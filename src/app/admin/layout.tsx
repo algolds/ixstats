@@ -1,9 +1,10 @@
 "use client";
 // src/app/admin/layout.tsx
-// Shared admin layout with auth guard, sidebar, and error boundary
+// Shared admin layout with auth guard, page container and error boundary (navigation is the
+// shell sidebar's Admin area list)
 
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
-import { AdminSidebarLayout } from "./_components/AdminSidebarLayout";
+import { SystemStatusStrip } from "./_components/SystemStatusWidget";
 import { AdminNavigationProvider } from "./_components/AdminNavigationContext";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
@@ -90,7 +91,12 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
   return (
     <AdminErrorBoundary>
       <AdminNavigationProvider>
-        <AdminSidebarLayout>{children}</AdminSidebarLayout>
+        <div className="bg-grouped text-label relative min-h-screen">
+          <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6 md:py-8 lg:px-6 lg:pt-8">
+            <SystemStatusStrip className="mb-6" />
+            {children}
+          </div>
+        </div>
       </AdminNavigationProvider>
     </AdminErrorBoundary>
   );

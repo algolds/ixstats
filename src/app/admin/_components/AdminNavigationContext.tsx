@@ -8,8 +8,6 @@ import { withBasePath, stripBasePath } from "~/lib/base-path";
 interface AdminNavigationContextType {
   activeSection: string;
   onNavigate: (section: string) => void;
-  sidebarHidden: boolean;
-  setSidebarHidden: (hidden: boolean) => void;
 }
 
 const AdminNavigationContext = createContext<AdminNavigationContextType | undefined>(undefined);
@@ -28,7 +26,6 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
   const [activeSection, setActiveSection] = useState<string>(() =>
     getSectionFromPathname(pathname)
   );
-  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   // Sync URL popstate events (browser back/forward button)
   useEffect(() => {
@@ -63,9 +60,7 @@ export function AdminNavigationProvider({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <AdminNavigationContext.Provider
-      value={{ activeSection, onNavigate, sidebarHidden, setSidebarHidden }}
-    >
+    <AdminNavigationContext.Provider value={{ activeSection, onNavigate }}>
       {children}
     </AdminNavigationContext.Provider>
   );
@@ -77,8 +72,6 @@ export function useAdminNavigation(): AdminNavigationContextType {
     return {
       activeSection: "dashboard",
       onNavigate: undefined as unknown as (section: string) => void,
-      sidebarHidden: false,
-      setSidebarHidden: () => {},
     };
   }
   return context;

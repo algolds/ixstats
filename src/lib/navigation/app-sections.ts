@@ -436,7 +436,7 @@ export const APPS: readonly AppDefinition[] = [
     requiresAuth: true,
     adminOnly: true,
     placement: "footer",
-    // Mirrors the admin console's rail (AdminSidebarNavWidget), hidden under the new shell.
+    // The console's pages; the sidebar lists them as an area, grouped by `group`.
     sections: [
       { id: "overview", label: "Overview", href: "/admin", icon: ShieldCheck, exact: true },
       ...adminGroup("Platform", [

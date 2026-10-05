@@ -94,6 +94,16 @@ describe("per-app sidebars are migrated to the source list", () => {
     expect(read("src/components/sports/club/ClubRouter.tsx")).toMatch(/<SportsSectionTabs\b/);
   });
 
+  it("admin: the source list's area mode replaces the admin sidebar widget", () => {
+    const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
+    expect(exists("src/app/admin/_components/AdminSidebarNavWidget.tsx")).toBe(false);
+    expect(exists("src/app/admin/_components/AdminSidebarLayout.tsx")).toBe(false);
+    expect(read("src/app/admin/layout.tsx")).not.toMatch(
+      /AdminSidebarNavWidget|AdminSidebarLayout|<aside|data-app-subnav/
+    );
+    expect(read("src/app/admin/layout.tsx")).toMatch(/data-app="admin"/);
+  });
+
   it("no layout renders a collapsible rail any more", () => {
     const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
     expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);

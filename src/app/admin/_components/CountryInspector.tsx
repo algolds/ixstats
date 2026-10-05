@@ -28,8 +28,6 @@ import {
   SystemRestart as Loader2,
   Dollar as DollarSign,
   Group as Users,
-  Expand as Maximize2,
-  Compress as Minimize2,
 } from "iconoir-react";
 
 import { Button } from "~/components/ui/button";
@@ -45,7 +43,6 @@ import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
-import { useAdminNavigation } from "./AdminNavigationContext";
 import { ECONOMIC_TIER_INFO } from "~/lib/tier-utils";
 import { EconomicTier, PopulationTier } from "~/types/ixstats";
 
@@ -79,16 +76,6 @@ const getPopTier = (population: number): PopulationTier =>
   POPULATION_TIER_FLOORS.find(([floor]) => population >= floor)?.[1] ?? PopulationTier.TIER_1;
 
 export function CountryInspector() {
-  const { sidebarHidden, setSidebarHidden } = useAdminNavigation();
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Reset sidebar navigation state when navigating away
-  useEffect(() => {
-    return () => {
-      setSidebarHidden(false);
-    };
-  }, [setSidebarHidden]);
-
   const [selectedCountryId, setSelectedCountryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -1489,22 +1476,6 @@ export function CountryInspector() {
               </div>
             )}
           </div>
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              setIsFullscreen(!isFullscreen);
-              setSidebarHidden(!sidebarHidden);
-            }}
-            className="shrink-0"
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            aria-pressed={isFullscreen}
-          >
-            {isFullscreen ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
-            <span className="hidden sm:inline">
-              {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-            </span>
-          </Button>
         </div>
       </div>
 
