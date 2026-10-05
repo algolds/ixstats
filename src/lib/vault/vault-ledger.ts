@@ -177,7 +177,10 @@ function assertSpendAllowed(config: VaultConfig, type: VaultTransactionType): vo
     throw new LedgerError("MAINTENANCE", "Vault economy is currently in maintenance mode.");
   }
   if (!config.isStoreEnabled && (type === "SPEND_COSMETIC" || type === "SPEND_BOOST")) {
-    throw new LedgerError("STORE_DISABLED", "Storefront purchases are currently disabled globally.");
+    throw new LedgerError(
+      "STORE_DISABLED",
+      "Storefront purchases are currently disabled globally."
+    );
   }
   if (!config.isPacksEnabled && type === "SPEND_PACKS") {
     throw new LedgerError("PACKS_DISABLED", "Card pack purchases are currently disabled globally.");
@@ -241,7 +244,7 @@ export async function earnCreditsTx(
       source,
       metadata: metadata ? (JSON.stringify(metadata) as any) : null,
       createdAt: createdAt ?? new Date(),
-          idempotencyKey: input.idempotencyKey ?? null,
+      idempotencyKey: input.idempotencyKey ?? null,
     },
   });
 
@@ -429,7 +432,8 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultLevel: 1,
       vaultXp: 0,
       loginStreak: 0,
-      canClaimDailyBonus: true,
+      // A failed read cannot know whether today's claim was taken, so never offer one.
+      canClaimDailyBonus: false,
       premiumMultiplier: 1.0,
       isPremium: false,
     };
