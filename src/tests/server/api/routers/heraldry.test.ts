@@ -99,7 +99,7 @@ describe("heraldry tRPC Router", () => {
       },
     };
 
-    mockAchievementCreate.mockResolvedValue({
+    const created = {
       id: "ach_1",
       title: "New Achievement",
       subjectType: "CHARACTER",
@@ -107,7 +107,10 @@ describe("heraldry tRPC Router", () => {
       compositionData: dummyComposition,
       generatedBlazon: "Or, a plain field",
       ownerId: "user_1",
-    });
+    };
+    mockAchievementCreate.mockResolvedValue(created);
+    // The post-save image render (see heraldry-render.test.ts) writes its URLs with update().
+    mockAchievementUpdate.mockImplementation(async ({ data }: any) => ({ ...created, ...data }));
     mockRevisionCreate.mockResolvedValue({ id: "rev_1" });
 
     const caller = createCallerFactory(heraldryRouter)(baseContext);

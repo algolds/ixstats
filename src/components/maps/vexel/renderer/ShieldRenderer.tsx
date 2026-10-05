@@ -2,15 +2,12 @@
 
 import type { MouseEvent } from "react";
 import type { HeraldryComposition } from "~/lib/heraldry";
-import { computeLayout } from "~/lib/heraldry";
-import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
 import {
-  renderShieldOutline,
-  renderDivisionPaths,
-  renderOrdinaryPath,
-  getTinctureColor,
-} from "./svg-utils";
-import { CHARGE_PATHS } from "./charge-paths";
+  buildShieldScene,
+  SHIELD_SHADOW,
+  SHIELD_STROKES,
+  SHIELD_VIEWBOX,
+} from "~/lib/heraldry/shield-scene";
 
 interface ShieldRendererProps {
   composition: HeraldryComposition;
@@ -21,6 +18,10 @@ interface ShieldRendererProps {
   customChargeSvgs?: Record<string, string>;
 }
 
+/**
+ * The live shield. Draws the same scene the server rasterizes into the stored coat-of-arms image
+ * (see serializeShieldSvg), plus click targets for the editor.
+ */
 export default function ShieldRenderer({
   composition,
   width = "100%",
@@ -28,17 +29,13 @@ export default function ShieldRenderer({
   onElementClick,
   customChargeSvgs = {},
 }: ShieldRendererProps) {
-  const { charges } = computeLayout(composition);
-  const clipId = `shield-clip-${composition.shield.shape}`;
-  const outline = renderShieldOutline(composition.shield.shape);
-  // Which charge ref each laid-out charge instance belongs to (a ref expands to `count` instances).
-  const chargeRefs = composition.shield.charges ?? [];
-  const chargeOwner = chargeRefs.flatMap((ref, i) => Array.from({ length: ref.count }, () => i));
+  const scene = buildShieldScene(composition, customChargeSvgs);
+  const { clipId, outline } = scene;
 
   return (
     <svg
       id="vexel-shield-canvas"
-      viewBox="0 0 1000 1000"
+      viewBox={SHIELD_VIEWBOX}
       width={width}
       height={height}
       className="overflow-visible select-none"
@@ -49,110 +46,93 @@ export default function ShieldRenderer({
         </clipPath>
 
         <filter id="shield-shadow" x="-10%" y="-10%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="8" stdDeviation="12" floodColor="#000000" floodOpacity="0.45" />
+          <feDropShadow
+            dx={SHIELD_SHADOW.dx}
+            dy={SHIELD_SHADOW.dy}
+            stdDeviation={SHIELD_SHADOW.stdDeviation}
+            floodColor={SHIELD_SHADOW.floodColor}
+            floodOpacity={SHIELD_SHADOW.floodOpacity}
+          />
         </filter>
       </defs>
 
       <g filter="url(#shield-shadow)">
         <g clipPath={`url(#${clipId})`}>
           <g onClick={() => onElementClick?.("shield.field")} className="cursor-pointer">
-            {renderDivisionPaths(
-              composition.shield.field.division,
-              composition.shield.field.tinctures
-            ).map((div, i) =>
-              div.rect ? (
-                <rect key={i} {...div.rect} fill={div.color} />
+            {scene.field.map((piece, i) =>
+              piece.rect ? (
+                <rect key={i} {...piece.rect} fill={piece.color} />
               ) : (
-                <path key={i} d={div.path} fill={div.color} />
+                <path key={i} d={piece.path} fill={piece.color} />
               )
             )}
           </g>
 
           <g>
-            {(composition.shield.ordinaries ?? []).map((ord, i) => {
-              const pathStr = renderOrdinaryPath(ord.type);
-              if (!pathStr) return null;
-
-              return (
-                <path
-                  key={i}
-                  d={pathStr}
-                  fill={getTinctureColor(ord.tincture)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onElementClick?.(`shield.ordinaries[${i}]`);
-                  }}
-                  className="cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:brightness-105 active:brightness-95"
-                />
-              );
-            })}
+            {scene.ordinaries.map((ord) => (
+              <path
+                key={ord.index}
+                d={ord.d}
+                fill={ord.fill}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onElementClick?.(`shield.ordinaries[${ord.index}]`);
+                }}
+                className="cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:brightness-105 active:brightness-95"
+              />
+            ))}
           </g>
 
           <g>
-            {charges.map((layoutCharge, idx) => {
-              const refChargeIndex = chargeOwner[idx] ?? 0;
-              const chargeRef = chargeRefs[refChargeIndex];
-              if (!chargeRef) return null;
-
-              const color = getTinctureColor(chargeRef.tincture);
-              const customSvg = customChargeSvgs[chargeRef.chargeId];
+            {scene.charges.map((charge) => {
               const handleChargeClick = (e: MouseEvent) => {
                 e.stopPropagation();
-                onElementClick?.(`shield.charges[${refChargeIndex}]`);
+                onElementClick?.(`shield.charges[${charge.refIndex}]`);
               };
 
-              if (customSvg) {
-                // Custom SVG rendered inline inside a nested viewport
+              if (charge.kind === "custom") {
+                // Custom SVG (sanitized in buildShieldScene) inside a nested viewport
                 return (
                   <svg
-                    key={layoutCharge.id}
-                    x={layoutCharge.x - layoutCharge.width / 2}
-                    y={layoutCharge.y - layoutCharge.height / 2}
-                    width={layoutCharge.width}
-                    height={layoutCharge.height}
+                    key={charge.key}
+                    x={charge.x}
+                    y={charge.y}
+                    width={charge.width}
+                    height={charge.height}
                     viewBox="0 0 100 100"
                     onClick={handleChargeClick}
                     className="cursor-pointer hover:brightness-110"
-                    dangerouslySetInnerHTML={{
-                      __html: sanitizeSvgMarkup(customSvg)
-                        .replace(/<svg[^>]*>/, "")
-                        .replace(/<\/svg>/, ""),
-                    }}
+                    dangerouslySetInnerHTML={{ __html: charge.markup }}
                   />
                 );
               }
 
               // Template shape, or a star placeholder for unknown charges
-              const template = CHARGE_PATHS[chargeRef.chargeId];
               return (
                 <path
-                  key={layoutCharge.id}
-                  d={template ?? CHARGE_PATHS.star}
-                  fill={color}
-                  opacity={template ? undefined : 0.85}
+                  key={charge.key}
+                  d={charge.d}
+                  fill={charge.fill}
+                  opacity={charge.placeholder ? 0.85 : undefined}
                   onClick={handleChargeClick}
                   className="cursor-pointer hover:brightness-110"
-                  transform={`translate(${layoutCharge.x}, ${layoutCharge.y}) scale(${layoutCharge.width / 100})`}
+                  transform={charge.transform}
                 />
               );
             })}
           </g>
         </g>
 
-        <path
-          d={outline}
-          fill="none"
-          stroke="#1e1b4b"
-          strokeWidth="14"
-          className="pointer-events-none"
-        />
-        <path
-          d={outline}
-          fill="none"
-          stroke="#f59e0b"
-          strokeWidth="6"
-          className="pointer-events-none"
-        />
+        {SHIELD_STROKES.map((stroke) => (
+          <path
+            key={stroke.color}
+            d={outline}
+            fill="none"
+            stroke={stroke.color}
+            strokeWidth={stroke.width}
+            className="pointer-events-none"
+          />
+        ))}
       </g>
     </svg>
   );

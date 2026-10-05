@@ -42,13 +42,14 @@ describe("heraldry.attachToCountry", () => {
   });
 
   it("writes the design's image when it has one", async () => {
-    const { caller, update } = attachCaller({ thumbnailUrl: null, largeUrl: "/arms/large.png" });
+    const large = `/images/uploads/heraldry_${ACHIEVEMENT_ID}_0123456789abcdef_1024.png`;
+    const { caller, update } = attachCaller({ thumbnailUrl: null, largeUrl: large });
 
     await expect(
       caller.attachToCountry({ achievementId: ACHIEVEMENT_ID, countryId: CALLER_COUNTRY })
     ).resolves.toEqual({ success: true });
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ coatOfArms: "/arms/large.png" }) })
+      expect.objectContaining({ data: expect.objectContaining({ coatOfArms: large }) })
     );
   });
 });

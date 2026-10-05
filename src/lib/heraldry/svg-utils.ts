@@ -1,5 +1,5 @@
-import type { ShieldShape, Division, OrdinaryType, Tincture } from "~/lib/heraldry";
-import { TINCTURE_HEX } from "~/lib/heraldry";
+import type { ShieldShape, Division, OrdinaryType, Tincture } from "./types";
+import { TINCTURE_HEX } from "./constants";
 
 export function getTinctureColor(tincture: Tincture): string {
   return TINCTURE_HEX[tincture] ?? "#FFFFFF";

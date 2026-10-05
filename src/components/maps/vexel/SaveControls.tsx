@@ -105,8 +105,29 @@ export default function SaveControls() {
     mutation.mutate({ id: achievementId });
   };
 
-  const handleAttach = () => {
+  // Saving renders the design to an image; a design saved before that has none, so render it first.
+  const renderMutation = api.heraldry.renderAchievementImage.useMutation({
+    onSuccess: () => utils.heraldry.getAchievement.invalidate({ id: achievementId! }),
+    onError: (err) => {
+      notifyFromStore({
+        title: "Could not render coat of arms",
+        message: err.message,
+        type: "error",
+        priority: "high",
+      });
+    },
+  });
+  const isAttaching = renderMutation.isPending || attachMutation.isPending;
+
+  const handleAttach = async () => {
     if (!achievementId || !subjectId) return;
+    if (!currentAchievement?.thumbnailUrl && !currentAchievement?.largeUrl) {
+      try {
+        await renderMutation.mutateAsync({ id: achievementId });
+      } catch {
+        return; // reported by renderMutation.onError
+      }
+    }
     attachMutation.mutate({ achievementId, countryId: subjectId });
   };
 
@@ -164,10 +185,14 @@ export default function SaveControls() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleAttach}
-              disabled={attachMutation.isPending}
+              onClick={() => void handleAttach()}
+              disabled={isAttaching}
             >
-              {attachMutation.isPending ? "Attaching..." : "Attach to map"}
+              {renderMutation.isPending
+                ? "Rendering..."
+                : attachMutation.isPending
+                  ? "Attaching..."
+                  : "Attach to map"}
             </Button>
           )}
 
