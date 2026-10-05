@@ -24,9 +24,10 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   `audit:vault-exploits:apply` and a production restore test, run the deploy-time backfills
   (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun prisma/seeds/achievement-cards.ts`).
 - **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes), D20 (PR #52 —
-  WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure), and the
-  sign-offs listed in the final hand-off: annual policy upkeep, the stability policy scale, Vexel attach refusing until
-  rendering exists, notification preferences now applying to saved rows.
+  WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure).
+- **Signed off by the owner (2026-10-05):** annual policy upkeep, the stability policy scale (×10), Vexel attach (now
+  renders on save), notification preferences applying to saved rows, and the earnings kill switch also blocking
+  auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off; D6 is moot).
 - **Engineering still open:** typecheck `src/tests` (≈890 errors); Vexel PNG rendering; blocking inside group chats;
   crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
   [backlog.md](backlog.md).
