@@ -3,16 +3,20 @@
  *
  * Seeds commemorative SPECIAL cards that are awarded for major achievements.
  * These cards cannot be obtained through packs or trading - only through achievement unlock.
+ * Unlocks that happened before the cards existed are backfilled (the award used to fail with
+ * "Card not found").
  *
- * Run with: tsx prisma/seeds/achievement-cards.ts
+ * Runs as part of `bun run db:seed`, or on its own: bun prisma/seeds/achievement-cards.ts
  */
 
 import { PrismaClient } from "@prisma/client";
-import { COMMEMORATIVE_CARD_DEFINITIONS } from "../../src/lib/achievement-card-rewards";
+import {
+  COMMEMORATIVE_CARD_DEFINITIONS,
+  listAchievementCardRewards,
+} from "../../src/lib/achievements/card-rewards";
+import { awardAchievementCard } from "../../src/lib/cards/card-service";
 
-const prisma = new PrismaClient();
-
-async function main() {
+export async function seedAchievementCards(prisma: PrismaClient) {
   console.log("🎴 Seeding Achievement Commemorative Cards...\n");
 
   let created = 0;
@@ -21,47 +25,34 @@ async function main() {
 
   for (const cardDef of COMMEMORATIVE_CARD_DEFINITIONS) {
     try {
+      const data = {
+        title: cardDef.title,
+        description: cardDef.description,
+        artwork: cardDef.artwork,
+        rarity: cardDef.rarity,
+        cardType: cardDef.cardType,
+        category: cardDef.category,
+        season: cardDef.season,
+        stats: cardDef.stats,
+        totalSupply: cardDef.totalSupply,
+        marketValue: cardDef.marketValue,
+      };
+
       // Check if card already exists
       const existing = await prisma.card.findUnique({
         where: { id: cardDef.id },
       });
 
       if (existing) {
-        // Update existing card
         await prisma.card.update({
           where: { id: cardDef.id },
-          data: {
-            title: cardDef.title,
-            description: cardDef.description,
-            artwork: cardDef.artwork,
-            rarity: cardDef.rarity,
-            cardType: cardDef.cardType,
-            season: cardDef.season,
-            stats: cardDef.stats,
-            totalSupply: cardDef.totalSupply,
-            marketValue: cardDef.marketValue,
-            updatedAt: new Date(),
-          },
+          data: { ...data, updatedAt: new Date() },
         });
         console.log(`✅ Updated: ${cardDef.title} (${cardDef.rarity})`);
         updated++;
       } else {
-        // Create new card
         await prisma.card.create({
-          data: {
-            id: cardDef.id,
-            title: cardDef.title,
-            description: cardDef.description,
-            artwork: cardDef.artwork,
-            rarity: cardDef.rarity,
-            cardType: cardDef.cardType,
-            season: cardDef.season,
-            stats: cardDef.stats,
-            totalSupply: cardDef.totalSupply,
-            marketValue: cardDef.marketValue,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          data: { id: cardDef.id, ...data },
         });
         console.log(`✨ Created: ${cardDef.title} (${cardDef.rarity})`);
         created++;
@@ -72,19 +63,52 @@ async function main() {
     }
   }
 
+  // Backfill: grant the card to everyone who already holds the achievement but not the card
+  let backfilled = 0;
+  for (const { achievementId, cardId } of listAchievementCardRewards()) {
+    const unlocks = await prisma.userAchievement.findMany({
+      where: { achievementId },
+      select: { userId: true, title: true },
+    });
+    for (const unlock of unlocks) {
+      // UserAchievement.userId is the Clerk id; ownerships use the database id
+      const user = await prisma.user.findFirst({
+        where: { OR: [{ id: unlock.userId }, { clerkUserId: unlock.userId }] },
+        select: { id: true },
+      });
+      if (!user) continue;
+      const owned = await prisma.cardOwnership.findFirst({
+        where: { ownerId: user.id, cardId },
+        select: { id: true },
+      });
+      if (owned) continue;
+      try {
+        await awardAchievementCard(prisma, user.id, cardId, achievementId, unlock.title);
+        backfilled++;
+      } catch (error) {
+        console.error(`❌ Failed to backfill ${cardId} for ${user.id}:`, error);
+      }
+    }
+  }
+
   console.log("\n📊 Achievement Card Seeding Summary:");
   console.log(`   Created: ${created}`);
   console.log(`   Updated: ${updated}`);
   console.log(`   Skipped: ${skipped}`);
+  console.log(`   Backfilled: ${backfilled}`);
   console.log(`   Total:   ${COMMEMORATIVE_CARD_DEFINITIONS.length}`);
   console.log("\n✅ Achievement card seeding complete!");
 }
 
-main()
-  .catch((error) => {
-    console.error("❌ Achievement card seeding failed:", error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Run if called directly (ES Module compatible)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const prisma = new PrismaClient();
+  seedAchievementCards(prisma)
+    .catch((error) => {
+      console.error("❌ Achievement card seeding failed:", error);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

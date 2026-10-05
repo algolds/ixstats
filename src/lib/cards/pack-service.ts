@@ -1,11 +1,67 @@
 // src/lib/card-pack-service.ts
 // Card pack service for IxCards system
 
-import type { PrismaClient } from "@prisma/client";
-import type { CardRarity } from "@prisma/client";
+import { LoreCategory } from "@prisma/client";
+import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { grantCardXp } from "./xp-utils";
+import { newCardOwnershipId } from "./ownership-id";
+
+/**
+ * A pack-service failure the caller can act on. `code` is the tRPC error code the router
+ * surfaces, so known failures don't reach players as 500s.
+ */
+export class PackError extends Error {
+  constructor(
+    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "PRECONDITION_FAILED",
+    message: string
+  ) {
+    super(message);
+    this.name = "PackError";
+  }
+}
+
+/**
+ * Optional `CardPack.themeFilter` shape. Each listed key narrows the pool (keys combine with
+ * AND, values within a key with OR); unknown keys are ignored.
+ *   { "categories": ["MILITARY"], "subcategories": [...], "cardTypes": ["LORE"], "countryIds": [...] }
+ */
+export interface PackThemeFilter {
+  categories?: string[];
+  subcategories?: string[];
+  cardTypes?: string[];
+  countryIds?: string[];
+}
+
+function stringList(value: unknown): string[] {
+  if (typeof value === "string") return value ? [value] : [];
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string" && v !== "")
+    : [];
+}
+
+/** Card filters for a pack's `themeFilter` JSON (an empty list when there is no theme). */
+export function themeFilterWhere(themeFilter: unknown): Prisma.CardWhereInput[] {
+  if (!themeFilter || typeof themeFilter !== "object" || Array.isArray(themeFilter)) return [];
+  const theme = themeFilter as Record<string, unknown>;
+  const where: Prisma.CardWhereInput[] = [];
+
+  const validCategories = new Set<string>(Object.values(LoreCategory));
+  const categories = stringList(theme.categories).filter((c) => validCategories.has(c));
+  if (stringList(theme.categories).length > 0) {
+    // A theme naming only unknown categories matches nothing rather than everything
+    where.push({ category: { in: categories as LoreCategory[] } });
+  }
+  const subcategories = stringList(theme.subcategories);
+  if (subcategories.length > 0) where.push({ subcategory: { in: subcategories } });
+  const cardTypes = stringList(theme.cardTypes);
+  if (cardTypes.length > 0) where.push({ cardType: { in: cardTypes } });
+  const countryIds = stringList(theme.countryIds);
+  if (countryIds.length > 0) where.push({ countryId: { in: countryIds } });
+
+  return where;
+}
 
 interface PackOdds {
   commonOdds: number;
@@ -52,17 +108,17 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
     });
 
     if (!pack) {
-      throw new Error("Pack not found");
+      throw new PackError("NOT_FOUND", "Pack not found");
     }
 
     // 2. Validate availability
     if (!pack.isActive) {
-      throw new Error("Pack is not available for purchase");
+      throw new PackError("BAD_REQUEST", "Pack is not available for purchase");
     }
 
     // Check expiry
     if (pack.expiresAt && pack.expiresAt < new Date()) {
-      throw new Error("Pack has expired");
+      throw new PackError("BAD_REQUEST", "Pack has expired");
     }
 
     // Check purchase limit
@@ -75,7 +131,10 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
       });
 
       if (userPurchaseCount >= pack.purchaseLimit) {
-        throw new Error(`Purchase limit reached: ${pack.purchaseLimit} pack(s) per user`);
+        throw new PackError(
+          "PRECONDITION_FAILED",
+          `Purchase limit reached: ${pack.purchaseLimit} pack(s) per user`
+        );
       }
     }
 
@@ -86,7 +145,7 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
       });
 
       if (soldCount >= pack.limitedQuantity) {
-        throw new Error("Pack sold out");
+        throw new PackError("PRECONDITION_FAILED", "Pack sold out");
       }
     }
 
@@ -120,11 +179,19 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
   });
 }
 
+/** Pack rarity tiers, lowest first (the order of the odds table). */
+const RARITY_ORDER: readonly CardRarity[] = RARITY_DISTRIBUTION.map(([rarity]) => rarity);
+
+function rarityRank(rarity: string | null | undefined): number {
+  return RARITY_ORDER.indexOf(rarity as CardRarity);
+}
+
 /**
  * Generate cards for pack based on rarity distribution
- * Returns array of card rarities to be pulled from card pool
+ * Returns array of card rarities to be pulled from card pool. When the pack has a
+ * `guaranteedRarity` and no roll reached it, the last slot is upgraded to that rarity.
  */
-function generatePackCards(pack: {
+export function generatePackCards(pack: {
   cardCount: number;
   commonOdds: number;
   uncommonOdds: number;
@@ -132,6 +199,7 @@ function generatePackCards(pack: {
   ultraRareOdds: number;
   epicOdds: number;
   legendaryOdds: number;
+  guaranteedRarity?: string | null;
 }): CardRarity[] {
   const rarities: CardRarity[] = [];
   const odds = {
@@ -147,7 +215,48 @@ function generatePackCards(pack: {
     rarities.push(selectRarityByOdds(odds));
   }
 
+  const guaranteedRank = rarityRank(pack.guaranteedRarity);
+  if (
+    guaranteedRank >= 0 &&
+    rarities.length > 0 &&
+    !rarities.some((r) => rarityRank(r) >= guaranteedRank)
+  ) {
+    rarities[rarities.length - 1] = RARITY_ORDER[guaranteedRank]!;
+  }
+
   return rarities;
+}
+
+/**
+ * The pack's card pool, before rarity: active cards matching the pack's type, season and
+ * theme, never SPECIAL (achievement / event rewards) and never crafted.
+ */
+async function packPoolWhere(
+  tx: Prisma.TransactionClient,
+  pack: { cardType: string | null; season: number | null; themeFilter: unknown }
+): Promise<Prisma.CardWhereInput> {
+  // Crafted cards carry CRAFTED_CARD_MARKER (crafting-rules.ts). Matched positively, as a NOT
+  // on a JSON path would also drop every card without metadata. Legacy crafts carry no
+  // marker, only the generic "Crafted via <recipe>" description.
+  const crafted = await tx.card.findMany({
+    where: {
+      OR: [
+        { metadata: { path: ["crafted"], equals: true } },
+        { description: { startsWith: "Crafted via " }, totalSupply: 1 },
+      ],
+    },
+    select: { id: true },
+  });
+
+  const and: Prisma.CardWhereInput[] = [
+    { isRetired: false },
+    { cardType: { not: "SPECIAL" } },
+    ...themeFilterWhere(pack.themeFilter),
+  ];
+  if (pack.cardType) and.push({ cardType: pack.cardType });
+  if (pack.season) and.push({ season: pack.season });
+  if (crafted.length > 0) and.push({ id: { notIn: crafted.map((c) => c.id) } });
+  return { AND: and };
 }
 
 /**
@@ -162,18 +271,14 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       include: { pack: true },
     });
 
-    if (!userPack) {
-      throw new Error("Pack not found");
-    }
-
-    // 2. Verify ownership
-    if (userPack.userId !== userId) {
-      throw new Error("Unauthorized: Pack belongs to another user");
+    // 2. Verify ownership (another user's pack reads as missing, so ids can't be probed)
+    if (!userPack || userPack.userId !== userId) {
+      throw new PackError("NOT_FOUND", "Pack not found");
     }
 
     // 3. Check if already opened
     if (userPack.isOpened) {
-      throw new Error("Pack has already been opened");
+      throw new PackError("BAD_REQUEST", "Pack has already been opened");
     }
 
     // 3.5 Check inventory capacity limits
@@ -192,7 +297,8 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
         where: { userId },
       });
       if (currentCardsCount + userPack.pack.cardCount > maxCards) {
-        throw new Error(
+        throw new PackError(
+          "PRECONDITION_FAILED",
           `Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`
         );
       }
@@ -202,42 +308,51 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
     const rarities = generatePackCards(userPack.pack);
 
     // 5. Select actual cards from pool based on rarities
+    const poolWhere = await packPoolWhere(tx, userPack.pack);
+    const tierCounts = new Map<CardRarity, number>();
+    const countTier = async (rarity: CardRarity) => {
+      let count = tierCounts.get(rarity);
+      if (count === undefined) {
+        count = await tx.card.count({ where: { AND: [poolWhere, { rarity }] } });
+        tierCounts.set(rarity, count);
+      }
+      return count;
+    };
+
     const cardsWithOwnership = [];
-    for (const rarity of rarities) {
-      // Build where clause
-      const where: {
-        rarity: CardRarity;
-        cardType?: string;
-        season?: number;
-        isRetired: boolean;
-      } = { rarity, isRetired: false };
-
-      // Apply pack filters
-      if (userPack.pack.cardType) {
-        where.cardType = userPack.pack.cardType;
-      }
-      if (userPack.pack.season) {
-        where.season = userPack.pack.season;
+    for (const rolled of rarities) {
+      // An empty tier falls back to the next-lower rarity; only when every lower tier is
+      // empty too does it reach upward, so a thin pool still opens.
+      const rank = rarityRank(rolled);
+      const tiers = [...RARITY_ORDER.slice(0, rank + 1).reverse(), ...RARITY_ORDER.slice(rank + 1)];
+      let rarity: CardRarity | null = null;
+      let cardCount = 0;
+      for (const tier of tiers) {
+        cardCount = await countTier(tier);
+        if (cardCount > 0) {
+          rarity = tier;
+          break;
+        }
       }
 
-      // Get random card of this rarity
-      const cardCount = await tx.card.count({ where });
-
-      if (cardCount === 0) {
-        throw new Error(`No cards found for rarity: ${rarity} with pack filters`);
+      if (!rarity) {
+        throw new PackError(
+          "PRECONDITION_FAILED",
+          "This pack has no cards available right now. Please try again later."
+        );
       }
 
       // Random offset for variety
       const randomOffset = Math.floor(Math.random() * cardCount);
 
       const card = await tx.card.findFirst({
-        where,
+        where: { AND: [poolWhere, { rarity }] },
         skip: randomOffset,
         take: 1,
       });
 
       if (!card) {
-        throw new Error(`Failed to select card for rarity: ${rarity}`);
+        throw new PackError("PRECONDITION_FAILED", `Failed to select a ${rarity} card`);
       }
 
       // 6. Create CardOwnership record
@@ -250,7 +365,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
 
       const ownership = await tx.cardOwnership.create({
         data: {
-          id: `co_${Date.now()}_${userId}_${card.id}`,
+          id: newCardOwnershipId(),
           userId,
           cardId: card.id,
           ownerId: userId,

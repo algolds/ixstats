@@ -2,7 +2,7 @@
 
 **Phase 3: Card Crafting/Fusion/Evolution**
 
-> **Status (verified 2026-09-29): PARTIAL.** The workbench, animation, and `crafting.getRecipes` / `getRecipeById` / `craftCard` exist, but `/vault/crafting` is not linked from the Vault nav, the page passes card-definition IDs where `craftCard` expects `CardOwnership` IDs, `successRate` units disagree between schema (0–1) and router (0–100), and the recipe seed does not match the Prisma model. See [Known Issues](#known-issues).
+> **Status (verified 2026-09-29): PARTIAL.** The workbench, animation, and `crafting.getRecipes` / `getRecipeById` / `craftCard` exist, but `/vault/crafting` is not linked from the Vault nav, and the page passes card-definition IDs where `craftCard` expects `CardOwnership` IDs. See [Known Issues](#known-issues).
 
 The crafting system allows players to combine or evolve cards to create more powerful variants. This system features fusion (combining multiple cards) and evolution (upgrading individual cards) mechanics with dynamic success rates and XP rewards.
 
@@ -134,7 +134,7 @@ model CraftingRecipe {
 }
 ```
 
-**Material Requirement Format** (`requiredCardIds`): either specific card IDs, or criteria objects validated by count only (`requiredCount`):
+**Material Requirement Format** (`requiredCardIds`): either specific card IDs, or criteria objects. Each criterion (`rarity`, `type` = `cardType`, `cardId`) must be met by `quantity` (default 1) of the chosen materials, and extra materials are refused:
 ```json
 [
   { "rarity": "RARE", "quantity": 2 }
@@ -174,18 +174,18 @@ model CraftingHistory {
 2. **EVOLUTION**
    - Intended to upgrade a single card to higher rarity
    - More reliable than fusion (higher seeded success rates)
-   - Currently consumes the material and mints a new card (identity is not preserved unless the recipe sets `resultCardId`)
+   - Consumes the material; the result is the recipe's `resultCardId` card, or a newly minted card when it has none
 
 ### Success Rate System
 
-Seeded rates (percent): Fusion 95 / 85 / 70 / 30 / 15, Evolution 100 / 95 / 85 / 70 / 50, Lore Card Fusion 80, Event Card Fusion 60.
+`successRate` is a fraction, 0.0–1.0, as the schema documents. Legacy rows stored a percentage, so `normalizeSuccessRate` (`src/lib/cards/crafting-rules.ts`) reads any value above 1 as a percent. `getRecipes` / `getRecipeById` return the normalised fraction.
+
+Seeded rates: Fusion 0.95 / 0.85 / 0.70 / 0.30 / 0.15, Evolution 1.0 / 0.95 / 0.85 / 0.70 / 0.50, Lore Card Fusion 0.80, Event Card Fusion 0.60.
 
 Success is determined by:
 ```typescript
-const roll = Math.random() * 100;
-const success = roll <= recipe.successRate;
+const success = Math.random() < normalizeSuccessRate(recipe.successRate);
 ```
-Note: this treats `successRate` as a percentage, while the schema default (`1.0`) and comment assume 0–1.
 
 ### Cost System
 
@@ -225,7 +225,7 @@ npx tsx prisma/seeds/crafting-recipes.ts
 
 1. Spend IxCredits (`vaultService.spendCreditsTx`, `SPEND_CRAFT`; fails on insufficient balance)
 2. Delete consumed `CardOwnership` rows
-3. On success: create a new `Card` (from `resultCardId`, else a generic "<recipe> Result" NATION card with `resultRarity`) and its ownership
+3. On success: grant an ownership of the recipe's `resultCardId` card (next serial); recipes without one mint a "<recipe> Result" NATION card with `resultRarity`, marked `metadata.crafted` so packs never drop it
 4. Award card XP to the new card
 5. Record crafting history
 
@@ -356,15 +356,13 @@ src/
 prisma/
 ├── schema/cards.prisma           # CraftingRecipe, CraftingHistory
 └── seeds/
-    └── crafting-recipes.ts       # Sample recipes (needs schema alignment)
+    └── crafting-recipes.ts       # Sample recipes
 ```
 
 ## Known Issues
 
 - `/vault/crafting` maps `cards.getMyCards` results to `CardInstance` with `id = card definition ID`; `craftCard` looks up `CardOwnership` IDs, so crafts fail with "You don't own all the specified material cards".
-- `successRate` percent vs fraction mismatch (see above).
-- Seed file field names do not match the model.
-- Evolution does not preserve card identity: success always mints a new card.
+- Recipes without a `resultCardId` still mint a new card on success.
 
 ## Version History
 

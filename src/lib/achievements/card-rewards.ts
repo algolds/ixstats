@@ -106,6 +106,120 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
 ];
 
 /**
+ * A commemorative card row, seeded by `prisma/seeds/achievement-cards.ts`. SPECIAL cards
+ * never drop from packs (`pack-service.ts`), so unlocking the achievement is the only source.
+ */
+interface CommemorativeCardDefinition {
+  id: string;
+  title: string;
+  description: string;
+  artwork: string | null;
+  rarity: "COMMON" | "UNCOMMON" | "RARE" | "ULTRA_RARE" | "EPIC" | "LEGENDARY";
+  cardType: "SPECIAL";
+  category: "SPECIAL";
+  season: number;
+  stats: Record<string, never>;
+  totalSupply: number | null;
+  marketValue: number;
+}
+
+function commemorative(
+  id: string,
+  title: string,
+  rarity: CommemorativeCardDefinition["rarity"],
+  description: string
+): CommemorativeCardDefinition {
+  return {
+    id,
+    title,
+    description,
+    artwork: null,
+    rarity,
+    cardType: "SPECIAL",
+    category: "SPECIAL",
+    season: 1,
+    stats: {},
+    totalSupply: null,
+    marketValue: 0,
+  };
+}
+
+/** One card per `cardId` in ACHIEVEMENT_CARD_REWARDS; rarity follows the achievement's. */
+export const COMMEMORATIVE_CARD_DEFINITIONS: CommemorativeCardDefinition[] = [
+  commemorative(
+    "card-achievement-first-nation",
+    "First Nation",
+    "COMMON",
+    "Commemorates claiming your first country."
+  ),
+  commemorative(
+    "card-achievement-veteran",
+    "Veteran",
+    "EPIC",
+    "Commemorates one year of activity on IxStats."
+  ),
+  commemorative(
+    "card-achievement-completionist",
+    "Completionist",
+    "EPIC",
+    "Commemorates unlocking 50 achievements."
+  ),
+  commemorative(
+    "card-achievement-economic-titan",
+    "Economic Titan",
+    "RARE",
+    "Commemorates ranking in the top 25% of nations by total GDP."
+  ),
+  commemorative(
+    "card-achievement-tier1-master",
+    "Tier 1 Master",
+    "EPIC",
+    "Commemorates reaching Tier 1 economic status."
+  ),
+  commemorative(
+    "card-achievement-prosperity-peak",
+    "Prosperity Peak",
+    "EPIC",
+    "Commemorates ranking in the top 10% of nations by GDP per capita."
+  ),
+  commemorative(
+    "card-achievement-diplomatic-architect",
+    "Diplomatic Architect",
+    "EPIC",
+    "Commemorates establishing 25 embassies."
+  ),
+  commemorative(
+    "card-achievement-trade-nexus",
+    "Trade Nexus",
+    "EPIC",
+    "Commemorates establishing 50 trade partnerships."
+  ),
+  commemorative(
+    "card-achievement-influencer",
+    "Influencer",
+    "RARE",
+    "Commemorates reaching 100 followers."
+  ),
+  commemorative(
+    "card-achievement-thought-leader",
+    "Thought Leader",
+    "RARE",
+    "Commemorates publishing 50 ThinkPages."
+  ),
+  commemorative(
+    "card-achievement-military-superpower",
+    "Military Superpower",
+    "LEGENDARY",
+    "Commemorates recruiting 5,000,000 military personnel."
+  ),
+];
+
+/** Every achievement → card pairing, for the seed's backfill of earlier unlocks. */
+export function listAchievementCardRewards(): { achievementId: string; cardId: string }[] {
+  return ACHIEVEMENT_CARD_REWARDS.map(({ achievementId, cardId }) => ({ achievementId, cardId }));
+}
+
+/**
  * Get card reward for achievement
  * @param achievementId Achievement ID from achievement-definitions.ts
  * @returns Card ID to award, or null if no card reward

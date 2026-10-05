@@ -17,6 +17,13 @@ import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-ser
 import { getVaultLevel } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
+import { newCardOwnershipId } from "~/lib/cards/ownership-id";
+import {
+  CRAFTED_CARD_MARKER,
+  normalizeSuccessRate,
+  validateMaterialCriteria,
+  type MaterialCriterion,
+} from "~/lib/cards/crafting-rules";
 import { type CardType } from "@prisma/client";
 
 /**
@@ -83,6 +90,7 @@ export const craftingRecipesRouter = createTRPCRouter({
 
         return {
           ...recipe,
+          successRate: normalizeSuccessRate(recipe.successRate),
           isUnlocked,
           isCompleted,
           completedCount,
@@ -144,6 +152,7 @@ export const craftingRecipesRouter = createTRPCRouter({
 
       return {
         ...recipe,
+        successRate: normalizeSuccessRate(recipe.successRate),
         isUnlocked,
         isCompleted: completedCount > 0,
         completedCount,
@@ -253,22 +262,34 @@ export const craftingRecipesRouter = createTRPCRouter({
             materialBaseIds.splice(idx, 1);
           }
         } else {
-          // Criteria-based validation — check count only; criteria assumed to be pre-validated
-          if (input.materialCardIds.length < recipe.requiredCount) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: `Need at least ${recipe.requiredCount} materials`,
-            });
+          // Criteria-based validation: every material must fit a criterion (rarity / type /
+          // card), each criterion gets its quantity, and nothing extra is consumed
+          const criteriaError = validateMaterialCriteria(
+            ownedCards,
+            materialsRequired as MaterialCriterion[]
+          );
+          if (criteriaError) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: criteriaError });
           }
         }
+      }
+
+      // A recipe with a fixed result grants that card, so it must still exist
+      const resultBaseCard = recipe.resultCardId
+        ? await ctx.db.card.findUnique({ where: { id: recipe.resultCardId } })
+        : null;
+      if (recipe.resultCardId && !resultBaseCard) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "This recipe's result card is no longer available",
+        });
       }
 
       // Get current IxCard season
       const currentSeason = await getCurrentIxCardSeason(ctx.db);
 
-      // Calculate success
-      const roll = Math.random() * 100;
-      const success = roll <= recipe.successRate;
+      // Calculate success (successRate is 0.0-1.0; legacy percentages are normalised)
+      const success = Math.random() < normalizeSuccessRate(recipe.successRate);
 
       // Start transaction
       try {
@@ -302,37 +323,49 @@ export const craftingRecipesRouter = createTRPCRouter({
 
           let resultCard = null;
 
-          // If successful, create result card
+          // If successful, grant the result card
           if (success) {
-            // Create new card instance
-            const baseCard = recipe.resultCardId
-              ? await tx.card.findUnique({ where: { id: recipe.resultCardId } })
-              : null;
+            let resultCardId: string;
+            let serialNumber = 1;
 
-            // Generate new card
-            const newCard = await tx.card.create({
-              data: {
-                title: baseCard?.title ?? `${recipe.name} Result`,
-                description: baseCard?.description ?? `Crafted via ${recipe.name}`,
-                artwork: baseCard?.artwork ?? "",
-                rarity: recipe.resultRarity ?? "COMMON",
-                cardType: "NATION" as CardType, // Default card type
-                season: currentSeason,
-                stats: {},
-                marketValue: 0,
-                totalSupply: 1,
-                level: 1,
-              },
-            });
+            if (resultBaseCard) {
+              // Fixed-result recipe: grant a copy of the recipe's card, next serial in line
+              resultCardId = resultBaseCard.id;
+              const maxSerial = await tx.cardOwnership.findFirst({
+                where: { cardId: resultCardId },
+                orderBy: { serialNumber: "desc" },
+                select: { serialNumber: true },
+              });
+              serialNumber = (maxSerial?.serialNumber ?? 0) + 1;
+            } else {
+              // Open-result recipe: mint a new card of the recipe's rarity, marked as crafted
+              // so it never drops from packs
+              const newCard = await tx.card.create({
+                data: {
+                  title: `${recipe.name} Result`,
+                  description: `Crafted via ${recipe.name}`,
+                  artwork: "",
+                  rarity: recipe.resultRarity ?? "COMMON",
+                  cardType: "NATION" as CardType, // Default card type
+                  season: currentSeason,
+                  stats: {},
+                  marketValue: 0,
+                  totalSupply: 1,
+                  level: 1,
+                  metadata: { ...CRAFTED_CARD_MARKER, recipeId: recipe.id },
+                },
+              });
+              resultCardId = newCard.id;
+            }
 
             // Create ownership
             resultCard = await tx.cardOwnership.create({
               data: {
-                id: `${userId}-${newCard.id}-${Date.now()}`,
-                cardId: newCard.id,
+                id: newCardOwnershipId(),
+                cardId: resultCardId,
                 userId: userId,
                 ownerId: userId,
-                serialNumber: 1,
+                serialNumber,
                 acquiredAt: new Date(),
               },
               include: {

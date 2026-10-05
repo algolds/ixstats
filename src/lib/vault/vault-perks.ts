@@ -1,5 +1,6 @@
 import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
+import { countStorePurchases } from "./store-purchases";
 
 interface VaultEffectPerks {
   cardCapacity?: number;
@@ -212,6 +213,8 @@ export async function getPurchasedItemsEffects(
   if (cached) return cached;
 
   try {
+    // Every purchase counts: no row limit (stacked upgrades past the 100th purchase used to
+    // drop off), and delisted (inactive) items keep applying to the players who bought them.
     const transactions = await db.vaultTransaction.findMany({
       where: {
         vault: { userId },
@@ -220,27 +223,9 @@ export async function getPurchasedItemsEffects(
       select: {
         metadata: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: 100,
     });
 
-    const purchasedItemCounts: Record<string, number> = {};
-    for (const tx of transactions) {
-      let meta = tx.metadata;
-      if (typeof meta === "string") {
-        try {
-          meta = JSON.parse(meta);
-        } catch {
-          // non-JSON metadata — treated as no item match
-        }
-      }
-      if (meta && typeof meta === "object") {
-        const metaObj = meta as Record<string, unknown>;
-        if (metaObj.itemId && typeof metaObj.itemId === "string") {
-          purchasedItemCounts[metaObj.itemId] = (purchasedItemCounts[metaObj.itemId] || 0) + 1;
-        }
-      }
-    }
+    const purchasedItemCounts = countStorePurchases(transactions);
 
     const uniqueIds = Object.keys(purchasedItemCounts);
     if (uniqueIds.length === 0) {
@@ -251,7 +236,6 @@ export async function getPurchasedItemsEffects(
     const storeItems = await db.vaultStoreItem.findMany({
       where: {
         id: { in: uniqueIds },
-        isActive: true,
       },
       select: {
         id: true,
