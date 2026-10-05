@@ -137,6 +137,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [specs/2026-09-08-builder-unified-companion-guide-design.md](specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
 | [specs/2026-10-04-facet-4-design.md](specs/2026-10-04-facet-4-design.md) | Facet 4 content-typed material system | 🟡 Foundation and sidebar implemented; per-app sweep in progress |
 | [specs/2026-10-04-facet-4-sidebar-design.md](specs/2026-10-04-facet-4-sidebar-design.md) | Facet 4 sidebar: one source list for all navigation | ✅ Implemented |
+| [specs/2026-10-05-realm-regions-design.md](specs/2026-10-05-realm-regions-design.md) | Realms as NationStates-style regions: banner, factbook, officers, embassies, census, polls, Manage tab | 📐 Design |
 | [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuild | 🟡 Phases 1–5 done; 6–7 pending |
 | [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbons | 🟡 Derived ribbons and the passport shelf built; Ribbons tab pending |
 | [specs/2026-07-15-vexel-prd.md](specs/2026-07-15-vexel-prd.md) | Vexel heraldry studio | 🟡 P0 mostly built |
