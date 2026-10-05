@@ -13,8 +13,18 @@ jest.mock("~/components/shell/FacetShell", () => ({
 }));
 
 // The provider's own behaviour is covered in the vault tests; here it only wraps the page.
+const dailyRewardProps: Array<{ autoOpen?: boolean }> = [];
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
-  DailyRewardProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DailyRewardProvider: ({
+    children,
+    autoOpen,
+  }: {
+    children: React.ReactNode;
+    autoOpen?: boolean;
+  }) => {
+    dailyRewardProps.push({ autoOpen });
+    return <>{children}</>;
+  },
 }));
 
 // eslint-disable-next-line import/first
@@ -30,6 +40,7 @@ function Shell() {
 
 beforeEach(() => {
   mockPathname = "/dashboard";
+  dailyRewardProps.length = 0;
 });
 
 describe("AppShell", () => {
@@ -75,6 +86,15 @@ describe("AppShell", () => {
     mockPathname = "/myleague";
     const { container } = render(<Shell />);
     expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-app", "sports");
+  });
+
+  it("auto-opens the daily reward on routes with chrome, not on chromeless ones", () => {
+    render(<Shell />);
+    expect(dailyRewardProps.at(-1)?.autoOpen).toBe(true);
+    dailyRewardProps.length = 0;
+    mockPathname = "/maps";
+    render(<Shell />);
+    expect(dailyRewardProps.at(-1)?.autoOpen).toBe(false);
   });
 
   it("gives chromeless routes no canvas wash", () => {

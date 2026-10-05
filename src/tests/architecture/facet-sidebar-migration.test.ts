@@ -39,10 +39,6 @@ describe("per-app sidebars are migrated to the source list", () => {
     expect(read("src/components/thinktanks/ThinktankLayout.tsx")).toMatch(/<Inspector\b/);
   });
 
-  it("the daily reward does not auto-open on chromeless routes", () => {
-    expect(read("src/components/shell/AppShell.tsx")).toMatch(/autoOpen=\{!chromeless\}/);
-  });
-
   it("wiki: no unified sidebar; article tabs and a New page action", () => {
     const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
     for (const gone of [

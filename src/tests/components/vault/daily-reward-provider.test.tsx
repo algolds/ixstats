@@ -1,7 +1,7 @@
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
-let mockUserId = "user-1";
+let mockUserId: string | null = "user-1";
 let balance = { canClaimDailyBonus: true, loginStreak: 4 };
 const mutate = jest.fn();
 const invalidateBalance = jest.fn();
@@ -232,7 +232,7 @@ describe("DailyRewardProvider", () => {
   });
 
   it("renders its children and no dialog for a signed-out visitor", () => {
-    mockUserId = null as unknown as string;
+    mockUserId = null;
     render(
       <DailyRewardProvider>
         <p>Page</p>
