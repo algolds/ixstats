@@ -3,7 +3,7 @@
 /**
  * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
  * name and country; your country (MyCountry), your passport and wiki profiles, the nation
- * switcher, a link to the nation's page, IxnayID connections, the external account manager and
+ * switcher, a link to the nation's public page (the country row above goes to MyCountry), IxnayID connections, the external account manager and
  * sign out. Signed out, it is the sign-in button.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
@@ -106,8 +106,8 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
   });
   const done = () => onClose?.();
   // The passport resolver never matches Clerk usernames, but it treats the handle "me" as the
-  // signed-in player. The wiki link falls back to the account username, which it resolves.
-  const wikiName = wikiProfile?.displayName ?? user?.username ?? "";
+  // signed-in player, so the wiki link falls back to "me" rather than the account username.
+  const wikiName = wikiProfile?.displayName ?? "me";
 
   return (
     <ul className="flex flex-col gap-0.5 pb-1">
@@ -172,7 +172,7 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
           <li>
             <Link href={getNationUrl(countryName)} onClick={done} className={itemClass}>
               <Crown aria-hidden className="size-4 shrink-0" />
-              Your nation
+              Public country page
             </Link>
           </li>
         )}

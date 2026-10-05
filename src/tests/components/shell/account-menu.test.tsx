@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 type Country = { id: string; name: string; flag: string; slug: string };
 
@@ -46,6 +46,8 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { AccountMenu } from "~/components/shell/AccountMenu";
+import { TabBar } from "~/components/shell/TabBar";
+import { getVisibleApps } from "~/lib/navigation/app-sections";
 
 beforeEach(() => {
   signedIn = true;
@@ -71,13 +73,22 @@ describe("AccountMenu identity rows", () => {
     );
   });
 
-  it("falls back to the account username when no wiki account is linked", () => {
+  it("falls back to the signed-in player's own work tab when no wiki account is linked", () => {
     wikiProfile = null;
     render(<AccountMenu layout="sheet" />);
     expect(screen.getByRole("link", { name: "Wiki profile" })).toHaveAttribute(
       "href",
-      "/@dee_?tab=work"
+      "/@me?tab=work"
     );
+  });
+
+  it("gives the country row and the public page link distinct destinations and labels", () => {
+    render(<AccountMenu layout="sheet" />);
+    expect(screen.getByRole("link", { name: "Caphiria" })).toHaveAttribute("href", "/mycountry");
+    expect(screen.queryByRole("link", { name: "Your nation" })).toBeNull();
+    const publicPage = screen.getByRole("link", { name: "Public country page" });
+    expect(publicPage).toHaveAttribute("href", expect.stringContaining("caphiria"));
+    expect(publicPage).not.toHaveAttribute("href", "/mycountry");
   });
 
   it("omits the country row when you have no country", () => {
@@ -102,5 +113,22 @@ describe("AccountMenu identity rows", () => {
     render(<AccountMenu layout="sidebar" />);
     expect(screen.getByRole("button", { name: "Account: Dee" })).toBeInTheDocument();
     expect(authorProfileQuery).not.toHaveBeenCalled();
+  });
+
+  it("loads the wiki profile in the tab bar's sheet layout only once More is opened", () => {
+    render(
+      <TabBar
+        pathname="/dashboard"
+        searchParams={null}
+        apps={getVisibleApps({ signedIn: true, isAdmin: false })}
+        expanded={new Set()}
+        onToggle={() => undefined}
+        badges={{}}
+        account={<AccountMenu layout="sheet" />}
+      />
+    );
+    expect(authorProfileQuery).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "More" }));
+    expect(authorProfileQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
   });
 });
