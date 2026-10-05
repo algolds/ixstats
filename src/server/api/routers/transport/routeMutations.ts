@@ -7,10 +7,7 @@
 
 import { z } from "zod/v4";
 import type { PrismaClient, Prisma } from "@prisma/client";
-import {
-  createTRPCRouter,
-  standardMutationCountryOwnerProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -31,6 +28,7 @@ import {
   samplePolylinePoints,
 } from "~/lib/maps/geo-math";
 import { getTerrainAtPoint } from "~/lib/country-geo";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonObject = Record<string, JsonPrimitive | JsonPrimitive[] | Record<string, JsonPrimitive>>;
@@ -42,14 +40,7 @@ const lineStringGeometrySchema = z.object({
 
 const routePropertiesSchema = z.record(
   z.string(),
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(z.string()),
-    z.array(z.number()),
-  ])
+  z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string()), z.array(z.number())])
 );
 
 export const transportRouteMutationsRouter = createTRPCRouter({
@@ -64,10 +55,24 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         routeTypes: z
           .array(
             z.enum([
-              "rail", "high_speed_rail", "freight_rail", "commuter_rail",
-              "motorway", "highway", "trunk", "road", "secondary",
-              "shipping_lane", "canal", "air_corridor", "ferry",
-              "pipeline", "power_grid", "fiber", "military_supply", "military_naval",
+              "rail",
+              "high_speed_rail",
+              "freight_rail",
+              "commuter_rail",
+              "motorway",
+              "highway",
+              "trunk",
+              "road",
+              "secondary",
+              "shipping_lane",
+              "canal",
+              "air_corridor",
+              "ferry",
+              "pipeline",
+              "power_grid",
+              "fiber",
+              "military_supply",
+              "military_naval",
             ])
           )
           .default(["rail", "highway"]),
@@ -85,6 +90,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           name: true,
           boundingBox: true,
           coastlineKm: true,
+          realmId: true,
           cities: {
             where: { status: "approved" },
             select: {
@@ -103,6 +109,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 
       const bbox = country.boundingBox as [number, number, number, number] | null;
       if (!bbox) throw new Error("Country has no bounding box");
+      // Routes and hubs live in their owner's realm (AT-1), not IxWorld by default.
+      const realmId = country.realmId ?? DEFAULT_REALM_ID;
 
       // Fetch airport POIs for air corridor generation
       const airportPois = input.routeTypes.includes("air_corridor")
@@ -175,6 +183,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
         await ctx.db.transportRoute.create({
           data: {
             countryId: input.countryId,
+            realmId,
             routeType: route.routeType,
             name: route.name,
             geometry: route.geometry,
@@ -188,7 +197,8 @@ export const transportRouteMutationsRouter = createTRPCRouter({
             status: "operational",
             terrainDifficulty: route.terrainDifficulty,
             lengthKm: route.lengthKm,
-            speedKmh: typeof route.properties?.speed_kmh === "number" ? route.properties.speed_kmh : null,
+            speedKmh:
+              typeof route.properties?.speed_kmh === "number" ? route.properties.speed_kmh : null,
           } as Prisma.TransportRouteCreateInput,
         });
         created++;
@@ -218,6 +228,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
           data: {
             cityId,
             countryId: input.countryId,
+            realmId,
             hubType,
             name: `${city.name} ${hubType === "port" ? "Port" : "Station"}`,
             coordinates: city.coordinates,
@@ -273,6 +284,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
       const route = await ctx.db.transportRoute.create({
         data: {
           countryId: input.countryId,
+          realmId: await countryRealmId(ctx.db, input.countryId),
           routeType: input.routeType,
           name: input.name,
           geometry: input.geometry,
@@ -504,6 +516,18 @@ async function computeRouteLengthAndDifficulty(
   }
 
   return { lengthKm, terrainDifficulty };
+}
+
+/** The realm a country's transport belongs to (AT-1); IxWorld when the country can't be read. */
+async function countryRealmId(
+  db: PrismaClient | Prisma.TransactionClient,
+  countryId: string
+): Promise<string> {
+  const country = await db.country.findUnique({
+    where: { id: countryId },
+    select: { realmId: true },
+  });
+  return country?.realmId ?? DEFAULT_REALM_ID;
 }
 
 async function getFallbackDifficulty(
