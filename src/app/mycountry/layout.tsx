@@ -27,7 +27,7 @@ function DemoModeBanner() {
       <span>
         <span className="font-semibold">Demo mode.</span>{" "}
         <span className="text-label-secondary">
-          You&apos;re viewing seeded demo data; changes aren&apos;t saved.
+          You&apos;re viewing seeded demo data.
         </span>
       </span>
     </div>
