@@ -125,6 +125,8 @@ function initAppearanceFromStorage(
 export const NAV_STORAGE_KEYS = {
   /** "true" when the AppSidebar is collapsed to icons. */
   sidebarCollapsed: "ixstats-sidebar-collapsed",
+  /** JSON array of app and admin-group ids the user opened in the source list. */
+  expanded: "ixstats-nav-expanded",
 } as const;
 
 type NavStorageKeys = typeof NAV_STORAGE_KEYS;

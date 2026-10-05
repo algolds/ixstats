@@ -44,6 +44,7 @@ import {
   Flask,
   Folder,
   Gamepad,
+  Gift,
   Globe,
   Group,
   Hammer,
@@ -80,6 +81,15 @@ import {
 } from "iconoir-react";
 
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
+
+export type NavBadgeKey = "mycountry-flag" | "diplomacy-inbox" | "vault-balance" | "daily-reward";
+export type NavAction = "daily-reward";
+export type NavBadge =
+  | { kind: "count"; value: number }
+  | { kind: "value"; label: string }
+  | { kind: "icon"; src: string; alt: string }
+  | { kind: "action"; label: string };
+export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
 type AppTint =
@@ -129,6 +139,10 @@ interface AppSection {
    * group (`groupSections`); ungrouped sections lead the list without a heading.
    */
   group?: string;
+  /** Live value from `useNavBadges`. */
+  badge?: NavBadgeKey;
+  /** Rendered as a button that runs the action; shown only while its badge is present. */
+  action?: NavAction;
 }
 
 export interface AppDefinition {
@@ -137,6 +151,8 @@ export interface AppDefinition {
   href: string;
   icon: NavIcon;
   tint?: AppTint;
+  /** Live value from `useNavBadges`, shown on the app's row. */
+  badge?: NavBadgeKey;
   /** Path prefixes that belong to this app ("/" means the root page only). */
   match: string[];
   sections: AppSection[];
@@ -182,13 +198,20 @@ export const APPS: readonly AppDefinition[] = [
     href: "/mycountry",
     icon: Crown,
     tint: "mycountry",
+    badge: "mycountry-flag",
     match: ["/mycountry"],
     requiresAuth: true,
     sections: [
       { id: "overview", label: "Overview", href: "/mycountry", icon: Crown, exact: true },
       { id: "executive", label: "Directives", href: "/mycountry/executive", icon: Building },
       { id: "economy", label: "Economy", href: "/mycountry/economy", icon: StatsReport },
-      { id: "diplomacy", label: "Diplomacy", href: "/mycountry/diplomacy", icon: Globe },
+      {
+        id: "diplomacy",
+        label: "Diplomacy",
+        href: "/mycountry/diplomacy",
+        icon: Globe,
+        badge: "diplomacy-inbox",
+      },
       {
         id: "defense",
         label: "Defense",
@@ -238,12 +261,21 @@ export const APPS: readonly AppDefinition[] = [
     href: "/vault",
     icon: MultiplePages,
     tint: "vault",
+    badge: "vault-balance",
     match: ["/vault"],
     requiresAuth: true,
     navSetting: "showCardsTab",
     // Mirrors the vault's pill bar (VaultSidebarLayout); its Achievements entry is Home → Achievements.
     sections: [
       { id: "dashboard", label: "Dashboard", href: "/vault", icon: Wallet, exact: true },
+      {
+        id: "daily-reward",
+        label: "Daily reward",
+        href: "/vault",
+        icon: Gift,
+        action: "daily-reward",
+        badge: "daily-reward",
+      },
       {
         id: "cards",
         label: "Cards",
@@ -636,6 +668,8 @@ export function getActiveSectionId(
   const path = normalizePath(pathname);
   let best: { id: string; score: number } | undefined;
   for (const section of app.sections) {
+    // An action row shares its app's route; it is never "where you are".
+    if (section.action) continue;
     const { path: sectionPath, query } = splitHref(section.href);
     let score = -1;
     const queryKeys = [...query.keys()];
