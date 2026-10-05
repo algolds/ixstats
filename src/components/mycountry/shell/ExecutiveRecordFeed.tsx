@@ -15,7 +15,7 @@ import { Button } from "~/components/ui/button";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
-import { CATEGORY_STYLE } from "./ExecutiveActionCards";
+import { CATEGORY_STYLE } from "./domain-tiles";
 import {
   type CanonFeedItem,
   NEGATIVE,

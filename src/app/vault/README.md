@@ -41,7 +41,7 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 | Layer | Location |
 |-------|----------|
 | Layout + auth | `src/app/vault/layout.tsx` (`AuthenticationGuard` + page container; no rail) |
-| Navigation | The sidebar's source list (the Vault entry in `src/lib/navigation/app-sections.ts`: sections, `vault-balance` badge, Daily reward row opening `DailyRewardProvider`'s dialog). `src/components/vault/VaultSidebarNav.tsx` only exports `VaultSection` and `getSubTabFromPathname` |
+| Navigation | The sidebar's source list (the Vault entry in `src/lib/navigation/app-sections.ts`: sections, `vault-balance` badge, Daily reward row opening `DailyRewardProvider`'s dialog). `src/components/vault/vault-sections.ts` only exports `VaultSection` and `getSubTabFromPathname` |
 | Cards Section | `src/components/vault/sections/cards/` — `InventoryTab`, `CollectionsTab`, `CardGalleryTab`, `*SidebarContent`, `useVaultCardsState`, `types.ts` |
 | Dashboard Section | `src/components/vault/sections/dashboard/` — `VaultNetWorthCard`, `VaultYieldProjectionsCard`, `VaultCardHoldingsCard`, `VaultMilestonesCard`, `VaultRecentActivityCard`, `VaultShowcaseGrid` |
 | Marketplace Section | `src/components/vault/sections/marketplace/` — Store (`store/`), Auctions (`auctions/` incl. `CreateAuctionModal`), Trading |

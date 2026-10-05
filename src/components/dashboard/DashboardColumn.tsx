@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react";
 
-interface DashboardSidebarLayoutProps {
+interface DashboardColumnProps {
   children: ReactNode;
   heroSection?: ReactNode;
 }
 
 /** A plain centred column with an optional hero above it. */
-export function DashboardSidebarLayout({ children, heroSection }: DashboardSidebarLayoutProps) {
+export function DashboardColumn({ children, heroSection }: DashboardColumnProps) {
   return (
     <div className="relative flex min-h-full w-full flex-1 flex-col space-y-0">
       {heroSection && (
@@ -16,9 +16,7 @@ export function DashboardSidebarLayout({ children, heroSection }: DashboardSideb
       )}
 
       <div className="z-raised relative container mx-auto px-4 py-4 sm:py-6 md:py-8">
-        <div className="flex gap-4 sm:gap-6">
-          <div className="relative min-w-0 flex-1">{children}</div>
-        </div>
+        {children}
       </div>
     </div>
   );

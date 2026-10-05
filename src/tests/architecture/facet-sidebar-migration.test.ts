@@ -7,7 +7,7 @@ const read = (p: string) =>
 
 describe("per-app sidebars are migrated to the source list", () => {
   it("dashboard: no widget column; the right column is an Inspector", () => {
-    const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
+    const layout = read("src/components/dashboard/DashboardColumn.tsx");
     expect(layout).not.toMatch(/VaultWidget|DashboardPlayerWidget|QuickLinks/);
     expect(read("src/components/dashboard/sections/UnifiedDashboardSection.tsx")).toMatch(
       /<Inspector\b/
@@ -31,7 +31,7 @@ describe("per-app sidebars are migrated to the source list", () => {
       "src/app/leaderboards/page.tsx",
       "src/app/thinktanks/layout.tsx",
     ]) {
-      expect(read(p)).not.toMatch(/VaultSidebarLayout|DashboardSidebarLayout/);
+      expect(read(p)).not.toMatch(/VaultSidebarLayout|DashboardColumn/);
     }
     expect(read("src/components/vault/sections/VaultDashboardSection.tsx")).toMatch(
       /DailyRewardStatus/
@@ -50,7 +50,7 @@ describe("per-app sidebars are migrated to the source list", () => {
       expect(exists(gone)).toBe(false);
     }
     expect(read("src/components/wiki-os/shared/WikiOSLayout.tsx")).not.toMatch(
-      /DashboardSidebarLayout|WikiOSUnifiedSidebar/
+      /DashboardColumn|WikiOSUnifiedSidebar/
     );
     const wiki = [
       "src/components/wiki-os/reader/ArticleRenderer.tsx",
@@ -97,7 +97,7 @@ describe("per-app sidebars are migrated to the source list", () => {
   });
 
   it("no layout renders a collapsible rail any more", () => {
-    const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
+    const layout = read("src/components/dashboard/DashboardColumn.tsx");
     expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);
   });
 

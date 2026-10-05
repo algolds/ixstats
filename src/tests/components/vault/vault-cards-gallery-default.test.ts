@@ -1,6 +1,6 @@
 import { resolveInitialTab } from "~/components/vault/sections/cards/useVaultCardsState";
 import { SUB_TABS } from "~/components/vault/sections/cards/types";
-import { getSubTabFromPathname } from "~/components/vault/VaultSidebarNav";
+import { getSubTabFromPathname } from "~/components/vault/vault-sections";
 
 describe("vault Cards lore-first gallery", () => {
   it("offers the Card Gallery tab first, outside development builds", () => {

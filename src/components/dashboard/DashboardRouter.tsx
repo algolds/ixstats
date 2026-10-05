@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { DashboardSidebarLayout } from "./sidebar/DashboardSidebarLayout";
+import { DashboardColumn } from "./DashboardColumn";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { DashboardHero } from "./hero/DashboardHero";
 import { useUser } from "~/context/auth-context";
@@ -44,7 +44,7 @@ export function DashboardRouter({ initialCountryId = "" }: DashboardRouterProps)
   }, [mapStatus]);
 
   return (
-    <DashboardSidebarLayout
+    <DashboardColumn
       heroSection={
         !heroCollapsed ? (
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
@@ -52,6 +52,6 @@ export function DashboardRouter({ initialCountryId = "" }: DashboardRouterProps)
       }
     >
       <UnifiedDashboardSection globalStats={globalStats} />
-    </DashboardSidebarLayout>
+    </DashboardColumn>
   );
 }

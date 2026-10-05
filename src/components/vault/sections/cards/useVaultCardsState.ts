@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { getSubTabFromPathname } from "../../VaultSidebarNav";
+import { getSubTabFromPathname } from "../../vault-sections";
 import type { SubTab, ViewMode, FilterState } from "./types";
 
 export function resolveInitialTab(initialTab: string | null | undefined): SubTab {

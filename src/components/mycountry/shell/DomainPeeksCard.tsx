@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
-import { DOMAIN_TILES } from "./ExecutiveActionCards";
+import { DOMAIN_TILES } from "./domain-tiles";
 
 /** A plain left click switches section in place; modified clicks keep the link's own behaviour. */
 function isPlainLeftClick(event: React.MouseEvent): boolean {

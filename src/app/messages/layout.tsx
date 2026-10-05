@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
+import { DashboardColumn } from "~/components/dashboard/DashboardColumn";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 import type { Metadata } from "next";
@@ -21,7 +21,7 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
       {/* Messages is a ThinkPages section (app-sections.ts), so it carries the ThinkPages tint. */}
       <div data-app="thinkpages" className="relative min-h-screen">
         <PortalTintSync />
-        <DashboardSidebarLayout>{children}</DashboardSidebarLayout>
+        <DashboardColumn>{children}</DashboardColumn>
       </div>
     </Suspense>
   );

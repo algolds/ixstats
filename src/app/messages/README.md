@@ -52,7 +52,7 @@ A `?conversation=<id>` query param deep-links a specific conversation (consumed 
 
 **Realtime mechanism:** The client connects via Socket.IO (`socket.io-client`) to path `/ws/thinkpages`. The server side is initialized in `src/lib/websocket/thinkpages-websocket-server.ts` (loaded by `src/server/websocket-server.ts`, production only). Incoming `message:new` / `message:updated` / `message:deleted` events are applied optimistically to the tRPC query cache (`utils.messages.getConversationMessages.setData`), and folder counts/list previews are updated without a full refetch. Typing and presence are emitted/received over the same socket.
 
-The layout (`src/app/messages/layout.tsx`) wraps content in `DashboardSidebarLayout` and forces dynamic rendering.
+The layout (`src/app/messages/layout.tsx`) wraps content in `DashboardColumn` and forces dynamic rendering.
 
 ## Data Sources
 

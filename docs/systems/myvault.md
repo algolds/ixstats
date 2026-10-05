@@ -12,7 +12,7 @@ Vault is the central incentive, social currency, and metagame reward platform fo
 ## Layout & Sections
 
 There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` + page container). Navigation is the shell sidebar's source list (Vault entry in `src/lib/navigation/app-sections.ts`); the Vault dashboard (`/vault`) has the wallet card with the balance:
-- `src/components/vault/VaultSidebarNav.tsx` – the `VaultSection` type and `getSubTabFromPathname` only; the navigation itself is the Vault entry of the source list
+- `src/components/vault/vault-sections.ts` – the `VaultSection` type and `getSubTabFromPathname` only; the navigation itself is the Vault entry of the source list
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): Balance overview, today's earnings breakdown, XP progress bar, yield projections, recent activity
   - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections

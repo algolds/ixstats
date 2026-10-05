@@ -9,7 +9,7 @@ import {
 import type { RouterOutputs } from "~/trpc/react";
 import type { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
-import { formatGrowthPeek } from "./ExecutiveActionCards";
+import { formatGrowthPeek } from "./domain-tiles";
 import type { StatusTone } from "./status-tone";
 
 export type OpportunityDrill = Exclude<DrillSheetKind, { kind: "intent" } | null>;

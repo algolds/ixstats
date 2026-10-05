@@ -12,7 +12,7 @@ import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
 import { SettingsSkeleton } from "./SettingsSkeleton";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
+import { DashboardColumn } from "~/components/dashboard/DashboardColumn";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { SETTINGS_TAB_IDS, type SettingSectionId } from "../_lib/sections";
 
@@ -154,7 +154,7 @@ export function SettingsContent() {
           {/* Phone title under the new navigation shell (nothing with the flag off). */}
           <ShellPageHeader title="Settings" className="relative" />
 
-          <DashboardSidebarLayout>
+          <DashboardColumn>
             {/* Incomplete Setup Banner */}
             {setupStatus === "needs-setup" && (
               <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
@@ -217,7 +217,7 @@ export function SettingsContent() {
 
               {activeSection === "cards" && <NationStatesCardsPanel />}
             </main>
-          </DashboardSidebarLayout>
+          </DashboardColumn>
         </div>
       </SignedIn>
       <SignedOut>
