@@ -148,7 +148,7 @@ describe("create", () => {
       })
     );
     expect(detectTaxConflicts).toHaveBeenCalled();
-    expect(syncTaxData).toHaveBeenCalledWith(db, COUNTRY, expect.any(Object));
+    expect(syncTaxData).toHaveBeenCalledWith(db as never, COUNTRY, expect.any(Object));
     expect(notificationHooks.onTaxSystemChange).toHaveBeenCalledWith(
       expect.objectContaining({ countryId: COUNTRY, changeType: "created" })
     );

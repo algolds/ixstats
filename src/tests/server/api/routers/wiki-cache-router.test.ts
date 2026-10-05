@@ -88,7 +88,7 @@ describe("builderDeepScan", () => {
 
     const result = await callerAs(null).builderDeepScan({ countryName: "Caphiria" });
 
-    expect(result.fromCache).toBe(true);
+    expect("fromCache" in result && result.fromCache).toBe(true);
     expect(batch).not.toHaveBeenCalled();
   });
 

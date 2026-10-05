@@ -91,7 +91,7 @@ describe("admin procedures", () => {
       domain: "economy",
       bypassLimits: true,
     });
-    expect(NationalIssuesEngine.evaluateCountry).toHaveBeenCalledWith("c1", db, {
+    expect(NationalIssuesEngine.evaluateCountry).toHaveBeenCalledWith("c1", db as never, {
       maxIssues: 2,
       forceDomain: "economy",
       bypassLimits: true,

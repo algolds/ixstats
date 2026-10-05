@@ -197,7 +197,7 @@ describe("executeBuyout", () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "clerk_seller", title: "Card Sold!" })
     );
-    expect(grantCardXp).toHaveBeenCalledWith(db, "own_1", 50, "BUYOUT");
+    expect(grantCardXp).toHaveBeenCalledWith(db as never, "own_1", 50, "BUYOUT");
     expect(result).toMatchObject({ success: true, leveledUp: true, newLevel: 2 });
   });
 });
