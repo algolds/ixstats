@@ -51,24 +51,15 @@ export const wikiCacheRouter = createTRPCRouter({
         officialName: z.string().optional(),
         categoryTags: z.array(z.string()).default([]),
         pageVariants: z.array(z.string()).default([]),
+        /** Accepted for older clients and ignored: the main article is fetched from the wiki. */
         mainWikitext: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
-      const {
-        countryName,
-        wikiSource,
-        officialName,
-        categoryTags,
-        pageVariants,
-        mainWikitext,
-      } = input;
+      const { countryName, wikiSource, officialName, categoryTags, pageVariants } = input;
 
       // 1. Check Multi-Tier Intelligent Cache (Memory + DB: <2ms hit)
-      const cached = await intelligentLoreCache.getDeepScan(
-        wikiSource as WikiSource,
-        countryName
-      );
+      const cached = await intelligentLoreCache.getDeepScan(wikiSource as WikiSource, countryName);
       if (cached) {
         return {
           pagesScanned: cached.pagesScanned,
@@ -99,8 +90,7 @@ export const wikiCacheRouter = createTRPCRouter({
             const cLower = c.toLowerCase();
             if (GENERIC_CATEGORY_PATTERN.test(c)) return false;
             return (
-              cLower.includes(nameLower) ||
-              (officialLower ? cLower.includes(officialLower) : false)
+              cLower.includes(nameLower) || (officialLower ? cLower.includes(officialLower) : false)
             );
           });
 
@@ -138,11 +128,7 @@ export const wikiCacheRouter = createTRPCRouter({
                 ? (membersResult.members as Array<{ title: string }>)
                 : [];
 
-            await intelligentLoreCache.setCategoryMembers(
-              wikiSource as WikiSource,
-              cat,
-              members
-            );
+            await intelligentLoreCache.setCategoryMembers(wikiSource as WikiSource, cat, members);
             return { cat, members };
           })
         );
@@ -220,27 +206,14 @@ export const wikiCacheRouter = createTRPCRouter({
         })
         .slice(0, 8);
 
-      // Separate main article (if already provided in memory) from subpages needing remote fetch
+      // Every page, the main article included, is read from the wiki: the result is cached for
+      // everyone, so caller-supplied text (mainWikitext) must not end up in it.
       const pages: { title: string; content: string }[] = [];
-      const subpagesToFetch: string[] = [];
-
-      for (const p of uniquePages) {
-        if (p.toLowerCase() === countryName.toLowerCase() && mainWikitext) {
-          pages.push({
-            title: p,
-            content: cleanWikitextForDisplay(mainWikitext),
-          });
-        } else {
-          subpagesToFetch.push(p);
-        }
-      }
+      const subpagesToFetch = uniquePages;
 
       // 3. Single Native MediaWiki Batch Query (1 HTTP request instead of N)
       if (subpagesToFetch.length > 0) {
-        const batchMap = await getBatchWikitext(
-          subpagesToFetch,
-          wikiSource as WikiSource
-        );
+        const batchMap = await getBatchWikitext(subpagesToFetch, wikiSource as WikiSource);
 
         for (const title of subpagesToFetch) {
           const article = batchMap.get(title.toLowerCase()) || batchMap.get(title);
@@ -265,11 +238,7 @@ export const wikiCacheRouter = createTRPCRouter({
       };
 
       // 4. Persist in Multi-Tier Lore Cache (Memory + DB)
-      await intelligentLoreCache.setDeepScan(
-        wikiSource as WikiSource,
-        countryName,
-        result
-      );
+      await intelligentLoreCache.setDeepScan(wikiSource as WikiSource, countryName, result);
 
       return result;
     }),
