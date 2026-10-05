@@ -10,6 +10,8 @@ import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
+import { articleUsesInspector } from "~/lib/wiki-os/article-gutter";
 import {
   articleHtmlInput,
   getWikiBaseUrl,
@@ -62,6 +64,10 @@ export default function WikiOSArticlePage() {
     titleLower,
   ];
   const targetReservedPath = reservedKeys.map((k) => RESERVED_TOOL_PAGES[k]).find(Boolean) ?? null;
+
+  // The Inspector gutter is decided before the article loads (the column must not jump when it
+  // arrives); a missing article and the editor give it back.
+  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
 
   // Sync mode with URL
   useEffect(() => {
@@ -141,6 +147,12 @@ export default function WikiOSArticlePage() {
     handleExitEdit();
   }, [refetch, handleExitEdit]);
 
+  const inspector = articleUsesInspector({
+    reading: mode === "reading",
+    notFound: Boolean(error) && !data,
+    showToc: showWikiToc,
+  });
+
   // Main Page
   if (isMainPage) {
     return (
@@ -151,7 +163,7 @@ export default function WikiOSArticlePage() {
   }
 
   return (
-    <WikiOSLayout readOnly={!isIxWiki}>
+    <WikiOSLayout readOnly={!isIxWiki} inspector={inspector}>
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
           <WikiEditBridge

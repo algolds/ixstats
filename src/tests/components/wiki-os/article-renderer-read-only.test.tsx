@@ -41,6 +41,7 @@ jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({
   EMBED_PREFETCH: "/maps?embed=true",
 }));
 jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
+jest.mock("~/hooks/useMediaQuery", () => ({ useMediaQuery: () => true }));
 jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));
 jest.mock("~/components/wiki-os/reader/ArticleHeader", () => ({
   WikiOSHeader: ({ title }: { title: string }) => <h1>{title}</h1>,

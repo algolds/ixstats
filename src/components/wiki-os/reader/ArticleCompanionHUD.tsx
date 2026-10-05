@@ -403,7 +403,7 @@ export function ArticleCompanionHUD({
 
       {categories.length > 0 && (
         <div className="bg-surface rounded-card border-separator border p-3">
-          <div className="text-label-secondary font-brand text-eyebrow mb-2">Categories</div>
+          <div className="text-label-secondary text-footnote mb-2 font-medium">Categories</div>
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((name) => (
               <Link

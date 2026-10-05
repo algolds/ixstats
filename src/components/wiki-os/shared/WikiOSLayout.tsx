@@ -30,12 +30,18 @@ export function WikiOSLayout({
   title,
   hideTitleHeading = false,
   readOnly,
+  inspector = false,
   children,
 }: {
   title?: string;
   hideTitleHeading?: boolean;
   /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
   readOnly?: boolean;
+  /**
+   * The page puts something in the shell's Inspector gutter (an article's contents and page info).
+   * Every other wiki page gives the gutter back and runs the full content width.
+   */
+  inspector?: boolean;
   children: ReactNode;
 }) {
   useWikiOSShortcuts(readOnly);
@@ -109,7 +115,7 @@ export function WikiOSLayout({
   );
 
   return (
-    <div className="wikios-shell wikios-root">
+    <div className="wikios-shell wikios-root" data-shell-gutter={inspector ? undefined : "none"}>
       <WikiOSContentWrapper
         title={hideTitleHeading ? undefined : title}
         actions={actions}

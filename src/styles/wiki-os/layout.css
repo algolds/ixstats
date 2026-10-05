@@ -57,7 +57,6 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 36px;
     width: 100%;
     margin: 0 auto;
   }
@@ -69,10 +68,19 @@
     width: 100%;
   }
 
+  /* The article body is a reading column: 70ch, centred in the vessel (the prose content type's
+     measure; the header above keeps the vessel's width). The infobox floats right inside the
+     body, so an article with one gets its width on top, or the text beside it would be a sliver. */
   .wikios-article-main {
     position: relative;
     width: 100%;
     min-width: 0;
+    max-width: 70ch;
+    margin-inline: auto;
+  }
+
+  .wikios-article-main:has(.wikios-infobox) {
+    max-width: calc(70ch + var(--wikios-infobox-width) + 1.5rem);
   }
 
   /* Legacy container compat */

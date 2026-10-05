@@ -10,11 +10,13 @@ import {
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { Button } from "~/components/ui/button";
+import { scrollToHeading } from "~/components/wiki-os/reader/ArticleToc";
 
 interface StickyTocProps {
   entries: TocEntry[];
   contentRef: React.RefObject<HTMLElement | null>;
-  isCollapsed?: boolean;
+  /** After a heading was picked: the Inspector sheet closes itself here. */
+  onNavigate?: () => void;
 }
 
 function highlightText(element: HTMLElement, query: string) {
@@ -58,7 +60,7 @@ function highlightText(element: HTMLElement, query: string) {
   }
 }
 
-export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTocProps) {
+export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
   const { activeSectionId } = useWikiContext();
   const activeId = activeSectionId;
   const [showSearch, setShowSearch] = useState(false);
@@ -145,8 +147,6 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
     if (matchCount <= 0) return;
     setCurrentMatchIndex((prev: number) => (prev - 1 + matchCount) % matchCount);
   };
-
-  if (isCollapsed) return null;
 
   return (
     <nav
@@ -239,6 +239,12 @@ export function StickyToc({ entries, contentRef, isCollapsed = false }: StickyTo
           <a
             key={item.id}
             href={`#${item.id}`}
+            onClick={(e) => {
+              // The default jump would park the heading under the Halo band.
+              e.preventDefault();
+              scrollToHeading(item.id);
+              onNavigate?.();
+            }}
             className={`wikios-sticky-toc-item ${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >

@@ -23,8 +23,16 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
-  WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
-    mockLayout({ readOnly });
+  WikiOSLayout: ({
+    children,
+    readOnly,
+    inspector,
+  }: {
+    children: ReactNode;
+    readOnly?: boolean;
+    inspector?: boolean;
+  }) => {
+    mockLayout({ readOnly, inspector });
     return <div>{children}</div>;
   },
 }));
@@ -91,7 +99,7 @@ describe("WikiOS reader ?source=", () => {
       "https://iiwiki.com/wiki/Portal%3AEurth"
     );
     expect(mockPrefetch).not.toHaveBeenCalled(); // ixwiki wikitext only warms the ixwiki editor
-    expect(mockLayout).toHaveBeenCalledWith({ readOnly: true }); // no page tools (ruling E-l)
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: true, inspector: true }); // no page tools (ruling E-l)
   });
 
   it.each(["", "source=eurth", "source=IIWIKI"])("%p reads from ixwiki", (search) => {
@@ -102,7 +110,7 @@ describe("WikiOS reader ?source=", () => {
 
     // The same key hover prefetch warms for IxWiki links
     expect(mockUseQuery).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
-    expect(mockLayout).toHaveBeenCalledWith({ readOnly: false });
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: false, inspector: true });
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ wikiSource: "ixwiki" }));
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
     expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
@@ -157,5 +165,40 @@ describe("WikiOS reader ?source=", () => {
     render(<WikiOSArticlePage />);
     expect(screen.getByText(/does not exist on IIWiki/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+  });
+
+  describe("Inspector gutter", () => {
+    beforeEach(() => localStorage.clear());
+
+    it("an article keeps the gutter before it has loaded, so the column does not jump", () => {
+      mockUseQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
+      render(<WikiOSArticlePage />);
+      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: true });
+    });
+
+    it("gives the gutter back when the Show wiki TOC setting is off", () => {
+      localStorage.setItem("wikios:showWikiToc", "false");
+      found();
+      render(<WikiOSArticlePage />);
+      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
+    });
+
+    it("gives the gutter back for a missing article, the editor and the Main Page", () => {
+      mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: new Error("x") });
+      const missing = render(<WikiOSArticlePage />);
+      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
+      missing.unmount();
+
+      mockSearch = "action=edit";
+      found();
+      const editing = render(<WikiOSArticlePage />);
+      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
+      editing.unmount();
+
+      mockSearch = "";
+      mockSlug = "Main_Page";
+      render(<WikiOSArticlePage />);
+      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: undefined, inspector: undefined });
+    });
   });
 });

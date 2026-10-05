@@ -40,7 +40,25 @@ jest.mock("~/lib/wiki-os/editor/wiki-embed-shared", () => ({
   EMBED_JS: "",
   EMBED_PREFETCH: "/maps?embed=true",
 }));
-jest.mock("~/components/wiki-os/reader/StickyToc", () => ({ StickyToc: () => null }));
+jest.mock("~/components/wiki-os/reader/StickyToc", () => ({
+  StickyToc: ({
+    entries,
+    onNavigate,
+  }: {
+    entries: { id: string; text: string }[];
+    onNavigate?: () => void;
+  }) => (
+    <nav aria-label="Table of contents">
+      {entries.map((e) => (
+        <a key={e.id} href={`#${e.id}`} onClick={() => onNavigate?.()}>
+          {e.text}
+        </a>
+      ))}
+    </nav>
+  ),
+}));
+let mockWide = true;
+jest.mock("~/hooks/useMediaQuery", () => ({ useMediaQuery: () => mockWide }));
 jest.mock("~/components/wiki-os/reader/InfoboxWithMap", () => ({ InfoboxWithMap: () => null }));
 jest.mock("~/components/wiki-os/shared/MediaThemeContext", () => ({
   useWikiMediaTheme: () => mockUseWikiMediaTheme,
@@ -89,54 +107,86 @@ function renderArticle(headings = toc) {
       infoboxHtml={null}
       noticesHtml={null}
       toc={headings}
-      categories={[]}
-      lastModified={null}
+      categories={["Realms"]}
+      lastModified="2026-09-01T00:00:00.000Z"
       wikiSource="ixwiki"
       authorInfo={null}
     />
   );
 }
 
-describe("ArticleRenderer table of contents", () => {
+const tocNav = () => screen.queryByRole("navigation", { name: "Table of contents" });
+
+describe("ArticleRenderer contents in the Inspector gutter", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockMarginOpen = false;
+    mockWide = true;
     localStorage.clear();
     window.scrollTo = jest.fn();
   });
 
-  it("shows a TOC button that opens a drawer listing the headings, and a click scrolls and closes it", () => {
+  it("puts the contents and a page-info block in the Inspector at desktop width", () => {
     renderArticle();
 
-    fireEvent.click(screen.getByRole("button", { name: "Table of contents" }));
-
-    const nav = within(screen.getByRole("navigation", { name: "Table of contents" }));
-    expect(nav.getAllByRole("button").map((b) => b.textContent)).toEqual([
-      "History",
-      "Geography",
-      "Rivers",
-    ]);
-
-    fireEvent.click(nav.getByRole("button", { name: "Rivers" }));
-    expect(window.scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: "smooth" }));
-    expect(window.location.hash).toBe("#Rivers");
-    expect(screen.queryByRole("navigation", { name: "Table of contents" })).toBeNull();
+    const inspector = screen.getByRole("complementary", { name: "Contents" });
+    const nav = within(inspector).getByRole("navigation", { name: "Table of contents" });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((a) => a.textContent)
+    ).toEqual(["History", "Geography", "Rivers"]);
+    expect(within(inspector).getByText("Last updated")).toBeInTheDocument();
+    expect(within(inspector).getByRole("link", { name: "Realms" })).toBeInTheDocument();
   });
 
-  it("has no TOC button for an article without headings", () => {
+  it("hides the header Contents button at desktop width, where the Inspector already shows it", () => {
+    renderArticle();
+    expect(screen.getByRole("button", { name: "Table of contents" })).toHaveClass("xl:hidden");
+  });
+
+  it("below desktop the Contents button opens the Inspector sheet, and picking a heading closes it", () => {
+    mockWide = false;
+    renderArticle();
+    expect(tocNav()).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Table of contents" }));
+    const sheet = within(screen.getByRole("dialog"));
+    expect(sheet.getByRole("navigation", { name: "Table of contents" })).toBeInTheDocument();
+    expect(sheet.getByText("Last updated")).toBeInTheDocument();
+
+    fireEvent.click(sheet.getByRole("link", { name: "Rivers" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("an article without headings keeps its page info but has no contents or button", () => {
     renderArticle([]);
+    const inspector = screen.getByRole("complementary", { name: "Contents" });
+    expect(within(inspector).queryByRole("navigation")).toBeNull();
+    expect(within(inspector).getByText("Last updated")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Table of contents" })).toBeNull();
   });
 
-  it("hides the button when the setting is off, and follows the setting live in the same tab", () => {
+  it("renders no Inspector and no contents when the setting is off, and follows it live in the same tab", () => {
     localStorage.setItem("wikios:showWikiToc", "false");
     renderArticle();
+    expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
+    expect(tocNav()).toBeNull();
     expect(screen.queryByRole("button", { name: "Table of contents" })).toBeNull();
 
     act(() => {
       localStorage.setItem("wikios:showWikiToc", "true");
       window.dispatchEvent(new Event("wikios-settings-changed"));
     });
+    expect(screen.getByRole("complementary", { name: "Contents" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Table of contents" })).toBeInTheDocument();
+  });
+
+  it("hides the Inspector while the margin drawer sits in the gutter", () => {
+    mockMarginOpen = true;
+    renderArticle();
+    expect(screen.getByRole("complementary", { name: "Contents", hidden: true })).toHaveClass(
+      "xl:hidden"
+    );
   });
 });

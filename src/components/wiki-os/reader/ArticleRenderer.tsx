@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { addSectionEditLinks, type TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
-import { TocDrawer } from "~/components/wiki-os/reader/ArticleToc";
+import { Inspector } from "~/components/ui/inspector";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
@@ -35,7 +35,6 @@ import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { soundCues } from "~/lib/sound/cuelume";
-import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractLeadImageFromHtml } from "~/lib/wiki-os/transformers/image-url";
 import {
@@ -154,27 +153,11 @@ export function ArticleRenderer({
   const readOnly = source !== "ixwiki";
   const marginOpen = isMarginOpen && !readOnly;
   const marginEnabled = !!title && !readOnly;
-  const [companionCollapsed, setCompanionCollapsed] = useState(false);
+  // The Inspector sheet below 1280px, opened by the header's Contents button.
   const [tocOpen, setTocOpen] = useState(false);
+  // The setting gates the whole Inspector: off, the page opts out of the gutter (ArticlePageClient).
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
   const tocVisible = showWikiToc && toc.length > 0;
-
-  // Persist companion collapsed preference (xl only)
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem("wikios:companionCollapsed");
-      if (v === "true") setCompanionCollapsed(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("wikios:companionCollapsed", String(companionCollapsed));
-    } catch {
-      /* ignore */
-    }
-  }, [companionCollapsed]);
 
   const [marginExpanded, setMarginExpanded] = useState(false);
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
@@ -530,20 +513,20 @@ export function ArticleRenderer({
     <div
       ref={titleRef}
       className={cn(
-        "wikios-article wikios-reader-container relative flex items-start justify-center gap-8 transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)] 2xl:gap-10",
-        marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
+        "wikios-article wikios-reader-container relative flex items-start justify-center transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        // The margin drawer (20rem, 25rem wider) overlays the Inspector gutter from 1280px, so the
+        // article only makes room for what sticks out past the gutter.
+        marginOpen &&
+          (marginExpanded
+            ? "lg:mr-[400px] xl:mr-[max(0px,calc(25rem-var(--shell-inspector-width)))]"
+            : "lg:mr-80 xl:mr-[max(0px,calc(20rem-var(--shell-inspector-width)))]")
       )}
       style={containerStyle}
     >
       <div ref={titleRef} className="wikios-title-sentinel" />
 
-      {/* Main Reading Vessel — expands when companion is collapsed */}
-      <div
-        className={cn(
-          "wikios-reading-vessel w-full min-w-0 flex-1 transition-[max-width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-          companionCollapsed ? "max-w-[1160px]" : "max-w-[1024px]"
-        )}
-      >
+      {/* Reading vessel: the header spans it, the body is centred at the reading width (layout.css) */}
+      <div className="wikios-reading-vessel w-full min-w-0 flex-1">
         {/* Redesigned Custom WikiOSHeader */}
         <WikiOSHeader
           title={title}
@@ -669,74 +652,50 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
-      {!marginOpen && !companionCollapsed && (
-        <aside
-          className="animate-in fade-in border-separator sticky top-(--shell-top-offset) hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
-          aria-label="Article companion and table of contents"
+      {/* Contents and page info in the shell's reserved gutter (a sheet below 1280px). Outside the
+          margin drawer's way: while it is open the aside steps aside. */}
+      {showWikiToc && (
+        <Inspector
+          title="Contents"
+          open={tocOpen}
+          onOpenChange={setTocOpen}
+          className={cn("pl-2", marginOpen && "xl:hidden")}
         >
-          <button
-            type="button"
-            onPointerDown={(e) => {
-              // Active feedback on pointer-down, not click
-              (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)";
-            }}
-            onPointerUp={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "";
-            }}
-            onPointerLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.transform = "";
-            }}
-            onClick={() => {
-              setCompanionCollapsed(true);
-            }}
-            className="text-label-secondary hover:text-label border-separator bg-fill-4 text-caption hover:border-separator hover:bg-fill-4 -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none xl:flex"
-            title="Hide companion"
-            aria-label="Hide companion"
-          >
-            <span>Hide</span>
-            <ChevronRight className="h-3 w-3" />
-          </button>
-          <ArticleCompanionHUD
-            contentHtml={contentHtml}
-            lastModified={lastModified}
-            authorInfo={authorInfo}
-            categories={categories}
-            awardsData={awardsData}
-            marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
-            marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
-            onOpenMargin={(tab) => {
-              setMarginTab(tab || "threads");
-              setMarginOpen(true);
-            }}
-            onOpenHistory={() => setActiveModal("history")}
-            onOpenBacklinks={() => setActiveModal("backlinks")}
-            narrator={narrator}
-            readOnly={readOnly}
-          />
-          {tocVisible && (
-            <div className="-mr-1 min-h-0 flex-1 scrollbar-thin overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_8px,black_calc(100%-8px),transparent)] pr-1">
-              <StickyToc entries={toc} contentRef={contentRef} isCollapsed={false} />
-            </div>
-          )}
-        </aside>
+          <div className="flex flex-col gap-4">
+            {tocVisible && (
+              <StickyToc
+                entries={toc}
+                contentRef={contentRef}
+                onNavigate={() => setTocOpen(false)}
+              />
+            )}
+            <ArticleCompanionHUD
+              contentHtml={contentHtml}
+              lastModified={lastModified}
+              authorInfo={authorInfo}
+              categories={categories}
+              awardsData={awardsData}
+              marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
+              marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+              onOpenMargin={(tab) => {
+                setMarginTab(tab || "threads");
+                setMarginOpen(true);
+                setTocOpen(false);
+              }}
+              onOpenHistory={() => {
+                setActiveModal("history");
+                setTocOpen(false);
+              }}
+              onOpenBacklinks={() => {
+                setActiveModal("backlinks");
+                setTocOpen(false);
+              }}
+              narrator={narrator}
+              readOnly={readOnly}
+            />
+          </div>
+        </Inspector>
       )}
-      {/* Companion collapsed: edge handle on the same border-l line */}
-      {!marginOpen && companionCollapsed && (
-        <button
-          type="button"
-          onClick={() => {
-            setCompanionCollapsed(false);
-          }}
-          className="text-label-secondary hover:text-label border-separator hover:border-separator hover:bg-fill-4 sticky top-(--shell-top-offset) hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l pt-8 transition-colors duration-150 select-none xl:flex"
-          title="Show companion"
-          aria-label="Show companion"
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </button>
-      )}
-
-      {tocVisible && <TocDrawer open={tocOpen} onClose={() => setTocOpen(false)} entries={toc} />}
 
       {lightboxPortal}
       {citeTooltipPortal}

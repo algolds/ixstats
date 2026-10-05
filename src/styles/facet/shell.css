@@ -22,6 +22,8 @@
    --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
 
    Hooks for feature code:
+   [data-shell-gutter="none"] A page marker (anywhere in the page) that opts the page out of the
+                           reserved Inspector gutter: --shell-inspector-width is 0 for the shell.
    [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden wherever that
                            page's <ShellPageHeader> shows (phones, or every width with
                            phoneOnly={false}), so the title is never shown twice.
@@ -69,6 +71,14 @@
   [data-app-shell][data-chromeless] {
     --shell-sidebar-width: 0px;
     --shell-tabbar-height: 0px;
+    --shell-inspector-width: 0px;
+  }
+
+  /* A page with nothing for the Inspector gives the gutter back and runs the full content width
+     (WikiOS tool pages: Recent changes, Categories, Utilities...). It marks itself with
+     data-shell-gutter="none"; :has() reads that on first paint, so there is no layout shift, and
+     <main>, Halo and the fixed bars all follow because they read this variable. */
+  [data-app-shell]:has([data-shell-gutter="none"]) {
     --shell-inspector-width: 0px;
   }
 }
