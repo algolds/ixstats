@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
@@ -8,7 +8,7 @@ export const diplomaticCulturalCompatibilityImpactRouter = createTRPCRouter({
   /**
    * Calculate exchange impact using Markov engine
    */
-  calculateExchangeImpact: protectedProcedure
+  calculateExchangeImpact: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),

@@ -4,7 +4,11 @@
 // and handles account linking + profile sync.
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 
 export const forumStashRouter = createTRPCRouter({
@@ -15,7 +19,7 @@ export const forumStashRouter = createTRPCRouter({
   /**
    * Stash a forum thread for later.
    */
-  stashThread: protectedProcedure
+  stashThread: rateLimitedMutationProcedure
     .input(
       z.object({
         threadId: z.number(),
@@ -63,7 +67,7 @@ export const forumStashRouter = createTRPCRouter({
   /**
    * Remove a forum thread from stash.
    */
-  unstashThread: protectedProcedure
+  unstashThread: rateLimitedMutationProcedure
     .input(
       z.object({
         threadId: z.number(),

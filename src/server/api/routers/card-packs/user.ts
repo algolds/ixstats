@@ -3,7 +3,11 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { purchasePack, openPack, getUserPacks, PackError } from "~/lib/cards/pack-service";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 import { syncUserToForum } from "~/server/modules/forum";
@@ -62,7 +66,7 @@ export const cardPacksUserRouter = createTRPCRouter({
    * Purchase pack with IxCredits
    * Admin-only endpoint
    */
-  purchasePack: protectedProcedure
+  purchasePack: rateLimitedMutationProcedure
     .input(
       z.object({
         packId: z.string().min(1),
@@ -135,7 +139,7 @@ export const cardPacksUserRouter = createTRPCRouter({
    * Open pack and reveal cards
    * Admin-only endpoint
    */
-  openPack: protectedProcedure
+  openPack: rateLimitedMutationProcedure
     .input(
       z.object({
         userPackId: z.string().cuid(),

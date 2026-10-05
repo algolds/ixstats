@@ -1,5 +1,9 @@
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { compositionSchema } from "~/lib/heraldry/composition-schema";
@@ -27,7 +31,7 @@ async function loadOwnedAchievement(
 }
 
 export const heraldryMutationsRouter = createTRPCRouter({
-  saveAchievement: protectedProcedure
+  saveAchievement: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().uuid().optional(),
@@ -88,7 +92,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       return achievement;
     }),
 
-  publishAchievement: protectedProcedure
+  publishAchievement: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await loadOwnedAchievement(
@@ -106,7 +110,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  unpublishAchievement: protectedProcedure
+  unpublishAchievement: rateLimitedMutationProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await loadOwnedAchievement(
@@ -185,7 +189,7 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
     }),
 
-  attachToCountry: protectedProcedure
+  attachToCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         achievementId: z.string().uuid(),

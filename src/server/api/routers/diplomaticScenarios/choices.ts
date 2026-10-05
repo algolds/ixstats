@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { CulturalScenario, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -76,7 +76,7 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
    * Record player choice and update scenario status
    * Creates ScenarioGeneration record for historical tracking
    */
-  recordChoice: protectedProcedure
+  recordChoice: rateLimitedMutationProcedure
     .input(
       z.object({
         scenarioId: z.string().cuid(),

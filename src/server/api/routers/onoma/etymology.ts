@@ -3,7 +3,11 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const onomaEtymologyRouter = createTRPCRouter({
   /**
@@ -31,7 +35,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
   /**
    * Create a new etymology root.
    */
-  createRoot: protectedProcedure
+  createRoot: rateLimitedMutationProcedure
     .input(
       z.object({
         root: z.string().min(1),
@@ -58,7 +62,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
   /**
    * Delete an etymology root.
    */
-  deleteRoot: protectedProcedure
+  deleteRoot: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -87,7 +91,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
   /**
    * Add a child/derivation word to a root or parent derivation.
    */
-  addDerivation: protectedProcedure
+  addDerivation: rateLimitedMutationProcedure
     .input(
       z.object({
         rootId: z.string(),
@@ -145,7 +149,7 @@ export const onomaEtymologyRouter = createTRPCRouter({
   /**
    * Delete a derivation.
    */
-  deleteDerivation: protectedProcedure
+  deleteDerivation: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

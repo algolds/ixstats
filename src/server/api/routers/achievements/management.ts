@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { adminProcedure, createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
 
 export const achievementsManagementRouter = createTRPCRouter({
   // User action: evaluate the caller's achievements now. Account-level achievements
   // evaluate without a country; country achievements use the active country if any.
-  syncMyCollectorAchievements: protectedProcedure.mutation(async ({ ctx }) => {
+  syncMyCollectorAchievements: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.user.clerkUserId;
     const user = await ctx.db.user.findUnique({
       where: { clerkUserId: userId },

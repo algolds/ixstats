@@ -5,7 +5,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 
@@ -14,7 +18,7 @@ export const nsImportVerificationRouter = createTRPCRouter({
    * Request verification for nation ownership
    * Returns the URL the user should visit to get their verification code
    */
-  requestVerification: protectedProcedure
+  requestVerification: rateLimitedMutationProcedure
     .input(
       z.object({
         nationName: z.string().min(1).max(100),
@@ -68,7 +72,7 @@ export const nsImportVerificationRouter = createTRPCRouter({
   /**
    * Verify nation ownership with checksum code from NS
    */
-  checkVerification: protectedProcedure
+  checkVerification: rateLimitedMutationProcedure
     .input(
       z.object({
         verificationId: z.string(),

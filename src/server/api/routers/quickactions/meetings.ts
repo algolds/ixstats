@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -46,7 +46,7 @@ export const quickActionsMeetingsRouter = createTRPCRouter({
   /**
    * Create a new cabinet meeting with IxTime sync
    */
-  createMeeting: protectedProcedure
+  createMeeting: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

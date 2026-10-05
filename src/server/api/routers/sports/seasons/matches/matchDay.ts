@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { transitionToNextStage } from "~/lib/sports";
@@ -74,7 +74,7 @@ function narrateInBackground(
 }
 
 export const matchDaySimulationRouter = createTRPCRouter({
-  simulateMatchDay: protectedProcedure
+  simulateMatchDay: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string(), matchDay: z.number().int().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -198,7 +198,7 @@ export const matchDaySimulationRouter = createTRPCRouter({
       }
     }),
 
-  simulateSingleMatch: protectedProcedure
+  simulateSingleMatch: rateLimitedMutationProcedure
     .input(z.object({ matchId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

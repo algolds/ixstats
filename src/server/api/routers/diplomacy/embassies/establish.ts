@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 // oxlint-disable-next-line typescript/no-unused-vars
@@ -9,7 +9,7 @@ import { ActivityHooks } from "~/lib/activity";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
-  establishEmbassy: protectedProcedure
+  establishEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         hostCountryId: z.string(),

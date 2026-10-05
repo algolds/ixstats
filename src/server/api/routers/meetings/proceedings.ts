@@ -3,7 +3,11 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import { resolveMeetingCountryId } from "~/server/shared/country-resource-owner";
 
@@ -29,7 +33,7 @@ const DECISION_LABEL: Record<AgendaDecision, string> = {
 export const meetingsProceedingsRouter = createTRPCRouter({
   // ==================== AGENDA ITEMS ====================
 
-  addAgendaItem: protectedProcedure
+  addAgendaItem: rateLimitedMutationProcedure
     .input(
       z.object({
         meetingId: z.string(),

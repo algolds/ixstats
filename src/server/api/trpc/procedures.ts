@@ -15,6 +15,7 @@ import {
   rateLimitMiddleware,
   standardMutationRateLimit,
   lightMutationRateLimit,
+  perProcedureMutationRateLimit,
   publicRateLimit,
   standardCacheMiddleware,
   staticCacheMiddleware,
@@ -56,6 +57,12 @@ export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
   .use(inputValidationMiddleware);
 
 export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLimit);
+
+/** Signed-in mutations: each procedure rate-limited on its own (60/min per user). */
+export const rateLimitedMutationProcedure = protectedProcedure.use(perProcedureMutationRateLimit);
+
+/** Premium mutations with the same per-procedure limit. */
+export const premiumMutationProcedure = premiumProcedure.use(perProcedureMutationRateLimit);
 
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
 

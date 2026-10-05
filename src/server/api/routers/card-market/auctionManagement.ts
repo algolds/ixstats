@@ -11,7 +11,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
@@ -27,7 +27,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
    * Create new auction
    * Admin-only endpoint
    */
-  createAuction: protectedProcedure
+  createAuction: rateLimitedMutationProcedure
     .input(
       z.object({
         cardId: z.string().min(1, "Card ID is required"),
@@ -109,7 +109,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
    * Execute buyout (instant purchase)
    * Admin-only endpoint
    */
-  executeBuyout: protectedProcedure
+  executeBuyout: rateLimitedMutationProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -215,7 +215,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
    * Cancel auction (only if no bids)
    * Admin-only endpoint
    */
-  cancelAuction: protectedProcedure
+  cancelAuction: rateLimitedMutationProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),

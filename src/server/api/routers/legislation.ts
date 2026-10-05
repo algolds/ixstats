@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -107,7 +112,7 @@ export const legislationRouter = createTRPCRouter({
       }));
     }),
 
-  proposeBill: protectedProcedure
+  proposeBill: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -138,7 +143,7 @@ export const legislationRouter = createTRPCRouter({
       return { id: bill.id };
     }),
 
-  holdVote: protectedProcedure
+  holdVote: rateLimitedMutationProcedure
     .input(z.object({ billId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const bill = await ctx.db.policy.findUnique({ where: { id: input.billId } });

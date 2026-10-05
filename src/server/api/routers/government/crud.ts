@@ -1,7 +1,7 @@
 // src/server/api/routers/government.ts
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { detectGovernmentConflicts } from "~/server/services/builderIntegrationService";
 import { GovernmentBuilderStateSchema } from "~/types/government";
 import {
@@ -111,7 +111,7 @@ export const governmentCrudRouter = createTRPCRouter({
     }),
 
   // Check for conflicts before creating/updating (the warnings quote the stored budget)
-  checkConflicts: protectedProcedure
+  checkConflicts: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -128,7 +128,7 @@ export const governmentCrudRouter = createTRPCRouter({
    * Start the current IxTime year's budget by copying the budget in effect (MC-1). Departments
    * that already have an allocation for the year keep it.
    */
-  startBudgetYear: protectedProcedure
+  startBudgetYear: rateLimitedMutationProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);

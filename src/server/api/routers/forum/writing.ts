@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import {
   xfPostAsUser,
   xfDelete,
@@ -34,7 +34,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * Create a new thread.
    */
-  createThread: protectedProcedure
+  createThread: rateLimitedMutationProcedure
     .input(
       z.object({
         forumId: z.number(),
@@ -96,7 +96,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * Reply to a thread.
    */
-  createPost: protectedProcedure
+  createPost: rateLimitedMutationProcedure
     .input(
       z.object({
         threadId: z.number(),
@@ -155,7 +155,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * Edit a post.
    */
-  editPost: protectedProcedure
+  editPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.number(),
@@ -186,7 +186,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * Delete a post.
    */
-  deletePost: protectedProcedure
+  deletePost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.number(),
@@ -215,7 +215,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * React to a post.
    */
-  reactToPost: protectedProcedure
+  reactToPost: rateLimitedMutationProcedure
     .input(
       z.object({
         postId: z.number(),
@@ -240,7 +240,7 @@ export const forumWritingRouter = createTRPCRouter({
   /**
    * Mark a forum/thread as read.
    */
-  markForumRead: protectedProcedure
+  markForumRead: rateLimitedMutationProcedure
     .input(
       z.object({
         forumId: z.number().optional(),

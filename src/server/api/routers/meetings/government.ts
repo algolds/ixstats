@@ -2,7 +2,7 @@
 // Cabinet meetings, government officials, and meeting management
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { assertCountryResourceWriteAccess } from "~/server/shared/country-authorization";
 import {
   resolveDepartmentCountryId,
@@ -13,7 +13,7 @@ import {
 export const meetingsGovernmentRouter = createTRPCRouter({
   // ==================== GOVERNMENT OFFICIALS ====================
 
-  appointOfficial: protectedProcedure
+  appointOfficial: rateLimitedMutationProcedure
     .input(
       z.object({
         governmentStructureId: z.string().optional(),
@@ -69,7 +69,7 @@ export const meetingsGovernmentRouter = createTRPCRouter({
       });
     }),
 
-  removeOfficial: protectedProcedure
+  removeOfficial: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

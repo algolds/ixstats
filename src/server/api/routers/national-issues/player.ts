@@ -12,7 +12,11 @@
 
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { NationalIssuesEngine } from "~/lib/national-issues";
 import type { ResponseOptionTemplate } from "~/lib/national-issues";
@@ -184,7 +188,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
   /**
    * Mark an issue as viewed. Owner / privileged roles only.
    */
-  markViewed: protectedProcedure
+  markViewed: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
@@ -215,7 +219,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
    * Capacity and sets a constant delay; findings land at reconReadyIxTime, revealing
    * the hard consequences with fog (getReconReveal). See plans/statecraft-stage1.md.
    */
-  commissionRecon: protectedProcedure
+  commissionRecon: rateLimitedMutationProcedure
     .input(z.object({ issueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!GAMEPLAY_FLAGS.statecraftSpine) {
@@ -307,7 +311,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
   /**
    * Respond to an issue - the core player action. Owner / privileged roles only.
    */
-  respond: protectedProcedure
+  respond: rateLimitedMutationProcedure
     .input(
       z.object({
         issueId: z.string(),
@@ -402,7 +406,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
   /**
    * Dismiss a non-urgent issue (only issues without deadlines). Owner / privileged roles only.
    */
-  dismiss: protectedProcedure
+  dismiss: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({

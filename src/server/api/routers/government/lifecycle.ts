@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   detectGovernmentConflicts,
@@ -167,7 +167,7 @@ const detectWarnings = (db: PrismaClient, input: LifecycleInput): Promise<Confli
 
 export const governmentLifecycleRouter = createTRPCRouter({
   // Create complete government structure
-  create: protectedProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
+  create: rateLimitedMutationProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
     const { countryId, data } = input;
     await assertCountryWriteAccess(ctx, countryId);
 
@@ -194,7 +194,7 @@ export const governmentLifecycleRouter = createTRPCRouter({
   }),
 
   // Update government structure
-  update: protectedProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
+  update: rateLimitedMutationProcedure.input(lifecycleInput).mutation(async ({ ctx, input }) => {
     const { countryId, data } = input;
     await assertCountryWriteAccess(ctx, countryId);
 

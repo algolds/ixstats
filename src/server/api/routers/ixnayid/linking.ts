@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { env } from "~/env";
 import { isSystemOwner } from "~/lib/auth";
@@ -77,14 +82,14 @@ export const ixnayidLinkingRouter = createTRPCRouter({
       wikiLinks().confirm(ctx.user.id, input.source).catch(toTrpcError)
     ),
 
-  unlinkWikiAccount: protectedProcedure
+  unlinkWikiAccount: rateLimitedMutationProcedure
     .input(z.object({ source: wikiSourceInput }))
     .mutation(async ({ ctx, input }) => {
       await wikiLinks().unlink(ctx.user.id, input.source);
       return { success: true };
     }),
 
-  linkDiscord: protectedProcedure.mutation(async ({ ctx }) => {
+  linkDiscord: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     const result = await linkDiscordAccount(ctx.user.id, ctx.auth.userId);
 
     if (!result.success) {
@@ -101,7 +106,7 @@ export const ixnayidLinkingRouter = createTRPCRouter({
     };
   }),
 
-  unlinkDiscord: protectedProcedure.mutation(async ({ ctx }) => {
+  unlinkDiscord: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     await db.user.update({
       where: { id: ctx.user.id },
       data: {
@@ -130,7 +135,7 @@ export const ixnayidLinkingRouter = createTRPCRouter({
       return { success: true, ...result };
     }),
 
-  unlinkForum: protectedProcedure.mutation(async ({ ctx }) => {
+  unlinkForum: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     await db.user.update({
       where: { id: ctx.user.id },
       data: {

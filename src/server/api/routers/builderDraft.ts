@@ -1,6 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 /**
  * Per-user server-side autosave for the country builder's create-mode draft.
@@ -18,7 +22,7 @@ export const builderDraftRouter = createTRPCRouter({
     return draft ? { data: draft.data, updatedAt: draft.updatedAt } : null;
   }),
 
-  save: protectedProcedure
+  save: rateLimitedMutationProcedure
     .input(
       z.object({
         data: z.custom<Prisma.InputJsonValue>((val) => typeof val === "object" && val !== null),
@@ -34,7 +38,7 @@ export const builderDraftRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  clear: protectedProcedure.mutation(async ({ ctx }) => {
+  clear: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
     if (!ctx.auth?.userId) return { success: false };
     await ctx.db.builderDraft.deleteMany({ where: { userId: ctx.auth.userId } });
     return { success: true };

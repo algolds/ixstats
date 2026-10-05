@@ -5,7 +5,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const customTypesRouter = createTRPCRouter({
   // ==================== Custom Government Types ====================
@@ -27,7 +31,7 @@ export const customTypesRouter = createTRPCRouter({
   /**
    * Create or increment usage count for a custom government type
    */
-  upsertCustomGovernmentType: protectedProcedure
+  upsertCustomGovernmentType: rateLimitedMutationProcedure
     .input(
       z.object({
         customTypeName: z.string().min(1).max(200),
@@ -129,7 +133,7 @@ export const customTypesRouter = createTRPCRouter({
   /**
    * Save a custom field value (creates or increments usage)
    */
-  upsertFieldValue: protectedProcedure
+  upsertFieldValue: rateLimitedMutationProcedure
     .input(
       z.object({
         fieldName: z.string().min(1).max(100),

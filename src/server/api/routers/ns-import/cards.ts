@@ -13,6 +13,7 @@ import {
   publicProcedure,
   lightMutationProcedure,
   rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
@@ -377,7 +378,7 @@ export const nsImportCardsRouter = createTRPCRouter({
    * opt-out). Requires the user to (a) own the card and (b) have a verified
    * NSVerification for the card's nation — proving they hold the flag rights.
    */
-  hideMyCard: protectedProcedure
+  hideMyCard: rateLimitedMutationProcedure
     .input(
       z.object({
         nsCardId: z.number().int().positive(),

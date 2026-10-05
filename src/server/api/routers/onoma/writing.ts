@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 
 export const onomaWritingRouter = createTRPCRouter({
   /**
@@ -29,7 +33,7 @@ export const onomaWritingRouter = createTRPCRouter({
   /**
    * Save (create or update) a writing system.
    */
-  saveSystem: protectedProcedure
+  saveSystem: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string().optional(),
@@ -84,7 +88,7 @@ export const onomaWritingRouter = createTRPCRouter({
   /**
    * Delete a writing system.
    */
-  deleteSystem: protectedProcedure
+  deleteSystem: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

@@ -1,6 +1,6 @@
 import type { DiplomaticRelationDto } from "~/types/diplomacy.dto";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -97,7 +97,7 @@ export const diplomaticCoreRelationsRouter = createTRPCRouter({
     }),
 
   // Set diplomatic goal (Stance)
-  setDiplomaticGoal: protectedProcedure
+  setDiplomaticGoal: rateLimitedMutationProcedure
     .input(
       z.object({
         relationId: z.string(),

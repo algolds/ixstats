@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { ErrorLogger, FeedbackLogger } from "~/lib/logging";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth/system-owner-constants";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -16,7 +16,7 @@ export const userLoggingRouter = createTRPCRouter({
   /**
    * Submit user feedback with diagnostic logs
    */
-  submitFeedback: protectedProcedure
+  submitFeedback: rateLimitedMutationProcedure
     .input(
       z.object({
         feedbackType: z.string(),

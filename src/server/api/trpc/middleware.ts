@@ -135,7 +135,9 @@ export const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) =
 interface RateLimitOptions {
   max: number;
   windowMs: number;
+  /** Bucket name; `perProcedure` gives each procedure its own bucket under this prefix. */
   namespace?: string;
+  perProcedure?: boolean;
 }
 
 export const createRateLimitMiddleware = (options: RateLimitOptions) => {
@@ -145,7 +147,8 @@ export const createRateLimitMiddleware = (options: RateLimitOptions) => {
     }
 
     const identifier = ctx.rateLimitIdentifier;
-    const namespace = options.namespace || "default";
+    const base = options.namespace || "default";
+    const namespace = options.perProcedure ? `${base}:${path}` : base;
 
     const result = await rateLimiter.check(identifier, namespace, {
       maxRequests: options.max,
@@ -442,6 +445,18 @@ export const lightMutationRateLimit = createRateLimitMiddleware({
   max: 100,
   windowMs: 60000,
   namespace: "light_mutations",
+});
+
+/**
+ * 60 calls a minute per user for each mutation separately (M0 #19). It stops anyone hammering
+ * one endpoint without putting a busy editing session, spread over many mutations, under a
+ * single shared cap the way the "light_mutations" bucket does.
+ */
+export const perProcedureMutationRateLimit = createRateLimitMiddleware({
+  max: 60,
+  windowMs: 60000,
+  namespace: "mutation",
+  perProcedure: true,
 });
 
 export const readOnlyRateLimit = createRateLimitMiddleware({

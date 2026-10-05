@@ -7,7 +7,12 @@
 
 import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { teamWageBill } from "~/lib/sports";
@@ -89,7 +94,7 @@ async function buildTeamOverview(
 }
 
 export const sportsClubRouter = createTRPCRouter({
-  upgradeStadium: protectedProcedure
+  upgradeStadium: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -120,7 +125,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  setTicketPrice: protectedProcedure
+  setTicketPrice: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), price: z.number().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -138,7 +143,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  setClubNotifications: protectedProcedure
+  setClubNotifications: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), enabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const team = await ctx.db.sportTeam.findUnique({
@@ -156,7 +161,7 @@ export const sportsClubRouter = createTRPCRouter({
       });
     }),
 
-  invokePatronSaint: protectedProcedure
+  invokePatronSaint: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), saintName: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -204,7 +209,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  updateTeamTactics: protectedProcedure
+  updateTeamTactics: rateLimitedMutationProcedure
     .input(
       z.object({
         teamId: z.string(),
@@ -243,7 +248,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  selectSponsor: protectedProcedure
+  selectSponsor: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), sponsorType: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -272,7 +277,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  trainPlayer: protectedProcedure
+  trainPlayer: rateLimitedMutationProcedure
     .input(z.object({ playerId: z.string(), attributeFocus: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -314,7 +319,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  teamTraining: protectedProcedure
+  teamTraining: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -361,7 +366,7 @@ export const sportsClubRouter = createTRPCRouter({
       }
     }),
 
-  setLineup: protectedProcedure
+  setLineup: rateLimitedMutationProcedure
     .input(
       z.object({
         teamId: z.string(),

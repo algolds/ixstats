@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const diplomaticEmbassiesBudgetRouter = createTRPCRouter({
   // Embassy Profile Management
-  updateEmbassyProfile: protectedProcedure
+  updateEmbassyProfile: rateLimitedMutationProcedure
     .input(
       z.object({
         embassyId: z.string(),

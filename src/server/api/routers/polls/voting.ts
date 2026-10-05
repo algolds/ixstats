@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 export const pollsVotingRouter = createTRPCRouter({
   // Register user vote
-  vote: protectedProcedure
+  vote: rateLimitedMutationProcedure
     .input(
       z.object({
         pollId: z.string(),

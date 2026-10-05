@@ -1,7 +1,12 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { ActivityGenerator } from "~/lib/activity";
@@ -212,7 +217,7 @@ export const onomaNameBankRouter = createTRPCRouter({
   /**
    * Save a generated name or custom dictionary directly into a global Stash folder or standalone Onoma NameBank.
    */
-  saveToNameBank: protectedProcedure
+  saveToNameBank: rateLimitedMutationProcedure
     .input(SaveToNameBankSchema)
     .mutation(async ({ ctx, input }) => {
       // An entry may be tagged to a country only by someone who may write to that country.
@@ -330,7 +335,7 @@ export const onomaNameBankRouter = createTRPCRouter({
   /**
    * Delete a saved name or dictionary from the global Stash system or standalone NameBank.
    */
-  deleteFromNameBank: protectedProcedure
+  deleteFromNameBank: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -386,7 +391,7 @@ export const onomaNameBankRouter = createTRPCRouter({
   /**
    * Clone a public dictionary preset into the user's global Stash folder.
    */
-  cloneDictionary: protectedProcedure
+  cloneDictionary: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -446,7 +451,7 @@ export const onomaNameBankRouter = createTRPCRouter({
   /**
    * Toggle the public visibility of a stashed naming dictionary.
    */
-  togglePublic: protectedProcedure
+  togglePublic: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -519,7 +524,7 @@ export const onomaNameBankRouter = createTRPCRouter({
   /**
    * Record name generation statistics activity log.
    */
-  logGeneration: protectedProcedure
+  logGeneration: rateLimitedMutationProcedure
     .input(
       z.object({
         count: z.number().min(1),

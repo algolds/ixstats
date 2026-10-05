@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 export const onomaMarketplaceRouter = createTRPCRouter({
   /**
@@ -76,7 +76,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
   /**
    * Fork a language pack version to make it local.
    */
-  fork: protectedProcedure
+  fork: rateLimitedMutationProcedure
     .input(
       z.object({
         packId: z.string(),
@@ -158,7 +158,7 @@ export const onomaMarketplaceRouter = createTRPCRouter({
   /**
    * Rate and review a language pack.
    */
-  rate: protectedProcedure
+  rate: rateLimitedMutationProcedure
     .input(
       z.object({
         packId: z.string(),

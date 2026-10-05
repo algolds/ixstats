@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 const economicsFiscalRouter = createTRPCRouter({
   // ==================== FISCAL SYSTEM ====================
@@ -12,7 +12,7 @@ const economicsFiscalRouter = createTRPCRouter({
   // payrollTaxRate, exciseTaxRates, wealthTaxRate, spendingByCategory,
   // fiscalBalanceGDPPercent, primaryBalanceGDPPercent, taxEfficiency
 
-  updateFiscalSystem: protectedProcedure
+  updateFiscalSystem: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
@@ -10,7 +10,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
-  createCulturalExchange: protectedProcedure
+  createCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         title: z.string(),
@@ -251,7 +251,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
       return { ...exchange, creditsEarned };
     }),
 
-  joinCulturalExchange: protectedProcedure
+  joinCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),

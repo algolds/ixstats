@@ -6,7 +6,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import {
@@ -110,7 +115,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
    * Pay the club for completed matches it hasn't collected yet (SL-14): ticket revenue and the
    * sponsor base fee per home match, the sponsor win bonus per win. Each match pays once.
    */
-  collectMatchRevenue: protectedProcedure
+  collectMatchRevenue: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -157,7 +162,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
 
   // ═══ Season & Simulation ════════════════════════════════════════════════════
 
-  startSeason: protectedProcedure
+  startSeason: rateLimitedMutationProcedure
     .input(z.object({ leagueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -356,7 +361,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
       }
     }),
 
-  transitionToNextSeason: protectedProcedure
+  transitionToNextSeason: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const season = await ctx.db.sportSeason.findUnique({

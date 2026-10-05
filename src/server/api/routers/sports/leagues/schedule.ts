@@ -5,9 +5,9 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
   publicProcedure,
   rateLimitedPublicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
@@ -82,7 +82,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  resetSeason: protectedProcedure
+  resetSeason: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -110,7 +110,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  overrideMatchResult: protectedProcedure
+  overrideMatchResult: rateLimitedMutationProcedure
     .input(
       z.object({
         matchId: z.string(),
@@ -149,7 +149,7 @@ export const leaguesScheduleRouter = createTRPCRouter({
       }
     }),
 
-  regenerateSchedule: protectedProcedure
+  regenerateSchedule: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

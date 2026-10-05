@@ -4,7 +4,11 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { requireWikiAuthId, requireWikiUserId } from "~/lib/wiki-os/auth";
 import { findWikiUserByAuthId } from "~/lib/wiki-os/storage";
 import { db } from "~/server/db";
@@ -68,7 +72,7 @@ export const blurbsRespondRouter = createTRPCRouter({
     }),
 
   /** Submit a response to a prompt. One per user per prompt. */
-  submitResponse: protectedProcedure
+  submitResponse: rateLimitedMutationProcedure
     .input(
       z.object({
         promptId: z.string().min(1),
@@ -152,7 +156,7 @@ export const blurbsRespondRouter = createTRPCRouter({
     }),
 
   /** User-submitted prompt (goes to DRAFT for admin review). */
-  submitPrompt: protectedProcedure
+  submitPrompt: rateLimitedMutationProcedure
     .input(
       z.object({
         title: z.string().min(1).max(200),

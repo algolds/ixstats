@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { AppError } from "~/lib/app-error";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import type { TaxBuilderState } from "~/types/builder";
 import {
   detectTaxConflicts,
@@ -294,7 +294,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
     }),
 
   // Create tax system
-  create: protectedProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
+  create: rateLimitedMutationProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
     const { data, warnings, rejection } = await checkTaxSave(ctx, input);
     if (rejection) return rejection;
 
@@ -344,7 +344,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
   }),
 
   // Update tax system
-  update: protectedProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
+  update: rateLimitedMutationProcedure.input(TaxSaveInput).mutation(async ({ ctx, input }) => {
     const { data, warnings, rejection } = await checkTaxSave(ctx, input);
     if (rejection) return rejection;
 
@@ -422,7 +422,7 @@ export const taxSystemCrudRouter = createTRPCRouter({
   }),
 
   // Delete tax system
-  delete: protectedProcedure
+  delete: rateLimitedMutationProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);

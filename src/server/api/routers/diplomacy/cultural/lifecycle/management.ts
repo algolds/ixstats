@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
   // Update cultural exchange (only title and description)
-  updateCulturalExchange: protectedProcedure
+  updateCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),
@@ -46,7 +46,7 @@ export const diplomaticCulturalLifecycleManagementRouter = createTRPCRouter({
     }),
 
   // Cancel cultural exchange (with diplomatic penalties)
-  cancelCulturalExchange: protectedProcedure
+  cancelCulturalExchange: rateLimitedMutationProcedure
     .input(
       z.object({
         exchangeId: z.string(),

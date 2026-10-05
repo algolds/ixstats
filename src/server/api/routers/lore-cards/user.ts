@@ -15,7 +15,11 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 
@@ -41,7 +45,7 @@ export const loreCardsUserRouter = createTRPCRouter({
    * Request a lore card for a specific wiki article
    * Costs 50 IxCredits or 1 Lore Request Token
    */
-  requestLoreCard: protectedProcedure
+  requestLoreCard: rateLimitedMutationProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1).max(200),

@@ -2,7 +2,7 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -87,7 +87,7 @@ export const securityMilitaryRouter = createTRPCRouter({
   // Military Asset Endpoints
   // ===========================
 
-  createMilitaryAsset: premiumProcedure
+  createMilitaryAsset: premiumMutationProcedure
     .input(
       z.object({
         branchId: z.string(),
@@ -122,7 +122,7 @@ export const securityMilitaryRouter = createTRPCRouter({
       });
     }),
 
-  updateMilitaryAsset: premiumProcedure
+  updateMilitaryAsset: premiumMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -139,7 +139,7 @@ export const securityMilitaryRouter = createTRPCRouter({
       });
     }),
 
-  deleteMilitaryAsset: premiumProcedure
+  deleteMilitaryAsset: premiumMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through branch

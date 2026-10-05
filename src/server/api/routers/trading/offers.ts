@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
 import { TRADE_PARTIES_INCLUDE, assertTradingOpen } from "./_shared";
@@ -51,7 +51,7 @@ export const tradingOffersRouter = createTRPCRouter({
   /**
    * Create a new trade offer
    */
-  createtradeOffer: protectedProcedure
+  createtradeOffer: rateLimitedMutationProcedure
     .input(createtradeOfferSchema)
     .mutation(async ({ ctx, input }) => {
       const initiatorDbId = ctx.user.id;
@@ -197,7 +197,7 @@ export const tradingOffersRouter = createTRPCRouter({
   /**
    * Respond to a trade offer (accept/decline/counter)
    */
-  respondToTrade: protectedProcedure
+  respondToTrade: rateLimitedMutationProcedure
     .input(respondToTradeSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
@@ -465,7 +465,7 @@ export const tradingOffersRouter = createTRPCRouter({
   /**
    * Cancel a pending trade
    */
-  cancelTrade: protectedProcedure
+  cancelTrade: rateLimitedMutationProcedure
     .input(z.object({ tradeId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;

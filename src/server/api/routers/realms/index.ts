@@ -8,6 +8,7 @@ import {
   lightMutationProcedure,
   protectedProcedure,
   publicProcedure,
+  rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import {
   ClaimError,
@@ -121,7 +122,7 @@ export const realmsRouter = createTRPCRouter({
     .input(z.object({ status: z.enum(["pending", "approved", "rejected"]).default("pending") }))
     .query(({ ctx, input }) => claims(ctx.db).listClaims(ctx.user, input.status)),
 
-  reviewClaim: protectedProcedure
+  reviewClaim: rateLimitedMutationProcedure
     .input(
       z.object({
         claimId: z.string().min(1),

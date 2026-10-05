@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -46,7 +46,7 @@ export const securityOperationsRouter = createTRPCRouter({
     }),
 
   // Create a military operation and deploy units/assets
-  createOperation: premiumProcedure
+  createOperation: premiumMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -195,7 +195,7 @@ export const securityOperationsRouter = createTRPCRouter({
     }),
 
   // Recall a deployment / end an operation
-  endOperation: premiumProcedure
+  endOperation: premiumMutationProcedure
     .input(
       z.object({
         operationId: z.string(),

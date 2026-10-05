@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { parseChambers } from "~/lib/government/election-simulation";
 import {
   MIN_ELECTION_PARTIES,
@@ -127,7 +127,7 @@ export const electionsElectionsRouter = createTRPCRouter({
    * for the elections cron. Only elections already due resolve — the owner cannot call an
    * early vote or re-roll a result. Also schedules the first election if setup is complete.
    */
-  resolveDueElection: protectedProcedure
+  resolveDueElection: rateLimitedMutationProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);

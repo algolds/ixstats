@@ -10,7 +10,7 @@ import { z } from "zod";
 import { IxTime } from "~/lib/ixtime";
 import { pct, type EconInputs, type NumberKey } from "./shared";
 import { generateSlug } from "~/lib/utils/slug-utils";
-import { protectedProcedure } from "~/server/api/trpc";
+import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
@@ -92,7 +92,7 @@ const NUMBER_SOURCES: ReadonlyArray<
 ];
 
 export const managementUpdateProcedures = {
-  updateCountry: protectedProcedure
+  updateCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),

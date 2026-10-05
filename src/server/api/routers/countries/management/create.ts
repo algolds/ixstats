@@ -8,7 +8,7 @@
 import type { Country, EconomicArchetype, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure } from "~/server/api/trpc";
+import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
@@ -456,106 +456,114 @@ type CreateCountryInput = z.infer<typeof createCountryInput>;
 
 export const managementCreateProcedures = {
   // Create a new country from builder
-  createCountry: protectedProcedure.input(createCountryInput).mutation(async ({ ctx, input }) => {
-    const userId = ctx.auth.userId;
-    if (!userId) {
-      throw new Error("User not authenticated");
-    }
+  createCountry: rateLimitedMutationProcedure
+    .input(createCountryInput)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
 
-    const player = await ctx.db.user.findUnique({
-      where: { clerkUserId: userId },
-      include: { role: true },
-    });
-    if (!player) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
-    }
-
-    // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
-    // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
-    const { realmId } = await resolveBuilderRealm(
-      ctx.db,
-      { id: player.id, clerkUserId: userId },
-      input.realmId
-    ).catch(builderRealmError);
-    const nameTaken = await ctx.db.country.findFirst({
-      where: { realmId, name: input.name },
-      select: { id: true },
-    });
-    if (nameTaken) {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: `A country named "${input.name}" already exists in this realm`,
+      const player = await ctx.db.user.findUnique({
+        where: { clerkUserId: userId },
+        include: { role: true },
       });
-    }
+      if (!player) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
+      }
 
-    await ensureDefaultRole(ctx.db, player, userId);
+      // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
+      // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
+      const { realmId } = await resolveBuilderRealm(
+        ctx.db,
+        { id: player.id, clerkUserId: userId },
+        input.realmId
+      ).catch(builderRealmError);
+      const nameTaken = await ctx.db.country.findFirst({
+        where: { realmId, name: input.name },
+        select: { id: true },
+      });
+      if (nameTaken) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `A country named "${input.name}" already exists in this realm`,
+        });
+      }
 
-    const { foundation, econ, base, payload } = await prepareFounding(ctx.db, input);
-    const { taxSystemData, governmentStructure, governmentComponents, economyBuilderState } =
-      payload;
+      await ensureDefaultRole(ctx.db, player, userId);
 
-    const slug = await uniqueCountrySlug(ctx.db, input.name);
-    const { nationalIdentity, demographics, incomeWealth, governmentSpending, fiscalSystem } = {
-      nationalIdentity: econ.nationalIdentity ?? {},
-      demographics: econ.demographics ?? {},
-      incomeWealth: econ.incomeWealth ?? {},
-      governmentSpending: econ.governmentSpending ?? {},
-      fiscalSystem: econ.fiscalSystem ?? {},
-    };
+      const { foundation, econ, base, payload } = await prepareFounding(ctx.db, input);
+      const { taxSystemData, governmentStructure, governmentComponents, economyBuilderState } =
+        payload;
 
-    try {
-      const result = await ctx.db.$transaction(async (tx) => {
-        const ixNow = new Date(IxTime.getCurrentIxTime());
-        const country = await tx.country.create({
-          data: {
-            ...buildCountryData({
-              name: input.name,
-              slug,
-              realmId,
-              econ,
-              foundation,
-              base,
-              taxRate: taxSystemData?.totalTaxRate,
-              structureType: governmentStructure?.governmentType,
-            }),
-            baselineDate: ixNow,
-            lastCalculated: ixNow,
-          },
+      const slug = await uniqueCountrySlug(ctx.db, input.name);
+      const { nationalIdentity, demographics, incomeWealth, governmentSpending, fiscalSystem } = {
+        nationalIdentity: econ.nationalIdentity ?? {},
+        demographics: econ.demographics ?? {},
+        incomeWealth: econ.incomeWealth ?? {},
+        governmentSpending: econ.governmentSpending ?? {},
+        fiscalSystem: econ.fiscalSystem ?? {},
+      };
+
+      try {
+        const result = await ctx.db.$transaction(async (tx) => {
+          const ixNow = new Date(IxTime.getCurrentIxTime());
+          const country = await tx.country.create({
+            data: {
+              ...buildCountryData({
+                name: input.name,
+                slug,
+                realmId,
+                econ,
+                foundation,
+                base,
+                taxRate: taxSystemData?.totalTaxRate,
+                structureType: governmentStructure?.governmentType,
+              }),
+              baselineDate: ixNow,
+              lastCalculated: ixNow,
+            },
+          });
+
+          await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
+          await syncDemographics(tx, country.id, demographics);
+          await syncIncomeAndSpending(
+            tx,
+            country.id,
+            incomeWealth,
+            governmentSpending,
+            fiscalSystem
+          );
+          await syncTaxSystem(tx, country.id, taxSystemData);
+          await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
+          await syncGovernmentComponents(tx, country.id, governmentComponents);
+          await syncEconomyBuilderState(tx, country.id, economyBuilderState);
+
+          // assignNation re-checks the cap inside the transaction (a concurrent build or claim may have
+          // filled it). The nation just built becomes the one the player acts as, so /mycountry shows it.
+          await assignNation(tx, { userId: player.id, countryId: country.id });
+          await pointActiveNation(tx, player.id, country.id);
+
+          return country;
         });
 
-        await syncNationalIdentity(tx, country.id, input.name, nationalIdentity);
-        await syncDemographics(tx, country.id, demographics);
-        await syncIncomeAndSpending(tx, country.id, incomeWealth, governmentSpending, fiscalSystem);
-        await syncTaxSystem(tx, country.id, taxSystemData);
-        await syncGovernmentStructure(tx, country.id, input.name, governmentStructure);
-        await syncGovernmentComponents(tx, country.id, governmentComponents);
-        await syncEconomyBuilderState(tx, country.id, economyBuilderState);
+        await invalidateCache(["countries.getAll"]);
+        clearLayerCache("political");
+        await globalCache.delete(`user_profile:${userId}`);
 
-        // assignNation re-checks the cap inside the transaction (a concurrent build or claim may have
-        // filled it). The nation just built becomes the one the player acts as, so /mycountry shows it.
-        await assignNation(tx, { userId: player.id, countryId: country.id });
-        await pointActiveNation(tx, player.id, country.id);
+        await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);
+        queueAchievementCheck(userId, result.id);
 
-        return country;
-      });
-
-      await invalidateCache(["countries.getAll"]);
-      clearLayerCache("political");
-      await globalCache.delete(`user_profile:${userId}`);
-
-      await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);
-      queueAchievementCheck(userId, result.id);
-
-      return result;
-    } catch (error) {
-      console.error("[createCountry] Transaction failed:", error);
-      if (error instanceof NationOwnershipError && error.code === "CAP_REACHED") {
-        throw new TRPCError({ code: "CONFLICT", message: error.message });
+        return result;
+      } catch (error) {
+        console.error("[createCountry] Transaction failed:", error);
+        if (error instanceof NationOwnershipError && error.code === "CAP_REACHED") {
+          throw new TRPCError({ code: "CONFLICT", message: error.message });
+        }
+        throw new Error(
+          `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
+          { cause: error }
+        );
       }
-      throw new Error(
-        `Failed to create country: ${error instanceof Error ? error.message : "Unknown error"}`,
-        { cause: error }
-      );
-    }
-  }),
+    }),
 };

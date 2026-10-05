@@ -11,6 +11,7 @@ import {
   lightMutationProcedure,
   publicProcedure,
   premiumProcedure,
+  premiumMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -25,7 +26,7 @@ import {
 
 export const securityConflictsRouter = createTRPCRouter({
   // Propose a PvP conflict (requires mutual acceptance)
-  proposePvPConflict: premiumProcedure
+  proposePvPConflict: premiumMutationProcedure
     .input(
       z.object({
         defenderId: z.string(),
@@ -132,7 +133,7 @@ export const securityConflictsRouter = createTRPCRouter({
     }),
 
   // Accept or decline a PvP conflict
-  respondToConflict: premiumProcedure
+  respondToConflict: premiumMutationProcedure
     .input(
       z.object({
         conflictId: z.string(),
@@ -423,7 +424,7 @@ export const securityConflictsRouter = createTRPCRouter({
   }),
 
   // Resolve a PvNPC conflict automatically
-  resolvePvNPCConflict: premiumProcedure
+  resolvePvNPCConflict: premiumMutationProcedure
     .input(
       z.object({
         targetCountryId: z.string(),

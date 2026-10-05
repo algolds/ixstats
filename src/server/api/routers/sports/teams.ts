@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
@@ -43,7 +43,7 @@ export const sportsTeamsRouter = createTRPCRouter({
     }
   }),
 
-  updateTeam: protectedProcedure
+  updateTeam: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -85,7 +85,7 @@ export const sportsTeamsRouter = createTRPCRouter({
       }
     }),
 
-  claimTeam: protectedProcedure
+  claimTeam: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

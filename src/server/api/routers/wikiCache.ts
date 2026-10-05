@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import {
   wikiCacheService,
   cleanWikitextForDisplay,
@@ -277,7 +277,7 @@ export const wikiCacheRouter = createTRPCRouter({
   /**
    * Refresh country cache (authenticated users only)
    */
-  refreshCountryCache: protectedProcedure
+  refreshCountryCache: rateLimitedMutationProcedure
     .input(
       z.object({
         countryName: z.string().min(1),

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { ECONOMY_INCLUDE, parseSectorBreakdown, type SectorRow } from "./_shared";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 const sectorView = (s: SectorRow) => ({
   id: s.name.toLowerCase().replace(/\s+/g, "_"),
@@ -124,7 +124,7 @@ const economicsBuilderRouter = createTRPCRouter({
     }),
 
   // Auto-save economy builder changes
-  autoSaveEconomyBuilder: protectedProcedure
+  autoSaveEconomyBuilder: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
@@ -218,7 +218,7 @@ async function findChampionTeamId(db: PrismaClient, seasonId: string, archetype:
 }
 
 export const sportsSeasonsFullseasonRouter = createTRPCRouter({
-  simulateFullSeason: protectedProcedure
+  simulateFullSeason: rateLimitedMutationProcedure
     .input(z.object({ seasonId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

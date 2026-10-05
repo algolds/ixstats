@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -9,7 +9,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
    * Close an embassy (soft delete - sets status to 'closed')
    * Applies diplomatic penalties for closing active embassies
    */
-  closeEmbassy: protectedProcedure
+  closeEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         embassyId: z.string(),
@@ -128,7 +128,7 @@ export const diplomaticEmbassiesLifecycleStatusRouter = createTRPCRouter({
       };
     }),
 
-  reopenEmbassy: protectedProcedure
+  reopenEmbassy: rateLimitedMutationProcedure
     .input(
       z.object({
         embassyId: z.string(),

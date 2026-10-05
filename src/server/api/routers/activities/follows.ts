@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import {
@@ -49,7 +49,7 @@ async function invalidateFollowingFeed(clerkUserId: string) {
 export const activitiesFollowsRouter = createTRPCRouter({
   // Country Follow System
   // Follow a country
-  followCountry: protectedProcedure
+  followCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         followerCountryId: z.string(),
@@ -95,101 +95,105 @@ export const activitiesFollowsRouter = createTRPCRouter({
 
   // Persona Follow System (ThinkPages)
   // Follow a persona. followerCount / followingCount move in the same transaction as the row.
-  followPersona: protectedProcedure.input(PersonaFollowInput).mutation(async ({ ctx, input }) => {
-    const clerkUserId = ctx.auth.userId;
-    const target = await ctx.db.thinkpagesAccount.findUnique({
-      where: { id: input.accountId },
-      select: { id: true, clerkUserId: true, username: true, isActive: true },
-    });
-    if (!target || !target.isActive) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
-    }
-    // Following your own personas would only inflate their counts.
-    if (target.clerkUserId === clerkUserId) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "You can't follow your own accounts" });
-    }
+  followPersona: rateLimitedMutationProcedure
+    .input(PersonaFollowInput)
+    .mutation(async ({ ctx, input }) => {
+      const clerkUserId = ctx.auth.userId;
+      const target = await ctx.db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId },
+        select: { id: true, clerkUserId: true, username: true, isActive: true },
+      });
+      if (!target || !target.isActive) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
+      }
+      // Following your own personas would only inflate their counts.
+      if (target.clerkUserId === clerkUserId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You can't follow your own accounts" });
+      }
 
-    const follower = input.followerAccountId
-      ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
-      : await ensurePersonalAccount(ctx.db, clerkUserId);
+      const follower = input.followerAccountId
+        ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
+        : await ensurePersonalAccount(ctx.db, clerkUserId);
 
-    try {
-      await ctx.db.$transaction(async (tx) => {
-        await tx.thinkpagesFollow.create({
-          data: {
-            followerAccountId: follower.id,
-            followedAccountId: target.id,
-            followerClerkUserId: clerkUserId,
-          },
+      try {
+        await ctx.db.$transaction(async (tx) => {
+          await tx.thinkpagesFollow.create({
+            data: {
+              followerAccountId: follower.id,
+              followedAccountId: target.id,
+              followerClerkUserId: clerkUserId,
+            },
+          });
+          await tx.thinkpagesAccount.update({
+            where: { id: target.id },
+            data: { followerCount: { increment: 1 } },
+          });
+          await tx.thinkpagesAccount.update({
+            where: { id: follower.id },
+            data: { followingCount: { increment: 1 } },
+          });
         });
+      } catch (error) {
+        // The unique (follower, followed) pair: already following, and the counts were not touched.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          return { success: true, alreadyFollowing: true, followerAccountId: follower.id };
+        }
+        throw error;
+      }
+
+      await invalidateFollowingFeed(clerkUserId);
+
+      // Notify the followed persona's owner (notifications are keyed by Clerk id). Imported
+      // IxTwitter personas belong to "system_" ids with no user behind them.
+      if (!target.clerkUserId.startsWith("system_")) {
+        try {
+          await notificationAPI.create({
+            title: "New follower",
+            message: `${follower.displayName} (@${follower.username}) followed @${target.username}`,
+            userId: target.clerkUserId,
+            category: "social",
+            priority: "low",
+            type: "info",
+            href: `/thinkpages/profile/${follower.username}`,
+            source: "thinkpages",
+            actionable: false,
+            metadata: { followerAccountId: follower.id, followedAccountId: target.id },
+          });
+        } catch (error) {
+          console.error("[Follows] Failed to send follow notification:", error);
+        }
+      }
+
+      return { success: true, alreadyFollowing: false, followerAccountId: follower.id };
+    }),
+
+  // Unfollow a persona (as the caller's personal persona unless another is given)
+  unfollowPersona: rateLimitedMutationProcedure
+    .input(PersonaFollowInput)
+    .mutation(async ({ ctx, input }) => {
+      const clerkUserId = ctx.auth.userId;
+      const follower = input.followerAccountId
+        ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
+        : await findPersonalAccount(ctx.db, clerkUserId);
+      if (!follower) return { success: true, wasFollowing: false };
+
+      const wasFollowing = await ctx.db.$transaction(async (tx) => {
+        const removed = await tx.thinkpagesFollow.deleteMany({
+          where: { followerAccountId: follower.id, followedAccountId: input.accountId },
+        });
+        if (removed.count === 0) return false;
         await tx.thinkpagesAccount.update({
-          where: { id: target.id },
-          data: { followerCount: { increment: 1 } },
+          where: { id: input.accountId },
+          data: { followerCount: { decrement: removed.count } },
         });
         await tx.thinkpagesAccount.update({
           where: { id: follower.id },
-          data: { followingCount: { increment: 1 } },
+          data: { followingCount: { decrement: removed.count } },
         });
+        return true;
       });
-    } catch (error) {
-      // The unique (follower, followed) pair: already following, and the counts were not touched.
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        return { success: true, alreadyFollowing: true, followerAccountId: follower.id };
-      }
-      throw error;
-    }
 
-    await invalidateFollowingFeed(clerkUserId);
-
-    // Notify the followed persona's owner (notifications are keyed by Clerk id). Imported
-    // IxTwitter personas belong to "system_" ids with no user behind them.
-    if (!target.clerkUserId.startsWith("system_")) {
-      try {
-        await notificationAPI.create({
-          title: "New follower",
-          message: `${follower.displayName} (@${follower.username}) followed @${target.username}`,
-          userId: target.clerkUserId,
-          category: "social",
-          priority: "low",
-          type: "info",
-          href: `/thinkpages/profile/${follower.username}`,
-          source: "thinkpages",
-          actionable: false,
-          metadata: { followerAccountId: follower.id, followedAccountId: target.id },
-        });
-      } catch (error) {
-        console.error("[Follows] Failed to send follow notification:", error);
-      }
-    }
-
-    return { success: true, alreadyFollowing: false, followerAccountId: follower.id };
-  }),
-
-  // Unfollow a persona (as the caller's personal persona unless another is given)
-  unfollowPersona: protectedProcedure.input(PersonaFollowInput).mutation(async ({ ctx, input }) => {
-    const clerkUserId = ctx.auth.userId;
-    const follower = input.followerAccountId
-      ? await requireOwnedActivePersona(ctx.db, clerkUserId, input.followerAccountId)
-      : await findPersonalAccount(ctx.db, clerkUserId);
-    if (!follower) return { success: true, wasFollowing: false };
-
-    const wasFollowing = await ctx.db.$transaction(async (tx) => {
-      const removed = await tx.thinkpagesFollow.deleteMany({
-        where: { followerAccountId: follower.id, followedAccountId: input.accountId },
-      });
-      if (removed.count === 0) return false;
-      await tx.thinkpagesAccount.update({
-        where: { id: input.accountId },
-        data: { followerCount: { decrement: removed.count } },
-      });
-      await tx.thinkpagesAccount.update({
-        where: { id: follower.id },
-        data: { followingCount: { decrement: removed.count } },
-      });
-      return true;
-    });
-
-    if (wasFollowing) await invalidateFollowingFeed(clerkUserId);
-    return { success: true, wasFollowing };
-  }),
+      if (wasFollowing) await invalidateFollowingFeed(clerkUserId);
+      return { success: true, wasFollowing };
+    }),
 });

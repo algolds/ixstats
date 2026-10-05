@@ -5,12 +5,17 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 
 export const sportsTransfersRouter = createTRPCRouter({
-  listPlayerForTransfer: protectedProcedure
+  listPlayerForTransfer: rateLimitedMutationProcedure
     .input(z.object({ playerId: z.string(), price: z.number().min(1) }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -43,7 +48,7 @@ export const sportsTransfersRouter = createTRPCRouter({
       }
     }),
 
-  placeTransferBid: protectedProcedure
+  placeTransferBid: rateLimitedMutationProcedure
     .input(z.object({ listingId: z.string(), amount: z.number().min(1), bidderTeamId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -90,7 +95,7 @@ export const sportsTransfersRouter = createTRPCRouter({
       }
     }),
 
-  respondToTransferBid: protectedProcedure
+  respondToTransferBid: rateLimitedMutationProcedure
     .input(z.object({ bidId: z.string(), action: z.enum(["accept", "reject"]) }))
     .mutation(async ({ ctx, input }) => {
       try {

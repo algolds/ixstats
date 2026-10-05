@@ -9,7 +9,7 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { MAX_PREDICTION_STAKE, MIN_PREDICTION_STAKE } from "~/lib/sports/predictions";
@@ -54,7 +54,7 @@ export const sportsPredictionsRouter = createTRPCRouter({
     }),
 
   /** Place a stake on a match outcome. One prediction per user per match, before kickoff. */
-  placePrediction: protectedProcedure
+  placePrediction: rateLimitedMutationProcedure
     .input(
       z.object({
         matchId: z.string().min(1),

@@ -11,7 +11,11 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
@@ -26,7 +30,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
    * Place bid on auction
    * Admin-only endpoint
    */
-  placeBid: protectedProcedure
+  placeBid: rateLimitedMutationProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),

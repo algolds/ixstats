@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 
 const cardImageTypeSchema = z.enum([
   "national_identity",
@@ -83,7 +83,7 @@ export const cardImagesRouter = createTRPCRouter({
   /**
    * Upsert a card background image (create or update)
    */
-  upsert: protectedProcedure
+  upsert: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -112,7 +112,7 @@ export const cardImagesRouter = createTRPCRouter({
   /**
    * Delete a card background image (reset to default)
    */
-  delete: protectedProcedure
+  delete: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

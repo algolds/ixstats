@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { ensureUpcomingElection } from "~/lib/government/election-lifecycle";
@@ -33,7 +33,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       });
     }),
 
-  createParty: protectedProcedure
+  createParty: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),
@@ -92,7 +92,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       return party;
     }),
 
-  updateParty: protectedProcedure
+  updateParty: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -127,7 +127,7 @@ export const electionsPartiesRouter = createTRPCRouter({
       return updated;
     }),
 
-  deleteParty: protectedProcedure
+  deleteParty: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const party = await ctx.db.politicalParty.findUnique({

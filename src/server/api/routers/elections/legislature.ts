@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 import {
   ensureUpcomingElection,
@@ -29,7 +29,7 @@ export const electionsLegislatureRouter = createTRPCRouter({
       });
     }),
 
-  configureLegislature: protectedProcedure
+  configureLegislature: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

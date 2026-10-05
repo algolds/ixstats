@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPreset,
@@ -134,7 +134,7 @@ export const leaguesCrudRouter = createTRPCRouter({
     }
   }),
 
-  createLeague: protectedProcedure
+  createLeague: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(1).max(200),
@@ -256,7 +256,7 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  updateLeague: protectedProcedure
+  updateLeague: rateLimitedMutationProcedure
     .input(
       z.object({
         id: z.string(),
@@ -305,7 +305,7 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  deleteLeague: protectedProcedure
+  deleteLeague: rateLimitedMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -398,7 +398,7 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  transferTeam: protectedProcedure
+  transferTeam: rateLimitedMutationProcedure
     .input(z.object({ teamId: z.string(), targetLeagueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {

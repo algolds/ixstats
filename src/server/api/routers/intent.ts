@@ -9,7 +9,12 @@
 
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { CountryEventSpine } from "~/lib/activity";
@@ -295,7 +300,7 @@ export const intentRouter = createTRPCRouter({
     }),
 
   /** Update status of an intent (e.g. mark completed, abandoned). */
-  updateStatus: protectedProcedure
+  updateStatus: rateLimitedMutationProcedure
     .input(
       z.object({ id: z.string(), status: z.enum(["proposed", "active", "completed", "abandoned"]) })
     )
@@ -352,7 +357,7 @@ export const intentRouter = createTRPCRouter({
     }),
 
   /** Explicitly generate/publish a ThinkPages summation post for an intent. */
-  generateSummationDraft: protectedProcedure
+  generateSummationDraft: rateLimitedMutationProcedure
     .input(
       z.object({
         intentId: z.string(),
@@ -381,7 +386,7 @@ export const intentRouter = createTRPCRouter({
     }),
 
   /** Commit a chosen package: applies it and records the Intent. */
-  commit: protectedProcedure
+  commit: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

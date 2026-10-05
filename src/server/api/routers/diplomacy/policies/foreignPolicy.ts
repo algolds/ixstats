@@ -1,6 +1,11 @@
 import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -268,7 +273,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
     }),
 
   // Propose / enact a foreign policy action
-  proposeForeignPolicyAction: protectedProcedure
+  proposeForeignPolicyAction: rateLimitedMutationProcedure
     .input(
       z.object({
         targetId: z.string(),
@@ -442,7 +447,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
     }),
 
   // The proposer withdraws a pending cooperative proposal before it is answered.
-  withdrawForeignPolicyProposal: protectedProcedure
+  withdrawForeignPolicyProposal: rateLimitedMutationProcedure
     .input(z.object({ actionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const action = await ctx.db.foreignPolicyAction.findUnique({
@@ -468,7 +473,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
     }),
 
   // Foreign consent: the target's owner accepts (enact the stored effects) or declines.
-  respondToForeignPolicyProposal: protectedProcedure
+  respondToForeignPolicyProposal: rateLimitedMutationProcedure
     .input(z.object({ actionId: z.string(), choice: z.enum(["accept", "decline"]) }))
     .mutation(async ({ ctx, input }) => {
       const action = await ctx.db.foreignPolicyAction.findUnique({

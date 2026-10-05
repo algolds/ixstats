@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationHooks } from "~/lib/notifications/hooks";
 
 const economicsProfileRouter = createTRPCRouter({
@@ -12,7 +12,7 @@ const economicsProfileRouter = createTRPCRouter({
   // Schema fields: gdpGrowthVolatility, economicComplexity, innovationIndex, competitivenessRank,
   // easeOfDoingBusiness, corruptionIndex, sectorBreakdown, exportsGDPPercent, importsGDPPercent, tradeBalance
 
-  updateEconomicProfile: protectedProcedure
+  updateEconomicProfile: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

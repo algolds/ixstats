@@ -4,22 +4,13 @@
  */
 
 // Context
-export {
-  createTRPCContext
-} from "./context";
+export { createTRPCContext } from "./context";
 
 // Core tRPC initialization & Router factories
-export {
-  createCallerFactory,
-  createTRPCRouter,
-  mergeRouters
-} from "./init";
+export { createCallerFactory, createTRPCRouter, mergeRouters } from "./init";
 
 // Middlewares
-export {
-  createRateLimitMiddleware,
-  userCacheMiddleware
-} from "./middleware";
+export { createRateLimitMiddleware, userCacheMiddleware } from "./middleware";
 
 // Procedure builders
 export {
@@ -30,6 +21,8 @@ export {
   adminProcedure,
   standardMutationCountryOwnerProcedure,
   lightMutationProcedure,
+  rateLimitedMutationProcedure,
+  premiumMutationProcedure,
   rateLimitedPublicProcedure,
   cachedPublicProcedure,
   cachedStaticProcedure,

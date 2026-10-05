@@ -2,7 +2,12 @@
 // Policy management and tracking system
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import type { PrismaClient } from "@prisma/client";
@@ -67,7 +72,7 @@ function getCustomPolicyAttributes(priority: string) {
 export const policiesCrudRouter = createTRPCRouter({
   // ==================== POLICY CRUD ====================
 
-  createPolicy: protectedProcedure
+  createPolicy: rateLimitedMutationProcedure
     .input(
       z.object({
         countryId: z.string(),

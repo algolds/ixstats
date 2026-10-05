@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 
@@ -129,7 +134,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Create a new alliance
-  createAlliance: protectedProcedure
+  createAlliance: rateLimitedMutationProcedure
     .input(
       z.object({
         name: z.string().min(2, "Alliance name must be at least 2 characters long").max(100),
@@ -212,7 +217,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Invite a country to join an alliance
-  inviteMember: protectedProcedure
+  inviteMember: rateLimitedMutationProcedure
     .input(
       z.object({
         allianceId: z.string(),
@@ -404,7 +409,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // The inviting country withdraws a pending invitation before it is answered.
-  withdrawAllianceInvite: protectedProcedure
+  withdrawAllianceInvite: rateLimitedMutationProcedure
     .input(z.object({ allianceId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const invite = await ctx.db.allianceMember.findUnique({
@@ -444,7 +449,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // The invited country's owner accepts (becomes a member) or declines
-  respondToAllianceInvite: protectedProcedure
+  respondToAllianceInvite: rateLimitedMutationProcedure
     .input(
       z.object({
         allianceId: z.string(),
@@ -515,7 +520,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Leave an alliance
-  leaveAlliance: protectedProcedure
+  leaveAlliance: rateLimitedMutationProcedure
     .input(z.object({ allianceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.user?.countryId) {
@@ -554,7 +559,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Propose an alliance action (collective sanction, shared defense, etc.)
-  proposeAllianceAction: protectedProcedure
+  proposeAllianceAction: rateLimitedMutationProcedure
     .input(
       z.object({
         allianceId: z.string(),
@@ -619,7 +624,7 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
     }),
 
   // Vote on an alliance action
-  voteOnAllianceAction: protectedProcedure
+  voteOnAllianceAction: rateLimitedMutationProcedure
     .input(
       z.object({
         actionId: z.string(),

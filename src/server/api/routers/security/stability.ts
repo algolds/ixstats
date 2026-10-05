@@ -2,7 +2,7 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { computeInternalStability } from "~/lib/statecraft/stability-store";
 
@@ -47,7 +47,7 @@ export const securityStabilityRouter = createTRPCRouter({
       return { metrics, activeEvents };
     }),
 
-  resolveSecurityEvent: premiumProcedure
+  resolveSecurityEvent: premiumMutationProcedure
     .input(
       z.object({
         id: z.string(),

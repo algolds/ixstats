@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure } from "~/server/api/trpc";
+import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
@@ -8,7 +8,7 @@ import { evaluateThresholds } from "~/server/shared/intelligence-alert-threshold
 
 export const managementLifecycleProcedures = {
   // General update mutation for country fields (used by editor)
-  update: protectedProcedure
+  update: rateLimitedMutationProcedure
     .input(
       z
         .object({

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -29,7 +29,7 @@ export const diplomaticCoreInfluenceRouter = createTRPCRouter({
       };
     }),
 
-  followCountry: protectedProcedure
+  followCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         followerCountryId: z.string(),
@@ -76,7 +76,7 @@ export const diplomaticCoreInfluenceRouter = createTRPCRouter({
       return { success: true, follow };
     }),
 
-  unfollowCountry: protectedProcedure
+  unfollowCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         followerCountryId: z.string(),

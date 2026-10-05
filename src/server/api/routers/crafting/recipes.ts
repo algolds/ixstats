@@ -11,7 +11,11 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
 import { getVaultLevel } from "~/lib/vault/vault-perks";
@@ -163,7 +167,7 @@ export const craftingRecipesRouter = createTRPCRouter({
   /**
    * Execute crafting (fusion or evolution)
    */
-  craftCard: protectedProcedure
+  craftCard: rateLimitedMutationProcedure
     .input(
       z.object({
         recipeId: z.string(),
