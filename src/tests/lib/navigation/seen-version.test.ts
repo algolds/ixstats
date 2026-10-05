@@ -19,11 +19,11 @@ describe("seen version", () => {
     window.removeEventListener("ixstats:version-seen", listener);
   });
 
-  it("reads null and does not throw when storage is blocked", () => {
+  it("treats the build as seen when storage cannot be read, so New never sticks", () => {
     const spy = jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(readSeenVersion()).toBeNull();
+    expect(readSeenVersion()).toBe(currentVersionKey());
     spy.mockRestore();
   });
 });

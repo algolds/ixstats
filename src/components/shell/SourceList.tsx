@@ -129,12 +129,15 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
 }
 
 function GroupHeading({
+  id,
   group,
   collapsible,
   open,
   listId,
   onToggle,
 }: {
+  /** Names the surrounding group, so its label is the heading itself rather than a copy of it. */
+  id: string;
   group: string;
   collapsible: boolean;
   open: boolean;
@@ -142,9 +145,14 @@ function GroupHeading({
   onToggle: () => void;
 }) {
   if (!collapsible)
-    return <h3 className="text-caption text-label-secondary px-2 pt-3 pb-1">{group}</h3>;
+    return (
+      <h3 id={id} className="text-caption text-label-secondary px-2 pt-3 pb-1">
+        {group}
+      </h3>
+    );
   return (
     <button
+      id={id}
       type="button"
       aria-expanded={open}
       aria-controls={listId}
@@ -168,11 +176,14 @@ function SectionRows({
   ctx,
   collapsibleGroups,
   id,
+  hidden = false,
 }: {
   app: AppDefinition;
   ctx: Ctx;
   collapsibleGroups: boolean;
   id?: string;
+  /** Collapsed but still mounted, so the toggle's `aria-controls` always resolves. */
+  hidden?: boolean;
 }) {
   // Action and conditional rows exist only while their badge does.
   const visible = app.sections.filter(
@@ -180,20 +191,27 @@ function SectionRows({
   );
   const rowCtx = app.id === ctx.activeAppId ? ctx : { ...ctx, activeSectionId: undefined };
   return (
-    <div id={id} className={cn("flex flex-col", !collapsibleGroups && "pl-4")} data-app={app.tint}>
+    <div
+      id={id}
+      hidden={hidden}
+      className={cn("flex flex-col", !collapsibleGroups && "pl-4")}
+      data-app={app.tint}
+    >
       {groupSections(visible).map(({ group, sections }, index) => {
         const groupKey = `${app.id}:${group}`;
         const containsActive = sections.some((s) => s.id === rowCtx.activeSectionId);
         const open = !collapsibleGroups || !group || containsActive || ctx.expanded.has(groupKey);
         const listId = `source-list-${ctx.indicatorId}-${groupKey}`.replace(/[^a-zA-Z0-9-]+/g, "-");
+        const headingId = `${listId}-heading`;
         return (
           <div
             key={group ?? `ungrouped-${index}`}
             role={group ? "group" : undefined}
-            aria-label={group}
+            aria-labelledby={group ? headingId : undefined}
           >
             {group && (
               <GroupHeading
+                id={headingId}
                 group={group}
                 // The group holding the current page stays open, so toggling it would do nothing.
                 collapsible={collapsibleGroups && !containsActive}
@@ -202,22 +220,15 @@ function SectionRows({
                 onToggle={() => ctx.onToggle(groupKey)}
               />
             )}
-            {open && (
-              <ul id={listId} className="flex flex-col gap-0.5">
-                {sections.map((section) =>
-                  section.action ? (
-                    <ActionRow
-                      key={section.id}
-                      section={section}
-                      action={section.action}
-                      ctx={ctx}
-                    />
-                  ) : (
-                    <SectionRow key={section.id} section={section} ctx={rowCtx} />
-                  )
-                )}
-              </ul>
-            )}
+            <ul id={listId} hidden={!open} className="flex flex-col gap-0.5">
+              {sections.map((section) =>
+                section.action ? (
+                  <ActionRow key={section.id} section={section} action={section.action} ctx={ctx} />
+                ) : (
+                  <SectionRow key={section.id} section={section} ctx={rowCtx} />
+                )
+              )}
+            </ul>
           </div>
         );
       })}
@@ -282,7 +293,9 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
           </button>
         )}
       </div>
-      {open && <SectionRows id={listId} app={app} ctx={ctx} collapsibleGroups={false} />}
+      {hasSections && (
+        <SectionRows id={listId} hidden={!open} app={app} ctx={ctx} collapsibleGroups={false} />
+      )}
     </li>
   );
 }
@@ -316,6 +329,34 @@ function FooterLinks({
   );
 }
 
+/**
+ * The current app and section. When the path belongs to an app the user has hidden (the changelog
+ * with Help turned off), fall back to a visible section row with the same href so the list still
+ * shows where they are; with none, nothing is highlighted.
+ */
+function resolveCurrent(
+  pathname: string,
+  searchParams: SearchParamsLike | null,
+  apps: readonly AppDefinition[],
+  badges: NavBadges
+): { current: AppDefinition | undefined; activeSectionId: string | undefined } {
+  const owner = getAppForPath(pathname);
+  if (!owner || apps.some((a) => a.id === owner.id)) {
+    return {
+      current: owner,
+      activeSectionId: owner ? getActiveSectionId(owner, pathname, searchParams) : undefined,
+    };
+  }
+  const path = pathname.split(/[?#]/)[0];
+  for (const app of apps) {
+    const row = app.sections.find(
+      (s) => !s.action && s.href === path && (!s.conditional || (s.badge && badges[s.badge]))
+    );
+    if (row) return { current: app, activeSectionId: row.id };
+  }
+  return { current: undefined, activeSectionId: undefined };
+}
+
 export function SourceList({
   pathname,
   searchParams,
@@ -328,8 +369,7 @@ export function SourceList({
   variant = "sidebar",
   app,
 }: SourceListProps) {
-  const current = getAppForPath(pathname);
-  const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
+  const { current, activeSectionId } = resolveCurrent(pathname, searchParams, apps, badges);
   const ctx: Ctx = {
     badges,
     onAction,
@@ -338,7 +378,8 @@ export function SourceList({
     onToggle,
     activeAppId: current?.id,
     activeSectionId,
-    indicatorId: `source-list-${variant}`,
+    // One pill per list: a shared layoutId would make it glide between the rail's separate popovers.
+    indicatorId: `source-list-${variant}${app ? `-${app.id}` : ""}`,
   };
 
   if (variant === "popover" && app) {

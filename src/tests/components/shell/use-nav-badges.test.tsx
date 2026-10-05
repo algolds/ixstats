@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 let country: { id: string; name: string; flag: string } | null = null;
 let inboxCount = 0;
 let flagNormalizes = true;
+const inboxEnabled = jest.fn();
 let balance: { credits: number; canClaimDailyBonus: boolean; loginStreak: number } | undefined;
 let folderCounts: { inbox: number } | undefined;
 const balanceQuery = jest.fn();
@@ -11,6 +12,7 @@ const folderCountsQuery = jest.fn();
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ country }) }));
 jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", () => ({
   useDiplomacyInboxCount: (_id: string | undefined, enabled: boolean) => ({
+    ...(inboxEnabled(enabled), {}),
     count: enabled ? inboxCount : 0,
   }),
 }));
@@ -49,6 +51,7 @@ beforeEach(() => {
   folderCounts = { inbox: 0 };
   balanceQuery.mockClear();
   folderCountsQuery.mockClear();
+  inboxEnabled.mockClear();
   // A build the user has already seen, so only the what's-new tests see that badge.
   markVersionSeen();
 });
@@ -59,6 +62,8 @@ describe("useNavBadges", () => {
     expect(result.current).toEqual({});
     expect(balanceQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
     expect(folderCountsQuery).toHaveBeenCalledWith(expect.objectContaining({ enabled: false }));
+    expect(inboxEnabled).toHaveBeenCalledWith(false);
+    expect(inboxEnabled).not.toHaveBeenCalledWith(true);
   });
 
   it("maps flag, inbox, balance and the claimable reward", () => {

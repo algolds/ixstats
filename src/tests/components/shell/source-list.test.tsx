@@ -191,6 +191,104 @@ describe("SourceList", () => {
     expect(within(nav).getAllByRole("link", { current: "page" })).toHaveLength(1);
   });
 
+  it("keeps a collapsed disclosure's list mounted but hidden, so aria-controls always resolves", () => {
+    const admin = apps.find((a) => a.id === "admin")!;
+    const deep = admin.sections[admin.sections.length - 1]!;
+    const { nav } = setup(deep.href);
+    const other = admin.sections.find((s) => s.group && s.group !== deep.group)!;
+    const toggle = within(nav).getByRole("button", { name: other.group });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    const list = document.getElementById(toggle.getAttribute("aria-controls")!);
+    expect(list).not.toBeNull();
+    expect(list).toHaveAttribute("hidden");
+    // Hidden rows are out of the accessibility tree.
+    expect(within(nav).queryByRole("link", { name: other.label })).toBeNull();
+  });
+
+  it("keeps a collapsed app's section list mounted but hidden", () => {
+    const { nav } = setup("/vault");
+    const expand = within(nav).getByRole("button", { name: "Expand Forum" });
+    const list = document.getElementById(expand.getAttribute("aria-controls")!);
+    expect(list).not.toBeNull();
+    expect(list).toHaveAttribute("hidden");
+  });
+
+  it("labels a plain group by its heading rather than repeating the text in aria-label", () => {
+    const admin = apps.find((a) => a.id === "admin")!;
+    const deep = admin.sections[admin.sections.length - 1]!;
+    const { nav } = setup(deep.href);
+    const group = within(nav).getByRole("group", { name: deep.group });
+    expect(group).not.toHaveAttribute("aria-label");
+    const heading = within(group).getByRole("heading", { name: deep.group });
+    expect(group).toHaveAttribute("aria-labelledby", heading.id);
+  });
+
+  it("area mode: a group toggle calls onToggle with the app-qualified group key", () => {
+    const admin = apps.find((a) => a.id === "admin")!;
+    const deep = admin.sections[admin.sections.length - 1]!;
+    const other = admin.sections.find((s) => s.group && s.group !== deep.group)!;
+    const { nav, onToggle } = setup(deep.href);
+    fireEvent.click(within(nav).getByRole("button", { name: other.group }));
+    expect(onToggle).toHaveBeenCalledWith(`admin:${other.group}`);
+  });
+
+  it("popover variant renders exactly one app's sections, with no app list", () => {
+    const vault = apps.find((a) => a.id === "vault")!;
+    render(
+      <SourceList
+        variant="popover"
+        app={vault}
+        pathname="/dashboard"
+        searchParams={null}
+        apps={apps}
+        expanded={new Set()}
+        onToggle={() => {}}
+        badges={{}}
+      />
+    );
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
+    expect(screen.queryByRole("link", { name: "Wiki" })).toBeNull();
+    const hrefs = screen.getAllByRole("link").map((l) => l.getAttribute("href"));
+    for (const section of vault.sections.filter((x) => !x.action && !x.conditional)) {
+      expect(hrefs).toContain(section.href);
+    }
+  });
+
+  describe("when the owning app is hidden", () => {
+    const withoutHelp = getVisibleApps({
+      signedIn: true,
+      isAdmin: false,
+      navigationSettings: { showHelpTab: false } as never,
+    });
+    const renderChangelog = (badges: NavBadges) =>
+      render(
+        <SourceList
+          pathname="/changelog"
+          searchParams={null}
+          apps={withoutHelp}
+          expanded={new Set()}
+          onToggle={() => {}}
+          badges={badges}
+        />
+      );
+
+    it("highlights a visible row with the same href (Home's What's new)", () => {
+      expect(withoutHelp.some((a) => a.id === "help")).toBe(false);
+      renderChangelog({ "whats-new": { kind: "action", label: "New" } });
+      const nav = screen.getByRole("navigation", { name: "App navigation" });
+      expect(within(nav).getByRole("link", { current: "page" })).toHaveAttribute(
+        "href",
+        "/changelog"
+      );
+    });
+
+    it("highlights nothing when no visible row points there", () => {
+      renderChangelog({});
+      const nav = screen.getByRole("navigation", { name: "App navigation" });
+      expect(within(nav).queryByRole("link", { current: "page" })).toBeNull();
+    });
+  });
+
   it("links every section href in the map (reachability)", () => {
     for (const app of apps) {
       const pathname = app.href;

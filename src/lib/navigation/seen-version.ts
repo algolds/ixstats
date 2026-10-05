@@ -13,12 +13,16 @@ export function currentVersionKey(): string {
   return `${APP_VERSION}+${BUILD_VERSION}`;
 }
 
-/** The last build marked seen, or null (never seen, or storage is unavailable). */
+/**
+ * The last build marked seen, or null when never seen. When storage cannot be read the answer is
+ * unknowable and a mark could never stick, so the running build counts as seen rather than
+ * leaving a "New" flag that no visit can clear.
+ */
 export function readSeenVersion(): string | null {
   try {
     return window.localStorage.getItem(STORAGE_KEY);
   } catch {
-    return null;
+    return currentVersionKey();
   }
 }
 

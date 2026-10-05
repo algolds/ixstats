@@ -52,8 +52,10 @@ describe("UnifiedDashboardSection", () => {
 
   it("keeps the fixed aside out of the animated (transformed) wrappers", () => {
     wide = true;
-    render(<UnifiedDashboardSection globalStats={stats} />);
+    const { container } = render(<UnifiedDashboardSection globalStats={stats} />);
     const aside = screen.getByRole("complementary", { name: "Around IxStates" });
+    // Not inside a flex column laid out for it: the shell reserves its gutter instead.
+    expect(aside.parentElement).toBe(container);
     // A transformed ancestor becomes the containing block of a fixed element and would make the
     // aside jump when the entrance animation ends; motion writes its values as inline styles.
     expect(aside.closest("[style]")).toBeNull();
@@ -62,10 +64,12 @@ describe("UnifiedDashboardSection", () => {
   it("opens the same content in a sheet from the Trends button below 1280px", () => {
     wide = false;
     render(<UnifiedDashboardSection globalStats={stats} />);
-    expect(screen.queryByText("trending widget")).not.toBeInTheDocument();
+    // The aside is in the page from the first paint (CSS shows it from xl); no sheet until asked.
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Trends" }));
     expect(screen.getByRole("dialog", { name: "Around IxStates" })).toHaveTextContent(
       "trending widget"
     );
+    expect(screen.getAllByText("trending widget")).toHaveLength(1);
   });
 });

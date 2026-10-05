@@ -4,7 +4,7 @@
  * the first client render show only the current app open (the current app is always open and is
  * not stored). Synced across tabs.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NAV_STORAGE_KEYS } from "~/lib/design/appearance";
 
 function readExpanded(): Set<string> {
@@ -20,7 +20,14 @@ function readExpanded(): Set<string> {
 }
 
 export function useNavExpanded(): { expanded: ReadonlySet<string>; toggle: (id: string) => void } {
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const [expanded, setExpandedState] = useState<ReadonlySet<string>>(() => new Set());
+  // The latest set, so toggle can compute the next one (and write it) outside a state updater:
+  // updaters must stay pure, and React runs them twice in StrictMode.
+  const latest = useRef<ReadonlySet<string>>(expanded);
+  const setExpanded = useCallback((next: ReadonlySet<string>) => {
+    latest.current = next;
+    setExpandedState(next);
+  }, []);
 
   useEffect(() => {
     // oxlint-disable-next-line
@@ -30,11 +37,11 @@ export function useNavExpanded(): { expanded: ReadonlySet<string>; toggle: (id: 
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [setExpanded]);
 
-  const toggle = useCallback((id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
+  const toggle = useCallback(
+    (id: string) => {
+      const next = new Set(latest.current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       try {
@@ -42,9 +49,10 @@ export function useNavExpanded(): { expanded: ReadonlySet<string>; toggle: (id: 
       } catch {
         // Storage blocked: the state still holds for this session.
       }
-      return next;
-    });
-  }, []);
+      setExpanded(next);
+    },
+    [setExpanded]
+  );
 
   return { expanded, toggle };
 }

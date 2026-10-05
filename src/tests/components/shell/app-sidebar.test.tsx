@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { describe, it, expect, jest } from "@jest/globals";
 import { AppSidebar } from "~/components/shell/AppSidebar";
 import { getVisibleApps } from "~/lib/navigation/app-sections";
@@ -163,6 +163,29 @@ describe("AppSidebar", () => {
         "href",
         "/vault"
       );
+    });
+
+    it("opening a second rail popover closes the first", async () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
+      await screen.findByRole("navigation", { name: "Vault" });
+      const wiki = within(rail()).getByRole("button", { name: "Wiki" });
+      // A real click presses down outside the open popover first, which is what dismisses it.
+      fireEvent.pointerDown(wiki);
+      fireEvent.click(wiki);
+      await screen.findByRole("navigation", { name: "Wiki" });
+      await waitFor(() => expect(screen.queryByRole("navigation", { name: "Vault" })).toBeNull());
+    });
+
+    it("closes the popover when a section link inside it is followed", async () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
+      const nav = await screen.findByRole("navigation", { name: "Vault" });
+      const link = within(nav).getByRole("link", { name: "Marketplace" });
+      // jsdom does not navigate; the click handler is what closes the popover.
+      link.addEventListener("click", (event) => event.preventDefault());
+      fireEvent.click(link);
+      await waitFor(() => expect(screen.queryByRole("navigation", { name: "Vault" })).toBeNull());
     });
 
     it("dots a rail button whose sections have something pending", () => {

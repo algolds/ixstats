@@ -20,7 +20,7 @@ export function ViewingAsBanner() {
   return (
     <div
       className={cn(
-        "fixed top-0 right-0 left-(--shell-sidebar-width) z-[100]",
+        "fixed top-0 right-(--shell-inspector-width) left-(--shell-sidebar-width) z-[100]",
         "flex items-center justify-center gap-4 px-4 py-2",
         "bg-amber-500/95 backdrop-blur-sm",
         "text-amber-950 shadow-md"
