@@ -27,7 +27,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
   WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure).
 - **Signed off by the owner (2026-10-05):** annual policy upkeep, the stability policy scale (×10), Vexel attach (now
   renders on save), notification preferences applying to saved rows, and the earnings kill switch also blocking
-  auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off; D6 is moot).
+  auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off). D6 and "failed crafting rolls consume materials": moot: crafting deprecated 2026-10-05.
 - **Engineering still open:** typecheck `src/tests` (≈890 errors); Vexel PNG rendering; blocking inside group chats;
   crisis-event producer and meeting decisions on the event spine (M4); M3–M7 as planned. The live backlog is
   [backlog.md](backlog.md).
@@ -253,7 +253,7 @@ Only the items still open or partial in code are listed. Everything else in M2 i
 | PvP conflict resolution | MC-4 | Open | `security/conflicts.ts:188` sets conflicts `active`, and nothing resolves them | M |
 | Alliance invite NPC auto-response | MC-10 | Partial | Accept, decline and withdraw are done; NPC targets never answer | S |
 | Cultural exchange missions | MC-11 | Open | `exchanges/core/mutations.ts:185` creates `EmbassyMission` rows that nothing completes | S |
-| Crafting | VT-14 | Partial | Grant `resultCardId` instead of minting a generic card (`recipes.ts:312`); validate criteria, not just counts (`:256`); one `successRate` unit (roll 0–100 vs schema 0–1 vs seed 95); ownership IDs (`:333`). Waits on D6 | M |
+| Crafting | VT-14 | Partial | Grant `resultCardId` instead of minting a generic card (`recipes.ts:312`); validate criteria, not just counts (`:256`); one `successRate` unit (roll 0–100 vs schema 0–1 vs seed 95); ownership IDs (`:333`). **Deprecated 2026-10-05:** crafting is retired; D6 moot: crafting deprecated 2026-10-05 | M |
 | Ledger earn gaps | VT-23 | Partial | `isEarningEnabled` exempts EARN_BONUS, EARN_CARDS and REFUND | S |
 | Pack opening | VT-18 | Open | `guaranteedRarity` and `themeFilter`; exclude SPECIAL and crafted cards; a rarity fallback (`pack-service.ts:108` throws); ownership IDs (`:134`); typed errors | S–M |
 | Achievement cards | VT-17 | Open | `prisma/seeds/achievement-cards.ts:11` imports a missing module, and `db:seed` doesn't call it | S |

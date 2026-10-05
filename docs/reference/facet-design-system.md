@@ -47,7 +47,7 @@ Facet's own:
 | Gold | `facet-gold` utility (progress fills, step markers, count pills) |
 | shadcn aliases | `foreground`, `card`, `popover`, `muted`, `accent`, `border`, `ring`, `chart-1..8` |
 
-- `facet-on-dark` (utility) rebinds `red yellow green blue indigo` to their dark-theme values for its subtree. Use it for content on a fixed dark scrim or overlay (the crafting result) so it stays legible in light mode. Only raw role utilities such as `text-green` and `bg-yellow` pick it up; derived tokens (`*-ink`, `success`, `destructive`) are not rebound.
+- `facet-on-dark` (utility) rebinds `red yellow green blue indigo` to their dark-theme values for its subtree. Use it for content on a fixed dark scrim or overlay (a reveal stage) so it stays legible in light mode. Only raw role utilities such as `text-green` and `bg-yellow` pick it up; derived tokens (`*-ink`, `success`, `destructive`) are not rebound.
 - App tints come from `data-app` on the app root, which sets `--tint*` for its subtree. Never inline `--tint`.
 
 | `data-app` | Tint |
@@ -181,7 +181,7 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
 - `FacetMaterial layer="chrome" | "overlay"` (default `chrome`) is the primitive for floating glass. Do not use it for content cards.
 - `Signal`: an inline semantic banner. Props: `tone` (`info | success | warning | destructive`), `title`, optional body, optional `onDismiss` (omit for critical signals). At most one per section.
 - `Inspector`: the one optional trailing column of a page, 320px wide and sticky from 1280px up, a `Sheet` below that. Props: `title`, `open`, `onOpenChange`. Use it for entity details, a table of contents or supporting data in Wells.
-- `RevealStage`: a `Dialog` with a full-bleed `art` stage and a centred title, for pack openings, crafting results and claimed rewards. It plays the `reveal` sound cue on open.
+- `RevealStage`: a `Dialog` with a full-bleed `art` stage and a centred title, for pack openings and claimed rewards. It plays the `reveal` sound cue on open.
 - `FlagWatermark` (`~/components/ui/facet`) is identity art for entity pages and heroes that have not moved to `EntityHeader` yet. Do not add it elsewhere.
 
 ### Actions and data

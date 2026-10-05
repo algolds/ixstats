@@ -4,8 +4,8 @@ description: Cosmetics and account upgrades in the Vault Shop, what each one doe
 badge: Vault, Cards & Rewards
 prevHref: /help/vault/card-packs
 prevLabel: Card Packs
-nextHref: /help/vault/crafting
-nextLabel: Crafting Cards
+nextHref: /help/vault/trading
+nextLabel: Auctions & Trading
 ---
 
 ## What the shop sells

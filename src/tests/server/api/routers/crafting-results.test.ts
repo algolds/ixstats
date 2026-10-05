@@ -3,6 +3,8 @@
  * card, criteria recipes checked only the material count, `successRate` was rolled as 0-100
  * against a 0-1 schema, and ownership ids were built from user + card + Date.now().
  */
+// Crafting is retired (./_retired refuses every call); these tests cover the logic kept for its return.
+jest.mock("~/server/api/routers/crafting/_retired", () => ({ assertCraftingEnabled: jest.fn() }));
 jest.mock("~/lib/cards/season", () => ({ getCurrentIxCardSeason: jest.fn().mockResolvedValue(1) }));
 jest.mock("~/lib/cards/xp-utils", () => ({ grantCardXp: jest.fn() }));
 

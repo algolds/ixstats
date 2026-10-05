@@ -2,6 +2,9 @@
  * Crafting Recipes Seed Data
  * Sample recipes for card fusion and evolution
  * Phase 3: Crafting System
+ *
+ * Crafting is retired for now (2026-10-05): `db:seed` no longer runs this file and the crafting
+ * router refuses every call. It is kept for when crafting returns.
  */
 
 import { PrismaClient } from "@prisma/client";

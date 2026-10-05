@@ -156,7 +156,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Glow**       | `text-cyan-400`                                                                                                                               |
 | **PWA**        | `IxCards - Trading Card Game` manifest with 8 icon sizes, 3 shortcuts                                                                         |
 | **Prisma**     | `cards.prisma` (MyVault, Card, VaultTransaction, CardValueHistory, etc.)                                                                      |
-| **Key routes** | `/vault/{cards,collections,crafting,create,import,inventory,lore-gallery,lore-generator,market,marketplace,ns-deck,ns-library,packs,trading}` |
+| **Key routes** | `/vault/{cards,collections,create,import,inventory,lore-gallery,lore-generator,market,marketplace,ns-deck,ns-library,packs,trading}` |
 
 #### Sub-systems
 
@@ -164,7 +164,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
 | **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/economy/budget-vault-calculator.ts`)       |
-| **Card Crafting**    | Card creation/combination with recipes. Prisma: `CraftingRecipe`, `CraftingHistory`. tRPC: `crafting/`. |
+| **Card Crafting**    | Retired for now (2026-10-05); every call refuses. Prisma: `CraftingRecipe`, `CraftingHistory` (kept). tRPC: `crafting/`. |
 | **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
 | **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
 | **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs/`. 🎁 emoji.                                        |

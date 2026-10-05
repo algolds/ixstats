@@ -17,6 +17,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | 🔒 **Premium** | Live, gated to premium accounts |
 | 🧪 **Labs** | Experimental; reachable under `/labs/<tool>` or a standalone route (there is no `/labs` index page) |
 | ⛔ **Not built** | Designed or documented only |
+| 💤 **Retired** | Switched off on purpose; data kept, every call refuses |
 
 ---
 
@@ -76,7 +77,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are not auto-minted; the `card-values` job (every 6 h, off by default) finds no NATION card with a `countryId`, so it does no real work |
 | Pack store & opening | IxVault v2 | `/vault/marketplace?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
 | Marketplace (auctions) & trading | IxVault v2 | `/vault/marketplace`, `/vault/trading` | `card-market/`, `trading/` | 🟡 Partial | Escrow-locked, but settlement (auction completion, trade expiry) runs only through crons that are off unless listed in `CRON_ENABLED_JOBS` |
-| Crafting | — | `/vault/crafting` (in the Vault sidebar group) | `crafting/` | 🟡 Partial | Now uses ownership IDs and the vault level; success-rate units and level pacing still need a design decision |
+| Crafting | — | `/vault/crafting` (retired notice only) | `crafting/` | 💤 Retired | Deprecated by the owner on 2026-10-05: every `crafting.*` call refuses, the workbench and its nav entries are gone; schema and rows stay until the schema-drop decision |
 | NationStates import | — | `/vault/import`, `/vault/ns-deck` | `ns-import/` | ✅ Live | Dump sync is admin-triggered |
 | Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Account-level achievements work without a country; background evaluation via event hooks and the `achievements-evaluate` cron. Ribbons are derived from unlocks and shown on the passport and country pages |
 | Premium tiers | — | — | `premiumProcedure`, `PremiumPreviewFrame` | 🟡 Partial | Only Defense and 10 security procedures are gated; no payments |

@@ -18,7 +18,6 @@ import {
   Shield,
   MultiplePages,
   Shop,
-  Hammer,
   Map,
   Trophy,
   Medal,
@@ -166,14 +165,6 @@ export const CORE_COMMANDS: CommandEntry[] = [
     category: "Vault",
     description: "Buy, sell and bid on cards with credits",
     keywords: ["market", "auction", "trade", "buy", "sell", "credits", "bids"],
-  },
-  {
-    name: "Card crafting",
-    path: "/vault/crafting",
-    icon: Hammer,
-    category: "Vault",
-    description: "Combine duplicate cards into a higher-tier card",
-    keywords: ["craft", "forge", "combine", "upgrade", "alchemy", "synthesis"],
   },
   {
     name: "Lore card gallery",

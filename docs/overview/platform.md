@@ -93,7 +93,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 ### App Router (`src/app`)
 
-**IxVault (Integrated Product):** `/vault` — cards, collections, crafting, trading, marketplace, packs, lore cards, NS import.
+**IxVault (Integrated Product):** `/vault` — cards, collections, trading, marketplace, packs, lore cards, NS import.
 
 **MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`, `/mycountry/builder`.
 

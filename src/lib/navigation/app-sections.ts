@@ -47,7 +47,6 @@ import {
   Gift,
   Globe,
   Group,
-  Hammer,
   HelpCircle,
   HomeSimple,
   Journal,
@@ -326,7 +325,6 @@ export const APPS: readonly AppDefinition[] = [
         // /vault/packs redirects into the marketplace store.
         match: ["/vault/market", "/vault/trading", "/vault/packs"],
       },
-      { id: "crafting", label: "Crafting", href: "/vault/crafting", icon: Hammer },
       { id: "import", label: "Import", href: "/vault/import", icon: Download },
     ],
   },

@@ -25,7 +25,6 @@ export interface VaultConfig {
   isTradingEnabled: boolean;
   isAuctionsEnabled: boolean;
   isStoreEnabled: boolean;
-  isCraftingEnabled: boolean;
   isPacksEnabled: boolean;
   isMaintenanceMode: boolean;
   exemptStaffFromLimit: boolean;
@@ -41,7 +40,6 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   isTradingEnabled: true,
   isAuctionsEnabled: true,
   isStoreEnabled: true,
-  isCraftingEnabled: true,
   isPacksEnabled: true,
   isMaintenanceMode: false,
   exemptStaffFromLimit: true,
@@ -57,7 +55,6 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   isTradingEnabled: "vault_isTradingEnabled",
   isAuctionsEnabled: "vault_isAuctionsEnabled",
   isStoreEnabled: "vault_isStoreEnabled",
-  isCraftingEnabled: "vault_isCraftingEnabled",
   isPacksEnabled: "vault_isPacksEnabled",
   isMaintenanceMode: "vault_isMaintenanceMode",
   exemptStaffFromLimit: "vault_exemptStaffFromLimit",
@@ -140,10 +137,6 @@ export async function getVaultConfig(db: {
         m.vault_isStoreEnabled !== undefined
           ? m.vault_isStoreEnabled === "true"
           : VAULT_CONFIG_DEFAULTS.isStoreEnabled,
-      isCraftingEnabled:
-        m.vault_isCraftingEnabled !== undefined
-          ? m.vault_isCraftingEnabled === "true"
-          : VAULT_CONFIG_DEFAULTS.isCraftingEnabled,
       isPacksEnabled:
         m.vault_isPacksEnabled !== undefined
           ? m.vault_isPacksEnabled === "true"

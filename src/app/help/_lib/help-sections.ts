@@ -446,13 +446,6 @@ export const helpSections: HelpSection[] = [
         tags: ["shop", "store", "cosmetics", "upgrades", "card capacity", "license"],
       },
       {
-        id: "crafting",
-        title: "Crafting Cards",
-        description: "Fusion and Evolution recipes that turn your cards into a rarer card.",
-        path: "/help/vault/crafting",
-        tags: ["crafting", "fusion", "evolution", "recipes", "cards"],
-      },
-      {
         id: "trading",
         title: "Auctions & Trading",
         description: "Auction cards, bid, buy outright, and trade directly with players.",

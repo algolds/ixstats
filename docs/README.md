@@ -80,7 +80,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
 | **Vault hub** | [systems/myvault.md](systems/myvault.md) | Dashboard, Cards, Marketplace, Import; admin toggles | ✅ Live |
-| **Cards & packs** | [systems/cards.md](systems/cards.md) | 5 card types, rarity, 20 seeded packs, crafting, junking | 🟡 Partial (pack guarantees; crafting partly fixed) |
+| **Cards & packs** | [systems/cards.md](systems/cards.md) | 5 card types, rarity, 20 seeded packs, junking (crafting retired) | 🟡 Partial (pack guarantees) |
 | **IxCredits** | [systems/ixcredits.md](systems/ixcredits.md) | Ledger, passive income, daily streak, bonuses, fees | ✅ Live |
 | **Achievements** | [systems/achievements.md](systems/achievements.md) | Achievements, leaderboards, derived ribbons | ✅ Live (event hooks and the `achievements-evaluate` cron) |
 | **NationStates bridge** | [systems/ns-integration.md](systems/ns-integration.md) | Deck import, verification, dump sync, image proxy, takedowns | ✅ Live |

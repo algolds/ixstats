@@ -41,7 +41,7 @@ P2 when capacity allows.
    another, or loses data comes first, however small.
 2. **Nothing on screen may lie.** A control that does nothing, a number that's made up, or a setting that isn't enforced
    either gets wired up or gets hidden. Don't leave it and add more.
-3. **Finish before starting.** Partly built loops (politics, defense, crafting, ThinkTanks) come before new pillars.
+3. **Finish before starting.** Partly built loops (politics, defense, ThinkTanks) come before new pillars.
 4. **Restore with a caller.** When a plan-312 deletion is restored, the UI that calls it lands in the same PR, so the zero-caller
    census doesn't delete it again.
 5. **Decide, then build or drop.** Dead schema and half-built systems wait on an owner decision
@@ -150,7 +150,7 @@ half-built features players can already see, and remove every fabricated number.
 | ✅ **Done:** pending invites (#48), the diplomacy Inbox (#49), and NPC targets answer at invite time from their personality's alliance prediction (2026-10-05) | MC-10 | S–M | — |
 | ✅ **Done (2026-10-05):** `diplomatic-drift` completes exchange missions when the exchange ends (cancels them with it); embassy details show elapsed-time progress | MC-11 | S | — |
 | ✅ **Done (#49):** the `stat-progression` job persists current stats and one `HistoricalDataPoint` per IxTime month; off until enabled | MC-7 | M | M1 jobs |
-| Crafting end to end. **Mostly done:** ownership IDs (#48); `resultCardId` granted, criteria validated, `successRate` 0–1, seed fixed (2026-10-05). Left: the workbench sends card IDs where crafting expects ownership IDs; the crafting seed is not in `db:seed`; MYTHIC recipe (D6) | VT-14, PF§2 | M | Decision D6 (rarity enum) |
+| 💤 **Deprecated (2026-10-05):** crafting is retired for now. Every `crafting.*` call refuses, the workbench, nav, Halo and help entries and the admin switch are gone, and `db:seed` skips the crafting seed; the schema and rows stay until the schema-drop decision | VT-14, PF§2 | — | — |
 | ✅ **Done:** packs, junk payouts and lore requests go through the ledger (VT-4, VT-5, #48); the earning kill switch covers EARN_BONUS and EARN_CARDS (VT-23, 2026-10-05; REFUND stays allowed) | VT-4, VT-5, VT-23 | M | M0 |
 | ✅ **Done (2026-10-05):** `guaranteedRarity` and `themeFilter` enforced, SPECIAL and crafted cards excluded, empty tiers fall back, typed `PackError`s | VT-18, PF§3 | S–M | — |
 | ✅ **Done (2026-10-05):** the 11 achievement cards are defined in `src/lib/achievements/card-rewards.ts`; the seed upserts them, back-grants earlier unlocks and runs in `db:seed` (production: `bun prisma/seeds/achievement-cards.ts`) | VT-17 | S | — |
@@ -279,7 +279,7 @@ the spine.
 | Cosmetics visible to other players (a public equipped-cosmetics query) | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
 | Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
-| Crafting extensions (catalysts, discovery, guilds, bulk) | PF§4 | L | M2 crafting |
+| 💤 Crafting extensions (catalysts, discovery, guilds, bulk): deprecated with crafting (2026-10-05) | PF§4 | — | — |
 
 ---
 
@@ -351,7 +351,7 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D3 | Where WikiOS images live | (a) MediaWiki keeps hosting; (b) WikiOS stores them natively (Stage 3 direction) | (b), if Stage 3 cutover is still the plan | WK-5, Stage 3 |
 | D4 | Premium & payments | (a) build checkout; (b) keep admin-granted premium, drop the pricing copy | (b) until the core loops are solid | M5 |
 | D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | (b) | Schema drop, M5 |
-| D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Crafting fix |
+| D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Moot: crafting deprecated 2026-10-05 (the MYTHIC recipe and "failed rolls consume materials" no longer apply) |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |
 | D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | Approve after M0 backups | Code health |
@@ -384,7 +384,6 @@ flowchart LR
     MEET[Meeting outcomes]
     DEF[Defense authoring MC-3/4]
     HIST[Stat history MC-7]
-    CRAFT[Crafting + ledger]
     WIKI[Edit integrity + protection]
     TT[ThinkTanks docs/chat/invites]
     TRUST[Fake-data removal]
@@ -421,5 +420,4 @@ flowchart LR
   GUARD --> FOUND
   BUILD --> FOUND
   ACH --> RIB
-  CRAFT --> PREM
 ```

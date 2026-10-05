@@ -98,10 +98,14 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | VT-12 | UNFINISHED | Only the buyer sees their own cosmetics (no public equipped-cosmetics query) | `hooks/useActiveCosmetics.ts` | M |
-| VT-14 | BUG | Crafting. Left: the MYTHIC recipe (D6). The workbench sends ownership IDs and shows one slot per card a recipe consumes, and `db:seed` runs the crafting seed (2026-10-05) | `crafting/recipes.ts` | S |
 | VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
+
+**Crafting is deprecated (owner, 2026-10-05).** Every `crafting.*` call refuses and the workbench, its nav entries and
+admin switch are gone, so VT-14 (crafting fixes), its PF§2 row and the PF§4 crafting extensions are moot, as are
+decision D6 (the MYTHIC recipe) and "failed crafting rolls consume materials". `CraftingRecipe` / `CraftingHistory`
+stay until the schema-drop decision ([§5](#5-dead-schema)).
 
 ### Social, Halo & Labs (SL)
 
@@ -139,7 +143,6 @@ See §1 above (password rotation, CSP).
 
 | Item | System | Detail |
 |---|---|---|
-| Crafting | Vault | See VT-14 |
 | Vexel attach-to-country | Labs › Vexel | Attach now refuses a design with no image instead of blanking the coat of arms; no PNG render exists, so attach always refuses ([vexel.md](../systems/vexel.md)) |
 | `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads on the server outside tests and read-only mode, including in scripts |
 | Auctions filter offers "Mythic" | Vault | Not a `CardRarity` value (`VaultAuctionsTab.tsx:225`) |
@@ -225,7 +228,6 @@ See §1 above (password rotation, CSP).
 - Ribbons: Ribbons tab and community ribbons ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
 - Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
 - Vault reorder (Lore Gallery primary, category filters); category-themed packs; seasons
-- Crafting extensions: catalysts, recipe discovery, guilds, bulk crafting, achievements, history/stats/admin endpoints
 - Real-time card updates over WebSocket
 - Premium: payments/checkout (D4), tiered rate limits, export quotas, history limits, ThinkPages Pro tiers ([premium-features.md](../reference/premium-features.md))
 
@@ -269,7 +271,7 @@ See §1 above (password rotation, CSP).
 
 ### PF§7 Documentation gaps
 
-- **Help center:** remove the "Not available yet" notes as features land ([help.md](../systems/help.md#known-gaps)). Every shipped system now has an article (Lorewards, ribbons and showcase, crafting, shop items and the activity feed added 2026-10-05).
+- **Help center:** remove the "Not available yet" notes as features land ([help.md](../systems/help.md#known-gaps)). Every shipped system now has an article (Lorewards, ribbons and showcase, shop items and the activity feed added 2026-10-05); the crafting article was removed when crafting was deprecated.
 - **Specs to retire once implemented and confirmed:** the realms foundation, realms Eurth and route travel-time specs; [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md), [myleague-lore-integration](../systems/myleague-lore-integration.md) (mostly obsolete); [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) after the 1.4 release. Move them to [docs/history/](../history/README.md).
 - **Trim:** [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches); [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance).
 - **Phase 4 follow-ups** ([action plan](ACTION_PLAN_2026-10-05.md#phase-4--consolidate-the-documentation-set)): one MyLeague system doc; Onoma and Stash subfolders; add doc updates to the PR checklist.
@@ -298,5 +300,6 @@ From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no acc
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
 them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop models that defense (MC-3), crisis events,
-procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. The full list is in the
+procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. `CraftingRecipe` and `CraftingHistory` join the
+list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
