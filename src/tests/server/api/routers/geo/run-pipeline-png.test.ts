@@ -6,10 +6,14 @@ jest.mock("~/lib/maps/map-pipeline", () => ({
   runMapPipeline: jest.fn(),
   validatePipelineResult: jest.fn(() => ({ valid: true, errors: [] })),
 }));
+jest.mock("~/lib/maps/adjacency", () => ({
+  rebuildAdjacency: jest.fn().mockResolvedValue({ features: 0, pairs: 0 }),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorProceduralRouter } from "~/server/api/routers/geo/editor/procedural";
 import { runMapPipeline } from "~/lib/maps/map-pipeline";
+import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { MAX_PNG_BASE64_LENGTH, PngDecodeError } from "~/lib/maps/png-realm-map";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -251,6 +255,75 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
       expect(typeof c.create.featureId).toBe("string");
       expect(c.where.realmId_layerType_featureId.featureId).toBe(c.create.featureId);
     }
+  });
+});
+
+describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
+  const adjacencyMock = rebuildAdjacency as jest.Mock;
+  const square = {
+    type: "Polygon",
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 0],
+      ],
+    ],
+  };
+  const layer = {
+    type: "FeatureCollection",
+    features: [{ type: "Feature", id: "Aurelia", geometry: square, properties: {} }],
+  };
+  function importInto(db: unknown, layers: Record<string, unknown>) {
+    return createCallerFactory(geoEditorProceduralRouter)(
+      createMockRouterContext({
+        db,
+        auth: { userId: "admin_1" },
+        user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+      }) as never
+    ).importPipelineResult({ realmId: "r_eurth", layers });
+  }
+  function importDb() {
+    const db = {
+      realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
+      mapLayer: { updateMany: jest.fn(), upsert: jest.fn().mockResolvedValue({}) },
+      sharedVertex: { deleteMany: jest.fn(), createMany: jest.fn() },
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(db)),
+    };
+    return db;
+  }
+  beforeEach(() => adjacencyMock.mockClear());
+
+  it("rebuilds the imported realm's adjacency after its political regions are stored", async () => {
+    const db = importDb();
+    await expect(importInto(db, { political: layer })).resolves.toMatchObject({
+      imported: 1,
+      adjacencyBuilt: true,
+    });
+    expect(adjacencyMock).toHaveBeenCalledWith(db, "r_eurth");
+    expect(db.mapLayer.upsert.mock.invocationCallOrder[0]).toBeLessThan(
+      adjacencyMock.mock.invocationCallOrder[0]!
+    );
+  });
+
+  it("a failed or skipped rebuild does not fail the import, and says adjacency was not built", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    adjacencyMock.mockRejectedValueOnce(new Error("no postgis"));
+    await expect(importInto(importDb(), { political: layer })).resolves.toMatchObject({
+      imported: 1,
+      adjacencyBuilt: false,
+    });
+    adjacencyMock.mockResolvedValueOnce({ features: 0, pairs: 0, skipped: true });
+    await expect(importInto(importDb(), { political: layer })).resolves.toMatchObject({
+      adjacencyBuilt: false,
+    });
+    errorSpy.mockRestore();
+  });
+
+  it("an import without political regions leaves adjacency alone", async () => {
+    await importInto(importDb(), { rivers: layer });
+    expect(adjacencyMock).not.toHaveBeenCalled();
   });
 });
 

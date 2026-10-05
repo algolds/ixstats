@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 
 const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
 
@@ -114,17 +113,11 @@ export const ixnayidCoreRouter = createTRPCRouter({
     };
   }),
 
-  // Lookups preview an account before linking it.
+  // A lookup previews an account before linking it.
   lookupForumUser: protectedProcedure
     .input(z.object({ username: z.string().min(1).max(100) }))
     .query(async ({ input }) => {
       const { lookupForumUser } = await import("~/server/modules/forum");
       return lookupForumUser(input.username);
-    }),
-
-  lookupWikiUser: protectedProcedure
-    .input(z.object({ username: z.string().min(1).max(100) }))
-    .query(async ({ input }) => {
-      return lookupWikiUser(input.username);
     }),
 });
