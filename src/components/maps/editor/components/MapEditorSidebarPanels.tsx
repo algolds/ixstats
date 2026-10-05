@@ -20,6 +20,7 @@ import { PropertiesPanelContent } from "./PropertiesPanelContent";
 import { HistoryPanel } from "./HistoryPanel";
 import { EditQueuePanel } from "../panels/EditQueuePanel";
 import { WikiScannerPanel } from "../panels/WikiScannerPanel";
+import { StorylinesPanel } from "../panels/StorylinesPanel";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
 import type { useMapEditorOverlayState } from "../hooks/useMapEditorOverlayState";
 import type { LayerStateRecord } from "../types/editor-state";
@@ -231,6 +232,18 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
         effectiveActiveTab === "wiki" ? (
           <WikiScannerPanel
             scanner={state.wikiScanner}
+            onFocusFeature={(id) => {
+              const feat = editor.allFeatures.find((f) => f.id === id);
+              if (feat) state.handleSelectFeature?.(feat);
+            }}
+          />
+        ) : undefined
+      }
+      storiesContent={
+        effectiveActiveTab === "stories" && state.activeCountryId ? (
+          <StorylinesPanel
+            countryId={state.activeCountryId}
+            features={editor.allFeatures}
             onFocusFeature={(id) => {
               const feat = editor.allFeatures.find((f) => f.id === id);
               if (feat) state.handleSelectFeature?.(feat);

@@ -46,7 +46,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | Interactive map | IxWorld v2 | `/maps` (`?realm=`) | `geo/core/`, `geo/sovereignty.ts`, `countryGeo.ts` | ✅ Live | MapLibre 6 globe; realm-scoped layers |
-| Map editor | IxWorld v2 | in place on `/maps`; world editor at `/admin/maps/editor` | `geo/editor/`, `geo/admin/` | 🟡 Partial | Border/coast/river snapping and history ship; the 2026-09-11 inspector spec is only partly built; no cross-country gap/overlap validation |
+| Map editor | IxWorld v2 | in place on `/maps`; world editor at `/admin/maps/editor` | `geo/editor/`, `geo/admin/` | 🟡 Partial | Border/coast/river snapping and history ship; the Stories tab creates storylines (AT-14); the 2026-09-11 inspector spec is only partly built; no cross-country gap/overlap validation |
 | Map pipeline (SVG/PNG/procedural) | Atlas v5 | `/labs/map-pipeline`, admin wizard | `geo/editor/procedural.ts`, `src/lib/maps/` | 🟡 Partial | SVG and PNG realm maps (colour → nation mapping) work. The procedural import is not in the wizard and produces no `Country`, `City` or `Subdivision` rows |
 | Worldgen (UPG v2) | Atlas v5 | `/labs/map-pipeline` | `src/lib/worldgen/v2/` | 🧪 Labs | Labs-only and not persisted; not connected to realm generation. Runs synchronously (3-28 s) on the main Node process |
 | Routes & travel time | — | `/maps` | `transport/`, `src/lib/economy/travel-time.ts` | ✅ Live | Sea routes use currents and wind; directive-driven network speeds not built |

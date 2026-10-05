@@ -10,6 +10,7 @@ import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
+import { assertStorylineInCountry } from "./storylines";
 
 export const geoFeaturesStoryPinsRouter = createTRPCRouter({
   createStoryPin: standardMutationCountryOwnerProcedure
@@ -57,6 +58,10 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
         "Story pin"
       );
       await checkNameUniqueness(ctx.db as any, input.countryId, input.title, "storyPin");
+      // A pin may only join a storyline of its own country.
+      if (input.storylineId) {
+        await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      }
 
       const pin = await ctx.db.storyPin.create({
         data: {
@@ -160,6 +165,9 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           input.coordinates[1],
           "Story pin"
         );
+      }
+      if (input.storylineId) {
+        await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
       }
       if (input.title) {
         await checkNameUniqueness(

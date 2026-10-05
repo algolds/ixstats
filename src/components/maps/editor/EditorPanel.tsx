@@ -15,6 +15,7 @@ import {
   ViewGrid as Layout,
   ClockRotateRight as History,
   MailIn as Inbox,
+  Bookmark,
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Badge } from "~/components/ui/badge";
@@ -34,7 +35,15 @@ const PANEL_STORAGE_KEY = "ixworld-editor-panel-size";
 type Placement = "left" | "right" | "bottom";
 
 export type TabId =
-  "properties" | "layers" | "features" | "wiki" | "linkages" | "sovereignty" | "history" | "queue";
+  | "properties"
+  | "layers"
+  | "features"
+  | "wiki"
+  | "stories"
+  | "linkages"
+  | "sovereignty"
+  | "history"
+  | "queue";
 
 const TAB_DEFS: Record<
   TabId,
@@ -46,6 +55,7 @@ const TAB_DEFS: Record<
   linkages: { label: "Links", Icon: LinkIcon },
   sovereignty: { label: "Sovereign", Icon: Globe },
   wiki: { label: "Wiki", Icon: BookOpen },
+  stories: { label: "Stories", Icon: Bookmark },
   history: { label: "History", Icon: History },
   queue: { label: "Queue", Icon: Inbox },
 };
@@ -69,6 +79,8 @@ interface EditorPanelProps {
   featureListContent?: React.ReactNode;
   layersContent?: React.ReactNode;
   wikiContent?: React.ReactNode;
+  /** Storylines (country editor). */
+  storiesContent?: React.ReactNode;
   linkagesContent?: React.ReactNode;
   sovereigntyContent?: React.ReactNode;
   historyContent?: React.ReactNode;
@@ -188,6 +200,7 @@ function TabBody({
     | "featureListContent"
     | "layersContent"
     | "wikiContent"
+    | "storiesContent"
     | "linkagesContent"
     | "sovereigntyContent"
     | "historyContent"
@@ -214,6 +227,8 @@ function TabBody({
       return props.sovereigntyContent && <div className={scroll}>{props.sovereigntyContent}</div>;
     case "history":
       return props.historyContent && <div className={scroll}>{props.historyContent}</div>;
+    case "stories":
+      return props.storiesContent && <div className={scroll}>{props.storiesContent}</div>;
     case "layers":
       return <div className={flexScroll}>{props.layersContent ?? <LayerPanelSkeleton />}</div>;
     case "features":
@@ -434,11 +449,7 @@ export function EditorPanel(props: EditorPanelProps) {
     return (
       <div className="relative flex h-full">
         {!collapsed && (
-          <FacetMaterial
-            layer="chrome"
-            className="flex flex-col rounded-none"
-            style={frameStyle}
-          >
+          <FacetMaterial layer="chrome" className="flex flex-col rounded-none" style={frameStyle}>
             {resizeHandle}
             {importWizardContent}
           </FacetMaterial>
