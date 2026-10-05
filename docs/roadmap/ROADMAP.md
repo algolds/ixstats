@@ -289,9 +289,9 @@ the spine.
 - ✅ **Activity producers (SL-7, 2026-10-05):** every remaining producer is called where its event happens (embassies,
   public alliances, laws passed, economic tier milestones, achievements, nations founded or claimed); producers with
   no real event were deleted.
-- **Feed producers through the event spine:** engagement counters (likes, comments, views), a real trending ranking, the
-  `trending` flag set (SL-7, SL-8, SL-9). *Needs M4 spine.* **Partial (#49):** the `thinkpages-trending` job scores
-  posts with engagement decay and reconciles the like/reply/repost counters; persona follows have real counts.
+- ✅ **Engagement and trending (SL-8, SL-9):** the `thinkpages-trending` job scores posts with engagement decay over
+  reactions, replies, reposts and daily distinct views, sets the `trending` flag and reconciles the like/reply/repost
+  counters (#49); post views are counted once per viewer per day (2026-10-05); persona follows have real counts.
 - **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
   registry to hooks that fire (SL-6).
 - **Privacy:** full enforcement of the remaining toggles (SL-4). *Needs M0 #7.*

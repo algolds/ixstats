@@ -67,6 +67,7 @@ model ThinkpagesPost {
   pollId           String?
   poll             Poll?             @relation("PostPolls", fields: [pollId], references: [id], onDelete: SetNull)
   discordMirror    ThinkpagesDiscordMirror? @relation("PostDiscordMirror")
+  viewDays         ThinkpagesPostViewDay[]
 
   @@index([accountId])
   @@index([ixTimeTimestamp])
@@ -77,6 +78,19 @@ model ThinkpagesPost {
   @@index([parentPostId])
   @@index([repostOfId])
   @@index([pollId])
+}
+
+/// Distinct signed-in viewers of a post per UTC day (SL-8). Views are deduplicated per viewer per
+/// post per day and flushed here in batches by src/lib/thinkpages/post-views.ts; the trending job
+/// scores them with the other engagement.
+model ThinkpagesPostViewDay {
+  postId String
+  day    DateTime       @db.Date
+  views  Int            @default(0)
+  post   ThinkpagesPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([postId, day])
+  @@index([day])
 }
 
 // Singleton config controlling which ThinkPages feed posts are mirrored to the

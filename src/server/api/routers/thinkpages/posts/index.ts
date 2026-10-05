@@ -9,16 +9,19 @@
  *  - reactions: add / remove / fetch post reactions (incl. Discord sync)
  *  - bookmarks: per-user bookmark list, lookup, and toggle
  *  - flags:     post flagging (flag / unflag / list / lookup) for moderation
+ *  - views:     post view counting (SL-8)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { thinkpagesPostsPostsRouter } from "./posts";
 import { thinkpagesPostsReactionsRouter } from "./reactions";
 import { thinkpagesPostsBookmarksRouter } from "./bookmarks";
 import { thinkpagesPostsFlagsRouter } from "./flags";
+import { thinkpagesPostsViewsRouter } from "./views";
 
 export const thinkpagesPostsRouter = mergeRouters(
   thinkpagesPostsPostsRouter,
   thinkpagesPostsReactionsRouter,
   thinkpagesPostsBookmarksRouter,
-  thinkpagesPostsFlagsRouter
+  thinkpagesPostsFlagsRouter,
+  thinkpagesPostsViewsRouter
 );

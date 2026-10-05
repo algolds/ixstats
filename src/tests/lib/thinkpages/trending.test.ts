@@ -65,6 +65,16 @@ describe("scoreEngagement", () => {
     expect(scores.get("p")!.weighted).toBe(6);
   });
 
+  it("weighs a day's distinct views per viewer (SL-8)", () => {
+    const scores = scoreEngagement(
+      [{ postId: "p", kind: "view", actorId: "views:2026-09-30", at: NOW, count: 12 }],
+      new Map([["p", "author"]]),
+      NOW
+    );
+    expect(scores.get("p")!.score).toBeCloseTo(12 * TRENDING_CONFIG.weights.view);
+    expect(scores.get("p")!.score).toBeCloseTo(TRENDING_CONFIG.minPostScore);
+  });
+
   it("ignores the author's own engagement and counts each user once per kind", () => {
     const scores = scoreEngagement(
       [
@@ -251,6 +261,42 @@ describe("runThinkPagesTrending", () => {
     expect(db.trendingTopic.updateMany).toHaveBeenCalledWith({
       where: { isActive: true, hashtag: { notIn: ["Econ"] } },
       data: { isActive: false },
+    });
+  });
+
+  it("scores stored view days, so a widely read post can trend on views", async () => {
+    const db: any = createMockPrisma();
+    db.thinkpagesPost.groupBy.mockResolvedValue([]);
+    db.postReaction.groupBy.mockResolvedValue([]);
+    db.thinkpagesPostViewDay.findMany.mockResolvedValue([
+      { postId: "read", day: new Date("2026-09-30T00:00:00Z"), views: 16 },
+    ]);
+    db.thinkpagesPost.findMany.mockImplementation(async (args: any) =>
+      args?.where?.id?.in
+        ? [
+            {
+              id: "read",
+              visibility: "public",
+              postType: "original",
+              content: "essay",
+              parentPostId: null,
+              trendingScore: 0,
+              accountId: "persona",
+              account: { clerkUserId: "author" },
+            },
+          ]
+        : []
+    );
+
+    const result = await runThinkPagesTrending(db, NOW);
+
+    expect(result.trendingPosts).toBe(1);
+    expect(db.thinkpagesPostViewDay.findMany.mock.calls[0][0].where.day.gte).toEqual(
+      new Date("2026-09-27T00:00:00Z")
+    );
+    expect(db.thinkpagesPost.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["read"] } },
+      data: { trending: true },
     });
   });
 

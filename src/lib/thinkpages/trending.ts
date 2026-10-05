@@ -7,6 +7,10 @@
  * replies and reposts made by any persona owned by the post author's Clerk user are ignored,
  * and each user counts at most once per kind per post (so one person cannot reply a post into
  * trending).
+ *
+ * Views (SL-8) are distinct signed-in viewers per post per UTC day (./post-views.ts, author
+ * excluded). Each day's views arrive as one "view" event carrying a `count`, timed at midday
+ * of that day, and weigh `weights.view` per viewer.
  */
 
 export const TRENDING_CONFIG = {
@@ -14,7 +18,8 @@ export const TRENDING_CONFIG = {
   windowHours: 72,
   /** An event's weight halves every this many hours. */
   halfLifeHours: 12,
-  weights: { reaction: 1, reply: 2, repost: 3 },
+  /** A view weighs a quarter of a reaction: twelve fresh viewers score like three reactions. */
+  weights: { reaction: 1, reply: 2, repost: 3, view: 0.25 },
   /** Posts flagged `trending`. */
   maxPosts: 25,
   /** A post needs at least this score to trend (≈ three fresh reactions from other users). */
@@ -38,12 +43,14 @@ export interface EngagementEvent {
   at: Date;
   /** Clerk user id owning the persona that engaged (falls back to the persona id). */
   actorId: string;
+  /** How many engagements the event stands for (a day's views); defaults to 1. */
+  count?: number;
 }
 
 interface PostEngagement {
   /** Decayed, weighted score. */
   score: number;
-  /** Undecayed weighted engagement count (reactions + 2·replies + 3·reposts). */
+  /** Undecayed weighted engagement count (reactions + 2·replies + 3·reposts + views/4). */
   weighted: number;
 }
 
@@ -77,7 +84,7 @@ export function scoreEngagement(
 
   const scores = new Map<string, PostEngagement>();
   for (const event of latest.values()) {
-    const weight = config.weights[event.kind];
+    const weight = config.weights[event.kind] * Math.max(0, event.count ?? 1);
     const ageHours = (now.getTime() - event.at.getTime()) / HOUR_MS;
     const entry = scores.get(event.postId) ?? { score: 0, weighted: 0 };
     entry.score += weight * decayFactor(ageHours, config.halfLifeHours);

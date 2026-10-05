@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState, useRef } from "react";
+import React, { use, useEffect, useState, useRef } from "react";
 import { useUser } from "~/context/auth-context";
 import { ArrowLeft, SystemRestart as Loader2, ArrowUp } from "iconoir-react";
 import Link from "next/link";
@@ -136,6 +136,13 @@ export default function PostPage({ params }: PostPageProps) {
     isLoading,
     error,
   } = api.thinkpages.getPost.useQuery({ postId }, { enabled: !!postId });
+
+  // Count this view once per post per signed-in viewer per day (the server dedupes; SL-8).
+  const { mutate: recordView } = api.thinkpages.recordPostView.useMutation();
+  const postLoaded = Boolean(post?.id);
+  useEffect(() => {
+    if (postLoaded && user?.id) recordView({ postId });
+  }, [postLoaded, user?.id, postId, recordView]);
 
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
