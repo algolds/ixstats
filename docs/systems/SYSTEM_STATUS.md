@@ -1,7 +1,7 @@
 # IxStates System Status
 
 **Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
-**Last verified:** 2026-09-29, by a doc-by-doc audit against the code; ratings corrected 2026-09-30 from the Atlas, MyCountry, Vault/Identity, WikiOS/Onoma and Social/Core audits and updated for the fix-batch merge
+**Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit)
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
 **Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../roadmap/code-audit-2026-09-30.md)
 
@@ -15,7 +15,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | ✅ **Live** | Shipped, wired into navigation, works end to end |
 | 🟡 **Partial** | Shipped, but documented scope is missing or a loop is broken (see Notes) |
 | 🔒 **Premium** | Live, gated to premium accounts |
-| 🧪 **Labs** | Experimental; reachable under `/labs` or a standalone route |
+| 🧪 **Labs** | Experimental; reachable under `/labs/<tool>` or a standalone route (there is no `/labs` index page) |
 | ⛔ **Not built** | Designed or documented only |
 
 ---
@@ -33,10 +33,10 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Economy & fiscal policy | — | `/mycountry/economy` | `economics/`, `taxSystem/`, `src/lib/economy/`, `src/lib/government/` | 🟡 Partial | The `stat-progression` cron (off until enabled) persists the projection into stored `current*` stats and writes monthly history; tax sliders still do not feed GDP growth |
 | Politics: parties, legislature, bills, brokers | — | `/mycountry/politics` | `elections/`, `legislation.ts` | ✅ Live | First election is scheduled once a legislature and 2+ parties exist; results seat parties and bills pass through whip/legislative-vote. Needs the `elections` cron (or the owner's Count votes button) |
 | Elections | — | `/mycountry/politics` | `elections/`, `src/lib/government/election-simulation.ts` | ✅ Live | First, follow-up and snap elections are created, get candidates from active parties, and resolve (cron or Count votes). Non-elected chambers are still seated by the vote simulation |
-| Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | 🟡 Partial | Embassies, alliances, cultural exchange, stances with drift cron. Diplomacy Inbox: accept/decline FP proposals and alliance invites, withdraw, 14-day expiry, notifications. Diplomatic Standing is computed from the real record. Shared data is synthesised; embassy missions are not playable |
+| Diplomacy | — | `/mycountry/diplomacy` | `diplomacy/`, `diplomaticScenarios/` | 🟡 Partial | Embassies, alliances, cultural exchange, stances with drift cron. Diplomacy Inbox: accept/decline FP proposals and alliance invites, withdraw, 14-day expiry, notifications. Diplomatic Standing is computed from the real record. Embassy missions are not playable, and NPC targets never answer alliance invites |
 | Defense | — | `/mycountry/defense` (also serves `/mycountry/intelligence`) | `security/`, `militaryEquipment/` | 🔒 Premium | |
 | Intelligence | — | — | `intelligence/` (templates), `diplo-intel.ts` | 🟡 Partial | No standalone dashboard; the old stack was deleted in plans 312/341 |
-| Map editor section | — | `/mycountry/map-editor` | — | 🟡 Partial | Premium-gated, but the route falls through to the Executive home |
+| Map editor section | — | `/mycountry/map-editor` | `app/mycountry/map-editor/page.tsx` | 🔒 Premium | The route renders the map editor full-screen; the shell's `map-editor` section navigates there |
 | Country Builder | v4 | `/builder`, `/mycountry/editor` | `builderDraft.ts`, `countries/`, `economics/`, `customTypes.ts` | ✅ Live | 4-step wizard plus wiki import; guided/expert modes, 50-step undo in edit mode |
 | Builder companion guide | — | `/builder` | `BuilderGuideSheet.tsx` | 🟡 Partial | No diagnostics tab or subheader deep links |
 | Autosave | — | builder | `useGenericAutoSync` | 🟡 Partial | Only the Economy builder uses the engine; no navigation flush or shared sync badge |
@@ -73,10 +73,10 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | IxCredits ledger | IxVault v2 | `/vault` | `vault/`, `src/lib/vault/` | 🟡 Partial | Passive income + catch-up, daily streak, `EARN_BONUS`. Pack purchases (`SPEND_PACKS`), junk payouts (`EARN_CARDS`) and lore-card requests and refunds (`SPEND_MARKET` / `REFUND`) all go through the ledger |
-| Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are re-priced daily but not auto-minted |
+| Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are not auto-minted; the `card-values` job (every 6 h, off by default) finds no NATION card with a `countryId`, so it does no real work |
 | Pack store & opening | IxVault v2 | `/vault/marketplace?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
 | Marketplace (auctions) & trading | IxVault v2 | `/vault/marketplace`, `/vault/trading` | `card-market/`, `trading/` | 🟡 Partial | Escrow-locked, but settlement (auction completion, trade expiry) runs only through crons that are off unless listed in `CRON_ENABLED_JOBS` |
-| Crafting | — | `/vault/crafting` (unlinked) | `crafting/` | 🟡 Partial | Now uses ownership IDs and the vault level; success-rate units and level pacing still need a design decision |
+| Crafting | — | `/vault/crafting` (in the Vault sidebar group) | `crafting/` | 🟡 Partial | Now uses ownership IDs and the vault level; success-rate units and level pacing still need a design decision |
 | NationStates import | — | `/vault/import`, `/vault/ns-deck` | `ns-import/` | ✅ Live | Dump sync is admin-triggered |
 | Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Account-level achievements work without a country; background evaluation via event hooks and the `achievements-evaluate` cron. Ribbons are derived from unlocks and shown on the passport and country pages |
 | Premium tiers | — | — | `premiumProcedure`, `PremiumPreviewFrame` | 🟡 Partial | Only Defense and 10 security procedures are gated; no payments |
@@ -104,20 +104,20 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
 | IxTime | platform (grouped under Concord in docs) | platform | `src/lib/ixtime/`, `/api/ixtime/sync-from-bot` | ✅ Live | Discord bot is the source of truth; continuous across multiplier changes |
-| Crisis events | Concord v2 | — | `crisis-events.ts` | 🟡 Partial | Read-only (`getActive`, `getStatistics`); only the demo seed creates `CrisisEvent` rows. The one working event producer is the admin world-events (Storyteller) tool at `/admin/storyteller` (`admin/worldEvents.ts`), which writes `WorldEvent` and `StorytellerEffect` rows |
+| Crisis events | Concord v2 | — | `crisis-events.ts` | 🟡 Partial | Read-only (`getActive`, `getStatistics`); nothing writes `CrisisEvent` rows now that the demo seed is gone. The one working event producer is the admin world-events (Storyteller) tool at `/admin/storyteller` (`admin/worldEvents.ts`), which writes `WorldEvent` and `StorytellerEffect` rows |
 | NPC personalities | Concord v2 | `/admin/npc-personalities` | `npcPersonalities/`, `src/lib/diplomacy/npc-personality.ts` | 🟡 Partial | Traits drive cultural-exchange responses only; drift has no callers; no event fatigue |
-| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 17 jobs (incl. `db-backup`, `budget-year-rollover`); none run unless listed in `CRON_ENABLED_JOBS` |
+| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 21 jobs ([events.md](../reference/events.md#scheduled--batch-jobs)); none run unless listed in `CRON_ENABLED_JOBS`. Each run takes a lease row (`job_leases`), is recorded as a `CronRun` row and alerts Discord on failure; `/api/health` shows the last run per job |
 
 ## 🎨 Design, Halo & admin
 
 | Subsystem | Version | Routes | Code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| Facet design system | v2 | global | `src/styles/facet/`, `src/components/ui/facet*` | ✅ Live | Plan 346 cleanup partial (hex colours, blur, pulse counts in the audits) |
-| Halo overlay & command palette | v5 | global | `src/components/halo/` | ✅ Live | |
+| Facet design system | v4 | global | `src/styles/facet/`, `src/components/ui/facet*` | ✅ Live | Five layers and the sidebar shell are in; the per-app sweep is in progress ([facet-design-system.md](../reference/facet-design-system.md)) |
+| Halo overlay & command palette | v6 | global | `src/components/halo/` | ✅ Live | |
 | Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
-| Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | 🟡 Partial | 39 sections; `/admin/calculations` has no `page.tsx`; the audit log middleware persists nothing (PL-1) |
-| Help center | platform | `/help` | `src/content/help/`, `HelpExplorer.tsx` | 🟡 Partial | See [help.md](help.md) for registered vs unregistered articles |
-| Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 of ~960 procedures are limited; no `X-RateLimit-*` headers |
+| Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | The sidebar's area list is the admin navigation; `/admin/calculations` has a page; `auditLogMiddleware` persists every admin mutation and failed call to `AuditLog` (PL-1) |
+| Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 55 articles are registered (a test checks it); see [help.md](help.md) |
+| Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 non-admin procedures of 922 are limited; 243 mutations are unlimited; no `X-RateLimit-*` headers |
 
 ## 🧪 Labs
 
@@ -137,9 +137,11 @@ found several that are partly built, read-only, or broken, so each row now carri
   fixed), and
   these ops steps (besides the password rotation below): run `db:backup` and test a restore; run
   `db:mark-match-revenue-collected` right after the schema push; run `db:remap-budget-years`;
-  review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup` and
-  `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
-- **`audit:arch` (non-blocking in CI) reports 15 source files over their line ceiling** (largest:
-  `routers/wikios/templates.ts`, 1,298 lines). Split them or add them to `RELAXED_FILES`.
+  review `audit:vault-exploits` and run `audit:vault-exploits:apply`; review `audit:forum-links`; enable `db-backup`,
+  `log-retention` and `budget-year-rollover` in `CRON_ENABLED_JOBS`; set `DISCORD_GUILD_ID`. Plan: [ROADMAP M0](../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits).
+- **`audit:arch` is still non-blocking in CI, and fails.** Its baseline was rebuilt on 2026-10-05 with real line
+  counts (38 files), so the size ratchet now fires. On 2026-10-05 it reports 14 violations: 8 files over their ceiling
+  and not in the baseline (largest `routers/wikios/templates.ts`, 1,295 lines), `auction-service.ts` grown past its
+  baseline, and 5 cross-router imports. Fix them or add files to `RELAXED_FILES`, then make it blocking.
 - **Rotate the `ixstats_readonly` Postgres password** (plan 325): the old one is in git history since 2026-05-31.
   The script no longer contains it.

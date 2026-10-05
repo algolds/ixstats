@@ -195,7 +195,7 @@ masked in the admin config; sports season and simulation procedures require the 
 From the status blocks in [`docs/audits/`](../audits/):
 
 - **Git-ignored fixtures:** three checks read files CI doesn't have — `next.config.js`, `public/icons/game-icons-manifest.json` and `public/data/vector-seeds/`. They now run only where the file exists (dev machines, the server), so CI doesn't cover them; tracking the assets would restore that coverage.
-- **`audit:arch` is non-blocking in CI.** Since 2026-10-05 its baseline holds real line counts for 38 files, so growth past a recorded size fails the check; split the large files or add them to `RELAXED_FILES`, then make it blocking. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
+- **`audit:arch` is non-blocking in CI.** Since 2026-10-05 its baseline holds real line counts for 38 files, so growth past a recorded size fails the check. It reports 14 violations on 2026-10-05 (8 new files over their ceiling, `auction-service.ts` grown past its baseline, 5 cross-router imports); fix them or add files to `RELAXED_FILES`, then make it blocking. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
 - **`docs:sync` procedure count:** `extractApiInventory` reported 901 procedures against a runtime count of 958 because it missed spread and `mergeRouters` routers; it reports 922 on 2026-10-05.
 - **Service layer:** 199 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
