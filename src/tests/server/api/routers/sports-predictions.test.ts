@@ -22,7 +22,12 @@ const spend = exchangeService.spend as jest.Mock;
 function makeDb(matchOverrides: Record<string, unknown> = {}): Db {
   const db = createMockPrisma();
   db.$transaction = jest.fn((cb: (tx: Db) => unknown) => cb(db)) as never;
-  db.$queryRaw = jest.fn().mockResolvedValue([]) as never;
+  // The per-user lock must go through $executeRaw: pg_advisory_xact_lock returns void, which
+  // $queryRaw cannot deserialize (every placement failed in production).
+  db.$executeRaw = jest.fn().mockResolvedValue(1) as never;
+  db.$queryRaw = jest.fn(() => {
+    throw new Error("$queryRaw cannot deserialize the void advisory-lock result");
+  }) as never;
   db.sportMatch.findUnique.mockResolvedValue({
     id: "m1",
     seasonId: "s1",

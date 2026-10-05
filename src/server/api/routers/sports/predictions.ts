@@ -72,7 +72,7 @@ export const sportsPredictionsRouter = createTRPCRouter({
       return ctx.db.$transaction(async (tx) => {
         // Serialize this user's placements so two parallel requests can't both pass the
         // one-per-match check (or both pass the wallet balance check).
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`sport-prediction:${userId}`}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`sport-prediction:${userId}`}))`;
 
         const match = await tx.sportMatch.findUnique({
           where: { id: input.matchId },
