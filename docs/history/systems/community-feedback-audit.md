@@ -1,5 +1,7 @@
 # Community Feedback Audit & Analysis
 
+> **Retired 2026-10-05** to [docs/history/](../../README.md). Merged into [community-feedback-analysis.md](../../research/community-feedback-analysis.md#how-the-feedback-was-addressed).
+
 **Last updated:** August 2026  
 **Context:** Co-design sessions involving **Urcea**, **Keaor**, **Burg**, and **Heku**.
 

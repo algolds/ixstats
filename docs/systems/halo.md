@@ -265,7 +265,7 @@ Under clean modular boundaries:
 ## Related Documentation
 
 - [MyCountry Design & Statecraft Guide](./mycountry.md)
-- [WikiOS System Guide](./wikios.md)
+- [WikiOS System Guide](./wikios/WIKIOS.md)
 - [Forum Integration](./forum.md)
 - [Cards & Vault System](./cards.md)
 - [Facet Design System](../reference/facet-design-system.md)

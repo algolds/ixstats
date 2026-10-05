@@ -68,7 +68,7 @@ Clerk Organizations as realms.
 Both plans are complete and were merged into `rose-garden` on 2026-09-29 (`91a84f50f`), followed by the F-6
 verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-realms-foundation`,
 `.superpowers/sdd/2026-09-28-realms-eurth`) record every task and ruling. Runbook:
-[`docs/realms/eurth-onboarding.md`](../realms/eurth-onboarding.md).
+[`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md).
 
 - **All tasks complete and reviewed clean:** Phase 1 tasks 1–8; Eurth tasks E1–E8.
 - **Gates green at `1d376b33`:** typecheck server/trpc/db/ui 0/0/0/0; full Jest 322 suites / 2,921 tests
@@ -114,7 +114,7 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   target realm and refuses an unknown one, while **Quick Update** always edits IxWorld's map. The world
   editor's realm follows the map it's drawn over; the country editor always works in the realm of the
   viewer's own nation, even when opened from another realm's map (E4, E-t).
-- This runbook, `docs/realms/eurth-onboarding.md` (E7).
+- This runbook, [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md) (E7).
 
 - Image maps (decisions 10–11): the **Full Pipeline** takes a flat-colour PNG/JPEG (≤ 25 MB), detects its
   colours, lets the admin map each colour to one of the target realm's nations (existing countries and

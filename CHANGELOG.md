@@ -143,7 +143,7 @@ reads 1.4.0 until the RC2 cut.
 - **Realm maps**: PNG realm maps run through the Full Pipeline with colour → nation mapping; claimed nations take their
   map region; the map's IndexedDB cache is keyed by the realm the server resolved.
 - **Operations**: throttled `lastSeenAt`, the Phase 1 ownership backfill script (refuses `--apply` while owner
-  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/realms/eurth-onboarding.md).
+  collisions remain), an admin-set nation cap, and the [Eurth onboarding runbook](docs/systems/realms-eurth-onboarding.md).
   Spec: [realms-framework-spec.md](docs/architecture/realms-framework-spec.md).
 
 ### 🪪 Identity: Verified Wiki Accounts & Passport (Plan 188)

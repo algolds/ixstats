@@ -200,7 +200,7 @@ A nation's issues are its private inbox. Every `nationalIssues` player procedure
 ## Related Documentation
 
 - [Design Philosophy & Statecraft PRDs](./mycountry-design-philosophy-and-prds.md)
-- [Community Feedback Audit](./community-feedback-audit.md)
+- [Community feedback and how it was addressed](../research/community-feedback-analysis.md#how-the-feedback-was-addressed)
 - [Economic Calculations Guide](./calculations.md)
 - [Diplomacy System Guide](./diplomacy.md)
 - [API Reference: MyCountry & Intent Routers](../reference/api-complete.md#operations)

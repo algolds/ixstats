@@ -256,4 +256,4 @@ From the status blocks in [`docs/audits/`](../../audits/):
 - **Trim:**
   - [rate-limiting.md](../../operations/rate-limiting.md) (~1,350 lines, mostly sketches);
   - [refactoring.md](../../processes/refactoring.md) (~1,000 lines of generic guidance);
-  - the Vercel/Netlify/Docker sections of [deployment-checklist.md](../../operations/deployment-checklist.md).
+  - the Vercel/Netlify/Docker sections of [deployment-checklist.md](../operations/deployment-checklist.md).

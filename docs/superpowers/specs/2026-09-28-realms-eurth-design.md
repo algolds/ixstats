@@ -45,4 +45,4 @@ The public founding application form · the realm calendar label (`yearOffset`) 
 2. All new and touched Jest suites pass. The full `src/tests/server`, `src/tests/lib` and `src/tests/components` runs show no new failures against the base.
 3. `bun run lint` shows no new warnings in touched files, and `audit:idor` is clean.
 4. The whole-branch review is clean, or every finding is fixed or parked with a ruling.
-5. The runbook `docs/realms/eurth-onboarding.md` takes an admin from nothing to "Eurth players can claim nations at `/r/eurth`".
+5. The runbook `docs/realms/eurth-onboarding.md` (now `docs/systems/realms-eurth-onboarding.md`) takes an admin from nothing to "Eurth players can claim nations at `/r/eurth`".

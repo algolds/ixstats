@@ -197,7 +197,7 @@ pm2 logs ixstats-ws --lines 30 --nostream       # expect "[WS] ✓ ThinkPages We
 
 ## 6b. Serve Eurth (the first outside realm)
 
-Full detail and player instructions: `docs/realms/eurth-onboarding.md`. On prod:
+Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md). On prod:
 
 1. Re-run `bun scripts/realms/backfill-foundation.ts` (dry run): expect `0 to assign, 0 collisions` — anything else
    means someone linked a nation between the backfill and the deploy; resolve as in 5a.

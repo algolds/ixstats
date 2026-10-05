@@ -63,12 +63,12 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | :--- | :--- | :--- | :---: |
 | **Maps & map editor** | [systems/maps.md](systems/maps.md) · [app README](../src/app/maps/README.md) | `/maps`, `/admin/maps/editor`, pipelines, layers, overlays, geo routers | ✅ Live (inspector spec partial) |
 | **Worldgen (UPG v2)** | [src/lib/worldgen/README.md](../src/lib/worldgen/README.md) | Procedural mesh, terrain, hydrology, climate, export | ✅ Live |
-| **Realms & Eurth** | [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) · [systems/realms.md](systems/realms.md) · [realms/eurth-onboarding.md](realms/eurth-onboarding.md) | Ownership, claims, realm hubs, realm-scoped listings, `/realms` directory, realm boards; Eurth runbook | ✅ Phase 1 · 🟡 Phases 2–4 |
+| **Realms & Eurth** | [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) · [systems/realms.md](systems/realms.md) · [systems/realms-eurth-onboarding.md](systems/realms-eurth-onboarding.md) | Ownership, claims, realm hubs, realm-scoped listings, `/realms` directory, realm boards; Eurth runbook | ✅ Phase 1 · 🟡 Phases 2–4 |
 
 ### 📖 WikiOS — lore platform
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Native lore engine** | [systems/wikios.md](systems/wikios.md) · [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) | PostgreSQL store, inbound MediaWiki sync, Plate Canvas editor, `?source=` multi-wiki | ✅ Live |
+| **Native lore engine** | [systems/wikios/WIKIOS.md](systems/wikios/WIKIOS.md) (canonical; [systems/wikios.md](systems/wikios.md) is a pointer) | PostgreSQL store, inbound MediaWiki sync, Plate Canvas editor, `?source=` multi-wiki | ✅ Live |
 | **Margin** | [systems/wikios/wikios-margin-spec.md](systems/wikios/wikios-margin-spec.md) | Inline notes, markup, gutter pins | 🟡 Partial |
 | **Stash** | [systems/stash.md](systems/stash.md) · [systems/stash-style-guide.md](systems/stash-style-guide.md) | Save articles, quotes, images and threads | 🟡 Partial (no sharing) |
 | **Lore lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | Drafting → publishing → Lorewards (`/util/lorewards`) | ✅ Live |
@@ -146,7 +146,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | --- | --- |
 | [operations/local-dev-setup.md](operations/local-dev-setup.md) | Local dev environment, empty-database bootstrap (`db:bootstrap`), dev scripts |
 | [operations/deployment.md](operations/deployment.md) | Production reference: PM2 apps (web, ws, cron), env vars, health checks |
-| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Pre-flight and post-deploy procedure |
+| [operations/deployment-checklist.md](operations/deployment-checklist.md) | Retired pointer to the release guide (kept for `docs:check`) |
 | [operations/release-guide.md](operations/release-guide.md) | Release guide: pre-deploy checklist, build and deploy from `master`, verification, rollback, and this release's one-off steps |
 | [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md) | Release runbook for rose-garden (Realms schema push, backfill, Eurth) |
 | [operations/credentials.md](operations/credentials.md) | Credentials and environment variables |
@@ -197,8 +197,7 @@ into [roadmap/backlog.md](roadmap/backlog.md).
 
 | Document | Topic |
 | --- | --- |
-| [research/community-feedback-analysis.md](research/community-feedback-analysis.md) | Player feedback analysis behind the Statecraft loop |
-| [systems/community-feedback-audit.md](systems/community-feedback-audit.md) | How the feedback was addressed in code |
+| [research/community-feedback-analysis.md](research/community-feedback-analysis.md) | Player feedback behind the Statecraft loop, and how it was addressed in code |
 | [research/sports-llm-commentary.md](research/sports-llm-commentary.md) | LLM match commentary (implemented) |
 | [research/chatgpt-logs.md](research/chatgpt-logs.md) | Historical architecture transcript |
 | [research/community-logs.md](research/community-logs.md) | Community discussion and playtest logs |

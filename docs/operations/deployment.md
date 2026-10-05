@@ -6,7 +6,7 @@ IxStats ships as a Next.js app. On the production VPS the web app runs as plain 
 
 Vercel is not a deployment target. The repository is connected to a Vercel project, but `vercel.json` sets `git.deploymentEnabled: false` so pushes and pull requests no longer trigger Vercel builds (they had all failed). Remove that setting, or disconnect the project in Vercel, to change this.
 
-To release, follow the [release guide](release-guide.md) (it also covers [rollback](release-guide.md#rollback)). The step-by-step reference is [`deployment-checklist.md`](deployment-checklist.md); the September release details are in [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md). There is no staging environment.
+To release, follow the [release guide](release-guide.md) (it also covers [rollback](release-guide.md#rollback)). The September release details are in [`deploy-rose-garden-2026-09.md`](deploy-rose-garden-2026-09.md). There is no staging environment.
 
 ## Build Pipeline
 1. Install dependencies: `bun install`
