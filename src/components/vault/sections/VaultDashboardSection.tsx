@@ -15,9 +15,12 @@ interface VaultDashboardSectionProps {
   onNavigate?: (section: any) => void;
 }
 
+const figure = (loading: boolean, failed: boolean, value: number): number | null | undefined =>
+  failed ? null : loading ? undefined : value;
+
 export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps) {
   const { user } = useUser();
-  const { stats, loading: statsLoading } = useVaultStats();
+  const { stats, loading: statsLoading, error: statsError } = useVaultStats();
   const { activities, loading: activitiesLoading } = useRecentActivity() as {
     activities: ActivityEntry[] | undefined;
     loading: boolean;
@@ -47,10 +50,11 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
     { enabled: !!user }
   );
 
-  const { data: balanceData, isLoading: balanceLoading } = api.vault.getBalance.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const {
+    data: balanceData,
+    isLoading: balanceLoading,
+    isError: balanceError,
+  } = api.vault.getBalance.useQuery(undefined, { enabled: !!user?.id });
 
   const { data: levelData } = api.vault.getVaultLevel.useQuery(undefined, {
     enabled: !!user?.id,
@@ -139,12 +143,15 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
 
   const loading = statsLoading || activitiesLoading || earningsLoading;
 
-  const collectionValuation = statsLoading ? undefined : (stats?.deckValue ?? 0);
-  const liquidCredits = balanceData?.credits;
+  // undefined: still loading (skeleton); null: the query failed (a dash).
+  const collectionValuation = figure(statsLoading, statsError, stats?.deckValue ?? 0);
+  const liquidCredits = figure(balanceLoading, balanceError, balanceData?.credits ?? 0);
   const netWorth =
-    collectionValuation === undefined || liquidCredits === undefined
-      ? undefined
-      : collectionValuation + liquidCredits;
+    collectionValuation === null || liquidCredits === null
+      ? null
+      : collectionValuation === undefined || liquidCredits === undefined
+        ? undefined
+        : collectionValuation + liquidCredits;
 
   return (
     <div className="space-y-6">

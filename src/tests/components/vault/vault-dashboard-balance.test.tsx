@@ -10,9 +10,11 @@ jest.mock("~/components/ui/number-flow", () => ({
   NumberFlowDisplay: ({ value }: { value: number }) => <span>{value.toLocaleString()}</span>,
 }));
 jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: { id: "user-1" } }) }));
+let statsError = false;
 jest.mock("~/hooks/vault/useVaultStats", () => ({
   useVaultStats: () => ({
     loading: false,
+    error: statsError,
     stats: {
       deckValue: 5000,
       totalCards: 12,
@@ -44,6 +46,7 @@ jest.mock("~/components/vault/sections/dashboard/VaultShowcaseGrid", () => ({
 }));
 
 let loadingQueries = new Set<string>();
+let errorQueries = new Set<string>();
 const queryData: Record<string, unknown> = {
   getBalance: { credits: 12345, canClaimDailyBonus: true, loginStreak: 1 },
   getVaultLevel: { vaultLevel: 4 },
@@ -54,7 +57,13 @@ const queryData: Record<string, unknown> = {
 const leaf = (name: string) => ({
   useQuery: () => {
     const isLoading = loadingQueries.has(name);
-    return { data: isLoading ? undefined : queryData[name], isLoading, refetch: jest.fn() };
+    const isError = errorQueries.has(name);
+    return {
+      data: isLoading || isError ? undefined : queryData[name],
+      isLoading,
+      isError,
+      refetch: jest.fn(),
+    };
   },
   useMutation: () => ({ mutate: jest.fn(), isPending: false }),
 });
@@ -74,6 +83,8 @@ const occurrences = (haystack: string, needle: string) => haystack.split(needle)
 describe("Vault dashboard", () => {
   beforeEach(() => {
     loadingQueries = new Set();
+    errorQueries = new Set();
+    statsError = false;
   });
 
   it("shows the IxCredits balance once, in the Wallet card", () => {
@@ -131,5 +142,25 @@ describe("Vault dashboard", () => {
     expect(
       collection.querySelector('[data-slot="stat-value"] [data-slot="skeleton"]')
     ).not.toBeNull();
+  });
+
+  it("shows a dash, not a skeleton, for net worth when the balance query fails", () => {
+    errorQueries = new Set(["getBalance"]);
+    render(<VaultDashboardSection />);
+    const collection = screen.getByText("Collection").closest(".facet-pane") as HTMLElement;
+    const netWorth = screen.getByText("Net worth").closest('[data-slot="stat"]') as HTMLElement;
+    expect(netWorth.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(netWorth.querySelector('[data-slot="stat-value"]')?.textContent).toBe("–");
+    expect(collection.textContent).toContain(DECK_VALUE.toLocaleString());
+  });
+
+  it("shows dashes for deck value and net worth when the stats query fails", () => {
+    statsError = true;
+    render(<VaultDashboardSection />);
+    for (const label of ["Card deck value", "Net worth"]) {
+      const stat = screen.getByText(label).closest('[data-slot="stat"]') as HTMLElement;
+      expect(stat.querySelector('[data-slot="skeleton"]')).toBeNull();
+      expect(stat.querySelector('[data-slot="stat-value"]')?.textContent).toBe("–");
+    }
   });
 });

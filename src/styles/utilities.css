@@ -63,7 +63,9 @@
 }
 
 /* A fixed dark surface (e.g. a black scrim) inside the light theme: system colours take their dark
-   values (the dark-theme ones in facet/tokens.css) so status text and accents stay legible on it. */
+   values (the dark-theme ones in facet/tokens.css) so status text and accents stay legible on it.
+   Only raw role utilities (text-green, bg-yellow, from-blue) pick this up; derived tokens such as
+   *-ink, success and destructive are not rebound. A test keeps the values equal to lib/design/tokens.ts. */
 @utility facet-on-dark {
   --color-red: #f87171;
   --color-yellow: #facc15;

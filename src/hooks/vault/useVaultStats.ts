@@ -23,6 +23,7 @@ export function useVaultStats() {
   const {
     data: userData,
     isLoading: userLoading,
+    isError: userError,
     refetch: refetchStats,
   } = api.vault.getUserStats.useQuery(undefined, { enabled: !!userId });
 
@@ -66,6 +67,7 @@ export function useVaultStats() {
   return {
     stats,
     loading: userLoading,
+    error: userError,
     refreshing: refreshMutation.isPending,
     refetch: refetchStats,
     refreshCardValues: () => refreshMutation.mutate(),

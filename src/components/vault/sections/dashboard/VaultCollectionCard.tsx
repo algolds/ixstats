@@ -13,19 +13,20 @@ const BASE_CARD_CAPACITY = 150;
 
 interface VaultCollectionCardProps {
   vaultLevel: number;
-  /** IxCredits balance plus card deck value; undefined until both are known. The balance itself lives in the Wallet card. */
-  netWorth: number | undefined;
-  /** Undefined while the stats load. */
-  collectionValuation: number | undefined;
+  /** IxCredits balance plus card deck value; undefined while either loads, null if either failed. The balance itself lives in the Wallet card. */
+  netWorth: number | null | undefined;
+  /** Undefined while the stats load, null if they failed. */
+  collectionValuation: number | null | undefined;
   totalCards: number;
   capacityBoost: number;
   unopenedPacks: number;
   activeAuctions: number;
 }
 
-/** A figure for the Stat value slot; a skeleton while its inputs are still loading. */
-function CreditsFigure({ amount }: { amount: number | undefined }) {
+/** A figure for the Stat value slot: a skeleton while loading, a dash when unavailable. */
+function CreditsFigure({ amount }: { amount: number | null | undefined }) {
   if (amount === undefined) return <Skeleton className="h-8 w-28" />;
+  if (amount === null) return <span aria-label="Unavailable">–</span>;
   return (
     <span className="flex items-center gap-2">
       <Credits amount={amount} symbolClassName="size-4" />

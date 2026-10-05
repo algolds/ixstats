@@ -47,6 +47,7 @@ Facet's own:
 | Gold | `facet-gold` utility (progress fills, step markers, count pills) |
 | shadcn aliases | `foreground`, `card`, `popover`, `muted`, `accent`, `border`, `ring`, `chart-1..8` |
 
+- `facet-on-dark` (utility) rebinds `red yellow green blue indigo` to their dark-theme values for its subtree. Use it for content on a fixed dark scrim or overlay (the crafting result) so it stays legible in light mode. Only raw role utilities such as `text-green` and `bg-yellow` pick it up; derived tokens (`*-ink`, `success`, `destructive`) are not rebound.
 - App tints come from `data-app` on the app root, which sets `--tint*` for its subtree. Never inline `--tint`.
 
 | `data-app` | Tint |
