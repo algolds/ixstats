@@ -110,6 +110,37 @@ describe("SourceList", () => {
     expect(within(nav).queryByRole("link", { name: "Vault" })).toBeNull();
   });
 
+  it("lists one app's sections in the popover and marks the active one only inside the current app", () => {
+    const vault = apps.find((a) => a.id === "vault")!;
+    const renderPopover = (pathname: string) =>
+      render(
+        <SourceList
+          variant="popover"
+          app={vault}
+          pathname={pathname}
+          searchParams={null}
+          apps={apps}
+          expanded={new Set()}
+          onToggle={() => {}}
+          badges={{}}
+        />
+      );
+    const other = renderPopover("/mycountry/economy");
+    const otherNav = screen.getByRole("navigation", { name: "Vault" });
+    expect(within(otherNav).getAllByRole("link").length).toBeGreaterThan(0);
+    expect(within(otherNav).queryByRole("link", { current: "page" })).toBeNull();
+    other.unmount();
+
+    renderPopover("/vault/marketplace");
+    const nav = screen.getByRole("navigation", { name: "Vault" });
+    expect(nav).toHaveAttribute("data-mode", "popover");
+    expect(within(nav).getByRole("link", { name: "Marketplace" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(within(nav).getAllByRole("link", { current: "page" })).toHaveLength(1);
+  });
+
   it("links every section href in the map (reachability)", () => {
     for (const app of apps) {
       const pathname = app.href;

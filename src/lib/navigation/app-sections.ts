@@ -165,7 +165,7 @@ export interface AppDefinition {
    * to holders of the `labs.access` permission regardless of `showLabsTab`).
    */
   navSettingBypass?: { admin?: boolean; labsAccess?: boolean };
-  /** `footer`: pinned to the bottom of the sidebar instead of listed in the app switcher. */
+  /** `footer`: listed below the main apps, and opens as an area of its own (Admin, Settings). */
   placement?: "main" | "footer";
 }
 
@@ -436,6 +436,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/admin"],
     requiresAuth: true,
     adminOnly: true,
+    placement: "footer",
     // Mirrors the admin console's rail (AdminSidebarNavWidget), hidden under the new shell.
     sections: [
       { id: "overview", label: "Overview", href: "/admin", icon: ShieldCheck, exact: true },

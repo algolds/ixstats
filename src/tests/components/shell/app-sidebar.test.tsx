@@ -5,9 +5,12 @@ import { AppSidebar } from "~/components/shell/AppSidebar";
 import { getVisibleApps } from "~/lib/navigation/app-sections";
 
 const apps = getVisibleApps({ signedIn: true, isAdmin: false });
+const mainApps = apps.filter((app) => app.placement !== "footer");
 
 function renderSidebar(props: Partial<React.ComponentProps<typeof AppSidebar>> = {}) {
   const onCollapsedChange = jest.fn();
+  const onToggle = jest.fn();
+  const onAction = jest.fn();
   const utils = render(
     <AppSidebar
       pathname="/mycountry/economy"
@@ -16,83 +19,67 @@ function renderSidebar(props: Partial<React.ComponentProps<typeof AppSidebar>> =
       collapsed={false}
       onCollapsedChange={onCollapsedChange}
       account={<button type="button">Account: diplomat</button>}
+      expanded={new Set()}
+      onToggle={onToggle}
+      badges={{}}
+      onAction={onAction}
       {...props}
     />
   );
-  return { ...utils, onCollapsedChange };
+  const rail = () => {
+    const el = utils.container.querySelector<HTMLElement>('[data-slot="app-sidebar-rail"]');
+    if (!el) throw new Error("rail not rendered");
+    return el;
+  };
+  return { ...utils, onCollapsedChange, onToggle, onAction, rail };
 }
 
 describe("AppSidebar", () => {
-  it("is a labelled nav landmark tinted for the current app", () => {
-    renderSidebar();
+  it("hosts the source list and tints the panel for the current app", () => {
+    const { container } = renderSidebar();
     const nav = screen.getByRole("navigation", { name: "App navigation" });
-    expect(nav).toHaveAttribute("data-app", "mycountry");
-    expect(within(nav).getByRole("heading", { name: "MyCountry" })).toBeInTheDocument();
-  });
-
-  it("marks only the current section with aria-current", () => {
-    renderSidebar();
-    expect(screen.getByRole("link", { name: "Economy" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "Directives" })).toHaveAttribute(
-      "href",
-      "/mycountry/executive"
+    expect(nav).toHaveAttribute("data-mode", "main");
+    expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
+      "data-app",
+      "mycountry"
     );
-    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    expect(within(nav).getByRole("link", { name: "Economy" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
   });
 
   it("uses the section tint (Intelligence is crimson)", () => {
-    renderSidebar({ pathname: "/mycountry/intelligence" });
-    expect(screen.getByRole("navigation", { name: "App navigation" })).toHaveAttribute(
+    const { container } = renderSidebar({ pathname: "/mycountry/intelligence" });
+    expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
       "data-app",
       "intel"
     );
   });
 
-  it("highlights query sections from the search params", () => {
-    renderSidebar({ pathname: "/settings", searchParams: new URLSearchParams("tab=appearance") });
-    expect(screen.getByRole("link", { name: "Appearance & accessibility" })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
-    // Settings is pinned to the bottom and current too.
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+  it("shows the account slot and has no app switcher", () => {
+    renderSidebar();
+    expect(screen.getByRole("button", { name: "Account: diplomat" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Switch app/ })).toBeNull();
   });
 
-  it("lists grouped sections under labelled sub-headings", () => {
+  it("lists Settings through the source list instead of a separate link", () => {
+    renderSidebar({ pathname: "/vault" });
+    const nav = screen.getByRole("navigation", { name: "App navigation" });
+    expect(within(nav).getAllByRole("link", { name: "Settings" })).toHaveLength(1);
+  });
+
+  it("switches to the area list inside Settings and Admin", () => {
     renderSidebar({
       pathname: "/admin/calculations",
       apps: getVisibleApps({ signedIn: true, isAdmin: true }),
     });
-    const simulation = screen.getByRole("group", { name: "Simulation" });
-    expect(within(simulation).getByRole("link", { name: "Calculations" })).toHaveAttribute(
+    const nav = screen.getByRole("navigation", { name: "App navigation" });
+    expect(nav).toHaveAttribute("data-mode", "area");
+    expect(within(nav).getByRole("link", { name: "Calculations" })).toHaveAttribute(
       "aria-current",
       "page"
     );
-    expect(screen.getByRole("heading", { name: "Users & security" })).toBeInTheDocument();
-    // The ungrouped overview leads without a heading of its own.
-    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/admin");
-    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
-  });
-
-  it("highlights the settings tab of the current URL within its group", () => {
-    renderSidebar({ pathname: "/settings", searchParams: new URLSearchParams("tab=cosmetics") });
-    const vault = screen.getByRole("group", { name: "Vault" });
-    expect(within(vault).getByRole("link", { name: "Cosmetics" })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
-    expect(screen.getByRole("link", { name: "IxnayID & Passport" })).not.toHaveAttribute(
-      "aria-current"
-    );
-  });
-
-  it("shows the account slot and the app switcher", () => {
-    renderSidebar();
-    expect(screen.getByRole("button", { name: "Account: diplomat" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Switch app, current app MyCountry" })
-    ).toHaveAttribute("aria-haspopup", "menu");
   });
 
   it("toggles collapse with an accessible button", () => {
@@ -109,19 +96,61 @@ describe("AppSidebar", () => {
         apps={apps}
         collapsed
         onCollapsedChange={onCollapsedChange}
+        expanded={new Set()}
+        onToggle={() => {}}
+        badges={{}}
       />
     );
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute(
       "aria-expanded",
       "false"
     );
-    // Labels stay in the accessibility tree when collapsed to icons.
-    expect(screen.getByRole("link", { name: "Economy" })).toBeInTheDocument();
   });
 
-  it("shows no sections outside the map", () => {
-    renderSidebar({ pathname: "/setup" });
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Switch app, current app IxStats" })).toBeVisible();
+  describe("icon rail", () => {
+    it("has one control per main app, named by the app", () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      for (const app of mainApps) {
+        const control = within(rail()).getByRole(app.sections.length > 0 ? "button" : "link", {
+          name: app.label,
+        });
+        if (app.id === "mycountry") expect(control).toHaveAttribute("aria-current", "page");
+      }
+      expect(within(rail()).queryByRole("link", { name: "Settings" })).toBeNull();
+    });
+
+    it("opens a popover with the app's sections", async () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
+      const nav = await screen.findByRole("navigation", { name: "Vault" });
+      expect(nav).toHaveAttribute("data-mode", "popover");
+      expect(within(nav).getByRole("link", { name: "Marketplace" })).toHaveAttribute(
+        "href",
+        "/vault/marketplace"
+      );
+      expect(within(nav).queryByRole("link", { current: "page" })).toBeNull();
+    });
+
+    it("links the popover header to the app itself", async () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
+      const nav = await screen.findByRole("navigation", { name: "Vault" });
+      const popover = nav.closest<HTMLElement>('[data-slot="popover-content"]')!;
+      expect(within(popover).getByRole("link", { name: "Vault" })).toHaveAttribute(
+        "href",
+        "/vault"
+      );
+    });
+
+    it("dots a rail button whose sections have something pending", () => {
+      const { rail } = renderSidebar({
+        collapsed: true,
+        badges: { "daily-reward": { kind: "action", label: "4d" } },
+      });
+      const vault = within(rail()).getByRole("button", { name: "Vault" });
+      expect(within(vault).getByLabelText("Has updates")).toBeInTheDocument();
+      const wiki = within(rail()).getByRole("button", { name: "Wiki" });
+      expect(within(wiki).queryByLabelText("Has updates")).toBeNull();
+    });
   });
 });

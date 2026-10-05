@@ -50,10 +50,11 @@ type Ctx = Pick<SourceListProps, "badges" | "onAction" | "onNavigate" | "expande
 
 type Section = AppDefinition["sections"][number];
 
-/** Admin and Settings sit below the app list and open as an area of their own. */
-const isAreaApp = (app: AppDefinition) => app.placement === "footer" || app.adminOnly === true;
+/** Footer apps (Admin, Settings) sit below the app list and open as an area of their own. */
+const isAreaApp = (app: AppDefinition) => app.placement === "footer";
 
-const isPending = (badge: NavBadge | undefined) =>
+/** A badge that wants attention (an action to take, or a non-zero count). */
+export const isPending = (badge: NavBadge | undefined) =>
   badge?.kind === "action" || (badge?.kind === "count" && badge.value > 0);
 
 function Trailing({ badge }: { badge: NavBadge | undefined }) {

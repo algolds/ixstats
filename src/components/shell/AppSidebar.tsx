@@ -3,43 +3,41 @@
 /**
  * AppSidebar: the primary navigation at ≥1024px.
  *
- * A `facet-chrome` panel floating on the leading edge (`z-chrome`, 256px, collapsible to 64px
- * icons; the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so
- * the persisted collapsed state is right before first paint). Top: the app switcher. Middle: the
- * current app's sections from the section map, the current one tinted and `aria-current="page"`.
- * Sections with a `group` are listed under a sub-heading (`role="group"`). Bottom: the account
- * slot, Settings and the collapse toggle.
+ * A `facet-chrome` panel floating on the leading edge (`z-chrome`, 256px, collapsible to 64px;
+ * the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so the
+ * persisted collapsed state is right before first paint). A thin host: the app tree is
+ * `SourceList`, the account slot and the collapse toggle sit below it.
  *
- * Presentational: the route, visible apps, account slot and collapsed state come in as props
- * (`FacetShell` wires them), so it renders the same on the server and in tests.
+ * Collapsing is CSS-driven (`data-sidebar="collapsed"` on <html>), so the full list and the icon
+ * rail are both rendered and toggled with `sidebar-collapsed:` variants; the `collapsed` prop
+ * only feeds tooltips and the toggle's label, because it is `null` before hydration. Each rail
+ * app with sections opens a popover listing them, so a collapsed sidebar still reaches every
+ * section.
+ *
+ * Presentational: the route, visible apps, badges, disclosure state, account slot and collapsed
+ * state come in as props (`FacetShell` wires them), so it renders the same on the server and in
+ * tests.
  */
 
 import * as React from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
-import { NavArrowDown, Check, SidebarCollapse, SidebarExpand } from "iconoir-react";
+import { SidebarCollapse, SidebarExpand } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { Tooltip } from "~/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { springSmooth } from "~/lib/design/motion";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
   getAppForPath,
   getTintForPath,
-  groupSections,
   type AppDefinition,
-  type NavIcon,
+  type NavAction,
+  type NavBadges,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
+import { SourceList, isPending, sourceRowClassName } from "./SourceList";
 
 interface AppSidebarProps {
   /** Current pathname without the base path. */
@@ -51,15 +49,22 @@ interface AppSidebarProps {
   /** Collapsed to icons; `null` before hydration (CSS already reflects the stored state). */
   collapsed: boolean | null;
   onCollapsedChange: (collapsed: boolean) => void;
-  /** The account row (`AccountMenu`, or its sign-in button) pinned above Settings. */
+  /** The account row (`AccountMenu`, or its sign-in button) pinned at the bottom. */
   account?: React.ReactNode;
+  /** Opened apps and section groups, remembered by the host. */
+  expanded: ReadonlySet<string>;
+  onToggle: (id: string) => void;
+  badges: NavBadges;
+  onAction?: (action: NavAction) => void;
   className?: string;
 }
 
 const APP_SIDEBAR_ID = "facet-app-sidebar";
 
-export const rowBase =
-  "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2.5 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11 sidebar-collapsed:justify-center sidebar-collapsed:px-0";
+export const rowBase = cn(
+  sourceRowClassName,
+  "sidebar-collapsed:justify-center sidebar-collapsed:px-0"
+);
 
 /** Wraps a row in a trailing tooltip when the sidebar is collapsed to icons. */
 export function CollapsedTooltip({
@@ -79,108 +84,111 @@ export function CollapsedTooltip({
   );
 }
 
-function SidebarLink({
-  href,
-  label,
-  icon: Icon,
-  active,
-  collapsed,
-  indicatorId,
+const railButtonClassName = (current: boolean) =>
+  cn(
+    focusRing,
+    "rounded-control relative grid size-9 shrink-0 cursor-pointer place-items-center transition-colors duration-fast ease-out-facet pointer-coarse:size-11",
+    current ? "bg-tint-fill text-tint" : "text-label hover:bg-fill-4"
+  );
+
+function RailGlyph({
+  app,
+  badges,
+  showDot,
 }: {
-  href: string;
-  label: string;
-  icon: NavIcon;
-  active: boolean;
-  collapsed: boolean | null;
-  indicatorId: string;
+  app: AppDefinition;
+  badges: NavBadges;
+  showDot: boolean;
 }) {
+  const Icon = app.icon;
+  const badge = app.badge ? badges[app.badge] : undefined;
   return (
-    <li>
-      <CollapsedTooltip collapsed={collapsed} label={label}>
-        <Link
-          href={href}
-          aria-current={active ? "page" : undefined}
-          data-active={active ? "" : undefined}
-          className={cn(
-            rowBase,
-            focusRing,
-            active ? "text-tint font-medium" : "text-label hover:bg-fill-4"
-          )}
-        >
-          {active && (
-            <motion.span
-              aria-hidden
-              layoutId={indicatorId}
-              transition={springSmooth}
-              className="bg-tint-fill rounded-control absolute inset-0"
-            />
-          )}
-          <Icon aria-hidden className="relative size-4 shrink-0" />
-          <span className="sidebar-collapsed:sr-only relative min-w-0 flex-1 truncate">
-            {label}
-          </span>
-        </Link>
-      </CollapsedTooltip>
-    </li>
+    <>
+      {badge?.kind === "icon" ? (
+        <img src={badge.src} alt="" className="size-5 rounded-sm object-cover" />
+      ) : (
+        <Icon aria-hidden className="size-5" />
+      )}
+      {showDot && (
+        <span
+          role="img"
+          aria-label="Has updates"
+          className="bg-tint ring-background absolute top-1 right-1 size-2 rounded-full ring-2"
+        />
+      )}
+    </>
   );
 }
 
-function AppSwitcher({
-  apps,
-  current,
-  collapsed,
+function RailApp({
+  app,
+  isCurrent,
+  list,
 }: {
-  apps: readonly AppDefinition[];
-  current: AppDefinition | undefined;
-  collapsed: boolean | null;
+  app: AppDefinition;
+  isCurrent: boolean;
+  list: Omit<React.ComponentProps<typeof SourceList>, "variant" | "app" | "onNavigate">;
 }) {
-  const CurrentIcon = current?.icon;
-  const label = current?.label ?? "IxStats";
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={`Switch app, current app ${label}`}
-          data-slot="app-switcher"
-          className={cn(
-            rowBase,
-            focusRing,
-            "text-headline text-label hover:bg-fill-4 min-h-11 cursor-pointer"
-          )}
-        >
-          <span
-            aria-hidden
-            className="bg-tint text-on-tint rounded-control-sm flex size-7 shrink-0 items-center justify-center"
+  const [open, setOpen] = React.useState(false);
+  const close = React.useCallback(() => setOpen(false), []);
+  const hasSections = app.sections.length > 0;
+  const pending = app.sections.some((s) => s.badge && isPending(list.badges[s.badge]));
+  const glyph = <RailGlyph app={app} badges={list.badges} showDot={pending} />;
+
+  if (!hasSections) {
+    return (
+      <li data-app={app.tint}>
+        <Tooltip content={app.label} side="right" sideOffset={8}>
+          <Link
+            href={app.href}
+            aria-label={app.label}
+            aria-current={isCurrent ? "page" : undefined}
+            className={railButtonClassName(isCurrent)}
           >
-            {CurrentIcon ? <CurrentIcon className="size-4" /> : null}
-          </span>
-          <span className="sidebar-collapsed:sr-only min-w-0 flex-1 truncate text-left">
-            {label}
-          </span>
-          <NavArrowDown
-            aria-hidden
-            className="text-label-secondary sidebar-collapsed:hidden size-4 shrink-0"
-          />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side={collapsed ? "right" : "bottom"} className="w-60">
-        <DropdownMenuLabel>Apps</DropdownMenuLabel>
-        {apps.map((app) => {
-          const Icon = app.icon;
-          const isCurrent = app.id === current?.id;
-          return (
-            <DropdownMenuItem key={app.id} asChild>
-              <Link href={app.href} aria-current={isCurrent ? "page" : undefined}>
-                <Icon aria-hidden />
-                <span className="flex-1">{app.label}</span>
-                {isCurrent && <Check aria-hidden className="text-tint" />}
-              </Link>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {glyph}
+          </Link>
+        </Tooltip>
+      </li>
+    );
+  }
+
+  return (
+    <li data-app={app.tint}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <Tooltip content={app.label} side="right" sideOffset={8} open={open ? false : undefined}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={app.label}
+              aria-current={isCurrent ? "page" : undefined}
+              className={railButtonClassName(isCurrent)}
+            >
+              {glyph}
+            </button>
+          </PopoverTrigger>
+        </Tooltip>
+        <PopoverContent
+          side="right"
+          align="start"
+          sideOffset={12}
+          data-app={app.tint}
+          className="w-64 p-2"
+        >
+          <Link
+            href={app.href}
+            onClick={close}
+            className={cn(
+              sourceRowClassName,
+              focusRing,
+              "text-headline text-label hover:bg-fill-4"
+            )}
+          >
+            {app.label}
+          </Link>
+          <SourceList {...list} variant="popover" app={app} onNavigate={close} />
+        </PopoverContent>
+      </Popover>
+    </li>
   );
 }
 
@@ -191,20 +199,22 @@ export function AppSidebar({
   collapsed,
   onCollapsedChange,
   account,
+  expanded,
+  onToggle,
+  badges,
+  onAction,
   className,
 }: AppSidebarProps) {
   const current = getAppForPath(pathname);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
   const tint = getTintForPath(current, activeSectionId);
-  const switcherApps = apps.filter((app) => app.placement !== "footer");
-  const settingsApp = apps.find((app) => app.id === "settings");
-  const sections = current?.sections ?? [];
   const isCollapsed = collapsed ?? false;
+  const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction };
 
   return (
-    <nav
+    <aside
       id={APP_SIDEBAR_ID}
-      aria-label="App navigation"
+      aria-label="Sidebar"
       data-slot="app-sidebar"
       data-app={tint}
       className={cn(
@@ -213,75 +223,24 @@ export function AppSidebar({
       )}
     >
       <FacetMaterial data-slot="app-sidebar-panel" className="flex min-h-0 flex-1 flex-col">
-        <div className="p-2">
-          <AppSwitcher apps={switcherApps} current={current} collapsed={collapsed} />
+        <div className="sidebar-collapsed:hidden min-h-0 flex-1 overflow-y-auto px-2 pt-2 pb-2">
+          <SourceList {...list} variant="sidebar" />
         </div>
 
-        {/* `pt-1`: room for the first row's 2px-offset focus ring inside the scroll clip (the
-            heading above it is screen-reader-only when collapsed). */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-1 pb-2">
-          {current && sections.length > 0 && (
-            <>
-              <h2 className="text-subhead text-label-secondary sidebar-collapsed:sr-only px-2.5 pt-2 pb-1">
-                {current.label}
-              </h2>
-              {groupSections(sections).map(({ group, sections: groupItems }, index) => {
-                const headingId = group
-                  ? `app-sidebar-group-${current.id}-${group.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
-                  : undefined;
-                return (
-                  <div
-                    key={group ?? `ungrouped-${index}`}
-                    role={group ? "group" : undefined}
-                    aria-labelledby={headingId}
-                    data-slot="app-sidebar-group"
-                    className={cn(
-                      index > 0 &&
-                        "sidebar-collapsed:border-separator sidebar-collapsed:mt-1 sidebar-collapsed:border-t sidebar-collapsed:pt-1"
-                    )}
-                  >
-                    {group && (
-                      <h3
-                        id={headingId}
-                        className="text-caption text-label-secondary sidebar-collapsed:sr-only px-2.5 pt-3 pb-1"
-                      >
-                        {group}
-                      </h3>
-                    )}
-                    <ul className="flex flex-col gap-0.5">
-                      {groupItems.map((section) => (
-                        <SidebarLink
-                          key={section.id}
-                          href={section.href}
-                          label={section.label}
-                          icon={section.icon}
-                          active={section.id === activeSectionId}
-                          collapsed={collapsed}
-                          indicatorId="app-sidebar-section"
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
+        <ul
+          data-slot="app-sidebar-rail"
+          aria-label="Apps"
+          className="sidebar-collapsed:flex hidden min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-2"
+        >
+          {apps
+            .filter((app) => app.placement !== "footer")
+            .map((app) => (
+              <RailApp key={app.id} app={app} isCurrent={app.id === current?.id} list={list} />
+            ))}
+        </ul>
 
         <div className="border-separator flex flex-col gap-0.5 border-t p-2">
-          <ul className="flex flex-col gap-0.5">
-            {account && <li className="sidebar-collapsed:justify-center flex">{account}</li>}
-            {settingsApp && (
-              <SidebarLink
-                href={settingsApp.href}
-                label={settingsApp.label}
-                icon={settingsApp.icon}
-                active={current?.id === settingsApp.id}
-                collapsed={collapsed}
-                indicatorId="app-sidebar-footer"
-              />
-            )}
-          </ul>
+          {account && <div className="sidebar-collapsed:justify-center flex">{account}</div>}
           <CollapsedTooltip collapsed={collapsed} label="Expand sidebar">
             <button
               type="button"
@@ -307,6 +266,6 @@ export function AppSidebar({
           </CollapsedTooltip>
         </div>
       </FacetMaterial>
-    </nav>
+    </aside>
   );
 }
