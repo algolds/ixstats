@@ -14,7 +14,7 @@ The IxStats codebase follows a **modular architecture pattern** that separates c
 
 ### Size Thresholds
 Consider refactoring a component when it exceeds:
-- **1,000+ lines of code** in a single file
+- **700+ lines of code** in a single file (500 in `src/hooks`): the `audit:arch` ceiling; split before you reach it
 - **500+ lines** in the main component function
 - **10+ useState/useEffect hooks** in one component
 - **5+ levels** of nested JSX
@@ -1001,7 +1001,7 @@ For procedure-bag routers (e.g. `countries/management` which exports `management
 
 ### The arch guard (enforcement)
 
-After 1.0.6, the architecture guard `bun run audit:arch` runs in CI and fails if:
+The architecture guard `bun run audit:arch` runs in CI (non-blocking for now, so a failure shows in the log but does not fail the build) and fails if:
 - A new file in `src/server/api/routers`, `src/types`, `src/app`, `src/components` or `src/lib` is over 700 lines (`src/hooks`: 500; `RELAXED_FILES` in `src/types`: 900)
 - A ratcheted file in `scripts/audit/arch-baseline.json` has grown
 - A new cross-router import appears (no router may import from another router)

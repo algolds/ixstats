@@ -1,6 +1,6 @@
 # Admin Router Endpoint Security Map
 
-Covers the `admin.*` tRPC namespace: `src/server/api/routers/admin/*.ts`, merged in `admin/index.ts`. `adminProcedure` is also used by roughly 270 procedures in other routers, which this map does not list.
+Covers the `admin.*` tRPC namespace: `src/server/api/routers/admin/*.ts`, merged in `admin/index.ts`. `adminProcedure` is also used by roughly 190 procedures in routers outside `admin/` (2026-10-05 count), which this map does not list.
 
 ## Security Level Hierarchy
 ```

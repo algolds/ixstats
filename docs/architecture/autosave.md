@@ -1,7 +1,7 @@
 # Autosave & Auto-Sync Architecture
 
 **Core Engine**: `src/hooks/useGenericAutoSync.ts`  
-**Consumers**: Economy Builder (`useEconomyAutoSync`, live). `useGovernmentBuilderAutoSync` / `useTaxBuilderAutoSync` (`src/hooks/useBuilderAutoSync.ts`) are implemented but not yet mounted by any component. National Identity and the Map Editor do not use this engine.  
+**Consumers**: Economy Builder only (`useEconomyAutoSync`, `src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`). There are no government or tax autosave hooks (the `useBuilderAutoSync.ts` module with `useGovernmentBuilderAutoSync` / `useTaxBuilderAutoSync` no longer exists). National Identity and the Map Editor do not use this engine.  
 **Protocol**: Client-driven debounced delta sync with deep equality detection and optimistic conflict handling
 
 ---
@@ -57,7 +57,7 @@ export function useGenericAutoSync<TData extends object, TResult = unknown, TErr
 
 ## 3. Implementation Pattern in Builder Forms
 
-When wiring autosave into a domain form, wrap `useGenericAutoSync` with domain mutations (simplified from `src/hooks/useBuilderAutoSync.ts`, which also handles create-vs-update and conflict checks):
+When wiring autosave into a domain form, wrap `useGenericAutoSync` with domain mutations. `useEconomyAutoSync` is the one live example; the sketch below shows the same pattern for the government builder, which has no autosave hook today (a real one would also handle create-vs-update and conflict checks, e.g. `api.government.checkConflicts`):
 
 ```tsx
 import { useState, useEffect } from "react";

@@ -1,6 +1,14 @@
 # Comprehensive WSL2 Local Development Setup Guide
 
+**Last updated:** 2026-10-05
+
 Welcome to the IxStates local development guide. This document details how to set up, configure, and run the entire development stack on your local Windows machine using Windows Subsystem for Linux (WSL2), Docker, and SSH port forwarding.
+
+> **Two paths.** Contributors start from an **empty local database** built from the repository alone
+> ([Part 4](#part-4--create-the-local-database)); no production access is needed. The SSH tunnels, the
+> configuration copied from the VPS and the production dump (Parts 2, 3 Step 2b and 6) are for maintainers with
+> access to the production server. On macOS or Linux, skip the WSL steps of Part 1 and install Docker, Node and Bun
+> directly.
 
 ---
 
@@ -98,9 +106,9 @@ node --version && bun --version
 
 ---
 
-## Part 2 — SSH and Tunnels Configuration
+## Part 2 — SSH and Tunnels Configuration (maintainers)
 
-OpenSSH inside WSL is the primary utility to establish tunnels, transfer files via `scp`, and pull production DB backups.
+You need this only with access to the production VPS. OpenSSH inside WSL is the primary utility to establish tunnels, transfer files via `scp`, and pull production DB backups.
 
 ### Step 1 — Key Generation
 Generate your SSH keys locally in WSL (if not already done) and upload the public key to the production VPS:
@@ -140,7 +148,15 @@ cd ixstats && git checkout development
 git config core.autocrlf input
 ```
 
-### Step 2 — Fetch Gitignored Configuration Files
+### Step 2 — Environment file
+Copy the template and fill in your own Clerk development keys (from a Clerk dev instance):
+```bash
+cp .env.example .env.local
+```
+`.env.example` lists every variable `src/env.ts` declares (a test keeps it complete), and its `DATABASE_URL` and
+`REDIS_URL` already match `docker-compose.dev.yml`.
+
+### Step 2b — Fetch Gitignored Configuration Files (maintainers)
 Environment files, editor settings, Docker specs and several tooling configs are gitignored (see `.gitignore`), so copy them over SSH from the VPS. The `tsconfig*.json` files, `prisma.config.ts`, `.oxlintrc.json` and `bun.lock` are tracked in git, so do not overwrite them from the server:
 ```bash
 cd ~/projects/ixstats
@@ -163,7 +179,28 @@ scp -r ixwiki:"/ixwiki/public/projects/ixstats/.vscode" .
 
 ---
 
-## Part 4 — Database Modes & Local Edits
+## Part 4 — Create the local database
+
+The supported way to get a working database without production access:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d   # PostgreSQL 16 + PostGIS on 5433, Redis on 6379
+bun run db:setup                                 # db:generate, then db:bootstrap
+bun run dev                                      # http://localhost:3000
+```
+
+`bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) enables PostGIS (`CREATE EXTENSION postgis`), pushes the
+Prisma schema and runs the reference-catalog seeds. It refuses to run when `NODE_ENV` is `production`, when
+`DATABASE_URL` points at a non-local host (unless `--allow-remote`), or when the database already holds countries or
+users. `bun run dev:db` (setup, then dev) and `bun run fresh` (clean reinstall, then setup) use the same path.
+
+Then:
+
+1. Sign in, and create a nation in the app at `/builder`. The bootstrap seeds no countries.
+2. To become an admin, add your Clerk user id to `SYSTEM_OWNER_IDS` in `.env.local` and run
+   `bun run set-admin-role`.
+
+## Part 5 — Database Modes & Local Edits
 
 The local Next.js dev server supports two distinct database connection modes depending on how you edit your environment files:
 
@@ -175,7 +212,7 @@ To create countries, manage sports clubs, trade cards, or save stashes, configur
    DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/ixstats?connection_limit=5"
    ```
    *(Note: The password is URL-encoded and connects as the `postgres` superuser on your local Docker container).*
-2. Under this mode, `start-development.sh` runs `bun run db:push:force` on boot whenever a `prisma/schema/*.prisma` file is newer than `.prisma/.schema-push-stamp` (set `SKIP_DB_PUSH=1` to skip it).
+2. Under this mode, `bun run dev` (`start-development.sh`) runs `bun run db:push:force` on boot whenever a `prisma/schema/*.prisma` file is newer than `.prisma/.schema-push-stamp`, so pulling a schema change updates your local database (set `SKIP_DB_PUSH=1` to skip it).
 
 ### Mode B: Read-Only Mode (Production Replica Inspection)
 To inspect production data securely without making modifications:
@@ -192,9 +229,9 @@ To inspect production data securely without making modifications:
 
 ---
 
-## Part 5 — Automated Workflow Scripts
+## Part 6 — Automated Workflow Scripts (maintainers)
 
-Three automation scripts simplify daily WSL development:
+Three automation scripts simplify daily WSL development. The first two need SSH access to the production server.
 
 ### 1. Unified Development Bootstrapper (`bun run dev:local`)
 Instead of running Docker, SSH, and Next.js separately, run:
@@ -226,7 +263,7 @@ This script runs the [deploy-local.sh](../../scripts/deploy-local.sh) wrapper, w
 - Runs Oxlint (`bun run lint`).
 - Runs the Jest suite (`bun run test`).
 - Pushes the active branch to GitHub (`origin`).
-- Logs into the VPS and runs `./scripts/deploy-production.sh`, which deploys whatever branch the **server** checkout is on (not necessarily the branch you just pushed).
+- Logs into the VPS and runs `./scripts/deploy-production.sh`, which deploys the **server** checkout's branch (not necessarily the branch you just pushed) and refuses anything but `master` unless `ALLOW_NON_MASTER_DEPLOY=1` is set (for rollbacks only).
 
 ---
 
@@ -239,7 +276,7 @@ Because `public/` files are gitignored. Run `bun run dev:local` or `./scripts/re
 This means another shell or a Windows app (like PuTTY or WSL session) is already forwarding these ports. You can ignore this warning; the dev server will successfully route traffic over the existing tunnels.
 
 #### 3. Error: `DATABASE_URL is not configured` during prisma commands
-Prisma 6 does not autoload `.env` variables if a config file (`prisma.config.ts`) is present. Sourcing environment variables via `set -a && source .env && set +a` exports the variables to the terminal environment first. Our automation scripts handle this internally.
+Prisma 6 does not autoload `.env` files when a config file is present, so `prisma.config.ts` loads them itself: when `DATABASE_URL` is unset it reads `.env.local.dev`, then `.env.local`, then `.env`, stopping at the first that sets it. If you still see this error, none of those files sets `DATABASE_URL`; add it to `.env.local` (see Part 3 Step 2).
 
 #### 4. The `vmmem` process is consuming too much Windows RAM
 WSL's virtualization process can grow large. You can restrict it by adjusting the `memory=` cap inside `C:\Users\<YourUsername>\.wslconfig` and executing `wsl --shutdown` in PowerShell to clear the cache.

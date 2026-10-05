@@ -283,8 +283,9 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, the
   per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
   (including a founder raising their own realm's nation cap — today only site admins can, in
-  `/admin/realms`), a per-realm ThinkPages feed, and the passport realm/nation switcher (Play as on the
-  realm page is the switch until then).
+  `/admin/realms`), and realm-scoped dashboard feed and trending. Shipped since: a realm filter on the ThinkPages
+  feed and the realm board at `/r/eurth/board`, and a nation switcher in the nav and on the passport (alongside
+  **Play as** on the realm page).
 
 ---
 

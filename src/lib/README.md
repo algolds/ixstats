@@ -25,7 +25,7 @@ The root level of `src/lib/` is strictly reserved for platform-wide architectura
 | | [`markdown-document.ts`](markdown-document.ts) | Parser for Markdown documents under `src/content/` (help, terms, privacy). |
 | | [`audio-store.ts`](audio-store.ts) · [`playback-engine.ts`](playback-engine.ts) | Media player queue store and playback engine (narrator / MiniPlayer). |
 | **Platform Config** | [`config-service.ts`](config-service.ts) | Database-backed `SystemConfig` settings cache and retrieval client. |
-| | [`navigation-config.ts`](navigation-config.ts) | App shell navigation tree, topbar links, sidebar menus, and command palettes. |
+| | [`navigation/app-sections.ts`](navigation/app-sections.ts) | The app sidebar's source list: every app, its sections and their visibility rules. |
 | | [`event-bus.ts`](event-bus.ts) | Universal EventEmitter singleton for cross-cutting in-memory pub/sub events. |
 | | [`gameplay-flags.ts`](gameplay-flags.ts) | Runtime evaluation for gameplay feature toggles and flags. |
 
@@ -65,7 +65,6 @@ All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/
 - **`src/lib/nationstates/`** — Official NationStates XML API v12 client, deck synchronization processor, and shard parsers.
 - **`src/lib/media/`** — Unsplash API integration, image palettes, sound FX triggers, and asset caching.
 - **`src/lib/themes/`** — Facet design system themes, chromatic palettes, and charting color token mappings.
-- **`src/lib/ai/`** — NLP sentiment analysis and AI text classification helpers.
 
 ### Maps, Geography & World Generation
 - **`src/lib/maps/`** — MapLibre GL pipelines, GeoJSON compression, shared vertex topology engines, border tracing, and spatial indexers.

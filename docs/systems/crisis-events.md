@@ -3,11 +3,11 @@
 **Parent Engine:** Concord Simulation Engine (`CONCORD_ENGINE_VERSION = 2`)  
 **Subsystem:** Incident Triage & Emergency Response Loop  
 **Primary Action:** `RESOLVE` | **Domain Accent:** Crimson Rose (`#F43F5E` / `--color-rose-500`)  
-**Route:** read-only, surfaced in the `/dashboard` player widget | **Status:** 🚧 Partial — read-only feed; generation & response engine not built  
+**Route:** read-only, surfaced as the crisis signal on the MyCountry Overview (`CrisisSignal.tsx`) | **Status:** 🚧 Partial — read-only, and nothing writes `CrisisEvent` rows; generation & response engine not built  
 
 The Crisis Events Engine is designed to generate algorithmic natural disasters, economic crises, diplomatic incidents, social unrest, and security threats with realistic progression, compounding escalation, and player response choices.
 
-> **Implementation status (2026-09):** Only the read side exists. `CrisisEvent` rows (`prisma/schema/diplomacy.prisma`: type, title, severity, affected countries, casualties, economic impact, `responseStatus`) are written only by the demo seed (`src/lib/demo-seed/domains/seed-security.ts`). The `crisisEvents` router exposes `getActive` and `getStatistics`, which the dashboard player widget reads for the active-crisis count. The taxonomy, lifecycle state machine, response postures, and consequence wiring below are **design targets** and are not implemented. There is no `/admin/crisis-events` page and no generator, response mutation, or spine integration for `CrisisEvent`. The one working event producer is the separate admin world-events (Storyteller) tool, described below. Player-facing "crises" today are urgent National Issues (see [MyCountry](./mycountry.md)).
+> **Implementation status (2026-10-05):** Only the read side exists. `CrisisEvent` rows (`prisma/schema/diplomacy.prisma`: type, title, severity, affected countries, casualties, economic impact, `responseStatus`) have no writer at all: the demo seed that created them is gone (checked 2026-10-05). The `crisisEvents` router exposes `getActive` and `getStatistics`, `CrisisSignal` on the MyCountry Overview reads `getStatistics` for the nation's active-crisis count (it renders nothing while there are none, which is always today). The taxonomy, lifecycle state machine, response postures, and consequence wiring below are **design targets** and are not implemented. There is no `/admin/crisis-events` page and no generator, response mutation, or spine integration for `CrisisEvent`. The one working event producer is the separate admin world-events (Storyteller) tool, described below. Player-facing "crises" today are urgent National Issues (see [MyCountry](./mycountry.md)).
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Database Engine**: PostgreSQL with PostGIS Extension  
 **ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
-**Location**: `prisma/schema/*.prisma` (18 schema files, 332 models, 33 enums) · `src/server/db.ts`
+**Location**: `prisma/schema/*.prisma` (21 schema files, 338 models, 33 enums) · `src/server/db.ts`
 
 ---
 
@@ -25,13 +25,14 @@ Spatial Engine: PostGIS 3.x (ST_AsGeoJSON, ST_Touches, ST_Centroid, ST_Area)
 
 ## 2. Multi-File Schema Architecture (`prisma/schema/`)
 
-Prisma models are domain-isolated across 18 individual `.prisma` files:
+Prisma models are domain-isolated across 21 individual `.prisma` files:
 
 ```
 prisma/schema/
 ├── base.prisma           # Generator and datasource config (PostgreSQL provider)
 ├── enums.prisma          # Shared enums (Priority, Category, Trend, CardRarity, ThreatType, ...)
-├── core.prisma           # Country, User, Role, Permission, UserSession, AuditLog, SystemLog, Notification
+├── core.prisma           # Country, User, Role, Permission, UserSession, AuditLog, SystemLog, Notification, JobLease, CronRun
+├── identity.prisma       # PassportPreference
 ├── government.prisma     # GovernmentStructure, GovernmentDepartment, Policy, Legislature, Intent, NationalIssue, CountryChangeLog
 ├── economy.prisma        # EconomicProfile, TaxSystem, FiscalSystem, EconomicComponent, EconomicArchetype
 ├── diplomacy.prisma      # DiplomaticRelation, Embassy, Treaty, DiplomaticEvent, Alliance, CrisisEvent
@@ -41,6 +42,8 @@ prisma/schema/
 ├── exchange.prisma       # ExchangeWallet, Company, Shareholding, SectorIndex, Contract
 ├── military.prisma       # MilitaryBranch, MilitaryUnit, MilitaryEquipmentCatalog, Deployment, MilitaryConflict
 ├── social.prisma         # ThinkpagesAccount, ThinkpagesPost, ThinktankGroup, ThinkshareConversation, ActivityFeed, Poll
+├── social-follows.prisma # ThinkpagesFollow, ThinkpagesPersonalAccount
+├── realm-boards.prisma   # RealmBoard
 ├── wiki.prisma           # WikiArticle, WikiRevision, WikiCategory, Stash, LorewardEntry, BlurbPrompt
 ├── sports.prisma         # SportLeague, SportTeam, SportPlayer, SportSeason, SportMatch, SportStanding
 ├── onoma.prisma          # NameBank, LanguagePack, EtymologyRoot, GrammarProfile, WritingSystem

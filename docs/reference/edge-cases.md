@@ -809,7 +809,7 @@ sessionStorage.removeItem('returnTo');
 
 ### Rate Limit Exceeded
 
-**Scenario:** A user exceeds the per-minute budget of a rate-limited procedure builder (e.g. 121st `readOnlyProcedure` call within 60 seconds)
+**Scenario:** A user exceeds the per-minute budget of a rate-limited procedure builder (e.g. the 101st `lightMutationProcedure` call within 60 seconds)
 
 **Implementation** (`src/server/api/trpc/middleware.ts` → `createRateLimitMiddleware`, backed by `src/lib/cache/rate-limiter.ts`: Redis in production, in-memory fallback in development):
 ```typescript
@@ -826,7 +826,7 @@ if (!result.success) {
 }
 ```
 
-Limits per builder: `readOnlyProcedure` 120/min, `lightMutationProcedure` 100/min, `rateLimitedPublicProcedure` 100/min, `adminProcedure` 100/min, `standardMutationCountryOwnerProcedure` 60/min. The limiter is skipped entirely when `rateLimiter.isEnabled()` is false.
+Limits per builder: `lightMutationProcedure` 100/min, `rateLimitedPublicProcedure` 100/min, `adminProcedure` 100/min, `standardMutationCountryOwnerProcedure` 60/min. The limiter is skipped entirely when `rateLimiter.isEnabled()` is false.
 
 **Client Response:**
 ```typescript

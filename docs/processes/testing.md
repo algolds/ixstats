@@ -69,7 +69,7 @@ bun run test:economics
 
 ## 4. Centralized Test Suite Layout (`src/tests/`)
 
-Jest unit and integration test files are centralized in `src/tests/` (320+ files) organized by domain; a few legacy tests remain co-located (`src/app/builder/__tests__/`, `src/lib/sports/analysis.test.ts`):
+Jest unit and integration test files are centralized in `src/tests/` (about 550 test files, 2026-10-05) organized by domain; a few legacy tests remain co-located (`src/app/builder/__tests__/`, `src/lib/sports/analysis.test.ts`):
 
 ```
 src/tests/

@@ -143,22 +143,33 @@ mkdir -p ~/projects && cd ~/projects
 git clone <repo-ssh-url> ixstats
 cd ixstats
 
-# 2. Use the active integration branch
-git checkout rose-garden
+# 2. Use the junior devs' branch (decision D13; see contributing.md)
+git checkout development
 
-# 3. Drop in the .env.local the lead gave you (into the project root)
+# 3. Drop in the .env.local the lead gave you (into the project root),
+#    or copy .env.example to .env.local and add your own Clerk dev keys
 
 # 4. Install dependencies (also generates the Prisma client)
 bun install
 
-# 5. Start everything — this boots Docker DB + Redis + SSH tunnels + the app
-bun run dev:local
+# 5. Start PostgreSQL + PostGIS and Redis, and build an empty database
+docker compose -f docker-compose.dev.yml up -d
+bun run db:setup
+
+# 6. Start the app
+bun run dev
 ```
 
-Open **http://localhost:3000** in your Windows browser. That's the app, running from WSL.
+Open **http://localhost:3000** in your Windows browser. That's the app, running from WSL. The database starts
+empty: sign in and create a nation at `/builder`. To get admin, add your Clerk user id to `SYSTEM_OWNER_IDS` in
+`.env.local` and run `bun run set-admin-role`.
 
-- `bun run dev:local` is the all-in-one for the WSL setup (DB, Redis, tunnels, Next.js).
-- Plain `bun run dev` runs just the Next.js dev server (use once your DB/Redis are already up).
+- `bun run db:setup` runs `db:generate` and `db:bootstrap` (PostGIS, schema push, catalog seeds). It refuses a
+  database that already has countries or users.
+- `bun run dev` runs `db:push:force` against your local database when a `prisma/schema/*.prisma` file changed
+  since its last push, so pulling a schema change updates your database (`SKIP_DB_PUSH=1` skips it).
+- `bun run dev:local` is the maintainers' all-in-one (DB, Redis, SSH tunnels to production, a production dump
+  on first run); it needs SSH access to the server.
 - First run is slow (it builds the DB and compiles). Later runs are fast.
 
 → If anything fails, the **[Local Dev Setup](../operations/local-dev-setup.md)** guide has the
@@ -168,10 +179,10 @@ troubleshooting section (Docker not running, tunnel auth, port conflicts).
 
 ## 8. The daily git workflow
 
-Never commit straight to `rose-garden` (the integration branch). Every change is a branch → PR.
+Never commit straight to `development` or `rose-garden`. Every change is a branch → PR into `development`.
 
 ```bash
-git checkout rose-garden && git pull # start from latest
+git checkout development && git pull # start from latest
 git checkout -b feat/my-thing        # new branch, descriptive name
 
 # ...edit code in VS Code...
@@ -194,15 +205,16 @@ See **[Contributing Guide](contributing.md)** for the full PR checklist and code
 These come from the project rules (`CLAUDE.md`, which is git-ignored — ask the lead for a copy) — breaking them can crash the server or production data.
 
 - **Use `bun` only.** Never `npm`, `yarn`, or `pnpm`. The lockfile is `bun.lock`.
-- **Prefer scoped typechecks** — use `bun run typecheck:ui`, `typecheck:server`, `typecheck:trpc` or
-  `typecheck:db` (`bun run typecheck` / `bun run check` run all four in sequence). Avoid a bare
+- **Prefer scoped typechecks** — use `bun run typecheck:ui`, `typecheck:server`, `typecheck:trpc`,
+  `typecheck:db` or `typecheck:scripts` (`bun run typecheck` runs all five in sequence). Avoid a bare
   `tsc --noEmit` on the root `tsconfig.json`: it pulls the whole graph into one process.
 - **Database write commands are guarded.** `db:migrate`, `db:push`, `db:reset` are blocked. Don't reach
   for the `:force` variants on production unless the lead is directing you.
 - **Code lives in the WSL/Linux filesystem**, never `/mnt/c/...`.
 - **Secrets never go in git.** `.env*` files are ignored — keep them that way.
 - **The middleware file is `src/proxy.ts`** (not `middleware.ts`) — surprises people; don't "fix" it.
-- **Active integration branch is `rose-garden`**, not `main` (older docs may still say `v2`).
+- **Branch from `development` and PR into it.** `rose-garden` is the maintainer's nightly branch and `master` is
+  production (older docs may still say `main` or `v2`).
 
 ---
 

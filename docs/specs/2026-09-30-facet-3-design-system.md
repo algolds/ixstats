@@ -1,4 +1,5 @@
-> **Superseded** by [`docs/reference/facet-design-system.md`](../reference/facet-design-system.md) (2026-10-02 design reset).
+> **Superseded** by Facet 4: see the [Facet 4 reference](../reference/facet-design-system.md) and its
+> [spec](../superpowers/specs/2026-10-04-facet-4-design.md) (2026-10-04).
 > Kept for history only; do not follow it for new work.
 
 # Facet 3 — Unified Design System Specification

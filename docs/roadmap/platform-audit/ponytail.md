@@ -1,7 +1,7 @@
 # Ponytail audit: IxStats `rose-garden` @ `e91e6b0b2` (2026-09-30)
 
 > **Snapshot of `rose-garden` @ `e91e6b0b2` (2026-09-30).** Many findings here were fixed the same day in PR #48;
-> see [README §0](README.md#0-status-since-the-audit-updated-2026-09-30-after-48) for current status.
+> see [README §0](README.md#0-status-since-the-audit-updated-2026-10-05-after-48-and-49) for current status.
 
 Read-only pass. Nothing in the repo was modified. All helper scripts and raw outputs are in this folder:
 `graph.ts` (file reachability incl. cron/scripts/tests roots), `symgraph.ts` (barrel-aware symbol reachability),

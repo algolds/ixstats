@@ -152,13 +152,11 @@ git push origin production-pre-v1.4.0
   - [ ] `NEXT_PUBLIC_APP_URL` and `WS_ALLOWED_ORIGINS` (WebSocket origin allowlist; fails closed)
   - [ ] `CRON_ENABLED_JOBS` (in `ecosystem.config.cjs` for `ixstats-cron`; empty = no jobs)
   - [ ] `DISCORD_WEBHOOK_URL` (optional but recommended)
-  - [ ] `REDIS_ENABLED="true"` + `REDIS_URL` (rate limiting, caches, ThinkPages broadcast bridge)
+  - [ ] `REDIS_ENABLED="true"` + `REDIS_URL` (rate limiting, caches, ThinkPages and market broadcast bridges)
   - [ ] `PORT` (default: 3550)
 
 - [ ] **Optional but recommended variables:**
   - [ ] `ENABLE_COMPRESSION="true"`
-  - [ ] `ENABLE_CACHING="true"`
-  - [ ] `CACHE_TTL_SECONDS="3600"`
   - [ ] `RATE_LIMIT_ENABLED="true"`
   - [ ] `RATE_LIMIT_MAX_REQUESTS="500"`
   - [ ] `DISCORD_WEBHOOK_ENABLED="true"`
@@ -408,7 +406,7 @@ git push origin production-pre-v1.4.0
 Choose your deployment method:
 
 **Option A: Platform Deployment (Vercel/Netlify)** — not used. The repo is connected to a Vercel project, but `vercel.json` turns off its git deployments (`git.deploymentEnabled: false`): every Vercel build failed, since the app needs a database, Clerk keys, the `/projects/ixstates` base path and the git-ignored `next.config.js`. There is no `netlify.toml`
-- [ ] See [Platform Deployment](#platform-deployment)
+- [ ] See [Platform Deployment](#platform-deployment-vercelnetlify)
 
 **Option B: VPS/Dedicated Server** — **production path**
 - [ ] See [Manual Server Deployment](#manual-server-deployment)
@@ -749,15 +747,16 @@ Immediately rollback if:
   - Document reason for rollback
   - Notify team
 
-- [ ] **Revert to previous version and redeploy**
+- [ ] **Revert to previous version and redeploy** (the [release guide's rollback](release-guide.md#rollback))
   ```bash
+  # Push a branch at the commit noted before deploying (e.g. rollback-<date>), then on the server:
   cd /ixwiki/public/projects/ixstats
-  git checkout -B <previous branch> <commit noted before deploying>
-  ./scripts/deploy-production.sh
-  # NOTE: the script hard-resets to master/<branch>, so the previous commit must be
-  # the tip of that branch on the remote (or push a rollback branch first).
-  # `bun run deploy:rollback` (scripts/deployment/rollback-deployment.sh) is an older helper; read it before use.
+  ./scripts/deployment/rollback-deployment.sh rollback-<date>
+  # or restore the pre-deploy dump first (backups/deploy-history.log names it):
+  ./scripts/deployment/rollback-deployment.sh rollback-<date> --restore backups/ixstats-<stamp>.dump
   ```
+  The script fetches the branch from the `master` remote, checks it out, optionally restores the dump, and runs
+  `deploy-production.sh` with `ALLOW_NON_MASTER_DEPLOY=1`.
 
 - [ ] **Restore database (if needed)**
   ```bash

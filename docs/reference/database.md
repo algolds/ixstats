@@ -1,9 +1,9 @@
 # Database Reference Snapshot
 
-**Last updated:** September 2026
+**Last updated:** 2026-10-05
 
-Prisma schema: `prisma/schema/*.prisma` (18 files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **332** (plus 33 enums)
+Prisma schema: `prisma/schema/*.prisma` (21 files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
+Models: **338** (plus 33 enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
@@ -13,9 +13,10 @@ Models: **332** (plus 33 enums)
 | Economy & Tax (`economy.prisma`) | `EconomicProfile`, `EconomicIndicator`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy` |
 | Government, Politics & Issues (`government.prisma`) | `GovernmentComponent`, `ComponentSynergy`, `GovernmentStructure`, `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`, `NationalIssue`, `StorytellerEffect`, `Intent` |
 | Defense & Security (`military.prisma`) | `MilitaryBranch`, `MilitaryUnit`, `DefenseBudget`, `SecurityThreat`, `SecurityEvent`, `MilitaryEquipmentCatalog` |
-| Social & Collaboration (`social.prisma`) | `ThinkpagesAccount`, `ThinkpagesPost`, `ThinktankGroup`, `ThinkshareConversation`, `ActivityFeed`, `Poll` |
+| Social & Collaboration (`social.prisma`, `social-follows.prisma`, `realm-boards.prisma`) | `ThinkpagesAccount`, `ThinkpagesPost`, `ThinktankGroup`, `ThinkshareConversation`, `ActivityFeed`, `Poll`, `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `RealmBoard` |
 | Achievements & Notifications (`core.prisma`) | `Achievement`, `UserAchievement`, `Notification`, `NotificationEventConfig` |
-| Users, Roles & Logging (`core.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog` |
+| Users, Roles & Logging (`core.prisma`, `identity.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog`, `PassportPreference` |
+| Scheduled jobs (`core.prisma`) | `JobLease` (`job_leases`, the cron lease row), `CronRun` (one row per cron run) |
 | Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `CraftingRecipe`, `TradeOffer`, `NSImport` (`CardBackgroundImage` lives in `core.prisma`) |
 | Exchange (`exchange.prisma`) | `ExchangeWallet`, `Company`, `Shareholding`, `SectorIndex`, `Contract` |
 | Maps, Geo & Realms (`maps.prisma`) | `Territory`, `Subdivision`, `City`, `PointOfInterest`, `CountrySovereignty`, `TransportRoute`, `Realm`, `RealmClaim` |

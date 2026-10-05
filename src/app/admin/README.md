@@ -59,7 +59,7 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 | `onoma/` | Onoma admin panel (Labs) |
 | `facet-lab/` | Facet design-system lab (`facet-materials-lab/FacetLabPanel`) |
 
-Directories without a `page.tsx`: `calculations/` (formula editor components; the `calculations` section is reachable from the sidebar, but a hard load of `/admin/calculations` has no route), `facet-materials-lab/` (lab components), `wiki/components/` (sections used by `wikios-settings`, `lorescanner`, `achievements`), `_components/`, `_hooks/`.
+`calculations/` has a `page.tsx` (the formula editor and simulator), so `/admin/calculations` loads directly. Directories without a `page.tsx`: `facet-materials-lab/` (lab components), `wiki/components/` (sections used by `wikios-settings`, `lorescanner`, `achievements`), `_components/`, `_hooks/`.
 
 > Removed since the June README: `settings/`, `system-validation/`, `user-logs/`, `worldstudio/`, `card-packs/`, `lorewards/`, `user-management/`, `wiki/` (page), `facet-materials-lab/` (page), `studio/`, and earlier `tax-components/`, `card-balancer/`, `crisis-events/`, `ns-sync/`, `lore-cards/`. Added: `narrator/`, `onoma/`.
 

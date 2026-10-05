@@ -181,6 +181,6 @@ $$\text{Total Tax} = \sum_{i=1}^{n} \max\left(0, \min(\text{Income}, \text{Brack
 - `src/lib/economy/calculations.ts` – Base `IxStatsCalculator` class (tiers, growth caps, population)
 - `src/lib/economy/modeling-engine.ts` – Sandbox what-if modeling engine
 - `src/lib/government/synergy.ts` – Government component synergy/conflict scoring
-- `src/lib/government/tax/atomic-tax-components.ts` & `src/lib/economy/atomic-tax-integration.ts` – Atomic tax components, synergies and revenue effects
+- `src/lib/government/tax/atomic-tax-components.ts` – Atomic tax components, synergies and revenue effects (`atomic-tax-integration.ts` was deleted)
 - `src/app/admin/calculations/system-formulas.ts` – Reference formulas shown in the admin Calculation Lab (ERI, embassy synergy, projections)
 - `src/server/shared/mycountry-helpers.ts` – Server-side vitality calculations

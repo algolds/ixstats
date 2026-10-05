@@ -10,9 +10,93 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.4 RC2)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-22 → 2026-09-29) is listed first; the
-2026-08-21 → 2026-09-22 work follows it. The version registry (`src/lib/buildVersion.ts`) still reads 1.4.0 until the
-RC2 cut.
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 → 2026-10-05) is listed first, then
+2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
+reads 1.4.0 until the RC2 cut.
+
+### 🛡️ Security, CI, Operations & Cron (2026-10-05)
+
+- **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
+  is used only with its own key and an allowlisted host); `generateMatchCommentary` is rate-limited and only the
+  league's manager can force a regenerate. Lorewards `getCrossValidationHistory` / `getBlacklist` and sports
+  `getAdminGlobalStats` / `testLLMNarrator` are `adminProcedure`. Production CSP drops plain `http:` images and `ws:`
+  sockets.
+- **CI:** `docs:check` is green again (`docs:sync`); new blocking steps `typecheck:db`, `typecheck:scripts` (scripts,
+  `proxy.ts`, `instrumentation.ts`, `content/`) and `check:script-imports`; seven package scripts that failed on import
+  work again. CI and the security scan run on `master`, `development` and `rose-garden`; the scan uses `bun audit`;
+  `image-validation.yml` is deleted. The `audit:arch` baseline holds real line counts, so its ratchet fires; the Facet
+  ratchet locks emoji at 530.
+- **Setup:** `bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) and `docker-compose.dev.yml` take a fresh
+  clone to a running app on an empty database (PostGIS, schema push, catalog seeds); `db:setup`, `dev:db` and `fresh`
+  use it. `.env.example` lists every `src/env.ts` key (a test enforces it). The small-arms and Onoma default-dictionary
+  seed data are restored, so `db:seed` runs.
+- **Operations:** `scripts/deployment/rollback-deployment.sh <remote-branch> [--restore <dump>] [--yes]` wraps the
+  release guide's rollback; each deploy appends time, commit and dump to `backups/deploy-history.log`, and a failed PM2
+  reload fails the deploy. `ecosystem.config.example.cjs` is the tracked PM2 template. Env files load in one order
+  everywhere (`.env.production.local` beats `.env.production`), and `verify:environment` fails on missing production
+  secrets. `deploy-to-staging.sh` and the legacy `deploy-to-production.sh` are removed.
+- **Cron:** a lease row (`job_leases`) replaces the advisory lock; every run writes a `CronRun` row, a failed run
+  alerts Discord, and `/api/health` shows each job's last run, status and last success plus Redis state. New
+  `log-retention` job (21 jobs in all).
+- **Realtime:** market WebSocket events go through a Redis bridge (`src/server/market-broadcast-bridge.ts`), so bids,
+  buyouts and cron completions reach every socket. `db.ts` logs when an unbounded `findMany` hits the 1,000-row cap.
+- **Docs:** a docs audit against the code and an ordered action plan
+  ([ACTION_PLAN_2026-10-05.md](docs/roadmap/ACTION_PLAN_2026-10-05.md)); the planning, status, onboarding and ops
+  docs follow the code.
+
+### 🧭 Facet 4 & the Sidebar (2026-10-04 → 10-05)
+
+- **Facet 4:** five layers (canvas, pane, well, chrome, overlay), content types as their own axis, a tinted canvas
+  behind glass panes and no glass on glass; eyebrows, em dashes, emoji, `Sparks` and `hover:scale` are counted by a ratchet that only
+  falls. Facet version 3.1 → 4, Halo 5 → 6 (standard chrome glass, no glow).
+- **Sidebar:** one macOS-style source list (`src/lib/navigation/app-sections.ts`) is the only navigation, with a
+  `TabBar` below 1024px. Per-app sidebars, rails and hidden sub-navigation are gone; admin and settings navigation are
+  the sidebar's area lists; the footer carries the Vault card, version, feedback and legal links.
+- **Shell:** a proportional sidebar / content / Inspector grid; WikiOS articles keep contents and page info in the
+  Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
+  domain peeks, and the executive console is URL-driven (`?mode=executive`).
+- Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
+  [spec](docs/superpowers/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/superpowers/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+
+### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
+
+- **Decisions move stats:** issue GDP and population consequences become phased level effects (±3% / ±1% caps);
+  directives use the same effects and consume CivCap; issue stability deltas survive recalculation. The new
+  `stat-progression` job persists stats and writes monthly `HistoricalDataPoint` rows.
+- **Elections:** a first election is scheduled once a legislature has at least 2 parties; candidates come from the
+  parties, results seat them, follow-up elections resolve, and bills can pass.
+- **Diplomacy inbox:** incoming and outgoing foreign-policy proposals and alliance invites with accept, decline and
+  withdraw, a count badge, notifications and 14-day expiry.
+- **Social loop:** mention, repost and quote notifications; the `thinkpages-trending` job; persona follows with real
+  counts; a personal persona for posting as yourself.
+- **IxnayID economy:** the 5,000 IxC welcome bonus at account creation, 19 account-level achievements, background
+  evaluation (`achievements-evaluate`), a passport showcase and ribbons derived from real unlocks; passport privacy is
+  persisted and enforced on the server.
+- **Realms:** nation caps (realm cap and tier), a realm-aware builder, the nav and passport nation switcher, realm
+  boards (`/r/<realm>/board`), a `/realms` directory and a realm filter on the ThinkPages feed.
+- **True numbers:** Diplomatic Standing computed from the real record, Governmental Efficiency from
+  `governmentEffectiveness`, real CivCap in the Capacity band, and realm-scoped World Census rankings.
+- New jobs `stat-progression`, `thinkpages-trending` and `achievements-evaluate` are off until named in
+  `CRON_ENABLED_JOBS`. Additive schema: `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `PassportPreference`,
+  `RealmBoard` and new fields.
+
+### 🧰 Audit Fix Batch (PR #48, 2026-09-30)
+
+- Fixes from the 2026-09-30 platform audit (ten parallel branches) plus a 17-item site bug list.
+- **Security and integrity:** ThinkShare thinktank conversations need active membership; ThinkPages account creation
+  needs write access to the country and only admins set `verified`; a WikiOS namespace edit policy; the Narrator LLM
+  URL has an SSRF guard; `IXWIKI_DB_PASSWORD` has no hard-coded fallback; Lorewards pays only verified wiki links.
+- **Economy:** packs, junk payouts and lore-card requests go through the ledger; junk rate 0.25 (capped at 0.5);
+  crafting uses ownership IDs.
+- **Loops:** hostile foreign-policy actions apply their effects; cooperative proposals and alliance invites can be
+  accepted; directives move GDP and stability; ThinkTank Chat and Docs tabs are mounted, with invites by username;
+  sports predictions can be placed.
+- **Honest UI:** no fabricated ribbons; Halo and profile Sign Out sign out; dead Create League/Club links removed; the
+  Approval and Stability bands read real values; one premium definition (`hasPremiumTier`).
+- **Site bugs:** flags and seals, the maps build (the 14 `@turf/*` packages declared, the MapLibre worker shipped),
+  icon stroke width, stashes under the old user ID, Daily Prompt, ThinkPages reposts and MyCountry layout fixes.
+- Schema: `AllianceMember.status`.
 
 ### 🎨 Facet 3 Design System, Phases 1–2 (2026-09-30)
 
@@ -869,7 +953,7 @@ RC2 cut.
 - **⟨ONOMA⟩ Glyph System v0.1 & Geometric Vector Brand Identity**:
   - Authored 24 mathematical and linguistic vector glyphs in [`onoma-glyphs-catalog.tsx`](src/app/labs/onoma/components/glyphs/onoma-glyphs-catalog.tsx) and [`OnomaGlyph.tsx`](src/app/labs/onoma/components/glyphs/OnomaGlyph.tsx), replacing generic icons with precise phonological notation across the suite.
   - Replaced generic AI sparkle icon with the Apple Drafting Stylus / Compose mark (`emerge-synthesis`) across creation and synthesis triggers.
-  - Upgraded [`OnomaBrandLogo.tsx`](src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx) with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
+  - Upgraded `src/app/labs/onoma/components/shared/OnomaBrandLogo.tsx` with authentic mathematical angle brackets `⟨ONOMA⟩` (U+27E8 / U+27E9) and custom geometric SVG wordmark in `public/images/onoma-logo.svg`.
   - Added interactive `/ˈɒnəmə/` IPA pronunciation button with first-visit ping animation and browser speech fallback.
 
 - **Quick Generator UI/UX Refresh & Always-Expanded Seed Words Editor (`QuickGeneratorControls.tsx`)**:
@@ -998,7 +1082,7 @@ RC2 cut.
 
 - **Phase 2: IxVault & Cards System (28 Components)**:
   - **IxVault Marketplace & Store**: Aligned [VaultAuctionsTab.tsx](src/components/vault/sections/marketplace/VaultAuctionsTab.tsx), [VaultTradingTab.tsx](src/components/vault/sections/marketplace/VaultTradingTab.tsx), [VaultStoreTab.tsx](src/components/vault/sections/marketplace/VaultStoreTab.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [AuctionCardItem.tsx](src/components/vault/sections/marketplace/auctions/AuctionCardItem.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), and [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx).
-  - **Vault Dashboard & Inventory**: Aligned [VaultNetWorthCard.tsx](src/components/vault/sections/dashboard/VaultNetWorthCard.tsx), [VaultYieldProjectionsCard.tsx](src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), [InventorySidebarContent.tsx](src/components/vault/sections/cards/InventorySidebarContent.tsx), [CollectionsSidebarContent.tsx](src/components/vault/sections/cards/CollectionsSidebarContent.tsx), [GallerySidebarContent.tsx](src/components/vault/sections/cards/GallerySidebarContent.tsx), [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
+  - **Vault Dashboard & Inventory**: Aligned `src/components/vault/sections/dashboard/VaultNetWorthCard.tsx`, [VaultYieldProjectionsCard.tsx](src/components/vault/sections/dashboard/VaultYieldProjectionsCard.tsx), `src/components/vault/sections/cards/InventorySidebarContent.tsx`, `src/components/vault/sections/cards/CollectionsSidebarContent.tsx`, `src/components/vault/sections/cards/GallerySidebarContent.tsx`, [ImportVerifyStep.tsx](src/components/vault/sections/import/ImportVerifyStep.tsx), and [ImportConfirmStep.tsx](src/components/vault/sections/import/ImportConfirmStep.tsx).
   - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), [CraftingWorkbench.tsx](src/components/cards/crafting/CraftingWorkbench.tsx), and [CraftingAnimation.tsx](src/components/cards/crafting/CraftingAnimation.tsx).
 
 - **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
@@ -1025,7 +1109,7 @@ RC2 cut.
   - Modernized high-traffic components to semantic design tokens:
     - [src/components/ui/select.tsx](src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
     - `src/components/profile/WikiPreferencesCard.tsx`: Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
-    - Vault modals & marketplace: [DailyBonusWidget.tsx](src/components/vault/DailyBonusWidget.tsx), [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx).
+    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), [CreateAuctionModal.tsx](src/components/vault/sections/marketplace/auctions/CreateAuctionModal.tsx), [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx).
     - ThinkPages composer & social cards: [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), `MentionMenuPortal.tsx`, `WikiAndStashPopovers.tsx`.
     - Maps & navigation HUDs: [TourHUD.tsx](src/components/maps/core/components/TourHUD.tsx), `NotificationsView.tsx`, `MatchDetailModal.tsx`, [DevCountryViewToolbar.tsx](src/components/dev/DevCountryViewToolbar.tsx).
     - Sports widgets: `PlayerCard1.tsx`, `Scoreboard1.tsx`, `Standings1.tsx`, `LatestResults1.tsx`, `PlayerStats1.tsx`, `MatchSchedule1.tsx`.
@@ -1140,7 +1224,7 @@ RC2 cut.
   - **Wiki & Factbook Parser Package (`src/lib/wiki/`)**: Consolidated wikitext data parser, factbook routes provider, and eligible country service into `src/lib/wiki/` with master barrel export (`index.ts`).
   - **Country Geography & PostGIS Compliance Package (`src/lib/country-geo/`)**: Consolidated geography compliance validator, PostGIS spatial queries, base terrain layer queries, and special stats populator into `src/lib/country-geo/` with master barrel export ([index.ts](src/lib/country-geo/index.ts)).
   - **Authorization & User Management Package (`src/lib/auth/`)**: Consolidated CASL user permissions builder, user management service, and system-owner security constants into `src/lib/auth/` with master barrel export ([index.ts](src/lib/auth/index.ts)).
-  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export ([index.ts](src/lib/ai/index.ts)).
+  - **AI & Sentiment Analysis Package (`src/lib/ai/`)**: Consolidated sentiment analysis NLP helper into `src/lib/ai/` with master barrel export (`src/lib/ai/index.ts`).
   - **Clean Codebase-Wide Call Site Migration**: Migrated 60+ import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, `src/tests/`, and `proxy.ts` to import directly from `~/lib/wiki`, `~/lib/country-geo`, `~/lib/auth`, and `~/lib/ai`, completely deleting 11 legacy root files from `src/lib/`.
   - **Root `src/lib/` Purity**: Successfully consolidated and partitioned all domain-specific code into dedicated packages; only global core primitives (`utils.ts`, `logger.ts`, `cache.ts`, `rate-limiter.ts`, `event-bus.ts`, `app-error.ts`, `prisma-error.ts`, `base-path.ts`, formatting, math, and system configurations) remain in the root of `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all unit test suites (558/558 full-platform tests passing across 49 test suites).
@@ -1149,7 +1233,7 @@ RC2 cut.
 
 - **Platform Infrastructure, Themes & Economy Vault Isolation (/ponytail)**:
   - **Media & Image Processing Package (`src/lib/media/`)**: Consolidated image cache services, image color palette extractor, image downloader, Unsplash client, country hero image engine, audio/sound service, and active cosmetic badge helpers into `src/lib/media/` with master barrel export ([index.ts](src/lib/media/index.ts)).
-  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export ([index.ts](src/lib/websocket/index.ts)).
+  - **WebSockets & Real-Time Streaming Package (`src/lib/websocket/`)**: Consolidated marketplace WebSocket client/server, core standalone WebSocket server, socket reconnection wrapper, intelligence live-stream servers, and ThinkPages socket broadcasts into `src/lib/websocket/` with master barrel export (`src/lib/websocket/index.ts`).
   - **Themes & Visual Design System Package (`src/lib/themes/`)**: Consolidated theme registry, theme utilities, MyCountry custom palette engine, charting color tokens, and holographic card foil shaders into `src/lib/themes/` with master barrel export ([index.ts](src/lib/themes/index.ts)).
   - **Vault & Credits Ledger Package (`src/lib/vault/`)**: Consolidated IxVault service facade, daily login bonuses, streak trackers, credit ledger transactions, vault notifications, passive income distributor, perk cache, type guards, and sovereign exchange configs/services into `src/lib/vault/` with master barrel export (`index.ts`).
   - **Activity Feed & Event Spine Package (`src/lib/activity/`)**: Consolidated player activity generator, activity action hooks, auto-posting service, and country event spine state dispatcher into `src/lib/activity/` with master barrel export ([index.ts](src/lib/activity/index.ts)).
@@ -1182,7 +1266,7 @@ RC2 cut.
 
 - **Simulation & Core Engine Package Isolation (/ponytail)**:
   - **Statecraft Simulation Package (`src/lib/statecraft/`)**: Consolidated simulation calendar, diplomatic intelligence analysis, foreign policy calculations, power broker extraction, reconnaissance reveals, whip vote modeling, stability formulas, cross-pillar engine, synergy calculator, and growth rate normalizers into `src/lib/statecraft/` with master barrel export (`index.ts`).
-  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export ([index.ts](src/lib/military/index.ts)).
+  - **Military & Defense Package (`src/lib/military/`)**: Consolidated branch configurations, equipment catalogs, extended defense inventory, catalog helpers, defense integration, and manufacturer utilities into `src/lib/military/` with barrel export (`src/lib/military/index.ts`).
   - **Intelligence Engine Package (`src/lib/intelligence/`)**: Consolidated core intelligence report generator, vitality metric calculator, intelligence cache, and real-time WebSocket broadcast service into `src/lib/intelligence/` with barrel export (`index.ts`).
   - **Diplomacy & Cultural Simulation Package (`src/lib/diplomacy/`)**: Consolidated relation bands, relative development metrics, choice tracking, drift cron, incident logging, Markov relationship engine, news generator, NPC AI personality system, profile options, cultural compatibility matrices, and cultural participation systems into `src/lib/diplomacy/` with barrel export (`index.ts`).
   - **Clean Call Site Migration**: Migrated all ~65 import call sites across `src/app/`, `src/components/`, `src/server/api/routers/`, `src/hooks/`, and `src/tests/` to import directly from `~/lib/statecraft`, `~/lib/military`, `~/lib/intelligence`, and `~/lib/diplomacy`, completely deleting 32 legacy root files from `src/lib/`.
@@ -1192,8 +1276,8 @@ RC2 cut.
 
 - **Domain Package Isolation & Clean Library Architecture (/ponytail)**:
   - **Achievements Package (`src/lib/achievements/`)**: Consolidated definitions, service, real-time sync, tier scaling math, tests, and card rewards from flat root files into `src/lib/achievements/` with internal relative imports and a master barrel export (`index.ts`).
-  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export ([index.ts](src/lib/discord/index.ts)).
-  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export ([index.ts](src/lib/nationstates/index.ts)).
+  - **Discord Package (`src/lib/discord/`)**: Consolidated Discord client, webhook dispatcher, OAuth user sync, interactive poll generator, IxTwitter sync, and Thinkpages social webhook into `src/lib/discord/` with barrel export (`src/lib/discord/index.ts`).
+  - **NationStates Package (`src/lib/nationstates/`)**: Consolidated NS API client, import service, sync health monitor, and background delta sync processor into `src/lib/nationstates/` with barrel export (`src/lib/nationstates/index.ts`).
   - **Notifications Package (`src/lib/notifications/`)**: Consolidated dispatch API, event emitter, deduplication guard, events registry, React hooks, and delivery optimizer into `src/lib/notifications/` with barrel export ([index.ts](src/lib/notifications/index.ts)).
   - **Clean Full-Codebase Call Site Migration**: Migrated all ~80 import call sites across components, pages, tRPC routers, server cron jobs, and scripts to import directly from domain packages (`~/lib/achievements`, `~/lib/discord`, `~/lib/nationstates`, `~/lib/notifications`), completely removing 22 legacy root files from `src/lib/`.
   - **Verification**: Verified 100% test pass rate across all migrated domain suites (stability guardrails, discord format, poll payload, achievements scaling, and wiki pipeline).
@@ -1214,7 +1298,7 @@ RC2 cut.
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
   - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
-  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers ([countryDataTransformers.ts](src/app/countries/[slug]/_utils/countryDataTransformers.ts)).
+  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
   - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](src/app/countries/_components/CountriesFocusGridModular.tsx), and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
   - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 
@@ -1344,7 +1428,7 @@ RC2 cut.
 
 - **Map Editor Performance & Responsiveness Overhaul (Plans 106–109)**:
   - **Phase 1 — React State Isolation (`transientStore.ts`)**: Decoupled high-frequency mouse pointer movements, cursor telemetry, and hover tooltips into [transientStore.ts](src/components/maps/editor/utils/transientStore.ts) (`useSyncExternalStore`), eliminating top-level React re-render cascades across Map Editor sidebar panels (`0` re-renders per cursor move).
-  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in [geoJsonPatcher.ts](src/components/maps/editor/utils/geoJsonPatcher.ts) supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
+  - **Phase 2 — MapLibre Source Diffing Engine (`geoJsonPatcher.ts`)**: Built `GeoJSONPatchEngine` in `src/components/maps/editor/utils/geoJsonPatcher.ts` supporting targeted feature patch operations (`UPDATE_FEATURE`, `ADD_FEATURE`, `REMOVE_FEATURE`) and MapLibre `setFeatureState` GPU state toggles, replacing full-collection GeoJSON stringification (`JSON.stringify` of 500+ features) and cutting selection/style delay to $<1\text{ms}$.
   - **Phase 3 — Web Worker Geometry Offloading (`geometry.worker.ts` & `useGeometryWorker.ts`)**: Offloaded heavy Turf.js spatial operations (`bezierSpline`, `area`, `union`, `difference`) into a dedicated Web Worker (`geometry.worker.ts`) while rendering fast $\mathcal{O}(1)$ polyline drag previews during vertex dragging, keeping editing frame rate locked at 60fps.
   - **Phase 4 — DOM List Virtualization & CSS Containment (`FeatureList.tsx`)**: Applied native CSS `[content-visibility:auto]` containment and extracted memoized `FeatureRowItem` component with custom equality comparators in `FeatureList.tsx`, reducing list item diffing overhead by > 99%.
 - **Map Editor Photoshop-Grade Selection (Plan 120)**:
@@ -1364,7 +1448,7 @@ RC2 cut.
   - **GeoJSON Precision Truncation at the Response Boundary**: `getCountryFeatures` now truncates subdivision geometry to 6 decimal places (~0.11 m) via the new exported `truncateGeometry` in `geojson-compress.ts` — DB keeps full precision, the editor keeps authoritative geometry, payloads shrink.
   - **Shared Geo Cache Invalidation Keys (`trpc-cache.ts`)**: Consolidated scattered inline key arrays into `GEO_FEATURE_INVALIDATE_KEYS` (+ `_WITH_STORY_PINS`, `_WITH_MAP_LABELS`) in `trpc-cache.ts`, applied across all geo feature routers (cities, pois, storyPins, labels, subdivisions) so writes always invalidate the full map-bundle cache set.
 - **Dushy Feedback Addressal**:
-  - **Daily Reward Copy**: Updated reward payout display in [DailyBonusWidget.tsx](src/components/vault/DailyBonusWidget.tsx) from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
+  - **Daily Reward Copy**: Updated reward payout display in `src/components/vault/DailyBonusWidget.tsx` from `"1-10k credits"` to `"1 to 10,000 IxCredits scaled by level & streak"`.
   - **Legislature Seat Cap (Vatican City Rule)**: Lowered minimum legislature seat count validator in [LegislatureConfig.tsx](src/components/executive/politics/LegislatureConfig.tsx) from 10 down to 1 seat.
   - **Map Trash Icon UX & Deletion Bug**: Made feature delete action button always visible, 1.25x larger, and styled in red (`text-rose-500 hover:bg-rose-500/20`) in `FeatureList.tsx`. Added immediate `void refetch()` to feature deletion onSuccess callbacks in [useMapEditor.ts](src/hooks/useMapEditor.ts) to instantly flush state without extra user inputs.
   - **Map Toolbar POI Label**: Updated toolbar button tooltip label to `"POI / Landmark"` in [MapEditorToolbar.tsx](src/components/maps/editor/MapEditorToolbar.tsx).
@@ -1703,7 +1787,7 @@ RC2 cut.
 ### Changed
 
 - **Global Navigation & Halo Settings Integration**:
-  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in [useNavigationItems.ts](src/hooks/useNavigationItems.ts).
+  - Removed the prominent "Admin" link from the global desktop navigation bar and mobile menu in `src/hooks/useNavigationItems.ts`.
   - Integrated the Admin Panel link into the Halo (Dynamic Island) settings overlay `SettingsView.tsx`, restricted to signed-in administrators (`isAdmin && isSignedIn`).
 
 ## [1.1.3 Ogma (Alpha)] - 2026-06-26
@@ -2000,7 +2084,7 @@ RC2 cut.
 
 - **Map Editor Real-Time Saving and Ghost Border Elimination**:
   - Hardened all database political borders and subdivision geometry calculations with PostGIS `ST_MakeValid` to auto-repair self-intersections or unclosed rings from imported/edited geometries.
-  - Integrated `ST_MakeValid` directly into geometry triggers (`setup-map-triggers.ts`) and manual update helpers ([upsert.ts](src/lib/country-geo/upsert.ts), [clone-subsystems.ts](src/lib/demo-seed/clone-subsystems.ts), [spatial.ts](src/lib/country-geo/spatial.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
+  - Integrated `ST_MakeValid` directly into geometry triggers (`setup-map-triggers.ts`) and manual update helpers ([upsert.ts](src/lib/country-geo/upsert.ts), `src/lib/demo-seed/clone-subsystems.ts`, [spatial.ts](src/lib/country-geo/spatial.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
   - Reconciled query cache invalidation typo key mismatch: replaced `"geoCore.getCountryGeoBundle"` with the correct `"countryGeo.getCountryGeoBundle"` across all backend routers ([countryGeo.ts](src/server/api/routers/countryGeo.ts), [borders.ts](src/server/api/routers/geo/editor/borders.ts), `linkage.ts`, [cities.ts](src/server/api/routers/geo/admin/cities.ts), [provinces.ts](src/server/api/routers/geo/admin/provinces.ts)).
   - Added missing cache invalidation for `"geoCore.getCountryGeometry"` to border mutations in [borders.ts](src/server/api/routers/geo/editor/borders.ts).
   - Wired client-side query cache updates and local state invalidations upon saving, splitting, and merging borders/subdivisions ([useBorderEditor.ts](src/hooks/useBorderEditor.ts), [useMapEditor.ts](src/hooks/useMapEditor.ts), [useMapLiveSync.ts](src/hooks/useMapLiveSync.ts)) to ensure the editor UI redraws instantly with the latest authoritative shape and eliminates stale ghost borders.
@@ -2597,14 +2681,14 @@ We organized the layout components of the dashboard under a dedicated `src/compo
 
 ##### 1. Moved Components
 
-- **[DashboardSidebarLayout.tsx](src/components/dashboard/sidebar/DashboardSidebarLayout.tsx)**: Main dashboard page grid structure.
-- **[DashboardPlayerWidget.tsx](src/components/dashboard/sidebar/DashboardPlayerWidget.tsx)**: Core player profile card and active alerts indicators.
-- **[DashboardQuickLinks.tsx](src/components/dashboard/sidebar/DashboardQuickLinks.tsx)**: Navigation list to help documents and system status.
-- **[ServerDiscordBadge.tsx](src/components/dashboard/sidebar/ServerDiscordBadge.tsx)**: Server-side wrapper for Discord badge loading.
+- **`src/components/dashboard/sidebar/DashboardSidebarLayout.tsx`**: Main dashboard page grid structure.
+- **`src/components/dashboard/sidebar/DashboardPlayerWidget.tsx`**: Core player profile card and active alerts indicators.
+- **`src/components/dashboard/sidebar/DashboardQuickLinks.tsx`**: Navigation list to help documents and system status.
+- **`src/components/dashboard/sidebar/ServerDiscordBadge.tsx`**: Server-side wrapper for Discord badge loading.
 
 ##### 2. Updated Imports
 
-- Updated imports in [DashboardRouter.tsx](src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](src/app/page.tsx), and vault layout [VaultSidebarLayout.tsx](src/components/vault/VaultSidebarLayout.tsx) to reflect the new paths.
+- Updated imports in [DashboardRouter.tsx](src/components/dashboard/DashboardRouter.tsx), root page [page.tsx](src/app/page.tsx), and vault layout `src/components/vault/VaultSidebarLayout.tsx` to reflect the new paths.
 
 ---
 
@@ -3103,7 +3187,7 @@ We successfully implemented conversation options, groups navigation back-button,
 #### Phase 11: Sidebar Discovery Routing, Group Creation & UI Text Wrapping Fixes
 
 - **Sidebar & Routing Updates**:
-  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config [navigation-config.ts](src/lib/navigation-config.ts), and redirection page [page.tsx](src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
+  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page [page.tsx](src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
   - Configured [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
   - Implemented query parameter parsing for `tab` inside `MessagesGroupsPanel.tsx` to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
 - **Group Creation Integration**:
@@ -3198,7 +3282,7 @@ We resolved several UX and functional issues on the MyCountry dashboard, includi
 
 #### Phase 3: Diplomatic Relations Seeding & Detailed Lists
 
-- **[seed-fallbacks.ts](src/lib/demo-seed/seed-fallbacks.ts)**:
+- **`src/lib/demo-seed/seed-fallbacks.ts`**:
   - Removed the `isDemo: false` selection filter so relationships and embassies seed successfully for demo/dev countries.
 - **`DiplomaticRelationsList.tsx`** [NEW]:
   - Displays country flags, status badges, strength bars, bilateral trade volumes, and last contact dates.

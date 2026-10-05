@@ -8,7 +8,7 @@
 The MyCountry Suite provides sovereign leaders with an executive command environment. Built around the single-page **Command Surface** architecture, it unifies decision-making, foreign relations, macroeconomic planning, and legislative governance into an action-first workflow.
 
 > **Open to every player:** **Overview/Executive**, **Economy**, **Politics**, and **Diplomacy** (`src/lib/auth/ability.ts`).  
-> *(**Defense** — which also serves `/mycountry/intelligence` — and the **Map Editor** are premium-gated: locked behind `PremiumPreviewFrame`. The sidebar-hiding rule (hidden for non-premium users unless an admin enables the teaser via `api.admin.getNavigationSettings`) lives in `MyCountrySidebarNav`, which is imported only as a type and never rendered, so that gating is not active.)*
+> *(**Defense** — which also serves `/mycountry/intelligence` — and the **Map Editor** are premium-gated: locked behind `PremiumPreviewFrame`. The app sidebar lists Defense only for MyCountry Premium members and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); the pages keep their premium preview for anyone who arrives by URL.)*
 
 ---
 
@@ -42,7 +42,7 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 
 ### Overview layout & design (Facet / Apple HIG)
 The overview reads top to bottom as one hierarchy, on an 8pt spacing rhythm (24px between cards):
-The overview follows the v2 composition (c5c6b382) on the Facet 3.1 identity (spec §16):
+The overview follows the Facet 4 rules ([facet-design-system.md](../reference/facet-design-system.md)):
 
 1. **Header** (`headers/UnifiedGlassCommandBar.tsx`) - the MyCountry `PageHeader`: the country name as the large title over its flag as cover art (the flag banner backdrop, no small flag beside the title), the identity subtitle (leader · government type · economic tier · realm) and the directive status line ("N of 3 directives left this week" / "Next directive in …", `intent.getStatus`) on a page-background plate, and the Profile, Editor and **Declare Directive** actions. The banner and plates collapse with the header; the compact sticky bar has plain ghost actions.
 2. **Priority** (`ExecutiveOpportunityHero.tsx`) - the one thing most worth the leader's attention, dismissible for the session: an opaque `Card` with the priority's glyph in its status tone, a one-line subtitle, title and description, an optional metric (label over value) and one primary action.
@@ -56,9 +56,9 @@ The overview follows the v2 composition (c5c6b382) on the Facet 3.1 identity (sp
 Rules the overview follows:
 - **Real data only.** Domain tiles show a real figure when one exists (Politics: stability; Economy: GDP growth from `calculatedStats.gdpGrowth`; Diplomacy: items awaiting an answer) and otherwise a plain description, never a placeholder number. The priority hero skips a card whose figure is missing (defense readiness, embassy counts). The agenda lists only open national issues, active directives and upcoming elections; the fixed sample events it used to show are gone, and an empty inbox says what lands there and offers Declare Directive.
 - **Facet primitives, not a local kit.** The header is the shell `PageHeader` over the flag banner; everything else (the priority card, Agenda, Recent activity, World Census, Territory, domain pages, tiles, rows) is an opaque `Card` with `CardHeader`/`CardContent`, and tiles inside a hero use `variant="inset"`. Glass never nests. Actions are `<Button>`; the agenda's mailboxes are a `SegmentedControl`, its rows and the census rows are plain `FacetList`/`FacetRow`s; census ranks, the unread count and ledger deltas are `<Badge>`s; a wiki-parse result is an `<Alert>`. See [facet-design-system.md](../reference/facet-design-system.md).
-- **Gold.** Inside `data-app="mycountry"` the plain `<Button>` is the flat gold primary; never hand-roll a `bg-yellow` class. Non-button gold uses `facet-gold` (count pills, meters). Domain hues (`domain-hue.ts`: Diplomacy cyan, Defense red, Politics indigo, Economy green, Directives gold) colour icon badges and glyphs only, next to the domain's glyph and label; there are no glows or per-domain hero washes. Status keeps `STATUS_TEXT` (`status-tone.ts`): critical `text-destructive`, warnings orange. Theme tokens throughout, no `dark:` overrides. Loading states use `<Skeleton>` shaped like the final rows.
+- **Gold.** Inside `data-app="mycountry"` the plain `<Button>` is the flat gold primary; never hand-roll a `bg-yellow` class. Non-button gold uses `facet-gold` (count pills, meters). Domains are identified by their glyph and label (`domain-meta.ts`; the per-domain hue module is gone); there are no glows or per-domain hero washes. Status keeps `STATUS_TEXT` (`status-tone.ts`): critical `text-destructive`, warnings orange. Theme tokens throughout, no `dark:` overrides. Loading states use `<Skeleton>` shaped like the final rows.
 - **Identity is the header banner.** The country's flag is the cover art behind the command bar (`PageHeader`'s `backdrop` slot, `headers/FlagBanner.tsx`), kept vivid under a 10% page-background wash. Readability sits on the content instead: the title block and the Profile/Editor actions have a page-background plate at 90% (`BACKDROP_PLATE`, opaque under Reduce Transparency and Increase Contrast). It collapses with the header and never reaches the compact bar. There is no watermark or glow elsewhere on MyCountry.
-- MyCountry has no private button/card kit: surfaces use the Facet primitives (`Card`, `Button`, `Badge`, `Toggle`, `SegmentedControl`, `Eyebrow`). The old `surface-kit.tsx` was removed.
+- MyCountry has no private button/card kit: surfaces use the Facet primitives (`Card`, `Button`, `Badge`, `Toggle`, `SegmentedControl`). Facet 4 removes eyebrows; the `Eyebrow` uses left in MyCountry modals are counted by the facet ratchet and may only fall. The old `surface-kit.tsx` was removed.
 - **Domain pages and drill sheets follow the same rules.** `DomainSurface.tsx` opens with a `PageHeader`-style title and the gold **Declare a Directive** `<Button>` with a suggested goal; the rails (`rails/shared.tsx`: `RailCard`, `RailRow`, `DomainKpiGrid`, `DomainActivityCard`) are opaque `Card`s with `<Badge>` counts and status colours from `status-tone.ts` (plus `success`). The Economy drill-down, Fiscal Policy and Trade & Commerce consoles render inside `DrillSheets.tsx`; the sheet is the only blurred surface. Sub-tabs use the shared `SectionTabBar`. Tax and tariff sliders keep a small channel colour dot only where it keys the revenue-composition chart.
 
 ### Key Component Architecture
@@ -67,7 +67,7 @@ All under `src/components/mycountry/shell/` unless noted.
 - `ExecutiveHome.tsx` – Overview body: priority hero, agenda, recent activity, and the rail (national standing, census, directive trigger, territory)
 - `ExecutiveAgenda.tsx` – Agenda inbox of open issues, active directives and upcoming elections, with read/done/snooze (`agenda/`: `deriveAgendaItems`, `inboxState`, `AgendaEventActionDialog`)
 - `WorldCensusCard.tsx` – World Census rail card: top five ranks by relevance, the rest behind "See more"
-- `ActionCardGraphics.tsx` – domain tile watermarks
+- `DomainPeeksCard.tsx` – the domain peeks on the Overview (the hidden domain tiles were removed)
 - `ExecutiveOpportunityHero.tsx` – Spotlight hero prioritizing critical national crises
 - `DomainSurface.tsx` – Specialized domain view for Diplomacy, Defense, Politics, Economy
 - `DomainContextRail.tsx` – Contextual KPI trends and event activity logs
@@ -75,8 +75,8 @@ All under `src/components/mycountry/shell/` unless noted.
 - `shared/headers/IssueDetailBrief.tsx` – 4-branch issue resolution brief modal
 - `ExecutiveConsole.tsx` – The Directives page (`/mycountry/executive`); renders `directives/DirectivesWorkspace.tsx` (see [Directives page](#directives-page-mycountryexecutive))
 - `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`)
-- `status-tone.ts` – `STATUS_TEXT` (critical / warning / accent / neutral); `domain-hue.ts` – the v2 domain hues as Facet accents (`DOMAIN_HUE`, `HUE_ACCENT`, `hueAccentStyle`, `HUE_BADGE`)
-- `MyCountryRouter.tsx` / `MyCountrySidebarNav.tsx` – Single-page section router and nav (the component is not rendered today; only its `MyCountrySection` type is used)
+- `status-tone.ts` – `STATUS_TEXT` (critical / warning / accent / neutral); `domain-meta.ts` – the four domains' titles, icons, routes and suggested goals (`DOMAIN_META`)
+- `MyCountryRouter.tsx` / `mycountry-sections.ts` – Single-page section router and the route ↔ section map; navigation is the app sidebar (`src/lib/navigation/app-sections.ts`)
 
 ---
 
