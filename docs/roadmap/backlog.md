@@ -41,6 +41,7 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 | Run `audit:vault-exploits:apply` on production and record the result | ROADMAP M0 #17 | — |
 | Restore a production `db:backup` dump into a scratch database | ROADMAP M0 #15, PL-11 | A scratch round trip passed on 2026-10-05 |
 | Run `db:mark-match-revenue-collected` at the next deploy | ROADMAP M0 #13, SL-14 | — |
+| Run `db:refund-retired-store-items -- --apply` after the exploit audit | Archetype Proposal Token retired 2026-10-05 | Refunds each purchase once at what was paid ([myvault.md](../systems/myvault.md#retired-store-items)) |
 | CSP: remove the nginx/Cloudflare override, check for violations, then drop `'unsafe-inline'` from `script-src` | PL-2, PF§1 | The nonce reaches the page (#46); `src/lib/security/csp.ts` |
 | Deploy rose-garden via the [runbook](../operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
 | Enable the 21 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |

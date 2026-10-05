@@ -27,6 +27,11 @@ import {
   storePrerequisiteMet,
 } from "~/lib/vault/store-purchases";
 import { globalCache } from "~/lib/cache";
+import {
+  isRetiredStoreItem,
+  RETIRED_STORE_ITEM_IDS,
+  RETIRED_STORE_ITEM_MESSAGE,
+} from "~/lib/vault/retired-store-items";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
 import { toggleEquippedCosmetic } from "./_equippedCosmetics";
@@ -127,6 +132,10 @@ export const vaultStoreRouter = createTRPCRouter({
       if (!item || !item.isActive) {
         throw new TRPCError({ code: "NOT_FOUND", message: "This item is not available." });
       }
+      // Retired items stay refused even if an admin reactivates the row.
+      if (isRetiredStoreItem(item.id)) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: RETIRED_STORE_ITEM_MESSAGE });
+      }
 
       const userId = await resolveVaultUserId(ctx);
       const type: VaultTransactionType = isRepeatableStoreItem(item.category)
@@ -196,7 +205,7 @@ export const vaultStoreRouter = createTRPCRouter({
   listStoreItems: protectedProcedure.query(async ({ ctx }) => {
     try {
       const items = await ctx.db.vaultStoreItem.findMany({
-        where: { isActive: true },
+        where: { isActive: true, id: { notIn: [...RETIRED_STORE_ITEM_IDS] } },
         orderBy: { price: "asc" },
       });
       return items;

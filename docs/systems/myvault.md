@@ -61,6 +61,17 @@ active `cosmetics` items only. Two queries answer a whole page. Client hooks: `u
 `useForumAuthorCosmetics` (thread lists and threads, one request per page). Equipping is the opt-in; there is no
 separate visibility setting.
 
+### Retired store items
+
+`src/lib/vault/retired-store-items.ts` lists store items withdrawn from sale. Today that is the **Archetype Proposal
+Token** (`upgrade_archetype_proposal`, retired 2026-10-05): it promised an archetype proposal for admin review, but no
+proposal model, form or admin queue exists for archetypes (`LoreCardRequest` is for wiki-article lore cards and does
+not fit), so buying it did nothing. A retired item is left out of `vault.listStoreItems`, `purchaseStoreItem` refuses it
+(`PRECONDITION_FAILED`) even if an admin reactivates the row, the seed keeps its row inactive (ledger rows still name
+it), and the exploit audit charges no shortfall on it. `bun run db:refund-retired-store-items -- --apply`
+(`scripts/migrations/refund-retired-store-items.ts`, dry run by default) refunds each purchase once, at what was paid
+net of exploit corrections, as a `REFUND` row keyed `retired_item_refund:<purchase id>`.
+
 Related routers: `cards/`, `card-packs/`, `card-market/` (auctions & bids), `trading/`, `crafting/` (retired), `lore-cards/`, `ns-import/`, `achievements/`.
 
 ---

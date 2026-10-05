@@ -76,7 +76,7 @@ Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that wo
 - **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
 - **Card Crafting (`SPEND_CRAFT`)**: retired for now (2026-10-05); nothing spends `SPEND_CRAFT` any more, and old rows stay in the ledger
 - **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
-- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, an archetype proposal token (no consumer yet), a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no passive yield boost item, although the passive-income code reads a yield boost if one exists
+- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no passive yield boost item, although the passive-income code reads a yield boost if one exists
 
 ---
 
