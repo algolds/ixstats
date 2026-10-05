@@ -17,6 +17,7 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { LanguagePackCard, type LanguagePack } from "../shared/LanguagePackCard";
+import { MyLanguagePacksPanel } from "./MyLanguagePacksPanel";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
@@ -127,7 +128,7 @@ export function LanguagePacksSection({
           <h2 className="text-label text-title-2 font-bold">Community packs</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Discover, inspect, and fork community conlang models, phonological rule sets, and seed
-            dictionaries.
+            dictionaries, or publish your own.
           </p>
         </div>
 
@@ -141,6 +142,8 @@ export function LanguagePacksSection({
           <ExternalLink className="text-label-secondary h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       </div>
+
+      <MyLanguagePacksPanel />
 
       {/* Toolbar: Search, Filters & Refresh */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
