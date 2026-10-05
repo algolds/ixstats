@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 // Import the wiki search service
 import { validateNoXSS } from "~/lib/utils";
 import { invalidateFeeds, loadPostForModeration } from "../../post-utils";
+import { ownHashtags, storedPseudoTags } from "~/server/shared/realm-board";
 
 export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // Update post content (edit post)
@@ -43,7 +44,10 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
         where: { id: input.postId },
         data: {
           content: input.content,
-          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : post.hashtags,
+          // Editing tags keeps the post's board placement and can't add a new one.
+          hashtags: input.hashtags
+            ? JSON.stringify([...storedPseudoTags(post.hashtags), ...ownHashtags(input.hashtags)])
+            : post.hashtags,
           updatedAt: new Date(),
         },
         include: {

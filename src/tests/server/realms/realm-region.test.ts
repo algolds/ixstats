@@ -286,6 +286,32 @@ describe("board restrictions", () => {
     expect(call.create.until.getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600 * 1000);
   });
 
+  it("takes a banned nation's owner off the board and its chat at once", async () => {
+    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
+    db.country.findFirst.mockResolvedValue({ id: "c9", owner: { clerkUserId: PLAYER } });
+    db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
+    db.thinktankGroup.findUnique.mockResolvedValue({ conversationId: "conv1" });
+    db.thinktankMember.updateMany.mockResolvedValue({ count: 1 });
+    await callerAs(OFFICER, db).region.restrictBoardNation({
+      slug: "eurth",
+      countryId: "c9",
+      kind: "ban",
+    });
+    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
+      where: { groupId: "board1", userId: PLAYER, isActive: true },
+      data: { isActive: false },
+    });
+    expect(db.conversationParticipant.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { conversationId: "conv1", userId: PLAYER, isActive: true },
+      })
+    );
+    expect(db.thinktankGroup.update).toHaveBeenCalledWith({
+      where: { id: "board1" },
+      data: { memberCount: { decrement: 1 } },
+    });
+  });
+
   it("can't restrict the founder's or an officer's nation", async () => {
     const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
     db.country.findFirst.mockResolvedValue({ id: "c1", owner: { clerkUserId: FOUNDER } });

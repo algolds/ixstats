@@ -17,9 +17,14 @@ import { sanitizeWikiContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import { removeFromRealmBoard } from "~/server/shared/realm-board";
 
 type ActionDb = Pick<
   PrismaClient,
+  | "realmBoard"
+  | "thinktankGroup"
+  | "thinktankMember"
+  | "conversationParticipant"
   | "realm"
   | "realmOfficer"
   | "realmEmbassy"
@@ -345,6 +350,8 @@ export async function restrictBoardNation(
     create: { realmId: realm.id, countryId: nation.id, ...data },
     update: data,
   });
+  // A ban takes the owner off the board and its chat now, not at the next board open.
+  if (input.kind === "ban" && ownerId) await removeFromRealmBoard(db, realm.id, ownerId);
   return { success: true };
 }
 

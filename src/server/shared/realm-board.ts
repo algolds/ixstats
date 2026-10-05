@@ -75,7 +75,7 @@ export async function activeBoardRestrictions(
 }
 
 /** The strongest of `rows`: any ban over a mute, then the one that lasts longest. */
-function strongestRestriction(
+export function strongestRestriction(
   rows: Array<{ kind: string; until: Date | null; reason: string | null }>
 ): RealmBoardRestriction | null {
   const rank = (r: { kind: string; until: Date | null }) =>
@@ -226,11 +226,12 @@ export async function syncRealmBoardMembers(
       .filter((r) => r.kind === "ban")
       .map((r) => r.countryId)
   );
+  // A ban on any of a player's nations takes the player off the board (as getRealmBoardAccess decides).
+  const bannedOwners = new Set(
+    owners.filter((c) => banned.has(c.id)).map((c) => c.owner?.clerkUserId)
+  );
   const ownerIds = new Set(
-    owners
-      .filter((c) => !banned.has(c.id))
-      .map((c) => c.owner?.clerkUserId)
-      .filter(Boolean)
+    owners.map((c) => c.owner?.clerkUserId).filter((id) => id && !bannedOwners.has(id))
   );
 
   const keep = (userId: string) =>
@@ -404,9 +405,18 @@ export async function groupFeedScope(
   /** The partner realm a post was cross-posted from, if any. */
   const embassyFrom = (hashtags: string | null) => embassySource(hashtags, partners);
   if (partners.size === 0) return { where: onGroup, embassyFrom };
-  const embassyPosts = [...partners.keys()].map((realmId) => ({
-    visibility: { not: "removed" },
-    hashtags: { contains: `"${embassyPostTag(realmId)}"` },
+  // Only posts made on the partner's own board, flagged for embassies there (the tags are set server-side).
+  const partnerBoards = await db.realmBoard.findMany({
+    where: { realmId: { in: [...partners.keys()] } },
+    select: { realmId: true, groupId: true },
+  });
+  if (partnerBoards.length === 0) return { where: onGroup, embassyFrom };
+  const embassyPosts = partnerBoards.map((b) => ({
+    visibility: "thinktank",
+    AND: [
+      { hashtags: { contains: `"${groupPostTag(b.groupId)}"` } },
+      { hashtags: { contains: `"${embassyPostTag(b.realmId)}"` } },
+    ],
   }));
   return { where: { OR: [onGroup, ...embassyPosts] }, embassyFrom };
 }
@@ -424,8 +434,7 @@ export function groupPostTags(
     groupPostTag(groupId),
     ...(embassyRealmId ? [embassyPostTag(embassyRealmId)] : []),
   ];
-  const mine = own.filter((t) => !t.startsWith("group:") && !t.startsWith("embassy:"));
-  return [...new Set([...mine, ...system])];
+  return [...new Set([...ownHashtags(own), ...system])];
 }
 
 /**
@@ -442,4 +451,59 @@ export async function realmBoardPoster(
   const restricted = boardRestrictionMessage(access.restriction);
   if (restricted) throw new TRPCError({ code: "FORBIDDEN", message: restricted });
   return access;
+}
+
+const PSEUDO_TAG = /^#?(group|embassy):/i;
+
+/** The tags a caller may set: never a `group:` or `embassy:` pseudo-tag, which places a post on a board. */
+export function ownHashtags(tags: string[] = []): string[] {
+  return tags.filter((tag) => !PSEUDO_TAG.test(tag.trim()));
+}
+
+/** The pseudo-tags a stored post carries (`hashtags` is a JSON array), kept when its author edits the tags. */
+export function storedPseudoTags(hashtags: string | null): string[] {
+  try {
+    const tags: unknown = JSON.parse(hashtags ?? "[]");
+    return Array.isArray(tags)
+      ? tags.filter((t): t is string => typeof t === "string" && PSEUDO_TAG.test(t))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Take a player off a realm's board at once (a ban): their member row and chat participant are deactivated,
+ * rather than waiting for the next board open to sync them.
+ */
+export async function removeFromRealmBoard(
+  db: Pick<
+    PrismaClient,
+    "realmBoard" | "thinktankGroup" | "thinktankMember" | "conversationParticipant"
+  >,
+  realmId: string,
+  clerkUserId: string
+): Promise<void> {
+  const board = await db.realmBoard.findUnique({ where: { realmId }, select: { groupId: true } });
+  if (!board) return;
+  const group = await db.thinktankGroup.findUnique({
+    where: { id: board.groupId },
+    select: { conversationId: true },
+  });
+  const { count } = await db.thinktankMember.updateMany({
+    where: { groupId: board.groupId, userId: clerkUserId, isActive: true },
+    data: { isActive: false },
+  });
+  if (group?.conversationId) {
+    await db.conversationParticipant.updateMany({
+      where: { conversationId: group.conversationId, userId: clerkUserId, isActive: true },
+      data: { isActive: false, leftAt: new Date() },
+    });
+  }
+  if (count > 0) {
+    await db.thinktankGroup.update({
+      where: { id: board.groupId },
+      data: { memberCount: { decrement: count } },
+    });
+  }
 }

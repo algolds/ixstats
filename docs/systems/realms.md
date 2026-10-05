@@ -95,14 +95,18 @@ The page has three tabs:
 The board is the **Board** tab of the realm page. Board moderation (section 4):
 
 - a **muted** nation's owner can read and chat but not post (`createGroupPost` refuses with the reason);
-- a **banned** nation's owner is not a board member (no posts, no chat; the membership sync drops them);
+- a **banned** nation's owner is not a board member (no posts, no chat): the ban deactivates their member row
+  and chat participant at once (`removeFromRealmBoard`), and a ban on any one of a player's nations there
+  counts;
 - restrictions run for 1, 7 or 30 days or until lifted (`RealmBoardBan.until`), and the founder's and
   officers' nations can't be restricted. Nobody can remove a nation from the realm.
 
 **Embassy posts:** a member can tick "Also show at our embassies". The post gets the pseudo-tag
 `embassy:<realmId>`, and `getGroupFeed` on a partner realm's board includes it (labelled "From <realm>") while
-the embassy is active. Moderators remove such posts on their own board only. Callers can't set `group:` or
-`embassy:` tags themselves; `createGroupPost` drops them.
+the embassy is active: only `thinktank` posts that carry both the partner board's `group:` tag and its
+`embassy:` tag (`groupFeedScope`). Moderators remove such posts on their own board only. Callers can't set
+`group:` or `embassy:` tags themselves: `createGroupPost`, `createPost` and `updatePost` drop them
+(`ownHashtags`), and editing a post's tags keeps the ones it has (`storedPseudoTags`).
 
 ## 4. Realm page (`/r/[realm]`)
 

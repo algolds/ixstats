@@ -10,6 +10,7 @@ import {
   activeBoardRestrictions,
   embassyPartners,
   groupPostTag,
+  strongestRestriction,
 } from "~/server/shared/realm-board";
 import {
   canModerateRealm,
@@ -307,13 +308,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       isFounder: viewer !== null && canModerateRealm(viewer, realm),
       canManage: powers.length > 0,
       ownedNations,
-      boardRestriction: restrictions[0]
-        ? {
-            kind: restrictions.some((r) => r.kind === "ban") ? "ban" : "mute",
-            until: restrictions[0].until,
-            reason: restrictions[0].reason,
-          }
-        : null,
+      boardRestriction: strongestRestriction(restrictions),
     },
   };
 }

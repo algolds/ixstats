@@ -12,7 +12,12 @@ jest.mock("~/lib/notifications/hooks", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesThinktanksRouter } from "~/server/api/routers/thinkpages/thinktanks";
-import { getRealmBoardAccess } from "~/server/shared/realm-board";
+import {
+  getRealmBoardAccess,
+  ownHashtags,
+  storedPseudoTags,
+  syncRealmBoardMembers,
+} from "~/server/shared/realm-board";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -140,8 +145,9 @@ describe("posting to a realm board", () => {
 });
 
 describe("the board feed", () => {
-  it("includes embassy posts from active partners, labelled with their realm", async () => {
+  it("includes embassy posts made on active partners' own boards, labelled with their realm", async () => {
     const db = makeDb();
+    db.realmBoard.findMany.mockResolvedValue([{ realmId: "terra", groupId: "terra_board" }]);
     db.realmEmbassy.findMany.mockResolvedValue([
       {
         fromRealmId: "eurth",
@@ -159,10 +165,60 @@ describe("the board feed", () => {
     ]);
     const feed = await callerAs(OWNER, db).getGroupFeed({ groupId: "board1" });
     const where = db.thinkpagesPost.findMany.mock.calls[0][0].where;
+    // A forged embassy tag on a plain post isn't enough: it must be a board post on the partner's board.
     expect(where.OR).toEqual([
       { hashtags: { contains: "group:board1" } },
-      { visibility: { not: "removed" }, hashtags: { contains: '"embassy:terra"' } },
+      {
+        visibility: "thinktank",
+        AND: [
+          { hashtags: { contains: '"group:terra_board"' } },
+          { hashtags: { contains: '"embassy:terra"' } },
+        ],
+      },
     ]);
     expect(feed.posts[0]?.embassyFrom).toMatchObject({ name: "Terra", slug: "terra" });
+  });
+});
+
+describe("pseudo-tags", () => {
+  it("are never taken from a caller", () => {
+    expect(ownHashtags(["news", "group:b1", "#embassy:eurth", "Group:x", "embassy-tour"])).toEqual([
+      "news",
+      "embassy-tour",
+    ]);
+  });
+
+  it("are kept from the stored post when its tags are edited", () => {
+    expect(storedPseudoTags(JSON.stringify(["group:b1", "news", "embassy:eurth"]))).toEqual([
+      "group:b1",
+      "embassy:eurth",
+    ]);
+    expect(storedPseudoTags("not json")).toEqual([]);
+  });
+});
+
+describe("board membership sync", () => {
+  it("drops a player banned on one nation even when they own another there", async () => {
+    const db = makeDb();
+    db.thinktankMember.findMany.mockResolvedValue([{ id: "m1", userId: OWNER, isActive: true }]);
+    db.country.findMany.mockResolvedValue([
+      { id: "c_x", owner: { clerkUserId: OWNER } },
+      { id: "c_y", owner: { clerkUserId: OWNER } },
+    ]);
+    db.realmBoardBan.findMany.mockResolvedValue([
+      { countryId: "c_x", kind: "ban", until: null, reason: null },
+    ]);
+    await syncRealmBoardMembers(
+      db as never,
+      { groupId: "board1", realmId: "eurth", conversationId: "conv1", realmOwnerId: FOUNDER },
+      null
+    );
+    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
+      where: { groupId: "board1", userId: { in: [OWNER] } },
+      data: { isActive: false },
+    });
+    expect(db.conversationParticipant.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { conversationId: "conv1", userId: { in: [OWNER] } } })
+    );
   });
 });

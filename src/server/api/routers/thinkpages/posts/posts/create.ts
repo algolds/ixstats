@@ -7,6 +7,7 @@ import { validateNoXSS } from "~/lib/utils";
 import { vaultService } from "~/lib/vault/vault-service";
 import { invalidateFeeds, personaDisplayName, postAuthorsInclude } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
+import { ownHashtags } from "~/server/shared/realm-board";
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
 const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);
@@ -326,7 +327,8 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         data: {
           accountId: input.accountId,
           content: input.content,
-          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
+          // Board placement tags are server-set (createGroupPost); a plain post can't claim one.
+          hashtags: input.hashtags ? JSON.stringify(ownHashtags(input.hashtags)) : null,
           visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
           postType,
           parentPostId: input.parentPostId,
