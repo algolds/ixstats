@@ -2,6 +2,7 @@
 // Comprehensive Security & Defense System Router
 
 import { z } from "zod";
+import type { SecurityAssessment } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactMilitaryBranchBudget } from "~/lib/country/public-record";
@@ -9,6 +10,31 @@ import { redactMilitaryBranchBudget } from "~/lib/country/public-record";
 // ===========================
 // Input Validation Schemas
 // ===========================
+
+/** The SecurityAssessment schema defaults, for a country that has no stored row. */
+export function defaultSecurityAssessment(countryId: string): SecurityAssessment {
+  const now = new Date();
+  return {
+    id: "",
+    countryId,
+    overallSecurityScore: 60,
+    securityLevel: "moderate",
+    securityTrend: "stable",
+    militaryStrength: 60,
+    internalStability: 60,
+    borderSecurity: 60,
+    cybersecurity: 50,
+    counterTerrorism: 55,
+    militaryReadiness: 65,
+    emergencyResponse: 60,
+    disasterPreparedness: 55,
+    activeThreatCount: 0,
+    highSeverityThreats: 0,
+    lastAssessed: now,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
 
 // ===========================
 // Security Router
@@ -22,29 +48,12 @@ export const securityAssessmentRouter = createTRPCRouter({
   getSecurityAssessment: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      let assessment = await ctx.db.securityAssessment.findUnique({
-        where: { countryId: input.countryId },
-      });
-
-      if (!assessment) {
-        // Create default assessment
-        assessment = await ctx.db.securityAssessment.create({
-          data: {
-            countryId: input.countryId,
-            overallSecurityScore: 60,
-            securityLevel: "moderate",
-            securityTrend: "stable",
-            militaryStrength: 60,
-            internalStability: 60,
-            borderSecurity: 60,
-            cybersecurity: 50,
-            counterTerrorism: 55,
-            militaryReadiness: 65,
-            emergencyResponse: 60,
-            disasterPreparedness: 55,
-          },
-        });
-      }
+      // A read never writes (MC-13): a country with no stored assessment gets the schema
+      // defaults in memory. Before, this public query created a row for any countryId sent.
+      const assessment =
+        (await ctx.db.securityAssessment.findUnique({
+          where: { countryId: input.countryId },
+        })) ?? defaultSecurityAssessment(input.countryId);
 
       // Get related data
       const [internalStability, borderSecurity, activeThreats, militaryBranches] =
