@@ -394,7 +394,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                   <div className="card-art-linear-t h-full w-full from-black/80 via-transparent to-transparent p-4">
                     {/* Card info */}
                     <div className="absolute right-0 bottom-0 left-0 p-4">
-                      <div className="text-body font-medium text-white/60">
+                      <div className="text-body font-medium tracking-wide text-white/60 uppercase">
                         {card.rarity.replace("_", " ")}
                       </div>
                       <div className="text-title-2 mt-1 font-bold text-white">
@@ -405,7 +405,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
 
                     {/* Rarity badge */}
                     <div
-                      className="text-footnote absolute top-4 right-4 rounded-full px-3 py-1 font-bold"
+                      className="text-footnote absolute top-4 right-4 rounded-full px-3 py-1 font-bold tracking-wide uppercase"
                       style={{
                         backgroundColor: `${rarityColor}80`,
                         color: "white",

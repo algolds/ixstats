@@ -30,7 +30,7 @@ jest.mock("~/hooks/vault/useRecentActivity", () => ({
         id: "a1",
         type: "EARN_BONUS",
         amount: 5000,
-        source: "bonus:new player",
+        source: "bonus:new_player",
         createdAt: new Date(Date.now() - 3 * 3600 * 1000),
       },
     ],
@@ -43,6 +43,7 @@ jest.mock("~/components/vault/sections/dashboard/VaultShowcaseGrid", () => ({
   VaultShowcaseGrid: () => null,
 }));
 
+let loadingQueries = new Set<string>();
 const queryData: Record<string, unknown> = {
   getBalance: { credits: 12345, canClaimDailyBonus: true, loginStreak: 1 },
   getVaultLevel: { vaultLevel: 4 },
@@ -51,7 +52,10 @@ const queryData: Record<string, unknown> = {
   getBudgetMultiplier: { percentChange: 2 },
 };
 const leaf = (name: string) => ({
-  useQuery: () => ({ data: queryData[name], isLoading: false, refetch: jest.fn() }),
+  useQuery: () => {
+    const isLoading = loadingQueries.has(name);
+    return { data: isLoading ? undefined : queryData[name], isLoading, refetch: jest.fn() };
+  },
   useMutation: () => ({ mutate: jest.fn(), isPending: false }),
 });
 jest.mock("~/trpc/react", () => ({
@@ -68,6 +72,10 @@ import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboar
 const occurrences = (haystack: string, needle: string) => haystack.split(needle).length - 1;
 
 describe("Vault dashboard", () => {
+  beforeEach(() => {
+    loadingQueries = new Set();
+  });
+
   it("shows the IxCredits balance once, in the Wallet card", () => {
     const { container } = render(<VaultDashboardSection />);
     expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(1);
@@ -110,5 +118,18 @@ describe("Vault dashboard", () => {
     expect(screen.getByText("New player bonus")).not.toBeNull();
     expect(screen.queryByText(/bonus:new/)).toBeNull();
     expect(screen.getByText("3h ago")).not.toBeNull();
+  });
+
+  it("does not show the deck value as net worth while the balance loads", () => {
+    loadingQueries = new Set(["getBalance"]);
+    render(<VaultDashboardSection />);
+    const collection = screen.getByText("Collection").closest(".facet-pane") as HTMLElement;
+    expect(collection.textContent).toContain("Net worth");
+    expect(collection.textContent).toContain(DECK_VALUE.toLocaleString());
+    // Only the deck value figure is present; no second figure standing in for net worth.
+    expect(occurrences(collection.textContent ?? "", DECK_VALUE.toLocaleString())).toBe(1);
+    expect(
+      collection.querySelector('[data-slot="stat-value"] [data-slot="skeleton"]')
+    ).not.toBeNull();
   });
 });

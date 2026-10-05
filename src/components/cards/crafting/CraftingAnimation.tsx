@@ -100,7 +100,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="h-dvh max-h-dvh w-screen max-w-none place-items-center rounded-none border-0 bg-black/90 p-0 text-white"
+        className="facet-on-dark h-dvh max-h-dvh w-screen max-w-none place-items-center rounded-none border-0 bg-black/90 p-0 text-white"
       >
         <DialogTitle className="sr-only">
           {success ? "Crafting succeeded" : "Crafting failed"}

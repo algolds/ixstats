@@ -139,9 +139,12 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
 
   const loading = statsLoading || activitiesLoading || earningsLoading;
 
-  const collectionValuation = stats?.deckValue ?? 0;
-  const liquidCredits = balanceData?.credits ?? 0;
-  const netWorth = collectionValuation + liquidCredits;
+  const collectionValuation = statsLoading ? undefined : (stats?.deckValue ?? 0);
+  const liquidCredits = balanceData?.credits;
+  const netWorth =
+    collectionValuation === undefined || liquidCredits === undefined
+      ? undefined
+      : collectionValuation + liquidCredits;
 
   return (
     <div className="space-y-6">

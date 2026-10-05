@@ -16,6 +16,7 @@ import { vaultService } from "~/lib/vault/vault-service";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
+import { sentenceCase } from "~/lib/format/sentence-case";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
@@ -86,8 +87,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           EARN_BONUS: "Bonuses",
           DAILY_LOGIN: "Daily Bonus",
         };
-        const plain = source.replace(/_/g, " ").toLowerCase();
-        return labels[source] || plain.charAt(0).toUpperCase() + plain.slice(1);
+        return labels[source] || sentenceCase(source);
       };
 
       const sources = Object.entries(summary.breakdown).map(([type, amount]) => ({

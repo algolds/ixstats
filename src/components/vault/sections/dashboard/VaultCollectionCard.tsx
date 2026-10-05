@@ -5,29 +5,30 @@ import { Component as Layers, Package, ShoppingBag } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardTitle } from "~/components/ui/card";
 import { Stat } from "~/components/ui/stat";
-import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Credits } from "./credits";
 
 /** Base card capacity before the account's capacity boost. */
 const BASE_CARD_CAPACITY = 150;
 
 interface VaultCollectionCardProps {
   vaultLevel: number;
-  /** IxCredits balance plus card deck value. The balance itself lives in the Wallet card. */
-  netWorth: number;
-  collectionValuation: number;
+  /** IxCredits balance plus card deck value; undefined until both are known. The balance itself lives in the Wallet card. */
+  netWorth: number | undefined;
+  /** Undefined while the stats load. */
+  collectionValuation: number | undefined;
   totalCards: number;
   capacityBoost: number;
   unopenedPacks: number;
   activeAuctions: number;
 }
 
-const formatCredits = (amount: number) => Math.round(amount).toLocaleString();
-
-function Credits({ amount }: { amount: number }) {
+/** A figure for the Stat value slot; a skeleton while its inputs are still loading. */
+function CreditsFigure({ amount }: { amount: number | undefined }) {
+  if (amount === undefined) return <Skeleton className="h-8 w-28" />;
   return (
     <span className="flex items-center gap-2">
-      <IxCreditsSymbol decorative className="size-4 shrink-0" />
-      {formatCredits(amount)}
+      <Credits amount={amount} symbolClassName="size-4" />
     </span>
   );
 }
@@ -73,10 +74,10 @@ export function VaultCollectionCard({
       </div>
 
       <div className="border-separator grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
-        <Stat label="Card deck value" value={<Credits amount={collectionValuation} />} />
+        <Stat label="Card deck value" value={<CreditsFigure amount={collectionValuation} />} />
         <Stat
           label="Net worth"
-          value={<Credits amount={netWorth} />}
+          value={<CreditsFigure amount={netWorth} />}
           hint="IxCredits balance plus card deck value"
         />
       </div>

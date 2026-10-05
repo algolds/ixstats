@@ -8,6 +8,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { Credits, formatCredits } from "./credits";
 
 type TodayEarnings = RouterOutputs["vault"]["getTodayEarnings"];
 
@@ -18,8 +19,6 @@ interface VaultWalletCardProps {
   balanceLoading: boolean;
   todayEarnings: TodayEarnings | undefined;
 }
-
-const formatCredits = (amount: number) => Math.round(amount).toLocaleString();
 
 function Row({ label, children, muted }: { label: string; children: ReactNode; muted?: boolean }) {
   return (
@@ -34,16 +33,6 @@ function Row({ label, children, muted }: { label: string; children: ReactNode; m
         {children}
       </span>
     </div>
-  );
-}
-
-function Credits({ amount, prefix = "" }: { amount: number; prefix?: string }) {
-  return (
-    <>
-      {prefix}
-      <IxCreditsSymbol decorative className="size-3 shrink-0" />
-      {formatCredits(amount)}
-    </>
   );
 }
 

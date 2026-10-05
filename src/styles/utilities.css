@@ -61,3 +61,13 @@
     opacity: 1;
   }
 }
+
+/* A fixed dark surface (e.g. a black scrim) inside the light theme: system colours take their dark
+   values (the dark-theme ones in facet/tokens.css) so status text and accents stay legible on it. */
+@utility facet-on-dark {
+  --color-red: #f87171;
+  --color-yellow: #facc15;
+  --color-green: #4ade80;
+  --color-blue: #60a5fa;
+  --color-indigo: #818cf8;
+}
