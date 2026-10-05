@@ -124,14 +124,17 @@ function RailApp({
   app,
   isCurrent,
   list,
+  plain = false,
 }: {
   app: AppDefinition;
   isCurrent: boolean;
+  /** Footer apps open as an area of their own, so the rail links straight to them. */
+  plain?: boolean;
   list: Omit<React.ComponentProps<typeof SourceList>, "variant" | "app" | "onNavigate">;
 }) {
   const [open, setOpen] = React.useState(false);
   const close = React.useCallback(() => setOpen(false), []);
-  const hasSections = app.sections.length > 0;
+  const hasSections = app.sections.length > 0 && !plain;
   const pending = app.sections.some((s) => s.badge && isPending(list.badges[s.badge]));
   const glyph = <RailGlyph app={app} badges={list.badges} showDot={pending} />;
 
@@ -160,7 +163,7 @@ function RailApp({
             <button
               type="button"
               aria-label={app.label}
-              aria-current={isCurrent ? "page" : undefined}
+              aria-current={isCurrent ? "true" : undefined}
               className={railButtonClassName(isCurrent)}
             >
               {glyph}
@@ -209,6 +212,8 @@ export function AppSidebar({
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
   const tint = getTintForPath(current, activeSectionId);
   const isCollapsed = collapsed ?? false;
+  const mainApps = apps.filter((app) => app.placement !== "footer");
+  const footerApps = apps.filter((app) => app.placement === "footer");
   const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction };
 
   return (
@@ -227,17 +232,31 @@ export function AppSidebar({
           <SourceList {...list} variant="sidebar" />
         </div>
 
-        <ul
-          data-slot="app-sidebar-rail"
+        {/* A landmark of its own: the full list's nav is hidden while collapsed. */}
+        <nav
           aria-label="Apps"
-          className="sidebar-collapsed:flex hidden min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto py-2"
+          data-slot="app-sidebar-rail"
+          className="sidebar-collapsed:flex hidden min-h-0 flex-1 flex-col items-center"
         >
-          {apps
-            .filter((app) => app.placement !== "footer")
-            .map((app) => (
+          <ul className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
+            {mainApps.map((app) => (
               <RailApp key={app.id} app={app} isCurrent={app.id === current?.id} list={list} />
             ))}
-        </ul>
+          </ul>
+          {footerApps.length > 0 && (
+            <ul className="border-separator flex w-full flex-col items-center gap-1 border-t py-2">
+              {footerApps.map((app) => (
+                <RailApp
+                  key={app.id}
+                  app={app}
+                  isCurrent={app.id === current?.id}
+                  list={list}
+                  plain
+                />
+              ))}
+            </ul>
+          )}
+        </nav>
 
         <div className="border-separator flex flex-col gap-0.5 border-t p-2">
           {account && <div className="sidebar-collapsed:justify-center flex">{account}</div>}

@@ -114,9 +114,32 @@ describe("AppSidebar", () => {
         const control = within(rail()).getByRole(app.sections.length > 0 ? "button" : "link", {
           name: app.label,
         });
-        if (app.id === "mycountry") expect(control).toHaveAttribute("aria-current", "page");
+        if (app.id === "mycountry") expect(control).toHaveAttribute("aria-current", "true");
       }
-      expect(within(rail()).queryByRole("link", { name: "Settings" })).toBeNull();
+    });
+
+    it("has its own navigation landmark", () => {
+      renderSidebar({ collapsed: true });
+      expect(screen.getByRole("navigation", { name: "Apps" })).toBeInTheDocument();
+    });
+
+    it("keeps Settings and Admin reachable as plain links after the main apps", () => {
+      const { rail } = renderSidebar({
+        collapsed: true,
+        pathname: "/settings",
+        apps: getVisibleApps({ signedIn: true, isAdmin: true }),
+      });
+      const settings = within(rail()).getByRole("link", { name: "Settings" });
+      expect(settings).toHaveAttribute("href", "/settings");
+      expect(settings).toHaveAttribute("aria-current", "page");
+      expect(within(rail()).getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
+      expect(within(rail()).queryByRole("button", { name: "Settings" })).toBeNull();
+    });
+
+    it("does not mark a popover trigger as the current page", () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      const mycountry = within(rail()).getByRole("button", { name: "MyCountry" });
+      expect(mycountry).toHaveAttribute("aria-current", "true");
     });
 
     it("opens a popover with the app's sections", async () => {
