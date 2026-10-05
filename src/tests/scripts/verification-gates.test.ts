@@ -151,8 +151,11 @@ describe("verification-gates", () => {
   });
 
   // next.config.js is git-ignored (each environment keeps its own copy), so this gate checks
-  // the local copy where one exists and is skipped in CI.
-  const nextConfigPath = path.resolve(rootDir, "next.config.js");
+  // the local copy where one exists and the committed template (next.config.example.js) in CI.
+  const localNextConfig = path.resolve(rootDir, "next.config.js");
+  const nextConfigPath = fs.existsSync(localNextConfig)
+    ? localNextConfig
+    : path.resolve(rootDir, "next.config.example.js");
   const describeWithNextConfig = fs.existsSync(nextConfigPath) ? describe : describe.skip;
 
   describeWithNextConfig("Next.js build configuration (next.config.js)", () => {
