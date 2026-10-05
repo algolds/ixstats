@@ -38,11 +38,25 @@ describe("StickyToc", () => {
     );
   });
 
-  it("is never hidden by CSS: the Inspector sheet below 1280px shows it too", () => {
+  it("is never hidden by any wiki-os stylesheet: the Inspector sheet below 1280px shows it too", () => {
+    const dir = path.resolve(process.cwd(), "src/styles/wiki-os");
+    for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".css"))) {
+      const css = fs.readFileSync(path.join(dir, file), "utf-8").replace(/\/\*[\s\S]*?\*\//g, "");
+      // Any rule whose selector names the TOC (not just its parts) and sets display: none.
+      const hiding = [
+        ...css.matchAll(/([^{}]*\.wikios-sticky-toc(?![\w-]|::)[^{}]*)\{([^{}]*)\}/g),
+      ].filter(([, , body]) => /display:\s*none/.test(body ?? ""));
+      expect({ file, hiding: hiding.map((m) => m[1]?.trim()) }).toEqual({ file, hiding: [] });
+    }
+  });
+
+  it("the page-enter animation never uses transform, which would make <main> the containing block of the fixed Inspector", () => {
     const css = fs.readFileSync(
-      path.resolve(process.cwd(), "src/styles/wiki-os/content.css"),
+      path.resolve(process.cwd(), "src/styles/wiki-os/layout.css"),
       "utf-8"
     );
-    expect(css).not.toMatch(/\.wikios-sticky-toc\s*\{[^}]*display:\s*none/);
+    const keyframes = /@keyframes wikios-page-enter\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
+    expect(keyframes).toContain("opacity");
+    expect(keyframes).not.toMatch(/transform|translate|scale|rotate/);
   });
 });

@@ -538,7 +538,7 @@ export function ArticleRenderer({
           authorInfo={authorInfo}
           awardsData={awardsData}
           tocLength={tocVisible ? toc.length : 0}
-          onTocClick={() => setTocOpen(true)}
+          onTocClick={showWikiToc ? () => setTocOpen(true) : undefined}
         />
         <SourceWikiNote title={title} wikiSource={source} />
 

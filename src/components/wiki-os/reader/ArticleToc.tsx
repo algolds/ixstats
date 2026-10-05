@@ -7,23 +7,25 @@ import { Button } from "~/components/ui/button";
 const SCROLL_TOP_OFFSET = 90;
 
 /**
- * Header button that opens the Inspector sheet with the contents. Renders nothing for an article
- * without headings, and from 1280px up, where the Inspector already sits in the gutter.
+ * Header button that opens the Inspector sheet: "Contents" when the article has headings, "Page info"
+ * when the sheet holds only the page info. Renders nothing without `onClick` (no Inspector), and
+ * from 1280px up, where the Inspector already sits in the gutter.
  */
 export function TocButton({ tocLength, onClick }: { tocLength: number; onClick?: () => void }) {
-  if (tocLength <= 0 || !onClick) return null;
+  if (!onClick) return null;
+  const label = tocLength > 0 ? "Contents" : "Page info";
   return (
     <Button
       type="button"
       variant="outline"
       size="xs"
       onClick={onClick}
-      title="Table of contents"
-      aria-label="Table of contents"
+      title={tocLength > 0 ? "Table of contents" : label}
+      aria-label={tocLength > 0 ? "Table of contents" : label}
       className="border-separator bg-surface text-label-secondary hover:text-label rounded-control gap-2 xl:hidden"
     >
       <List className="h-3.5 w-3.5" aria-hidden="true" />
-      Contents
+      {label}
     </Button>
   );
 }

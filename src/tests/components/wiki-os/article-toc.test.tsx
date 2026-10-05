@@ -159,12 +159,22 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("an article without headings keeps its page info but has no contents or button", () => {
+  it("an article without headings keeps its page info in the Inspector, no contents list", () => {
     renderArticle([]);
     const inspector = screen.getByRole("complementary", { name: "Contents" });
     expect(within(inspector).queryByRole("navigation")).toBeNull();
     expect(within(inspector).getByText("Last updated")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Table of contents" })).toBeNull();
+  });
+
+  it("below desktop a headingless article still gets a Page info button that opens the sheet", () => {
+    mockWide = false;
+    renderArticle([]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Page info" }));
+    const sheet = within(screen.getByRole("dialog"));
+    expect(sheet.getByText("Last updated")).toBeInTheDocument();
+    expect(sheet.queryByRole("navigation", { name: "Table of contents" })).toBeNull();
   });
 
   it("renders no Inspector and no contents when the setting is off, and follows it live in the same tab", () => {
@@ -173,6 +183,7 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
     expect(tocNav()).toBeNull();
     expect(screen.queryByRole("button", { name: "Table of contents" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Page info" })).toBeNull();
 
     act(() => {
       localStorage.setItem("wikios:showWikiToc", "true");
