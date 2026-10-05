@@ -50,6 +50,15 @@ describe("UnifiedDashboardSection", () => {
     expect(aside).toHaveTextContent("Economic tiers");
   });
 
+  it("keeps the fixed aside out of the animated (transformed) wrappers", () => {
+    wide = true;
+    render(<UnifiedDashboardSection globalStats={stats} />);
+    const aside = screen.getByRole("complementary", { name: "Around IxStates" });
+    // A transformed ancestor becomes the containing block of a fixed element and would make the
+    // aside jump when the entrance animation ends; motion writes its values as inline styles.
+    expect(aside.closest("[style]")).toBeNull();
+  });
+
   it("opens the same content in a sheet from the Trends button below 1280px", () => {
     wide = false;
     render(<UnifiedDashboardSection globalStats={stats} />);

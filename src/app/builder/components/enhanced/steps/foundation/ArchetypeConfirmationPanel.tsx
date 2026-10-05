@@ -26,7 +26,7 @@ export function ArchetypeConfirmationPanel({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0, transition: springSmooth }}
           exit={{ opacity: 0, y: 10, transition: tweenExit }}
-          className="z-sticky fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-(--shell-sidebar-width) flex justify-center px-4"
+          className="z-sticky fixed right-(--shell-inspector-width) bottom-[calc(var(--shell-tabbar-height)+1.5rem)] left-(--shell-sidebar-width) flex justify-center px-4"
         >
           <FacetMaterial
             layer="chrome"

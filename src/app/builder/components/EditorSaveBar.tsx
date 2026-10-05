@@ -62,7 +62,7 @@ export function EditorSaveBar({
         aria-label="Editor changes"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0, transition: springSmooth }}
-        className="z-sticky pointer-events-none fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-(--shell-sidebar-width) flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
+        className="z-sticky pointer-events-none fixed right-(--shell-inspector-width) bottom-[calc(var(--shell-tabbar-height)+1rem)] left-(--shell-sidebar-width) flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
       >
         <FacetMaterial
           layer="chrome"

@@ -264,14 +264,14 @@ export function UnifiedDashboardSection({
     ?.economicTierDistribution;
 
   return (
-    <motion.div
-      variants={staggerContainer}
-      initial="hidden"
-      animate="show"
-      className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
-    >
-      <motion.div variants={staggerItem}>
-        <>
+    <>
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
+      >
+        <motion.div variants={staggerItem}>
           <div className="flex min-w-0 flex-col space-y-5">
             <motion.div variants={staggerItem} className="flex items-center gap-2">
               <SegmentedControl
@@ -333,56 +333,57 @@ export function UnifiedDashboardSection({
               <UnifiedFeedContent activeTab={activeTab} {...feedHandlers} />
             )}
           </div>
+        </motion.div>
 
-          <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
-            <div className="flex flex-col space-y-4">
-              <TrendingSectionWidget />
-              <BlurbSection />
-              <CountriesToExploreCard currentUserCountryId={countryId} />
-              {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
-            </div>
-          </Inspector>
-        </>
+        {showAccountCreation && isCountryDataReady && (
+          <AccountCreationModal
+            countryId={countryData!.id}
+            countryName={countryData!.name}
+            existingAccountCount={accounts.length}
+            isOpen
+            onClose={() => setShowAccountCreation(false)}
+            onAccountCreated={() => setShowAccountCreation(false)}
+          />
+        )}
+        {settingsAccount && (
+          <AccountSettingsModal
+            account={settingsAccount}
+            isOpen
+            onClose={() => setSettingsAccount(null)}
+            onAccountUpdate={() => setSettingsAccount(null)}
+          />
+        )}
+
+        <AccountManagerModal
+          isOpen={isAccountModalOpen}
+          onClose={() => setIsAccountModalOpen(false)}
+          {...accountProps}
+        />
+
+        {repostingPost && (
+          <RepostModal
+            open={isRepostModalOpen}
+            onOpenChange={setIsRepostModalOpen}
+            originalPost={repostingPost}
+            {...accountProps}
+            onPost={() => {
+              refetchFeeds(hasCountry);
+              setIsRepostModalOpen(false);
+              setRepostingPost(null);
+            }}
+          />
+        )}
       </motion.div>
 
-      {showAccountCreation && isCountryDataReady && (
-        <AccountCreationModal
-          countryId={countryData!.id}
-          countryName={countryData!.name}
-          existingAccountCount={accounts.length}
-          isOpen
-          onClose={() => setShowAccountCreation(false)}
-          onAccountCreated={() => setShowAccountCreation(false)}
-        />
-      )}
-      {settingsAccount && (
-        <AccountSettingsModal
-          account={settingsAccount}
-          isOpen
-          onClose={() => setSettingsAccount(null)}
-          onAccountUpdate={() => setSettingsAccount(null)}
-        />
-      )}
-
-      <AccountManagerModal
-        isOpen={isAccountModalOpen}
-        onClose={() => setIsAccountModalOpen(false)}
-        {...accountProps}
-      />
-
-      {repostingPost && (
-        <RepostModal
-          open={isRepostModalOpen}
-          onOpenChange={setIsRepostModalOpen}
-          originalPost={repostingPost}
-          {...accountProps}
-          onPost={() => {
-            refetchFeeds(hasCountry);
-            setIsRepostModalOpen(false);
-            setRepostingPost(null);
-          }}
-        />
-      )}
-    </motion.div>
+      {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
+      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
+        <div className="flex flex-col space-y-4">
+          <TrendingSectionWidget />
+          <BlurbSection />
+          <CountriesToExploreCard currentUserCountryId={countryId} />
+          {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
+        </div>
+      </Inspector>
+    </>
   );
 }

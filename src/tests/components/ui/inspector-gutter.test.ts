@@ -31,4 +31,14 @@ describe("Inspector users do not lay out a column for it", () => {
     const source = read("src/components/ui/inspector.tsx");
     expect(source).not.toMatch(/\bsticky\b|\bw-80\b/);
   });
+
+  it("fixed bars centre on the content column, not on sidebar..viewport", () => {
+    for (const file of [
+      "src/app/builder/components/EditorSaveBar.tsx",
+      "src/app/builder/components/enhanced/steps/foundation/ArchetypeConfirmationPanel.tsx",
+      "src/app/thinkpages/post/[postId]/page.tsx",
+    ]) {
+      expect(read(file)).toContain("--shell-inspector-width");
+    }
+  });
 });

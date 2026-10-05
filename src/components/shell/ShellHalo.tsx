@@ -2,7 +2,7 @@
 
 /**
  * Halo in the shell: the contextual island (search, notifications, live activity, quick actions)
- * floating top-centre over the content area, clear of the sidebar (`--shell-sidebar-width`). It is
+ * floating top-centre over the content area, clear of the sidebar (`--shell-sidebar-width`) and the Inspector gutter (`--shell-inspector-width`), so it centres on the same column as the page toolbars. It is
  * not the primary navigation. Halo hides itself on /maps, where MapDynamicIsland takes over.
  */
 
@@ -12,7 +12,7 @@ export function ShellHalo() {
   return (
     <div
       data-slot="shell-halo"
-      className="z-nav pointer-events-none fixed top-[calc(env(safe-area-inset-top)+0.5rem)] right-0 left-(--shell-sidebar-width) flex justify-center px-3"
+      className="z-nav pointer-events-none fixed top-[calc(env(safe-area-inset-top)+0.5rem)] right-(--shell-inspector-width) left-(--shell-sidebar-width) flex justify-center px-3"
     >
       <div className="pointer-events-auto max-w-full">
         <CommandPalette isSticky={false} scrollY={0} />
