@@ -28,7 +28,7 @@ export function has(data: HistoryData, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined;
 }
 
-const STORY_CATEGORIES = [
+export const STORY_CATEGORIES = [
   "battle",
   "founding",
   "treaty",
@@ -44,7 +44,7 @@ const STORY_CATEGORIES = [
   "linguistic",
   "upheaval",
 ] as const;
-type StoryCategory = (typeof STORY_CATEGORIES)[number];
+export type StoryCategory = (typeof STORY_CATEGORIES)[number];
 
 const LABEL_TYPES = [
   "mountain_range",

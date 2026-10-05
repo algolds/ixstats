@@ -8,7 +8,9 @@
  * - Procedural GeographicResource placement
  *
  * The GeoProfiles and resources are SAMPLE values (AT-9): they come from the centroid and area, not
- * the terrain, and nothing persists them. The Labs telemetry labels them as sample data.
+ * the terrain, and nothing persists them. The Labs telemetry labels them as sample data. A generated
+ * world has no Country rows to attach real values to. Real resources for persisted countries come
+ * from `~/lib/maps/geographic-resources.ts` (PostGIS rivers, lakes, coast and climate).
  * - Initial transport route seeding
  * - SharedVertex boundary graph construction
  */

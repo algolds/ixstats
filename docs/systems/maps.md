@@ -1,6 +1,6 @@
 # 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-05
 
 **Parent App Suite:** Atlas (app version 2 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
@@ -13,7 +13,7 @@ Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built
 ### Core Foundation: "Geography is King"
 In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
 - **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (`importPipelineResult`, so PNG realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
-- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. `GeographicResource` has no writer.
+- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. **Geographic resources** (AT-9): the admin **Recalc** action (`geoCore.recalculateGeoProfiles`) also rewrites the country's `GeographicResource` rows from PostGIS (`src/lib/maps/geographic-resources.ts`): freshwater for its three longest rivers and three largest lakes inside the border, a fishery on the coast (the border not shared with a neighbour) when `coastlineKm > 0`, and farmland weighted by each clipped climate zone's agriculture factor. `quantity` is the measured size on a fixed scale (1000 km of river, 1000 km² of lake, 2000 km of coast, the arable share); only farmland gets a `quality` (its mean agriculture factor), so the Geography tab shows quality for farmland only. There is no geology data, so no mineral, oil, gas or forest resources are written. Like the profiles, they are display only. The Labs pipeline (`/labs/map-pipeline`) still shows sample profiles and resources (labelled as such): a generated world has no `Country` rows to attach real values to.
 - **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
   1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
   2. **Procedural UPG v2 Vector Pipeline**: ~100,000-seed Voronoi spatial mesh (`WorldGraph`; ~69,000 cells after latitude thinning), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
@@ -96,6 +96,7 @@ The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-scr
 - **Sub-National Regions & Provinces**: Partition sovereign territory into administrative subdivisions, states, and cantons with autonomous attribute rollups.
 - **Cities & Municipalities**: Place capital cities, industrial hubs, and ports with population weight and review status.
 - **Points of Interest (POIs) & Landmarks**: Place historical sites, military fortifications, mountain peaks, canal locks, and natural superlatives.
+- **Story Pins & Storylines** (AT-14): the country editor's **Stories** tab (`panels/StorylinesPanel.tsx`) creates, recolours and deletes storylines, adds the country's story pins to one (appended after its last pin), takes them out again, and writes a new event (title, IxTime year, category, text) straight into a storyline at one of the country's cities, POIs, story pins or peaks. It previews the same `StorylineTimeline` the map's story pin modal shows once a storyline has two or more pins. Storyline writes are `geoFeatures.createStoryline` / `updateStoryline` / `deleteStoryline` / `addPinToStoryline` / `removePinFromStoryline` (`geo/features/storylines.ts`; owner of the country or privileged, `assertOwnCountry` plus `findFirst({ id, countryId })`; deleting a storyline keeps its pins). `createStoryPin` / `updateStoryPin` refuse a `storylineId` from another country. These writes bypass the editor's undo history.
 - **Transit & Trade Corridors**: Friction-weighted pathfinding generating realistic highway, rail, and maritime shipping routes following terrain contours.
 
 ### 2. Precision GIS & Vertex Snapping Model
@@ -137,7 +138,7 @@ The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarativ
 
 Geography serves as the foundational data source across the platform:
 - **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. `Territory` is used only by the demo seed. Adjacency is computed live with PostGIS `ST_Touches`.
-- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `MapLabel` foreign-key linked to `Country.id`.
+- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel` foreign-key linked to `Country.id`.
 - **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row and `populateFromWiki`, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
 - **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
@@ -146,7 +147,7 @@ Geography serves as the foundational data source across the platform:
 ## Geo API Routers (`src/server/api/routers/`)
 
 - `geo/core/` (`geoCore`) – World map geometry and bundles, country geometry/neighbors, point lookups, geo profiles, overlays, border history, and area/profile recalculation
-- `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins, map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
+- `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins and storylines (`getCountryStorylines`, storyline CRUD, add/remove pins), map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
 - `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, and the map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted)
 - `geo/admin/` (`geoAdmin`) – SVG uploads, province and city imports (the province and city imports are country-owner procedures, not admin-only)
 - `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features

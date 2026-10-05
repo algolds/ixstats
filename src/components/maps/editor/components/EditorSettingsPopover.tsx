@@ -289,11 +289,11 @@ export function EditorSettingsPopover({
                   onClick={() =>
                     run("Recalculation error", async () => {
                       await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                      return "Geographic profile recalculated successfully";
+                      return "Geographic profile and resources recalculated";
                     })
                   }
                   disabled={recalculateGeo.isPending}
-                  title="Recalculate the geographic profile for the active country"
+                  title="Recalculate the geographic profile and resources for the active country"
                 />
               </>
             )}

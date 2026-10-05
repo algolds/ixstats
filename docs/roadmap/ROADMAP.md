@@ -173,7 +173,7 @@ Replace each with real data, or show an empty state. All S or S–M.
 - ✅ **Passport realm tiles:** real values (AT-4).
 - ✅ **Sports standings form:** computed from the last 5 matches (SL-17).
 - ✅ **LiveDataCard:** empty state instead of a fake GDP series (SL-26).
-- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Real enrichment stays in M7.
+- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Persisted countries get real `GeographicResource` rows from PostGIS rivers, lakes, coast and climate (AT-9, 2026-10-05); real Labs enrichment stays in M7, once generated worlds are persisted.
 
 ### M2.3 Settings that do nothing: wire or hide
 ✅ **Done (2026-10-05)**, each wired or hidden:
@@ -241,7 +241,7 @@ IxWorld.
 1. **Universal event spine:** diplomacy, defense, elections and meetings write to it (PRD Rule 6). *Needs M2 politics, meetings and defense.*
 2. **Recon returns minutes and cables; `STATECRAFT_SPINE` on by default.** *Needs meeting outcomes (M2).*
 3. **Information fog bands:** mask previews into qualitative bands at governance-competence thresholds. *Needs MC-7 history.*
-4. **Intelligence dashboard:** threshold alerts are read and resolved (MC-17); `/mycountry/intelligence` gets its own surface.
+4. **Intelligence dashboard:** ✅ threshold alerts are read and resolved in an alerts card on the MyCountry overview, and their notifications link there (MC-17, 2026-10-05). Left: `/mycountry/intelligence` gets its own surface (it still renders Defense).
 
 **Living world**
 - **Crisis engine:** a producer, the lifecycle state machine, player response postures, an admin UI; `auto-post.ts` wired
@@ -316,7 +316,7 @@ the spine.
 | MyLeague / MyClub | Boxing bout engine; rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
 | Onoma | Publish path for language packs (SL-18) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
 | Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
-| Map pipeline | Real enrichment (AT-9); storylines (AT-14). SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
+| Map pipeline | Real enrichment for the Labs pipeline (AT-9; persisted countries' resources are real since 2026-10-05). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |
 
 ---
@@ -327,7 +327,7 @@ Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
   Needs M0 backups and Decisions D1, D2, D5 and D9.
-- **Dead code:** re-check the remaining MC-18 components. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
+- **Dead code:** ✅ MC-18 is closed: a re-check on 2026-10-05 (static, dynamic and string imports) found every file the audit listed already deleted. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** router tests for the 35 untested routers, largest first (thinkpages, lore-cards, national-issues, forum, blurbs,
   card-market).

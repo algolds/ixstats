@@ -103,6 +103,8 @@ model IntelligenceAlert {
   confidence    Float
   isResolved    Boolean               @default(false)
   resolvedAt    DateTime?
+  /// When the country owner first read the alert in MyCountry (null = unread).
+  readAt        DateTime?
   detectedAt    DateTime              @default(now())
   isActive      Boolean               @default(true)
   createdAt     DateTime              @default(now())
