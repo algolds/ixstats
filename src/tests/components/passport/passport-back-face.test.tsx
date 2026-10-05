@@ -58,7 +58,9 @@ function renderBackFace(onDone = jest.fn()) {
 }
 
 describe("PassportBackFace", () => {
-  beforeEach(() => mutate.mockClear());
+  beforeEach(() => {
+    mutate.mockClear();
+  });
 
   it("no longer labels the toggles as session-only", () => {
     renderBackFace();
