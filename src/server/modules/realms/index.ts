@@ -8,7 +8,13 @@ export {
 export { BuilderRealmError, listBuilderRealms, resolveBuilderRealm } from "./realms.builder";
 export { listMyNations } from "./realms.my-nations";
 export { DEFAULT_REALM_ID, resolveViewerRealmId } from "./realms.context";
-export { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access";
+export {
+  canModerateRealm,
+  isRealmOpen,
+  isRealmPublished,
+  isSiteAdmin,
+  type RealmActor,
+} from "./realms.access";
 export {
   activateOwnedNation,
   adminAssignNation,

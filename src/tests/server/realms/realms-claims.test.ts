@@ -19,7 +19,10 @@ const country = {
 };
 
 const EURTH = "eurth-id";
-const nationPage = { wikiSource: "iiwiki", realm: { slug: "eurth", settings: null } };
+const nationPage = {
+  wikiSource: "iiwiki",
+  realm: { slug: "eurth", settings: null, status: "active" },
+};
 /** What Postgres raises when a concurrent approval created the same (realmId, name) or slug first. */
 const uniqueViolation = () =>
   new Prisma.PrismaClientKnownRequestError(
@@ -193,7 +196,12 @@ describe("claimCountry", () => {
 
   it("re-verifies a pending claim: once the creator is verified it is upgraded in place, not duplicated (F-5.1)", async () => {
     const { db, deps, claims } = setup();
-    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: "c1", status: "pending" });
+    db.realmClaim.findFirst.mockResolvedValue({
+      id: "old",
+      userId: "u1",
+      countryId: "c1",
+      status: "pending",
+    });
     await expect(claims.claimCountry(actor, "c1")).resolves.toEqual({
       claimId: "old",
       status: "approved",
@@ -202,7 +210,12 @@ describe("claimCountry", () => {
     // The guarded decide (pending → approved) upgrades the existing row…
     expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
       where: { id: "old", status: "pending" },
-      data: { status: "approved", autoApproved: true, reviewedBy: "system:auto", reviewedAt: expect.any(Date) },
+      data: {
+        status: "approved",
+        autoApproved: true,
+        reviewedBy: "system:auto",
+        reviewedAt: expect.any(Date),
+      },
     });
     // …then the nation is handed over; no second claim row.
     expect(db.realmClaim.create).not.toHaveBeenCalled();
@@ -215,7 +228,12 @@ describe("claimCountry", () => {
 
   it("an upgrade that a moderator decided first is NOT_PENDING and assigns nothing", async () => {
     const { db, deps, claims } = setup();
-    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: "c1", status: "pending" });
+    db.realmClaim.findFirst.mockResolvedValue({
+      id: "old",
+      userId: "u1",
+      countryId: "c1",
+      status: "pending",
+    });
     db.realmClaim.updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({ code: "NOT_PENDING" });
     expect(db.country.updateMany).not.toHaveBeenCalled();
@@ -390,7 +408,12 @@ function pageSetup({ takenSlugs = [] as string[] } = {}) {
         ? takenSlugs.includes(where.slug)
           ? { id: "elsewhere" }
           : null
-        : { id: where.id, realmId: EURTH, ownerUserId: null, realm: { settings: null } }
+        : {
+            id: where.id,
+            realmId: EURTH,
+            ownerUserId: null,
+            realm: { settings: null, status: "active" },
+          }
     )
   );
   return s;
@@ -541,7 +564,12 @@ describe("claimNationPage", () => {
 
   it("re-verifies the player's pending page claim and upgrades it in place once verified (F-5.1)", async () => {
     const { db, deps, claims } = pageSetup();
-    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", countryId: null, status: "pending" });
+    db.realmClaim.findFirst.mockResolvedValue({
+      id: "old",
+      userId: "u1",
+      countryId: null,
+      status: "pending",
+    });
     await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
       claimId: "old",
       status: "approved",
@@ -549,11 +577,19 @@ describe("claimNationPage", () => {
     });
     expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
       where: { id: "old", status: "pending" },
-      data: { status: "approved", autoApproved: true, reviewedBy: "system:auto", reviewedAt: expect.any(Date) },
+      data: {
+        status: "approved",
+        autoApproved: true,
+        reviewedBy: "system:auto",
+        reviewedAt: expect.any(Date),
+      },
     });
     expect(db.realmClaim.create).not.toHaveBeenCalled();
     expect(db.country.create).toHaveBeenCalledTimes(1);
-    expect(db.realmClaim.update).toHaveBeenCalledWith({ where: { id: "old" }, data: { countryId: "new-c" } });
+    expect(db.realmClaim.update).toHaveBeenCalledWith({
+      where: { id: "old" },
+      data: { countryId: "new-c" },
+    });
     expect(db.realmClaim.updateMany).toHaveBeenCalledWith({
       where: { realmId: EURTH, wikiPageTitle: "Aurelia", status: "pending", id: { not: "old" } },
       data: expect.objectContaining({ status: "rejected" }),
@@ -600,7 +636,7 @@ describe("reviewClaim — nation page claims", () => {
     realmId: EURTH,
     wikiSource: "iiwiki",
     wikiPageTitle: "Aurelia",
-    realm: { ownerId: "system", slug: "eurth" },
+    realm: { ownerId: "system", slug: "eurth", status: "active" },
     user: { clerkUserId: "clerk_u1" },
     country: null,
   };
@@ -614,7 +650,9 @@ describe("reviewClaim — nation page claims", () => {
     });
     expect(db.realmClaim.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: expect.objectContaining({ realm: { select: { ownerId: true, slug: true } } }),
+        include: expect.objectContaining({
+          realm: { select: { ownerId: true, slug: true, status: true } },
+        }),
       })
     );
     expect(db.realmClaim.updateMany).toHaveBeenNthCalledWith(1, {
@@ -740,7 +778,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     realmId: EURTH,
     wikiSource: "iiwiki",
     wikiPageTitle: "Aurelia",
-    realm: { ownerId: "system", slug: "eurth" },
+    realm: { ownerId: "system", slug: "eurth", status: "active" },
     user: { clerkUserId: "clerk_u1" },
     country: null,
   };
@@ -818,5 +856,71 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     const { table, claims } = regionSetup([region()]);
     await claims.claimCountry(actor, "c1");
     expect(table.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("realm status (AT-7)", () => {
+  const eurthCountry = (status: string) => ({
+    ...country,
+    realmId: EURTH,
+    realm: { settings: null, status },
+  });
+
+  it.each(["draft", "generating", "archived"])(
+    "a %s realm refuses country claims and files nothing",
+    async (status) => {
+      const { db, claims } = setup();
+      db.country.findUnique.mockResolvedValue(eurthCountry(status));
+      await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
+        code: "REALM_CLOSED",
+      });
+      expect(db.realmClaim.create).not.toHaveBeenCalled();
+    }
+  );
+
+  it("an archived realm refuses nation page claims", async () => {
+    const { db, claims } = setup();
+    db.realmPage.findFirst.mockResolvedValue({
+      ...nationPage,
+      realm: { ...nationPage.realm, status: "archived" },
+    });
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
+      code: "REALM_CLOSED",
+    });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+  });
+
+  it("an active realm and IxWorld (with or without a realm row) take claims", async () => {
+    const { db, claims } = setup();
+    db.country.findUnique.mockResolvedValue(eurthCountry("active"));
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
+    const ixworld = setup();
+    ixworld.db.country.findUnique.mockResolvedValue({ ...country, realm: null });
+    await expect(ixworld.claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+    });
+  });
+
+  it("a pending claim in a realm archived since can be rejected but not approved", async () => {
+    const claim = {
+      id: "cl1",
+      status: "pending",
+      userId: "u1",
+      countryId: "c9",
+      realmId: EURTH,
+      realm: { ownerId: "system", slug: "eurth", status: "archived" },
+      user: { clerkUserId: "clerk_u1" },
+      country: { name: "Gallambria" },
+    };
+    const { db, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(claim);
+    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).rejects.toMatchObject({
+      code: "REALM_CLOSED",
+    });
+    expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
+    expect(db.country.updateMany).not.toHaveBeenCalled();
+    await expect(
+      claims.reviewClaim(admin, "cl1", { approve: false, reason: "Realm archived" })
+    ).resolves.toEqual({ status: "rejected" });
   });
 });

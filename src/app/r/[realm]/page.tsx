@@ -115,8 +115,16 @@ export default function RealmPage({ params }: { params: Promise<{ realm: string 
         </ul>
       </section>
 
-      {realm.nationPages.length > 0 && (
-        <ClaimableNations realmSlug={realm.slug} pages={realm.nationPages} />
+      {realm.claimsOpen ? (
+        realm.nationPages.length > 0 && (
+          <ClaimableNations realmSlug={realm.slug} pages={realm.nationPages} />
+        )
+      ) : (
+        <p className="text-label-secondary text-footnote">
+          {realm.status === "archived"
+            ? "This realm is archived: its nations can be read but no longer claimed."
+            : "This realm is not open yet: its nations cannot be claimed."}
+        </p>
       )}
 
       {realm.lorePageCount > 0 && realm.loreSource && (

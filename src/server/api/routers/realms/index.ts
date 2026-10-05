@@ -65,6 +65,7 @@ const CLAIM_ERROR_CODES = {
   FORBIDDEN: "FORBIDDEN",
   NOT_PENDING: "CONFLICT",
   REASON_REQUIRED: "BAD_REQUEST",
+  REALM_CLOSED: "FORBIDDEN",
 } as const;
 
 function claimError(error: Error): never {
@@ -80,10 +81,13 @@ function slugTaken(error: Error): never {
 }
 
 export const realmsRouter = createTRPCRouter({
-  /** Public realm page data (public and unlisted realms are both readable by link). */
+  /**
+   * Public realm page data (public and unlisted realms are both readable by link; draft and generating realms only
+   * by their moderators).
+   */
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user?.id ?? null)),
+    .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user ?? null)),
 
   claimCountry: lightMutationProcedure
     .input(z.object({ countryId: z.string().min(1) }))

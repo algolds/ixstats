@@ -16,12 +16,18 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
-import { canModerateRealm, isSiteAdmin, type RealmActor } from "./realms.access";
+import { canModerateRealm, isRealmOpen, isSiteAdmin, type RealmActor } from "./realms.access";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
 type ClaimErrorCode =
-  "NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED" | "FORBIDDEN" | "NOT_PENDING" | "REASON_REQUIRED";
+  | "NOT_FOUND"
+  | "ALREADY_OWNED"
+  | "CAP_REACHED"
+  | "FORBIDDEN"
+  | "NOT_PENDING"
+  | "REASON_REQUIRED"
+  | "REALM_CLOSED";
 
 export class ClaimError extends Error {
   constructor(
@@ -96,6 +102,11 @@ const canonical = (source: ProofSource, name: string) => {
     : normalized;
 };
 const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
+/** AT-7: only an active realm (or IxWorld) hands out nations; draft, generating and archived realms refuse claims. */
+function assertRealmOpen(realmId: string, status: string | null | undefined): void {
+  if (!isRealmOpen(realmId, status))
+    throw new ClaimError("REALM_CLOSED", "This realm is not open for claims");
+}
 const pending = (claimId: string) => ({ claimId, status: "pending" as const, autoApproved: false });
 const rivalRejected = () => ({
   status: "rejected",
@@ -294,10 +305,11 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         ownerUserId: true,
         wikiSource: true,
         wikiPageTitle: true,
-        realm: { select: { settings: true } },
+        realm: { select: { settings: true, status: true } },
       },
     });
     if (!country) throw new ClaimError("NOT_FOUND", "Country not found");
+    assertRealmOpen(country.realmId, country.realm?.status);
     if (country.ownerUserId)
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
     await assertUnderCap(actor, country.realmId, country.realm?.settings);
@@ -365,9 +377,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
   ): Promise<NationPage> {
     const page = await db.realmPage.findFirst({
       where: { realmId, kind: "nation", title },
-      select: { wikiSource: true, realm: { select: { slug: true, settings: true } } },
+      select: {
+        wikiSource: true,
+        realm: { select: { slug: true, settings: true, status: true } },
+      },
     });
     if (!page) throw new ClaimError("NOT_FOUND", "That page is not a nation of this realm");
+    assertRealmOpen(realmId, page.realm.status);
     if (await nationExists(db, realmId, title))
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
     await assertUnderCap(actor, realmId, page.realm.settings);
@@ -415,7 +431,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const claim = await db.realmClaim.findUnique({
       where: { id: claimId },
       include: {
-        realm: { select: { ownerId: true, slug: true } },
+        realm: { select: { ownerId: true, slug: true, status: true } },
         user: { select: { clerkUserId: true } },
         country: { select: { name: true } },
       },
@@ -430,6 +446,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       if (reason.length < 3) throw new ClaimError("REASON_REQUIRED", "Give the player a reason");
       return reject(claimId, actor.clerkUserId, reason);
     }
+    // A claim filed before the realm closed can still be rejected, but no longer approved.
+    assertRealmOpen(claim.realmId, claim.realm.status);
     let country: { id: string; name: string };
     try {
       country = await db.$transaction(async (tx) => {

@@ -4,6 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { isRealmOpen } from "./realms.access";
 import {
   capacityOf,
   capReachedMessage,
@@ -47,9 +48,6 @@ async function builderProfile(db: BuilderDb, userId: string) {
   };
 }
 
-const isOpen = (realmId: string, status: string) =>
-  realmId === DEFAULT_REALM_ID || status === "active";
-
 /**
  * The realm a new builder nation goes into: `realmId` when given, else the realm of the nation the user acts as,
  * else IxWorld. Refuses an unknown or closed realm, and a realm where the user is at their nation cap.
@@ -69,7 +67,7 @@ export async function resolveBuilderRealm(
   if (!realm && target !== DEFAULT_REALM_ID) {
     throw new BuilderRealmError("REALM_NOT_FOUND", "Realm not found");
   }
-  if (realm && !isOpen(realm.id, realm.status)) {
+  if (realm && !isRealmOpen(realm.id, realm.status)) {
     throw new BuilderRealmError("REALM_CLOSED", "This realm is not open for new nations");
   }
   const capacity = await nationCapacity(db, {
