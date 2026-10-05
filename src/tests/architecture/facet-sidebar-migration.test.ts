@@ -68,6 +68,19 @@ describe("per-app sidebars are migrated to the source list", () => {
     expect(wiki).toMatch(/New page/);
   });
 
+  it("forum: no hidden rails; Reply and Share are thread header actions", () => {
+    const layout = read("src/components/forum/shared/ForumLayout.tsx");
+    expect(layout).not.toMatch(/data-app-subnav|forum-icon-rail|forum-mobile-nav/);
+    expect(read("src/styles/forum.css")).not.toMatch(/forum-icon-rail|forum-mobile-nav/);
+    const thread = fs
+      .readdirSync(path.join(ROOT, "src/components/forum"), { recursive: true })
+      .filter((f): f is string => typeof f === "string" && f.endsWith(".tsx"))
+      .map((f) => read(`src/components/forum/${f}`))
+      .join("\n");
+    expect(thread).toMatch(/Reply/);
+    expect(thread).toMatch(/Share/);
+  });
+
   it("no layout renders a collapsible rail any more", () => {
     const layout = read("src/components/dashboard/sidebar/DashboardSidebarLayout.tsx");
     expect(layout).not.toMatch(/sidebarContent|useSidebar|RailBalancer/);

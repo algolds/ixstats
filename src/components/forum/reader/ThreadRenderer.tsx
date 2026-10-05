@@ -3,14 +3,13 @@
 // Client-side pagination for hybrid routing pattern.
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Lock, Eye, ChatBubble as MessageSquare } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { PostCard } from "~/components/forum/reader/PostCard";
+import { ThreadHeader } from "~/components/forum/reader/ThreadHeader";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { ReplyComposer } from "~/components/forum/composer/ReplyComposer";
-import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -104,26 +103,7 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
         ]}
       />
 
-      <div className="mb-4">
-        <h1 className="text-title-1 sm:text-large-title text-label">{thread.title}</h1>
-        <div className="text-footnote text-label-secondary mt-2 flex flex-wrap items-center gap-3 tabular-nums">
-          <span>by {thread.authorName}</span>
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-3 w-3" />
-            {thread.replyCount.toLocaleString()} replies
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye className="h-3 w-3" />
-            {thread.viewCount.toLocaleString()} views
-          </span>
-          {!thread.isOpen && (
-            <Badge variant="destructive">
-              <Lock />
-              Closed
-            </Badge>
-          )}
-        </div>
-      </div>
+      <ThreadHeader thread={thread} onReply={handleReply} />
 
       {pagination && pagination.last_page > 1 && (
         <ForumPagination

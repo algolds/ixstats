@@ -5,30 +5,15 @@
 
 /* ===================================
    FORUM
-   `--forum-*` are aliases of the Facet roles plus the Forum tint (orange, from
-   `data-app="forum"`). Surfaces are opaque (Card / FacetList in the
-   components); only the mobile pill bar and the reply composer are chrome
-   (facet-chrome, set in the components). These classes style layout and the
+   The Forum tint (orange) comes from `data-app="forum"`. Surfaces are opaque
+   (Card / FacetList in the components); only the reply composer is chrome
+   (facet-chrome, set in the component). These classes style layout and the
    BBCode/XenForo post HTML the forum renders.
    =================================== */
 
 @layer base {
   /* Resolved on the forum scope (and on <body> via PortalTintSync) so --tint is the Forum tint. */
   [data-app="forum"] {
-    --forum-bg: var(--color-background-grouped);
-    --forum-surface: var(--color-surface);
-    --forum-surface-hover: var(--color-fill-4);
-    --forum-border: var(--color-separator);
-    --forum-border-hover: var(--color-separator-opaque);
-    --forum-text: var(--color-label);
-    --forum-text-muted: var(--color-label-secondary);
-    --forum-text-dim: var(--color-label-secondary);
-    --forum-accent: var(--tint);
-    --forum-accent-hover: var(--tint-hover);
-    --forum-accent-dim: var(--tint);
-    --forum-accent-subtle: var(--tint-fill);
-    --forum-accent-border: color-mix(in srgb, var(--tint) 30%, transparent);
-
     /* Layout — wide but contained */
     --forum-content-max-width: 1280px;
   }
@@ -71,46 +56,6 @@
     .forum-content {
       padding: 2rem 3rem;
     }
-  }
-
-  /* ---------------------------------------------------------------------------
-     Icon rail (desktop sub-navigation; hidden under the new shell via data-app-subnav)
-     --------------------------------------------------------------------------- */
-
-  .forum-icon-rail {
-    position: sticky;
-    top: 4rem;
-    flex-direction: column;
-    align-items: center;
-    width: 56px;
-    padding: 1rem 0.5rem;
-    gap: 0.25rem;
-    height: calc(100vh - 4rem);
-    overflow-y: auto;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .forum-icon-rail::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Compact density: the fixed nav is 48px (class lands on <html>) */
-
-  html.compact-mode .forum-icon-rail,
-  [data-density="compact"] .forum-icon-rail {
-    top: 48px;
-    height: calc(100vh - 48px);
-  }
-
-  /* Mobile pill bar (set on the element with facet-chrome) */
-
-  .forum-mobile-nav {
-    position: sticky;
-    top: 3.5rem;
-    z-index: var(--z-index-sticky);
-    border-width: 0 0 1px;
-    -webkit-overflow-scrolling: touch;
   }
 
   /* ---------------------------------------------------------------------------
