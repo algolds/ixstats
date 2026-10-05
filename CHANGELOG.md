@@ -14,6 +14,16 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 💎 Vault Cleanup (2026-10-05)
+
+- **Crafting retired for now:** every `crafting.*` call refuses (`CRAFTING_ENABLED = false`); the workbench, its
+  sidebar, Halo and help entries and the admin switch are gone, `/vault/crafting` says crafting is retired, and
+  `db:seed` skips the crafting seed. The schema and rows stay until the schema-drop decision. VT-14 and D6 are moot.
+- **Cosmetics visible to other players (VT-12):** the public, batched `vault.getEquippedCosmeticsFor` returns render
+  data only; the passport photo and name and forum post and thread authors now wear their equipped glow, frame and badge.
+- **Archetype Proposal Token retired:** it never did anything. It is hidden and refused, and
+  `db:refund-retired-store-items -- --apply` refunds each purchase once through the ledger.
+
 ### 🛡️ Security, CI, Operations & Cron (2026-10-05)
 
 - **Security:** sports commentary no longer sends the server's LLM or TTS key to a caller-supplied URL (a caller config
