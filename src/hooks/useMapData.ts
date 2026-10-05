@@ -77,10 +77,7 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     let cancelled = false;
     setIdbData(null);
     getCachedMapLayers(cacheScope).then((cached) => {
-      if (cached && !cancelled) {
-        console.log("[useMapData] Loaded map data from IndexedDB cache");
-        setIdbData(cached);
-      }
+      if (cached && !cancelled) setIdbData(cached);
     });
     return () => {
       cancelled = true;
