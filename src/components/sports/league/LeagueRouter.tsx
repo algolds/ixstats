@@ -514,7 +514,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             title={league.name}
             subtitle={sportTheme.name}
             back={{ href: "/myleague", label: "Leagues" }}
-            className="-mx-2"
+            bleed
             actions={
               hasSideContent ? (
                 <Button

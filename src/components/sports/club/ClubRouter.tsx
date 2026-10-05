@@ -396,7 +396,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             title={team.name}
             subtitle={getSportTheme(team.league?.sportPreset).name}
             back={{ href: "/myclub", label: "MyClub" }}
-            className="-mx-2"
+            bleed
           />
         }
         heroSection={heroSection}
