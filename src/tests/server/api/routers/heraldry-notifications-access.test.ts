@@ -101,3 +101,25 @@ describe("notification tray mutations act on the caller only", () => {
     expect(JSON.stringify(updateMany.mock.calls[0]![0].where)).toContain(CALLER_CLERK_ID);
   });
 });
+
+describe("notification tray lists what the badge counts", () => {
+  it("includes notifications addressed by the internal user id (sports results)", async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const ctx = createIdorContext({
+      notification: { findMany, count: jest.fn().mockResolvedValue(0) },
+      user: {
+        findFirst: jest
+          .fn()
+          .mockResolvedValue({
+            id: "db_internal_1",
+            clerkUserId: CALLER_CLERK_ID,
+            countryId: null,
+          }),
+      },
+    });
+    await notificationsUserRouter.createCaller(ctx).getUserNotifications({});
+    const where = JSON.stringify(findMany.mock.calls[0]![0].where);
+    expect(where).toContain("db_internal_1");
+    expect(where).toContain(CALLER_CLERK_ID);
+  });
+});

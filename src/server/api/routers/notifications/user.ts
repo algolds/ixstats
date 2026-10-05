@@ -42,22 +42,13 @@ const NotificationCategory = z.enum([
 
 type NotificationDb = Pick<PrismaClient, "user" | "notification">;
 
-/** Notifications a user can see: their own, global ones, and their country's. */
+/**
+ * Notifications a user can see: their own (addressed by either id form, internal or Clerk;
+ * sports results use the internal id), global ones, and their country's. The tray list, the
+ * unread count and the read/dismiss mutations all use this, so the badge never counts a
+ * notification the tray can't show.
+ */
 async function visibleNotificationFilters(db: NotificationDb, userId: string) {
-  const userProfile = await db.user.findFirst({
-    where: { clerkUserId: userId },
-    select: { countryId: true },
-  });
-  const filters: Prisma.NotificationWhereInput[] = [
-    { userId },
-    { AND: [{ userId: null }, { countryId: null }] },
-  ];
-  if (userProfile?.countryId) filters.push({ countryId: userProfile.countryId });
-  return filters;
-}
-
-/** Like visibleNotificationFilters, but matching the user by either id form (internal or Clerk). */
-async function visibleNotificationFiltersById(db: NotificationDb, userId: string) {
   const userProfile = await db.user.findFirst({
     where: { OR: [{ clerkUserId: userId }, { id: userId }] },
     select: { id: true, clerkUserId: true, countryId: true },
@@ -211,7 +202,7 @@ export const notificationsUserRouter = createTRPCRouter({
 
       if (!userId) return { success: true };
 
-      const orConditions = await visibleNotificationFiltersById(db, userId);
+      const orConditions = await visibleNotificationFilters(db, userId);
 
       await db.notification.updateMany({
         where: {
@@ -299,7 +290,7 @@ export const notificationsUserRouter = createTRPCRouter({
       return { count: 0 };
     }
 
-    const orConditions = await visibleNotificationFiltersById(db, userId);
+    const orConditions = await visibleNotificationFilters(db, userId);
 
     const count = await db.notification.count({
       where: {
