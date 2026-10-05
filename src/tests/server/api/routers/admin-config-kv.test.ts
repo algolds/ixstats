@@ -1,7 +1,7 @@
 /** Plan 345 Step 6: the shared SystemConfig read/write used by the admin config procedures. */
 import { describe, it, expect, jest } from "@jest/globals";
 import type { PrismaClient } from "@prisma/client";
-import { readConfigKeys, writeConfigKeys } from "~/server/api/routers/admin/_config-kv";
+import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 
 function makeDb(rows: { key: string; value: string }[] = []) {
   const db = {

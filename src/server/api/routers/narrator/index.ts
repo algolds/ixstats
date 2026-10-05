@@ -4,7 +4,7 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { DEFAULT_FLAVOR_SYSTEM_PROMPT } from "~/lib/narrator/constants";
 import { buildCanonContext, formatCanonContext } from "~/lib/narrator/canon-context";
 import { queryLLM } from "~/lib/narrator/client";
-import { readConfigKeys, writeConfigKeys } from "../admin/_config-kv";
+import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 
 const SETTING_KEYS = [
   "narrator:flavor:enabled",
