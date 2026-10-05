@@ -45,6 +45,9 @@ async function broadcastMarket(message: MarketBroadcastMessage): Promise<void> {
   publishMarketEvent(message, await getMarketWs());
 }
 
+const broadcastComplete = (auctionId: string, winnerId: string | null, finalPrice: number) =>
+  broadcastMarket({ type: "auction_complete", data: { auctionId, winnerId, finalPrice } });
+
 type AuctionWithCard = Prisma.CardAuctionGetPayload<{
   include: { CardOwnership: { include: { cards: true } } };
 }>;
@@ -734,14 +737,7 @@ export class AuctionService {
         `[Auction Service] User ${params.userId} bought card instance ${auction.cardInstanceId} via buyout for ${buyoutPrice} IxC`
       );
 
-      await broadcastMarket({
-        type: "auction_complete",
-        data: {
-          auctionId: params.auctionId,
-          winnerId: params.userId,
-          finalPrice: buyoutPrice,
-        },
-      });
+      await broadcastComplete(params.auctionId, params.userId, buyoutPrice);
 
       return { success: true };
     } catch (error) {
@@ -832,14 +828,7 @@ export class AuctionService {
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
           );
 
-          await broadcastMarket({
-            type: "auction_complete",
-            data: {
-              auctionId,
-              winnerId: auction.currentBidderId,
-              finalPrice,
-            },
-          });
+          await broadcastComplete(auctionId, auction.currentBidderId, finalPrice);
 
           const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
           await notifyQuietly("Winner", auctionId, {
@@ -886,14 +875,7 @@ export class AuctionService {
           );
 
           // No bids expired — treat as complete/cancelled for WS
-          await broadcastMarket({
-            type: "auction_complete",
-            data: {
-              auctionId,
-              winnerId: auction.sellerId,
-              finalPrice: 0,
-            },
-          });
+          await broadcastComplete(auctionId, auction.sellerId, 0);
 
           await notifyQuietly("No-bid", auctionId, {
             userId: auction.sellerId,
@@ -1010,14 +992,7 @@ export class AuctionService {
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
 
-      await broadcastMarket({
-        type: "auction_complete",
-        data: {
-          auctionId: params.auctionId,
-          winnerId: params.userId,
-          finalPrice: 0,
-        },
-      });
+      await broadcastComplete(params.auctionId, params.userId, 0);
 
       return { success: true };
     } catch (error) {
