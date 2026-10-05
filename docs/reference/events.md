@@ -1,6 +1,6 @@
 # Events & Realtime Channels
 
-**Last updated:** September 2026
+**Last updated:** 2026-10-05
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
@@ -34,6 +34,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 ### Market — `/api/market-ws`
 - **Server**: `src/lib/websocket/market-websocket-server.ts` (`ws`); client in `market-websocket-client.ts`
 - **Server → client**: `connected`, `pong`, `bid`, `auction_complete`, `price_update`, `auction_created`
+- **Cross-process fan-out**: bids and buyouts happen in the web process and completions in `ixstats-cron`, so every market event is published to the Redis channel `ixstats:market:broadcast` (`src/server/market-broadcast-bridge.ts`); each process that hosts a market socket subscribes and re-emits it. Without Redis the event goes only to the local socket, if the process has one
 
 ### Map updates (SSE) — `/api/sse/map-updates`
 - **Route**: `src/app/api/sse/map-updates/route.ts` (Next.js route handler, `EventSource`), fed by `mapUpdateBus` (`src/lib/maps/map-update-bus.ts`)
@@ -41,14 +42,14 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 
 ## Notification Pipeline
 - `notifications` router (`src/server/api/routers/notifications/`) handles listing, read state, preferences, and event configuration
-- Event catalog: `src/lib/notifications/events-registry.ts` (35 events) — categories: economic, governance, social, system, security, achievement, crisis, diplomatic, intelligence
+- Event catalog: `src/lib/notifications/events-registry.ts` (13 events in 6 categories: economic, diplomatic, governance, achievement, social, system)
 - `notificationAPI` (`src/lib/notifications/api.ts`) is the server-side creation entry point
 - Discord webhooks: `src/lib/discord/webhook.ts` and `src/lib/logging/error-logger.ts`, enabled by `DISCORD_WEBHOOK_ENABLED=true` (+ `DISCORD_WEBHOOK_URL`)
 - In-app notifications appear in the notification centre, compliance modal, and activity streams
 
 ## Scheduled & Batch Jobs
 
-`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts`; only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a Postgres advisory lock (`src/lib/system/job-lock.ts`). Schedules with a `SystemConfig` override key are read once at startup.
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (21 jobs); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
 
 | Job | Default schedule | Override key |
 | --- | --- | --- |
@@ -68,7 +69,18 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `national-issues` | `*/30 * * * *` | — |
 | `wiki-recentchanges` | `*/10 * * * *` | `cronSchedule_wikiRecentChanges` |
 | `budget-year-rollover` | `41 * * * *` | — |
+| `stat-progression` | `23 */6 * * *` | `cronSchedule_statProgression` |
+| `thinkpages-trending` | `*/15 * * * *` | `cronSchedule_thinkpagesTrending` |
+| `achievements-evaluate` | `41 * * * *` | — |
 | `db-backup` | `17 3 * * *` | — |
+| `log-retention` | `41 4 * * *` | — |
+
+- `stat-progression` persists the economic projection into each country's stored `current*` stats and writes one `HistoricalDataPoint` per IxTime month; the admin `forceRecalculation` takes the same lease.
+- `thinkpages-trending` scores posts with engagement decay, writes `TrendingTopic` and reconciles the like/reply/repost counters.
+- `achievements-evaluate` evaluates account-level and active-country achievements for recently seen users.
+- `db-backup` writes a `pg_dump` to `backups/` and keeps the newest 14.
+- `log-retention` prunes user-action logs and log files older than `UserLogger`'s 90-day retention, and `CronRun` rows older than 30 days.
+- `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.
 
@@ -83,7 +95,7 @@ Manual scripts under `scripts/`:
 - **ThinkShare messages** – `messages` router (`messaging.ts`, `conversations.ts`, `participants.ts`) → `getThinkPagesBroadcaster().broadcastMessage()`
 - **Marketplace auctions** – `src/lib/economy/auction-service.ts` (card-market router and `auction-completion` job) → Market WS broadcasts
 - **Achievements** – `achievements.unlock` admin mutation (awards 5 credits on first unlock); collector achievements resync via `syncMyCollectorAchievements`
-- **Cron jobs** – economy, politics, diplomacy, national-issue and wiki jobs listed above
+- **Cron jobs** – economy, politics, diplomacy, national-issue, stats, social and wiki jobs listed above
 
 ## Consumers
 - Messaging (`useThinkPagesWebSocket` in `src/hooks/useThinkPagesWebSocket.ts`, used by `MessagesRouter.tsx`)

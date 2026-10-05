@@ -223,8 +223,15 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` → `scheduled-changes` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `passive-income` (last).
 
-Enable `db-backup` (daily dump to `backups/`) with the first cycle, and `budget-year-rollover` (new-fiscal-year
-reminders) once the budget-year remap in step 8 is applied.
+Enable `db-backup` (daily dump to `backups/`) and `log-retention` (prunes old logs and `CronRun` rows) with the
+first cycle, and `budget-year-rollover` (new-fiscal-year reminders) once the budget-year remap in step 8 is applied.
+
+PR #49 added three more jobs; enable them after the list above, one per cycle: `thinkpages-trending` (trending and
+post counters) → `achievements-evaluate` → `stat-progression`. `stat-progression` writes every country's stored
+stats and monthly history, so take a `bun run db:backup` first; until it runs, stored stats never move.
+
+That makes 21 jobs, the full table in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs)
+lists them with schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop
 syncing until you enable it, or until the MediaWiki webhook calls `/api/wikios/inbound-sync` with the secret.

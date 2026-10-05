@@ -1,6 +1,6 @@
 # Release guide: build and deploy IxStats from `master`
 
-**For:** whoever releases IxStats to production (`ssh ixwiki`, root). **Last updated:** 2026-09-30.
+**For:** whoever releases IxStats to production (`ssh ixwiki`, root). **Last updated:** 2026-10-05.
 
 This is the one place to start a release. Part A is the procedure for **every** release. Part B lists the one-off
 steps for the **first release under the new branch model** (1.4, promoting the September `rose-garden` work),
@@ -43,7 +43,8 @@ tmux new -s deploy            # the deploy ends by running the server in the for
 ```
 
 - [ ] **Disk:** `df -h /` — keep at least a few GB free. A full disk puts Postgres into recovery mode.
-- [ ] **Note the running commit** for rollback: `git log -1 --oneline` → write it down.
+- [ ] **Note the running commit** for rollback: `git log -1 --oneline` → write it down (the last line of
+      `backups/deploy-history.log` also has it).
 - [ ] **Back up:** `bun run db:backup` → `backups/ixstats-<UTC timestamp>.dump` (via the `ixstats-postgres`
       container). The deploy script takes another one before `db push`; this one is your pre-deploy copy.
       Check it: `ls -lh backups/ | tail -3` (a healthy dump is not tiny).
@@ -68,7 +69,11 @@ tmux new -s deploy            # the deploy ends by running the server in the for
       | `FORUM_VERIFICATION_SECRET` | Optional; forum-link codes fall back to `CRON_SECRET` |
       | `BOT_API_KEY` | Discord bot → `/api/bot/lorewards/sync` |
 
-      Generate secrets on the server (`openssl rand -hex 32`) and never paste them elsewhere.
+      Generate secrets on the server (`openssl rand -hex 32`) and never paste them elsewhere. Check them with
+      `bun run verify:environment` in a shell that has the production env loaded
+      (`set -a; source .env.production; source .env.production.local; set +a; NODE_ENV=production bun run verify:environment`):
+      it fails when a secret from the first table is missing or too short, and warns about missing Redis,
+      `NEXT_PUBLIC_APP_URL` and Discord settings.
 - [ ] **PM2 env:** `ecosystem.config.cjs` (git-ignored) gives `ixstats-cron` and `ixstats-ws` their env. They need
       the same Redis settings, and `ixstats-cron` needs `CRON_ENABLED_JOBS` (see A7).
 - [ ] **Server-only config:** `next.config.js` is not tracked; if the release changes rewrites/redirects, edit the
@@ -102,11 +107,14 @@ What it does, in order (and what to watch for):
    live keys.
 3. `bun run clean` — **downtime starts here**: the old build is deleted while the old server is still running.
 4. `bun install --frozen-lockfile`, `bun run db:generate`.
-5. `bun run db:backup` — aborts the deploy if the dump fails.
+5. `bun run db:backup` — aborts the deploy if the dump fails; on success it appends the time, commit and dump to
+   `backups/deploy-history.log`.
 6. `bun run db:push:force` — applies the schema. **If it reports possible data loss, stop (Ctrl+C) and read the
    message**; never add `--accept-data-loss` blindly. Restore from A2's dump if in doubt.
 7. `bun run build`, then `scripts/deploy-ixworld.sh` (the standalone maps app).
-8. `pm2 startOrReload ecosystem.config.cjs --update-env` (cron, websockets, IxTwitter sync).
+8. `pm2 startOrReload ecosystem.config.cjs --update-env` (cron, websockets, IxTwitter sync). A failed reload stops
+   the deploy; a missing `pm2` or `ecosystem.config.cjs` is reported and skipped (the tracked template is
+   `ecosystem.config.example.cjs`).
 9. Frees port 3550 and runs `start-production.sh` in the foreground — **downtime ends** when it's listening.
    Detach from tmux with `Ctrl+B D`; reattach later with `tmux attach -t deploy`.
 
@@ -139,8 +147,11 @@ release's.
 
 `cron-runner.mjs` (PM2 `ixstats-cron`) runs only the jobs named in `CRON_ENABLED_JOBS` (comma-separated, or `*`).
 Add new jobs one per cycle, edit `ecosystem.config.cjs`, then `pm2 restart ixstats-cron --update-env` and read its
-log. The job table is `src/server/cron/jobs.ts`; the order to enable them is in the
-[September runbook, step 7](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle).
+log. The job table is `src/server/cron/jobs.ts` (21 jobs, listed in
+[events.md](../reference/events.md#scheduled--batch-jobs)); the order to enable them is in the
+[September runbook, step 7](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle), ending with
+`thinkpages-trending` → `achievements-evaluate` → `stat-progression`. After each change, check the job's last run in
+`/api/health` (`cron.<job>.lastStatus`) or `pm2 logs ixstats-cron`; a failed run also posts to the Discord webhook.
 
 ### A8. After the release
 
@@ -166,6 +177,19 @@ If the release is broken and a fix-forward isn't quick:
    bun run db:restore -- backups/ixstats-<stamp>.dump --yes --i-know-this-is-production
    ```
 3. Revert or fix on `master` (via `development`), then deploy `master` again.
+
+`scripts/deployment/rollback-deployment.sh` (`bun run deploy:rollback`) does steps 1–2 in one go:
+
+```bash
+./scripts/deployment/rollback-deployment.sh rollback-<date>                                        # code only
+./scripts/deployment/rollback-deployment.sh rollback-<date> --restore backups/ixstats-<stamp>.dump  # restore, then deploy
+```
+
+It fetches the branch from the `master` remote, checks it out, optionally restores the dump (with the production
+confirmation flags), then runs `deploy-production.sh` with `ALLOW_NON_MASTER_DEPLOY=1`, so the rollback gets the
+same backup, build, PM2 reload and restart as a release. It asks for confirmation unless given `--yes`. Each deploy
+appends a line to `backups/deploy-history.log`: the time, the commit it deployed, and the dump it took before
+`db push`; use it to pick the dump to restore.
 
 ---
 
@@ -227,9 +251,10 @@ bun scripts/fix-storyteller-effect-timestamps.ts --apply
 
 ### B5. Cron (A7)
 
-Start with `db-backup` (daily dump). Then follow the
+Start with `db-backup` (daily dump) and `log-retention`. Then follow the
 [runbook's order](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle), and add
-`budget-year-rollover` (new-fiscal-year reminders) once B4's remap is applied. Before the money jobs
+`budget-year-rollover` (new-fiscal-year reminders) once B4's remap is applied. The #49 jobs come last:
+`thinkpages-trending`, `achievements-evaluate`, then `stat-progression` (take a `db:backup` first). Before the money jobs
 (`auction-completion`, `trade-expiry`, `policy-maintenance`, `passive-income`), size their backlogs as the
 runbook describes.
 
