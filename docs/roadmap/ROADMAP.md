@@ -4,6 +4,9 @@
 **Sources:** [code audit 2026-09-30](code-audit-2026-09-30.md) (IDs `MC-`, `AT-`, `WK-`, `VT-`, `SL-`, `PL-`) ·
 [pending-features.md](pending-features.md) (the doc-based backlog) · [System Status](../systems/SYSTEM_STATUS.md) (what is live)
 
+> **2026-10-05:** statuses below predate PRs #48–#49. About 30 open items are done in code; see
+> [ACTION_PLAN_2026-10-05.md](ACTION_PLAN_2026-10-05.md) for the verified status and the ordered next steps.
+
 This is the plan: what to do, in what order, and why. Items refer to the two backlogs above, which keep the evidence
 (file paths, callers, sizes). Milestones are ordered by risk and dependency, not by calendar. Version targets are
 proposals for the version registry (`src/lib/buildVersion.ts`).

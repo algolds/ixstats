@@ -15,6 +15,7 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 
 - **What's live** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
 - **The roadmap** — [roadmap/ROADMAP.md](roadmap/ROADMAP.md) (milestones M0–M7, dependencies, owner decisions)
+- **What to work on next** — [roadmap/ACTION_PLAN_2026-10-05.md](roadmap/ACTION_PLAN_2026-10-05.md) (docs audit against the code, verified roadmap status, ordered action list)
 - **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (doc-based backlog) · [roadmap/code-audit-2026-09-30.md](roadmap/code-audit-2026-09-30.md) (code-level findings, incl. security and economy exploits)
 - **Platform overview** — [overview/platform.md](overview/platform.md)
 - **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
