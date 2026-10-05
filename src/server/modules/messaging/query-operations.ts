@@ -50,8 +50,17 @@ export class MessagingQueryOperations {
     return batchResolveMessagingAccounts(userIds, this.db);
   }
 
-  /** Unread message count per conversation (messages from others after the actor's last read). */
-  private async unreadCounts(conversationIds: string[], actorId: string) {
+  /**
+   * Unread message count per conversation (messages from others after the actor's last read).
+   * In group conversations, messages from `blocked` senders are hidden from the actor, so they
+   * are not counted either.
+   */
+  private async unreadCounts(
+    conversationIds: string[],
+    actorId: string,
+    groupIds: ReadonlySet<string> = new Set(),
+    blocked: readonly string[] = []
+  ) {
     const unreadMap = new Map<string, number>();
     if (conversationIds.length === 0) return unreadMap;
 
@@ -68,6 +77,8 @@ export class MessagingQueryOperations {
           OR: myParticipants.map((mp: any) => ({
             conversationId: mp.conversationId,
             ixTimeTimestamp: { gt: mp.lastReadAt || new Date(0) },
+            ...(blocked.length > 0 &&
+              groupIds.has(mp.conversationId) && { userId: { notIn: [...blocked] } }),
           })),
           userId: { not: actorId },
           deletedAt: null,
@@ -102,6 +113,22 @@ export class MessagingQueryOperations {
       record(Boolean(actorId), false);
       throw err;
     }
+  }
+
+  /** Swaps a group conversation's preview for its latest message from a sender not in `blocked`. */
+  private async replaceBlockedPreviews(groups: any[], blocked: readonly string[]) {
+    const hidden = new Set(blocked);
+    await Promise.all(
+      groups
+        .filter((conv) => conv.messages?.[0] && hidden.has(conv.messages[0].userId))
+        .map(async (conv) => {
+          const visible = await this.db.thinkshareMessage.findFirst({
+            where: { conversationId: conv.id, userId: { notIn: [...blocked] } },
+            orderBy: { ixTimeTimestamp: "desc" },
+          });
+          conv.messages = visible ? [visible] : [];
+        })
+    );
   }
 
   /** Removes the look-ahead row from a `limit + 1` page and returns its lastActivity as the next cursor. */
@@ -157,10 +184,18 @@ export class MessagingQueryOperations {
 
       const nextCursor = this.popNextCursor(conversations, limit) ?? null;
 
+      // Messages from accounts the viewer blocked are hidden in group conversations, so they
+      // neither preview nor count as unread there.
+      const groups = conversations.filter((c: any) => c.type !== "direct");
+      const blocked = groups.length > 0 ? await blockedUserClerkIds(this.db, actorId) : [];
+      if (blocked.length > 0) await this.replaceBlockedPreviews(groups, blocked);
+
       const accountMap = await this.resolveListAccounts(conversations, actorId);
       const unreadMap = await this.unreadCounts(
         conversations.map((c: any) => c.id),
-        actorId
+        actorId,
+        new Set(groups.map((c: any) => c.id)),
+        blocked
       );
 
       return {
@@ -194,6 +229,10 @@ export class MessagingQueryOperations {
 
     if (activeParticipants.length === 0) return counts;
 
+    // Messages from accounts the actor blocked are hidden in group conversations, so they
+    // don't count there.
+    const blocked = await blockedUserClerkIds(this.db, actorId);
+
     // Count unread per conversation in SQL: loading every received message row hit the
     // 1000-row findMany guard and undercounted badges for busy users.
     const rows: { conversationId: string; unread: number }[] = await this.db.$queryRaw`
@@ -203,9 +242,11 @@ export class MessagingQueryOperations {
         ON p."conversationId" = m."conversationId"
        AND p."userId" = ${actorId}
        AND p."isActive" = true
+      JOIN "ThinkshareConversation" c ON c."id" = m."conversationId"
       WHERE m."userId" <> ${actorId}
         AND m."deletedAt" IS NULL
         AND m."ixTimeTimestamp" > p."lastReadAt"
+        AND (c."type" = 'direct' OR m."userId" <> ALL(${blocked}::text[]))
       GROUP BY m."conversationId"
     `;
     const convUnreadCounts = new Map(rows.map((r) => [r.conversationId, Number(r.unread)]));

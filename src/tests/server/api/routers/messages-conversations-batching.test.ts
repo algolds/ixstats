@@ -78,6 +78,9 @@ describe("Plan 159: Messages Conversations Unread Query Batching", () => {
       thinkpagesAccount: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      userConnection: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       conversationParticipant: {
         findMany: jest.fn().mockResolvedValue([
           { conversationId: "conv-1", userId: "user-me", lastReadAt: new Date("2026-01-01") },

@@ -54,6 +54,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       thinkshareMessage: {
         findMany: jest.fn().mockResolvedValue([]),
         findUnique: jest.fn().mockResolvedValue(null),
+        findFirst: jest.fn().mockResolvedValue(null),
         create: jest
           .fn()
           .mockResolvedValue({ id: "msg_1", content: "hello", createdAt: new Date() }),
@@ -163,6 +164,57 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(res.conversations[0]?.unreadCount).toBe(3);
     });
 
+    test("5b. group conversations skip blocked senders in previews and unread counts", async () => {
+      mockDb.userConnection.findMany.mockResolvedValue([
+        { targetUserId: "user_blocked", targetCountryId: null },
+      ]);
+      mockDb.thinkshareConversation.findMany.mockResolvedValue([
+        {
+          id: "g_1",
+          type: "group",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastActivity: new Date(),
+          participants: [{ userId: "user_1", isActive: true }],
+          messages: [{ id: "m_2", userId: "user_blocked", content: "spam", createdAt: new Date() }],
+        },
+        {
+          id: "d_1",
+          type: "direct",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastActivity: new Date(),
+          participants: [{ userId: "user_1", isActive: true }],
+          messages: [{ id: "m_3", userId: "user_blocked", content: "old", createdAt: new Date() }],
+        },
+      ]);
+      mockDb.thinkshareMessage.findFirst.mockResolvedValue({
+        id: "m_1",
+        userId: "user_2",
+        content: "hello",
+        createdAt: new Date(),
+      });
+      mockDb.conversationParticipant.findMany.mockResolvedValue([
+        { conversationId: "g_1", userId: "user_1", lastReadAt: new Date(0) },
+        { conversationId: "d_1", userId: "user_1", lastReadAt: new Date(0) },
+      ]);
+
+      const res = await service.getConversationsByFolder("user_1", { folder: "inbox" });
+
+      expect(mockDb.thinkshareMessage.findFirst).toHaveBeenCalledTimes(1);
+      expect(mockDb.thinkshareMessage.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { conversationId: "g_1", userId: { notIn: ["user_blocked"] } },
+        })
+      );
+      expect(res.conversations.map((c: any) => c.lastMessage?.content)).toEqual(["hello", "old"]);
+      const unreadWhere = mockDb.thinkshareMessage.findMany.mock.calls[0][0].where;
+      expect(unreadWhere.OR).toEqual([
+        expect.objectContaining({ conversationId: "g_1", userId: { notIn: ["user_blocked"] } }),
+        expect.not.objectContaining({ userId: expect.anything() }),
+      ]);
+    });
+
     test("6. getFolderCounts aggregates unread counts across all category folders", async () => {
       mockDb.conversationParticipant.findMany.mockResolvedValue([
         {
@@ -209,6 +261,21 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
       expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
       expect(counts.inbox).toBe(4);
+    });
+
+    test("6d. getFolderCounts leaves blocked senders out of group unread counts", async () => {
+      mockDb.userConnection.findMany.mockResolvedValue([
+        { targetUserId: "user_blocked", targetCountryId: null },
+      ]);
+      mockDb.conversationParticipant.findMany.mockResolvedValue([
+        { conversationId: "c_1", lastReadAt: new Date(0), conversation: { source: "thinktank" } },
+      ]);
+
+      await service.getFolderCounts("user_1");
+
+      const [sql, ...params] = mockDb.$queryRaw.mock.calls[0];
+      expect(sql.join("?")).toContain(`c."type" = 'direct' OR m."userId" <> ALL(`);
+      expect(params).toContainEqual(["user_blocked"]);
     });
 
     test("6c. getFolderCounts returns zeros without querying messages when user has no active participants", async () => {
