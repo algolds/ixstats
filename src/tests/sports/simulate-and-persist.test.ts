@@ -96,7 +96,10 @@ type UpsertArgs = {
 };
 
 /** In-memory stand-in for the Prisma calls simulateAndPersistMatch makes. */
-function fakeDb(rivalryIntensity: number | null = null) {
+function fakeDb(
+  rivalryIntensity: number | null = null,
+  meetings: Array<{ homeScore: number; awayScore: number }> = []
+) {
   let status = "scheduled";
   let boutStatus = "scheduled";
   const standings = new Map<string, StandingRow>();
@@ -106,6 +109,7 @@ function fakeDb(rivalryIntensity: number | null = null) {
       status = "completed";
       return { count: 1 };
     }),
+    findMany: jest.fn(async () => meetings),
   };
   const sportBracket = {
     updateMany: jest.fn(async (args: BoutClaimArgs) => {
@@ -139,8 +143,10 @@ function fakeDb(rivalryIntensity: number | null = null) {
   const sportMatchStat = { createMany: jest.fn(async () => ({ count: 1 })) };
   const sportRivalry = {
     findFirst: jest.fn(async () =>
-      rivalryIntensity === null ? null : { intensity: rivalryIntensity }
+      rivalryIntensity === null ? null : { id: "rivalry_1", intensity: rivalryIntensity }
     ),
+    update: jest.fn(async (_args: unknown) => ({})),
+    upsert: jest.fn(async (_args: unknown) => ({})),
   };
   const fake = {
     sportMatch,
@@ -237,6 +243,35 @@ describe("simulateAndPersistMatch", () => {
     const normal = fakeDb();
     await simulateAndPersistMatch(normal.db, { match: fixture(), league: LEAGUE });
     expect(claimArgs(normal).data.matchStats.simulationSnapshot.homeAdvantage).toBe(55);
+  });
+
+  it("creates a rivalry once the pair's meetings qualify (SL-16)", async () => {
+    const close = [
+      { homeScore: 1, awayScore: 1 },
+      { homeScore: 2, awayScore: 1 },
+      { homeScore: 4, awayScore: 0 },
+    ];
+    const fake = fakeDb(null, close);
+    await simulateAndPersistMatch(fake.db, { match: fixture(), league: LEAGUE });
+    expect(fake.sportMatch.findMany).toHaveBeenCalledTimes(1);
+    expect(fake.sportRivalry.upsert).toHaveBeenCalledTimes(1);
+    expect(fake.sportRivalry.upsert.mock.calls[0]![0]).toMatchObject({
+      create: { intensity: 60 },
+    });
+
+    const none = fakeDb(null, [{ homeScore: 5, awayScore: 0 }]);
+    await simulateAndPersistMatch(none.db, { match: fixture(), league: LEAGUE });
+    expect(none.sportRivalry.upsert).not.toHaveBeenCalled();
+    expect(none.sportRivalry.update).not.toHaveBeenCalled();
+  });
+
+  it("never lowers an existing rivalry's intensity", async () => {
+    const fake = fakeDb(85, [{ homeScore: 3, awayScore: 0 }]);
+    await simulateAndPersistMatch(fake.db, { match: fixture(), league: LEAGUE });
+    expect(fake.sportRivalry.update.mock.calls[0]![0]).toMatchObject({
+      where: { id: "rivalry_1" },
+      data: { intensity: 85 },
+    });
   });
 
   it("completing the same match twice does not double-count standings", async () => {

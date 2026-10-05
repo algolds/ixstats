@@ -637,7 +637,8 @@ describe("MyLeague Phase 3 & 4 Integration Tests", () => {
       ]);
 
       mockPrisma.sportRivalry = {
-        findFirst: jest.fn<any>().mockResolvedValue({ intensity: 85 }),
+        findFirst: jest.fn<any>().mockResolvedValue({ id: "rivalry_1", intensity: 85 }),
+        update: jest.fn<any>().mockResolvedValue({}),
       };
       mockPrisma.sportPlayer.updateMany = jest.fn<any>().mockResolvedValue({ count: 1 });
 
