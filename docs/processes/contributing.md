@@ -50,6 +50,17 @@ Work flows up through three long-lived branches, always by merge pull request (n
 - Update the relevant Markdown guide in `docs/` and `/help`
 - Keep feature-level READMEs (e.g., `src/app/mycountry/README.md`) aligned with code changes
 - Note breaking changes or migrations in the pull request
+- When a PR closes a roadmap ID, delete its row from [backlog.md](../roadmap/backlog.md), mark it done in
+  [ROADMAP.md](../roadmap/ROADMAP.md), and update the system doc and [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md)
+- Link every new doc from the [documentation hub](../README.md)
+
+## Archiving Documentation
+- Retired docs (finished audits, superseded specs, docs for deleted code) move to the tracked
+  [`docs/history/`](../history/README.md) folder with `git mv`, under the same sub-path they had in `docs/`
+- Add a one-line "Retired" note under the title, fix every link to the old path, and list the doc in
+  [docs/history/README.md](../history/README.md)
+- `docs/archive/` and `plans/` are local-only maintainer folders (git-ignored): don't move tracked docs there and
+  don't link them from tracked docs
 
 ## Tests & Verification
 - Add or update Jest tests for routers/services touched
@@ -65,6 +76,6 @@ Work flows up through three long-lived branches, always by merge pull request (n
 ## Release Guidance
 - Record releases in the root `CHANGELOG.md`; version numbers come from `src/lib/buildVersion.ts`
 - Run deployment checklist from `docs/operations/deployment.md`
-- Archive legacy docs under `docs/archive/<date>` when retiring features (`docs/archive/` is git-ignored and kept locally)
+- Retire docs for removed features to `docs/history/` (see [Archiving Documentation](#archiving-documentation))
 
 Maintainers should revise this guide when workflow expectations change or new tooling is adopted.

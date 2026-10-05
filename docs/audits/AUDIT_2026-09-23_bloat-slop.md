@@ -1,5 +1,8 @@
 # IxStats Bloat, Duplication & AI-Slop Audit — 2026-09-23
 
+> **Local-only references:** paths under `plans/` (for example `plans/341-zero-caller-procedures.txt`) point at the
+> maintainer's local plans folder, which is not in the repository.
+
 > ## Status (2026-09-29)
 >
 > Point-in-time record; findings are unchanged. §9 logs the 2026-09-25 execution (all 9 commits are merged into the current tree). Later commits closed more: plan 312 `cc12cf122` deleted 508 zero-caller procedures (router total now 77 namespaces / 958 procedures vs 94 / 1,661 audited); `48c03130b` moved help/terms/privacy to markdown; `ededb10d8` (plans 313 + 345) unified formatters/colour helpers/relative time/rarity palette and added the admin config-kv helper; `f737604ca` + `003c1ee5d` (plan 346 Steps 2–6) trimmed root providers, added opaque nested surfaces, `<Eyebrow>` and fewer decorative pulses; `server.mjs` no longer imports `sports-cron.js`.

@@ -1,5 +1,8 @@
 # Deploying `rose-garden` to production (September 2026 plan wave)
 
+> **One-off runbook.** It retires to [docs/history/](../history/README.md) once 1.4 is released; the standing
+> procedure is the [release guide](release-guide.md).
+
 **For:** whoever deploys IxStats on the prod host (`ssh ixwiki`, root). **Written:** 2026-09-27.
 Read it end to end once before starting. Every command here is meant to be run by hand.
 

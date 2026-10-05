@@ -63,4 +63,4 @@ None.
 ## Related documentation
 
 - [MyCountry](./mycountry.md)
-- [Platform audit, ponytail D4](../roadmap/platform-audit/ponytail.md): the demo-seed removal
+- [Platform audit, ponytail D4](../history/roadmap/platform-audit/ponytail.md): the demo-seed removal

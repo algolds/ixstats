@@ -6,8 +6,8 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 > Audited 2026-09-29 and again 2026-10-05 against the code — platform **IxStates 1.4.0 "Lobster Crosby"** (Release Candidate), on the
 > nightly branch `rose-garden` (branches: `rose-garden` nightly → `development` stable-experimental → `master`
 > production; see [contributing](processes/contributing.md#branches)). Every doc below was checked claim by claim; statuses reflect the code, not earlier plans.
-> Implementation plans live in `plans/` and completion records in `docs/archive/` and `plans/archive/`. All three are
-> git-ignored and exist only in the maintainer's local checkout.
+> Retired docs are kept in [history/](history/README.md). `plans/` and `docs/archive/` are local-only maintainer
+> folders, not in the repository.
 
 ---
 
@@ -16,7 +16,7 @@ comes from the [Version Registry](../src/lib/buildVersion.ts) — see [Versionin
 - **What's live** — [systems/SYSTEM_STATUS.md](systems/SYSTEM_STATUS.md)
 - **The roadmap** — [roadmap/ROADMAP.md](roadmap/ROADMAP.md) (milestones M0–M7, dependencies, owner decisions)
 - **What to work on next** — [roadmap/ACTION_PLAN_2026-10-05.md](roadmap/ACTION_PLAN_2026-10-05.md) (docs audit against the code, verified roadmap status, ordered action list)
-- **What's pending** — [roadmap/pending-features.md](roadmap/pending-features.md) (doc-based backlog) · [roadmap/code-audit-2026-09-30.md](roadmap/code-audit-2026-09-30.md) (code-level findings, incl. security and economy exploits) · [roadmap/platform-audit/README.md](roadmap/platform-audit/README.md) (2026-09-30 platform audit and its status; per-area reports alongside)
+- **What's pending** — [roadmap/backlog.md](roadmap/backlog.md) (the one backlog: every open item with its ID and evidence)
 - **Platform overview** — [overview/platform.md](overview/platform.md)
 - **Local dev setup** — [operations/local-dev-setup.md](operations/local-dev-setup.md)
 - **Production deployment** — start with the [release guide](operations/release-guide.md) (pre-deploy checklist, build and deploy from `master`, verify, rollback) · reference: [operations/deployment.md](operations/deployment.md) · September runbook: [operations/deploy-rose-garden-2026-09.md](operations/deploy-rose-garden-2026-09.md)
@@ -55,7 +55,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Defense** | [systems/defense.md](systems/defense.md) | Branches, units, procurement, readiness, threats | 🔒 Premium |
 | **Intelligence** | [systems/intelligence.md](systems/intelligence.md) | Where recon and fog live now; no standalone dashboard | 🟡 Partial |
 | **Synergies** | [reference/synergies.md](reference/synergies.md) | 45 additive + 45 conflicting government component relationships | ✅ Live |
-| Statecraft vision audit | [systems/statecraft/mycountry-vision-audit.md](systems/statecraft/mycountry-vision-audit.md) | June 2026 audit of the vision vs the build | 🗄️ Historical |
 | Statecraft game loops | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) | IN → SEE → OUT → RIPPLE loop design | 📐 Design (partly built) |
 | Design philosophy & PRDs | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | Design bible and statecraft PRDs, with a status matrix | 📐 Design (partly built) |
 
@@ -65,7 +64,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Maps & map editor** | [systems/maps.md](systems/maps.md) · [app README](../src/app/maps/README.md) | `/maps`, `/admin/maps/editor`, pipelines, layers, overlays, geo routers | ✅ Live (inspector spec partial) |
 | **Worldgen (UPG v2)** | [src/lib/worldgen/README.md](../src/lib/worldgen/README.md) | Procedural mesh, terrain, hydrology, climate, export | ✅ Live |
 | **Realms & Eurth** | [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) · [systems/realms.md](systems/realms.md) · [realms/eurth-onboarding.md](realms/eurth-onboarding.md) | Ownership, claims, realm hubs, realm-scoped listings, `/realms` directory, realm boards; Eurth runbook | ✅ Phase 1 · 🟡 Phases 2–4 |
-| Map editor improvements | [systems/map-editor-improvements-overview.md](systems/map-editor-improvements-overview.md) | June–August editor plans (all shipped or superseded) | 🗄️ Historical |
 
 ### 📖 WikiOS — lore platform
 | System | Document | Scope | Status |
@@ -76,8 +74,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Lore lifecycle** | [systems/lore-lifecycle.md](systems/lore-lifecycle.md) | Drafting → publishing → Lorewards (`/util/lorewards`) | ✅ Live |
 | WikiOS style guide | [systems/wikios/style-guide.md](systems/wikios/style-guide.md) | WikiOS tokens and typography | ✅ Live |
 | Stage 3 config plan | [systems/wikios/wikios-stage3-config-plan.md](systems/wikios/wikios-stage3-config-plan.md) | MediaWiki render-service isolation | 📐 Staged, not cut over |
-| Independence 2b/3 | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | Stage 2b (shipped) and Stage 3 proposal | 🗄️ Historical after Stage 3 |
-| Longevity workflow | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | Portability rules; Workstream C not started | 🗄️ Historical |
 
 ### 💎 Vault — credits, cards, achievements
 | System | Document | Scope | Status |
@@ -114,7 +110,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Facet** | [reference/facet-design-system.md](reference/facet-design-system.md) | Facet 4: five layers, content types, materials, primitives, the sidebar shell, sound, accessibility | ✅ Live (foundation and sidebar; per-app sweep in progress) |
 | **Halo** | [systems/halo.md](systems/halo.md) | Contextual overlay, plugins, `Cmd+K` palette | ✅ Live |
 | **Admin CMS** | [systems/admin-cms.md](systems/admin-cms.md) · [app README](../src/app/admin/README.md) | Admin sections, reference catalogs, RBAC, persisted audit log | ✅ Live |
-| **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` (55 articles, all registered) | ✅ Live |
+| **Help center** | [systems/help.md](systems/help.md) · [app README](../src/app/help/README.md) | Markdown help in `src/content/help/` (63 articles, all registered) | ✅ Live |
 
 ### 🧪 Labs
 | System | Document | Scope | Status |
@@ -136,7 +132,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md](superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
 | [superpowers/specs/2026-10-04-facet-4-design.md](superpowers/specs/2026-10-04-facet-4-design.md) | Facet 4 content-typed material system | 🟡 Foundation and sidebar implemented; per-app sweep in progress |
 | [superpowers/specs/2026-10-04-facet-4-sidebar-design.md](superpowers/specs/2026-10-04-facet-4-sidebar-design.md) | Facet 4 sidebar: one source list for all navigation | ✅ Implemented |
-| [specs/2026-09-30-facet-3-design-system.md](specs/2026-09-30-facet-3-design-system.md) | Facet 3 unified design system | 🗄️ Superseded by Facet 4 |
 | [specs/2026-08-13-ixcards-lore-first-rebuild.md](specs/2026-08-13-ixcards-lore-first-rebuild.md) | IxCards lore-first rebuild | 🟡 Phases 1–5 done; 6–7 pending |
 | [specs/2026-08-10-achievements-ribbons-design.md](specs/2026-08-10-achievements-ribbons-design.md) | Achievements ribbons | 🟡 Derived ribbons and the passport shelf built; Ribbons tab pending |
 | [specs/vexel-prd.md](specs/vexel-prd.md) | Vexel heraldry studio | 🟡 P0 mostly built |
@@ -181,14 +176,13 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [reference/admin-endpoint-security-map.md](reference/admin-endpoint-security-map.md) | Admin procedures, middleware chain, RBAC |
 | [reference/oceanography-report.md](reference/oceanography-report.md) | Ocean basins, currents, shipping routes |
 | [reference/caphiria-geographical-report.md](reference/caphiria-geographical-report.md) | Caphiria physical geography |
-| [reference/user-profile-utils.md](reference/user-profile-utils.md) | 🗄️ Obsolete — the module was deleted in June 2026 |
 
 ---
 
 ## 🔍 Audits
 
 Point-in-time audits. Each opens with a "Status (2026-09-29)" block of resolved and open items; open items are rolled
-into [roadmap/pending-features.md](roadmap/pending-features.md).
+into [roadmap/backlog.md](roadmap/backlog.md).
 
 | Document | Topic |
 | --- | --- |
@@ -196,8 +190,6 @@ into [roadmap/pending-features.md](roadmap/pending-features.md).
 | [audits/HEX_COLOUR_INVENTORY_2026-09-27.md](audits/HEX_COLOUR_INVENTORY_2026-09-27.md) | Hard-coded colour inventory |
 | [audits/src-monolith-candidates.md](audits/src-monolith-candidates.md) | Files ≥800 lines (recomputed) |
 | [audits/AUDIT_2026-06-13.md](audits/AUDIT_2026-06-13.md) · [audits/AUDIT_2026-06.md](audits/AUDIT_2026-06.md) | June architecture audits |
-| [audits/REFACTOR_PLAN_2026-06.md](audits/REFACTOR_PLAN_2026-06.md) | June refactor plan (all items resolved) |
-| [audits/test-suite-audit-and-justification.md](audits/test-suite-audit-and-justification.md) | Test-suite inventory (removals done) |
 
 ---
 
@@ -213,12 +205,7 @@ into [roadmap/pending-features.md](roadmap/pending-features.md).
 
 ---
 
-## 🗄️ Historical archive (`docs/archive/`)
+## 🗄️ History
 
-Completed plans, spike records and legacy changelogs live in `docs/archive/`, which is git-ignored (local only, not in
-the repository):
-- **Superpowers brainstorming archive**: `docs/archive/superpowers/` (plans and design specs from June–August 2026).
-- **Design spikes**: `docs/archive/design/` (`province-generator.md`, `territory-brush.md`).
-- **Legacy changelog**: `docs/archive/CHANGELOG_PRE_OGMA.md` (v0.9 to v2.2.0).
-- **Command Surface migration record**: `docs/archive/mycountry-v2-command-surface-plan.md`.
-- **Pre-UPG v2 maps spec**: `docs/archive/maps-1.1.md`.
+Retired docs (finished audits, superseded specs, docs for deleted code) are in [history/](history/README.md), with
+the reason each was retired; `docs/archive/` and `plans/` are local-only maintainer folders, not in the repository.

@@ -1,10 +1,12 @@
 # Pending Features & Open Work
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). Folded into [backlog.md](../../roadmap/backlog.md) (open items, cited as PF§1–PF§7).
+
 **Compiled:** 2026-09-29 from a doc-by-doc audit of `docs/`, the `src/**/README.md` files and the in-app help, each
 claim checked against the code on `rose-garden`.
 **Rows updated 2026-10-05** for PRs #48–#49 and the 2026-10-05 commits; resolved rows are struck through with the fix.
-**Companion:** [System Status](../systems/SYSTEM_STATUS.md) lists what is live. **The plan** built from this backlog is
-[ROADMAP.md](ROADMAP.md); a follow-up code-level audit ([code-audit-2026-09-30.md](code-audit-2026-09-30.md)) found
+**Companion:** [System Status](../../systems/SYSTEM_STATUS.md) lists what is live. **The plan** built from this backlog is
+[ROADMAP.md](../../roadmap/ROADMAP.md); a follow-up code-level audit ([code-audit-2026-09-30.md](code-audit-2026-09-30.md)) found
 ~130 more items, including 16 security and economy exploits, and corrects several entries below.
 
 Every item here is something a doc promised, planned or assumed that the code does not do today. Items are grouped by
@@ -30,9 +32,9 @@ masked in the admin config; sports season and simulation procedures require the 
 
 | Item | Where | Detail |
 |---|---|---|
-| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](ROADMAP.md#m0--integrity-security--economy-exploits) |
+| **Economy, account and authorization exploits found by the code audit** | Vault, ThinkTanks, forum, Lorewards, audit log | See [code audit §1](code-audit-2026-09-30.md#1-security--economy-exploits) (VT-1 store price trusted from the client, VT-2 import-bonus farming, SL-1 ThinkTank authorization, WK-1 forum impersonation, PL-1 audit log persists nothing, …) and [ROADMAP M0](../../roadmap/ROADMAP.md#m0--integrity-security--economy-exploits) |
 | Rotate the read-only DB password | `ixstats_readonly` role (plan 325) | The old password is in git history since 2026-05-31; the script no longer contains it, but the credential itself must be changed on the server |
-| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
+| CSP nonce not enforced | `src/lib/security/csp.ts`, [deploy runbook](../../operations/deploy-rose-garden-2026-09.md) | The nonce now reaches the page ([#46](https://github.com/algolds/ixstats/pull/46), PL-2). Left: remove the nginx/Cloudflare override on the server and check for CSP violations, then drop `'unsafe-inline'` from `script-src` |
 
 ## 2. Broken or regressed features
 
@@ -40,7 +42,7 @@ masked in the admin config; sports season and simulation procedures require the 
 |---|---|---|
 | ~~Elections and legislation can't work~~ | MyCountry › Politics | ✅ Fixed in #49: a first election is scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them, and bills can pass (`src/lib/government/election-lifecycle.ts`, MC-2) |
 | Cabinet meetings can't conclude | MyCountry | `completeMeeting` and the decision/implement mutations were deleted (plans 312/332); meetings are schedule-only |
-| Crafting fails end to end | Vault | Ownership IDs fixed in #48. Still open: `successRate` 0–1 vs 0–100; a generic card is minted instead of `resultCardId`; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../systems/cards.md), VT-14) |
+| Crafting fails end to end | Vault | Ownership IDs fixed in #48. Still open: `successRate` 0–1 vs 0–100; a generic card is minted instead of `resultCardId`; seed uses fields and a `MYTHIC` rarity the schema lacks ([cards.md](../../systems/cards.md), VT-14) |
 | Vexel attach-to-country blanks the coat of arms | Labs › Vexel | Writes an empty `coatOfArms` to `Country` |
 | ~~`/mycountry/map-editor` inside the shell~~ | MyCountry | ✅ Fixed: the route renders the full-screen editor, and the shell's `map-editor` section navigates to it (`MyCountryRouter.tsx`) |
 | ~~`/admin/calculations` 404s on reload~~ | Admin | ✅ Fixed: `src/app/admin/calculations/page.tsx` exists |
@@ -54,21 +56,21 @@ masked in the admin config; sports season and simulation procedures require the 
 ## 3. Partly built — finish the documented scope
 
 ### MyCountry & simulation
-- **Information fog:** mask numeric previews into qualitative bands; governance-competence thresholds (>75% clear, <45% fogged). Source: [design PRDs](../systems/mycountry-design-philosophy-and-prds.md) :39, :449; [game loops](../systems/statecraft/statecraft-game-loops.md) :115.
+- **Information fog:** mask numeric previews into qualitative bands; governance-competence thresholds (>75% clear, <45% fogged). Source: [design PRDs](../../systems/mycountry-design-philosophy-and-prds.md) :39, :449; [game loops](../../systems/statecraft/statecraft-game-loops.md) :115.
 - **Universal event spine:** diplomacy, defense, elections and meetings bypass it (PRD Rule 6, :374).
 - **Issue recon ("SEE"):** enable `STATECRAFT_SPINE` and have recon meetings return minutes/cables (game loops :14).
-- **Intelligence:** no dashboard; `/mycountry/intelligence` renders Defense. The 5-tab Intelligence page in [premium-features.md](../reference/premium-features.md) is unbuilt.
-- **Crisis events:** taxonomy, lifecycle state machine, player response postures, mutations and an admin UI ([crisis-events.md](../systems/crisis-events.md)). Only `getActive`/`getStatistics` exist, and nothing writes `CrisisEvent` rows now that the demo seed is gone.
-- **NPC AI:** apply trait drift (no callers); NPC responses for embassies, alliances and treaties; event-fatigue dampening ([npc-ai.md](../systems/npc-ai.md) :41, :54).
+- **Intelligence:** no dashboard; `/mycountry/intelligence` renders Defense. The 5-tab Intelligence page in [premium-features.md](../../reference/premium-features.md) is unbuilt.
+- **Crisis events:** taxonomy, lifecycle state machine, player response postures, mutations and an admin UI ([crisis-events.md](../../systems/crisis-events.md)). Only `getActive`/`getStatistics` exist, and nothing writes `CrisisEvent` rows now that the demo seed is gone.
+- **NPC AI:** apply trait drift (no callers); NPC responses for embassies, alliances and treaties; event-fatigue dampening ([npc-ai.md](../../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** display-only; feed it into trade maths (vision audit :80).
 - **Embassy missions:** not playable.
-- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
-- **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../architecture/autosave.md)).
-- **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../systems/calculations.md)).
+- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
+- **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../../architecture/autosave.md)).
+- **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../../systems/calculations.md)).
 - ~~**Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts`~~ ✅ deleted. The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone wrote are still in the schema.
 
 ### Atlas & Realms
-- **Map editor inspector** ([2026-09-11 spec](../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
+- **Map editor inspector** ([2026-09-11 spec](../../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
   - coastline/perimeter/transport-density telemetry, Köppen chip, metric/imperial toggle, WikiOS status chip and thumbnail, Narrative Lore card;
   - geometry actions: Snap to River, Calculate Centroid, Simplify Polygon, Snap Vertices to Cities, Smooth Spline;
   - batch alignment and batch parent assignment (batch delete and batch edit already exist);
@@ -78,7 +80,7 @@ masked in the admin config; sports season and simulation procedures require the 
 
 ### WikiOS
 - **Export durability:** the MediaWiki export queue is in memory and lost on restart; per-user actor attribution is a no-op.
-- **Margin:** `toggleCommentReaction`, `deleteComment`, the Stash tab, and un-hiding the Inspect tab (`WikiMarginDrawer.tsx:157`) ([margin spec](../systems/wikios/wikios-margin-spec.md)).
+- **Margin:** `toggleCommentReaction`, `deleteComment`, the Stash tab, and un-hiding the Inspect tab (`WikiMarginDrawer.tsx:157`) ([margin spec](../../systems/wikios/wikios-margin-spec.md)).
 - **Stash share links:** `?stash=` is never read, and stashes have no visibility field or public read path (M, schema change).
 - **Guardian:** mass-blanking and homoglyph abuse filter.
 - **Portability:** `transformers/html-transformer.ts` hard-codes `https://ixwiki.com/`.
@@ -97,18 +99,18 @@ masked in the admin config; sports season and simulation procedures require the 
 
 ### Labs
 - **MyLeague:** boxing bout engine (uses the soccer loop); Golden Box stage config UI and double elimination; patron-saint MyClub UI and Sports → Storyteller write-back.
-- **Onoma:** partial phases 4, 5, 8, 9 ([onoma-roadmap.md](../systems/onoma-roadmap.md)).
-- **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../specs/vexel-prd.md)).
+- **Onoma:** partial phases 4, 5, 8, 9 ([onoma-roadmap.md](../../systems/onoma-roadmap.md)).
+- **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../../specs/vexel-prd.md)).
 
 ### Platform
-- **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 243 mutations are not (234 `protectedProcedure`, 9 `premiumProcedure`; recount 2026-10-05); `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
+- **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 243 mutations are not (234 `protectedProcedure`, 9 `premiumProcedure`; recount 2026-10-05); `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../../operations/rate-limiting.md)).
 - ~~**Admin audit log:** it persists nothing today (PL-1)~~ ✅ #38: `auditLogMiddleware` checks `result.ok` and logs every admin mutation (`trpc/middleware.ts`).
 - **Admin cache:** evict/flush (only `getStats` exists).
 - ~~**Help center:** register the unregistered articles~~ ✅ all 55 are registered; see §7 for systems still without an article.
 
 ## 4. Not started — planned features
 
-### Realms Phases 2–4 ([realms-framework-spec.md](../architecture/realms-framework-spec.md))
+### Realms Phases 2–4 ([realms-framework-spec.md](../../architecture/realms-framework-spec.md))
 - Public founding application (decisions 6–7)
 - Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` (decisions 20–21). Part of the backend exists (`canModerateRealm`, founder claim review); founders just can't be assigned (AT-8)
 - Archived realms: read-only, excluded from crons and payouts (decision 21)
@@ -119,7 +121,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - Builder prefill from a claimed nation page (Eurth E-f)
 - Procedural realm generation: `runPipeline` already accepts a `procedural` source; the wizard option and the `Realm.seed` / `generationParams` writes are missing (M)
 
-### MyCountry statecraft ([design PRDs](../systems/mycountry-design-philosophy-and-prds.md), [game loops](../systems/statecraft/statecraft-game-loops.md))
+### MyCountry statecraft ([design PRDs](../../systems/mycountry-design-philosophy-and-prds.md), [game loops](../../systems/statecraft/statecraft-game-loops.md))
 - Intent DAG with Vision / Strategic / Operational layers, `NationalIntent` / `IntentDependency`, Blocked → Proposed (:274, :318, :333)
 - Government-generated Plans A/B/C (Rule 2, :370)
 - Deliberation meeting loop (convene → brief → deliberate → commit), 7 meeting categories, participant profiles (:398, :421, :432)
@@ -134,30 +136,30 @@ masked in the admin config; sports season and simulation procedures require the 
 - Mandate as a gate/multiplier; weekly lever regeneration (game loops :51, :72)
 - Atom-biased issue deck; atom-parameterized fog and regeneration (game loops :136–146)
 - Cross-arena ripple beyond intent resistance (game loops :101)
-- Statecraft directives that change transport network speeds ([route travel-time spec](../superpowers/specs/2026-09-12-route-travel-time-design.md) §5)
-- Edge cases never built: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../reference/edge-cases.md))
+- Statecraft directives that change transport network speeds ([route travel-time spec](../../superpowers/specs/2026-09-12-route-travel-time-design.md) §5)
+- Edge cases never built: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../../reference/edge-cases.md))
 
 ### Vault & cards
-- Ribbons: Ribbons tab and tab sync (#49 derives ribbons from real unlocks and adds a pinned shelf on the passport) ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
-- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III)
+- Ribbons: Ribbons tab and tab sync (#49 derives ribbons from real unlocks and adds a pinned shelf on the passport) ([ribbons spec](../../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
+- Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III)
 - 40/25/20/10/4/1 rarity distribution (Part IV)
 - Vault reorder with the Lore Gallery as the primary view and category filters (Phase 6); category-themed packs (Phase 7); seasons and pack composition (open questions)
 - Crafting extensions: catalysts, recipe discovery, guilds, bulk crafting, crafting achievements, history/stats/admin endpoints
 - Real-time card updates over WebSocket
-- Premium: payments/checkout, tiered rate limits, export quotas, history limits, ThinkPages Pro account tiers ([premium-features.md](../reference/premium-features.md))
+- Premium: payments/checkout, tiered rate limits, export quotas, history limits, ThinkPages Pro account tiers ([premium-features.md](../../reference/premium-features.md))
 
 ### ThinkPages
 - ~~ThinkTanks group chat~~ ✅ #48: the Chat tab is mounted
 - Joint working papers
 
 ### Labs
-- **Onoma** ([roadmap](../systems/onoma-roadmap.md)):
+- **Onoma** ([roadmap](../../systems/onoma-roadmap.md)):
   - vocabulary timeline slider (:114), language family trees (:115);
   - semantic embeddings / TF-IDF (:121), corpus gap recommender (:122);
   - AI Linguist etymology composer and guardrails (:127–128), free-text translator (:147), dialect branch merging (:153);
   - Phase 10 AI agents (:158);
   - platform integration: NPC dynasties, map toponyms, MyCountry demonyms (:175–180).
-- **MyLeague / MySports** ([PRD](../specs/myleague-v1-prd.md), [MySports v0](../specs/mysports-v0.md)):
+- **MyLeague / MySports** ([PRD](../../specs/myleague-v1-prd.md), [MySports v0](../../specs/mysports-v0.md)):
   - AegisCore engine and custom sport DSL; `SportDefinition` adapter;
   - dynasty detection, significance scoring, national leaderboards; market-currency club valuations;
   - promotion/relegation news bulletin;
@@ -167,12 +169,12 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Strata & Dynas** labs (tectonic relief, dynastic genealogy) — roadmap only.
 
 ### Platform & integrations
-- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../operations/huggingface-spaces-guide.md))
+- Hugging Face Space offload for Whisper and an LLM ([huggingface-spaces-guide.md](../../operations/huggingface-spaces-guide.md))
 - Browser end-to-end tests (Playwright isn't installed)
 - Telemetry opt-out / global discoverability settings: the toggles are back in the Privacy panel and nothing enforces them — part of the wider unenforced Privacy & Safety panel (SL-4)
-- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint; namespace-redirect decisions undecided ([stage3 plan](../systems/wikios/wikios-stage3-config-plan.md))
+- WikiOS Stage 3 MediaWiki isolation: nginx lockdown, 301s, `LocalSettings`, internal `WIKIOS_MEDIAWIKI_API` endpoint; namespace-redirect decisions undecided ([stage3 plan](../../systems/wikios/wikios-stage3-config-plan.md))
 - WikiOS Workstream C packaging: decouple Clerk, the IxStats DB and templates ([longevity workflow](../systems/wikios/wikios-longevity-workflow.md))
-- Lore-card portfolio boosts ([lore-lifecycle.md](../systems/lore-lifecycle.md))
+- Lore-card portfolio boosts ([lore-lifecycle.md](../../systems/lore-lifecycle.md))
 
 ## 5. Operations & infrastructure
 
@@ -192,10 +194,10 @@ masked in the admin config; sports season and simulation procedures require the 
 
 ## 6. Code health & tech debt
 
-From the status blocks in [`docs/audits/`](../audits/):
+From the status blocks in [`docs/audits/`](../../audits/):
 
 - **Git-ignored fixtures:** three checks read files CI doesn't have — `next.config.js`, `public/icons/game-icons-manifest.json` and `public/data/vector-seeds/`. They now run only where the file exists (dev machines, the server), so CI doesn't cover them; tracking the assets would restore that coverage.
-- **`audit:arch` is non-blocking in CI.** Since 2026-10-05 its baseline holds real line counts for 38 files, so growth past a recorded size fails the check. It reports 14 violations on 2026-10-05 (8 new files over their ceiling, `auction-service.ts` grown past its baseline, 5 cross-router imports); fix them or add files to `RELAXED_FILES`, then make it blocking. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../audits/src-monolith-candidates.md).
+- **`audit:arch` is non-blocking in CI.** Since 2026-10-05 its baseline holds real line counts for 38 files, so growth past a recorded size fails the check. It reports 14 violations on 2026-10-05 (8 new files over their ceiling, `auction-service.ts` grown past its baseline, 5 cross-router imports); fix them or add files to `RELAXED_FILES`, then make it blocking. The 52 source files ≥800 lines are tracked in [src-monolith-candidates.md](../../audits/src-monolith-candidates.md).
 - **`docs:sync` procedure count:** `extractApiInventory` reported 901 procedures against a runtime count of 958 because it missed spread and `mergeRouters` routers; it reports 922 on 2026-10-05.
 - **Service layer:** 199 router files query `ctx.db` directly.
 - **Arch guard coverage:** no pre-commit hook for `audit:arch`; the router-split parity check covers 5 routers.
@@ -207,7 +209,7 @@ From the status blocks in [`docs/audits/`](../audits/):
   - 27 random-string id helpers;
   - 29 JSON deep copies.
 - **Size:** `lib/notifications/hooks.ts` is 1,288 lines; `wikios/templates.ts` holds static data.
-- **Design cleanup (plan 346 remainder):** 966 hex colours, 3,972 `dark:` variants, 1,376 blurs, 174 pulses, 180 Sparkles icons; hex inventory classes in [HEX_COLOUR_INVENTORY](../audits/HEX_COLOUR_INVENTORY_2026-09-27.md).
+- **Design cleanup (plan 346 remainder):** 966 hex colours, 3,972 `dark:` variants, 1,376 blurs, 174 pulses, 180 Sparkles icons; hex inventory classes in [HEX_COLOUR_INVENTORY](../../audits/HEX_COLOUR_INVENTORY_2026-09-27.md).
 - **Product calls:**
   - deck.gl used in 4 places and tsparticles in 2;
   - `DATABASE_READONLY` replacement;
@@ -223,7 +225,7 @@ From the status blocks in [`docs/audits/`](../audits/):
 
 ## 7. Documentation gaps
 
-- **Help center (see [help.md](../systems/help.md)):**
+- **Help center (see [help.md](../../systems/help.md)):**
   - ✅ All 55 articles in `src/content/help/` are registered in `src/app/help/_lib/help-sections.ts` (a test checks it),
     and Realms, the IxnayID passport, Atlas maps, the map editor, WikiOS, Stash, Forum, MyCountry economy and Premium
     now have articles.
@@ -238,20 +240,20 @@ From the status blocks in [`docs/audits/`](../audits/):
 
   | Doc | When |
   |---|---|
-  | [realms-foundation](../superpowers/specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../superpowers/specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../superpowers/specs/2026-09-12-route-travel-time-design.md) specs | implemented |
+  | [realms-foundation](../../superpowers/specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../../superpowers/specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../../superpowers/specs/2026-09-12-route-travel-time-design.md) specs | implemented |
   | [map-editor-improvements-overview](../systems/map-editor-improvements-overview.md) | historical |
-  | [myleague-v1-prd](../specs/myleague-v1-prd.md), [myleague-top5-features](../systems/myleague-top5-features.md), [sports-llm-commentary](../research/sports-llm-commentary.md) | implemented |
-  | [myleague-lore-integration](../systems/myleague-lore-integration.md) | mostly obsolete |
+  | [myleague-v1-prd](../../specs/myleague-v1-prd.md), [myleague-top5-features](../../systems/myleague-top5-features.md), [sports-llm-commentary](../../research/sports-llm-commentary.md) | implemented |
+  | [myleague-lore-integration](../../systems/myleague-lore-integration.md) | mostly obsolete |
   | [mycountry-vision-audit](../systems/statecraft/mycountry-vision-audit.md) | dated snapshot |
   | [wikios-longevity-workflow](../systems/wikios/wikios-longevity-workflow.md) | round complete |
   | [wikios-independence-2b-3](../systems/wikios/wikios-independence-2b-3.md) | after the Stage 3 cutover |
   | [user-profile-utils](../reference/user-profile-utils.md) | module deleted |
   | [REFACTOR_PLAN_2026-06](../audits/REFACTOR_PLAN_2026-06.md), [test-suite-audit](../audits/test-suite-audit-and-justification.md) | all items resolved |
-  | [deploy-rose-garden-2026-09](../operations/deploy-rose-garden-2026-09.md) | after the release ships |
+  | [deploy-rose-garden-2026-09](../../operations/deploy-rose-garden-2026-09.md) | after the release ships |
 
   `docs/archive/` is git-ignored, so archiving there removes a file from the repository. Use a tracked archive folder
   or keep the file with its status line.
 - **Trim:**
-  - [rate-limiting.md](../operations/rate-limiting.md) (~1,350 lines, mostly sketches);
-  - [refactoring.md](../processes/refactoring.md) (~1,000 lines of generic guidance);
-  - the Vercel/Netlify/Docker sections of [deployment-checklist.md](../operations/deployment-checklist.md).
+  - [rate-limiting.md](../../operations/rate-limiting.md) (~1,350 lines, mostly sketches);
+  - [refactoring.md](../../processes/refactoring.md) (~1,000 lines of generic guidance);
+  - the Vercel/Netlify/Docker sections of [deployment-checklist.md](../../operations/deployment-checklist.md).

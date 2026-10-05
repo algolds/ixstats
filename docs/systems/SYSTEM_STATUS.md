@@ -3,7 +3,7 @@
 **Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
 **Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit)
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
-**Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../roadmap/code-audit-2026-09-30.md)
+**Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../history/roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../history/roadmap/code-audit-2026-09-30.md)
 
 This page replaces the August "Gold Master (100%)" matrix. That matrix rated every system as finished; the September audit
 found several that are partly built, read-only, or broken, so each row now carries the status the code supports.
@@ -116,7 +116,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Halo overlay & command palette | v6 | global | `src/components/halo/` | ✅ Live | |
 | Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
 | Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | The sidebar's area list is the admin navigation; `/admin/calculations` has a page; `auditLogMiddleware` persists every admin mutation and failed call to `AuditLog` (PL-1) |
-| Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 55 articles are registered (a test checks it); see [help.md](help.md) |
+| Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 63 articles are registered (a test checks it); see [help.md](help.md) |
 | Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 non-admin procedures of 922 are limited; 243 mutations are unlimited; no `X-RateLimit-*` headers |
 
 ## 🧪 Labs

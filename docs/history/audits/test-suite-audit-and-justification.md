@@ -1,5 +1,7 @@
 # IxStates Test Suite Comprehensive Audit & Justification
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). The removals it proposed are done; the inventory is stale.
+
 > ## Status (2026-09-29)
 >
 > **Removal candidates: RESOLVED.** All 7 Tier-4 files in §2 are deleted (`passport-architecture`, `clerk-components`, `wiki-os/margin`, the 3 admin `*-page` tests, `caching-benchmark`). Flakiness remedies are in place: `src/tests/helpers/mock-prisma.ts`, `transactional-mock-db.ts`, and `article-store.test.ts` now clears mocks; CI runs Jest through the quarantine runner (`bun run test:ci`, `test:quarantine:verify`).

@@ -1,12 +1,14 @@
 # WikiOS Longevity & Packaging — Workflow
 
+> **Retired 2026-10-05** to [docs/history/](../../README.md). The round is complete; Workstream C is tracked in [backlog.md](../../../roadmap/backlog.md).
+
 **North star:** WikiOS becomes a **packageable, licensable wiki frontend** other worldbuilding
 communities can deploy, backed by a **small headless MediaWiki core** (render + templates + Lua only).
 MediaWiki usage minimized; WikiOS isolated and independent.
 
 > **Status (September 29, 2026).** Agent A / Stage 2b **shipped** (PostgreSQL-first store, `WikiRevision`,
 > recent-changes sync in `src/lib/wiki-os/services/auto-sync-service.ts`). Agent B / Stage 3 planning is
-> **done** ([`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md), which lives in `docs/systems/wikios/`,
+> **done** ([`wikios-stage3-config-plan.md`](../../../systems/wikios/wikios-stage3-config-plan.md), which lives in `docs/systems/wikios/`,
 > not `plans/`), but the cutover has **not** happened. **Workstream C (packaging) has not started**: there is
 > no `plans/wikios-workstream-c-packaging.md` in the repo, and WikiOS still depends on Clerk, IxStats Postgres,
 > and IxStats routers. The integration branch is now `rose-garden` (the `v2` references below are historical).

@@ -12,7 +12,7 @@ This page does two things:
 
 It does not replace ROADMAP.md (the milestone plan) or [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md) (what is live).
 It is the to-do list that gets both of them back in step with the code. Item IDs (`MC-`, `AT-`, `WK-`, `VT-`, `SL-`,
-`PL-`) refer to [code-audit-2026-09-30.md](code-audit-2026-09-30.md).
+`PL-`) refer to [code-audit-2026-09-30.md](../history/roadmap/code-audit-2026-09-30.md).
 
 **Size:** S under a day · M 1–3 days · L more than 3 days. **Priority:** P0 now · P1 this cycle · P2 when capacity allows.
 
@@ -100,7 +100,7 @@ All S unless noted. One PR, preferably straight after Phase 0. The line-level li
 1. **Update the planning docs for #48, #49 and Facet 4.**
    - Mark every row in [Appendix A](#appendix-a--done-in-code-still-open-in-the-roadmap) done in ROADMAP.md, and
      narrow the partial rows.
-   - Update [pending-features.md](pending-features.md): about 12 rows now contradict the code.
+   - Update [pending-features.md](../history/roadmap/pending-features.md): about 12 rows now contradict the code.
    - Update the platform audit §0 "still open" list.
    - Add CHANGELOG entries for #48, #49 and Facet 4 / the sidebar. The newest entry is Facet 3.
 2. **Fix the counts.**

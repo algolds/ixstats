@@ -1,12 +1,14 @@
-> **Superseded** by Facet 4: see the [Facet 4 reference](../reference/facet-design-system.md) and its
-> [spec](../superpowers/specs/2026-10-04-facet-4-design.md) (2026-10-04).
+> **Superseded** by Facet 4: see the [Facet 4 reference](../../reference/facet-design-system.md) and its
+> [spec](../../superpowers/specs/2026-10-04-facet-4-design.md) (2026-10-04).
 > Kept for history only; do not follow it for new work.
 
 # Facet 3 — Unified Design System Specification
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). Superseded by Facet 4 ([spec](../../superpowers/specs/2026-10-04-facet-4-design.md)); the current reference is [facet-design-system.md](../../reference/facet-design-system.md).
+
 **Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped; **amended by Facet 3.1 — identity (2026-10-01, §16)** ·
-**Replaces:** [Facet v2](../reference/facet-design-system.md) once Phase 2 lands · **Evidence:**
-[Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+**Replaces:** [Facet v2](../../reference/facet-design-system.md) once Phase 2 lands · **Evidence:**
+[Facet style audit](../../audits/FACET_STYLE_AUDIT_2026-09-30.md)
 
 > **Facet 3.1 (§16) overrides parts of this spec.** The standardisation stays; the pre-refactor (v2, `c5c6b382`)
 > identity comes back on top of it: glass hero cards, a monochrome primary (gold in MyCountry/Builder), mono data
@@ -370,7 +372,7 @@ values on hover or tap.
    `FacetList`/`FacetRow`, `Stat`, `EmptyState`, Skeleton/Progress/HealthRing/Eyebrow); presentation (opaque dialogs,
    `material-thick` popovers/menus, responsive `Sheet` with detents, instant `CommandDialog`, overlay animations);
    `FacetMotionConfig`; Cuelume restricted to §9 moments; Settings → Appearance & accessibility. The
-   [reference doc](../reference/facet-design-system.md) now documents Facet 3 and `FACET_VERSION` is 3.
+   [reference doc](../../reference/facet-design-system.md) now documents Facet 3 and `FACET_VERSION` is 3.
    **Deviations from this spec, as shipped:** (a) the Swiss UI stack leads with Schibsted Grotesk (the shipped Swiss
    preset), not DINPro; (b) sheets are opaque `surface-elevated`, not `material-thick`, because callers nest blurred
    content inside them; (c) `FacetCard`/`FacetContainer` still accept `depth`, `theme`, `variant` and
@@ -693,7 +695,7 @@ known containers).
 wants to keep that — but it also flattened the IxStates look into something generic. Facet 3.1 restores the
 pre-refactor identity (v2, baseline commit `c5c6b382`) on top of the Facet 3 foundations, all at once: the foundation
 (tokens, utilities, primitives, guards, this section) first, then every app adopts it. Adoption recipes are in the
-[reference doc](../reference/facet-design-system.md) §0.
+[reference doc](../../reference/facet-design-system.md) §0.
 
 ### 16.0 Governing rule — evolve, don't redesign
 

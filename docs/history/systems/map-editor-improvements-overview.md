@@ -1,5 +1,7 @@
 # Map Editor Improvements — Overview & Index
 
+> **Retired 2026-10-05** to [docs/history/](../README.md). June–August editor plans, all shipped or superseded; see [maps.md](../../systems/maps.md).
+
 **Repo:** `/ixwiki/public/projects/ixstats` · **Branch:** `v2` · **Base commit:** `35274d70`
 **Stack:** Next.js 16.2 / React 19 / tRPC / Prisma (Postgres + PostGIS) · `maplibre-gl@5.24` · `@turf/turf@7.3.5` · `topojson-*`. Package manager: **bun**.
 
@@ -7,7 +9,7 @@ This initiative improves the MyCountry map editor across three fronts. Each plan
 
 > **Status (2026-09-29): historical — C-1, C-2 and C-3 are shipped.** Written in June 2026 against the retired `v2` branch (the integration branch is now `rose-garden`). The per-plan files it names were not kept in the repo, and the paths and line numbers in Part A are the June 2026 layout — e.g. `EnhancedMapEditorContent.tsx` no longer exists; the editor is `src/components/maps/editor/MapEditorOverlay.tsx` (country editor in place on `/maps`, world editor at `/admin/maps/editor`). Current stack: Next.js 16.3, `maplibre-gl` 6.11, `@turf/turf` 7.4. Geoman was never added: region union/subtract/intersect shipped on turf instead (`pathfinderOperation` in `src/hooks/map-editor/useMapEditorTransforms.ts`).
 
-> **Update (2026-09-30): performance, UX and completion pass.** Current behaviour is documented in [maps.md → Map Editor Studio Architecture](maps.md#map-editor-studio-architecture-adminmapseditor-mycountrymap-editor-in-place-on-maps) (sections 3–4). In short:
+> **Update (2026-09-30): performance, UX and completion pass.** Current behaviour is documented in [maps.md → Map Editor Studio Architecture](../../systems/maps.md#map-editor-studio-architecture-adminmapseditor-mycountrymap-editor-in-place-on-maps) (sections 3–4). In short:
 > - **Bugs fixed:** Ctrl+Z undid twice (plugin and overlay both handled it); undoing or dragging a point rewrote the feature with placeholder values ("Updated City", capital flag cleared); story pins and labels were undone through the POI procedures; region reshapes were never saved (`updateSubdivisionGeometry` was a no-op) and "Save" would have written every region; region undo ignored geometry; route and river drawing never collected clicks; the split tool always split with an empty line; the gaps toggle computed nothing; duplicating a capital created a second capital; border-editor shortcuts were shown but not wired and the feature-tool letters fired inside the border editor.
 > - **Finished stubs:** scatter cities, regional capitals for empty regions, snap to region border / coastline, bulk region edit, create-region-from-gap, the Wiki scanner tab (AT-10), smart-placement terrain and suggestions plus the inspector's snap-to-coast (AT-11), GeoJSON import/export, draft recovery, themed confirmations (AT-20), admin-role users get the admin tools (AT-13), and `/mycountry/map-editor` is now a full-screen editor instead of falling through to the Executive home.
 > - **Performance:** frame-batched transient store for pointer state; hover, lasso and cascade previews batched per frame; feature layers re-upload only when data or visibility values change; stable plugin context; rulers isolated; one debounced invalidation per edit burst; hidden mobile/desktop panels no longer mounted.

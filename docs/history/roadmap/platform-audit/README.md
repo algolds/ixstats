@@ -1,5 +1,7 @@
 # IxStates platform audit — 2026-09-30
 
+> **Retired 2026-10-05** to [docs/history/](../../README.md). Open items live in [backlog.md](../../../roadmap/backlog.md) (PA); the area reports beside this file are unchanged snapshots.
+
 **Branch audited:** `rose-garden` @ `e91e6b0b2`. **Method:** every system doc, the roadmap, the 2026-09-30 code
 audit and the CHANGELOG were read and checked claim by claim against the code (routers, libs, schema, callers, and
 a few measured runs). Where docs and code disagree, the code wins. Six area audits sit next to this file; this page
@@ -73,7 +75,7 @@ or left as found. The area reports are unchanged snapshots; this page tracks sta
 
 **Still open:** the owner actions above; PR #49's known gaps (no region filter on rankings, DMs can't be sent as a
 persona or country, appointed chambers are still seated by the vote simulation); the GDP-growth trigger unit bug in
-national issues. [ROADMAP.md](../ROADMAP.md) and [ACTION_PLAN_2026-10-05.md](../ACTION_PLAN_2026-10-05.md) track the
+national issues. [ROADMAP.md](../../../roadmap/ROADMAP.md) and [ACTION_PLAN_2026-10-05.md](../../../roadmap/ACTION_PLAN_2026-10-05.md) track the
 rest.
 
 The decisions the owner still owes (crafting pacing, FP expiry, passport privacy model, WikiOS Template/Category
@@ -273,7 +275,7 @@ No schema change is strictly required.
 
 ## 8. Distance to the goal — suggested order
 
-This reorders the existing [ROADMAP](../ROADMAP.md) milestones around what the audits found; M0 is done in code.
+This reorders the existing [ROADMAP](../../../roadmap/ROADMAP.md) milestones around what the audits found; M0 is done in code.
 
 1. ✅ **Fix now** — section 2. Done in #36–#48; owner actions remain (bot grants, password rotation).
 2. ◐ **Make it true** (M2's rule, pulled forward): most fabricated numbers are fixed and the docs are corrected
