@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, premiumProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { recalculateInternalStability } from "~/lib/statecraft/stability-store";
+import { computeInternalStability } from "~/lib/statecraft/stability-store";
 
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
@@ -25,8 +25,9 @@ export const securityStabilityRouter = createTRPCRouter({
   getInternalStability: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Formula recalculation that keeps event (issue/directive) deltas on the stored row.
-      const metrics = await recalculateInternalStability(ctx.db, input.countryId);
+      // The formula plus the stored row's event (issue/directive) deltas, computed without
+      // writing (MC-13); the stat-progression job and the issue path persist it.
+      const metrics = await computeInternalStability(ctx.db, input.countryId);
 
       if (!metrics) {
         throw new TRPCError({

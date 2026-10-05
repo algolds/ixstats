@@ -5,6 +5,7 @@ import {
 } from "~/lib/national-issues/evaluators/condition-evaluator";
 import { substituteVariables } from "~/lib/national-issues/evaluators/issue-generator";
 import type { CountrySnapshot } from "~/lib/national-issues/engine";
+import { growthDecimalToPercent } from "~/lib/national-issues/country-snapshot";
 
 describe("National Issues Condition Evaluator", () => {
   const mockSnapshot: CountrySnapshot = {
@@ -218,19 +219,55 @@ describe("National Issues Condition Evaluator", () => {
     it("substitutes built-in country variables", () => {
       const template = "{{countryName}} is governed by {{leaderName}} under a {{governmentType}}.";
       const rendered = substituteVariables(template, mockSnapshot);
-      expect(rendered).toBe("Aethelgard is governed by High Chancellor Vane under a Constitutional Republic.");
+      expect(rendered).toBe(
+        "Aethelgard is governed by High Chancellor Vane under a Constitutional Republic."
+      );
     });
 
     it("substitutes grounded relationships and intent goals", () => {
-      const template = "Relations with {{allyName}} flourish while {{rivalName}} poses border friction.";
+      const template =
+        "Relations with {{allyName}} flourish while {{rivalName}} poses border friction.";
       const rendered = substituteVariables(template, mockSnapshot);
-      expect(rendered).toBe("Relations with Nordland flourish while Valeria poses border friction.");
+      expect(rendered).toBe(
+        "Relations with Nordland flourish while Valeria poses border friction."
+      );
     });
 
     it("accepts override extra variables", () => {
       const template = "Target state {{targetCountryName}} has approached {{countryName}}.";
-      const rendered = substituteVariables(template, mockSnapshot, { targetCountryName: "Zandaria" });
+      const rendered = substituteVariables(template, mockSnapshot, {
+        targetCountryName: "Zandaria",
+      });
       expect(rendered).toBe("Target state Zandaria has approached Aethelgard.");
+    });
+  });
+
+  describe("GDP growth units (#49)", () => {
+    // Country.actualGdpGrowth is stored as a decimal; templates compare it in percent.
+    const withStoredGrowth = (stored: number): CountrySnapshot => ({
+      ...mockSnapshot,
+      actualGdpGrowth: growthDecimalToPercent(stored),
+    });
+    const boom: TriggerCondition = { field: "actualGdpGrowth", op: ">", value: 3 };
+    const slump: TriggerCondition = { field: "actualGdpGrowth", op: "<", value: 0.5 };
+
+    it("converts the stored decimal to percent", () => {
+      expect(growthDecimalToPercent(0.035)).toBe(3.5);
+      expect(growthDecimalToPercent(0.07)).toBe(7);
+      expect(growthDecimalToPercent(-0.012)).toBe(-1.2);
+      expect(growthDecimalToPercent(null)).toBe(0);
+    });
+
+    it("fires a percent threshold on a stored decimal growth rate", () => {
+      expect(evaluateTriggerCondition(boom, withStoredGrowth(0.035))).toBe(true);
+      expect(evaluateTriggerCondition(boom, withStoredGrowth(0.02))).toBe(false);
+      // 2% growth is not a slump; compared raw (0.02 < 0.5) it used to be.
+      expect(evaluateTriggerCondition(slump, withStoredGrowth(0.02))).toBe(false);
+      expect(evaluateTriggerCondition(slump, withStoredGrowth(0.003))).toBe(true);
+    });
+
+    it("renders {{gdpGrowth}} in percent", () => {
+      expect(substituteVariables("{{gdpGrowth}}", withStoredGrowth(0.035))).toBe("3.5%");
     });
   });
 });

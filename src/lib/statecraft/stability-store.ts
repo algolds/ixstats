@@ -1,16 +1,20 @@
 /**
  * Persisted internal stability: formula values plus the deltas events applied on top.
  *
- * `security.getInternalStability` recalculates the stability formula on every view. It used to
- * upsert the raw formula result, wiping any delta a national issue (or other event through the
- * CountryEventSpine) had written to `InternalStabilityMetrics`. Each row now also stores the
- * formula values it was last computed from (`formulaSnapshot`); on recalculation the gap between
- * a stored field and its snapshot value (the accumulated event delta) is carried onto the new
- * formula value. A legacy row without a snapshot keeps its stored values once, then tracks the
- * formula from there.
+ * Each `InternalStabilityMetrics` row stores the formula values it was last computed from
+ * (`formulaSnapshot`); the gap between a stored field and its snapshot value is the accumulated
+ * event delta (national issues and other events through the CountryEventSpine), which is
+ * carried onto every new formula value. A legacy row without a snapshot keeps its stored values
+ * once, then tracks the formula from there.
+ *
+ * Reads never write (MC-13): `security.getInternalStability` computes the current values on the
+ * fly (`computeInternalStability`). Rows are persisted by the issue path
+ * (`ensureInternalStabilityMetrics`, before a delta is applied) and refreshed by the
+ * stat-progression job (`refreshStoredInternalStability`).
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { IxTime } from "~/lib/ixtime";
 import {
   calculateStabilityMetrics,
   type DemographicData,
@@ -64,6 +68,63 @@ function parseSnapshot(raw: string | null | undefined): Partial<StabilityValues>
   } catch {
     return null;
   }
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** The formula only weighs policies passed in the last 90 days. */
+const RECENT_POLICY_DAYS = 90;
+
+function clampImpact(value: number): number {
+  return Math.max(-100, Math.min(100, value));
+}
+
+/** Decretal policies record their stability effect in `calculatedEffects`; others have none. */
+function policyStabilityEffect(calculatedEffects: string | null): number {
+  if (!calculatedEffects) return 0;
+  try {
+    const parsed = JSON.parse(calculatedEffects) as { stabilityEffect?: unknown };
+    return typeof parsed.stabilityEffect === "number" && Number.isFinite(parsed.stabilityEffect)
+      ? parsed.stabilityEffect
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Active policies enacted in the last 90 IxTime days (most recent 50), for the protest term of the formula.
+ * Policies carry no popularity figure, so popularity is the decretal's stability effect (a few
+ * points either way) scaled ×10 onto the formula's -100..100 range, and the economic impact is
+ * the GDP effect (percent) scaled the same way. Policies without either count as neutral.
+ */
+async function loadRecentPolicies(db: PrismaClient, countryId: string): Promise<RecentPolicy[]> {
+  const now = IxTime.getCurrentIxTime();
+  // Bills record when they passed as a real `effectiveDate`; `effectiveIxTime` wins when set.
+  const policies = await db.policy.findMany({
+    where: { countryId, status: "active", effectiveDate: { not: null } },
+    select: {
+      category: true,
+      gdpEffect: true,
+      calculatedEffects: true,
+      effectiveDate: true,
+      effectiveIxTime: true,
+    },
+    orderBy: { effectiveDate: "desc" },
+    take: 50,
+  });
+  return policies.flatMap((p) => {
+    const passedIxTime = p.effectiveIxTime ?? IxTime.convertToIxTime(p.effectiveDate!.getTime());
+    const timeSincePassed = Math.max(0, (now - passedIxTime) / DAY_MS);
+    if (timeSincePassed >= RECENT_POLICY_DAYS) return [];
+    return [
+      {
+        type: p.category,
+        popularityImpact: clampImpact(policyStabilityEffect(p.calculatedEffects) * 10),
+        economicImpact: clampImpact((p.gdpEffect ?? 0) * 10),
+        timeSincePassed,
+      },
+    ];
+  });
 }
 
 /**
@@ -146,8 +207,7 @@ async function computeFormulaStability(
     protestFrequency: 8, // Will be overwritten by calculation
   };
 
-  // TODO: Get recent policies from database
-  const recentPolicies: RecentPolicy[] = [];
+  const recentPolicies = await loadRecentPolicies(db, countryId);
 
   return calculateStabilityMetrics(
     economicData,
@@ -195,23 +255,68 @@ const STORED_SELECT = {
   ...Object.fromEntries(STABILITY_NUMERIC_FIELDS.map((f) => [f, true])),
 } as Record<StabilityNumericField | "formulaSnapshot", true>;
 
+type StoredStability = StabilityValues & { formulaSnapshot: string | null };
+
+/** The formula plus the stored row's carried event deltas. Null when the country is missing. */
+async function currentStabilityData(db: PrismaClient, countryId: string) {
+  const formula = await computeFormulaStability(db, countryId);
+  if (!formula) return null;
+  const stored = (await db.internalStabilityMetrics.findUnique({
+    where: { countryId },
+    select: { ...STORED_SELECT, id: true, createdAt: true },
+  })) as (StoredStability & { id: string; createdAt: Date }) | null;
+  return { stored, data: stabilityRowData(formula, stored) };
+}
+
+/**
+ * A country's current stability, computed without writing: the same values a recalculation
+ * would store, shaped like the row. Null when the country does not exist.
+ */
+export async function computeInternalStability(db: PrismaClient, countryId: string) {
+  const current = await currentStabilityData(db, countryId);
+  if (!current) return null;
+  const { stored, data } = current;
+  return {
+    id: stored?.id ?? null,
+    countryId,
+    ...data,
+    createdAt: stored?.createdAt ?? data.lastCalculated,
+    updatedAt: data.lastCalculated,
+  };
+}
+
 /**
  * Recalculate and persist a country's stability, keeping event deltas. Null when the country
  * does not exist.
  */
 export async function recalculateInternalStability(db: PrismaClient, countryId: string) {
-  const formula = await computeFormulaStability(db, countryId);
-  if (!formula) return null;
-  const stored = (await db.internalStabilityMetrics.findUnique({
-    where: { countryId },
-    select: STORED_SELECT,
-  })) as (StabilityValues & { formulaSnapshot: string | null }) | null;
-  const data = stabilityRowData(formula, stored);
+  const current = await currentStabilityData(db, countryId);
+  if (!current) return null;
   return db.internalStabilityMetrics.upsert({
     where: { countryId },
-    create: { countryId, ...data },
-    update: data,
+    create: { countryId, ...current.data },
+    update: current.data,
   });
+}
+
+/**
+ * Re-persist every stored stability row from the current formula (stat-progression job), so
+ * readers of the stored row see fresh values now that viewing no longer writes. Never throws.
+ */
+export async function refreshStoredInternalStability(
+  db: PrismaClient
+): Promise<{ refreshed: number; failed: number }> {
+  const result = { refreshed: 0, failed: 0 };
+  const rows = await db.internalStabilityMetrics.findMany({ select: { countryId: true } });
+  for (const { countryId } of rows) {
+    try {
+      if (await recalculateInternalStability(db, countryId)) result.refreshed++;
+    } catch (err) {
+      result.failed++;
+      console.error(`[stability] Failed to refresh ${countryId}:`, err);
+    }
+  }
+  return result;
 }
 
 /**

@@ -50,7 +50,7 @@ export async function applyPolicyEffect(db: PrismaClient, policy: PolicyLike): P
 }
 
 /** Deactivate the StorytellerEffect(s) tied to a policy. */
-async function clearPolicyEffect(db: PrismaClient, policyId: string): Promise<void> {
+export async function clearPolicyEffect(db: PrismaClient, policyId: string): Promise<void> {
   await db.storytellerEffect.updateMany({
     where: { createdBy: POLICY_TAG(policyId), isActive: true },
     data: { isActive: false },

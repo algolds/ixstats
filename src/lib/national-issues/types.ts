@@ -17,6 +17,7 @@ export interface CountrySnapshot {
   currentPopulation: number;
   currentGdpPerCapita: number;
   currentTotalGdp: number;
+  /** Percent (3 = 3%), converted from the stored decimal by buildCountrySnapshot. */
   actualGdpGrowth: number;
   unemploymentRate: number;
   inflationRate: number;

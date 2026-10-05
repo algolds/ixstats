@@ -159,7 +159,7 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/diplomacy/drift-cron")).runDiplomaticDrift,
   },
   {
-    // Debits national treasuries every 6 h.
+    // Every 6 h: expires lapsed policies and debits policy upkeep, once per budget year (PL-8).
     name: "policy-maintenance",
     defaultSchedule: "0 */6 * * *",
     lockName: "policy-maintenance",
@@ -200,7 +200,8 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/government/budget-year-rollover-cron")).runBudgetYearRollover,
   },
   {
-    // Persists the economic projection into stored current* stats + monthly history (MC-7).
+    // Persists the economic projection into stored current* stats + monthly history (MC-7),
+    // then refreshes stored internal stability (viewing it no longer writes, MC-13).
     // Same lock as the admin forceRecalculation button.
     name: "stat-progression",
     defaultSchedule: "23 */6 * * *",
@@ -211,7 +212,12 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     exportName: "runStatProgression",
     load: async () => {
       const { runStatProgression } = await import("~/server/cron/stat-progression");
-      return () => runStatProgression();
+      const { refreshStoredInternalStability } = await import("~/lib/statecraft/stability-store");
+      const { db } = await import("~/server/db");
+      return async () => ({
+        ...(await runStatProgression({ db })),
+        stability: await refreshStoredInternalStability(db),
+      });
     },
   },
   {

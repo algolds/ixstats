@@ -96,7 +96,7 @@ const RICH_COUNTRY = {
   currentPopulation: 200000,
   currentGdpPerCapita: 38000,
   currentTotalGdp: 7600000000,
-  actualGdpGrowth: 1.4,
+  actualGdpGrowth: 0.014, // stored as a decimal; the snapshot reports 1.4 (%)
   unemploymentRate: 6.2,
   inflationRate: null,
   tradeBalance: -12000000,

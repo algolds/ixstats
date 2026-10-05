@@ -1,14 +1,17 @@
+import type { PrismaClient } from "@prisma/client";
 import { db } from "~/server/db";
-import { CountryEventSpine } from "~/lib/activity";
+import { currentBudgetYear } from "~/lib/government/budget-year";
 import { NationalIssuesEngine } from "~/lib/national-issues/engine";
 import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
 import type { Category } from "~/lib/intent/assemble";
+import { debitCountryMaintenance, expireLapsedPolicies } from "./lifecycle";
 
 interface PolicyMaintenanceResult {
   countriesProcessed: number;
   policiesProcessed: number;
   totalCostDebited: number;
+  policiesExpired: number;
   volatileSpawns: SpawnVolatileIssuesResult;
 }
 
@@ -177,11 +180,19 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
   return result;
 }
 
-export async function runPolicyMaintenanceDebits(): Promise<PolicyMaintenanceResult> {
+/**
+ * The `policy-maintenance` job (every 6 h): expire lapsed policies, roll volatile risks, then
+ * debit each country's active policies — at most once per policy per budget year (PL-8, see
+ * ./lifecycle), so reruns within a year debit nothing.
+ */
+export async function runPolicyMaintenanceDebits(
+  database: PrismaClient = db
+): Promise<PolicyMaintenanceResult> {
   const result: PolicyMaintenanceResult = {
     countriesProcessed: 0,
     policiesProcessed: 0,
     totalCostDebited: 0,
+    policiesExpired: 0,
     volatileSpawns: {
       policiesRolled: 0,
       policyIssuesSpawned: 0,
@@ -191,88 +202,44 @@ export async function runPolicyMaintenanceDebits(): Promise<PolicyMaintenanceRes
   };
 
   try {
+    // Lapsed policies stop first, so they are neither rolled nor debited.
+    result.policiesExpired = await expireLapsedPolicies(database);
+
     // Risk rolls for volatile policies + intents (policy maintenance is run
     // alongside; both are part of the same 6-hourly maintenance pass).
     result.volatileSpawns = await spawnVolatileIssues();
 
-    // Find all active policies
-    const activePolicies = await db.policy.findMany({
+    const activePolicies = await database.policy.findMany({
       where: { status: "active" },
-      select: {
-        id: true,
-        countryId: true,
-        name: true,
-        maintenanceCost: true,
-      },
+      select: { id: true, countryId: true, name: true, maintenanceCost: true },
     });
 
-    if (activePolicies.length === 0) {
-      return result;
+    const policiesByCountry = new Map<string, typeof activePolicies>();
+    for (const p of activePolicies) {
+      const list = policiesByCountry.get(p.countryId) ?? [];
+      list.push(p);
+      policiesByCountry.set(p.countryId, list);
     }
 
-    // Group active policies by countryId
-    const policiesByCountry: Record<string, typeof activePolicies> = {};
-    activePolicies.forEach((p) => {
-      if (!policiesByCountry[p.countryId]) {
-        policiesByCountry[p.countryId] = [];
-      }
-      policiesByCountry[p.countryId].push(p);
-    });
-
-    const countryIds = Object.keys(policiesByCountry);
-
-    for (const countryId of countryIds) {
+    const budgetYear = currentBudgetYear();
+    for (const [countryId, countryPolicies] of policiesByCountry) {
       try {
         result.countriesProcessed++;
-        const countryPolicies = policiesByCountry[countryId]!;
-
-        // Get GovernmentStructure for the country
-        const structure = await db.governmentStructure.findUnique({
+        const structure = await database.governmentStructure.findUnique({
           where: { countryId },
-          select: { id: true, totalBudget: true },
+          select: { totalBudget: true },
         });
+        // No budget to debit from yet: nothing to do (and nothing recorded) until there is.
+        if (structure?.totalBudget == null) continue;
 
-        if (!structure) continue;
-
-        let totalMaintenanceCost = 0;
-        const policyDetails: string[] = [];
-        const consequences: Array<{
-          targetModel: string;
-          targetField: string;
-          operation: "subtract" | "add" | "multiply" | "set";
-          value: number;
-          effectType?: string;
-        }> = [];
-
-        for (const policy of countryPolicies) {
-          const cost = policy.maintenanceCost || 0;
-          if (cost > 0) {
-            totalMaintenanceCost += cost;
-            policyDetails.push(`"${policy.name}" (${cost.toLocaleString()})`);
-
-            consequences.push({
-              targetModel: "GovernmentStructure",
-              targetField: "totalBudget",
-              operation: "subtract",
-              value: cost,
-              effectType: "POLICY_MAINTENANCE",
-            });
-
-            result.policiesProcessed++;
-            result.totalCostDebited += cost;
-          }
-        }
-
-        if (totalMaintenanceCost > 0) {
-          // Record the event and apply consequences using the unified spine
-          await CountryEventSpine.recordCountryEvent({
-            db,
-            countryId,
-            sourceType: "policy",
-            description: `Policy Maintenance: debited total cost of ${totalMaintenanceCost.toLocaleString()} from budget for active policies: ${policyDetails.join(", ")}`,
-            consequences,
-          });
-        }
+        const debit = await debitCountryMaintenance(
+          database,
+          countryId,
+          countryPolicies,
+          budgetYear
+        );
+        result.policiesProcessed += debit.policiesDebited;
+        result.totalCostDebited += debit.totalDebited;
       } catch (err: any) {
         console.error(`[PolicyMaintenanceCron] Failed for country ${countryId}:`, err.message);
       }

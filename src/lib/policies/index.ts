@@ -5,3 +5,4 @@
 export * from "./registry";
 export * from "./maintenance-cron";
 export * from "./effects-sync";
+export * from "./lifecycle";
