@@ -14,7 +14,7 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsSkeleton } from "./SettingsSkeleton";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
-import { type SettingSectionId } from "../_lib/sections";
+import { SETTINGS_TAB_IDS, type SettingSectionId } from "../_lib/sections";
 
 export { SettingsSkeleton };
 
@@ -79,18 +79,7 @@ const NationStatesCardsPanel = dynamic(
 
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
-const VALID_TABS = new Set<SettingSectionId>([
-  "account",
-  "country",
-  "appearance",
-  "wikios",
-  "notifications",
-  "social",
-  "privacy",
-  "vault",
-  "cosmetics",
-  "cards",
-]);
+const VALID_TABS = new Set<SettingSectionId>(SETTINGS_TAB_IDS);
 
 export function SettingsContent() {
   usePageTitle({ title: "Settings" });

@@ -19,6 +19,7 @@ import {
   matchesPrefix,
   splitTabBarApps,
 } from "~/lib/navigation/app-sections";
+import { SETTINGS_TAB_IDS } from "~/app/settings/_lib/sections";
 
 const appDir = path.resolve(__dirname, "../../../app");
 const srcDir = path.resolve(__dirname, "../../..");
@@ -85,23 +86,13 @@ describe("app section map routes", () => {
     expect(stubs).toEqual([]);
   });
 
-  it("uses only settings tabs that the settings page knows", () => {
-    const source = fs.readFileSync(path.join(appDir, "settings/_lib/sections.ts"), "utf-8");
-    const union = source.match(/export type SettingSectionId =([^;]+);/)?.[1] ?? "";
-    const valid = new Set([...union.matchAll(/"([a-z-]+)"/g)].map((m) => m[1]));
-    const used = getApp("settings").sections.map(
-      (section) => new URLSearchParams(section.href.split("?")[1]).get("tab") ?? ""
+  it("lists exactly the settings tabs the settings page renders", () => {
+    const tabOf = (href: string) => new URLSearchParams(href.split("?")[1]).get("tab");
+    const sections = getApp("settings").sections;
+    expect(sections.map((section) => section.id).sort()).toEqual([...SETTINGS_TAB_IDS].sort());
+    expect(sections.map((section) => tabOf(section.href))).toEqual(
+      sections.map((section) => section.id)
     );
-    expect(valid.size).toBeGreaterThan(0);
-    expect(used.filter((tab) => !valid.has(tab))).toEqual([]);
-  });
-
-  it("lists every settings tab", () => {
-    const source = fs.readFileSync(path.join(appDir, "settings/_lib/sections.ts"), "utf-8");
-    const union = source.match(/export type SettingSectionId =([^;]+);/)?.[1] ?? "";
-    const tabs = [...union.matchAll(/"([a-z-]+)"/g)].map((m) => m[1]);
-    const ids = getApp("settings").sections.map((section) => section.id);
-    expect(tabs.filter((tab) => !ids.includes(tab!))).toEqual([]);
   });
 
   it("has unique app ids and unique section ids per app", () => {

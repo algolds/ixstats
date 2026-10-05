@@ -24,7 +24,7 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/admin` | admin gate | Admin-only vault tools (`useIsAdmin`) |
 | `/vault/market`, `/vault/packs`, `/vault/trading` | — | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading` |
 
-There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the dashboard (`VaultWalletCard`).
+There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the Vault dashboard (`/vault`, `VaultWalletCard`).
 
 ## Key Features
 

@@ -505,7 +505,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/settings"],
     requiresAuth: true,
     placement: "footer",
-    // Tabs of src/app/settings (`?tab=` ids and categories from src/app/settings/_lib/sections.ts).
+    // Tabs of src/app/settings; the `?tab=` ids are `SETTINGS_TAB_IDS` (src/app/settings/_lib/sections.ts).
     sections: [
       {
         id: "account",
