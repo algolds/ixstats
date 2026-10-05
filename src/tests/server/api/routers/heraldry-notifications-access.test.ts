@@ -52,7 +52,7 @@ describe("heraldry draft visibility", () => {
       },
       heraldryRevision: { findMany: jest.fn().mockResolvedValue([{ id: "r1" }]) },
     });
-    ctx.auth = clerkId ? { ...ctx.auth, userId: clerkId } : null;
+    ctx.auth = clerkId ? { userId: clerkId } : null;
     return heraldryQueriesRouter.createCaller(ctx);
   }
 
@@ -108,13 +108,11 @@ describe("notification tray lists what the badge counts", () => {
     const ctx = createIdorContext({
       notification: { findMany, count: jest.fn().mockResolvedValue(0) },
       user: {
-        findFirst: jest
-          .fn()
-          .mockResolvedValue({
-            id: "db_internal_1",
-            clerkUserId: CALLER_CLERK_ID,
-            countryId: null,
-          }),
+        findFirst: jest.fn().mockResolvedValue({
+          id: "db_internal_1",
+          clerkUserId: CALLER_CLERK_ID,
+          countryId: null,
+        }),
       },
     });
     await notificationsUserRouter.createCaller(ctx).getUserNotifications({});

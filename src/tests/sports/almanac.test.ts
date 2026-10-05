@@ -1,12 +1,12 @@
-import { describe, it, expect, jest } from "@jest/globals";
+import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { sportsAlmanacRouter } from "~/server/api/routers/sports/almanac";
-import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { createMockCallerContext } from "~/tests/helpers/router-context";
 
 const createCaller = createCallerFactory(sportsAlmanacRouter);
 
 function callerWith(db: Record<string, Record<string, jest.Mock>>) {
-  return createCaller(createMockRouterContext({ db, auth: null }));
+  return createCaller(createMockCallerContext({ db, auth: null }));
 }
 
 const team = (id: string, name: string) => ({ id, name, logo: null, color: "#000000" });

@@ -1,4 +1,4 @@
-import { createMockRouterContext, type MockRouterContext } from "~/tests/helpers/router-context";
+import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
 
 /** The caller always owns CALLER_COUNTRY; FOREIGN_COUNTRY belongs to someone else. */
 export const CALLER_COUNTRY = "country_caller";
@@ -13,14 +13,14 @@ export const CALLER_CLERK_ID = "user_caller";
 export function createIdorContext(
   db: Record<string, object>,
   role: "member" | "admin" = "member"
-): MockRouterContext {
+): MockCallerContext {
   const user = {
     id: "db_user_caller",
     clerkUserId: CALLER_CLERK_ID,
     countryId: CALLER_COUNTRY,
     role: { name: role },
   };
-  return createMockRouterContext({
+  return createMockCallerContext({
     auth: { userId: CALLER_CLERK_ID },
     user,
     db: {

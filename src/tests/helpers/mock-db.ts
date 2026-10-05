@@ -1,7 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 
+/** Model delegate names (`country`, `user`, ...); excludes client methods such as `$transaction`. */
+type PrismaModelName = Exclude<keyof PrismaClient, `$${string}` | symbol>;
+
 export type MockPrismaProxy = {
-  [K in keyof PrismaClient]: {
+  [K in PrismaModelName]: {
     [M: string]: jest.Mock<any, any>;
   };
 } & {
