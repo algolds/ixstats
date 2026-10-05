@@ -400,13 +400,18 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
                         style={{ width: `${r.quantity * 100}%` }}
                       />
                     </div>
-                    <span className="text-label-secondary">Ql</span>
-                    <div className="bg-fill-3 h-1.5 w-10 rounded-full">
-                      <div
-                        className="bg-green h-1.5 rounded-full"
-                        style={{ width: `${r.quality * 100}%` }}
-                      />
-                    </div>
+                    {/* Only farmland quality is graded (lib/maps/geographic-resources.ts). */}
+                    {r.resourceType === "agricultural" && (
+                      <>
+                        <span className="text-label-secondary">Ql</span>
+                        <div className="bg-fill-3 h-1.5 w-10 rounded-full">
+                          <div
+                            className="bg-green h-1.5 rounded-full"
+                            style={{ width: `${r.quality * 100}%` }}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               );

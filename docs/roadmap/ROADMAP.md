@@ -173,7 +173,7 @@ Replace each with real data, or show an empty state. All S or S–M.
 - ✅ **Passport realm tiles:** real values (AT-4).
 - ✅ **Sports standings form:** computed from the last 5 matches (SL-17).
 - ✅ **LiveDataCard:** empty state instead of a fake GDP series (SL-26).
-- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Real enrichment stays in M7.
+- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Persisted countries get real `GeographicResource` rows from PostGIS rivers, lakes, coast and climate (AT-9, 2026-10-05); real Labs enrichment stays in M7, once generated worlds are persisted.
 
 ### M2.3 Settings that do nothing: wire or hide
 ✅ **Done (2026-10-05)**, each wired or hidden:
@@ -316,7 +316,7 @@ the spine.
 | MyLeague / MyClub | Boxing bout engine; rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
 | Onoma | Publish path for language packs (SL-18) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
 | Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
-| Map pipeline | Real enrichment (AT-9). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
+| Map pipeline | Real enrichment for the Labs pipeline (AT-9; persisted countries' resources are real since 2026-10-05). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |
 
 ---

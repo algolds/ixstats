@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import type { PrismaClient } from "@prisma/client";
 import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
+import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
 import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
 import { requirePoliticalLayer } from "./shared";
 
@@ -125,7 +126,10 @@ export const adminOpsProcedures = {
       });
     }),
 
-  /** Admin: recompute stored geo profiles (one country, or every country with geometry). */
+  /**
+   * Admin: recompute stored geo profiles (one country, or every country with geometry), and with
+   * them the country's map-derived `GeographicResource` rows (AT-9).
+   */
   recalculateGeoProfiles: adminProcedure
     .input(z.object({ countryId: z.string().optional() }).optional())
     .mutation(async ({ ctx, input }) => {
@@ -135,18 +139,27 @@ export const adminOpsProcedures = {
       });
 
       let processed = 0;
+      let resourcesWritten = 0;
       const errors: string[] = [];
+      const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
       for (const country of countries) {
         try {
           await recalculateGeoProfile(ctx.db, country.id);
           processed++;
         } catch (err) {
-          errors.push(`${country.name}: ${err instanceof Error ? err.message : String(err)}`);
+          errors.push(`${country.name}: ${message(err)}`);
+          continue;
+        }
+        try {
+          resourcesWritten += await refreshGeographicResources(ctx.db, country.id);
+        } catch (err) {
+          errors.push(`${country.name} (resources): ${message(err)}`);
         }
       }
 
       return {
         processed,
+        resourcesWritten,
         failed: errors.length,
         total: countries.length,
         errors: errors.slice(0, 20),
