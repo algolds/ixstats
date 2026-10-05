@@ -28,6 +28,28 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 - **Unified trending** (`activities.getUnifiedTrending`, dashboard sidebar): the ThinkPages source is the posts with `trendingScore > 0`, by score.
 - **Engagement counters**: `likeCount` mirrors the `like` entry of the `reactionCounts` tally and is written by every reaction add, change and remove. `createPost` increments the parent's `replyCount` and the original's `repostCount`, and `deletePost` decrements them (never below 0). Other writers (Discord import, ThinkTanks, auto-posts) don't maintain them, so the cron job also reconciles all three counters with the real rows on every run.
 
+### Activity feed producers (`ActivityFeed`)
+
+The global activity feed (`activities.getGlobalFeed`, `/feed` and the dashboard) merges `ActivityFeed` rows with
+ThinkPages posts, wiki and forum activity. The rows come from `src/lib/activity/hooks.ts` (`ActivityHooks`) and
+`src/lib/activity/generator.ts`, and each producer is called where its game event happens. Every producer is best
+effort: a failed write is logged and never fails the action that triggered it.
+
+| Feed filter | Event | Called from |
+| :--- | :--- | :--- |
+| Diplomatic | Embassy established | `diplomacy/embassies/establish.ts` |
+| Diplomatic | Public alliance founded / joined (accepted invite) | `diplomacy/policies/alliances.ts`, `alliance-invite-procedures.ts`; private and secret alliances post nothing |
+| Economic | Economic milestone: the stored economic tier changes (GDP per capita crossed a tier threshold) | `stat-progression` cron job and the admin force recalculation (`onEconomicTierChange`) |
+| Economic / Achievements | A bill passes and becomes law (Economic when it has a GDP effect) | `legislation.holdVote` |
+| Achievements | Achievement unlocked | `lib/achievements/service.ts` |
+| Social | Nation founded in the builder / nation claimed in a realm | `countries.createCountry`, `realms` claim side effects |
+| Social | Onoma name generation and dictionary sharing | `onoma/namebank.ts` |
+
+Producers with no real event behind them (diplomatic missions, trade agreements, budgets, tax reforms,
+infrastructure projects, military branches, security threats, government components and effectiveness, ThinkPage
+posts, country follows and sign-ups) were deleted (SL-7). The `achievements` filter matches rows of type
+`achievement`.
+
 ### Social notifications
 
 Notifications are keyed by Clerk user id. The recipient is always the **owning user** of the target persona, never the persona id, and a user is never notified about their own personas. Titles name the acting persona (display name, else `@username`), and every link goes to `/thinkpages/post/<id>` (base path applied).

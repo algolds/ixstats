@@ -10,6 +10,7 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { withJobLock } from "~/lib/system/job-lock";
 import { runStatProgression, type StatProgressionResult } from "~/server/cron/stat-progression";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import type { SystemStatus } from "~/types/ixstats";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
@@ -372,6 +373,8 @@ export const adminSystemRouter = createTRPCRouter({
             db: ctx.db,
             force: true,
             note: "Manual recalculation from admin panel",
+            onEconomicTierChange: ({ countryId, from, to }) =>
+              ActivityHooks.Economic.onEconomicTierChange(countryId, from, to),
           }),
         { timeoutMs: 30 * 60_000 }
       );

@@ -131,6 +131,17 @@ interface StatProgressionOptions {
   batchSize?: number;
   /** CalculationLog note. */
   note?: string;
+  /**
+   * Called (never awaited, errors ignored) for each country whose stored economic tier changes,
+   * so the caller can post the economic milestone to the activity feed (SL-7).
+   */
+  onEconomicTierChange?: (change: EconomicTierChange) => unknown;
+}
+
+export interface EconomicTierChange {
+  countryId: string;
+  from: string;
+  to: string;
 }
 
 export interface StatProgressionResult {
@@ -141,6 +152,21 @@ export interface StatProgressionResult {
   historyPointsWritten: number;
   ixTime: number;
   executionTimeMs: number;
+}
+
+/** Best-effort: a failing listener never fails the progression run. */
+function notifyTierChange(
+  listener: StatProgressionOptions["onEconomicTierChange"],
+  change: EconomicTierChange
+) {
+  if (!listener) return;
+  try {
+    void Promise.resolve(listener(change)).catch((err: unknown) =>
+      console.error("[stat-progression] Tier change listener failed:", err)
+    );
+  } catch (err) {
+    console.error("[stat-progression] Tier change listener failed:", err);
+  }
 }
 
 export async function runStatProgression(
@@ -195,6 +221,13 @@ export async function runStatProgression(
         if (options.force || !isProjectionUnchanged(country, data)) {
           await db.country.update({ where: { id: country.id }, data });
           result.updated++;
+          if (country.economicTier && country.economicTier !== data.economicTier) {
+            notifyTierChange(options.onEconomicTierChange, {
+              countryId: country.id,
+              from: country.economicTier,
+              to: data.economicTier,
+            });
+          }
         } else {
           result.unchanged++;
         }

@@ -3,6 +3,7 @@
  */
 import { z } from "zod";
 import { protectedProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import { TRPCError } from "@trpc/server";
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -201,7 +202,10 @@ export const allianceInviteProcedures = {
       }
 
       const [alliance, invitee, proposerIds] = await Promise.all([
-        ctx.db.alliance.findUnique({ where: { id: input.allianceId }, select: { name: true } }),
+        ctx.db.alliance.findUnique({
+          where: { id: input.allianceId },
+          select: { name: true, visibility: true },
+        }),
         ctx.db.country.findUnique({ where: { id: input.countryId }, select: { name: true } }),
         inviteProposerCountryIds(ctx.db, invite),
       ]);
@@ -225,6 +229,13 @@ export const allianceInviteProcedures = {
         where: { id: input.allianceId },
         data: { memberCount: count },
       });
+      if (alliance?.visibility === "public") {
+        void ActivityHooks.Diplomatic.onAllianceJoined(
+          input.countryId,
+          allianceName,
+          ctx.auth?.userId ?? undefined
+        );
+      }
       await notifyCountryOwners(ctx.db, proposerIds, {
         title: "Alliance Invitation Accepted",
         message: `${inviteeName} accepted the invitation and joined ${allianceName}.`,

@@ -214,8 +214,13 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       const { runStatProgression } = await import("~/server/cron/stat-progression");
       const { refreshStoredInternalStability } = await import("~/lib/statecraft/stability-store");
       const { db } = await import("~/server/db");
+      const { ActivityHooks } = await import("~/lib/activity/hooks");
       return async () => ({
-        ...(await runStatProgression({ db })),
+        ...(await runStatProgression({
+          db,
+          onEconomicTierChange: ({ countryId, from, to }) =>
+            ActivityHooks.Economic.onEconomicTierChange(countryId, from, to),
+        })),
         stability: await refreshStoredInternalStability(db),
       });
     },

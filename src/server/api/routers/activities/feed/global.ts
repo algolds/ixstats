@@ -120,7 +120,9 @@ type FeedInput = z.infer<typeof activityFilterSchema>;
 /** ActivityFeed rows as feed items, with their users and countries batch-loaded (no N+1). */
 async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: number) {
   const where: Prisma.ActivityFeedWhereInput = {};
-  if (input.filter !== "all" && input.filter !== "community") where.type = input.filter;
+  // Rows are stored with type "achievement"; the filter is named "achievements".
+  if (input.filter !== "all" && input.filter !== "community")
+    where.type = input.filter === "achievements" ? "achievement" : input.filter;
   if (input.category !== "all") where.category = input.category;
   if (input.userId) where.userId = input.userId;
 

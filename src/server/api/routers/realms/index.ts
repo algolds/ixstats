@@ -26,6 +26,7 @@ import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache } from "~/lib/cache";
 import { listRealmDirectory, openRealmBoard } from "./places";
 import { realmRegionRouter } from "./region";
@@ -50,6 +51,7 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
     )
     .catch((e: Error) => console.error("[realms] new-player bonus failed:", e));
   queueAchievementCheck(event.clerkUserId, event.countryId);
+  await ActivityHooks.User.onCountryLink(event.clerkUserId, event.countryId, false);
   await globalCache.delete(`user_profile:${event.clerkUserId}`);
 }
 

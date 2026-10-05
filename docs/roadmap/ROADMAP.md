@@ -286,6 +286,9 @@ the spine.
 ## M6 — Social & knowledge
 
 **Feed & notifications**
+- ✅ **Activity producers (SL-7, 2026-10-05):** every remaining producer is called where its event happens (embassies,
+  public alliances, laws passed, economic tier milestones, achievements, nations founded or claimed); producers with
+  no real event were deleted.
 - **Feed producers through the event spine:** engagement counters (likes, comments, views), a real trending ranking, the
   `trending` flag set (SL-7, SL-8, SL-9). *Needs M4 spine.* **Partial (#49):** the `thinkpages-trending` job scores
   posts with engagement decay and reconciles the like/reply/repost counters; persona follows have real counts.
