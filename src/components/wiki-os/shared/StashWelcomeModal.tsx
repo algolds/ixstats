@@ -14,7 +14,7 @@ import {
   Eye,
   Folder as FolderOpen,
   Plus,
-  Page as StickyNote,
+  Search,
   Download,
   ShareIos,
 } from "iconoir-react";
@@ -72,13 +72,13 @@ const ARTICLE_STEPS = [
     color: "text-yellow",
     title: "Quotes and highlights",
     description:
-      "Highlights created in WikiOS Margin sync to your Quotes tab with lore notes and direct links.",
+      "Highlights created in WikiOS Margin sync to your Quotes tab with their comments and direct links.",
   },
   {
-    icon: StickyNote,
+    icon: Search,
     color: "text-indigo",
-    title: "Personal notes",
-    description: "Attach markdown notes to saved pages to record lore observations or todo items.",
+    title: "Search your stash",
+    description: "Filter saved pages, quotes, media, and threads by title or quoted text.",
   },
   {
     icon: Clock,
@@ -126,10 +126,11 @@ const FORUM_STEPS = [
       "Save regional forum threads, debates, and policy proposals in your research lists.",
   },
   {
-    icon: StickyNote,
+    icon: Download,
     color: "text-green",
-    title: "Custom summaries",
-    description: "Write context summaries on saved threads to keep track of decisions.",
+    title: "Exports included",
+    description:
+      "Saved threads go out with the rest of the collection in markdown and JSON exports.",
   },
   {
     icon: Clock,
