@@ -5,6 +5,7 @@ import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { baseCardCapacity } from "~/lib/cards/general-settings";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { generateNSImportDescription } from "~/lib/nationstates/import-service";
@@ -357,7 +358,7 @@ export const nsImportDecksRouter = createTRPCRouter({
       const config = await getVaultConfig(ctx.db as any);
       const valCfg = await getValuationConfig(ctx.db);
       const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
-      const maxCards = 150 + capacityBoost;
+      const maxCards = (await baseCardCapacity(ctx.db)) + capacityBoost;
 
       // Exempt when role level <= 20 and the exemption toggle is enabled
       const isExempt = config.exemptStaffFromLimit && (ctx.user.role?.level ?? 100) <= 20;

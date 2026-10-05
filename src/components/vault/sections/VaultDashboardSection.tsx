@@ -171,7 +171,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
             netWorth={netWorth}
             collectionValuation={collectionValuation}
             totalCards={stats?.totalCards ?? 0}
-            capacityBoost={stats?.capacityBoost ?? 0}
+            cardCapacity={stats?.cardCapacity ?? null}
             unopenedPacks={stats?.unopenedPacks ?? 0}
             activeAuctions={stats?.activeAuctions ?? 0}
           />

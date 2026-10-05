@@ -9,7 +9,7 @@
  * - IxCredits integration via vault-service
  * - real-time auction timing
  * - Auto-extension for last-minute bids
- * - Market fee calculation (10% on sales >100 IxC)
+ * - Market fee calculation (admin house rake, default 10%, on sales >100 IxC)
  * - Listing fees (5 IxC standard, 10 IxC featured)
  * - Bid validation (5% minimum increment)
  */
@@ -19,6 +19,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
+import { marketplaceFee } from "~/lib/cards/general-settings";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth";
 import {
   publishMarketEvent,
@@ -51,9 +52,6 @@ const broadcastComplete = (auctionId: string, winnerId: string | null, finalPric
 type AuctionWithCard = Prisma.CardAuctionGetPayload<{
   include: { CardOwnership: { include: { cards: true } } };
 }>;
-
-/** 10% marketplace fee on sales over 100 IxC. */
-const marketplaceFee = (price: number) => (price > 100 ? Math.floor(price * 0.1) : 0);
 
 /** Fire-and-forget notification: a failure is logged, never thrown. */
 async function notifyQuietly(
@@ -140,7 +138,7 @@ async function settleSale(
   sale: { buyerId: string; price: number; sellerSource: string }
 ) {
   const { buyerId, price } = sale;
-  const fee = marketplaceFee(price);
+  const fee = await marketplaceFee(tx, price);
   await vaultService.earnCreditsTx(tx, {
     userId: auction.sellerId,
     amount: price - fee,
@@ -723,7 +721,7 @@ export class AuctionService {
           metadata: {
             auctionId: params.auctionId,
             cardInstanceId: auction.cardInstanceId,
-            marketplaceFee: marketplaceFee(buyoutPrice),
+            marketplaceFee: await marketplaceFee(tx, buyoutPrice),
           },
         });
         await settleSale(tx, auction, {
