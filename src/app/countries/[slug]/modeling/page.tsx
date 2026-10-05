@@ -57,7 +57,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
           <PageHeader
             title={`Economic modeling for ${country.name}`}
             back={{ href: createUrl(`/countries/${country.slug}`), label: country.name }}
-            className="-mx-2"
+            bleed
           />
           <Card padding="md">
             <EconomicModelingEngine

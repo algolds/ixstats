@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useNotificationBadge } from "./useLiveNotifications";
+import { restoreTitle } from "~/lib/notifications/title-badge";
 
 interface UsePageTitleOptions {
   /**
@@ -49,12 +50,10 @@ export function usePageTitle({ title, enableNotificationBadge = true }: UsePageT
 
     document.title = fullTitle;
 
-    // Cleanup on unmount - restore original title
+    // On unmount (or before the next title) leave this page's title, keeping the unread badge
+    // that a still-mounted instance (the app shell's) shows.
     return () => {
-      if (typeof document !== "undefined") {
-        // Try to restore a clean base title without notification count
-        document.title = baseTitle;
-      }
+      if (typeof document !== "undefined") restoreTitle(baseTitle);
     };
   }, [title, unreadCount, enableNotificationBadge]);
 }

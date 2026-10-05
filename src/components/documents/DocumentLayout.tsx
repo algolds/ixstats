@@ -95,7 +95,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
               </Button>
             </div>
           }
-          className="-mx-2"
+          bleed
         />
 
         <div className="text-footnote text-label-secondary mb-8 flex flex-wrap items-center gap-3 px-2">

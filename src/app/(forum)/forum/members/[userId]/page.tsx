@@ -66,7 +66,7 @@ export default function MemberProfilePage() {
             </Link>
           </div>
 
-          <PageHeader title={member.username} subtitle={member.userTitle} className="-mx-2" />
+          <PageHeader title={member.username} subtitle={member.userTitle} bleed />
           <div className="mb-4 flex items-center gap-4">
             {member.avatarUrl ? (
               <img

@@ -55,7 +55,8 @@ export interface PageHeaderProps {
   /**
    * For pages that already pad their content (the forum): pulls the header out by its own inner
    * gutter, so the title and toolbar actions line up with the page's content edge instead of
-   * sitting a gutter further in.
+   * sitting a gutter further in. It does not apply to the `backdrop` variant, whose gutter is
+   * `px-4` rather than `px-2`.
    */
   bleed?: boolean;
   className?: string;

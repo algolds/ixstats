@@ -3,8 +3,8 @@
 /**
  * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
  * name and country; your country (MyCountry), your passport and wiki profiles, the nation
- * switcher, a link to the nation's public page (the country row above goes to MyCountry), IxnayID connections, the external account manager and
- * sign out. Signed out, it is the sign-in button.
+ * switcher, a link to the nation's public page (the country row above goes to MyCountry), IxnayID
+ * connections, the external account manager and sign out. Signed out, it is the sign-in button.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
  * same panel inline in the TabBar's More sheet.

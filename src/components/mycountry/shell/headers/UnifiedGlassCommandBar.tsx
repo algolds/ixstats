@@ -96,13 +96,13 @@ export function UnifiedGlassCommandBar({
     .join(" · ");
 
   const identity = [subtitle, realmName].filter(Boolean).join(" · ");
-  // Pills only over the visible art: not in the compact bar (its own chrome is the backdrop there).
-  const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
   // The flag whose image failed to load; a different flag is tried afresh. The plates behind the
   // title and the action pills exist only to sit over the art, so they follow whether it shows.
   const [failedFlag, setFailedFlag] = useState<string | null>(null);
   const bannerShowing = Boolean(flagUrl) && failedFlag !== flagUrl;
+  // Pills only over the visible art: not in the compact bar (its own chrome is the backdrop there).
+  const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
 
   return (
     <PageHeader

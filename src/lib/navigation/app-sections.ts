@@ -90,7 +90,6 @@ type NavBadgeKey =
   | "daily-reward"
   | "messages-unread"
   | "issues-pending"
-  | "actions-pending"
   | "whats-new";
 export type NavAction = "daily-reward";
 export type NavBadge =
@@ -234,8 +233,6 @@ export const APPS: readonly AppDefinition[] = [
         href: "/mycountry",
         icon: Crown,
         exact: true,
-        // The agenda card (pending cabinet meeting actions) lives on the Overview.
-        badge: "actions-pending",
       },
       {
         id: "executive",

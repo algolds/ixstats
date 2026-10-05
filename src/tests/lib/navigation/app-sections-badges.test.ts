@@ -103,9 +103,9 @@ describe("Home, Messages, Sports and Help in the map", () => {
 });
 
 describe("badges recovered from the old player widget", () => {
-  it("MyCountry Overview carries pending actions and Directives the pending issues", () => {
+  it("Directives carries the pending issues; the Overview has no badge (meeting actions have no UI home)", () => {
     const sections = app("mycountry").sections;
-    expect(sections.find((s) => s.id === "overview")?.badge).toBe("actions-pending");
+    expect(sections.find((s) => s.id === "overview")?.badge).toBeUndefined();
     expect(sections.find((s) => s.id === "executive")?.badge).toBe("issues-pending");
   });
 

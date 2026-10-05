@@ -11,7 +11,7 @@ export default function LeaderboardsPage() {
 
   return (
     <div className="container mx-auto space-y-6 px-4 py-4 sm:py-6 md:py-8">
-      <PageHeader title="Global leaderboards" className="-mx-2" />
+      <PageHeader title="Global leaderboards" bleed />
       <LeaderboardTab />
     </div>
   );

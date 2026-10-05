@@ -29,7 +29,7 @@ export function CountriesPageHeader({
 
   return (
     <header className="mb-8">
-      <PageHeader title="Explore countries" className="-mx-2" />
+      <PageHeader title="Explore countries" bleed />
       <div className="flex flex-col gap-3 sm:flex-row">
         <ExpandableStatCard
           icon={<Users aria-hidden="true" className="text-label-secondary h-4 w-4" />}

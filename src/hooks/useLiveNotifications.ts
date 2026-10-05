@@ -6,20 +6,15 @@
  * removed on 2026-09-25 (plan 342). Only `useNotificationBadge` remains.
  */
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-
-/** Matches the "(N) " prefix this hook writes, so it can be re-applied or removed. */
-const UNREAD_PREFIX = /^\(\d+\) /;
-
-// The base title is read from document.title at the moment of each write, never cached:
-// pages change the title (usePageTitle, Next metadata) while this hook stays mounted
-// app-wide, so any remembered copy would revert to a stale page's title.
-function withUnreadPrefix(count: number): string {
-  const base = document.title.replace(UNREAD_PREFIX, "");
-  return count > 0 ? `(${count}) ${base}` : base;
-}
+import {
+  applyRemainingBadge,
+  clearBadgeCount,
+  setBadgeCount,
+  withUnreadPrefix,
+} from "~/lib/notifications/title-badge";
 
 /**
  * Hook specifically for unread count and title badge
@@ -28,6 +23,7 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   const { enableTitleBadge = true } = options;
   const { user } = useUser();
   const userId = user?.id;
+  const instanceId = useId();
 
   const { data: unreadData } = api.notifications.getUnreadCount.useQuery(undefined, {
     enabled: !!userId,
@@ -41,12 +37,14 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   useEffect(() => {
     if (!enableTitleBadge || typeof document === "undefined") return;
 
+    setBadgeCount(instanceId, unreadCount);
     document.title = withUnreadPrefix(unreadCount);
 
     return () => {
-      if (typeof document !== "undefined") document.title = withUnreadPrefix(0);
+      clearBadgeCount(instanceId);
+      if (typeof document !== "undefined") document.title = applyRemainingBadge();
     };
-  }, [unreadCount, enableTitleBadge]);
+  }, [unreadCount, enableTitleBadge, instanceId]);
 
   return { unreadCount };
 }

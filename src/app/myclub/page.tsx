@@ -74,7 +74,7 @@ export default function MyClubPage() {
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
       <PageHeader
         title="MyClub"
-        className="-mx-2"
+        bleed
         actions={
           <>
             <HeroHelpModal title="MyClub guide" steps={MYCLUB_HELP_STEPS} accentClass="text-tint" />

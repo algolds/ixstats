@@ -59,7 +59,7 @@ Key files (all under `src/components/dashboard/`):
 | ------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
 | `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels                                        |
-| `DashboardColumn.tsx`                    | Shared content layout: a plain centred column (hero, children)         |
+| `DashboardColumn.tsx`                                   | Shared content layout: a plain centred column (hero, children)         |
 | `sections/UnifiedDashboardSection.tsx`                  | Feed tabs, composer, Inspector with the community widgets              |
 | `sections/UnifiedFeedContent.tsx`                       | Feed/Following stream rendering                                        |
 | `sections/TrendingSectionWidget.tsx`                    | Trending content                                                       |

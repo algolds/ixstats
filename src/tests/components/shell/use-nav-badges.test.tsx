@@ -7,9 +7,7 @@ const inboxEnabled = jest.fn();
 let balance: { credits: number; canClaimDailyBonus: boolean; loginStreak: number } | undefined;
 let folderCounts: { inbox: number } | undefined;
 let pendingIssues: { total: number; urgent: number } | undefined;
-let meetings: { actionItems: { status: string }[] }[] | undefined;
 const issuesQuery = jest.fn();
-const meetingsQuery = jest.fn();
 const balanceQuery = jest.fn();
 const folderCountsQuery = jest.fn();
 
@@ -41,14 +39,6 @@ jest.mock("~/trpc/react", () => ({
         },
       },
     },
-    meetings: {
-      getMeetings: {
-        useQuery: (input: { countryId: string }, opts: { enabled: boolean }) => {
-          meetingsQuery(input, opts);
-          return { data: opts.enabled ? meetings : undefined };
-        },
-      },
-    },
     vault: {
       getBalance: {
         useQuery: (_input: unknown, opts: { enabled: boolean }) => {
@@ -70,9 +60,7 @@ beforeEach(() => {
   flagNormalizes = true;
   folderCounts = { inbox: 0 };
   pendingIssues = undefined;
-  meetings = undefined;
   issuesQuery.mockClear();
-  meetingsQuery.mockClear();
   balanceQuery.mockClear();
   folderCountsQuery.mockClear();
   inboxEnabled.mockClear();
@@ -140,41 +128,26 @@ describe("useNavBadges", () => {
     expect(renderHook(() => useNavBadges(false)).result.current).toEqual({});
   });
 
-  it("counts pending issues and pending meeting actions, hiding zeros", () => {
+  it("counts pending issues and hides a zero count", () => {
     pendingIssues = { total: 4, urgent: 1 };
-    meetings = [
-      { actionItems: [{ status: "pending" }, { status: "done" }] },
-      { actionItems: [{ status: "pending" }] },
-    ];
     const { result, rerender } = renderHook(() => useNavBadges(true));
     expect(result.current["issues-pending"]).toEqual({ kind: "count", value: 4 });
-    expect(result.current["actions-pending"]).toEqual({ kind: "count", value: 2 });
     pendingIssues = { total: 0, urgent: 0 };
-    meetings = [{ actionItems: [{ status: "done" }] }];
     rerender();
     expect(result.current["issues-pending"]).toBeUndefined();
-    expect(result.current["actions-pending"]).toBeUndefined();
   });
 
-  it("queries issues and meetings only when signed in with a country", () => {
+  it("queries issues only when signed in with a country, and never fetches meetings", () => {
+    // The api mock has no `meetings` router: fetching them would throw.
     renderHook(() => useNavBadges(false));
     expect(issuesQuery).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ enabled: false })
     );
-    expect(meetingsQuery).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ enabled: false })
-    );
     issuesQuery.mockClear();
-    meetingsQuery.mockClear();
     country = null;
     renderHook(() => useNavBadges(true));
     expect(issuesQuery).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ enabled: false })
-    );
-    expect(meetingsQuery).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ enabled: false })
     );

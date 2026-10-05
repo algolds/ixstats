@@ -35,7 +35,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 
   return (
     <div className="mb-6">
-      <PageHeader title="Countries" actions={luckyButton} className="-mx-2" />
+      <PageHeader title="Countries" actions={luckyButton} bleed />
       <Card padding="md" className="flex flex-col gap-3">
         <SearchField
           size="lg"
