@@ -7,34 +7,54 @@
  */
 
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import {
   parseInfobox,
   extractCoordsFromFields,
   parseCoordTemplate,
 } from "~/lib/wiki-os/transformers/infobox-parser";
 
+/** IxWorld's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). */
+const IXWORLD_WIKIS: readonly WikiSource[] = ["ixwiki", "iiwiki"];
+
+/**
+ * The wikis a realm's map looks pages up in (AT-12): the wiki its lore index was imported from, else
+ * IxWorld's order. A realm's wiki is recorded on its RealmPage rows; Realm has no wiki setting of its own.
+ */
+async function realmWikis(
+  ctx: Parameters<typeof viewerRealmId>[0] & { db: Pick<PrismaClient, "realmPage"> },
+  realmSlug: string | undefined
+): Promise<readonly WikiSource[]> {
+  const realmId = await viewerRealmId(ctx, realmSlug);
+  if (realmId === DEFAULT_REALM_ID) return IXWORLD_WIKIS;
+  const lore = await ctx.db.realmPage.findFirst({
+    where: { realmId },
+    select: { wikiSource: true },
+  });
+  return lore ? [parseWikiSource(lore.wikiSource)] : IXWORLD_WIKIS;
+}
+
 export const geoWikiRouter = createTRPCRouter({
   /** Fetch wiki article intro for a map feature (city/POI) by its linked wiki page title. */
   getFeatureWikiIntro: cachedPublicProcedure
-    .input(z.object({ wikiPageTitle: z.string() }))
-    .query(async ({ input }) => {
+    .input(realmScopeInput.extend({ wikiPageTitle: z.string() }))
+    .query(async ({ ctx, input }) => {
       const name = input.wikiPageTitle.trim();
       if (!name) return null;
 
       const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
-      // Try ixwiki first (direct MySQL, ~8ms), then iiwiki (HTTP, ~400ms)
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+      for (const wiki of await realmWikis(ctx, input.realm)) {
         const result = await getArticleIntro(name, wiki);
         if (result?.text) {
           return {
             extract: result.text.substring(0, 400),
             wikiSource: wiki,
-            wikiUrl:
-              wiki === "ixwiki"
-                ? `/wiki/${encodeURIComponent(result.title)}`
-                : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
+            wikiUrl: wikiReaderPath(result.title, wiki),
           };
         }
       }
@@ -46,19 +66,16 @@ export const geoWikiRouter = createTRPCRouter({
    * Used by the map editor WikiLinkWizard for auto-filling city/POI data.
    */
   parseWikiInfobox: cachedPublicProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(200) }))
-    .query(async ({ input }) => {
+    .input(realmScopeInput.extend({ pageTitle: z.string().min(1).max(200) }))
+    .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
       const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+      for (const wiki of await realmWikis(ctx, input.realm)) {
         const article = await getArticleWikitext(title, wiki);
         if (!article) continue;
 
-        const pageUrl =
-          wiki === "ixwiki"
-            ? `/wiki/${encodeURIComponent(article.title)}`
-            : `https://iiwiki.com/wiki/${encodeURIComponent(article.title)}`;
+        const pageUrl = wikiReaderPath(article.title, wiki);
         const parsed = parseInfobox(article.wikitext);
 
         if (!parsed) {
@@ -111,13 +128,15 @@ export const geoWikiRouter = createTRPCRouter({
    */
   searchWikiPages: cachedPublicProcedure
     .input(
-      z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) })
+      realmScopeInput.extend({
+        query: z.string().min(1).max(100),
+        limit: z.number().min(1).max(20).default(10),
+      })
     )
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
 
-      // Try ixwiki first (MySQL, ~30ms), then iiwiki (HTTP, ~400ms)
-      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+      for (const wiki of await realmWikis(ctx, input.realm)) {
         const results = await searchPages(input.query, input.limit, wiki);
         if (results.length > 0) {
           return {
@@ -125,10 +144,7 @@ export const geoWikiRouter = createTRPCRouter({
             results: results.map((r) => ({
               title: r.title,
               description: "",
-              url:
-                wiki === "ixwiki"
-                  ? `/wiki/${encodeURIComponent(r.title)}`
-                  : `https://iiwiki.com/wiki/${encodeURIComponent(r.title)}`,
+              url: wikiReaderPath(r.title, wiki),
             })),
           };
         }

@@ -368,6 +368,7 @@ interface UseWorldMapLayersProps {
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
   fullLayerDataRef: React.MutableRefObject<Map<string, FeatureCollection>>;
   theme?: MapTheme;
+  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
   showOceanLabels?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;
@@ -383,7 +384,7 @@ export function useWorldMapLayers({
   labelFeaturesRef,
   fullLayerDataRef,
   theme,
-  showOceanLabels = true,
+  showOceanLabels = false,
   labelsVisible = true,
 }: UseWorldMapLayersProps) {
   useEffect(() => {

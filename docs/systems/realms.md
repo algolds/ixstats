@@ -90,4 +90,13 @@ The realm page (`/r/[realm]`) links to the board.
 - Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
-- There is no navigation entry for `/realms` yet.
+
+## 5. Map and transport isolation
+
+- Transport routes and hubs take their owning country's `realmId` when created (AT-1). Rows created before this
+  were all saved to IxWorld: run `bun run db:backfill-transport-realm` (dry run) and then with `-- --apply`. It is
+  idempotent and leaves rows with no owning country where they are.
+- The flag lookup by country name (`countries.flags.resolveBatch`) is scoped to the viewer's realm, or `?realm=` (AT-18).
+- IxWorld's ocean labels and guided tour show only on IxWorld's map (AT-2).
+- Map wiki lookups (`geoWiki.*`) use the wiki the realm's lore index was imported from (its `RealmPage.wikiSource`),
+  and link to the in-site reader. IxWorld, and a realm with no lore index, keep ixwiki then iiwiki (AT-12).
