@@ -15,7 +15,7 @@ module.exports = {
       name: "ixstats-cron",
       cwd,
       script: "cron-runner.mjs",
-      interpreter: "node",
+      interpreter: "bun",
       env: {
         NODE_ENV: "production",
         // Comma-separated job names, or "*". Enable one per release cycle; see
@@ -31,7 +31,7 @@ module.exports = {
       name: "ixstats-ws",
       cwd,
       script: "ws-backend.mjs",
-      interpreter: "node",
+      interpreter: "bun",
       env: {
         NODE_ENV: "production",
         WS_BACKEND_PORT: "3551",
