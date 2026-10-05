@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Coins, Wallet } from "iconoir-react";
+import { Coins, GraphUp, Wallet } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
 import { Card, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -59,7 +59,9 @@ function Credits({ amount, prefix = "" }: { amount: number; prefix?: string }) {
 function EarningsRows({ earnings }: { earnings: TodayEarnings }) {
   return (
     <Card padding="sm" className="space-y-2">
-      <p className="text-footnote text-label font-medium">Today&apos;s earnings</p>
+      <CardTitle icon={<GraphUp />} className="text-footnote">
+        Today&apos;s earnings
+      </CardTitle>
       <div className="space-y-1">
         {earnings.sources.map((source) => (
           <Row key={source.type} label={source.label} muted>
