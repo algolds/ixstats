@@ -199,6 +199,22 @@ describe("Manage permissions", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("accepts a banner uploaded through the image upload route", async () => {
+    const db = makeDb();
+    const uploaded = "/images/uploads/uploaded_1759600000000_ab12cd34_banner.png";
+    await callerAs(FOUNDER, db).region.updateAppearance({ slug: "eurth", bannerUrl: uploaded });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { bannerUrl: uploaded },
+    });
+    await expect(
+      callerAs(FOUNDER, db).region.updateAppearance({
+        slug: "eurth",
+        bannerUrl: "/images/uploads/../../etc/passwd",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("refuses a thumbnail change from an officer without the appearance power", async () => {
     const db = makeDb();
     await expect(

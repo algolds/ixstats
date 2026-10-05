@@ -16,6 +16,7 @@ import {
 } from "~/components/ui/select";
 import { cn, createUrl, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact, timeAgo } from "~/lib/format/compact";
+import { assetUrl } from "~/lib/base-path";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -275,7 +276,11 @@ export function EmbassiesPanel({ overview }: { overview: Overview }) {
               className="hover:bg-fill-4 rounded-row text-label text-body flex items-center gap-2 p-2"
             >
               {realm.thumbnail ? (
-                <img src={realm.thumbnail} alt="" className="size-5 rounded-sm object-cover" />
+                <img
+                  src={assetUrl(realm.thumbnail) ?? ""}
+                  alt=""
+                  className="size-5 rounded-sm object-cover"
+                />
               ) : (
                 <span className="bg-fill-3 size-5 rounded-sm" aria-hidden="true" />
               )}

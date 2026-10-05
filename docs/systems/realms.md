@@ -176,12 +176,18 @@ embassies, board restrictions and polls go with it, and its board group is deact
 
 ### Manage tab (`/r/[realm]/manage`)
 
-Sections follow the caller's powers: **Appearance** (banner and thumbnail as `https://` addresses
-(`isRealmImageUrl`), description, up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
+Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
+address; description; up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
 sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
 options, optional end date) and **Board moderation**.
+
+**Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
+(`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG
+sanitized), the same path flags and coats of arms use, and keep the address field as an alternative.
+`updateAppearance` accepts only an `https://` address or a file that route produced (`/images/uploads/uploaded_…`,
+`isRealmImageUrl`); pages render either through `assetUrl`.
 
 ## 5. Known gaps
 
@@ -190,7 +196,6 @@ options, optional end date) and **Board moderation**.
   moment the nation changes hands.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
 - A mute stops board posts, not chat messages.
-- The banner is an image address; there is no upload.
 - Happenings has no history page beyond the latest 15 items.
 
 ## 6. Map and transport isolation

@@ -7,6 +7,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { cn, createUrl } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
+import { assetUrl } from "~/lib/base-path";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -45,7 +46,11 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
     <header className="border-separator bg-surface rounded-card overflow-hidden border">
       <div className="bg-fill-3 relative h-32 w-full sm:h-44">
         {realm.bannerUrl ? (
-          <img src={realm.bannerUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={assetUrl(realm.bannerUrl) ?? ""}
+            alt=""
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Globe className="text-label-secondary size-10" aria-hidden="true" />
@@ -57,7 +62,7 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
         <div className="flex items-start gap-3">
           {realm.thumbnail && (
             <img
-              src={realm.thumbnail}
+              src={assetUrl(realm.thumbnail) ?? ""}
               alt=""
               className="border-separator rounded-row -mt-12 size-16 shrink-0 border object-cover sm:-mt-14 sm:size-20"
             />

@@ -53,8 +53,19 @@ export const STAFF_FOUNDER_ID = "system";
 
 export const MAX_OFFICERS = 12;
 
-/** A realm banner or thumbnail: an `https://` image address. Empty means "none". */
+/**
+ * An image uploaded through `/api/upload/image` (which checks the type and the 5MB limit, and sanitizes SVG): it
+ * is served from `UPLOADS_URL_PREFIX` (`src/server/shared/upload-storage.ts`) under a generated `uploaded_…` name.
+ */
+const UPLOADED_IMAGE = /^\/images\/uploads\/uploaded_[A-Za-z0-9_.-]+$/;
+
+/**
+ * A realm banner or thumbnail: an `https://` image address, or an image uploaded through the image upload route.
+ * Empty means "none".
+ */
 export function isRealmImageUrl(url: string): boolean {
   const value = url.trim();
-  return value === "" || /^https:\/\/[^\s]+$/i.test(value);
+  if (value === "") return true;
+  if (UPLOADED_IMAGE.test(value)) return !value.includes("..");
+  return /^https:\/\/[^\s]+$/i.test(value);
 }

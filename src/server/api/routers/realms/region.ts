@@ -57,12 +57,12 @@ const officerInput = z.object({
   title: z.string().trim().min(1).max(60),
   powers: z.array(z.enum(REALM_POWERS)).max(REALM_POWERS.length),
 });
-/** A banner or thumbnail: an https:// image address (see `isRealmImageUrl`), or "" for none. */
+/** A banner or thumbnail: an https:// address or an uploaded image (see `isRealmImageUrl`), or "" for none. */
 const realmImage = z
   .string()
   .trim()
   .max(1000)
-  .refine(isRealmImageUrl, "Use an https:// image address");
+  .refine(isRealmImageUrl, "Use an https:// image address or upload an image");
 
 export const realmRegionRouter = createTRPCRouter({
   /** The front page and header: banner, stats, factbook, officers, embassies, poll, board preview. */
