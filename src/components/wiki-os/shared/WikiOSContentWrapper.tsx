@@ -4,6 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { cn } from "~/lib/utils/cn";
 
 interface WikiOSContentWrapperProps {
   title?: string;
@@ -56,15 +57,30 @@ export function WikiOSContentWrapper({
     }
   }, [pathname]);
 
+  // The article tools stay in reach on long articles: sticky under the Halo band on chrome, in the
+  // raised layer so the page header's own z-sticky toolbar (compact title) always paints above it.
+  const stickyTools =
+    "facet-chrome rounded-card z-raised sticky top-(--shell-top-offset) mx-2 mb-4";
+
   return (
     <main ref={contentRef} className="wikios-content relative min-w-0 flex-1">
       {title ? (
         <>
           <PageHeader title={title.replace(/_/g, " ")} actions={actions} />
-          {tabs && <div className="px-2 pb-4">{tabs}</div>}
+          {tabs && (
+            <div data-slot="wiki-article-tools" className={cn(stickyTools, "px-2 py-1")}>
+              {tabs}
+            </div>
+          )}
         </>
       ) : (
-        <div className="flex flex-wrap items-center gap-2 px-2 pt-2 pb-4">
+        <div
+          data-slot={tabs ? "wiki-article-tools" : undefined}
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            tabs ? cn(stickyTools, "mt-2 px-2 py-1") : "px-2 pt-2 pb-4"
+          )}
+        >
           {tabs}
           <div className="ml-auto flex items-center gap-2">{actions}</div>
         </div>
