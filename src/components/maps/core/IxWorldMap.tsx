@@ -117,6 +117,7 @@ interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   overlayData?: Record<string, unknown>;
   onRouteClick?: (routeId: string) => void;
+  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
   showOceanLabels?: boolean;
 }
 
@@ -151,7 +152,7 @@ const IxWorldMap = memo(
       onZoomChange,
       overlayData,
       onRouteClick,
-      showOceanLabels = true,
+      showOceanLabels = false,
     },
     ref
   ) {

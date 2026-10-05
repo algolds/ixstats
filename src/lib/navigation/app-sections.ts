@@ -437,6 +437,7 @@ export const APPS: readonly AppDefinition[] = [
     // the sports sections carry their own tint, which the sidebar applies while one is current.
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
+      { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
       { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy, tint: "sports" },
       { id: "myclub", label: "MyClub", href: "/myclub", icon: Group, tint: "sports" },
     ],

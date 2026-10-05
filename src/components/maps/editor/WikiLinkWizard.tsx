@@ -18,6 +18,7 @@ import { useDebounce } from "~/hooks/useDebounce";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
 import { Card } from "~/components/ui/card";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 
 interface WikiImportableFields {
   population?: number;
@@ -156,8 +157,10 @@ function WikiSearch({
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery, 300);
 
+  const realm = useMapRealm();
+
   const { data: searchResults, isLoading: searchLoading } = api.geoWiki.searchWikiPages.useQuery(
-    { query: debouncedQuery, limit: 8 },
+    { query: debouncedQuery, limit: 8, realm },
     { enabled: enabled && debouncedQuery.length >= 2, staleTime: 30_000 }
   );
 
@@ -227,10 +230,11 @@ export function WikiLinkWizard({
 }: WikiLinkWizardProps) {
   const [isSearching, setIsSearching] = useState(!value);
   const [showInfobox, setShowInfobox] = useState(false);
+  const realm = useMapRealm();
 
-  // Infobox parse (fires when a page is linked)
+  // Infobox parse (fires when a page is linked); looked up in the map's realm's wiki
   const { data: infobox, isLoading: infoboxLoading } = api.geoWiki.parseWikiInfobox.useQuery(
-    { pageTitle: value! },
+    { pageTitle: value!, realm },
     { enabled: !!value && showInfobox, staleTime: 5 * 60_000 }
   );
 

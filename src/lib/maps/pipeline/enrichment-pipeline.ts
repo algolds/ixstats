@@ -6,6 +6,9 @@
  * - Climate & altitude zone metadata
  * - CountryGeoProfile calculation payloads (climate/elevation distribution, arable land, coastlines)
  * - Procedural GeographicResource placement
+ *
+ * The GeoProfiles and resources are SAMPLE values (AT-9): they come from the centroid and area, not
+ * the terrain, and nothing persists them. The Labs telemetry labels them as sample data.
  * - Initial transport route seeding
  * - SharedVertex boundary graph construction
  */
@@ -93,7 +96,7 @@ export function enrichMapDataset(
     }
   }
 
-  // 2. Compute CountryGeoProfiles
+  // 2. Sample CountryGeoProfiles (placeholder values, not terrain analysis — see header)
   const geoProfiles: GeoProfilePayload[] = countries.map((c) => {
     // Standard baseline profile computation
     const arablePercent = Math.min(65, Math.max(10, 30 + (c.centroid[1] % 20)));
@@ -146,7 +149,9 @@ export function enrichMapDataset(
     };
   });
 
-  log.push(`[Enrichment] Generated ${geoProfiles.length} CountryGeoProfiles`);
+  log.push(
+    `[Enrichment] Generated ${geoProfiles.length} sample CountryGeoProfiles (placeholder values)`
+  );
 
   // 3. Generate Geographic Resources based on terrain and profiles
   const resources: ResourcePlacementPayload[] = [];
@@ -191,7 +196,9 @@ export function enrichMapDataset(
     }
   }
 
-  log.push(`[Enrichment] Placed ${resources.length} GeographicResource points`);
+  log.push(
+    `[Enrichment] Placed ${resources.length} sample GeographicResource points (placeholder values)`
+  );
 
   // 4. Extract Shared Vertices for Border Editor graph
   const sharedVertices: SharedVertexPayload[] = [];

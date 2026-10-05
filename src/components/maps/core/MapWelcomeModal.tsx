@@ -32,6 +32,7 @@ const STORAGE_KEY = "ixworld-welcome-seen";
 interface MapWelcomeModalProps {
   /** Only show after the map is ready */
   isMapReady: boolean;
+  /** Omitted when the map has no tour (non-IxWorld realms); the tour button is then hidden. */
   onStartTour?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
@@ -296,17 +297,19 @@ export function MapWelcomeModal({
           onPageChange={setCurrentPage}
           finalActions={
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  handleClose();
-                  onStartTour?.();
-                }}
-              >
-                <Compass aria-hidden />
-                Take a tour
-              </Button>
+              {onStartTour && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleClose();
+                    onStartTour();
+                  }}
+                >
+                  <Compass aria-hidden />
+                  Take a tour
+                </Button>
+              )}
               <Button
                 size="sm"
                 onClick={handleClose}

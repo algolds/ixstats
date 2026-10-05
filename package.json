@@ -43,6 +43,7 @@
     "cleanup:logs": "bun scripts/cleanup-logs.ts",
     "clerk:setup": "node scripts/setup/setup-clerk-dev.js",
     "cron:check": "bun scripts/cron/check-cron-jobs.ts",
+    "db:backfill-transport-realm": "bun scripts/realms/backfill-transport-realm.ts",
     "db:backup": "bun scripts/setup/backup-db.ts",
     "db:bootstrap": "bun scripts/setup/bootstrap-dev-db.ts",
     "db:generate": "prisma generate",

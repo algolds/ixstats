@@ -33,6 +33,7 @@ import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 import { BetaNotice, MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
+import { isIxWorldView } from "~/lib/realms/realm-ids";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -280,6 +281,8 @@ function MapToolbars({
 interface MapOverlaysProps {
   state: MapState;
   tour: ReturnType<typeof useMapTour>;
+  /** The IxWorld tour is offered only on IxWorld's map. */
+  tourAvailable: boolean;
   showLoading: boolean;
   showControls: boolean;
   mapReady: boolean;
@@ -294,6 +297,7 @@ interface MapOverlaysProps {
 function MapOverlays({
   state,
   tour,
+  tourAvailable,
   showLoading,
   showControls,
   mapReady,
@@ -312,7 +316,7 @@ function MapOverlays({
       {showControls && (
         <MapWelcomeModal
           isMapReady={mapReady}
-          onStartTour={tour.startTour}
+          onStartTour={tourAvailable ? tour.startTour : undefined}
           isOpen={isWelcomeOpen}
           onClose={onCloseWelcome}
         />
@@ -380,6 +384,8 @@ export function MapContainer({
     retry: false,
   });
   const userCountryId = userProfile?.countryId ?? null;
+  // Ocean labels and the guided tour describe IxWorld only (AT-2).
+  const ixWorld = isIxWorldView(realm, userProfile?.country?.realmId);
 
   // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
   // fetched after useMapState runs, so they are handed over through a ref-backed getter.
@@ -522,6 +528,7 @@ export function MapContainer({
         initialZoom={initialZoom}
         overlayData={deferredOverlayData}
         onRouteClick={state.setSelectedRouteId}
+        showOceanLabels={ixWorld}
       />
 
       <MapToolbars
@@ -565,18 +572,22 @@ export function MapContainer({
         sidePanelOpen={sidePanelOpen}
       />
 
-      <MapInfoPanels
-        state={state}
-        pin={pin}
-        mapRef={mapRef}
-        countryPanelOpen={countryPanelOpen}
-        featurePanelOpen={featurePanelOpen}
-        canEdit={!!userCountryId}
-      />
+      {/* Feature panels read the wiki of the realm this map shows */}
+      <MapRealmProvider value={realm}>
+        <MapInfoPanels
+          state={state}
+          pin={pin}
+          mapRef={mapRef}
+          countryPanelOpen={countryPanelOpen}
+          featurePanelOpen={featurePanelOpen}
+          canEdit={!!userCountryId}
+        />
+      </MapRealmProvider>
 
       <MapOverlays
         state={state}
         tour={tour}
+        tourAvailable={ixWorld}
         showLoading={showLoading}
         showControls={showControls}
         mapReady={mapReady}

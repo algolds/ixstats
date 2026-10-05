@@ -2,11 +2,12 @@ import { z } from "zod";
 import { createTRPCRouter, cachedStaticProcedure } from "~/server/api/trpc";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { realmScopeInput, realmWhere } from "~/server/api/trpc/realm-scope";
 
 export const flagsProcedures = createTRPCRouter({
   resolveBatch: cachedStaticProcedure
     .input(
-      z.object({
+      realmScopeInput.extend({
         countryNames: z.array(z.string()),
         fallbackPolicy: z.enum(["commons-only", "fictional-wiki"]).optional(),
       })
@@ -15,11 +16,12 @@ export const flagsProcedures = createTRPCRouter({
       const result: Record<string, string | null> = {};
       const missingNames: string[] = [];
 
-      // 1. Check database for known country flags
+      // 1. Check database for known country flags. Names are unique per realm only (AT-18).
       if (input.countryNames.length > 0) {
         const dbCountries = await ctx.db.country.findMany({
           where: {
             name: { in: input.countryNames },
+            ...(await realmWhere(ctx, input.realm)),
           },
           select: {
             name: true,
