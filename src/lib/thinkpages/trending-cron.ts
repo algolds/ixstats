@@ -14,6 +14,7 @@ import {
   topicRank,
   type EngagementEvent,
 } from "./trending";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 interface ThinkPagesTrendingResult {
   eventsConsidered: number;
@@ -32,41 +33,53 @@ type Db = (typeof import("~/server/db"))["db"];
 
 async function loadEvents(db: Db, since: Date): Promise<EngagementEvent[]> {
   const [reactions, replies, reposts] = await Promise.all([
-    db.postReaction.findMany({
-      where: { timestamp: { gte: since } },
-      select: {
-        postId: true,
-        accountId: true,
-        timestamp: true,
-        account: { select: { clerkUserId: true } },
-      },
-    }),
-    db.thinkpagesPost.findMany({
-      where: {
-        parentPostId: { not: null },
-        createdAt: { gte: since },
-        visibility: { in: PUBLIC_VISIBILITIES },
-      },
-      select: {
-        parentPostId: true,
-        accountId: true,
-        createdAt: true,
-        account: { select: { clerkUserId: true } },
-      },
-    }),
-    db.thinkpagesPost.findMany({
-      where: {
-        repostOfId: { not: null },
-        createdAt: { gte: since },
-        visibility: { in: PUBLIC_VISIBILITIES },
-      },
-      select: {
-        repostOfId: true,
-        accountId: true,
-        createdAt: true,
-        account: { select: { clerkUserId: true } },
-      },
-    }),
+    findAllById((page) =>
+      db.postReaction.findMany({
+        where: { timestamp: { gte: since } },
+        select: {
+          id: true,
+          postId: true,
+          accountId: true,
+          timestamp: true,
+          account: { select: { clerkUserId: true } },
+        },
+        ...page,
+      })
+    ),
+    findAllById((page) =>
+      db.thinkpagesPost.findMany({
+        where: {
+          parentPostId: { not: null },
+          createdAt: { gte: since },
+          visibility: { in: PUBLIC_VISIBILITIES },
+        },
+        select: {
+          id: true,
+          parentPostId: true,
+          accountId: true,
+          createdAt: true,
+          account: { select: { clerkUserId: true } },
+        },
+        ...page,
+      })
+    ),
+    findAllById((page) =>
+      db.thinkpagesPost.findMany({
+        where: {
+          repostOfId: { not: null },
+          createdAt: { gte: since },
+          visibility: { in: PUBLIC_VISIBILITIES },
+        },
+        select: {
+          id: true,
+          repostOfId: true,
+          accountId: true,
+          createdAt: true,
+          account: { select: { clerkUserId: true } },
+        },
+        ...page,
+      })
+    ),
   ]);
 
   const events: EngagementEvent[] = [];

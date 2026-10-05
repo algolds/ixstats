@@ -32,6 +32,7 @@ import {
   passiveIncomeKey,
   utcDayStart,
 } from "~/lib/vault/vault-passive-income";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 interface PassiveIncomeSummary {
   success: boolean;
@@ -59,15 +60,18 @@ export async function distributePassiveIncome(): Promise<PassiveIncomeSummary> {
 
   try {
     // Users who own a nation, or act as one (legacy link / system-owner override)
-    const usersWithCountries = await db.user.findMany({
-      where: {
-        OR: [{ countryId: { not: null } }, { ownedCountries: { some: {} } }],
-      },
-      include: {
-        country: true,
-        vault: true,
-      },
-    });
+    const usersWithCountries = await findAllById((page) =>
+      db.user.findMany({
+        where: {
+          OR: [{ countryId: { not: null } }, { ownedCountries: { some: {} } }],
+        },
+        include: {
+          country: true,
+          vault: true,
+        },
+        ...page,
+      })
+    );
 
     console.log(`[Passive Income Cron] Found ${usersWithCountries.length} users with countries`);
 

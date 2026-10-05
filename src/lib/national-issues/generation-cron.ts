@@ -11,6 +11,7 @@
 import { db } from "~/server/db";
 import { NationalIssuesEngine } from "./engine";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 interface IssuesGenerationResult {
   countriesChecked: number;
@@ -28,10 +29,13 @@ export async function generateNationalIssues(): Promise<IssuesGenerationResult> 
   if (!GAMEPLAY_FLAGS.issuesAutoGenerate) return result;
 
   // Only evaluate claimed countries (those a user owns) — NPCs don't need an inbox.
-  const owned = await db.country.findMany({
-    where: { ownerUserId: { not: null } },
-    select: { id: true },
-  });
+  const owned = await findAllById((page) =>
+    db.country.findMany({
+      where: { ownerUserId: { not: null } },
+      select: { id: true },
+      ...page,
+    })
+  );
   const countryIds = owned.map((c) => c.id);
   result.countriesChecked = countryIds.length;
 

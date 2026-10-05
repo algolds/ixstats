@@ -6,6 +6,7 @@ import { getNationalIssuesConfig } from "~/lib/national-issues/config";
 import { INTENT_CATEGORY_TO_TEMPLATE, spawnResistanceForIntent } from "~/lib/intent/resistance";
 import type { Category } from "~/lib/intent/assemble";
 import { debitCountryMaintenance, expireLapsedPolicies } from "./lifecycle";
+import { findAllById } from "~/lib/system/find-all-by-id";
 
 interface PolicyMaintenanceResult {
   countriesProcessed: number;
@@ -209,10 +210,13 @@ export async function runPolicyMaintenanceDebits(
     // alongside; both are part of the same 6-hourly maintenance pass).
     result.volatileSpawns = await spawnVolatileIssues();
 
-    const activePolicies = await database.policy.findMany({
-      where: { status: "active" },
-      select: { id: true, countryId: true, name: true, maintenanceCost: true },
-    });
+    const activePolicies = await findAllById((page) =>
+      database.policy.findMany({
+        where: { status: "active" },
+        select: { id: true, countryId: true, name: true, maintenanceCost: true },
+        ...page,
+      })
+    );
 
     const policiesByCountry = new Map<string, typeof activePolicies>();
     for (const p of activePolicies) {
