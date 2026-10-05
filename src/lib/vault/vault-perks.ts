@@ -14,18 +14,13 @@ interface VaultEffectItem {
   [key: string]: unknown;
 }
 
+/** Vault-wide constants and switches. Store prices live on each VaultStoreItem (VT-10). */
 export interface VaultConfig {
   activeDailyCap: number;
   socialDailyCap: number;
   xpPerLevel: number;
   maxStreakBonus: number;
   premiumMultiplier: number;
-  priceGoldenProfileGlow: number;
-  priceNeonCyberFrame: number;
-  priceEliteChatBadge: number;
-  priceLoreRequestToken: number;
-  priceCardCapacity: number;
-  pricePassiveYieldBoost: number;
   isEarningEnabled: boolean;
   isTradingEnabled: boolean;
   isAuctionsEnabled: boolean;
@@ -42,12 +37,6 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   xpPerLevel: 1000,
   maxStreakBonus: 7,
   premiumMultiplier: 1.0,
-  priceGoldenProfileGlow: 500,
-  priceNeonCyberFrame: 750,
-  priceEliteChatBadge: 1000,
-  priceLoreRequestToken: 2500,
-  priceCardCapacity: 5000,
-  pricePassiveYieldBoost: 5000,
   isEarningEnabled: true,
   isTradingEnabled: true,
   isAuctionsEnabled: true,
@@ -64,12 +53,6 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   xpPerLevel: "vault_xpPerLevel",
   maxStreakBonus: "vault_maxStreakBonus",
   premiumMultiplier: "vault_premiumMultiplier",
-  priceGoldenProfileGlow: "vault_priceGoldenProfileGlow",
-  priceNeonCyberFrame: "vault_priceNeonCyberFrame",
-  priceEliteChatBadge: "vault_priceEliteChatBadge",
-  priceLoreRequestToken: "vault_priceLoreRequestToken",
-  priceCardCapacity: "vault_priceCardCapacity",
-  pricePassiveYieldBoost: "vault_pricePassiveYieldBoost",
   isEarningEnabled: "vault_isEarningEnabled",
   isTradingEnabled: "vault_isTradingEnabled",
   isAuctionsEnabled: "vault_isAuctionsEnabled",
@@ -140,24 +123,6 @@ export async function getVaultConfig(db: {
       ),
       premiumMultiplier: parseFloat(
         m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
-      ),
-      priceGoldenProfileGlow: parseFloat(
-        m.vault_priceGoldenProfileGlow ?? String(VAULT_CONFIG_DEFAULTS.priceGoldenProfileGlow)
-      ),
-      priceNeonCyberFrame: parseFloat(
-        m.vault_priceNeonCyberFrame ?? String(VAULT_CONFIG_DEFAULTS.priceNeonCyberFrame)
-      ),
-      priceEliteChatBadge: parseFloat(
-        m.vault_priceEliteChatBadge ?? String(VAULT_CONFIG_DEFAULTS.priceEliteChatBadge)
-      ),
-      priceLoreRequestToken: parseFloat(
-        m.vault_priceLoreRequestToken ?? String(VAULT_CONFIG_DEFAULTS.priceLoreRequestToken)
-      ),
-      priceCardCapacity: parseFloat(
-        m.vault_priceCardCapacity ?? String(VAULT_CONFIG_DEFAULTS.priceCardCapacity)
-      ),
-      pricePassiveYieldBoost: parseFloat(
-        m.vault_pricePassiveYieldBoost ?? String(VAULT_CONFIG_DEFAULTS.pricePassiveYieldBoost)
       ),
       isEarningEnabled:
         m.vault_isEarningEnabled !== undefined
