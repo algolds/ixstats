@@ -1,6 +1,6 @@
 # IxForum
 
-**Last updated:** September 2026
+**Last updated:** October 2026
 
 IxForum is the native community area of IxStats, a server-side bridge to a XenForo
 forum hosted at `forum.ixwiki.com`. Forum data is fetched, cached, and BBCode-transformed
@@ -39,9 +39,9 @@ Embeddable forum user cards live in a separate route group:
 | Boards & threads | Forums, thread lists, threads with paginated posts, member profiles |
 | BBCode transformation | Server-side BBCode→HTML via `transformBBCode` (`src/server/modules/forum/lib/bbcode-transformer.ts`) |
 | Caching | Per-type TTL cache layer (`cachedFetch` / `cacheKey` in `src/server/modules/forum/lib/cache.ts`) |
-| Account linking (IxnayID) | Clerk users link a XenForo account by username via `api.ixnayid.linkForum` / `unlinkForum`; stored on `User.forumUserId` / `forumUsername`. `api.forum.getLinkStatus` reports the link |
+| Account linking (IxnayID) | Users prove they own a XenForo account by putting a code on their forum profile (`api.ixnayid.startForumVerification` / `confirmForumVerification`; `unlinkForum` removes it); stored on `User.forumUserId` / `forumUsername`. `api.forum.getLinkStatus` reports the link |
 | Stash bookmarks | Bookmark threads via the shared Stash system |
-| Moderation | Not exposed in IxStats (moderate on XenForo directly) |
+| Moderation | XenForo only (decision D12): no report or moderator tools in IxStats; the help article `src/content/help/social/forum.md` says so |
 | Forum alerts | Not exposed; forum alerts are expected to route through the global notification system |
 | Widget embeds | Iframe-embeddable forum user cards under `(widget)/forum/cards/` |
 | Private messaging | Not native — `/forum/conversations*` redirects to ThinkShare at `/messages` |

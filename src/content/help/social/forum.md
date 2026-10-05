@@ -29,7 +29,11 @@ Full steps: [IxnayID & Your Passport](/help/getting-started/ixnayid#link-your-fo
 - **Reply**, **edit** or **delete** your own posts, and **react** to others'.
 - Save threads to [Stash](/help/wiki/stash); your saved threads are listed in [Bookmarks](/forum/bookmarks).
 
+## Moderation
+
+Forum moderation happens on the forum itself, not in IxStats. IxStats has no report button and no moderator tools: reports, locked or moved threads, warnings and bans are all handled by the forum's staff on [forum.ixwiki.com](https://forum.ixwiki.com). To report a post, open it on the forum and use its **Report** link. Your forum permissions apply in IxStats too, so if the forum stops you posting or editing, IxStats will as well.
+
 ## Good to know
 
 - Private forum conversations open in [Messages](/help/social/thinkshare).
-- Moderation and forum alerts are handled on the forum itself, not in IxStats.
+- Forum alerts stay on the forum; IxStats shows new threads and replies in its own notifications.
