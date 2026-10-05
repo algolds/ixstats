@@ -9,7 +9,17 @@
 import { useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-let originalTitle: string | null = null;
+
+/** Matches the "(N) " prefix this hook writes, so it can be re-applied or removed. */
+const UNREAD_PREFIX = /^\(\d+\) /;
+
+// The base title is read from document.title at the moment of each write, never cached:
+// pages change the title (usePageTitle, Next metadata) while this hook stays mounted
+// app-wide, so any remembered copy would revert to a stale page's title.
+function withUnreadPrefix(count: number): string {
+  const base = document.title.replace(UNREAD_PREFIX, "");
+  return count > 0 ? `(${count}) ${base}` : base;
+}
 
 /**
  * Hook specifically for unread count and title badge
@@ -31,20 +41,10 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   useEffect(() => {
     if (!enableTitleBadge || typeof document === "undefined") return;
 
-    if (originalTitle === null) {
-      originalTitle = document.title;
-    }
-
-    if (unreadCount > 0) {
-      document.title = `(${unreadCount}) ${originalTitle}`;
-    } else {
-      document.title = originalTitle;
-    }
+    document.title = withUnreadPrefix(unreadCount);
 
     return () => {
-      if (originalTitle !== null && typeof document !== "undefined") {
-        document.title = originalTitle;
-      }
+      if (typeof document !== "undefined") document.title = withUnreadPrefix(0);
     };
   }, [unreadCount, enableTitleBadge]);
 
