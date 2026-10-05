@@ -8,6 +8,8 @@
  *
  * - Blocked and muted accounts' posts are left out of the owner's ThinkPages feeds.
  * - A user who blocked someone cannot be sent direct messages by them.
+ * - In group conversations, blocked accounts' messages are left out of the owner's reads
+ *   (they can still post to the group).
  */
 import type { PrismaClient } from "@prisma/client";
 
@@ -52,6 +54,42 @@ export async function hiddenThinkpagesAccountIds(
     select: { id: true },
   });
   return accounts.map((a) => a.id);
+}
+
+/**
+ * Clerk ids of the users the viewer has blocked, by account or by nation (muted accounts are
+ * not included). Raw `targetUserId`s are kept too, since older rows may already hold a Clerk id.
+ * Empty for anonymous viewers.
+ */
+export async function blockedUserClerkIds(
+  db: Pick<PrismaClient, "userConnection" | "user">,
+  viewerClerkId: string | null | undefined
+): Promise<string[]> {
+  if (!viewerClerkId) return [];
+  const rows = await db.userConnection.findMany({
+    where: { userId: viewerClerkId, connectionType: "blocked" },
+    select: { targetUserId: true, targetCountryId: true },
+  });
+  if (rows.length === 0) return [];
+
+  const targetIds = [...new Set(rows.flatMap((r) => (r.targetUserId ? [r.targetUserId] : [])))];
+  const countryIds = [
+    ...new Set(rows.flatMap((r) => (r.targetCountryId ? [r.targetCountryId] : []))),
+  ];
+  const users = await db.user.findMany({
+    where: {
+      OR: [
+        ...(targetIds.length
+          ? [{ id: { in: targetIds } }, { clerkUserId: { in: targetIds } }]
+          : []),
+        ...(countryIds.length ? [{ countryId: { in: countryIds } }] : []),
+      ],
+    },
+    select: { clerkUserId: true },
+  });
+  return [...new Set([...targetIds, ...users.map((u) => u.clerkUserId)])].filter(
+    (id) => id !== viewerClerkId
+  );
 }
 
 /**

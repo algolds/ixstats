@@ -94,9 +94,22 @@ export class MessagingMessageOperations {
       return createdMsg;
     });
 
-    const otherParticipants = await this.db.conversationParticipant.findMany({
-      where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
-    });
+    let otherParticipants: Array<{ userId: string }> =
+      await this.db.conversationParticipant.findMany({
+        where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
+      });
+    // Group members who blocked the sender are not notified or pushed the message.
+    if ((conv ?? participant.conversation)?.type !== "direct" && otherParticipants.length > 0) {
+      const blocking = new Set(
+        await recipientsBlockingSender(
+          this.db,
+          actorId,
+          otherParticipants.map((p) => p.userId)
+        )
+      );
+      if (blocking.size > 0)
+        otherParticipants = otherParticipants.filter((p) => !blocking.has(p.userId));
+    }
 
     this.notifyRecipients(otherParticipants, targetConvId, input.content);
     this.broadcastNewMessage(otherParticipants, targetConvId, message, actorId, input.content);
