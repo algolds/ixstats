@@ -37,6 +37,13 @@ describe("ThreadHeader", () => {
     expect(screen.getByText(/1,200 replies/)).toBeInTheDocument();
   });
 
+  it("aligns with the forum's content edge through the header's own bleed, not a hand-set margin", () => {
+    const { container } = render(<ThreadHeader thread={thread} onReply={jest.fn()} />);
+    const header = container.querySelector("header")!;
+    expect(header).toHaveClass("-mx-2");
+    expect(header.className.match(/-mx-2/g)).toHaveLength(1);
+  });
+
   it("Reply goes to the composer", () => {
     const onReply = jest.fn();
     render(<ThreadHeader thread={thread} onReply={onReply} />);

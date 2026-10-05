@@ -129,4 +129,12 @@ describe("PageHeader backdrop", () => {
     const { container } = render(<PageHeader title="Help" />);
     expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();
   });
+
+  it("bleeds by its own inner gutter only when asked", () => {
+    const { container, rerender } = render(<PageHeader title="Plain" />);
+    const header = () => container.querySelector("header")!;
+    expect(header()).not.toHaveClass("-mx-2");
+    rerender(<PageHeader title="Plain" bleed />);
+    expect(header()).toHaveClass("-mx-2");
+  });
 });

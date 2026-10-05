@@ -54,7 +54,7 @@ export function ThreadHeader({ thread, onReply }: ThreadHeaderProps) {
 
   return (
     <PageHeader
-      className="-mx-2"
+      bleed
       title={thread.title}
       subtitle={
         <div className="text-footnote flex flex-wrap items-center gap-3 tabular-nums">

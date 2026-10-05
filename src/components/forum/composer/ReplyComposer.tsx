@@ -1,7 +1,7 @@
 "use client";
 // Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, type Ref } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Send, SystemRestart as Loader2 } from "iconoir-react";
 import dynamic from "next/dynamic";
@@ -17,7 +17,13 @@ const GlassPlateEditor = dynamic(
 );
 import { Button } from "~/components/ui/button";
 
+/** What a thread view needs from the composer: put the caret in the editor. */
+export interface ReplyComposerHandle {
+  focus: () => void;
+}
+
 interface ReplyComposerProps {
+  ref?: Ref<ReplyComposerHandle>;
   threadId: number;
   initialText?: string | null;
   onClearQuote?: () => void;
@@ -25,6 +31,7 @@ interface ReplyComposerProps {
 }
 
 export function ReplyComposer({
+  ref,
   threadId,
   initialText,
   onClearQuote,
@@ -34,6 +41,7 @@ export function ReplyComposer({
   const [plainText, setPlainText] = useState("");
   const [bbcode, setBbcode] = useState("");
   const editorRef = useRef<GlassPlateEditorRef>(null);
+  useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }), []);
 
   // Apply initial text (from quoting)
   useEffect(() => {

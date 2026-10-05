@@ -44,6 +44,12 @@ export interface PageHeaderProps {
    * that need one apply the same classes.
    */
   backdrop?: React.ReactNode;
+  /**
+   * For pages that already pad their content (the forum): pulls the header out by its own inner
+   * gutter, so the title and toolbar actions line up with the page's content edge instead of
+   * sitting a gutter further in.
+   */
+  bleed?: boolean;
   className?: string;
 }
 
@@ -93,6 +99,7 @@ export function PageHeader({
   leading,
   actions,
   backdrop,
+  bleed,
   className,
 }: PageHeaderProps) {
   const toolbarRef = React.useRef<HTMLDivElement>(null);
@@ -107,7 +114,13 @@ export function PageHeader({
       // No `isolate`/z-index here: a stacking context would trap the sticky toolbar's `z-sticky`
       // and let later page content paint over the compact bar. The backdrop sits at z-base and the
       // expanded block at z-raised (below z-sticky) instead.
-      className={cn("flex flex-col", backdrop != null && "relative", className)}
+      className={cn(
+        "flex flex-col",
+        backdrop != null && "relative",
+        // Cancels the inner `px-2` gutter (the toolbar and the title block both use it).
+        bleed && "-mx-2",
+        className
+      )}
     >
       {backdrop != null && (
         <div

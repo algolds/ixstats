@@ -9,7 +9,7 @@ import { PostCard } from "~/components/forum/reader/PostCard";
 import { ThreadHeader } from "~/components/forum/reader/ThreadHeader";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
-import { ReplyComposer } from "~/components/forum/composer/ReplyComposer";
+import { ReplyComposer, type ReplyComposerHandle } from "~/components/forum/composer/ReplyComposer";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -22,6 +22,7 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
   const [page, setPage] = useState(initialPage);
   const [quoteText, setQuoteText] = useState<string | null>(null);
   const composerRef = useRef<HTMLDivElement>(null);
+  const composerHandle = useRef<ReplyComposerHandle>(null);
   const { setForumPage } = useForumContext();
 
   const { data, isLoading, error } = api.forum.getThread.useQuery(
@@ -65,8 +66,11 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
     }, 100);
   }, []);
 
+  // Reply is a request to write: bring the composer into view, then put the caret in it (the
+  // editor focuses without scrolling, so the smooth scroll is not cut short).
   const handleReply = useCallback(() => {
     composerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    composerHandle.current?.focus();
   }, []);
 
   if (isLoading) {
@@ -137,6 +141,7 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
       {thread.isOpen && (
         <div ref={composerRef} className="mt-4">
           <ReplyComposer
+            ref={composerHandle}
             threadId={threadId}
             initialText={quoteText}
             onClearQuote={() => setQuoteText(null)}
