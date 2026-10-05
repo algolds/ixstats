@@ -138,6 +138,43 @@ describe("MyCountry header flag banner", () => {
     expect(declare.className).toContain("bg-primary-fill");
   });
 
+  it("drops the title plate and the action pills when there is no flag", () => {
+    mockCountry = { name: "Pelaxia", leader: "Ana" };
+    const { container } = renderBar();
+    expect(container.querySelector('[data-slot="page-header-plate"]')!.className).not.toMatch(
+      /bg-grouped/
+    );
+    for (const name of ["Open public profile", "Edit country"]) {
+      const action = container.querySelector(`[aria-label="${name}"]`)!;
+      expect(action.className).not.toMatch(/bg-grouped/);
+      expect(action.className).not.toContain("rounded-full");
+    }
+  });
+
+  it("drops the plates once the flag image fails, and brings them back for a new flag", () => {
+    const { container, rerender } = renderBar();
+    const plate = () => container.querySelector('[data-slot="page-header-plate"]')!;
+    expect(plate().className).toMatch(/bg-grouped/);
+    fireEvent.error(container.querySelector("img")!);
+    expect(plate().className).not.toMatch(/bg-grouped/);
+    expect(container.querySelector('[aria-label="Edit country"]')!.className).not.toMatch(
+      /bg-grouped/
+    );
+    mockCountry = { name: "Pelaxia", flagUrl: "https://example.test/flags/new.svg" };
+    rerender(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
+    expect(plate().className).toMatch(/bg-grouped/);
+  });
+
+  it("uses plain ghost actions in the compact sticky bar, pills again when expanded", () => {
+    const { container } = renderBar();
+    const edit = () => container.querySelector('[aria-label="Edit country"]')!;
+    expect(edit().className).toMatch(/bg-grouped\/90/);
+    scrollTitleUnderToolbar();
+    expect(edit().className).not.toMatch(/bg-grouped/);
+    expect(edit().className).not.toContain("rounded-full");
+    expect(edit().className).toContain("text-label-secondary");
+  });
+
   it("resets a failed flag load when the flag changes", () => {
     const { container, rerender } = renderBar();
     fireEvent.error(container.querySelector("img")!);

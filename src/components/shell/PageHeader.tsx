@@ -35,8 +35,11 @@ export interface PageHeaderProps {
   back?: { href: string; label?: string };
   /** Thumbnail or avatar before the large title, centred with it (not in the collapsed title). */
   leading?: React.ReactNode;
-  /** Trailing toolbar actions (buttons, a dropdown menu). */
-  actions?: React.ReactNode;
+  /**
+   * Trailing toolbar actions (buttons, a dropdown menu). A function receives whether the header
+   * has collapsed into the compact bar, for actions styled differently over backdrop art.
+   */
+  actions?: React.ReactNode | ((state: { collapsed: boolean }) => React.ReactNode);
   /**
    * Decorative art behind the expanded header. It is clipped to the header's rounded box, fades out
    * once the header collapses, and never reaches the compact toolbar. Readability is the header's
@@ -44,6 +47,11 @@ export interface PageHeaderProps {
    * that need one apply the same classes.
    */
   backdrop?: React.ReactNode;
+  /**
+   * Whether the backdrop actually shows art (default true). A header whose art is missing or failed
+   * keeps the backdrop layout, so nothing shifts, but drops the plate behind the title.
+   */
+  backdropVisible?: boolean;
   /**
    * For pages that already pad their content (the forum): pulls the header out by its own inner
    * gutter, so the title and toolbar actions line up with the page's content edge instead of
@@ -99,6 +107,7 @@ export function PageHeader({
   leading,
   actions,
   backdrop,
+  backdropVisible = true,
   bleed,
   className,
 }: PageHeaderProps) {
@@ -181,7 +190,7 @@ export function PageHeader({
           <div aria-hidden className="w-(--shell-halo-reserve) shrink" />
           {actions && (
             <div className="relative flex min-w-0 flex-1 items-center justify-end gap-2">
-              {actions}
+              {typeof actions === "function" ? actions({ collapsed }) : actions}
             </div>
           )}
         </div>
@@ -199,7 +208,7 @@ export function PageHeader({
           className={cn(
             "flex min-w-0 flex-col gap-1",
             // Sized to the text, so long names are covered too.
-            backdrop != null && cn("rounded-card px-4 py-3", BACKDROP_PLATE)
+            backdrop != null && cn("rounded-card px-4 py-3", backdropVisible && BACKDROP_PLATE)
           )}
         >
           <h1 ref={titleRef} className="text-large-title text-label">

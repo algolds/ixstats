@@ -125,6 +125,41 @@ describe("PageHeader backdrop", () => {
     );
   });
 
+  it("lifts the expanded block above the backdrop, and the sticky toolbar is not inside it", () => {
+    const { container } = render(
+      <PageHeader title="Pelaxia" actions={<button type="button">Go</button>} backdrop={<i />} />
+    );
+    const expanded = container.querySelector('[data-slot="page-header-plate"]')!.parentElement!;
+    expect(expanded.className).toContain("z-raised");
+    expect(expanded.className).not.toContain("z-sticky");
+    const toolbar = container.querySelector('[data-slot="page-header-toolbar"]')!;
+    expect(expanded.contains(toolbar)).toBe(false);
+    expect(toolbar.contains(expanded)).toBe(false);
+  });
+
+  it("keeps the backdrop layout but drops the title plate while the art is not visible", () => {
+    const { container } = render(
+      <PageHeader title="Pelaxia" backdrop={<i />} backdropVisible={false} />
+    );
+    const plate = container.querySelector('[data-slot="page-header-plate"]')!;
+    expect(plate.className).not.toMatch(/bg-grouped/);
+    expect(plate.parentElement!.className).toContain("z-raised");
+  });
+
+  it("passes the collapsed state to a function as actions", () => {
+    render(
+      <PageHeader
+        title="Pelaxia"
+        actions={({ collapsed }) => (
+          <button type="button">{collapsed ? "compact" : "expanded"}</button>
+        )}
+      />
+    );
+    expect(screen.getByRole("button", { name: "expanded" })).toBeInTheDocument();
+    scrollTitle(20, false);
+    expect(screen.getByRole("button", { name: "compact" })).toBeInTheDocument();
+  });
+
   it("is unchanged without a backdrop", () => {
     const { container } = render(<PageHeader title="Help" />);
     expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();

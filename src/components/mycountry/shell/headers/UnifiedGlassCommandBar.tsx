@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -96,22 +96,31 @@ export function UnifiedGlassCommandBar({
     .join(" · ");
 
   const identity = [subtitle, realmName].filter(Boolean).join(" · ");
+  // Pills only over the visible art: not in the compact bar (its own chrome is the backdrop there).
+  const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
+  // The flag whose image failed to load; a different flag is tried afresh. The plates behind the
+  // title and the action pills exist only to sit over the art, so they follow whether it shows.
+  const [failedFlag, setFailedFlag] = useState<string | null>(null);
+  const bannerShowing = Boolean(flagUrl) && failedFlag !== flagUrl;
 
   return (
     <PageHeader
       title={country?.name ?? "MyCountry"}
       // Always present, so the header's padding never jumps when the flag arrives late or fails.
-      backdrop={<FlagBanner key={flagUrl} src={flagUrl} />}
+      backdrop={
+        <FlagBanner src={bannerShowing ? flagUrl : null} onError={() => setFailedFlag(flagUrl)} />
+      }
+      backdropVisible={bannerShowing}
       subtitle={
         <>
           {identity ? <p>{identity}</p> : null}
           <DirectiveStatusLine countryId={country?.id} />
         </>
       }
-      actions={
+      actions={({ collapsed }) => (
         <>
-          <Button asChild variant="ghost" className={cn("text-label-secondary", ACTION_PLATE)}>
+          <Button asChild variant="ghost" className={cn("text-label-secondary", plate(collapsed))}>
             <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
               <User aria-hidden="true" />
               <span className="hidden md:inline">Profile</span>
@@ -121,7 +130,7 @@ export function UnifiedGlassCommandBar({
             type="button"
             variant="ghost"
             onClick={() => router.push("/mycountry/editor")}
-            className={cn("text-label-secondary", ACTION_PLATE)}
+            className={cn("text-label-secondary", plate(collapsed))}
             aria-label="Edit country"
             title="Edit country and territory"
           >
@@ -143,7 +152,7 @@ export function UnifiedGlassCommandBar({
             <span>Declare Directive</span>
           </Button>
         </>
-      }
+      )}
     />
   );
 }
