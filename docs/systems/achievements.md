@@ -111,4 +111,4 @@ See [IxnayID Passport](./ixnayid-passport.md).
 - [API Reference](../reference/api-complete.md)
 - [IxCredits Economy Guide](./ixcredits.md)
 - [WikiOS System Guide](./wikios.md)
-- [Help: Achievements](/help/gameplay/achievements) (source: `src/content/help/gameplay/achievements.md`)
+- Help: Achievements, in-app at `/help/gameplay/achievements` (source: [`src/content/help/gameplay/achievements.md`](../../src/content/help/gameplay/achievements.md))

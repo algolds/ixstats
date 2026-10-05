@@ -4,10 +4,10 @@
 > - ✅ `BuilderGuideContext` / `useBuilderGuide()` (`builder-guide-context.tsx`), mounted in `BuilderRouter.tsx`; per-section `builder-guide-seen-<section>` keys (versioned `"2.0"`).
 > - ✅ `BuilderGuideSheet.tsx` with **Milestones** (`data/contextual-help.ts`) and **Rules** (`data/guide-rules.ts`) tabs, tip box, and "Changes auto-save in draft" footer.
 > - ✅ Triggers: studio header Guide button (`BuilderStudioHeader.tsx`), and first-visit auto-open for Government (create mode) and Economics (`GovernmentStep.tsx`, `EconomyBuilderPage.tsx`).
-> - ✅ `BenchmarkHelpModal`, `GovernmentHelpSystem`, `BuilderHelpWidget` deleted; `FieldHelpTooltip.tsx` kept. `AtomicWelcomeModal` no longer renders in the builder (the builder mounts `AtomicGovernmentComponents` with `standalone`). `EconomicWelcomeModal` is no longer rendered anywhere (only re-exported from its barrel).
+> - ✅ `BenchmarkHelpModal`, `GovernmentHelpSystem`, `BuilderHelpWidget` deleted; `FieldHelpTooltip.tsx` kept. `AtomicWelcomeModal` no longer renders in the builder (the builder mounts `AtomicGovernmentComponents` with `standalone`). `EconomicWelcomeModal` is deleted.
 > - ❌ **Live Insights / `"diagnostics"` tab not built** — `GuideTab` is `"milestones" | "rules"` only.
 > - ❌ Subheader deep-link buttons (`[ ? Component Guide ]`, `[ ? Help ]`, `[ ? Template Guide ]`) are not wired to `openGuide`; the foundation `CountryGrid` "full guide" still opens `BuilderWelcomeModal` (`CountrySelector.tsx`), and non-standalone `AtomicGovernmentComponents` still opens `AtomicWelcomeModal`.
-> - ⚠️ `AtomicWelcomeModal.tsx` / `EconomicWelcomeModal.tsx` files still exist (the former is used outside the builder).
+> - ⚠️ `AtomicWelcomeModal.tsx` still exists (used outside the builder); `EconomicWelcomeModal.tsx` was deleted (checked 2026-10-05).
 
 ## 1. Overview & Problem Statement
 
@@ -15,7 +15,7 @@ The current help architecture in the IxStates Nation Builder is fragmented acros
 1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
 2. **Multiple Viewport-Blocking Centered Modals**:
    - [`AtomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
-   - [`EconomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/economy/atomic/EconomicWelcomeModal.tsx) (Economy component walkthrough)
+   - `EconomicWelcomeModal.tsx` (Economy component walkthrough; since deleted)
    - `BenchmarkHelpModal.tsx` (Country benchmark template guide)
    - `GovernmentHelpSystem.tsx` (Legacy government dialog)
 
