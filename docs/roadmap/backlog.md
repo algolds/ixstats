@@ -172,13 +172,13 @@ See §1 above (password rotation, CSP).
 - **Crisis events:** taxonomy, lifecycle, response postures, mutations, admin UI ([crisis-events.md](../systems/crisis-events.md)); nothing writes `CrisisEvent` rows.
 - **NPC AI:** trait drift (no callers); NPC responses for embassies and treaties; event-fatigue dampening ([npc-ai.md](../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** feed it into trade maths.
-- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
+- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
 - **Autosave rollout:** government/tax hooks, National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../architecture/autosave.md)).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../systems/calculations.md)).
 - The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models are still in the schema after their writers were deleted.
 
 **Atlas & Realms**
-- **Map editor inspector** ([2026-09-11 spec](../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)): telemetry chips, geometry actions (Snap to River, Calculate Centroid, Simplify Polygon, Snap Vertices to Cities, Smooth Spline), batch alignment and parent assignment, optimistic history.
+- **Map editor inspector** ([2026-09-11 spec](../specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)): telemetry chips, geometry actions (Snap to River, Calculate Centroid, Simplify Polygon, Snap Vertices to Cities, Smooth Spline), batch alignment and parent assignment, optimistic history.
 - **Topology validation:** cross-country gap/overlap checks on save.
 - **Named rivers/lakes → trade modifiers:** `computeEconomicGeoModifiers` ignores named features.
 
@@ -202,7 +202,7 @@ See §1 above (password rotation, CSP).
 **Labs**
 - **MyLeague:** boxing bout engine; Golden Box stage config UI and double elimination; patron-saint MyClub UI and Sports → Storyteller write-back.
 - **Onoma:** partial phases 4, 5, 8, 9 ([onoma-roadmap.md](../systems/onoma-roadmap.md)).
-- **Vexel:** external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../specs/vexel-prd.md)).
+- **Vexel:** external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([Vexel PRD](../specs/2026-07-15-vexel-prd.md)).
 
 **Platform**
 - **Rate limiting:** `wikios` mutations (20) wait on #52; `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../operations/rate-limiting.md)).
@@ -235,7 +235,7 @@ See §1 above (password rotation, CSP).
 - Mandate as a gate/multiplier; weekly lever regeneration (game loops :51, :72)
 - Atom-biased issue deck; atom-parameterized fog and regeneration (game loops :136–146)
 - Cross-arena ripple beyond intent resistance (game loops :101)
-- Directives that change transport network speeds ([route travel-time spec](../superpowers/specs/2026-09-12-route-travel-time-design.md) §5)
+- Directives that change transport network speeds ([route travel-time spec](../specs/2026-09-12-route-travel-time-design.md) §5)
 - Edge cases: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../reference/edge-cases.md))
 
 **Vault & cards**
@@ -251,7 +251,7 @@ See §1 above (password rotation, CSP).
 
 **Labs**
 - **Onoma** ([roadmap](../systems/onoma-roadmap.md)): vocabulary timeline slider (:114), language family trees (:115); semantic embeddings / TF-IDF (:121), corpus gap recommender (:122); AI Linguist (:127–128), free-text translator (:147), dialect branch merging (:153); Phase 10 AI agents (:158); platform integration: NPC dynasties, map toponyms, MyCountry demonyms (:175–180).
-- **MyLeague / MySports** ([PRD](../specs/myleague-v1-prd.md), [MySports v0](../specs/mysports-v0.md)): AegisCore engine and sport DSL; dynasty detection, significance scoring, national leaderboards; market-currency club valuations; promotion/relegation bulletin; broadcast mode, live speed, momentum graph, `<AthleteCard>`; bid-distribution transfer UI, institutional management, scouting, medical, academy.
+- **MyLeague / MySports** ([PRD](../specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../specs/2026-09-22-mysports-v0.md)): AegisCore engine and sport DSL; dynasty detection, significance scoring, national leaderboards; market-currency club valuations; promotion/relegation bulletin; broadcast mode, live speed, momentum graph, `<AthleteCard>`; bid-distribution transfer UI, institutional management, scouting, medical, academy.
 - **Vexel:** P1 templates, conflict detection, personal arms, keyboard shortcuts; P2 items 1–10.
 - **Strata & Dynas** labs: roadmap only.
 

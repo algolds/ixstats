@@ -64,13 +64,13 @@ masked in the admin config; sports season and simulation procedures require the 
 - **NPC AI:** apply trait drift (no callers); NPC responses for embassies, alliances and treaties; event-fatigue dampening ([npc-ai.md](../../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** display-only; feed it into trade maths (vision audit :80).
 - **Embassy missions:** not playable.
-- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../../superpowers/specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
+- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
 - **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../../architecture/autosave.md)).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../../systems/calculations.md)).
 - ~~**Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts`~~ ✅ deleted. The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone wrote are still in the schema.
 
 ### Atlas & Realms
-- **Map editor inspector** ([2026-09-11 spec](../../superpowers/specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
+- **Map editor inspector** ([2026-09-11 spec](../../specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md)):
   - coastline/perimeter/transport-density telemetry, Köppen chip, metric/imperial toggle, WikiOS status chip and thumbnail, Narrative Lore card;
   - geometry actions: Snap to River, Calculate Centroid, Simplify Polygon, Snap Vertices to Cities, Smooth Spline;
   - batch alignment and batch parent assignment (batch delete and batch edit already exist);
@@ -100,7 +100,7 @@ masked in the admin config; sports season and simulation procedures require the 
 ### Labs
 - **MyLeague:** boxing bout engine (uses the soccer loop); Golden Box stage config UI and double elimination; patron-saint MyClub UI and Sports → Storyteller write-back.
 - **Onoma:** partial phases 4, 5, 8, 9 ([onoma-roadmap.md](../../systems/onoma-roadmap.md)).
-- **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../../specs/vexel-prd.md)).
+- **Vexel:** add to the Labs menu; full external ornaments (crest, mantling, supporters, compartment); Commons charge seed; embedded attribution; autosave; `[id]/preview` route ([vexel-prd.md](../../specs/2026-07-15-vexel-prd.md)).
 
 ### Platform
 - **Rate limiting:** 347 of 958 procedures use a rate-limited builder, but 274 of those are admin procedures: only 73 non-admin procedures are limited, and 243 mutations are not (234 `protectedProcedure`, 9 `premiumProcedure`; recount 2026-10-05); `X-RateLimit-*` headers; stats endpoint, metrics and Discord alerts ([rate-limiting.md](../../operations/rate-limiting.md)).
@@ -136,7 +136,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - Mandate as a gate/multiplier; weekly lever regeneration (game loops :51, :72)
 - Atom-biased issue deck; atom-parameterized fog and regeneration (game loops :136–146)
 - Cross-arena ripple beyond intent resistance (game loops :101)
-- Statecraft directives that change transport network speeds ([route travel-time spec](../../superpowers/specs/2026-09-12-route-travel-time-design.md) §5)
+- Statecraft directives that change transport network speeds ([route travel-time spec](../../specs/2026-09-12-route-travel-time-design.md) §5)
 - Edge cases never built: tier-transition smoothing, "IMF intervention" recession event, optimistic locking via a `version` column ([edge-cases.md](../../reference/edge-cases.md))
 
 ### Vault & cards
@@ -159,7 +159,7 @@ masked in the admin config; sports season and simulation procedures require the 
   - AI Linguist etymology composer and guardrails (:127–128), free-text translator (:147), dialect branch merging (:153);
   - Phase 10 AI agents (:158);
   - platform integration: NPC dynasties, map toponyms, MyCountry demonyms (:175–180).
-- **MyLeague / MySports** ([PRD](../../specs/myleague-v1-prd.md), [MySports v0](../../specs/mysports-v0.md)):
+- **MyLeague / MySports** ([PRD](../../specs/2026-06-12-myleague-v1-prd.md), [MySports v0](../../specs/2026-09-22-mysports-v0.md)):
   - AegisCore engine and custom sport DSL; `SportDefinition` adapter;
   - dynasty detection, significance scoring, national leaderboards; market-currency club valuations;
   - promotion/relegation news bulletin;
@@ -240,9 +240,9 @@ From the status blocks in [`docs/audits/`](../../audits/):
 
   | Doc | When |
   |---|---|
-  | [realms-foundation](../../superpowers/specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../../superpowers/specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../../superpowers/specs/2026-09-12-route-travel-time-design.md) specs | implemented |
+  | [realms-foundation](../../specs/2026-09-27-realms-foundation-design.md), [realms-eurth](../../specs/2026-09-28-realms-eurth-design.md), [route-travel-time](../../specs/2026-09-12-route-travel-time-design.md) specs | implemented |
   | [map-editor-improvements-overview](../systems/map-editor-improvements-overview.md) | historical |
-  | [myleague-v1-prd](../../specs/myleague-v1-prd.md), [myleague-top5-features](../../systems/myleague-top5-features.md), [sports-llm-commentary](../../research/sports-llm-commentary.md) | implemented |
+  | [myleague-v1-prd](../../specs/2026-06-12-myleague-v1-prd.md), [myleague-top5-features](../../systems/myleague-top5-features.md), [sports-llm-commentary](../../research/sports-llm-commentary.md) | implemented |
   | [myleague-lore-integration](../../systems/myleague-lore-integration.md) | mostly obsolete |
   | [mycountry-vision-audit](../systems/statecraft/mycountry-vision-audit.md) | dated snapshot |
   | [wikios-longevity-workflow](../systems/wikios/wikios-longevity-workflow.md) | round complete |

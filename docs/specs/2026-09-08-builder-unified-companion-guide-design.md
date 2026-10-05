@@ -12,9 +12,9 @@
 ## 1. Overview & Problem Statement
 
 The current help architecture in the IxStates Nation Builder is fragmented across two competing paradigms:
-1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
+1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
 2. **Multiple Viewport-Blocking Centered Modals**:
-   - [`AtomicWelcomeModal.tsx`](../../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
+   - [`AtomicWelcomeModal.tsx`](../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
    - `EconomicWelcomeModal.tsx` (Economy component walkthrough; since deleted)
    - `BenchmarkHelpModal.tsx` (Country benchmark template guide)
    - `GovernmentHelpSystem.tsx` (Legacy government dialog)

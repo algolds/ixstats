@@ -56,8 +56,8 @@ reads 1.4.0 until the RC2 cut.
   Inspector, and tool pages take the full width. MyCountry's flag is the header cover banner, the Overview shows
   domain peeks, and the executive console is URL-driven (`?mode=executive`).
 - Docs: [Facet 4 reference](docs/reference/facet-design-system.md) ·
-  [spec](docs/superpowers/specs/2026-10-04-facet-4-design.md) ·
-  [sidebar spec](docs/superpowers/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
+  [spec](docs/specs/2026-10-04-facet-4-design.md) ·
+  [sidebar spec](docs/specs/2026-10-04-facet-4-sidebar-design.md). The per-app sweep is in progress.
 
 ### 🔁 Seven Audit Loops Closed (PR #49, 2026-09-30)
 

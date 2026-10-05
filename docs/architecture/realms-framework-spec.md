@@ -3,7 +3,7 @@
 **Status:** Decided 2026-09-27 (design Q&A with the owner). Supersedes the earlier multi-tenant PRD
 (`docs/archive/superpowers/specs/2026-07-21-realms-platform-prd.md` — `docs/archive/` is gitignored, so it exists only in local archives), which is historical only.
 **Build phases:** 1 Foundation → 2 Founding → 3 Playing → 4 Social & governance.
-Phase 1 spec: `docs/superpowers/specs/2026-09-27-realms-foundation-design.md`.
+Phase 1 spec: [`docs/specs/2026-09-27-realms-foundation-design.md`](../specs/2026-09-27-realms-foundation-design.md).
 
 ## What a realm is
 
@@ -141,7 +141,7 @@ pulled forward only the pieces listed above (lore index import, nation-page clai
 maps, PNG realm maps, the realm hub, Play as).
 
 **Rulings (E-a..E-w, F-1..F-6):** E-a–E-j are the Eurth design spec's binding decisions
-(`docs/superpowers/specs/2026-09-28-realms-eurth-design.md`) — index lore rather than copy it (E-a), a
+([`docs/specs/2026-09-28-realms-eurth-design.md`](../specs/2026-09-28-realms-eurth-design.md)) — index lore rather than copy it (E-a), a
 5,000-page crawl cap for this slice (E-b), follow only keyword subcategories (E-c), infobox-based nation
 detection (E-d), a script-based one-time import (E-e), claiming creates the `Country` (E-f), a
 realm-suffixed slug on a name collision (E-g), realm-scoped cross-country queries (E-h), a per-realm

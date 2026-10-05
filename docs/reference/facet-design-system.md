@@ -1,6 +1,6 @@
 # Facet design system
 
-The canonical UI reference for Facet 4 (2026-10-04). Design rationale: `docs/superpowers/specs/2026-10-04-facet-4-design.md`.
+The canonical UI reference for Facet 4 (2026-10-04). Design rationale: [`docs/specs/2026-10-04-facet-4-design.md`](../specs/2026-10-04-facet-4-design.md).
 
 Sources of truth: `src/styles/facet/tokens.css` (raw values), `layers.css` (the five layers and the content-type scopes), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `shell.css` (navigation variables), `src/styles/card-art.css` (content art, imported globally) and `src/styles/textures.css`, `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
 

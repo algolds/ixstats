@@ -1,7 +1,7 @@
 # Facet 4 sidebar: one source list
 
-Date: 2026-10-04. Status: implemented (foundation + sidebar); per-app sweep in progress (2026-10-05). Reference: [`docs/reference/facet-design-system.md`](../../reference/facet-design-system.md).
-Parent: `docs/superpowers/specs/2026-10-04-facet-4-design.md` (section 6, sub-project 3).
+Date: 2026-10-04. Status: implemented (foundation + sidebar); per-app sweep in progress (2026-10-05). Reference: [`docs/reference/facet-design-system.md`](../reference/facet-design-system.md).
+Parent: [`docs/specs/2026-10-04-facet-4-design.md`](2026-10-04-facet-4-design.md) (section 6, sub-project 3).
 
 ## 1. Goal
 

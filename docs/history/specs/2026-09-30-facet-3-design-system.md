@@ -1,10 +1,10 @@
 > **Superseded** by Facet 4: see the [Facet 4 reference](../../reference/facet-design-system.md) and its
-> [spec](../../superpowers/specs/2026-10-04-facet-4-design.md) (2026-10-04).
+> [spec](../../specs/2026-10-04-facet-4-design.md) (2026-10-04).
 > Kept for history only; do not follow it for new work.
 
 # Facet 3 — Unified Design System Specification
 
-> **Retired 2026-10-05** to [docs/history/](../README.md). Superseded by Facet 4 ([spec](../../superpowers/specs/2026-10-04-facet-4-design.md)); the current reference is [facet-design-system.md](../../reference/facet-design-system.md).
+> **Retired 2026-10-05** to [docs/history/](../README.md). Superseded by Facet 4 ([spec](../../specs/2026-10-04-facet-4-design.md)); the current reference is [facet-design-system.md](../../reference/facet-design-system.md).
 
 **Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped; **amended by Facet 3.1 — identity (2026-10-01, §16)** ·
 **Replaces:** [Facet v2](../../reference/facet-design-system.md) once Phase 2 lands · **Evidence:**
