@@ -38,7 +38,13 @@ type ActionDb = Pick<
 export async function updateRealmAppearance(
   db: ActionDb,
   actor: RealmActor,
-  input: { slug: string; bannerUrl?: string | null; description?: string | null; tags?: string[] }
+  input: {
+    slug: string;
+    bannerUrl?: string | null;
+    thumbnail?: string | null;
+    description?: string | null;
+    tags?: string[];
+  }
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
   const tags = input.tags
@@ -50,6 +56,7 @@ export async function updateRealmAppearance(
     where: { id: realm.id },
     data: {
       ...(input.bannerUrl !== undefined && { bannerUrl: input.bannerUrl || null }),
+      ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail || null }),
       ...(input.description !== undefined && { description: input.description || null }),
       ...(tags && { tags }),
     },

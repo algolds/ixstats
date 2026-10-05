@@ -448,6 +448,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     select: {
       description: true,
       bannerUrl: true,
+      thumbnail: true,
       tags: true,
       factbookWikitext: true,
       factbookUpdatedAt: true,
@@ -527,7 +528,12 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     isFounder,
     archived: staff.status === "archived",
     appearance: can("appearance")
-      ? { description: realm.description, bannerUrl: realm.bannerUrl, tags: realm.tags }
+      ? {
+          description: realm.description,
+          bannerUrl: realm.bannerUrl,
+          thumbnail: realm.thumbnail,
+          tags: realm.tags,
+        }
       : null,
     factbook: can("appearance")
       ? { wikitext: realm.factbookWikitext ?? "", updatedAt: realm.factbookUpdatedAt }

@@ -175,6 +175,40 @@ describe("Manage permissions", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
+
+  it("lets appearance officers change the thumbnail, https only (AT-8)", async () => {
+    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["appearance"] }] }));
+    await callerAs(OFFICER, db).region.updateAppearance({
+      slug: "eurth",
+      thumbnail: "https://img.example/thumb.png",
+    });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { thumbnail: "https://img.example/thumb.png" },
+    });
+    await callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", thumbnail: null });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { thumbnail: null },
+    });
+    await expect(
+      callerAs(OFFICER, db).region.updateAppearance({
+        slug: "eurth",
+        thumbnail: "http://img.example/thumb.png",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("refuses a thumbnail change from an officer without the appearance power", async () => {
+    const db = makeDb();
+    await expect(
+      callerAs(OFFICER, db).region.updateAppearance({
+        slug: "eurth",
+        thumbnail: "https://img.example/thumb.png",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("embassies", () => {
@@ -491,5 +525,75 @@ describe("overview and happenings", () => {
       "Aurelia was founded",
     ]);
     expect(items[0]?.href).toBe("/r/terra");
+  });
+});
+
+describe("deleting a realm (AT-8)", () => {
+  function deletableDb(countries = 0, regions = 0) {
+    const db = mockDb();
+    db.realm.findUnique.mockResolvedValue({
+      id: "eurth",
+      slug: "eurth",
+      name: "Eurth",
+      _count: { countries },
+    });
+    db.mapLayer.count.mockResolvedValue(regions);
+    db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
+    return db;
+  }
+
+  it("is for site admins only", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(FOUNDER, db).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
+    ).rejects.toThrow();
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("never deletes IxWorld", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixworld" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("needs the realm's slug typed", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "Eurth!" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuses a realm that still has nations or map regions, and moves nothing", async () => {
+    const withNations = deletableDb(3);
+    await expect(
+      callerAs(ADMIN, withNations, admin).region.deleteRealm({
+        realmId: "eurth",
+        confirmSlug: "eurth",
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("3 nations") });
+    expect(withNations.realm.delete).not.toHaveBeenCalled();
+    expect(withNations.country.updateMany).not.toHaveBeenCalled();
+
+    const withMap = deletableDb(0, 12);
+    await expect(
+      callerAs(ADMIN, withMap, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
+    ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("map regions") });
+    expect(withMap.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("deletes an empty realm and retires its board", async () => {
+    const db = deletableDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: " eurth " })
+    ).resolves.toEqual({ success: true, slug: "eurth" });
+    expect(db.thinktankGroup.updateMany).toHaveBeenCalledWith({
+      where: { id: "board1" },
+      data: { isActive: false },
+    });
+    expect(db.realmBoard.delete).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
+    expect(db.realm.delete).toHaveBeenCalledWith({ where: { id: "eurth" } });
   });
 });

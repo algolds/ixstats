@@ -3,6 +3,7 @@ import { RealmsTab } from "~/app/admin/realms/_components/RealmsTab";
 
 const mutate = jest.fn();
 const assignFounder = jest.fn();
+const deleteRealm = jest.fn();
 const realm = {
   id: "r_eurth",
   slug: "eurth",
@@ -34,6 +35,7 @@ jest.mock("~/trpc/react", () => ({
         assignFounder: {
           useMutation: () => ({ mutateAsync: assignFounder, isPending: false }),
         },
+        deleteRealm: { useMutation: () => ({ mutate: deleteRealm, isPending: false }) },
       },
     },
   },
@@ -71,5 +73,30 @@ describe("RealmsTab nation cap (decision 15)", () => {
     );
     // The founder was left as it was: nothing to assign.
     expect(assignFounder).not.toHaveBeenCalled();
+  });
+});
+
+describe("RealmsTab delete (AT-8)", () => {
+  beforeEach(() => deleteRealm.mockClear());
+
+  it("explains that a realm with nations is archived instead, with no way to delete it", () => {
+    render(<RealmsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Delete Eurth" }));
+    expect(screen.getByText(/never releases or moves nations/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete realm" })).not.toBeInTheDocument();
+  });
+
+  it("deletes an empty realm once its slug is typed", () => {
+    realm._count.countries = 0;
+    render(<RealmsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Delete Eurth" }));
+    const confirm = screen.getByRole("button", { name: "Delete realm" });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Realm slug" }), {
+      target: { value: "eurth" },
+    });
+    fireEvent.click(confirm);
+    expect(deleteRealm).toHaveBeenCalledWith({ realmId: "r_eurth", confirmSlug: "eurth" });
+    realm._count.countries = 12;
   });
 });

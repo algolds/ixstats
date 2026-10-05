@@ -4,24 +4,35 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { MAX_REALM_TAGS, REALM_TAGS, type RealmTag } from "~/lib/realms/realm-region";
+import {
+  isRealmImageUrl,
+  MAX_REALM_TAGS,
+  REALM_TAGS,
+  type RealmTag,
+} from "~/lib/realms/realm-region";
 import { ManageSection } from "./ManageSection";
+import { RealmImageField } from "./RealmImageField";
 
-/** Banner image, description and directory tags. */
+/** Banner image, thumbnail, description and directory tags. */
 export function AppearanceSection({
   slug,
   appearance,
 }: {
   slug: string;
-  appearance: { bannerUrl: string | null; description: string | null; tags: string[] };
+  appearance: {
+    bannerUrl: string | null;
+    thumbnail: string | null;
+    description: string | null;
+    tags: string[];
+  };
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
   const [bannerUrl, setBannerUrl] = useState(appearance.bannerUrl ?? "");
+  const [thumbnail, setThumbnail] = useState(appearance.thumbnail ?? "");
   const [description, setDescription] = useState(appearance.description ?? "");
   const [tags, setTags] = useState<string[]>(appearance.tags);
   const save = api.realms.region.updateAppearance.useMutation({
@@ -32,35 +43,29 @@ export function AppearanceSection({
     },
     onError: (error) => notify.error("Could not save", error.message),
   });
-  const bannerOk = bannerUrl.trim() === "" || /^https:\/\/\S+$/i.test(bannerUrl.trim());
+  const imagesOk = isRealmImageUrl(bannerUrl) && isRealmImageUrl(thumbnail);
 
   return (
     <ManageSection
       id="appearance"
       title="Appearance"
-      description="The banner across the top of the realm page, its description and the tags the directory filters by."
+      description="The banner across the top of the realm page, the thumbnail beside its name, its description and the tags the directory filters by."
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="realm-banner">Banner image address</Label>
-          <Input
-            id="realm-banner"
-            value={bannerUrl}
-            onChange={(e) => setBannerUrl(e.target.value)}
-            placeholder="https://"
-            aria-invalid={!bannerOk}
-          />
-          {!bannerOk && (
-            <p className="text-destructive text-footnote">Use an https:// image address.</p>
-          )}
-          {bannerOk && bannerUrl.trim() && (
-            <img
-              src={bannerUrl.trim()}
-              alt="Banner preview"
-              className="border-separator rounded-row mt-1 h-28 w-full border object-cover"
-            />
-          )}
-        </div>
+        <RealmImageField
+          id="realm-banner"
+          label="Banner image"
+          value={bannerUrl}
+          onChange={setBannerUrl}
+          previewClassName="h-28 w-full"
+        />
+        <RealmImageField
+          id="realm-thumbnail"
+          label="Thumbnail"
+          value={thumbnail}
+          onChange={setThumbnail}
+          previewClassName="size-20"
+        />
         <div className="flex flex-col gap-2">
           <Label htmlFor="realm-description">Description</Label>
           <Textarea
@@ -95,11 +100,12 @@ export function AppearanceSection({
         </div>
         <div>
           <Button
-            disabled={!bannerOk || save.isPending}
+            disabled={!imagesOk || save.isPending}
             onClick={() =>
               save.mutate({
                 slug,
                 bannerUrl: bannerUrl.trim() || null,
+                thumbnail: thumbnail.trim() || null,
                 description: description.trim() || null,
                 tags: tags as RealmTag[],
               })

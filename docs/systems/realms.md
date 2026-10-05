@@ -168,10 +168,16 @@ Manage action and makes an archived realm read-only. Officers must own a nation 
 Site admins assign founders in `/admin/realms` (the Founder column, `realms.region.assignFounder`); until then a
 realm is administered by staff.
 
+**Deleting a realm (AT-8):** site admins delete a realm created by mistake from `/admin/realms`
+(`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses IxWorld, and any realm
+that still has nations or map regions: deleting never releases, moves or deletes a nation, so such a realm is
+archived instead (status Archived: read-only, closed to claims). An empty realm's claims, lore index, officers,
+embassies, board restrictions and polls go with it, and its board group is deactivated.
+
 ### Manage tab (`/r/[realm]/manage`)
 
-Sections follow the caller's powers: **Appearance** (banner `https://` address, description, up to five tags
-from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
+Sections follow the caller's powers: **Appearance** (banner and thumbnail as `https://` addresses
+(`isRealmImageUrl`), description, up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
 sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10

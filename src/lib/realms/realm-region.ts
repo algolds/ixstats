@@ -52,3 +52,9 @@ export const embassyPairKey = (a: string, b: string) => [a, b].sort().join(":");
 export const STAFF_FOUNDER_ID = "system";
 
 export const MAX_OFFICERS = 12;
+
+/** A realm banner or thumbnail: an `https://` image address. Empty means "none". */
+export function isRealmImageUrl(url: string): boolean {
+  const value = url.trim();
+  return value === "" || /^https:\/\/[^\s]+$/i.test(value);
+}
