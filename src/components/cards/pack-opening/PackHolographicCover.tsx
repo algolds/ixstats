@@ -67,12 +67,6 @@ const PACK_THEMES: Record<string, PackTheme> = {
     accentSoft: "rgba(234,179,8,0.12)",
     hueRotate: 160,
   },
-  LIMITED: {
-    base: "from-emerald-950 via-teal-900 to-emerald-950",
-    accent: "rgba(16,185,129,0.45)",
-    accentSoft: "rgba(16,185,129,0.12)",
-    hueRotate: 120,
-  },
 };
 
 // Rarity helpers

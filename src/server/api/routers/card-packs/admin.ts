@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { PackType } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 
@@ -25,7 +26,7 @@ export const cardPacksAdminRouter = createTRPCRouter({
         name: z.string().min(1).max(100),
         description: z.string().optional(),
         artwork: z.string().optional(),
-        packType: z.string(),
+        packType: z.nativeEnum(PackType),
         priceCredits: z.number().positive(),
         cardCount: z.number().int().min(1).max(20).default(5),
         guaranteedRarity: z.string().optional(),
@@ -76,7 +77,7 @@ export const cardPacksAdminRouter = createTRPCRouter({
           description: z.string().optional(),
           artwork: z.string().optional().nullable(),
           cardCount: z.number().int().min(1).max(20).optional(),
-          packType: z.string().optional(),
+          packType: z.nativeEnum(PackType).optional(),
           priceCredits: z.number().positive().optional(),
           guaranteedRarity: z.string().optional(),
           isActive: z.boolean().optional(),
