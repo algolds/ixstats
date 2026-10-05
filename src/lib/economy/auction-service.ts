@@ -20,13 +20,17 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth";
+import {
+  publishMarketEvent,
+  type MarketBroadcastMessage,
+  type MarketBroadcastTarget,
+} from "~/server/market-broadcast-bridge";
 
-// market-websocket-server is marked `server-only`; importing it in a pure backend
-// process (the cron under plain Bun) throws. Load it lazily + best-effort so auction
-// completion still runs there — the WS broadcast is just skipped when it can't load.
-// ponytail: best-effort WS; cron skips broadcasts, web server still gets them.
-let _marketWs: { getMarketWebSocketServer: () => any } | null | undefined;
-async function getMarketWs() {
+// market-websocket-server is marked `server-only`; importing it in a pure backend process
+// (the cron under plain Bun) throws, so it loads lazily and best-effort. Events go through
+// the Redis market bridge either way, so cron completions still reach browsers.
+let _marketWs: { getMarketWebSocketServer: () => MarketBroadcastTarget | null } | null | undefined;
+async function getMarketWs(): Promise<MarketBroadcastTarget | null> {
   if (_marketWs === undefined) {
     try {
       _marketWs = await import("~/lib/websocket/market-websocket-server");
@@ -35,6 +39,10 @@ async function getMarketWs() {
     }
   }
   return _marketWs?.getMarketWebSocketServer() ?? null;
+}
+
+async function broadcastMarket(message: MarketBroadcastMessage): Promise<void> {
+  publishMarketEvent(message, await getMarketWs());
 }
 
 type AuctionWithCard = Prisma.CardAuctionGetPayload<{
@@ -304,7 +312,7 @@ export class AuctionService {
         `[Auction Service] Created auction ${auction.id} for card ${params.cardId} by user ${params.userId}`
       );
 
-      (await getMarketWs())?.broadcastAuctionCreated(auction);
+      await broadcastMarket({ type: "auction_created", data: auction });
 
       // Trigger watchlist price alerts (fire-and-forget)
       try {
@@ -546,13 +554,13 @@ export class AuctionService {
 
       // 8. Broadcast bid event via WebSocket
       {
-        const ws = await getMarketWs();
-        if (ws) {
-          const bidder = await db.user.findUnique({
-            where: { id: params.userId },
-            select: { clerkUserId: true },
-          });
-          ws.broadcastBid({
+        const bidder = await db.user.findUnique({
+          where: { id: params.userId },
+          select: { clerkUserId: true },
+        });
+        await broadcastMarket({
+          type: "bid",
+          data: {
             id: `bid_${Date.now()}`,
             auctionId: params.auctionId,
             bidderId: params.userId,
@@ -560,8 +568,8 @@ export class AuctionService {
             amount: params.amount,
             timestamp: Date.now(),
             isAutoBid: false,
-          });
-        }
+          },
+        });
       }
 
       // 9. Notify previous bidder if outbid (fire-and-forget)
@@ -726,10 +734,13 @@ export class AuctionService {
         `[Auction Service] User ${params.userId} bought card instance ${auction.cardInstanceId} via buyout for ${buyoutPrice} IxC`
       );
 
-      (await getMarketWs())?.broadcastAuctionComplete({
-        auctionId: params.auctionId,
-        winnerId: params.userId,
-        finalPrice: buyoutPrice,
+      await broadcastMarket({
+        type: "auction_complete",
+        data: {
+          auctionId: params.auctionId,
+          winnerId: params.userId,
+          finalPrice: buyoutPrice,
+        },
       });
 
       return { success: true };
@@ -821,10 +832,13 @@ export class AuctionService {
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
           );
 
-          (await getMarketWs())?.broadcastAuctionComplete({
-            auctionId,
-            winnerId: auction.currentBidderId,
-            finalPrice,
+          await broadcastMarket({
+            type: "auction_complete",
+            data: {
+              auctionId,
+              winnerId: auction.currentBidderId,
+              finalPrice,
+            },
           });
 
           const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
@@ -872,10 +886,13 @@ export class AuctionService {
           );
 
           // No bids expired — treat as complete/cancelled for WS
-          (await getMarketWs())?.broadcastAuctionComplete({
-            auctionId,
-            winnerId: auction.sellerId,
-            finalPrice: 0,
+          await broadcastMarket({
+            type: "auction_complete",
+            data: {
+              auctionId,
+              winnerId: auction.sellerId,
+              finalPrice: 0,
+            },
           });
 
           await notifyQuietly("No-bid", auctionId, {
@@ -993,10 +1010,13 @@ export class AuctionService {
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);
 
-      (await getMarketWs())?.broadcastAuctionComplete({
-        auctionId: params.auctionId,
-        winnerId: params.userId,
-        finalPrice: 0,
+      await broadcastMarket({
+        type: "auction_complete",
+        data: {
+          auctionId: params.auctionId,
+          winnerId: params.userId,
+          finalPrice: 0,
+        },
       });
 
       return { success: true };

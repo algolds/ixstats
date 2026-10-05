@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { cronHealth } from "~/lib/system/cron-runs";
+import { getEnabledRedisUrl, getSharedRedis } from "~/lib/cache/redis-client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -40,6 +41,15 @@ export async function GET() {
     } catch {
       checks.cron = "unavailable";
     }
+  }
+
+  // Redis carries realtime across processes and shared rate limits; production needs it.
+  // Reported rather than failing the check, so an outage degrades features, not the app.
+  if (!getEnabledRedisUrl()) {
+    checks.redis =
+      process.env.NODE_ENV === "production" ? "disabled (required in production)" : "disabled";
+  } else {
+    checks.redis = getSharedRedis()?.status === "ready" ? "ok" : "not ready";
   }
 
   // Uptime

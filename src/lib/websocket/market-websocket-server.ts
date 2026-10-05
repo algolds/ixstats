@@ -240,6 +240,13 @@ export function initializeMarketWebSocket(
   }
 
   instance = new MarketWebSocketServerInstance(server, path);
+  // Re-emit events other processes publish (bids from the web app, completions from cron).
+  const local = instance;
+  void import("~/server/market-broadcast-bridge")
+    .then(({ startMarketBroadcastSubscriber }) => startMarketBroadcastSubscriber(local))
+    .catch((error: Error) =>
+      console.warn("[MarketWS Server] Cross-process broadcasts unavailable:", error.message)
+    );
   return instance;
 }
 

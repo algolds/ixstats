@@ -71,7 +71,10 @@ function parseEvent(raw: string): ThinkPagesMessageEvent | null {
   }
 }
 
-function createSubscriber(): BroadcastSubscriber | null {
+/** A dedicated Redis subscriber connection, or null when Redis is disabled. Shared by the bridges. */
+export function createBroadcastSubscriber(
+  logPrefix = "[ThinkPagesBridge]"
+): BroadcastSubscriber | null {
   const url = getEnabledRedisUrl();
   if (!url) return null;
   // Subscriber mode needs its own connection; SUBSCRIBE waits for the first connect.
@@ -80,7 +83,7 @@ function createSubscriber(): BroadcastSubscriber | null {
   client.on("error", (err: Error) => {
     if (err.message === lastError) return;
     lastError = err.message;
-    console.warn("[ThinkPagesBridge] Redis subscriber error:", err.message);
+    console.warn(`${logPrefix} Redis subscriber error:`, err.message);
   });
   return {
     subscribe: async (channel) => {
@@ -98,7 +101,7 @@ function createSubscriber(): BroadcastSubscriber | null {
 /** Re-emits published events on the local Socket.IO server. Returns null when Redis is disabled. */
 export function startThinkPagesBroadcastSubscriber(
   server: MessageBroadcaster,
-  subscriber: BroadcastSubscriber | null = createSubscriber()
+  subscriber: BroadcastSubscriber | null = createBroadcastSubscriber()
 ): BroadcastSubscriber | null {
   if (!subscriber) {
     console.warn("[ThinkPagesBridge] Redis disabled; cross-process broadcasts are off");

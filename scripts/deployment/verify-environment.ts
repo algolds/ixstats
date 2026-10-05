@@ -41,7 +41,12 @@ export const PRODUCTION_REQUIRED: ReadonlyArray<{ name: string; minLength: numbe
 ];
 
 // Recommended in production (warnings only)
-const PRODUCTION_RECOMMENDED = ["DISCORD_WEBHOOK_URL", "NEXT_PUBLIC_APP_URL", "REDIS_URL"] as const;
+const PRODUCTION_RECOMMENDED = [
+  "DISCORD_WEBHOOK_URL",
+  "NEXT_PUBLIC_APP_URL",
+  "REDIS_ENABLED",
+  "REDIS_URL",
+] as const;
 
 /** Production-required variables that are missing or shorter than src/env.ts allows. */
 export function checkProductionRequired(env: NodeJS.ProcessEnv = process.env): string[] {

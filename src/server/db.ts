@@ -169,6 +169,9 @@ const createPrismaClient = () => {
   });
 };
 
+/** Rows an unbounded findMany returns before the guard below truncates it. */
+export const UNBOUNDED_FIND_MANY_CAP = 1000;
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -186,11 +189,19 @@ export const db = (globalForPrisma.prisma ??
            *    set `take` explicitly (e.g. `take: 50000`) to bypass this guard.
            *    Example: Map layer queries need all 4000+ altitude features.
            */
-          async findMany({ args, query }) {
-            if (!args.take && !args.cursor) {
-              args.take = 1000;
+          async findMany({ model, args, query }) {
+            if (args.take || args.cursor) return query(args);
+            args.take = UNBOUNDED_FIND_MANY_CAP;
+            const rows = await query(args);
+            // A capped read that comes back full has probably dropped rows silently
+            // (cron jobs walking every country, for example): say so.
+            if (Array.isArray(rows) && rows.length >= UNBOUNDED_FIND_MANY_CAP) {
+              console.warn(
+                `[DATABASE] ${model}.findMany hit the ${UNBOUNDED_FIND_MANY_CAP}-row cap; ` +
+                  "page with take/cursor or set take explicitly"
+              );
             }
-            return query(args);
+            return rows;
           },
         },
       },
