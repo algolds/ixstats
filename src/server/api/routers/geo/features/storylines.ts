@@ -38,7 +38,11 @@ export async function assertStorylineInCountry(
 }
 
 async function afterStorylineWrite(countryId: string) {
-  await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS);
+  // The story pin modal's cached read carries the storyline and its pins.
+  await invalidateCache([
+    ...GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS,
+    "geoFeatures.getStoryPinFull",
+  ]);
   broadcastMapUpdate("storyPin", countryId);
 }
 

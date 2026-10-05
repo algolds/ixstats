@@ -78,7 +78,7 @@ export function IntelligenceAlertsCard({ countryId }: { countryId: string }) {
         >
           <WarningTriangle className="size-4" />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 id="intelligence-alerts-title" className="text-headline text-label">
             Intelligence alerts
           </h2>

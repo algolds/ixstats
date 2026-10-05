@@ -19,6 +19,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { geoFeaturesStorylinesRouter } from "~/server/api/routers/geo/features/storylines";
 import { geoFeaturesStoryPinsRouter } from "~/server/api/routers/geo/features/storyPins";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { invalidateCache } from "~/lib/cache";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = { id: "c1", name: "Aurelia", slug: "aurelia", flag: null };
@@ -104,6 +105,10 @@ describe("storylines (AT-14)", () => {
       data: { countryId: "c1", title: "Founding Wars", description: null, color: "#aa3300" },
     });
     expect(broadcastMapUpdate).toHaveBeenCalledWith("storyPin", "c1");
+    // The story pin modal's cached read (it carries the storyline) is cleared too.
+    expect(invalidateCache).toHaveBeenCalledWith(
+      expect.arrayContaining(["geoFeatures.getAllStoryPins", "geoFeatures.getStoryPinFull"])
+    );
   });
 
   it("rejects a storyline in another country and a bad colour", async () => {
