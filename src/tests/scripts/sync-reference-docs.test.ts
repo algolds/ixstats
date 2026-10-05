@@ -123,7 +123,7 @@ describe("Reference Docs Synchronizer (Plan 169)", () => {
       write("docs/b.md", "# B\n\n## Second section\n");
       write(
         "src/content/help/x.md",
-        "---\ntitle: X\n---\n\n[route](/help/anything) [bad](../nope.md)\n"
+        "---\ntitle: X\n---\n\n## Privacy & security\n\n[route](/help/anything) [app anchor](#privacy-security) [bad](../nope.md)\n"
       );
       write("src/foo/README.md", "# Foo\n");
       write("src/foo/notes.md", "# Notes\n");

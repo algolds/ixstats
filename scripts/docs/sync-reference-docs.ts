@@ -576,7 +576,8 @@ export function generateApiInventoryTableMarkdown(api = extractApiInventory()): 
  * Covers every tracked markdown file named by LINK_CHECK_PATHSPECS (plus the
  * synced IN_SCOPE_DOCS). Checks relative file links and `#anchors` into
  * markdown files using GitHub's heading-slug rules. Links that start with `/`
- * in src/content/help and src/content/legal are in-app routes and are skipped.
+ * in src/content/help and src/content/legal are in-app routes and are skipped,
+ * as are their in-page `#anchors` (app heading ids, checked by help-center.test.ts).
  */
 
 /** Git pathspecs for the markdown the link validator covers. */
@@ -838,8 +839,9 @@ export function validateDocLinks(
       }
       // Web URLs and other schemes (http, https, mailto, …)
       if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
-      // In-app routes in player-facing content
-      if (target.startsWith("/") && isRouteDoc) continue;
+      // In-app routes in player-facing content. Their in-page anchors use the app's own
+      // heading ids (src/lib/markdown-document.ts), which help-center.test.ts checks.
+      if ((target.startsWith("/") || target.startsWith("#")) && isRouteDoc) continue;
       if (target === "" || target === "#") continue;
 
       const hashIdx = target.indexOf("#");
