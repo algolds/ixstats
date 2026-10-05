@@ -212,7 +212,7 @@ shipped system.
 |---|---|---|---|
 | 1 | ✅ **Done (2026-10-05):** `isRealmOpen()` status guard for the hub and claims (later reused by jobs and payouts) | AT-7 | S |
 | 2 | Assign founders (`ownerId`, thumbnail, delete realm). **Partial (2026-10-05):** site admins assign founders in `/admin/realms`; thumbnail upload and delete are open | AT-8 | S |
-| 3 | Claimants see pending and rejected claims; rejection notifies | AT-5 | S |
+| 3 | ✅ **Done (2026-10-05):** claimants see pending, approved and rejected claims (with the reason) on `/realms` and the realm's Nations tab; a rejection notifies them | AT-5 | S |
 | 4 | Builder creates nations in any realm (realm input, nation cap), with prefill from a claimed nation page. **Partial (#49):** the builder is realm-aware with nation caps; prefill is open | AT-3, PF§4 | M |
 | 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | PF§4 | M |
 | 6 | Realm directory filtered by visibility and status. **Partial:** `/realms` lists open realms (#49) and has a sidebar entry in the Realms group (2026-10-05) | AT-6 | M |

@@ -46,6 +46,9 @@ sorted (name, most nations, most active board, newest) and filtered by tag; only
 offered. It shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the realm's cap. The link goes to the realm page, where
 claiming happens (`ClaimableNations`, `realms.claimNationPage`).
 
+Signed-in players with claims see **Your claims** above the list (`realms.myClaims`, the `MyClaims` component): each
+claim's nation and realm, its status (pending review, approved, rejected) and a rejection's reason.
+
 Below the list, a **realm feed** panel shows the ThinkPages feed for one realm. It defaults to the realm of
 the viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector
 switches between realms and All realms.
@@ -128,7 +131,15 @@ board posts, and claimable nations. The sidebar (stacked under the main column b
 - **Happenings** (`realms.region.happenings`): new nations, approved claims, embassies opened, officers
   appointed and the realm's nations' public game events (`ActivityFeed`), newest first. Composed on read.
 
-**Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own. Leaving
+**Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own, then the viewer's
+claims in this realm (`realms.myClaims({ realmSlug })`) and the claimable nations. A claimable nation the viewer
+claimed shows **Pending review**, or the rejection's reason with **Claim again**.
+
+**Claim notices (AT-5):** a rejected claim notifies its claimant (`notifyClaimRejected` in `realms.notices.ts`,
+event `realmsNotification`): a moderator's rejection with its reason, an automatic one when another player took the
+nation first, and rival pending claims turned away by an approval. It goes through `notificationAPI.create`, so the
+recipient's preferences apply (`recipientAccepts`: the system category and minimum urgency). Approvals notify
+through `onNationAssigned` ("Country Assigned"). Leaving
 (`realms.region.abandonNation`) needs the nation's name typed; the nation is released (unclaimed), its board
 restriction cleared, and the player loses an officer post if it was their last nation there.
 

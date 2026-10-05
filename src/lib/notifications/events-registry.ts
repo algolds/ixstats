@@ -122,6 +122,15 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
     defaultEnabled: true,
   },
   {
+    eventKey: "realmsNotification",
+    name: "Realm Notices",
+    description: "Tells a player their realm nation claim was rejected, and why",
+    category: "system",
+    source: "realms",
+    triggerType: "user-action",
+    defaultEnabled: true,
+  },
+  {
     eventKey: "systemNotification",
     name: "System Notification",
     description: "General system-generated notifications and alerts",

@@ -107,6 +107,7 @@ function setup() {
   const deps = {
     fetchPageCreator: jest.fn().mockResolvedValue("Kir"),
     onNationAssigned: jest.fn().mockResolvedValue(undefined),
+    onClaimRejected: jest.fn().mockResolvedValue(undefined),
   };
   return { db, deps, claims: createClaimsService(db, deps) };
 }
@@ -922,5 +923,89 @@ describe("realm status (AT-7)", () => {
     await expect(
       claims.reviewClaim(admin, "cl1", { approve: false, reason: "Realm archived" })
     ).resolves.toEqual({ status: "rejected" });
+  });
+});
+
+describe("claimants see their claims and hear about rejections (AT-5)", () => {
+  const pending = {
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: "c1",
+    realmId: "default",
+    realm: { ownerId: "system", slug: "ixworld" },
+    user: { clerkUserId: "clerk_u1" },
+    country: { name: "Aurelia" },
+  };
+
+  it("a moderator's rejection tells the claimant the nation and the reason", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    await claims.reviewClaim(admin, "cl1", { approve: false, reason: " Not your nation " });
+    expect(deps.onClaimRejected).toHaveBeenCalledWith({
+      clerkUserId: "clerk_u1",
+      nationName: "Aurelia",
+      realmSlug: "ixworld",
+      reason: "Not your nation",
+    });
+  });
+
+  it("an automatic rejection (the nation was taken first) is announced too", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    db.country.findUnique.mockResolvedValue({ ...country, ownerUserId: "u2" });
+    await claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(deps.onClaimRejected).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "clerk_u1",
+        reason: expect.stringContaining("another player"),
+      })
+    );
+  });
+
+  it("an approval tells the rival claimants it turned away", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    db.realmClaim.findMany.mockResolvedValue([{ user: { clerkUserId: "clerk_rival" } }]);
+    await claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { countryId: "c1", status: "pending", id: { not: "cl1" } } })
+    );
+    expect(deps.onClaimRejected).toHaveBeenCalledWith({
+      clerkUserId: "clerk_rival",
+      nationName: "Aurelia",
+      realmSlug: "ixworld",
+      reason: "Another claim for this nation was approved",
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("a failing notice never undoes the decision", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(pending);
+    deps.onClaimRejected.mockRejectedValue(new Error("notifications down"));
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(
+      claims.reviewClaim(admin, "cl1", { approve: false, reason: "Not yours" })
+    ).resolves.toEqual({ status: "rejected" });
+    error.mockRestore();
+  });
+
+  it("myClaims lists only the player's own claims, optionally in one realm, with the reason", async () => {
+    const { db, claims } = setup();
+    await claims.myClaims(actor, "eurth");
+    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "u1", realm: { slug: "eurth" } },
+        orderBy: { createdAt: "desc" },
+        select: expect.objectContaining({ status: true, rejectionReason: true }),
+      })
+    );
+    const select = db.realmClaim.findMany.mock.calls[0][0].select;
+    expect(select).not.toHaveProperty("reviewedBy");
+    await claims.myClaims(actor);
+    expect(db.realmClaim.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { userId: "u1" } })
+    );
   });
 });

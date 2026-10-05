@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { RealmFeed } from "~/app/r/[realm]/_components/RealmFeed";
+import { MyClaims } from "~/app/r/[realm]/_components/MyClaims";
 import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -151,6 +152,8 @@ export default function RealmsDirectoryPage() {
           Worlds you can play in. Each realm has its own nations and a board where they talk.
         </p>
       </header>
+
+      <MyClaims />
 
       {isLoading ? (
         <p className="text-label-secondary text-body">Loading realms…</p>

@@ -70,7 +70,6 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | AT-3 | UNFINISHED | Builder in any realm. Left: prefill from a claimed nation page (the builder is realm-aware with nation caps since #49) | `countries/management/create.ts` | M |
-| AT-5 | UNFINISHED | Claimants can't see their claim status (`realms.myClaims` has no caller); rejections send no notification | `routers/realms/index.ts`; `realms.claims.ts` | S |
 | AT-6 | UNFINISHED | Realm directory filtered by `visibility` and status. Left: `/realms` lists open realms but `visibility` is unused | `realms.hub.ts` | M |
 | AT-8 | UNFINISHED | A realm's founder can't be assigned (no `ownerId` or thumbnail update, no delete) | `routers/realms/index.ts` | S |
 | AT-9 | STUB | Labs map pipeline enrichment is placeholder data (now labelled "sample data"); `GeographicResource` has no writer | `lib/maps/pipeline/enrichment-pipeline.ts` | M |
