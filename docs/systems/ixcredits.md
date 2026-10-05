@@ -53,7 +53,7 @@ $$\text{Daily Dividend} = (\text{BaseRate} + \text{PopulationBonus} + \text{Grow
 
 ### 2. Active Gameplay (`EARN_ACTIVE`) — 100 IxC Daily Cap
 - **Login Streak** (`vault.claimDailyBonus`): 1 to 7 IxC daily (`min(streak, maxStreakBonus)`)
-- **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day. The claim widget (`DailyBonusWidget.tsx`) describes the roll as paid up to the daily earning cap (the 100 IxC active cap always applies). The widget auto-opens its prompt at most once per user per UTC day (tracked in `localStorage`); after that it stays available from the Vault widget until claimed
+- **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day. The claim dialog (`DailyRewardProvider.tsx`) describes the roll as paid up to the daily earning cap (the 100 IxC active cap always applies). It auto-opens at most once per user per UTC day (tracked in `localStorage`); after that it stays available from the sidebar "Daily reward" row and the Vault dashboard's `DailyRewardStatus` until claimed
 - **Diplomatic Actions**: 15 IxC for new embassy, 12 IxC for cultural exchange
 - **Diplomatic Scenario Responses**: 10 IxC base, +5 for high-stakes scenarios, +0/2/5/8 by choice risk (10–23 IxC)
 
@@ -105,7 +105,7 @@ try {
 - `useVaultStats()` – Aggregate vault statistics
 - `useCollections()` / `useRecentActivity()` – Collection list and recent ledger activity
 
-There is no client-side earn hook: credits are only awarded server-side. Daily claims call `api.vault.claimDailyBonus` / `claimCombinedDailyClaim` directly (e.g. `DailyBonusWidget`).
+There is no client-side earn hook: credits are only awarded server-side. Daily claims call `api.vault.claimDailyBonus` / `claimCombinedDailyClaim` directly (e.g. `DailyRewardProvider`).
 
 ---
 

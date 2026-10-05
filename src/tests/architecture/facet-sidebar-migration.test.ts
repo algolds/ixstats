@@ -72,13 +72,9 @@ describe("per-app sidebars are migrated to the source list", () => {
     const layout = read("src/components/forum/shared/ForumLayout.tsx");
     expect(layout).not.toMatch(/data-app-subnav|forum-icon-rail|forum-mobile-nav/);
     expect(read("src/styles/forum.css")).not.toMatch(/forum-icon-rail|forum-mobile-nav/);
-    const thread = fs
-      .readdirSync(path.join(ROOT, "src/components/forum"), { recursive: true })
-      .filter((f): f is string => typeof f === "string" && f.endsWith(".tsx"))
-      .map((f) => read(`src/components/forum/${f}`))
-      .join("\n");
-    expect(thread).toMatch(/Reply/);
-    expect(thread).toMatch(/Share/);
+    const header = read("src/components/forum/reader/ThreadHeader.tsx");
+    expect(header).toMatch(/onClick=\{onReply\}/);
+    expect(header).toMatch(/onClick=\{handleShare\}/);
   });
 
   it("sports: no left nav, command bar or main-column Card; tabs and Inspector instead", () => {

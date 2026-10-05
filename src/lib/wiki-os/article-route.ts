@@ -3,7 +3,7 @@ import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 /** The views of one article, each its own route. */
 export type ArticleTab = "read" | "edit" | "history" | "talk";
 
-export interface ArticleRoute {
+interface ArticleRoute {
   /** The article's path segment, still percent-encoded as it appears in the URL. */
   slug: string;
   tab: ArticleTab;

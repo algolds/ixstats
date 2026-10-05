@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { getAppForPath, getTintForPath, isChromelessPath } from "~/lib/navigation/app-sections";
 import { cn } from "~/lib/utils/cn";
+import { focusRing } from "~/components/ui/button";
 import { DailyRewardProvider } from "~/components/vault/DailyRewardProvider";
 import { FacetShell } from "./FacetShell";
 
@@ -33,9 +34,19 @@ export function AppShell({ beforeMain, children }: AppShellProps) {
         data-chromeless={chromeless ? "" : undefined}
         className={cn("flex min-h-screen flex-col", !chromeless && "facet-canvas")}
       >
+        <a
+          href="#main-content"
+          className={cn(
+            focusRing,
+            "sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50",
+            "bg-card text-label rounded-control text-body shadow-floating px-4 py-2 font-medium"
+          )}
+        >
+          Skip to content
+        </a>
         <FacetShell />
         {beforeMain}
-        <main data-shell-main="" className="flex flex-1 flex-col">
+        <main id="main-content" tabIndex={-1} data-shell-main="" className="flex flex-1 flex-col">
           {children}
         </main>
       </div>

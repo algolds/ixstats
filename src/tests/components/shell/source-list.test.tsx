@@ -13,6 +13,7 @@ const apps = getVisibleApps({
 function setup(pathname: string, opts: { expanded?: string[]; badges?: NavBadges } = {}) {
   const onToggle = jest.fn();
   const onAction = jest.fn();
+  const onNavigate = jest.fn();
   render(
     <SourceList
       pathname={pathname}
@@ -22,9 +23,15 @@ function setup(pathname: string, opts: { expanded?: string[]; badges?: NavBadges
       onToggle={onToggle}
       badges={opts.badges ?? {}}
       onAction={onAction}
+      onNavigate={onNavigate}
     />
   );
-  return { onToggle, onAction, nav: screen.getByRole("navigation", { name: "App navigation" }) };
+  return {
+    onToggle,
+    onAction,
+    onNavigate,
+    nav: screen.getByRole("navigation", { name: "App navigation" }),
+  };
 }
 
 describe("SourceList", () => {
@@ -89,6 +96,15 @@ describe("SourceList", () => {
     expect(current[0]).toHaveAttribute("href", "/dashboard");
   });
 
+  it("closes a hosting sheet or popover when an action row is used", () => {
+    const { nav, onAction, onNavigate } = setup("/vault", {
+      badges: { "daily-reward": { kind: "action", label: "4d" } },
+    });
+    fireEvent.click(within(nav).getByRole("button", { name: /Daily reward/ }));
+    expect(onAction).toHaveBeenCalledWith("daily-reward");
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
   it("hides the reward row when nothing is claimable", () => {
     const { nav } = setup("/vault");
     expect(within(nav).queryByRole("button", { name: /Daily reward/ })).toBeNull();
@@ -108,6 +124,21 @@ describe("SourceList", () => {
       "page"
     );
     expect(within(nav).queryByRole("link", { name: "Vault" })).toBeNull();
+  });
+
+  it("renders the active section's group heading as plain text, not a dead toggle", () => {
+    const admin = apps.find((a) => a.id === "admin")!;
+    const deep = admin.sections[admin.sections.length - 1]!;
+    const { nav } = setup(deep.href);
+    const group = within(nav).getByRole("group", { name: deep.group });
+    expect(within(group).queryByRole("button", { name: deep.group })).toBeNull();
+    expect(within(group).getByRole("heading", { name: deep.group })).toBeInTheDocument();
+    // Another group is still a real toggle.
+    const other = admin.sections.find((s) => s.group && s.group !== deep.group)!;
+    expect(within(nav).getByRole("button", { name: other.group })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
   });
 
   it("lists one app's sections in the popover and marks the active one only inside the current app", () => {

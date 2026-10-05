@@ -41,6 +41,17 @@ describe("AppShell", () => {
     expect(screen.getByText("Page")).toBeInTheDocument();
   });
 
+  it("puts a skip link first, targeting the main landmark", () => {
+    const { container } = render(<Shell />);
+    const skip = screen.getByRole("link", { name: "Skip to content" });
+    const main = screen.getByRole("main");
+    expect(skip).toHaveAttribute("href", `#${main.id}`);
+    expect(main.id).not.toBe("");
+    expect(main).toHaveAttribute("tabindex", "-1");
+    const firstFocusable = container.querySelector("a[href], button, [tabindex='0']");
+    expect(firstFocusable).toBe(skip);
+  });
+
   it("marks chromeless routes (Maps)", () => {
     mockPathname = "/maps";
     const { container } = render(<Shell />);

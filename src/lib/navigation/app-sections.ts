@@ -81,7 +81,7 @@ import {
 
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-export type NavBadgeKey = "mycountry-flag" | "diplomacy-inbox" | "vault-balance" | "daily-reward";
+type NavBadgeKey = "mycountry-flag" | "diplomacy-inbox" | "vault-balance" | "daily-reward";
 export type NavAction = "daily-reward";
 export type NavBadge =
   | { kind: "count"; value: number }

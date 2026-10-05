@@ -26,7 +26,7 @@ import {
 export const sourceRowClassName =
   "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11";
 
-export interface SourceListProps {
+interface SourceListProps {
   pathname: string;
   searchParams: SearchParamsLike | null;
   apps: readonly AppDefinition[];
@@ -76,7 +76,10 @@ function ActionRow({ section, action, ctx }: { section: Section; action: NavActi
     <li>
       <button
         type="button"
-        onClick={() => ctx.onAction?.(action)}
+        onClick={() => {
+          ctx.onAction?.(action);
+          ctx.onNavigate?.();
+        }}
         className={cn(
           sourceRowClassName,
           focusRing,
@@ -189,7 +192,8 @@ function SectionRows({
             {group && (
               <GroupHeading
                 group={group}
-                collapsible={collapsibleGroups}
+                // The group holding the current page stays open, so toggling it would do nothing.
+                collapsible={collapsibleGroups && !containsActive}
                 open={open}
                 listId={listId}
                 onToggle={() => ctx.onToggle(groupKey)}

@@ -67,7 +67,7 @@ Directories without a `page.tsx`: `calculations/` (formula editor components; th
 
 - **Shared layout guard** — `src/app/admin/layout.tsx` enforces access before rendering any admin route. It requires a signed-in Clerk user who is either a system owner (`isSystemOwner(user.id)`) **or** has a role `∈ {admin, owner, staff}` in Clerk `publicMetadata.role` or in the database role. Anyone else sees the `AccessDeniedScreen`; signed-out users get a sign-in modal.
 - **System owner** — `src/lib/auth/system-owner-constants.ts` defines `SYSTEM_OWNER_IDS` and `isSystemOwner()`, which audit-logs owner access in production.
-- **Section router**: `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) derive the active section from the pathname (re-synced on route changes and `popstate`); the dashboard's tiles can also switch section in place with `pushState`. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting. The sidebar's Admin area list in `app-sections.ts` is the only navigation between sections.
+- **Section router**: `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) derive the active section straight from the pathname (no state copy, so a new page never renders the previous section) and set the per-section document title; the dashboard's tiles can also switch section in place with `pushState`. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting. The sidebar's Admin area list in `app-sections.ts` is the only navigation between sections.
 - **Exceptions to the router** — `maps/editor` and `maps/style-editor` bypass the sidebar layout and render inside an `AdminErrorBoundary` directly.
 
 ## Data Sources

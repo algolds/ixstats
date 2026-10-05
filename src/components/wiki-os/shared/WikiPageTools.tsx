@@ -29,7 +29,7 @@ import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryAction
 import { useWikiContext } from "./WikiContext";
 
 /** The country a wiki page is about, if it names one. */
-export interface WikiCountry {
+interface WikiCountry {
   id?: string;
   name?: string | null;
 }

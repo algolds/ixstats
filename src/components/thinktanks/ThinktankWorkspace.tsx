@@ -153,11 +153,15 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
 
   const groups = useMemo(() => (allGroupsData as any[]) ?? [], [allGroupsData]);
 
-  const { data: activeGroupData, isLoading: isLoadingActiveGroup } =
-    api.thinkpages.getThinktankById.useQuery(
-      { groupId: selectedGroupId! },
-      { enabled: !!selectedGroupId, staleTime: 10000 }
-    );
+  const {
+    data: activeGroupData,
+    isLoading: isLoadingActiveGroup,
+    isError: activeGroupFailed,
+    refetch: refetchActiveGroup,
+  } = api.thinkpages.getThinktankById.useQuery(
+    { groupId: selectedGroupId! },
+    { enabled: !!selectedGroupId, staleTime: 10000 }
+  );
 
   const activeGroup = activeGroupData ?? null;
 
@@ -224,6 +228,18 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                   />
                 </div>
               </div>
+            ) : activeGroupFailed ? (
+              <EmptyState
+                className="h-full"
+                icon={<Group />}
+                title="Couldn't load this ThinkTank"
+                message="Something went wrong while loading it. Try again in a moment."
+                action={
+                  <Button variant="secondary" onClick={() => void refetchActiveGroup()}>
+                    Try again
+                  </Button>
+                }
+              />
             ) : (
               <EmptyState
                 className="h-full"
