@@ -7,9 +7,13 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
   rateLimitedMutationProcedure,
+  createRateLimitMiddleware,
 } from "~/server/api/trpc";
 import type { PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { switchIsOn } from "~/server/shared/privacy-permissions";
+import { recordHeartbeat } from "~/server/shared/presence";
+import { clearOwnHistory } from "~/server/shared/clear-history";
 
 /**
  * The nation a player typed: its name within the viewer's realm first, else a (globally unique) slug.
@@ -42,12 +46,15 @@ export interface PrivacyConfig {
   searchDiscoverable: boolean;
   searchEngineIndexing: boolean;
   dmReadReceipts: boolean;
-  diagnosticTelemetry: boolean;
-  personalizedRecommendations: boolean;
   showDiscordTag: boolean;
   showWikiAttribution: boolean;
 }
 
+/**
+ * Every key is enforced (SL-4; see server/shared/privacy-permissions.ts). "Anonymous diagnostics"
+ * and "Personalized recommendations" were removed: no telemetry is sent anywhere and nothing is
+ * recommended, so they had nothing to switch. Stored values for them are ignored.
+ */
 const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   directMessages: "everyone",
   messageRequestFiltering: true,
@@ -58,11 +65,31 @@ const DEFAULT_PRIVACY_CONFIG: PrivacyConfig = {
   searchDiscoverable: true,
   searchEngineIndexing: true,
   dmReadReceipts: true,
-  diagnosticTelemetry: true,
-  personalizedRecommendations: true,
   showDiscordTag: true,
   showWikiAttribution: true,
 };
+
+/** The stored config merged over the defaults, keeping only known keys. */
+function parsePrivacyConfig(status: string | null | undefined): PrivacyConfig {
+  if (!status) return DEFAULT_PRIVACY_CONFIG;
+  try {
+    const parsed = JSON.parse(status) as Record<string, unknown>;
+    const known = Object.keys(DEFAULT_PRIVACY_CONFIG).filter((key) => key in parsed);
+    return {
+      ...DEFAULT_PRIVACY_CONFIG,
+      ...Object.fromEntries(known.map((key) => [key, parsed[key]])),
+    };
+  } catch {
+    return DEFAULT_PRIVACY_CONFIG;
+  }
+}
+
+/** Clear history may run three times an hour. */
+const clearHistoryRateLimit = createRateLimitMiddleware({
+  max: 3,
+  windowMs: 60 * 60_000,
+  namespace: "clear_history",
+});
 
 /** Deletes the caller's own connection record; anything else reads as not found. */
 async function deleteOwnConnection(
@@ -133,15 +160,7 @@ export const usersPreferencesRouter = createTRPCRouter({
       },
     });
 
-    let config: PrivacyConfig = DEFAULT_PRIVACY_CONFIG;
-    if (configRecord?.status) {
-      try {
-        const parsed = JSON.parse(configRecord.status);
-        config = { ...DEFAULT_PRIVACY_CONFIG, ...parsed };
-      } catch {
-        config = DEFAULT_PRIVACY_CONFIG;
-      }
-    }
+    const config = parsePrivacyConfig(configRecord?.status);
 
     // 2. Fetch blocked connections
     const blockedConnections = await ctx.db.userConnection.findMany({
@@ -265,8 +284,6 @@ export const usersPreferencesRouter = createTRPCRouter({
         searchDiscoverable: z.boolean().optional(),
         searchEngineIndexing: z.boolean().optional(),
         dmReadReceipts: z.boolean().optional(),
-        diagnosticTelemetry: z.boolean().optional(),
-        personalizedRecommendations: z.boolean().optional(),
         showDiscordTag: z.boolean().optional(),
         showWikiAttribution: z.boolean().optional(),
       })
@@ -282,16 +299,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         },
       });
 
-      let currentConfig: PrivacyConfig = DEFAULT_PRIVACY_CONFIG;
-      if (existingRecord?.status) {
-        try {
-          currentConfig = { ...DEFAULT_PRIVACY_CONFIG, ...JSON.parse(existingRecord.status) };
-        } catch {
-          currentConfig = DEFAULT_PRIVACY_CONFIG;
-        }
-      }
-
-      const mergedConfig = { ...currentConfig, ...input };
+      const mergedConfig = { ...parsePrivacyConfig(existingRecord?.status), ...input };
 
       if (existingRecord) {
         return ctx.db.userConnection.update({
@@ -436,8 +444,16 @@ export const usersPreferencesRouter = createTRPCRouter({
       deleteOwnConnection(ctx.db, ctx.auth.userId, input.connectionId, "Keyword filter")
     ),
 
-  clearSearchHistory: rateLimitedMutationProcedure.mutation(async () => {
-    return { success: true, timestamp: new Date().toISOString() };
+  /** Clear history (SL-4); exactly what it deletes is listed on `clearOwnHistory`. */
+  clearHistory: rateLimitedMutationProcedure
+    .use(clearHistoryRateLimit)
+    .input(z.object({ confirm: z.literal(true) }))
+    .mutation(({ ctx }) => clearOwnHistory(ctx.db, ctx.auth.userId, ctx.user?.id)),
+
+  /** Online status heartbeat (SL-4): signed-in clients call it about once a minute. */
+  heartbeat: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
+    await recordHeartbeat(ctx.auth.userId);
+    return { ok: true };
   }),
 
   // ─── Data Export (Account & Country Data) ─────────────────────────────
@@ -539,6 +555,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         where: { wikiUsername: input.wikiUsername },
         select: {
           wikiUsername: true,
+          clerkUserId: true,
           role: {
             select: {
               name: true,
@@ -560,6 +577,10 @@ export const usersPreferencesRouter = createTRPCRouter({
       });
 
       if (!user) return null;
+      // Wiki attribution off (SL-4): the wiki name is not linked to the user's role or country.
+      if (!(await switchIsOn(ctx.db, user.clerkUserId, "showWikiAttribution").catch(() => false))) {
+        return { wikiUsername: user.wikiUsername, role: null, country: null };
+      }
 
       return {
         wikiUsername: user.wikiUsername,

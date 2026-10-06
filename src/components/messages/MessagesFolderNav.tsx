@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Settings, SoundHigh, ChatBubble, User } from "iconoir-react";
+import { Settings, SoundHigh, ChatBubble, User, Mail } from "iconoir-react";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import {
@@ -35,6 +35,15 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
     emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
   },
+  {
+    id: "requests",
+    icon: Mail as any,
+    title: "Requests",
+    description: "Messages from people outside your direct-message audience",
+    emptyTitle: "No message requests",
+    emptyDescription:
+      "Messages from people outside your direct-message audience wait here until you accept them.",
+  },
 ];
 
 export function getFolderFromPathname(_pathname?: string): MessageFolder {
@@ -50,10 +59,14 @@ interface MessagesFolderNavProps {
 }
 
 export function MessagesFolderNav({
+  activeFolder = "conversations",
+  onNavigate,
   unreadCounts,
   settings = DEFAULT_MESSAGES_SETTINGS,
   onSettingsChange,
 }: MessagesFolderNavProps) {
+  const requestCount = unreadCounts?.requests ?? 0;
+  const showRequests = requestCount > 0 || activeFolder === "requests";
   const toggleSetting = (key: keyof MessagesSettings) => {
     const nextValue = !settings[key];
     if (key === "notificationSounds") {
@@ -89,6 +102,20 @@ export function MessagesFolderNav({
           )}
         </div>
       </div>
+
+      {showRequests && (
+        <Button
+          type="button"
+          variant={activeFolder === "requests" ? "secondary" : "ghost"}
+          size="sm"
+          className="ml-auto"
+          aria-pressed={activeFolder === "requests"}
+          onClick={() => onNavigate?.(activeFolder === "requests" ? "conversations" : "requests")}
+        >
+          <Mail aria-hidden="true" />
+          {activeFolder === "requests" ? "Back to messages" : `Requests (${requestCount})`}
+        </Button>
+      )}
 
       <Popover>
         <PopoverTrigger

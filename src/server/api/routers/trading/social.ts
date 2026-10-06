@@ -11,6 +11,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { hiddenLinkedNames } from "~/server/shared/privacy-permissions";
 
 export const tradingSocialRouter = createTRPCRouter({
   /**
@@ -62,15 +63,37 @@ export const tradingSocialRouter = createTRPCRouter({
         take: 15,
       });
 
-      return users.map((user) => ({
-        id: user.clerkUserId,
-        dbId: user.id,
-        countryName: user.country?.name || "Unknown Country",
-        leader: user.country?.leader || "Unknown Leader",
-        economicTier: user.country?.economicTier || "Unknown",
-        username:
-          user.forumUsername || user.wikiUsername || user.discordUsername || "Unnamed Player",
-        flag: user.country?.flag || null,
-      }));
+      // A Discord tag or wiki name its owner hid (SL-4) is neither shown nor matched on.
+      const hidden = await hiddenLinkedNames(
+        ctx.db,
+        users.map((u) => u.clerkUserId)
+      );
+      const needle = query.toLowerCase();
+      const has = (value: string | null | undefined) =>
+        Boolean(value?.toLowerCase().includes(needle));
+
+      return users
+        .map((user) => ({
+          user,
+          wiki: hidden.wiki.has(user.clerkUserId) ? null : user.wikiUsername,
+          discord: hidden.discord.has(user.clerkUserId) ? null : user.discordUsername,
+        }))
+        .filter(
+          ({ user, wiki, discord }) =>
+            has(user.country?.name) ||
+            has(user.country?.leader) ||
+            has(user.forumUsername) ||
+            has(wiki) ||
+            has(discord)
+        )
+        .map(({ user, wiki, discord }) => ({
+          id: user.clerkUserId,
+          dbId: user.id,
+          countryName: user.country?.name || "Unknown Country",
+          leader: user.country?.leader || "Unknown Leader",
+          economicTier: user.country?.economicTier || "Unknown",
+          username: user.forumUsername || wiki || discord || "Unnamed Player",
+          flag: user.country?.flag || null,
+        }));
     }),
 });

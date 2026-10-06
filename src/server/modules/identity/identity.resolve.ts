@@ -172,6 +172,17 @@ export async function resolveIdentity(
   };
 }
 
+/**
+ * The Clerk id of the user a passport handle belongs to, without the external wiki and forum
+ * lookups (for page metadata). Null when the handle names no user.
+ */
+export async function resolveHandleOwnerClerkId(rawHandle: string): Promise<string | null> {
+  const handle = rawHandle.replace(/^@/, "").trim();
+  if (!handle || handle === "me") return null;
+  const { user } = await findUserAndCountry(handle, handle.replace(/_$/, ""), null);
+  return user?.clerkUserId ?? null;
+}
+
 /** Every country the identity leads or is linked to, largest economy first. */
 export async function resolveIdentityNations(
   identity: ResolvedIdentity

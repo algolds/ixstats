@@ -89,6 +89,36 @@ export const messagesParticipantsRouter = createTRPCRouter({
     }),
 
   /**
+   * Accept or decline a message request (SL-4).
+   */
+  respondToRequest: rateLimitedMutationProcedure
+    .input(z.object({ conversationId: z.string().min(1), accept: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const messagingService = messagingFor(ctx);
+      return await mapMessagingErrors(
+        () => messagingService.respondToRequest(ctx.auth.userId, input),
+        { forbidden: "You cannot answer this request", notFound: "Message request not found" }
+      );
+    }),
+
+  /**
+   * Read receipts (SL-4): when the other person in a direct conversation last read it, or null
+   * unless both of you allow read receipts.
+   */
+  getSeenState: protectedProcedure
+    .input(z.object({ conversationId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const messagingService = messagingFor(ctx);
+      return await mapMessagingErrors(
+        () => messagingService.getSeenState(ctx.auth.userId, input.conversationId),
+        {
+          forbidden: "You are not an active participant in this conversation",
+          notFound: "Conversation not found",
+        }
+      );
+    }),
+
+  /**
    * Search users for new conversation creation.
    */
   searchUsers: protectedProcedure

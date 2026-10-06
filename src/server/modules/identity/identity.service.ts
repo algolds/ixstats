@@ -30,8 +30,10 @@ import {
 } from "./identity.mappers";
 import type { IdentityCountry } from "./identity.selects";
 import { resolveIdentity, resolveIdentityNations } from "./identity.resolve";
+import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
+  AwardHistoryItem,
   IdentityForumGateway,
   IdentityForumMember,
   IdentityHistoryPage,
@@ -193,6 +195,15 @@ function passportWiki(
   };
 }
 
+/** The wiki block when the holder turned wiki attribution off (identity.link-privacy.ts). */
+const HIDDEN_WIKI = {
+  linked: false,
+  editCount: null,
+  groups: [] as string[],
+  lorewards: null,
+  awardHistory: [] as AwardHistoryItem[],
+};
+
 function passportForum(
   identity: ResolvedIdentity,
   member: IdentityForumMember | null,
@@ -258,6 +269,11 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const loreRank = loreStats ? await loadLoreRank(loreStats.totalScore) : null;
   syncLinkedAccounts(identity, member);
 
+  const [{ hideDiscord, hideWiki }, online] = await Promise.all([
+    loadLinkPrivacy(identity),
+    passportOnline(identity),
+  ]);
+
   const forumStats = toForumStats(member);
   // Loaders above already skip most hidden sections; the redaction is the single enforcement point.
   const sections = redactPassportSections(
@@ -279,7 +295,11 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     privacy: shown,
     featuredRealm: realms.find((r) => r.isFeatured) ?? realms[0] ?? null,
     realmCount: realms.length,
-    wiki: passportWiki(identity, wikiInfo, verifiedWikiName, sections),
+    /** Shown online (heartbeat in the last two minutes and `showOnlineStatus` on). */
+    online,
+    wiki: hideWiki
+      ? { ...HIDDEN_WIKI, username: null }
+      : passportWiki(identity, wikiInfo, verifiedWikiName, sections),
     forum: passportForum(identity, member, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,
@@ -288,10 +308,9 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
       achievements: sections.achievements,
     },
     thinkpages: passportThinkpages(thinkpages),
-    discord: {
-      linked: Boolean(user?.discordUserId),
-      username: user?.discordUsername ?? null,
-    },
+    discord: hideDiscord
+      ? { linked: false, username: null }
+      : { linked: Boolean(user?.discordUserId), username: user?.discordUsername ?? null },
   };
 }
 
@@ -325,16 +344,17 @@ export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
       wikiActivityFeed: [],
     };
   }
-  const [nations, settings] = await Promise.all([
+  const [nations, settings, { hideWiki }] = await Promise.all([
     resolveIdentityNations(identity),
     loadPassportSettings(identity.user?.id),
+    loadLinkPrivacy(identity),
   ]);
   const nationIds = nations.map((n) => n.id);
   const [wikiActivityFeed, articleRows, createdPages, conlangs, sportTeams, directives] =
     await Promise.all([
-      loadWikiFeed(identity, settings.visibility),
-      loadAuthoredArticleRows(identity),
-      loadCreatedPages(identity.wikiName),
+      hideWiki ? [] : loadWikiFeed(identity, settings.visibility),
+      hideWiki ? [] : loadAuthoredArticleRows(identity),
+      hideWiki ? [] : loadCreatedPages(identity.wikiName),
       loadConlangs(identity),
       loadSportTeams(nationIds),
       loadDirectives(nationIds),

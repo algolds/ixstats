@@ -23,6 +23,7 @@ const passport: PassportPayload = {
     clerkImageUrl: null,
     signature: null,
   },
+  online: false,
   privacy: {
     accolades: true,
     impact: true,

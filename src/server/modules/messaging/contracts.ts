@@ -24,7 +24,9 @@ export type MessageFolder =
   | "discussions"
   | "groups"
   | "system"
-  | "conversations";
+  | "conversations"
+  /** Message requests (SL-4): conversations the actor holds as a pending request. */
+  | "requests";
 
 export interface UserAccount {
   id: string;
@@ -174,6 +176,11 @@ export interface AddParticipantInput {
 
 export interface LeaveConversationInput {
   conversationId: string;
+}
+
+export interface RespondToRequestInput {
+  conversationId: string;
+  accept: boolean;
 }
 
 export interface SearchUsersInput {

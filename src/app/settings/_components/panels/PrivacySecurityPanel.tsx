@@ -6,9 +6,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   UserXmark,
-  ChatBubble,
-  AtSign,
-  RefreshDouble,
   Text as TextIcon,
   EyeClosed as EyeOff,
   Download,
@@ -18,7 +15,6 @@ import {
   OpenNewWindow as ExternalLink,
   SystemRestart as Loader2,
   Search,
-  Group as Users,
 } from "iconoir-react";
 import { useClerk } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
@@ -37,14 +33,19 @@ import {
   SelectItem,
 } from "~/components/ui/select";
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
+import { ClearHistoryRow } from "./ClearHistoryRow";
+import {
+  ACTIVITY_ROWS,
+  DISCOVERY_ROWS,
+  INTERACTION_SWITCH_ROWS,
+  LINKED_NAME_ROWS,
+  SELECT_ROWS,
+  type SwitchRowSpec,
+} from "./privacy-rows";
 
 /*
- * Only settings the server enforces are shown (SL-4): blocking, muting and muted words, who may
- * message you, mention you, send you trade offers and invite you to ThinkTanks, and appearing in
- * ThinkTank invite search (src/server/shared/privacy-permissions.ts, user-blocks.ts). The other
- * PrivacyConfig keys (message request filtering, online status, read receipts, indexing,
- * telemetry, recommendations, Discord tag, wiki attribution) and "clear history" have nothing
- * behind them yet, so they are hidden.
+ * Every control here is enforced on the server (SL-4; src/server/shared/privacy-permissions.ts,
+ * user-blocks.ts, presence.ts, clear-history.ts). See docs/systems/settings.md for what each does.
  */
 type FilterTab = "blocked" | "muted" | "keywords";
 type Icon = React.ComponentType<{ className?: string }>;
@@ -56,73 +57,6 @@ type FilterAccount = {
 };
 
 const GLYPH = "bg-muted/60 text-foreground";
-
-interface SelectRowSpec {
-  key: "directMessages" | "mentions" | "tradeOffers" | "thinktankInvites";
-  label: string;
-  description: string;
-  icon: Icon;
-  options: Array<[value: string, label: string]>;
-}
-
-const AUDIENCE_OPTIONS: Array<[value: string, label: string]> = [
-  ["everyone", "Everyone"],
-  ["followers", "People you follow"],
-  ["nobody", "Nobody"],
-];
-
-const SELECT_ROWS: SelectRowSpec[] = [
-  {
-    key: "directMessages",
-    label: "Direct messages",
-    description: "Who can start a conversation with you or message you directly",
-    icon: ChatBubble,
-    options: AUDIENCE_OPTIONS,
-  },
-  {
-    key: "mentions",
-    label: "Mentions",
-    description: "Whose @mentions notify you (the mention still shows on the post)",
-    icon: AtSign,
-    options: AUDIENCE_OPTIONS,
-  },
-  {
-    key: "tradeOffers",
-    label: "Card trade offers",
-    description: "Who can send you a card trade offer",
-    icon: RefreshDouble,
-    options: AUDIENCE_OPTIONS,
-  },
-  {
-    key: "thinktankInvites",
-    label: "ThinkTank invites",
-    description: "Who can invite you to private ThinkTanks",
-    icon: Users,
-    options: [
-      ["everyone", "Everyone"],
-      ["followers", "Followers only"],
-      ["nobody", "Nobody"],
-    ],
-  },
-];
-
-interface SwitchRowSpec {
-  key: "searchDiscoverable";
-  id: string;
-  label: string;
-  description: string;
-  icon: Icon;
-}
-
-const DISCOVERY_ROWS: SwitchRowSpec[] = [
-  {
-    key: "searchDiscoverable",
-    id: "search-discoverable",
-    label: "Appear in invite search",
-    description: "Let ThinkTank owners find you by name when inviting members",
-    icon: Search,
-  },
-];
 
 function FilterForm(props: {
   icon: Icon;
@@ -438,7 +372,7 @@ function SecurityAndDataGroup() {
   return (
     <SettingsGroup
       title="Security and data"
-      description="Export your data and manage sessions and credentials."
+      description="Export or clear your data and manage sessions and credentials."
     >
       <SettingsRow
         label="Export your data"
@@ -462,6 +396,8 @@ function SecurityAndDataGroup() {
           <span>{isExporting ? "Generating..." : "Download archive"}</span>
         </Button>
       </SettingsRow>
+
+      <ClearHistoryRow glyphClass={GLYPH} />
 
       <SettingsRow
         label="Sessions and two-step verification"
@@ -558,7 +494,7 @@ export function PrivacySecurityPanel() {
       <SettingsHeader
         title="Privacy & Security"
         category="Platform & preferences"
-        description="Blocking, muting, who can reach you, invite search and your data."
+        description="Blocking, muting, who can reach you, what others see of you and your data."
       />
 
       <SettingsGroup
@@ -608,13 +544,25 @@ export function PrivacySecurityPanel() {
             </SettingsRow>
           </React.Fragment>
         ))}
+        {renderSwitchRows(INTERACTION_SWITCH_ROWS)}
       </SettingsGroup>
 
-      <SettingsGroup title="Discovery" description="Whether others can find you by name.">
+      <SettingsGroup title="Activity" description="What others see of your activity in Messages.">
+        {renderSwitchRows(ACTIVITY_ROWS)}
+      </SettingsGroup>
+
+      <SettingsGroup
+        title="Discovery"
+        description="Whether others and search engines can find you."
+      >
         {renderSwitchRows(DISCOVERY_ROWS)}
       </SettingsGroup>
 
-      <SettingsGroup title="Connected services" description="Trading card indexing.">
+      <SettingsGroup
+        title="Connected services"
+        description="Linked names on your public profile, and trading card indexing."
+      >
+        {renderSwitchRows(LINKED_NAME_ROWS)}
         <SettingsRow
           label="NationStates card deck"
           description="Remove your card data from public search or unlink your deck"

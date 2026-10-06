@@ -276,3 +276,28 @@ export function useMarkConversationRead(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation.id, currentUserId, isSystemThread]);
 }
+
+/**
+ * Read receipts (SL-4): the id of the newest own message the other person has read, in a direct
+ * conversation where both of you allow read receipts; null otherwise. Polled while open.
+ */
+export function useSeenMessageId(
+  conversationId: string,
+  messages: any[],
+  currentUserId: string,
+  enabled: boolean
+): string | null {
+  const { data } = api.messages.getSeenState.useQuery(
+    { conversationId },
+    { enabled: enabled && !!conversationId, refetchInterval: 20_000, staleTime: 10_000 }
+  );
+  return useMemo(() => {
+    const seenAt = data?.seenAt ? new Date(data.seenAt).getTime() : null;
+    if (seenAt === null) return null;
+    const seen = messages.filter(
+      (m) =>
+        m.accountId === currentUserId && !String(m.id).startsWith("temp-") && timeOf(m) < seenAt
+    );
+    return seen.at(-1)?.id ?? null;
+  }, [data?.seenAt, messages, currentUserId]);
+}

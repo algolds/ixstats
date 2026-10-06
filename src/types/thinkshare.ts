@@ -72,6 +72,8 @@ interface ThinkShareParticipant {
   isActive: boolean;
   joinedAt?: Date;
   lastReadAt?: Date;
+  /** Online and showing it (server presence, SL-4). */
+  isOnline?: boolean;
 }
 
 /**
@@ -164,6 +166,10 @@ export interface ThinkShareConversation {
   lastMessage?: ThinkShareMessage;
   lastReadAt?: Date;
   unreadCount: number;
+  /** The viewer holds this as an unanswered message request (SL-4). */
+  isRequest?: boolean;
+  /** Another participant has not accepted it as a message request yet. */
+  awaitingAcceptance?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
