@@ -5,45 +5,40 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, premiumMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
-import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryResourceWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 import { redactMilitaryBranchBudget } from "~/lib/country/public-record";
+import { FORCE_LIMITS } from "~/lib/military/force-structure";
 
 // ===========================
 // Input Validation Schemas
 // ===========================
 
-const militaryAssetInputSchema = z.object({
+const militaryAssetFields = z.object({
   assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
-  category: z.string(),
-  name: z.string().min(1),
-  quantity: z.number().int().positive().default(1),
-  operational: z.number().int().nonnegative().default(1),
-  capability: z.string().optional(),
+  category: z.string().trim().max(100),
+  name: z.string().trim().min(1).max(150),
+  quantity: z.number().int().positive().max(FORCE_LIMITS.maxAssetQuantity).default(1),
+  operational: z.number().int().nonnegative().max(FORCE_LIMITS.maxAssetQuantity).default(1),
+  capability: z.string().max(2000).optional(),
   status: z.enum(["operational", "maintenance", "reserve", "retired"]).default("operational"),
   modernizationLevel: z.number().min(0).max(100).default(50),
-  acquisitionCost: z.number().nonnegative().default(0),
-  maintenanceCost: z.number().nonnegative().default(0),
-  imageUrl: z.string().optional(),
+  acquisitionCost: z.number().nonnegative().max(FORCE_LIMITS.maxBudget).default(0),
+  maintenanceCost: z.number().nonnegative().max(FORCE_LIMITS.maxBudget).default(0),
+  imageUrl: z.string().max(2048).optional(),
 });
 
-type AuthedCtx = {
-  db: PrismaClient;
-  auth: { userId: string };
-};
+const militaryAssetInputSchema = militaryAssetFields.refine(
+  (a) => a.operational <= a.quantity,
+  "Operational count cannot exceed quantity"
+);
 
-/** FORBIDDEN unless the caller's linked country is `countryId`. */
-async function assertOwnsCountry(ctx: AuthedCtx, countryId: string, message: string) {
-  const userProfile = await ctx.db.user.findUnique({
-    where: { clerkUserId: ctx.auth.userId },
-    select: { countryId: true },
-  });
-  if (userProfile?.countryId !== countryId) {
-    throw new TRPCError({ code: "FORBIDDEN", message });
-  }
-}
+type AuthedCtx = Parameters<typeof assertCountryResourceWriteAccess>[0] & { db: PrismaClient };
 
-/** NOT_FOUND unless the asset exists; FORBIDDEN unless its branch belongs to the caller's country. */
-async function assertOwnsAsset(ctx: AuthedCtx, assetId: string, message: string) {
+/** NOT_FOUND unless the asset exists; then country-write access (owner or privileged role). */
+async function loadWritableAsset(ctx: AuthedCtx, assetId: string) {
   const asset = await ctx.db.militaryAsset.findUnique({
     where: { id: assetId },
     include: { branch: { select: { countryId: true } } },
@@ -51,7 +46,8 @@ async function assertOwnsAsset(ctx: AuthedCtx, assetId: string, message: string)
   if (!asset) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Military asset not found" });
   }
-  await assertOwnsCountry(ctx, asset.branch.countryId, message);
+  await assertCountryResourceWriteAccess(ctx, asset.branch.countryId, "Military asset");
+  return asset;
 }
 
 // ===========================
@@ -95,24 +91,22 @@ export const securityMilitaryRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify user owns the branch
       const branch = await ctx.db.militaryBranch.findUnique({
         where: { id: input.branchId },
         select: { countryId: true },
       });
-
       if (!branch) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Military branch not found" });
+      }
+      await assertCountryResourceWriteAccess(ctx, branch.countryId, "Military branch");
+
+      const existing = await ctx.db.militaryAsset.count({ where: { branchId: input.branchId } });
+      if (existing >= FORCE_LIMITS.maxAssetsPerBranch) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Military branch not found",
+          code: "BAD_REQUEST",
+          message: `A branch can have at most ${FORCE_LIMITS.maxAssetsPerBranch} assets.`,
         });
       }
-
-      await assertOwnsCountry(
-        ctx,
-        branch.countryId,
-        "You can only create assets for your own military branches"
-      );
 
       return ctx.db.militaryAsset.create({
         data: {
@@ -126,12 +120,28 @@ export const securityMilitaryRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        asset: militaryAssetInputSchema.partial(),
+        asset: militaryAssetFields
+          .extend({
+            quantity: z.number().int().positive().max(FORCE_LIMITS.maxAssetQuantity),
+            operational: z.number().int().nonnegative().max(FORCE_LIMITS.maxAssetQuantity),
+            status: z.enum(["operational", "maintenance", "reserve", "retired"]),
+            modernizationLevel: z.number().min(0).max(100),
+            acquisitionCost: z.number().nonnegative().max(FORCE_LIMITS.maxBudget),
+            maintenanceCost: z.number().nonnegative().max(FORCE_LIMITS.maxBudget),
+          })
+          .partial(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify ownership through branch
-      await assertOwnsAsset(ctx, input.id, "You can only update your own military assets");
+      const asset = await loadWritableAsset(ctx, input.id);
+      const quantity = input.asset.quantity ?? asset.quantity;
+      const operational = input.asset.operational ?? asset.operational;
+      if (operational > quantity) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Operational count cannot exceed quantity",
+        });
+      }
 
       return ctx.db.militaryAsset.update({
         where: { id: input.id },
@@ -142,8 +152,7 @@ export const securityMilitaryRouter = createTRPCRouter({
   deleteMilitaryAsset: premiumMutationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Verify ownership through branch
-      await assertOwnsAsset(ctx, input.id, "You can only delete your own military assets");
+      await loadWritableAsset(ctx, input.id);
 
       return ctx.db.militaryAsset.delete({
         where: { id: input.id },

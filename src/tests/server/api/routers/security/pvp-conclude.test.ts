@@ -67,12 +67,12 @@ const branch = (personnel: number) => ({
 });
 
 describe("conflict outcome helpers", () => {
-  it("sums personnel x readiness and operational assets", () => {
+  it("sums personnel x readiness and operational assets (operational capped at quantity)", () => {
     expect(
       militaryStrength([
         { units: [{ personnel: 1000, readiness: 50 }], assets: [{ quantity: 2, operational: 3 }] },
       ])
-    ).toBe(500 + 60);
+    ).toBe(500 + 20);
   });
 
   it("is deterministic for a given random source and favours the stronger side", () => {
