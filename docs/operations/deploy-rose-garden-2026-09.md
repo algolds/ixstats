@@ -31,6 +31,12 @@ Read it end to end once before starting. Every command here is meant to be run b
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
     `resolvedBy` and a `(status, createdAt)` index
+  - the Exchange (2026-10-06, additive, VT-16/D5): nullable unique `idempotencyKey` on `exchange_transactions`,
+    `exchange_conversion_logs` and `exchange_contracts`; `exchange_contracts` gains issuer, escrow, award, dispute and
+    `updatedAt` columns plus `issuerCompanyId`/`winnerCompanyId` indexes; `SPEND_EXCHANGE` and `EARN_EXCHANGE` in the
+    vault transaction enum. The Exchange is on by default (`vault_isExchangeEnabled`; Admin → Vault and economy →
+    System config). New ₷ wallets now start at 1,000 instead of 10,000. **No data fix:** existing wallets keep their
+    balance, and seeded ₷ can't be converted to IxCredits (only ₷ converted in can go back out)
   - WikiOS v1 (2026-10-06, D20): the wiki tables and columns of PR #52 (`wiki_mirror_jobs`, `wiki_user_groups`,
     `wiki_restrictions`, `wiki_blocks`, `wiki_bot_passwords`, `wiki_api_sessions`, `wiki_template_links`,
     `wiki_image_links`, new `wiki_articles` / `wiki_revisions` / `wiki_logs` / `wiki_assets` / `wiki_account_links`
@@ -243,8 +249,11 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `ecosystem.config.cjs` and run `pm2 restart ixstats-cron --update-env`:
 
 `wiki-recentchanges` → `lore-card-generation` → `card-values` → `sports-season-advance` → `national-issues` →
-`politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` → `scheduled-changes` →
+`politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `passive-income` (last).
+
+The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still listed in `CRON_ENABLED_JOBS`, remove it
+before deploying: the runner exits on an unknown job name.
 
 Enable `db-backup` (daily dump to `backups/`) and `log-retention` (prunes old logs and `CronRun` rows) with the
 first cycle, and `budget-year-rollover` (new-fiscal-year reminders) once the budget-year remap in step 8 is applied.

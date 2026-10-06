@@ -28,6 +28,8 @@ export interface VaultConfig {
   isPacksEnabled: boolean;
   isMaintenanceMode: boolean;
   exemptStaffFromLimit: boolean;
+  /** The Exchange (₷): conversion, companies and contracts. MyClub's ₷ spends are not gated. */
+  isExchangeEnabled: boolean;
 }
 
 export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
@@ -43,6 +45,7 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   isPacksEnabled: true,
   isMaintenanceMode: false,
   exemptStaffFromLimit: true,
+  isExchangeEnabled: true,
 };
 
 const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
@@ -58,6 +61,7 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   isPacksEnabled: "vault_isPacksEnabled",
   isMaintenanceMode: "vault_isMaintenanceMode",
   exemptStaffFromLimit: "vault_exemptStaffFromLimit",
+  isExchangeEnabled: "vault_isExchangeEnabled",
 };
 
 const vaultConfigCache = new Cache<VaultConfig>({
@@ -149,6 +153,10 @@ export async function getVaultConfig(db: {
         m.vault_exemptStaffFromLimit !== undefined
           ? m.vault_exemptStaffFromLimit === "true"
           : VAULT_CONFIG_DEFAULTS.exemptStaffFromLimit,
+      isExchangeEnabled:
+        m.vault_isExchangeEnabled !== undefined
+          ? m.vault_isExchangeEnabled === "true"
+          : VAULT_CONFIG_DEFAULTS.isExchangeEnabled,
     };
 
     vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);

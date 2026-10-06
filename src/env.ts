@@ -121,13 +121,6 @@ export const env = createEnv({
     ISSUES_AWARD_CREDITS: z.string().optional(),
     // Neighbor-aware national issues; on unless "0"/"false" (national-issues/neighbors.ts)
     ISSUES_NEIGHBORS: z.string().optional(),
-    // Narrator LLM (lib/narrator/client.ts); independent of the SPORTS_LLM_* keys (no fallback)
-    NARRATOR_LLM_API_KEY: z.string().optional(),
-    NARRATOR_LLM_API_URL: z.string().optional(),
-    NARRATOR_LLM_MODEL: z.string().optional(),
-    NARRATOR_LLM_PROVIDER: z.string().optional(),
-    // "true" enables reasoning mode for narrator LLM requests
-    NARRATOR_LLM_REASONING: z.string().optional(),
     // Sports commentary LLM (lib/sports/commentary/narrator.ts); "true" enables commentary
     SPORTS_LLM_COMMENTARY: z.string().optional(),
     SPORTS_LLM_API_KEY: z.string().optional(),
@@ -251,11 +244,6 @@ export const env = createEnv({
     ISSUES_ENFORCE_DEADLINES: process.env.ISSUES_ENFORCE_DEADLINES,
     ISSUES_AWARD_CREDITS: process.env.ISSUES_AWARD_CREDITS,
     ISSUES_NEIGHBORS: process.env.ISSUES_NEIGHBORS,
-    NARRATOR_LLM_API_KEY: process.env.NARRATOR_LLM_API_KEY,
-    NARRATOR_LLM_API_URL: process.env.NARRATOR_LLM_API_URL,
-    NARRATOR_LLM_MODEL: process.env.NARRATOR_LLM_MODEL,
-    NARRATOR_LLM_PROVIDER: process.env.NARRATOR_LLM_PROVIDER,
-    NARRATOR_LLM_REASONING: process.env.NARRATOR_LLM_REASONING,
     SPORTS_LLM_COMMENTARY: process.env.SPORTS_LLM_COMMENTARY,
     SPORTS_LLM_API_KEY: process.env.SPORTS_LLM_API_KEY,
     SPORTS_LLM_API_URL: process.env.SPORTS_LLM_API_URL,

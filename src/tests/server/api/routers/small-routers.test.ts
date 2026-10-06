@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The small routers: per-user reads and writes stay keyed to the caller (builderDraft,
- * scheduledChanges), demo state is only revealed to the system owner, cache stats are admin
+ * The small routers: per-user reads and writes stay keyed to the caller (builderDraft),
+ * demo state is only revealed to the system owner, cache stats are admin
  * only, and the public country reads (resources, atomicGovernment, historical, system) filter
  * and validate as documented.
  *
@@ -17,7 +17,6 @@ jest.mock("~/lib/auth", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { builderDraftRouter } from "~/server/api/routers/builderDraft";
-import { scheduledChangesRouter } from "~/server/api/routers/scheduledChanges";
 import { demoModeRouter } from "~/server/api/routers/demo-mode";
 import { cacheRouter } from "~/server/api/routers/cache";
 import { resourcesRouter } from "~/server/api/routers/resources";
@@ -76,26 +75,6 @@ describe("builderDraft", () => {
       draft(ctx(db, "u1")).save({ data: "just a string" as never })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.builderDraft.upsert).not.toHaveBeenCalled();
-  });
-});
-
-describe("scheduledChanges", () => {
-  const changes = createCallerFactory(scheduledChangesRouter);
-
-  it("lists the caller's pending changes for their own country", async () => {
-    db.user.findUnique.mockResolvedValue({ id: "u1", countryId: "c1" });
-    db.scheduledChange.findMany.mockResolvedValue([{ id: "ch1" }]);
-
-    await expect(changes(ctx(db, "u1")).getPendingChanges()).resolves.toEqual([{ id: "ch1" }]);
-    expect(db.scheduledChange.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1", userId: "u1", status: "pending" } })
-    );
-  });
-
-  it("returns nothing for a user without a country", async () => {
-    db.user.findUnique.mockResolvedValue({ id: "u1", countryId: null });
-    await expect(changes(ctx(db, "u1")).getPendingChanges()).resolves.toEqual([]);
-    expect(db.scheduledChange.findMany).not.toHaveBeenCalled();
   });
 });
 

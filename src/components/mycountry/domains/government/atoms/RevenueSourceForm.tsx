@@ -1,7 +1,6 @@
 "use client";
 
 import { formatExactCurrency } from "~/lib/utils";
-import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
 import { Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
@@ -25,8 +24,6 @@ export function RevenueSourceForm({
   isReadOnly = false,
   availableDepartments = [],
 }: RevenueSourceFormProps) {
-  const { isLocked } = usePendingLocks();
-
   const totalCalculated = data.reduce((sum, item) => sum + item.revenueAmount, 0);
   const totalPercent = data.reduce((sum, item) => sum + (item.revenuePercent ?? 0), 0);
   const percentOf = (amount: number) => (totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0);
@@ -96,7 +93,6 @@ export function RevenueSourceForm({
               isReadOnly={isReadOnly}
               currency={currency}
               availableDepartments={availableDepartments}
-              isLocked={isLocked}
               onUpdate={handleUpdate}
               onRemove={handleRemove}
             />

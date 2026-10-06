@@ -87,15 +87,41 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      // Calculate daily cost: (personnel * $200/day) + (asset maintenance * 1.5x)
-      let assetMaintenanceCost = 0;
-      if (input.assetIds.length > 0) {
-        const assets = await ctx.db.militaryAsset.findMany({
-          where: { id: { in: input.assetIds } },
-          select: { maintenanceCost: true },
+      // Units and assets must belong to this nation's active branches.
+      const [ownUnits, ownAssets] = await Promise.all([
+        input.unitIds.length > 0
+          ? ctx.db.militaryUnit.findMany({
+              where: {
+                id: { in: input.unitIds },
+                branch: { countryId: input.countryId, isActive: true },
+              },
+              select: { id: true },
+            })
+          : [],
+        input.assetIds.length > 0
+          ? ctx.db.militaryAsset.findMany({
+              where: {
+                id: { in: input.assetIds },
+                branch: { countryId: input.countryId, isActive: true },
+              },
+              select: { id: true, maintenanceCost: true },
+            })
+          : [],
+      ]);
+      if (
+        ownUnits.length !== new Set(input.unitIds).size ||
+        ownAssets.length !== new Set(input.assetIds).size
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Deploy only your own nation's units and assets.",
         });
-        assetMaintenanceCost = assets.reduce((sum, a) => sum + (a.maintenanceCost ?? 0), 0);
       }
+      const unitIds = ownUnits.map((u) => u.id);
+      const assetIds = ownAssets.map((a) => a.id);
+
+      // Calculate daily cost: (personnel * $200/day) + (asset maintenance * 1.5x)
+      const assetMaintenanceCost = ownAssets.reduce((sum, a) => sum + (a.maintenanceCost ?? 0), 0);
 
       const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
       const annualCost = dailyCost * 365;
@@ -122,9 +148,9 @@ export const securityOperationsRouter = createTRPCRouter({
       });
 
       // Create deployments for units
-      if (input.unitIds.length > 0) {
+      if (unitIds.length > 0) {
         await ctx.db.deployment.createMany({
-          data: input.unitIds.map((unitId) => ({
+          data: unitIds.map((unitId) => ({
             operationId: operation.id,
             unitId,
             status: "deployed",
@@ -133,15 +159,15 @@ export const securityOperationsRouter = createTRPCRouter({
 
         // Reduce unit readiness
         await ctx.db.militaryUnit.updateMany({
-          where: { id: { in: input.unitIds } },
+          where: { id: { in: unitIds } },
           data: { readiness: { decrement: 10 } },
         });
       }
 
       // Create deployments for assets
-      if (input.assetIds.length > 0) {
+      if (assetIds.length > 0) {
         await ctx.db.deployment.createMany({
-          data: input.assetIds.map((assetId) => ({
+          data: assetIds.map((assetId) => ({
             operationId: operation.id,
             assetId,
             status: "deployed",

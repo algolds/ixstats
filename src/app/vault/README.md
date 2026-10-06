@@ -18,6 +18,7 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/lore-generator`                           | `LoreCardGenerator`       | Request generation of a lore card                                             |
 | `/vault/marketplace`                              | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links)                    |
 | `/vault/crafting`                                 | `EmptyState`              | "Crafting is retired for now" notice (crafting deprecated 2026-10-05)         |
+| `/vault/exchange`                                 | `VaultExchangeSection`    | The Exchange (₷): wallet and IxC conversion, companies, contracts             |
 | `/vault/import`                                   | `VaultImportSection`      | NationStates deck import wizard                                               |
 | `/vault/ns-deck`                                  | `ImportWizard`            | Legacy NS deck import wizard (the source list uses `/vault/import`)           |
 | `/vault/ns-deck/[nation]`                         | NS deck viewer            | Public NS deck for a nation                                                   |
@@ -34,6 +35,7 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 - **Crafting** — Retired for now (2026-10-05): every `crafting.*` procedure refuses and the workbench is gone; see `docs/systems/cards.md`.
 - **Card junking** — Recycle unlocked cards for IxC (`cards.junkCards`); cards escrow-locked by an auction or trade are refused.
 - **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `importDeck`, `hasImported`, `fetchPublicDeck`); see `docs/systems/ns-integration.md`.
+- **The Exchange (₷)** — Sovereign wallet, IxC ⇄ ₷ conversion, companies and B2B contracts with escrow (`exchange.*`); see `docs/systems/exchange.md`.
 - **IxCredits** — Earn (passive nation dividend, active gameplay, social, uncapped metagame bonuses) and spend (packs, market, store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
 
 ## Architecture

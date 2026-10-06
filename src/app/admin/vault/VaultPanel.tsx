@@ -9,6 +9,7 @@ import {
   ClockRotateRight as History,
   Settings,
   Gift,
+  Coins,
 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
@@ -20,8 +21,9 @@ import { VaultStoreControl } from "./VaultStoreControl";
 import { VaultBonusAdmin } from "./VaultBonusAdmin";
 import { VaultPurchaseLogs } from "./VaultPurchaseLogs";
 import { VaultSystemConfig } from "./VaultSystemConfig";
+import { ExchangeAdmin } from "./ExchangeAdmin";
 
-type VaultTab = "users" | "store" | "bonuses" | "logs" | "config";
+type VaultTab = "users" | "store" | "bonuses" | "logs" | "exchange" | "config";
 
 export default function AdminVaultPage() {
   usePageTitle({ title: "Admin - Vault Store & Economy" });
@@ -56,6 +58,10 @@ export default function AdminVaultPage() {
             <History className="h-4 w-4" />
             Purchase logs
           </TabsTrigger>
+          <TabsTrigger value="exchange" className="text-caption flex items-center gap-2">
+            <Coins className="h-4 w-4" />
+            Exchange
+          </TabsTrigger>
           <TabsTrigger value="config" className="text-caption flex items-center gap-2">
             <Settings className="h-4 w-4" />
             System config
@@ -76,6 +82,10 @@ export default function AdminVaultPage() {
 
         <TabsContent value="logs" className="mt-4 focus-visible:outline-none">
           <VaultPurchaseLogs />
+        </TabsContent>
+
+        <TabsContent value="exchange" className="mt-4 focus-visible:outline-none">
+          <ExchangeAdmin />
         </TabsContent>
 
         <TabsContent value="config" className="mt-4 focus-visible:outline-none">

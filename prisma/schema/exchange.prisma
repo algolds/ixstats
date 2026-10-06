@@ -25,17 +25,20 @@ model ExchangeWallet {
 }
 
 /// Sovereign transaction ledger. type: CONVERT_IN | CONVERT_OUT | CHARTER_FEE |
-/// SHARE_BUY | SHARE_SELL | CONTRACT_PAYOUT | SECTOR_BUY | SECTOR_SELL | ADMIN_ADJUSTMENT
+/// COMPANY_DEPOSIT | COMPANY_WITHDRAW | SHARE_BUY | SHARE_SELL | CONTRACT_PAYOUT |
+/// SECTOR_BUY | SECTOR_SELL | ADMIN_ADJUSTMENT, plus the MyClub types in exchange-service.ts.
+/// idempotencyKey: a retried move with the same key is applied once (NULL for ordinary rows).
 model ExchangeTransaction {
-  id           String         @id @default(cuid())
-  walletId     String
-  sovereigns   Float
-  balanceAfter Float
-  type         String
-  source       String
-  metadata     Json?
-  ixTime       Float
-  createdAt    DateTime       @default(now())
+  id             String         @id @default(cuid())
+  walletId       String
+  sovereigns     Float
+  balanceAfter   Float
+  type           String
+  source         String
+  metadata       Json?
+  ixTime         Float
+  createdAt      DateTime       @default(now())
+  idempotencyKey String?        @unique
   wallet       ExchangeWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId, createdAt])
@@ -66,6 +69,7 @@ model Company {
   shareholdings      Shareholding[]
   decisions          CompanyDecision[]
   bids               ContractBid[]
+  issuedContracts    Contract[]            @relation("ContractIssuer")
 
   @@index([founderId])
   @@index([sectorKey])
@@ -179,6 +183,8 @@ model ConversionLog {
   fee        Float
   ixTime     Float
   createdAt  DateTime @default(now())
+  /// A retried conversion with the same key is applied once.
+  idempotencyKey String? @unique
   user       User     @relation("UserConversionLogs", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
@@ -204,7 +210,10 @@ model CompanyDecision {
   @@map("exchange_company_decisions")
 }
 
-/// A B2G/B2B contract companies can bid on. type: B2G | B2B. status: OPEN | AWARDED | CLOSED
+/// A B2G/B2B contract companies can bid on. type: B2G | B2B.
+/// status: OPEN | AWARDED | COMPLETED | CANCELLED | DISPUTED (see
+/// docs/specs/2026-10-06-exchange-economy-design.md). A B2B contract is issued by a company
+/// whose capital funds `escrow` at creation; the winning bid's amount is paid out of escrow.
 model Contract {
   id          String        @id @default(cuid())
   type        String
@@ -217,7 +226,21 @@ model Contract {
   createdIxTime Float
   createdAt   DateTime      @default(now())
   bids        ContractBid[]
+  issuerCompanyId  String?
+  issuerUserId     String?
+  description      String?
+  escrow           Float    @default(0)
+  awardedBidId     String?
+  disputeReason    String?
+  disputedByUserId String?
+  resolutionNote   String?
+  closedIxTime     Float?
+  idempotencyKey   String?  @unique
+  updatedAt        DateTime @default(now()) @updatedAt
+  issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
+  @@index([issuerCompanyId])
+  @@index([winnerCompanyId])
   @@index([status])
   @@index([sectorKey])
   @@index([endIxTime])

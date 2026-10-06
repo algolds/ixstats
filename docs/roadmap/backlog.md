@@ -61,8 +61,6 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
-| MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
 ### Atlas, Realms & identity (AT)
@@ -77,14 +75,13 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | WK-6 | BUG | The editor's image picker (`ImageSearchGrid`) has an empty Commons tab: `commons.search` exists (the media search's repository tab uses it) but the picker never calls it | `editor/ImageSearchGrid.tsx:66` | S |
-| WK-12 | DEAD | Narrator LLM narration has no production caller (the key is masked). Wire or retire (D10) | `routers/narrator/index.ts` | M |
 | WK-17 | UNFINISHED | No BlurHash is computed from an image: uploads store none (the filename-based one is gone, #52) and placeholders use the asset's size | `core/media-asset-service.ts`; `core/blurhash-service.ts` | S–M |
 
 ### Vault, cards & achievements (VT)
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
+| VT-16 | UNFINISHED | Exchange (₷) phase 2. The MVP (conversion, companies, B2B contracts, conditional `spend`, 1,000 ₷ seed) is built (D5, 2026-10-06); left: share trading, sector indices (`SectorIndex`, `SectorIndexHistory`, `SectorPosition`), `CompanyDecision`, B2G tenders, an expiry job for lapsed OPEN contracts ([spec §8](../specs/2026-10-06-exchange-economy-design.md#8-phase-2-not-built)) | `exchange.prisma`; `lib/exchange/` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
 
@@ -276,7 +273,16 @@ items not already listed above:
 From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no accessor at all (c15t consent 8,
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
-them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop models that defense (MC-3), crisis events,
-procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. `CraftingRecipe` and `CraftingHistory` join the
+them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop the force-structure models (`MilitaryBranch`,
+`MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events or procedural
+realms (AT-15) would use until those are decided. **The 13 Exchange models are off the drop list (D5 decided "build",
+2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`, `SectorIndexHistory`, `SectorPosition` and
+`CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
+
+**Drop prepared (2026-10-06, D9):** the reviewed drop (56 models with no accessor left once the retired crafting router goes, plus the
+`CardPack.pdsConfig` column) is on branch `chore/drop-unused-models`, with its runbook in
+`docs/operations/drop-unused-models.md` on that branch. It is not applied here: it waits on a successful production
+restore test. It keeps the Exchange models (D5), the military and defense models (D2) and every model still read
+through a relation (for example `Permission`, `GovernmentBranch`, `EconomicModel`, `ThinktankMessage`).

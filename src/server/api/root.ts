@@ -31,7 +31,6 @@ import { legislationRouter } from "./routers/legislation";
 import { electionsRouter } from "./routers/elections";
 import { customTypesRouter } from "./routers/customTypes";
 import { quickActionsRouter } from "./routers/quickactions";
-import { scheduledChangesRouter } from "./routers/scheduledChanges";
 import { nationalIssuesRouter } from "./routers/national-issues";
 import { diplomaticCoreRouter } from "./routers/diplomacy/core";
 import { diplomaticEmbassiesRouter } from "./routers/diplomacy/embassies";
@@ -52,6 +51,7 @@ import { cardImagesRouter } from "./routers/cardImages";
 import { loreCardsRouter } from "./routers/lore-cards";
 import { nsImportRouter } from "./routers/ns-import";
 import { vaultRouter } from "./routers/vault";
+import { exchangeRouter } from "./routers/exchange";
 import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
 import { geoCoreRouter } from "./routers/geo/core";
@@ -76,7 +76,6 @@ import { pollsRouter } from "./routers/polls";
 import { forumRouter } from "./routers/forum";
 import { ixnayidRouter } from "./routers/ixnayid";
 import { sportsRouter } from "./routers/sports";
-import { narratorRouter } from "./routers/narrator";
 import { myCountryRouter } from "./routers/mycountry";
 import { historicalRouter } from "./routers/historical";
 import { countryGeoRouter } from "./routers/countryGeo";
@@ -110,7 +109,6 @@ export const appRouter = createTRPCRouter({
   elections: electionsRouter,
   customTypes: customTypesRouter,
   quickActions: quickActionsRouter,
-  scheduledChanges: scheduledChangesRouter,
   nationalIssues: nationalIssuesRouter,
   intent: intentRouter,
   diplomaticCore: diplomaticCoreRouter,
@@ -132,6 +130,7 @@ export const appRouter = createTRPCRouter({
   loreCards: loreCardsRouter,
   nsImport: nsImportRouter,
   vault: vaultRouter,
+  exchange: exchangeRouter,
   crafting: craftingRouter,
   trading: tradingRouter,
   geoCore: geoCoreRouter,
@@ -155,7 +154,6 @@ export const appRouter = createTRPCRouter({
   forum: forumRouter,
   ixnayid: ixnayidRouter,
   sports: sportsRouter,
-  narrator: narratorRouter,
   mycountry: myCountryRouter,
   historical: historicalRouter,
   countryGeo: countryGeoRouter,

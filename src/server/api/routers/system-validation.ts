@@ -306,7 +306,6 @@ export const systemValidationRouter = createTRPCRouter({
       "atomicGovernment",
       "formulas",
       "quickActions",
-      "scheduledChanges",
       "taxSystem",
       "wikiCache",
       "security",

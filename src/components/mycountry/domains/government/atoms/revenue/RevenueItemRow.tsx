@@ -22,7 +22,6 @@ interface RevenueItemRowProps {
   isReadOnly?: boolean;
   currency: string;
   availableDepartments?: { id: string; name: string }[];
-  isLocked: (key: string) => boolean;
   onUpdate: (index: number, field: keyof RevenueSourceInput, value: string | number) => void;
   onRemove: (index: number) => void;
 }
@@ -33,7 +32,6 @@ export function RevenueItemRow({
   isReadOnly = false,
   currency,
   availableDepartments = [],
-  isLocked,
   onUpdate,
   onRemove,
 }: RevenueItemRowProps) {
@@ -96,7 +94,7 @@ export function RevenueItemRow({
                 type="number"
                 value={item.revenueAmount}
                 onChange={(e) => onUpdate(index, "revenueAmount", parseFloat(e.target.value) || 0)}
-                disabled={isReadOnly || isLocked("revenueSources")}
+                disabled={isReadOnly}
                 min="0"
                 step="1000000"
                 className="h-8 pl-6"

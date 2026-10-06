@@ -146,7 +146,7 @@ half-built features players can already see, and remove every fabricated number.
 | ✅ **Done (#49):** first elections are scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them and bills can pass (D1 option a; seat-by-vote-share not built) | MC-2, PF§2 | M–L | Decision D1 |
 | ✅ **Done (2026-10-05):** `meetings.concludeMeeting` records the outcome and one decision per agenda item; `CabinetMeetingsPanel` in the Cabinet tab. Left: decisions don't reach the event spine or become policies (M4) | PF§2 | M | — |
 | ✅ **Done (2026-10-05):** `policies.repealPolicy` (Repeal on passed bills), expiry in `policy-maintenance`, CivCap released (the shared sum counts active policies only); upkeep debited once per IxTime budget year (PL-8) | MC-5 | S–M | — |
-| Defense: force-structure authoring (branches and units) → meaningful PvNPC and PvP results. **Partial:** PvP conflicts resolve after `maxDuration` via `security.concludePvPConflict` (MC-4, 2026-10-05) using the PvNPC strength calculation; force structure (MC-3) still waits on D2 | MC-3, MC-4 | L | Decision D2 |
+| ✅ **Done (2026-10-06):** defense force structure. Owners create, edit and delete branches and units in Defense → Branches and readiness (or start from their builder data), deployments pick real units, and PvNPC strikes and PvP resolution (`security.concludePvPConflict`, MC-4) use strength computed from that structure (D2 option a; see [defense.md](../systems/defense.md#force-structure-and-combat-strength)) | MC-3, MC-4 | L | Decision D2 |
 | ✅ **Done:** pending invites (#48), the diplomacy Inbox (#49), and NPC targets answer at invite time from their personality's alliance prediction (2026-10-05) | MC-10 | S–M | — |
 | ✅ **Done (2026-10-05):** `diplomatic-drift` completes exchange missions when the exchange ends (cancels them with it); embassy details show elapsed-time progress | MC-11 | S | — |
 | ✅ **Done (#49):** the `stat-progression` job persists current stats and one `HistoricalDataPoint` per IxTime month; off until enabled | MC-7 | M | M1 jobs |
@@ -280,7 +280,7 @@ the spine.
 | Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
 | ✅ **Done (2026-10-05):** cosmetics visible to other players: the public, batched `vault.getEquippedCosmeticsFor` feeds the passport photo and name and forum post and thread authors | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
-| Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
+| 🟡 **MVP done (2026-10-06, D5 (a)):** the Exchange (₷) at `/vault/exchange`: conditional, idempotent `spend`, a 1,000 ₷ seed, IxC ⇄ ₷ conversion (fee, daily cap, convert-out bounded by what went in), companies, B2B contracts with escrow and admin-decided disputes, the `isExchangeEnabled` vault flag ([spec](../specs/2026-10-06-exchange-economy-design.md), [system doc](../systems/exchange.md)). Left: phase 2 (shares, sector indices, company decisions, B2G tenders, contract expiry) | VT-16 | L | — |
 | 💤 Crafting extensions (catalysts, discovery, guilds, bulk): deprecated with crafting (2026-10-05) | PF§4 | — | — |
 
 ---
@@ -337,7 +337,7 @@ the spine.
 Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
-  Needs M0 backups and Decisions D1, D2, D5 and D9.
+  Needs M0 backups and Decisions D1, D2 and D9 (D5 keeps the 13 Exchange models: it decided "build").
 - **Dead code:** ✅ MC-18 is closed: a re-check on 2026-10-05 (static, dynamic and string imports) found every file the audit listed already deleted. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** every one of the 69 routers has a router-level test (2026-10-05). Left: the 63 sub-router files no test
@@ -359,16 +359,16 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | # | Decision | Options | Recommendation | Blocks |
 |---|---|---|---|---|
 | D1 | How politics gets candidates | (a) restore candidate registration and scheduled elections; (b) seat parties by vote share when the legislature is configured, with elections as an optional layer | (b) first: it unblocks bills fast, and (a) can follow | M2 politics, M4 legislature |
-| D2 | Defense force structure | (a) restore branch/unit authoring; (b) derive branches from builder defense data | **Decided (2026-10-06): (a)** restore branch and unit authoring | M2 defense, Premium value |
+| D2 | Defense force structure | (a) restore branch/unit authoring; (b) derive branches from builder defense data | **Decided (2026-10-06): (a)** restore branch and unit authoring. ✅ **Done (2026-10-06)** (MC-3) | M2 defense, Premium value |
 | D3 | Where WikiOS images live | (a) MediaWiki keeps hosting; (b) WikiOS stores them natively (Stage 3 direction) | **Decided (2026-10-06): (b)** with D20: PR #52 stores uploads natively and mirrors them to MediaWiki | WK-5, Stage 3 |
 | D4 | Premium & payments | (a) build checkout; (b) keep admin-granted premium, drop the pricing copy | (b) until the core loops are solid | M5 |
-| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | **Decided (2026-10-06): (a)** build conversion, companies and contracts | Schema drop, M5 |
+| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | **Decided (2026-10-06): (a)** build conversion, companies and contracts. MVP built 2026-10-06; the Exchange models leave the drop list | M5 (phase 2) |
 | D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Moot: crafting deprecated 2026-10-05 (the MYTHIC recipe and "failed rolls consume materials" no longer apply) |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |
 | D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | **Decided (2026-10-06):** approved, applied only after a successful production restore test | Code health |
-| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire | WK-12 |
-| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete | MC-6 |
+| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire. **Done (2026-10-06):** the narrator router, library, admin panel and `NARRATOR_LLM_*` env keys are removed; sports commentary keeps the shared LLM client, now in `src/lib/llm/` | WK-12 (closed) |
+| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete. **Done (2026-10-06):** service, cron job and route, router, `usePendingLocks` and the budget/revenue form locks removed; the model waits for the D9 drop | MC-6 (closed) |
 | D12 | Forum moderation | **Decided:** XenForo only; the forum help article says so (WK-20 done, 2026-10-05) | — | WK-20 |
 | D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |

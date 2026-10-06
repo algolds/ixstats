@@ -11,6 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { ReadinessOverviewCard } from "~/components/mycountry/domains/defense/command/ReadinessOverviewCard";
+import { militaryStrength } from "~/lib/military/force-structure";
 import {
   DomainActivityCard,
   RailBar,
@@ -49,10 +50,13 @@ interface MilitaryBranchRecord {
   branchType?: string | null;
   readinessLevel: number;
   technologyLevel: number;
+  trainingLevel?: number | null;
   morale: number;
   annualBudget: number;
-  personnelCount?: number | null;
-  personnel?: number | null;
+  activeDuty?: number | null;
+  reserves?: number | null;
+  units: { personnel: number | null; readiness: number | null }[];
+  assets: { quantity: number | null; operational: number | null }[];
   updatedAt?: string | Date | null;
   createdAt?: string | Date | null;
 }
@@ -85,6 +89,8 @@ export function DefenseRail({ countryId }: { countryId: string }) {
     };
   }, [branches]);
 
+  const strength = useMemo(() => militaryStrength(branches ?? []), [branches]);
+
   const activity = useMemo<ActivityEntry[]>(() => {
     const entries: ActivityEntry[] = [];
 
@@ -96,7 +102,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
           id: `branch-${b.id}`,
           icon: Sword,
           iconColor: STATUS_TEXT[readinessTone(readiness)],
-          text: `${b.name ?? "Military branch"} — ${Math.round(readiness)}% ready`,
+          text: `${b.name ?? "Military branch"}: ${Math.round(readiness)}% ready`,
         },
         b.updatedAt,
         b.createdAt
@@ -138,12 +144,20 @@ export function DefenseRail({ countryId }: { countryId: string }) {
         icon={Sword}
         accessory={<RailCount>{branches?.length ?? 0} active</RailCount>}
       >
+        {branches && branches.length > 0 && (
+          <RailRow className="flex items-center justify-between gap-2">
+            <span className="text-label-secondary">Combat strength</span>
+            <span className="text-label font-medium tabular-nums">
+              {Math.round(strength).toLocaleString("en-US")}
+            </span>
+          </RailRow>
+        )}
         {!branches || branches.length === 0 ? (
-          <RailEmpty>No active military branches configured.</RailEmpty>
+          <RailEmpty>No military branches yet. Combat strength is zero.</RailEmpty>
         ) : (
           branches.slice(0, 4).map((b) => {
             const readiness = b.readinessLevel;
-            const personnel = b.personnelCount ?? b.personnel ?? 0;
+            const personnel = b.activeDuty ?? 0;
             const tone = readinessTone(readiness);
 
             return (
