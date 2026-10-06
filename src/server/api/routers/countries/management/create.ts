@@ -14,6 +14,7 @@ import { invalidateCache, globalCache } from "~/lib/cache";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import { IxTime } from "~/lib/ixtime";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
@@ -565,6 +566,7 @@ export const managementCreateProcedures = {
 
         await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);
         queueAchievementCheck(userId, result.id);
+        void ActivityHooks.User.onCountryLink(userId, result.id, true);
 
         return result;
       } catch (error) {

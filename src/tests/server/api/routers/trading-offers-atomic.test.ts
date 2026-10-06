@@ -204,13 +204,36 @@ describe("respondToTrade ACCEPT", () => {
 });
 
 describe("createtradeOffer", () => {
+  it("refuses a recipient whose trade-offer setting excludes the sender (SL-4)", async () => {
+    const { db, caller } = makeCaller();
+    db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);
+    db.userConnection.findMany = jest.fn(async (args: any) =>
+      args.where.connectionType === "privacy_config"
+        ? [{ userId: "clerk_recip", status: JSON.stringify({ tradeOffers: "nobody" }) }]
+        : []
+    ) as never;
+
+    await expect(
+      caller.createtradeOffer({
+        recipientId: "clerk_recip",
+        initiatorCardIds: ["ci_1"],
+        recipientCardIds: ["cr_1"],
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.tradeOffer.create).not.toHaveBeenCalled();
+  });
+
   it("double lock: a card already locked elsewhere fails the lock -> CONFLICT, no offer created", async () => {
     const { db, caller } = makeCaller();
     db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);
     db.cardOwnership.findMany = jest
       .fn()
-      .mockResolvedValueOnce([{ id: "ci_1", inscription: null, cards: { marketValue: 10 } }] as never)
-      .mockResolvedValueOnce([{ id: "cr_1", inscription: null, cards: { marketValue: 5 } }] as never);
+      .mockResolvedValueOnce([
+        { id: "ci_1", inscription: null, cards: { marketValue: 10 } },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: "cr_1", inscription: null, cards: { marketValue: 5 } },
+      ] as never);
     db.cardOwnership.updateMany = jest.fn().mockResolvedValue({ count: 0 } as never);
 
     await expect(

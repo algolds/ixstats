@@ -111,8 +111,8 @@ function describePost(post: TrendingPost) {
 }
 
 async function thinkpagesItems(db: PrismaClient): Promise<TrendingItem[]> {
-  // Scored by the thinkpages-trending cron (engagement-decay over real reactions, replies
-  // and reposts); posts with no engagement from other users do not appear.
+  // Scored by the thinkpages-trending cron (engagement-decay over real reactions, replies,
+  // reposts and daily distinct views); posts with no engagement from other users do not appear.
   const posts = await db.thinkpagesPost.findMany({
     where: { visibility: "public", trendingScore: { gt: 0 } },
     orderBy: { trendingScore: "desc" },
@@ -222,7 +222,8 @@ const ACTIVITY_BASE_SCORE: Record<string, number> = {
 async function activityItems(db: PrismaClient, now: number): Promise<TrendingItem[]> {
   const activities = await db.activityFeed.findMany({
     where: { createdAt: { gte: new Date(now - 48 * HOUR_MS) }, visibility: "public" },
-    orderBy: { views: "desc" },
+    // Activity rows have no view tracking (only ThinkPages posts do), so take the newest.
+    orderBy: { createdAt: "desc" },
     take: 40,
     select: {
       id: true,

@@ -208,6 +208,34 @@ describe("runStatProgression", () => {
     expect(result).toMatchObject({ processed: 2, updated: 1, failed: 1 });
     expect(db.calculationLog.create).toHaveBeenCalledTimes(1);
   });
+
+  it("reports an economic tier change to the listener (SL-7 economic milestone)", async () => {
+    const stored = upToDate("a");
+    const db = makeDb([{ ...stored, economicTier: "Impoverished" } as any, upToDate("b")]);
+    const onEconomicTierChange = jest.fn();
+
+    await runStatProgression({ db: db as any, ixTime: NOW, onEconomicTierChange });
+
+    expect(onEconomicTierChange).toHaveBeenCalledTimes(1);
+    expect(onEconomicTierChange).toHaveBeenCalledWith({
+      countryId: "a",
+      from: "Impoverished",
+      to: stored.economicTier,
+    });
+  });
+
+  it("never fails the run when the tier listener throws", async () => {
+    const db = makeDb([{ ...upToDate("a"), economicTier: "Impoverished" } as any]);
+    const onEconomicTierChange = jest.fn(() => {
+      throw new Error("activity feed down");
+    });
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await runStatProgression({ db: db as any, ixTime: NOW, onEconomicTierChange });
+
+    expect(result).toMatchObject({ updated: 1, failed: 0 });
+    spy.mockRestore();
+  });
 });
 
 describe("isProjectionUnchanged", () => {

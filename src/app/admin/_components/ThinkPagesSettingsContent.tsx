@@ -10,11 +10,12 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Globe, FloppyDisk as Save, RssFeed as Rss } from "iconoir-react";
+import { Globe, FloppyDisk as Save, RssFeed as Rss, WarningTriangle } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 import { ThinkPagesDiscordFeedCard } from "./ThinkPagesDiscordFeedCard";
+import { ThinkPagesFlagQueueCard } from "./ThinkPagesFlagQueueCard";
 
 export function ThinkPagesSettingsContent() {
   usePageTitle({ title: "Admin - ThinkPages Panel" });
@@ -23,17 +24,24 @@ export function ThinkPagesSettingsContent() {
     <div className="space-y-6">
       <PageHeader
         title="ThinkPages settings"
-        subtitle="Account limits and the Discord feed mirror."
+        subtitle="Account limits, flagged posts and the Discord feed mirror."
       />
 
       <Tabs defaultValue="platform" className="w-full">
-        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-xl justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="platform"
             className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Globe className="text-teal h-4 w-4" />
             Platform settings
+          </TabsTrigger>
+          <TabsTrigger
+            value="flags"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <WarningTriangle className="text-orange h-4 w-4" />
+            Flagged posts
           </TabsTrigger>
           <TabsTrigger
             value="discord"
@@ -46,6 +54,10 @@ export function ThinkPagesSettingsContent() {
 
         <TabsContent value="platform" className="mt-4 focus-visible:outline-none">
           <PlatformSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="flags" className="mt-4 focus-visible:outline-none">
+          <ThinkPagesFlagQueueCard />
         </TabsContent>
 
         <TabsContent value="discord" className="mt-4 focus-visible:outline-none">

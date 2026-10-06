@@ -1,7 +1,7 @@
 import type { Priority } from "@prisma/client";
 import { db } from "~/server/db";
 import { ActivityGenerator } from "./generator";
-import { formatCurrency, formatPopulation } from "~/lib/utils";
+import { EconomicTier } from "~/types/ixstats";
 import { notificationHooks } from "~/lib/notifications";
 import { eventBus } from "~/lib/event-bus";
 
@@ -116,92 +116,51 @@ class DiplomaticActivityHooks {
     });
   }
 
-  /** Diplomatic mission completed */
-  static onMissionCompleted(
-    countryId: string,
-    targetCountryId: string,
-    missionType: string,
-    success: boolean,
-    userId?: string
-  ): Promise<void> {
-    return guarded("mission completed", async () => {
-      queueAchievementChecks("diplomacy:updated", [countryId], userId);
-      const [country, targetCountry] = await findCountries(countryId, targetCountryId);
-      if (!country || !targetCountry) return;
-
-      await recordActivity({
-        type: "diplomatic",
-        userId,
-        countryId,
-        title: `${country.name} ${success ? "Completes" : "Fails"} ${missionType} Mission`,
-        description: `${country.name} has ${success ? "successfully completed" : "failed to complete"} a ${missionType} mission with ${targetCountry.name}.`,
-        eventType: "mission_completed",
-        meta: {
-          missionType,
-          success,
-          country: country.name,
-          targetCountry: targetCountry.name,
-        },
-        priority: success ? "medium" : "low",
-        related: [countryId, targetCountryId],
-      });
-    });
-  }
-
-  /** Alliance formed between countries */
+  /** A country founds a public alliance. */
   static onAllianceFormed(
-    country1Id: string,
-    country2Id: string,
+    countryId: string,
     allianceName: string,
+    allianceType: string,
     userId?: string
   ): Promise<void> {
-    return guarded("alliance formed", async () => {
-      queueAchievementChecks("diplomacy:updated", [country1Id, country2Id], userId);
-      const [country1, country2] = await findCountries(country1Id, country2Id);
-      if (!country1 || !country2) return;
-
-      await recordActivity({
+    return recordCountryActivity(
+      "alliance formed",
+      "diplomacy:updated",
+      countryId,
+      userId,
+      (name) => ({
         type: "diplomatic",
-        userId,
-        title: `${country1.name} and ${country2.name} Form Alliance`,
-        description: `${country1.name} and ${country2.name} have formed the ${allianceName || "bilateral alliance"}, pledging mutual cooperation and support.`,
+        title: `${name} Founds the ${allianceName}`,
+        description: `${name} has founded the ${allianceName}, a new ${allianceType} alliance.`,
         eventType: "alliance_formed",
-        meta: { countries: [country1.name, country2.name], allianceName },
+        meta: { allianceName, allianceType, country: name },
         priority: "high",
-        related: [country1Id, country2Id],
-      });
-    });
+      })
+    );
   }
 
-  /** Trade agreement signed */
-  static onTradeAgreement(
-    country1Id: string,
-    country2Id: string,
-    tradeValue?: number,
-    userId?: string
-  ): Promise<void> {
-    return guarded("trade agreement", async () => {
-      queueAchievementChecks("diplomacy:updated", [country1Id, country2Id], userId);
-      const [country1, country2] = await findCountries(country1Id, country2Id);
-      if (!country1 || !country2) return;
-
-      await recordActivity({
+  /** A country accepts an invitation and joins a public alliance. */
+  static onAllianceJoined(countryId: string, allianceName: string, userId?: string): Promise<void> {
+    return recordCountryActivity(
+      "alliance joined",
+      "diplomacy:updated",
+      countryId,
+      userId,
+      (name) => ({
         type: "diplomatic",
-        userId,
-        title: `${country1.name} and ${country2.name} Sign Trade Agreement`,
-        description: `${country1.name} and ${country2.name} have signed a comprehensive trade agreement${tradeValue ? ` valued at ${formatCurrency(tradeValue)}` : ""}.`,
-        eventType: "trade_agreement",
-        meta: { countries: [country1.name, country2.name], tradeValue },
-        priority: tradeValue && tradeValue > 50000000000 ? "high" : "medium",
-        related: [country1Id, country2Id],
-      });
-    });
+        title: `${name} Joins the ${allianceName}`,
+        description: `${name} has joined the ${allianceName}, pledging cooperation with its members.`,
+        eventType: "alliance_joined",
+        meta: { allianceName, country: name },
+        priority: "medium",
+      })
+    );
   }
 }
 
 /**
- * One single-country "achievement/economic/meta" activity: queues the achievement check, looks up
- * the country and records the entry built from its name.
+ * One single-country activity: queues the achievement check, looks up the country and records
+ * the entry built from its name.
  */
 async function recordCountryActivity(
   label: string,
@@ -222,77 +181,24 @@ async function recordCountryActivity(
  * Activity hooks for government operations
  */
 class GovernmentActivityHooks {
-  /** Government component added to country */
-  static onComponentAdded(
+  /**
+   * A bill passes the legislature and becomes law. Bills with an economic effect file under
+   * Economic; the rest under Achievements.
+   */
+  static onLawPassed(
     countryId: string,
-    componentName: string,
-    componentType: string,
+    billName: string,
+    gdpEffect: number,
     userId?: string
   ): Promise<void> {
-    return recordCountryActivity(
-      "component added",
-      "country:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "achievement",
-        title: `${name} Implements ${componentName}`,
-        description: `${name} has implemented ${componentName}, a ${componentType} component in their governmental system.`,
-        eventType: "component_added",
-        meta: { componentName, componentType, country: name },
-        priority: "medium",
-      })
-    );
-  }
-
-  /** Government effectiveness change (only significant swings are recorded) */
-  static onEffectivenessChange(
-    countryId: string,
-    oldEffectiveness: number,
-    newEffectiveness: number,
-    userId?: string
-  ): Promise<void> {
-    const change = Math.abs(newEffectiveness - oldEffectiveness);
-    if (change < 10) return Promise.resolve();
-
-    const isImprovement = newEffectiveness > oldEffectiveness;
-    return recordCountryActivity(
-      "effectiveness change",
-      "country:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "achievement",
-        title: `${name} Government Effectiveness ${isImprovement ? "Increases" : "Decreases"}`,
-        description: `${name}'s governmental effectiveness has ${isImprovement ? "improved" : "declined"} to ${newEffectiveness.toFixed(1)}%, ${isImprovement ? "strengthening" : "weakening"} administrative capacity.`,
-        eventType: "effectiveness_change",
-        meta: { oldEffectiveness, newEffectiveness, isImprovement },
-        priority: change > 20 ? "high" : "medium",
-      })
-    );
-  }
-
-  /** Constitutional reform enacted */
-  static onConstitutionalReform(
-    countryId: string,
-    reformType: string,
-    reformDescription: string,
-    userId?: string
-  ): Promise<void> {
-    return recordCountryActivity(
-      "constitutional reform",
-      "country:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "achievement",
-        title: `${name} Enacts Constitutional Reform`,
-        description: `${name} has enacted major ${reformType} reforms: ${reformDescription}`,
-        eventType: "constitutional_reform",
-        meta: { reformType, reformDescription },
-        priority: "high",
-      })
-    );
+    return recordCountryActivity("law passed", "country:updated", countryId, userId, (name) => ({
+      type: gdpEffect !== 0 ? "economic" : "achievement",
+      title: `${name} Passes ${billName}`,
+      description: `The legislature of ${name} has passed "${billName}" into law.`,
+      eventType: "law_passed",
+      meta: { billName, gdpEffect },
+      priority: "medium",
+    }));
   }
 }
 
@@ -300,221 +206,34 @@ class GovernmentActivityHooks {
  * Activity hooks for economic operations
  */
 class EconomicActivityHooks {
-  /** Budget approved/changed */
-  static onBudgetApproved(
-    countryId: string,
-    totalBudget: number,
-    majorChanges: string[],
-    userId?: string
-  ): Promise<void> {
+  /**
+   * Economic milestone: the nightly stat progression moved a country to a new economic tier
+   * (tiers follow GDP per capita, so this fires only when a threshold is crossed).
+   */
+  static onEconomicTierChange(countryId: string, oldTier: string, newTier: string): Promise<void> {
+    const rose = economicTierRank(newTier) > economicTierRank(oldTier);
     return recordCountryActivity(
-      "budget approved",
+      "economic tier change",
       "country:updated",
       countryId,
-      userId,
+      undefined,
       (name) => ({
         type: "economic",
-        title: `${name} Approves ${formatCurrency(totalBudget)} Budget`,
-        description: `${name} has approved a ${formatCurrency(totalBudget)} national budget${majorChanges.length ? ` with major changes in ${majorChanges.join(", ")}` : ""}.`,
-        eventType: "budget_approved",
-        meta: { totalBudget, majorChanges },
-        priority: totalBudget > 1000000000000 ? "high" : "medium",
-      })
-    );
-  }
-
-  /** Tax policy change */
-  static onTaxPolicyChange(
-    countryId: string,
-    policyType: string,
-    policyDescription: string,
-    impactedPopulation: number,
-    userId?: string
-  ): Promise<void> {
-    if (!db || typeof (db as any).country?.findUnique !== "function") {
-      return Promise.resolve();
-    }
-    return recordCountryActivity(
-      "tax policy change",
-      "country:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "economic",
-        title: `${name} Reforms Tax Policy`,
-        description: `${name} has implemented ${policyType} tax reforms affecting ${formatPopulation(impactedPopulation)} citizens: ${policyDescription}`,
-        eventType: "tax_policy_change",
-        meta: { policyType, policyDescription, impactedPopulation },
-        priority: "medium",
-      })
-    );
-  }
-
-  /** Major infrastructure project announced */
-  static onInfrastructureProject(
-    countryId: string,
-    projectName: string,
-    projectValue: number,
-    projectType: string,
-    userId?: string
-  ): Promise<void> {
-    return recordCountryActivity(
-      "infrastructure project",
-      "country:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "economic",
-        title: `${name} Announces Major Infrastructure Project`,
-        description: `${name} has announced the ${projectName}, a ${formatCurrency(projectValue)} ${projectType} infrastructure initiative.`,
-        eventType: "infrastructure_project",
-        meta: { projectName, projectValue, projectType },
-        priority: projectValue > 10000000000 ? "high" : "medium",
+        title: `${name} ${rose ? "Rises" : "Falls"} to ${newTier} Status`,
+        description: rose
+          ? `${name} has grown into a ${newTier} economy, up from ${oldTier}.`
+          : `${name} has slipped to a ${newTier} economy, down from ${oldTier}.`,
+        eventType: "economic_tier_change",
+        meta: { oldTier, newTier, rose },
+        priority: rose ? "high" : "medium",
       })
     );
   }
 }
 
-/**
- * Activity hooks for defense/security operations
- */
-class SecurityActivityHooks {
-  /** Military branch created/upgraded */
-  static onMilitaryBranchChange(
-    countryId: string,
-    branchName: string,
-    action: "created" | "upgraded",
-    newLevel?: string,
-    userId?: string
-  ): Promise<void> {
-    return recordCountryActivity(
-      "military branch change",
-      "military:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "achievement",
-        title: `${name} ${action === "created" ? "Establishes" : "Upgrades"} ${branchName}`,
-        description: `${name} has ${action} the ${branchName}${newLevel ? ` to ${newLevel} level` : ""}, enhancing national defense capabilities.`,
-        eventType: "military_branch_change",
-        meta: { branchName, action, newLevel },
-        priority: "medium",
-      })
-    );
-  }
-
-  /** Security threat detected/resolved */
-  static onSecurityThreat(
-    countryId: string,
-    threatType: string,
-    severity: string,
-    status: "detected" | "resolved",
-    userId?: string
-  ): Promise<void> {
-    return recordCountryActivity(
-      "security threat",
-      "military:updated",
-      countryId,
-      userId,
-      (name) => ({
-        type: "meta",
-        title: `${name} ${status === "detected" ? "Faces" : "Resolves"} Security Threat`,
-        description: `${name} has ${status} a ${severity} severity ${threatType} threat to national security.`,
-        eventType: "security_threat",
-        meta: { threatType, severity, status },
-        priority: severity === "critical" ? "critical" : severity === "high" ? "high" : "medium",
-      })
-    );
-  }
-}
-
-/**
- * Activity hooks for social/ThinkPages operations
- */
-class SocialActivityHooks {
-  /** ThinkPage post created */
-  static async onThinkPagePost(
-    userId: string,
-    countryId: string,
-    postTitle: string,
-    postType: string,
-    visibility: "public" | "followers" | "friends"
-  ): Promise<void> {
-    await guarded("ThinkPage post", async () => {
-      queueAchievementChecks("thinkpages:updated", [countryId], userId);
-      const [country] = await findCountries(countryId);
-      if (!country) return;
-
-      await recordActivity({
-        type: "social",
-        category: "social",
-        userId,
-        countryId,
-        title: `New ${postType} from ${country.name}`,
-        description: postTitle,
-        eventType: "thinkpage_post",
-        meta: { postType },
-        priority: "low",
-        visibility,
-        related: [countryId],
-      });
-    });
-  }
-
-  /** User follows country */
-  static async onFollowCountry(
-    userId: string,
-    countryId: string,
-    userCountryId?: string
-  ): Promise<void> {
-    await guarded("follow country", async () => {
-      triggerAchievementCheck(userCountryId || countryId, "thinkpages:updated", userId).catch(
-        console.error
-      );
-      triggerAchievementCheck(countryId, "thinkpages:updated").catch(console.error);
-
-      const [country, userCountry] = await Promise.all([
-        findCountries(countryId).then(([c]) => c),
-        userCountryId ? findCountries(userCountryId).then(([c]) => c) : null,
-      ]);
-      if (!country) return;
-
-      await recordActivity({
-        type: "social",
-        category: "social",
-        userId,
-        countryId: userCountryId || null,
-        title: `${userCountry?.name || "User"} Follows ${country.name}`,
-        description: `${userCountry?.name || "A user"} is now following ${country.name} for updates and activities.`,
-        eventType: "follow_country",
-        meta: { followedCountry: country.name },
-        priority: "low",
-        visibility: "friends",
-        related: [countryId, ...(userCountryId ? [userCountryId] : [])],
-      });
-    });
-  }
-
-  /** User joins platform */
-  static async onUserJoined(userId: string, countryId?: string): Promise<void> {
-    await guarded("user joined", async () => {
-      if (countryId) queueAchievementChecks("user:signup", [countryId], userId);
-      const country = countryId ? (await findCountries(countryId))[0] : null;
-
-      await recordActivity({
-        type: "social",
-        category: "platform",
-        userId,
-        countryId: countryId || null,
-        title: `New Leader Joins IxStats`,
-        description: `A new leader has joined IxStats${country ? ` representing ${country.name}` : ""}!`,
-        eventType: "user_joined",
-        meta: { countryName: country?.name },
-        priority: "low",
-        related: countryId ? [countryId] : null,
-      });
-    });
-  }
+/** Rank of an economic tier, lowest first (`EconomicTier` declaration order); unknown names rank -1. */
+export function economicTierRank(tier: string): number {
+  return (Object.values(EconomicTier) as string[]).indexOf(tier);
 }
 
 /**
@@ -564,7 +283,5 @@ export const ActivityHooks = {
   Diplomatic: DiplomaticActivityHooks,
   Government: GovernmentActivityHooks,
   Economic: EconomicActivityHooks,
-  Security: SecurityActivityHooks,
-  Social: SocialActivityHooks,
   User: UserActivityHooks,
 };

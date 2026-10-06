@@ -16,7 +16,9 @@ import {
   POLL_INCLUDE,
   thinkpagesFeedItem,
   withViewerPollVotes,
+  dropMutedItems,
 } from "./shared";
+import { mutedKeywords } from "~/server/shared/privacy-permissions";
 
 const activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
@@ -120,7 +122,9 @@ type FeedInput = z.infer<typeof activityFilterSchema>;
 /** ActivityFeed rows as feed items, with their users and countries batch-loaded (no N+1). */
 async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: number) {
   const where: Prisma.ActivityFeedWhereInput = {};
-  if (input.filter !== "all" && input.filter !== "community") where.type = input.filter;
+  // Rows are stored with type "achievement"; the filter is named "achievements".
+  if (input.filter !== "all" && input.filter !== "community")
+    where.type = input.filter === "achievements" ? "achievement" : input.filter;
   if (input.category !== "all") where.category = input.category;
   if (input.userId) where.userId = input.userId;
 
@@ -328,13 +332,19 @@ export const activitiesFeedGlobalRouter = createTRPCRouter({
         await globalCache.set(cacheKey, { combinedActivities }, { ttl: 60 });
       }
 
-      // Leave out ThinkPages posts by accounts the viewer blocked or muted.
-      const hidden = new Set(await hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId));
+      // Leave out ThinkPages posts by accounts the viewer blocked or muted, and anything
+      // containing one of the viewer's muted words.
+      const [hiddenIds, mutedWords] = await Promise.all([
+        hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId),
+        mutedKeywords(ctx.db, ctx.auth?.userId),
+      ]);
+      const hidden = new Set(hiddenIds);
       if (hidden.size) {
         combinedActivities = combinedActivities.filter(
           (a) => !(a.source === "thinkpages" && hidden.has(a.rawPost?.accountId))
         );
       }
+      combinedActivities = dropMutedItems(combinedActivities, mutedWords);
 
       // Apply pagination limit to combined results
       const paginatedActivities = await attachViewerEngagement(

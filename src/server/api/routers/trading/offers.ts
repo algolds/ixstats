@@ -15,6 +15,8 @@ import {
   transferCreditsTx,
   unlockCardsTx,
 } from "~/lib/vault/trade-settlement";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 
 /** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
 async function clearVaultCaches(...users: Array<{ id: string; clerkUserId?: string | null }>) {
@@ -70,6 +72,18 @@ export const tradingOffersRouter = createTRPCRouter({
         });
       }
       const recipientDbId = recipientUser.id;
+
+      // The recipient's trade-offer setting and block list (SL-4).
+      const [refusing, blocking] = await Promise.all([
+        recipientsRefusing(ctx.db, ctx.auth.userId, [input.recipientId], "tradeOffers"),
+        recipientsBlockingSender(ctx.db, ctx.auth.userId, [input.recipientId]),
+      ]);
+      if (refusing.length > 0 || blocking.length > 0) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This user is not accepting trade offers from you",
+        });
+      }
 
       // Verify initiator owns the cards they're offering
       const initiatorCards = await ctx.db.cardOwnership.findMany({

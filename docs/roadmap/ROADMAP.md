@@ -194,6 +194,8 @@ Replace each with real data, or show an empty state. All S or S–M.
   `/blurbs/<slug>` (2026-10-05).
 - ✅ **Pages:** the `/explore` mobile filters (SL-24); `/admin/calculations` has a page; the WikiOS export link passes a
   slug (WK-15, 2026-10-05).
+- ✅ **Labs gate:** `/labs/*` pages check on the server the same rule the sidebar uses (signed in, `showLabsTab` or the
+  admin / `labs.access` bypass) (SL-27, 2026-10-05).
 
 ### M2.5 Help centre
 ✅ **Done:** all 63 articles are registered in `src/app/help/_lib/help-sections.ts` (8 added on 2026-10-05: Blurbs, MyLeague/MyClub, Onoma, Vexel, the Canvas editor, Explore, Settings and Halo); the admin article is rewritten
@@ -286,13 +288,19 @@ the spine.
 ## M6 — Social & knowledge
 
 **Feed & notifications**
-- **Feed producers through the event spine:** engagement counters (likes, comments, views), a real trending ranking, the
-  `trending` flag set (SL-7, SL-8, SL-9). *Needs M4 spine.* **Partial (#49):** the `thinkpages-trending` job scores
-  posts with engagement decay and reconciles the like/reply/repost counters; persona follows have real counts.
+- ✅ **Activity producers (SL-7, 2026-10-05):** every remaining producer is called where its event happens (embassies,
+  public alliances, laws passed, economic tier milestones, achievements, nations founded or claimed); producers with
+  no real event were deleted.
+- ✅ **Engagement and trending (SL-8, SL-9):** the `thinkpages-trending` job scores posts with engagement decay over
+  reactions, replies, reposts and daily distinct views, sets the `trending` flag and reconciles the like/reply/repost
+  counters (#49); post views are counted once per viewer per day (2026-10-05); persona follows have real counts.
 - **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
   registry to hooks that fire (SL-6).
-- **Privacy:** full enforcement of the remaining toggles (SL-4). *Needs M0 #7.*
-- **Moderation:** bookmarks list; flag moderation queue (SL-10).
+- **Privacy:** DM, mention and trade-offer audiences and muted words are enforced and shown (SL-4, 2026-10-05). Left:
+  online status and read receipts need the features first; message request filtering, indexing, telemetry,
+  recommendations, Discord tag, wiki attribution and clear history stay hidden. *Needs M0 #7.*
+- ✅ **Moderation (SL-10, 2026-10-05):** a Saved posts list for bookmarks; an admin flag queue that dismisses flags or
+  removes the post.
 - ✅ **Follows:** persona follows with real counts, notifications and a Following feed (SL-9, #49).
 - **ThinkShare encryption:** build it or drop the fields (Decision D7).
 
@@ -313,8 +321,8 @@ the spine.
 
 | Lab | Next items | Refs |
 |---|---|---|
-| MyLeague / MyClub | Boxing bout engine; rivalries created (SL-16); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
-| Onoma | Publish path for language packs (SL-18) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
+| MyLeague / MyClub | Boxing bout engine; ✅ rivalries created from match results (SL-16, 2026-10-05); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
+| Onoma | ✅ Publish path for language packs (SL-18, 2026-10-05) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
 | Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
 | Map pipeline | Real enrichment for the Labs pipeline (AT-9; persisted countries' resources are real since 2026-10-05). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |

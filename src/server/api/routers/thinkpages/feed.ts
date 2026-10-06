@@ -7,6 +7,7 @@ import { globalCache } from "~/lib/cache";
 import { postInclude, transformPost } from "./post-utils";
 import { realmFeedWhere } from "./realm-feed";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
+import { mutedKeywords } from "~/server/shared/privacy-permissions";
 
 interface PostDateFields {
   createdAt?: string | Date | null;
@@ -107,9 +108,14 @@ export const thinkpagesFeedRouter = createTRPCRouter({
   // Get feed
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     try {
-      // Posts by accounts the viewer blocked or muted are left out (and cached per viewer).
-      const hiddenAccountIds = await hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId);
-      const viewerScope = hiddenAccountIds.length ? `:viewer:${ctx.auth?.userId}` : "";
+      // Posts by accounts the viewer blocked or muted, and posts containing one of the viewer's
+      // muted words (SL-4), are left out (and cached per viewer).
+      const [hiddenAccountIds, mutedWords] = await Promise.all([
+        hiddenThinkpagesAccountIds(ctx.db, ctx.auth?.userId),
+        mutedKeywords(ctx.db, ctx.auth?.userId),
+      ]);
+      const viewerScope =
+        hiddenAccountIds.length || mutedWords.length ? `:viewer:${ctx.auth?.userId}` : "";
       const cacheKey = `thinkpages_feed:${input.countryId || "all"}:${input.realmId || "all"}:${input.hashtag || "all"}:${input.filter}:${input.limit}:${input.cursor || "none"}${viewerScope}`;
 
       const cached = await globalCache.get<{ posts: any[]; nextCursor: string | null }>(cacheKey);
@@ -141,6 +147,15 @@ export const thinkpagesFeedRouter = createTRPCRouter({
         // Realm board posts are "thinktank" posts, so the realm clause carries its own visibility.
         delete whereClause.visibility;
         whereClause.AND = [await realmFeedWhere(db, input.realmId)];
+      }
+
+      if (mutedWords.length) {
+        whereClause.AND = [
+          ...(whereClause.AND ?? []),
+          ...mutedWords.map((word) => ({
+            NOT: { content: { contains: word, mode: "insensitive" } },
+          })),
+        ];
       }
 
       if (input.filter === "trending") {

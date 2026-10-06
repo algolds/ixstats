@@ -9,6 +9,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import { applyPolicyEffect } from "~/lib/policies";
 import {
   tallyVote,
@@ -200,6 +201,12 @@ export const legislationRouter = createTRPCRouter({
           name: bill.name,
           gdpEffect: bill.gdpEffect,
         });
+        void ActivityHooks.Government.onLawPassed(
+          bill.countryId,
+          bill.name,
+          bill.gdpEffect ?? 0,
+          ctx.auth?.userId ?? undefined
+        );
       }
 
       void generateDiplomaticNews(

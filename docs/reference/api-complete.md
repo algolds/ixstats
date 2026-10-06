@@ -5,13 +5,13 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 943 Endpoints)
+### Live tRPC API Inventory (77 Routers, 951 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 5 | 2 | 0 | **7** | `src/server/api/routers/achievements/index.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
-| **`api.admin`** | 35 | 44 | 0 | **79** | `src/server/api/routers/admin/index.ts` |
+| **`api.admin`** | 36 | 45 | 0 | **81** | `src/server/api/routers/admin/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
 | **`api.autosaveHistory`** | 2 | 0 | 0 | **2** | `src/server/api/routers/autosaveHistory.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
@@ -65,7 +65,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.notifications`** | 6 | 12 | 0 | **18** | `src/server/api/routers/notifications/index.ts` |
 | **`api.npcPersonalities`** | 1 | 4 | 0 | **5** | `src/server/api/routers/npcPersonalities/index.ts` |
 | **`api.nsImport`** | 9 | 14 | 0 | **23** | `src/server/api/routers/ns-import/index.ts` |
-| **`api.onoma`** | 16 | 23 | 0 | **39** | `src/server/api/routers/onoma/index.ts` |
+| **`api.onoma`** | 17 | 26 | 0 | **43** | `src/server/api/routers/onoma/index.ts` |
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
 | **`api.quickActions`** | 1 | 1 | 0 | **2** | `src/server/api/routers/quickactions/index.ts` |
@@ -78,7 +78,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 1 | 4 | 0 | **5** | `src/server/api/routers/taxSystem/index.ts` |
-| **`api.thinkpages`** | 19 | 27 | 0 | **46** | `src/server/api/routers/thinkpages/index.ts` |
+| **`api.thinkpages`** | 20 | 28 | 0 | **48** | `src/server/api/routers/thinkpages/index.ts` |
 | **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
@@ -86,7 +86,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 26 | 19 | 0 | **45** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 53 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **459** | **480** | **0** | **943** | **77 registered namespaces** |
+| **TOTALS** | **462** | **485** | **0** | **951** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.

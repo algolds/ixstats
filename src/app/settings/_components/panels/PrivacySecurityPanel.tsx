@@ -6,6 +6,10 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   UserXmark,
+  ChatBubble,
+  AtSign,
+  RefreshDouble,
+  Text as TextIcon,
   EyeClosed as EyeOff,
   Download,
   Lock,
@@ -35,12 +39,14 @@ import {
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
 
 /*
- * Only settings the server enforces are shown (SL-4): blocking and muting, ThinkTank invite
- * permissions and appearing in ThinkTank invite search. The other PrivacyConfig keys (DM, mention
- * and trade permissions, online status, read receipts, indexing, telemetry, recommendations),
- * muted words and "clear history" have nothing behind them yet, so they are hidden.
+ * Only settings the server enforces are shown (SL-4): blocking, muting and muted words, who may
+ * message you, mention you, send you trade offers and invite you to ThinkTanks, and appearing in
+ * ThinkTank invite search (src/server/shared/privacy-permissions.ts, user-blocks.ts). The other
+ * PrivacyConfig keys (message request filtering, online status, read receipts, indexing,
+ * telemetry, recommendations, Discord tag, wiki attribution) and "clear history" have nothing
+ * behind them yet, so they are hidden.
  */
-type FilterTab = "blocked" | "muted";
+type FilterTab = "blocked" | "muted" | "keywords";
 type Icon = React.ComponentType<{ className?: string }>;
 type FilterAccount = {
   id: string;
@@ -52,14 +58,41 @@ type FilterAccount = {
 const GLYPH = "bg-muted/60 text-foreground";
 
 interface SelectRowSpec {
-  key: "thinktankInvites";
+  key: "directMessages" | "mentions" | "tradeOffers" | "thinktankInvites";
   label: string;
   description: string;
   icon: Icon;
   options: Array<[value: string, label: string]>;
 }
 
+const AUDIENCE_OPTIONS: Array<[value: string, label: string]> = [
+  ["everyone", "Everyone"],
+  ["followers", "People you follow"],
+  ["nobody", "Nobody"],
+];
+
 const SELECT_ROWS: SelectRowSpec[] = [
+  {
+    key: "directMessages",
+    label: "Direct messages",
+    description: "Who can start a conversation with you or message you directly",
+    icon: ChatBubble,
+    options: AUDIENCE_OPTIONS,
+  },
+  {
+    key: "mentions",
+    label: "Mentions",
+    description: "Whose @mentions notify you (the mention still shows on the post)",
+    icon: AtSign,
+    options: AUDIENCE_OPTIONS,
+  },
+  {
+    key: "tradeOffers",
+    label: "Card trade offers",
+    description: "Who can send you a card trade offer",
+    icon: RefreshDouble,
+    options: AUDIENCE_OPTIONS,
+  },
   {
     key: "thinktankInvites",
     label: "ThinkTank invites",
@@ -202,8 +235,9 @@ function AccountList(props: {
 function BlockingFilters(props: {
   blockedAccounts: FilterAccount[];
   mutedAccounts: FilterAccount[];
+  mutedKeywords: FilterAccount[];
 }) {
-  const { blockedAccounts, mutedAccounts } = props;
+  const { blockedAccounts, mutedAccounts, mutedKeywords } = props;
   const notify = useNotify();
   const utils = api.useUtils();
 
@@ -211,6 +245,7 @@ function BlockingFilters(props: {
   const [inputs, setInputs] = useState<Record<FilterTab, string>>({
     blocked: "",
     muted: "",
+    keywords: "",
   });
   const setInput = (tab: FilterTab) => (value: string) =>
     setInputs((prev) => ({ ...prev, [tab]: value }));
@@ -248,6 +283,12 @@ function BlockingFilters(props: {
   const unmuteMutation = api.users.unmuteAccount.useMutation(
     listMutation("Account unmuted", "Failed to unmute account", "press")
   );
+  const addKeywordMutation = api.users.addMutedKeyword.useMutation(
+    listMutation("Word muted", "Failed to mute word", "bloom", () => setInput("keywords")(""))
+  );
+  const removeKeywordMutation = api.users.removeMutedKeyword.useMutation(
+    listMutation("Word unmuted", "Failed to unmute word", "press")
+  );
 
   return (
     <div className="space-y-4 p-4">
@@ -263,6 +304,7 @@ function BlockingFilters(props: {
         options={[
           { value: "blocked", label: `Blocked accounts (${blockedAccounts.length})` },
           { value: "muted", label: `Muted accounts (${mutedAccounts.length})` },
+          { value: "keywords", label: `Muted words (${mutedKeywords.length})` },
         ]}
       />
 
@@ -320,6 +362,35 @@ function BlockingFilters(props: {
               actionLabel="Unmute"
               onAction={(connectionId) => unmuteMutation.mutate({ connectionId })}
               pending={unmuteMutation.isPending}
+            />
+          )}
+        </div>
+      )}
+
+      {activeFilterTab === "keywords" && (
+        <div className="space-y-3">
+          <FilterForm
+            icon={TextIcon}
+            value={inputs.keywords}
+            onChange={setInput("keywords")}
+            placeholder="Word or phrase to mute"
+            onSubmit={(keyword) => addKeywordMutation.mutate({ keyword })}
+            pending={addKeywordMutation.isPending}
+            buttonIcon={<EyeOff className="text-muted-foreground h-3.5 w-3.5" />}
+            buttonLabel="Mute"
+          />
+          {mutedKeywords.length === 0 ? (
+            <EmptyListNotice
+              icon={TextIcon}
+              title="No muted words"
+              text="Posts containing a muted word are hidden from your ThinkPages, activity and Following feeds."
+            />
+          ) : (
+            <AccountList
+              accounts={mutedKeywords}
+              actionLabel="Unmute"
+              onAction={(connectionId) => removeKeywordMutation.mutate({ connectionId })}
+              pending={removeKeywordMutation.isPending}
             />
           )}
         </div>
@@ -460,6 +531,10 @@ export function PrivacySecurityPanel() {
   const config = privacyData?.config;
   const blockedAccounts = privacyData?.blockedAccounts ?? [];
   const mutedAccounts = privacyData?.mutedAccounts ?? [];
+  const mutedKeywords = (privacyData?.mutedKeywords ?? []).map((k) => ({
+    id: k.id,
+    label: k.keyword,
+  }));
 
   const setOption = <K extends keyof PrivacyConfig>(key: K, value: PrivacyConfig[K]) =>
     updateConfigMutation.mutate({ [key]: value } as Partial<PrivacyConfig>);
@@ -483,17 +558,24 @@ export function PrivacySecurityPanel() {
       <SettingsHeader
         title="Privacy & Security"
         category="Platform & preferences"
-        description="Blocking, ThinkTank invites, invite search and your data."
+        description="Blocking, muting, who can reach you, invite search and your data."
       />
 
       <SettingsGroup
         title="Blocking and muting"
-        description="Stop accounts from messaging you or appearing in your ThinkPages feeds."
+        description="Stop accounts from messaging you, and keep accounts and words out of your feeds."
       >
-        <BlockingFilters blockedAccounts={blockedAccounts} mutedAccounts={mutedAccounts} />
+        <BlockingFilters
+          blockedAccounts={blockedAccounts}
+          mutedAccounts={mutedAccounts}
+          mutedKeywords={mutedKeywords}
+        />
       </SettingsGroup>
 
-      <SettingsGroup title="Interactions" description="Who can invite you to ThinkTanks.">
+      <SettingsGroup
+        title="Interactions"
+        description="Who can message, mention, trade with and invite you."
+      >
         {SELECT_ROWS.map((row) => (
           <React.Fragment key={row.key}>
             <SettingsRow

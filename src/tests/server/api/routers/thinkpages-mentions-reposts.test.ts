@@ -62,6 +62,30 @@ beforeEach(() => {
 });
 
 describe("mention notifications", () => {
+  it("skip users whose mention setting excludes the author, but still record the mention (SL-4)", async () => {
+    const db = setupCreate();
+    db.thinkpagesAccount.findMany.mockResolvedValue([
+      { id: "persona_a", username: "alice", clerkUserId: "clerk_alice" },
+      { id: "persona_b", username: "bob", clerkUserId: "clerk_bob" },
+    ]);
+    db.userConnection.findMany.mockImplementation(async (args: any) =>
+      args.where.connectionType === "privacy_config"
+        ? [{ userId: "clerk_alice", status: JSON.stringify({ mentions: "nobody" }) }]
+        : []
+    );
+    const caller = createCaller(createMockRouterContext({ db }) as never);
+    await caller.createPost({
+      accountId: "persona_me",
+      content: "hi @alice @bob",
+      mentions: ["@alice", "@bob"],
+      postToDiscord: false,
+    });
+
+    expect(db.postMention.createMany.mock.calls[0][0].data).toHaveLength(2);
+    expect(mockOnSocialActivity).toHaveBeenCalledTimes(1);
+    expect(mockOnSocialActivity.mock.calls[0]![0]).toMatchObject({ toUserId: "clerk_bob" });
+  });
+
   it("notify the mentioned persona's owning user once, named after the actor persona", async () => {
     const db = setupCreate();
     db.thinkpagesAccount.findMany.mockResolvedValue([

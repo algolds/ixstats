@@ -92,22 +92,29 @@ automatically for a persona.
 Only controls the server enforces are shown. Lists and options are stored as `UserConnection` rows
 (`users/preferences.ts`): blocks and mutes as one row each, and the options as one JSON row
 (`targetUserId: "global_privacy"`, `connectionType: "privacy_config"`). Enforcement lives in
-`src/server/shared/user-blocks.ts`.
+`src/server/shared/user-blocks.ts` (blocks and mutes) and `src/server/shared/privacy-permissions.ts` (audiences and
+muted words, SL-4). For the audience settings, "people you follow" means one of your ThinkPages personas follows one
+of theirs, or your country follows theirs; a missing setting means everyone.
 
 | Control | Effect |
 | :--- | :--- |
 | Blocked accounts | `users.blockAccount` / `unblockAccount`. Posts by blocked accounts (or a blocked nation's accounts) are left out of your ThinkPages feed (`thinkpages.getFeed`) and the global activity feed. Someone you blocked can't start a conversation with you or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`). In group conversations their messages are hidden from you and don't count toward your unread badges, previews or notifications. ThinkTank invites also honour blocks (`thinktanks/invite-privacy.ts`) |
 | Muted accounts | `users.muteAccount` / `unmuteAccount`. Their posts are left out of your ThinkPages and activity feeds; they can still message you |
+| Muted words | `users.addMutedKeyword` / `removeMutedKeyword` (one `keyword` row each). Posts and activity entries containing a muted word (case-insensitive substring) are left out of your ThinkPages feed (`thinkpages.getFeed`, cached per viewer), the global activity feed and the Following feed |
+| Direct messages (everyone, people you follow, nobody) | `directMessages`. Someone outside your audience can't start a conversation with you (including a group or diplomatic one) or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`, "not accepting direct messages"). Group conversations you are already in are unaffected. A stored `verified` value (no longer offered) means the sender owns a verified ThinkPages persona |
+| Mentions (everyone, people you follow, nobody) | `mentions`. An @mention from outside your audience, or from someone you blocked, is still recorded on the post but doesn't notify you (`thinkpages.createPost`) |
+| Card trade offers (everyone, people you follow, nobody) | `tradeOffers`. Someone outside your audience, or someone you blocked, can't send you a trade offer (`trading.createtradeOffer` → `FORBIDDEN`) |
 | ThinkTank invites (everyone, followers, nobody) | Enforced by `filterInvitableUserIds` when someone invites you |
 | Appear in invite search | `searchDiscoverable`. When off, ThinkTank owners can't find you in the invite search (`invite-privacy.ts`) |
 | Export your data | `users.exportUserData`: a JSON download of account fields, Vault, card count, preferences and up to 50 recent ThinkPages posts |
 | Sessions and two-step verification | Opens the auth provider's user profile (Clerk) |
 | NationStates card deck | Links to the Cards tab and opens the takedown modal |
 
-**Hidden** (stored keys with nothing behind them): direct-message, mention and trade-offer permissions, message
-request filtering, online status, read receipts, search engine indexing, Discord tag and wiki attribution, diagnostics,
-recommendations, muted words and "clear history". Their procedures (`addMutedKeyword`, `removeMutedKeyword`,
-`clearSearchHistory`, the other `PrivacyConfig` keys of `updatePrivacyConfig`) still exist; `clearSearchHistory` is a
+**Hidden** (stored keys with nothing behind them): message request filtering, online status (presence updates are
+emitted by the client but the WebSocket server neither relays nor stores them, so nobody sees an online state), read
+receipts (the client never sends message ids, so no receipts are written), search engine indexing (profiles set no
+robots metadata), Discord tag and wiki attribution, diagnostics, recommendations and "clear history". Their procedures
+(`clearSearchHistory`, the other `PrivacyConfig` keys of `updatePrivacyConfig`) still exist; `clearSearchHistory` is a
 stub that returns success.
 
 ### Vault status (`vault`) — `VaultStatusPanel`
@@ -169,7 +176,8 @@ panel's Defense and Intelligence tab switches (the sidebar gates Defense on MyCo
 - A few controls are display-only (listed above): persona posting rules, MyCountry inline lore
   (`wikiAutoScan`), and the Discord "bot alerts" wording on the account panel.
 - Appearance and most WikiOS reader settings are per browser and don't follow the account to another device.
-- Muted accounts are hidden from feeds but can still message you; there are no muted words.
+- Muted accounts are hidden from feeds but can still message you.
+- Online status, read receipts, indexing and the other hidden privacy keys have no feature behind them (see above).
 - The MyCountry tab and the Country Editor both change the flag and name; Settings has no coat-of-arms field.
 
 ## Related documentation

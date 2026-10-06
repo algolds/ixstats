@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Group as Users, Plus, ArrowRight } from "iconoir-react";
+import { Group as Users, Plus, ArrowRight, BookmarkBook } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
@@ -89,12 +89,20 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
             Post, browse, and interact from the unified feed.
           </p>
         </div>
-        <Button asChild size="sm" variant="outline">
-          <Link href={"/dashboard"}>
-            Go to dashboard
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button asChild size="sm" variant="ghost">
+            <Link href={"/thinkpages/saved"}>
+              <BookmarkBook aria-hidden="true" />
+              Saved posts
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href={"/dashboard"}>
+              Go to dashboard
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
       </Card>
 
       <div className="flex items-center justify-between">

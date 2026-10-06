@@ -22,7 +22,10 @@ import {
   MessagingValidationError,
 } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
+
+const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
 
 export class MessagingConversationOperations {
   private db: any;
@@ -44,6 +47,12 @@ export class MessagingConversationOperations {
     // Nobody who has blocked the creator can be pulled into a conversation with them.
     if ((await recipientsBlockingSender(this.db, actorId, allParticipants)).length > 0) {
       throw new MessagingBlockedError();
+    }
+    // Nor anyone whose direct-message setting excludes the creator (SL-4).
+    if (
+      (await recipientsRefusing(this.db, actorId, allParticipants, "directMessages")).length > 0
+    ) {
+      throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
     }
 
     return await this.db.$transaction(async (tx: any) => {

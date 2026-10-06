@@ -2,7 +2,8 @@
  * `thinkpages-trending` cron job: scores recent ThinkPages engagement, flags the top posts
  * `trending` (clearing the rest), stores every post's `trendingScore` for the "hot" sort, writes
  * trending hashtags to `TrendingTopic`, and reconciles the denormalised engagement counters
- * (`likeCount`, `replyCount`, `repostCount`) with the real rows.
+ * (`likeCount`, `replyCount`, `repostCount`) with the real rows. It first flushes the pending
+ * post views (./post-views.ts) so the score sees them.
  */
 import { resolveReactionCounts } from "~/server/shared/thinkpages-post-utils";
 import {
@@ -15,8 +16,10 @@ import {
   type EngagementEvent,
 } from "./trending";
 import { findAllById } from "~/lib/system/find-all-by-id";
+import { flushPendingViews, viewDayMoment } from "./post-views";
 
 interface ThinkPagesTrendingResult {
+  viewsFlushed: number;
   eventsConsidered: number;
   postsScored: number;
   trendingPosts: number;
@@ -31,8 +34,12 @@ const PUBLIC_VISIBILITIES = ["public", "unlisted"];
 
 type Db = (typeof import("~/server/db"))["db"];
 
-async function loadEvents(db: Db, since: Date): Promise<EngagementEvent[]> {
-  const [reactions, replies, reposts] = await Promise.all([
+async function loadEvents(db: Db, since: Date, now: Date): Promise<EngagementEvent[]> {
+  // View days are stored at UTC midnight: include the day the window starts in.
+  const sinceDay = new Date(
+    Date.UTC(since.getUTCFullYear(), since.getUTCMonth(), since.getUTCDate())
+  );
+  const [reactions, replies, reposts, viewDays] = await Promise.all([
     findAllById((page) =>
       db.postReaction.findMany({
         where: { timestamp: { gte: since } },
@@ -80,9 +87,23 @@ async function loadEvents(db: Db, since: Date): Promise<EngagementEvent[]> {
         ...page,
       })
     ),
+    db.thinkpagesPostViewDay.findMany({
+      where: { day: { gte: sinceDay }, views: { gt: 0 } },
+      select: { postId: true, day: true, views: true },
+    }),
   ]);
 
   const events: EngagementEvent[] = [];
+  for (const v of viewDays ?? []) {
+    events.push({
+      postId: v.postId,
+      kind: "view",
+      at: viewDayMoment(v.day, now),
+      // One event per post per day: the actor is the day, so the per-actor dedupe keeps each day.
+      actorId: `views:${v.day.toISOString().slice(0, 10)}`,
+      count: v.views,
+    });
+  }
   for (const r of reactions ?? []) {
     events.push({
       postId: r.postId,
@@ -306,7 +327,13 @@ export async function runThinkPagesTrending(
   const client = db ?? (await import("~/server/db")).db;
   const since = new Date(now.getTime() - TRENDING_CONFIG.windowHours * HOUR_MS);
 
-  const events = await loadEvents(client, since);
+  let viewsFlushed = 0;
+  try {
+    viewsFlushed = await flushPendingViews(client);
+  } catch (error) {
+    console.error("[thinkpages-trending] Failed to flush post views:", error);
+  }
+  const events = await loadEvents(client, since, now);
   const { scores, scoredCount, trendingCount } = await writePostScores(client, now, events);
   const trendingTopics = await writeTopics(client, now, since, scores);
   const countersFixed = await reconcileEngagementCounters(client);
@@ -319,6 +346,7 @@ export async function runThinkPagesTrending(
   }
 
   return {
+    viewsFlushed,
     eventsConsidered: events.length,
     postsScored: scoredCount,
     trendingPosts: trendingCount,

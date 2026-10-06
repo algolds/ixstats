@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
+import { ActivityHooks } from "~/lib/activity/hooks";
 import {
   INVITE_STATUS,
   inviteIssuedAt,
@@ -167,6 +168,15 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         allianceName: input.name,
         countryName: founderCountry?.name ?? "Unknown",
       });
+      // Activity feed: only public alliances are announced (best effort, never throws).
+      if (input.visibility === "public") {
+        void ActivityHooks.Diplomatic.onAllianceFormed(
+          ctx.user.countryId,
+          input.name,
+          input.type,
+          ctx.auth?.userId ?? undefined
+        );
+      }
 
       // Notification: alliance formed (fire-and-forget)
       try {

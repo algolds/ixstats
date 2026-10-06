@@ -18,15 +18,40 @@ The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects t
 - **Official Seals & Sovereign Identity**: Posts display sovereign state seals, leader titles, and verified tags. Only admins can set the verified flag, and creating an account tied to a country requires write access to that country (`accounts.ts`).
 - **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
 - **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
+- **Saved posts** (`/thinkpages/saved`, SL-10): a post's menu bookmarks it (`thinkpages.bookmarkPost`, keyed by the caller's Clerk id). `thinkpages.getBookmarkedPosts` lists the caller's bookmarks, most recently saved first (cursor on the bookmark id), leaving out posts deleted since and posts the caller can no longer read. The page links from the ThinkPages account hub and each item has **Remove from saved**.
+- **Flags and the moderation queue** (SL-10): `thinkpages.flagPost` records a flag (`PostFlag`) for the caller, with an optional reason; the flagger is always the signed-in user (a client-sent `userId` is ignored), and a user flags a post once. Admins work the queue in **Admin → ThinkPages → Flagged posts** (`admin.listFlaggedPosts`: open flags grouped by post, most flagged first, with up to five reasons). **Dismiss** closes every open flag on the post (`status: "dismissed"`); **Remove post** deletes the post through the same path as `deletePost` (`server/shared/thinkpages-post-delete.ts`) and closes its flags as `removed`. Both record `resolvedAt` and the admin's Clerk id in `resolvedBy`.
 
 ### Trending, Hot & engagement counters
 
-- **`thinkpages-trending` cron job** (`src/lib/thinkpages/trending-cron.ts`, every 15 min, schedule override `cronSchedule_thinkpagesTrending`; off unless listed in `CRON_ENABLED_JOBS`). It scores each post from the real reactions (`PostReaction`), public replies and reposts it received in the last 72 h. Weights are reaction 1, reply 2 and repost/quote 3, and each event halves every 12 h. Engagement from any persona of the post author's own user is ignored, and each user counts once per kind per post. Tunables live in `TRENDING_CONFIG` (`src/lib/thinkpages/trending.ts`).
+- **`thinkpages-trending` cron job** (`src/lib/thinkpages/trending-cron.ts`, every 15 min, schedule override `cronSchedule_thinkpagesTrending`; off unless listed in `CRON_ENABLED_JOBS`). It scores each post from the real reactions (`PostReaction`), public replies, reposts and views it received in the last 72 h. Weights are reaction 1, reply 2, repost/quote 3 and view 0.25 per distinct viewer, and each event halves every 12 h (a day's views count as made at midday). Engagement from any persona of the post author's own user is ignored, and each user counts once per kind per post. Tunables live in `TRENDING_CONFIG` (`src/lib/thinkpages/trending.ts`).
+- **Post views** (`src/lib/thinkpages/post-views.ts`, SL-8): opening `/thinkpages/post/[postId]` signed in calls `thinkpages.recordPostView` (light mutation). A view counts once per viewer per post per UTC day, never the author's own, on public and unlisted posts only. The per-day claim is a Redis `SET NX` (2-day expiry) when Redis is ready, else an in-process set (so without Redis, each web process dedupes on its own). Counted views collect in a pending tally (Redis hash or memory) that is flushed in batches, once a minute or every 100 views from the recording process and at the start of every trending run, into `ThinkpagesPostViewDay` (views per post per day, read by the score) and `ThinkpagesPost.impressions` (the lifetime count shown as views).
 - **Trending posts**: public, top-level posts (not replies or plain reposts) with a score of at least 3 are ranked, and the top 25 get `trending = true`; every other post is cleared. Each eligible post's score is stored in `ThinkpagesPost.trendingScore`, and scores outside the window reset to 0.
 - **Feed filters** (`thinkpages.getFeed`): `trending` lists only flagged posts, by score. `hot` lists all posts, pinned first and then by `trendingScore`, newest among equals. `recent` is newest first. The `/dashboard` **Trending** tab shows the flagged posts and trending hashtags. When nothing qualifies it shows an empty state ("Nothing is trending right now"), with no recency fallback.
 - **Trending topics** (`TrendingTopic`): hashtags on public posts from the window, grouped case-insensitively. A hashtag needs at least 2 posts by at least 2 users. The top 10 by `postCount + engagement` are `isActive`; the rest are deactivated. `peakTimestamp` records when a topic last hit a new high. `activities.getTrendingTopics` reads these rows for the `/feed` "Trending Now" list and the Trending tab chips. A topic shows as rising if it peaked in the last 6 h.
-- **Unified trending** (`activities.getUnifiedTrending`, dashboard sidebar): the ThinkPages source is the posts with `trendingScore > 0`, by score.
+- **Unified trending** (`activities.getUnifiedTrending`, dashboard sidebar): the ThinkPages source is the posts with `trendingScore > 0`, by score (views included). Activity rows have no view tracking, so the IxStats source takes the newest public rows of the last 48 h and scores them by type, likes, comments and shares.
 - **Engagement counters**: `likeCount` mirrors the `like` entry of the `reactionCounts` tally and is written by every reaction add, change and remove. `createPost` increments the parent's `replyCount` and the original's `repostCount`, and `deletePost` decrements them (never below 0). Other writers (Discord import, ThinkTanks, auto-posts) don't maintain them, so the cron job also reconciles all three counters with the real rows on every run.
+
+### Activity feed producers (`ActivityFeed`)
+
+The global activity feed (`activities.getGlobalFeed`, `/feed` and the dashboard) merges `ActivityFeed` rows with
+ThinkPages posts, wiki and forum activity. The rows come from `src/lib/activity/hooks.ts` (`ActivityHooks`) and
+`src/lib/activity/generator.ts`, and each producer is called where its game event happens. Every producer is best
+effort: a failed write is logged and never fails the action that triggered it.
+
+| Feed filter | Event | Called from |
+| :--- | :--- | :--- |
+| Diplomatic | Embassy established | `diplomacy/embassies/establish.ts` |
+| Diplomatic | Public alliance founded / joined (accepted invite) | `diplomacy/policies/alliances.ts`, `alliance-invite-procedures.ts`; private and secret alliances post nothing |
+| Economic | Economic milestone: the stored economic tier changes (GDP per capita crossed a tier threshold) | `stat-progression` cron job and the admin force recalculation (`onEconomicTierChange`) |
+| Economic / Achievements | A bill passes and becomes law (Economic when it has a GDP effect) | `legislation.holdVote` |
+| Achievements | Achievement unlocked | `lib/achievements/service.ts` |
+| Social | Nation founded in the builder / nation claimed in a realm | `countries.createCountry`, `realms` claim side effects |
+| Social | Onoma name generation and dictionary sharing | `onoma/namebank.ts` |
+
+Producers with no real event behind them (diplomatic missions, trade agreements, budgets, tax reforms,
+infrastructure projects, military branches, security threats, government components and effectiveness, ThinkPage
+posts, country follows and sign-ups) were deleted (SL-7). The `achievements` filter matches rows of type
+`achievement`.
 
 ### Social notifications
 
