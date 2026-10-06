@@ -341,8 +341,9 @@ describe("getFileInfo (File: pages, Special:FilePath)", () => {
       thumbnailUrl: "/images/uploads/thumb/Flag.svg",
       width: 300,
       height: 200,
-      mimeType: "image/svg+xml",
+      mimeType: "image/png",
       sizeBytes: 2048,
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
     });
     const info = await getFileInfo("File:Flag_of_Eurth.svg");
 
@@ -353,8 +354,9 @@ describe("getFileInfo (File: pages, Special:FilePath)", () => {
       thumbUrl: "/images/uploads/thumb/Flag.svg",
       width: 300,
       height: 200,
-      mimeType: "image/svg+xml",
+      mimeType: "image/png",
       sizeBytes: 2048,
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
     });
   });
 

@@ -106,6 +106,7 @@ login that fails is a failed job, never an anonymous write). Only the realm `ixw
 | `src/app/api/mediawiki/ixwiki/[...path]/route.ts`, `src/app/api/mediawiki/_media-response.ts` | `images/...`, `images/thumb/...`, `Special:FilePath/<name>`, `thumb.php?f=<name>&width=<n>` | Image-only proxy (image/* only, 15 MB cap). Rate-limited. Registers the file in `wiki_assets` on first sight. This is a file download, not a wiki read: the bytes of an uploaded file are not in Postgres. |
 | `src/app/api/_lib/image-proxy.ts`, `src/app/api/download/external-image/route.ts` | allow-listed external image hosts (ixwiki.com among them) | Generic image download proxy. |
 | `src/app/api/mediawiki/[wiki]/[...path]/route.ts` | the same shapes, for iiwiki, AltHistory and Commons | Sister wikis (below). |
+| `src/lib/wiki-os/services/blurhash-backfill.ts` (`scripts/wikios-backfill-blurhash.ts`, `bun run wiki:backfill:blurhash`) | each PNG, JPEG, GIF and WebP asset without a BlurHash: its `/images/...` file, through `media-download.ts` (the media proxies' host allowlist, 10 MB cap, every redirect re-checked), or its staged copy | Operator script (WK-17), one file at a time with a pause between; a dry run by default. |
 
 ### Public `api.php` proxy (IxWiki: closed)
 

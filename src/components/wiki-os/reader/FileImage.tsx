@@ -1,7 +1,10 @@
 // The image on a `File:` page, above its description. Plain markup, rendered on the server so the
-// image is in the first HTML (it is the largest thing on the page).
+// image is in the first HTML (it is the largest thing on the page), with the file's BlurHash behind
+// it until it loads (WK-17).
 
+import { PlaceholderImage } from "~/components/wiki-os/shared/PlaceholderImage";
 import { assetUrl } from "~/lib/base-path";
+import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
 import type { FileInfo } from "~/lib/wiki-os/core/file-page-service";
 
 function formatBytes(bytes: number): string {
@@ -27,7 +30,8 @@ export function FileImage({ file }: { file: FileInfo }) {
     <figure className="mb-6">
       {isPicture ? (
         <a href={src} target="_blank" rel="noopener">
-          <img
+          <PlaceholderImage
+            placeholder={BlurHashService.placeholderDataUri(file.blurhash, file.width, file.height)}
             src={src}
             alt={file.name}
             width={file.width ?? undefined}

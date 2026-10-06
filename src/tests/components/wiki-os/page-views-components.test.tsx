@@ -1,6 +1,6 @@
 /** Plan 412: the page furniture of the /wiki/<path> route: tabs, notices, lists and the 404. */
 import type { ReactNode } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 
 let mockPathname = "/wiki/Foo";
@@ -247,6 +247,7 @@ describe("FileImage", () => {
           height: 200,
           mimeType: "image/svg+xml",
           sizeBytes: 2048,
+          blurhash: null,
         }}
       />
     );
@@ -255,6 +256,32 @@ describe("FileImage", () => {
     expect(image).toHaveAttribute("src", "https://ixwiki.com/images/a/ab/Flag.svg");
     expect(image).toHaveAttribute("fetchpriority", "high");
     expect(screen.getByText(/300 × 200 pixels, 2 KB, image\/svg\+xml/)).toBeInTheDocument();
+  });
+});
+
+describe("FileImage's placeholder (WK-17)", () => {
+  const file = {
+    name: "Harbour.png",
+    url: "https://ixwiki.com/images/a/ab/Harbour.png",
+    thumbUrl: null,
+    width: 1200,
+    height: 800,
+    mimeType: "image/png",
+    sizeBytes: 4096,
+  };
+
+  it("draws the file's BlurHash behind it until it loads", () => {
+    render(<FileImage file={{ ...file, blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" }} />);
+
+    const image = screen.getByRole("img", { name: "Harbour.png" });
+    expect(image.style.backgroundImage).toContain("data:image/svg+xml");
+    fireEvent.load(image);
+    expect(image.style.backgroundImage).toBe("");
+  });
+
+  it("draws nothing behind a file with no BlurHash", () => {
+    render(<FileImage file={{ ...file, blurhash: null }} />);
+    expect(screen.getByRole("img", { name: "Harbour.png" }).style.backgroundImage).toBe("");
   });
 });
 
@@ -270,6 +297,7 @@ describe("FileImage for a PDF (plan 411)", () => {
           height: null,
           mimeType: "application/pdf",
           sizeBytes: 90000,
+          blurhash: null,
         }}
       />
     );

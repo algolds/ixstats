@@ -84,6 +84,22 @@ describe("recordUpload", () => {
     });
   });
 
+  it("stores the BlurHash it is given, and a new version's replaces the old one's (WK-17)", async () => {
+    const first = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
+    await db.$transaction((tx) =>
+      MediaAssetService.recordUpload(tx as never, {
+        ...upload("Swatch.png", "c".repeat(31)),
+        blurhash: first,
+      })
+    );
+    expect(tables.wikiAsset.rows[0]?.blurhash).toBe(first);
+
+    await db.$transaction((tx) =>
+      MediaAssetService.recordUpload(tx as never, upload("Swatch.png", "d".repeat(31)))
+    );
+    expect(tables.wikiAsset.rows[0]?.blurhash).toBeNull();
+  });
+
   it("gives a name whose slug another file took a slug of its own", async () => {
     await db.$transaction((tx) =>
       MediaAssetService.recordUpload(tx as never, upload("Flag.png", "a".repeat(31)))
@@ -154,6 +170,23 @@ describe("registerAsset", () => {
     const asset = await MediaAssetService.registerAsset({ filename: "Seen_in_MediaWiki.png" });
 
     expect(asset.blurhash).toBeNull();
+  });
+
+  it("keeps a file's BlurHash while its size is the same, and drops it for a new version (WK-17)", async () => {
+    const hash = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";
+    await MediaAssetService.registerAsset({
+      filename: "Harbour.png",
+      sizeBytes: 500,
+      blurhash: hash,
+    });
+
+    await MediaAssetService.registerAsset({ filename: "Harbour.png", sizeBytes: 500 });
+    expect(tables.wikiAsset.rows[0]?.blurhash).toBe(hash);
+    await MediaAssetService.registerAsset({ filename: "Harbour.png" });
+    expect(tables.wikiAsset.rows[0]?.blurhash).toBe(hash);
+
+    await MediaAssetService.registerAsset({ filename: "Harbour.png", sizeBytes: 900 });
+    expect(tables.wikiAsset.rows[0]?.blurhash).toBeNull();
   });
 });
 

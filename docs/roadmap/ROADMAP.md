@@ -156,7 +156,7 @@ half-built features players can already see, and remove every fabricated number.
 | ✅ **Done (2026-10-05):** the 11 achievement cards are defined in `src/lib/achievements/card-rewards.ts`; the seed upserts them, back-grants earlier unlocks and runs in `db:seed` (production: `bun prisma/seeds/achievement-cards.ts`) | VT-17 | S | — |
 | ✅ **Done:** the owned state shows (VT-11); every owned perk applies (VT-13, 2026-10-05) | VT-11, VT-13 | S | M0 #1 |
 | ✅ **Done (WikiOS v1, #52, 2026-10-06):** edit conflicts are detected against the base revision, Turnstile is gone (edits are rate-limited and rights-checked), revert and rollback purge the edge cache, and protection has a writer, `/util/protect` and the log. Live at the cutover (D20) | WK-2, WK-4, WK-16, WK-3 | M | — |
-| WikiOS uploads: ✅ native uploads mirrored to MediaWiki (#52, D3). Left: the editor's image picker never calls `commons.search` (WK-6) | WK-5, WK-6 | S | — |
+| ✅ **Done:** native uploads mirrored to MediaWiki (#52, D3); the editor's image picker searches Wikimedia Commons through `commons.search`, paged, with licence and author (WK-6, 2026-10-06) | WK-5, WK-6 | S | — |
 | ✅ **Done:** Docs and Chat tabs and username invites (#48); an invites inbox with accept/decline and join-by-code on the existing `inviteCode` (SL-13, 2026-10-05) | PF§3, SL-22, SL-13 | M | M0 #7 |
 | ✅ **Done (2026-10-05):** routes and hubs are saved with the owning country's realm, with `db:backfill-transport-realm` (dry run, then `--apply`); `flags.resolveBatch` filters by realm | AT-1, AT-18 | S | — |
 | ✅ **Done (2026-10-05):** ocean labels and the tour only on IxWorld; map wiki lookups use the realm's lore-index wiki source | AT-2, AT-12 | S | — |
@@ -316,7 +316,8 @@ the spine.
 - **Stash share links** with a visibility field.
 - **Guardian:** mass-blanking and homoglyph abuse filter.
 - Workstream C packaging; the Lorewards state-file path.
-- Real BlurHash (WK-17).
+- ✅ Real BlurHash (WK-17, 2026-10-06): computed from the pixels on upload, shown behind the `File:` page image and the
+  picker's tiles; `bun run wiki:backfill:blurhash` fills existing assets.
 
 ---
 

@@ -1,5 +1,6 @@
 "use client";
-// Visual image search with card tiles — IxWiki + Wikimedia Commons.
+// Visual image search with card tiles: IxWiki's files (`wikios.searchFiles`) and Wikimedia Commons
+// (`commons.search`, paged, with each file's author and licence).
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
@@ -15,10 +16,16 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
 import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { PlaceholderImage } from "~/components/wiki-os/shared/PlaceholderImage";
 import { Button } from "~/components/ui/button";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  MIN_COMMONS_QUERY_LENGTH,
+  useCommonsImageSearch,
+} from "~/components/wiki-os/editor/hooks/useCommonsImageSearch";
 
 interface ImageResult {
   title: string;
@@ -27,6 +34,22 @@ interface ImageResult {
   width?: number;
   height?: number;
   mime?: string;
+  /** Where the file lives: IxWiki's own files, or Wikimedia Commons (which IxWiki shows through InstantCommons). */
+  source?: "ixwiki" | "commons";
+  /** A Commons file's author, as Commons credits it. */
+  artist?: string;
+  /** A Commons file's licence (its short name, such as "CC BY-SA 4.0"). */
+  license?: string;
+  /** A Commons file's description page, where its full attribution is. */
+  descriptionUrl?: string;
+  /** An IxWiki file's BlurHash (WK-17), shown while the thumbnail loads. */
+  blurhash?: string | null;
+}
+
+/** "CC BY-SA 4.0 · Jane Doe": the credit line of a Commons file, or null when Commons gave neither. */
+export function attributionLine(image: Pick<ImageResult, "artist" | "license">): string | null {
+  const parts = [image.license, image.artist].filter((part): part is string => !!part?.trim());
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 type Tab = "ixwiki" | "commons";
@@ -59,12 +82,13 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     timerRef.current = setTimeout(() => setDebouncedQuery(val), 400);
   }, []);
 
+  const searched = debouncedQuery.trim().length >= MIN_COMMONS_QUERY_LENGTH;
   const ixwikiQuery = api.wikios.searchFiles.useQuery(
     { query: debouncedQuery, limit: 48 },
-    { enabled: tab === "ixwiki" && debouncedQuery.length >= 2, staleTime: 60000 }
+    { enabled: tab === "ixwiki" && searched, staleTime: 60000 }
   );
+  const commons = useCommonsImageSearch(debouncedQuery, tab === "commons");
 
-  // No Commons search procedure is wired up yet, so the Commons tab never has results.
   const results: ImageResult[] =
     tab === "ixwiki"
       ? (ixwikiQuery.data ?? []).map((f: any) => ({
@@ -74,10 +98,23 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
           width: f.width,
           height: f.height,
           mime: f.mime,
+          source: "ixwiki" as const,
+          blurhash: f.blurhash ?? null,
         }))
-      : [];
+      : commons.results;
 
-  const isLoading = tab === "ixwiki" && ixwikiQuery.isLoading;
+  const sourceName = tab === "ixwiki" ? "IxWiki" : "Wikimedia Commons";
+  const isLoading = tab === "ixwiki" ? ixwikiQuery.isLoading : commons.isLoading;
+  const hasError = tab === "ixwiki" ? ixwikiQuery.isError : commons.error !== null;
+  const errorText =
+    tab === "commons" && commons.error?.rateLimited
+      ? "Too many Commons searches just now. Wait a minute, then try again."
+      : `${sourceName} could not be searched.`;
+  const retry = () => {
+    if (tab === "ixwiki") void ixwikiQuery.refetch();
+    else commons.retry();
+  };
+  const expandedCredit = expandedImage ? attributionLine(expandedImage) : null;
 
   const handleCopy = useCallback((img: ImageResult) => {
     const name = img.title.replace(/^File:/, "");
@@ -88,7 +125,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
 
   return (
     <div className={cn("wikios-imgs", compact && "wikios-imgs-compact")}>
-      {/* Header bar — tabs + search in one row */}
+      {/* Header bar: tabs and search in one row */}
       <div className="wikios-imgs-header">
         <SegmentedControl
           size="sm"
@@ -118,22 +155,24 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
       </div>
 
       {/* Status line */}
-      {debouncedQuery.length >= 2 && !isLoading && results.length > 0 && (
+      {searched && !isLoading && results.length > 0 && (
         <div className="wikios-imgs-status">
-          {results.length} {results.length === 1 ? "image" : "images"} found
-          {tab === "ixwiki" ? " on IxWiki" : " on Wikimedia Commons"}
+          {tab === "commons" && commons.totalHits !== null && commons.totalHits > results.length
+            ? `${results.length} of ${commons.totalHits.toLocaleString()} images shown`
+            : `${results.length} ${results.length === 1 ? "image" : "images"} found`}
+          {` on ${sourceName}`}
         </div>
       )}
 
       {/* States */}
-      {isLoading && debouncedQuery.length >= 2 && (
+      {isLoading && searched && (
         <div className="wikios-imgs-state">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Searching {tab === "ixwiki" ? "IxWiki" : "Wikimedia Commons"}...</span>
+          <span>Searching {sourceName}...</span>
         </div>
       )}
 
-      {debouncedQuery.length < 2 && (
+      {!searched && (
         <div className="wikios-imgs-state wikios-imgs-empty-state">
           <div className="wikios-imgs-empty-icon">
             <ImageIcon className="h-9 w-9" />
@@ -146,14 +185,23 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
         </div>
       )}
 
-      {!isLoading && debouncedQuery.length >= 2 && results.length === 0 && (
+      {hasError && searched && !isLoading && (
+        <div role="alert" className="wikios-imgs-state">
+          <span>{errorText}</span>
+          <Button variant="secondary" size="sm" onClick={retry}>
+            Try again
+          </Button>
+        </div>
+      )}
+
+      {!isLoading && !hasError && searched && results.length === 0 && (
         <div className="wikios-imgs-state">
           <ImageIcon className="h-6 w-6 opacity-30" />
           <span>No images found for &ldquo;{debouncedQuery}&rdquo;</span>
         </div>
       )}
 
-      {/* Main content — grid + optional detail panel */}
+      {/* Main content: grid and optional detail panel */}
       <div className="wikios-imgs-content">
         <div
           className={cn(
@@ -178,7 +226,12 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                 }}
               >
                 <div className="wikios-imgs-card-img">
-                  <img
+                  <PlaceholderImage
+                    placeholder={BlurHashService.placeholderDataUri(
+                      img.blurhash,
+                      img.width,
+                      img.height
+                    )}
                     src={img.thumbUrl ?? img.url}
                     alt={img.title}
                     loading="lazy"
@@ -191,6 +244,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                 <div className="wikios-imgs-card-footer">
                   <span className="wikios-imgs-card-name">
                     {img.title.replace(/^File:/, "").replace(/_/g, " ")}
+                    {img.license && <span className="wikios-imgs-card-licence">{img.license}</span>}
                   </span>
                   <div className="wikios-imgs-card-actions">
                     <Button
@@ -227,9 +281,23 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
               </div>
             );
           })}
+          {tab === "commons" &&
+            results.length > 0 &&
+            (commons.hasMore || commons.isLoadingMore) && (
+              <div className="wikios-imgs-more">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={commons.isLoadingMore}
+                  onClick={commons.loadMore}
+                >
+                  {commons.isLoadingMore ? "Loading..." : "Load more images"}
+                </Button>
+              </div>
+            )}
         </div>
 
-        {/* Detail panel — shows when an image is expanded (standalone page only) */}
+        {/* Detail panel: shows when an image is expanded (standalone page only) */}
         {!compact && expandedImage && (
           <div className="wikios-imgs-detail">
             <Button
@@ -254,6 +322,20 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                 )}
                 {expandedImage.mime && <span>{expandedImage.mime}</span>}
               </div>
+              {expandedImage.source === "commons" && (
+                <p className="wikios-imgs-attribution">
+                  From Wikimedia Commons{expandedCredit ? `: ${expandedCredit}` : ""}.{" "}
+                  {expandedImage.descriptionUrl && (
+                    <a
+                      href={expandedImage.descriptionUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Full attribution
+                    </a>
+                  )}
+                </p>
+              )}
               <div className="wikios-imgs-detail-actions">
                 <Button size="sm" onClick={() => handleCopy(expandedImage)}>
                   {copiedId === expandedImage.url ? (

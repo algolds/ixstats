@@ -308,6 +308,14 @@ bun scripts/fix-storyteller-effect-timestamps.ts --apply    # after reading the 
 
 Once applied, government-component and power-broker bonuses start affecting economies. Announce it to players first.
 
+WikiOS assets stored before WK-17 have no BlurHash (their placeholder is a flat box). Fill them in, any time after the
+deploy; safe with `WIKIOS_V1_ENABLED` off, since it writes only `wiki_assets.blurhash`, never a page, file or log:
+
+```bash
+bun run wiki:backfill:blurhash                    # dry run: hashes at most 25 files, writes nothing
+bun run wiki:backfill:blurhash -- --apply         # every PNG/JPEG/GIF/WebP asset without one; re-runs skip those done
+```
+
 ## 9. Later, not part of this deploy
 
 - **CSP (plan 335 Step 6, PL-2):** nginx or a Cloudflare transform rule replaces the app's `Content-Security-Policy`

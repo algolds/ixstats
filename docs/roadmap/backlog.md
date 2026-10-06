@@ -74,8 +74,6 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| WK-6 | BUG | The editor's image picker (`ImageSearchGrid`) has an empty Commons tab: `commons.search` exists (the media search's repository tab uses it) but the picker never calls it | `editor/ImageSearchGrid.tsx:66` | S |
-| WK-17 | UNFINISHED | No BlurHash is computed from an image: uploads store none (the filename-based one is gone, #52) and placeholders use the asset's size | `core/media-asset-service.ts`; `core/blurhash-service.ts` | S–M |
 
 ### Vault, cards & achievements (VT)
 

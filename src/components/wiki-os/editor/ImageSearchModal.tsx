@@ -3,7 +3,11 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
-import { ImageSearchGrid, type ImageResult } from "~/components/wiki-os/editor/ImageSearchGrid";
+import {
+  attributionLine,
+  ImageSearchGrid,
+  type ImageResult,
+} from "~/components/wiki-os/editor/ImageSearchGrid";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import {
   describeWarnings,
@@ -197,9 +201,30 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       alt={selected.title}
                       referrerPolicy="no-referrer"
                     />
-                    <span className="wikios-img-insert-name">
-                      {selected.title.replace(/^File:/, "")}
-                    </span>
+                    <div className="wikios-img-insert-caption">
+                      <span className="wikios-img-insert-name">
+                        {selected.title.replace(/^File:/, "")}
+                      </span>
+                      {selected.source === "commons" && (
+                        <span className="wikios-img-insert-credit">
+                          {["Wikimedia Commons", attributionLine(selected)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          {selected.descriptionUrl && (
+                            <>
+                              {" · "}
+                              <a
+                                href={selected.descriptionUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Attribution
+                              </a>
+                            </>
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="wikios-img-insert-fields">

@@ -45,6 +45,8 @@ export interface RecordUploadInput {
   height: number | null;
   sha1: string;
   uploaderId: string | null;
+  /** The BlurHash of the file's pixels (`services/image-blurhash.ts`); null for an SVG, a PDF or a file that could not be decoded. */
+  blurhash?: string | null;
 }
 
 export interface RegisterAssetInput {
@@ -234,7 +236,8 @@ export class MediaAssetService {
    * Record that `input.name` now holds the uploaded bytes, in the caller's transaction (the upload service writes
    * the file's log entry and its mirror job there too). The asset is served from WikiOS (`/api/wiki/file/<name>`, no
    * thumbnail) until the mirror job has put the same bytes in MediaWiki: `markMirrored` then switches the URL. A new
-   * version of a file replaces the row's facts in place; the older versions live in the upload log.
+   * version of a file replaces the row's facts in place (its BlurHash too: an older version's would be the wrong
+   * picture); the older versions live in the upload log.
    */
   static async recordUpload(
     tx: Prisma.TransactionClient,
@@ -250,7 +253,7 @@ export class MediaAssetService {
       sizeBytes: input.sizeBytes,
       width: input.width,
       height: input.height,
-      blurhash: null,
+      blurhash: input.blurhash ?? null,
       sha1: input.sha1,
       uploaderId: input.uploaderId,
     };
@@ -340,7 +343,10 @@ export class MediaAssetService {
       sizeBytes: data.sizeBytes || existing.sizeBytes,
       width: data.width ?? existing.width,
       height: data.height ?? existing.height,
-      blurhash: data.blurhash ?? existing.blurhash,
+      // A file whose size changed is a new version: the stored hash is of the old picture (the backfill reads the new one)
+      blurhash:
+        data.blurhash ??
+        (data.sizeBytes && data.sizeBytes !== existing.sizeBytes ? null : existing.blurhash),
     });
 
     try {
@@ -380,7 +386,7 @@ export class MediaAssetService {
           sizeBytes: data.sizeBytes || 0,
           width: data.width ?? null,
           height: data.height ?? null,
-          // No pixel was read here: a blurhash made up from the name would be a wrong picture, so readers use their placeholder.
+          // No pixel is read here: a blurhash made up from the name would be a wrong picture (the backfill script reads the file).
           blurhash: data.blurhash ?? null,
           md5Hash: hash,
         },

@@ -21,6 +21,8 @@ export interface FileInfo {
   height: number | null;
   mimeType: string | null;
   sizeBytes: number | null;
+  /** The BlurHash of the file's pixels (WK-17), the placeholder shown while it loads; null when none was computed. */
+  blurhash: string | null;
 }
 
 /**
@@ -45,6 +47,7 @@ export async function getFileInfo(rawName: string): Promise<FileInfo | null> {
       height: asset.height ?? null,
       mimeType: asset.mimeType,
       sizeBytes: asset.sizeBytes,
+      blurhash: asset.blurhash ?? null,
     };
   }
 
@@ -58,6 +61,7 @@ export async function getFileInfo(rawName: string): Promise<FileInfo | null> {
     height: null,
     mimeType: null,
     sizeBytes: null,
+    blurhash: null,
   };
 }
 
