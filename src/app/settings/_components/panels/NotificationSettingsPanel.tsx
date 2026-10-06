@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsSwitchRow, SettingsSelectRow } from "../primitives";
+import { DeliveryChannelsGroup } from "./DeliveryChannelsGroup";
 
 interface NotificationSettingsPanelProps {
   userId: string;
@@ -86,10 +87,11 @@ export function NotificationSettingsPanel({ userId }: NotificationSettingsPanelP
       <SettingsHeader
         title="Notifications"
         category="Platform & preferences"
-        description="Choose which in-app notifications reach you and how urgent they must be."
+        description="Choose which notifications reach you, how urgent they must be and where they arrive."
       />
 
-      {/* Email and push delivery are not offered: notifications arrive in-app only. */}
+      {/* Email and push switches appear only for channels the server has configured (SL-5). */}
+      <DeliveryChannelsGroup userId={userId} preferences={preferences} />
 
       {/* Alert categories */}
       <SettingsGroup

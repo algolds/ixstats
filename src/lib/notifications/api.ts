@@ -24,6 +24,7 @@ import { db } from "~/server/db";
 import { withBasePath } from "~/lib/base-path";
 import { isNotificationEventEnabled } from "./guard";
 import { recipientAccepts } from "./recipient-preferences";
+import { deliverNotification } from "./delivery/deliver";
 
 function resolveHref(href?: string | null): string | null {
   if (!href) return null;
@@ -178,6 +179,8 @@ class NotificationAPIService {
           notification.title
         );
       }
+      const recipient = notification.userId;
+      if (recipient) void deliverNotification({ ...notification, userId: recipient }, { db });
       return notification.id;
     } catch (error) {
       console.error("[NotificationAPI] Failed to create notification:", error);
@@ -216,6 +219,11 @@ class NotificationAPIService {
       });
 
       console.log("[NotificationAPI] Created", notifications.count, "notifications");
+      inputs.forEach((input, i) => {
+        if (!accepted[i] || !input.userId) return;
+        const n = { ...input, userId: input.userId, href: resolveHref(input.href) };
+        void deliverNotification(n, { db });
+      });
 
       // Note: We can't easily get IDs from createMany, so we return empty array
       // For detailed tracking, use multiple create() calls instead

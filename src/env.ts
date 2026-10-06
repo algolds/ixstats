@@ -135,6 +135,15 @@ export const env = createEnv({
     UNSPLASH_ACCESS_KEY: z.string().optional(),
     // Directory for uploaded images (defaults to public/images/uploads)
     UPLOAD_DIR: z.string().optional(),
+    // Notification email (SL-5, lib/notifications/delivery/config.ts): off unless the key and sender
+    // are both set. Any HTTP email API that accepts Resend's JSON; EMAIL_API_URL defaults to Resend.
+    EMAIL_API_KEY: z.string().optional(),
+    EMAIL_FROM: z.string().optional(),
+    EMAIL_API_URL: z.string().url().optional(),
+    // Web Push (SL-5): off unless all three are set. Base64url P-256 key pair and a mailto:/https: contact.
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().optional(),
   },
 
   /**
@@ -254,6 +263,12 @@ export const env = createEnv({
     SPORTS_TTS_API_URL: process.env.SPORTS_TTS_API_URL,
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
     UPLOAD_DIR: process.env.UPLOAD_DIR,
+    EMAIL_API_KEY: process.env.EMAIL_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    EMAIL_API_URL: process.env.EMAIL_API_URL,
+    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT,
     NEXT_PUBLIC_CLERK_SIGN_IN_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
     NEXT_PUBLIC_ENABLE_WEBSOCKET: process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET,
     NEXT_PUBLIC_WS_PORT: process.env.NEXT_PUBLIC_WS_PORT,

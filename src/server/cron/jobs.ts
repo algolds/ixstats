@@ -295,6 +295,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
+    // Daily email summary for users who chose the digest (SL-5); does nothing unless EMAIL_* is set.
+    name: "notification-email-digest",
+    defaultSchedule: "7 8 * * *",
+    lockName: "notification-email-digest",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/lib/notifications/delivery/digest",
+    exportName: "runNotificationEmailDigest",
+    load: async () =>
+      (await import("~/lib/notifications/delivery/digest")).runNotificationEmailDigest,
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

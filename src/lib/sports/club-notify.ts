@@ -36,14 +36,16 @@ export async function notifyClubMatchResult(
 
     // 1. In-app notification (the bell), unless the owner's preferences filter it out
     //    (sports results are "low" priority, so a higher minimum urgency hides them).
+    //    Accepted results also go out by push (and email, which skips low priorities), SL-5.
     const { recipientAccepts } = await import("~/lib/notifications/recipient-preferences");
-    if (await recipientAccepts(userId, "sports", "low"))
+    if (await recipientAccepts(userId, "sports", "low")) {
+      const href = `/myclub/${args.teamId}`;
       await prisma.notification.create({
         data: {
           userId,
           title,
           message: body,
-          href: `/myclub/${args.teamId}`,
+          href,
           type: "sports_result",
           category: "sports",
           source: "SportsNews",
@@ -51,6 +53,12 @@ export async function notifyClubMatchResult(
           severity: "informational",
         },
       });
+      const { deliverNotification } = await import("~/lib/notifications/delivery/deliver");
+      void deliverNotification(
+        { userId, title, message: body, href, priority: "low" },
+        { db: prisma }
+      );
+    }
 
     // 2. Durable record in a per-user system DM channel.
     let convo = await prisma.thinkshareConversation.findFirst({

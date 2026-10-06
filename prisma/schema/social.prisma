@@ -345,11 +345,15 @@ model ConversationParticipant {
   role                 String                 @default("participant")
   lastReadAt           DateTime               @default(now())
   notificationSettings String?
+  /// Message requests (SL-4): "none" (normal), "pending" (in the recipient's Requests folder),
+  /// "accepted" (the recipient accepted; their DM audience no longer applies) or "declined".
+  requestStatus        String                 @default("none")
   conversation         ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, userId])
   @@index([conversationId])
   @@index([userId])
+  @@index([userId, requestStatus])
 }
 
 model ThinkshareMessage {
