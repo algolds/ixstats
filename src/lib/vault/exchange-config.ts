@@ -26,7 +26,14 @@ export interface ExchangeConfig {
   convertDailyLimit: number;
   /** Sovereigns granted to a wallet on first creation. Existing wallets keep their balance. */
   seedSovereigns: number;
-  /** Fair-value coefficients, reserved for the phase 2 sector-index valuation. */
+  /**
+   * Share (0 to 1) of verified contract revenue that becomes convertible back to IxCredits
+   * once it has aged `revenueHoldDays` (spec §8, relaxed out allowance). 0 turns it off.
+   */
+  revenueConvertibleShare: number;
+  /** Real days a completed contract's payout waits before it counts toward the out allowance. */
+  revenueHoldDays: number;
+  /** Fair-value coefficients for the sector-index valuation (companies.ts computeFairValue). */
   valuationSectorWeight: number;
   valuationStandingWeight: number;
   valuationDecisionWeight: number;
@@ -41,6 +48,8 @@ export const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
   // 2026-10-06: was 10,000. 1,000 covers a MyClub team claim, a league charter or a company
   // charter; more comes from converting IxCredits.
   seedSovereigns: 1000,
+  revenueConvertibleShare: 0.5,
+  revenueHoldDays: 7,
   valuationSectorWeight: 1.0,
   valuationStandingWeight: 0.5,
   valuationDecisionWeight: 1.0,
@@ -54,6 +63,8 @@ export const EXCHANGE_CONFIG_BOUNDS: Record<keyof ExchangeConfig, readonly [numb
   convertFee: [0, 0.5],
   convertDailyLimit: [0, 1_000_000],
   seedSovereigns: [0, 100_000],
+  revenueConvertibleShare: [0, 1],
+  revenueHoldDays: [1, 90],
   valuationSectorWeight: [0, 10],
   valuationStandingWeight: [0, 10],
   valuationDecisionWeight: [0, 10],
@@ -67,6 +78,8 @@ export const EXCHANGE_CONFIG_KEYS = {
   convertFee: "exchange_convert_fee",
   convertDailyLimit: "exchange_convert_daily_limit",
   seedSovereigns: "exchange_seed_sovereigns",
+  revenueConvertibleShare: "exchange_revenue_convertible_share",
+  revenueHoldDays: "exchange_revenue_hold_days",
   valuationSectorWeight: "exchange_valuation_sector_weight",
   valuationStandingWeight: "exchange_valuation_standing_weight",
   valuationDecisionWeight: "exchange_valuation_decision_weight",

@@ -59,6 +59,10 @@ model Company {
   sharesIssued       Int                   @default(0)
   sharesOutstanding  Int                   @default(0)
   contractsWonValue  Float                 @default(0)
+  /// Founder control: new listings and share purchases are allowed only while true.
+  tradingOpen        Boolean               @default(false)
+  /// Fair value added by applied EXPAND decisions (see CompanyDecision).
+  decisionValue      Float                 @default(0)
   status             String                @default("ACTIVE")
   createdIxTime      Float
   createdAt          DateTime              @default(now())
@@ -70,6 +74,8 @@ model Company {
   decisions          CompanyDecision[]
   bids               ContractBid[]
   issuedContracts    Contract[]            @relation("ContractIssuer")
+  shareListings      ShareListing[]
+  dividends          CompanyDividend[]
 
   @@index([founderId])
   @@index([sectorKey])
@@ -108,6 +114,49 @@ model ShareIssuance {
   @@map("exchange_share_issuances")
 }
 
+/// A fixed-price sell order for a company's shares. sellerUserId NULL is a primary issue
+/// (new shares sold by the company, proceeds to its capital); otherwise a holder's secondary
+/// listing, whose shares are escrowed out of their Shareholding until sold or cancelled.
+/// status: OPEN | FILLED | CANCELLED. `shares` is what is left to sell.
+model ShareListing {
+  id             String   @id @default(cuid())
+  companyId      String
+  sellerUserId   String?
+  shares         Int
+  sharesListed   Int
+  pricePerShare  Float
+  status         String   @default("OPEN")
+  createdIxTime  Float
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([sellerUserId])
+  @@index([status])
+  @@map("exchange_share_listings")
+}
+
+/// A dividend paid from a company's capital pro rata to its shareholders. `amount` is what
+/// was paid: the declared amount less the sub-cent remainder, which stays in capital.
+model CompanyDividend {
+  id               String   @id @default(cuid())
+  companyId        String
+  declaredByUserId String
+  declared         Float
+  amount           Float
+  shareCount       Int
+  holderCount      Int
+  ixTime           Float
+  idempotencyKey   String   @unique
+  createdAt        DateTime @default(now())
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, createdAt])
+  @@map("exchange_company_dividends")
+}
+
 /// A player's holding in a company's shares.
 model Shareholding {
   id          String   @id @default(cuid())
@@ -136,6 +185,10 @@ model SectorIndex {
   baseTotal     Float?
   dmModifier    Float    @default(0)
   computedIxTime Float?
+  /// The sector fund: ₷ held for SectorPosition holders and the units they own. Each index
+  /// update rebalances the four funds by relative index performance; no ₷ is created.
+  fundSovereigns   Float @default(0)
+  unitsOutstanding Float @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
@@ -237,9 +290,16 @@ model Contract {
   closedIxTime     Float?
   idempotencyKey   String?  @unique
   updatedAt        DateTime @default(now()) @updatedAt
+  /// B2G: the nation the tender is issued for (its owner posts and funds it).
+  issuerCountryId  String?
+  /// Where escrow came from and returns to: COMPANY (issuer capital) | WALLET (issuer's wallet).
+  /// NULL on MVP rows, which are all COMPANY.
+  fundedBy         String?
   issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
   @@index([issuerCompanyId])
+  @@index([issuerCountryId])
+  @@index([status, endIxTime])
   @@index([winnerCompanyId])
   @@index([status])
   @@index([sectorKey])

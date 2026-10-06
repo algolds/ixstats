@@ -280,7 +280,7 @@ the spine.
 | Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
 | ✅ **Done (2026-10-05):** cosmetics visible to other players: the public, batched `vault.getEquippedCosmeticsFor` feeds the passport photo and name and forum post and thread authors | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
-| 🟡 **MVP done (2026-10-06, D5 (a)):** the Exchange (₷) at `/vault/exchange`: conditional, idempotent `spend`, a 1,000 ₷ seed, IxC ⇄ ₷ conversion (fee, daily cap, convert-out bounded by what went in), companies, B2B contracts with escrow and admin-decided disputes, the `isExchangeEnabled` vault flag ([spec](../specs/2026-10-06-exchange-economy-design.md), [system doc](../systems/exchange.md)). Left: phase 2 (shares, sector indices, company decisions, B2G tenders, contract expiry) | VT-16 | L | — |
+| 🟡 **MVP and phase 2 done (2026-10-06, D5 (a)):** the Exchange (₷) at `/vault/exchange`: conditional, idempotent `spend`, a 1,000 ₷ seed, IxC ⇄ ₷ conversion (fee, daily cap, convert-out bounded by what went in plus aged contract revenue), companies, B2B contracts and B2G tenders with escrow and admin-decided disputes, a fixed-price share market with dividends, sector indices with zero-sum sector funds, company decisions, notifications, and the `exchange-market` and `exchange-contract-expiry` jobs ([spec](../specs/2026-10-06-exchange-economy-design.md), [system doc](../systems/exchange.md)). Left: the other decision types, faucet tenders, an order book | VT-16 | M | — |
 | 💤 Crafting extensions (catalysts, discovery, guilds, bulk): deprecated with crafting (2026-10-05) | PF§4 | — | — |
 
 ---

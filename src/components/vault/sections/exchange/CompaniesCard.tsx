@@ -9,6 +9,7 @@ import { Card, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Stat } from "~/components/ui/stat";
+import { CompanyControls } from "./CompanyControls";
 import {
   Field,
   SectorSelect,
@@ -171,6 +172,7 @@ function CompanyRow({ company, onDone }: { company: Company; onDone: () => void 
           </Button>
         </div>
       )}
+      {active && <CompanyControls company={company} onDone={onDone} />}
     </Card>
   );
 }

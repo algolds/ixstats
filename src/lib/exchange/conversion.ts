@@ -4,9 +4,10 @@
  *
  *   CONVERT_IN   IxC → ₷   ₷ = IxC × rate × (1 − fee)
  *   CONVERT_OUT  ₷ → IxC   IxC = ₷ ÷ rate × (1 − fee), and never more ₷ than the user has
- *                           converted in, net of earlier conversions out. ₷ that came from the
- *                           wallet seed, MyClub or other players can't become IxCredits, so the
- *                           bridge can't mint IxCredits or move them between accounts.
+ *                           converted in, plus a share of verified contract revenue once it
+ *                           has aged (phase 2), net of earlier conversions out. ₷ from the
+ *                           wallet seed, MyClub, dividends or share sales can't become
+ *                           IxCredits.
  *
  * One transaction does both sides: the IxC move goes through the vault ledger (kill
  * switches, conditional decrement), the ₷ move through the Exchange ledger, and a
@@ -52,15 +53,59 @@ export async function convertedToday(db: Db, userId: string): Promise<number> {
   return agg._sum.sovereigns ?? 0;
 }
 
-/** ₷ this user may still convert out: lifetime ₷ converted in minus ₷ converted out. */
-export async function convertOutAllowance(db: Db, userId: string): Promise<number> {
-  const rows = await db.conversionLog.groupBy({
-    by: ["direction"],
-    where: { userId },
-    _sum: { sovereigns: true },
+const DAY_MS = 86_400_000;
+
+/**
+ * Verified contract revenue that has become convertible (spec §8, relaxed out allowance):
+ * `revenueConvertibleShare` of what this user's companies were paid on contracts that
+ * completed at least `revenueHoldDays` ago. "Verified" means the issuer confirmed delivery
+ * or an admin paid the contractor in a dispute; a contractor never bids on their own
+ * contracts. Dividends, share sales and fund sales never count.
+ */
+export async function convertibleContractRevenue(db: Db, userId: string): Promise<number> {
+  const cfg = await getExchangeConfig(db);
+  if (cfg.revenueConvertibleShare <= 0) return 0;
+  const companies = await db.company.findMany({
+    where: { founderId: userId },
+    select: { id: true },
   });
+  if (companies.length === 0) return 0;
+  const cutoff =
+    IxTime.getCurrentIxTime() - cfg.revenueHoldDays * DAY_MS * IxTime.getTimeMultiplier();
+  const contracts = await db.contract.findMany({
+    where: {
+      status: "COMPLETED",
+      winnerCompanyId: { in: companies.map((c) => c.id) },
+      closedIxTime: { lte: cutoff },
+    },
+    select: { awardedBidId: true, issuerUserId: true },
+  });
+  const bidIds = contracts
+    .filter((c) => c.awardedBidId && c.issuerUserId !== userId)
+    .map((c) => c.awardedBidId!);
+  if (bidIds.length === 0) return 0;
+  const paid = await db.contractBid.aggregate({
+    where: { id: { in: bidIds } },
+    _sum: { amount: true },
+  });
+  return Math.floor((paid._sum.amount ?? 0) * cfg.revenueConvertibleShare * 100) / 100;
+}
+
+/**
+ * ₷ this user may still convert out: lifetime ₷ converted in, plus convertible contract
+ * revenue, minus ₷ converted out.
+ */
+export async function convertOutAllowance(db: Db, userId: string): Promise<number> {
+  const [rows, revenue] = await Promise.all([
+    db.conversionLog.groupBy({
+      by: ["direction"],
+      where: { userId },
+      _sum: { sovereigns: true },
+    }),
+    convertibleContractRevenue(db, userId),
+  ]);
   const sum = (d: ConvertDirection) => rows.find((r) => r.direction === d)?._sum.sovereigns ?? 0;
-  return Math.max(0, round2(sum("CONVERT_IN") - sum("CONVERT_OUT")));
+  return Math.max(0, round2(sum("CONVERT_IN") + revenue - sum("CONVERT_OUT")));
 }
 
 function keyFor(input: ConvertInput): string {
@@ -134,7 +179,7 @@ async function convertTx(
     if (quote.sovereigns > allowance) {
       throw new ExchangeError(
         "LIMIT_REACHED",
-        `You can convert out up to ₷${allowance.toLocaleString("en-US")}: the Sovereigns you converted in, less what you have converted out`
+        `You can convert out up to ₷${allowance.toLocaleString("en-US")}: the Sovereigns you converted in and your aged contract revenue, less what you have converted out`
       );
     }
     await spendSovereignsTx(tx, {

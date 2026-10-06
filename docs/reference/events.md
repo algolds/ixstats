@@ -49,7 +49,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 
 ## Scheduled & Batch Jobs
 
-`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (20 jobs); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (24 jobs, two of them WikiOS jobs not listed here); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
 
 | Job | Default schedule | Override key |
 | --- | --- | --- |
@@ -71,6 +71,8 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `stat-progression` | `23 */6 * * *` | `cronSchedule_statProgression` |
 | `thinkpages-trending` | `*/15 * * * *` | `cronSchedule_thinkpagesTrending` |
 | `achievements-evaluate` | `41 * * * *` | — |
+| `exchange-market` | `7 */6 * * *` | — |
+| `exchange-contract-expiry` | `*/15 * * * *` | — |
 | `db-backup` | `17 3 * * *` | — |
 | `log-retention` | `41 4 * * *` | — |
 
@@ -79,6 +81,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 - `achievements-evaluate` evaluates account-level and active-country achievements for recently seen users.
 - `db-backup` writes a `pg_dump` to `backups/` and keeps the newest 14.
 - `log-retention` prunes user-action logs and log files older than `UserLogger`'s 90-day retention, and `CronRun` rows older than 30 days.
+- `exchange-market` recomputes the four Exchange sector indices, rebalances the sector funds (zero-sum), applies company decisions queued a day earlier and refreshes company fair values; `exchange-contract-expiry` cancels OPEN contracts never awarded within 3 days of bidding closing and refunds their escrow once ([exchange.md](../systems/exchange.md)).
 - `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.

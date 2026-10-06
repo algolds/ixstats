@@ -17,6 +17,12 @@ const CONFIG_FIELDS = [
   { key: "charterFee", label: "Company charter fee (₷)", step: "1" },
   { key: "activeCompanyCap", label: "Active companies per player", step: "1" },
   { key: "seedSovereigns", label: "Starting balance for new wallets (₷)", step: "1" },
+  {
+    key: "revenueConvertibleShare",
+    label: "Share of contract revenue convertible to IxC (0 to 1)",
+    step: "0.05",
+  },
+  { key: "revenueHoldDays", label: "Days contract revenue waits before it converts", step: "1" },
 ] as const;
 
 type ConfigKey = (typeof CONFIG_FIELDS)[number]["key"];
@@ -107,7 +113,7 @@ function DisputeRow({
     <div className="border-separator rounded-control space-y-2 border p-4">
       <p className="text-body text-label font-medium">{dispute.title}</p>
       <p className="text-footnote text-label-secondary">
-        Issued by {dispute.issuerCompany?.name ?? "unknown"}. Escrow ₷
+        Issued by {dispute.issuerCompany?.name ?? "a nation (government tender)"}. Escrow ₷
         {dispute.escrow.toLocaleString("en-US")}. Reason: {dispute.disputeReason}
       </p>
       <Input
