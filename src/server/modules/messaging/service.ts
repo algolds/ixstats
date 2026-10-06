@@ -21,6 +21,7 @@ import {
   type RemoveReactionInput,
   type AddParticipantInput,
   type LeaveConversationInput,
+  type RespondToRequestInput,
   type SearchUsersInput,
   type UpdatePresenceInput,
   type SendAdminBroadcastInput,
@@ -117,6 +118,14 @@ export class MessagingService {
 
   public async leaveConversation(actorId: string, input: LeaveConversationInput) {
     return await this.conversations.leaveConversation(actorId, input);
+  }
+
+  public async respondToRequest(actorId: string, input: RespondToRequestInput) {
+    return await this.conversations.respondToRequest(actorId, input);
+  }
+
+  public async getSeenState(actorId: string, conversationId: string) {
+    return await this.queries.getSeenState(actorId, conversationId);
   }
 
   public async clearAllSystemNotifications(actorId: string) {

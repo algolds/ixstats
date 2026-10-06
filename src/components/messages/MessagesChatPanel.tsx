@@ -8,8 +8,10 @@ import {
   isConsecutiveMessage,
   useConversationMessages,
   useMarkConversationRead,
+  useSeenMessageId,
   useSystemBroadcasts,
 } from "./useConversationMessages";
+import { MessagesAwaitingNote, MessagesRequestBar } from "./MessagesRequestBar";
 import { MessagesInputBar } from "./MessagesInputBar";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
@@ -120,10 +122,9 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
   );
 }
 
-const presenceOf = (clientState: ThinkShareClientState, accountId?: string): any =>
-  accountId ? clientState.presenceMap?.[accountId] : undefined;
-
 interface ThreadStreamProps {
+  /** The newest own message the other person has read (read receipts), if any. */
+  seenMessageId?: string | null;
   isSystemThread: boolean;
   isLoreBotThread: boolean;
   isLoading: boolean;
@@ -147,6 +148,7 @@ function ThreadStream({
   settings,
   onReply,
   endRef,
+  seenMessageId,
 }: ThreadStreamProps) {
   if (isLoading) {
     return (
@@ -188,16 +190,20 @@ function ThreadStream({
   return (
     <div className="py-2">
       {thread.messages.map((message: any, index: number, arr: any[]) => (
-        <MessagesBubble
-          key={message.id}
-          message={message}
-          currentUserId={currentUserId}
-          isConsecutive={isConsecutiveMessage(arr[index - 1], message)}
-          onReply={onReply}
-          actions={thread.actions}
-          settings={settings}
-          searchQuery={searchQuery}
-        />
+        <React.Fragment key={message.id}>
+          <MessagesBubble
+            message={message}
+            currentUserId={currentUserId}
+            isConsecutive={isConsecutiveMessage(arr[index - 1], message)}
+            onReply={onReply}
+            actions={thread.actions}
+            settings={settings}
+            searchQuery={searchQuery}
+          />
+          {message.id === seenMessageId && (
+            <p className="text-caption text-label-secondary px-4 text-right">Seen</p>
+          )}
+        </React.Fragment>
       ))}
       <div ref={endRef} />
     </div>
@@ -281,7 +287,11 @@ export function MessagesChatPanel({
 
   const otherParticipant =
     isSystemThread || conversation.type === "group" ? undefined : conversation.otherParticipants[0];
-  const participantStatus = presenceOf(clientState, otherParticipant?.accountId);
+  // Server presence, already filtered by the other person's Online status setting (SL-4).
+  const participantStatus = otherParticipant?.isOnline ? "online" : undefined;
+  const isDirect = conversation.type === "direct" && !isSystemThread && !isLoreBotThread;
+  const seenMessageId = useSeenMessageId(conversation.id, thread.messages, currentUserId, isDirect);
+  const otherName = otherParticipant?.account?.displayName ?? "This person";
 
   const isLoading = isSystemThread ? system.isLoading : thread.isLoading;
 
@@ -316,10 +326,18 @@ export function MessagesChatPanel({
           settings={settings}
           onReply={setReplyingTo}
           endRef={messagesEndRef}
+          seenMessageId={seenMessageId}
         />
       </div>
 
-      {isSystemThread || isLoreBotThread ? (
+      {conversation.awaitingAcceptance && <MessagesAwaitingNote recipientName={otherName} />}
+      {conversation.isRequest ? (
+        <MessagesRequestBar
+          conversationId={conversation.id}
+          senderName={otherName}
+          onDeclined={() => onBack?.()}
+        />
+      ) : isSystemThread || isLoreBotThread ? (
         <div className="border-separator text-footnote text-label-secondary flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3">
           <Shield className="text-label-secondary size-3.5" aria-hidden="true" />
           <span>System Messages is an official broadcast channel. Messages are read-only.</span>

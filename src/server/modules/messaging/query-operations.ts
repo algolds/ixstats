@@ -12,11 +12,13 @@ import {
   type SearchUsersInput,
   type MessagingDependencies,
 } from "./contracts";
-import { MessagingForbiddenError } from "./errors";
+import { MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 import { formatMessagesConversation, formatThinkpagesConversation } from "./formatters";
 import { recordMessagingTelemetry } from "./telemetry";
 import { batchResolveMessagingAccounts } from "./account-resolver";
 import { blockedUserClerkIds } from "~/server/shared/user-blocks";
+import { usersWithSwitchOff } from "~/server/shared/privacy-permissions";
+import { visibleOnlineUserIds } from "~/server/shared/presence";
 
 const FOLDER_SOURCES = new Set(["diplomatic", "wiki", "forum"]);
 const COUNTED_SOURCES = ["thinktank", "diplomatic", "wiki", "forum"] as const;
@@ -131,6 +133,47 @@ export class MessagingQueryOperations {
     );
   }
 
+  /** The other participants of direct conversations who are online and let others see it. */
+  private onlineDirectParticipants(conversations: any[], actorId: string) {
+    const ids = conversations
+      .filter((c) => c.type === "direct")
+      .flatMap((c) => (c.participants ?? []).map((p: any) => p.userId as string))
+      .filter((id) => id !== actorId);
+    return visibleOnlineUserIds(this.db, ids);
+  }
+
+  /**
+   * Read receipts (SL-4): in a direct conversation, when the other participant last read it.
+   * Null unless both people allow read receipts, and while the other person holds the
+   * conversation as an unanswered message request. A message counts as seen when it was sent
+   * before `seenAt`.
+   */
+  public async getSeenState(actorId: string, conversationId: string) {
+    const conv = await this.db.thinkshareConversation.findUnique({
+      where: { id: conversationId },
+      select: {
+        type: true,
+        participants: {
+          where: { isActive: true },
+          select: { userId: true, lastReadAt: true, requestStatus: true },
+        },
+      },
+    });
+    if (!conv) throw new MessagingNotFoundError();
+    const participants: Array<{ userId: string; lastReadAt: Date; requestStatus?: string }> =
+      conv.participants ?? [];
+    if (!participants.some((p) => p.userId === actorId)) throw new MessagingForbiddenError();
+
+    const other = conv.type === "direct" ? participants.find((p) => p.userId !== actorId) : null;
+    if (!other || other.requestStatus === "pending") return { seenAt: null };
+    try {
+      const off = await usersWithSwitchOff(this.db, [actorId, other.userId], "dmReadReceipts");
+      return { seenAt: off.size > 0 ? null : other.lastReadAt };
+    } catch {
+      return { seenAt: null };
+    }
+  }
+
   /** Removes the look-ahead row from a `limit + 1` page and returns its lastActivity as the next cursor. */
   private popNextCursor(conversations: any[], limit: number): string | undefined {
     if (conversations.length <= limit) return undefined;
@@ -150,6 +193,7 @@ export class MessagingQueryOperations {
       const { folder, cursor } = input;
       const isMember = { userId: actorId, isActive: true };
 
+      // Message requests (SL-4) sit in their own folder, out of every other one.
       const where: any =
         folder === "thinktank" || folder === "groups"
           ? {
@@ -159,10 +203,12 @@ export class MessagingQueryOperations {
                 { thinktankGroup: { members: { some: isMember } } },
               ],
             }
-          : {
-              participants: { some: isMember },
-              source: FOLDER_SOURCES.has(folder) ? folder : { not: "thinktank" },
-            };
+          : folder === "requests"
+            ? { participants: { some: { ...isMember, requestStatus: "pending" } } }
+            : {
+                participants: { some: { ...isMember, requestStatus: { not: "pending" } } },
+                source: FOLDER_SOURCES.has(folder) ? folder : { not: "thinktank" },
+              };
 
       if (cursor) {
         where.lastActivity = { lt: new Date(cursor) };
@@ -191,16 +237,19 @@ export class MessagingQueryOperations {
       if (blocked.length > 0) await this.replaceBlockedPreviews(groups, blocked);
 
       const accountMap = await this.resolveListAccounts(conversations, actorId);
-      const unreadMap = await this.unreadCounts(
-        conversations.map((c: any) => c.id),
-        actorId,
-        new Set(groups.map((c: any) => c.id)),
-        blocked
-      );
+      const [unreadMap, online] = await Promise.all([
+        this.unreadCounts(
+          conversations.map((c: any) => c.id),
+          actorId,
+          new Set(groups.map((c: any) => c.id)),
+          blocked
+        ),
+        this.onlineDirectParticipants(conversations, actorId),
+      ]);
 
       return {
         conversations: conversations.map((conv: any) =>
-          formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0)
+          formatMessagesConversation(conv, actorId, accountMap, unreadMap.get(conv.id) ?? 0, online)
         ),
         nextCursor,
       };
@@ -210,12 +259,14 @@ export class MessagingQueryOperations {
   public async getFolderCounts(actorId: string) {
     // ConversationParticipant has no archive/trash state (archive and mute are client-side
     // only), so those folders carry no counts.
+    // `requests` is the number of pending message requests; their messages count nowhere else.
     const counts = {
       inbox: 0,
       thinktank: 0,
       diplomatic: 0,
       wiki: 0,
       forum: 0,
+      requests: 0,
     };
 
     if (!actorId) return counts;
@@ -228,6 +279,9 @@ export class MessagingQueryOperations {
     });
 
     if (activeParticipants.length === 0) return counts;
+    counts.requests = activeParticipants.filter(
+      (p: { requestStatus?: string }) => p.requestStatus === "pending"
+    ).length;
 
     // Messages from accounts the actor blocked are hidden in group conversations, so they
     // don't count there.
@@ -242,6 +296,7 @@ export class MessagingQueryOperations {
         ON p."conversationId" = m."conversationId"
        AND p."userId" = ${actorId}
        AND p."isActive" = true
+       AND p."requestStatus" <> 'pending'
       JOIN "ThinkshareConversation" c ON c."id" = m."conversationId"
       WHERE m."userId" <> ${actorId}
         AND m."deletedAt" IS NULL
@@ -343,15 +398,18 @@ export class MessagingQueryOperations {
 
     const accountMap = await batchResolveMessagingAccounts(userIdsToResolve, this.db);
 
-    const unreadCount = await this.db.thinkshareMessage.count({
-      where: {
-        conversationId: conv.id,
-        userId: { not: actorId },
-        deletedAt: null,
-      },
-    });
+    const [unreadCount, online] = await Promise.all([
+      this.db.thinkshareMessage.count({
+        where: {
+          conversationId: conv.id,
+          userId: { not: actorId },
+          deletedAt: null,
+        },
+      }),
+      this.onlineDirectParticipants([conv], actorId),
+    ]);
 
-    return formatMessagesConversation(conv, actorId, accountMap, unreadCount);
+    return formatMessagesConversation(conv, actorId, accountMap, unreadCount, online);
   }
 
   public getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
@@ -359,7 +417,7 @@ export class MessagingQueryOperations {
       const limit = input.limit ?? 20;
       const where: any = {
         participants: {
-          some: { userId: actorId, isActive: true },
+          some: { userId: actorId, isActive: true, requestStatus: { not: "pending" } },
         },
         source: { not: "thinktank" },
       };

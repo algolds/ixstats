@@ -23,6 +23,7 @@ const MessageFolderSchema = z.enum([
   "thinktank",
   "wiki",
   "forum",
+  "requests",
 ]);
 
 const MessageSourceSchema = z.enum([

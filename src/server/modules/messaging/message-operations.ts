@@ -18,8 +18,12 @@ import {
 import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { realmBoardChatRestriction } from "~/server/shared/realm-board";
-import { recipientsRefusing } from "~/server/shared/privacy-permissions";
+import {
+  recipientsRefusing,
+  splitDirectMessageRefusals,
+} from "~/server/shared/privacy-permissions";
 
+const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
 const EXEMPT_ROLES = new Set(["admin", "system-owner", "owner", "staff"]);
 const EXEMPT_MEMBERSHIP_TIERS = new Set(["premium", "pro", "vip"]);
 
@@ -65,20 +69,10 @@ export class MessagingMessageOperations {
     );
     if (restricted) throw new MessagingBlockedError(restricted);
 
-    // A direct conversation goes quiet once the other person blocks the sender.
-    if ((conv ?? participant.conversation)?.type === "direct") {
-      const others = await this.db.conversationParticipant.findMany({
-        where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
-        select: { userId: true },
-      });
-      const otherIds = others.map((p: { userId: string }) => p.userId);
-      const blocking = await recipientsBlockingSender(this.db, actorId, otherIds);
-      if (blocking.length > 0) throw new MessagingBlockedError();
-      // ...or narrows who may message them to exclude the sender (SL-4).
-      if ((await recipientsRefusing(this.db, actorId, otherIds, "directMessages")).length > 0) {
-        throw new MessagingBlockedError("This user is not accepting direct messages from you");
-      }
-    }
+    const newlyPending =
+      (conv ?? participant.conversation)?.type === "direct"
+        ? await this.checkDirectRecipients(actorId, targetConvId)
+        : new Set<string>();
 
     const message = await this.db.$transaction(async (tx: any) => {
       const createdMsg = await tx.thinkshareMessage.create({
@@ -105,10 +99,16 @@ export class MessagingMessageOperations {
       return createdMsg;
     });
 
-    let otherParticipants: Array<{ userId: string }> =
+    // Recipients holding the conversation as a message request are not notified or pushed it;
+    // it waits in their Requests folder.
+    let otherParticipants: Array<{ userId: string; requestStatus?: string }> = (
       await this.db.conversationParticipant.findMany({
         where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
-      });
+      })
+    ).filter(
+      (p: { userId: string; requestStatus?: string }) =>
+        p.requestStatus !== "pending" && !newlyPending.has(p.userId)
+    );
     // Group members who blocked the sender are not notified or pushed the message.
     if ((conv ?? participant.conversation)?.type !== "direct" && otherParticipants.length > 0) {
       const blocking = new Set(
@@ -178,6 +178,48 @@ export class MessagingMessageOperations {
         include: { conversation: true },
       })
       .catch(() => null);
+  }
+
+  /**
+   * A direct conversation goes quiet once the other person blocks the sender or declines the
+   * conversation as a message request. When their direct-message audience excludes the sender
+   * (SL-4) the message is refused, unless they filter message requests: then the conversation
+   * moves to their Requests folder. A recipient who accepted the request is not re-checked.
+   * Returns the recipients whose conversation just became a request.
+   */
+  private async checkDirectRecipients(actorId: string, conversationId: string) {
+    const others: Array<{ userId: string; requestStatus?: string | null }> =
+      (await this.db.conversationParticipant.findMany({
+        where: {
+          conversationId,
+          userId: { not: actorId },
+          OR: [{ isActive: true }, { requestStatus: "declined" }],
+        },
+        select: { userId: true, requestStatus: true },
+      })) ?? [];
+    if (others.some((p) => p.requestStatus === "declined")) {
+      throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+    }
+    const otherIds = others.map((p) => p.userId);
+    const blocking = await recipientsBlockingSender(this.db, actorId, otherIds);
+    if (blocking.length > 0) throw new MessagingBlockedError();
+
+    const unaccepted = others.filter((p) => p.requestStatus !== "accepted").map((p) => p.userId);
+    const refusing = await recipientsRefusing(this.db, actorId, unaccepted, "directMessages");
+    if (refusing.length === 0) return new Set<string>();
+
+    const { requests, refused } = await splitDirectMessageRefusals(this.db, refusing);
+    if (refused.length > 0) throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+    const fresh = others
+      .filter((p) => requests.includes(p.userId) && (p.requestStatus ?? "none") === "none")
+      .map((p) => p.userId);
+    if (fresh.length > 0) {
+      await this.db.conversationParticipant.updateMany({
+        where: { conversationId, userId: { in: fresh } },
+        data: { requestStatus: "pending" },
+      });
+    }
+    return new Set(fresh);
   }
 
   private notifyRecipients(

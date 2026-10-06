@@ -45,7 +45,8 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 | CSP: remove the nginx/Cloudflare override, check for violations, then drop `'unsafe-inline'` from `script-src` | PL-2, PF§1 | The nonce reaches the page (#46); `src/lib/security/csp.ts` |
 | Deploy rose-garden via the [runbook](../operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
 | WikiOS v1 cutover via its [runbook](../operations/wikios-v1-cutover.md) | D20 | Merged switched off: `WIKIOS_V1_ENABLED` stays unset (WikiOS read-only) until the runbook's step 6b |
-| Enable the 21 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |
+| Enable the 23 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |
+| Optional: configure notification email (`EMAIL_*`) and Web Push (`VAPID_*`), then enable `notification-email-digest` | SL-5 | Built and off until configured ([runbook step 2](../operations/deploy-rose-garden-2026-09.md#2-environment)); Settings shows the switches only then |
 | Redis in production | PF§5 | Required for realtime across processes and shared rate limits; `/api/health` reports it |
 | Run the web process under PM2 | PL-12 | The template (cron, ws, ixtwitter) is committed; the web app still runs from `start-production.sh` |
 | Promote rose-garden → development → master | PL-14, PL-15 | Dependabot and scheduled workflows read config from `master` only |
@@ -92,8 +93,6 @@ stay until the schema-drop decision ([§5](#5-dead-schema)).
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| SL-4 | FLAGGED | Privacy. DM, mention and trade-offer audiences and muted words are enforced and shown (2026-10-05). Left, still hidden: message request filtering, online status (no presence relay), read receipts (none written), indexing, telemetry, recommendations, Discord tag, wiki attribution, clear history | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
-| SL-5 | FLAGGED | Notifications. Admin notices to one user and sports results respect recipient preferences (2026-10-05). Left: country-wide and global admin broadcasts are unfiltered by design; no email or push delivery | `lib/notifications/recipient-preferences.ts` | M |
 | SL-27 | FLAGGED | The Discord mirror, sports LLM commentary and sports TTS are off by default. `/labs/*` is gated on the server (2026-10-05) | `narrator.ts` | S |
 
 ### Platform & infrastructure (PL)

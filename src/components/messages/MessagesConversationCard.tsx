@@ -132,6 +132,13 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             aria-hidden="true"
           />
         )}
+        {conversation.type === "direct" && other?.isOnline && (
+          <span
+            className="bg-success ring-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2"
+            aria-label="Online"
+            role="img"
+          />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

@@ -10,6 +10,7 @@ import {
   type CreateConversationByCountriesInput,
   type AddParticipantInput,
   type LeaveConversationInput,
+  type RespondToRequestInput,
   type UpdatePresenceInput,
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
@@ -22,8 +23,12 @@ import {
   MessagingValidationError,
 } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
-import { recipientsRefusing } from "~/server/shared/privacy-permissions";
+import {
+  recipientsRefusing,
+  splitDirectMessageRefusals,
+} from "~/server/shared/privacy-permissions";
 import { recipientAccepts } from "~/lib/notifications/recipient-preferences";
+import { deliverNotification } from "~/lib/notifications/delivery/deliver";
 
 const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
 
@@ -48,11 +53,14 @@ export class MessagingConversationOperations {
     if ((await recipientsBlockingSender(this.db, actorId, allParticipants)).length > 0) {
       throw new MessagingBlockedError();
     }
-    // Nor anyone whose direct-message setting excludes the creator (SL-4).
-    if (
-      (await recipientsRefusing(this.db, actorId, allParticipants, "directMessages")).length > 0
-    ) {
-      throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+    // Nor anyone whose direct-message setting excludes the creator (SL-4), unless they filter
+    // message requests: then the conversation waits in their Requests folder.
+    const refusing = await recipientsRefusing(this.db, actorId, allParticipants, "directMessages");
+    const pending = new Set<string>();
+    if (refusing.length > 0) {
+      const { requests, refused } = await splitDirectMessageRefusals(this.db, refusing);
+      if (refused.length > 0) throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+      for (const id of requests) pending.add(id);
     }
 
     return await this.db.$transaction(async (tx: any) => {
@@ -69,6 +77,7 @@ export class MessagingConversationOperations {
             create: allParticipants.map((uid) => ({
               userId: uid,
               role: "participant",
+              ...(pending.has(uid) && { requestStatus: "pending" }),
             })),
           },
         },
@@ -152,6 +161,32 @@ export class MessagingConversationOperations {
     return { success: true };
   }
 
+  /**
+   * Accepts or declines a message request (SL-4). Accepting moves the conversation to the inbox
+   * and lets the sender keep messaging even though they are outside the recipient's audience;
+   * declining removes it and refuses further messages in it.
+   */
+  public async respondToRequest(actorId: string, input: RespondToRequestInput) {
+    const participant = await this.db.conversationParticipant.findFirst({
+      where: {
+        conversationId: input.conversationId,
+        userId: actorId,
+        isActive: true,
+        requestStatus: "pending",
+      },
+      select: { id: true },
+    });
+    if (!participant) throw new MessagingNotFoundError();
+
+    await this.db.conversationParticipant.update({
+      where: { id: participant.id },
+      data: input.accept
+        ? { requestStatus: "accepted" }
+        : { requestStatus: "declined", isActive: false, leftAt: new Date() },
+    });
+    return { success: true, accepted: input.accept };
+  }
+
   public async clearAllSystemNotifications(actorId: string) {
     await this.db.notification.deleteMany({
       where: { userId: actorId },
@@ -216,6 +251,8 @@ export class MessagingConversationOperations {
         notification,
       });
     }
+    // A notice to one user also goes out by email and push (SL-5); broadcasts stay in-app.
+    if (userId) void deliverNotification({ ...notification, userId }, { db: this.db });
 
     return notification;
   }

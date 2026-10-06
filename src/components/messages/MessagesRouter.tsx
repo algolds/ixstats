@@ -22,6 +22,7 @@ import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/message
 
 const SECTION_TITLES: Record<MessageFolder, string> = {
   conversations: "Messages",
+  requests: "Requests",
 };
 
 const officialConversation = (id: string, name: string, source: string) => ({
@@ -93,8 +94,12 @@ function MessagesRouterInner() {
     { enabled: !!currentUserId, refetchOnWindowFocus: false, staleTime: 30000 }
   );
 
-  // The UI has a single "conversations" folder; its badge is the server's total unread (inbox).
-  const unreadCounts: Record<MessageFolder, number> = { conversations: folderCounts?.inbox ?? 0 };
+  // "conversations" shows the server's total unread (inbox); "requests" the pending message
+  // requests (SL-4), which count nowhere else.
+  const unreadCounts: Record<MessageFolder, number> = {
+    conversations: folderCounts?.inbox ?? 0,
+    requests: folderCounts?.requests ?? 0,
+  };
 
   // Conversations opened by deep link may not be in the folder list, so fall back to a fetch.
   const isSpecialId =

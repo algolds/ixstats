@@ -99,7 +99,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         expect.objectContaining({
           where: expect.objectContaining({
             participants: {
-              some: { userId: callerUser, isActive: true },
+              some: expect.objectContaining({ userId: callerUser, isActive: true }),
             },
           }),
         })

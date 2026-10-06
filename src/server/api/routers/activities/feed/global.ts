@@ -18,7 +18,7 @@ import {
   withViewerPollVotes,
   dropMutedItems,
 } from "./shared";
-import { mutedKeywords } from "~/server/shared/privacy-permissions";
+import { hiddenLinkedNames, mutedKeywords } from "~/server/shared/privacy-permissions";
 
 const activityFilterSchema = z.object({
   limit: z.number().min(1).max(80).default(20),
@@ -160,6 +160,8 @@ async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: nu
   ]);
   const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
   const countryMap = new Map(countries.map((c) => [c.id, c]));
+  // Linked names the author hid (SL-4) are skipped.
+  const hidden = await hiddenLinkedNames(db, userIds);
 
   return entries.map((activity) => {
     const dbUser = activity.userId ? userMap.get(activity.userId) : undefined;
@@ -167,8 +169,8 @@ async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: nu
       ? {
           id: dbUser.clerkUserId,
           name:
-            dbUser.wikiUsername ??
-            dbUser.discordUsername ??
+            (hidden.wiki.has(dbUser.clerkUserId) ? null : dbUser.wikiUsername) ??
+            (hidden.discord.has(dbUser.clerkUserId) ? null : dbUser.discordUsername) ??
             dbUser.forumUsername ??
             dbUser.country?.name ??
             "User",

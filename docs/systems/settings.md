@@ -1,8 +1,9 @@
 # Settings
 
-**Last updated:** 2026-10-05
-**Status:** Live. Controls with nothing behind them are hidden (2026-10-05, SL-4/SL-5). A few that remain are saved
-but nothing reads them yet; they are marked **display-only** below.
+**Last updated:** 2026-10-06
+**Status:** Live. Every privacy control is enforced (2026-10-06, SL-4); email and push switches appear when the server
+has those channels configured (SL-5). A few other controls are saved but nothing reads them yet; they are marked
+**display-only** below.
 **Route:** `/settings?tab=<id>` (sign-in required)
 **Code:** `src/app/settings/` (`page.tsx`, `_components/SettingsContent.tsx`, `_components/panels/*`,
 `_hooks/useProfileSettings.ts`, `_lib/sections.ts`), `src/components/settings/`,
@@ -77,8 +78,19 @@ threshold** select. Each change calls `notifications.upsertPreferences`, which w
 
 They are enforced when a notification is created for **one user** through `notificationAPI.create` / `createMany`
 (`src/lib/notifications/recipient-preferences.ts`): a notification whose category is switched off, or whose priority
-is below the threshold, is not written. Country-wide and global notifications always show. The email and push
-toggles are hidden: there is no email or push delivery. Details: [Notifications](./notifications.md#3-recipient-preferences).
+is below the threshold, is not written. Country-wide and global notifications always show. Details:
+[Notifications](./notifications.md#3-recipient-preferences).
+
+**Delivery** (`DeliveryChannelsGroup`, SL-5) appears only for channels the server has configured
+(`notifications.getDeliveryChannels`); with neither configured the group is absent.
+
+| Control | Effect |
+| :--- | :--- |
+| Email | `upsertPreferences({ emailNotifications })`. Turning it on also sets `emailEnabledAt` (consent); off clears it. High and critical notifications you accepted are emailed to your primary Clerk address |
+| Daily digest (shown while email is on) | `emailDigest`. One summary email a day instead of separate emails (the `notification-email-digest` job) |
+| Push notifications | Asks the browser for permission, registers `/push-sw.js` (scope `/push/`), subscribes with the VAPID key and saves it (`savePushSubscription`); off unsubscribes this browser (`removePushSubscription`) and sets `pushNotifications` false. Shown on when `pushNotifications` is on and you have a saved subscription |
+
+How each channel sends: [Notifications §4](./notifications.md#4-delivery-paths).
 
 ### Social & ThinkPages (`social`) — `SocialPersonaPanel`
 
@@ -89,33 +101,41 @@ automatically for a persona.
 
 ### Privacy & security (`privacy`) — `PrivacySecurityPanel`
 
-Only controls the server enforces are shown. Lists and options are stored as `UserConnection` rows
+Every control is enforced on the server (SL-4). Lists and options are stored as `UserConnection` rows
 (`users/preferences.ts`): blocks and mutes as one row each, and the options as one JSON row
 (`targetUserId: "global_privacy"`, `connectionType: "privacy_config"`). Enforcement lives in
-`src/server/shared/user-blocks.ts` (blocks and mutes) and `src/server/shared/privacy-permissions.ts` (audiences and
-muted words, SL-4). For the audience settings, "people you follow" means one of your ThinkPages personas follows one
-of theirs, or your country follows theirs; a missing setting means everyone.
+`src/server/shared/user-blocks.ts` (blocks and mutes), `src/server/shared/privacy-permissions.ts` (audiences, muted
+words and the switches), `presence.ts` (online status) and `clear-history.ts`. For the audience settings, "people you
+follow" means one of your ThinkPages personas follows one of theirs, or your country follows theirs; a missing setting
+means everyone. Every switch defaults to on. Where a switch hides something (online status, Seen, linked names) a
+failed settings read hides it too.
 
 | Control | Effect |
 | :--- | :--- |
 | Blocked accounts | `users.blockAccount` / `unblockAccount`. Posts by blocked accounts (or a blocked nation's accounts) are left out of your ThinkPages feed (`thinkpages.getFeed`) and the global activity feed. Someone you blocked can't start a conversation with you or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`). In group conversations their messages are hidden from you and don't count toward your unread badges, previews or notifications. ThinkTank invites also honour blocks (`thinktanks/invite-privacy.ts`) |
 | Muted accounts | `users.muteAccount` / `unmuteAccount`. Their posts are left out of your ThinkPages and activity feeds; they can still message you |
 | Muted words | `users.addMutedKeyword` / `removeMutedKeyword` (one `keyword` row each). Posts and activity entries containing a muted word (case-insensitive substring) are left out of your ThinkPages feed (`thinkpages.getFeed`, cached per viewer), the global activity feed and the Following feed |
-| Direct messages (everyone, people you follow, nobody) | `directMessages`. Someone outside your audience can't start a conversation with you (including a group or diplomatic one) or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`, "not accepting direct messages"). Group conversations you are already in are unaffected. A stored `verified` value (no longer offered) means the sender owns a verified ThinkPages persona |
+| Direct messages (everyone, people you follow, nobody) | `directMessages`. Someone outside your audience can't start a conversation with you (including a group or diplomatic one) or send messages in a direct conversation with you (`MessagingBlockedError` → `FORBIDDEN`, "not accepting direct messages"), unless Message requests is on (below). "Nobody" always refuses. Group conversations you are already in are unaffected. A stored `verified` value (no longer offered) means the sender owns a verified ThinkPages persona |
+| Message requests | `messageRequestFiltering`. On: what Direct messages would refuse goes to your **Requests** folder instead (`ConversationParticipant.requestStatus = "pending"`; `messages.getConversationsByFolder({ folder: "requests" })`, counted as `getFolderCounts().requests` and nowhere else). Requests send no notification or push. Accept (`messages.respondToRequest`) moves it to Messages and lets that person keep messaging you there; Decline leaves the conversation and refuses further messages in it. The sender sees "waiting in their Requests" until you answer. Off: such messages are refused |
 | Mentions (everyone, people you follow, nobody) | `mentions`. An @mention from outside your audience, or from someone you blocked, is still recorded on the post but doesn't notify you (`thinkpages.createPost`) |
 | Card trade offers (everyone, people you follow, nobody) | `tradeOffers`. Someone outside your audience, or someone you blocked, can't send you a trade offer (`trading.createtradeOffer` → `FORBIDDEN`) |
 | ThinkTank invites (everyone, followers, nobody) | Enforced by `filterInvitableUserIds` when someone invites you |
+| Online status | `showOnlineStatus`. Signed-in tabs send `users.heartbeat` about once a minute while visible (`usePresenceHeartbeat` in `GameSidecar`); the last time is kept in Redis (`presence:<clerkId>`, 10-minute expiry) or, without Redis, in process memory. Nothing is written to the database. You show as online for two minutes after a heartbeat: a green dot on direct conversations in Messages and an "Online" badge on your passport. Off: nobody sees it |
+| Read receipts | `dmReadReceipts`. Opening a conversation records your read time (`ConversationParticipant.lastReadAt`, `messages.markMessagesAsRead`). In direct conversations the sender sees "Seen" under their newest message sent before it (`messages.getSeenState`, polled every 20 seconds) only when both of you have receipts on, and not while you hold it as an unanswered request. Group conversations never show it |
 | Appear in invite search | `searchDiscoverable`. When off, ThinkTank owners can't find you in the invite search (`invite-privacy.ts`) |
+| Search engine indexing | `searchEngineIndexing`. Off: your passport (`/@handle`, `/id/[username]`) is served with `robots: noindex, nofollow` (`src/app/id/[username]/layout.tsx`, `passportIndexable`) |
+| Show Discord tag | `showDiscordTag`. Off: other viewers see no Discord affiliation on your passport, your Discord name is not used as your name in the global activity feed, and trading partner search neither shows nor matches it. You still see it on your own passport |
+| Wiki attribution | `showWikiAttribution`. Off: other viewers see no wiki name, wiki groups, Lorewards or award history on your passport and no wiki articles or wiki activity on its Work tab; `users.resolveWikiAuthor` returns your wiki name without your role or country, so wiki bylines and user-page cards don't link to your nation; the activity feed and trading search skip the name |
 | Export your data | `users.exportUserData`: a JSON download of account fields, Vault, card count, preferences and up to 50 recent ThinkPages posts |
+| Clear history | `users.clearHistory({ confirm: true })` after a confirmation dialog, at most 3 times an hour. Deletes your personal notifications (rows addressed to your Clerk or user id; country-wide and global notices stay), your message read receipts and your online-status heartbeat, and the browser forgets its recently viewed wiki articles and forum threads (session storage). It does not touch messages (yours or anyone's), conversation read positions, posts, activity entries, audit logs or settings |
 | Sessions and two-step verification | Opens the auth provider's user profile (Clerk) |
 | NationStates card deck | Links to the Cards tab and opens the takedown modal |
 
-**Hidden** (stored keys with nothing behind them): message request filtering, online status (presence updates are
-emitted by the client but the WebSocket server neither relays nor stores them, so nobody sees an online state), read
-receipts (the client never sends message ids, so no receipts are written), search engine indexing (profiles set no
-robots metadata), Discord tag and wiki attribution, diagnostics, recommendations and "clear history". Their procedures
-(`clearSearchHistory`, the other `PrivacyConfig` keys of `updatePrivacyConfig`) still exist; `clearSearchHistory` is a
-stub that returns success.
+**Removed** (2026-10-06): "Anonymous diagnostics" (`diagnosticTelemetry`) and "Personalized recommendations"
+(`personalizedRecommendations`). No telemetry is sent anywhere (the browser posts no analytics, error reports or load
+metrics; server logs are operational and audit records), and nothing is recommended or personalised (feeds are
+chronological or trending for everyone). Stored values for them are ignored and dropped on the next save. The
+`clearSearchHistory` stub is replaced by `clearHistory`.
 
 ### Vault status (`vault`) — `VaultStatusPanel`
 
@@ -140,9 +160,13 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 | Procedure | Auth |
 | :--- | :--- |
 | `notifications.getPreferences`, `notifications.upsertPreferences` | protected (own row only) |
+| `notifications.getDeliveryChannels` | protected |
+| `notifications.savePushSubscription`, `removePushSubscription` | protected, light rate limit; saving needs push configured and a known push service endpoint |
 | `users.getPreferences`, `users.updateWikiPreferences` | protected |
-| `users.getPrivacySettings`, `updatePrivacyConfig`, `blockAccount`, `unblockAccount`, `muteAccount`, `unmuteAccount`, `exportUserData` | protected (mutations rate limited) |
-| `users.addMutedKeyword`, `removeMutedKeyword`, `clearSearchHistory` | protected; no control on the page |
+| `users.getPrivacySettings`, `updatePrivacyConfig`, `blockAccount`, `unblockAccount`, `muteAccount`, `unmuteAccount`, `addMutedKeyword`, `removeMutedKeyword`, `exportUserData` | protected (mutations rate limited) |
+| `users.clearHistory` | protected; per-procedure limit plus 3 an hour; input `{ confirm: true }` |
+| `users.heartbeat` | protected, rate limited (sent by every signed-in tab, not from this page) |
+| `messages.respondToRequest`, `messages.getSeenState` | protected (Messages, not this page) |
 | `countries.update` | protected + `assertCountryWriteAccess` |
 | `countryGeo.updateGeoRollupMode`, `countryGeo.rebaseNationalFromGeography` | country owner, standard mutation rate limit |
 | `thinkpages.updateAccount` | protected |
@@ -153,7 +177,7 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 
 ## 3. Jobs
 
-None.
+`notification-email-digest` (daily, 08:07 UTC) sends the email digest; see [Notifications §7](./notifications.md#7-jobs).
 
 ## 4. Admin-side settings wired on 2026-10-05
 
@@ -177,7 +201,9 @@ panel's Defense and Intelligence tab switches (the sidebar gates Defense on MyCo
   (`wikiAutoScan`), and the Discord "bot alerts" wording on the account panel.
 - Appearance and most WikiOS reader settings are per browser and don't follow the account to another device.
 - Muted accounts are hidden from feeds but can still message you.
-- Online status, read receipts, indexing and the other hidden privacy keys have no feature behind them (see above).
+- Online status needs Redis to be shared across processes; with several web processes and no Redis a user shows online
+  only to requests served by a process that received their heartbeat.
+- "Seen" is polled (every 20 seconds while a direct conversation is open), not pushed over the socket.
 - The MyCountry tab and the Country Editor both change the flag and name; Settings has no coat-of-arms field.
 
 ## Related documentation

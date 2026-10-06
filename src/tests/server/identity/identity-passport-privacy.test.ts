@@ -6,6 +6,7 @@ jest.mock("~/server/db", () => {
   const db = {
     user: { update: jest.fn().mockResolvedValue({}) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    userConnection: { findMany: jest.fn().mockResolvedValue([]) },
     passportPreference: {
       findUnique: jest.fn().mockResolvedValue(null),
       upsert: jest.fn(),

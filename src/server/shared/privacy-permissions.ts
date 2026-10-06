@@ -11,6 +11,12 @@
  *   offer (`trading.createtradeOffer`).
  * - Muted words (`connectionType: "keyword"` rows): posts containing one are left out of the
  *   user's ThinkPages, activity and Following feeds.
+ * - `messageRequestFiltering` (boolean): when on, a direct message from outside the user's
+ *   `directMessages` audience goes to their Requests folder instead of being refused
+ *   ("nobody" still refuses). See `splitDirectMessageRefusals`.
+ * - Boolean switches read through `usersWithSwitchOff`: `showOnlineStatus` (presence.ts),
+ *   `dmReadReceipts` (messaging "seen"), `searchEngineIndexing` (passport robots metadata),
+ *   `showDiscordTag` and `showWikiAttribution` (public profile surfaces).
  *
  * "followers" means the sender follows the recipient: one of the sender's ThinkPages personas
  * follows one of the recipient's (ThinkpagesFollow), or the sender's country follows the
@@ -27,7 +33,45 @@ type PrivacyDb = Pick<
   "userConnection" | "user" | "countryFollow" | "thinkpagesFollow" | "thinkpagesAccount"
 >;
 
+/** Boolean privacy switches; each defaults to on (a missing or unreadable value is `true`). */
+export type PrivacySwitchKey =
+  | "messageRequestFiltering"
+  | "showOnlineStatus"
+  | "searchEngineIndexing"
+  | "dmReadReceipts"
+  | "showDiscordTag"
+  | "showWikiAttribution";
+
 const AUDIENCES = new Set<Audience>(["everyone", "followers", "verified", "nobody"]);
+
+/** Each user's parsed privacy config (users without a readable stored config are absent). */
+async function loadPrivacyConfigs(
+  db: Pick<PrismaClient, "userConnection">,
+  clerkIds: string[]
+): Promise<Map<string, Record<string, unknown>>> {
+  const configs = new Map<string, Record<string, unknown>>();
+  const ids = [...new Set(clerkIds.filter(Boolean))];
+  if (ids.length === 0) return configs;
+  const rows = await db.userConnection.findMany({
+    where: {
+      userId: { in: ids },
+      targetUserId: "global_privacy",
+      connectionType: "privacy_config",
+    },
+    select: { userId: true, status: true },
+  });
+  for (const row of rows ?? []) {
+    try {
+      const parsed: unknown = JSON.parse(row.status);
+      if (parsed && typeof parsed === "object") {
+        configs.set(row.userId, parsed as Record<string, unknown>);
+      }
+    } catch {
+      // Unreadable config: the defaults apply.
+    }
+  }
+  return configs;
+}
 
 /** Each user's stored audience for `key` (users without a stored config are absent). */
 async function loadAudiences(
@@ -35,26 +79,79 @@ async function loadAudiences(
   clerkIds: string[],
   key: PermissionKey
 ): Promise<Map<string, Audience>> {
-  const rows = await db.userConnection.findMany({
-    where: {
-      userId: { in: clerkIds },
-      targetUserId: "global_privacy",
-      connectionType: "privacy_config",
-    },
-    select: { userId: true, status: true },
-  });
   const audiences = new Map<string, Audience>();
-  for (const row of rows ?? []) {
-    try {
-      const value = (JSON.parse(row.status) as Record<string, unknown>)[key];
-      if (typeof value === "string" && AUDIENCES.has(value as Audience)) {
-        audiences.set(row.userId, value as Audience);
-      }
-    } catch {
-      // Unreadable config: the default ("everyone") applies.
+  for (const [userId, config] of await loadPrivacyConfigs(db, clerkIds)) {
+    const value = config[key];
+    if (typeof value === "string" && AUDIENCES.has(value as Audience)) {
+      audiences.set(userId, value as Audience);
     }
   }
   return audiences;
+}
+
+/**
+ * Which of `clerkIds` turned the boolean switch `key` off. A read error propagates: callers
+ * that expose something (presence, "seen", linked names) catch it and fail closed.
+ */
+export async function usersWithSwitchOff(
+  db: Pick<PrismaClient, "userConnection">,
+  clerkIds: string[],
+  key: PrivacySwitchKey
+): Promise<Set<string>> {
+  const off = new Set<string>();
+  for (const [userId, config] of await loadPrivacyConfigs(db, clerkIds)) {
+    if (config[key] === false) off.add(userId);
+  }
+  return off;
+}
+
+/**
+ * Users whose linked Discord tag or wiki name must not appear on public surfaces
+ * (`showDiscordTag` / `showWikiAttribution` off). Fails closed: on a read error everyone's
+ * names are hidden.
+ */
+export async function hiddenLinkedNames(
+  db: Pick<PrismaClient, "userConnection">,
+  clerkIds: string[]
+): Promise<{ discord: Set<string>; wiki: Set<string> }> {
+  try {
+    const configs = await loadPrivacyConfigs(db, clerkIds);
+    const off = (key: PrivacySwitchKey) =>
+      new Set([...configs].filter(([, c]) => c[key] === false).map(([id]) => id));
+    return { discord: off("showDiscordTag"), wiki: off("showWikiAttribution") };
+  } catch {
+    const all = new Set(clerkIds);
+    return { discord: all, wiki: all };
+  }
+}
+
+/** Whether one user has the boolean switch `key` on (the default). */
+export async function switchIsOn(
+  db: Pick<PrismaClient, "userConnection">,
+  clerkId: string,
+  key: PrivacySwitchKey
+): Promise<boolean> {
+  return !(await usersWithSwitchOff(db, [clerkId], key)).has(clerkId);
+}
+
+/**
+ * Splits recipients who refuse a sender's direct messages (`recipientsRefusing(...,
+ * "directMessages")`) into those whose messages go to their Requests folder (message request
+ * filtering on and an audience other than "nobody") and those who refuse them outright.
+ */
+export async function splitDirectMessageRefusals(
+  db: Pick<PrismaClient, "userConnection">,
+  refusingClerkIds: string[]
+): Promise<{ requests: string[]; refused: string[] }> {
+  const configs = await loadPrivacyConfigs(db, refusingClerkIds);
+  const requests: string[] = [];
+  const refused: string[] = [];
+  for (const id of refusingClerkIds) {
+    const config = configs.get(id) ?? {};
+    const filtering = config.messageRequestFiltering !== false;
+    (filtering && config.directMessages !== "nobody" ? requests : refused).push(id);
+  }
+  return { requests, refused };
 }
 
 /** Which of `recipientClerkIds` the sender follows (by persona or by country). */

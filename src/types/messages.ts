@@ -1,6 +1,6 @@
 // Folder System
 
-export type MessageFolder = "conversations";
+export type MessageFolder = "conversations" | "requests";
 
 export type ChannelFilter = "all" | "diplomatic" | "direct" | "community";
 

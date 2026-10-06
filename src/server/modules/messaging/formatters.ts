@@ -63,6 +63,10 @@ interface MessagesConversationResult {
   isActive: boolean;
   participantCount: number;
   unreadCount: number;
+  /** The actor holds this conversation as an unanswered message request (SL-4). */
+  isRequest: boolean;
+  /** Another participant has not yet accepted it as a message request. */
+  awaitingAcceptance: boolean;
   otherParticipants: any[];
   otherParticipant?: any;
   lastMessage?: {
@@ -94,16 +98,23 @@ export function formatMessagesConversation(
   conv: any,
   actorId: string,
   accountMap: Map<string, UserAccount>,
-  unreadCount = 0
+  unreadCount = 0,
+  /** Participants shown as online (presence.ts already applied their privacy setting). */
+  online: ReadonlySet<string> = new Set()
 ): MessagesConversationResult {
   const participants: any[] = conv.participants || [];
+  const others = participants.filter((p) => p.userId !== actorId);
 
-  const otherAccounts: any[] = participants
-    .filter((p) => p.userId !== actorId)
-    .map((p) => {
-      const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
-      return { ...acc, id: p.id || p.userId, accountId: p.userId, account: acc };
-    });
+  const otherAccounts: any[] = others.map((p) => {
+    const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
+    return {
+      ...acc,
+      id: p.id || p.userId,
+      accountId: p.userId,
+      account: acc,
+      isOnline: online.has(p.userId),
+    };
+  });
 
   const isGroupConv = conv.type === "group" || conv.source === "thinktank" || Boolean(conv.isGroup);
   const lastActivity = toDate(conv.lastActivity || conv.updatedAt);
@@ -120,6 +131,8 @@ export function formatMessagesConversation(
     isActive: conv.isActive ?? true,
     participantCount: participants.length,
     unreadCount,
+    isRequest: participants.some((p) => p.userId === actorId && p.requestStatus === "pending"),
+    awaitingAcceptance: others.some((p) => p.requestStatus === "pending"),
     otherParticipants: otherAccounts,
     otherParticipant: otherAccounts[0]?.account ?? otherAccounts[0],
     lastMessage: formatLastMessage(conv, accountMap),

@@ -190,6 +190,8 @@ export function MidRibbonPassportDocument({
 
                       {/* Authoritative user role */}
                       {roleName && <Badge variant="info">{roleName}</Badge>}
+                      {/* Shown only when the holder allows Online status (SL-4) */}
+                      {data.online && <Badge variant="success">Online</Badge>}
                     </div>
                   </div>
 

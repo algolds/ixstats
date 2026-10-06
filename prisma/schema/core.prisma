@@ -452,9 +452,29 @@ model UserPreferences {
   notificationLevel  String   @default("medium")
   wikiAutoScan       Boolean  @default(true)
   wikiSourcePriority String   @default("ixwiki")
-  wikiDisplayMode    String   @default("inline")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  wikiDisplayMode    String    @default("inline")
+  /// Email delivery is opt-in (SL-5): set when the user turns email on, cleared when they turn it off.
+  /// A stored `emailNotifications: true` from before delivery existed does not count without it.
+  emailEnabledAt     DateTime?
+  /// One daily summary email instead of an email per important notification.
+  emailDigest        Boolean   @default(false)
+  lastEmailDigestAt  DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+/// A browser's Web Push subscription (SL-5). Keyed by the push service endpoint; `userId` is the Clerk id.
+model PushSubscription {
+  id         String    @id @default(cuid())
+  userId     String
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@index([userId])
 }
