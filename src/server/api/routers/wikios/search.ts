@@ -244,6 +244,8 @@ export const wikiosSearchRouter = createTRPCRouter({
           width: a.width ?? 800,
           height: a.height ?? 600,
           mime: a.mimeType || "image/png",
+          // The placeholder pickers show while the thumbnail loads (WK-17); null when none was computed
+          blurhash: a.blurhash,
         }));
       }
 

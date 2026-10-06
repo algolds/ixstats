@@ -13,8 +13,9 @@
  *   4. the bytes are kept under their SHA-1 in the staging directory (upload-staging.ts) and the file is served from
  *      WikiOS at once (`/api/wiki/file/<name>`);
  *   5. a new file gets its `File:` description page through the ordinary save (its own revision job and render);
- *   6. one transaction records the asset, the upload log entry and the `upload` mirror job, which puts the same bytes in
- *      MediaWiki (mirror-upload.ts) and then switches the asset's URL to MediaWiki's `/images/` path.
+ *   6. one transaction records the asset (with the BlurHash of its pixels, image-blurhash.ts: best effort, none for an
+ *      SVG, a PDF or a picture that cannot be decoded), the upload log entry and the `upload` mirror job, which puts
+ *      the same bytes in MediaWiki (mirror-upload.ts) and then switches the asset's URL to MediaWiki's `/images/` path.
  *
  * The description page is saved first, so its revision job precedes the upload job in the title's order: MediaWiki
  * has the page when the file arrives.
@@ -37,6 +38,7 @@ import {
 import { commitWikitextSave, deletedPage } from "./edit-service";
 import { enqueueUploadJob, scheduleMirrorKick } from "./mirror-outbox";
 import { releaseStagedFileUnlessNeeded, withStagedFileLock } from "./staged-uploads";
+import { computeBlurhash } from "./image-blurhash";
 import { UploadError } from "./upload-error";
 import { stageBytes } from "./upload-staging";
 
@@ -267,10 +269,11 @@ function recordUpload(
     articleId: string | null;
     replaced: boolean;
     comment: string;
+    blurhash: string | null;
   }
 ): Promise<MediaAssetRecord> {
   const { ctx, bytes } = request;
-  const { title, name, file, sha1, articleId, replaced, comment } = upload;
+  const { title, name, file, sha1, articleId, replaced, comment, blurhash } = upload;
   return withStagedFileLock(sha1, async (tx) => {
     const asset = await MediaAssetService.recordUpload(tx, {
       name,
@@ -280,6 +283,7 @@ function recordUpload(
       height: file.height,
       sha1,
       uploaderId: ctx.user?.id ?? null,
+      blurhash,
     });
     const log = await tx.wikiLog.create({
       data: {
@@ -387,6 +391,8 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
     };
   }
 
+  // Read before the transaction and the file's lock (decoding takes a moment); never fails the upload.
+  const blurhash = await computeBlurhash(request.bytes, file.mime);
   const articleId = await descriptionPageId(request, title, current.page, { wikitext, comment });
   const asset = await stageAndRecord(request, {
     title,
@@ -396,6 +402,7 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
     articleId,
     replaced,
     comment,
+    blurhash,
   });
   // The job is committed: let the mirror worker send it to MediaWiki in a moment, not at the next cron minute.
   scheduleMirrorKick();

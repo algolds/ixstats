@@ -129,6 +129,7 @@
     "wiki:seed:categories": "bun scripts/sync-wikios-categories.ts",
     "wiki:clean:summaries": "bun scripts/cleanup-wikios-sync-summaries.ts",
     "wiki:sync:media": "bun scripts/sync-ixwiki-media.ts",
+    "wiki:backfill:blurhash": "bun scripts/wikios-backfill-blurhash.ts",
     "wiki:sync:full": "bun scripts/sync-ixwiki-full.ts",
     "wiki:sync:live": "bun scripts/sync-ixwiki-live.ts",
     "typecheck:db": "bun scripts/verification/run-typecheck.ts tsconfig.db.json",

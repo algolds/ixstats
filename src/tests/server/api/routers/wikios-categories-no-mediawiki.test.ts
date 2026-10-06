@@ -117,7 +117,9 @@ describe("getSubcategories for IxWiki", () => {
   });
 
   it("is empty for a category with no subcategory, without asking MediaWiki", async () => {
-    expect(await categories().getSubcategories({ category: "Nothing", wiki: "ixwiki" })).toEqual([]);
+    expect(await categories().getSubcategories({ category: "Nothing", wiki: "ixwiki" })).toEqual(
+      []
+    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -138,7 +140,9 @@ describe("autocompleteCategories for IxWiki", () => {
   });
 
   it("is empty when nothing matches", async () => {
-    expect(await categories().autocompleteCategories({ prefix: "Zzz", wiki: "ixwiki" })).toEqual([]);
+    expect(await categories().autocompleteCategories({ prefix: "Zzz", wiki: "ixwiki" })).toEqual(
+      []
+    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -152,6 +156,7 @@ describe("searchFiles for IxWiki", () => {
     width: 300,
     height: 200,
     mimeType: "image/png",
+    blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
   };
 
   it("lists the assets Postgres holds, never asking MediaWiki", async () => {
@@ -168,6 +173,8 @@ describe("searchFiles for IxWiki", () => {
         width: 300,
         height: 200,
         mime: "image/png",
+        // the pickers' placeholder (WK-17)
+        blurhash: asset.blurhash,
       },
     ]);
     expect(guard.calls()).toEqual([]);
@@ -199,14 +206,16 @@ describe("searchFiles for IxWiki", () => {
       const title = `File ${String(i).padStart(3, "0")}.png`;
       return { ...asset, title, filename: title.replace(/ /g, "_") };
     });
-    mocked.wikiAsset.findMany.mockImplementation(async ({ skip = 0, take }: { skip?: number; take: number }) =>
-      all.slice(skip, skip + take)
+    mocked.wikiAsset.findMany.mockImplementation(
+      async ({ skip = 0, take }: { skip?: number; take: number }) => all.slice(skip, skip + take)
     );
     // the first 70 have a deleted File: page (the query for archived titles answers it).
     const deleted = new Set(all.slice(0, 70).map((file) => `File:${file.title}`));
     mocked.wikiArticle.findMany.mockImplementation(
       async ({ where }: { where: { status: string; title: { in: string[] } } }) =>
-        where.status === "ARCHIVED" ? where.title.in.filter((title) => deleted.has(title)).map((title) => ({ title })) : []
+        where.status === "ARCHIVED"
+          ? where.title.in.filter((title) => deleted.has(title)).map((title) => ({ title }))
+          : []
     );
 
     const result = await search().searchFiles({ query: "png", limit: 2, wiki: "ixwiki" });
@@ -257,7 +266,9 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
     guard = installFetchGuard((url) => {
       host(url);
       expect(url.searchParams.get("list")).toBe("allcategories");
-      return { query: { allcategories: [{ "*": "Elmerian", size: 3, pages: 2, files: 1, subcats: 0 }] } };
+      return {
+        query: { allcategories: [{ "*": "Elmerian", size: 3, pages: 2, files: 1, subcats: 0 }] },
+      };
     });
 
     expect(await categories().searchCategories({ query: "Elm", wiki: "iiwiki" })).toEqual([
@@ -270,7 +281,9 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
     guard.restore();
     guard = installFetchGuard((url) => {
       host(url);
-      return { query: { pages: { 1: { title: "Category:Elmerian", categoryinfo: { files: 9 } } } } };
+      return {
+        query: { pages: { 1: { title: "Category:Elmerian", categoryinfo: { files: 9 } } } },
+      };
     });
 
     expect(
@@ -311,13 +324,30 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
       host(url);
       return {
         query: {
-          allimages: [{ name: "Elm.png", url: "https://iiwiki.com/Elm.png", size: 5, width: 4, height: 3, mime: "image/png" }],
+          allimages: [
+            {
+              name: "Elm.png",
+              url: "https://iiwiki.com/Elm.png",
+              size: 5,
+              width: 4,
+              height: 3,
+              mime: "image/png",
+            },
+          ],
         },
       };
     });
 
     expect(await search().searchFiles({ query: "Elm", wiki: "iiwiki" })).toEqual([
-      { name: "Elm.png", title: "File:Elm.png", url: "https://iiwiki.com/Elm.png", size: 5, width: 4, height: 3, mime: "image/png" },
+      {
+        name: "Elm.png",
+        title: "File:Elm.png",
+        url: "https://iiwiki.com/Elm.png",
+        size: 5,
+        width: 4,
+        height: 3,
+        mime: "image/png",
+      },
     ]);
     expect(mocked.wikiAsset.findMany).not.toHaveBeenCalled();
   });

@@ -34,7 +34,9 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRPCError } from "@trpc/server";
+import sharp from "sharp";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
+import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { authorizeAction, requireRight } from "~/lib/wiki-os/permissions";
 import { scheduleMirrorKick, uploadPayloadSchema } from "~/lib/wiki-os/services/mirror-outbox";
@@ -615,6 +617,58 @@ describe("the SVG size limit", () => {
     await expect(uploadFile(request({ filename: "Flag.png" }))).resolves.toMatchObject({
       result: "Success",
     });
+  });
+});
+
+describe("the BlurHash (WK-17)", () => {
+  it("is computed from a real picture's pixels and stored on the asset", async () => {
+    const bytes = new Uint8Array(
+      await sharp({
+        create: { width: 64, height: 48, channels: 3, background: { r: 200, g: 40, b: 90 } },
+      })
+        .png()
+        .toBuffer()
+    );
+
+    await uploadFile(request({ bytes, filename: "Red.png" }));
+
+    const blurhash = tables.wikiAsset.rows[0]?.blurhash as string;
+    expect(BlurHashService.components(blurhash)).toEqual({ x: 4, y: 3 });
+    // the picture's colour: the hash's average (DC) decodes to it
+    const average = BlurHashService.decode(`00${blurhash.slice(2, 6)}`, 1, 1)!;
+    expect(Array.from(average.slice(0, 3))).toEqual([200, 40, 90]);
+  });
+
+  it("is a new version's own when a file is replaced", async () => {
+    const colour = async (r: number) =>
+      new Uint8Array(
+        await sharp({ create: { width: 8, height: 8, channels: 3, background: { r, g: 0, b: 0 } } })
+          .png()
+          .toBuffer()
+      );
+    await uploadFile(request({ bytes: await colour(250), filename: "Swatch.png" }));
+    const first = tables.wikiAsset.rows[0]?.blurhash;
+    await uploadFile(
+      request({ bytes: await colour(20), filename: "Swatch.png", ignoreWarnings: true })
+    );
+
+    expect(tables.wikiAsset.rows).toHaveLength(1);
+    expect(tables.wikiAsset.rows[0]?.blurhash).not.toBe(first);
+  });
+
+  it("is none for an SVG, and none for a picture that cannot be decoded, which still uploads", async () => {
+    const svg = new TextEncoder().encode(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20"/></svg>`
+    );
+    await expect(uploadFile(request({ bytes: svg, filename: "Clean.svg" }))).resolves.toMatchObject(
+      { result: "Success" }
+    );
+    // a PNG header with no image data behind it
+    await expect(uploadFile(request({ filename: "Broken.png" }))).resolves.toMatchObject({
+      result: "Success",
+    });
+
+    expect(tables.wikiAsset.rows.map((row) => row.blurhash)).toEqual([null, null]);
   });
 });
 
