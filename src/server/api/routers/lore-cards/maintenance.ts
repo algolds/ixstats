@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
@@ -56,36 +56,59 @@ async function moveOwnershipChildren(db: Prisma.TransactionClient, fromId: strin
   });
 }
 
-/** Moves ownerships (with their auctions and history), watchlist and value history of a duplicate card onto the keeper. */
-async function mergeIntoKeeper(db: PrismaClient, keeperId: string, duplicateId: string) {
-  await db.$transaction(async (tx) => {
-    const ownerships = await tx.cardOwnership.findMany({ where: { cardId: duplicateId } });
-    for (const own of ownerships) {
-      const existingOwner = await tx.cardOwnership.findFirst({
-        where: { cardId: keeperId, ownerId: own.ownerId },
-      });
-      if (existingOwner) {
-        // The user already owns the keeper: merge quantities, keeping the duplicate's auctions and history
-        await tx.cardOwnership.update({
-          where: { id: existingOwner.id },
-          data: { quantity: existingOwner.quantity + own.quantity },
-        });
-        await moveOwnershipChildren(tx, own.id, existingOwner.id);
-        await tx.cardOwnership.delete({ where: { id: own.id } });
-      } else {
-        // Auctions and history follow the ownership row itself
-        await tx.cardOwnership.update({ where: { id: own.id }, data: { cardId: keeperId } });
-      }
-    }
+/**
+ * Moves ownerships (with their auctions and history), watchlist and value history of a duplicate card onto the keeper.
+ *
+ * Quantities are merged into the owner's keeper ownership only when neither row is committed elsewhere: a locked row
+ * (listed at auction, offered in a pending trade, achievement-locked) or one with an ACTIVE auction. An auction sale
+ * hands the buyer the whole ownership row, and trades and auctions hold ownership ids, so a committed row is instead
+ * repointed to the keeper card intact, keeping its id, lock, auction and escrowed bid.
+ */
+async function mergeIntoKeeper(
+  tx: Prisma.TransactionClient,
+  keeperId: string,
+  duplicateId: string
+) {
+  const ownerships = await tx.cardOwnership.findMany({ where: { cardId: duplicateId } });
+  const listed = await tx.cardAuction.findMany({
+    where: { cardInstanceId: { in: ownerships.map((o) => o.id) }, status: "ACTIVE" },
+    select: { cardInstanceId: true },
+  });
+  const committed = new Set(listed.map((a) => a.cardInstanceId));
 
-    await tx.cardWatchlist.updateMany({
-      where: { cardId: duplicateId },
-      data: { cardId: keeperId },
-    });
-    await tx.cardValueHistory.updateMany({
-      where: { cardId: duplicateId },
-      data: { cardId: keeperId },
-    });
+  for (const own of ownerships) {
+    const mergeTarget =
+      own.isLocked || committed.has(own.id)
+        ? null
+        : await tx.cardOwnership.findFirst({
+            where: {
+              cardId: keeperId,
+              ownerId: own.ownerId,
+              isLocked: false,
+              CardAuction: { none: { status: "ACTIVE" } },
+            },
+          });
+    if (mergeTarget) {
+      // The user already holds the keeper: merge quantities, keeping the duplicate's past auctions and history
+      await tx.cardOwnership.update({
+        where: { id: mergeTarget.id },
+        data: { quantity: mergeTarget.quantity + own.quantity },
+      });
+      await moveOwnershipChildren(tx, own.id, mergeTarget.id);
+      await tx.cardOwnership.delete({ where: { id: own.id } });
+    } else {
+      // Auctions and history follow the ownership row itself
+      await tx.cardOwnership.update({ where: { id: own.id }, data: { cardId: keeperId } });
+    }
+  }
+
+  await tx.cardWatchlist.updateMany({
+    where: { cardId: duplicateId },
+    data: { cardId: keeperId },
+  });
+  await tx.cardValueHistory.updateMany({
+    where: { cardId: duplicateId },
+    data: { cardId: keeperId },
   });
 }
 
@@ -180,25 +203,30 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
         HAVING COUNT(*) > 1;
       `);
 
+      // Each group is merged and purged atomically, so a failure leaves no card half-merged
       for (const group of duplicateLoreGroups) {
-        const cards = await ctx.db.card.findMany({
-          where: { wikiArticleTitle: group.wikiArticleTitle, wikiSource: group.wikiSource },
-          orderBy: [
-            { CardOwnership: { _count: "desc" } },
-            { level: "desc" },
-            { marketValue: "desc" },
-            { createdAt: "asc" },
-          ],
-        });
-        const [keeper, ...duplicates] = cards;
-        if (!keeper || duplicates.length === 0) continue;
+        const purged = await ctx.db.$transaction(async (tx) => {
+          const cards = await tx.card.findMany({
+            where: { wikiArticleTitle: group.wikiArticleTitle, wikiSource: group.wikiSource },
+            orderBy: [
+              { CardOwnership: { _count: "desc" } },
+              { level: "desc" },
+              { marketValue: "desc" },
+              { createdAt: "asc" },
+            ],
+          });
+          const [keeper, ...duplicates] = cards;
+          if (!keeper || duplicates.length === 0) return 0;
 
-        for (const dup of duplicates) await mergeIntoKeeper(ctx.db, keeper.id, dup.id);
+          for (const dup of duplicates) await mergeIntoKeeper(tx, keeper.id, dup.id);
 
-        const deleteRes = await ctx.db.card.deleteMany({
-          where: { id: { in: duplicates.map((d) => d.id) } },
+          const deleteRes = await tx.card.deleteMany({
+            where: { id: { in: duplicates.map((d) => d.id) } },
+          });
+          return deleteRes.count;
         });
-        purgedCount += deleteRes.count;
+        if (purged === 0) continue;
+        purgedCount += purged;
         groupsResolved++;
       }
 
