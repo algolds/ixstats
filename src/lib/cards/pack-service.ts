@@ -236,7 +236,7 @@ async function packPoolWhere(
   tx: Prisma.TransactionClient,
   pack: { cardType: string | null; season: number | null; themeFilter: unknown }
 ): Promise<Prisma.CardWhereInput> {
-  // Crafted cards carry CRAFTED_CARD_MARKER (crafting-rules.ts). Matched positively, as a NOT
+  // Crafted cards carry `metadata.crafted = true` (crafting is retired). Matched positively, as a NOT
   // on a JSON path would also drop every card without metadata. Legacy crafts carry no
   // marker, only the generic "Crafted via <recipe>" description.
   const crafted = await tx.card.findMany({

@@ -17,15 +17,15 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
   [
     // Vault / card system
     `Card CardOwnership CardPack CardPackOpening UserPack MyVault VaultTransaction
-    NSVerification CardTrade CardTradeOffer TradeOffer CardAuction CardBid CardCollection
-    CardCollectionItem CraftingRecipe VaultStoreItem VaultStorePriceHistory CardWatchlist
+    NSVerification CardTradeOffer TradeOffer CardAuction CardBid CardCollection
+    CardCollectionItem VaultStoreItem VaultStorePriceHistory CardWatchlist
     CardTransferEvent`,
     // NS sync management
-    `SyncLog SyncCheckpoint`,
+    `SyncLog`,
     // Country stats & economic calculations
     `Country EconomicProfile LaborMarket FiscalSystem IncomeDistribution GovernmentBudget
     Demographics HistoricalDataPoint CalculationLog NationalIdentity AuditLog
-    StorytellerEffect User CountryFollow EconomicModel SectoralOutput PolicyEffect`,
+    StorytellerEffect User CountryFollow EconomicModel`,
     // Demo mode - all models written by DemoSeedService (clone-first system)
     `SystemConfig GovernmentStructure InternalStabilityMetrics CabinetMeeting MeetingAgendaItem
     MeetingAttendance MeetingDecision MeetingActionItem Policy PolicyEffectLog PoliticalParty
@@ -37,18 +37,18 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     // New models cloned by demo-seed system
     `DefenseBudget SecurityAssessment AtomicEffectiveness GovernmentDepartment
     GovernmentOfficial BudgetAllocation SubBudgetCategory RevenueSource GovernmentComponent
-    ComponentSynergy EconomicComponent TaxComponent CrossBuilderSynergy TaxSystem TaxCategory
-    TaxBracket TaxExemption TaxDeduction TaxPolicy BorderSecurity NeighborThreatAssessment
-    SecurityThreat ThreatIncident SecurityEvent Territory Subdivision City PointOfInterest
-    VitalityHistory ComponentEffectivenessHistory NPCPersonalityAssignment CardBackgroundImage
+    ComponentSynergy EconomicComponent TaxComponent TaxSystem TaxCategory
+    TaxBracket TaxExemption TaxDeduction BorderSecurity NeighborThreatAssessment
+    SecurityThreat ThreatIncident SecurityEvent Subdivision City PointOfInterest
+    NPCPersonalityAssignment CardBackgroundImage
     IntelligenceAlertThreshold`,
     // Diplomacy (all writable models for gameplay + demo seed)
-    `DiplomaticEvent DiplomaticAction DiplomaticOption DiplomaticOptionUsage
-    DiplomaticRelationshipHistory DiplomaticScenario DiplomaticChannel
-    DiplomaticChannelParticipant DiplomaticMessage Alliance AllianceMember AllianceAction
+    `DiplomaticEvent DiplomaticOption DiplomaticOptionUsage
+    DiplomaticScenario DiplomaticChannel
+    DiplomaticChannelParticipant Alliance AllianceMember AllianceAction
     AllianceVote AllianceDocument ForeignPolicyAction BilateralTrade CulturalExchange
     CulturalExchangeParticipant CulturalArtifact CulturalScenario CulturalExchangeOutcome
-    CulturalExchangeVote EmbassyUpgrade EmbassyRequirement`,
+    CulturalExchangeVote EmbassyUpgrade`,
     // ThinkShare diplomatic channels & DMs (seeded by demo seed system)
     `ThinkshareConversation ConversationParticipant ThinkshareMessage`,
     // ThinkTank groups (seeded by demo seed system)
@@ -58,7 +58,7 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     // SVG upload pipeline (admin map management)
     `SvgUpload MapLayer MapEditRequest`,
     // Border editor, world templates, procedural generation
-    `MapEditorSession WorldTemplate ProceduralWorld MapStyleOverride`,
+    `MapEditorSession MapStyleOverride`,
     // Transport infrastructure (generated routes, hubs)
     `TransportRoute TransportHub`,
     // Story pins & custom map labels

@@ -4,7 +4,7 @@
 
 **Database Engine**: PostgreSQL with PostGIS Extension  
 **ORM**: Prisma 6.19.3 (Multi-file Schema Architecture, `prisma.config.ts` → `prisma/schema`)  
-**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->342<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
+**Location**: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->20<!-- END_DOCS:COUNT:schemaFiles --> schema files, <!-- BEGIN_DOCS:COUNT:models -->286<!-- END_DOCS:COUNT:models --> models, <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums) · `src/server/db.ts`
 
 ---
 
@@ -39,8 +39,8 @@ prisma/schema/
 ├── economy.prisma        # EconomicProfile, TaxSystem, FiscalSystem, EconomicComponent, EconomicArchetype
 ├── diplomacy.prisma      # DiplomaticRelation, Embassy, Treaty, DiplomaticEvent, Alliance, CrisisEvent
 ├── intelligence.prisma   # IntelligenceItem, IntelligenceBriefing, IntelligenceAlert, VitalitySnapshot
-├── maps.prisma           # Territory, Subdivision, City, PointOfInterest, Transport*, Realm, RealmClaim, RealmPage (PostGIS)
-├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, VaultTransaction, TradeOffer, CraftingRecipe
+├── maps.prisma           # Subdivision, City, PointOfInterest, TransportRoute, TransportHub, Realm, RealmClaim, RealmPage (PostGIS)
+├── cards.prisma          # Card, CardOwnership, CardPack, MyVault, VaultTransaction, TradeOffer
 ├── exchange.prisma       # ExchangeWallet, Company, Shareholding, SectorIndex, Contract
 ├── military.prisma       # MilitaryBranch, MilitaryUnit, MilitaryEquipmentCatalog, Deployment, MilitaryConflict
 ├── social.prisma         # ThinkpagesAccount, ThinkpagesPost, ThinktankGroup, ThinkshareConversation, ActivityFeed, Poll
@@ -50,8 +50,7 @@ prisma/schema/
 ├── sports.prisma         # SportLeague, SportTeam, SportPlayer, SportSeason, SportMatch, SportStanding
 ├── onoma.prisma          # NameBank, LanguagePack, EtymologyRoot, GrammarProfile, WritingSystem
 ├── heraldry.prisma       # HeraldryAchievement, HeraldryCharge, HeraldryRevision
-├── media.prisma          # MediaTrack, MediaPlaylist, PlaybackHistory
-└── c15t.prisma           # Consent-management tables (c15t)
+└── media.prisma          # MediaType enum only
 ```
 
 ---

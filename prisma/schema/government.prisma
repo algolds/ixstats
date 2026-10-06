@@ -501,21 +501,6 @@ model GovernmentComponentData {
   @@index([usageCount])
 }
 
-model GovernmentSynergy {
-  id           String        @id @default(cuid())
-  component1   ComponentType
-  component2   ComponentType
-  synergyType  String
-  bonusPercent Int
-  description  String
-  isActive     Boolean       @default(true)
-
-  @@unique([component1, component2])
-  @@index([component1])
-  @@index([component2])
-  @@index([synergyType])
-}
-
 model PoliticalParty {
   id             String              @id @default(cuid())
   countryId      String

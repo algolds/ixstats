@@ -190,19 +190,6 @@ model TrendingTopic {
   @@index([isActive])
 }
 
-model CountryMoodMetric {
-  id             String   @id @default(cuid())
-  countryId      String
-  timestamp      DateTime
-  sentimentScore Float
-  postCount      Int      @default(0)
-  country        Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@unique([countryId, timestamp])
-  @@index([countryId])
-  @@index([timestamp])
-}
-
 model ThinktankGroup {
   id                String                  @id @default(cuid())
   name              String
@@ -468,9 +455,6 @@ model ActivityFeed {
   views            Int               @default(0)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  activityComments ActivityComment[]
-  activityLikes    ActivityLike[]
-  activityShares   ActivityShare[]
   pollId           String?
   poll             Poll?             @relation(fields: [pollId], references: [id], onDelete: Cascade)
 
@@ -482,44 +466,6 @@ model ActivityFeed {
   @@index([createdAt])
   @@index([visibility])
   @@index([pollId])
-}
-
-model ActivityLike {
-  id         String       @id @default(cuid())
-  activityId String
-  userId     String
-  createdAt  DateTime     @default(now())
-  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@unique([activityId, userId])
-  @@index([activityId])
-  @@index([userId])
-}
-
-model ActivityComment {
-  id         String       @id @default(cuid())
-  activityId String
-  userId     String
-  content    String
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@index([activityId])
-  @@index([userId])
-  @@index([createdAt])
-}
-
-model ActivityShare {
-  id         String       @id @default(cuid())
-  activityId String
-  userId     String
-  createdAt  DateTime     @default(now())
-  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
-
-  @@unique([activityId, userId])
-  @@index([activityId])
-  @@index([userId])
 }
 
 model Poll {

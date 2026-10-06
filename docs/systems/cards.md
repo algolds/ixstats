@@ -92,16 +92,13 @@ Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` an
 
 ## Crafting (retired) & Junking
 
-### Crafting: retired for now (2026-10-05)
-The owner deprecated crafting. Nothing can craft:
-- Every `crafting.*` procedure (`getRecipes`, `getRecipeById`, `craftCard`) refuses with `PRECONDITION_FAILED`
-  ("Crafting is retired for now.") before touching the database. The switch is `CRAFTING_ENABLED` in
-  `src/server/api/routers/crafting/_retired.ts`; the Vault config's `isCraftingEnabled` key and its admin toggle are gone.
-- `/vault/crafting` shows a short "Crafting is retired for now" empty state; the workbench components, the sidebar,
-  Halo and help-centre entries are removed. `db:seed` no longer runs `prisma/seeds/crafting-recipes.ts`.
-- Kept until the schema-drop decision (it waits on a backup): the `CraftingRecipe` / `CraftingHistory` models and rows,
-  `SPEND_CRAFT` / `CRAFT` enum values, `src/lib/cards/crafting-rules.ts` (packs still exclude crafted cards with
-  `CRAFTED_CARD_MARKER`) and the router logic, whose tests mock the flag on.
+### Crafting: retired (2026-10-05)
+The owner deprecated crafting, and the D9 schema drop removed what was left:
+- The `crafting` router, `src/lib/cards/crafting-rules.ts`, `prisma/seeds/crafting-recipes.ts` and the
+  `CraftingRecipe` / `CraftingHistory` models are gone. The `SPEND_CRAFT` / `CRAFT` enum values stay for old ledger rows.
+- `/vault/crafting` shows a short "Crafting is retired for now" empty state.
+- Packs still exclude crafted cards: they match `metadata.crafted = true` or the legacy "Crafted via" description
+  (`src/lib/cards/pack-service.ts`).
 - Moot with it: decision D6 (a MYTHIC recipe) and "failed rolls consume materials".
 
 ### Card Recycling (Junking)

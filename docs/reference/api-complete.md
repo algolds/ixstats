@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (75 Routers, 944 Endpoints)
+### Live tRPC API Inventory (74 Routers, 941 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -25,7 +25,6 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
-| **`api.crafting`** | 2 | 1 | 0 | **3** | `src/server/api/routers/crafting/index.ts` |
 | **`api.crisisEvents`** | 2 | 0 | 0 | **2** | `src/server/api/routers/crisis-events.ts` |
 | **`api.customTypes`** | 2 | 2 | 0 | **4** | `src/server/api/routers/customTypes.ts` |
 | **`api.demoMode`** | 1 | 0 | 0 | **1** | `src/server/api/routers/demo-mode.ts` |
@@ -84,10 +83,10 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 26 | 19 | 0 | **45** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 53 | 20 | 0 | **75** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **458** | **482** | **0** | **944** | **75 registered namespaces** |
+| **TOTALS** | **456** | **481** | **0** | **941** | **74 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
-> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **75 namespaces / 951 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
+> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **74 namespaces / 948 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
 
 ---
 

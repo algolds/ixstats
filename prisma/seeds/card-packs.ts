@@ -46,7 +46,6 @@ export async function seedCardPacks() {
         limitedQuantity: pack.limitedQuantity,
         purchaseLimit: pack.purchaseLimit,
         expiresAt: pack.expiresAt ? new Date(pack.expiresAt) : null,
-        pdsConfig: pack.pdsConfig || undefined,
       };
 
       await prisma.cardPack.upsert({

@@ -1,20 +1,5 @@
 // IxStates — Maps, Geography & IxWorld models
 
-model Territory {
-  id           String                   @id @default(cuid())
-  countryId    String
-  name         String
-  geometry     Json
-  isMainland   Boolean                  @default(false)
-  areaSqKm     Float?
-  geom_postgis Unsupported("geometry")?
-  country      Country                  @relation(fields: [countryId], references: [id], onDelete: Cascade)
-
-  @@index([countryId])  // FK index for country territory queries
-  @@index([geom_postgis], map: "idx_territory_geom", type: Gist)
-  @@map("territories")
-}
-
 model BorderHistory {
   id            String   @id @default(cuid())
   countryId     String
@@ -115,7 +100,6 @@ model City {
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
   transportHubs        TransportHub[]           @relation("CityTransportHubs")
-  transportNodes       TransportNode[]          @relation("CityTransportNodes")
   nationalCapitalOf    NationalIdentity[]       @relation("NationalCapital")
   nationalLargestOf    NationalIdentity[]       @relation("NationalLargestCity")
   subdivisionCapitalOf Subdivision[]            @relation("SubdivisionCapital")
@@ -322,46 +306,6 @@ model MapEditorSession {
   @@map("map_editor_sessions")
 }
 
-/// IxMaps - World template for export/import (clone system)
-model WorldTemplate {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  version       String    @default("1.0.0")
-  createdBy     String    // Clerk userId
-  metadata      Json?     // { bounds, featureCounts, generatedFrom, etc. }
-  layers        Json      // Record<LayerType, GeoJSON.FeatureCollection>
-  countries     Json?     // Array<{ name, featureId, properties }>
-  sovereignty   Json?     // Array<{ sovereign, subject, type, autonomy }>
-  mapConfig     Json?     // { center, zoom, layerConfigs, colorPalette }
-  fileSizeBytes Int?
-  isPublic      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([createdBy])
-  @@index([isPublic])
-  @@map("world_templates")
-}
-
-/// IxMaps - Procedurally generated worlds
-model ProceduralWorld {
-  id             String    @id @default(cuid())
-  seed           Int
-  parameters     Json      // WorldGenParams
-  status         String    @default("completed") // "generating", "completed", "failed"
-  generatedData  Json?     // Generated layers (FeatureCollections)
-  metadata       Json?     // Stats: landPercentage, countryCount, generationTimeMs, etc.
-  templateId     String?   // If saved as template
-  createdBy      String    // Clerk userId
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  @@index([seed])
-  @@index([createdBy])
-  @@map("procedural_worlds")
-}
-
 /// IxMaps - Sovereignty/dependency relationships between countries
 /// Supports multi-level hierarchies (crown possessions, vassals, protectorates, etc.)
 model CountrySovereignty {
@@ -383,21 +327,6 @@ model CountrySovereignty {
   @@index([sovereignId])
   @@index([subjectId])
   @@map("country_sovereignty")
-}
-
-/// IxMaps - Canonical elevation zone reference (9 zones matching IxWiki topographic legend)
-model ElevationZone {
-  id           String   @id @default(cuid())
-  zoneId       String   @unique // "zone_0" through "zone_8"
-  zoneName     String // "Coastal Lowlands", "Low Hills", etc.
-  elevationMin Int // meters: 0, 100, 350, 500, 1000, 2000, 3000, 4000, 5000
-  elevationMax Int // meters: 99, 349, 499, 999, 1999, 2999, 3999, 4999, 9999
-  color        String // hex with alpha: "#a8c995ff"
-  sortOrder    Int // 0-8 for rendering order
-  createdAt    DateTime @default(now())
-
-  @@index([sortOrder])
-  @@map("elevation_zones")
 }
 
 /// IxMaps - Shared vertices between political features for synchronized border editing
@@ -562,8 +491,6 @@ model TransportRoute {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  routeSegments     TransportRouteSegment[] @relation("RouteSegments")
-
   @@index([countryId])
   @@index([routeType])
   @@index([realmId, routeType])
@@ -591,79 +518,6 @@ model TransportHub {
   @@index([realmId])
   @@index([cityId])
   @@map("transport_hubs")
-}
-
-/// Shared intersection or waypoint node in the transport network.
-model TransportNode {
-  id            String   @id @default(cuid())
-  coordinates   Json     // [lng, lat]
-  nodeType      String   // "city", "junction", "interchange", "waypoint", "border_crossing"
-  cityId        String?
-  city          City?    @relation("CityTransportNodes", fields: [cityId], references: [id], onDelete: SetNull)
-  countryId     String?
-  country       Country? @relation("CountryTransportNodes", fields: [countryId], references: [id], onDelete: SetNull)
-  name          String?
-  elevation     Float?
-  realmId       String   @default("default") @map("worldId")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  segmentsFrom  TransportSegment[] @relation("SegmentFromNode")
-  segmentsTo    TransportSegment[] @relation("SegmentToNode")
-
-  @@index([countryId])
-  @@index([realmId])
-  @@index([cityId])
-  @@map("transport_nodes")
-}
-
-/// Network edge representing a physically connected segment between two nodes.
-model TransportSegment {
-  id                String   @id @default(cuid())
-  fromNodeId        String
-  fromNode          TransportNode @relation("SegmentFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
-  toNodeId          String
-  toNode            TransportNode @relation("SegmentToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
-  routeType         String   // rail, high_speed_rail, motorway, highway, road, etc.
-  geometry          Json     // GeoJSON LineString
-  status            String   @default("operational") // planned, under_construction, operational, abandoned
-  builtYear         Int?
-  lengthKm          Float?
-  terrainDifficulty Float?
-  speedKmh          Float?
-  capacity          Float?
-  properties        Json?
-  isInternational   Boolean  @default(false)
-  countryId         String?
-  country           Country? @relation("CountryTransportSegments", fields: [countryId], references: [id], onDelete: SetNull)
-  realmId           String   @default("default") @map("worldId")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  routeSegments     TransportRouteSegment[]
-
-  @@index([countryId])
-  @@index([routeType])
-  @@index([realmId, routeType])
-  @@index([fromNodeId])
-  @@index([toNodeId])
-  @@map("transport_segments")
-}
-
-/// Ordered join linking named routes to their constituent network segments.
-model TransportRouteSegment {
-  id         String           @id @default(cuid())
-  routeId    String
-  route      TransportRoute   @relation("RouteSegments", fields: [routeId], references: [id], onDelete: Cascade)
-  segmentId  String
-  segment    TransportSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
-  order      Int              // 0-indexed position in route
-  direction  String           @default("forward") // "forward" | "reverse"
-
-  @@unique([routeId, segmentId])
-  @@index([routeId])
-  @@index([segmentId])
-  @@map("transport_route_segments")
 }
 
 model MapStyleOverride {

@@ -2,29 +2,28 @@
 
 **Last updated:** 2026-10-05
 
-Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **<!-- BEGIN_DOCS:COUNT:models -->342<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums)
+Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->20<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->286<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
 | --- | --- |
-| Countries & Identity (`core.prisma`) | `Country`, `NationalIdentity`, `CountryActivity`, `CountryFollow`, `WikiAccountLink` |
+| Countries & Identity (`core.prisma`) | `Country`, `NationalIdentity`, `CountryFollow`, `WikiAccountLink` |
 | Intelligence & Diplomacy (`intelligence.prisma`, `diplomacy.prisma`) | `IntelligenceBriefing`, `IntelligenceTemplate`, `DiplomaticRelation`, `DiplomaticEvent`, `Embassy`, `EmbassyMission`, `Alliance`, `ForeignPolicyAction`, `NPCPersonality` |
-| Economy & Tax (`economy.prisma`) | `EconomicProfile`, `EconomicIndicator`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent`, `CrossBuilderSynergy` |
+| Economy & Tax (`economy.prisma`) | `EconomicProfile`, `LaborMarket`, `FiscalSystem`, `TaxSystem`, `EconomicComponent`, `TaxComponent` |
 | Government, Politics & Issues (`government.prisma`) | `GovernmentComponent`, `ComponentSynergy`, `GovernmentStructure`, `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`, `NationalIssue`, `StorytellerEffect`, `Intent` |
 | Defense & Security (`military.prisma`) | `MilitaryBranch`, `MilitaryUnit`, `DefenseBudget`, `SecurityThreat`, `SecurityEvent`, `MilitaryEquipmentCatalog` |
 | Social & Collaboration (`social.prisma`, `social-follows.prisma`, `realm-boards.prisma`) | `ThinkpagesAccount`, `ThinkpagesPost`, `ThinktankGroup`, `ThinkshareConversation`, `ActivityFeed`, `Poll`, `ThinkpagesFollow`, `ThinkpagesPersonalAccount`, `RealmBoard` |
 | Achievements & Notifications (`core.prisma`) | `Achievement`, `UserAchievement`, `Notification`, `NotificationEventConfig` |
 | Users, Roles & Logging (`core.prisma`, `identity.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog`, `PassportPreference` |
 | Scheduled jobs (`core.prisma`) | `JobLease` (`job_leases`, the cron lease row), `CronRun` (one row per cron run) |
-| Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `CraftingRecipe`, `TradeOffer`, `NSImport` (`CardBackgroundImage` lives in `core.prisma`) |
+| Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `TradeOffer` (`CardBackgroundImage` lives in `core.prisma`) |
 | Exchange (`exchange.prisma`) | `ExchangeWallet`, `Company`, `Shareholding`, `SectorIndex`, `Contract` |
-| Maps, Geo & Realms (`maps.prisma`) | `Territory`, `Subdivision`, `City`, `PointOfInterest`, `CountrySovereignty`, `TransportRoute`, `Realm`, `RealmClaim` |
+| Maps, Geo & Realms (`maps.prisma`) | `Subdivision`, `City`, `PointOfInterest`, `CountrySovereignty`, `TransportRoute`, `Realm`, `RealmClaim` |
 | Wiki, Stash & LoreWards (`wiki.prisma`) | `WikiArticle`, `WikiRevision`, `WikiLink`, `Stash`, `StashItem`, `LorewardEntry`, `BlurbPrompt` |
 | Sports (`sports.prisma`) | `SportLeague`, `SportTeam`, `SportSeason`, `SportMatch` |
 | Onoma (`onoma.prisma`) | `NameBank`, `LanguagePack`, `EtymologyRoot`, `WritingSystem` |
-| Heraldry & Media (`heraldry.prisma`, `media.prisma`) | `HeraldryRevision`, `MediaTrack`, `MediaPlaylist` |
-| Consent (`c15t.prisma`) | `consent`, `consentPolicy`, `C15tAuditLog` |
+| Heraldry (`heraldry.prisma`; `media.prisma` holds only the `MediaType` enum) | `HeraldryRevision` |
 | Autosave | No dedicated table — autosaves are `AuditLog` rows (`autosave:*` actions); drafts use `BuilderDraft` |
 
 ## Schema Conventions

@@ -54,7 +54,7 @@ async function seedDatabase() {
     // Seed commemorative achievement cards (and backfill earlier unlocks)
     await seedAchievementCards(db);
 
-    // Crafting is retired for now (2026-10-05): prisma/seeds/crafting-recipes.ts is not run.
+    // Crafting is retired (2026-10-05); its seed and tables were dropped with D9.
 
     // Seed reference catalogs (idempotent — each clears + repopulates its own tables)
     console.log("🔫 Seeding small arms equipment catalog...");

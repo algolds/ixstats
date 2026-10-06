@@ -95,7 +95,7 @@ partly done item.
 **Crafting is deprecated (owner, 2026-10-05).** Every `crafting.*` call refuses and the workbench, its nav entries and
 admin switch are gone, so VT-14 (crafting fixes), its PF§2 row and the PF§4 crafting extensions are moot, as are
 decision D6 (the MYTHIC recipe) and "failed crafting rolls consume materials". `CraftingRecipe` / `CraftingHistory`
-stay until the schema-drop decision ([§5](#5-dead-schema)).
+are dropped with D9 ([§5](#5-dead-schema)).
 
 ### Social, Halo & Labs (SL)
 
@@ -288,8 +288,8 @@ procedural realms (AT-15) or the Exchange (VT-16) would use until those are deci
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
 
-**Drop prepared (2026-10-06, D9):** the reviewed drop (56 models with no accessor left once the retired crafting router goes, plus the
-`CardPack.pdsConfig` column) is on branch `chore/drop-unused-models`, with its runbook in
-`docs/operations/drop-unused-models.md` on that branch. It is not applied here: it waits on a successful production
-restore test. It keeps the Exchange models (D5), the military and defense models (D2) and every model still read
-through a relation (for example `Permission`, `GovernmentBranch`, `EconomicModel`, `ThinktankMessage`).
+**Drop prepared (2026-10-06, D9):** on this branch (`chore/drop-unused-models`) the schema no longer has the 56
+models (each re-verified to have no accessor left once the retired crafting router went with its two tables) or the
+`CardPack.pdsConfig` column. The database keeps them until an operator follows
+[drop-unused-models.md](../operations/drop-unused-models.md), which starts with a successful production restore test.
+It keeps the Exchange models (D5), the military and defense models (D2) and every model still read through a relation (for example `Permission`, `GovernmentBranch`, `EconomicModel`, `ThinktankMessage`).

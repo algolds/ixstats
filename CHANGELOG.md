@@ -22,6 +22,10 @@ reads 1.4.0 until the RC2 cut.
 - **Scheduled changes deleted (D11):** the service, the `scheduled-changes` cron job and its HTTP route, the
   `scheduledChanges` router and `usePendingLocks` (and the budget and revenue form locks it drove) are gone. Remove
   `scheduled-changes` from `CRON_ENABLED_JOBS` if listed. The Prisma models stay until the D9 schema drop.
+- **Unused models dropped from the schema (D9):** 56 models with no accessor (c15t consent, crafting, the old archetype
+  set, unused diplomacy, economy, map, media and activity tables, `ScheduledChange`) and `CardPack.pdsConfig`. The
+  retired `crafting` router goes with its tables. Apply only by
+  [drop-unused-models.md](docs/operations/drop-unused-models.md), after a successful production restore test.
 
 ### 💎 Vault Cleanup (2026-10-05)
 

@@ -20,7 +20,7 @@ There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapp
   - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections
   - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/marketplace?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening), Auctions, P2P Trading. `/vault/packs`, `/vault/market` and `/vault/trading` are redirect stubs into this section
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
-- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#crafting-retired-for-now-2026-10-05)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
+- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#crafting-retired-2026-10-05)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
 
 ---
 
@@ -33,7 +33,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 - `isTradingEnabled`: P2P card and credit trade offers
 - `isAuctionsEnabled`: Marketplace listing and bidding
 - `isMaintenanceMode`: Emergency master switch blocking all ledger writes
-- Crafting has no switch any more: it is retired and refuses every call (`CRAFTING_ENABLED = false` in `routers/crafting/_retired.ts`); a leftover `vault_isCraftingEnabled` row is ignored
+- Crafting has no switch any more: it is retired and its router is gone (D9 schema drop); a leftover `vault_isCraftingEnabled` row is ignored
 - Also tunable: `activeDailyCap` (100), `socialDailyCap` (50), `xpPerLevel` (1,000), `maxStreakBonus` (7) and `premiumMultiplier` (display-only today). Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
 
 ---

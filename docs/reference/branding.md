@@ -164,7 +164,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
 | **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/economy/budget-vault-calculator.ts`)       |
-| **Card Crafting**    | Retired for now (2026-10-05); every call refuses. Prisma: `CraftingRecipe`, `CraftingHistory` (kept). tRPC: `crafting/`. |
+| **Card Crafting**    | Retired (2026-10-05). The router and the `CraftingRecipe` / `CraftingHistory` tables were removed with the D9 schema drop. |
 | **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
 | **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
 | **Card Packs**       | Pack purchase & animated opening. tRPC: `card-packs/`. 🎁 emoji.                                        |
@@ -482,7 +482,7 @@ In-app help center (`/help/`). Routes for economy, defense, diplomacy, intellige
 
 ### 6.4 Consent Manager (c15t)
 
-GDPR-style consent management. Package: `@c15t/nextjs`, `@c15t/backend`. Prisma: `c15t.prisma`. Route: `/api/c15t/`.
+Removed. The `@c15t/*` packages and the `/api/c15t/` route were deleted earlier, and the D9 schema drop removed the `c15t.prisma` tables.
 
 ### 6.5 Flag Service
 

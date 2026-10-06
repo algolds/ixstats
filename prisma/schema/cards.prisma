@@ -264,7 +264,6 @@ model CardPack {
   limitedQuantity  Int?
   purchaseLimit    Int?
   expiresAt        DateTime?
-  pdsConfig        Json?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @default(now())
   UserPack         UserPack[]
@@ -290,22 +289,6 @@ model UserPack {
   @@map("user_packs")
 }
 
-model NSImport {
-  id           String    @id @default(cuid())
-  userId       String
-  nationName   String
-  cardCount    Int
-  totalValue   Float
-  status       String    @default("PENDING")
-  errorMessage String?
-  createdAt    DateTime  @default(now())
-  completedAt  DateTime?
-
-  @@index([userId])
-  @@index([status])
-  @@map("ns_imports")
-}
-
 model SyncLog {
   id             String    @id @default(cuid())
   syncType       String
@@ -324,22 +307,6 @@ model SyncLog {
 
   @@index([syncType, status])
   @@map("sync_logs")
-}
-
-model SyncCheckpoint {
-  id          String   @id @default(cuid())
-  syncType    String
-  season      Int?
-  lastCardId  String?
-  lastPage    Int?
-  totalPages  Int?
-  checkpoint  Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([syncType, season])
-  @@index([syncType])
-  @@map("sync_checkpoints")
 }
 
 model LoreCardRequest {
@@ -394,69 +361,6 @@ model CardExperienceEvent {
   @@index([ownershipId, createdAt])
   @@index([source])
   @@map("card_experience_events")
-}
-
-model CardTrade {
-  id          String    @id
-  fromUserId  String
-  toUserId    String
-  status      String    @default("PENDING")
-  expiresAt   DateTime?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
-
-  @@index([fromUserId], map: "CardTrade_fromUserId_idx")
-  @@index([toUserId], map: "CardTrade_toUserId_idx")
-  @@index([status], map: "CardTrade_status_idx")
-  @@index([expiresAt], map: "CardTrade_expiresAt_idx")
-  @@index([fromUserId, status], map: "CardTrade_fromUserId_status_idx")
-  @@index([toUserId, status], map: "CardTrade_toUserId_status_idx")
-}
-
-/// Crafting Recipe Model
-/// Defines card crafting/fusion/evolution recipes
-model CraftingRecipe {
-  id              String            @id @default(cuid())
-  name            String
-  description     String?
-  recipeType      String            // "FUSION" | "EVOLUTION"
-  requiredCardIds Json              // Array of card IDs or criteria
-  requiredCount   Int               @default(1)
-  resultCardId    String?           // Specific result card (null = random by rarity)
-  resultRarity    String?           // If random result, rarity constraint
-  ixCreditsCost   Int               @default(0)
-  successRate     Float             @default(1.0) // 0.0-1.0 (1.0 = 100%)
-  minLevel        Int               @default(1)
-  collectorXPGain Int               @default(0)
-  isActive        Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  craftingHistory CraftingHistory[]
-
-  @@index([recipeType])
-  @@index([resultRarity])
-  @@index([isActive])
-}
-
-/// Crafting History Model
-/// Tracks user crafting attempts and results
-model CraftingHistory {
-  id              String         @id @default(cuid())
-  userId          String
-  recipeId        String
-  materialsUsed   Json           // Array of CardOwnership IDs consumed
-  success         Boolean
-  resultCardId    String?        // CardOwnership ID created (if successful)
-  ixCreditsSpent  Int
-  collectorXPGain Int
-  craftedAt       DateTime       @default(now())
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe          CraftingRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-
-  @@index([userId, craftedAt])
-  @@index([recipeId])
-  @@index([success])
 }
 
 /// Trade Offer Model
