@@ -55,7 +55,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | **Defense** | [systems/defense.md](systems/defense.md) | Branches, units, procurement, readiness, threats | 🔒 Premium |
 | **Intelligence** | [systems/intelligence.md](systems/intelligence.md) | Where recon and fog live now; no standalone dashboard | 🟡 Partial |
 | **Synergies** | [reference/synergies.md](reference/synergies.md) | 45 additive + 45 conflicting government component relationships | ✅ Live |
-| Scheduled changes | [systems/scheduled-changes.md](systems/scheduled-changes.md) | Delayed-effect pipeline with no producer (decision D11) | 🟡 Built, unused |
 | Statecraft game loops | [systems/statecraft/statecraft-game-loops.md](systems/statecraft/statecraft-game-loops.md) · [UI demos](systems/statecraft/ui-demos/index.html) ([briefing](systems/statecraft/ui-demos/1-briefing.html), [desk](systems/statecraft/ui-demos/2-desk.html), [situation table](systems/statecraft/ui-demos/3-situation-table.html), [ticker](systems/statecraft/ui-demos/4-ticker.html), [console](systems/statecraft/ui-demos/5-console.html)) | IN → SEE → OUT → RIPPLE loop design | 📐 Design (partly built) |
 | Design philosophy & PRDs | [systems/mycountry-design-philosophy-and-prds.md](systems/mycountry-design-philosophy-and-prds.md) | Design bible and statecraft PRDs, with a status matrix | 📐 Design (partly built) |
 

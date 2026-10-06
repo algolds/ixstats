@@ -136,11 +136,11 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 **IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `crafting/`, `trading/`, `lore-cards/`, `ns-import/`
 
-**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `scheduledChanges.ts`, `quickactions/`, `historical/`, `countryGeo.ts`, `customTypes.ts`
+**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `quickactions/`, `historical/`, `countryGeo.ts`, `customTypes.ts`
 
 **Maps & Realms:** `geo/` (core, features, editor, admin, sovereignty, wiki), `realms/`
 
-**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `narrator/`, `onoma/`
+**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `onoma/`
 
 **Other:** `achievements/`, `activities/` (feed, follows, trending, activities), `admin/` (countries, wiki, worldEvents, system, users, cron, bot, stash, thinkpages), `countries/` (list, economy, identity, management, wiki, atomic, flags), `formulas.ts`, `notifications/`, `users/`, `user-logging.ts`, `system.ts`, `system-validation.ts`, `cache.ts`, `demo-mode.ts`, `builderDraft.ts`, `autosaveHistory.ts`, `autosaveMonitoring.ts`
 

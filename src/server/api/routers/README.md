@@ -26,7 +26,7 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 | Intelligence & Diplomacy | `intelligence/`, `diplomacy/` (core, embassies, cultural, policies — registered as `diplomaticCore` etc.), `diplomaticScenarios/`, `npcPersonalities/`, `crisis-events` |
 | Government & Politics | `government/`, `atomicGovernment`, `governmentComponents/`, `policies/`, `legislation`, `elections/`, `national-issues/`, `intent` |
 | Defense & Security | `security/`, `militaryEquipment/`, `smallArmsEquipment/`, `meetings/` |
-| Social & Collaboration | `thinkpages/`, `messages/`, `polls/`, `activities/`, `notifications/`, `forum/`, `sports/`, `narrator/` |
+| Social & Collaboration | `thinkpages/`, `messages/`, `polls/`, `activities/`, `notifications/`, `forum/`, `sports/` |
 | Cards & Vault | `cards/`, `card-packs/`, `card-market/`, `cardImages`, `lore-cards/`, `ns-import/`, `vault/`, `crafting/`, `trading/` |
 | Wiki & Content | `wikios/`, `wikiCache`, `lorewards/`, `commons`, `heraldry/`, `blurbs/`, `onoma/` |
 | Admin & Operations | `admin/`, `users/`, `user-logging`, `system`, `system-validation`, `cache`, `demo-mode`, `scheduledChanges`, `quickactions/`, `customTypes`, `builderDraft`, `autosaveHistory`, `autosaveMonitoring`, `ixnayid/` |
