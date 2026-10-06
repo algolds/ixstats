@@ -52,6 +52,7 @@ import { cardImagesRouter } from "./routers/cardImages";
 import { loreCardsRouter } from "./routers/lore-cards";
 import { nsImportRouter } from "./routers/ns-import";
 import { vaultRouter } from "./routers/vault";
+import { exchangeRouter } from "./routers/exchange";
 import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
 import { geoCoreRouter } from "./routers/geo/core";
@@ -132,6 +133,7 @@ export const appRouter = createTRPCRouter({
   loreCards: loreCardsRouter,
   nsImport: nsImportRouter,
   vault: vaultRouter,
+  exchange: exchangeRouter,
   crafting: craftingRouter,
   trading: tradingRouter,
   geoCore: geoCoreRouter,

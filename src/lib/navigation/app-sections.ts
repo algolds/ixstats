@@ -325,6 +325,7 @@ export const APPS: readonly AppDefinition[] = [
         // /vault/packs redirects into the marketplace store.
         match: ["/vault/market", "/vault/trading", "/vault/packs"],
       },
+      { id: "exchange", label: "Exchange", href: "/vault/exchange", icon: Coins },
       { id: "import", label: "Import", href: "/vault/import", icon: Download },
     ],
   },

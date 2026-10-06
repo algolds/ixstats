@@ -31,6 +31,7 @@ export function VaultSystemConfig() {
     isPacksEnabled: true,
     isMaintenanceMode: false,
     exemptStaffFromLimit: true,
+    isExchangeEnabled: true,
   });
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export function VaultSystemConfig() {
         isPacksEnabled: vaultConfig.isPacksEnabled ?? true,
         isMaintenanceMode: vaultConfig.isMaintenanceMode ?? false,
         exemptStaffFromLimit: vaultConfig.exemptStaffFromLimit ?? true,
+        isExchangeEnabled: vaultConfig.isExchangeEnabled ?? true,
       });
     }
   }, [vaultConfig]);
@@ -265,6 +267,21 @@ export function VaultSystemConfig() {
                       checked={configForm.isAuctionsEnabled}
                       onCheckedChange={(val) =>
                         setConfigForm((f) => ({ ...f, isAuctionsEnabled: val }))
+                      }
+                    />
+                  </div>
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-label text-caption">Enable the Exchange</span>
+                      <span className="text-label-secondary text-footnote">
+                        Sovereign conversion, companies and contracts. MyClub spending is not
+                        affected.
+                      </span>
+                    </div>
+                    <Switch
+                      checked={configForm.isExchangeEnabled}
+                      onCheckedChange={(val) =>
+                        setConfigForm((f) => ({ ...f, isExchangeEnabled: val }))
                       }
                     />
                   </div>
