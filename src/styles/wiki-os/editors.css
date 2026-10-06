@@ -181,6 +181,35 @@
     min-width: 0;
   }
 
+  /* A Commons file's licence, under its name */
+  .wikios-imgs-card-licence {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--wikios-text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* "Load more" after the last card, across the whole grid */
+  .wikios-imgs-more {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .wikios-imgs-attribution {
+    font-size: 0.75rem;
+    color: var(--wikios-text-dim);
+    margin: 0 0 14px;
+    word-break: break-word;
+  }
+
+  .wikios-imgs-attribution a {
+    color: var(--wikios-accent);
+    text-decoration: underline;
+  }
+
   .wikios-imgs-card-actions {
     display: flex;
     gap: 2px;
@@ -296,6 +325,27 @@
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid var(--color-separator);
+  }
+
+  .wikios-img-insert-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  /* A Commons file's source, licence and author */
+  .wikios-img-insert-credit {
+    font-size: 0.75rem;
+    color: var(--wikios-text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wikios-img-insert-credit a {
+    color: var(--wikios-accent);
+    text-decoration: underline;
   }
 
   .wikios-img-insert-name {
