@@ -60,7 +60,6 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
 | MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
@@ -285,7 +284,7 @@ items not already listed above:
 From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no accessor at all (c15t consent 8,
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
-them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop models that defense (MC-3), crisis events,
+them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop the force-structure models (`MilitaryBranch`, `MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events,
 procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
