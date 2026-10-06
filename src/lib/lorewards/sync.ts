@@ -9,16 +9,53 @@ import * as path from "path";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
+/**
+ * Before the WikiOS v1 cutover (`WIKIOS_V1_ENABLED` off) classic MediaWiki is the wiki of record and
+ * WikiOS's copy of a page may lag it, so a page WikiOS lacks is read from MediaWiki's api.php, as before v1.
+ */
+async function fetchOOLPageFromMediaWiki(pageTitle: string): Promise<string | null> {
+  try {
+    const params = new URLSearchParams({
+      action: "query",
+      prop: "revisions",
+      rvprop: "content",
+      rvslots: "main",
+      titles: pageTitle,
+      format: "json",
+      formatversion: "2",
+    });
+    const res = await fetch(`${getMediaWikiApiUrl("ixwiki")}?${params.toString()}`, {
+      headers: { "User-Agent": DEFAULT_USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      query?: {
+        pages?: { missing?: boolean; revisions?: { slots?: { main?: { content?: string } } }[] }[];
+      };
+    };
+    const page = data.query?.pages?.[0];
+    return page && !page.missing ? (page.revisions?.[0]?.slots?.main?.content ?? null) : null;
+  } catch (err) {
+    console.warn(`[Lorewards] MediaWiki read failed for ${pageTitle}:`, err);
+    return null;
+  }
+}
+
+/**
+ * The wikitext of an OOL page: a WikiOS page, read from Postgres (after the cutover MediaWiki is never asked;
+ * before it, a page WikiOS lacks is read from MediaWiki). Null when neither has the page, or the reads fail.
+ */
 async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string | null> {
   const pageTitle = yearOrKey === "main" ? "IxWiki:OOL" : `IxWiki:OOL/${yearOrKey}`;
   const shortTitle = yearOrKey === "main" ? "OOL" : `OOL/${yearOrKey}`;
 
-  // 1. Try PostgreSQL first (<1ms)
   try {
-    const article: any = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source: "ixwiki",
         OR: [
@@ -32,41 +69,10 @@ async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string 
     });
     if (article?.wikitext) return article.wikitext;
   } catch (err) {
-    console.warn("[Lorewards] DB lookup failed, falling back to HTTP:", pageTitle, err);
+    console.warn(`[Lorewards] DB lookup failed for ${pageTitle}:`, err);
   }
 
-  // 2. Try MediaWiki Action API HTTP
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: pageTitle,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const rev = pages[pageId]?.revisions?.[0];
-        return rev?.slots?.main?.["*"] ?? rev?.["*"] ?? null;
-      }
-    }
-  } catch (err) {
-    console.error(`[Lorewards] HTTP error fetching OOL/${yearOrKey}:`, err);
-  }
-
-  return null;
+  return isWikiosV1Enabled() ? null : fetchOOLPageFromMediaWiki(pageTitle);
 }
 
 const STATE_FILE = path.resolve("/ixwiki/shared/bots/discord/lorewards-state.json");
@@ -209,7 +215,7 @@ export async function syncFromStateFile(): Promise<number> {
 /**
  * Backfill historical entries from ALL OOL wiki pages (2017-2026).
  */
-async function syncFromOOLPages(): Promise<number> {
+export async function syncFromOOLPages(): Promise<number> {
   let totalSynced = 0;
 
   for (const year of OOL_YEARS) {
@@ -338,7 +344,7 @@ async function recomputeAllStats(): Promise<number> {
  * Sync canonical medal scores and membership data from the main IxWiki:OOL page.
  * This is the authoritative source for user rankings.
  */
-async function syncFromMainOOLPage(): Promise<number> {
+export async function syncFromMainOOLPage(): Promise<number> {
   const wikitext = await fetchOOLPageWikitext("main");
   if (!wikitext) {
     console.warn("[Lorewards] Could not fetch main OOL page");

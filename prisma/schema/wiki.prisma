@@ -31,11 +31,17 @@ model WikiArticle {
   contentJson         Json?                // Structured Block AST (for 0ms Canvas startup)
   contentHtml         String?              @db.Text // Pre-compiled HTML (for <2ms reads)
   htmlContent         String?              @db.Text // Legacy pre-rendered transformed HTML cache
+  renderedView        Json?                // Reader view bundle built once per revision (WikiOS render-service); null until first render
   wikitext            String               @db.Text // Canonical wikitext representation
   summary             String?              @db.VarChar(500)
+  /// Stored generated column (title A, summary B, first 20,000 characters of wikitext C) read by the native
+  /// search; created by prisma/manual-migrations/2026-09-30-wikios-search-indexes.sql, never written by the app.
+  searchVector        Unsupported("tsvector")?
   
   // Structured Metadata & Infobox
   infoboxData         Json?                // Structured key-value infobox properties
+  displayTitle        String?              @db.Text // {{DISPLAYTITLE}} as sanitized HTML, from the last render; null = the title itself
+  pageProps           Json?                // Page properties MediaWiki reports for the last render (defaultsort, disambiguation, ...)
   readingTime         Int                  @default(1)
   wordCount           Int                  @default(0)
   viewCount           Int                  @default(0)
@@ -62,6 +68,9 @@ model WikiArticle {
   htmlSyncedAt        DateTime?            // timestamp when HTML was last rendered
   syncedAt            DateTime             @default(now()) // last pull from MediaWiki
   mwPageId            Int?                 // Legacy MediaWiki page_id
+  /// The integer page id api.php reports (`pageid`): the MediaWiki page_id for pages that have one, else a number from
+  /// `wiki_articles_pageid_seq`. Assigned by a trigger on insert (prisma/manual-migrations/2026-09-30-wikios-api.sql); never changes.
+  pageId              Int?
   mwLatestRevId       Int?                 // Legacy MediaWiki rev_id
   lastMwSyncAt        DateTime?
   
@@ -76,8 +85,11 @@ model WikiArticle {
   awards              WikiArticleAward[]   @relation("ArticleAwards")
   watchers            WikiWatchlist[]      @relation("WatchedArticles")
   logs                WikiLog[]            @relation("ArticleLogs")
+  templateLinks       WikiTemplateLink[]   @relation("ArticleTemplateLinks")
+  imageLinks          WikiImageLink[]      @relation("ArticleImageLinks")
 
   @@unique([source, title])
+  @@unique([source, pageId])
   @@index([source, slug])
   @@index([source, status])
   @@index([source, namespace])
@@ -93,6 +105,9 @@ model WikiRevision {
   articleId        String
   article          WikiArticle  @relation("ArticleRevisions", fields: [articleId], references: [id], onDelete: Cascade)
   mwRevId          Int?         // MediaWiki rev_id (null if native WikiOS edit)
+  /// The integer revision id api.php reports (`revid`): the MediaWiki rev_id for revisions that have one, else a number from
+  /// `wiki_revisions_revid_seq`. Assigned by a trigger on insert (prisma/manual-migrations/2026-09-30-wikios-api.sql); never changes.
+  revId            Int?
   format           String       @default("STRUCTURED_JSON")
   contentJson      Json?
   contentHtml      String?      @db.Text
@@ -106,10 +121,23 @@ model WikiRevision {
   parentRevisionId String?
   byteSize         Int          @default(0)
   byteDelta        Int          @default(0)
+  sha1             String?      // MediaWiki rev_sha1: base-36 SHA-1 of wikitext, 31 chars (null on rows that predate it)
+  // MediaWiki revision deletion (rev_deleted): what a dump marks deleted="deleted". The text of a
+  // textDeleted row is "" and must be read as hidden, never as an empty page.
+  textDeleted      Boolean      @default(false)
+  commentDeleted   Boolean      @default(false)
+  userDeleted      Boolean      @default(false)
+  // Inbound sync (fast-forward or park): a MediaWiki edit that was not made on top of WikiOS's head is kept
+  // here, in the history, but is never the page's current text. Every "latest revision" query filters it out.
+  parked           Boolean      @default(false)
+  parkReason       String?      // "conflict:<head revision ref>"
   createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
+  @@index([articleId, parked, createdAt])
+  @@index([articleId, sha1])
   @@unique([source, mwRevId])
+  @@unique([source, revId])
   @@index([author])
   @@index([authorId])
   @@index([createdAt])
@@ -139,6 +167,8 @@ model WikiLog {
   id                  String       @id @default(cuid())
   articleId           String?
   article             WikiArticle? @relation("ArticleLogs", fields: [articleId], references: [id], onDelete: SetNull)
+  /// The integer log id api.php reports (`logid`), from `wiki_logs_logid_seq`; assigned by a trigger on insert.
+  logId               Int?         @unique
   logType             String       // move | delete | protect | upload | rights | block
   action              String       // e.g. "delete", "restore", "move", "protect", "modify"
   title               String
@@ -147,12 +177,126 @@ model WikiLog {
   actorName           String
   comment             String?      @db.VarChar(1000)
   params              Json?
+  /// The MediaWiki log id of an event the inbound sync applied (unique: an event is applied once); null for WikiOS's own.
+  mwLogId             Int?         @unique
   createdAt           DateTime     @default(now())
 
   @@index([logType, createdAt(sort: Desc)])
   @@index([articleId, createdAt(sort: Desc)])
   @@index([actorName, createdAt(sort: Desc)])
   @@map("wiki_logs")
+}
+
+/// Durable outbox of WikiOS -> classic MediaWiki writes (plan 407). A WikiOS write inserts its job in the same
+/// transaction as the change itself; the mirror worker (services/mirror-worker.ts) applies jobs in order per title.
+model WikiMirrorJob {
+  id            String   @id @default(cuid())
+  source        String   @default("ixwiki")
+  kind          String   // revision | move | delete | undelete | protect | upload
+  title         String   // canonical title at enqueue time (target of the operation)
+  articleId     String?
+  revisionId    String?  // WikiRevision.id for kind=revision
+  logId         String?  // WikiLog.id for move/delete/undelete/protect
+  payload       Json?    // extra params (move target, reason, restrictions, ...)
+  state         String   @default("pending") // pending | running | done | dead | discarded (a dead job an administrator gave up on)
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?  @db.VarChar(2000)
+  mwRevId       Int?     // resulting MediaWiki revision (kind=revision)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([state, nextAttemptAt])
+  @@index([source, title, createdAt])
+  @@map("wiki_mirror_jobs")
+}
+
+/// Explicit MediaWiki-style group membership (sysop, bureaucrat, interface-admin, bot, ...). A row is keyed by
+/// the WikiOS user, or by the MediaWiki username alone while that user has not yet verified a wiki link.
+model WikiUserGroup {
+  id           String    @id @default(cuid())
+  userId       String?
+  wikiUsername String?   // MediaWiki-normalised username (pending link)
+  group        String    // sysop | bureaucrat | interface-admin | bot | autoconfirmed | confirmed | rollbacker
+  expiresAt    DateTime?
+  addedById    String?
+  source       String    @default("wikios") // wikios | mw-import
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, group])
+  @@unique([wikiUsername, group])
+  @@index([group])
+  @@map("wiki_user_groups")
+}
+
+/// Page protection per action. Title-based so create-protection works for pages that do not exist yet.
+/// The source of truth for protection; WikiArticle.protectionLevel mirrors the `edit` restriction for readers.
+model WikiRestriction {
+  id        String    @id @default(cuid())
+  source    String    @default("ixwiki")
+  title     String    // canonical title
+  action    String    // edit | move | create | upload
+  level     String    // autoconfirmed | sysop
+  expiresAt DateTime?
+  cascade   Boolean   @default(false)
+  setById   String?
+  reason    String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+
+  @@unique([source, title, action])
+  @@map("wiki_restrictions")
+}
+
+/// A block on a WikiOS user and/or a MediaWiki username.
+model WikiBlock {
+  id            String    @id @default(cuid())
+  userId        String?
+  wikiUsername  String?   // block a MediaWiki username that has no WikiOS link yet
+  reason        String?   @db.VarChar(500)
+  expiresAt     DateTime? // null = indefinite
+  allowUserTalk Boolean   @default(true)
+  blockedById   String?
+  source        String    @default("wikios") // wikios | mw-import
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([wikiUsername])
+  @@map("wiki_blocks")
+}
+
+/// An app-specific credential for the api.php endpoint (Special:BotPasswords). The password is shown once; only
+/// its scrypt hash (`scrypt$<salt b64>$<hash b64>`) is stored. `grants` limit what a login may do (effective rights =
+/// the user's rights intersected with the grants' rights). `restrictions` is reserved for IP/time restrictions and is
+/// not read yet.
+model WikiBotPassword {
+  id           String           @id @default(cuid())
+  userId       String
+  appId        String           // /^[a-zA-Z0-9_ -]{1,32}$/
+  passwordHash String
+  grants       String[]
+  restrictions Json?
+  createdAt    DateTime         @default(now())
+  lastUsedAt   DateTime?
+  sessions     WikiApiSession[]
+
+  @@unique([userId, appId])
+  @@index([userId])
+  @@map("wiki_bot_passwords")
+}
+
+/// A bot's api.php session (`wikios_api_session` cookie = `<id>.<HMAC>`); 24 hours, sliding.
+model WikiApiSession {
+  id            String          @id
+  botPasswordId String
+  botPassword   WikiBotPassword  @relation(fields: [botPasswordId], references: [id], onDelete: Cascade)
+  userId        String
+  expiresAt     DateTime
+  createdAt     DateTime        @default(now())
+
+  @@index([botPasswordId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("wiki_api_sessions")
 }
 
 /// Native Directed Link Graph Edge
@@ -183,6 +327,7 @@ model WikiCategory {
   slug        String               @unique
   name        String
   description String?              @db.Text
+  hidden      Boolean              @default(false) // __HIDDENCAT__: MediaWiki's own flag, from the render
   parentId    String?
   parent      WikiCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    WikiCategory[]       @relation("CategoryHierarchy")
@@ -210,7 +355,34 @@ model WikiCategoryMember {
   @@map("wiki_category_members")
 }
 
-/// Native Media Commons Asset
+/// What an article transcludes (templates, and Lua modules through #invoke), from the last render.
+/// A change to `templateTitle` makes every row's article stale (`invalidateDependents`).
+model WikiTemplateLink {
+  id            String      @id @default(cuid())
+  articleId     String
+  article       WikiArticle @relation("ArticleTemplateLinks", fields: [articleId], references: [id], onDelete: Cascade)
+  templateTitle String      // canonical title, "Module:" titles included
+
+  @@unique([articleId, templateTitle])
+  @@index([templateTitle])
+  @@map("wiki_template_links")
+}
+
+/// The files an article uses, from the last render.
+model WikiImageLink {
+  id        String      @id @default(cuid())
+  articleId String
+  article   WikiArticle @relation("ArticleImageLinks", fields: [articleId], references: [id], onDelete: Cascade)
+  fileName  String      // file name without the "File:" prefix, spaces not underscores
+
+  @@unique([articleId, fileName])
+  @@index([fileName])
+  @@map("wiki_image_links")
+}
+
+/// Native Media Commons Asset: one row per file NAME (a re-upload replaces the row's bytes, the old versions live in
+/// `wiki_logs` with logType "upload"). `url` is `/api/wiki/file/<name>` while WikiOS alone holds the bytes (the staging
+/// directory, WIKIOS_UPLOAD_DIR) and the file's `/images/...` path once the mirror's `upload` job has put it in MediaWiki.
 model WikiAsset {
   id           String   @id @default(cuid())
   title        String
@@ -222,11 +394,17 @@ model WikiAsset {
   sizeBytes    Int
   width        Int?
   height       Int?
+  /// Always null for a native upload: no pixel was ever read to make one. Readers use a neutral placeholder.
   blurhash     String?
   
   uploaderId   String?
   uploader     User?    @relation("WikiAssetUploader", fields: [uploaderId], references: [id])
+  /// MD5 of the file NAME (MediaWiki's shard path hash, `images/<a>/<ab>/`), NOT of the content: the lookup key by name.
   md5Hash      String   @unique
+  /// SHA-1 of the CONTENT in MediaWiki's base 36 (`img_sha1`): the staging file's name and the key of duplicate checks.
+  /// Not unique: the same bytes may be uploaded under two names when the uploader accepts the duplicate warning.
+  /// Null for an asset that was registered from MediaWiki's files (the media proxy, the sync script) and never uploaded here.
+  sha1         String?
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -234,6 +412,7 @@ model WikiAsset {
   @@index([slug])
   @@index([mimeType])
   @@index([uploaderId])
+  @@index([sha1])
   @@map("wiki_assets")
 }
 
@@ -295,7 +474,7 @@ model StashItem {
   stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
   annotations StashAnnotation[]
 
-  @@unique([stashId, pageTitle])
+  @@unique([stashId, contentType, pageTitle])
   @@index([stashId])
   @@index([pageTitle])
   @@index([articleId])

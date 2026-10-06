@@ -79,7 +79,7 @@ describe("Halo wiki view: This page actions follow the page's wiki (ruling E-lâ€
     render(<WikiView onClose={jest.fn()} />);
 
     fireEvent.click(screen.getByText("Edit"));
-    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal%3AEurth/edit");
+    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal%3AEurth?action=edit");
     expect(screen.getByText("History")).toBeInTheDocument();
     expect(screen.getByText("What links here")).toBeInTheDocument();
 

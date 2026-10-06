@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
@@ -96,7 +97,9 @@ async function searchLocalLore(db: PrismaClient, query: string) {
       orderBy: { createdAt: "desc" },
     });
     const dbArticles = await db.wikiArticle.findMany({
-      where: search ? { title: { contains: query, mode: "insensitive" } } : {},
+      where: search
+        ? { status: "PUBLISHED", title: { contains: query, mode: "insensitive" } }
+        : { status: "PUBLISHED" },
       select: { id: true, title: true, wikitext: true },
       take: 20,
       orderBy: { updatedAt: "desc" },
@@ -138,28 +141,18 @@ async function searchLocalLore(db: PrismaClient, query: string) {
 
 type SearchHit = { title: string; pageId?: number | string; length?: number };
 
-/** Runs `load` and logs a warning instead of failing; `fallback` stands in for the result. */
 type LegacyPreview = Awaited<
   ReturnType<typeof wikiLoreCardGenerator.fetchArticleMetadataBatch>
 >[number] & { excerpt?: string; description?: string; rarity?: string; marketValue?: number };
 
-async function warnOnError<T>(label: string, fallback: T, load: () => Promise<T>): Promise<T> {
-  try {
-    return await load();
-  } catch (e) {
-    console.warn(`[Lore Cards] ${label}:`, e);
-    return fallback;
-  }
-}
-
-/** Search hits for a query: the bridge search, else the wiki's opensearch endpoint. */
+/** Search hits: the bridge search (IxWiki's is native); an iiwiki query that found nothing asks iiwiki's opensearch. */
 async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit[]> {
-  const found = await warnOnError("searchPages error", [] as SearchHit[], () =>
+  const found = await orFallback("searchPages error", [] as SearchHit[], () =>
     searchPages(query, 25, wikiSrc)
   );
-  if (found.length > 0) return found;
+  if (found.length > 0 || wikiSrc !== "iiwiki") return found;
 
-  return warnOnError("HTTP search fallback error", [] as SearchHit[], async () => {
+  return orFallback("HTTP search fallback error", [] as SearchHit[], async () => {
     const res = await fetch(
       `${getMediaWikiApiUrl(wikiSrc)}?action=opensearch&search=${encodeURIComponent(query)}&limit=25&format=json`,
       { headers: { "User-Agent": DEFAULT_USER_AGENT }, signal: AbortSignal.timeout(6000) }
@@ -174,7 +167,7 @@ async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit
 /** Recently changed article titles, used as the default list when there is no query. */
 async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
   if (wikiSrc === "iiwiki") {
-    return warnOnError("IIWiki recentchanges fetch error", [] as string[], async () => {
+    return orFallback("IIWiki recentchanges fetch error", [] as string[], async () => {
       const res = await fetch(
         `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`,
         { headers: { "User-Agent": DEFAULT_USER_AGENT } }
@@ -185,7 +178,7 @@ async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
       return [...new Set(changes.flatMap((r) => r.title || []))].filter(isArticleTitle);
     });
   }
-  return warnOnError("getRecentChanges error", [] as string[], async () => {
+  return orFallback("getRecentChanges error", [] as string[], async () => {
     const recents = await getRecentChanges(30);
     return [...new Set((recents ?? []).map((r) => r.title).filter((t) => t && isArticleTitle(t)))];
   });
@@ -232,14 +225,16 @@ async function buildLoreMetadata(
     source: "ixwiki" | "iiwiki" | "wikios" | "stash";
     pageTitle: string;
     stashItemId?: string;
-  }
+  },
+  /** False when the reader may not see the page (a deleted one): no wiki metadata, the live wiki's copy included. */
+  canSeeWikiPage: boolean
 ) {
   const stash =
     input.source === "stash" && input.stashItemId
       ? await stashItemExcerpt(db, input.stashItemId)
       : null;
   const wiki =
-    input.source === "ixwiki" || input.source === "iiwiki"
+    (input.source === "ixwiki" || input.source === "iiwiki") && canSeeWikiPage
       ? await wikiArticleExcerpt(input.pageTitle, input.source)
       : null;
   const rawExcerpt =
@@ -293,7 +288,7 @@ async function searchRemoteLore(query: string, wikiSrc: WikiSource) {
   const titlesToFetch = results.map((r) => r.title).filter(Boolean);
   const previews =
     titlesToFetch.length > 0
-      ? await warnOnError("Error batch fetching metadata previews", [], () =>
+      ? await orFallback("Error batch fetching metadata previews", [], () =>
           wikiLoreCardGenerator.fetchArticleMetadataBatch(titlesToFetch.slice(0, 25), wikiSrc)
         )
       : [];
@@ -531,7 +526,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       try {
-        return await buildLoreMetadata(ctx.db, input);
+        const canSeeWikiPage =
+          (input.source === "ixwiki" || input.source === "iiwiki") &&
+          (await canSeeTitle(ctx, input.pageTitle, input.source));
+        return await buildLoreMetadata(ctx.db, input, canSeeWikiPage);
       } catch (error) {
         console.error("[Lore Cards] Error in fetchLoreMetadata:", error);
         return {

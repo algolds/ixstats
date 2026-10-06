@@ -20,6 +20,9 @@ if (typeof globalThis.structuredClone === "undefined") {
 // Polyfill Clerk publishable key for test env
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_mock_key_for_testing";
 
+// The suites test WikiOS v1 as it runs after the cutover; wikios-v1-switch.test.ts covers the switch off.
+process.env.WIKIOS_V1_ENABLED ??= "true";
+
 // Mock window.matchMedia for jsdom
 if (typeof window !== "undefined" && !window.matchMedia) {
   Object.defineProperty(window, "matchMedia", {

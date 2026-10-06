@@ -58,16 +58,16 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path. Rendering, templates, Lua and the Main Page still come from MediaWiki, and uploads are broken |
+| Native lore engine | WikiOS v1 | `/wiki/*`, `/util/*` | `wikios/`, `src/lib/wiki-os/` | ✅ Live | PostgreSQL store with inbound MediaWiki recent-changes sync; no MariaDB path. Rendering, templates and Lua still come from MediaWiki. WikiOS v1 (#52, D20) is merged and switched off (`WIKIOS_V1_ENABLED`): WikiOS reads but takes no edits, uploads or api.php requests until the cutover |
 | Multi-wiki reading | — | `/wiki/[slug]?source=` | `wikios/` | ✅ Live | Other wikis' pages are read-only |
-| Canvas editor (Plate) | Canvas v1 | `/wiki/[slug]/edit` | `wikios/editing.ts`, `components/wiki-os/editor/plate/` | ✅ Live | WikiAST, slash menu, TemplateData forms |
-| MediaWiki export | — | — | `adapters/mediawiki/sync-worker.ts` | 🟡 Partial | In-memory queue (lost on restart); bot session only, no per-user attribution |
+| Canvas editor (Plate) | Canvas v1 | `/wiki/<title>?action=edit` | `wikios/editing.ts`, `components/wiki-os/editor/plate/` | ✅ Live | WikiAST, slash menu, TemplateData forms |
+| MediaWiki export | — | — | `services/mirror-worker.ts` (+ `mirror-outbox.ts`, `mirror-queue.ts`) | ✅ Live | Durable outbox (`wiki_mirror_jobs`), per-title FIFO, backoff and dead letter; revisions imported with the real author (plan 407) |
 | Margin | — | `/wiki/*?margin` | `components/wiki-os/margin/` | 🟡 Partial | No comment reactions or deletion; no Stash tab; Inspect tab hidden |
 | Stash | v1 | `/stashes` | `wikios/stash.ts`, `forum/stash.ts` | 🟡 Partial | Share links are not read. Also written by forum, Onoma and the media editor |
 | Lorewards & article awards | Achievements v2 | `/util/lorewards` | `lorewards/` | ✅ Live | |
 | Repository (Commons) | v2 | `/util/repository` | `commons.ts` | ✅ Live | |
-| Guardian | — | — | `guardian/cloudflare-guardian.ts` | 🟡 Partial | Turnstile optional; no abuse filter |
-| Stage 3 MediaWiki isolation | — | — | `scripts/ops/stage3-nginx-cutover.conf` | ⛔ Not built | Staged config only; not cut over |
+| Guardian | — | — | `guardian/cloudflare-guardian.ts` | 🟡 Partial | No CAPTCHA (Turnstile removed, plan 416: edits are rate-limited and rights-checked); no abuse filter |
+| WikiOS standalone takeover of `/wiki/*` (replaces Stage 3) | — | `/wiki/*` | `scripts/deploy-wikios.sh`, `scripts/ops/nginx/wikios-takeover.conf`, `scripts/ops/mediawiki/wikios-localsettings.php`, `src/lib/system/wikios-standalone.ts` | 🟡 Merged, off | Kit merged with WikiOS v1 (2026-10-06), nothing applied on the server; steps in [`docs/operations/wikios-v1-cutover.md`](../operations/wikios-v1-cutover.md) |
 
 ## 💎 Vault — credits, cards, achievements
 

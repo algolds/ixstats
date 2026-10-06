@@ -6,13 +6,12 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import {
-  fetchTemplateData,
-  categorizeTemplate,
-  isNoiseTemplate,
-} from "~/lib/wiki-os/templates/template-registry";
+import { createTRPCRouter, publicProcedure, readOnlyProcedure } from "~/server/api/trpc";
+import { categorizeTemplate, isNoiseTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
+import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { templatePreviewInput } from "./_shared";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 
@@ -1134,6 +1133,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       if (!input.canonicalOnly && templateMap.size < input.limit) {
         const articleTemplates = await db.wikiArticle.findMany({
           where: {
+            status: "PUBLISHED",
             namespace: 10,
             ...(input.query ? { title: { contains: input.query, mode: "insensitive" } } : {}),
           },
@@ -1235,8 +1235,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
         };
       }
 
-      // 2. Fetch from MediaWiki API
-      const tdMap = await fetchTemplateData([templateName]);
+      // 2. Read the TemplateData block from the template's own stored wikitext (or its /doc subpage)
+      const tdMap = await readTemplateData([templateName]);
       const data = tdMap.get(templateName);
       if (!data) {
         return {
@@ -1279,17 +1279,11 @@ export const wikiosTemplatesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get rendered preview of a template with given parameters.
+   * Get rendered preview of a template with given parameters. Signed-in and rate limited: it
+   * forwards to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  getTemplatePreview: publicProcedure
-    .input(
-      z.object({
-        template: z.string().min(1).max(500),
-        params: z.record(z.string(), z.string()),
-      })
-    )
-    .query(async ({ input }) => {
-      const preview = await renderTemplateWithRedisCache(input.template, input.params);
-      return preview.html;
-    }),
+  getTemplatePreview: readOnlyProcedure.input(templatePreviewInput).query(async ({ input }) => {
+    const preview = await renderTemplateWithRedisCache(input.template, input.params);
+    return sanitizeWikiArticleHtml(preview.html);
+  }),
 });

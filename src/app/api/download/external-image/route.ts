@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_REDIRECTS = 3;
@@ -28,7 +29,7 @@ const TRUSTED_DOMAINS = [
   "upload.wikimedia.org",
   "commons.wikimedia.org",
   "images.unsplash.com",
-  "ixwiki.com",
+  new URL(mediaWikiOrigin()).hostname,
   "iiwiki.com",
   "cdn.discordapp.com",
 ];

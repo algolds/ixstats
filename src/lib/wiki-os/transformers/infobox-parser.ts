@@ -1,5 +1,5 @@
 /**
- * Parse MediaWiki infobox templates into structured data.
+ * wiki-infobox-parser.ts — Parse MediaWiki infobox templates into structured data.
  *
  * Handles common infobox formats used on IxWiki:
  * - {{Infobox country|...}}, {{Infobox settlement|...}}, {{Infobox city|...}}
@@ -8,6 +8,16 @@
  *
  * Pure functions — no side effects, no database, no fetch.
  */
+
+import { isBlank } from "../wikitext/blank";
+import { forwardFinder } from "../wikitext/forward-finder";
+import {
+  replaceInlineTemplates,
+  replacePipedLinks,
+  replaceSimpleLinks,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "./clean-markup-passes";
 
 export interface InfoboxField {
   value: unknown;
@@ -22,10 +32,12 @@ export interface InfoboxField {
   fieldType: "text" | "number" | "coordinates" | "date" | "unknown";
 }
 
-interface ParsedInfobox {
+export interface ParsedInfobox {
   templateName: string;
   fields: InfoboxField[];
 }
+
+// ── Coordinate parsing ─────────────────────────────────────────────
 
 /**
  * Parse a {{coord}} template or lat/lon degree fields into [lng, lat].
@@ -37,17 +49,17 @@ interface ParsedInfobox {
  */
 export function parseCoordTemplate(text: string): [number, number] | null {
   // {{coord|...}} format
-  const coordMatch = text.match(/\{\{coord\|([^}]+)\}\}/i);
-  if (coordMatch) {
-    const parts = coordMatch[1]!.split("|").map((s) => s.trim());
+  const coordBody = firstCoordBody(text);
+  if (coordBody !== null) {
+    const parts = coordBody.split("|").map((s) => s.trim());
     return parseCoordParts(parts);
   }
 
   // Try bare numeric coords
-  const numMatch = text.match(/(-?\d+\.?\d*)\s*[,|]\s*(-?\d+\.?\d*)/);
-  if (numMatch) {
-    const a = parseFloat(numMatch[1]!);
-    const b = parseFloat(numMatch[2]!);
+  const numbers = firstNumberPair(text);
+  if (numbers) {
+    const a = parseFloat(numbers[0]);
+    const b = parseFloat(numbers[1]);
     if (!isNaN(a) && !isNaN(b)) {
       // Heuristic: if first is lat range (-90 to 90), second is lng
       if (Math.abs(a) <= 90 && Math.abs(b) <= 180) return [b, a]; // [lng, lat]
@@ -55,6 +67,62 @@ export function parseCoordTemplate(text: string): [number, number] | null {
     }
   }
 
+  return null;
+}
+
+/** What follows the first `{{coord|` that a `}}` closes (what `/\{\{coord\|([^}]+)\}\}/i` captures), or null. */
+export function firstCoordBody(text: string): string | null {
+  const nextBrace = forwardFinder(text, "}");
+  const opener = /\{\{coord\|/gi;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const start = found.index + found[0].length;
+    const close = nextBrace(start);
+    if (close === -1) return null; // nothing closes any later template either
+    if (close > start && text.charAt(close + 1) === "}") return text.slice(start, close);
+  }
+  return null;
+}
+
+const isDigit = (code: number): boolean => code >= 48 && code <= 57;
+
+/** The end of `\d+\.?\d*` that starts at `from`, a digit. */
+function numberEnd(text: string, from: number): number {
+  let at = from;
+  while (isDigit(text.charCodeAt(at))) at++;
+  if (text.charCodeAt(at) === 46) at++;
+  while (isDigit(text.charCodeAt(at))) at++;
+  return at;
+}
+
+/**
+ * The two numbers of the first `-?\d+\.?\d*\s*[,|]\s*-?\d+\.?\d*` in the text (what
+ * `/(-?\d+\.?\d*)\s*[,|]\s*(-?\d+\.?\d*)/` captures), or null. The first number of a candidate runs as far as it
+ * can, so every start inside one digit run answers alike: it is tried once, from its first digit.
+ */
+export function firstNumberPair(text: string): [string, string] | null {
+  let at = 0;
+  while (at < text.length) {
+    if (!isDigit(text.charCodeAt(at))) {
+      at++;
+      continue;
+    }
+    let runEnd = at;
+    while (isDigit(text.charCodeAt(runEnd))) runEnd++;
+    const leftEnd = numberEnd(text, at);
+    let separator = leftEnd;
+    while (isBlank(text.charCodeAt(separator))) separator++;
+    const code = text.charCodeAt(separator);
+    if (code === 44 || code === 124) {
+      let right = separator + 1;
+      while (isBlank(text.charCodeAt(right))) right++;
+      const digits = text.charCodeAt(right) === 45 ? right + 1 : right;
+      if (isDigit(text.charCodeAt(digits))) {
+        const left = text.charCodeAt(at - 1) === 45 ? at - 1 : at;
+        return [text.slice(left, leftEnd), text.slice(right, numberEnd(text, digits))];
+      }
+    }
+    at = runEnd;
+  }
   return null;
 }
 
@@ -109,16 +177,44 @@ function dmsToDecimal(parts: number[]): number {
   return d + m / 60 + s / 3600;
 }
 
+// ── Population parsing ─────────────────────────────────────────────
+
+/** The number written before the first million, billion or thousand (what `/([\d,.]+)\s*(million|billion|thousand)/i` captures), and that word. */
+export function firstMagnitude(text: string): [number: string, word: string] | null {
+  const word = /million|billion|thousand/gi;
+  for (let found = word.exec(text); found; found = word.exec(text)) {
+    let end = found.index;
+    while (end > 0 && isBlank(text.charCodeAt(end - 1))) end--;
+    let start = end;
+    while (start > 0 && /[\d,.]/.test(text.charAt(start - 1))) start--;
+    if (start < end) return [text.slice(start, end), found[0]];
+  }
+  return null;
+}
+
+/** The digits of the first `{{formatnum:1234567}}` or `{{formatnum|1,234}}` (what `/\{\{formatnum[:|](\d[\d,]*)\}\}/i` captures), or null. */
+export function firstFormatnum(text: string): string | null {
+  const opener = /\{\{formatnum[:|]/gi;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const start = found.index + found[0].length;
+    if (!isDigit(text.charCodeAt(start))) continue;
+    let end = start + 1;
+    while (isDigit(text.charCodeAt(end)) || text.charCodeAt(end) === 44) end++;
+    if (text.startsWith("}}", end)) return text.slice(start, end);
+  }
+  return null;
+}
+
 /** Parse population strings like "1,234,567", "12.5 million", "{{formatnum:1234567}}" */
 export function parsePopulation(text: string): number | null {
   // Strip wiki templates
-  let clean = text.replace(/\{\{[^}]*\}\}/g, "").trim();
+  let clean = replaceInlineTemplates(text, /\{\{[^}]*\}\}/, () => "").trim();
 
   // "12.5 million" / "1.2 billion"
-  const millMatch = clean.match(/([\d,.]+)\s*(million|billion|thousand)/i);
+  const millMatch = firstMagnitude(clean);
   if (millMatch) {
-    const num = parseFloat(millMatch[1]!.replace(/,/g, ""));
-    const mult = millMatch[2]!.toLowerCase();
+    const num = parseFloat(millMatch[0].replace(/,/g, ""));
+    const mult = millMatch[1].toLowerCase();
     if (!isNaN(num)) {
       if (mult === "billion") return Math.round(num * 1e9);
       if (mult === "million") return Math.round(num * 1e6);
@@ -127,26 +223,28 @@ export function parsePopulation(text: string): number | null {
   }
 
   // Extract {{formatnum:1234567}} or {{formatnum|1234567}} value
-  const fmtMatch = text.match(/\{\{formatnum[:|](\d[\d,]*)\}\}/i);
-  if (fmtMatch) clean = fmtMatch[1]!;
+  const formatnum = firstFormatnum(text);
+  if (formatnum !== null) clean = formatnum;
 
   // Plain numeric
   const num = parseFloat(clean.replace(/[,\s]/g, ""));
   return !isNaN(num) && num > 0 ? Math.round(num) : null;
 }
 
+// ── Wikitext cleanup ───────────────────────────────────────────────
+
 /** Strip wiki markup from a value: [[links]], '''bold''', templates, HTML */
 export function cleanWikiValue(raw: string): string {
   let s = raw;
   // [[Link|Display]] → Display; [[Link]] → Link
-  s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  s = unpackInternalLinks(s);
   // '''bold''' / ''italic''
   s = s.replace(/'{2,3}/g, "");
   // Strip remaining templates (but keep their first arg for simple ones)
-  s = s.replace(/\{\{[^}]*\}\}/g, "");
+  s = replaceInlineTemplates(s, /\{\{[^}]*\}\}/, () => "");
   // Line breaks separate values; other HTML tags carry no text
   s = s.replace(/<br\s*\/?>/gi, ", ");
-  s = s.replace(/<[^>]+>/g, "");
+  s = stripHtmlTags(s);
   // &nbsp; etc
   s = s.replace(/&\w+;/g, " ");
   // Collapse whitespace
@@ -154,6 +252,8 @@ export function cleanWikiValue(raw: string): string {
   // Adjacent or trailing breaks leave dangling separators
   return s.replace(/\s*,(?:\s*,)+/g, ",").replace(/^(?:,\s*)+|(?:\s*,)+$/g, "");
 }
+
+// ── Field type detection ───────────────────────────────────────────
 
 /** Known field names and their semantic types */
 const FIELD_TYPE_MAP: Record<string, InfoboxField["fieldType"]> = {
@@ -197,76 +297,81 @@ function inferFieldType(key: string): InfoboxField["fieldType"] {
   return FIELD_TYPE_MAP[normalized] ?? "unknown";
 }
 
-/** Index just past the `}}` closing the `{{` at `start`, or -1 when it is never closed. */
-function findInfoboxEnd(wikitext: string, start: number): number {
-  let depth = 0;
-  for (let i = start; i < wikitext.length - 1; i++) {
-    const pair = wikitext.slice(i, i + 2);
-    if (pair === "{{") {
-      depth++;
-      i++;
-    } else if (pair === "}}") {
-      depth--;
-      i++;
-      if (depth === 0) return i + 1;
-    }
-  }
-  return -1;
-}
-
-/** Nesting change per bracket pair: [template depth, link depth]. */
-const NESTING_DELTAS: Record<string, [number, number]> = {
-  "{{": [1, 0],
-  "}}": [-1, 0],
-  "[[": [0, 1],
-  "]]": [0, -1],
-};
-
-/** Splits at every `|` that is outside nested `{{ }}` and `[[ ]]`. */
-function splitTopLevelFields(text: string): string[] {
-  const parts: string[] = [];
-  let templateDepth = 0;
-  let linkDepth = 0;
-  let start = 0;
-
-  for (let i = 0; i < text.length; i++) {
-    const delta = NESTING_DELTAS[text.slice(i, i + 2)];
-    if (delta) {
-      templateDepth += delta[0];
-      linkDepth += delta[1];
-      i++;
-    } else if (text[i] === "|" && templateDepth === 0 && linkDepth === 0) {
-      parts.push(text.slice(start, i));
-      start = i + 1;
-    }
-  }
-  parts.push(text.slice(start));
-  return parts;
-}
+// ── Main parser ────────────────────────────────────────────────────
 
 /**
- * Parse the first infobox template from wikitext (typically the main one), handling nested
- * templates inside {{Infobox ...| ...}}.
+ * Parse all infobox templates from wikitext.
+ * Returns the first infobox found (typically the main one).
  */
 export function parseInfobox(wikitext: string): ParsedInfobox | null {
+  // Find {{Infobox ...| ...}} — handle nested templates
   const infoboxStart = wikitext.search(/\{\{[Ii]nfobox[\s_]/);
   if (infoboxStart === -1) return null;
 
-  const infoboxEnd = findInfoboxEnd(wikitext, infoboxStart);
+  // Find the matching closing }}
+  let depth = 0;
+  let infoboxEnd = -1;
+  for (let i = infoboxStart; i < wikitext.length - 1; i++) {
+    if (wikitext.charCodeAt(i) === 123 && wikitext.charCodeAt(i + 1) === 123) {
+      depth++;
+      i++; // skip next char
+    } else if (wikitext.charCodeAt(i) === 125 && wikitext.charCodeAt(i + 1) === 125) {
+      depth--;
+      i++;
+      if (depth === 0) {
+        infoboxEnd = i + 1;
+        break;
+      }
+    }
+  }
+
   if (infoboxEnd === -1) return null;
 
   const infoboxContent = wikitext.slice(infoboxStart + 2, infoboxEnd - 2);
 
-  // Template name: everything before the first pipe
+  // Extract template name (first line before |)
   const firstPipe = infoboxContent.indexOf("|");
   const templateName = (
     firstPipe >= 0 ? infoboxContent.slice(0, firstPipe) : infoboxContent
   ).trim();
+
   if (firstPipe === -1) return { templateName, fields: [] };
 
-  const fields = splitTopLevelFields(infoboxContent.slice(firstPipe + 1))
-    .map(parseField)
-    .filter((field): field is InfoboxField => field !== null);
+  // Split fields by | at depth 0 (not inside nested {{ }} or [[ ]])
+  const fieldsStr = infoboxContent.slice(firstPipe + 1);
+  const fields: InfoboxField[] = [];
+
+  let templateDepth = 0;
+  let linkDepth = 0;
+  let fieldStart = 0;
+
+  for (let i = 0; i < fieldsStr.length; i++) {
+    const code = fieldsStr.charCodeAt(i);
+    const next = fieldsStr.charCodeAt(i + 1); // NaN past the end: no pair
+    if (code === 123 && next === 123) {
+      templateDepth++;
+      i++;
+    } else if (code === 125 && next === 125) {
+      templateDepth--;
+      i++;
+    } else if (code === 91 && next === 91) {
+      linkDepth++;
+      i++;
+    } else if (code === 93 && next === 93) {
+      linkDepth--;
+      i++;
+    } else if (code === 124 && templateDepth === 0 && linkDepth === 0) {
+      const fieldStr = fieldsStr.slice(fieldStart, i);
+      const parsed = parseField(fieldStr);
+      if (parsed) fields.push(parsed);
+      fieldStart = i + 1;
+    }
+  }
+
+  // Last field
+  const lastField = fieldsStr.slice(fieldStart);
+  const parsedLast = parseField(lastField);
+  if (parsedLast) fields.push(parsedLast);
 
   return { templateName, fields };
 }
@@ -303,9 +408,16 @@ function parseField(fieldStr: string): InfoboxField | null {
  * Call after parsing all fields to check for split coordinate fields.
  */
 export function extractCoordsFromFields(fields: InfoboxField[]): [number, number] | null {
-  const find = (key: string) => fields.find((f) => f.key.toLowerCase() === key);
-  const get = (key: string) => parseFloat(find(key)?.cleanValue ?? "");
-  const getStr = (key: string) => find(key)?.cleanValue?.toUpperCase() ?? "";
+  const get = (key: string) => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
+    const f = fields.find((f) => f.key.toLowerCase() === key);
+    return f ? parseFloat(f.cleanValue) : NaN;
+  };
+  const getStr = (key: string) => {
+    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'f' is intentional in this scope
+    const f = fields.find((f) => f.key.toLowerCase() === key);
+    return f?.cleanValue?.toUpperCase() ?? "";
+  };
 
   const latd = get("latd");
   const longd = get("longd");
@@ -316,8 +428,8 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
   const longm = get("longm") || 0;
   const longs = get("longs") || 0;
 
-  let lat = latm / 60 + lats / 3600 + latd;
-  let lng = longm / 60 + longs / 3600 + longd;
+  let lat = (isNaN(latm) ? 0 : latm) / 60 + (isNaN(lats) ? 0 : lats) / 3600 + latd;
+  let lng = (isNaN(longm) ? 0 : longm) / 60 + (isNaN(longs) ? 0 : longs) / 3600 + longd;
 
   if (getStr("latns") === "S") lat = -lat;
   if (getStr("longew") === "W") lng = -lng;
@@ -326,13 +438,24 @@ export function extractCoordsFromFields(fields: InfoboxField[]): [number, number
 }
 
 /**
+ * ponytail: MAX_INFOBOX_ROWS, 1,000: the most rows an infobox is drawn with. An infobox has a hundred fields
+ * at the most; a text of two million characters can be 200,000 `|`-separated fields, and each is a table row of
+ * 500 characters of markup.
+ */
+const MAX_INFOBOX_ROWS = 1_000;
+
+/**
  * Renders a parsed infobox into a clean, styled MediaWiki-compatible HTML table.
  */
-function renderInfoboxHtml(parsed: ParsedInfobox): string {
+export function renderInfoboxHtml(parsed: ParsedInfobox): string {
   if (!parsed || parsed.fields.length === 0) return "";
 
-  const titleField = parsed.fields.find((f) =>
-    ["name", "common_name", "conventional_long_name", "title"].includes(f.key.toLowerCase())
+  const titleField = parsed.fields.find(
+    (f) =>
+      f.key.toLowerCase() === "name" ||
+      f.key.toLowerCase() === "common_name" ||
+      f.key.toLowerCase() === "conventional_long_name" ||
+      f.key.toLowerCase() === "title"
   );
 
   const imageField = parsed.fields.find((f) =>
@@ -362,20 +485,22 @@ function renderInfoboxHtml(parsed: ParsedInfobox): string {
     }
   }
 
+  let rendered = 0;
   for (const f of parsed.fields) {
     if (!f.cleanValue || f === titleField || f === imageField) continue;
+    if (++rendered > MAX_INFOBOX_ROWS) break;
     const label = f.key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     // Format wiki links inside clean value: [[Target|Label]] -> <a href="/wiki/Target">Label</a>
-    const formattedVal = f.cleanValue
-      .replace(
-        /\[\[([^|\]]+)\|([^\]]+)\]\]/g,
-        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$2</a>'
-      )
-      .replace(
-        /\[\[([^\]]+)\]\]/g,
-        '<a href="/wiki/$1" class="text-wiki hover:underline font-medium">$1</a>'
-      );
+    const formattedVal = replaceSimpleLinks(
+      replacePipedLinks(
+        f.cleanValue,
+        (target, shown) =>
+          `<a href="/wiki/${target}" class="text-wiki hover:underline font-medium">${shown}</a>`
+      ),
+      (target) =>
+        `<a href="/wiki/${target}" class="text-wiki hover:underline font-medium">${target}</a>`
+    );
 
     rows += `<tr class="infobox-row border-b border-border/20 last:border-b-0 hover:bg-muted/15 transition-colors"><th scope="row" class="infobox-label py-1.5 px-2.5 text-left text-xs font-semibold text-muted-foreground align-top w-2/5">${label}</th><td class="infobox-data py-1.5 px-2.5 text-left text-xs text-foreground align-top leading-relaxed">${formattedVal}</td></tr>`;
   }

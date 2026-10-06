@@ -260,8 +260,8 @@ Only the items still open or partial in code are listed. Everything else in M2 i
 | Pack opening | VT-18 | Open | `guaranteedRarity` and `themeFilter`; exclude SPECIAL and crafted cards; a rarity fallback (`pack-service.ts:108` throws); ownership IDs (`:134`); typed errors | S–M |
 | Achievement cards | VT-17 | Open | `prisma/seeds/achievement-cards.ts:11` imports a missing module, and `db:seed` doesn't call it | S |
 | Store perks vanish | VT-13 | Open | `vault-perks.ts:224` `take: 100`, `:254` `isActive: true` | S |
-| WikiOS edit integrity | WK-2, WK-4, WK-16, WK-3 | Open | Use `basetimestamp` for conflicts (`editing.ts:102`); require and check Turnstile (`:108`); purge the cache on revert; page-protection writer, admin UI and `WikiLog` | M |
-| WikiOS uploads and Commons | WK-5, WK-6 | Open | The upload sends no file buffer (`editing.ts:300`); the Commons tab has no procedure. Waits on D3; coordinate with PR #52 | M |
+| WikiOS edit integrity | WK-2, WK-4, WK-16, WK-3 | ✅ Done with WikiOS v1 (#52, D20, 2026-10-06; live at the cutover) | Use `basetimestamp` for conflicts (`editing.ts:102`); require and check Turnstile (`:108`); purge the cache on revert; page-protection writer, admin UI and `WikiLog` | M |
+| WikiOS uploads and Commons | WK-5, WK-6 | WK-5 ✅ done with #52; WK-6 open (the picker never calls `commons.search`) | The upload sends no file buffer (`editing.ts:300`); the Commons tab has no procedure. Waits on D3; coordinate with PR #52 | M |
 | ThinkTank invites | SL-13 | Partial | An invite inbox with decline; join-by-code | S–M |
 | Realm data isolation | AT-1, AT-18 | Open | Set `realmId` on route and hub creates, with a backfill; scope the flag lookup to the realm | S |
 | Realm-aware maps | AT-2, AT-12 | Open | IxWorld-only ocean labels and tour; a realm wiki source | S |

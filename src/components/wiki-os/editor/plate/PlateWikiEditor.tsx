@@ -24,6 +24,7 @@ import { PlateInteractiveTemplateElement } from "./elements/PlateInteractiveTemp
 import { PlateEngineChipElement } from "./elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/PlateCoordChipElement";
 import { PlateMediaElement } from "./elements/PlateMediaElement";
+import { PlateRawWikitextElement } from "./elements/PlateRawWikitextElement";
 import { handleEditorKeyDown } from "./plate-key-handlers";
 
 interface PlateWikiEditorProps {
@@ -34,7 +35,6 @@ interface PlateWikiEditorProps {
   onEditorReady?: (editor: ReturnType<typeof usePlateEditor>) => void;
   openTemplateEditor: (id: string) => void;
   deleteNode: (id: string) => void;
-  updateInfoboxFields?: (id: string, fields: Array<{ label: string; value: string }>) => void;
   onKeyDownExtra?: (e: React.KeyboardEvent) => void;
   onSelectionChange?: () => void;
 }
@@ -108,6 +108,7 @@ const ATOMIC_ELEMENTS: Record<string, React.ComponentType<any>> = {
   "chip-coord": PlateCoordChipElement,
   "chip-mapembed": PlateMapEmbedChipElement,
   media: PlateMediaElement,
+  "raw-wikitext": PlateRawWikitextElement,
 };
 
 const SELECTION_AFFECTING_OPS = new Set([
@@ -210,6 +211,33 @@ function ElementRenderer(props: any) {
           [{element.label || element.name || "ref"}]<span className="hidden">{children}</span>
         </span>
       );
+    case "wiki-file":
+      return (
+        <span
+          {...attributes}
+          contentEditable={false}
+          className="rounded-control-sm bg-fill-3 border-separator text-footnote text-label hover:bg-fill-2 mx-0.5 inline-flex items-center gap-1 border px-1.5 py-0.5 align-baseline transition-colors select-none"
+          title={element.caption || undefined}
+        >
+          <span className="text-wiki font-semibold">File</span>
+          <span className="font-mono">{String(element.target ?? "").replace(/^[^:]*:/, "")}</span>
+          {element.caption && (
+            <span className="text-label-secondary max-w-[220px] truncate">{element.caption}</span>
+          )}
+          {children}
+        </span>
+      );
+    case "citation-ref":
+      return (
+        <span
+          {...attributes}
+          contentEditable={false}
+          className="text-wiki text-caption align-super font-semibold select-none"
+          title={element.name ? `Reference: ${element.name}` : "Citation"}
+        >
+          [{element.name || "ref"}]<span className="hidden">{children}</span>
+        </span>
+      );
     case "chip-template":
     case "inline-template":
       return (
@@ -241,7 +269,6 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
   onEditorReady,
   openTemplateEditor,
   deleteNode,
-  updateInfoboxFields,
   onKeyDownExtra,
   onSelectionChange,
 }: PlateWikiEditorProps) {
@@ -297,9 +324,8 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
     () => ({
       openTemplateEditor,
       deleteNode,
-      updateInfoboxFields,
     }),
-    [openTemplateEditor, deleteNode, updateInfoboxFields]
+    [openTemplateEditor, deleteNode]
   );
 
   useEffect(() => {

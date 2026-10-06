@@ -20,8 +20,10 @@
 import { db } from "~/server/db";
 import { CardType, CardRarity, Prisma } from "@prisma/client";
 import { getCurrentIxCardSeason } from "./season";
+import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
-import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
 import type {
   MediaWikiPageItem,
   MediaWikiCategoryItem,
@@ -32,6 +34,25 @@ import { getValuationConfig, computeCardValue, type CardValuationConfig } from "
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { LoreCategory, type LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
+import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
+import {
+  CATEGORY_STAT_WEIGHTS,
+  buildAuthorInfo,
+  firstPage,
+  mwQuery,
+  pickCreator,
+  type MwPage,
+  type RevisionUser,
+} from "./lore-card-mediawiki";
+import {
+  ixwikiAuthorInfo,
+  ixwikiCategoryTitles,
+  ixwikiImageUrls,
+  ixwikiMainNamespaceTitles,
+  ixwikiRandomTitles,
+  loadIxwikiArticle,
+  loadIxwikiPreviews,
+} from "./lore-card-ixwiki";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
@@ -90,117 +111,6 @@ interface ArticleMetadataPreview {
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
 
-const BOT_REGEX =
-  /^(.*bot|mediawiki default|maintenance script|adminimport|importbot|uploadwizard|system|anonymous)$/i;
-
-/**
- * Clean a wiki username by stripping import prefixes, namespaces, and brackets
- */
-function cleanWikiUsername(username: string | null | undefined): string {
-  if (!username) return "";
-  let clean = String(username).trim();
-  // Strip MediaWiki XML import dump prefixes: "imported>", "Imported>", "import>", "Import>"
-  clean = clean.replace(/^(?:imported|import)\s*>\s*/i, "").trim();
-  // Strip "User:" or "user:" namespace prefix
-  clean = clean.replace(/^user:\s*/i, "").trim();
-  // Strip wiki links [[User:Foo|Foo]] or [[Foo]]
-  clean = clean.replace(/^\[\[(?:[^|\]]*\|)?([^\]]+)\]\]$/g, "$1").trim();
-  // Strip enclosing quotes
-  clean = clean.replace(/^["']|["']$/g, "").trim();
-  return clean;
-}
-
-/**
- * Category-based stat weights for lore cards.
- * Each category emphasizes different stats based on thematic relevance.
- */
-const CATEGORY_STAT_WEIGHTS: Record<
-  string,
-  { economic: number; diplomatic: number; military: number; social: number }
-> = {
-  [LoreCategory.PEOPLE]: { economic: 0.15, diplomatic: 0.4, military: 0.15, social: 0.3 },
-  [LoreCategory.GEOGRAPHY]: { economic: 0.4, diplomatic: 0.2, military: 0.15, social: 0.25 },
-  [LoreCategory.MILITARY]: { economic: 0.1, diplomatic: 0.2, military: 0.55, social: 0.15 },
-  [LoreCategory.DIPLOMACY]: { economic: 0.2, diplomatic: 0.5, military: 0.1, social: 0.2 },
-  [LoreCategory.GOVERNMENT]: { economic: 0.25, diplomatic: 0.35, military: 0.15, social: 0.25 },
-  [LoreCategory.ECONOMY]: { economic: 0.55, diplomatic: 0.2, military: 0.1, social: 0.15 },
-  [LoreCategory.SCIENCE]: { economic: 0.35, diplomatic: 0.15, military: 0.2, social: 0.3 },
-  [LoreCategory.RELIGION]: { economic: 0.1, diplomatic: 0.25, military: 0.15, social: 0.5 },
-  [LoreCategory.CULTURE]: { economic: 0.15, diplomatic: 0.25, military: 0.1, social: 0.5 },
-  [LoreCategory.HISTORY]: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
-  [LoreCategory.NATION]: { economic: 0.3, diplomatic: 0.3, military: 0.2, social: 0.2 },
-  [LoreCategory.SPECIAL]: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
-  default: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
-};
-
-type MwPage = MediaWikiPageItem & { original?: { source?: string } };
-type RevisionUser = { user: string; timestamp: string };
-
-/** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
-function mwQuery(wikiSource: WikiSource, params: Record<string, string>, timeoutMs?: number) {
-  const url = new URL(getMediaWikiApiUrl(wikiSource));
-  for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
-    url.searchParams.set(key, value);
-  }
-  return fetch(url.toString(), {
-    headers: { "User-Agent": getWikiUserAgent(wikiSource) },
-    ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
-  });
-}
-
-/** The first page of an `action=query` response's `pages` map. */
-const firstPage = <T = MwPage>(data: any): T | undefined =>
-  Object.values(data.query?.pages ?? {})[0] as T | undefined;
-
-/** The earliest non-bot editor of a revision list (flagging when a bot was skipped). */
-function pickCreator(revs: RevisionUser[]) {
-  let isBotFiltered = false;
-  for (const r of revs) {
-    const user = cleanWikiUsername(r.user);
-    if (!user) continue;
-    if (!BOT_REGEX.test(user)) return { creator: user, createdAt: r.timestamp, isBotFiltered };
-    isBotFiltered = true;
-  }
-  return { creator: "", createdAt: "", isBotFiltered };
-}
-
-/** Creator + top editor (the first non-bot contributor who is not the creator), as card author info. */
-function buildAuthorInfo(
-  found: { creator: string; createdAt: string; isBotFiltered: boolean },
-  contributors: Array<{ name: string }>
-): CardAuthorInfo {
-  let { creator } = found;
-  let primaryContributor: string | null = null;
-  for (const c of contributors) {
-    const user = cleanWikiUsername(c.name);
-    if (
-      user &&
-      (!creator || user.toLowerCase() !== creator.toLowerCase()) &&
-      !BOT_REGEX.test(user)
-    ) {
-      primaryContributor = user;
-      break;
-    }
-  }
-  // No usable creator: the top contributor takes the credit
-  if (!creator && primaryContributor) {
-    creator = primaryContributor;
-    primaryContributor = null;
-  }
-  creator ||= "Unknown";
-
-  return {
-    creator,
-    createdAt: found.createdAt || undefined,
-    primaryContributor,
-    contributorCount: contributors.length,
-    displayAuthor: primaryContributor
-      ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
-      : creator,
-    isBotFiltered: found.isBotFiltered,
-  };
-}
-
 /** Lookup keys an article title may be requested under (raw, lowercase, spaced, underscored). */
 const titleKeys = (title: string | undefined, underscored = false) =>
   title
@@ -240,6 +150,9 @@ const WIKI_URL_BASES: Record<string, string> = {
 
 const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
 const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
+
+/** IxWiki card data: from Postgres once WikiOS v1 is on, from MediaWiki before it (v1-switch.ts). */
+const readsPostgres = (wikiSource: WikiSource) => wikiSource === "ixwiki" && isWikiosV1Enabled();
 
 class WikiLoreCardGenerator {
   /** Generate a lore card candidate from a wiki article; throws a descriptive error when it can't. */
@@ -313,7 +226,10 @@ class WikiLoreCardGenerator {
 
   /** Article content, infobox, featured image, backlinks and author info from the wiki API. */
   private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
+    if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
     try {
+      // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
+      if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
       const response = await mwQuery(wikiSource, {
         titles: title,
         prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
@@ -448,9 +364,12 @@ class WikiLoreCardGenerator {
    * in generateCard at actual generation time.
    */
   async fetchArticleMetadataBatch(
-    titles: string[],
+    requestedTitles: string[],
     wikiSource: WikiSource
   ): Promise<ArticleMetadataPreview[]> {
+    if (readsPostgres(wikiSource)) return this.fetchIxwikiMetadataBatch(requestedTitles);
+    // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
+    const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
     const valuationCfg = await getValuationConfig(db);
     const authorsMap = await this.fetchArticleAuthorInfoBatch(titles, wikiSource);
 
@@ -498,6 +417,47 @@ class WikiLoreCardGenerator {
     return out;
   }
 
+  /** A published IxWiki page's card data, from Postgres (MediaWiki is not asked); null when missing or deleted. */
+  private async fetchIxwikiArticleData(title: string) {
+    try {
+      const article = await loadIxwikiArticle(title);
+      if (!article) return null;
+      const { wikitext, ...rest } = article;
+      return {
+        ...rest,
+        text: this.removeTemplates(wikitext),
+        rawText: wikitext,
+        infobox: this.parseInfobox(wikitext),
+        links: [],
+      };
+    } catch (error) {
+      console.error(`[Lore Card Generator] Error reading article "${title}":`, error);
+      return null;
+    }
+  }
+
+  /** Previews of published IxWiki pages from Postgres, in the order asked. */
+  private async fetchIxwikiMetadataBatch(titles: string[]): Promise<ArticleMetadataPreview[]> {
+    const [pages, valuationCfg, authors] = await Promise.all([
+      loadIxwikiPreviews(titles),
+      getValuationConfig(db),
+      ixwikiAuthorInfo(titles),
+    ]);
+    return pages.map((page) =>
+      this.toMetadataPreview(
+        {
+          title: page.title,
+          extract: page.extract,
+          length: page.length,
+          categories: page.categories,
+          original: page.imageUrl ? { source: page.imageUrl } : undefined,
+        },
+        valuationCfg,
+        authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
+      )
+    );
+  }
+
   private toMetadataPreview(
     page: MediaWikiPageItem & { extract?: string; length?: number },
     cfg: CardValuationConfig,
@@ -543,6 +503,7 @@ class WikiLoreCardGenerator {
     titles: string[],
     wikiSource: WikiSource
   ): Promise<Map<string, CardAuthorInfo>> {
+    if (readsPostgres(wikiSource)) return ixwikiAuthorInfo(titles);
     const resultMap = new Map<string, CardAuthorInfo>();
     const uniqueTitles = Array.from(
       new Set(titles.map((t) => t.trim()).filter((t) => t.length > 0))
@@ -631,7 +592,7 @@ class WikiLoreCardGenerator {
         break;
       }
     } while (cont && titles.length < limit);
-    return titles.slice(0, limit);
+    return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
   }
 
   /** List page titles in a live wiki category (namespace-0 pages and files, with paging). */
@@ -641,6 +602,10 @@ class WikiLoreCardGenerator {
     limit = 10000,
     type: "page" | "file" | "page|file" = "page|file"
   ): Promise<string[]> {
+    if (readsPostgres(wikiSource)) {
+      const kinds: Array<"page" | "file"> = type === "page|file" ? ["page", "file"] : [type];
+      return ixwikiCategoryTitles(category, kinds, limit);
+    }
     const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
     return this.listAll(
       wikiSource,
@@ -653,6 +618,7 @@ class WikiLoreCardGenerator {
 
   /** List all pages in the main namespace (namespace 0, excluding redirects). */
   fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
+    if (readsPostgres(wikiSource)) return ixwikiMainNamespaceTitles(limit);
     return this.listAll(
       wikiSource,
       { list: "allpages", apnamespace: "0", apfilterredir: "nonredirects", aplimit: "500" },
@@ -664,6 +630,9 @@ class WikiLoreCardGenerator {
 
   /** Search live wiki categories by prefix — feeds the discovery category picker. */
   async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
+    if (readsPostgres(wikiSource)) {
+      return CategoryService.autocomplete(prefix, Math.min(Math.max(limit, 1), 100));
+    }
     try {
       const res = await mwQuery(
         wikiSource,
@@ -695,6 +664,14 @@ class WikiLoreCardGenerator {
   ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
     const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
       {};
+    if (readsPostgres(wikiSource)) {
+      const names = categories.map((c) => c.replace(/^Category:\s*/i, "")).slice(0, 50);
+      for (const [name, { pages, files, subcats }] of await CategoryService.getCounts(names)) {
+        const counts = { size: pages + files + subcats, pages, files, subcats };
+        result[name] = result[`Category:${name}`] = counts;
+      }
+      return result;
+    }
     const formattedTitles = categories
       .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
       .slice(0, 50);
@@ -758,8 +735,12 @@ class WikiLoreCardGenerator {
     return cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "").replace(/<ref[^>]*\/>/gi, "");
   }
 
-  /** Image URL from a file name via the MediaWiki API. */
+  /** Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API. */
   private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+    if (readsPostgres(wikiSource)) {
+      const name = filename.replace(/^(File|Image):/i, "");
+      return (await ixwikiImageUrls([name])).get(name) ?? null;
+    }
     try {
       const response = await mwQuery(wikiSource, {
         titles: `File:${filename.replace(/^(File|Image):/i, "")}`,
@@ -932,6 +913,7 @@ class WikiLoreCardGenerator {
    * cover pages without an image.
    */
   async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
+    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: true });
     try {
       const response = await mwQuery(wikiSource, {
         generator: "random",
@@ -948,10 +930,8 @@ class WikiLoreCardGenerator {
 
       const data = await response.json();
       const pages = Object.values(data.query?.pages ?? {}) as MwPage[];
-      return pages
-        .filter((p) => p?.original?.source)
-        .map((p) => p.title as string)
-        .slice(0, count);
+      const titles = pages.filter((p) => p?.original?.source).map((p) => p.title as string);
+      return withoutArchivedTitles(titles.slice(0, count), wikiSource);
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles with images:`, error);
       return [];
@@ -960,6 +940,7 @@ class WikiLoreCardGenerator {
 
   /** Random main-namespace article titles. */
   async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
+    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: false });
     try {
       const response = await mwQuery(wikiSource, {
         list: "random",
@@ -972,7 +953,8 @@ class WikiLoreCardGenerator {
       }
 
       const data = await response.json();
-      return ((data.query?.random || []) as Array<{ title: string }>).map((a) => a.title);
+      const titles = ((data.query?.random || []) as Array<{ title: string }>).map((a) => a.title);
+      return withoutArchivedTitles(titles, wikiSource);
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles:`, error);
       return [];

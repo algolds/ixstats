@@ -1,8 +1,14 @@
 /**
- * Infobox parser with template processing, shared by IxWiki, IIWiki and AltHistory Wiki.
+ * unified-wiki-parser.ts — Comprehensive wiki infobox parser with template processing.
  *
- * Pipeline: extract the infobox (infobox-parser.ts), process templates (Switcher, convert, flag,
- * formatnum, ...), and return structured UnifiedInfoboxData.
+ * Unified entry point for all wiki parsing across the app.
+ * Handles IxWiki, IIWiki, and AltHistory Wiki uniformly.
+ *
+ * Pipeline:
+ * 1. Fetch wikitext via WikiBridge
+ * 2. Extract infobox via brace-depth parser (wiki-infobox-parser.ts)
+ * 3. Process templates (Switcher, convert, flag, formatnum, etc.)
+ * 4. Return structured UnifiedInfoboxData with 80+ typed fields
  */
 
 import {
@@ -11,10 +17,20 @@ import {
   extractCoordsFromFields,
   cleanWikiValue,
 } from "~/lib/wiki-os/transformers/infobox-parser";
+import {
+  lowerAscii,
+  replaceInlineTemplates,
+  replaceTagBlocks,
+  rewriteSpans,
+  stripComments,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "~/lib/wiki-os/transformers/clean-markup-passes";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
-import { splitBalancedPipes } from "~/lib/wiki-os/wikitext/parameter-parser";
-
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
 export { resolveImageUrl };
+
+// ─── Unified Infobox Data Interface ───────────────────────────────────────────
 
 export interface UnifiedInfoboxData {
   // Core identification
@@ -122,74 +138,56 @@ export interface UnifiedInfoboxData {
   templateName?: string;
 }
 
-type Rule = readonly [RegExp, string];
+// ─── Template Processing Functions ────────────────────────────────────────────
 
-const applyRules = (value: string, rules: readonly Rule[]): string =>
-  rules.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
+function splitByPipe(content: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let linkDepth = 0;
+  let start = 0;
 
-const STRIP_MARKUP_RULES: Rule[] = [
-  [/<!--[\s\S]*?-->/g, ""],
-  [/<nowiki[^>]*>([\s\S]*?)<\/nowiki>/gi, "$1"],
-];
-
-const SIMPLE_TEMPLATE_RULES: Rule[] = [
-  [/\{\{flag\|([^}|]+)[^}]*\}\}/g, "$1"],
-  [/\{\{formatnum[:|]([^}]+)\}\}/g, "$1"],
-  [/\{\{nts\|([^}]+)\}\}/g, "$1"],
-  [/\{\{val\|([^|]+)\|unit=([^}]+)\}\}/g, "$1 $2"],
-  [/\{\{val\|([^}]+)\}\}/g, "$1"],
-  [/\{\{start date\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3"],
-  [/\{\{start date\|(\d{4})[^}]*\}\}/g, "$1"],
-  [/\{\{increase\}\}/g, ""],
-  [/\{\{decrease\}\}/g, ""],
-  [/\{\{flagicon\|[^}]*\}\}/g, ""],
-  [/\{\{flag\|[^}]*\}\}/g, ""],
-];
-
-const DISPLAY_TEMPLATE_RULES: Rule[] = [
-  [/\{\{sort\|[^|]*\|([^}]+)\}\}/g, "$1"],
-  [/\{\{sort\|([^}]+)\}\}/g, "$1"],
-  [/\{\{dts\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3"],
-  [/\{\{dts\|([^}]+)\}\}/g, "$1"],
-  [/\{\{color\|[^|]*\|([^}]+)\}\}/g, "$1"],
-  [/\{\{colour\|[^|]*\|([^}]+)\}\}/g, "$1"],
-  [/\{\{lang\|[^|]*\|([^}]+)\}\}/g, "$1"],
-  [/\{\{langx\|[^|]*\|([^}]+)\}\}/g, "$1"],
-  [/\{\{wp\|([^}|]+)[^}]*\}\}/g, "$1"],
-  [/\{\{abbr\|([^|]+)\|[^}]*\}\}/g, "$1"],
-  [/\{\{nobold\|([^}]+)\}\}/g, "$1"],
-  [/\{\{plainlist\|([\s\S]*?)\}\}/g, "$1"],
-  [/\{\{flatlist\|([\s\S]*?)\}\}/g, "$1"],
-  [/\{\{unbulleted list\|([\s\S]*?)\}\}/g, "$1"],
-  [/\{\{bulleted list\|([\s\S]*?)\}\}/g, "$1"],
-];
-
-/** Applied once every template has been stripped. */
-const CLEANUP_RULES: Rule[] = [
-  [/<ref[^>]*>[\s\S]*?<\/ref>/gi, ""],
-  [/<ref[^/>]*\/>/gi, ""],
-  [/<ref[^>]*>[\s\S]*/gi, ""],
-  [/<small[^>]*>[\s\S]*?<\/small>/gi, ""],
-  [/<br\s*\/?>/gi, ", "],
-  [/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1"],
-  [/'{2,3}/g, ""],
-  [/&\w+;/g, " "],
-  [/\s+/g, " "],
-  [/\s*,\s*,/g, ","],
-  [/,\s*$/, ""],
-];
-
-const isFileRef = (text: string): boolean => /^(?:File|Image|file):/.test(text);
+  for (let i = 0; i < content.length; i++) {
+    if (content[i] === "{" && i + 1 < content.length && content[i + 1] === "{") {
+      depth++;
+      i++;
+    } else if (content[i] === "}" && i + 1 < content.length && content[i + 1] === "}") {
+      depth--;
+      i++;
+    } else if (content[i] === "[" && i + 1 < content.length && content[i + 1] === "[") {
+      linkDepth++;
+      i++;
+    } else if (content[i] === "]" && i + 1 < content.length && content[i + 1] === "]") {
+      linkDepth--;
+      i++;
+    } else if (content[i] === "|" && depth === 0 && linkDepth === 0) {
+      parts.push(content.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(content.slice(start));
+  return parts;
+}
 
 function processSwitcher(value: string): string {
   const match = /\{\{\s*[Ss]witcher\s*\|([\s\S]*?)\}\}/.exec(value);
   if (!match) return value;
-  const parts = splitBalancedPipes(match[1]!).map((part) => part.trim());
-  const first = parts[0] ?? "";
-  // A file switcher shows its first non-file entry; any other switcher shows its first entry.
-  return cleanWikiValue(
-    isFileRef(first) ? (parts.find((part) => !isFileRef(part)) ?? first) : first
-  );
+  const content = match[1]!;
+  const parts = splitByPipe(content);
+  const first = parts[0]?.trim() || "";
+  if (first.startsWith("File:") || first.startsWith("Image:") || first.startsWith("file:")) {
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (
+        !trimmed.startsWith("File:") &&
+        !trimmed.startsWith("Image:") &&
+        !trimmed.startsWith("file:")
+      ) {
+        return cleanWikiValue(trimmed);
+      }
+    }
+    return cleanWikiValue(first);
+  }
+  return cleanWikiValue(first);
 }
 
 function processConvert(value: string): string {
@@ -204,103 +202,309 @@ function processConvert(value: string): string {
     );
 }
 
-function processHdi(value: string): string {
-  const hdiMatch =
-    /\{\{HDI data\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value) ??
-    /\{\{HDI ranking\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value);
-  return hdiMatch ? hdiMatch[1]! : value;
+function processFlag(value: string): string {
+  return value.replace(/\{\{flag\|([^}|]+)[^}]*\}\}/g, "$1");
 }
 
-function processCompose(value: string): string {
-  return value.replace(/\{\{compose\|([\s\S]*?)\}\}/g, (_match, content) =>
-    splitBalancedPipes(content)
-      .map((p) => cleanWikiValue(p.trim()))
-      .filter(Boolean)
-      .join(", ")
-  );
+function processFormatnum(value: string): string {
+  return value.replace(/\{\{formatnum[:|]([^}]+)\}\}/g, "$1");
 }
 
-function stripNestedTemplates(value: string): string {
+function processNts(value: string): string {
+  return value.replace(/\{\{nts\|([^}]+)\}\}/g, "$1");
+}
+
+function processVal(value: string): string {
+  return value
+    .replace(/\{\{val\|([^|]+)\|unit=([^}]+)\}\}/g, "$1 $2")
+    .replace(/\{\{val\|([^}]+)\}\}/g, "$1");
+}
+
+function processStartDate(value: string): string {
+  return value
+    .replace(/\{\{start date\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3")
+    .replace(/\{\{start date\|(\d{4})[^}]*\}\}/g, "$1");
+}
+
+function processGdp(value: string): string {
   let result = value;
-  let previous;
-  do {
-    previous = result;
-    result = result.replace(/\{\{[^{}]*\}\}/g, "");
-  } while (result !== previous);
+  result = result.replace(/\{\{increase\}\}/g, "").replace(/\{\{decrease\}\}/g, "");
+  result = result.replace(/\{\{flagicon\|[^}]*\}\}/g, "").replace(/\{\{flag\|[^}]*\}\}/g, "");
   return result;
 }
 
-function processTemplates(value: string): string {
-  const steps = [
-    (text: string) => applyRules(text, STRIP_MARKUP_RULES),
-    processSwitcher,
-    processConvert,
-    (text: string) => applyRules(text, SIMPLE_TEMPLATE_RULES),
-    processHdi,
-    (text: string) => applyRules(text, DISPLAY_TEMPLATE_RULES),
-    processCompose,
-    stripNestedTemplates,
-    (text: string) => applyRules(text, CLEANUP_RULES),
-  ];
-  return steps.reduce((text, step) => step(text), value).trim();
+function processHdi(value: string): string {
+  const hdiMatch = /\{\{HDI data\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value);
+  if (hdiMatch) return hdiMatch[1]!;
+  const rankMatch = /\{\{HDI ranking\|[^|]*\|[^|]*\|([^}|]+)[^}]*\}\}/.exec(value);
+  if (rankMatch) return rankMatch[1]!;
+  return value;
 }
 
-/** Infobox keys that are already canonical field names (matched case-insensitively). */
-const CANONICAL_FIELDS = `
-  conventional_long_name native_name common_name official_name image_flag flag image_coat
-  coat_of_arms locator_map image_map capital largest_city area_total area_km2 area_rank
-  continent climate government_type leader_title1 leader_name1 leader_title2 leader_name2
-  leader_title3 leader_name3 leader_title4 leader_name4 head_of_state head_of_government
-  deputy_leader legislature upper_house lower_house currency currency_code
-  population_estimate population_census population population_density life_expectancy
-  literacy_rate urbanization official_languages languages ethnic_groups religion demonym
-  national_anthem motto national_motto established established_event1 established_date1
-  established_event2 established_date2 established_event3 established_date3
-  independence_date time_zone drives_on calling_code internet_tld iso_code electricity
-  hdi patron_saint
-`
-  .trim()
-  .split(/\s+/);
+function processWikilinks(value: string): string {
+  return unpackInternalLinks(value);
+}
 
-/** Normalized infobox key to canonical field name. */
-const FIELD_ALIASES: Record<string, string> = {
-  ...Object.fromEntries(CANONICAL_FIELDS.map((field) => [field, field])),
+/** `<ref .../>` (what `/<ref[^/>]*\/>/gi` cuts): the first `/` or `>` after `<ref` is a `/` that `>` follows. */
+function stripLooseSelfClosingRefs(value: string): string {
+  const lower = lowerAscii(value);
+  const nextStop = forwardFinder(value, /[/>]/g);
+  return rewriteSpans(value, (from) => {
+    for (
+      let open = lower.indexOf("<ref", from);
+      open !== -1;
+      open = lower.indexOf("<ref", open + 1)
+    ) {
+      const stop = nextStop(open + 4);
+      if (stop === -1) return null;
+      if (value.startsWith("/>", stop)) return [open, stop + 2];
+    }
+    return null;
+  });
+}
+
+function processRefs(value: string): string {
+  const withoutBlocks = stripLooseSelfClosingRefs(replaceTagBlocks(value, "ref", () => "", false));
+  // What follows a `<ref ...>` that nothing closes is cut with it.
+  const open = lowerAscii(withoutBlocks).indexOf("<ref");
+  return open !== -1 && withoutBlocks.indexOf(">", open + 4) !== -1
+    ? withoutBlocks.slice(0, open)
+    : withoutBlocks;
+}
+
+function processBr(value: string): string {
+  return value.replace(/<br\s*\/?>/gi, ", ");
+}
+
+function processSmall(value: string): string {
+  return replaceTagBlocks(value, "small", () => "", false);
+}
+
+function processComments(value: string): string {
+  return stripComments(value);
+}
+
+function processSort(value: string): string {
+  return value
+    .replace(/\{\{sort\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{sort\|([^}]+)\}\}/g, "$1");
+}
+
+function processDts(value: string): string {
+  return value
+    .replace(/\{\{dts\|(\d{4})\|(\d{1,2})\|(\d{1,2})[^}]*\}\}/g, "$1-$2-$3")
+    .replace(/\{\{dts\|([^}]+)\}\}/g, "$1");
+}
+
+function processNowiki(value: string): string {
+  return replaceTagBlocks(value, "nowiki", (inside) => inside, false);
+}
+
+function processColor(value: string): string {
+  return value
+    .replace(/\{\{color\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{colour\|[^|]*\|([^}]+)\}\}/g, "$1");
+}
+
+function processLang(value: string): string {
+  return value
+    .replace(/\{\{lang\|[^|]*\|([^}]+)\}\}/g, "$1")
+    .replace(/\{\{langx\|[^|]*\|([^}]+)\}\}/g, "$1");
+}
+
+function processWp(value: string): string {
+  return value.replace(/\{\{wp\|([^}|]+)[^}]*\}\}/g, "$1");
+}
+
+function processAbbr(value: string): string {
+  return value.replace(/\{\{abbr\|([^|]+)\|[^}]*\}\}/g, "$1");
+}
+
+function processNobold(value: string): string {
+  return value.replace(/\{\{nobold\|([^}]+)\}\}/g, "$1");
+}
+
+function processList(value: string): string {
+  return value
+    .replace(/\{\{plainlist\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{flatlist\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{unbulleted list\|([\s\S]*?)\}\}/g, "$1")
+    .replace(/\{\{bulleted list\|([\s\S]*?)\}\}/g, "$1");
+}
+
+function processCompose(value: string): string {
+  return value.replace(/\{\{compose\|([\s\S]*?)\}\}/g, (_match, content) => {
+    return splitByPipe(content)
+      .map((p) => cleanWikiValue(p.trim()))
+      .filter(Boolean)
+      .join(", ");
+  });
+}
+
+/**
+ * ponytail: MAX_TEMPLATE_ROUNDS, 64: the deepest nesting of templates in an infobox value that is stripped. A
+ * round takes the innermost level of the whole value, so a value nested thousands deep (a text of `{{a|` and
+ * `}}`) was a pass over all of it per level: 240 KB took 8.8 s. Real values nest a handful deep (the clone's
+ * deepest is 5); a level past the 64th is left as text.
+ */
+const MAX_TEMPLATE_ROUNDS = 64;
+
+function processTemplates(value: string): string {
+  let result = value;
+  result = processComments(result);
+  result = processNowiki(result);
+  result = processSwitcher(result);
+  result = processConvert(result);
+  result = processFlag(result);
+  result = processFormatnum(result);
+  result = processNts(result);
+  result = processVal(result);
+  result = processStartDate(result);
+  result = processGdp(result);
+  result = processHdi(result);
+  result = processSort(result);
+  result = processDts(result);
+  result = processColor(result);
+  result = processLang(result);
+  result = processWp(result);
+  result = processAbbr(result);
+  result = processNobold(result);
+  result = processList(result);
+  result = processCompose(result);
+  // Strip nested templates from innermost out, a level a round
+  for (let round = 0; round < MAX_TEMPLATE_ROUNDS; round++) {
+    const stripped = result.replace(/\{\{[^{}]*\}\}/g, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
+  result = processRefs(result);
+  result = processSmall(result);
+  result = processBr(result);
+  result = processWikilinks(result);
+  result = result.replace(/'{2,3}/g, "");
+  result = result
+    .replace(/&\w+;/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*,/g, ",")
+    .replace(/,\s*$/, "")
+    .trim();
+  return result;
+}
+
+// ─── Field Mapping ────────────────────────────────────────────────────────────
+
+const FIELD_ALIASES: Record<string, keyof UnifiedInfoboxData> = {
+  conventional_long_name: "conventional_long_name",
+  native_name: "native_name",
+  common_name: "common_name",
+  official_name: "official_name",
   officialname: "official_name",
+  image_flag: "image_flag",
+  flag: "flag",
+  image_coat: "image_coat",
+  coat_of_arms: "coat_of_arms",
   coatofarms: "coat_of_arms",
+  locator_map: "locator_map",
+  image_map: "image_map",
+  capital: "capital",
   capital_city: "capital",
+  largest_city: "largest_city",
   largestcity: "largest_city",
+  area_total: "area_total",
+  area_km2: "area_km2",
   area: "area_total",
+  area_rank: "area_rank",
+  continent: "continent",
+  climate: "climate",
+  government_type: "government_type",
   government: "government_type",
   gov_type: "government_type",
+  leader_title1: "leader_title1",
+  leader_name1: "leader_name1",
+  leader_title2: "leader_title2",
+  leader_name2: "leader_name2",
+  leader_title3: "leader_title3",
+  leader_name3: "leader_name3",
+  leader_title4: "leader_title4",
+  leader_name4: "leader_name4",
+  head_of_state: "head_of_state",
   headofstate: "head_of_state",
+  head_of_government: "head_of_government",
   headofgovernment: "head_of_government",
+  deputy_leader: "deputy_leader",
+  legislature: "legislature",
+  upper_house: "upper_house",
+  lower_house: "lower_house",
+  GDP_PPP: "GDP_PPP",
   gdp_ppp: "GDP_PPP",
+  GDP_PPP_per_capita: "GDP_PPP_per_capita",
   gdp_ppp_per_capita: "GDP_PPP_per_capita",
+  GDP_nominal: "GDP_nominal",
   gdp_nominal: "GDP_nominal",
+  GDP: "GDP_nominal",
   gdp: "GDP_nominal",
+  GDP_total: "GDP_nominal",
   gdp_total: "GDP_nominal",
+  GDP_nominal_per_capita: "GDP_nominal_per_capita",
   gdp_nominal_per_capita: "GDP_nominal_per_capita",
+  GDP_per_capita: "GDP_nominal_per_capita",
   gdp_per_capita: "GDP_nominal_per_capita",
+  currency: "currency",
+  currency_code: "currency_code",
+  population_estimate: "population_estimate",
   population_est: "population_estimate",
   pop_estimate: "population_estimate",
+  population_census: "population_census",
+  population: "population",
   population_total: "population",
   pop: "population",
   pop_total: "population",
   population_data: "population",
+  population_density: "population_density",
   pop_density: "population_density",
+  life_expectancy: "life_expectancy",
   life_expect: "life_expectancy",
+  literacy_rate: "literacy_rate",
   literacy: "literacy_rate",
+  urbanization: "urbanization",
   urban_pop: "urbanization",
+  official_languages: "official_languages",
   official_language: "official_languages",
+  languages: "languages",
   language: "languages",
+  ethnic_groups: "ethnic_groups",
   ethnicity: "ethnic_groups",
+  religion: "religion",
+  demonym: "demonym",
+  national_anthem: "national_anthem",
   anthem: "national_anthem",
+  motto: "motto",
+  national_motto: "national_motto",
+  established: "established",
+  established_event1: "established_event1",
+  established_date1: "established_date1",
+  established_event2: "established_event2",
+  established_date2: "established_date2",
+  established_event3: "established_event3",
+  established_date3: "established_date3",
+  independence_date: "independence_date",
   independence: "independence_date",
+  time_zone: "time_zone",
   timezone: "time_zone",
+  drives_on: "drives_on",
   drives: "drives_on",
   driving_side: "drives_on",
+  calling_code: "calling_code",
+  callingCode: "calling_code",
+  internet_tld: "internet_tld",
+  internetTld: "internet_tld",
   tld: "internet_tld",
+  iso_code: "iso_code",
   iso: "iso_code",
+  electricity: "electricity",
+  HDI: "hdi",
+  hdi: "hdi",
+  patron_saint: "patron_saint",
   englishmotto: "motto",
 };
 
@@ -318,7 +522,24 @@ const NUMERIC_FIELDS = new Set([
   "urbanization",
 ]);
 
-const IMAGE_FIELDS = new Set([
+// Also track lowercase versions since FIELD_ALIASES values are case-sensitive
+const NUMERIC_FIELDS_LOWER = new Set([
+  "population",
+  "population_estimate",
+  "population_census",
+  "area_km2",
+  "gdp_nominal",
+  "gdp_ppp",
+  "gdp_nominal_per_capita",
+  "gdp_ppp_per_capita",
+  "life_expectancy",
+  "literacy_rate",
+  "urbanization",
+]);
+
+// ─── Image/File Extraction Helpers ──────────────────────────────────────────
+
+const IMAGE_FIELDS = new Set<string>([
   "image_flag",
   "flag",
   "image_coat",
@@ -329,51 +550,46 @@ const IMAGE_FIELDS = new Set([
 
 function extractFilename(value: string): string {
   if (!value) return "";
-  const clean = value.replace(/<!--[\s\S]*?-->/g, "").trim();
+  // Trim comments first
+  // eslint-disable-next-line prefer-const
+  let clean = stripComments(value).trim();
 
-  // External URLs are returned as is.
-  if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) return clean;
+  // If it's an external URL, return as is
+  if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) {
+    return clean;
+  }
 
-  // [[File:Filename.png|options]], [[Image:Filename.png|options]] or plain [[Filename.png]]
-  const link =
-    /\[\[(?:File|Image):\s*([^|\]]+)/i.exec(clean)?.[1] ?? /\[\[\s*([^|\]]+)/.exec(clean)?.[1];
-  if (link) return link.trim();
+  // Handle [[File:Filename.png|options]] or [[Image:Filename.png|options]]
+  const fileLinkMatch = /\[\[(?:File|Image|file|image):\s*([^|\]]+)/i.exec(clean);
+  if (fileLinkMatch && fileLinkMatch[1]) {
+    return fileLinkMatch[1].trim();
+  }
 
-  const switcher = /\{\{\s*[Ss]witcher\s*\|\s*([^|]+)/i.exec(clean)?.[1];
-  if (switcher) return extractFilename(switcher);
+  // Handle plain [[Filename.png]] (without File: prefix)
+  const plainLinkMatch = /\[\[\s*([^|\]]+)/i.exec(clean);
+  if (plainLinkMatch && plainLinkMatch[1]) {
+    return plainLinkMatch[1].trim();
+  }
+
+  // Handle switcher template
+  const switcherMatch = /\{\{\s*[Ss]witcher\s*\|\s*([^|]+)/i.exec(clean);
+  if (switcherMatch && switcherMatch[1]) {
+    return extractFilename(switcherMatch[1]);
+  }
 
   // Strip general templates and formatting
-  const plain = clean
-    .replace(/\{\{[^}]*\}\}/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-    .trim();
+  let plain = unpackInternalLinks(
+    stripHtmlTags(replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => ""))
+  ).trim();
 
-  return plain.split("|")[0]!.trim();
+  if (plain.includes("|")) {
+    plain = plain.split("|")[0]!.trim();
+  }
+
+  return plain;
 }
 
-const HEAD_OF_STATE_TITLE = /president|monarch|king|queen|emperor|sultan/;
-const HEAD_OF_GOVERNMENT_TITLE = /prime minister|chancellor|premier/;
-
-/** Fills head_of_state / head_of_government from the numbered leader fields when absent. */
-function inferHeads(result: UnifiedInfoboxData): void {
-  if (!result.head_of_state && result.leader_title1 && result.leader_name1) {
-    const title = result.leader_title1.toLowerCase();
-    const isGovernmentHead =
-      !HEAD_OF_STATE_TITLE.test(title) && HEAD_OF_GOVERNMENT_TITLE.test(title);
-    result[isGovernmentHead ? "head_of_government" : "head_of_state"] = result.leader_name1;
-  }
-  if (!result.head_of_government && result.leader_name2) {
-    result.head_of_government = result.leader_name2;
-  }
-}
-
-/** Numeric mirrors of the textual GDP fields. */
-const GDP_MIRRORS = [
-  ["GDP_nominal", "gdp_nominal"],
-  ["GDP_PPP", "gdp_ppp"],
-  ["GDP_nominal_per_capita", "gdpPerCapita"],
-] as const;
+// ─── Main Parser ──────────────────────────────────────────────────────────────
 
 export function parseInfoboxWithTemplates(
   wikitext: string,
@@ -385,38 +601,90 @@ export function parseInfoboxWithTemplates(
   const parsed = parseInfobox(wikitext);
   if (!parsed) return null;
 
-  const result: UnifiedInfoboxData = { name: countryName || "" };
-  const fields = result as unknown as Record<string, string | number>;
+  const result: UnifiedInfoboxData = {
+    name: countryName || "",
+  };
   const rawInfobox: Record<string, string> = {};
 
   for (const field of parsed.fields) {
-    const unifiedKey = FIELD_ALIASES[field.key.toLowerCase().replace(/[\s-]/g, "_")];
-    const processedValue =
-      unifiedKey && IMAGE_FIELDS.has(unifiedKey)
-        ? extractFilename(field.rawValue)
-        : processTemplates(field.rawValue);
+    const rawKey = field.key;
+    const unifiedKey = FIELD_ALIASES[rawKey.toLowerCase().replace(/[\s-]/g, "_")];
+
+    // Determine if it is an image field
+    const isImageField = unifiedKey && IMAGE_FIELDS.has(unifiedKey);
+    const processedValue = isImageField
+      ? extractFilename(field.rawValue)
+      : processTemplates(field.rawValue);
+
     if (!processedValue) continue;
 
-    rawInfobox[field.key] = processedValue;
-    if (!unifiedKey) continue;
+    rawInfobox[rawKey] = processedValue;
 
-    fields[unifiedKey] = NUMERIC_FIELDS.has(unifiedKey)
-      ? (parsePopulation(field.rawValue) ?? processedValue)
-      : processedValue;
+    if (unifiedKey) {
+      const isNumeric = NUMERIC_FIELDS.has(unifiedKey) || NUMERIC_FIELDS_LOWER.has(unifiedKey);
+      if (isNumeric) {
+        const num = parsePopulation(field.rawValue);
+        if (num !== null) {
+          (result as any)[unifiedKey] = num;
+        } else {
+          (result as any)[unifiedKey] = processedValue;
+        }
+      } else {
+        (result as any)[unifiedKey] = processedValue;
+      }
+    }
   }
 
   const coords = extractCoordsFromFields(parsed.fields);
   if (coords) result.coordinates = coords;
 
-  inferHeads(result);
-
-  for (const [source, target] of GDP_MIRRORS) {
-    const value = fields[source];
-    const mirrored = typeof value === "string" ? parsePopulation(value) : value;
-    if (typeof mirrored === "number") result[target] = mirrored;
+  if (!result.head_of_state && result.leader_title1 && result.leader_name1) {
+    const title = (result.leader_title1 || "").toLowerCase();
+    if (
+      title.includes("president") ||
+      title.includes("monarch") ||
+      title.includes("king") ||
+      title.includes("queen") ||
+      title.includes("emperor") ||
+      title.includes("sultan")
+    ) {
+      result.head_of_state = result.leader_name1;
+    } else if (
+      title.includes("prime minister") ||
+      title.includes("chancellor") ||
+      title.includes("premier")
+    ) {
+      result.head_of_government = result.leader_name1;
+    } else {
+      result.head_of_state = result.leader_name1;
+    }
+  }
+  if (!result.head_of_government && result.leader_name2) {
+    result.head_of_government = result.leader_name2;
   }
 
-  result.name ||= result.common_name || result.conventional_long_name || "";
+  if (typeof result.GDP_nominal === "string") {
+    const gdpNum = parsePopulation(result.GDP_nominal);
+    if (gdpNum !== null) result.gdp_nominal = gdpNum;
+  } else if (typeof result.GDP_nominal === "number") {
+    result.gdp_nominal = result.GDP_nominal;
+  }
+  if (typeof result.GDP_PPP === "string") {
+    const gdpPppNum = parsePopulation(result.GDP_PPP);
+    if (gdpPppNum !== null) result.gdp_ppp = gdpPppNum;
+  } else if (typeof result.GDP_PPP === "number") {
+    result.gdp_ppp = result.GDP_PPP;
+  }
+  if (typeof result.GDP_nominal_per_capita === "string") {
+    const gdpPcNum = parsePopulation(result.GDP_nominal_per_capita);
+    if (gdpPcNum !== null) result.gdpPerCapita = gdpPcNum;
+  } else if (typeof result.GDP_nominal_per_capita === "number") {
+    result.gdpPerCapita = result.GDP_nominal_per_capita;
+  }
+
+  if (!result.name && result.common_name) result.name = result.common_name;
+  if (!result.name && result.conventional_long_name) result.name = result.conventional_long_name;
+
   result.rawInfobox = rawInfobox;
   result.templateName = parsed.templateName;
 

@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { WikiZoomDialog } from "~/components/wiki-os/shared/WikiZoomDialog";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { isMediaWikiUrl } from "~/lib/wiki-os/config";
 import {
   CopyFormatSelector,
   copyFormatText,
@@ -100,7 +101,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
   }, [image.url]);
 
   const handleStash = useCallback(() => {
-    const isLocal = image.descriptionUrl.includes("ixwiki.com");
+    const isLocal = isMediaWikiUrl(image.descriptionUrl);
     const isIiwiki = image.descriptionUrl.includes("iiwiki.com");
     let title = `commons:${image.title}`;
     if (isLocal) {
@@ -111,7 +112,7 @@ export function CommonsDetailPanel({ image, onClose }: CommonsDetailPanelProps) 
     stashMutation.mutate({ pageTitle: title });
   }, [image.descriptionUrl, image.title, stashMutation]);
 
-  const viewSourceLabel = image.descriptionUrl.includes("ixwiki.com")
+  const viewSourceLabel = isMediaWikiUrl(image.descriptionUrl)
     ? "View on IxWiki"
     : image.descriptionUrl.includes("iiwiki.com")
       ? "View on IIWiki"

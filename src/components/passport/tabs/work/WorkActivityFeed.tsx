@@ -15,6 +15,7 @@ import {
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils/cn";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import type { WorkPayload } from "../../types";
 
 type FeedItem = WorkPayload["wikiActivityFeed"][number];
@@ -65,7 +66,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
           </span>
         </h4>
         <Link
-          href={`/wiki/contributions/${encodeURIComponent(contributionsUser)}`}
+          href={`/util/contributions/${encodeURIComponent(contributionsUser)}`}
           className="text-tint text-footnote flex items-center gap-0.5 hover:underline"
         >
           <span>View all</span>
@@ -105,6 +106,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
                       })}
                     </span>
                     {item.byteDiff !== null && <ByteDiff bytes={item.byteDiff} />}
+                    {item.parked && <ParkedBadge />}
                   </div>
 
                   <h4 className="text-label text-headline truncate">{item.title}</h4>

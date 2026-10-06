@@ -1,11 +1,38 @@
 /** @jest-environment node */
-import { checkEditPolicy, parseWikiTitle } from "~/lib/wiki-os/namespace-policy";
+import {
+  checkEditPolicy,
+  parseWikiTitle,
+  type EditPolicyIdentity,
+} from "~/lib/wiki-os/namespace-policy";
+import type { Right } from "~/lib/wiki-os/rights";
 
-type EditPolicyIdentity = Parameters<typeof checkEditPolicy>[1];
+// Plan 409: the policy asks for rights, not for "is admin". These are the rights of the groups that matter.
+const userRights: ReadonlySet<Right> = new Set<Right>(["edit", "createpage", "createtalk"]);
+const sysopRights: ReadonlySet<Right> = new Set<Right>([
+  ...userRights,
+  "editprotected",
+  "editinterface",
+]);
+const interfaceAdminRights: readonly Right[] = [
+  "editinterface",
+  "editsitecss",
+  "editsitejs",
+  "editsitejson",
+  "editusercss",
+  "edituserjs",
+  "edituserjson",
+];
+/** The owner role: sysop + interface-admin. */
+const adminRights: ReadonlySet<Right> = new Set<Right>([...sysopRights, ...interfaceAdminRights]);
 
-const user: EditPolicyIdentity = { isAdmin: false, linkedWikiUsername: "Alice" };
-const unlinked: EditPolicyIdentity = { isAdmin: false, linkedWikiUsername: null };
-const admin: EditPolicyIdentity = { isAdmin: true, linkedWikiUsername: null };
+const user = { rights: userRights, linkedWikiUsername: "Alice" };
+const unlinked = { rights: userRights, linkedWikiUsername: null };
+const sysop = { rights: sysopRights, linkedWikiUsername: null };
+const interfaceAdmin = {
+  rights: new Set<Right>([...userRights, ...interfaceAdminRights]),
+  linkedWikiUsername: null,
+};
+const admin = { rights: adminRights, linkedWikiUsername: null };
 
 const allowed = (title: string, identity: EditPolicyIdentity = user) =>
   checkEditPolicy(title, identity).allowed;
@@ -53,6 +80,11 @@ describe("checkEditPolicy: ordinary users", () => {
     expect(allowed("Talk:Caphiria")).toBe(true);
     expect(allowed("User talk:Somebody")).toBe(true);
     expect(allowed("Template talk:Infobox")).toBe(true);
+    expect(allowed("Campaign talk:Operation Dawn")).toBe(true);
+  });
+
+  it("treats Portal: as a main-namespace title, as IxWiki does (it has no Portal namespace)", () => {
+    expect(allowed("Portal:Eurth")).toBe(true);
   });
 
   it.each([
@@ -71,6 +103,8 @@ describe("checkEditPolicy: ordinary users", () => {
     "MediaWiki talk:Common.js",
     "Module talk:Foo",
     "Widget:Foo",
+    "Campaign:Operation Dawn",
+    "campaign : Operation Dawn",
     ":Template:Foo",
     "template:foo",
     "TEMPLATE:foo",
@@ -122,5 +156,63 @@ describe("checkEditPolicy: wiki admins", () => {
 
   it("still refuses an empty title", () => {
     expect(allowed("   ", admin)).toBe(false);
+  });
+});
+
+describe("checkEditPolicy: sysop versus interface-admin (plan 409)", () => {
+  it.each([
+    "Template:Infobox country",
+    "Module:Foo",
+    "MediaWiki:Sidebar",
+    "MediaWiki talk:Sidebar",
+    "Help:Editing",
+    "Category:Nations",
+    "File:Flag.png",
+    "IxWiki:Policy",
+    "User:Bob",
+  ])("sysop can edit %s", (title) => {
+    expect(allowed(title, sysop)).toBe(true);
+  });
+
+  it.each([
+    "MediaWiki:Common.css",
+    "MediaWiki:Common.js",
+    "MediaWiki:Gadgets.json",
+    "MediaWiki:Theme.less",
+    "User:Bob/common.js",
+    "User:Bob/vector.css",
+    "User:Bob/data.json",
+  ])("sysop alone cannot edit the interface page %s", (title) => {
+    expect(allowed(title, sysop)).toBe(false);
+  });
+
+  it("asks for the right that matches the kind of interface page", () => {
+    const only = (right: Right) => ({
+      rights: new Set<Right>(["edit", right]),
+      linkedWikiUsername: null,
+    });
+    expect(allowed("MediaWiki:Common.css", only("editsitecss"))).toBe(true);
+    expect(allowed("MediaWiki:Common.js", only("editsitecss"))).toBe(false);
+    expect(allowed("MediaWiki:Common.js", only("editsitejs"))).toBe(true);
+    expect(allowed("MediaWiki:Data.json", only("editsitejson"))).toBe(true);
+    expect(allowed("MediaWiki:Sidebar", only("editsitejs"))).toBe(false);
+    expect(allowed("MediaWiki:Sidebar", only("editinterface"))).toBe(true);
+    expect(allowed("User:Bob/common.js", only("edituserjs"))).toBe(true);
+    expect(allowed("User:Bob/common.js", only("editsitejs"))).toBe(false);
+    expect(allowed("User:Bob/vector.css", only("editusercss"))).toBe(true);
+  });
+
+  it("lets interface-admin edit script pages but not other namespaces", () => {
+    expect(allowed("MediaWiki:Common.js", interfaceAdmin)).toBe(true);
+    expect(allowed("MediaWiki:Sidebar", interfaceAdmin)).toBe(true);
+    expect(allowed("User:Bob/common.js", interfaceAdmin)).toBe(true);
+    expect(allowed("Template:Foo", interfaceAdmin)).toBe(false);
+    expect(allowed("User:Bob", interfaceAdmin)).toBe(false);
+  });
+
+  it("still lets the owner of a verified link edit their own text pages but not their own scripts", () => {
+    expect(allowed("User:Alice/Notes", user)).toBe(true);
+    expect(allowed("User:Alice/common.js", user)).toBe(false);
+    expect(allowed("User:Alice/common.js", { ...user, rights: adminRights })).toBe(true);
   });
 });

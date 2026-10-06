@@ -7,6 +7,7 @@ const mockStash = jest.fn();
 const mockUnstash = jest.fn();
 let mockStashed = false;
 let mockMarginOpen = false;
+let mockRights: string[] = [];
 
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({
@@ -28,6 +29,7 @@ jest.mock("~/trpc/react", () => ({
       isStashed: { useQuery: () => ({ data: { stashed: mockStashed } }) },
       stashPage: { useMutation: () => ({ mutate: mockStash, isPending: false }) },
       unstashPage: { useMutation: () => ({ mutate: mockUnstash, isPending: false }) },
+      getUserPermissions: { useQuery: () => ({ data: { rights: mockRights } }) },
     },
   },
 }));
@@ -55,6 +57,7 @@ describe("WikiPageActions", () => {
     jest.clearAllMocks();
     mockStashed = false;
     mockMarginOpen = false;
+    mockRights = [];
   });
 
   it("New page opens the create dialog", () => {
@@ -117,6 +120,24 @@ describe("WikiPageActions", () => {
     openMenu();
     fireEvent.click(screen.getByRole("menuitem", { name: /Remove from Stash/ }));
     expect(mockUnstash).toHaveBeenCalledWith({ pageTitle: "Aurelia" });
+  });
+
+  it("offers move, protect and delete for the rights the reader holds, and nothing without them", () => {
+    const { unmount } = render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
+    openMenu();
+    expect(
+      screen.queryByRole("menuitem", { name: /Move page|Protect page|Delete page/ })
+    ).toBeNull();
+    unmount();
+
+    mockRights = ["move", "delete"];
+    render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
+    openMenu();
+    expect(screen.getByRole("menuitem", { name: /Move page/ }).getAttribute("href")).toBe(
+      "/util/move?title=Aurelia"
+    );
+    expect(screen.getByRole("menuitem", { name: /Delete page/ })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: /Protect page/ })).toBeNull();
   });
 
   it("offers no stash to a signed-out reader", () => {

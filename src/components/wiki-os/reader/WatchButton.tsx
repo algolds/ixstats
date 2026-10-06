@@ -1,6 +1,7 @@
 "use client";
 // Watch/Unwatch toggle for an article; watched pages feed the watchlist at /util/watchlist.
 
+import { useEffect } from "react";
 import { Eye, EyeClosed } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
@@ -29,6 +30,12 @@ function IxWikiWatchButton({ title }: { title: string }) {
     },
     onSettled: () => utils.wikios.isPageWatched.invalidate({ pageTitle }),
   });
+  // Viewing a watched page clears its "you were notified" mark, so the next change notifies again.
+  const { mutate: markWatchedVisited } = api.wikios.markWatchedVisited.useMutation();
+  useEffect(() => {
+    if (isWatched) markWatchedVisited({ pageTitle });
+  }, [isWatched, pageTitle, markWatchedVisited]);
+
   const watch = api.wikios.watchPage.useMutation(toggleOptions(true));
   const unwatch = api.wikios.unwatchPage.useMutation(toggleOptions(false));
 

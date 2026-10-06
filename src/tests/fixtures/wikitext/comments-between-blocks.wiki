@@ -1,0 +1,17 @@
+<!-- Page maintained by the Vesperia WikiProject -->
+<!-- Do not remove the infobox below -->
+{{Infobox country
+| name = Vesperia <!-- official short form -->
+}}
+
+<!--
+A multi-line comment
+with {{a template}} inside and a blank line
+
+that must stay verbatim.
+-->
+First paragraph. <!-- inline comment --> Continues here.
+
+== Heading ==
+<!-- comment directly under a heading -->
+Paragraph after the comment.

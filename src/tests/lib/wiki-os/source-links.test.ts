@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { transformArticleHtml } from "~/lib/wiki-os/transformers/html-transformer";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 /** What ixwiki's action=parse makes of another wiki's wikitext: links are resolved against ixwiki. */
 const parsed = [
@@ -27,12 +27,26 @@ describe("transformArticleHtml links for another wiki's page (ruling E-l)", () =
     expect(html).toContain('href="/wiki/Portal:Eurth?source=iiwiki"');
   });
 
-  it("sends red links (missing only on IxWiki) to the reader for that wiki, not to a create form", () => {
-    expect(html).toContain('href="/wiki/Aurelian_Empire?source=iiwiki"');
+  it("sends red links (missing on that wiki, which rendered the page) to its reader, still red, not to a create form", () => {
+    expect(html).toContain(
+      'href="/wiki/Aurelian_Empire?source=iiwiki" class="new" title="Aurelian Empire (page does not exist)"'
+    );
     expect(html).not.toContain("index.php");
     expect(html).not.toContain("redlink");
-    expect(html).not.toContain('class="new');
-    expect(html).not.toContain("page does not exist");
+  });
+
+  it("reads a red link of the /wiki/Title?action=edit&redlink=1 form (Fandom's) the same way", () => {
+    const fandom = transformArticleHtml(
+      '<div class="mw-parser-output"><p><a href="/wiki/Gallambria?action=edit&amp;redlink=1" class="new" title="Gallambria (page does not exist)">G</a> ' +
+        '<a href="/wiki/Gallambria?action=history#Top">h</a> <a href="/wiki/Special:Search?search=x">s</a></p></div>',
+      "",
+      "althistory"
+    ).contentHtml;
+
+    expect(fandom).toContain('href="/wiki/Gallambria?source=althistory" class="new"');
+    expect(fandom).toContain('href="/wiki/Gallambria?source=althistory#Top"');
+    expect(fandom).toContain('href="https://althistory.fandom.com/wiki/Special:Search?search=x" rel="noreferrer"');
+    expect(fandom).not.toContain("redlink");
   });
 
   it("opens files, special, user and category pages on that wiki", () => {
@@ -67,19 +81,21 @@ describe("transformArticleHtml links for another wiki's page (ruling E-l)", () =
   });
 });
 
-describe("transformArticleHtml links for an IxWiki page are unchanged", () => {
+describe("transformArticleHtml links for an IxWiki page", () => {
   const html = transformArticleHtml(parsed, "", "ixwiki").contentHtml;
 
-  it("routes articles in-app, and files, special pages and red links to ixwiki", () => {
+  it("routes articles and red links in-app, and files and special pages to ixwiki", () => {
     expect(html).toContain('href="/wiki/Gallambria"');
     expect(html).toContain('href="/wiki/Gallambria#History"');
-    expect(html).toContain(`href="${DEFAULT_MEDIAWIKI_URL}/wiki/File:Map.png" rel="noreferrer"`);
-    expect(html).toContain(`href="${DEFAULT_MEDIAWIKI_URL}/wiki/Special:Random" rel="noreferrer"`);
+    expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/File:Map.png" rel="noreferrer"`);
+    expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/Special:Random" rel="noreferrer"`);
     expect(html).toContain('href="/wiki/User:Kir"');
-    expect(html).toContain(
-      `href="${DEFAULT_MEDIAWIKI_URL}/index.php?title=Aurelian_Empire&amp;action=edit&amp;redlink=1" rel="noreferrer"`
-    );
+    // a red link opens WikiOS's own editor (plan 415, F16), not MediaWiki's index.php
+    expect(html).toContain('href="/wiki/Aurelian_Empire?action=edit&amp;redlink=1"');
+    expect(html).not.toContain("index.php?title=Aurelian_Empire");
     expect(html).toContain('class="new wikios-redlink"');
+    // an upload link is not a red link of a page: it still opens on the wiki
+    expect(html).toContain(`href="${mediaWikiOrigin()}/index.php?title=Special:Upload&amp;wpDestFile=Flag_of_Aurelia.png" rel="noreferrer"`);
     expect(html).not.toContain("source=");
   });
 });

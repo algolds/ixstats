@@ -30,6 +30,8 @@ const IMPORTANT_ALLOWED = new Set([
   "facet/interaction.css",
   // Overrides for MediaWiki/Parsoid HTML with inline styles and CodeMirror's injected theme.
   "wiki-os/mediawiki.css",
+  // The editor half of it (Parsoid / CodeMirror), loaded with the editor chunk instead of the reader's sheet.
+  "wiki-os/mediawiki-editors.css",
 ]);
 
 /** Top-level at-rules that are fine outside a layer. */

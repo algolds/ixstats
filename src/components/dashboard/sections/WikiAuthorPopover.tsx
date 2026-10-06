@@ -25,7 +25,7 @@ export function WikiAuthorPopover({ username }: { username: string }) {
   );
 
   const wikiUserUrl = createUrl(getWikiProfilePath(username));
-  const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
+  const wikiContribsUrl = createUrl(`/util/contributions/${username}`);
   const country = author?.country;
   const links = [
     { href: wikiUserUrl, icon: BookOpen, label: "Wiki user page" },

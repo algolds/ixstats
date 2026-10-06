@@ -1,0 +1,163 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>IxWiki</sitename>
+    <dbname>ixwiki</dbname>
+    <base>https://ixwiki.com/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.1</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Kingdom of Testia</title>
+    <ns>0</ns>
+    <id>101</id>
+    <restrictions>edit=sysop:move=sysop</restrictions>
+    <revision>
+      <id>1001</id>
+      <timestamp>2026-01-02T03:04:05Z</timestamp>
+      <contributor>
+        <username>Jane</username>
+        <id>7</id>
+      </contributor>
+      <comment>Create the page</comment>
+      <origin>1001</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="24" sha1="5m4a1twcqtk8kln29696qjq0i7jb99b" xml:space="preserve">Testia is a [[kingdom]].</text>
+      <sha1>5m4a1twcqtk8kln29696qjq0i7jb99b</sha1>
+    </revision>
+    <revision>
+      <id>1002</id>
+      <parentid>1001</parentid>
+      <timestamp>2026-01-03T10:00:00Z</timestamp>
+      <contributor>
+        <ip>192.0.2.7</ip>
+      </contributor>
+      <minor />
+      <comment>typo &amp; &lt;nowiki&gt; fix</comment>
+      <origin>1002</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="48" sha1="grmcclep59tdxmaepo3mr82bcghxotv" xml:space="preserve">Testia is a [[kingdom]] &amp; &lt;nowiki&gt;more&lt;/nowiki&gt;.</text>
+      <sha1>grmcclep59tdxmaepo3mr82bcghxotv</sha1>
+    </revision>
+    <revision>
+      <id>1003</id>
+      <parentid>1002</parentid>
+      <timestamp>2026-02-01T00:00:00Z</timestamp>
+      <contributor deleted="deleted" />
+      <comment deleted="deleted" />
+      <origin>1003</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="54" sha1="ih14qtmq7un0xyinywzceva6okr6l5u" deleted="deleted" />
+      <sha1>ih14qtmq7un0xyinywzceva6okr6l5u</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Testia</title>
+    <ns>0</ns>
+    <id>102</id>
+    <redirect title="Kingdom of Testia" />
+    <revision>
+      <id>2001</id>
+      <timestamp>2026-01-02T03:10:00Z</timestamp>
+      <contributor>
+        <username>Jane</username>
+        <id>7</id>
+      </contributor>
+      <comment>Redirect</comment>
+      <origin>2001</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="31" sha1="9qk5kgqieffyhmdm0wl8nrdu0fpwgy9" xml:space="preserve">#REDIRECT [[Kingdom of Testia]]</text>
+      <sha1>9qk5kgqieffyhmdm0wl8nrdu0fpwgy9</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Talk:Kingdom of Testia</title>
+    <ns>1</ns>
+    <id>103</id>
+    <revision>
+      <id>3001</id>
+      <timestamp>2026-01-04T12:30:00Z</timestamp>
+      <contributor>
+        <username>Bob the Builder</username>
+        <id>9</id>
+      </contributor>
+      <minor />
+      <origin>3001</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="36" sha1="gxsv3arspybgvze1rxvqseygm9m4rct" xml:space="preserve">Discuss é漢字 here.
+
+* one
+* two
+</text>
+      <sha1>gxsv3arspybgvze1rxvqseygm9m4rct</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Infobox testia</title>
+    <ns>10</ns>
+    <id>104</id>
+    <revision>
+      <id>4001</id>
+      <timestamp>2026-01-05T08:00:00Z</timestamp>
+      <contributor>
+        <username>Jane</username>
+        <id>7</id>
+      </contributor>
+      <comment>Template</comment>
+      <origin>4001</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="34" sha1="apbw6f6z2n6r3gh2cw32vsncw90mkqn" xml:space="preserve"><![CDATA[<includeonly>{{{1}}}</includeonly>]]></text>
+      <sha1>apbw6f6z2n6r3gh2cw32vsncw90mkqn</sha1>
+      <unknownfuturething kind="ignored">
+        <nested>skipped, not an error</nested>
+      </unknownfuturething>
+    </revision>
+  </page>
+  <page>
+    <title>File:Testia flag.png</title>
+    <ns>6</ns>
+    <id>105</id>
+    <revision>
+      <id>5001</id>
+      <timestamp>2026-01-06T09:00:00Z</timestamp>
+      <contributor>
+        <username>Jane</username>
+        <id>7</id>
+      </contributor>
+      <comment>Upload</comment>
+      <origin>5001</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="17" sha1="tux9l4gbc22sbf83hiad2tn3q2hvk7g" xml:space="preserve">A flag of Testia.</text>
+      <sha1>tux9l4gbc22sbf83hiad2tn3q2hvk7g</sha1>
+    </revision>
+    <upload>
+      <timestamp>2026-01-06T09:00:00Z</timestamp>
+      <contributor>
+        <username>Jane</username>
+        <id>7</id>
+      </contributor>
+      <comment>Upload</comment>
+      <filename>Testia_flag.png</filename>
+      <src>https://example.invalid/images/Testia_flag.png</src>
+      <size>1234</size>
+    </upload>
+  </page>
+  <logitem>
+    <id>1</id>
+    <timestamp>2026-01-01T00:00:00Z</timestamp>
+    <type>create</type>
+  </logitem>
+</mediawiki>

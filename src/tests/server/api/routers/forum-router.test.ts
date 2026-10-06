@@ -276,7 +276,13 @@ describe("forum stash", () => {
     expect(result).toEqual({ success: true, stashId: "stash_new" });
     expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { stashId_pageTitle: { stashId: "stash_new", pageTitle: "forum:thread:10" } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: "stash_new",
+            contentType: "forum_thread",
+            pageTitle: "forum:thread:10",
+          },
+        },
       })
     );
   });
@@ -304,20 +310,31 @@ describe("forum stash", () => {
 
     expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { stashId_pageTitle: { stashId: "stash_mine", pageTitle: "forum:thread:10" } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: "stash_mine",
+            contentType: "forum_thread",
+            pageTitle: "forum:thread:10",
+          },
+        },
       })
     );
   });
 
   it("only unstashes from the caller's own stashes", async () => {
-    await callerAs("u1").unstashThread({ threadId: 10, stashId: "stash_other" });
+    await expect(
+      callerAs("u1").unstashThread({ threadId: 10, stashId: "stash_other" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(mockDb.stashItem.deleteMany).not.toHaveBeenCalled();
 
+    mockDb.stash.findFirst.mockResolvedValue({ id: "stash_mine" });
+    await callerAs("u1").unstashThread({ threadId: 10, stashId: "stash_mine" });
+
+    expect(mockDb.stash.findFirst).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { id: "stash_mine", userId: { in: ["u1", "clerk_u1"] } } })
+    );
     expect(mockDb.stashItem.deleteMany).toHaveBeenCalledWith({
-      where: {
-        stashId: "stash_other",
-        pageTitle: "forum:thread:10",
-        stash: { userId: { in: ["u1", "clerk_u1"] } },
-      },
+      where: { stashId: "stash_mine", pageTitle: "forum:thread:10", contentType: "forum_thread" },
     });
   });
 

@@ -1,6 +1,4 @@
 "use client";
-
-// src/hooks/useWikiNarrator.ts
 // Custom hook to manage full-article audio narration using Onoma Voice (Kokoro TTS).
 // Splits the article DOM into clean text segments, manages sequential playback,
 // pre-buffers future blocks, highlights active text, and bridges state/actions
@@ -8,7 +6,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { api } from "~/trpc/react";
+import { useEngineReporter, useSpeechConfigLoader } from "~/hooks/narrator-speech";
 import { useNotify } from "~/hooks/useNotify";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useIxMediaActions } from "~/components/media/MediaContext";
@@ -111,10 +109,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     []
   );
 
-  // Load public speech config (including Kokoro settings)
-  const { data: config } = api.onoma.getSpeechConfig.useQuery(undefined, {
-    staleTime: 600000,
-  });
+  // The speech config is read on the first play (narrator-speech.ts)
+  const { speechConfigRef, loadSpeechConfig } = useSpeechConfigLoader();
 
   const activeIdxRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -172,22 +168,17 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     return fetchPromise;
   }, []);
 
-  // Single source of truth for the TTS request URL so prefetch and playback always
-  // hit the same cache key. Speed is intentionally omitted — it's applied client-side
-  // via audio.playbackRate, so one cached clip is reused across every speed setting.
-  const buildTtsUrl = useCallback(
-    (text: string) => {
-      const params = new URLSearchParams({ text, ipa: "" });
-      const chosenVoice = voiceRef.current || config?.kokoro?.voice;
-      if (chosenVoice) params.set("voice", chosenVoice);
-      return withBasePath(`/api/onoma/tts?${params.toString()}`);
-    },
-    [config]
-  );
+  // One TTS URL for prefetch and playback (one cache key). No speed: audio.playbackRate applies it client-side.
+  const buildTtsUrl = useCallback((text: string) => {
+    const params = new URLSearchParams({ text, ipa: "" });
+    const chosenVoice = voiceRef.current || speechConfigRef.current?.kokoro?.voice;
+    if (chosenVoice) params.set("voice", chosenVoice);
+    return withBasePath(`/api/onoma/tts?${params.toString()}`);
+  }, []);
 
   const preFetchBlocks = useCallback(
     async (index: number) => {
-      if (!config?.kokoro?.enabled) return;
+      if (!speechConfigRef.current?.kokoro?.enabled) return;
 
       for (let i = 1; i <= 2; i++) {
         const nextIdx = index + i;
@@ -197,7 +188,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         }
       }
     },
-    [config, fetchAudioBlob, buildTtsUrl]
+    [fetchAudioBlob, buildTtsUrl]
   );
 
   // Local storage personal preferences loading
@@ -371,6 +362,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     });
   }, [clearHighlight, setNarratorState, updatePlaybackState]);
 
+  const reportEngine = useEngineReporter(setNarratorState);
+
   // Synthesize and play block
   const playBlock = useCallback(
     async (index: number) => {
@@ -432,7 +425,10 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
         activeAudioUrlRef.current = null;
       }
 
+      // The natural voice is for users the TTS route lets in (the same ones who see the narrator).
+      const config = hasNarratorAccess ? await loadSpeechConfig() : null;
       const isKokoroEnabled = Boolean(config?.kokoro?.enabled);
+      reportEngine(isKokoroEnabled ? "kokoro" : "browser");
 
       // Save progress to session storage
       try {
@@ -518,6 +514,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
           err?.message || err
         );
         // Fallback to browser speech directly
+        reportEngine("browser");
         const utterance = new SpeechSynthesisUtterance(block.text);
         utterance.rate = speedRef.current * 0.85;
         utterance.onend = () => {
@@ -530,7 +527,9 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
       }
     },
     [
-      config,
+      hasNarratorAccess,
+      loadSpeechConfig,
+      reportEngine,
       articleTitle,
       highlightBlock,
       setNarratorState,

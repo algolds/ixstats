@@ -4,9 +4,10 @@ import { cn } from "~/lib/utils";
 import React from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
-import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
+import { useOptionalPlateWikiCallbacks } from "./PlateRawHtmlElement";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { Button } from "~/components/ui/button";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 
 /** Stashed/Commons media block — original figure HTML or AST-resolved image rendered. */
 export function PlateMediaElement({
@@ -20,14 +21,10 @@ export function PlateMediaElement({
   const path = usePath();
   const editor = useEditorRef();
   const readOnly = useReadOnly();
-  let cb: ReturnType<typeof usePlateWikiCallbacks> | null = null;
-  try {
-    // Always called (the try only catches the missing-provider throw), so the hook order is stable.
-    // oxlint-disable-next-line react-hooks/rules-of-hooks
-    cb = usePlateWikiCallbacks();
-  } catch {
-    // rendered outside the PlateWikiCallbacks provider — media callbacks disabled
-  }
+  // one object per HTML: a new one each render would write the figure's DOM again (React 19)
+  const htmlMarkup = useHtmlMarkup(el?.html ?? "");
+  // null outside the PlateWikiCallbacks provider: media callbacks are disabled then
+  const cb = useOptionalPlateWikiCallbacks();
 
   if (!el) return <div {...attributes}>{children}</div>;
 
@@ -55,7 +52,7 @@ export function PlateMediaElement({
         {el.html ? (
           <div
             className="wikios-ve-media rounded-row overflow-hidden [&_figure]:m-0 [&_img]:max-w-full"
-            dangerouslySetInnerHTML={{ __html: el.html }}
+            dangerouslySetInnerHTML={htmlMarkup}
           />
         ) : (
           <figure

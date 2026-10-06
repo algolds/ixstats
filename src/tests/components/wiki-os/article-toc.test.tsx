@@ -5,7 +5,7 @@ import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 const mockToggleMargin = jest.fn();
 const mockSetWikiPage = jest.fn();
 const mockMargin = jest.fn();
-const mockUseWikiMediaTheme = { getImageStyle: () => ({}) };
+const mockUseWikiMediaTheme = { getImageAttributes: () => ({}) };
 let mockMarginOpen = false;
 
 jest.mock("next/dynamic", () => () => () => null);
@@ -28,6 +28,8 @@ jest.mock("~/components/wiki-os/reader/AnnotationOverlay", () => ({
   useAnnotationOverlay: () => undefined,
 }));
 jest.mock("~/components/wiki-os/reader/useCiteTooltips", () => ({ useCiteTooltips: () => null }));
+jest.mock("~/components/wiki-os/reader/useStatValues", () => ({ useStatValues: () => ({}) }));
+jest.mock("~/components/wiki-os/reader/useScrollSpy", () => ({ useScrollSpy: () => undefined }));
 jest.mock("~/hooks/useWikiNarrator", () => ({
   useWikiNarrator: () => ({ isPlaying: false, play: jest.fn(), pause: jest.fn(), stop: jest.fn() }),
 }));
@@ -70,6 +72,7 @@ jest.mock("~/components/wiki-os/reader/ArticleModals", () => ({
 }));
 jest.mock("~/components/wiki-os/reader/ArticlePlaceholders", () => ({
   injectPlaceholderElements: (html: string) => html,
+  extractStatKeys: () => [],
   CoordsPill: () => null,
   DynamicStatSpan: () => null,
 }));

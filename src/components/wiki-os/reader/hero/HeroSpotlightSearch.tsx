@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
@@ -23,6 +24,9 @@ interface HeroSpotlightSearchProps {
   className?: string;
   placeholderHints?: string[];
 }
+
+/** Characters before the typeahead looks anything up. */
+const MIN_QUERY_LENGTH = 2;
 
 const DEFAULT_PLACEHOLDERS = [
   "Search all articles, categories, lore...",
@@ -57,13 +61,13 @@ export function HeroSpotlightSearch({
   }, [query, isOpen, placeholderHints.length]);
 
   // 120ms for instant native database spotlight feel
-  const deferredQuery = useDeferredValue(useDebounce(query.trim(), 120));
+  const deferredQuery = useDeferredValue(useDebounce(query.trim(), 150));
 
   // Direct native database query with featured image thumbnails
-  const { data: searchData, isFetching: isLoading } = api.wikios.advancedSearch.useQuery(
+  const { data: searchData, isFetching: isLoading } = api.wikios.typeahead.useQuery(
     { query: deferredQuery, limit: 8 },
     {
-      enabled: isOpen && deferredQuery.length >= 1,
+      enabled: isOpen && deferredQuery.length >= MIN_QUERY_LENGTH,
       staleTime: 60_000,
     }
   );
@@ -99,8 +103,7 @@ export function HeroSpotlightSearch({
   const handleCreatePage = useCallback(
     (rawTitle: string) => {
       setIsOpen(false);
-      const encodedTitle = encodeURIComponent(rawTitle.trim().replace(/ /g, "_"));
-      router.push(withBasePath(`/wiki/${encodedTitle}/edit?mode=visual`));
+      router.push(withBasePath(pageEditHref(rawTitle.trim(), null, { mode: "visual" })));
     },
     [router]
   );
@@ -108,7 +111,7 @@ export function HeroSpotlightSearch({
   const navigateToSearchPage = useCallback(
     (searchTerms: string) => {
       setIsOpen(false);
-      router.push(withBasePath(`/wiki/search?q=${encodeURIComponent(searchTerms)}`));
+      router.push(withBasePath(`/util/search?q=${encodeURIComponent(searchTerms)}`));
     },
     [router]
   );
@@ -274,7 +277,9 @@ export function HeroSpotlightSearch({
               </div>
             ) : results.length === 0 && query.trim().length > 0 ? (
               <div className="text-label-secondary text-footnote py-5 text-center">
-                No matching articles. Press Enter or click above to create it.
+                {query.trim().length < MIN_QUERY_LENGTH
+                  ? "Keep typing to search articles…"
+                  : "No matching articles. Press Enter or click above to create it."}
               </div>
             ) : (
               <div className="max-h-[340px] space-y-0.5 overflow-y-auto">

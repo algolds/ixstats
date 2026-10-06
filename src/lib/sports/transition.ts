@@ -7,6 +7,7 @@ import { persistSeasonSchedule } from "./scheduler";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 import { clamp } from "~/lib/utils";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 
 type Prisma =
   | PrismaClient
@@ -771,7 +772,7 @@ async function recordWorldCupFinal(
       card: {
         title: `${winnerName} World Cup Season ${seasonNumber} Champions`,
         description: `Commemorative trophy card awarded for winning the WAFF World Cup in Season ${seasonNumber}.`,
-        artwork: "https://ixwiki.com/worldcup-trophy.png",
+        artwork: mediaWikiImageUrl("/worldcup-trophy.png"),
         rarity: "LEGENDARY",
         season: seasonNumber,
         stats: { champion: 100, worldcup: 1 },
@@ -934,11 +935,10 @@ export async function transitionToNextStage(prisma: Prisma, seasonId: string): P
       await createBrackets(prisma, seasonId, nextStage.id, crossDivisionPairings(standings));
     }
   } else {
-    // Standard top-K qualifiers (e.g. top 4 for Golden Box)
+    // Standard top-K qualifiers (e.g. top 4 for Golden Box); a bracket plays 1 vs 4, 2 vs 3 (or a single final)
     const qualified = standings.map((s: any) => s.teamId).slice(0, nextStage.teams || 4);
 
     if (isBracket) {
-      // 1 vs 4, 2 vs 3 (or a single final)
       const pairings: Array<[string, string]> =
         qualified.length >= 4
           ? [

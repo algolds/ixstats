@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useState, useEffect } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -10,7 +10,12 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
-import { getArticleRoute, isNonArticlePath } from "~/lib/wiki-os/article-route";
+import {
+  getArticleRoute,
+  isNonArticlePath,
+  type ArticleView,
+} from "~/lib/wiki-os/article-route";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
   Popover,
@@ -23,14 +28,20 @@ import {
 // Sibling component imports
 import { WikiPageActions } from "./WikiPageActions";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
-import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
+import { useMountOnFirstOpen } from "./useMountOnFirstOpen";
+
+// A dialog nobody has opened when the page paints: fetched the first time it is opened.
+const CreatePageModal = dynamic(() => import("./CreatePageModal").then((m) => m.CreatePageModal), {
+  ssr: false,
+});
 
 export function WikiOSLayout({
   title,
   hideTitleHeading = false,
   readOnly,
   inspector = false,
+  articleView = "read",
   children,
 }: {
   title?: string;
@@ -42,6 +53,8 @@ export function WikiOSLayout({
    * Every other wiki page gives the gutter back and runs the full content width.
    */
   inspector?: boolean;
+  /** The view of the page its path does not say (`?action=edit|history` on /wiki/<title>). */
+  articleView?: ArticleView;
   children: ReactNode;
 }) {
   useWikiOSShortcuts(readOnly);
@@ -49,6 +62,7 @@ export function WikiOSLayout({
   const { articleTitle } = useWikiContext();
   const pathname = usePathname();
   const [createPageOpen, setCreatePageOpen] = useState(false);
+  const createPageMounted = useMountOnFirstOpen(createPageOpen);
 
   // Check URL params to auto-open page creation modal
   useEffect(() => {
@@ -96,11 +110,11 @@ export function WikiOSLayout({
 
   const cleanPath = stripBasePath(pathname);
   // Another wiki's page is read-only: no tabs, and none of the article's own tools.
-  const articleRoute = readOnly ? null : getArticleRoute(cleanPath);
+  const articleRoute = readOnly ? null : getArticleRoute(cleanPath, articleView);
   const hasArticleTools = !(readOnly || isMainPage || isNonArticlePath(cleanPath));
 
   const tabs = articleRoute && (
-    <WikiArticleTabs slug={articleRoute.slug} active={articleRoute.tab} canEdit={isSignedIn} />
+    <WikiArticleTabs title={articleRoute.title} active={articleRoute.tab} canEdit={isSignedIn} />
   );
   const actions = (
     <WikiPageActions
@@ -151,17 +165,19 @@ export function WikiOSLayout({
         </Popover>
 
         <div className="text-label-secondary text-footnote flex items-center justify-center gap-4 font-[var(--wikios-font-ui)]">
-          <Link href="/terms" className="hover:text-yellow transition-colors">
+          <a href={ixstatesHref("/terms")} className="hover:text-yellow transition-colors">
             Terms of service
-          </Link>
+          </a>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-yellow transition-colors">
+          <a href={ixstatesHref("/privacy")} className="hover:text-yellow transition-colors">
             Privacy policy
-          </Link>
+          </a>
         </div>
       </footer>
 
-      <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      {createPageMounted && (
+        <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      )}
     </div>
   );
 }

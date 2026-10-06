@@ -16,11 +16,14 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface ArticleCompanionHUDProps {
   contentHtml: string;
   lastModified?: string | null;
   authorInfo?: ArticleAuthorInfo | null;
+  /** Authorship is on its way: its rows' place is held, so the cards below do not drop when it arrives. */
+  authorsPending?: boolean;
   categories?: string[];
   awardsData?: any;
   marginThreadsCount?: number;
@@ -101,7 +104,9 @@ function IxWikiPageTools({
 const userHref = (name: string) =>
   withBasePath(`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`);
 
-const shortDate = new Intl.DateTimeFormat(undefined, {
+// One locale and time zone, so the server's date and the browser's are the same text.
+const shortDate = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
   month: "short",
   day: "numeric",
   year: "numeric",
@@ -246,11 +251,13 @@ function ProvenanceCapsule({
   contentHtml,
   lastModified,
   authorInfo,
+  authorsPending,
   hasLoreward,
 }: {
   contentHtml: string;
   lastModified?: string | null;
   authorInfo?: ArticleAuthorInfo | null;
+  authorsPending?: boolean;
   hasLoreward?: boolean;
 }) {
   const { wordCount, readingTime } = useMemo(() => {
@@ -311,6 +318,15 @@ function ProvenanceCapsule({
           weight="font-medium"
         />
 
+        {authorsPending && (
+          <div aria-hidden="true" className="border-separator min-h-42 space-y-2.5 border-t pt-2.5">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        )}
+
         {others.length > 0 && (
           <ContributorList
             contributors={others}
@@ -365,6 +381,7 @@ export function ArticleCompanionHUD({
   contentHtml,
   lastModified,
   authorInfo,
+  authorsPending = false,
   categories = [],
   awardsData,
   marginThreadsCount = 0,
@@ -386,6 +403,7 @@ export function ArticleCompanionHUD({
         contentHtml={contentHtml}
         lastModified={lastModified}
         authorInfo={authorInfo}
+        authorsPending={authorsPending}
         hasLoreward={awardsData?.hasLoreward}
       />
 
@@ -408,7 +426,7 @@ export function ArticleCompanionHUD({
             {categoryNames.map((name) => (
               <Link
                 key={name}
-                href={`/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`}
+                href={withBasePath(`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
                 className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
               >
                 {name}

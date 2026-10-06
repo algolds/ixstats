@@ -179,6 +179,29 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/wiki-os/services/auto-sync-service")).runAutoSyncCycle,
   },
   {
+    // Applies the outbox of WikiOS writes (saves, moves, deletes, protections) to classic MediaWiki. The lock is
+    // shared with the in-process run a save kicks (mirror-outbox.ts MIRROR_LOCK_NAME): never rename one alone.
+    name: "wiki-mirror",
+    defaultSchedule: "* * * * *",
+    lockName: "wiki-mirror",
+    // Longer than a cycle can take (it starts nothing after 50 s, and an attempt is cut off after 6 minutes: see
+    // mirror-worker.ts MAX_CYCLE_MS / LOCK_TIMEOUT_MS, which a test keeps in step), so the lock never expires mid-attempt.
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/lib/wiki-os/services/mirror-worker",
+    exportName: "runMirrorCycle",
+    load: async () => (await import("~/lib/wiki-os/services/mirror-worker")).runMirrorCycle,
+  },
+  {
+    // Renders the articles a changed template (or an import) left stale, two at a time, in the background.
+    name: "wiki-render-stale",
+    defaultSchedule: "* * * * *",
+    lockName: "wiki-render-stale",
+    timeoutMs: 55_000,
+    modulePath: "~/lib/wiki-os/services/render-service",
+    exportName: "renderStaleBatch",
+    load: async () => (await import("~/lib/wiki-os/services/render-service")).renderStaleBatch,
+  },
+  {
     // Once per new IxTime year, remind each owned country to set that year's budget (MC-1).
     name: "budget-year-rollover",
     defaultSchedule: "41 * * * *",

@@ -1,7 +1,8 @@
-/** The ixwiki article title a URL points at, or null. */
+import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
+
+/** The ixwiki article title a URL points at (on the configured wiki host), or null. */
 export function wikiTitleFromUrl(url: string | null | undefined): string | null {
-  const match = url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-  return match ? decodeURIComponent(match[1]!).replace(/_/g, " ") : null;
+  return wikiTitleFromArticleUrl(url);
 }
 
 /** The forum thread id a URL points at, or null. */

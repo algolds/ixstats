@@ -39,8 +39,6 @@ export const env = createEnv({
     RATE_LIMIT_WINDOW_MS: z.string().optional().default("60000"),
     // Performance & Optimization
     ENABLE_COMPRESSION: z.string().optional().default("true"),
-    // IxWiki Local Path (for same-server optimization)
-    IXWIKI_LOCAL_PATH: z.string().optional(),
     // NationStates verification secret (required for NS nation verification)
     NS_VERIFICATION_SECRET: z.string().optional(),
     // XenForo Forum API Configuration
@@ -48,12 +46,6 @@ export const env = createEnv({
     XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
     // HMAC key for forum account verification codes (falls back to CRON_SECRET when unset)
     FORUM_VERIFICATION_SECRET: z.string().optional(),
-    // IxWiki MySQL direct access (for wiki-bridge.ts read queries)
-    IXWIKI_DB_HOST: z.string().optional().default("localhost"),
-    IXWIKI_DB_PORT: z.coerce.number().optional().default(3306),
-    IXWIKI_DB_USER: z.string().optional().default("ixwiki"),
-    IXWIKI_DB_PASSWORD: z.string().optional(),
-    IXWIKI_DB_NAME: z.string().optional().default("ixwiki"),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -73,6 +65,12 @@ export const env = createEnv({
             .string()
             .min(32, "WIKI_SYNC_WEBHOOK_SECRET must be at least 32 characters in production")
         : z.string().optional(),
+    // HMAC key for WikiOS api.php sessions and tokens (src/lib/wiki-os/api-compat/auth.ts). Optional, and any
+    // string is accepted here, on purpose: a missing or too short key must never stop the app from starting.
+    // api.php treats a value under 32 characters as unset: it answers `sessionsecretmissing` to a login, a login
+    // token and any request that carries a session cookie (it never signs or accepts one with a fallback or
+    // short key), logs one warning, and keeps serving anonymous reads.
+    WIKIOS_API_SESSION_SECRET: z.string().optional(),
     // cron-runner.mjs job allowlist: comma-separated names from src/server/cron/jobs.ts, or "*".
     // Unset/empty schedules nothing.
     CRON_ENABLED_JOBS: z.string().optional(),
@@ -81,21 +79,27 @@ export const env = createEnv({
     WS_ALLOWED_ORIGINS: z.string().optional(),
     // System owner Clerk IDs (comma-separated) - loaded from env for security
     SYSTEM_OWNER_IDS: z.string().optional(),
-    // WikiOS MediaWiki Bot Username
-    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional().default("Heku@WikiOS"),
+    // The mirror's MediaWiki bot login, "<Account>@<bot name>" (Special:BotPasswords). No default: without it the
+    // mirror has no account to write as, so its jobs fail (it never writes anonymously, csrf-cache.ts). It must be
+    // the dedicated `WikiOSMirror` account, in the `wikios-mirror` group (plan 417's LocalSettings snippet), with
+    // the `import`, `importupload`, `edit`, `bot`, `move`, `delete`, `undelete` and `protect` grants.
+    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional(),
     // Declared for visibility; call sites still read process.env directly (plan 339).
     // MediaWiki bot password (lgpassword) for the WikiOS bot login (csrf-cache.ts)
     WIKIOS_MEDIAWIKI_BOT_TOKEN: z.string().optional(),
-    // MediaWiki api.php URL used for WikiOS writes and CSRF tokens
+    // MediaWiki api.php URL the mirror logs in to and writes through (default: WIKIOS_MEDIAWIKI_INTERNAL_URL, else the public api.php)
     WIKIOS_MEDIAWIKI_API: z.string().optional(),
-    // Internal (same-server) ixwiki api.php URL that overrides the public one for reads
+    // Internal (same-server) ixwiki api.php URL that overrides the public one for every server-side call: renders, reads and the mirror's writes
     WIKIOS_MEDIAWIKI_INTERNAL_URL: z.string().optional(),
     // iiwiki api.php proxy URL that overrides the default iiwiki endpoint
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
-    // "true" stops WikiOS from queueing background MediaWiki sync jobs (sync-worker.ts)
+    // TemplateStyles <style> in article HTML: on when unset, empty, "1", "true", "on" or "yes"; ANY other value ("0", "off", a typo) removes every <style> (the pre-plan-415 behaviour): the emergency lever if a CSS bypass is reported. config.ts reads it once, and it is part of the sanitizer fingerprint
+    WIKIOS_TEMPLATESTYLES: z.string().optional(),
+    // "true" stops the mirror worker (services/mirror-worker.ts): outbox jobs accumulate and nothing is lost
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
-    // Cloudflare Turnstile secret for verifying WikiOS challenge tokens
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().optional(),
+    // WikiOS v1 switch, off when unset: WikiOS stays read-only (no edits, uploads, imports, api.php, mirror,
+    // render refresh or parked revisions) until the cutover turns it on. lib/wiki-os/v1-switch.ts reads it.
+    WIKIOS_V1_ENABLED: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
     CLOUDFLARE_API_TOKEN: z.string().optional(),
     CLOUDFLARE_ZONE_ID: z.string().optional(),
@@ -143,8 +147,8 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_PATH: z.string().optional().default(""),
     // If you need the bot URL on the client side for direct API calls:
     NEXT_PUBLIC_IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
-    // MediaWiki API URL for country data and flags
-    NEXT_PUBLIC_MEDIAWIKI_URL: z.string().url().optional().default("https://ixwiki.com/"),
+    // Public origin of the wiki; `src/lib/wiki-os/config.ts` owns the default and every reader of it
+    NEXT_PUBLIC_MEDIAWIKI_URL: z.string().url().optional(),
     // Clerk Authentication Configuration (Client-side) - Required in production
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NODE_ENV === "production"
@@ -162,6 +166,10 @@ export const env = createEnv({
     NEXT_PUBLIC_WS_PORT: z.string().optional(),
     // "true" for the IxWorld standalone build (maps.ixwiki.com): empty base path
     NEXT_PUBLIC_IXWORLD_STANDALONE: z.string().optional(),
+    // "true" for the WikiOS standalone build (ixwiki.com/wiki/*): empty base path, other paths go to IxStates
+    NEXT_PUBLIC_WIKIOS_STANDALONE: z.enum(["true", "false"]).optional(),
+    // IxStates base URL that the WikiOS standalone build redirects non-wiki paths to; required there, no default
+    NEXT_PUBLIC_IXSTATES_URL: z.string().url().optional(),
     // Map glyph (font PBF) URL template that overrides the default
     NEXT_PUBLIC_MAP_GLYPHS_URL: z.string().optional(),
     // "true" grants MyCountry Premium features to every user (test builds; keep off in production)
@@ -199,20 +207,12 @@ export const env = createEnv({
     RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
     // Performance
     ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
-    // IxWiki Local Path
-    IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
     // NationStates
     NS_VERIFICATION_SECRET: process.env.NS_VERIFICATION_SECRET,
     // XenForo Forum
     XENFORO_API_KEY: process.env.XENFORO_API_KEY,
     XENFORO_API_URL: process.env.XENFORO_API_URL,
     FORUM_VERIFICATION_SECRET: process.env.FORUM_VERIFICATION_SECRET,
-    // IxWiki MySQL
-    IXWIKI_DB_HOST: process.env.IXWIKI_DB_HOST,
-    IXWIKI_DB_PORT: process.env.IXWIKI_DB_PORT,
-    IXWIKI_DB_USER: process.env.IXWIKI_DB_USER,
-    IXWIKI_DB_PASSWORD: process.env.IXWIKI_DB_PASSWORD,
-    IXWIKI_DB_NAME: process.env.IXWIKI_DB_NAME,
     NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,
@@ -220,6 +220,7 @@ export const env = createEnv({
     APP_URL: process.env.APP_URL,
     CRON_SECRET: process.env.CRON_SECRET,
     WIKI_SYNC_WEBHOOK_SECRET: process.env.WIKI_SYNC_WEBHOOK_SECRET,
+    WIKIOS_API_SESSION_SECRET: process.env.WIKIOS_API_SESSION_SECRET,
     CRON_ENABLED_JOBS: process.env.CRON_ENABLED_JOBS,
     WS_ALLOWED_ORIGINS: process.env.WS_ALLOWED_ORIGINS,
     SYSTEM_OWNER_IDS: process.env.SYSTEM_OWNER_IDS,
@@ -228,8 +229,9 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_API: process.env.WIKIOS_MEDIAWIKI_API,
     WIKIOS_MEDIAWIKI_INTERNAL_URL: process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL,
     IIWIKI_DEV_PROXY_URL: process.env.IIWIKI_DEV_PROXY_URL,
+    WIKIOS_TEMPLATESTYLES: process.env.WIKIOS_TEMPLATESTYLES,
     SKIP_MEDIAWIKI_SYNC: process.env.SKIP_MEDIAWIKI_SYNC,
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+    WIKIOS_V1_ENABLED: process.env.WIKIOS_V1_ENABLED,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     BOT_API_KEY: process.env.BOT_API_KEY,
@@ -256,6 +258,8 @@ export const env = createEnv({
     NEXT_PUBLIC_ENABLE_WEBSOCKET: process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET,
     NEXT_PUBLIC_WS_PORT: process.env.NEXT_PUBLIC_WS_PORT,
     NEXT_PUBLIC_IXWORLD_STANDALONE: process.env.NEXT_PUBLIC_IXWORLD_STANDALONE,
+    NEXT_PUBLIC_WIKIOS_STANDALONE: process.env.NEXT_PUBLIC_WIKIOS_STANDALONE,
+    NEXT_PUBLIC_IXSTATES_URL: process.env.NEXT_PUBLIC_IXSTATES_URL,
     NEXT_PUBLIC_MAP_GLYPHS_URL: process.env.NEXT_PUBLIC_MAP_GLYPHS_URL,
     NEXT_PUBLIC_PREMIUM_FOR_ALL: process.env.NEXT_PUBLIC_PREMIUM_FOR_ALL,
   },

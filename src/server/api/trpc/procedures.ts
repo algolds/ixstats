@@ -17,6 +17,8 @@ import {
   lightMutationRateLimit,
   perProcedureMutationRateLimit,
   publicRateLimit,
+  readOnlyRateLimit,
+  wikiReadRateLimit,
   standardCacheMiddleware,
   staticCacheMiddleware,
 } from "./middleware";
@@ -65,6 +67,11 @@ export const rateLimitedMutationProcedure = protectedProcedure.use(perProcedureM
 export const premiumMutationProcedure = premiumProcedure.use(perProcedureMutationRateLimit);
 
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
+/** Signed-in reads that cost the server something (previews, credentials lists), on the read-only bucket. */
+export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
+
+/** Public article reads, on their own generous `wiki_read` bucket (see `wikiReadRateLimit`). */
+export const wikiReadProcedure = publicProcedure.use(wikiReadRateLimit);
 
 // Cached procedure variants
 export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);

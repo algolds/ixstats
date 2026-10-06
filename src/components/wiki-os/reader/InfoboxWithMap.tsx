@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -20,9 +21,11 @@ const CountryMapEmbed = dynamic(
 interface InfoboxWithMapProps {
   infoboxHtml: string;
   articleTitle: string;
+  /** The id of the element holding the infobox's HTML (lean mode reads it back from there). */
+  markupId?: string;
 }
 
-export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProps) {
+export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxWithMapProps) {
   const { data: countries } = api.countries.getSelectList.useQuery(
     { search: articleTitle, limit: 5 },
     { staleTime: 10 * 60 * 1000 }
@@ -46,10 +49,16 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
   );
 
   const blurbs = blurbData?.pages.flatMap((p) => p.responses) ?? [];
+  // a stable object: a new one each render would write the infobox's HTML (and reload its picture) again
+  const infoboxMarkup = useMemo(() => ({ __html: infoboxHtml }), [infoboxHtml]);
 
   return (
     <aside className="wikios-infobox rounded-row border-separator bg-surface border">
-      <div dangerouslySetInnerHTML={{ __html: infoboxHtml }} />
+      <div
+        id={markupId}
+        className={ARTICLE_STYLE_ROOT_CLASS}
+        dangerouslySetInnerHTML={infoboxMarkup}
+      />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">
           <CountryMapEmbed
@@ -67,14 +76,14 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
           {blurbs.map((r) => (
             <Link
               key={r.id}
-              href={withBasePath(`/blurbs/${r.prompt.slug}`)}
+              href={ixstatesHref(`/blurbs/${r.prompt.slug}`)}
               className="wikios-infobox-blurb-item"
             >
               <span className="wikios-infobox-blurb-prompt">{r.prompt.title}</span>
               <span className="wikios-infobox-blurb-content">{r.content}</span>
             </Link>
           ))}
-          <Link href={withBasePath("/blurbs")} className="wikios-infobox-blurbs-more">
+          <Link href={ixstatesHref("/blurbs")} className="wikios-infobox-blurbs-more">
             View all blurbs →
           </Link>
         </div>

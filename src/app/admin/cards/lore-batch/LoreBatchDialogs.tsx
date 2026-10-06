@@ -31,6 +31,7 @@ import {
 } from "~/components/ui/dialog";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 import type { ArtworkPreview, BatchCandidate } from "./types";
 
 type Tone = "red" | "yellow" | "purple";
@@ -44,11 +45,6 @@ const TONE_ICON: Record<Tone, string> = {
   red: "text-red",
   yellow: "text-yellow",
   purple: "text-purple",
-};
-
-const WIKI_ARTICLE_URL: Record<string, string> = {
-  ixwiki: "https://ixwiki.com/wiki/",
-  iiwiki: "https://iiwiki.com/wiki/",
 };
 
 const SOURCE_OPTIONS = [
@@ -176,7 +172,10 @@ export function ArtworkPreviewDialog({
             <div className="border-separator bg-surface flex items-center justify-between border-t px-6 py-4">
               {preview.wikiSource ? (
                 <a
-                  href={`${WIKI_ARTICLE_URL[preview.wikiSource] ?? WIKI_ARTICLE_URL.ixwiki}${encodeURIComponent(preview.title.replace(/ /g, "_"))}`}
+                  href={publicArticleUrl(
+                    preview.title,
+                    preview.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
+                  )}
                   target="_blank"
                   rel="noreferrer"
                   className="text-tint text-caption inline-flex items-center gap-2 hover:underline"

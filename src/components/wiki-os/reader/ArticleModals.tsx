@@ -9,6 +9,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -62,7 +63,7 @@ export function QuickHistoryModal({
   onClose: () => void;
 }) {
   const { data, isLoading } = api.wikios.getHistory.useQuery(
-    { title, limit: 10 },
+    { title, limit: 10, includeParked: true }, // it badges a parked revision
     { staleTime: 30_000 }
   );
 
@@ -75,7 +76,7 @@ export function QuickHistoryModal({
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">
-          <Link href={withBasePath(`/wiki/history/${slug}`)} onClick={onClose}>
+          <Link href={withBasePath(`/util/history/${slug}`)} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View full history
           </Link>
@@ -116,6 +117,11 @@ export function QuickHistoryModal({
                   </span>
                 )}
               </div>
+              {rev.parked && (
+                <div className="pt-0.5">
+                  <ParkedBadge />
+                </div>
+              )}
               {rev.comment && (
                 <p className="text-footnote text-label-secondary line-clamp-2">{rev.comment}</p>
               )}
@@ -150,7 +156,7 @@ export function QuickBacklinksModal({
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">
-          <Link href={withBasePath(`/wiki/whatlinkshere/${slug}`)} onClick={onClose}>
+          <Link href={withBasePath(`/util/whatlinkshere/${slug}`)} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View all backlinks
           </Link>

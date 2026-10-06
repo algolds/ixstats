@@ -315,13 +315,20 @@ export const onomaNameBankRouter = createTRPCRouter({
         });
       } else {
         // Create new stash item
+        const contentType = input.type === "dictionary" ? "dictionary" : "name";
         item = await db.stashItem.upsert({
-          where: { stashId_pageTitle: { stashId: targetStashId, pageTitle } },
+          where: {
+            stashId_contentType_pageTitle: {
+              stashId: targetStashId,
+              contentType,
+              pageTitle,
+            },
+          },
           create: {
             stashId: targetStashId,
             pageTitle,
             pageSlug,
-            contentType: input.type === "dictionary" ? "dictionary" : "name",
+            contentType,
             note,
           },
           update: { note },
@@ -424,8 +431,9 @@ export const onomaNameBankRouter = createTRPCRouter({
 
       const item = await db.stashItem.upsert({
         where: {
-          stashId_pageTitle: {
+          stashId_contentType_pageTitle: {
             stashId: defaultStash.id,
+            contentType: "dictionary",
             pageTitle: title,
           },
         },

@@ -20,7 +20,7 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
           <Link
             key={country.id}
             href={withBasePath(
-              `/wiki/categories/${encodeURIComponent((country.name ?? "").replace(/ /g, "_"))}`
+              `/util/categories/${encodeURIComponent((country.name ?? "").replace(/ /g, "_"))}`
             )}
             className={cn(
               "group rounded-row relative flex items-center gap-3 overflow-hidden p-3",

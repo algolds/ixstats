@@ -15,7 +15,8 @@ import {
   type Path,
 } from "slate";
 import { nanoid } from "platejs";
-import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
+import { useNotify } from "~/hooks/useNotify";
+import { previewFailureReason, TEMPLATE_PREVIEW_STALE_MS } from "./template-preview";
 
 // The concrete plate editor type is deeply generic; the formatting layer only
 // relies on Slate runtime APIs, so we keep the ref loose.
@@ -301,6 +302,8 @@ export function useWikiVisualFormatting({
   const lastActiveFormatsRef = useRef<Set<string>>(new Set());
 
   const previewMutation = api.wikios.previewWikitext.useMutation();
+  const utils = api.useUtils();
+  const notify = useNotify();
 
   const withEditor = useCallback(
     <T>(fn: (editor: PlateEditorLike) => T): T | undefined => {
@@ -563,25 +566,36 @@ export function useWikiVisualFormatting({
         return;
       }
 
+      // The server renders the preview (sanitized, cached in Redis): the browser never asks MediaWiki itself.
+      // The template is the wikitext either way: when the preview cannot be had (rate limit, refused
+      // parameters, signed out) it is inserted without one, and the author is told.
+      const wikitext = buildWikitext(templateName, params);
+      let preview = "";
       try {
-        const wikitext = buildWikitext(templateName, params);
-        const preview = await renderTemplateCached(templateName, params);
-        insertNode({
-          type: "raw-html",
-          id: nanoid(),
-          kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
-          name: templateName,
-          params,
-          dataMw,
-          html: transclusionHtml(dataMw, preview.html),
-          wikitext,
-          children: [{ text: "" }],
-        });
+        preview = await utils.wikios.getTemplatePreview.fetch(
+          { template: templateName, params },
+          { staleTime: TEMPLATE_PREVIEW_STALE_MS }
+        );
       } catch (err) {
         console.error("Failed to render template:", err);
+        notify.warning(
+          "Template inserted without a preview",
+          `{{${templateName}}} is in the page as written. ${previewFailureReason(err)}`.trim()
+        );
       }
+      insertNode({
+        type: "raw-html",
+        id: nanoid(),
+        kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
+        name: templateName,
+        params,
+        dataMw,
+        html: preview ? transclusionHtml(dataMw, preview) : "",
+        wikitext,
+        children: [{ text: "" }],
+      });
     },
-    [insertNode]
+    [insertNode, utils, notify]
   );
 
   const handleInsertImage = useCallback(

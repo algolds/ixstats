@@ -56,7 +56,7 @@ export function AlphabetIndexBar({
             <Link
               key={cat.name}
               href={withBasePath(
-                `/wiki/categories/${encodeURIComponent(cat.name.replace(/ /g, "_"))}`
+                `/util/categories/${encodeURIComponent(cat.name.replace(/ /g, "_"))}`
               )}
               className={cn(
                 "group rounded-row relative flex flex-col justify-between overflow-hidden p-4",

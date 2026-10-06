@@ -18,6 +18,8 @@ import {
 } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { withBasePath } from "~/lib/base-path";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
@@ -78,13 +80,16 @@ export function SculptedEmblemHero({
   const [chronicleIndex, setChronicleIndex] = useState(0);
   const reduceMotion = useReducedMotion();
 
-  const articleCountStr = siteStats?.articles
-    ? `${siteStats.articles.toLocaleString()}+`
-    : "1,400+";
+  // one object per HTML: a new one each render would write the featured article's DOM again (React 19)
+  const featuredMarkup = useHtmlMarkup(featuredArticleHtml ?? "");
 
+  // The count is what the database holds; without it the placeholder simply says "articles"
+  const articleCount = siteStats?.articles;
   const searchPlaceholders = useMemo(
-    () => [`Search ${articleCountStr} articles...`],
-    [articleCountStr]
+    () => [
+      articleCount ? `Search ${articleCount.toLocaleString()}+ articles...` : "Search articles...",
+    ],
+    [articleCount]
   );
 
   return (
@@ -179,7 +184,7 @@ export function SculptedEmblemHero({
 
         {/* Action 3: Resources */}
         <Link
-          href={withBasePath("/wiki/repository")}
+          href={withBasePath("/util/repository")}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -482,8 +487,11 @@ export function SculptedEmblemHero({
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
+                className={cn(
+                  "wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed",
+                  ARTICLE_STYLE_ROOT_CLASS
+                )}
+                dangerouslySetInnerHTML={featuredMarkup}
               />
             )}
           </FeaturedArticleCard>

@@ -1,20 +1,19 @@
 /**
- * Canonical WikiAST to wikitext serializer.
+ * src/lib/wiki-os/wikitext/serializer.ts — Canonical WikiAST to Wikitext Serializer.
  *
- * Guaranteed: semantic equivalence, structural equivalence, full parameter preservation,
+ * Guaranteed: Semantic equivalence, structural equivalence, full parameter preservation,
  * raw-node verbatim preservation (Invariant 4), and deterministic output.
  */
 
-import type { WikiParagraphBlock } from "../core/wiki-ast";
 import type {
   WikiDocument,
   WikiBlockNode,
   WikiInlineNode,
-  WikiTextNode,
   WikiParameter,
   WikiTemplateNode,
   WikiInfoboxBlock,
   WikiRawNode,
+  WikiHeadingBlock,
   WikiTableBlock,
   ListBlock,
   QuoteBlock,
@@ -22,9 +21,11 @@ import type {
   MediaBlock,
   WikiMapEmbedBlock,
   WikiParserFunctionBlock,
-  WikiHeadingBlock,
-  CitationInline,
+  WikiInlineTemplateNode,
+  WikiTextNode,
 } from "./types";
+import { buildFileLink } from "./file-params";
+import { joinMarkedSegments, type MarkedSegment } from "./quote-marks";
 
 export function serializeTemplateToWikitext(template: {
   templateName?: string;
@@ -40,230 +41,323 @@ export function serializeTemplateToWikitext(template: {
   const positional = template.positional || [];
   const paramList = template.paramList;
 
-  // Numeric keys mirror the positional values, so only named params are emitted from `params`.
-  const named = Object.entries(params).filter(([key]) => !/^\d+$/.test(key));
-  if (named.length === 0 && positional.length === 0) return `{{${name}}}`;
+  // If there are no parameters, emit single-line {{Name}}
+  const paramKeys = Object.keys(params).filter((k) => !/^\d+$/.test(k));
+  if (paramKeys.length === 0 && positional.length === 0) {
+    return `{{${name}}}`;
+  }
 
+  // Check if multiline formatting is warranted
   const isMultiline =
-    named.length >= 2 ||
+    paramKeys.length >= 2 ||
     name.toLowerCase().startsWith("infobox") ||
     Object.values(params).some((v) => v.includes("\n"));
 
-  if (!isMultiline) {
-    const args = [...positional.map((v) => `|${v}`), ...named.map(([k, v]) => `|${k}=${v}`)];
-    return `{{${name}${args.join("")}}}`;
+  if (isMultiline) {
+    const lines: string[] = [`{{${name}\n`];
+
+    if (paramList && paramList.length > 0) {
+      for (const p of paramList) {
+        lines.push(p.isPositional ? `| ${p.value}\n` : `| ${p.key} = ${p.value}\n`);
+      }
+    } else {
+      // Positional first
+      for (const val of positional) {
+        lines.push(`| ${val}\n`);
+      }
+      // Named params
+      for (const [k, v] of Object.entries(params)) {
+        if (/^\d+$/.test(k)) continue; // skip positional mirror
+        lines.push(`| ${k} = ${v}\n`);
+      }
+    }
+
+    lines.push("}}");
+    return lines.join("");
   }
 
-  const lines = paramList?.length
-    ? paramList.map((p) => (p.isPositional ? `| ${p.value}` : `| ${p.key} = ${p.value}`))
-    : [...positional.map((v) => `| ${v}`), ...named.map(([k, v]) => `| ${k} = ${v}`)];
-  return `{{${name}\n${lines.map((line) => `${line}\n`).join("")}}}`;
+  // Single-line compact
+  const pieces: string[] = [`{{${name}`];
+  for (const val of positional) {
+    pieces.push(`|${val}`);
+  }
+  for (const [k, v] of Object.entries(params)) {
+    if (/^\d+$/.test(k)) continue;
+    pieces.push(`|${k}=${v}`);
+  }
+  pieces.push("}}");
+  return pieces.join("");
 }
-
-const INLINE_TYPES = new Set([
-  "wiki-link",
-  "external-link",
-  "chip-coord",
-  "chip-engine-data",
-  "citation-ref",
-  "inline-template",
-]);
 
 function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {
-  const type = (node as { type?: string }).type;
-  return type === undefined || type === "text" || INLINE_TYPES.has(type);
+  if (!("type" in node) || (node as any).type === "text") return true;
+  const type = (node as any).type;
+  return (
+    type === "wiki-link" ||
+    type === "external-link" ||
+    type === "wiki-file" ||
+    type === "chip-coord" ||
+    type === "chip-engine-data" ||
+    type === "citation-ref" ||
+    type === "inline-template"
+  );
 }
 
-function isTextNode(node: WikiInlineNode): node is WikiTextNode {
-  const { type, text } = node as { type?: string; text?: unknown };
-  return typeof text === "string" && (type === undefined || type === "text");
-}
-
-const TEXT_WRAPPERS = [
-  ["code", "code"],
-  ["strikethrough", "s"],
-  ["underline", "u"],
-] as const;
-
-function serializeTextNode(node: WikiTextNode): string {
-  const quotes = "'".repeat((node.bold ? 3 : 0) + (node.italic ? 2 : 0));
-  let out = `${quotes}${node.text}${quotes}`;
-  for (const [flag, tag] of TEXT_WRAPPERS) {
-    if (node[flag]) out = `<${tag}>${out}</${tag}>`;
-  }
+/** `<code>`, `<s>`, `<u>`, `<sup>` and `<sub>` around a text node: marks with no quote syntax. */
+function withHtmlMarks(node: WikiTextNode, text: string): string {
+  let out = text;
+  if (node.code) out = `<code>${out}</code>`;
+  if (node.strikethrough) out = `<s>${out}</s>`;
+  if (node.underline) out = `<u>${out}</u>`;
+  if (node.superscript) out = `<sup>${out}</sup>`;
+  if (node.subscript) out = `<sub>${out}</sub>`;
   return out;
 }
 
-function serializeInlines(nodes: readonly WikiInlineNode[] | undefined): string {
-  return (nodes ?? []).map((node) => serializeInlineNodeToWikitext(node)).join("");
-}
-
-/** Children that may mix inline and block nodes, joined by `separator`. */
-function serializeMixed(
-  nodes: ReadonlyArray<WikiBlockNode | WikiInlineNode> | undefined,
-  separator = ""
-): string {
-  return (nodes ?? [])
-    .map((c) =>
-      isInlineNode(c)
-        ? serializeInlineNodeToWikitext(c as WikiInlineNode)
-        : serializeBlockNodeToWikitext(c as WikiBlockNode)
-    )
-    .join(separator);
-}
-
-function serializeCitation(n: CitationInline): string {
-  if (n.rawWikitext) return n.rawWikitext;
-  const hasText = Boolean((n.children?.[0] as { text?: string } | undefined)?.text);
-  if (n.name && !hasText) return `<ref name="${n.name}" />`;
-  const open = n.name ? `<ref name="${n.name}">` : "<ref>";
-  return `${open}${serializeInlines(n.children)}</ref>`;
-}
-
-function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
-  if (isTextNode(node)) return serializeTextNode(node);
-
-  switch (node.type) {
-    case "wiki-link":
-      return node.label && node.label !== node.target
-        ? `[[${node.target}|${node.label}]]`
-        : `[[${node.target}]]`;
-
-    case "external-link": {
-      const textChild = (node.children?.[0] as { text?: string } | undefined)?.text;
-      return textChild && textChild !== node.url ? `[${node.url} ${textChild}]` : `[${node.url}]`;
+/** The wikitext of an inline element, without the bold/italic state around it. */
+function inlineElementWikitext(typed: Exclude<WikiInlineNode, WikiTextNode>): string {
+  switch (typed.type) {
+    case "wiki-link": {
+      const n = typed as import("./types").WikiLinkInline;
+      if (n.label && n.label !== n.target) {
+        return `[[${n.target}|${n.label}]]`;
+      }
+      return `[[${n.target}]]`;
     }
 
-    case "chip-coord":
-      if (node.wikitext) return node.wikitext;
-      if (node.lat === undefined || node.lng === undefined) return "";
-      return `[[Coords:${node.lat},${node.lng}${node.label ? `|${node.label}` : ""}]]`;
+    case "external-link": {
+      const n = typed as import("./types").WikiExternalLinkInline;
+      const textChild = (n.children?.[0] as { text?: string } | undefined)?.text;
+      if (textChild && textChild !== n.url) {
+        return `[${n.url} ${textChild}]`;
+      }
+      return `[${n.url}]`;
+    }
 
-    case "chip-engine-data":
-      return node.wikitext || `[[${node.connector}:${node.slug}|${node.metric}]]`;
+    case "wiki-file": {
+      const n = typed as import("./types").WikiFileInline;
+      return buildFileLink(n.target, n.params, n.caption);
+    }
 
-    case "citation-ref":
-      return serializeCitation(node);
+    case "chip-coord": {
+      const n = typed as import("./types").CoordChipInline;
+      if (n.wikitext) return n.wikitext;
+      if (n.lat !== undefined && n.lng !== undefined) {
+        return n.label ? `[[Coords:${n.lat},${n.lng}|${n.label}]]` : `[[Coords:${n.lat},${n.lng}]]`;
+      }
+      return "";
+    }
 
-    case "inline-template":
-      return (
-        node.raw ||
-        node.rawWikitext ||
-        serializeTemplateToWikitext({
-          templateName: node.templateName || node.name,
-          params: node.params,
-          paramList: node.paramList,
-          positional: node.positional,
-        })
-      );
+    case "chip-engine-data": {
+      const n = typed as import("./types").EngineDataChipInline;
+      if (n.wikitext) return n.wikitext;
+      return `[[${n.connector}:${n.slug}|${n.metric}]]`;
+    }
+
+    case "citation-ref": {
+      const n = typed as import("./types").CitationInline;
+      if (n.rawWikitext) return n.rawWikitext;
+      if (
+        n.name &&
+        (!n.children ||
+          n.children.length === 0 ||
+          !(n.children[0] as { text?: string } | undefined)?.text)
+      ) {
+        return `<ref name="${n.name}" />`;
+      }
+      const refInner = n.children ? serializeInlineNodes(n.children) : "";
+      return n.name ? `<ref name="${n.name}">${refInner}</ref>` : `<ref>${refInner}</ref>`;
+    }
+
+    case "inline-template": {
+      const n = typed as WikiInlineTemplateNode;
+      if (n.raw || n.rawWikitext) return n.raw || n.rawWikitext || "";
+      return serializeTemplateToWikitext({
+        templateName: n.templateName || n.name,
+        params: n.params,
+        paramList: n.paramList,
+        positional: n.positional,
+      });
+    }
 
     default:
       return "";
   }
 }
 
-function serializeMedia(mb: MediaBlock): string {
-  if (mb.wikitext) return mb.wikitext;
-  const parts = [`File:${mb.filename}`];
-  if (mb.align) parts.push(mb.align);
-  if (mb.width) parts.push(`${mb.width}px`);
-  if (mb.caption) parts.push(mb.caption);
-  return `[[${parts.join("|")}]]`;
+function inlineSegment(node: WikiInlineNode): MarkedSegment {
+  if ("text" in node && typeof (node as { text?: unknown }).text === "string" && (!("type" in node) || (node as any).type === "text")) {
+    const textNode = node as WikiTextNode;
+    return {
+      text: withHtmlMarks(textNode, textNode.text),
+      bold: Boolean(textNode.bold),
+      italic: Boolean(textNode.italic),
+      isText: true,
+    };
+  }
+  const typed = node as Exclude<WikiInlineNode, WikiTextNode>;
+  return {
+    text: inlineElementWikitext(typed),
+    bold: Boolean(typed.bold),
+    italic: Boolean(typed.italic),
+    isText: false,
+  };
 }
 
-function serializeTable(tb: WikiTableBlock): string {
-  if (tb.rawWikitext) return tb.rawWikitext;
-  const rows = (tb.children ?? []).flatMap((row) => [
-    "|-",
-    ...(row.children ?? []).map(
-      (cell) => `${cell.isHeader ? "!" : "|"} ${serializeMixed(cell.children)}`
-    ),
-  ]);
-  const caption = tb.caption ? [`|+ ${tb.caption}`] : [];
-  return [`{| class="wikitable"`, ...caption, ...rows, "|}"].join("\n");
+/** A run of inline nodes: bold and italic are written from the state across the whole run. */
+export function serializeInlineNodes(nodes: readonly WikiInlineNode[]): string {
+  return joinMarkedSegments(nodes.map(inlineSegment).filter((segment) => segment.text !== ""));
 }
 
-function serializeList(lb: ListBlock): string {
-  const defaultChar = lb.ordered ? "#" : "*";
-  return (lb.children ?? [])
-    .map((item) => {
-      const prefix = item.prefix || defaultChar.repeat(Math.max(1, item.level || 1));
-      return `${prefix} ${serializeMixed(item.children)}`;
-    })
-    .join("\n");
+export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
+  return serializeInlineNodes([node]);
 }
 
-function serializeQuote(qb: QuoteBlock): string {
-  const inner = serializeMixed(qb.children, "\n");
-  if (qb.author) return `{{Quote|${inner}|${qb.author}${qb.source ? `|${qb.source}` : ""}}}`;
-  return `<blockquote>\n${inner}\n</blockquote>`;
+/** Children of a list item, cell or quote: runs of inline nodes keep their marks, blocks serialize as blocks. */
+function serializeMixedChildren(children: readonly (WikiBlockNode | WikiInlineNode)[]): string {
+  const parts: string[] = [];
+  let run: WikiInlineNode[] = [];
+  const flush = (): void => {
+    if (run.length > 0) parts.push(serializeInlineNodes(run));
+    run = [];
+  };
+  for (const child of children) {
+    if (isInlineNode(child)) {
+      run.push(child as WikiInlineNode);
+    } else {
+      flush();
+      parts.push(serializeBlockNodeToWikitext(child as WikiBlockNode));
+    }
+  }
+  flush();
+  return parts.join("");
 }
-
-function serializeMapEmbed(me: WikiMapEmbedBlock): string {
-  if (me.wikitext) return me.wikitext;
-  const zoom = me.zoom ? `|zoom=${me.zoom}` : "";
-  const layer = me.layer ? `|layer=${me.layer}` : "";
-  return `[[MapEmbed:${me.lat},${me.lng}${zoom}${layer}]]`;
-}
-
-function serializeParserFunction(pfn: WikiParserFunctionBlock): string {
-  const raw = pfn.raw || pfn.rawWikitext;
-  if (raw) return raw;
-  const branches = (pfn.branches ?? []).map((b) => `|${b}`).join("");
-  return `{{${pfn.functionName}:${pfn.expression}${branches}}}`;
-}
-
-/** Block type aliases that serialize exactly like their canonical type. */
-const BLOCK_ALIASES: Record<string, string> = {
-  h2: "heading",
-  h3: "heading",
-  h4: "heading",
-  p: "paragraph",
-  ul: "list",
-  ol: "list",
-  blockquote: "quote",
-  hr: "divider",
-  "chip-mapembed": "map-embed",
-};
 
 export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
-  switch (BLOCK_ALIASES[node.type] ?? node.type) {
-    case "heading": {
-      const heading = node as WikiHeadingBlock;
-      const mark = "=".repeat(heading.level ?? 2);
-      return `${mark} ${serializeInlines(heading.children)} ${mark}`;
+  switch (node.type) {
+    case "heading":
+    case "h2":
+    case "h3":
+    case "h4": {
+      const level = (node as WikiHeadingBlock).level ?? 2;
+      const mark = "=".repeat(level);
+      const text = serializeInlineNodes((node.children ?? []) as WikiInlineNode[]);
+      return `${mark} ${text} ${mark}`;
     }
+
     case "paragraph":
-      return serializeInlines((node as WikiParagraphBlock).children);
+    case "p":
+      return serializeInlineNodes((node.children ?? []) as WikiInlineNode[]);
+
     case "infobox":
     case "template":
       return serializeTemplateToWikitext(node as WikiTemplateNode | WikiInfoboxBlock);
-    case "parser-function":
-      return serializeParserFunction(node as WikiParserFunctionBlock);
+
+    case "parser-function": {
+      const pfn = node as WikiParserFunctionBlock;
+      if (pfn.raw || pfn.rawWikitext) return pfn.raw || pfn.rawWikitext || "";
+      const branches = pfn.branches ? pfn.branches.map((b) => `|${b}`).join("") : "";
+      return `{{${pfn.functionName}:${pfn.expression}${branches}}}`;
+    }
+
     case "raw":
       return (node as WikiRawNode).raw || (node as WikiRawNode).rawWikitext || "";
-    case "media":
-      return serializeMedia(node as MediaBlock);
-    case "table":
-      return serializeTable(node as WikiTableBlock);
+
+    case "media": {
+      const mb = node as MediaBlock;
+      if (mb.wikitext) return mb.wikitext;
+      const parts = [`File:${mb.filename}`];
+      if (mb.align) parts.push(mb.align);
+      if (mb.width) parts.push(`${mb.width}px`);
+      if (mb.caption) parts.push(mb.caption);
+      return `[[${parts.join("|")}]]`;
+    }
+
+    case "table": {
+      const tb = node as WikiTableBlock;
+      if (tb.rawWikitext) return tb.rawWikitext;
+      let out = `{| class="wikitable"\n`;
+      if (tb.caption) out += `|+ ${tb.caption}\n`;
+      for (const row of tb.children || []) {
+        out += `|-\n`;
+        for (const cell of row.children || []) {
+          const prefix = cell.isHeader ? `! ` : `| `;
+          const cellText = serializeMixedChildren(cell.children || []);
+          out += `${prefix}${cellText}\n`;
+        }
+      }
+      out += `|}`;
+      return out;
+    }
+
     case "list":
-      return serializeList(node as ListBlock);
+    case "ul":
+    case "ol": {
+      const lb = node as ListBlock;
+      const defaultChar = lb.ordered ? "#" : "*";
+      return (
+        lb.children
+          ?.map((item: ListBlock["children"][number]) => {
+            const text = serializeMixedChildren(item.children || []);
+            const level = Math.max(1, item.level || 1);
+            const prefix = item.prefix || defaultChar.repeat(level);
+            return `${prefix} ${text}`;
+          })
+          .join("\n") ?? ""
+      );
+    }
+
     case "quote":
-      return serializeQuote(node as QuoteBlock);
-    case "code-block":
-      return `<pre>\n${(node as CodeBlock).code || ""}\n</pre>`;
+    case "blockquote": {
+      const qb = node as QuoteBlock;
+      // Inline children are one run of text; block children (paragraphs) are one per line.
+      const children: readonly (WikiBlockNode | WikiInlineNode)[] = qb.children ?? [];
+      const inner = children.some((c) => !isInlineNode(c))
+        ? children
+            .map((c) =>
+              isInlineNode(c)
+                ? serializeInlineNodeToWikitext(c as WikiInlineNode)
+                : serializeBlockNodeToWikitext(c as WikiBlockNode)
+            )
+            .join("\n")
+        : serializeInlineNodes(children as WikiInlineNode[]);
+      if (qb.author) {
+        return `{{Quote|${inner}|${qb.author}${qb.source ? `|${qb.source}` : ""}}}`;
+      }
+      return `<blockquote>\n${inner}\n</blockquote>`;
+    }
+
+    case "code-block": {
+      const cb = node as CodeBlock;
+      return `<pre>\n${cb.code || ""}\n</pre>`;
+    }
+
     case "divider":
+    case "hr":
       return "----";
+
     case "map-embed":
-      return serializeMapEmbed(node as WikiMapEmbedBlock);
+    case "chip-mapembed": {
+      const me = node as WikiMapEmbedBlock;
+      if (me.wikitext) return me.wikitext;
+      return `[[MapEmbed:${me.lat},${me.lng}${me.zoom ? `|zoom=${me.zoom}` : ""}${me.layer ? `|layer=${me.layer}` : ""}]]`;
+    }
+
     default:
       return "";
   }
 }
 
 export function astToWikitext(doc: WikiDocument): string {
-  return (doc.nodes ?? [])
-    .map((node) => serializeBlockNodeToWikitext(node))
-    .filter((serialized) => serialized !== "")
-    .join("\n\n");
+  if (!doc.nodes || doc.nodes.length === 0) return "";
+
+  const blocks: string[] = [];
+  for (const node of doc.nodes) {
+    const serialized = serializeBlockNodeToWikitext(node);
+    if (serialized !== "") {
+      blocks.push(serialized);
+    }
+  }
+
+  return blocks.join("\n\n");
 }

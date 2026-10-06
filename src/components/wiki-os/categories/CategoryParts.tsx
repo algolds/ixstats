@@ -39,7 +39,7 @@ export function CategoryMasthead({
       <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div className="max-w-2xl space-y-2">
           <Link
-            href={withBasePath("/wiki/categories")}
+            href={withBasePath("/util/categories")}
             className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 focus-visible:outline-tint inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <ArrowLeft
@@ -115,7 +115,7 @@ export function SubcategorySection({ subcategories }: { subcategories: CategoryM
           return (
             <Link
               key={m.title}
-              href={withBasePath(`/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+              href={withBasePath(`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
               className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint focus-visible:outline-tint facet-press inline-flex items-center gap-2 border px-4 py-2 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <Folder

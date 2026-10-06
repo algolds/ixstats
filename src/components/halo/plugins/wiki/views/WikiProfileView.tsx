@@ -3,6 +3,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { navigateWithBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useRouter } from "next/navigation";
 import {
   OpenBook as BookOpen,
@@ -25,7 +26,7 @@ import {
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { motion, AnimatePresence } from "motion/react";
 import type { PausedSession } from "../types";
 import { pageRefPath } from "~/lib/wiki-os/page-ref";
@@ -50,7 +51,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
   // Active cosmetics
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge?.icon ?? ""] || Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge?.icon);
 
   // API query
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -395,7 +396,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
@@ -408,7 +409,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/executive", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/executive"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
@@ -421,7 +422,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/diplomacy", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/diplomacy"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
@@ -434,7 +435,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/editor", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/editor"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
@@ -447,7 +448,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/vault", router);
+                  navigateWithBasePath(ixstatesHref("/vault"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
@@ -460,7 +461,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath("/mycountry/politics", router);
+                  navigateWithBasePath(ixstatesHref("/mycountry/politics"), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >

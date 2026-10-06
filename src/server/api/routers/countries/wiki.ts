@@ -153,7 +153,10 @@ async function fetchWikiSections(
   return null;
 }
 
-/** Fetch images from a country's wiki page with thumbnail URLs. */
+/**
+ * Fetch images from a country's wiki page with thumbnail URLs: IxWiki's page first, then iiwiki's (a
+ * page's images are looked up on the wiki the page belongs to, as its intro and sections are).
+ */
 async function fetchWikiPageImages(name: string): Promise<Array<{
   title: string;
   url: string;
@@ -161,12 +164,18 @@ async function fetchWikiPageImages(name: string): Promise<Array<{
   width: number;
   height: number;
 }> | null> {
-  try {
-    return await wikiBridgePageImages(name, { excludePatterns: EXCLUDED_IMAGE_PATTERNS });
-  } catch (err) {
-    console.error(`[Wiki] Error fetching page images for ${name}:`, err);
-    return null;
+  for (const wiki of ["ixwiki", "iiwiki"] as const) {
+    try {
+      const images = await wikiBridgePageImages(name, {
+        excludePatterns: EXCLUDED_IMAGE_PATTERNS,
+        wiki,
+      });
+      if (images && images.length > 0) return images;
+    } catch (err) {
+      console.error(`[Wiki] Error fetching page images for ${name} from ${wiki}:`, err);
+    }
   }
+  return null;
 }
 
 /**

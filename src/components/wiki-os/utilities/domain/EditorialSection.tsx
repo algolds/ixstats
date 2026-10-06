@@ -38,15 +38,13 @@ const TOOLS: UtilityTool[] = [
   },
   {
     id: "export",
-    title: "Portable MDX & JSON snapshot exporter",
+    title: "Page exporter",
     description:
-      "Download an article as Markdown with YAML frontmatter or as JSON. Opens the Main Page; change ?slug= for another article.",
+      "Download pages as a MediaWiki XML dump (export-0.11), with their full history if you are signed in.",
     legacyAlias: "Special:Export",
     icon: Download,
-    // The hub has no current article, so like the editor card it opens the Main Page (WK-15).
-    href: "/api/wiki/export?slug=Main_Page&format=json",
-    isExternal: true,
-    badge: "MDX / JSON",
+    href: "/util/export",
+    badge: "XML",
     color: "border-yellow/20 bg-yellow/10 text-yellow",
   },
   {

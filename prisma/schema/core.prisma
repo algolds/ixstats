@@ -946,6 +946,13 @@ model WikiAccountLink {
   token          String?
   tokenExpiresAt DateTime?
   verifiedAt     DateTime?
+  /// null = proven by the account's own token on its wiki user page; set to the admin's user id when an
+  /// admin confirmed the link (`adminVerify`). Pending wiki-username groups and blocks attach to a link
+  /// only when this is null or the verifier is a system owner (plan 409).
+  verifiedById   String?
+  /// The wiki account's registration date and edit count when the link was proven (autoconfirmed rule).
+  mwRegisteredAt DateTime?
+  mwEditCount    Int?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

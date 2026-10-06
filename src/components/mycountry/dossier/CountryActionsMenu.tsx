@@ -25,7 +25,6 @@ import {
 import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
-import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -34,6 +33,8 @@ import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import dynamic from "next/dynamic";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,13 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Card } from "~/components/ui/card";
+
+// The scheduler is a dialog nobody has opened yet when the menu mounts: its chunk is fetched when it is first
+// opened (plan 415, F19), not with every page that shows the menu (the wiki's sidebar widget does).
+const MeetingScheduler = dynamic(
+  () => import("~/components/executive/actions/MeetingScheduler").then((m) => m.MeetingScheduler),
+  { ssr: false }
+);
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -175,6 +183,7 @@ export function CountryActionsMenu({
   const router = useRouter();
   const [copiedLink, setCopiedLink] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
+  const schedulerMounted = useMountOnFirstOpen(schedulerOpen);
 
   const diplomacy = useCountryDiplomacyActions({
     viewerCountryId,
@@ -351,7 +360,7 @@ export function CountryActionsMenu({
           </div>
         </DialogContent>
       </Dialog>
-      {viewerCountryId && (
+      {viewerCountryId && schedulerMounted && (
         <MeetingScheduler
           countryId={viewerCountryId}
           open={schedulerOpen}

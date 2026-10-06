@@ -9,6 +9,8 @@
  *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+
 // oxlint-disable-next-line typescript/no-unused-vars
 export function buildCSPTemplate(standalone: boolean): string {
   const isDevelopment = process.env.NODE_ENV === "development";
@@ -30,7 +32,7 @@ export function buildCSPTemplate(standalone: boolean): string {
     isDevelopment ? `connect-src 'self' https: wss: ws:` : `connect-src 'self' https: wss:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
     `worker-src 'self' blob:`,
-    `media-src 'self' https://ixwiki.com data: blob:`,
+    `media-src 'self' ${mediaWikiOrigin()} data: blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

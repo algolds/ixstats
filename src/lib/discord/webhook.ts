@@ -61,12 +61,14 @@ class DiscordWebhookService {
   }
 
   /**
-   * Send a message to Discord
+   * Send a message to Discord. Resolves to whether Discord accepted it: false when the webhook is not
+   * configured or disabled, answered with an error, or could not be reached (it never throws; a caller that
+   * must know the message arrived, such as one that rate-limits itself by its last message, reads the result).
    */
-  async send(payload: DiscordWebhookPayload): Promise<void> {
+  async send(payload: DiscordWebhookPayload): Promise<boolean> {
     if (!this.enabled || !this.webhookUrl) {
       console.log("[Discord Webhook] Not configured or disabled, skipping notification");
-      return;
+      return false;
     }
 
     try {
@@ -81,31 +83,34 @@ class DiscordWebhookService {
 
       if (!response.ok) {
         console.error("[Discord Webhook] Failed to send:", response.statusText);
+        return false;
       }
+      return true;
     } catch (error) {
       console.error("[Discord Webhook] Error sending webhook:", error);
+      return false;
     }
   }
 
   /**
    * Send a simple text message
    */
-  async sendMessage(message: string): Promise<void> {
-    await this.send({ content: message });
+  async sendMessage(message: string): Promise<boolean> {
+    return this.send({ content: message });
   }
 
   /**
    * Send an embed message
    */
-  async sendEmbed(embed: DiscordEmbed): Promise<void> {
-    await this.send({ embeds: [embed] });
+  async sendEmbed(embed: DiscordEmbed): Promise<boolean> {
+    return this.send({ embeds: [embed] });
   }
 
   /**
    * Send production error alert
    */
-  async sendError(error: Error, context?: string): Promise<void> {
-    await this.sendEmbed({
+  async sendError(error: Error, context?: string): Promise<boolean> {
+    return this.sendEmbed({
       title: "🚨 Production Error",
       description: context || "An error occurred in production",
       color: 0xff0000, // Red
@@ -131,8 +136,8 @@ class DiscordWebhookService {
   /**
    * Send production deployment notification
    */
-  async sendDeployment(version: string, environment: string): Promise<void> {
-    await this.sendEmbed({
+  async sendDeployment(version: string, environment: string): Promise<boolean> {
+    return this.sendEmbed({
       title: "🚀 Deployment Complete",
       description: `IxStats has been deployed to ${environment}`,
       color: 0x00ff00, // Green
@@ -159,8 +164,8 @@ class DiscordWebhookService {
     title: string,
     description: string,
     fields?: Array<{ name: string; value: string; inline?: boolean }>
-  ): Promise<void> {
-    await this.sendEmbed({
+  ): Promise<boolean> {
+    return this.sendEmbed({
       title,
       description,
       color: 0x0099ff, // Blue
@@ -172,8 +177,8 @@ class DiscordWebhookService {
   /**
    * Send warning notification
    */
-  async sendWarning(title: string, message: string): Promise<void> {
-    await this.sendEmbed({
+  async sendWarning(title: string, message: string): Promise<boolean> {
+    return this.sendEmbed({
       title: `⚠️ ${title}`,
       description: message,
       color: 0xffa500, // Orange
@@ -184,8 +189,8 @@ class DiscordWebhookService {
   /**
    * Send success notification
    */
-  async sendSuccess(title: string, message: string): Promise<void> {
-    await this.sendEmbed({
+  async sendSuccess(title: string, message: string): Promise<boolean> {
+    return this.sendEmbed({
       title: `✅ ${title}`,
       description: message,
       color: 0x00ff00, // Green

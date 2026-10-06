@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import {
   HoverCard,
@@ -259,7 +260,7 @@ function domNodeToReact(
       return (
         <Link
           key={index}
-          href={withBasePath(href)}
+          href={ixstatesHref(href)}
           className={element.className || "text-tint cursor-pointer font-medium hover:underline"}
         >
           {renderChildren(element, missing)}
@@ -276,7 +277,7 @@ function domNodeToReact(
       return (
         <Link
           key={index}
-          href={withBasePath(href.replace(/^\/projects\/ixstates/, ""))}
+          href={ixstatesHref(href.replace(/^\/projects\/ixstates/, ""))}
           className={element.className}
         >
           {renderChildren(element, missing)}
@@ -339,6 +340,7 @@ interface PopoverCardProps {
   titleClass: string;
   subtitle?: React.ReactNode;
   subtitleClass?: string;
+  /** Each `href` is already an IxStates link (ixstatesHref). */
   actions: Array<{ href: string; label: string; tone: keyof typeof ACTION_TONES }>;
 }
 
@@ -364,7 +366,7 @@ function PopoverCard({
         {actions.map((action) => (
           <Link
             key={action.href}
-            href={withBasePath(action.href)}
+            href={action.href}
             className={`rounded-control-sm text-caption flex-1 py-1 text-center font-semibold ${ACTION_TONES[action.tone]}`}
           >
             {action.label}
@@ -422,7 +424,13 @@ function MentionProfile({
           titleClass="text-yellow"
           subtitle={`${leagueData.sportPreset} · ${leagueData.archetype}`}
           subtitleClass="text-footnote text-label-secondary capitalize"
-          actions={[{ href: `/myleague/${entityId}`, label: "View workspace", tone: "yellow" }]}
+          actions={[
+            {
+              href: ixstatesHref(`/myleague/${entityId}`),
+              label: "View workspace",
+              tone: "yellow",
+            },
+          ]}
         />
       )}
 
@@ -439,7 +447,13 @@ function MentionProfile({
           title={teamData.name}
           titleClass="text-tint"
           subtitle={`Stadium Cap: ${teamData.stadiumCapacity}`}
-          actions={[{ href: `/myclub/${entityId}`, label: "View roster & stats", tone: "tint" }]}
+          actions={[
+            {
+              href: ixstatesHref(`/myclub/${entityId}`),
+              label: "View roster & stats",
+              tone: "tint",
+            },
+          ]}
         />
       )}
 
@@ -451,8 +465,8 @@ function MentionProfile({
           subtitle={countryData.paragraphs?.[0] || "Explore country details."}
           subtitleClass="text-footnote text-label-secondary line-clamp-2"
           actions={[
-            { href: `/countries/${entityId}`, label: "View profile", tone: "green" },
-            { href: "/mycountry/diplomacy", label: "Open embassy", tone: "neutral" },
+            { href: ixstatesHref(`/countries/${entityId}`), label: "View profile", tone: "green" },
+            { href: ixstatesHref("/mycountry/diplomacy"), label: "Open embassy", tone: "neutral" },
           ]}
         />
       )}
@@ -468,8 +482,8 @@ function MentionProfile({
           titleClass="text-tint"
           subtitle={authorData.country && `From ${authorData.country.name}`}
           actions={[
-            { href: "/dashboard", label: "View feed", tone: "tint" },
-            { href: "/messages", label: "Message", tone: "neutral" },
+            { href: ixstatesHref("/dashboard"), label: "View feed", tone: "tint" },
+            { href: ixstatesHref("/messages"), label: "Message", tone: "neutral" },
           ]}
         />
       )}
@@ -480,7 +494,7 @@ function MentionProfile({
           <h4 className="text-caption text-label-secondary font-semibold">{label}</h4>
           <p className="text-footnote text-label-secondary">Explore page profile.</p>
           <Link
-            href={withBasePath(href)}
+            href={ixstatesHref(href)}
             className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
           >
             Go to page
@@ -508,7 +522,7 @@ function MentionPopover({
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
-        <Link href={withBasePath(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
+        <Link href={ixstatesHref(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
           {icon && <span className="text-footnote shrink-0 leading-none">{icon}</span>}
           <span>{label}</span>
         </Link>
@@ -530,6 +544,8 @@ function MentionPopover({
 
 export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiHtmlContentProps) {
   const [isMounted, setIsMounted] = useState(false);
+  // the server's and the first client render's HTML: one object per string, or React 19 writes it again
+  const rawMarkup = useHtmlMarkup(html);
 
   useEffect(() => {
     // oxlint-disable-next-line
@@ -571,7 +587,7 @@ export function WikiHtmlContent({ html, className = "", as: Tag = "div" }: WikiH
   }, [root, missing]);
 
   if (!isMounted || !parsedContent) {
-    return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <Tag className={className} dangerouslySetInnerHTML={rawMarkup} />;
   }
 
   return <Tag className={className}>{parsedContent}</Tag>;

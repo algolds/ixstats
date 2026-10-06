@@ -1,203 +1,193 @@
 /**
- * Canonical wikitext serialization for the Plate canvas. Atomic and interactive
- * template nodes emit their stored wikitext or canonical representation;
- * structural blocks map to standard MediaWiki markup.
+ * wiki-wikitext.ts — Canonical wikitext serialization for the Plate canvas.
+ *
+ * Selective serialisation (plan 414): a block loaded from wikitext whose content is unchanged is
+ * written back exactly as it was loaded, with the separator it had; only blocks the user edited or
+ * inserted are generated from the Plate node. Atomic and interactive template nodes emit their
+ * stored wikitext or canonical representation; structural blocks map to standard MediaWiki markup.
  */
 
 import type { Descendant } from "slate";
-import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
-import { esc } from "./wiki-html";
+import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
+import { isUnmodified, serializeInline } from "./wiki-inline-wikitext";
+import { headingWikitext, listWikitext, tableWikitext, templateWikitext } from "./wiki-structure-wikitext";
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 export interface WikitextSerializeResult {
   wikitext: string;
   complete: boolean;
+  /** Things the author should be told after a save: an edit that could not be applied, a block that was moved. */
+  notices: string[];
 }
 
-/** Plate nodes are loosely typed: legacy and plugin nodes carry extra fields. */
-type Loose = any;
-
-const WRAP_INNER: ReadonlyArray<[string, string]> = [
-  ["code", "code"],
-  ["strike", "s"],
-  ["underline", "u"],
-];
-const WRAP_OUTER: ReadonlyArray<[string, string]> = [
-  ["sup", "sup"],
-  ["sub", "sub"],
-];
-
-function leavesToWikitext(children: Descendant[]): string {
-  let out = "";
-  for (const t of children as Loose[]) {
-    if (typeof t.text !== "string") continue;
-    const marks: Record<string, boolean> = {
-      code: Boolean(t.codeMark || t.code),
-      strike: Boolean(t.strike || t.strikethrough),
-      underline: Boolean(t.underline),
-      sup: Boolean(t.sup || t.superscript),
-      sub: Boolean(t.sub || t.subscript),
-    };
-    const quotes = "'".repeat((t.bold ? 3 : 0) + (t.italic ? 2 : 0));
-    let text: string = t.text;
-    if (quotes || Object.values(marks).some(Boolean)) text = text.replace(/\n/g, "");
-    for (const [mark, tag] of WRAP_INNER) if (marks[mark]) text = `<${tag}>${text}</${tag}>`;
-    text = `${quotes}${text}${quotes}`;
-    for (const [mark, tag] of WRAP_OUTER) if (marks[mark]) text = `<${tag}>${text}</${tag}>`;
-    out += text;
-  }
-  return out;
-}
-
-const verbatimWikitext = (el: Loose): string | undefined => el.rawWikitext || el.wikitext;
-
-const templateWikitext = (el: Loose, fallbackName: string): string =>
-  verbatimWikitext(el) ||
-  serializeTemplateToWikitext({
-    templateName: el.templateName || el.name || fallbackName,
-    params: el.params,
-    positional: el.positional,
-    paramList: el.paramList,
-  });
-
-function linkToWikitext(el: Loose): string {
-  const label = leavesToWikitext(el.children || []);
-  const isInternal =
-    el.internal ??
-    Boolean(
-      el.target || (el.url ? !/^https?:/i.test(el.url) || el.url.startsWith("/wiki/") : true)
-    );
-  if (!isInternal) return `[${el.url} ${label}]`;
-  const target =
-    el.target || decodeURIComponent((el.url || "").replace(/^\/wiki\//, "").replace(/_/g, " "));
-  return target === label ? `[[${target}]]` : `[[${target}|${label}]]`;
-}
-
-function inlineToWikitext(children: Descendant[]): string {
-  let out = "";
-  for (const el of children as Loose[]) {
-    switch (typeof el.text === "string" ? "text" : el.type) {
-      case "text":
-        out += leavesToWikitext([el]);
-        break;
-      case "a":
-      case "link":
-        out += linkToWikitext(el);
-        break;
-      case "ref":
-        out += `<ref>${el.label || ""}</ref>`;
-        break;
-      case "chip-coord":
-        out += el.wikitext || `[[Coords:${el.lat},${el.lng}|${el.label || "Location"}]]`;
-        break;
-      case "chip-engine":
-        out += el.wikitext || `[[${el.connector || "CountryData"}:${el.slug}|${el.metric}]]`;
-        break;
-      case "chip-template":
-      case "inline-template":
-        out += templateWikitext(el, "Template");
-        break;
-      case "lic":
-      case "span":
-        out += inlineToWikitext(el.children || []);
-        break;
-      default:
-        if (verbatimWikitext(el)) out += verbatimWikitext(el);
-        else if (Array.isArray(el.children)) out += inlineToWikitext(el.children);
-    }
-  }
-  return out;
-}
-
-/** One entry per item, each ending in a newline; join with "" so items stay on consecutive lines. */
-function listToWikitext(el: Loose): string[] {
-  const defaultMarker = el.type === "ol" ? "#" : "*";
-  return (el.children || []).map((li: Loose) => {
-    const marker = li.prefix || defaultMarker.repeat(Math.max(1, li.level || 1));
-    if (typeof li.text === "string") return `${marker} ${leavesToWikitext([li]).trim()}\n`;
-    let kids = li.children || [];
-    if (kids.length === 1 && kids[0]?.type === "lic") kids = kids[0].children || [];
-    return `${marker} ${inlineToWikitext(kids).trim()}\n`;
-  });
-}
-
-function tableToWikitext(el: Loose): string {
-  const lines = [`{|${el.attributes ? ` ${el.attributes}` : ' class="wikitable"'}`];
-  if (el.caption) lines.push(`|+ ${el.caption}`);
-  for (const tr of el.children || []) {
-    lines.push(`|-${tr.attributes ? ` ${tr.attributes}` : ""}`);
-    for (const cell of tr.children || []) {
-      const attrPart = cell.attributes ? `${cell.attributes} | ` : "";
-      lines.push(
-        `${cell.type === "th" ? "!" : "|"} ${attrPart}${inlineToWikitext(cell.children || []).trim()}`
-      );
-    }
-  }
-  lines.push("|}");
-  return lines.join("\n") + "\n";
-}
-
-function mediaToWikitext(el: Loose): string {
+function mediaWikitext(el: PlateNode): string {
   if (el.wikitext) return el.wikitext;
   if (!el.filename) return el.rawWikitext || "";
-  return `[[File:${el.filename}|${el.align || "thumb"}${el.caption ? `|${el.caption}` : ""}]]`;
+  return `[[File:${el.filename}${el.align ? `|${el.align}` : "|thumb"}${el.caption ? `|${el.caption}` : ""}]]`;
 }
 
-const TEMPLATE_BLOCK_NAMES: Record<string, string> = {
-  "infobox-block": "Infobox",
-  infobox: "Infobox",
-  "infobox-box": "Infobox",
-  "template-block": "Template",
-  template: "Template",
+interface SerializeState {
+  complete: boolean;
+  notices: string[];
+}
+
+type BlockSerializer = (el: PlateNode, state: SerializeState) => string;
+
+const headingSerializer =
+  (level: number): BlockSerializer =>
+  (el) =>
+    headingWikitext(el, level);
+
+/** A paragraph that holds only whitespace writes nothing. */
+const paragraphWikitext: BlockSerializer = (el) => {
+  const inner = serializeInline(el.children);
+  return inner.trim() ? inner : "";
 };
 
-/** Wikitext for one block node, or "" when it emits nothing. `complete` flips when HTML had to leak. */
-function blockToWikitext(el: Loose, state: { complete: boolean }): string {
-  const heading = /^h([1-6])$/.exec(el.type);
-  if (heading) {
-    const marks = "=".repeat(Number(heading[1]));
-    return `${marks} ${inlineToWikitext(el.children)} ${marks}\n`;
-  }
-  if (Object.hasOwn(TEMPLATE_BLOCK_NAMES, el.type)) {
-    return `${templateWikitext(el, TEMPLATE_BLOCK_NAMES[el.type]!)}\n`;
-  }
-  switch (el.type) {
-    case "p":
-    case "lic": {
-      const inner = inlineToWikitext(el.children);
-      return inner.trim() ? `${inner}\n` : "";
-    }
-    case "blockquote":
-      return `<blockquote>${inlineToWikitext(el.children)}</blockquote>\n`;
-    case "code-block":
-      return `<pre>${esc(el.children.map((c: Loose) => c.text ?? "").join(""))}</pre>\n`;
-    case "ul":
-    case "ol":
-      return listToWikitext(el).join("");
-    case "table":
-      return tableToWikitext(el);
-    case "hr":
-      return "----\n";
-    case "media": {
-      const wt = mediaToWikitext(el);
-      return wt ? `${wt}\n` : "";
-    }
-    case "raw-html": {
-      const wt = verbatimWikitext(el);
-      if (!wt) state.complete = false;
-      return `${wt || el.html || ""}\n`;
-    }
-    default: {
-      const wt = verbatimWikitext(el);
-      return wt ? `${wt}\n` : "";
-    }
-  }
+const rawHtmlWikitext: BlockSerializer = (el, state) => {
+  const wt = el.rawWikitext || el.wikitext;
+  if (!wt) state.complete = false;
+  return wt || el.html || "";
+};
+
+const BLOCK_SERIALIZERS: ReadonlyMap<string, BlockSerializer> = new Map<string, BlockSerializer>([
+  ["h1", headingSerializer(1)],
+  ["h2", headingSerializer(2)],
+  ["h3", headingSerializer(3)],
+  ["h4", headingSerializer(4)],
+  ["h5", headingSerializer(5)],
+  ["h6", headingSerializer(6)],
+  ["p", paragraphWikitext],
+  ["lic", paragraphWikitext],
+  ["blockquote", (el) => `<blockquote>${serializeInline(el.children)}</blockquote>`],
+  ["code-block", (el) => `<pre>${esc((el.children ?? []).map((c) => c.text ?? "").join(""))}</pre>`],
+  ["ul", listWikitext],
+  ["ol", listWikitext],
+  ["table", tableWikitext],
+  ["hr", () => "----"],
+  ["infobox-block", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["infobox", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["infobox-box", (el, state) => templateWikitext(el, "Infobox", state.notices)],
+  ["template-block", (el, state) => templateWikitext(el, "Template", state.notices)],
+  ["template", (el, state) => templateWikitext(el, "Template", state.notices)],
+  ["media", mediaWikitext],
+  ["raw-wikitext", (el) => el.rawWikitext ?? ""],
+  ["raw-html", rawHtmlWikitext],
+]);
+
+/** The wikitext of one generated block, without its separator; "" for a block that writes nothing. */
+function blockWikitext(el: PlateNode, state: SerializeState): string {
+  const serialize = el.type === undefined ? undefined : BLOCK_SERIALIZERS.get(el.type);
+  return serialize ? serialize(el, state) : el.rawWikitext || el.wikitext || "";
+}
+
+const newlineCount = (text: string): number => text.split("\n").length - 1;
+
+/** What the previous block written to the output tells the next one about its separator. */
+interface Written {
+  type: string | undefined;
+  /** End offset of the previous block in the loaded page, when it is an original block. */
+  srcEnd: number | null;
+  /** The previous block was written back exactly as it was loaded. */
+  verbatim: boolean;
 }
 
 /**
- * Serialize the Plate value to canonical MediaWiki wikitext.
+ * The separator to write before `el`. Between two blocks that are both written back unchanged and
+ * were neighbours, it is the one they had, and a block that shared its line with the one before it
+ * (an infobox followed by text) stays on that line. Otherwise an original block keeps its
+ * separator when it is safe (any blank-line separator, or a single line break when the block
+ * before it is still its original neighbour), everything else gets a blank line, and two
+ * paragraphs are always a blank line apart (a single line break would merge them).
  */
-export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerializeResult {
-  const state = { complete: true };
-  const parts = nodes.map((node) => blockToWikitext(node, state)).filter(Boolean);
-  return { wikitext: parts.join("\n").trim(), complete: state.complete };
+function separatorBefore(el: PlateNode, isOriginal: boolean, verbatim: boolean, prev: Written): string {
+  const recorded = isOriginal ? el.wikiSep : undefined;
+  let sep = "\n\n";
+  if (recorded !== undefined) {
+    const adjacent = prev.srcEnd !== null && prev.srcEnd === (el.wikiSrc ?? 0) - recorded.length;
+    if (adjacent && (!recorded.includes("\n") || (verbatim && prev.verbatim))) return recorded;
+    if (recorded.includes("\n") && (newlineCount(recorded) >= 2 || adjacent)) sep = recorded;
+  }
+  if (prev.type === "p" && el.type === "p" && newlineCount(sep) < 2) sep = "\n\n";
+  return sep;
+}
+
+/**
+ * For each original block (by offset in the loaded page) the index of the node that still is that
+ * block. Slate copies a block's properties when it splits it, so an offset can appear twice: the
+ * unmodified node owns it, else the first one.
+ */
+function originalOwners(nodes: readonly PlateNode[]): Map<number, number> {
+  const owners = new Map<number, number>();
+  nodes.forEach((node, index) => {
+    if (node.wikiSrc !== undefined && isUnmodified(node) && !owners.has(node.wikiSrc)) {
+      owners.set(node.wikiSrc, index);
+    }
+  });
+  nodes.forEach((node, index) => {
+    if (node.wikiSrc !== undefined && !owners.has(node.wikiSrc)) owners.set(node.wikiSrc, index);
+  });
+  return owners;
+}
+
+/** A block the output will contain, with how it is written. */
+interface Planned {
+  el: PlateNode;
+  isOriginal: boolean;
+  /** The block exactly as loaded, when it is unchanged. */
+  verbatimRaw: string | undefined;
+  body: string;
+}
+
+const isRedirect = (el: PlateNode): boolean => el.type === "raw-wikitext" && el.construct === "redirect";
+
+/**
+ * MediaWiki honours `#REDIRECT` only on the first line of a page. A redirect block that is not first
+ * (the author added blocks above it) is moved to the top, and the author is told.
+ */
+function redirectFirst(planned: Planned[], state: SerializeState): Planned[] {
+  const at = planned.findIndex((block) => isRedirect(block.el));
+  if (at <= 0) return planned;
+  state.notices.push(
+    "The #REDIRECT line was moved to the top of the page: MediaWiki only honours a redirect on the first line."
+  );
+  return [planned[at]!, ...planned.slice(0, at), ...planned.slice(at + 1)];
+}
+
+/**
+ * Serialize the Plate value to MediaWiki wikitext. Blocks loaded from wikitext and not edited are
+ * written back byte for byte, separators included; the leading text of the page is kept with its
+ * first block and the trailing text with its last.
+ */
+export function serializePlateToWikitext(value: readonly Descendant[]): WikitextSerializeResult {
+  const nodes = value as readonly PlateNode[];
+  const owners = originalOwners(nodes);
+  const state: SerializeState = { complete: true, notices: [] };
+
+  const planned: Planned[] = [];
+  for (const [index, el] of nodes.entries()) {
+    const isOriginal = el.wikiSrc !== undefined && owners.get(el.wikiSrc) === index;
+    const verbatimRaw = isOriginal && isUnmodified(el) ? el.wikiRaw : undefined;
+    const body = verbatimRaw ?? blockWikitext(el, state);
+    if (body !== "") planned.push({ el, isOriginal, verbatimRaw, body });
+  }
+
+  let out = "";
+  let prev: Written | null = null;
+  for (const { el, isOriginal, verbatimRaw, body } of redirectFirst(planned, state)) {
+    const lead = isOriginal ? (el.wikiLead ?? "") : "";
+    const verbatim = verbatimRaw !== undefined;
+    out += (prev === null ? lead : separatorBefore(el, isOriginal, verbatim, prev)) + body;
+    prev = {
+      type: el.type,
+      srcEnd: isOriginal && el.wikiRaw !== undefined ? (el.wikiSrc ?? 0) + el.wikiRaw.length : null,
+      verbatim,
+    };
+  }
+
+  out += nodes[nodes.length - 1]?.wikiTrail ?? "";
+  return { wikitext: out, complete: state.complete, notices: state.notices };
 }

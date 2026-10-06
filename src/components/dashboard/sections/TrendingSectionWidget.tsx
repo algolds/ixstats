@@ -213,7 +213,7 @@ function TrendingRow({ item }: { item: any }) {
 function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
-  const leadImage = useWikiLeadImage(title, intro?.text || intro?.intro || "");
+  const leadImage = useWikiLeadImage(title, intro?.text || intro?.intro || "", wiki);
 
   return (
     <div className="space-y-2">
