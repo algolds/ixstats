@@ -2,6 +2,7 @@
 /**
  * Plan 413 (item 8b): the view bundle's HTML loses its dead weight at render time, and only that.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -212,6 +213,6 @@ describe("classes a kept TemplateStyles block styles (plan 415 review, m3)", () 
     const hostile = '<style data-mw-deduplicate="x">'.repeat(20_000);
     const started = performance.now();
     expect(templateStyleIdentifiers(hostile).size).toBe(0);
-    expect(performance.now() - started).toBeLessThan(250);
+    expect(performance.now() - started).toBeLessThan(250 * TIMING_BUDGET_SCALE);
   });
 });

@@ -3,6 +3,7 @@
  * Plan 402: redirects are recognised the way MediaWiki recognises them (text STARTS with
  * #REDIRECT), and the target is a canonical title plus an optional fragment.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 
 describe("parseRedirect", () => {
@@ -102,7 +103,7 @@ describe("parseRedirect", () => {
     for (const text of hostile) {
       const started = performance.now();
       parseRedirect(text);
-      expect(performance.now() - started).toBeLessThan(100);
+      expect(performance.now() - started).toBeLessThan(100 * TIMING_BUDGET_SCALE);
     }
     expect(parseRedirect("#REDIRECT" + " ".repeat(200_000) + "x")).toBeNull();
   });

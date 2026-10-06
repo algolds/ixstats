@@ -6,6 +6,7 @@
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 import { categoryLinks, externalUrls, linkTargets, visibleText } from "~/lib/wiki-os/api-compat/scan";
 import { diffTableHtml } from "~/lib/wiki-os/api-compat/diff-table";
@@ -14,7 +15,7 @@ import { ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protec
 import { locateSection, replaceSection, sectionHeadings, sectionText } from "~/lib/wiki-os/wikitext/section-locator";
 
 const N = 200_000;
-const BUDGET_MS = 200;
+const BUDGET_MS = 200 * TIMING_BUDGET_SCALE;
 
 const HOSTILE: Record<string, string> = {
   "category opener and spaces": `[[Category:${" ".repeat(N)}`,
@@ -72,7 +73,7 @@ describe("the wikitext scanners are linear", () => {
       sectionHeadings(text);
       replaceSection(text, 3, "new");
     });
-    expect(ms).toBeLessThan(1000);
+    expect(ms).toBeLessThan(1000 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -88,9 +89,9 @@ describe("no scan keeps state keyed on a text's content", () => {
     expect(copy).toBe(hostile);
     const second = timed(() => sectionHeadings(copy));
     const third = timed(() => sectionHeadings(freshCopy(hostile)));
-    expect(first.ms).toBeLessThan(200);
-    expect(second.ms).toBeLessThan(200);
-    expect(third.ms).toBeLessThan(200);
+    expect(first.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
+    expect(second.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
+    expect(third.ms).toBeLessThan(200 * TIMING_BUDGET_SCALE);
   });
 
   it("does the same for section locating and replacing, and for the tag lookups themselves", () => {
@@ -102,7 +103,7 @@ describe("no scan keeps state keyed on a text's content", () => {
         const scanner = new ProtectedScanner(text);
         for (let i = text.indexOf("<"); i !== -1; i = text.indexOf("<", i + 1)) skipProtectedAt(text, i, true, scanner);
       });
-      expect(ms).toBeLessThan(400);
+      expect(ms).toBeLessThan(400 * TIMING_BUDGET_SCALE);
     }
   });
 
@@ -113,7 +114,7 @@ describe("no scan keeps state keyed on a text's content", () => {
       wiki.data.pages![0]!.wikitext = freshCopy(hostile);
       const start = performance.now();
       const body = (await call(wiki.deps, "action=parse&page=Hostile&prop=text|sections|categories|links|displaytitle|properties&formatversion=2")).body as Record<string, any>;
-      expect(performance.now() - start).toBeLessThan(400);
+      expect(performance.now() - start).toBeLessThan(400 * TIMING_BUDGET_SCALE);
       expect(body.parse.title).toBe("Hostile");
     }
   });
@@ -125,7 +126,7 @@ describe("no scan keeps state keyed on a text's content", () => {
       wiki.data.pages![0]!.wikitext = freshCopy(hostile);
       const start = performance.now();
       const body = (await wiki.bot.post({ action: "edit", title: "Hostile", section: "1", text: "== One ==\nx", token, formatversion: "2" })) as Record<string, any>;
-      expect(performance.now() - start).toBeLessThan(400);
+      expect(performance.now() - start).toBeLessThan(400 * TIMING_BUDGET_SCALE);
       expect(body.error.code).toBe("nosuchsection");
     }
   });
@@ -148,7 +149,7 @@ describe("the compare table over plan 413's diff engine is bounded", () => {
     const changed = old.map((line, i) => (i % 10 === 0 ? `${line} changed` : line));
     for (const [from, to] of [[lines(100_000, "old"), lines(100_000, "new")], [old.join("\n"), changed.join("\n")]] as const) {
       const { ms, value } = timed(() => toobig(() => table(from, to)));
-      expect(ms).toBeLessThan(500);
+      expect(ms).toBeLessThan(500 * TIMING_BUDGET_SCALE);
       expect(value).toBe("toobig");
     }
   });
@@ -158,7 +159,7 @@ describe("the compare table over plan 413's diff engine is bounded", () => {
     const changed = old.map((line, i) => (i % 3 === 0 ? `${line} changed` : line));
     const { ms, value } = timed(() => toobig(() => table(old.join("\n"), changed.join("\n"))));
     expect(value).toBe("toobig");
-    expect(ms).toBeLessThan(1000);
+    expect(ms).toBeLessThan(1000 * TIMING_BUDGET_SCALE);
   });
 
   it("shows at most two unchanged lines on each side of a change (MediaWiki's context), even in a 19,000-line page", () => {
@@ -166,7 +167,7 @@ describe("the compare table over plan 413's diff engine is bounded", () => {
     const changed = [...old];
     changed[9_500] = "row 9500 changed";
     const { ms, value } = timed(() => table(old.join("\n"), changed.join("\n")));
-    expect(ms).toBeLessThan(500);
+    expect(ms).toBeLessThan(500 * TIMING_BUDGET_SCALE);
     const rows = value.split("\n");
     // 2 before, the removed line, the added line, 2 after
     expect(rows).toHaveLength(6);
@@ -262,7 +263,7 @@ describe("action=parse and action=compare over hostile text", () => {
     );
     const start = performance.now();
     const body = (await call(wiki.deps, "action=compare&fromrev=1&torev=2&formatversion=2")).body as Record<string, any>;
-    expect(performance.now() - start).toBeLessThan(2000);
+    expect(performance.now() - start).toBeLessThan(2000 * TIMING_BUDGET_SCALE);
     expect(body.error).toBeUndefined();
     expect(body.compare.body.split("\n")).toHaveLength(6);
   }, 30_000);
@@ -272,7 +273,7 @@ describe("action=parse and action=compare over hostile text", () => {
     const side = (tag: string) => Array.from({ length: 100_000 }, (_, i) => `${tag}${i}`).join("\n").slice(0, 199_999);
     const start = performance.now();
     const body = (await call(wiki.deps, `action=compare&formatversion=2`, { method: "POST", body: { fromtext: side("a"), totext: side("b") } })).body as Record<string, any>;
-    expect(performance.now() - start).toBeLessThan(500);
+    expect(performance.now() - start).toBeLessThan(500 * TIMING_BUDGET_SCALE);
     expect(body.compare?.body ?? body.error.code).toBeTruthy();
   });
 });

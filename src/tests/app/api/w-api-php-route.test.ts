@@ -8,6 +8,7 @@ jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 jest.mock("~/lib/wiki-os/api-compat/deps", () => ({ createApiDeps: jest.fn() }));
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
@@ -352,7 +353,7 @@ describe("an upload: a multipart body with a file part (plan 411)", () => {
       code: "badrequest",
       info: expect.stringContaining("64 parts"),
     });
-    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(Date.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
   });
 
   it("reads the boundary the way the parser does, and refuses a missing or over-long one before reading the body (review M4b)", async () => {
@@ -419,7 +420,7 @@ describe("an upload: a multipart body with a file part (plan 411)", () => {
       })
     );
     expect(response.status).toBe(400);
-    expect(Date.now() - started).toBeLessThan(500);
+    expect(Date.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
   });
 
   it("refuses a body past the upload limit even with a session, and stops reading it", async () => {

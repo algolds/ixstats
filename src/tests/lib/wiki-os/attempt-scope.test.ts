@@ -9,6 +9,7 @@ jest.mock("~/lib/wiki-os/config", () =>
     .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
 );
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { requestSignal, withinAttempt } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 import {
   getBotSessionAndToken,
@@ -92,7 +93,7 @@ describe("the calls of an attempt", () => {
       name: "TimeoutError",
     });
 
-    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(Date.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
     expect(signals[0]?.aborted).toBe(true);
   });
 

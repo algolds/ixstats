@@ -5,6 +5,7 @@
  * against a verbatim copy of that version on thousands of random small texts), and it finishes hostile
  * 100,000-opener inputs in well under 100 ms.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   extractLeadImageFromWikitext,
   getImageUrl,
@@ -212,7 +213,7 @@ describe("it answers what the regular-expression version answered", () => {
 });
 
 describe("hostile input is read in linear time", () => {
-  const BUDGET_MS = 100;
+  const BUDGET_MS = 100 * TIMING_BUDGET_SCALE;
 
   function ms(text: string): number {
     const started = performance.now();

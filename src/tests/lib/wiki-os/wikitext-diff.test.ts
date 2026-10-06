@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { describe, it, expect } from "@jest/globals";
 import {
   DIFF_MAX_BYTES_PER_SIDE,
@@ -149,7 +150,7 @@ describe("diffWikitext correctness", () => {
 
     const diff = diffWikitext(a, b);
 
-    expect(Date.now() - started).toBeLessThan(5000);
+    expect(Date.now() - started).toBeLessThan(5000 * TIMING_BUDGET_SCALE);
     expect(diff.removed).toBe(8000);
     expect(diff.added).toBe(8000);
   });
@@ -186,7 +187,7 @@ describe("diffWikitext answer caps", () => {
 
     const diff = diffWikitext(old, next);
 
-    expect(Date.now() - started).toBeLessThan(5000);
+    expect(Date.now() - started).toBeLessThan(5000 * TIMING_BUDGET_SCALE);
     expect(diff.tooLarge).toBe(true);
     expect(diff.hunks).toEqual([]);
     expect(diff.added).toBe(1_000_000);

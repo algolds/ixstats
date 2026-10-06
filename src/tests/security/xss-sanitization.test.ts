@@ -5,6 +5,7 @@
  * across user content, wiki content, and general HTML processing.
  */
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   sanitizeUserContent,
   sanitizeWikiContent,
@@ -502,7 +503,7 @@ describe("XSS Sanitization Test Suite", () => {
       const duration = Date.now() - start;
 
       expect(sanitized).toContain("<p>");
-      expect(duration).toBeLessThan(100); // Should complete within 100ms
+      expect(duration).toBeLessThan(100 * TIMING_BUDGET_SCALE); // Should complete within 100ms
     });
 
     it("handles deeply nested HTML", () => {

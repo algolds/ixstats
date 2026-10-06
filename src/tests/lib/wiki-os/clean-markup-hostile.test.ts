@@ -6,6 +6,7 @@
  * (`maxLength > 0`) is read no further than CLEAN_MARKUP_CEILING characters. A whole page (`maxLength` 0)
  * is read in full, in linear time: tests/lib/wiki-os/clean-markup-linear.test.ts.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   CLEAN_MARKUP_CEILING,
   cleanWikiMarkup,
@@ -86,14 +87,14 @@ describe("unpackInternalLinks", () => {
     ]) {
       const started = performance.now();
       unpackInternalLinks(text);
-      expect(performance.now() - started).toBeLessThan(100);
+      expect(performance.now() - started).toBeLessThan(100 * TIMING_BUDGET_SCALE);
     }
   });
 });
 
 describe("cleanWikiMarkup on hostile text", () => {
   // Not linear: bounded by the ceiling (about 0.2 s for the worst family at 20,000 characters on a busy machine).
-  const BUDGET_MS = 500;
+  const BUDGET_MS = 500 * TIMING_BUDGET_SCALE;
   const FAMILIES = [
     "[[",
     "{{",
@@ -157,6 +158,6 @@ describe("stripWikitextFiles on hostile text", () => {
     const text = "[[File:a|".repeat(100_000) + "]]";
     const started = performance.now();
     stripWikitextFiles(text);
-    expect(performance.now() - started).toBeLessThan(300);
+    expect(performance.now() - started).toBeLessThan(300 * TIMING_BUDGET_SCALE);
   });
 });

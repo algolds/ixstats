@@ -5,6 +5,7 @@
  */
 jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { call, fakeWiki, loggedIn, makeDeps, makeWikiDeps, type FakeWikiData } from "./harness";
 import { ACTIONS } from "~/lib/wiki-os/api-compat/actions";
 import { buildRegistry } from "~/lib/wiki-os/api-compat/registry";
@@ -77,7 +78,7 @@ describe("action=paraminfo", () => {
       expect(read.parameters.length).toBeGreaterThan(0);
       for (const parameterDefinition of read.parameters) expect(parameterDefinition.name).toMatch(/^[a-z][a-z0-9]*$/);
     }
-    expect(performance.now() - start).toBeLessThan(1000);
+    expect(performance.now() - start).toBeLessThan(1000 * TIMING_BUDGET_SCALE);
   });
 
   it("describes every module it lists with the parameters the module reads (no hand-kept table)", async () => {

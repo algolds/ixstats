@@ -4,13 +4,14 @@
  * and the one-pass match index agrees with the forward scan it replaces.
  */
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { findMatchingClosingBraces, findMatchingClosingBrackets } from "~/lib/wiki-os/wikitext/link-parser";
 import { UNINDEXED, matchBraces, matchBrackets } from "~/lib/wiki-os/wikitext/match-index";
 import { parse } from "~/lib/wiki-os/wikitext/parser";
 
-const BUDGET_MS = 200;
+const BUDGET_MS = 200 * TIMING_BUDGET_SCALE;
 
 function parseMs(input: string): number {
   const started = performance.now();
@@ -57,10 +58,10 @@ describe("parser time with unclosed tags (re-verification item 9)", () => {
       const inline = big((filler) => `${filler}<${tag}> x\n`);
       const blocks = big((filler) => `<${tag}>\n${filler}\n\n`);
       expect(inline.length).toBeGreaterThan(1_900_000);
-      expect(parseMs(inline)).toBeLessThan(300);
-      expect(parseMs(blocks)).toBeLessThan(300);
+      expect(parseMs(inline)).toBeLessThan(300 * TIMING_BUDGET_SCALE);
+      expect(parseMs(blocks)).toBeLessThan(300 * TIMING_BUDGET_SCALE);
       // a single closing tag at the very end must not make every earlier tag scan to it
-      expect(parseMs(`${inline}</${tag}>`)).toBeLessThan(300);
+      expect(parseMs(`${inline}</${tag}>`)).toBeLessThan(300 * TIMING_BUDGET_SCALE);
     }
   );
 

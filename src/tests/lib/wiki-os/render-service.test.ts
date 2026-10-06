@@ -52,6 +52,7 @@ jest.mock("~/lib/utils/sanitize-html", () => {
   };
 });
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   buildViewBundle,
   enqueueRender,
@@ -672,7 +673,7 @@ describe("loadViewBundle", () => {
 
       await expect(loadViewBundle("a")).resolves.toBeNull();
 
-      expect(performance.now() - started).toBeLessThan(1_000);
+      expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
     });
 
     it("keeps the template chip markers the sanitizer lets through", async () => {
@@ -708,7 +709,7 @@ describe("renderFallbackView", () => {
     const started = performance.now();
     const bundle = await renderFallbackView("a");
 
-    expect(performance.now() - started).toBeLessThan(5_000);
+    expect(performance.now() - started).toBeLessThan(5_000 * TIMING_BUDGET_SCALE);
     expect(bundle?.bodyHtml).toContain('class="wikios-fallback-plain"');
     expect(bundle?.bodyHtml).toContain("&lt;script&gt;alert(1)&lt;/script&gt; [[ [[ ");
     expect(bundle?.bodyHtml).not.toContain("<script");

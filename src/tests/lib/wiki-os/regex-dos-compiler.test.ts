@@ -6,6 +6,7 @@
  * case) and on the real-looking pages of src/tests/fixtures/wikitext. The gate that they are fast is
  * regex-dos.test.ts.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import {
@@ -939,7 +940,7 @@ describe("unified-parser: infobox values are cleaned by scanning", () => {
       `{{Infobox country\n| conventional_long_name = ${nested(20_000)}\n}}`,
       "Urcea"
     );
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
   });
 
   it("leaves what is nested past the 64th level as text", () => {

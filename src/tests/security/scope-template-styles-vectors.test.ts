@@ -3,6 +3,7 @@
 // lightningcss (a spec CSS tokenizer and parser, like the browsers'), run over what the scoper emits: every rule
 // it finds must be confined to the article's root, and no at-rule but @media may be left. lightningcss is
 // a devDependency pinned to the version tailwind already resolves; postcss walks its output.
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { transform } from "lightningcss";
 import postcss from "postcss";
 import { ARTICLE_STYLE_SCOPE, scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
@@ -291,7 +292,7 @@ describe("the url() allowlist judges the target a browser fetches, not a truncat
     scopeTemplateStyles(`.a{content:"url(${" ".repeat(150_000)}";color:red}`, OWN_ORIGIN);
     scopeTemplateStyles(`.a{content:"${"url(".repeat(40_000)}";color:red}`, OWN_ORIGIN);
 
-    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
   });
 });
 

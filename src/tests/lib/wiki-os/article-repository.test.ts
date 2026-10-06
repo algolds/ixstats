@@ -2,6 +2,7 @@
 /**
  * Plan 403: ArticleRepository writes and reads one MediaWiki-canonical identity per title.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
@@ -231,7 +232,7 @@ describe("ArticleRepository.saveArticle", () => {
 
     await save("Foo", "", text);
 
-    expect(performance.now() - started).toBeLessThan(1_000);
+    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
     const summary: string = mockUpsert.mock.calls[0]?.[0].create.summary;
     expect(summary.startsWith("Foo is a country in Eurth.")).toBe(true);
     expect(summary.length).toBeLessThanOrEqual(480);

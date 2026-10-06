@@ -5,6 +5,7 @@
  * openers and closers are the common case) and on every real-looking page of src/tests/fixtures/wikitext.
  * The gate that they are fast is regex-dos.test.ts.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import {
   findMatchingClosingBraces,
@@ -943,7 +944,7 @@ describe("match-index: an opener the pass did not reach is scanned for, within a
     for (let at = text.indexOf("[["); at !== -1; at = text.indexOf("[[", at + 1)) {
       findMatchingClosingBrackets(text, at, index);
     }
-    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -1248,7 +1249,7 @@ describe("section-locator: findSectionLine answers what the expressions answered
       findSectionLine("== History ==\n", text);
       findSectionLine(text, "History");
     }
-    expect(performance.now() - started).toBeLessThan(2_000);
+    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -1311,7 +1312,7 @@ describe("api-compat/scan: linkTargets answers what it answered", () => {
   it("takes time linear in the nested links of a text", () => {
     const started = performance.now();
     linkTargets("[[".repeat(100_000) + "]]".repeat(100_000), 5001);
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -1366,6 +1367,6 @@ describe("parser: scanBlockquote answers what it answered", () => {
     ]) {
       expect(parse(text).ast.nodes.length).toBeGreaterThan(0);
     }
-    expect(performance.now() - started).toBeLessThan(2_000); // each of these takes 5 to 9 s unmemoized
+    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE); // each of these takes 5 to 9 s unmemoized
   });
 });

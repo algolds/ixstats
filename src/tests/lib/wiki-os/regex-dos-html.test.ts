@@ -5,6 +5,7 @@
  * passes that tidy a page in a DOM, each held against a verbatim copy of the code it replaced on random pages of
  * well-formed tags (the HTML a wiki serves) in many shapes. The gate that they are fast is regex-dos.test.ts.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
 import { featuredArticleDetails } from "~/lib/wiki-os/main-page/featured-article";
 import { leadParagraph } from "~/lib/wiki-os/main-page/lead-paragraph";
@@ -514,7 +515,7 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
     it("is quick on closing tags that close nothing", () => {
       const started = performance.now();
       tagsNestTooDeep(`${nested("<a>", 399)}${nested("</b>", 400_000)}`);
-      expect(performance.now() - started).toBeLessThan(500);
+      expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
     });
   });
 
@@ -574,7 +575,7 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
       nestsTooDeep(nested("<div>", 400_000)); // parsed whole, this takes 8 s
       nestsTooDeep(nested("<a><div></a>", 100_000));
       nestsTooDeep(nested("<i><b></i>", 100_000));
-      expect(performance.now() - started).toBeLessThan(1_500);
+      expect(performance.now() - started).toBeLessThan(1_500 * TIMING_BUDGET_SCALE);
     });
 
     it("passes a page of 450 KB of the HTML articles have, in tens of milliseconds", () => {
@@ -585,7 +586,7 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
         .slice(0, 450_000);
       const started = performance.now();
       expect(nestsTooDeep(page)).toBe(false);
-      expect(performance.now() - started).toBeLessThan(500);
+      expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
     });
   });
 
@@ -603,7 +604,7 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
       const started = performance.now();
       expect(slimArticleHtml(html)).toBe(html);
       expect(markTemplateChips(html)).toBe(html);
-      expect(performance.now() - started).toBeLessThan(1_000);
+      expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
     }
   );
 
@@ -685,7 +686,7 @@ describe("slimArticleHtml empties the blanks between blocks instead of removing 
       expect(slimArticleHtml(html)).not.toContain("\n");
     }
     // the removing version takes 1.7 s on the first of these alone
-    expect(performance.now() - started).toBeLessThan(3_000);
+    expect(performance.now() - started).toBeLessThan(3_000 * TIMING_BUDGET_SCALE);
   });
 });
 
@@ -724,7 +725,7 @@ describe("markTemplateChips makes at most 1,000 markers", () => {
     const html = Array.from({ length: 8_000 }, (_, i) => chipLink(i)).join("");
     const started = performance.now();
     const marked = markTemplateChips(html);
-    expect(performance.now() - started).toBeLessThan(2_000); // the uncapped version takes 5 s
+    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE); // the uncapped version takes 5 s
     expect(markersIn(marked)).toBe(1_000);
     expect(marked.startsWith('<span data-wikios-chip="CountryData:C0:population"></span> ')).toBe(
       true
@@ -758,7 +759,7 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
   it("shows HTML nested past the ceiling as its escaped source, at once", () => {
     const started = performance.now();
     const shown = sanitizeWikiArticleHtml(`${"<s>".repeat(12_000)}x<script>alert(1)</script>`);
-    expect(performance.now() - started).toBeLessThan(500); // 12,000 levels took 20 s
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE); // 12,000 levels took 20 s
     expect(shown.startsWith('<pre class="wikios-fallback-plain">&lt;s&gt;&lt;s&gt;')).toBe(true);
     expect(shown).not.toMatch(/<s>|<script/);
   });
@@ -777,7 +778,7 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
     (unit, times) => {
       const started = performance.now();
       const shown = sanitizeWikiArticleHtml(unit.repeat(times));
-      expect(performance.now() - started).toBeLessThan(500); // the deep tree took 8 to 22 s in jsdom
+      expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE); // the deep tree took 8 to 22 s in jsdom
       expect(shown.startsWith('<pre class="wikios-fallback-plain">')).toBe(true);
     }
   );
@@ -852,7 +853,7 @@ describe("mapSrcsetUrls answers what it answered", () => {
     expect(mapSrcsetUrls(`a${",".repeat(200_000)}x 1x`, mapped)).toBe(
       `<a${",".repeat(200_000)}x> 1x`
     );
-    expect(performance.now() - started).toBeLessThan(500); // the expression took 3 s on this
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE); // the expression took 3 s on this
   });
 });
 
@@ -917,6 +918,6 @@ describe("scopeTemplateStyles answers what it answered", () => {
     for (const css of ["(".repeat(190_000), "calc(".repeat(38_000), ".a:is(".repeat(31_000)]) {
       scopeTemplateStyles(css, "https://ixwiki.com");
     }
-    expect(performance.now() - started).toBeLessThan(1_000); // the first took 5.9 s
+    expect(performance.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE); // the first took 5.9 s
   });
 });

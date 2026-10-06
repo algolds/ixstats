@@ -5,6 +5,7 @@
  * output for valid input or defeat the fatal-error-throws-on-malformed-XML
  * contract that the Discord markdown fallback and SVG parsers depend on.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { describe, expect, it } from "@jest/globals";
 import { DOMParser } from "@xmldom/xmldom";
 import { htmlToDiscordMarkdown } from "~/lib/discord/ixtwitter-sync";
@@ -52,6 +53,6 @@ describe("xmldom upgrade — behavior pinning", () => {
     } catch {
       // rejecting the malformed/oversized input is an acceptable outcome too
     }
-    expect(Date.now() - t).toBeLessThan(2000);
+    expect(Date.now() - t).toBeLessThan(2000 * TIMING_BUDGET_SCALE);
   });
 });

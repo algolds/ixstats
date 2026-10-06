@@ -8,6 +8,7 @@ jest.mock("~/server/db", () => ({
   db: { wikiArticle: { findMany: jest.fn() } },
 }));
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
 import {
@@ -72,7 +73,7 @@ describe("extractTemplateDataJson", () => {
     const hostile = "<templatedata>".repeat(140_000);
     const started = performance.now();
     expect(extractTemplateDataJson(hostile)).toBeNull();
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(500 * TIMING_BUDGET_SCALE);
   });
 });
 

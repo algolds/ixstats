@@ -1,3 +1,4 @@
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { articleSeo, descriptionFromHtml, leadImageUrl } from "~/lib/wiki-os/article-seo";
 
 describe("descriptionFromHtml (plan 412)", () => {
@@ -35,7 +36,7 @@ describe("descriptionFromHtml (plan 412)", () => {
     const started = Date.now();
     expect(descriptionFromHtml(hostile)).toBeNull();
     descriptionFromHtml(`<p>${"<".repeat(50_000)}</p>`); // whatever it returns, it returns promptly
-    expect(Date.now() - started).toBeLessThan(1_000);
+    expect(Date.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
   });
 
   it("ignores text past the start of a very long page", () => {

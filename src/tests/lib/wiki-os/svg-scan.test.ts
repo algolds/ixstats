@@ -3,6 +3,7 @@
  * Plan 411 review (minor 4): the hostile-SVG vectors the verifier tried, kept as a regression table. Every one of the
  * hostile files must be refused and every legitimate one accepted, plus the bounds (attribute count and length, linear time).
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { sniffFile } from "~/lib/wiki-os/core/file-sniff";
 import { scanSvg } from "~/lib/wiki-os/core/svg-scan";
 
@@ -358,6 +359,6 @@ describe("SVG scan bounds and reasons", () => {
     const text = `<svg ${NS}><defs><linearGradient id="g"/></defs>${path.repeat(Math.floor(10_000_000 / path.length))}</svg>`;
     const started = performance.now();
     expect(svgProblem(text)).toBeNull();
-    expect(performance.now() - started).toBeLessThan(1_500);
+    expect(performance.now() - started).toBeLessThan(1_500 * TIMING_BUDGET_SCALE);
   });
 });

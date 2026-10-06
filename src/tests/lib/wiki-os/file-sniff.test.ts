@@ -3,6 +3,7 @@
  * Plan 411: what an upload is is decided by its bytes. Real PNG, JPEG, GIF and WebP headers are built here (no fixture
  * files), a scripted SVG is refused and a clean one accepted, and a hostile SVG costs linear time.
  */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   extensionMatches,
   fileExtension,
@@ -312,14 +313,14 @@ describe("sniffFile: SVG", () => {
     const started = Date.now();
     const big = svg(`<svg><style>${"url(#a ".repeat(Math.floor(9_800_000 / 7))}</style></svg>`);
     expect(sniffFile(big)).toMatchObject({ ok: false, code: "unsafe-svg" });
-    expect(Date.now() - started).toBeLessThan(3_000);
+    expect(Date.now() - started).toBeLessThan(3_000 * TIMING_BUDGET_SCALE);
   });
 
   it("reads ten megabytes of closed url() references in linear time, and accepts them when they stay in the file", () => {
     const started = Date.now();
     const css = "fill:url(#a);".repeat(Math.floor(9_800_000 / 13));
     expect(svgProblem(`<svg><style>${css}</style></svg>`)).toBeNull();
-    expect(Date.now() - started).toBeLessThan(3_000);
+    expect(Date.now() - started).toBeLessThan(3_000 * TIMING_BUDGET_SCALE);
     // one that leaves the file, at the very end, is still found
     expect(svgProblem(`<svg><style>${css}a{fill:url(//evil.example/a)}</style></svg>`)).toBe(
       "it refers to something outside the file (url())"
@@ -333,7 +334,7 @@ describe("sniffFile: SVG", () => {
     const urls = `<svg>${"url( ".repeat(100_000)}</svg>`;
     const refs = `<svg><a href="${"&#x6a;".repeat(100_000)}"/></svg>`;
     for (const text of [nested, spaces, urls, refs]) svgProblem(text);
-    expect(Date.now() - started).toBeLessThan(5_000);
+    expect(Date.now() - started).toBeLessThan(5_000 * TIMING_BUDGET_SCALE);
   });
 });
 

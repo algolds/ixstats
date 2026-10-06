@@ -4,6 +4,7 @@
  * Verifies execution time and memory footprint stay within performance budgets.
  */
 
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { generateWorld } from "~/lib/worldgen/v2/index";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 
@@ -20,7 +21,7 @@ describe("v2/performance", () => {
     });
     const elapsed = performance.now() - t0;
 
-    expect(elapsed).toBeLessThan(3000);
+    expect(elapsed).toBeLessThan(3000 * TIMING_BUDGET_SCALE);
     expect(world.layers.background!.features.length).toBeGreaterThan(0);
   });
 
@@ -36,7 +37,7 @@ describe("v2/performance", () => {
 
     // Assert fast execution per stage for 5K mesh
     for (const [stage, timeMs] of Object.entries(stageTimes)) {
-      expect(timeMs).toBeLessThan(2000); // no single stage takes over 2s for 5K mesh
+      expect(timeMs).toBeLessThan(2000 * TIMING_BUDGET_SCALE); // no single stage takes over 2s for 5K mesh
     }
   });
 
