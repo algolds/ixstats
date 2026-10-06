@@ -12,7 +12,10 @@ const TELLS: Record<string, RegExp> = {
   statLabel: /\btext-stat-label\b/g,
   emDash: /—/g,
   sparks: /\bSparks\b/g,
-  emoji: /\p{Extended_Pictographic}/gu,
+  // Engines disagree on some code points: V8 (Node) counts U+2605 ★ as Extended_Pictographic,
+  // JavaScriptCore (Bun, which CI runs Jest under) does not. Excluding them keeps the count
+  // identical whichever runtime writes the baseline.
+  emoji: /(?![\u2605])\p{Extended_Pictographic}/gu,
   hoverScale: /\bhover:scale-/g,
   hexClass: /\[#[0-9a-fA-F]{3,8}\]/g,
   rawPalette:
