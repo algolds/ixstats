@@ -1,5 +1,6 @@
 /**
- * Exchange router: the Sovereign (₷) economy. Conversion, companies and contracts.
+ * Exchange router: the Sovereign (₷) economy. Conversion, companies and contracts here; the
+ * share market, dividends, sector funds, decisions and tenders in markets.ts.
  * Spec: docs/specs/2026-10-06-exchange-economy-design.md; system doc: docs/systems/exchange.md.
  *
  * Every mutation is rate limited per procedure and checks the `vault_isExchangeEnabled`
@@ -36,6 +37,7 @@ import {
 import { getExchangeOverview, listContracts } from "~/lib/exchange/queries";
 import { guard } from "./_errors";
 import { exchangeAdminRouter } from "./admin";
+import { exchangeMarketsRouter } from "./markets";
 
 const requestId = z.string().min(8).max(64);
 const sovereigns = z.number().int().min(1).max(10_000_000);
@@ -169,4 +171,8 @@ const exchangeUserRouter = createTRPCRouter({
     ),
 });
 
-export const exchangeRouter = mergeRouters(exchangeUserRouter, exchangeAdminRouter);
+export const exchangeRouter = mergeRouters(
+  exchangeUserRouter,
+  exchangeMarketsRouter,
+  exchangeAdminRouter
+);

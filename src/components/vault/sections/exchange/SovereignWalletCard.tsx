@@ -126,7 +126,10 @@ export function SovereignWalletCard({
         </div>
         {overview.isOpen && <ConvertForm overview={overview} onDone={onChanged} />}
         <p className="text-caption text-label-secondary">
-          Only Sovereigns you converted in can go back to IxCredits.
+          Sovereigns you converted in can go back to IxCredits
+          {conversion.revenueShare > 0
+            ? `, plus ${Math.round(conversion.revenueShare * 100)}% of what your companies earn on completed contracts once it is ${conversion.revenueHoldDays} days old.`
+            : "."}
         </p>
       </Card>
 

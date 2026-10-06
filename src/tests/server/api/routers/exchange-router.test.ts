@@ -2,6 +2,10 @@
  * The exchange router: admin procedures refuse members, failures map to tRPC codes,
  * and the procedures act as the signed-in user, never one named in the input.
  */
+jest.mock("~/lib/exchange/notify", () => ({
+  notifyExchange: jest.fn(),
+  sendExchangeNotices: jest.fn(),
+}));
 jest.mock("~/server/modules/forum", () => ({
   syncUserToForum: jest.fn().mockResolvedValue(true),
 }));
@@ -40,6 +44,7 @@ function setup(config: Record<string, string> = {}) {
         status: "ACTIVE",
       },
     ],
+    country: [{ id: "nation_other", name: "Other Land", ownerUserId: "other" }],
     systemConfig: Object.entries(config).map(([key, value]) => ({ key, value })),
   });
   // An ordinary member: admin rights go to the admin/staff/owner roles or level <= 20.
@@ -72,6 +77,8 @@ describe("exchange router", () => {
         convertFee: 0,
         convertDailyLimit: 1_000_000,
         seedSovereigns: 100_000,
+        revenueConvertibleShare: 1,
+        revenueHoldDays: 1,
       })
     ).rejects.toThrow(/Admin privileges required/);
   });
@@ -100,5 +107,43 @@ describe("exchange router", () => {
       caller.withdrawFromCompany({ companyId: "co_other", amount: 900, requestId: "request-0003" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(fake.tables.company![0]!.capital).toBe(900);
+  });
+
+  it("phase 2 founder and owner controls refuse anyone else", async () => {
+    const caller = setup();
+    await expect(
+      caller.declareDividend({ companyId: "co_other", amount: 100, requestId: "request-0004" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.setShareTrading({ companyId: "co_other", open: true })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.submitDecision({
+        companyId: "co_other",
+        type: "EXPAND",
+        amount: 100,
+        requestId: "request-0005",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.createTender({
+        countryId: "nation_other",
+        title: "Roads",
+        sectorKey: "industry",
+        value: 100,
+        biddingDays: 3,
+        requestId: "request-0006",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(fake.tables.company![0]!.capital).toBe(900);
+    expect(fake.tables.exchangeWallet![0]!.sovereigns).toBe(1000);
+  });
+
+  it("buys sector units for the signed-in user", async () => {
+    const caller = setup();
+    await caller.buySectorUnits({ sectorKey: "services", amount: 100, requestId: "request-0007" });
+    const sectors = await caller.getSectors();
+    expect(sectors.find((x) => x.sectorKey === "services")?.position?.value).toBe(100);
+    expect(fake.tables.exchangeWallet![0]!.sovereigns).toBe(900);
   });
 });

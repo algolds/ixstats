@@ -49,7 +49,7 @@ export function ContractsCard({
         />
       </div>
 
-      {overview.isOpen && activeCompanies.length > 0 && (
+      {overview.isOpen && (activeCompanies.length > 0 || overview.nations.length > 0) && (
         <div className="space-y-3">
           <Button size="sm" variant="secondary" onClick={() => setPosting((p) => !p)}>
             {posting ? "Close" : "Post a contract"}
@@ -57,6 +57,8 @@ export function ContractsCard({
           {posting && (
             <ContractForm
               companies={activeCompanies}
+              nations={overview.nations}
+              walletBalance={overview.wallet.sovereigns}
               onDone={() => {
                 setPosting(false);
                 setScope("mine");

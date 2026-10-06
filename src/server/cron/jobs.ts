@@ -261,6 +261,40 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/achievements/evaluate-cron")).runAchievementsEvaluate,
   },
   {
+    // Exchange (₷): recomputes the sector indices, rebalances the sector funds, applies due
+    // company decisions and refreshes fair values (docs/systems/exchange.md).
+    name: "exchange-market",
+    defaultSchedule: "7 */6 * * *",
+    lockName: "exchange-market",
+    timeoutMs: 15 * MINUTE,
+    modulePath: "~/lib/exchange/market",
+    exportName: "runExchangeMarketTick",
+    load: async () => {
+      const [{ runExchangeMarketTick }, { db }] = await Promise.all([
+        import("~/lib/exchange/market"),
+        import("~/server/db"),
+      ]);
+      return () => runExchangeMarketTick(db);
+    },
+  },
+  {
+    // Exchange (₷): cancels OPEN contracts never awarded within 3 days of their bidding window
+    // closing, refunding escrow once (idempotent).
+    name: "exchange-contract-expiry",
+    defaultSchedule: "*/15 * * * *",
+    lockName: "exchange-contract-expiry",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/lib/exchange/expiry",
+    exportName: "expireLapsedContracts",
+    load: async () => {
+      const [{ expireLapsedContracts }, { db }] = await Promise.all([
+        import("~/lib/exchange/expiry"),
+        import("~/server/db"),
+      ]);
+      return () => expireLapsedContracts(db);
+    },
+  },
+  {
     // pg_dump to backups/ in the runner's cwd, keeping the newest 14 (PL-11).
     name: "db-backup",
     defaultSchedule: "17 3 * * *",

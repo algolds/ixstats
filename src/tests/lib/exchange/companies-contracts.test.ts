@@ -3,6 +3,10 @@
  * §3-4): owner checks, the company cap, capital that never goes negative, and the
  * contract state machine with escrow paid out exactly once.
  */
+jest.mock("~/lib/exchange/notify", () => ({
+  notifyExchange: jest.fn(),
+  sendExchangeNotices: jest.fn(),
+}));
 import {
   depositToCompany,
   dissolveCompany,

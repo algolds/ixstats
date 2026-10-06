@@ -8,6 +8,8 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { CompaniesCard } from "./exchange/CompaniesCard";
 import { ContractsCard } from "./exchange/ContractsCard";
+import { SectorsCard } from "./exchange/SectorsCard";
+import { SharesCard } from "./exchange/SharesCard";
 import { SovereignWalletCard } from "./exchange/SovereignWalletCard";
 import { formatSovereigns, sectorLabel } from "./exchange/shared";
 
@@ -45,13 +47,14 @@ export function VaultExchangeSection() {
   const refresh = () => {
     void utils.exchange.getOverview.invalidate();
     void utils.exchange.listCompanies.invalidate();
+    void utils.exchange.getShareMarket.invalidate();
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Exchange"
-        subtitle="Sovereigns, companies and contracts. Convert IxCredits to found a company, post work and bid on other players' contracts."
+        subtitle="Sovereigns, companies, shares and contracts. Convert IxCredits to found a company, post work, bid on contracts and invest in companies and sectors."
       />
       {overview.isLoading ? (
         <Skeleton className="h-64 w-full" />
@@ -78,6 +81,8 @@ export function VaultExchangeSection() {
             <div className="space-y-6 lg:col-span-2">
               <CompaniesCard overview={overview.data} onChanged={refresh} />
               <ContractsCard overview={overview.data} onChanged={refresh} />
+              <SharesCard overview={overview.data} onChanged={refresh} />
+              <SectorsCard isOpen={overview.data.isOpen} onChanged={refresh} />
             </div>
           </div>
         </>

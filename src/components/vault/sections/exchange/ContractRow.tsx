@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -141,7 +142,10 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
               ` · bids close ${new Date(contract.biddingClosesAt).toLocaleDateString()}`}
           </p>
         </div>
-        <StatusBadge status={status} />
+        <div className="flex items-center gap-2">
+          {contract.type === "B2G" && <Badge variant="info">Government tender</Badge>}
+          <StatusBadge status={status} />
+        </div>
       </div>
       {contract.description && (
         <p className="text-footnote text-label-secondary whitespace-pre-line">

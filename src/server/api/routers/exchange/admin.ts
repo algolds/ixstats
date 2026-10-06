@@ -29,6 +29,8 @@ const configInput = z.object({
   convertFee: bounded("convertFee"),
   convertDailyLimit: bounded("convertDailyLimit"),
   seedSovereigns: bounded("seedSovereigns"),
+  revenueConvertibleShare: bounded("revenueConvertibleShare"),
+  revenueHoldDays: bounded("revenueHoldDays").int(),
 });
 
 export const exchangeAdminRouter = createTRPCRouter({

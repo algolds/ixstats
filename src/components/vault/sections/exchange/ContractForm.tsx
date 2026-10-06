@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Textarea } from "~/components/ui/textarea";
 import {
   CompanySelect,
@@ -18,13 +19,23 @@ import {
 
 interface ContractFormProps {
   companies: ReadonlyArray<{ id: string; name: string; capital: number }>;
+  /** Nations the viewer owns: they can post government tenders funded from their wallet. */
+  nations: ReadonlyArray<{ id: string; name: string }>;
+  walletBalance: number;
   onDone: () => void;
 }
 
-/** Post a B2B contract; its value moves from the company's capital into escrow. */
-export function ContractForm({ companies, onDone }: ContractFormProps) {
+type IssuerKind = "company" | "nation";
+
+/**
+ * Post a contract. From a company (B2B), its value moves from the company's capital into
+ * escrow; from a nation (a government tender, B2G), from the owner's wallet.
+ */
+export function ContractForm({ companies, nations, walletBalance, onDone }: ContractFormProps) {
   const notify = useNotify();
+  const [kind, setKind] = useState<IssuerKind>(companies.length > 0 ? "company" : "nation");
   const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
+  const [countryId, setCountryId] = useState(nations[0]?.id ?? "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sector, setSector] = useState<Sector>("services");
@@ -35,7 +46,7 @@ export function ContractForm({ companies, onDone }: ContractFormProps) {
   const days = parseAmount(rawDays);
   const company = companies.find((c) => c.id === companyId);
 
-  const create = api.exchange.createContract.useMutation({
+  const handlers = {
     onSuccess: () => {
       notify.success("Contract posted", "Bids are open");
       setTitle("");
@@ -44,10 +55,14 @@ export function ContractForm({ companies, onDone }: ContractFormProps) {
       rotate();
       onDone();
     },
-    onError: (e) => notify.error("Could not post the contract", e.message),
-  });
+    onError: (e: { message: string }) => notify.error("Could not post the contract", e.message),
+  };
+  const create = api.exchange.createContract.useMutation(handlers);
+  const tender = api.exchange.createTender.useMutation(handlers);
+  const pending = create.isPending || tender.isPending;
 
-  const valid = !!companyId && title.trim().length >= 3 && value >= 10 && days >= 1 && days <= 30;
+  const issuerChosen = kind === "company" ? !!companyId : !!countryId;
+  const valid = issuerChosen && title.trim().length >= 3 && value >= 10 && days >= 1 && days <= 30;
 
   return (
     <form
@@ -55,26 +70,50 @@ export function ContractForm({ companies, onDone }: ContractFormProps) {
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        create.mutate({
-          issuerCompanyId: companyId,
+        const terms = {
           title,
           description: description || undefined,
           sectorKey: sector,
           value,
           biddingDays: days,
           requestId,
-        });
+        };
+        if (kind === "company") create.mutate({ issuerCompanyId: companyId, ...terms });
+        else tender.mutate({ countryId, ...terms });
       }}
     >
+      {companies.length > 0 && nations.length > 0 && (
+        <SegmentedControl
+          aria-label="Issued by"
+          size="sm"
+          value={kind}
+          onValueChange={(v) => setKind(v as IssuerKind)}
+          options={[
+            { value: "company", label: "A company" },
+            { value: "nation", label: "My nation (tender)" },
+          ]}
+        />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field id="exchange-contract-company" label="Issuing company">
-          <CompanySelect
-            id="exchange-contract-company"
-            companies={companies}
-            value={companyId}
-            onChange={setCompanyId}
-          />
-        </Field>
+        {kind === "company" ? (
+          <Field id="exchange-contract-company" label="Issuing company">
+            <CompanySelect
+              id="exchange-contract-company"
+              companies={companies}
+              value={companyId}
+              onChange={setCompanyId}
+            />
+          </Field>
+        ) : (
+          <Field id="exchange-contract-nation" label="Issuing nation">
+            <CompanySelect
+              id="exchange-contract-nation"
+              companies={nations}
+              value={countryId}
+              onChange={setCountryId}
+            />
+          </Field>
+        )}
         <Field id="exchange-contract-sector" label="Sector">
           <SectorSelect id="exchange-contract-sector" value={sector} onChange={setSector} />
         </Field>
@@ -118,12 +157,17 @@ export function ContractForm({ companies, onDone }: ContractFormProps) {
         </Field>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" size="sm" disabled={!valid || create.isPending}>
-          {create.isPending ? "Posting..." : "Post contract"}
+        <Button type="submit" size="sm" disabled={!valid || pending}>
+          {pending ? "Posting..." : kind === "company" ? "Post contract" : "Post tender"}
         </Button>
-        {company && (
+        {kind === "company" && company && (
           <span className="text-caption text-label-secondary">
             {company.name} holds {formatSovereigns(company.capital)}
+          </span>
+        )}
+        {kind === "nation" && (
+          <span className="text-caption text-label-secondary">
+            Escrow comes from your wallet ({formatSovereigns(walletBalance)})
           </span>
         )}
       </div>

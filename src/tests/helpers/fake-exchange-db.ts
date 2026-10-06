@@ -20,6 +20,10 @@ const UNIQUE: Record<string, string[][]> = {
   contract: [["idempotencyKey"]],
   contractBid: [["contractId", "companyId"]],
   shareholding: [["companyId", "ownerUserId"]],
+  shareListing: [["idempotencyKey"]],
+  companyDividend: [["idempotencyKey"]],
+  sectorIndex: [["sectorKey"]],
+  sectorPosition: [["ownerUserId", "sectorKey"]],
   myVault: [["userId"]],
   vaultTransaction: [["idempotencyKey"]],
 };
@@ -33,6 +37,8 @@ const DEFAULTS: Record<string, () => Row> = {
     sharesIssued: 0,
     sharesOutstanding: 0,
     contractsWonValue: 0,
+    tradingOpen: false,
+    decisionValue: 0,
     status: "ACTIVE",
   }),
   contract: () => ({
@@ -45,8 +51,23 @@ const DEFAULTS: Record<string, () => Row> = {
     disputeReason: null,
     resolutionNote: null,
     idempotencyKey: null,
+    issuerCountryId: null,
+    fundedBy: null,
+    closedIxTime: null,
   }),
   contractBid: () => ({ outcome: null, standingDelta: 0 }),
+  shareholding: () => ({ shares: 0, avgCost: 0 }),
+  shareListing: () => ({ status: "OPEN", sellerUserId: null, idempotencyKey: null }),
+  sectorIndex: () => ({
+    value: 1000,
+    baseTotal: null,
+    dmModifier: 0,
+    computedIxTime: null,
+    fundSovereigns: 0,
+    unitsOutstanding: 0,
+  }),
+  sectorPosition: () => ({ units: 0, avgCost: 0 }),
+  companyDecision: () => ({ payload: null, effect: null, appliedIxTime: null }),
   myVault: () => ({
     credits: 0,
     lifetimeEarned: 0,
@@ -63,6 +84,8 @@ const DEFAULTS: Record<string, () => Row> = {
 const RELATIONS: Record<string, Record<string, [string, string]>> = {
   contractBid: { company: ["company", "companyId"], contract: ["contract", "contractId"] },
   contract: { issuerCompany: ["company", "issuerCompanyId"] },
+  shareListing: { company: ["company", "companyId"] },
+  shareholding: { company: ["company", "companyId"] },
 };
 
 function p2002(model: string, fields: string[]) {
