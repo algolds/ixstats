@@ -31,6 +31,12 @@ Read it end to end once before starting. Every command here is meant to be run b
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
     `resolvedBy` and a `(status, createdAt)` index
+  - the Exchange (2026-10-06, additive, VT-16/D5): nullable unique `idempotencyKey` on `exchange_transactions`,
+    `exchange_conversion_logs` and `exchange_contracts`; `exchange_contracts` gains issuer, escrow, award, dispute and
+    `updatedAt` columns plus `issuerCompanyId`/`winnerCompanyId` indexes; `SPEND_EXCHANGE` and `EARN_EXCHANGE` in the
+    vault transaction enum. The Exchange is on by default (`vault_isExchangeEnabled`; Admin → Vault and economy →
+    System config). New ₷ wallets now start at 1,000 instead of 10,000. **No data fix:** existing wallets keep their
+    balance, and seeded ₷ can't be converted to IxCredits (only ₷ converted in can go back out)
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 
 ## What prod looked like on 2026-09-27 (read-only check)

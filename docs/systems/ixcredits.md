@@ -24,7 +24,8 @@ Defined in `prisma/schema/cards.prisma`:
 | `todayEarned` | Float | Credits earned today (reset lazily on the first read/earn after midnight UTC) |
 
 ### `VaultTransaction`
-Immutable ledger recording every balance change with `vaultId`, `credits`, `balanceAfter`, `type` (a `VaultTransactionType` value stored as a string: `EARN_PASSIVE`, `EARN_ACTIVE`, `EARN_CARDS`, `EARN_SOCIAL`, `EARN_BONUS`, `REFUND`, `SPEND_*`, `ADMIN_ADJUSTMENT`), `source`, `metadata` (JSON audit trail), an optional unique `idempotencyKey`, and `createdAt`.
+Immutable ledger recording every balance change with `vaultId`, `credits`, `balanceAfter`, `type` (a `VaultTransactionType` value stored as a string: `EARN_PASSIVE`, `EARN_ACTIVE`, `EARN_CARDS`, `EARN_SOCIAL`, `EARN_BONUS`, `REFUND`, `SPEND_*`, `ADMIN_ADJUSTMENT`, and `SPEND_EXCHANGE` / `EARN_EXCHANGE` for
+conversions to and from Sovereigns, see [exchange.md](exchange.md)), `source`, `metadata` (JSON audit trail), an optional unique `idempotencyKey`, and `createdAt`.
 
 ---
 

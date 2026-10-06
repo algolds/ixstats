@@ -27,6 +27,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         isPacksEnabled: z.boolean(),
         isMaintenanceMode: z.boolean(),
         exemptStaffFromLimit: z.boolean(),
+        isExchangeEnabled: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -44,6 +45,7 @@ export const vaultAdminStoreRouter = createTRPCRouter({
           { key: "vault_isPacksEnabled", value: input.isPacksEnabled.toString() },
           { key: "vault_isMaintenanceMode", value: input.isMaintenanceMode.toString() },
           { key: "vault_exemptStaffFromLimit", value: input.exemptStaffFromLimit.toString() },
+          { key: "vault_isExchangeEnabled", value: input.isExchangeEnabled.toString() },
         ];
 
         await ctx.db.$transaction(

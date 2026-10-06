@@ -409,6 +409,8 @@ enum VaultTransactionType {
   SPEND_BOOST
   SPEND_COSMETIC
   ADMIN_ADJUSTMENT
+  SPEND_EXCHANGE
+  EARN_EXCHANGE
 }
 
 /// *

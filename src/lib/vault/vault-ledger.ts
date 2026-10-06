@@ -164,6 +164,7 @@ export async function checkDailyCap(
  * Earn types the global earning kill switch stops. REFUND is deliberately exempt: a refund
  * returns credits the user already paid, it doesn't mint new ones, so it must still land
  * while earning is off. ADMIN_ADJUSTMENT stays open so admins can still correct balances.
+ * EARN_EXCHANGE (Sovereigns converted back to IxCredits) is stopped too.
  */
 const KILL_SWITCHED_EARN_TYPES: ReadonlySet<VaultTransactionType> = new Set([
   "EARN_ACTIVE",
@@ -171,6 +172,7 @@ const KILL_SWITCHED_EARN_TYPES: ReadonlySet<VaultTransactionType> = new Set([
   "EARN_PASSIVE",
   "EARN_BONUS",
   "EARN_CARDS",
+  "EARN_EXCHANGE",
 ]);
 
 function assertEarnAllowed(config: VaultConfig, type: VaultTransactionType): void {
@@ -235,13 +237,16 @@ export async function earnCreditsTx(
 
   await checkAndResetDailyEarnings(vault, tx);
 
+  // Sovereigns converted back are the user's own credits returning, not play: no XP, not
+  // "earned today" (otherwise round trips through the Exchange would buy vault levels).
+  const counts = type !== "EARN_EXCHANGE";
   const updatedVault = await tx.myVault.update({
     where: { id: vault.id },
     data: {
       credits: { increment: amount },
       lifetimeEarned: { increment: amount },
-      todayEarned: { increment: amount },
-      vaultXp: { increment: Math.floor(amount) },
+      todayEarned: { increment: counts ? amount : 0 },
+      vaultXp: { increment: counts ? Math.floor(amount) : 0 },
     },
   });
 
@@ -314,6 +319,7 @@ export async function spendCreditsTx(
       type,
       source,
       metadata: metadata ? (JSON.stringify(metadata) as any) : null,
+      idempotencyKey: input.idempotencyKey ?? null,
     },
   });
 

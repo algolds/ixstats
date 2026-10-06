@@ -280,7 +280,7 @@ the spine.
 | Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
 | ✅ **Done (2026-10-05):** cosmetics visible to other players: the public, batched `vault.getEquippedCosmeticsFor` feeds the passport photo and name and forum post and thread authors | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
-| Exchange (₷) economy: build (fix `spend`, 0 ₷ seed, conversion) or drop 11 models | VT-16 | L | Decision D5 |
+| 🟡 **MVP done (2026-10-06, D5 (a)):** the Exchange (₷) at `/vault/exchange`: conditional, idempotent `spend`, a 1,000 ₷ seed, IxC ⇄ ₷ conversion (fee, daily cap, convert-out bounded by what went in), companies, B2B contracts with escrow and admin-decided disputes, the `isExchangeEnabled` vault flag ([spec](../specs/2026-10-06-exchange-economy-design.md), [system doc](../systems/exchange.md)). Left: phase 2 (shares, sector indices, company decisions, B2G tenders, contract expiry) | VT-16 | L | — |
 | 💤 Crafting extensions (catalysts, discovery, guilds, bulk): deprecated with crafting (2026-10-05) | PF§4 | — | — |
 
 ---
@@ -334,7 +334,7 @@ the spine.
 Run throughout, preferably in PRs that already touch the area.
 
 - **Dead schema:** drop the 57 fully dead models, and the always-empty ones once their feature is decided ([backlog §5](backlog.md#5-dead-schema)).
-  Needs M0 backups and Decisions D1, D2, D5 and D9.
+  Needs M0 backups and Decisions D1, D2 and D9 (D5 keeps the 13 Exchange models: it decided "build").
 - **Dead code:** ✅ MC-18 is closed: a re-check on 2026-10-05 (static, dynamic and string imports) found every file the audit listed already deleted. PL-18, WK-18 and SL-25 are done (2026-10-05), as is AT-16. (The dead intelligence calculator, `calculator.ts` and
   `live-data-transformers.ts`, is already deleted; the models it alone wrote remain in the schema.)
 - **Tests:** every one of the 69 routers has a router-level test (2026-10-05). Left: the 63 sub-router files no test
@@ -359,7 +359,7 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D2 | Defense force structure | (a) restore branch/unit authoring; (b) derive branches from builder defense data | **Decided (2026-10-06): (a)** restore branch and unit authoring. ✅ **Done (2026-10-06)** (MC-3) | M2 defense, Premium value |
 | D3 | Where WikiOS images live | (a) MediaWiki keeps hosting; (b) WikiOS stores them natively (Stage 3 direction) | **Decided (2026-10-06): (b)** with D20: PR #52 stores uploads natively and mirrors them to MediaWiki | WK-5, Stage 3 |
 | D4 | Premium & payments | (a) build checkout; (b) keep admin-granted premium, drop the pricing copy | (b) until the core loops are solid | M5 |
-| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | **Decided (2026-10-06): (a)** build conversion, companies and contracts | Schema drop, M5 |
+| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | **Decided (2026-10-06): (a)** build conversion, companies and contracts. MVP built 2026-10-06; the Exchange models leave the drop list | M5 (phase 2) |
 | D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Moot: crafting deprecated 2026-10-05 (the MYTHIC recipe and "failed rolls consume materials" no longer apply) |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |

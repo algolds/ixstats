@@ -130,17 +130,17 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->75<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->952<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->76<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->973<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 **IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `crafting/`, `trading/`, `lore-cards/`, `ns-import/`
 
-**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `quickactions/`, `historical/`, `countryGeo.ts`, `customTypes.ts`
+**MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `scheduledChanges.ts`, `quickactions/`, `historical/`, `countryGeo.ts`, `customTypes.ts`
 
 **Maps & Realms:** `geo/` (core, features, editor, admin, sovereignty, wiki), `realms/`
 
-**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `onoma/`
+**Wiki & Social:** `wikios/`, `wikiCache.ts`, `lorewards/`, `commons.ts`, `heraldry/`, `blurbs/`, `thinkpages/` (posts, accounts, feed, thinktanks), `messages/`, `polls/`, `forum/`, `ixnayid/`, `sports/`, `narrator/`, `onoma/`
 
 **Other:** `achievements/`, `activities/` (feed, follows, trending, activities), `admin/` (countries, wiki, worldEvents, system, users, cron, bot, stash, thinkpages), `countries/` (list, economy, identity, management, wiki, atomic, flags), `formulas.ts`, `notifications/`, `users/`, `user-logging.ts`, `system.ts`, `system-validation.ts`, `cache.ts`, `demo-mode.ts`, `builderDraft.ts`, `autosaveHistory.ts`, `autosaveMonitoring.ts`
 
