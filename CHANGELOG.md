@@ -14,6 +14,16 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🧭 Navigation (2026-10-06)
+
+- **Realms sidebar:** the Realms app opens the realm directory (`/realms`). Its sections are **My realm**
+  (`/countries`, the nations of your realm) and **Explore** (`/realms`); Collections and Leaderboards are no longer
+  listed there (both pages still exist).
+- **My realm** is the filterable directory that was `/explore` (search, tier, continent, region, population, sort,
+  compare), scoped to your realm or `?realm=`. `/explore` redirects to it. The shuffled card grid is retired.
+- **MyCountry icon:** the sidebar and the Halo tray use the MyCountry crown logo (the logo's globe with its crown
+  badge, in one colour).
+
 ### 🧹 Retirements (2026-10-06)
 
 - **Narrator retired (D10):** the `narrator` router, `src/lib/narrator/`, the admin "AI narrator" Labs panel and the
@@ -1318,7 +1328,7 @@ reads 1.4.0 until the RC2 cut.
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
   - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
   - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
-  - **Countries Directory Hub (`/countries`)**: Upgraded [CountriesHeader.tsx](src/app/countries/_components/CountriesHeader.tsx), [CountriesFocusGridModular.tsx](src/app/countries/_components/CountriesFocusGridModular.tsx), and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
+  - **Countries Directory Hub (`/countries`)**: Upgraded `CountriesHeader.tsx`, `CountriesFocusGridModular.tsx`, and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
   - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 
 ### Refactored & Modularized (IxCards & IxVault Architecture Decomposition)

@@ -118,17 +118,13 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("calls the Countries app Realms, keeping its route, with Countries as the first section", () => {
+  it("opens the Realms app on /realms, with My realm and Explore as its sections", () => {
     const realms = getApp("countries");
-    expect(realms).toMatchObject({ label: "Realms", href: "/countries" });
-    expect(realms.sections.map((section) => section.label)).toEqual([
-      "Countries",
-      "Explore",
-      "Collections",
-      "Leaderboards",
-      "Realms",
+    expect(realms).toMatchObject({ label: "Realms", href: "/realms" });
+    expect(realms.sections.map((section) => [section.label, section.href])).toEqual([
+      ["My realm", "/countries"],
+      ["Explore", "/realms"],
     ]);
-    expect(realms.sections[0]?.href).toBe("/countries");
   });
 
   it("folds ThinkPages into Home as emerald-tinted sections", () => {

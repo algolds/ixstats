@@ -7,12 +7,14 @@ import { ExpandableStatCard } from "./ExpandableStatCard";
 import { useMemo } from "react";
 
 interface CountriesPageHeaderProps {
+  title?: string;
   isLoading?: boolean;
   totalPopulation?: number;
   combinedGdp?: number;
 }
 
 export function CountriesPageHeader({
+  title = "My realm",
   isLoading = false,
   totalPopulation,
   combinedGdp,
@@ -29,7 +31,7 @@ export function CountriesPageHeader({
 
   return (
     <header className="mb-8">
-      <PageHeader title="Explore countries" bleed />
+      <PageHeader title={title} bleed />
       <div className="flex flex-col gap-3 sm:flex-row">
         <ExpandableStatCard
           icon={<Users aria-hidden="true" className="text-label-secondary h-4 w-4" />}

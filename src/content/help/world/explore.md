@@ -10,12 +10,9 @@ nextLabel: How the World Moves
 
 ## What Explore is
 
-[Explore](/explore) is a searchable, sortable list of every nation in your realm. It sits in the sidebar under **Realms**, next to **Countries**, and anyone can use it, signed in or not.
+**My realm** ([/countries](/countries)), under **Realms** in the sidebar, is a searchable, sortable list of every nation in your realm: filter, sort, page through results and compare. Anyone can use it, signed in or not. The old `/explore` address opens it too.
 
-- **Countries** ([/countries](/countries)) shows nations in a shuffled order, which is good for discovering new ones. See [Exploring Countries](/help/world/countries).
-- **Explore** ([/explore](/explore)) is for finding a particular kind of nation: filter, sort, page through results and compare.
-
-Both list the nations of your active nation's realm (IxWorld if you're signed out or have no nation). Only the Countries page can show another realm, by adding `?realm=<realm>` to its address.
+It lists the nations of your active nation's realm (IxWorld if you're signed out or have no nation); add `?realm=<realm>` to its address to list another realm. The sidebar's **Explore** opens the [realm directory](/realms), where you find, search and join realms.
 
 ## Filtering and sorting
 
@@ -33,7 +30,7 @@ Choose **Compare countries** to open the comparison window. Add up to eight nati
 
 ## Collections
 
-**Collections** ([/explore/collections](/explore/collections)), also under **Realms** in the sidebar, is something different: a gallery of players' public [Vault](/help/vault/overview) card collections. Search them, sort by newest, most valuable, most cards or top rated, and see the collection leaderboard.
+**Collections** ([/explore/collections](/explore/collections)) is something different: a gallery of players' public [Vault](/help/vault/overview) card collections. Search them, sort by newest, most valuable, most cards or top rated, and see the collection leaderboard.
 
 ## What you see on a profile
 

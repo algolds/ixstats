@@ -7,12 +7,12 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   StatsReport as BarChart3,
   Compass,
-  Crown,
   Globe,
   ChatBubble as MessageSquare,
   MoreHoriz as MoreHorizontal,
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
+import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
@@ -23,8 +23,10 @@ import { focusRing } from "~/components/ui/button";
 const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "var(--color-green)", bg: "bg-green/15", label: "Dashboard" },
   "/mycountry": { accent: "var(--color-yellow)", bg: "bg-yellow/15", label: "MyCountry" },
-  "/countries": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Explore" },
-  "/leaderboards": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Explore" },
+  "/countries": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Realms" },
+  "/leaderboards": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Realms" },
+  "/realms": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Realms" },
+  "/r/": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Realms" },
   "/maps": { accent: "var(--color-teal)", bg: "bg-teal/15", label: "Maps" },
   "/w": { accent: "var(--color-blue)", bg: "bg-blue/15", label: "Wiki" },
   "/forum": { accent: "var(--color-orange)", bg: "bg-orange/15", label: "Forum" },
@@ -59,8 +61,8 @@ interface NavTrayItem {
 
 const PRIMARY_NAV: NavTrayItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3, accent: "var(--color-green)" },
-  { name: "MyCountry", href: "/mycountry", icon: Crown, accent: "var(--color-yellow)" },
-  { name: "Explore", href: "/countries", icon: Globe, accent: "var(--color-purple)" },
+  { name: "MyCountry", href: "/mycountry", icon: MyCountryLogomark, accent: "var(--color-yellow)" },
+  { name: "Realms", href: "/realms", icon: Globe, accent: "var(--color-purple)" },
   { name: "Wiki", href: "/w", icon: WikiOSLogomark, accent: "var(--color-blue)" },
   { name: "Maps", href: "/maps", icon: Compass, accent: "var(--color-teal)" },
   { name: "Forum", href: "/forum", icon: MessageSquare, accent: "var(--color-orange)" },

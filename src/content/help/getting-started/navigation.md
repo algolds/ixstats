@@ -17,7 +17,7 @@ The sidebar on the left of every page (except the full-screen maps) lists the ma
 - **Maps** ([/maps](/maps)): the world map.
 - **Vault** ([/vault](/vault)): IxCredits, your daily reward, cards and the marketplace.
 - **Wiki** ([/wiki](/wiki)) and **Forum** ([/forum](/forum)).
-- **Realms**: [Countries](/countries) and [Explore](/explore) to browse every nation, card collections, [Leaderboards](/leaderboards) and the [realm directory](/realms). See [Exploring Countries](/help/world/countries).
+- **Realms**: **My realm** ([/countries](/countries)) to browse, filter and compare your realm's nations, and **Explore** ([/realms](/realms)) to find, search and join realms. See [Exploring Countries](/help/world/countries).
 - **Labs**: experimental tools (Onoma, Vexel, MyLeague and MyClub), when Labs is switched on for you. See [Labs](/help/labs/overview).
 - **Help** ([/help](/help)): these guides and What's new.
 - **Settings** ([/settings](/settings)): every settings panel.

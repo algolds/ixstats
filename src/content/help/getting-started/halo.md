@@ -27,7 +27,7 @@ The sidebar on the left lists the areas ("apps") of IxStats. Selecting one opens
 | **Vault** | IxCredits, your daily reward, cards, collections, the marketplace and import |
 | **Wiki** | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
 | **Forum** | Forums, trending, new posts, search, bookmarks and new thread |
-| **Realms** | [Countries](/countries), [Explore](/explore), Collections, [Leaderboards](/leaderboards) and [Realms](/realms) |
+| **Realms** | My realm ([/countries](/countries)) and Explore ([/realms](/realms)) |
 | **Labs** | Onoma, Vexel, MyLeague and MyClub |
 | **Help** | These guides, What's new, and the Ixnay Discord |
 | **Settings** | Every [settings panel](/help/getting-started/settings) |

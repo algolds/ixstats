@@ -1,0 +1,358 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
+import { CountriesPageHeader } from "./CountriesPageHeader";
+import { CountriesGrid } from "./CountriesGrid";
+import type {
+  SortField,
+  SortDirection,
+  TierFilter,
+  PopulationRange,
+} from "./filters";
+import CountriesFilterSidebar from "./CountriesFilterSidebar";
+import CountriesSortBar from "./CountriesSortBar";
+import { CountryComparisonModal } from "./CountryComparisonModal";
+import { useCountryComparison } from "~/hooks/useCountryComparison";
+import { createUrl } from "~/lib/utils";
+import { matchesTierFilter } from "~/lib/economic-tier-filter";
+import { Filter } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
+
+import type { PageCountryData } from "./CountriesGrid";
+
+/**
+ * The nations of a realm (My realm, /countries): search, filter by tier, continent, region and population,
+ * sort, page through and compare. `realm` is a realm slug; without it the server lists the viewer's active
+ * nation's realm (IxWorld when signed out).
+ */
+export function CountriesDirectory({ realm, title }: { realm?: string; title: string }) {
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [continentFilter, setContinentFilter] = useState<string>("all");
+  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [populationRange, setPopulationRange] = useState<PopulationRange>({});
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+
+  // Comparison functionality
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+  const {
+    // oxlint-disable-next-line eslint/no-unused-vars
+    comparisonCountries,
+    // oxlint-disable-next-line eslint/no-unused-vars
+    addCountryToComparison,
+    // oxlint-disable-next-line eslint/no-unused-vars
+    removeCountryFromComparison,
+    // oxlint-disable-next-line eslint/no-unused-vars
+    clearComparison,
+    getAvailableCountries,
+    // oxlint-disable-next-line eslint/no-unused-vars
+    isLoading: isLoadingComparison,
+  } = useCountryComparison();
+
+  // Get all countries without filtering at the API level to enable client-side filtering
+  const {
+    data: countriesResult,
+    isLoading,
+    error,
+  } = api.countries.getAll.useQuery(
+    { limit: 1000, realm },
+    { refetchOnWindowFocus: false, staleTime: 5 * 60 * 1000 }
+  );
+
+  const raw = countriesResult?.countries || [];
+  const processed: PageCountryData[] = raw.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    continent: c.continent,
+    region: c.region,
+    economicTier: c.economicTier,
+    populationTier: c.populationTier,
+    currentPopulation: c.currentPopulation,
+    currentGdpPerCapita: c.currentGdpPerCapita,
+    currentTotalGdp: c.currentTotalGdp,
+    landArea: c.landArea,
+    populationDensity: c.populationDensity,
+    gdpDensity: c.gdpDensity,
+    adjustedGdpGrowth: c.adjustedGdpGrowth ?? c.realGDPGrowthRate ?? null,
+    lastCalculated: c.lastCalculated,
+  }));
+
+  const availableContinents = useMemo(() => {
+    return Array.from(
+      new Set(processed.map((c) => c.continent).filter((x): x is string => !!x))
+    ).sort();
+  }, [processed]);
+
+  const availableRegions = useMemo(() => {
+    if (continentFilter === "all") return [];
+    return Array.from(
+      new Set(
+        processed
+          .filter((c) => c.continent === continentFilter)
+          .map((c) => c.region)
+          .filter((x): x is string => !!x)
+      )
+    ).sort();
+  }, [processed, continentFilter]);
+
+  const filtered = useMemo(() => {
+    let arr = [...processed];
+
+    // Search filter
+    const term = searchTerm.toLowerCase().trim();
+    if (term) {
+      arr = arr.filter(
+        (c) =>
+          c.name.toLowerCase().includes(term) ||
+          c.continent?.toLowerCase().includes(term) ||
+          c.region?.toLowerCase().includes(term)
+      );
+    }
+
+    // Tier filter
+    if (tierFilter !== "all") {
+      arr = arr.filter((c) => matchesTierFilter(c.economicTier, tierFilter));
+    }
+
+    // Continent filter
+    if (continentFilter !== "all") {
+      arr = arr.filter((c) => c.continent === continentFilter);
+    }
+
+    // Region filter
+    if (regionFilter !== "all") {
+      arr = arr.filter((c) => c.region === regionFilter);
+    }
+
+    // Population range filter
+    const { min, max } = populationRange;
+    if (min !== undefined) {
+      arr = arr.filter((c) => c.currentPopulation >= min);
+    }
+    if (max !== undefined) {
+      arr = arr.filter((c) => c.currentPopulation <= max);
+    }
+
+    // Sorting
+    const m = sortDirection === "asc" ? 1 : -1;
+    arr = arr.sort((a, b) => {
+      if (sortField === "name") {
+        return m * a.name.localeCompare(b.name);
+      }
+      let va, vb;
+      switch (sortField) {
+        case "population":
+          va = a.currentPopulation ?? 0;
+          vb = b.currentPopulation ?? 0;
+          break;
+        case "gdpPerCapita":
+          va = a.currentGdpPerCapita ?? 0;
+          vb = b.currentGdpPerCapita ?? 0;
+          break;
+        case "totalGdp":
+          va = a.currentTotalGdp ?? 0;
+          vb = b.currentTotalGdp ?? 0;
+          break;
+        case "economicTier":
+          va = a.economicTier ?? "";
+          vb = b.economicTier ?? "";
+          return m * va.localeCompare(vb);
+        case "continent":
+          va = a.continent ?? "";
+          vb = b.continent ?? "";
+          return m * va.localeCompare(vb);
+        case "region":
+          va = a.region ?? "";
+          vb = b.region ?? "";
+          return m * va.localeCompare(vb);
+        case "landArea":
+          va = a.landArea ?? 0;
+          vb = b.landArea ?? 0;
+          break;
+        case "populationDensity":
+          va = a.populationDensity ?? 0;
+          vb = b.populationDensity ?? 0;
+          break;
+        default:
+          va = (a as any)[sortField] ?? 0;
+          vb = (b as any)[sortField] ?? 0;
+          break;
+      }
+      return m * (va - vb);
+    });
+    return arr;
+  }, [
+    processed,
+    searchTerm,
+    tierFilter,
+    continentFilter,
+    regionFilter,
+    populationRange,
+    sortField,
+    sortDirection,
+  ]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [
+    // oxlint-disable-next-line
+    searchTerm,
+    tierFilter,
+    continentFilter,
+    regionFilter,
+    populationRange,
+    sortField,
+    sortDirection,
+  ]);
+
+  // Early return for error - after all hooks have been called
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-destructive text-title-1">Error loading countries</h1>
+          <p className="text-label-secondary mt-2">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const pageCount = Math.ceil(filtered.length / pageSize);
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const totalPop = filtered.reduce((sum, c) => sum + c.currentPopulation, 0);
+  const totalGdp = filtered.reduce((sum, c) => sum + c.currentTotalGdp, 0);
+
+  // Handler to clear all filters
+  const handleClearAll = () => {
+    setSearchTerm("");
+    setTierFilter("all");
+    setContinentFilter("all");
+    setRegionFilter("all");
+    setPopulationRange({});
+    setSortField("name");
+    setSortDirection("asc");
+  };
+
+  // Handler for compare button
+  const handleCompare = () => {
+    setIsComparisonModalOpen(true);
+  };
+
+  // Handle country selection from comparison modal
+  const handleCountrySelect = (countryId: string) => {
+    // Navigate to country detail page
+    // Find country by ID to get slug, then navigate
+    const country = processed.find((c) => c.id === countryId);
+    if (country?.slug) {
+      router.push(createUrl(`/countries/${country.slug}`));
+    }
+  };
+
+  const renderFilterSidebar = () => (
+    <CountriesFilterSidebar
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      tierFilter={tierFilter}
+      onTierFilterChange={setTierFilter}
+      continentFilter={continentFilter}
+      onContinentFilterChange={setContinentFilter}
+      regionFilter={regionFilter}
+      onRegionFilterChange={setRegionFilter}
+      populationRange={populationRange}
+      onPopulationRangeChange={setPopulationRange}
+      availableContinents={availableContinents}
+      availableRegions={availableRegions}
+      onClearAll={handleClearAll}
+    />
+  );
+
+  return (
+    <div className="bg-background min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <CountriesPageHeader
+          title={title}
+          isLoading={isLoading}
+          totalPopulation={totalPop}
+          combinedGdp={totalGdp}
+          filteredCountries={filtered}
+        />
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
+          {/* Sidebar: Filters (sticky rail on desktop) */}
+          <aside aria-label="Filters" className="hidden lg:block">
+            <div className="lg:sticky lg:top-(--shell-top-offset)">{renderFilterSidebar()}</div>
+          </aside>
+
+          {/* Main content: Sort/search bar, grid, pagination */}
+          <div>
+            {/* On mobile, the same filters open in a sheet */}
+            <div className="mb-4 lg:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="secondary" className="w-full">
+                    <Filter aria-hidden="true" className="h-4 w-4" />
+                    Show filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-sm">
+                  <SheetHeader className="mb-4 text-left">
+                    <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>Narrow the list of countries.</SheetDescription>
+                  </SheetHeader>
+                  {renderFilterSidebar()}
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Sort/search bar and compare button */}
+            <CountriesSortBar
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSortChange={(f, d) => {
+                setSortField(f);
+                setSortDirection(d);
+              }}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onCompare={handleCompare}
+            />
+
+            {/* Country grid */}
+            <CountriesGrid
+              countries={paged}
+              isLoading={isLoading}
+              searchTerm={searchTerm}
+              page={page}
+              pageCount={pageCount}
+              onPageChangeAction={setPage}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Country Comparison Modal */}
+      <CountryComparisonModal
+        isOpen={isComparisonModalOpen}
+        onClose={() => setIsComparisonModalOpen(false)}
+        availableCountries={getAvailableCountries()}
+        onCountrySelect={handleCountrySelect}
+      />
+    </div>
+  );
+}

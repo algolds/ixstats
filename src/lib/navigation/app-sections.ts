@@ -38,7 +38,6 @@ import {
   Cpu,
   Crown,
   Database,
-  DocMagnifyingGlass,
   Download,
   FireFlame,
   Flask,
@@ -50,7 +49,6 @@ import {
   HelpCircle,
   HomeSimple,
   Journal,
-  LeaderboardStar,
   List,
   Lock,
   Mail,
@@ -410,15 +408,14 @@ export const APPS: readonly AppDefinition[] = [
   {
     id: "countries",
     label: "Realms",
-    href: "/countries",
+    // /realms is the landing page for exploring, searching and joining realms.
+    href: "/realms",
     icon: Globe,
-    match: ["/countries", "/explore", "/leaderboards", "/realms", "/r"],
+    match: ["/realms", "/r", "/countries", "/explore", "/leaderboards"],
     sections: [
-      { id: "countries", label: "Countries", href: "/countries", icon: Globe },
-      { id: "explore", label: "Explore", href: "/explore", icon: DocMagnifyingGlass },
-      { id: "collections", label: "Collections", href: "/explore/collections", icon: Archive },
-      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: LeaderboardStar },
-      { id: "realms", label: "Realms", href: "/realms", icon: Community, match: ["/r"] },
+      // The nations of the viewer's realm (/countries follows the active nation's realm).
+      { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
+      { id: "explore", label: "Explore", href: "/realms", icon: Community, match: ["/r"] },
     ],
   },
   {

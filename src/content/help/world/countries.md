@@ -10,13 +10,13 @@ nextLabel: Explore & Comparing Nations
 
 ## The country directory
 
-**Countries** ([/countries](/countries)), under **Realms** in the sidebar, lists every nation in your realm (or another realm with `?realm=<realm>` in the address). Anyone can browse it, signed in or not.
+**My realm** ([/countries](/countries)), under **Realms** in the sidebar, lists every nation in your realm (or another realm with `?realm=<realm>` in the address). Anyone can browse it, signed in or not.
 
-- Nations appear in a **shuffled order** that changes on each visit, which makes it a good place to discover new ones. **Feeling lucky** opens a random nation from the current results.
-- **Search** by name, economic tier, continent or region.
-- **Filter** by continent and economic tier.
+- **Search** by name, continent or region.
+- **Filter** by economic tier, continent, region and population range, and **sort** by any figure.
+- **Compare** up to eight nations side by side. See [Comparing Nations](/help/world/explore).
 
-To sort, filter by population or compare nations side by side, use [Explore](/help/world/explore) instead.
+To find other realms, search across them or join one, choose **Explore**, which opens the [realm directory](/realms). See [Realms & Claiming a Nation](/help/world/realms).
 
 ## A country's profile
 
