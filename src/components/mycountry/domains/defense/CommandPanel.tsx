@@ -3,6 +3,7 @@
 
 import { useDefenseBudget } from "~/hooks/useDefenseBudget";
 import { BudgetManagementCard } from "~/components/mycountry/domains/defense/command";
+import { ForceStructurePanel } from "./forces/ForceStructurePanel";
 
 interface CommandPanelProps {
   countryId: string;
@@ -23,6 +24,7 @@ export function CommandPanel({ countryId }: CommandPanelProps) {
 
   return (
     <div className="space-y-6">
+      <ForceStructurePanel countryId={countryId} />
       <BudgetManagementCard
         budgetData={budgetData}
         editingBudget={editingBudget}
