@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
@@ -25,33 +25,67 @@ function lacksAuthorInfo(metadata: unknown) {
   return ["community", "imported>", "import>"].some((marker) => name.includes(marker));
 }
 
-/** Moves ownerships, auctions, watchlist and value history of a duplicate card onto the keeper. */
-async function mergeIntoKeeper(db: PrismaClient, keeperId: string, duplicateId: string) {
-  const ownerships = await db.cardOwnership.findMany({ where: { cardId: duplicateId } });
-  for (const own of ownerships) {
-    const existingOwner = await db.cardOwnership.findFirst({
-      where: { cardId: keeperId, ownerId: own.ownerId },
-    });
-    if (existingOwner) {
-      // The user already owns the keeper: merge quantities
-      await db.cardOwnership.update({
-        where: { id: existingOwner.id },
-        data: { quantity: existingOwner.quantity + own.quantity },
-      });
-      await db.cardOwnership.delete({ where: { id: own.id } });
-    } else {
-      await db.cardOwnership.update({ where: { id: own.id }, data: { cardId: keeperId } });
-    }
-  }
-
+/**
+ * Rows that hang off a card ownership (auctions reference the ownership, not the card): moved to `toId` before a
+ * merged-away ownership is deleted, so the delete can't cascade them away. A collection already holding the
+ * surviving ownership keeps that entry.
+ */
+async function moveOwnershipChildren(db: Prisma.TransactionClient, fromId: string, toId: string) {
   await db.cardAuction.updateMany({
-    where: { cardInstanceId: duplicateId },
-    data: { cardInstanceId: keeperId },
+    where: { cardInstanceId: fromId },
+    data: { cardInstanceId: toId },
   });
-  await db.cardWatchlist.updateMany({ where: { cardId: duplicateId }, data: { cardId: keeperId } });
-  await db.cardValueHistory.updateMany({
-    where: { cardId: duplicateId },
-    data: { cardId: keeperId },
+  const inBoth = await db.cardCollectionItem.findMany({
+    where: { cardOwnershipId: toId },
+    select: { collectionId: true },
+  });
+  await db.cardCollectionItem.deleteMany({
+    where: { cardOwnershipId: fromId, collectionId: { in: inBoth.map((i) => i.collectionId) } },
+  });
+  await db.cardCollectionItem.updateMany({
+    where: { cardOwnershipId: fromId },
+    data: { cardOwnershipId: toId },
+  });
+  await db.cardExperienceEvent.updateMany({
+    where: { ownershipId: fromId },
+    data: { ownershipId: toId },
+  });
+  await db.cardTransferEvent.updateMany({
+    where: { ownershipId: fromId },
+    data: { ownershipId: toId },
+  });
+}
+
+/** Moves ownerships (with their auctions and history), watchlist and value history of a duplicate card onto the keeper. */
+async function mergeIntoKeeper(db: PrismaClient, keeperId: string, duplicateId: string) {
+  await db.$transaction(async (tx) => {
+    const ownerships = await tx.cardOwnership.findMany({ where: { cardId: duplicateId } });
+    for (const own of ownerships) {
+      const existingOwner = await tx.cardOwnership.findFirst({
+        where: { cardId: keeperId, ownerId: own.ownerId },
+      });
+      if (existingOwner) {
+        // The user already owns the keeper: merge quantities, keeping the duplicate's auctions and history
+        await tx.cardOwnership.update({
+          where: { id: existingOwner.id },
+          data: { quantity: existingOwner.quantity + own.quantity },
+        });
+        await moveOwnershipChildren(tx, own.id, existingOwner.id);
+        await tx.cardOwnership.delete({ where: { id: own.id } });
+      } else {
+        // Auctions and history follow the ownership row itself
+        await tx.cardOwnership.update({ where: { id: own.id }, data: { cardId: keeperId } });
+      }
+    }
+
+    await tx.cardWatchlist.updateMany({
+      where: { cardId: duplicateId },
+      data: { cardId: keeperId },
+    });
+    await tx.cardValueHistory.updateMany({
+      where: { cardId: duplicateId },
+      data: { cardId: keeperId },
+    });
   });
 }
 

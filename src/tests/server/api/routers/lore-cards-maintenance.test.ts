@@ -44,6 +44,7 @@ let db: MockPrismaProxy;
 beforeEach(() => {
   jest.clearAllMocks();
   db = createMockPrisma();
+  db.$transaction.mockImplementation((cb: (tx: MockPrismaProxy) => unknown) => cb(db));
   db.$queryRawUnsafe = jest.fn().mockResolvedValue([]);
   db.card.deleteMany.mockImplementation(async ({ where }: any) => ({ count: where.id.in.length }));
   db.auditLog.create.mockResolvedValue({});
@@ -85,6 +86,38 @@ describe("purgeDuplicateCards", () => {
     });
     expect(db.card.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["dup"] } } });
     expect(result).toMatchObject({ success: true, purgedCount: 1, groupsResolved: 1 });
+  });
+
+  it("moves a merged-away ownership's auctions and history before deleting it", async () => {
+    db.$queryRawUnsafe.mockResolvedValue([{ wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" }]);
+    db.card.findMany.mockResolvedValue([{ id: "keep" }, { id: "dup" }]);
+    db.cardOwnership.findMany.mockResolvedValue([{ id: "own_a", ownerId: "alice", quantity: 1 }]);
+    db.cardOwnership.findFirst.mockResolvedValue({ id: "own_keep_a", quantity: 1 });
+    db.cardCollectionItem.findMany.mockResolvedValue([{ collectionId: "col_1" }]);
+
+    await callerAs(db, "admin").purgeDuplicateCards({});
+
+    // Auctions reference the ownership: deleting own_a would cascade them away.
+    expect(db.cardAuction.updateMany).toHaveBeenCalledWith({
+      where: { cardInstanceId: "own_a" },
+      data: { cardInstanceId: "own_keep_a" },
+    });
+    expect(db.cardCollectionItem.deleteMany).toHaveBeenCalledWith({
+      where: { cardOwnershipId: "own_a", collectionId: { in: ["col_1"] } },
+    });
+    expect(db.cardCollectionItem.updateMany).toHaveBeenCalledWith({
+      where: { cardOwnershipId: "own_a" },
+      data: { cardOwnershipId: "own_keep_a" },
+    });
+    for (const model of [db.cardExperienceEvent, db.cardTransferEvent]) {
+      expect(model.updateMany).toHaveBeenCalledWith({
+        where: { ownershipId: "own_a" },
+        data: { ownershipId: "own_keep_a" },
+      });
+    }
+    const moved = db.cardAuction.updateMany.mock.invocationCallOrder[0]!;
+    const deleted = db.cardOwnership.delete.mock.invocationCallOrder[0]!;
+    expect(moved).toBeLessThan(deleted);
   });
 
   it("reports duplicate groups with their redundant counts", async () => {
