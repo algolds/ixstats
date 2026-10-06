@@ -130,7 +130,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->77<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->928<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->77<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->936<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
@@ -146,7 +146,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 ### Database & Data Flow
 
-- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->341<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
+- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->342<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->21<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite October 2025)
