@@ -254,7 +254,7 @@ export function PatternDepthControl({
                 <div className="flex items-center gap-2">
                   <span className="bg-tint h-1.5 w-1.5 rounded-full" />
                   <span className="text-tint font-semibold">2 Organic:</span>
-                  <span>Natural flow (★)</span>
+                  <span>Natural flow (Recommended)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-indigo h-1.5 w-1.5 rounded-full" />
