@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Calculator, Map as MapIcon, OpenBook, Page, StatsReport } from "iconoir-react";
+import { Calculator, Map as MapIcon, OpenBook, StatsReport } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/utils";
@@ -28,9 +28,9 @@ interface QuickActionsProps {
 }
 
 /**
- * QuickActions — Compare (the comparison modal, loaded on demand), the Factbook, economic
- * modeling, Open on map and the wiki article. Gray buttons: the one filled button on the page is
- * the header's Country Actions.
+ * QuickActions: Compare (the comparison modal, loaded on demand), economic modeling, Open on map
+ * and the wiki article (the Factbook is the page they sit on, reached from the country tabs).
+ * Gray buttons: the one filled button on the page is the header's Country Actions.
  */
 export function QuickActions({
   countryId,
@@ -58,12 +58,6 @@ export function QuickActions({
         <Button variant="secondary" size="sm" className={item} onClick={() => setCompareOpen(true)}>
           <StatsReport aria-hidden />
           Compare
-        </Button>
-        <Button asChild variant="secondary" size="sm" className={item}>
-          <Link href={createUrl(`/countries/${slug}/factbook`)}>
-            <Page aria-hidden />
-            Factbook
-          </Link>
         </Button>
         <Button asChild variant="secondary" size="sm" className={item}>
           <Link href={createUrl(`/countries/${slug}/modeling`)}>

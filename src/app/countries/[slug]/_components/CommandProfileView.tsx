@@ -60,6 +60,7 @@ import { censusRealmName, scrollBehavior } from "~/components/country-profile/la
 import { useCountryProfileLayer, type CountryProfileLayer } from "../_hooks/useCountryProfileLayer";
 import type { LoreChapter } from "../_utils/profileLayer";
 import { CountryTabs } from "./CountryTabs";
+import { FactbookSectionNav } from "./FactbookSectionNav";
 import { Card } from "~/components/ui/card";
 
 /** The dock: one entry per domain. */
@@ -101,12 +102,13 @@ export interface CommandProfileViewProps {
 }
 
 /**
- * CommandProfileView — the country profile (`/countries/[slug]`): the hero (cover, flag,
- * identity), the national pulse, then a sticky dock (side rail ≥1024px, bottom bar below) over a
- * stream of domain tiles: country DNA and condition, territory, lore, economy, people, state
- * structure, foreign affairs and the chronicle. Visitors see the public record only
- * (server-enforced); the owner also sees a private strip. The Factbook (`/factbook`) is the
- * deep-dive.
+ * CommandProfileView: the Factbook tab's overview, at the country's own URL (`/countries/[slug]`):
+ * the hero (cover, flag, identity, key facts), the country tabs and the Factbook section pills,
+ * the national pulse, then a sticky dock (side rail ≥1024px, bottom bar below) over a stream of
+ * domain tiles: country DNA and condition, territory, lore, economy, people, state structure,
+ * foreign affairs and the chronicle. The other Factbook sections (`/factbook/economy`, ...) are
+ * the deep sections. Visitors see the public record only (server-enforced); the owner also sees
+ * a private strip.
  */
 export function CommandProfileView({
   slug,
@@ -537,6 +539,7 @@ function CommandBody({
       />
 
       <CountryTabs countrySlug={slug} />
+      <FactbookSectionNav countrySlug={slug} />
       <OwnerLayer owner={layer.owner} />
       <PulseBanner name={identity.name} vitals={vitals} />
 

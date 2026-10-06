@@ -8,13 +8,14 @@ import { CommandProfileView } from "../_components/CommandProfileView";
 import { useProfileShell } from "../_components/ProfileShellContext";
 
 /**
- * CountryProfilePage — `/countries/[slug]`, the country profile (route group `(profile)`): the
- * Command profile on the profile layer. The Factbook (`/factbook/**`), Dossier and Activity are
- * the deep-dives.
+ * CountryProfilePage: `/countries/[slug]` (route group `(profile)`), the Factbook tab's overview:
+ * the hero and key facts, then the domain stream, on the profile layer. The other Factbook
+ * sections (`/factbook/<section>`), the Dossier and Activity are the deep-dives; `/factbook`
+ * itself redirects here.
  *
  * Deep links that used the legacy URL hash (`/countries/:slug#economy`, `#dossier`,
- * `#activity`, …) still move to the equivalent route; any other hash stays on the profile.
- * `/countries/[slug]/modeling` lives outside this route group and is unaffected.
+ * `#activity`, …) still move to the equivalent route; any other hash (including `#overview`)
+ * stays here. `/countries/[slug]/modeling` lives outside this route group and is unaffected.
  */
 export default function CountryProfilePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);

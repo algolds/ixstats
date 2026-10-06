@@ -3,7 +3,6 @@
 import React from "react";
 import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import {
-  OverviewTab,
   EconomyTab,
   LaborTab,
   GovernmentTab,
@@ -12,11 +11,16 @@ import {
 import type { FactbookSection } from "~/lib/country/factbook-routes";
 
 /**
- * FactbookSectionContent — renders the tab content for a single factbook
- * section, consuming the shared `useFactbookMetrics` context (which lives in
- * the factbook layout). Shared by the five factbook route pages.
+ * FactbookSectionContent: renders the tab content for a single factbook section route, consuming
+ * the shared `useFactbookMetrics` context (which lives in the factbook layout). Shared by the
+ * four `/factbook/<section>` route pages. The overview is the country's own URL, rendered by
+ * `CommandProfileView`, so it has no case here.
  */
-export function FactbookSectionContent({ section }: { section: FactbookSection }) {
+export function FactbookSectionContent({
+  section,
+}: {
+  section: Exclude<FactbookSection, "overview">;
+}) {
   const {
     country,
     economyData,
@@ -24,9 +28,6 @@ export function FactbookSectionContent({ section }: { section: FactbookSection }
     governmentStructure,
     metricView,
     setMetricView,
-    wikiIntro,
-    wikiLoading,
-    wikiImages,
     setImageUploadModal,
     openMetricModal,
   } = useFactbookMetrics();
@@ -34,17 +35,6 @@ export function FactbookSectionContent({ section }: { section: FactbookSection }
   if (!country) return null;
 
   switch (section) {
-    case "overview":
-      return (
-        <OverviewTab
-          country={country}
-          wikiIntro={wikiIntro}
-          wikiImages={wikiImages}
-          wikiLoading={wikiLoading}
-          metricView={metricView}
-          setMetricViewAction={setMetricView}
-        />
-      );
     case "economy":
       return (
         <EconomyTab

@@ -3,31 +3,42 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { Activity, OpenBook, Page, Sparks } from "iconoir-react";
+import { Activity, OpenBook, Page } from "iconoir-react";
 import { springSnappy } from "~/lib/design/motion";
 import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import type { ProfileTabType } from "../_types";
 
-const TABS: { id: ProfileTabType; label: string; path: string; icon: typeof Page }[] = [
-  { id: "profile", label: "Profile", path: "", icon: Sparks },
-  { id: "factbook", label: "Factbook", path: "/factbook", icon: Page },
+/**
+ * The country's top-level tabs. The Factbook is the country's own URL: it opens on the overview
+ * (hero, key facts and the domain stream) and its other sections live under `/factbook/*`.
+ */
+export const COUNTRY_TABS: {
+  id: ProfileTabType;
+  label: string;
+  path: string;
+  icon: typeof Page;
+}[] = [
+  { id: "factbook", label: "Factbook", path: "", icon: Page },
   { id: "dossier", label: "Dossier", path: "/dossier", icon: OpenBook },
   { id: "activity", label: "Activity", path: "/activity", icon: Activity },
 ];
 
-/** The tab a pathname under `/countries/[slug]` belongs to (the profile when none matches). */
-function activeProfileTab(pathname: string | null, slug: string): ProfileTabType {
+/**
+ * The tab a pathname under `/countries/[slug]` belongs to. The country's own URL and every
+ * `/factbook/*` section are the Factbook, as is anything unrecognised.
+ */
+export function activeCountryTab(pathname: string | null, slug: string): ProfileTabType {
   const base = `/countries/${slug}`;
   const index = pathname?.indexOf(base) ?? -1;
   const rest = index >= 0 ? pathname!.slice(index + base.length).replace(/^\/+/, "") : "";
   const first = rest.split(/[/?#]/)[0];
-  return TABS.find((t) => t.path === `/${first}`)?.id ?? "profile";
+  return COUNTRY_TABS.find((t) => t.path !== "" && t.path === `/${first}`)?.id ?? "factbook";
 }
 
 /**
- * CountryTabs — Tier 1 navigation for a country: the profile (Command) and its deep-dives,
- * Factbook, Dossier and Activity. Real links styled as a Facet segmented control: a `fill-3`
+ * CountryTabs: Tier 1 navigation for a country: the Factbook (the country's own URL) and the
+ * Dossier and Activity deep-dives. Real links styled as a Facet segmented control: a `fill-3`
  * track and an opaque thumb that springs (`springSnappy`) to the current route.
  */
 export function CountryTabs({
@@ -38,12 +49,12 @@ export function CountryTabs({
   className?: string;
 }) {
   const pathname = usePathname();
-  const active = activeProfileTab(pathname, countrySlug);
+  const active = activeCountryTab(pathname, countrySlug);
 
   return (
     <nav aria-label="Country sections" className={cn("w-full min-w-0", className)}>
       <ul className="bg-fill-3 rounded-control flex w-full gap-0.5 overflow-x-auto p-0.5">
-        {TABS.map((tab) => {
+        {COUNTRY_TABS.map((tab) => {
           const isActive = tab.id === active;
           const Icon = tab.icon;
           return (
