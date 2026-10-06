@@ -1,10 +1,10 @@
 # Realms — Places
 
-**Last updated:** 2026-10-05
-**Routes:** `/realms` (directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
+**Last updated:** 2026-10-06
+**Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
-(`realms.region.ts`, `realms.region-actions.ts`), `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
+(`realms.region.ts`, `realms.region-actions.ts`), `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
 [region page design](../specs/2026-10-05-realm-regions-design.md)
@@ -17,7 +17,7 @@ one realm.
 
 ---
 
-## 1. Realm directory (`/realms`)
+## 1. Realms landing page and directory (`/realms`)
 
 `realms.directory` (public) lists the open realms:
 
@@ -26,12 +26,12 @@ one realm.
 
 **Visibility and status rule (AT-6):**
 
-| Realm | Listed (directory, its feed picker, embassy proposals) | Reachable by link (page, board, `?realm=`) |
-| :---- | :---- | :---- |
-| Public and active, or IxWorld | Yes | Yes |
-| Unlisted and active | No | Yes |
-| Archived | No | Yes, read-only and closed to claims |
-| Draft or generating | No | Only its staff (founder, site admins) |
+| Realm                         | Listed (directory, its feed picker, embassy proposals) | Reachable by link (page, board, `?realm=`) |
+| :---------------------------- | :----------------------------------------------------- | :----------------------------------------- |
+| Public and active, or IxWorld | Yes                                                    | Yes                                        |
+| Unlisted and active           | No                                                     | Yes                                        |
+| Archived                      | No                                                     | Yes, read-only and closed to claims        |
+| Draft or generating           | No                                                     | Only its staff (founder, site admins)      |
 
 - Listing is `DIRECTORY_REALM_WHERE` in `places.ts`. Nothing else lists realms to other players.
 - The builder's realm picker also offers an active unlisted realm to the player who founded it or holds a nation
@@ -53,18 +53,44 @@ Each row reports only counted facts:
 | `maxNationsPerUser` | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                                      |
 | `board`             | `null` until someone first opens the board. Then `{ recentPosts, lastPostAt }`: board posts in the last `BOARD_ACTIVITY_WINDOW_DAYS` (7) days and the newest post's time, both from real-time `createdAt` |
 
-Each row also carries `bannerUrl`, `tags` and `foundedAt` (`Realm.foundedAt`, else `createdAt`). The page shows
-each realm as a banner card with links to its page and board, and can be searched (name and description),
-sorted (name, most nations, most active board, newest) and filtered by tag; only tags some realm uses are
-offered. It shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the realm's cap. The link goes to the realm page, where
-claiming happens (`ClaimableNations`, `realms.claimNationPage`).
+| `openNationPageCount` | Nation pages of the realm's lore index that no country has taken yet (claimable, `realms.claimNationPage`; the same rule as the realm page's `nationPages`) |
 
-Signed-in players with claims see **Your claims** above the list (`realms.myClaims`, the `MyClaims` component): each
-claim's nation and realm, its status (pending review, approved, rejected) and a rejection's reason.
+Each row also carries `bannerUrl`, `tags` and `foundedAt` (`Realm.foundedAt`, else `createdAt`).
 
-Below the list, a **realm feed** panel shows the ThinkPages feed for one realm. It defaults to the realm of
-the viewer's active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector
-switches between realms and All realms.
+**Nation search.** `realms.searchNations({ query })` (public, `rateLimitedPublicProcedure`; query trimmed, 2 to 100
+characters) finds nations whose name contains the query, case-insensitive, in the realms `DIRECTORY_REALM_WHERE`
+lists only, so never in a draft, generating or unlisted realm. It returns at most `NATION_SEARCH_LIMIT` (20) rows,
+sorted by name, each with its realm (`id`, `slug`, `name`) and `claimable`:
+
+- `kind: "country"`: a non-demo country; claimable when nobody owns it. Owner ids are never returned.
+- `kind: "page"`: a lore-index nation page no country has taken yet; always claimable.
+
+### The landing page
+
+`/realms` is the main page for exploring, searching and joining realms (`src/app/realms/page.tsx`, sections in
+`src/app/realms/_components/`). Top to bottom, in the realm pages' gutter (`max-w-6xl`):
+
+1. **Hero** (`RealmsHero`): what realms are, the totals (realms, nations, open to claim) and one call to action
+   for the viewer. Signed out: **Sign in to play** and **Browse realms**. Signed in with no nation: **Join a
+   realm** (to Open to join, else Browse). Holding nations: **Go to your realms** and **Join another realm**.
+2. **Your realms** (signed in, `YourRealms`): each realm where the viewer holds nations (`realms.myNations`), with
+   its banner and thumbnail from the directory row, "You hold N of cap", each nation with **Play as**
+   (`PlayAsNation`; the active one reads Active) and links to the realm's board and Nations tab. Then **Your
+   claims** (`realms.myClaims`, the `MyClaims` component): each claim's nation and realm, its status (pending
+   review, approved, rejected) and a rejection's reason.
+3. **Search** (`RealmSearch`): one box. Realms match on name, description or tag (client side, over the
+   directory); nations come from `realms.searchNations` once two letters are typed, each showing its realm and a
+   **Claimable** badge (to the realm's Nations tab) or **Claimed**.
+4. **Open to join** (`OpenToJoin`): realms with `openNationCount + openNationPageCount > 0`, most open first, with
+   the count of unclaimed nations and nation pages and a link to the realm's Nations tab, where claiming happens
+   (`ClaimableNations`). It says so when the viewer already holds the realm's cap. Hidden when no realm is open.
+5. **Browse all realms** (`BrowseRealms`): every listed realm as a banner card with links to its page and board,
+   sorted (name, most nations, most active board, newest) and filtered by tag; only tags some realm uses are
+   offered. A card shows "Join · claim a nation" (or "Claim another nation") while the viewer is under the
+   realm's cap, linking to the realm's Nations tab.
+6. **Realm feed** (`RealmFeedPanel`): the ThinkPages feed for one realm. It defaults to the realm of the viewer's
+   active nation (`useViewerRealmId`), or to **All realms** when signed out, and a selector switches between
+   realms and All realms.
 
 ## 2. Realm feed filter
 
@@ -86,10 +112,10 @@ Each realm has one board: a ThinkTank of type `realm_board`, mapped by the `Real
 (`prisma/schema/realm-boards.prisma`). It is created the first time anyone opens it (`realms.getBoard`); there
 is no bulk migration. The full rules are in [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board). In short:
 
-| Who                                                      | Can                                                                  |
-| :------------------------------------------------------- | :------------------------------------------------------------------- |
-| Anyone (signed out included)                             | Read the board feed and the realm feed                               |
-| Owners of a nation in the realm                          | Post as a persona of one of their nations there, chat, join or leave |
+| Who                                                       | Can                                                                                 |
+| :-------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| Anyone (signed out included)                              | Read the board feed and the realm feed                                              |
+| Owners of a nation in the realm                           | Post as a persona of one of their nations there, chat, join or leave                |
 | Site admins, the founder, officers with the `board` power | Everything members can, plus remove posts (`removeGroupPost`), mute and ban nations |
 
 `realms.getBoard({ slug })` returns:
@@ -172,10 +198,10 @@ restriction cleared, and the player loses an officer post if it was their last n
 
 ### Governance
 
-| Who | Powers |
-| :-- | :----- |
-| Founder (`Realm.ownerId`), and site admins | Everything below, plus claims review and appointing officers |
-| Officer (`RealmOfficer`, custom title) | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll) |
+| Who                                        | Powers                                                                                                                        |
+| :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| Founder (`Realm.ownerId`), and site admins | Everything below, plus claims review and appointing officers                                                                  |
+| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll) |
 
 `realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).

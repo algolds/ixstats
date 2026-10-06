@@ -9,6 +9,7 @@ import {
   protectedProcedure,
   publicProcedure,
   rateLimitedMutationProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import {
   ClaimError,
@@ -30,7 +31,7 @@ import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache } from "~/lib/cache";
-import { listRealmDirectory, openRealmBoard } from "./places";
+import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
@@ -246,6 +247,11 @@ export const realmsRouter = createTRPCRouter({
 
   /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
   directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
+
+  /** Nation search on /realms: countries and claimable nation pages in the realms the directory lists. */
+  searchNations: rateLimitedPublicProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(100) }))
+    .query(({ ctx, input }) => searchDirectoryNations(ctx.db, input.query)),
 
   /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
   getBoard: publicProcedure
