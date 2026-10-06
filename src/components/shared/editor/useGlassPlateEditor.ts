@@ -84,7 +84,7 @@ export function useGlassPlateEditor({
   );
 
   const wikiImagesQuery = api.wikios.getPageImages.useQuery(
-    { title: wikiTarget },
+    { title: wikiTarget, wiki: selectedWikiSource },
     { enabled: isWikiOpen && wikiInsertMode === "embed" && !!wikiTarget.trim(), staleTime: 30_000 }
   );
 

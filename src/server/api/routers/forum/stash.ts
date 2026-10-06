@@ -25,20 +25,20 @@ export const forumStashRouter = createTRPCRouter({
       z.object({
         threadId: z.number(),
         title: z.string().min(1).max(500),
-        stashId: z.string().optional(),
+        stashId: z.string().max(64).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { db } = await import("~/server/db");
-      // Get or create the user's default stash
-      let targetStashId = input.stashId;
-      if (targetStashId) {
-        // A named stash must be one of the caller's own.
+      // A given stashId must be the caller's own; otherwise use (or create) their default stash.
+      let targetStashId: string;
+      if (input.stashId) {
         const owned = await db.stash.findFirst({
-          where: { id: targetStashId, userId: { in: requireWikiUserIds(ctx) } },
+          where: { id: input.stashId, userId: { in: requireWikiUserIds(ctx) } },
           select: { id: true },
         });
         if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
+        targetStashId = owned.id;
       } else {
         const defaultStash = await db.stash.findFirst({
           where: { userId: { in: requireWikiUserIds(ctx) }, isDefault: true },
@@ -57,7 +57,13 @@ export const forumStashRouter = createTRPCRouter({
       const pageSlug = `/forum/thread/${input.threadId}`;
 
       await db.stashItem.upsert({
-        where: { stashId_pageTitle: { stashId: targetStashId, pageTitle } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: targetStashId,
+            contentType: "forum_thread",
+            pageTitle,
+          },
+        },
         create: {
           stashId: targetStashId,
           pageTitle,
@@ -79,7 +85,7 @@ export const forumStashRouter = createTRPCRouter({
     .input(
       z.object({
         threadId: z.number(),
-        stashId: z.string().optional(),
+        stashId: z.string().max(64).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -87,12 +93,13 @@ export const forumStashRouter = createTRPCRouter({
       const pageTitle = `forum:thread:${input.threadId}`;
 
       if (input.stashId) {
+        const owned = await db.stash.findFirst({
+          where: { id: input.stashId, userId: { in: requireWikiUserIds(ctx) } },
+          select: { id: true },
+        });
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
         await db.stashItem.deleteMany({
-          where: {
-            stashId: input.stashId,
-            pageTitle,
-            stash: { userId: { in: requireWikiUserIds(ctx) } },
-          },
+          where: { stashId: owned.id, pageTitle, contentType: "forum_thread" },
         });
       } else {
         // Remove from all user's stashes
@@ -104,6 +111,7 @@ export const forumStashRouter = createTRPCRouter({
           where: {
             stashId: { in: userStashes.map((s) => s.id) },
             pageTitle,
+            contentType: "forum_thread",
           },
         });
       }
@@ -128,6 +136,7 @@ export const forumStashRouter = createTRPCRouter({
         where: {
           stashId: { in: userStashes.map((s) => s.id) },
           pageTitle,
+          contentType: "forum_thread",
         },
         select: { stashId: true },
       });

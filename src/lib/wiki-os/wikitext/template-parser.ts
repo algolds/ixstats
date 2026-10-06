@@ -5,8 +5,10 @@
  * nested templates, links, tables, and unclosed typing states.
  */
 
+import { forwardFinder } from "./forward-finder";
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
 import { classifyTemplate } from "./resolver";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 import type { ParsedTemplate, Diagnostic } from "./types";
 
 interface ScanTemplatesResult {
@@ -14,109 +16,145 @@ interface ScanTemplatesResult {
   diagnostics: Diagnostic[];
 }
 
+interface ScannedTemplate {
+  /** The parsed template, or null when the braces hold no usable name. */
+  parsed: ParsedTemplate | null;
+  /** Index just after the closing `}}`; the end of the text when the template is never closed. */
+  end: number;
+  closed: boolean;
+}
+
+/** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1; `nextTag` finds a `<` for calls whose position only grows. */
+function nextTemplateOpen(
+  wikitext: string,
+  from: number,
+  nextTag: (from: number) => number,
+  scanner: ProtectedScanner
+): number {
+  let i = from;
+  let brace = wikitext.indexOf("{{", i);
+  while (brace !== -1) {
+    const tag = nextTag(i);
+    if (tag === -1 || tag > brace) return brace;
+    const end = skipProtectedAt(wikitext, tag, false, scanner);
+    i = end ?? tag + 1;
+    if (brace < i) brace = wikitext.indexOf("{{", i);
+  }
+  return -1;
+}
+
+/** Scans the template whose `{{` is at `openIdx`: balanced braces, links, tables and comments. */
+export function scanTemplateAt(
+  wikitext: string,
+  openIdx: number,
+  scanner: ProtectedScanner = new ProtectedScanner(wikitext)
+): ScannedTemplate {
+  let depth = 0;
+  let inComment = false;
+  let j = openIdx;
+  let endIdx = -1;
+
+  while (j < wikitext.length) {
+    // 1. Comments
+    if (!inComment && wikitext.startsWith("<!--", j)) {
+      inComment = true;
+      j += 4;
+      continue;
+    }
+    if (inComment) {
+      if (wikitext.startsWith("-->", j)) {
+        inComment = false;
+        j += 3;
+        continue;
+      }
+      j++;
+      continue;
+    }
+
+    // 2. Literal tags (`<nowiki>}}</nowiki>`)
+    if (wikitext.charCodeAt(j) === 60) {
+      const skipped = skipProtectedAt(wikitext, j, false, scanner);
+      if (skipped !== null) {
+        j = skipped;
+        continue;
+      }
+    }
+
+    // 3. Links and tables hold braces of their own
+    if (wikitext.startsWith("[[", j) || wikitext.startsWith("]]", j)) {
+      j += 2;
+      continue;
+    }
+    if (wikitext.startsWith("{|", j) || wikitext.startsWith("|}", j)) {
+      j += 2;
+      continue;
+    }
+
+    // 4. Templates
+    if (wikitext.startsWith("{{", j)) {
+      depth++;
+      j += 2;
+      continue;
+    }
+    if (wikitext.startsWith("}}", j)) {
+      depth--;
+      j += 2;
+      if (depth === 0) {
+        endIdx = j;
+        break;
+      }
+      continue;
+    }
+
+    j++;
+  }
+
+  // Tolerant handling: unclosed template before EOF
+  if (endIdx === -1) {
+    const raw = wikitext.slice(openIdx);
+    const parsed = parseTemplateInner(raw.slice(2), raw, openIdx, wikitext.length, "incomplete");
+    return { parsed, end: wikitext.length, closed: false };
+  }
+
+  const raw = wikitext.slice(openIdx, endIdx);
+  const parsed = parseTemplateInner(raw.slice(2, -2), raw, openIdx, endIdx, "complete");
+  return { parsed, end: endIdx, closed: true };
+}
+
+/** The warning for a template that runs to the end of the text without closing. */
+export function unclosedTemplateDiagnostic(
+  parsed: ParsedTemplate,
+  openIdx: number,
+  textLength: number
+): Diagnostic {
+  return {
+    severity: "warning",
+    message: `Unclosed template: "${parsed.name}"`,
+    start: openIdx,
+    end: textLength,
+    code: "UNCLOSED_TEMPLATE",
+  };
+}
+
 export function scanTemplates(wikitext: string): ScanTemplatesResult {
   const templates: ParsedTemplate[] = [];
   const diags: Diagnostic[] = [];
+  const nextTag = forwardFinder(wikitext, "<");
 
   let i = 0;
+  const scanner = new ProtectedScanner(wikitext);
 
   while (i < wikitext.length) {
-    const openIdx = wikitext.indexOf("{{", i);
+    const openIdx = nextTemplateOpen(wikitext, i, nextTag, scanner);
     if (openIdx === -1) break;
 
-    let depth = 0;
-    let linkDepth = 0;
-    let tableDepth = 0;
-    let inComment = false;
-    let j = openIdx;
-    let endIdx = -1;
-
-    while (j < wikitext.length) {
-      // 1. Comments
-      if (!inComment && wikitext.startsWith("<!--", j)) {
-        inComment = true;
-        j += 4;
-        continue;
-      }
-      if (inComment) {
-        if (wikitext.startsWith("-->", j)) {
-          inComment = false;
-          j += 3;
-          continue;
-        }
-        j++;
-        continue;
-      }
-
-      // 2. Links
-      if (wikitext.startsWith("[[", j)) {
-        linkDepth++;
-        j += 2;
-        continue;
-      }
-      if (wikitext.startsWith("]]", j)) {
-        linkDepth = Math.max(0, linkDepth - 1);
-        j += 2;
-        continue;
-      }
-
-      // 3. Tables
-      if (wikitext.startsWith("{|", j)) {
-        tableDepth++;
-        j += 2;
-        continue;
-      }
-      if (wikitext.startsWith("|}", j)) {
-        tableDepth = Math.max(0, tableDepth - 1);
-        j += 2;
-        continue;
-      }
-
-      // 4. Templates
-      if (wikitext.startsWith("{{", j)) {
-        depth++;
-        j += 2;
-        continue;
-      }
-      if (wikitext.startsWith("}}", j)) {
-        depth--;
-        j += 2;
-        if (depth === 0) {
-          endIdx = j;
-          break;
-        }
-        continue;
-      }
-
-      j++;
-    }
-
-    // Tolerant handling: unclosed template before EOF
-    if (endIdx === -1) {
-      const raw = wikitext.slice(openIdx);
-      const inner = raw.slice(2);
-      const parsed = parseTemplateInner(inner, raw, openIdx, wikitext.length, "incomplete");
-      if (parsed) {
-        templates.push(parsed);
-        diags.push({
-          severity: "warning",
-          message: `Unclosed template: "${parsed.name}"`,
-          start: openIdx,
-          end: wikitext.length,
-          code: "UNCLOSED_TEMPLATE",
-        });
-      }
+    const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx, scanner);
+    if (parsed) templates.push(parsed);
+    if (!closed) {
+      if (parsed) diags.push(unclosedTemplateDiagnostic(parsed, openIdx, wikitext.length));
       break;
     }
-
-    const raw = wikitext.slice(openIdx, endIdx);
-    const inner = raw.slice(2, -2);
-    const parsed = parseTemplateInner(inner, raw, openIdx, endIdx, "complete");
-    if (parsed) {
-      templates.push(parsed);
-    }
-
-    i = endIdx;
+    i = end;
   }
 
   return { templates, diagnostics: diags };

@@ -244,3 +244,10 @@ scripts/reports/
 data/political-audit/
 scripts/*.json
 scripts/*_report.md
+
+# WikiOS bench / parity / round-trip script output (plan 405)
+.bench-out/
+scripts/ops/wikios-test-mediawiki/.env.test-mediawiki
+
+# WikiOS native uploads waiting for the mirror (plan 411): WIKIOS_UPLOAD_DIR defaults to this in dev
+.wikios-uploads/

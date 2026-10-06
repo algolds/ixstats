@@ -49,7 +49,8 @@ type NotificationCategory =
   | "policy"
   | "intelligence"
   | "global"
-  | "military";
+  | "military"
+  | "wiki";
 export type NotificationType = "info" | "success" | "warning" | "error" | "alert" | "update";
 type NotificationSeverity = "urgent" | "important" | "informational";
 type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";

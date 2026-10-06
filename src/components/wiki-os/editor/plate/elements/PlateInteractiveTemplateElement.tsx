@@ -6,9 +6,11 @@ import React, { useState, useId } from "react";
 import { useElement, usePath, useReadOnly, useEditorRef } from "platejs/react";
 import { Transforms } from "slate";
 import { api } from "~/trpc/react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { useTemplateSchema } from "../../hooks/useTemplateSchema";
 import { parse } from "~/lib/wiki-os/wikitext/parser";
-import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
+import { templateWikitext } from "../wiki-structure-wikitext";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +52,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
   const classification =
     element?.classification ||
     (templateName.toLowerCase().startsWith("infobox") ? "infobox" : "standard");
-  const rawWikitext = element?.rawWikitext || element?.raw || serializeTemplateToWikitext(element);
+  // What the template will be saved as: its own wikitext with the form's edits applied to it.
+  const rawWikitext = templateWikitext(element ?? {}, templateName);
   const params: Record<string, string> = element?.params || {};
 
   const { paramList, hasSchema, loading } = useTemplateSchema(templateName);
@@ -59,24 +62,18 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
     { template: templateName, params },
     { enabled: isModalOpen && activeTab === "preview", staleTime: 30_000 }
   );
+  // one object per preview HTML: a new one each render would write the preview's DOM again (React 19)
+  const previewMarkup = useHtmlMarkup(previewQuery.data ?? "");
 
-  // Update a single parameter value
+  // Update a single parameter value. Only the parameters and the `edited` flag change: the serializer
+  // rebuilds the template from its own wikitext, changing just the values that differ, so the
+  // formatting, order and comments of everything else survive the form.
   const handleParamChange = (key: string, value: string) => {
     if (readOnly || !path) return;
-    const nextParams = { ...params, [key]: value };
-    const nextWikitext = serializeTemplateToWikitext({
-      templateName,
-      params: nextParams,
-      positional: element?.positional,
-    });
-
     try {
       Transforms.setNodes(
         editor as any,
-        {
-          params: nextParams,
-          rawWikitext: nextWikitext,
-        } as any,
+        { params: { ...params, [key]: value }, edited: true } as any,
         { at: path }
       );
     } catch (e) {
@@ -107,6 +104,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
           templateName: parsedNode?.templateName || templateName,
           params: parsedNode?.params || params,
           rawWikitext: newWikitext,
+          // The typed wikitext is the template now: nothing is rebuilt from the form's parameters.
+          edited: false,
           parseState: parsedNode?.parseState,
         } as any,
         { at: path }
@@ -408,8 +407,8 @@ export function PlateInteractiveTemplateElement({ attributes, children }: PlateT
                 ) : previewQuery.data ? (
                   <div className="rounded-row border-separator bg-surface shadow-card overflow-x-auto border p-4">
                     <div
-                      className="wikios-article-body text-footnote"
-                      dangerouslySetInnerHTML={{ __html: previewQuery.data }}
+                      className={`wikios-article-body text-footnote ${ARTICLE_STYLE_ROOT_CLASS}`}
+                      dangerouslySetInnerHTML={previewMarkup}
                     />
                   </div>
                 ) : (

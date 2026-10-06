@@ -12,6 +12,7 @@ import {
 } from "iconoir-react";
 
 import { api } from "~/trpc/react";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { useNotify } from "~/hooks/useNotify";
 import { AccountTypeSelector } from "./account/AccountTypeSelector";
 import { AccountDetailsForm } from "./account/AccountDetailsForm";
@@ -88,7 +89,7 @@ function ModalHeader({
     <DialogHeader className="border-separator flex-row items-center gap-3 border-b px-4 py-3 text-left sm:px-6 sm:py-4">
       <div className="border-separator bg-surface-secondary rounded-row flex size-10 shrink-0 items-center justify-center overflow-hidden border p-2">
         <img
-          src="https://ixwiki.com/images/8/88/Thinkpages_Logo.svg"
+          src={mediaWikiImageUrl("/images/8/88/Thinkpages_Logo.svg")}
           alt="Thinkpages"
           className="size-full object-contain"
         />

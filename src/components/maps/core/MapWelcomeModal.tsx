@@ -23,7 +23,7 @@ import {
 } from "~/components/ui/dialog";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { Card } from "~/components/ui/card";
 import { SlidePage, TipCard, WelcomeFooter } from "~/components/maps/shared/WelcomeDialogParts";
 
@@ -190,7 +190,7 @@ function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
           }
         >
           <a
-            href={DEFAULT_MEDIAWIKI_URL}
+            href={mediaWikiOrigin()}
             target="_blank"
             rel="noopener"
             className={`hover:text-label ${TERM_CLASS}`}

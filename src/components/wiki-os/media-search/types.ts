@@ -1,4 +1,5 @@
 import { withBasePath } from "~/lib/base-path";
+import { isMediaWikiUrl, publicArticleUrl } from "~/lib/wiki-os/config";
 
 export interface CommonsImage {
   pageid: number;
@@ -68,6 +69,10 @@ interface WikiFileRecord {
 
 /** Route direct wiki file URLs through the local MediaWiki proxy. */
 function proxyWikiFileUrl(rawUrl: string): string {
+  // IxWiki's files are on its configured public host (not necessarily ixwiki.com).
+  if (isMediaWikiUrl(rawUrl)) {
+    return withBasePath(rawUrl.replace(/^(?:https?:)?\/\/[^/]+\//, "/api/mediawiki/ixwiki/"));
+  }
   for (const host of ["iiwiki", "ixwiki"]) {
     if (rawUrl.includes(`${host}.com/`)) {
       return withBasePath(
@@ -90,7 +95,7 @@ export function wikiFilesToImages(files: WikiFileRecord[], source: WikiSubSource
       title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
       thumbUrl: url,
       url,
-      descriptionUrl: `https://${source}.com/wiki/File:${encodeURIComponent(img.name)}`,
+      descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
       width: img.width || 0,
       height: img.height || 0,
       mime: img.mime || "image/png",

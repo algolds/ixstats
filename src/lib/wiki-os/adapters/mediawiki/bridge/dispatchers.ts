@@ -1,8 +1,7 @@
-// src/lib/wiki-os/adapters/mediawiki/bridge/dispatchers.ts
+// src/lib/wiki-os/bridge/dispatchers.ts
 // Public dispatchers routing requests across PostgreSQL (IxWiki) and HTTP (IIWiki/AltHistory).
 
 import { parseInfobox, parseCoordTemplate } from "~/lib/wiki-os/transformers/infobox-parser";
-import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import {
   type WikiSource,
   type WikiSearchResult,
@@ -23,7 +22,6 @@ import {
   ixwikiGetWikitext,
   ixwikiSearch,
   ixwikiRecentChanges,
-  ixwikiGetHistory,
   ixwikiGetUserContribs,
   ixwikiGetUserCreatedPages,
   ixwikiGetUserInfo,
@@ -33,9 +31,13 @@ import {
   ixwikiGetRandomPage,
   ixwikiResolveRedirect,
   ixwikiGetRevisionWikitext,
+  ixwikiGetCurrentRevMeta,
+  ixwikiSearchTemplates,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
+  ixwikiGetCategoryInfo,
   ixwikiGetImageMeta,
+  ixwikiGetPageImages,
 } from "./pg-reader";
 import {
   iiwikiGetWikitext,
@@ -45,6 +47,9 @@ import {
   fetchPageImagesHttp as httpGetPageImages,
   httpGetCategoryMembers,
 } from "./http-reader";
+
+// Re-exported from image-url (shared with client-safe code)
+export { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
 const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
 
@@ -164,17 +169,14 @@ export async function getPageSections(
 }
 
 /**
- * Get recent changes from IxWiki.
+ * Get recent changes from IxWiki: the edits that went live, plus the parked ones (flagged) when
+ * `includeParked`.
  */
-export async function getRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
-  return ixwikiRecentChanges(limit);
-}
-
-/**
- * Get page revision history via direct MySQL.
- */
-export async function getPageHistory(title: string, limit?: number, offset?: number) {
-  return ixwikiGetHistory(title, limit, offset);
+export async function getRecentChanges(
+  limit: number = 20,
+  options: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
+  return ixwikiRecentChanges(limit, options);
 }
 
 /**
@@ -190,14 +192,14 @@ export async function getUserContribs(
 }
 
 /**
- * Get all pages created by a user via direct MySQL.
+ * Get all pages created by a user from PostgreSQL.
  */
 export async function getUserCreatedPages(username: string, limit?: number) {
   return ixwikiGetUserCreatedPages(username, limit);
 }
 
 /**
- * Get user info via direct MySQL.
+ * Get user info from PostgreSQL.
  */
 export async function getUserInfo(username: string) {
   return ixwikiGetUserInfo(username);
@@ -224,7 +226,7 @@ export async function getBacklinks(title: string, limit?: number, offset?: numbe
   return ixwikiGetBacklinks(title, limit, offset);
 }
 
-interface CategoryMembersResult {
+export interface CategoryMembersResult {
   members: Array<{
     pageid?: number;
     pageId?: number;
@@ -323,21 +325,21 @@ export async function getCategoryMembers(
 }
 
 /**
- * Get site statistics via direct MySQL.
+ * Get site statistics from PostgreSQL.
  */
 export async function getSiteStats() {
   return ixwikiGetSiteStats();
 }
 
 /**
- * Get a random article title via direct MySQL.
+ * Get a random article title from PostgreSQL.
  */
 export async function getRandomPage() {
   return ixwikiGetRandomPage();
 }
 
 /**
- * Resolve redirects via direct MySQL (up to 5 hops).
+ * Resolve a redirect from Postgres (up to 2 hops): the page to show plus the target fragment.
  */
 export async function resolveRedirect(title: string) {
   return ixwikiResolveRedirect(title);
@@ -351,7 +353,21 @@ export async function getRevisionWikitext(ref: string) {
 }
 
 /**
- * Full-text search via MySQL searchindex table.
+ * Get current revision metadata (revid + timestamp) from PostgreSQL.
+ */
+export async function getCurrentRevMeta(title: string) {
+  return ixwikiGetCurrentRevMeta(title);
+}
+
+/**
+ * Search templates by prefix from PostgreSQL.
+ */
+export async function searchTemplates(query: string, limit?: number) {
+  return ixwikiSearchTemplates(query, limit);
+}
+
+/**
+ * Full-text search of IxWiki's articles (PostgreSQL).
  */
 export async function fullTextSearch(
   query: string,
@@ -363,10 +379,17 @@ export async function fullTextSearch(
 }
 
 /**
- * Get parent categories via direct MySQL.
+ * Get parent categories from PostgreSQL.
  */
 export async function getParentCategories(title: string) {
   return ixwikiGetParentCategories(title);
+}
+
+/**
+ * Get category info with subcategories from PostgreSQL.
+ */
+export async function getCategoryInfo(category: string) {
+  return ixwikiGetCategoryInfo(category);
 }
 
 /**
@@ -406,7 +429,9 @@ export async function getCoordinates(
 }
 
 /**
- * Get images referenced on a wiki page with thumbnail URLs.
+ * Get images referenced on a wiki page with thumbnail URLs. An IxWiki page's come from Postgres (its
+ * redirect followed, as MediaWiki's own image query did); a sister wiki's page asks its own wiki, and
+ * no title is ever tried on a wiki it does not belong to.
  */
 export async function getPageImages(
   title: string,
@@ -414,10 +439,33 @@ export async function getPageImages(
     excludePatterns?: RegExp[];
     thumbWidth?: number;
     limit?: number;
+    wiki?: WikiSource;
   }
 ) {
-  return httpGetPageImages(title, opts);
+  const wiki = opts?.wiki ?? "ixwiki";
+  if (wiki !== "ixwiki") return httpGetPageImages(title, wiki, opts);
+  const { title: shown } = await ixwikiResolveRedirect(title);
+  return ixwikiGetPageImages(shown, opts);
 }
+
+/**
+ * Search with fallback: try ixwiki first, then iiwiki.
+ */
+export async function searchWithFallback(
+  query: string,
+  limit: number = 10
+): Promise<WikiSearchResult[]> {
+  const results = await searchPages(query, limit, "ixwiki");
+  if (results.length > 0) return results;
+  return searchPages(query, limit, "iiwiki");
+}
+
+// ──────────────────────────────────────────────
+// Wikitext Processing Helpers
+// ──────────────────────────────────────────────
+
+import { cleanExcerpt, cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
+export { cleanWikiMarkup };
 
 /**
  * Extract the intro paragraph from raw wikitext.

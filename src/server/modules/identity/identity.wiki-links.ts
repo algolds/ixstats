@@ -9,6 +9,7 @@ import {
   wikiUserPageUrl,
   type ProofSource,
   type UserPageHistory,
+  type WikiUser,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -24,7 +25,9 @@ type WikiLinkErrorCode =
   | "NO_PENDING"
   | "EXPIRED"
   | "TOKEN_NOT_FOUND"
-  | "WIKI_UNREACHABLE";
+  | "WIKI_UNREACHABLE"
+  /** An admin link the admin may not make (their own account, a name holding imported groups). */
+  | "NOT_ALLOWED";
 
 export class WikiLinkError extends Error {
   constructor(
@@ -36,16 +39,22 @@ export class WikiLinkError extends Error {
   }
 }
 
-interface WikiLinkDeps {
-  fetchWikiUser: (source: ProofSource, username: string) => Promise<{ username: string; userId: number } | null>;
+export interface WikiLinkDeps {
+  fetchWikiUser: (source: ProofSource, username: string) => Promise<WikiUser | null>;
   fetchUserPageHistory: (source: ProofSource, username: string, since: Date) => Promise<UserPageHistory>;
   now?: () => Date;
   newToken?: () => string;
 }
 
-type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "user" | "$transaction">;
+type WikiLinkDb = Pick<PrismaClient, "wikiAccountLink" | "user" | "wikiUserGroup" | "$transaction">;
 /** Shape a transaction client needs to expose for the legacy-column writes below. */
-type WikiLinkTx = Pick<PrismaClient, "wikiAccountLink" | "user">;
+type WikiLinkTx = Pick<PrismaClient, "wikiAccountLink" | "user" | "wikiUserGroup">;
+
+/** Who is confirming a link by authority: the admin's user row, and whether they are a system owner. */
+export interface AdminLinkActor {
+  adminUserId: string;
+  isSystemOwner: boolean;
+}
 
 interface WikiLinkView {
   source: string;
@@ -144,13 +153,22 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
         `The code must be saved on User:${link.username} by ${link.username} themself`
       );
     }
+    // The account's age and edits at proof time decide whether the link alone autoconfirms (plan 409).
+    const wikiUser = await wikiCall(() => deps.fetchWikiUser(source, link.username));
     await db.$transaction(async (tx) => {
       const verifiedAt = now();
       // Re-check owner + token atomically: a concurrent start() may have re-owned this row (new
       // token) while we were waiting on the wiki fetch above.
       const claimed = await tx.wikiAccountLink.updateMany({
         where: { id: link.id, userId, token, verifiedAt: null },
-        data: { verifiedAt, token: null, tokenExpiresAt: null },
+        data: {
+          verifiedAt,
+          token: null,
+          tokenExpiresAt: null,
+          verifiedById: null,
+          mwRegisteredAt: wikiUser?.registration ?? null,
+          mwEditCount: wikiUser?.editCount ?? null,
+        },
       });
       if (claimed.count !== 1) {
         throw new WikiLinkError("NO_PENDING", "Your verification changed — start again");
@@ -164,26 +182,55 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
 
   /**
    * Admin-confirmed link: the admin's authority is the proof, not a token. Used only by the admin
-   * user-management router, never reachable from self-service `linkWiki`.
+   * user-management router, never reachable from self-service `linkWiki`. The row records who
+   * confirmed it (`verifiedById`): a link an ordinary admin confirmed never inherits the groups or
+   * blocks waiting for that wiki name (see rights.ts), so an admin cannot claim a MediaWiki
+   * bureaucrat's name. Two refusals enforce the same rule up front, for everyone but a system owner:
+   * a name that already holds pending groups, and the admin's own account.
    */
   async function adminVerify(
     userId: string,
     source: ProofSource,
     rawUsername: string,
-    wikiUserId: number | null
+    wikiUserId: number | null,
+    actor: AdminLinkActor
   ): Promise<{ username: string }> {
     const username = normalizeWikiUsername(rawUsername);
     const verifiedAt = now();
+    if (userId === actor.adminUserId && !actor.isSystemOwner) {
+      throw new WikiLinkError(
+        "NOT_ALLOWED",
+        "You cannot link your own wiki account: ask another administrator."
+      );
+    }
     await db.$transaction(async (tx) => {
       const holder = await tx.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
       if (holder && holder.userId !== userId && holder.verifiedAt) {
         throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
       }
+      if (source === "ixwiki" && !actor.isSystemOwner) {
+        const pending = await tx.wikiUserGroup.count({ where: { wikiUsername: username } });
+        if (pending > 0) {
+          throw new WikiLinkError(
+            "NOT_ALLOWED",
+            `${username} holds wiki groups that would pass to whoever is linked to it: only a system owner can link this name.`
+          );
+        }
+      }
       await tx.wikiAccountLink.deleteMany({ where: { userId, source, NOT: { username } } });
       await tx.wikiAccountLink.upsert({
         where: { source_username: { source, username } },
-        update: { userId, wikiUserId, verifiedAt, token: null, tokenExpiresAt: null },
-        create: { userId, source, username, wikiUserId, verifiedAt },
+        update: {
+          userId,
+          wikiUserId,
+          verifiedAt,
+          token: null,
+          tokenExpiresAt: null,
+          verifiedById: actor.adminUserId,
+          mwRegisteredAt: null,
+          mwEditCount: null,
+        },
+        create: { userId, source, username, wikiUserId, verifiedAt, verifiedById: actor.adminUserId },
       });
       if (source === "ixwiki") {
         await syncIxwikiLegacyColumns(tx, userId, username, wikiUserId, verifiedAt);

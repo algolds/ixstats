@@ -26,6 +26,7 @@ import {
   Eye,
   Group as Users,
 } from "iconoir-react";
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 
 type DetectedLink =
@@ -38,12 +39,16 @@ function wikiLink(match: RegExpMatchArray, wiki: "ixwiki" | "iiwiki"): DetectedL
   const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
   return NO_PREVIEW_TITLE.test(title) ? null : { kind: "wiki", title, wiki };
 }
+/** An absolute link to an article of the wiki, by the configured public host. */
+const ABSOLUTE_WIKI_LINK = new RegExp(
+  `(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`
+);
 
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string): DetectedLink | null {
-  // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
+  // Wiki links: <public host>/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
   const ixMatch =
-    href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
+    href.match(ABSOLUTE_WIKI_LINK) ??
     href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??
     href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
   if (ixMatch) return wikiLink(ixMatch, "ixwiki");

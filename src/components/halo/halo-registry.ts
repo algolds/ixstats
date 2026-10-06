@@ -228,7 +228,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Wiki recent changes",
-    path: "/wiki/recent-changes",
+    path: "/util/recent-changes",
     icon: Page,
     category: "Knowledge",
     description: "Recent article edits, revisions and lore updates",

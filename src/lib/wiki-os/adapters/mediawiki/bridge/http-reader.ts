@@ -1,29 +1,33 @@
+// src/lib/wiki-os/bridge/http-reader.ts
 // HTTP readers for external MediaWiki endpoints (IIWiki, Althistory, Commons).
 
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import {
+  type PageImage,
+  type SisterWikiSource,
   type WikiArticle,
   type WikiSearchResult,
-  type WikiSource,
   cacheGet,
   cacheSet,
 } from "./types";
 
 const USER_AGENT = DEFAULT_USER_AGENT;
-const WIKI_HEADERS = { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT };
-const OFFLINE_HOST_TTL_MS = 5 * 60 * 1000;
 
 const offlineExternalHosts = new Map<string, number>();
 
-function isExternalHostOffline(hostname: string): boolean {
-  const offlineSince = offlineExternalHosts.get(hostname);
-  if (!offlineSince) return false;
-  if (Date.now() - offlineSince <= OFFLINE_HOST_TTL_MS) return true;
-  offlineExternalHosts.delete(hostname);
+export function isExternalHostOffline(hostname: string): boolean {
+  const offlineTime = offlineExternalHosts.get(hostname);
+  if (offlineTime) {
+    if (Date.now() - offlineTime > 5 * 60 * 1000) {
+      offlineExternalHosts.delete(hostname);
+      return false;
+    }
+    return true;
+  }
   return false;
 }
 
-function markExternalHostOffline(hostname: string) {
+export function markExternalHostOffline(hostname: string) {
   if (!offlineExternalHosts.has(hostname)) {
     offlineExternalHosts.set(hostname, Date.now());
     console.warn(
@@ -35,21 +39,31 @@ function markExternalHostOffline(hostname: string) {
 
 /**
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
- * Returns null on persistent failures instead of throwing or polling repeatedly.
+ * Returns null on persistent failures instead of throwing or polling repeatedly. `form` makes it a
+ * POST of that form (a render of a page's wikitext does not fit in a URL).
  */
-async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promise<Response | null> {
+export async function fetchExternalWiki(
+  url: string,
+  timeoutMs: number = 12000,
+  form?: URLSearchParams
+): Promise<Response | null> {
   const hostname = new URL(url).hostname;
-  if (isExternalHostOffline(hostname)) return null;
+  if (isExternalHostOffline(hostname)) {
+    return null;
+  }
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(url, {
+      ...(form ? { method: "POST", body: form.toString() } : {}),
       headers: {
-        ...WIKI_HEADERS,
+        "User-Agent": USER_AGENT,
+        "Api-User-Agent": USER_AGENT,
         Accept: "application/json, text/html, */*",
         "Accept-Language": "en-US,en;q=0.9",
+        ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       },
       signal: controller.signal,
     });
@@ -59,96 +73,61 @@ async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promis
       markExternalHostOffline(hostname);
       return null;
     }
-    return response.ok ? response : null;
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return response;
   } catch (err: unknown) {
-    if (err instanceof Error && err.name === "AbortError") {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorName = err instanceof Error ? err.name : "";
+    if (errorName === "AbortError") {
       console.warn(`[WikiBridge] ${hostname} fetch timed out (${timeoutMs / 1000}s)`);
     } else {
-      console.warn(
-        `[WikiBridge] ${hostname} fetch failed:`,
-        err instanceof Error ? err.message : String(err)
-      );
+      console.warn(`[WikiBridge] ${hostname} fetch failed:`, errorMsg);
     }
     return null;
   }
 }
 
-const IIWIKI_BASE_URL = "https://iiwiki.com";
-export const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
-const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
+// ──────────────────────────────────────────────
+// IIWiki HTTP API
+// ──────────────────────────────────────────────
 
-/** The `api.php` URL of a wiki's own site (not the iiwiki dev proxy). */
-function wikiApiUrl(wiki: WikiSource): URL {
-  const rawBase =
-    wiki === "iiwiki"
-      ? IIWIKI_BASE_URL
-      : wiki === "althistory"
-        ? ALTHISTORY_API
-        : DEFAULT_MEDIAWIKI_URL;
-  const base = rawBase.replace(/\/+$/, "");
-  return new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+export function getIiwikiApiBaseUrl(): string {
+  return "https://iiwiki.com";
 }
 
-/** GET a JSON `action=query` from the live ixwiki API; null on a non-OK response, throws on network errors. */
-export async function fetchIxwikiLive<T>(
-  params: Record<string, string>,
-  timeoutMs: number
-): Promise<T | null> {
-  const query = new URLSearchParams({ ...params, format: "json" });
-  const res = await fetch(`${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php?${query}`, {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  return res.ok ? ((await res.json()) as T) : null;
+export function getFullIiwikiApiUrl(): string {
+  return getMediaWikiApiUrl("iiwiki");
 }
 
-/** MediaWiki returns `pages` as an array (formatversion 2) or an id-keyed object. */
+/** The pages of an `action=query` response, whether it came back as an array or an id-keyed map. */
 export function pagesOf<T>(raw: T[] | Record<string, T> | undefined): T[] {
   return Array.isArray(raw) ? raw : Object.values(raw ?? {});
 }
 
-/** GET JSON from a wiki API URL; null on a non-OK response, throws on network errors. */
-async function fetchWikiJson<T>(url: URL | string, timeoutMs: number): Promise<T | null> {
-  const res = await fetch(url, { headers: WIKI_HEADERS, signal: AbortSignal.timeout(timeoutMs) });
-  return res.ok ? ((await res.json()) as T) : null;
-}
-
-export function getFullIiwikiApiUrl(): string {
-  if (process.env.IIWIKI_DEV_PROXY_URL) {
-    return process.env.IIWIKI_DEV_PROXY_URL;
-  }
-  if (process.env.NODE_ENV === "development") {
-    return "https://maps.ixwiki.com/api/mediawiki/iiwiki/api.php";
-  }
-  return "https://iiwiki.com/api.php";
-}
-
-async function mediaWikiApiCall(
-  apiUrl: string,
-  params: Record<string, string>
-): Promise<unknown | null> {
-  const url = new URL(apiUrl);
-  for (const [k, v] of Object.entries({ format: "json", origin: "*", ...params })) {
+export async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
+  const url = new URL(getFullIiwikiApiUrl());
+  url.searchParams.set("format", "json");
+  url.searchParams.set("origin", "*");
+  for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
 
   const res = await fetchExternalWiki(url.toString());
-  return res ? res.json() : null;
+  if (!res) return null;
+  return res.json();
 }
 
-type WikiApiCall = (params: Record<string, string>) => Promise<unknown | null>;
-
-async function mediaWikiGetWikitext(
-  apiCall: WikiApiCall,
-  title: string,
-  label: string
-): Promise<WikiArticle | null> {
+export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
   try {
-    const data = (await apiCall({
+    const data = (await iiwikiApiCall({
       action: "query",
       titles: title,
       prop: "revisions",
-      rvprop: "content",
+      rvprop: "content|ids",
       rvslots: "main",
     })) as {
       query?: {
@@ -157,7 +136,7 @@ async function mediaWikiGetWikitext(
           {
             pageid?: number;
             title?: string;
-            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
+            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
           }
         >;
       };
@@ -176,20 +155,17 @@ async function mediaWikiGetWikitext(
       pageId: page.pageid,
       wikitext,
       length: wikitext.length,
+      revId: page.revisions?.[0]?.revid,
     };
   } catch (err) {
-    console.error(`[WikiBridge] ${label} fetch error:`, err);
+    console.error("[WikiBridge] iiwiki fetch error:", err);
     return null;
   }
 }
 
-async function mediaWikiSearch(
-  apiCall: WikiApiCall,
-  query: string,
-  limit: number
-): Promise<WikiSearchResult[]> {
+export async function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
   try {
-    const data = await apiCall({
+    const data = await iiwikiApiCall({
       action: "opensearch",
       search: query,
       limit: String(limit),
@@ -207,47 +183,42 @@ async function mediaWikiSearch(
   }
 }
 
-export function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
-  return mediaWikiApiCall(getFullIiwikiApiUrl(), params);
-}
-
-export function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
-  return mediaWikiGetWikitext(iiwikiApiCall, title, "iiwiki");
-}
-
-export function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
-  return mediaWikiSearch(iiwikiApiCall, query, limit);
-}
-
-type CategoryMemberType = "page" | "subcat" | "file";
-const MEMBER_TYPE_BY_NAMESPACE: Record<number, CategoryMemberType> = { 14: "subcat", 6: "file" };
-
 export async function httpGetCategoryMembers(
   category: string,
   limit: number = 50,
-  type?: CategoryMemberType,
-  wiki: WikiSource = "ixwiki"
+  type: "page" | "subcat" | "file" | undefined,
+  wiki: SisterWikiSource
 ): Promise<{
-  members: Array<{ pageid: number; title: string; type: CategoryMemberType }>;
+  members: Array<{ pageid: number; title: string; type: "page" | "subcat" | "file" }>;
 }> {
-  const url = wikiApiUrl(wiki);
-  url.search = new URLSearchParams({
-    action: "query",
-    list: "categorymembers",
-    cmtitle: `Category:${category.replace(/^Category:/i, "")}`,
-    cmlimit: String(Math.min(limit, 100)),
-    format: "json",
-    ...(type && { cmtype: type }),
-  }).toString();
+  const cleanCat = category.replace(/^Category:/i, "");
+  const base = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("list", "categorymembers");
+  url.searchParams.set("cmtitle", `Category:${cleanCat}`);
+  url.searchParams.set("cmlimit", String(Math.min(limit, 100)));
+  url.searchParams.set("format", "json");
+  if (type) {
+    url.searchParams.set("cmtype", type);
+  }
 
   try {
-    const data = await fetchWikiJson<{
-      query?: { categorymembers?: Array<{ pageid: number; title: string; ns: number }> };
-    }>(url, 8000);
-    const members = (data?.query?.categorymembers ?? []).map((m) => ({
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { members: [] };
+    const data = (await res.json()) as {
+      query?: {
+        categorymembers?: Array<{ pageid: number; title: string; ns: number }>;
+      };
+    };
+    const members = (data.query?.categorymembers ?? []).map((m) => ({
       pageid: m.pageid,
       title: m.title,
-      type: MEMBER_TYPE_BY_NAMESPACE[m.ns] ?? "page",
+      type: (m.ns === 14 ? "subcat" : m.ns === 6 ? "file" : "page") as "page" | "subcat" | "file",
     }));
     return { members };
   } catch (err) {
@@ -256,45 +227,49 @@ export async function httpGetCategoryMembers(
   }
 }
 
-interface RevisionRow {
-  revid: number;
-  timestamp: string;
-  user: string;
-  comment: string;
-  size: number;
-}
-
 /**
- * Fetch full revision lineage from MediaWiki to accurately identify the original page creator,
- * creation timestamp, latest editor, and all historical contributors.
+ * Fetch a sister wiki page's revision lineage to identify the original page creator, creation
+ * timestamp, latest editor, and all historical contributors. IxWiki's own come from Postgres.
  */
 export async function fetchMediaWikiPageAuthorsAndRevisions(
   title: string,
-  wiki: WikiSource = "ixwiki",
+  wiki: SisterWikiSource,
   limit: number = 250,
   timeoutMs: number = 8000
 ): Promise<{
   creator: { username: string; timestamp: string; avatar?: string | null } | null;
   lastEditor: { username: string; timestamp: string; avatar?: string | null } | null;
-  revisions: RevisionRow[];
+  revisions: Array<{
+    revid: number;
+    timestamp: string;
+    user: string;
+    comment: string;
+    size: number;
+  }>;
   contributors: Array<{ username: string; editCount: number; lastContributedAt?: string }>;
   totalContributors: number;
 } | null> {
-  const url = wikiApiUrl(wiki);
-  url.search = new URLSearchParams({
-    action: "query",
-    prop: "revisions",
-    titles: decodeURIComponent(title).replace(/_/g, " ").trim(),
-    rvprop: "ids|timestamp|user|comment|size",
-    rvlimit: String(Math.min(limit, 500)),
-    rvdir: "older", // newest to oldest
-    format: "json",
-  }).toString();
+  // `title` arrives already URL-decoded (a "%" in it is part of the title): never decode again.
+  const cleanTitle = title.replace(/_/g, " ").trim();
+  const rawBase = wiki === "iiwiki" ? getIiwikiApiBaseUrl() : ALTHISTORY_API;
+  const base = rawBase.replace(/\/+$/, "");
+
+  const url = new URL(base.endsWith("api.php") ? base : `${base}/api.php`);
+  url.searchParams.set("action", "query");
+  url.searchParams.set("prop", "revisions");
+  url.searchParams.set("titles", cleanTitle);
+  url.searchParams.set("rvprop", "ids|timestamp|user|comment|size");
+  url.searchParams.set("rvlimit", String(Math.min(limit, 500)));
+  url.searchParams.set("rvdir", "older"); // newest to oldest
+  url.searchParams.set("format", "json");
 
   try {
-    const data = await fetchWikiJson<{
-      query?: { pages?: Record<string, { revisions?: RevisionRow[] }> };
-    }>(url, timeoutMs);
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as any;
     const pages = data?.query?.pages;
     if (!pages) return null;
 
@@ -307,31 +282,39 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
     const newest = revList[0];
     const oldest = revList[revList.length - 1];
 
-    const contributors = new Map<
-      string,
-      { username: string; editCount: number; lastContributedAt: string }
-    >();
-    const revisions = revList.map((r) => {
+    const counts = new Map<string, { editCount: number; lastContributedAt: string }>();
+    const formattedRevs = revList.map((r: any) => {
       const user = r.user || "MediaWiki Contributor";
-      const timestamp = r.timestamp || new Date().toISOString();
-      const existing = contributors.get(user);
-      if (existing) existing.editCount += 1;
-      else contributors.set(user, { username: user, editCount: 1, lastContributedAt: timestamp });
+      const ts = r.timestamp || new Date().toISOString();
+      const existing = counts.get(user);
+      if (existing) {
+        existing.editCount += 1;
+      } else {
+        counts.set(user, { editCount: 1, lastContributedAt: ts });
+      }
       return {
         revid: r.revid || 0,
-        timestamp,
+        timestamp: ts,
         user,
         comment: r.comment || "",
         size: r.size || 0,
       };
     });
 
+    const contributors = Array.from(counts.entries())
+      .map(([username, val]) => ({
+        username,
+        editCount: val.editCount,
+        lastContributedAt: val.lastContributedAt,
+      }))
+      .sort((a, b) => b.editCount - a.editCount);
+
     return {
       creator: oldest ? { username: oldest.user, timestamp: oldest.timestamp } : null,
       lastEditor: newest ? { username: newest.user, timestamp: newest.timestamp } : null,
-      revisions,
-      contributors: Array.from(contributors.values()).sort((a, b) => b.editCount - a.editCount),
-      totalContributors: contributors.size,
+      revisions: formattedRevs,
+      contributors,
+      totalContributors: counts.size,
     };
   } catch (err) {
     console.error(`[WikiBridge] Error fetching revisions for "${title}" on ${wiki}:`, err);
@@ -339,118 +322,192 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
   }
 }
 
-export function althistoryApiCall(params: Record<string, string>): Promise<unknown | null> {
-  return mediaWikiApiCall(ALTHISTORY_API, params);
+// ──────────────────────────────────────────────
+// AltHistory Wiki HTTP API
+// ──────────────────────────────────────────────
+
+export const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
+
+export async function althistoryApiCall(params: Record<string, string>): Promise<unknown | null> {
+  const url = new URL(ALTHISTORY_API);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("origin", "*");
+  for (const [k, v] of Object.entries(params)) {
+    url.searchParams.set(k, v);
+  }
+
+  const res = await fetchExternalWiki(url.toString());
+  if (!res) return null;
+  return res.json();
 }
 
-export function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
-  return mediaWikiGetWikitext(althistoryApiCall, title, "althistory");
+export async function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
+  try {
+    const data = (await althistoryApiCall({
+      action: "query",
+      titles: title,
+      prop: "revisions",
+      rvprop: "content|ids",
+      rvslots: "main",
+    })) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            pageid?: number;
+            title?: string;
+            revisions?: Array<{ revid?: number; slots?: { main?: { "*"?: string } } }>;
+          }
+        >;
+      };
+    } | null;
+
+    if (!data) return null;
+    const pages = data.query?.pages;
+    if (!pages) return null;
+
+    const page = Object.values(pages)[0];
+    if (!page || !page.pageid || page.pageid < 0) return null;
+
+    const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? "";
+    return {
+      title: page.title ?? title,
+      pageId: page.pageid,
+      wikitext,
+      length: wikitext.length,
+      revId: page.revisions?.[0]?.revid,
+    };
+  } catch (err) {
+    console.error("[WikiBridge] althistory fetch error:", err);
+    return null;
+  }
 }
 
-export function althistorySearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
-  return mediaWikiSearch(althistoryApiCall, query, limit);
-}
-
-interface PageImage {
-  title: string;
-  url: string;
-  thumbUrl: string;
-  width: number;
-  height: number;
-}
-
-interface PageImageOptions {
-  excludePatterns?: RegExp[];
-  thumbWidth?: number;
-  limit?: number;
-}
-
-type MediaWikiPages<P> = { query?: { pages?: Record<string, P> } };
-
-/** Images used on `title` at one wiki, excluding patterns and tiny or non-image files. */
-async function fetchPageImagesFromSource(
-  base: string,
-  title: string,
-  { excludePatterns = [], thumbWidth = 200, limit = 50 }: PageImageOptions
-): Promise<PageImage[]> {
-  const fetchJson = async <T>(query: string): Promise<T | null> => {
-    const res = await fetch(`${base}/api.php?action=query&${query}&format=json`, {
-      headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(5000),
+export async function althistorySearch(
+  query: string,
+  limit: number = 10
+): Promise<WikiSearchResult[]> {
+  try {
+    const data = await althistoryApiCall({
+      action: "opensearch",
+      search: query,
+      limit: String(limit),
+      namespace: "0",
     });
-    return res.ok ? ((await res.json()) as T) : null;
-  };
 
-  const listData = await fetchJson<
-    MediaWikiPages<{ missing?: boolean; images?: Array<{ title: string }> }>
-  >(`titles=${encodeURIComponent(title)}&prop=images&imlimit=${limit}&redirects=1`);
-  const page = Object.values(listData?.query?.pages ?? {})[0];
-  if (page?.missing || !page?.images?.length) return [];
+    if (!data || !Array.isArray(data) || data.length < 2) return [];
+    return ((data[1] as string[]) ?? []).map((title: string, i: number) => ({
+      title,
+      pageId: i,
+      length: 0,
+    }));
+  } catch {
+    return [];
+  }
+}
 
-  const imageTitles = page.images
-    .map((img) => img.title)
-    .filter((t) => !excludePatterns.some((p) => p.test(t)))
-    .slice(0, limit);
-  if (imageTitles.length === 0) return [];
+// ──────────────────────────────────────────────
+// Page Images Multi-Source Resolver
+// ──────────────────────────────────────────────
 
-  const infoData = await fetchJson<
-    MediaWikiPages<{
-      title?: string;
-      missing?: boolean;
-      imageinfo?: Array<{
-        url: string;
-        thumburl?: string;
-        width: number;
-        height: number;
-        mime?: string;
-      }>;
-    }>
-  >(
-    `titles=${imageTitles.map(encodeURIComponent).join("|")}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=${thumbWidth}`
-  );
+export async function fetchPageImagesHttp(
+  title: string,
+  wiki: SisterWikiSource,
+  opts?: {
+    excludePatterns?: RegExp[];
+    thumbWidth?: number;
+    limit?: number;
+  }
+): Promise<PageImage[] | null> {
+  const cacheKey = `pageimages:${wiki}:${title}`;
+  const cached = cacheGet<PageImage[]>(cacheKey);
+  if (cached) return cached;
 
-  return Object.values(infoData?.query?.pages ?? {}).flatMap((p) => {
-    const info = p?.imageinfo?.[0];
-    if (p?.missing || !info) return [];
-    if (info.width < 100 && info.height < 100) return [];
-    if (info.mime && !info.mime.startsWith("image/")) return [];
-    return [
-      {
+  const apiUrl = wiki === "iiwiki" ? `${getIiwikiApiBaseUrl()}/api.php` : ALTHISTORY_API;
+  const thumbWidth = opts?.thumbWidth ?? 200;
+  const maxImages = opts?.limit ?? 50;
+  const excludePatterns = opts?.excludePatterns ?? [];
+
+  try {
+    const listRes = await fetch(
+      `${apiUrl}?action=query&titles=${encodeURIComponent(title)}&prop=images&imlimit=${maxImages}&format=json&redirects=1`,
+      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
+    );
+    if (!listRes.ok) return null;
+    const listData = (await listRes.json()) as {
+      query?: {
+        pages?: Record<string, { missing?: boolean; images?: Array<{ title: string }> }>;
+      };
+    };
+    const pages = listData?.query?.pages;
+    if (!pages) return null;
+    const page = Object.values(pages)[0];
+    if (page?.missing || !page?.images?.length) return null;
+
+    const imageTitles = page.images
+      .map((img) => img.title)
+      .filter((t) => !excludePatterns.some((p) => p.test(t)));
+    if (imageTitles.length === 0) return null;
+
+    const titlesParam = imageTitles.slice(0, maxImages).map(encodeURIComponent).join("|");
+    const infoRes = await fetch(
+      `${apiUrl}?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=${thumbWidth}&format=json`,
+      { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(5000) }
+    );
+    if (!infoRes.ok) return null;
+    const infoData = (await infoRes.json()) as {
+      query?: {
+        pages?: Record<
+          string,
+          {
+            title?: string;
+            missing?: boolean;
+            imageinfo?: Array<{
+              url: string;
+              thumburl?: string;
+              width: number;
+              height: number;
+              mime?: string;
+            }>;
+          }
+        >;
+      };
+    };
+    const infoPages = infoData?.query?.pages;
+    if (!infoPages) return null;
+
+    const images: PageImage[] = [];
+    for (const p of Object.values(infoPages)) {
+      if (p?.missing || !p?.imageinfo?.[0]) continue;
+      const info = p.imageinfo[0];
+      if (info.width < 100 && info.height < 100) continue;
+      if (info.mime && !info.mime.startsWith("image/")) continue;
+      images.push({
         title: p.title ?? "",
         url: info.url,
         thumbUrl: info.thumburl ?? info.url,
         width: info.width,
         height: info.height,
-      },
-    ];
-  });
-}
-
-export async function fetchPageImagesHttp(
-  title: string,
-  opts?: PageImageOptions
-): Promise<PageImage[] | null> {
-  const cacheKey = `pageimages:${title}`;
-  const cached = cacheGet<PageImage[]>(cacheKey);
-  if (cached) return cached;
-
-  for (const base of [DEFAULT_MEDIAWIKI_URL, IIWIKI_BASE_URL]) {
-    try {
-      const images = await fetchPageImagesFromSource(base, title, opts ?? {});
-      if (images.length > 0) {
-        cacheSet(cacheKey, images);
-        return images;
-      }
-    } catch {
-      continue;
+      });
     }
+
+    if (images.length > 0) {
+      cacheSet(cacheKey, images);
+      return images;
+    }
+  } catch {
+    return null;
   }
   return null;
 }
 
+// ──────────────────────────────────────────────
+// Commons Media & Batch Fetchers
+// ──────────────────────────────────────────────
+
 export async function fetchMediaWikiImageBatch(
   fileTitles: string[],
-  endpoint: string = COMMONS_API,
+  endpoint: string = "https://commons.wikimedia.org/w/api.php",
   options?: { thumbWidth?: number; signal?: AbortSignal }
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
@@ -509,12 +566,11 @@ export interface CommonsCategoryItem {
   category: string;
 }
 
-const IMAGE_EXTENSION = /\.(svg|png|jpe?g|webp)$/i;
-
 export async function fetchCommonsCategoryMembers(
   categoryName: string,
   limit = 100
 ): Promise<CommonsCategoryItem[]> {
+  const endpoint = "https://commons.wikimedia.org/w/api.php";
   let cleaned = categoryName.trim();
   if (cleaned.includes("/wiki/")) {
     cleaned = cleaned.split("/wiki/").pop() || cleaned;
@@ -534,8 +590,10 @@ export async function fetchCommonsCategoryMembers(
     origin: "*",
   });
 
-  const response = await fetch(`${COMMONS_API}?${params}`, {
-    headers: { "User-Agent": DEFAULT_USER_AGENT },
+  const response = await fetch(`${endpoint}?${params.toString()}`, {
+    headers: {
+      "User-Agent": DEFAULT_USER_AGENT,
+    },
     signal: AbortSignal.timeout(10000),
   });
 
@@ -547,29 +605,38 @@ export async function fetchCommonsCategoryMembers(
   const rawMembers: Array<{ pageid: number; ns: number; title: string }> =
     data?.query?.categorymembers || [];
 
-  const imageFiles = rawMembers.filter(
-    (m) =>
-      (m.ns === 6 || m.title.toLowerCase().startsWith("file:")) && IMAGE_EXTENSION.test(m.title)
+  const fileMembers = rawMembers.filter(
+    (m) => m.ns === 6 || m.title.toLowerCase().startsWith("file:")
   );
+
+  const imageFiles = fileMembers.filter((m) => {
+    const t = m.title.toLowerCase();
+    return (
+      t.endsWith(".svg") ||
+      t.endsWith(".png") ||
+      t.endsWith(".jpg") ||
+      t.endsWith(".jpeg") ||
+      t.endsWith(".webp")
+    );
+  });
+
   if (imageFiles.length === 0) return [];
 
-  const imageMap = await fetchMediaWikiImageBatch(
-    imageFiles.map((f) => f.title),
-    COMMONS_API
-  );
+  const titles = imageFiles.map((f) => f.title);
+  const imageMap = await fetchMediaWikiImageBatch(titles, endpoint);
 
   const items: CommonsCategoryItem[] = [];
   for (const file of imageFiles) {
     const url = imageMap.get(file.title) || imageMap.get(file.title.replace(/^File:/i, ""));
     if (!url) continue;
 
-    const cleanTitle = file.title
+    let cleanTitle = file.title
       .replace(/^File:/i, "")
-      .replace(IMAGE_EXTENSION, "")
+      .replace(/\.(svg|png|jpg|jpeg|webp)$/i, "")
       .replace(/_/g, " ")
-      .trim()
-      .replace(/^Flag of /i, "Flag of ")
-      .replace(/^Flag /i, "Flag ");
+      .trim();
+
+    cleanTitle = cleanTitle.replace(/^Flag of /i, "Flag of ").replace(/^Flag /i, "Flag ");
 
     items.push({
       pageId: file.pageid,

@@ -19,6 +19,8 @@ import {
   searchShadowArticles,
   NativeSearchService,
 } from "~/lib/wiki-os/core/native-search-service";
+import { assetUrl } from "~/lib/base-path";
+import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { db } from "~/server/db";
 import { wikiSourceSchema } from "./_shared";
 
@@ -96,12 +98,18 @@ export const wikiosSearchRouter = createTRPCRouter({
     }),
 
   /**
-   * Get recent changes from the wiki feed.
+   * Get recent changes from the wiki feed: the edits that went live. `includeParked` adds the ones
+   * that did not (MediaWiki edits that conflicted with WikiOS's head), flagged `parked`.
    */
   getRecentChanges: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        includeParked: z.boolean().default(false),
+      })
+    )
     .query(async ({ input }) => {
-      return getRecentChanges(input.limit);
+      return getRecentChanges(input.limit, { includeParked: input.includeParked });
     }),
 
   /**
@@ -120,12 +128,35 @@ export const wikiosSearchRouter = createTRPCRouter({
   }),
 
   /**
+   * Title typeahead for the search boxes: titles that start with, contain or resemble the text
+   * (id, title, summary and lead image only; never the wikitext), at most 10.
+   */
+  typeahead: publicProcedure
+    .input(
+      z.object({
+        query: z.string().min(1).max(200),
+        limit: z.number().int().min(1).max(10).default(10),
+      })
+    )
+    .query(async ({ input }) => {
+      const results = await NativeSearchService.spotlightSearch(input.query, "ixwiki", input.limit);
+      return {
+        results: results.map((r) => ({
+          title: r.title,
+          snippet: r.snippet,
+          thumbnail: r.leadImageUrl ?? null,
+        })),
+      };
+    }),
+
+  /**
    * Full-text search with weighted relevance scoring — native PostgreSQL tsvector primary.
+   * `snippetRanges` are the character ranges of `snippet` that matched (the client marks them).
    */
   advancedSearch: publicProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(500),
+        query: z.string().min(1).max(256),
         limit: z.number().min(1).max(50).default(20),
         offset: z.number().min(0).default(0),
         namespace: z.number().optional(),
@@ -138,28 +169,28 @@ export const wikiosSearchRouter = createTRPCRouter({
           input.query,
           "ixwiki",
           input.limit,
-          input.offset
+          input.offset,
+          input.namespace
         );
-        if (native && native.results.length > 0) {
-          return {
-            results: native.results.map((r) => ({
-              title: r.title,
-              namespace: 0,
-              snippet: r.snippet,
-              titleSnippet: null,
-              sectionSnippet: null,
-              categorySnippet: null,
-              size: (r.readingTime || 1) * 200,
-              wordCount: (r.readingTime || 1) * 200,
-              timestamp: new Date().toISOString(),
-              thumbnail: r.leadImageUrl ?? null,
-            })),
-            totalHits: native.total,
-            hasMore: native.results.length >= input.limit,
-          };
-        }
+        return {
+          results: native.results.map((r) => ({
+            title: r.title,
+            namespace: input.namespace ?? 0,
+            snippet: r.snippet,
+            snippetRanges: r.snippetRanges,
+            titleSnippet: null,
+            sectionSnippet: null,
+            categorySnippet: null,
+            size: (r.readingTime || 1) * 200,
+            wordCount: (r.readingTime || 1) * 200,
+            timestamp: new Date().toISOString(),
+            thumbnail: r.leadImageUrl ?? null,
+          })),
+          totalHits: native.total,
+          hasMore: input.offset + native.results.length < native.total,
+        };
       } catch {
-        // Fallback to legacy MySQL fulltext search
+        // The native search could not answer: fall back to the bridge's reader
       }
 
       const result = await fullTextSearch(input.query, input.limit, input.offset, input.namespace);
@@ -168,6 +199,7 @@ export const wikiosSearchRouter = createTRPCRouter({
           title: r.title,
           namespace: r.namespace,
           snippet: r.snippet,
+          snippetRanges: [] as Array<[number, number]>,
           titleSnippet: null,
           sectionSnippet: null,
           categorySnippet: null,
@@ -196,49 +228,27 @@ export const wikiosSearchRouter = createTRPCRouter({
         query: z.string().max(200).optional(),
         category: z.string().max(200).optional(),
         limit: z.number().min(1).max(50).default(20),
-        fileTypes: z.array(z.string()).optional(),
+        fileTypes: z.array(z.string().max(100)).max(20).optional(),
         wiki: wikiSourceSchema,
       })
     )
     .query(async ({ input }) => {
-      // 1. Primary: Direct PostgreSQL Prisma Asset Search
+      // IxWiki's files are the assets Postgres holds (a category limits them to the files it lists).
       if (input.wiki === "ixwiki") {
-        const where: {
-          OR?: Array<{
-            title?: { contains: string; mode: "insensitive" };
-            filename?: { contains: string; mode: "insensitive" };
-          }>;
-          mimeType?: { in: string[] };
-        } = {};
-        if (input.query && input.query.trim().length > 0) {
-          where.OR = [
-            { title: { contains: input.query.trim(), mode: "insensitive" } },
-            { filename: { contains: input.query.trim(), mode: "insensitive" } },
-          ];
-        }
-        if (input.fileTypes && input.fileTypes.length > 0) {
-          where.mimeType = { in: input.fileTypes };
-        }
-
-        const assets = await db.wikiAsset.findMany({
-          where,
-          take: input.limit,
-          orderBy: { title: "asc" },
-        });
-
-        if (assets && assets.length > 0) {
-          return assets.map((a) => ({
-            name: a.filename || a.title,
-            title: `File:${a.title}`,
-            url: a.url,
-            size: a.sizeBytes || 0,
-            width: a.width ?? 800,
-            height: a.height ?? 600,
-            mime: a.mimeType || "image/png",
-          }));
-        }
+        const assets = await MediaAssetService.search(input);
+        return assets.map((a) => ({
+          name: a.filename || a.title,
+          title: `File:${a.title}`,
+          // An upload only WikiOS holds is a path on this site (`/api/wiki/file/<name>`): it needs the base path.
+          url: assetUrl(a.url) ?? a.url,
+          size: a.sizeBytes || 0,
+          width: a.width ?? 800,
+          height: a.height ?? 600,
+          mime: a.mimeType || "image/png",
+        }));
       }
 
+      // A sister wiki's files are read from that wiki.
       const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 
@@ -323,7 +333,7 @@ export const wikiosSearchRouter = createTRPCRouter({
   searchBusinesses: publicProcedure
     .input(
       z.object({
-        query: z.string().optional(),
+        query: z.string().max(256).optional(),
         countryId: z.string().optional(),
         limit: z.number().min(1).max(50).default(30),
       })

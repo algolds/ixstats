@@ -14,7 +14,6 @@ import {
   Trash as Trash2,
   DesignPencil as Edit3,
   Quote,
-  Crown,
   Copy,
   Leaf as Sprout,
   HelpCircle,
@@ -26,6 +25,8 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { DiffViewer } from "~/components/diff-viewer";
 import { MarginUserAvatar, type CommentAuthor } from "../shared/MarginUserAvatar";
+import { useThreadComments } from "./useThreadComments";
+import { HoldToResolveButton } from "./HoldToResolveButton";
 import { MarginCategoryHelpModal } from "../modals/MarginCategoryHelpModal";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -89,7 +90,7 @@ interface ThreadItem {
   selectedText: string | null;
   anchorOffset: number | null;
   resolvedAt: Date | null;
-  resolvedBy: { id: string; username: string } | null;
+  resolvedBy: { username: string } | null;
   createdBy: CommentAuthor;
   teamId: string | null;
   createdAt: Date;
@@ -103,6 +104,9 @@ interface ThreadItem {
     createdAt: Date;
     author: CommentAuthor;
   }>;
+  /** All the thread's comments; `comments` holds the first page of them. */
+  commentCount: number;
+  hasMoreComments: boolean;
 }
 
 interface MarginThreadsTabProps {
@@ -116,81 +120,11 @@ interface MarginThreadsTabProps {
   onSelectThread: (threadId: string | null) => void;
   isAuthenticated: boolean;
   onRefetch: () => void;
-}
-
-function HoldToResolveButton({
-  isResolved,
-  onResolveToggle,
-  isPending,
-}: {
-  isResolved: boolean;
-  onResolveToggle: (resolved: boolean) => void;
-  isPending: boolean;
-}) {
-  const [holding, setHolding] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  const startHold = () => {
-    if (isPending) return;
-    setHolding(true);
-    timerRef.current = setTimeout(() => {
-      soundCues?.success?.();
-      onResolveToggle(!isResolved);
-      setHolding(false);
-    }, 900);
-  };
-
-  const cancelHold = () => {
-    setHolding(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
-
-  if (isResolved) {
-    return (
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => onResolveToggle(false)}
-        className="bg-green/10 text-green hover:bg-green/20"
-        title="Reopen discussion thread"
-      >
-        <Check className="size-3" />
-        <span>Resolved (click to reopen)</span>
-      </Button>
-    );
-  }
-
-  return (
-    <div className="relative inline-flex select-none">
-      <Button
-        variant="outline"
-        size="sm"
-        onMouseDown={startHold}
-        onMouseUp={cancelHold}
-        onMouseLeave={cancelHold}
-        onTouchStart={startHold}
-        onTouchEnd={cancelHold}
-        disabled={isPending}
-        className={cn(
-          "overflow-hidden",
-          holding
-            ? "border-green/60 bg-green/20 text-green hover:bg-green/20 scale-95"
-            : "text-label-secondary hover:text-label"
-        )}
-      >
-        {holding && (
-          <div
-            className="bg-green/30 absolute inset-0 origin-left transition-[width] duration-900 ease-linear"
-            style={{ width: "100%" }}
-          />
-        )}
-        <span className="relative z-10 flex items-center gap-1">
-          <Check className="text-green h-3 w-3" />
-          <span>{holding ? "Keep holding..." : "Hold to resolve"}</span>
-        </span>
-      </Button>
-    </div>
-  );
+  /** The reader may resolve, reopen and delete any thread and delete any comment (a sysop). */
+  canModerate: boolean;
+  hasMoreThreads: boolean;
+  isLoadingMoreThreads: boolean;
+  onLoadMoreThreads: () => void;
 }
 
 function ThreadCard({
@@ -200,8 +134,7 @@ function ThreadCard({
   isAuthenticated,
   onRefetch,
   currentUserAvatar,
-  currentUsername,
-  currentUserId,
+  canModerate,
 }: {
   thread: ThreadItem;
   isExpanded: boolean;
@@ -209,8 +142,7 @@ function ThreadCard({
   isAuthenticated: boolean;
   onRefetch: () => void;
   currentUserAvatar?: string | null;
-  currentUsername?: string | null;
-  currentUserId?: string | null;
+  canModerate: boolean;
 }) {
   const [replyText, setReplyText] = useState("");
   const [showSuggestEdit, setShowSuggestEdit] = useState(false);
@@ -219,12 +151,11 @@ function ThreadCard({
 
   const replyInputRef = useRef<HTMLInputElement>(null);
   const notify = useNotify();
-  const liveAvatarFor = (author: CommentAuthor) =>
-    (currentUserId && author.id === currentUserId) ||
-    (currentUsername && author.username.toLowerCase() === currentUsername.toLowerCase())
-      ? currentUserAvatar
-      : undefined;
+  const liveAvatarFor = (author: CommentAuthor) => (author.isAuthor ? currentUserAvatar : undefined);
+  // The server enforces this too: the thread's creator or a sysop.
+  const canManageThread = isAuthenticated && (thread.createdBy.isAuthor || canModerate);
   const isResolved = thread.status === "RESOLVED";
+  const paged = useThreadComments(thread, onRefetch);
 
   // Parse Lore Dimension tag if present in title (e.g. "[WHY] Topic")
   const dimensionMatch = thread.title.match(/^\[(WHY|WHEN|WHERE|WHO|WHAT)\]\s*(.*)$/i);
@@ -345,13 +276,6 @@ function ThreadCard({
               {thread.createdBy.username}
             </span>
 
-            {thread.createdBy.country && (
-              <span className="py-0.2 rounded-control-sm border-margin-border bg-margin-bg text-caption inline-flex items-center gap-1 border px-1 font-semibold text-(--margin-accent-text)">
-                <Crown className="h-2.5 w-2.5" />
-                <span className="max-w-[75px] truncate">{thread.createdBy.country.name}</span>
-              </span>
-            )}
-
             {thread.sectionAnchor && (
               <span className="py-0.2 rounded-control-sm border-separator bg-surface-secondary text-caption text-label-secondary max-w-28 truncate border px-1 font-semibold">
                 #{thread.sectionAnchor}
@@ -382,7 +306,7 @@ function ThreadCard({
                 : "border-separator bg-surface-secondary text-label-secondary border"
             )}
           >
-            {isResolved ? "Done" : `${thread.comments.length}`}
+            {isResolved ? "Done" : `${thread.commentCount}`}
           </span>
           {isExpanded ? (
             <ChevronDown className="text-label-secondary h-3.5 w-3.5" />
@@ -397,7 +321,8 @@ function ThreadCard({
         <div className="animate-in fade-in-50 border-separator space-y-3 border-t px-3 pt-1 pb-3 duration-150">
           {/* Discussion Comments List */}
           <div className="border-separator space-y-2 border-t pt-1">
-            {thread.comments.map((comment) => {
+            {paged.comments.map((comment) => {
+              const canDeleteComment = isAuthenticated && (comment.author.isAuthor || canModerate);
               return (
                 <div
                   key={comment.id}
@@ -411,11 +336,6 @@ function ThreadCard({
                         liveAvatar={liveAvatarFor(comment.author)}
                       />
                       <span className="text-footnote">{comment.author.username}</span>
-                      {comment.author.country?.name && (
-                        <span className="text-caption text-(--margin-accent-text)">
-                          ({comment.author.country.name})
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -432,6 +352,23 @@ function ThreadCard({
                           aria-label="Quote in reply"
                         >
                           <Quote className="size-3" />
+                        </Button>
+                      )}
+                      {canDeleteComment && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => {
+                            if (confirm("Delete this comment?")) {
+                              paged.deleteComment.mutate({ commentId: comment.id });
+                            }
+                          }}
+                          disabled={paged.deleteComment.isPending}
+                          className="text-label-secondary hover:text-red opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                          title="Delete comment"
+                          aria-label="Delete comment"
+                        >
+                          <Trash2 className="size-3" />
                         </Button>
                       )}
                     </div>
@@ -485,12 +422,23 @@ function ThreadCard({
                 </div>
               );
             })}
+            {paged.hasMore && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void paged.loadMore()}
+                disabled={paged.isLoadingMore}
+                className="text-label-secondary hover:text-label w-full"
+              >
+                {paged.isLoadingMore ? "Loading replies..." : "Show more replies"}
+              </Button>
+            )}
           </div>
 
           {/* Action Bar: Hold-to-Resolve, Create Child Page & Delete */}
           <div className="border-separator flex items-center justify-between border-t pt-1">
             <div className="flex items-center gap-2">
-              {isAuthenticated && (
+              {canManageThread && (
                 <HoldToResolveButton
                   isResolved={isResolved}
                   onResolveToggle={(resolved) =>
@@ -502,7 +450,7 @@ function ThreadCard({
 
               {/* Create Subpage Button */}
               <Link
-                href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(thread.articleTitle)}`}
+                href={`/wiki/${sproutChildSlug}?action=edit&parent=${encodeURIComponent(thread.articleTitle)}`}
                 className="rounded-control border-green/30 bg-green/10 text-caption text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-1 font-semibold"
                 title="Create a new subpage from this discussion"
               >
@@ -511,7 +459,7 @@ function ThreadCard({
               </Link>
             </div>
 
-            {isAuthenticated && (
+            {canManageThread && (
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -615,6 +563,10 @@ export function MarginThreadsTab({
   onSelectThread,
   isAuthenticated,
   onRefetch,
+  canModerate,
+  hasMoreThreads,
+  isLoadingMoreThreads,
+  onLoadMoreThreads,
 }: MarginThreadsTabProps) {
   const { user: currentWikiUser } = useWikiAuth();
   const ixnayStatus = api.ixnayid.getStatus.useQuery(undefined, {
@@ -623,7 +575,6 @@ export function MarginThreadsTab({
   });
   const currentUsername = ixnayStatus.data?.wiki.username || currentWikiUser?.username;
   const currentUserAvatar = currentWikiUser?.imageUrl;
-  const currentUserId = currentWikiUser?.id;
   const [filter, setFilter] = useState<"OPEN" | "ALL">("OPEN");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDimension, setSelectedDimension] = useState<string>("WHY");
@@ -748,11 +699,9 @@ export function MarginThreadsTab({
           <div className="border-separator text-caption text-label flex items-center gap-2 border-b pb-2 font-semibold">
             <MarginUserAvatar
               author={{
-                id: currentUserId || "you",
                 username: currentUsername || "You",
                 avatar: currentUserAvatar || null,
-                role: null,
-                country: null,
+                isAuthor: true,
               }}
               size="xs"
               liveAvatar={currentUserAvatar}
@@ -930,10 +879,20 @@ export function MarginThreadsTab({
               isAuthenticated={isAuthenticated}
               onRefetch={onRefetch}
               currentUserAvatar={currentUserAvatar}
-              currentUsername={currentUsername}
-              currentUserId={currentUserId}
+              canModerate={canModerate}
             />
           ))}
+          {hasMoreThreads && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLoadMoreThreads}
+              disabled={isLoadingMoreThreads}
+              className="text-label-secondary hover:text-label w-full"
+            >
+              {isLoadingMoreThreads ? "Loading discussions..." : "Show more discussions"}
+            </Button>
+          )}
         </div>
       )}
 

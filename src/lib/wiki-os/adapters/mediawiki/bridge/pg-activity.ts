@@ -1,163 +1,78 @@
 /**
  * pg-activity.ts — ixwiki recent changes, page history, user contributions and user info.
  *
- * Split out of pg-reader.ts (which re-exports it); ixwiki reads from PostgreSQL.
+ * Split out of pg-reader.ts (which re-exports it); ixwiki reads from PostgreSQL alone, MediaWiki is
+ * never asked (plan 418).
  */
 
+import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
-import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
-import { fetchIxwikiLive, fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
-import { warnDev, type WikiRecentChange } from "./types";
+import { loadWikiUserInfo, type WikiUserInfo } from "~/lib/wiki-os/core/wiki-user-info";
+import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { resolveStoredImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
+import type { WikiRecentChange } from "./types";
 
-const BOT_AUTHORS = ["LorewardsBot", "Maintenance script", "Robot"];
-const UNKNOWN_EDITOR = "MediaWiki Editor";
+// ---------------------------------------------------------------------------
+// Activity, Contributions & History
+// ---------------------------------------------------------------------------
 
-export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
+/**
+ * The latest edits that went live. A parked one (a MediaWiki edit that conflicted with WikiOS's head
+ * and never went live) is left out, unless `includeParked`: the recent-changes page lists it, flagged
+ * `parked`; everything that presents "the latest change" (the Main Page, the feeds) does not.
+ */
+export async function ixwikiRecentChanges(
+  limit: number = 20,
+  { includeParked = false }: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
   try {
-    const revs: any[] = await (db as any).wikiRevision.findMany({
+    // A revision's size is stored with it, and the article's summary is its excerpt: no wikitext is read.
+    const revs = await db.wikiRevision.findMany({
       where: {
         source: "ixwiki",
-        article: { namespace: 0 },
-        author: { notIn: BOT_AUTHORS },
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      include: {
-        article: {
-          select: { title: true, summary: true, leadImageUrl: true, wikitext: true },
-        },
-      },
-    });
-
-    if (revs.length > 0) {
-      return revs
-        .filter((r) => r.article?.title)
-        .map((r) => {
-          const wikitext = r.wikitext || r.article.wikitext;
-          const blurb = cleanExcerpt(wikitext || r.article.summary, 180);
-          const newLen = calculateRawTextBytes(wikitext);
-          const delta = r.byteDelta !== 0 ? r.byteDelta : newLen;
-
-          return {
-            title: r.article.title,
-            user: r.author || UNKNOWN_EDITOR,
-            timestamp: new Date(r.createdAt).toISOString(),
-            comment: r.summary || "",
-            type: "edit" as const,
-            oldLen: Math.max(0, newLen - delta),
-            newLen,
-            blurb: blurb || null,
-            thumbnail: r.article.leadImageUrl || null,
-          };
-        });
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-
-  // Live HTTP fallback
-  try {
-    const data = await fetchIxwikiLive<{ query?: { recentchanges?: any[] } }>(
-      {
-        action: "query",
-        list: "recentchanges",
-        rcnamespace: "0",
-        rcprop: "title|user|timestamp|comment|sizes|flags",
-        rclimit: String(limit),
-      },
-      6000
-    );
-    if (data) {
-      return (data.query?.recentchanges || []).map((rc) => ({
-        title: rc.title,
-        user: rc.user,
-        timestamp: rc.timestamp,
-        comment: rc.comment || "",
-        type: rc.type === "new" ? "new" : "edit",
-        oldLen: rc.oldlen || 0,
-        newLen: rc.newlen || 0,
-      }));
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-
-  return [];
-}
-
-interface HistoryRow {
-  rev_id: number;
-  rev_timestamp: string;
-  rev_user_text: string;
-  rev_comment: string;
-  rev_len: number;
-  rev_minor_edit: number;
-  diff: number;
-}
-
-const toHistoryRow = (r: any): HistoryRow => ({
-  rev_id: r.mwRevId || 0,
-  rev_timestamp: new Date(r.createdAt).toISOString(),
-  rev_user_text: r.author || UNKNOWN_EDITOR,
-  rev_comment: r.summary || "",
-  rev_len: r.byteSize || 0,
-  rev_minor_edit: r.minor ? 1 : 0,
-  diff: r.byteDelta || 0,
-});
-
-export async function ixwikiGetHistory(
-  title: string,
-  limit: number = 50,
-  _offset?: number
-): Promise<HistoryRow[]> {
-  try {
-    const revs: any[] = await (db as any).wikiRevision.findMany({
-      where: {
-        article: {
-          source: "ixwiki",
-          OR: [{ title }, { slug: toArticleSlug(title) }],
-        },
+        article: { namespace: 0, status: "PUBLISHED" },
+        author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
+        ...(includeParked ? {} : { parked: false }),
       },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: {
-        id: true,
-        mwRevId: true,
         author: true,
         summary: true,
         byteSize: true,
         byteDelta: true,
-        minor: true,
+        parked: true,
         createdAt: true,
+        article: { select: { title: true, summary: true, leadImageUrl: true } },
       },
     });
 
-    if (revs.length > 1) return revs.map(toHistoryRow);
-
-    // With 0 or 1 PostgreSQL revisions (e.g. from a single-revision sync), MediaWiki has the full history.
-    const mwData = await fetchMediaWikiPageAuthorsAndRevisions(title, "ixwiki", limit);
-    if (mwData && mwData.revisions.length > 0) {
-      return mwData.revisions.map((r) => ({
-        rev_id: r.revid,
-        rev_timestamp: r.timestamp,
-        rev_user_text: r.user,
-        rev_comment: r.comment,
-        rev_len: r.size,
-        rev_minor_edit: 0,
-        diff: 0,
-      }));
-    }
-
-    if (revs.length === 1) return [toHistoryRow(revs[0])];
+    return revs
+      .filter((r) => r.article?.title)
+      .map((r) => {
+        const delta = r.byteDelta !== 0 ? r.byteDelta : r.byteSize;
+        return {
+          title: r.article.title,
+          user: r.author || "MediaWiki Editor",
+          timestamp: r.createdAt.toISOString(),
+          comment: r.summary || "",
+          type: "edit" as const,
+          oldLen: Math.max(0, r.byteSize - delta),
+          newLen: r.byteSize,
+          blurb: cleanExcerpt(r.article.summary, 180) || null,
+          thumbnail: resolveStoredImageUrl(r.article.leadImageUrl),
+          parked: r.parked,
+        };
+      });
   } catch (err) {
-    warnDev(err);
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
 
   return [];
 }
 
-interface UserContribution {
+export interface UserContribution {
   rev_id: number;
   page_title: string;
   page_namespace: number;
@@ -167,31 +82,34 @@ interface UserContribution {
   rev_comment: string;
   rev_minor_edit: number;
   is_new: boolean;
+  /** A MediaWiki edit that did not go live (conflict): the user's, listed, never the page's text. */
+  parked: boolean;
 }
 
-const liveContribToRow = (c: any): UserContribution => ({
-  rev_id: Number(c.revid || 0),
-  page_title: String(c.title || "").replace(/_/g, " "),
-  page_namespace: Number(c.ns ?? 0),
-  rev_timestamp: String(c.timestamp || new Date().toISOString()),
-  rev_len: Number(c.size || 0),
-  diff: Number(c.sizediff || 0),
-  rev_comment: String(c.comment || ""),
-  rev_minor_edit: c.minor !== undefined ? 1 : 0,
-  is_new: c.new !== undefined,
-});
+/**
+ * The WikiOS users who proved they own the wiki account `username`: their revisions carry the user
+ * id, whatever name the edit was saved under. At most one (a wiki account links to one user).
+ */
+async function linkedUserIds(username: string): Promise<string[]> {
+  const links = await db.wikiAccountLink.findMany({
+    where: {
+      source: "ixwiki",
+      username: normalizeWikiUsername(username),
+      verifiedAt: { not: null },
+    },
+    select: { userId: true },
+    take: 1, // a wiki account links to one user
+  });
+  return links.map((link) => link.userId);
+}
 
-const pgRevisionToContrib = (r: any): UserContribution => ({
-  rev_id: Number(r.mwRevId || 0),
-  page_title: r.article?.title || "Untitled",
-  page_namespace: Number(r.article?.namespace || 0),
-  rev_timestamp: new Date(r.createdAt).toISOString(),
-  rev_len: Number(r.byteSize || 0),
-  diff: Number(r.byteDelta || 0),
-  rev_comment: String(r.summary || ""),
-  rev_minor_edit: r.minor ? 1 : 0,
-  is_new: Number(r.byteSize || 0) === Number(r.byteDelta || 0),
-});
+/** The revisions made by the account `username`: by the name it edited under, or by its verified owner's id. */
+function madeBy(username: string, userIds: readonly string[]): Prisma.WikiRevisionWhereInput {
+  const named = {
+    author: { equals: normalizeWikiUsername(username), mode: "insensitive" as const },
+  };
+  return userIds.length > 0 ? { OR: [named, { authorId: { in: [...userIds] } }] } : named;
+}
 
 export async function ixwikiGetUserContribs(
   username: string,
@@ -199,212 +117,104 @@ export async function ixwikiGetUserContribs(
   _offset?: number,
   namespace: number = 0
 ): Promise<UserContribution[]> {
-  const results: UserContribution[] = [];
-
-  // Live MediaWiki Action API
   try {
-    const data = await fetchIxwikiLive<{ query?: { usercontribs?: any[] } }>(
-      {
-        action: "query",
-        list: "usercontribs",
-        ucuser: username,
-        ucnamespace: String(namespace),
-        uclimit: String(Math.min(100, limit)),
-        ucprop: "ids|title|timestamp|comment|size|flags",
-      },
-      8000
-    );
-    results.push(...(data?.query?.usercontribs || []).map(liveContribToRow));
-  } catch (err) {
-    warnDev(err);
-  }
-
-  // Merge PostgreSQL revisions the live API did not return
-  try {
-    const pgRevs: any[] = await (db as any).wikiRevision.findMany({
+    const revs = await db.wikiRevision.findMany({
       where: {
-        author: { equals: username, mode: "insensitive" },
-        article: { namespace },
+        ...madeBy(username, await linkedUserIds(username)),
+        article: { namespace, status: "PUBLISHED" },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
-      include: { article: { select: { title: true, namespace: true } } },
+      include: {
+        article: {
+          select: { title: true, namespace: true },
+        },
+      },
     });
 
-    for (const contrib of pgRevs.map(pgRevisionToContrib)) {
-      const known = contrib.rev_id > 0 && results.some((e) => e.rev_id === contrib.rev_id);
-      if (!known) results.push(contrib);
-    }
+    // MediaWiki lists every edit its editor made, parked ones too: each says whether it ever went live.
+    return revs.map((r) => ({
+      rev_id: Number(r.mwRevId || 0),
+      page_title: r.article?.title || "Untitled",
+      page_namespace: Number(r.article?.namespace || 0),
+      rev_timestamp: new Date(r.createdAt).toISOString(),
+      rev_len: Number(r.byteSize || 0),
+      diff: Number(r.byteDelta || 0),
+      rev_comment: String(r.summary || ""),
+      rev_minor_edit: r.minor ? 1 : 0,
+      is_new: Number(r.byteSize || 0) === Number(r.byteDelta || 0),
+      parked: r.parked,
+    }));
   } catch (err) {
-    warnDev(err);
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
 
-  results.sort((a, b) => new Date(b.rev_timestamp).getTime() - new Date(a.rev_timestamp).getTime());
-  return results.slice(0, limit);
+  return [];
 }
 
-interface CreatedPage {
+interface CreatedPageRow {
   title: string;
   namespace: number;
-  createdAt: string;
+  createdAt: Date;
   byteSize: number;
 }
 
+/**
+ * The main-namespace pages `username` created, newest first: the published pages whose oldest live
+ * revision (a parked edit is nobody's creation) was made by that account, by name or by its verified
+ * owner's id. `createdAt` and `byteSize` are those of that first revision.
+ */
 export async function ixwikiGetUserCreatedPages(
   username: string,
   limit: number = 100
-): Promise<CreatedPage[]> {
-  const pagesMap = new Map<string, CreatedPage>();
-
-  // Live MediaWiki Action API (new creations)
+): Promise<
+  Array<{
+    title: string;
+    namespace: number;
+    createdAt: string;
+    byteSize: number;
+  }>
+> {
   try {
-    const data = await fetchIxwikiLive<{ query?: { usercontribs?: any[] } }>(
-      {
-        action: "query",
-        list: "usercontribs",
-        ucuser: username,
-        ucnamespace: "0",
-        ucshow: "new",
-        uclimit: String(Math.min(200, limit)),
-        ucprop: "title|timestamp|size",
-      },
-      8000
-    );
-    for (const c of data?.query?.usercontribs || []) {
-      const title = String(c.title || "").replace(/_/g, " ");
-      pagesMap.set(title.toLowerCase(), {
-        title,
-        namespace: Number(c.ns ?? 0),
-        createdAt: String(c.timestamp || new Date().toISOString()),
-        byteSize: Number(c.size || 0),
-      });
-    }
+    const name = normalizeWikiUsername(username);
+    const userIds = await linkedUserIds(username);
+    const byOwner =
+      userIds.length > 0 ? Prisma.sql`OR f."authorId" IN (${Prisma.join(userIds)})` : Prisma.empty;
+    const rows = await db.$queryRaw<CreatedPageRow[]>`
+      SELECT a."title" AS "title", a."namespace" AS "namespace",
+             f."createdAt" AS "createdAt", f."byteSize" AS "byteSize"
+      FROM wiki_articles a
+      JOIN LATERAL (
+        SELECT r."author", r."authorId", r."createdAt", r."byteSize"
+        FROM wiki_revisions r
+        WHERE r."articleId" = a."id" AND r."parked" = false
+        ORDER BY r."createdAt" ASC, r."id" ASC
+        LIMIT 1
+      ) f ON true
+      WHERE a."source" = 'ixwiki' AND a."status" = 'PUBLISHED' AND a."namespace" = 0
+        AND (lower(f."author") = lower(${name}) ${byOwner})
+      ORDER BY f."createdAt" DESC
+      LIMIT ${limit}`;
+
+    return rows.map((row) => ({
+      title: row.title,
+      namespace: row.namespace,
+      createdAt: new Date(row.createdAt).toISOString(),
+      byteSize: Number(row.byteSize || 0),
+    }));
   } catch (err) {
-    warnDev(err);
+    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
   }
 
-  // Merge PostgreSQL created articles
-  try {
-    const createdArticles: any[] = await (db as any).wikiArticle.findMany({
-      where: {
-        source: "ixwiki",
-        revisions: { some: { author: { equals: username, mode: "insensitive" } } },
-      },
-      take: limit,
-      select: { title: true, namespace: true, createdAt: true, wordCount: true },
-    });
-
-    for (const a of createdArticles) {
-      const key = a.title.toLowerCase();
-      if (!pagesMap.has(key)) {
-        pagesMap.set(key, {
-          title: a.title,
-          namespace: a.namespace || 0,
-          createdAt: new Date(a.createdAt).toISOString(),
-          byteSize: (a.wordCount || 0) * 6,
-        });
-      }
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-
-  return Array.from(pagesMap.values()).slice(0, limit);
+  return [];
 }
 
-interface IxwikiUserInfo {
-  exists: boolean;
-  userId: number;
-  username: string;
-  editCount: number;
-  registration: string | null;
-  groups: string[];
-  user_id: number;
-  user_name: string;
-  user_editcount: number;
-  user_registration: string;
-}
-
-function buildUserInfo(
-  exists: boolean,
-  username: string,
-  { userId = 0, editCount = 0, registration = null, groups = [] }: Partial<IxwikiUserInfo> = {}
-): IxwikiUserInfo {
-  return {
-    exists,
-    userId,
-    username,
-    editCount,
-    registration,
-    groups,
-    user_id: userId,
-    user_name: username,
-    user_editcount: editCount,
-    user_registration: registration ?? "",
-  };
-}
-
-/** Live MediaWiki Action API read: the only source of a real user id, edit count and groups. */
-async function fetchLiveUserInfo(cleanUser: string): Promise<IxwikiUserInfo | null> {
-  try {
-    const data = await fetchIxwikiLive<{ query?: { users?: any[] } }>(
-      {
-        action: "query",
-        list: "users",
-        ususers: cleanUser,
-        usprop: "editcount|registration|groups",
-      },
-      6000
-    );
-    const u = data?.query?.users?.[0];
-    if (u && !u.missing) {
-      return buildUserInfo(true, u.name || cleanUser, {
-        userId: Number(u.userid || 0),
-        editCount: Number(u.editcount || 0),
-        registration: u.registration || null,
-        groups: Array.isArray(u.groups) ? u.groups : [],
-      });
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-  return null;
-}
+export type IxwikiUserInfo = WikiUserInfo;
 
 /**
- * MediaWiki user info. Real data (id, edit count, groups) comes only from the live MediaWiki API. When the wiki
- * cannot be reached but IxStats has mirrored activity for the name, the user is reported as existing with
- * `userId: 0`, `editCount: 0` and no groups: "unknown", never an estimate or a made-up id.
+ * What WikiOS knows about a wiki account (see `loadWikiUserInfo`): its edit count, registration,
+ * groups and whether it exists, all from Postgres. A name with no trace reports `exists: false`.
  */
 export async function ixwikiGetUserInfo(username: string): Promise<IxwikiUserInfo | null> {
-  const cleanUser = decodeURIComponent(username).replace(/^@/, "").trim();
-  if (!cleanUser) return null;
-
-  const live = await fetchLiveUserInfo(cleanUser);
-  if (live) return live;
-
-  // Local mirror: proves the name is known (revisions / Lorewards stats) but not its edit count or id.
-  try {
-    const byName = { equals: cleanUser, mode: "insensitive" };
-    const [revCount, stats, firstRev] = await Promise.all([
-      (db as any).wikiRevision.count({ where: { author: byName } }),
-      (db as any).lorewardUserStats.findFirst({
-        where: { username: byName },
-        select: { username: true },
-      }),
-      (db as any).wikiRevision.findFirst({
-        where: { author: byName },
-        orderBy: { createdAt: "asc" },
-        select: { author: true },
-      }),
-    ]);
-
-    if (revCount > 0 || stats) {
-      return buildUserInfo(true, firstRev?.author || stats?.username || cleanUser);
-    }
-  } catch (err) {
-    warnDev(err);
-  }
-
-  return buildUserInfo(false, cleanUser);
+  return loadWikiUserInfo(username);
 }

@@ -1,14 +1,15 @@
 /**
- * template-registry.ts — WikiOS Template Registry.
+ * template-registry.ts — WikiOS Template Registry: the TemplateData types and the pure helpers that sort
+ * templates (noise filter, domain tier).
  *
- * Syncs TemplateData schemas from MediaWiki, caches them in Prisma,
- * and provides lookup/search for the editor's template inserter.
+ * Nothing here talks to MediaWiki or the database, so client code may import it. The calls that do live
+ * in `template-engine.server.ts` (the render engine and the admin refresh) and `template-data-reader.ts`
+ * (Postgres); neither can reach a browser bundle.
  */
 
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
-import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
-import { transformImages, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface TemplateParam {
   name?: string; // palette presets use this; registry lookups key by map key
@@ -24,7 +25,7 @@ export interface TemplateParam {
   variantOnly?: string[]; // palette presets filter by variant
 }
 
-interface TemplateDataInfo {
+export interface TemplateDataInfo {
   title: string;
   description?: string;
   params: Record<string, TemplateParam>;
@@ -33,7 +34,12 @@ interface TemplateDataInfo {
   sets?: Array<{ label: string; params: string[] }>;
 }
 
-function normalizeString(val: unknown): string | undefined {
+// ---------------------------------------------------------------------------
+// TemplateData text
+// ---------------------------------------------------------------------------
+
+/** A TemplateData text that is a string or an object of strings by language: the English one, else the first. */
+export function normalizeString(val: unknown): string | undefined {
   if (!val) return undefined;
   if (typeof val === "string") return val;
   if (typeof val === "object") {
@@ -41,128 +47,6 @@ function normalizeString(val: unknown): string | undefined {
     return obj.en || Object.values(obj)[0] || undefined;
   }
   return undefined;
-}
-
-interface RawTemplateDataPage {
-  title?: string;
-  description?: unknown;
-  params?: Record<string, any>;
-  paramOrder?: string[];
-  format?: string;
-  sets?: Array<{ label: string; params: string[] }>;
-  notemplatedata?: boolean;
-}
-
-function toTemplateDataInfo(page: RawTemplateDataPage & { title: string }): TemplateDataInfo {
-  const title = page.title.replace(/^Template:/, "");
-  const params = Object.fromEntries(
-    Object.entries(page.params ?? {}).map(([key, val]) => [
-      key,
-      { ...val, label: normalizeString(val?.label), description: normalizeString(val?.description) },
-    ])
-  );
-  return {
-    title,
-    description: normalizeString(page.description),
-    params,
-    paramOrder: page.paramOrder,
-    format: page.format,
-    sets: page.sets,
-  };
-}
-
-async function fetchTemplateDataBatch(batch: string[]): Promise<TemplateDataInfo[]> {
-  const params = new URLSearchParams({
-    action: "templatedata",
-    titles: batch.map((t) => (t.startsWith("Template:") ? t : `Template:${t}`)).join("|"),
-    formatversion: "2",
-    format: "json",
-  });
-  const res = await fetch(`${getMediaWikiApiUrl("ixwiki")}?${params}`, {
-    headers: { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return [];
-
-  const rawText = await res.text();
-  if (!rawText.trim().startsWith("{")) return [];
-
-  const data = JSON.parse(rawText) as { pages?: Record<string, RawTemplateDataPage> };
-  return Object.values(data.pages ?? {})
-    .filter((page): page is RawTemplateDataPage & { title: string } => !!page.title && !page.notemplatedata)
-    .map(toTemplateDataInfo);
-}
-
-export async function fetchTemplateData(titles: string[]): Promise<Map<string, TemplateDataInfo>> {
-  const result = new Map<string, TemplateDataInfo>();
-
-  // MediaWiki API accepts up to 50 titles at once
-  for (let i = 0; i < titles.length; i += 50) {
-    try {
-      for (const info of await fetchTemplateDataBatch(titles.slice(i, i + 50))) {
-        result.set(info.title, info);
-      }
-    } catch {
-      // Continue next batch
-    }
-  }
-
-  return result;
-}
-
-/**
- * Get a rendered preview of a template with given parameters.
- */
-export async function getTemplatePreview(
-  templateName: string,
-  params: Record<string, string>
-): Promise<string> {
-  // Build wikitext from template name + params
-  const paramParts = Object.entries(params)
-    .filter(([, v]) => v.trim() !== "")
-    .map(([k, v]) => `|${k}=${v}`);
-  const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-
-  const apiParams = new URLSearchParams({
-    action: "parse",
-    text: wikitext,
-    contentmodel: "wikitext",
-    prop: "text",
-    pst: "1",
-    disablelimitreport: "1",
-    disableeditsection: "1",
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(mwApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      body: apiParams.toString(),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as {
-        parse?: { text?: string };
-      };
-      if (data.parse?.text) {
-        return transformWikiLinks(
-          transformImages(stripConflictingStyles(data.parse.text), "ixwiki")
-        );
-      }
-    }
-  } catch {
-    // Fall through to local compiler
-  }
-
-  const localHtml = parseWikitextToHtml(wikitext, "ixwiki");
-  return transformWikiLinks(transformImages(localHtml, "ixwiki"));
 }
 
 /**
@@ -197,118 +81,164 @@ export function isNoiseTemplate(name: string): boolean {
   return false;
 }
 
-/** Ordered keyword rules: the first category with a matching keyword wins. */
-const CATEGORY_RULES: ReadonlyArray<readonly [string, readonly string[]]> = [
-  ["engine", ["countrydata", "businessdata", "defensedata", "vitalitydata", "stabilitydata"]],
-  [
-    "sovereign",
-    [
-      "country",
-      "settlement",
-      "city",
-      "subdivision",
-      "province",
-      "state",
-      "territory",
-      "caphirian province",
-      "kirstate",
-      "cartadania",
-      "former country",
-    ],
-  ],
-  [
-    "biography",
-    [
-      "person",
-      "monarch",
-      "imperator",
-      "officeholder",
-      "noble",
-      "royalty",
-      "scientist",
-      "academic",
-      "philosopher",
-      "saint",
-      "religious biography",
-      "bishop",
-      "military person",
-      "military personnel",
-      "biography",
-    ],
-  ],
-  [
-    "defense",
-    [
-      "conflict",
-      "war",
-      "battle",
-      "military unit",
-      "national military",
-      "ship",
-      "naval",
-      "vessel",
-      "submarine",
-      "aircraft",
-      "weapon",
-      "missile",
-      "military installation",
-      "fort",
-      "defense",
-    ],
-  ],
-  [
-    "economy",
-    [
-      "company",
-      "enterprise",
-      "corporation",
-      "central bank",
-      "currency",
-      "bank",
-      "airport",
-      "port",
-      "rail",
-      "power station",
-      "mine",
-      "pipeline",
-      "bridge",
-      "road",
-      "infrastructure",
-    ],
-  ],
-  [
-    "lore",
-    [
-      "spacecraft",
-      "rocket",
-      "invention",
-      "software",
-      "language",
-      "conlang",
-      "religion",
-      "church",
-      "heritage",
-      "historical era",
-      "historical event",
-      "bilateral relations",
-      "book",
-      "film",
-      "sports team",
-    ],
-  ],
-  ["citation", ["citation", "cite", "ref"]],
-  ["navigation", ["navbox", "navigation", "sidebar"]],
-  ["formatting", ["quote", "hatnote", "timeline", "gallery"]],
-  ["geographic", ["map", "coord", "location", "weather", "climate"]],
-  ["icon", ["flag", "coat of arms", "icon", "heraldry"]],
-  ["sovereign", ["infobox"]],
-];
-
 /**
  * Categorize a template into a canonical domain tier based on its name/description.
  */
 export function categorizeTemplate(name: string, description?: string): string {
-  const lower = `${name} ${description ?? ""}`.toLowerCase();
-  const match = CATEGORY_RULES.find(([, keywords]) => keywords.some((k) => lower.includes(k)));
-  return match?.[0] ?? "general";
+  const lower = (name + " " + (description ?? "")).toLowerCase();
+
+  // 1. IxStates Native Engine Data Connectors
+  if (
+    lower.includes("countrydata") ||
+    lower.includes("businessdata") ||
+    lower.includes("defensedata") ||
+    lower.includes("vitalitydata") ||
+    lower.includes("stabilitydata")
+  ) {
+    return "engine";
+  }
+
+  // 2. Sovereign, Realms, Nations & Settlements
+  if (
+    lower.includes("country") ||
+    lower.includes("settlement") ||
+    lower.includes("city") ||
+    lower.includes("subdivision") ||
+    lower.includes("province") ||
+    lower.includes("state") ||
+    lower.includes("territory") ||
+    lower.includes("caphirian province") ||
+    lower.includes("kirstate") ||
+    lower.includes("cartadania") ||
+    lower.includes("former country")
+  ) {
+    return "sovereign";
+  }
+
+  // 3. Biography, Leaders, Monarchs, Nobles & Scientists
+  if (
+    lower.includes("person") ||
+    lower.includes("monarch") ||
+    lower.includes("imperator") ||
+    lower.includes("officeholder") ||
+    lower.includes("noble") ||
+    lower.includes("royalty") ||
+    lower.includes("scientist") ||
+    lower.includes("academic") ||
+    lower.includes("philosopher") ||
+    lower.includes("saint") ||
+    lower.includes("religious biography") ||
+    lower.includes("bishop") ||
+    lower.includes("military person") ||
+    lower.includes("military personnel") ||
+    lower.includes("biography")
+  ) {
+    return "biography";
+  }
+
+  // 4. Military, Security, Fleet, Ordnance & War
+  if (
+    lower.includes("conflict") ||
+    lower.includes("war") ||
+    lower.includes("battle") ||
+    lower.includes("military unit") ||
+    lower.includes("national military") ||
+    lower.includes("ship") ||
+    lower.includes("naval") ||
+    lower.includes("vessel") ||
+    lower.includes("submarine") ||
+    lower.includes("aircraft") ||
+    lower.includes("weapon") ||
+    lower.includes("missile") ||
+    lower.includes("military installation") ||
+    lower.includes("fort") ||
+    lower.includes("defense")
+  ) {
+    return "defense";
+  }
+
+  // 5. Economy, Companies, Banks, Infrastructure & Trade
+  if (
+    lower.includes("company") ||
+    lower.includes("enterprise") ||
+    lower.includes("corporation") ||
+    lower.includes("central bank") ||
+    lower.includes("currency") ||
+    lower.includes("bank") ||
+    lower.includes("airport") ||
+    lower.includes("port") ||
+    lower.includes("rail") ||
+    lower.includes("power station") ||
+    lower.includes("mine") ||
+    lower.includes("pipeline") ||
+    lower.includes("bridge") ||
+    lower.includes("road") ||
+    lower.includes("infrastructure")
+  ) {
+    return "economy";
+  }
+
+  // 6. Science, Lore, Conlangs, Faith, Culture & Media
+  if (
+    lower.includes("spacecraft") ||
+    lower.includes("rocket") ||
+    lower.includes("invention") ||
+    lower.includes("software") ||
+    lower.includes("language") ||
+    lower.includes("conlang") ||
+    lower.includes("religion") ||
+    lower.includes("church") ||
+    lower.includes("heritage") ||
+    lower.includes("historical era") ||
+    lower.includes("historical event") ||
+    lower.includes("bilateral relations") ||
+    lower.includes("book") ||
+    lower.includes("film") ||
+    lower.includes("sports team")
+  ) {
+    return "lore";
+  }
+
+  // 7. Citations & Bibliography
+  if (lower.includes("citation") || lower.includes("cite") || lower.includes("ref")) {
+    return "citation";
+  }
+
+  // 8. Navigation & Sidebars
+  if (lower.includes("navbox") || lower.includes("navigation") || lower.includes("sidebar")) {
+    return "navigation";
+  }
+
+  // 9. Editorial Formatting & Quotes
+  if (
+    lower.includes("quote") ||
+    lower.includes("hatnote") ||
+    lower.includes("timeline") ||
+    lower.includes("gallery")
+  ) {
+    return "formatting";
+  }
+
+  // 10. Spatial Coordinates, Maps, Weather & Flags
+  if (
+    lower.includes("map") ||
+    lower.includes("coord") ||
+    lower.includes("location") ||
+    lower.includes("weather") ||
+    lower.includes("climate")
+  ) {
+    return "geographic";
+  }
+
+  if (
+    lower.includes("flag") ||
+    lower.includes("coat of arms") ||
+    lower.includes("icon") ||
+    lower.includes("heraldry")
+  ) {
+    return "icon";
+  }
+
+  if (lower.includes("infobox")) return "sovereign";
+  return "general";
 }

@@ -12,6 +12,8 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -23,6 +25,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
+/** How long the two selected revisions stay unchanged before the diff between them is asked for. */
+const DIFF_SETTLE_MS = 250;
+
 interface RevisionItem {
   id: string;
   articleId: string;
@@ -31,8 +36,9 @@ interface RevisionItem {
   minor: boolean;
   byteSize: number;
   byteDelta?: number;
+  /** A MediaWiki edit that conflicted with WikiOS's head: in the history, never the live text. */
+  parked?: boolean;
   createdAt: Date | string;
-  wikitext?: string;
 }
 
 interface ScrubbableRevisionTimelineProps {
@@ -97,20 +103,23 @@ export function ScrubbableRevisionTimeline({
 
   const targetRev = revisions[targetRevIndex];
   const compareRev = revisions[compareRevIndex];
+  // Rollback works on the page's real revisions: a parked one never was the latest.
+  const liveRevisions = revisions.filter((r) => !r.parked);
+  // ...and of an author with a name: one that MediaWiki revision deletion hid (a null) is not offered
+  const canRollback =
+    liveRevisions.length >= 2 &&
+    !!liveRevisions[0]?.author &&
+    liveRevisions[0].author === liveRevisions[1]?.author;
 
-  // Fetch full wikitext for both revisions if needed
-  const { data: targetContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: targetRev?.id ?? "" },
-    { enabled: !!targetRev && !targetRev.wikitext, staleTime: 300_000 }
+  // The server diffs the two revisions once and sends only the hunks (never both texts). Dragging a
+  // slider crosses many positions: one diff is asked for per settled position, not one per step.
+  const settledFrom = useDebounce(compareRev?.id, DIFF_SETTLE_MS);
+  const settledTo = useDebounce(targetRev?.id, DIFF_SETTLE_MS);
+  const settling = settledFrom !== compareRev?.id || settledTo !== targetRev?.id;
+  const diff = api.wikios.getDiff.useQuery(
+    { fromrev: settledFrom, torev: settledTo ?? "" },
+    { enabled: !!settledTo && !!settledFrom, staleTime: 300_000 }
   );
-
-  const { data: compareContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: compareRev?.id ?? "" },
-    { enabled: !!compareRev && !compareRev.wikitext, staleTime: 300_000 }
-  );
-
-  const targetWikitext = targetRev?.wikitext || targetContent?.wikitext || "";
-  const compareWikitext = compareRev?.wikitext || compareContent?.wikitext || "";
 
   if (isLoading) {
     return (
@@ -162,7 +171,7 @@ export function ScrubbableRevisionTimeline({
             />
 
             {/* Rollback Latest Author */}
-            {revisions.length >= 2 && revisions[0]?.author === revisions[1]?.author && (
+            {canRollback && (
               <Button
                 variant="secondary"
                 size="sm"
@@ -171,11 +180,24 @@ export function ScrubbableRevisionTimeline({
                 className="bg-red/10 text-red hover:bg-red/20"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
-                {rollbackMutation.isPending ? "Rolling back…" : `Rollback ${revisions[0]?.author}`}
+                {rollbackMutation.isPending
+                  ? "Rolling back…"
+                  : `Rollback ${liveRevisions[0]?.author}`}
               </Button>
             )}
           </div>
         </div>
+
+        {/* Rollback failure: the server's reason (e.g. a revision text that was never imported) */}
+        {rollbackMutation.error && (
+          <div
+            role="alert"
+            className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {rollbackMutation.error.message}
+          </div>
+        )}
 
         {/* Visual Timeline Scrubber Bar */}
         <div className="space-y-2 pt-2">
@@ -233,6 +255,7 @@ export function ScrubbableRevisionTimeline({
                   m
                 </span>
               )}
+              {targetRev?.parked && <ParkedBadge />}
             </div>
             <div className="text-label-secondary text-footnote">
               {targetRev && new Date(targetRev.createdAt).toLocaleString()}
@@ -254,7 +277,8 @@ export function ScrubbableRevisionTimeline({
                 <SelectContent>
                   {revisions.map((r, idx) => (
                     <SelectItem key={r.id} value={String(idx)}>
-                      {idx === 0 ? "Latest" : `r${r.id}`} • {r.author}
+                      {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
+                      {r.parked ? " (conflict — not live)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -263,6 +287,7 @@ export function ScrubbableRevisionTimeline({
             <div className="text-label text-footnote flex items-center gap-2">
               <User className="text-label-secondary h-3.5 w-3.5" />
               <span className="font-medium">{compareRev?.author || "Community Contributor"}</span>
+              {compareRev?.parked && <ParkedBadge />}
             </div>
             <div className="text-label-secondary text-footnote">
               {compareRev && new Date(compareRev.createdAt).toLocaleString()}
@@ -277,15 +302,25 @@ export function ScrubbableRevisionTimeline({
             <span className="text-label-secondary text-footnote">
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setUndoTarget(compareRev)}
-              className="bg-yellow/10 text-yellow hover:bg-yellow/20"
-            >
-              <Undo className="h-3.5 w-3.5" />
-              Revert to this version
-            </Button>
+            {compareRev.parked ? (
+              // a parked revision was never the page's text: there is nothing to go back to
+              <span className="text-label-secondary text-footnote">
+                r{compareRev.id} never went live, so it cannot be restored.
+              </span>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  revertMutation.reset();
+                  setUndoTarget(compareRev);
+                }}
+                className="bg-yellow/10 text-yellow hover:bg-yellow/20"
+              >
+                <Undo className="h-3.5 w-3.5" />
+                Revert to this version
+              </Button>
+            )}
           </div>
         )}
 
@@ -298,9 +333,16 @@ export function ScrubbableRevisionTimeline({
             </div>
             <p className="text-label-secondary text-footnote">
               Are you sure you want to restore the article to revision{" "}
-              <strong>{undoTarget.id}</strong> authored by <strong>{undoTarget.author}</strong>?
-              This will create a new revision restoring the exact text.
+              <strong>{undoTarget.id}</strong> authored by{" "}
+              <strong>{undoTarget.author || "Community Contributor"}</strong>? This will create a
+              new revision restoring the exact text.
             </p>
+            {revertMutation.error && (
+              <p role="alert" className="text-red text-caption flex items-center gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                {revertMutation.error.message}
+              </p>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
@@ -309,14 +351,21 @@ export function ScrubbableRevisionTimeline({
                   revertMutation.mutate({
                     title,
                     revid: undoTarget.id,
-                    summary: `Reverted to revision ${undoTarget.id} by ${undoTarget.author}`,
+                    summary: `Reverted to revision ${undoTarget.id}${undoTarget.author ? ` by ${undoTarget.author}` : ""}`,
                   });
                 }}
                 className="bg-yellow hover:bg-yellow/80 text-black"
               >
                 {revertMutation.isPending ? "Reverting…" : "Confirm revert"}
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => setUndoTarget(null)}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  revertMutation.reset();
+                  setUndoTarget(null);
+                }}
+              >
                 Cancel
               </Button>
             </div>
@@ -326,14 +375,32 @@ export function ScrubbableRevisionTimeline({
 
       {/* Embedded DiffViewer */}
       <div className="border-separator bg-surface rounded-card overflow-hidden border p-4">
-        <DiffViewer
-          oldCode={compareWikitext}
-          newCode={targetWikitext}
-          layout={layout}
-          language="markdown"
-          oldTitle={`Revision B (r${compareRev?.id || "origin"})`}
-          newTitle={`Revision A (r${targetRev?.id || "current"})`}
-        />
+        {settling ? (
+          <div className="flex h-24 items-center justify-center">
+            <div className="border-tint h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          </div>
+        ) : diff.error ? (
+          <p className="text-red text-caption">
+            Failed to load the comparison: {diff.error.message}
+          </p>
+        ) : diff.data ? (
+          <DiffViewer
+            hunks={diff.data.hunks}
+            trailingSkipped={diff.data.trailingSkipped}
+            tooLarge={diff.data.tooLarge}
+            truncated={diff.data.truncated}
+            added={diff.data.added}
+            removed={diff.data.removed}
+            layout={layout}
+            language="markdown"
+            oldTitle={`Revision B (r${compareRev?.id || "origin"})`}
+            newTitle={`Revision A (r${targetRev?.id || "current"})`}
+          />
+        ) : (
+          <div className="flex h-24 items-center justify-center">
+            <div className="border-tint h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          </div>
+        )}
       </div>
     </div>
   );

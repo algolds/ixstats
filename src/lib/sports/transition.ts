@@ -7,6 +7,7 @@ import { persistSeasonSchedule } from "./scheduler";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 import { clamp } from "~/lib/utils";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 
 type Prisma =
   | PrismaClient
@@ -771,7 +772,7 @@ async function recordWorldCupFinal(
       card: {
         title: `${winnerName} World Cup Season ${seasonNumber} Champions`,
         description: `Commemorative trophy card awarded for winning the WAFF World Cup in Season ${seasonNumber}.`,
-        artwork: "https://ixwiki.com/worldcup-trophy.png",
+        artwork: mediaWikiImageUrl("/worldcup-trophy.png"),
         rarity: "LEGENDARY",
         season: seasonNumber,
         stats: { champion: 100, worldcup: 1 },

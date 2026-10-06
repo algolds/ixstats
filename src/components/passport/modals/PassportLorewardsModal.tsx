@@ -379,7 +379,7 @@ export function PassportLorewardsModal({
 
         <SheetFooter className="border-separator items-center border-t p-6 pt-4 sm:justify-between">
           <Link
-            href={`/wiki/contributions/${encodeURIComponent(wikiUsername)}`}
+            href={`/util/contributions/${encodeURIComponent(wikiUsername)}`}
             className="text-tint text-footnote inline-flex cursor-pointer items-center gap-2 font-medium hover:underline"
           >
             <BookOpen aria-hidden className="size-3.5" />

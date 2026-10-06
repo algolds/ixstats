@@ -17,7 +17,11 @@ interface FeedItem {
   summary: string;
   author: string;
   updated: string;
+  /** A MediaWiki edit that did not go live (conflict): listed, never the page's live text. */
+  parked: boolean;
 }
+
+const PARKED_NOTE = "conflict — not live";
 
 export async function GET(req: NextRequest, context: { params: Promise<{ type: string }> }) {
   const { type } = await context.params;
@@ -28,7 +32,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
   const realm = search.get("realm") || "ixwiki";
 
   const revisions = await db.wikiRevision.findMany({
-    where: { source: realm },
+    where: { source: realm, article: { status: "PUBLISHED" } },
     take: limit,
     orderBy: { createdAt: "desc" },
     select: {
@@ -36,6 +40,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
       author: true,
       summary: true,
       minor: true,
+      parked: true,
       byteDelta: true,
       createdAt: true,
       article: { select: { title: true, slug: true } },
@@ -44,11 +49,12 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
 
   const feedItems: FeedItem[] = revisions.map((r) => ({
     id: `tag:ixstats.com,${r.createdAt.toISOString().slice(0, 10)}:wiki:rev:${r.id}`,
-    title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})`,
+    title: `${r.article.title} (${r.byteDelta >= 0 ? `+${r.byteDelta}` : r.byteDelta})${r.parked ? ` — ${PARKED_NOTE}` : ""}`,
     link: `${SITE_URL}/wiki/${r.article.slug}`,
     summary: r.summary || (r.minor ? "Minor edit" : "Updated article content"),
     author: r.author || "WikiOS Contributor",
     updated: r.createdAt.toISOString(),
+    parked: r.parked,
   }));
 
   if (isJson) {
@@ -65,25 +71,30 @@ export async function GET(req: NextRequest, context: { params: Promise<{ type: s
         content_text: item.summary,
         date_modified: item.updated,
         authors: [{ name: item.author }],
+        // JSON Feed extension (names start with an underscore): a conflict, listed but not live.
+        _parked: item.parked,
       })),
     });
   }
 
   const updatedIso = feedItems[0]?.updated ?? new Date().toISOString();
   const entries = feedItems
-    .map(
-      (item) => `
+    .map((item) => {
+      const parkedCategory = item.parked
+        ? `\n    <category term="parked" label="${PARKED_NOTE}" />`
+        : "";
+      return `
   <entry>
     <title>${escapeXml(item.title)}</title>
     <link href="${escapeXml(item.link)}" />
     <id>${escapeXml(item.id)}</id>
     <updated>${item.updated}</updated>
-    <summary>${escapeXml(item.summary)}</summary>
+    <summary>${escapeXml(item.summary)}</summary>${parkedCategory}
     <author>
       <name>${escapeXml(item.author)}</name>
     </author>
-  </entry>`
-    )
+  </entry>`;
+    })
     .join("");
   const atomXml = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

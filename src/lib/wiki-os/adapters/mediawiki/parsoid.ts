@@ -1,166 +1,134 @@
 /**
- * parsoid.ts — WikiOS article HTML rendering and wikitext preview.
+ * parsoid.ts — the MediaWiki `action=parse` calls WikiOS makes.
  *
- * Renders from PostgreSQL through the in-process wikitext compiler, falling back to
- * MediaWiki `action=parse` for the Main Page, cached HTML missing its infobox, and
- * previews (so templates, parser functions and Lua modules expand).
+ * `renderArticleViaMediaWiki` is the render service's engine call (MediaWiki as a private renderer of
+ * Postgres wikitext, which also reports what the page links, transcludes and is categorised in); `wikitextToHtml` renders editor previews, falling back to the in-process
+ * wikitext compiler when MediaWiki is unreachable.
  */
 
-import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import type { WikiArticleEntity } from "~/lib/wiki-os/core/domain-types";
+import { z } from "zod";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
-import {
-  DEFAULT_MEDIAWIKI_URL,
-  DEFAULT_USER_AGENT,
-  getMediaWikiApiUrl,
-} from "~/lib/wiki-os/config";
-import { saveArticleHtmlShadow } from "./article-store";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 
-interface ParsoidArticle {
+/**
+ * What MediaWiki reports about a page it rendered: the same facts its own link tables are built from.
+ * A field is null when the response did not carry it in a shape WikiOS can read (nothing is learned from
+ * it, so the stored data is left as it is), never an empty list standing in for "unknown".
+ */
+export interface RenderMetadata {
+  /** Pages linked from the page, as MediaWiki titles (namespace prefix included). */
+  links: Array<{ ns: number; title: string }> | null;
+  /** Pages transcluded: templates, and Lua modules invoked with #invoke (namespace 828). */
+  templates: Array<{ ns: number; title: string }> | null;
+  /** Files used, without the "File:" prefix. */
+  images: string[] | null;
+  /** Categories the page is in, with their sort key and whether MediaWiki hides them. */
+  categories: Array<{ name: string; sortKey: string | null; hidden: boolean }> | null;
+  /** `{{DISPLAYTITLE}}` as MediaWiki's HTML; null unless the page sets one. */
+  displayTitle: string | null;
+  /** Page properties MediaWiki reports (defaultsort, disambiguation, ...). */
+  properties: Record<string, string>;
+}
+
+export interface RenderedPage {
   html: string;
-  title: string;
-  categories: string[];
-  lastModified: string | null;
-  isRedirect: boolean;
-  redirectTarget: string | null;
+  metadata: RenderMetadata;
 }
 
-const PARSE_COMMON = {
-  prop: "text",
-  disablelimitreport: "1",
-  disableeditsection: "1",
-  formatversion: "2",
-  format: "json",
-};
+const titleEntrySchema = z.array(z.looseObject({ ns: z.number(), title: z.string() }));
 
-/** POST an `action=parse` request with the given params to the WikiOS MediaWiki API. */
-function postParse(params: Record<string, string>, timeoutMs: number): Promise<Response> {
-  return fetch(getMediaWikiApiUrl("ixwiki"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": DEFAULT_USER_AGENT,
-      "Api-User-Agent": DEFAULT_USER_AGENT,
-    },
-    body: new URLSearchParams({ ...PARSE_COMMON, action: "parse", ...params }).toString(),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-}
+/** A field whose shape is not the expected one reads as absent: metadata never costs the page its HTML. */
+const parseResponseSchema = z.object({
+  parse: z
+    .looseObject({
+      text: z.string().optional(),
+      links: titleEntrySchema.optional().catch(undefined),
+      templates: titleEntrySchema.optional().catch(undefined),
+      images: z.array(z.string()).optional().catch(undefined),
+      categories: z
+        .array(
+          z.looseObject({
+            category: z.string(),
+            sortkey: z.string().optional(),
+            // formatversion 2 writes a boolean; the older format an empty string when the category is hidden
+            hidden: z.union([z.boolean(), z.string()]).optional(),
+          })
+        )
+        .optional()
+        .catch(undefined),
+      properties: z.record(z.string(), z.json()).optional().catch(undefined),
+      displaytitle: z.string().optional().catch(undefined),
+    })
+    .optional(),
+});
 
-/** GET `action=parse` for a page name on the public wiki. */
-function getParse(params: Record<string, string>, timeoutMs: number): Promise<Response> {
-  const query = new URLSearchParams({ action: "parse", ...params });
-  return fetch(`${DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php?${query}`, {
-    headers: { "User-Agent": DEFAULT_USER_AGENT },
-    signal: AbortSignal.timeout(timeoutMs),
-  });
+function toMetadata(
+  parsed: NonNullable<z.infer<typeof parseResponseSchema>["parse"]>
+): RenderMetadata {
+  const properties: Record<string, string> = {};
+  for (const [name, value] of Object.entries(parsed.properties ?? {})) {
+    if (typeof value === "string") properties[name] = value;
+  }
+  return {
+    links: parsed.links?.map(({ ns, title }) => ({ ns, title })) ?? null,
+    templates: parsed.templates?.map(({ ns, title }) => ({ ns, title })) ?? null,
+    images: parsed.images ?? null,
+    categories:
+      parsed.categories?.map((entry) => ({
+        name: entry.category,
+        sortKey: entry.sortkey || null,
+        hidden: entry.hidden === true || entry.hidden === "",
+      })) ?? null,
+    // The title MediaWiki shows is a page property only when the page sets one; otherwise it is the title itself.
+    displayTitle:
+      "displaytitle" in properties
+        ? (parsed.displaytitle ?? properties.displaytitle ?? null)
+        : null,
+    properties,
+  };
 }
 
 /**
- * Render an article through MediaWiki `action=parse` so templates, parser functions and Lua expand.
- *
- * When the Postgres wikitext is at hand it is what gets rendered (`text=` with the title as context).
- * `page=` reads MediaWiki's own copy of the page, which is the pre-edit version until the background
- * export lands (or forever under SKIP_MEDIAWIKI_SYNC), so it is only the fallback for HTML-only rows.
- * Returns null when MediaWiki is unreachable or returns nothing.
+ * Render an article's Postgres wikitext through MediaWiki `action=parse` (`text=`, with the title as
+ * context) so templates, parser functions and Lua expand. MediaWiki's own copy of the page is never
+ * read: it is the pre-edit version until the background export lands (or forever under
+ * SKIP_MEDIAWIKI_SYNC). `wikitext` must not be blank (the render service never sends a blank page).
+ * The same request asks for the page's links, templates, images, categories and properties
+ * (`RenderMetadata`): the render is the only place WikiOS learns them. Returns null when MediaWiki is
+ * unreachable or returns nothing.
  */
 export async function renderArticleViaMediaWiki(
-  wikitext: string | null | undefined,
+  wikitext: string,
   title: string
-): Promise<string | null> {
+): Promise<RenderedPage | null> {
   try {
-    const res =
-      wikitext && wikitext.trim() !== ""
-        ? await postParse({ text: wikitext, title, contentmodel: "wikitext" }, 6000)
-        : await getParse({ ...PARSE_COMMON, page: title.replace(/ /g, "_") }, 3500);
+    const res = await fetch(getMediaWikiApiUrl("ixwiki"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
+      body: new URLSearchParams({
+        action: "parse",
+        text: wikitext,
+        title,
+        contentmodel: "wikitext",
+        prop: "text|links|templates|images|categories|properties|displaytitle",
+        disablelimitreport: "1",
+        disableeditsection: "1",
+        formatversion: "2",
+        format: "json",
+      }).toString(),
+      signal: AbortSignal.timeout(6000),
+    });
     if (!res.ok) return null;
-    const data = (await res.json()) as { parse?: { text?: unknown } };
-    const text = data?.parse?.text;
-    return typeof text === "string" && text !== "" ? text : null;
+    const data = parseResponseSchema.safeParse(await res.json());
+    const parsed = data.success ? data.data.parse : undefined;
+    return parsed?.text ? { html: parsed.text, metadata: toMetadata(parsed) } : null;
   } catch {
     return null;
   }
-}
-
-/** The MediaWiki-rendered Main Page, whose featured portal layout the local compiler cannot match. */
-async function fetchMainPageHtml(): Promise<string | null> {
-  try {
-    const res = await getParse({ page: "Main_Page", prop: "text", format: "json" }, 6000);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { parse?: { text?: string | { "*"?: string } } };
-    const text = data?.parse?.text;
-    return (typeof text === "string" ? text : text?.["*"]) || null;
-  } catch {
-    return null;
-  }
-}
-
-const hasCorruptedMarkup = (html: string): boolean =>
-  /\|\d+px\|/i.test(html) || /\|\s*(?:center|left|right|thumb)\]\]/i.test(html);
-
-/** Cached HTML, re-rendered upstream or locally when it is missing, corrupted or lacks an infobox. */
-async function resolveArticleHtml(
-  article: WikiArticleEntity,
-  cleanTitle: string,
-  isMainPage: boolean
-): Promise<string> {
-  let html = article.contentHtml && article.contentHtml.trim() !== "" ? article.contentHtml : "";
-  // Cached HTML can hold leaked wikitext (table pipes, dangling image parameters)
-  const corrupted = html !== "" && hasCorruptedMarkup(html);
-
-  const wikitextHasInfobox = article.wikitext && /\{\{[Ii]nfobox/i.test(article.wikitext);
-  const htmlHasInfobox = html && !corrupted && (html.includes("infobox") || html.includes("aside"));
-
-  if ((!html || corrupted || (wikitextHasInfobox && !htmlHasInfobox)) && !isMainPage) {
-    const parsed = await renderArticleViaMediaWiki(article.wikitext, cleanTitle);
-    if (parsed) {
-      html = parsed;
-      void saveArticleHtmlShadow(cleanTitle, html, "ixwiki", article.wikitext || undefined).catch(
-        () => {}
-      );
-    }
-  }
-
-  if ((!html || corrupted) && article.wikitext) {
-    html = parseWikitextToHtml(article.wikitext, "ixwiki");
-    void saveArticleHtmlShadow(cleanTitle, html, "ixwiki", article.wikitext).catch(() => {});
-  }
-
-  return html;
-}
-
-/** Fetch rendered HTML for an article from PostgreSQL / the in-process wikitext compiler. */
-export async function getArticleHtml(title: string): Promise<ParsoidArticle> {
-  const cleanTitle = decodeURIComponent(title).replace(/_/g, " ").trim();
-  const isMainPage = cleanTitle.toLowerCase() === "main page";
-
-  if (isMainPage) {
-    const html = await fetchMainPageHtml();
-    if (html) {
-      return {
-        html,
-        title: "Main Page",
-        categories: [],
-        lastModified: new Date().toISOString(),
-        isRedirect: false,
-        redirectTarget: null,
-      };
-    }
-  }
-
-  const article = await ArticleRepository.findBySlug(cleanTitle, "ixwiki");
-  if (!article || !(article.contentHtml || article.wikitext)) {
-    throw new Error(`Article "${title}" not found`);
-  }
-
-  return {
-    html: await resolveArticleHtml(article, cleanTitle, isMainPage),
-    title: article.title,
-    categories: [],
-    lastModified: article.updatedAt ? article.updatedAt.toISOString() : null,
-    isRedirect: Boolean(article.redirectTargetSlug),
-    redirectTarget: article.redirectTargetSlug ?? null,
-  };
 }
 
 /**
@@ -173,13 +141,34 @@ export async function wikitextToHtml(wikitext: string, title = "Preview"): Promi
   const cleanTitle = title.replace(/^Template:/i, "").trim() || "Preview";
 
   try {
-    const res = await postParse(
-      { text: wikitext, title: cleanTitle, contentmodel: "wikitext", pst: "1" },
-      8000
-    );
+    const mwApi = getMediaWikiApiUrl("ixwiki");
+    const body = new URLSearchParams({
+      action: "parse",
+      text: wikitext,
+      title: cleanTitle,
+      contentmodel: "wikitext",
+      prop: "text",
+      pst: "1",
+      disablelimitreport: "1",
+      disableeditsection: "1",
+      formatversion: "2",
+      format: "json",
+    });
+    const res = await fetch(mwApi, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": DEFAULT_USER_AGENT,
+        "Api-User-Agent": DEFAULT_USER_AGENT,
+      },
+      body: body.toString(),
+      signal: AbortSignal.timeout(8000),
+    });
     if (res.ok) {
       const data = (await res.json()) as { parse?: { text?: string } };
-      if (data?.parse?.text) return data.parse.text;
+      if (data?.parse?.text) {
+        return data.parse.text;
+      }
     }
   } catch {
     // Network unavailable or offline: fall back to local in-process compiler

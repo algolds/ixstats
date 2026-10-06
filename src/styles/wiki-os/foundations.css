@@ -170,6 +170,64 @@
   }
 }
 
+/* ===========================================================================
+   Media theme for pictures that say what they are (the hero art, the lightbox picture)
+
+   Such a picture (and the hero's backdrop around it) carries `data-media-kind` (svg | diagram |
+   math | photo | unknown) and, only when that one picture has a mode of its own,
+   `data-media-mode` (auto | plinth). The theme is not in the markup: it is `<html>`'s, which the
+   pre-paint script sets before the first frame, and the reader's mode is `<html data-media-theme>`.
+   So the server and the first client render write the same attributes, and a reader of either theme
+   sees the right picture from the first paint. (The theme used to be read while rendering and put
+   in an inline `filter`: the server could only guess dark, and a light reader's page hydrated to a
+   different style.) Dark theme only: in the light theme nothing here matches and every picture is
+   shown as it is.
+
+   Layer: utilities. The plinth's padding and radius used to be inline styles; as rules they still
+   have to win over the pictures' own `p-*` utilities.
+   =========================================================================== */
+@layer utilities {
+  /* Auto (the default): vector art and diagrams are inverted with their hues kept, so black linework
+     reads on the dark page; a formula becomes white. Photos are not touched. */
+  img:is(
+      :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+        [data-media-kind]:not([data-media-mode="plinth"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="auto"]
+    ):is([data-media-kind="svg"], [data-media-kind="diagram"]) {
+    filter: invert(0.92) hue-rotate(180deg) brightness(1.05) contrast(1.02);
+  }
+
+  img:is(
+      :is(html.dark, html[data-theme="dark"]):not([data-media-theme="plinth"])
+        [data-media-kind]:not([data-media-mode="plinth"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="auto"]
+    )[data-media-kind="math"] {
+    filter: brightness(0) invert(1);
+  }
+
+  /* Plinth: everything that is not a photo sits on a light plate (the hero's backdrop is the plate
+     of its art; the picture itself also gets the mat). */
+  :is(
+    :is(html.dark, html[data-theme="dark"])[data-media-theme="plinth"]
+      [data-media-kind]:not([data-media-mode="auto"]),
+    :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="plinth"]
+  ):not([data-media-kind="photo"]) {
+    background-color: rgba(255, 255, 255, 0.94);
+  }
+
+  img:is(
+      :is(html.dark, html[data-theme="dark"])[data-media-theme="plinth"]
+        [data-media-kind]:not([data-media-mode="auto"]),
+      :is(html.dark, html[data-theme="dark"]) [data-media-kind][data-media-mode="plinth"]
+    ):not([data-media-kind="photo"]) {
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px;
+  }
+}
+
 @keyframes loreward-particle-1 {
   0% {
     transform: translate(-50%, -50%) scale(1);

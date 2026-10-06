@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Eye, EyeClosed, Check, Calendar, Refresh as RefreshCw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { DiffViewer } from "~/components/diff-viewer";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { SearchField } from "~/components/ui/search-field";
@@ -199,6 +200,7 @@ export function WikiWatchlistFeed() {
                             m
                           </span>
                         )}
+                        {item.parked && <ParkedBadge />}
                       </div>
 
                       <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-2">
@@ -266,7 +268,7 @@ export function WikiWatchlistFeed() {
                         Revision <strong className="text-label">{item.id}</strong> preview
                       </span>
                       <Link
-                        href={withBasePath(`/wiki/history/${item.articleSlug}`)}
+                        href={withBasePath(`/util/history/${item.articleSlug}`)}
                         className="text-tint text-caption hover:underline"
                       >
                         View Full History &rarr;

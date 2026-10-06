@@ -246,7 +246,7 @@ export function useDynamicIslandState() {
             return;
           }
           case "random-wiki": {
-            window.location.href = createAbsoluteUrl("/wiki/random");
+            window.location.href = createAbsoluteUrl("/util/random");
             return;
           }
           case "sign-out": {

@@ -29,7 +29,7 @@ function renderLayout(readOnly?: boolean) {
   );
 }
 
-const hasTabs = () => screen.queryByRole("tablist", { name: "Article views" }) !== null;
+const hasTabs = () => screen.queryByRole("tablist", { name: "Page views" }) !== null;
 const hasPageTools = () => screen.queryByRole("button", { name: "Page tools" }) !== null;
 
 describe("WikiOSLayout without a rail", () => {
@@ -41,17 +41,18 @@ describe("WikiOSLayout without a rail", () => {
 
   it.each([
     ["/wiki/Aurelia", true],
-    ["/wiki/Aurelia/talk", true],
-    ["/wiki/Aurelia/edit", true],
-    ["/wiki/search", false],
-    ["/wiki/recent-changes", false],
+    ["/wiki/Talk:Aurelia", true],
+    ["/wiki/A/B", true],
+    // Titles that used to be tool routes are pages now (the old slugs redirect before this renders).
+    ["/wiki/Search", true],
+    ["/wiki/Recent_changes", true],
     ["/wiki/Special:Random", false],
     ["/wiki/special%3Arandom", false],
     ["/util/search", false],
     ["/stashes", false],
     ["/blurbs/abc", false],
     ["/dashboard", false],
-  ])("%s: article tabs and page tools = %s", (pathname, article) => {
+  ])("%s: page tabs and page tools = %s", (pathname, article) => {
     mockPathname = pathname;
     renderLayout();
     expect(hasTabs()).toBe(article);
@@ -76,12 +77,12 @@ describe("WikiOSLayout without a rail", () => {
     expect(screen.queryByRole("tab", { name: "Edit" })).toBeNull();
   });
 
-  it("every page offers New page, which opens the create dialog", () => {
+  it("every page offers New page, which opens the create dialog", async () => {
     mockPathname = "/util/search";
     renderLayout();
     expect(screen.queryByText("create page dialog")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "New page" }));
-    expect(screen.getByText("create page dialog")).toBeTruthy();
+    expect(await screen.findByText("create page dialog")).toBeTruthy();
   });
 
   it("shows no tabs or page tools on another wiki's page, but still New page", () => {
@@ -101,7 +102,7 @@ describe("WikiOSLayout without a rail", () => {
   it("the edit shortcut still opens the editor for an IxWiki article", () => {
     renderLayout();
     act(() => void window.dispatchEvent(new Event("wikios:edit")));
-    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal:Eurth/edit");
+    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal:Eurth?action=edit");
   });
 
   describe("Inspector gutter", () => {

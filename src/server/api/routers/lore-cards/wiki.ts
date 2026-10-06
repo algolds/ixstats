@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
@@ -96,7 +97,9 @@ async function searchLocalLore(db: PrismaClient, query: string) {
       orderBy: { createdAt: "desc" },
     });
     const dbArticles = await db.wikiArticle.findMany({
-      where: search ? { title: { contains: query, mode: "insensitive" } } : {},
+      where: search
+        ? { status: "PUBLISHED", title: { contains: query, mode: "insensitive" } }
+        : { status: "PUBLISHED" },
       select: { id: true, title: true, wikitext: true },
       take: 20,
       orderBy: { updatedAt: "desc" },
@@ -152,12 +155,15 @@ async function warnOnError<T>(label: string, fallback: T, load: () => Promise<T>
   }
 }
 
-/** Search hits for a query: the bridge search, else the wiki's opensearch endpoint. */
+/**
+ * Search hits for a query: the bridge search. IxWiki's search is native (`searchPages`); only a sister
+ * wiki that returned nothing falls back to its own opensearch, with the correct User-Agent.
+ */
 async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit[]> {
   const found = await warnOnError("searchPages error", [] as SearchHit[], () =>
     searchPages(query, 25, wikiSrc)
   );
-  if (found.length > 0) return found;
+  if (found.length > 0 || wikiSrc !== "iiwiki") return found;
 
   return warnOnError("HTTP search fallback error", [] as SearchHit[], async () => {
     const res = await fetch(
@@ -232,14 +238,16 @@ async function buildLoreMetadata(
     source: "ixwiki" | "iiwiki" | "wikios" | "stash";
     pageTitle: string;
     stashItemId?: string;
-  }
+  },
+  /** False when the reader may not see the page (a deleted one): no wiki metadata, the live wiki's copy included. */
+  canSeeWikiPage: boolean
 ) {
   const stash =
     input.source === "stash" && input.stashItemId
       ? await stashItemExcerpt(db, input.stashItemId)
       : null;
   const wiki =
-    input.source === "ixwiki" || input.source === "iiwiki"
+    (input.source === "ixwiki" || input.source === "iiwiki") && canSeeWikiPage
       ? await wikiArticleExcerpt(input.pageTitle, input.source)
       : null;
   const rawExcerpt =
@@ -531,7 +539,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       try {
-        return await buildLoreMetadata(ctx.db, input);
+        const canSeeWikiPage =
+          (input.source === "ixwiki" || input.source === "iiwiki") &&
+          (await canSeeTitle(ctx, input.pageTitle, input.source));
+        return await buildLoreMetadata(ctx.db, input, canSeeWikiPage);
       } catch (error) {
         console.error("[Lore Cards] Error in fetchLoreMetadata:", error);
         return {

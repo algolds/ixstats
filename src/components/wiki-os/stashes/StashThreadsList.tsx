@@ -1,7 +1,7 @@
 "use client";
 // Saved forum threads view with rich metadata and direct link to native forum.
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
 
 import type { StashedThreadItem } from "./types";
@@ -28,7 +28,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
           >
             <div className="flex items-start justify-between gap-3">
               <Link
-                href={withBasePath(forumUrl)}
+                href={ixstatesHref(forumUrl)}
                 className="group/title flex min-w-0 flex-1 items-center gap-2"
               >
                 <div className="rounded-row border-orange/30 bg-orange/15 text-orange flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
@@ -56,7 +56,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
 
               <div className="flex shrink-0 items-center gap-1">
                 <Link
-                  href={withBasePath(forumUrl)}
+                  href={ixstatesHref(forumUrl)}
                   className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Open forum thread"
                 >

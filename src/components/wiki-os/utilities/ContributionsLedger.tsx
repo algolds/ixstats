@@ -4,6 +4,7 @@ import Link from "next/link";
 import { User as UserIcon, Clock, GitCommit } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { DashedNotice, UtilitySearchShell, useSearchTerm } from "./UtilitySearchShell";
 
 const shortDate = new Intl.DateTimeFormat("en-US", {
@@ -82,6 +83,7 @@ export function ContributionsLedger({
                         m
                       </span>
                     )}
+                    {c.parked && <ParkedBadge />}
                   </div>
 
                   <div className="min-w-0">
@@ -108,7 +110,7 @@ export function ContributionsLedger({
                   </span>
                   {!c.isNew && (
                     <Link
-                      href={withBasePath(`/wiki/diff?to=${c.revid}`)}
+                      href={withBasePath(`/util/diff?to=${c.revid}`)}
                       className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-3 py-1 font-semibold transition-colors"
                     >
                       <GitCommit className="text-label-secondary h-3 w-3" />

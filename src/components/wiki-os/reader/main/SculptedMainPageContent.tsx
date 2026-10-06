@@ -59,7 +59,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={withBasePath("/wiki/categories/Countries")}
+              href={withBasePath("/util/categories/Countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -78,7 +78,7 @@ export function SculptedMainPageContent({
                   return (
                     <Link
                       key={cat.name}
-                      href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.name)}`)}
+                      href={withBasePath(`/util/categories/${encodeURIComponent(cat.name)}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className={cn(

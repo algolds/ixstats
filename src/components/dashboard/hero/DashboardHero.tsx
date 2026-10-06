@@ -4,7 +4,7 @@ import { useState, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { NavArrowUp as ChevronUp, NavArrowRight as ChevronRight } from "iconoir-react";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -87,7 +87,7 @@ function HeroIdentity({
   flagUrl: string | null | undefined;
 }) {
   const { avatarGlow, chatBadge } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as Record<string, any>)[chatBadge.icon] || IconoirIcons.Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
   return (
     <Link
       href={`/countries/${profileSlug}`}

@@ -27,6 +27,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 import { useWikiContext } from "./WikiContext";
+import { PageAdminMenuItems } from "~/components/wiki-os/admin/PageAdminMenuItems";
 
 /** The country a wiki page is about, if it names one. */
 interface WikiCountry {
@@ -147,6 +148,7 @@ export function WikiPageTools({
                 <Printer className="size-4" />
                 Print
               </DropdownMenuItem>
+              <PageAdminMenuItems title={title} enabled={isSignedIn && !!title} />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href={withBasePath("/util")}>

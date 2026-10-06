@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
-import { articleHtmlInput, parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import { stripBasePath } from "~/lib/base-path";
+import { articleHtmlInput, type WikiSource } from "~/lib/wiki-os/config";
+import { resolveWikiPath } from "~/lib/wiki-os/wiki-path";
 
 const PREFETCH_DEBOUNCE_MS = 50;
 const prefetchedSet = new Set<string>();
@@ -15,12 +17,10 @@ export function useWikiPrefetch() {
   const utils = api.useUtils();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Warm the article `title` (canonical, as the reader asks for it) of `source`. */
   const prefetchArticle = useCallback(
-    async (rawTitle: string, prefetchWikitext = false, source: WikiSource = "ixwiki") => {
-      const title = decodeURIComponent(rawTitle).trim().replace(/_/g, " ");
-      if (!title || title.startsWith("Special:") || title.startsWith("Category:")) {
-        return;
-      }
+    async (title: string, prefetchWikitext = false, source: WikiSource = "ixwiki") => {
+      if (!title) return;
 
       const cacheKey = `${source}:${title.toLowerCase()}`;
       if (prefetchedSet.has(cacheKey)) {
@@ -52,16 +52,16 @@ export function useWikiPrefetch() {
 
       try {
         const url = new URL(target.href, window.location.origin);
-        // Match /wiki/[slug]
-        const match = url.pathname.match(/^\/wiki\/([^/?#]+)$/);
-        if (match && match[1]) {
-          const rawSlug = match[1];
-          const source = parseWikiSource(url.searchParams.get("source"));
+        // Any /wiki/<path>, subpages included: the route's own parser says whether it is an article's
+        // read view (not a tool, a Special: page, ?action=edit or another view) and under which title.
+        const path = stripBasePath(url.pathname).match(/^\/wiki\/(.+)$/)?.[1];
+        const page = path ? resolveWikiPath(path.split("/"), url.searchParams) : null;
+        if (page?.kind === "article" && page.view.type === "read") {
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
           debounceTimerRef.current = setTimeout(() => {
-            void prefetchArticle(rawSlug, false, source);
+            void prefetchArticle(page.canon.title, false, page.source);
           }, PREFETCH_DEBOUNCE_MS);
         }
       } catch {

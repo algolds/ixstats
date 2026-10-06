@@ -1,0 +1,7 @@
+'''[[Foo]] bar''' is a thing.
+
+'''The [[Foo]] Treaty''' was signed in [[1812]].
+
+The '''[[Vilena|capital city]]''' and ''[[Ostrava]]'' are neighbours.
+
+A line with '''bold''' and ''italic'' and '''''both''''' together.

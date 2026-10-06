@@ -9,16 +9,18 @@ import * as path from "path";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
+/**
+ * The wikitext of an OOL page: a WikiOS page, read from Postgres alone (MediaWiki is never asked).
+ * Null when WikiOS has no such page, or the read fails.
+ */
 async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string | null> {
   const pageTitle = yearOrKey === "main" ? "IxWiki:OOL" : `IxWiki:OOL/${yearOrKey}`;
   const shortTitle = yearOrKey === "main" ? "OOL" : `OOL/${yearOrKey}`;
 
-  // 1. Try PostgreSQL first (<1ms)
   try {
-    const article: any = await (db as any).wikiArticle.findFirst({
+    const article = await db.wikiArticle.findFirst({
       where: {
         source: "ixwiki",
         OR: [
@@ -32,38 +34,7 @@ async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string 
     });
     if (article?.wikitext) return article.wikitext;
   } catch (err) {
-    console.warn("[Lorewards] DB lookup failed, falling back to HTTP:", pageTitle, err);
-  }
-
-  // 2. Try MediaWiki Action API HTTP
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: pageTitle,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const rev = pages[pageId]?.revisions?.[0];
-        return rev?.slots?.main?.["*"] ?? rev?.["*"] ?? null;
-      }
-    }
-  } catch (err) {
-    console.error(`[Lorewards] HTTP error fetching OOL/${yearOrKey}:`, err);
+    console.warn(`[Lorewards] DB lookup failed for ${pageTitle}:`, err);
   }
 
   return null;

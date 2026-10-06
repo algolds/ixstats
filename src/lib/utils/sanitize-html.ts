@@ -5,35 +5,39 @@
  * - sanitizeUserContent(): Strictest - for user posts, comments, collaborative docs
  * - sanitizeWikiContent(): Moderate - for external wiki HTML with allowed styling
  * - sanitizeHtml(): Balanced - for general use cases
- * - sanitizeWikiArticleHtml(): WikiOS article HTML (Parsoid/MediaWiki markup, no <style>)
+ * - sanitizeWikiArticleHtml(): WikiOS article HTML (Parsoid/MediaWiki markup, MediaWiki's legacy tags and
+ *   attributes, and TemplateStyles <style> blocks, scoped to the article)
  *
  * Uses DOMPurify in the browser and DOMPurify + jsdom on the server (SSR, tRPC, API routes).
  */
 
 import DOMPurify, { type Config } from "dompurify";
+import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
+import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
+import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
+type StyleSanitizer = (style: Element) => void;
+
+let serverWindow: import("jsdom").DOMWindow | null = null;
 
 /**
  * DOMPurify needs a DOM. Browsers (and Jest's jsdom environment) provide one; on the
  * server (SSR, tRPC, route handlers) it is backed by one jsdom window, created on first
  * use. `typeof window` is a compile-time constant per bundle, so browser bundles drop
- * the jsdom branch.
+ * the jsdom branch. `fresh` asks for an instance of its own (hooks are per instance), not the shared one.
  */
-function createPurifier(): Purifier {
+function createPurifier(fresh = false): Purifier {
   if (typeof window === "undefined") {
     const { JSDOM } = require("jsdom") as typeof import("jsdom");
-    return DOMPurify(new JSDOM("").window);
+    serverWindow ??= new JSDOM("").window;
+    return DOMPurify(serverWindow);
   }
-  return DOMPurify;
+  return fresh ? DOMPurify(window) : DOMPurify;
 }
 
-let purifier: Purifier | null = null;
-
-function getPurifier(): Purifier {
-  if (purifier) return purifier;
-  const created = createPurifier();
-  // Block data: URIs in src/href attributes
+/** Block data: URIs in src/href attributes. */
+function installSharedHooks(created: Purifier): void {
   created.addHook("uponSanitizeAttribute", (_node, event) => {
     if (
       (event.attrName === "src" || event.attrName === "href") &&
@@ -42,6 +46,14 @@ function getPurifier(): Purifier {
       event.attrValue = "";
     }
   });
+}
+
+let purifier: Purifier | null = null;
+
+function getPurifier(): Purifier {
+  if (purifier) return purifier;
+  const created = createPurifier();
+  installSharedHooks(created);
   purifier = created;
   return created;
 }
@@ -49,6 +61,49 @@ function getPurifier(): Purifier {
 const purify = {
   sanitize: (html: string, config: Config): string => getPurifier().sanitize(html, config),
 };
+
+const HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
+/** What TemplateStyles puts on the `<style>` it emits: the only block the article sanitizer lets stay. */
+const TEMPLATE_STYLES_ATTRIBUTE = "data-mw-deduplicate";
+
+/**
+ * Keeps a `<style>` only when it is TemplateStyles' own: an HTML element, carrying `data-mw-deduplicate`,
+ * holding nothing but text, whose CSS the scoper leaves something of. It then holds that scoped CSS and no
+ * other attribute; anything else is removed (DOMPurify treats a node a hook detached as removed).
+ */
+const sanitizeTemplateStyle: StyleSanitizer = (style) => {
+  const text = Array.from(style.childNodes).every((child) => child.nodeType === 3)
+    ? (style.textContent ?? "")
+    : "";
+  const css =
+    wikiosConfig.templateStyles &&
+    style.namespaceURI === HTML_NAMESPACE &&
+    style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
+      ? scopeTemplateStyles(text, new URL(mediaWikiOrigin()).origin)
+      : "";
+  if (!css) {
+    style.remove();
+    return;
+  }
+  const kept = style.getAttribute(TEMPLATE_STYLES_ATTRIBUTE) ?? "";
+  for (const name of style.getAttributeNames()) style.removeAttribute(name);
+  style.setAttribute(TEMPLATE_STYLES_ATTRIBUTE, kept);
+  style.textContent = css;
+};
+
+let articlePurifier: Purifier | null = null;
+
+/** The article's own instance: the shared hooks plus the `<style>` filter, which no other sanitizer wants. */
+function getArticlePurifier(): Purifier {
+  if (articlePurifier) return articlePurifier;
+  const created = createPurifier(true);
+  installSharedHooks(created);
+  created.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName === "style") sanitizeTemplateStyle(node as Element);
+  });
+  articlePurifier = created;
+  return created;
+}
 
 /**
  * STRICT sanitization for user-generated content
@@ -234,6 +289,69 @@ export function sanitizeWikiContent(html: string): string {
   return purify.sanitize(html, WIKI_CONTENT_SANITIZE_CONFIG);
 }
 
+/**
+ * Tags MediaWiki's own Sanitizer lets through that the shared wiki config lacks (plan 415, COMPAT-10): the
+ * legacy presentational markup that old wikitext and `{| ... |}` tables still produce, ruby, `<bdo>` and
+ * `<data>`. Tags that are already allowed (`bdi`, `wbr`, `time`, `mark`, `u`, `s`, `small`, `sub`, `sup`,
+ * `abbr`, `cite`, `q`, `caption`) are not repeated.
+ */
+const MEDIAWIKI_MARKUP_TAGS = [
+  "del",
+  "ins",
+  "center",
+  "font",
+  "big",
+  "tt",
+  "kbd",
+  "samp",
+  "var",
+  "dfn",
+  "strike",
+  "bdo",
+  "data",
+  "ruby",
+  "rt",
+  "rp",
+  "rb",
+  "rtc",
+  "col",
+  "colgroup",
+];
+
+/**
+ * Attributes of MediaWiki's attribute whitelist that the shared wiki config lacks: the table, list and
+ * `<font>` attributes of legacy markup (`border`, `cellpadding`, `bgcolor`, `align`, `valign`, `start`,
+ * `reversed`, `type`, `headers`, `size`, `color`, `face`, ...). Every value is still checked against
+ * ALLOWED_URI_REGEXP, so none can carry a `javascript:` URL.
+ */
+const MEDIAWIKI_MARKUP_ATTRIBUTES = [
+  "align",
+  "valign",
+  "bgcolor",
+  "border",
+  "cellpadding",
+  "cellspacing",
+  "summary",
+  "frame",
+  "rules",
+  "abbr",
+  "axis",
+  "headers",
+  "nowrap",
+  "char",
+  "charoff",
+  "span",
+  "start",
+  "reversed",
+  "type",
+  "value",
+  "clear",
+  "size",
+  "color",
+  "face",
+  "rbspan",
+];
+
 const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
   ...WIKI_CONTENT_SANITIZE_CONFIG,
   ALLOWED_TAGS: [
@@ -244,6 +362,9 @@ const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
     "summary",
     "bdi",
     "wbr",
+    ...MEDIAWIKI_MARKUP_TAGS,
+    // TemplateStyles' `<style data-mw-deduplicate>`: getArticlePurifier's hook removes any other, and scopes this one's CSS
+    "style",
   ],
   ALLOWED_ATTR: [
     ...WIKI_CONTENT_SANITIZE_CONFIG.ALLOWED_ATTR,
@@ -257,23 +378,91 @@ const WIKI_ARTICLE_SANITIZE_CONFIG: Config = {
     "decoding",
     "referrerpolicy", // added to <img> by transformArticleHtml
     "role",
+    ...MEDIAWIKI_MARKUP_ATTRIBUTES,
   ],
   // RDFa values such as typeof="mw:Transclusion" look like URI schemes; they are inert.
   ADD_URI_SAFE_ATTR: ["typeof", "about", "property"],
-  FORBID_TAGS: [...WIKI_CONTENT_SANITIZE_CONFIG.FORBID_TAGS, "style"],
+  // A leading <style> (TemplateStyles' usual place) is otherwise taken for <head> content and dropped.
+  FORCE_BODY: true,
   // SAFE_FOR_TEMPLATES would drop every data-* attribute (Parsoid data-mw, template chips)
   // and blank {{MyCountry:...}} placeholders. This HTML never goes through a template engine.
   SAFE_FOR_TEMPLATES: false,
 };
 
+/** A 53-bit string hash (cyrb53): plenty to tell one sanitizer configuration from another. */
+function hashString(text: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ code, 2654435761);
+    h2 = Math.imul(h2 ^ code, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+}
+
+/**
+ * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter), the TemplateStyles scoper
+ * (`scope-template-styles.ts`) or the guard that shows HTML nested too deep as its source
+ * (`sanitizeWikiArticleHtml`) change: they shape the output but are not part of the config.
+ * 8: HTML nested past DOM_DEPTH_CEILING (as the parser nests it) is an escaped `<pre class="wikios-fallback-plain">`.
+ */
+const SANITIZER_HOOKS_VERSION = 8;
+
+let articleSanitizerFingerprint: string | null = null;
+
+/**
+ * Identifies everything that decides what `sanitizeWikiArticleHtml` outputs: its allow and forbid
+ * lists (regular expressions included), the hooks version, the depth past which HTML is shown as its source,
+ * DOMPurify's own version, the wiki's origin (the one host a TemplateStyles `url()` may name) and whether
+ * TemplateStyles is on (`WIKIOS_TEMPLATESTYLES`).
+ * Stored article bundles carry it, so changing the sanitizer invalidates them by itself.
+ */
+export function wikiArticleSanitizerFingerprint(): string {
+  articleSanitizerFingerprint ??= hashString(
+    JSON.stringify(
+      [
+        WIKI_ARTICLE_SANITIZE_CONFIG,
+        SANITIZER_HOOKS_VERSION,
+        DOM_DEPTH_CEILING,
+        DOMPurify.version,
+        mediaWikiOrigin(),
+        wikiosConfig.templateStyles,
+      ],
+      (_key: string, value: object | string | number | boolean | null) =>
+        value instanceof RegExp ? value.toString() : value
+    )
+  );
+  return articleSanitizerFingerprint;
+}
+
 /**
  * WikiOS article sanitization (stored or compiled article HTML, served to every reader).
- * Wiki config plus the MediaWiki/Parsoid markup articles need; <style> blocks are removed
- * (the style attribute stays allowed).
+ * Wiki config plus the MediaWiki/Parsoid markup articles need, and the legacy tags and attributes
+ * MediaWiki's own Sanitizer allows. A `<style>` stays only when it is TemplateStyles' (it carries
+ * `data-mw-deduplicate`) and then only as CSS scoped under `.mw-parser-output` and cleared of imports,
+ * URLs other than the page's own and the wiki's origin, and script hooks (`scope-template-styles.ts`); the style attribute stays allowed.
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
-  return purify.sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG);
+  // ponytail: jsdom's DOM, which DOMPurify runs on a server, is quadratic in nesting depth (6,000 `<s>` took 5 s, 12,000 take
+  // 20): HTML the parser nests past DOM_DEPTH_CEILING (400; real pages nest a few dozen) is shown as its escaped source,
+  // which is safe and one pass. A server asks the parser how deep (tags alone do not say: `<span><div></span>` and
+  // `<i><b></i>` nest thousands deep); a browser's DOM is native and gets the estimate from the tags.
+  // (`typeof window` is a compile-time constant: a browser bundle drops the branch that loads parse5.)
+  const tooDeep =
+    typeof window === "undefined"
+      ? (
+          require("../wiki-os/transformers/dom-depth") as typeof import("../wiki-os/transformers/dom-depth")
+        ).nestsTooDeep(html)
+      : tagsNestTooDeep(html);
+  if (tooDeep) {
+    const escaped = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return `<pre class="wikios-fallback-plain">${escaped}</pre>`;
+  }
+  return getArticlePurifier().sanitize(html, WIKI_ARTICLE_SANITIZE_CONFIG);
 }
 
 /**

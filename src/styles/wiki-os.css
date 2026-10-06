@@ -7,6 +7,10 @@
    wiki-os/tokens.css is also imported globally (globals.css) because
    --wikios-* / --margin-* are read outside /wiki; importing it here too is
    harmless (same values, same layer) and keeps /wiki correct on its own.
+
+   The reader's styles only. editors.css (the visual and source editors, writer mode) is imported
+   by the editor components themselves, so it travels with the editor chunk and a reader never
+   downloads it.
    =========================================================================== */
 
 @layer theme, base, components, utilities;
@@ -16,5 +20,4 @@
 @import "./wiki-os/layout.css";
 @import "./wiki-os/content.css";
 @import "./wiki-os/components.css";
-@import "./wiki-os/editors.css";
 @import "./wiki-os/mediawiki.css";

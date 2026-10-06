@@ -72,6 +72,8 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     // WikiOS Core Entities (Articles, Revisions, Categories, DAG Graph)
     `WikiArticle WikiRevision WikiCategory WikiCategoryMember WikiAsset WikiLink WikiLog
     WikiWatchlist`,
+    // WikiOS bot-API logins: a read-only dev server still accepts them (bot password last-use stamp, API sessions)
+    `WikiBotPassword WikiApiSession`,
     // WikiOS Stash — save-for-later with annotations
     `Stash StashItem StashAnnotation`,
     // WikiOS Template Registry

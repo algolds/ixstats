@@ -8,6 +8,11 @@
  * server-side XenForo API integration from src/server/modules/forum.
  */
 
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
+
+/** An absolute URL on the wiki's own host; group 1 is the path. */
+const IXWIKI_URL = new RegExp(`^https?:\\/\\/${mediaWikiHostPattern()}\\/(.+)$`, "i");
+
 export const RARITY_INLINE_COLORS: Record<
   string,
   { primary: string; border: string; glow: string; bg: string; label: string }
@@ -85,7 +90,7 @@ export function resolveArtworkUrl(artwork: string | null, basePath = ""): string
   const normalizedBasePath = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
 
   // Handle Wiki URLs
-  const ixwikiMatch = artwork.match(/^https?:\/\/(?:www\.)?ixwiki\.com\/(.+)$/i);
+  const ixwikiMatch = artwork.match(IXWIKI_URL);
   if (ixwikiMatch) {
     return `${normalizedBasePath}/api/mediawiki/ixwiki/${ixwikiMatch[1]}`;
   }

@@ -1,0 +1,8 @@
+== Merge proposal ==
+I propose merging this into [[Vesperia]]. [[User:Alice|Alice]] ([[User talk:Alice|talk]]) 14:02, 3 March 2026 (UTC)
+:Oppose. The topics are distinct. [[User:Bob|Bob]] ([[User talk:Bob|talk]]) 15:30, 3 March 2026 (UTC)
+::Fair point, withdrawn. [[User:Alice|Alice]] ([[User talk:Alice|talk]]) 16:11, 3 March 2026 (UTC)
+
+== Sources ==
+Can someone add sources? ~~~~
+* {{ping|Bob}} ?

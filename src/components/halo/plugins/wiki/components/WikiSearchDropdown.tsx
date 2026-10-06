@@ -1,10 +1,11 @@
 "use client";
 // src/components/halo/plugins/wiki/components/WikiSearchDropdown.tsx
-// Full-text wiki article search input & results dropdown with snippet highlights.
+// Full-text wiki article search input & results dropdown. Snippets are plain text.
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
+import { HighlightedSnippet } from "~/components/wiki-os/shared/HighlightedSnippet";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 
@@ -25,9 +26,16 @@ export function WikiSearchDropdown({
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
 
+  // One full-text search per pause in typing, not per keystroke
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 150);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data: searchData, isFetching: isSearching } = api.wikios.advancedSearch.useQuery(
-    { query: searchQuery, limit: 8 },
-    { enabled: searchQuery.length >= 2, staleTime: 30_000 }
+    { query: debouncedQuery, limit: 8 },
+    { enabled: debouncedQuery.length >= 2, staleTime: 60_000 }
   );
   const searchResults = searchData?.results ?? [];
 
@@ -88,10 +96,9 @@ export function WikiSearchDropdown({
                   </PreText>
                 </span>
                 {result.snippet && (
-                  <span
-                    className="text-label-secondary [&_.searchmatch]:text-label text-footnote mt-0.5 line-clamp-1 pl-[22px] [&_.searchmatch]:font-semibold"
-                    dangerouslySetInnerHTML={{ __html: result.snippet }}
-                  />
+                  <span className="text-label-secondary text-footnote mt-0.5 line-clamp-1 pl-[22px]">
+                    <HighlightedSnippet text={result.snippet} ranges={result.snippetRanges} />
+                  </span>
                 )}
               </button>
             ))

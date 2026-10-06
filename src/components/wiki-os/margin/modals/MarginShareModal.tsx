@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 interface MarginShareModalProps {
   isOpen: boolean;
@@ -61,7 +62,7 @@ export function MarginShareModal({
     },
   });
 
-  const slug = encodeURIComponent(articleTitle.replace(/ /g, "_"));
+  const articleUrl = publicArticleUrl(articleTitle);
   const cleanQuote = quoteText.trim();
 
   const formats = [
@@ -71,7 +72,7 @@ export function MarginShareModal({
       icon: FileText,
       description: "For notes, docs, and chat",
       getContent: () =>
-        `> "${cleanQuote}"\n\n— *[${articleTitle}](https://ixwiki.com/wiki/${slug})*${
+        `> "${cleanQuote}"\n\n— *[${articleTitle}](${articleUrl})*${
           commentNote ? `\n> *Significance: ${commentNote}*` : ""
         }`,
     },
@@ -111,7 +112,7 @@ export function MarginShareModal({
   const handleDispatchToChat = (conversationId: string) => {
     if (isSending) return;
     setIsSending(true);
-    const formattedMessage = `Quote from [[${articleTitle}]]:\n> "${cleanQuote}"\n\nhttps://ixwiki.com/wiki/${slug}`;
+    const formattedMessage = `Quote from [[${articleTitle}]]:\n> "${cleanQuote}"\n\n${articleUrl}`;
 
     sendMessageMutation.mutate({
       conversationId,

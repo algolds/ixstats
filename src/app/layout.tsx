@@ -31,7 +31,7 @@ import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
 import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
-import { APPEARANCE_INIT_SCRIPT } from "~/lib/design/appearance";
+import { AppearanceInitScript } from "~/components/providers/AppearanceInitScript";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -127,11 +127,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }}
-        />
+        <AppearanceInitScript nonce={nonce} />
       </head>
       <body className="min-h-screen transition-colors duration-200">
         <ChunkLoadErrorHandler />

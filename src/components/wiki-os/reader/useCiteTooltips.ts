@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
 import { createElement } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { VirtualAnchorPopover } from "~/components/ui/popover";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { useLinkTargetPreference } from "./useLinkTargetPreference";
@@ -105,6 +106,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     };
   }, [contentRef, show, hide, enabled]);
 
+  // one object per footnote HTML: a new one each render would write the tooltip's DOM again (React 19)
+  const tooltipMarkup = useHtmlMarkup(tooltip?.html ?? "");
+
   // The tooltip: a popover above the citation (flips below near the top of the viewport). The
   // popover overlay is the only surface; the inner `.wikios-cite-tooltip-inner` just sets the
   // reading-face footnote type.
@@ -126,7 +130,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     tooltip
       ? createElement("div", {
           className: "wikios-cite-tooltip-inner",
-          dangerouslySetInnerHTML: { __html: tooltip.html },
+          dangerouslySetInnerHTML: tooltipMarkup,
         })
       : null
   );

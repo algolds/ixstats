@@ -16,13 +16,14 @@ interface FeaturedArticleData {
 }
 
 export interface WikiHeroProps {
+  /** Counts from the database; a count that could not be read is null and left out of the page. */
   siteStats?: {
-    articles?: number;
-    edits?: number;
-    users?: number;
-    activeUsers?: number;
-    images?: number;
-    countries?: number;
+    articles?: number | null;
+    edits?: number | null;
+    users?: number | null;
+    activeUsers?: number | null;
+    images?: number | null;
+    countries?: number | null;
   };
   activePrompt?: {
     title: string;

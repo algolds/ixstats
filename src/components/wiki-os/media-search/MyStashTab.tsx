@@ -63,8 +63,10 @@ export function MyStashTab({
       try {
         const promises = stashItems.map(async (item, idx) => {
           try {
+            // A stash holds IxWiki pages (a stash item records no other wiki).
             const images = await utils.wikios.getPageImages.fetch({
               title: item.pageTitle,
+              wiki: "ixwiki",
             });
             if (!isMounted) return [];
             return (images ?? []).map(

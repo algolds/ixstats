@@ -11,7 +11,8 @@ import {
   scoreDailyWikiOS,
   TUNABLE_WEIGHTS,
 } from "~/lib/lorewards";
-import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
 import { writeConfigKeys } from "./_config-kv";
 
 /** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */

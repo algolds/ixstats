@@ -24,6 +24,8 @@ export {
   rateLimitedMutationProcedure,
   premiumMutationProcedure,
   rateLimitedPublicProcedure,
+  readOnlyProcedure,
+  wikiReadProcedure,
   cachedPublicProcedure,
   cachedStaticProcedure,
 } from "./procedures";

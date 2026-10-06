@@ -1,11 +1,12 @@
 /**
  * Wiki account proof — the three MediaWiki reads needed to verify that a user controls a wiki account
- * and to find who created a page. All three wikis are read through their public api.php with the
- * allowlisted IxStats-Builder user agent (iiwiki through the Cloudflare-safe URL). The underlying
+ * and to find who created a page. IxWiki is read through its internal api.php (the private engine's URL),
+ * the sister wikis through their public ones, all with the allowlisted IxStats-Builder user agent
+ * (iiwiki through the Cloudflare-safe URL). The underlying
  * `wikiQuery` is exported for other read-only wiki queries (the realm lore import).
  */
 import { z } from "zod";
-import { DEFAULT_MEDIAWIKI_URL, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 
 export const PROOF_SOURCES = ["ixwiki", "iiwiki", "althistory"] as const;
@@ -22,15 +23,15 @@ export class WikiApiError extends Error {
   }
 }
 
-const IXWIKI_BASE = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
 const SITE_URLS: Record<ProofSource, string> = {
-  ixwiki: IXWIKI_BASE,
+  ixwiki: mediaWikiOrigin(),
   iiwiki: "https://iiwiki.com",
   althistory: "https://althistory.fandom.com",
 };
 
 function apiUrl(source: ProofSource): string {
   if (source === "iiwiki") return getFullIiwikiApiUrl();
+  if (source === "ixwiki") return getMediaWikiApiUrl("ixwiki");
   return `${SITE_URLS[source]}/api.php`;
 }
 
@@ -66,15 +67,41 @@ export async function wikiQuery<T>(source: ProofSource, params: Record<string, s
 
 const UsersSchema = z.object({
   query: z.object({
-    users: z.array(z.object({ userid: z.number().optional(), name: z.string(), missing: z.boolean().optional() })),
+    users: z.array(
+      z.object({
+        userid: z.number().optional(),
+        name: z.string(),
+        missing: z.boolean().optional(),
+        editcount: z.number().optional(),
+        registration: z.string().nullable().optional(),
+      })
+    ),
   }),
 });
 
-export async function fetchWikiUser(source: ProofSource, username: string): Promise<{ username: string; userId: number } | null> {
-  const data = await wikiQuery(source, { list: "users", ususers: normalizeWikiUsername(username) }, UsersSchema);
+export interface WikiUser {
+  username: string;
+  userId: number;
+  /** When the account registered; null when the wiki does not say (accounts from before registration dates were kept). */
+  registration: Date | null;
+  editCount: number | null;
+}
+
+export async function fetchWikiUser(source: ProofSource, username: string): Promise<WikiUser | null> {
+  const data = await wikiQuery(
+    source,
+    { list: "users", ususers: normalizeWikiUsername(username), usprop: "editcount|registration" },
+    UsersSchema
+  );
   const user = data.query.users[0];
   if (!user || user.missing || user.userid === undefined) return null;
-  return { username: user.name, userId: user.userid };
+  const registration = user.registration ? new Date(user.registration) : null;
+  return {
+    username: user.name,
+    userId: user.userid,
+    registration: registration && !Number.isNaN(registration.getTime()) ? registration : null,
+    editCount: user.editcount ?? null,
+  };
 }
 
 const RevisionsSchema = z.object({

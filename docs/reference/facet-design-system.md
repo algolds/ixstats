@@ -31,7 +31,7 @@ Facet's own:
 
 ## 2. Theme and colour
 
-- Dark-first. With no stored choice the theme follows the OS and falls back to dark when the OS states no light preference. The choice is written to `html[data-theme="light"|"dark"]` before first paint by the inline script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`). Light mode is white frosted glass over a lighter wash.
+- Dark-first. With no stored choice the theme follows the OS and falls back to dark when the OS states no light preference. The choice is written to `html[data-theme="light"|"dark"]` before first paint by the inline script `APPEARANCE_INIT_SCRIPT` (`src/lib/design/appearance.ts`), which `AppearanceInitScript` (`src/components/providers/AppearanceInitScript.tsx`) writes once into the server's `<head>` with the request's CSP nonce (`useServerInsertedHTML`, never a React `<script>` element; `src/tests/components/appearance-init-script.test.tsx`). The same script sets WikiOS's picture mode, `data-media-theme` (`auto` | `plinth`), which `wiki-os/foundations.css` themes pictures by. Light mode is white frosted glass over a lighter wash.
 - Write colour as roles, never hex or Tailwind palette steps. Roles switch with the theme, so feature code has no `dark:` overrides.
 
 | Role | Tokens |
