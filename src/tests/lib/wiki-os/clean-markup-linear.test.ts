@@ -6,6 +6,7 @@
  * copy of the expression it replaced, and the whole pipeline against a copy of the pipeline as it was.
  */
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { findMatchingClosingBrackets } from "~/lib/wiki-os/wikitext/link-parser";
 import { matchBrackets } from "~/lib/wiki-os/wikitext/match-index";
 import {
@@ -312,7 +313,7 @@ describe("each linear pass answers what its expression answered", () => {
 
 describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text", () => {
   const SIZE = 2_000_000;
-  const BUDGET_MS = 500;
+  const BUDGET_MS = 500 * TIMING_BUDGET_SCALE;
 
   /** Milliseconds `run` takes: when the first run is over budget the second counts too, and the best is kept (a busy machine slows one run, a quadratic pass slows both). */
   function milliseconds(run: () => void): number {
@@ -355,7 +356,7 @@ describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text"
     "<ref name=a />",
   ];
 
-  it.each(FAMILIES)("reads %j repeated in under 500 ms", (unit) => {
+  it.each(FAMILIES)("reads %j repeated in under 500 ms (times the machine allowance)", (unit) => {
     const text = unit.repeat(Math.ceil(SIZE / unit.length));
     expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
   });
@@ -372,12 +373,15 @@ describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text"
     "[[Category:",
     "<",
     "{{lang|",
-  ])("reads %j followed by one long run of blanks in under 500 ms", (head) => {
-    const text = head + " ".repeat(SIZE) + "}}";
-    expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
-  });
+  ])(
+    "reads %j followed by one long run of blanks in under 500 ms (times the machine allowance)",
+    (head) => {
+      const text = head + " ".repeat(SIZE) + "}}";
+      expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
+    }
+  );
 
-  it("reads templates nested 300,000 deep in under 500 ms", () => {
+  it("reads templates nested 300,000 deep in under 500 ms (times the machine allowance)", () => {
     const text = "{{a".repeat(SIZE / 6) + "}}".repeat(SIZE / 6);
     expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
   });

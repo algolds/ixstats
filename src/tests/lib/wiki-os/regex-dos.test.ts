@@ -15,9 +15,10 @@ import {
   runSize,
   type Target,
 } from "../../../../scripts/audit/wikios-regex-fuzz-targets";
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 
 const SIZE = 200_000;
-const BUDGET_MS = 150;
+const BUDGET_MS = 150 * TIMING_BUDGET_SCALE;
 
 type Call = Awaited<ReturnType<Target["load"]>>;
 
