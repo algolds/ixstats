@@ -23,8 +23,9 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
 - **Owner and ops actions (0.3):** rotate the leaked database password, check the IxWiki bot grants, run
   `audit:vault-exploits:apply` and a production restore test, run the deploy-time backfills
   (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun prisma/seeds/achievement-cards.ts`).
-- **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes), D20 (PR #52 —
-  WikiOS edit integrity, uploads and the `wikios` rate limits wait on it), D2 (defense force structure).
+- **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes). Decided on
+  2026-10-06: D2 (a) restore unit authoring, D3 (b) via D20, D5 (a) build the Exchange, D9 approved after the restore
+  test, D10 retire the narrator, D11 delete scheduled changes, D20 merge PR #52 (cutover later).
 - **Signed off by the owner (2026-10-05):** annual policy upkeep, the stability policy scale (×10), Vexel attach (now
   renders on save), notification preferences applying to saved rows, and the earnings kill switch also blocking
   auctions, trades and junking. Crafting is deprecated for now (the workbench and recipes are off); D6 and "failed
@@ -394,7 +395,7 @@ unchanged.
 | D17 | Which branch contributors start from: `development` (contributing.md) or `rose-garden` (onboarding, README) | Per D13: juniors use `development`; say it once, in contributing.md | Phase 1 #7 |
 | D18 | Promote to `master` now (redo #44/#45), or cherry-pick only `.github/` | Cherry-pick `.github/` now; promote after Phase 2 | Phase 2.1 |
 | D19 | The #49 tuning constants still unconfirmed: realm nation cap stays 1, 14-day proposal expiry, passport sections visible by default (including the IxC balance), ±3% / ±1% issue caps, public realm boards | Confirm them, or list overrides | Phase 1 docs |
-| D20 | PR #52 (WikiOS v1) and its scope against WK-5, WK-6 and Stage 3 | Merge order decided before Phase 3 WikiOS work | Phase 3.1, Phase 4 #4 |
+| D20 | PR #52 (WikiOS v1) and its scope against WK-5, WK-6 and Stage 3 | **Decided (2026-10-06):** merge #52 into `rose-garden` now; the cutover is a separate deploy (its runbook) | Phase 3.1, Phase 4 #4 |
 
 ---
 

@@ -356,16 +356,16 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | # | Decision | Options | Recommendation | Blocks |
 |---|---|---|---|---|
 | D1 | How politics gets candidates | (a) restore candidate registration and scheduled elections; (b) seat parties by vote share when the legislature is configured, with elections as an optional layer | (b) first: it unblocks bills fast, and (a) can follow | M2 politics, M4 legislature |
-| D2 | Defense force structure | (a) restore branch/unit authoring; (b) derive branches from builder defense data | (b) plus light editing: less for players to set up | M2 defense, Premium value |
-| D3 | Where WikiOS images live | (a) MediaWiki keeps hosting; (b) WikiOS stores them natively (Stage 3 direction) | (b), if Stage 3 cutover is still the plan | WK-5, Stage 3 |
+| D2 | Defense force structure | (a) restore branch/unit authoring; (b) derive branches from builder defense data | **Decided (2026-10-06): (a)** restore branch and unit authoring | M2 defense, Premium value |
+| D3 | Where WikiOS images live | (a) MediaWiki keeps hosting; (b) WikiOS stores them natively (Stage 3 direction) | **Decided (2026-10-06): (b)** with D20: PR #52 stores uploads natively and mirrors them to MediaWiki | WK-5, Stage 3 |
 | D4 | Premium & payments | (a) build checkout; (b) keep admin-granted premium, drop the pricing copy | (b) until the core loops are solid | M5 |
-| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | (b) | Schema drop, M5 |
+| D5 | Exchange (₷) economy | (a) build conversion, companies and contracts; (b) keep only what MyClub uses and drop 11 models | **Decided (2026-10-06): (a)** build conversion, companies and contracts | Schema drop, M5 |
 | D6 | Card rarity model | `CardRarity` enum without MYTHIC (lore-first spec) vs the current strings | Enum per the spec | Moot: crafting deprecated 2026-10-05 (the MYTHIC recipe and "failed rolls consume materials" no longer apply) |
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |
-| D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | Approve after M0 backups | Code health |
-| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | Retire until M4 needs it | WK-12 |
-| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | Delete unless M4 needs delays | MC-6 |
+| D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | **Decided (2026-10-06):** approved, applied only after a successful production restore test | Code health |
+| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire | WK-12 |
+| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete | MC-6 |
 | D12 | Forum moderation | **Decided:** XenForo only; the forum help article says so (WK-20 done, 2026-10-05) | — | WK-20 |
 | D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |
