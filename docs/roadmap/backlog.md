@@ -287,3 +287,9 @@ them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop models tha
 procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
+
+**Drop prepared (2026-10-06, D9):** the reviewed drop (56 models with no accessor left once the retired crafting router goes, plus the
+`CardPack.pdsConfig` column) is on branch `chore/drop-unused-models`, with its runbook in
+`docs/operations/drop-unused-models.md` on that branch. It is not applied here: it waits on a successful production
+restore test. It keeps the Exchange models (D5), the military and defense models (D2) and every model still read
+through a relation (for example `Permission`, `GovernmentBranch`, `EconomicModel`, `ThinktankMessage`).
