@@ -6,7 +6,8 @@
  *
  * Domains:
  *  - assessment: security assessment + threat catalog (threats, intelligence, incidents)
- *  - military:   military force structure (branches, units, assets)
+ *  - military:   order of battle read and military assets
+ *  - force-structure: branch and unit authoring, starter force (MC-3)
  *  - defense:    defense budget, overview, and intelligence metrics
  *  - stability:  internal stability and security events
  *  - borders:    border security and neighbor threats
@@ -15,6 +16,7 @@
 import { mergeRouters } from "~/server/api/trpc";
 import { securityAssessmentRouter } from "./assessment";
 import { securityMilitaryRouter } from "./military";
+import { securityForceStructureRouter } from "./force-structure";
 import { securityDefenseRouter } from "./defense";
 import { securityStabilityRouter } from "./stability";
 import { securityBordersRouter } from "./borders";
@@ -24,6 +26,7 @@ import { securityConflictsRouter } from "./conflicts";
 export const securityRouter = mergeRouters(
   securityAssessmentRouter,
   securityMilitaryRouter,
+  securityForceStructureRouter,
   securityDefenseRouter,
   securityStabilityRouter,
   securityBordersRouter,

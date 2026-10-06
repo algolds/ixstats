@@ -134,9 +134,11 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     });
   };
 
-  // Flatten units and assets from branches
-  const allUnits = branches?.flatMap((b) => b.units ?? []) ?? [];
-  const allAssets = branches?.flatMap((b) => b.assets ?? []) ?? [];
+  // Units and assets come from the authored force structure (Branches and readiness tab).
+  const allUnits =
+    branches?.flatMap((b) => (b.units ?? []).map((u) => ({ ...u, branchName: b.name }))) ?? [];
+  const allAssets =
+    branches?.flatMap((b) => (b.assets ?? []).map((a) => ({ ...a, branchName: b.name }))) ?? [];
 
   const targetCountries = relationships
     ? [
@@ -153,10 +155,16 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   const estimatedDailyCost = personnel * 200;
   const estimatedAnnualCost = estimatedDailyCost * 365;
 
+  // Selecting units sets the deployed personnel to their combined strength.
   const toggleUnit = (id: string) => {
-    setSelectedUnitIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    const next = selectedUnitIds.includes(id)
+      ? selectedUnitIds.filter((x) => x !== id)
+      : [...selectedUnitIds, id];
+    setSelectedUnitIds(next);
+    const unitPersonnel = allUnits
+      .filter((u) => next.includes(u.id))
+      .reduce((sum, u) => sum + (u.personnel ?? 0), 0);
+    if (unitPersonnel > 0) setPersonnel(Math.min(100000, Math.max(100, unitPersonnel)));
   };
 
   const toggleAsset = (id: string) => {
@@ -245,6 +253,13 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             />
           </div>
 
+          {branches && allUnits.length === 0 && allAssets.length === 0 && (
+            <p className="border-separator rounded-control text-label-secondary text-footnote border border-dashed p-3">
+              No units or assets to deploy yet. Build your force under Branches and readiness, then
+              assign its units here.
+            </p>
+          )}
+
           {allUnits.length > 0 && (
             <div>
               <Label>Deploy Units ({selectedUnitIds.length} selected)</Label>
@@ -259,7 +274,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                   >
                     <span className="w-full truncate font-medium">{unit.name}</span>
                     <span className="text-label-secondary block w-full truncate font-normal">
-                      {unit.personnel?.toLocaleString() ?? 0} personnel
+                      {unit.branchName} · {unit.personnel?.toLocaleString() ?? 0} personnel
                     </span>
                   </Toggle>
                 ))}
@@ -281,7 +296,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                   >
                     <span className="w-full truncate font-medium">{asset.name}</span>
                     <span className="text-label-secondary block w-full truncate font-normal">
-                      Qty: {asset.quantity ?? 0}
+                      {asset.branchName} · Qty: {asset.quantity ?? 0}
                     </span>
                   </Toggle>
                 ))}

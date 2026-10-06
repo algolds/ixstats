@@ -44,10 +44,10 @@ const BorderThreatPanel = dynamic(
   }
 );
 
-const AssetManager = dynamic(
+const ArsenalPanel = dynamic(
   () =>
-    import("~/components/mycountry/domains/defense/AssetManager").then((m) => ({
-      default: m.AssetManager,
+    import("~/components/mycountry/domains/defense/forces/ArsenalPanel").then((m) => ({
+      default: m.ArsenalPanel,
     })),
   {
     ssr: false,
@@ -106,7 +106,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
 
       {activeTab === "branches" && <CommandPanel countryId={countryId} />}
       {activeTab === "threats" && <BorderThreatPanel countryId={countryId} />}
-      {activeTab === "assets" && <AssetManager countryId={countryId} />}
+      {activeTab === "assets" && <ArsenalPanel countryId={countryId} />}
       {activeTab === "operations" && <OperationsPanel countryId={countryId} />}
       {activeTab === "stability" && <StabilityPanel countryId={countryId} />}
     </div>

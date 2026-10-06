@@ -1,29 +1,13 @@
 /**
  * Battle outcome for a military conflict (Plan 163 / 191), shared by the instant PvNPC strike
- * and the PvP resolution once a conflict's duration has run. Strength is the simple
- * personnel x readiness + operational-asset sum over active branches; a nation with no force
+ * and the PvP resolution once a conflict's duration has run. Each side's strength comes from its
+ * authored force structure (`militaryStrength` in ./force-structure): branch and unit personnel
+ * weighted by readiness, operational assets, and a quality factor. A nation with no force
  * structure fights at zero strength, so the swing alone decides it.
  */
 import { IxTime } from "~/lib/ixtime";
 
-interface BranchForce {
-  units: { personnel: number | null; readiness: number | null }[];
-  assets: { quantity: number | null; operational: number | null }[];
-}
-
-export function militaryStrength(branches: BranchForce[]): number {
-  return branches.reduce((sum, b) => {
-    const unitStr = b.units.reduce(
-      (s, u) => s + (u.personnel ?? 0) * ((u.readiness ?? 50) / 100),
-      0
-    );
-    const assetStr = b.assets.reduce(
-      (s, a) => s + (a.quantity ?? 0) * (a.operational ?? 0) * 10,
-      0
-    );
-    return sum + unitStr + assetStr;
-  }, 0);
-}
+export { militaryStrength } from "./force-structure";
 
 export interface ConflictOutcome {
   initiatorWins: boolean;

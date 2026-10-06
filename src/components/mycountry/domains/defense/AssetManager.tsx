@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
+import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { ASSET_TYPE_CONFIG, AssetCard, AssetDialog, type Asset } from "./assets";
 
 interface AssetManagerProps {
@@ -52,6 +53,7 @@ export function AssetManager({
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const notify = useNotify();
+  const { canEdit } = useCanEdit();
 
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
@@ -139,10 +141,12 @@ export function AssetManager({
             </SelectContent>
           </Select>
         </div>
-        <Button size="sm" onClick={handleCreate}>
-          <Plus className="h-4 w-4" />
-          Add asset
-        </Button>
+        {canEdit && (
+          <Button size="sm" onClick={handleCreate}>
+            <Plus className="h-4 w-4" />
+            Add asset
+          </Button>
+        )}
       </div>
 
       {filteredAssets.length > 0 ? (
