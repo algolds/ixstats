@@ -238,6 +238,7 @@ bun install
 
 # 2. Configure your local environment (then add your Clerk development keys)
 cp .env.example .env.local
+cp next.config.example.js next.config.js   # git-ignored: each environment keeps its own copy
 
 # 3. Start PostgreSQL + PostGIS (port 5433) and Redis (6379)
 docker compose -f docker-compose.dev.yml up -d
