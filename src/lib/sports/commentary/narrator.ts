@@ -1,6 +1,6 @@
 import type { EventTraceStep } from "../resolver";
-import { isAllowedLlmApiUrl } from "~/lib/narrator/llm-url";
-import { chatCompletion, resolveLlmEndpoint, type LLMConfig } from "~/lib/narrator/llm-chat";
+import { isAllowedLlmApiUrl } from "~/lib/llm/url";
+import { chatCompletion, resolveLlmEndpoint, type LLMConfig } from "~/lib/llm/chat";
 
 /**
  * A caller-supplied config is honoured only when it brings its own API key and,

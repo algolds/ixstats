@@ -107,7 +107,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | IxTime | platform (grouped under Concord in docs) | platform | `src/lib/ixtime/`, `/api/ixtime/sync-from-bot` | ✅ Live | Discord bot is the source of truth; continuous across multiplier changes |
 | Crisis events | Concord v2 | — | `crisis-events.ts` | 🟡 Partial | Read-only (`getActive`, `getStatistics`); nothing writes `CrisisEvent` rows now that the demo seed is gone. The one working event producer is the admin world-events (Storyteller) tool at `/admin/storyteller` (`admin/worldEvents.ts`), which writes `WorldEvent` and `StorytellerEffect` rows |
 | NPC personalities | Concord v2 | `/admin/npc-personalities` | `npcPersonalities/`, `src/lib/diplomacy/npc-personality.ts` | 🟡 Partial | Traits drive cultural-exchange responses only; drift has no callers; no event fatigue |
-| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 21 jobs ([events.md](../reference/events.md#scheduled--batch-jobs)); none run unless listed in `CRON_ENABLED_JOBS`. Each run takes a lease row (`job_leases`), is recorded as a `CronRun` row and alerts Discord on failure; `/api/health` shows the last run per job |
+| Cron | — | — | `cron-runner.mjs`, `src/server/cron/jobs.ts` | ✅ Live | 20 jobs ([events.md](../reference/events.md#scheduled--batch-jobs)); none run unless listed in `CRON_ENABLED_JOBS`. Each run takes a lease row (`job_leases`), is recorded as a `CronRun` row and alerts Discord on failure; `/api/health` shows the last run per job |
 
 ## 🎨 Design, Halo & admin
 

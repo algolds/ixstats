@@ -364,8 +364,8 @@ Owner calls that block or reshape roadmap items. For each, the recommendation fr
 | D7 | ThinkShare encryption | Build real end-to-end encryption, or drop the schema fields and the flag | Drop | Schema drop |
 | D8 | ThinkPages follows | Build following, or remove the follower counters | Remove the counters for now | SL-9 |
 | D9 | Unused Prisma models | Approve the drop list in [backlog §5](backlog.md#5-dead-schema) (57 models) | **Decided (2026-10-06):** approved, applied only after a successful production restore test | Code health |
-| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire | WK-12 |
-| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete | MC-6 |
+| D10 | Narrator/LLM | Wire it into issues and decisions, or retire it | **Decided (2026-10-06):** retire. **Done (2026-10-06):** the narrator router, library, admin panel and `NARRATOR_LLM_*` env keys are removed; sports commentary keeps the shared LLM client, now in `src/lib/llm/` | WK-12 (closed) |
+| D11 | ScheduledChange pipeline | Use it for impact-delayed edits, or delete it | **Decided (2026-10-06):** delete. **Done (2026-10-06):** service, cron job and route, router, `usePendingLocks` and the budget/revenue form locks removed; the model waits for the D9 drop | MC-6 (closed) |
 | D12 | Forum moderation | **Decided:** XenForo only; the forum help article says so (WK-20 done, 2026-10-05) | — | WK-20 |
 | D13 | Branch model | **Decided (2026-09-30):** `rose-garden` is the maintainer's nightly branch, `development` the junior devs' stable-but-experimental branch, `master` production; work is promoted up by merge PRs ([contributing.md](../processes/contributing.md#branches)) | — | PL-14 |
 | D14 | Vercel | Keep the `vercel.json` disable, or disconnect the integration | Disconnect | — |

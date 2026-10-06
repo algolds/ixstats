@@ -108,11 +108,6 @@ const MyLeagueAdminPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const NarratorAdminPanel = dynamic(
-  () => import("../narrator/NarratorPanel").then((m) => m.NarratorPanel),
-  { loading: Loader, ssr: false }
-);
-
 const OnomaAdminPanel = dynamic(() => import("./OnomaAdminPanel").then((m) => m.OnomaAdminPanel), {
   loading: Loader,
   ssr: false,
@@ -293,8 +288,6 @@ export function AdminRouter() {
       // Labs
       case "myleague":
         return <MyLeagueAdminPanel />;
-      case "narrator":
-        return <NarratorAdminPanel />;
       case "onoma":
         return <OnomaAdminPanel />;
       case "facet-lab":

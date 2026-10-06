@@ -498,7 +498,7 @@ Multi-source flag resolution pipeline. Key files: `unified-flag-service.ts`, `fl
 
 ### 6.7 Cron Jobs
 
-All scheduled jobs run only in `cron-runner.mjs` (PM2 app `ixstats-cron`); the 15 jobs are defined in `src/server/cron/jobs.ts` and enabled via `CRON_ENABLED_JOBS`. See [`events.md`](./events.md#scheduled--batch-jobs) for the full table (auction completion, passive income, card values, lore card generation, LoreWards full/state sync, trade expiry, sports season advance, scheduled changes, elections, politics drift, diplomatic drift, policy maintenance, national issues, wiki recent changes). IxTwitter Discord sync runs as its own PM2 process (`ixstats-ixtwitter`).
+All scheduled jobs run only in `cron-runner.mjs` (PM2 app `ixstats-cron`); the jobs are defined in `src/server/cron/jobs.ts` and enabled via `CRON_ENABLED_JOBS`. See [`events.md`](./events.md#scheduled--batch-jobs) for the full table (auction completion, passive income, card values, lore card generation, LoreWards full/state sync, trade expiry, sports season advance, elections, politics drift, diplomatic drift, policy maintenance, national issues, wiki recent changes). IxTwitter Discord sync runs as its own PM2 process (`ixstats-ixtwitter`).
 
 ### 6.8 Caching / Rate Limiting / Auth
 

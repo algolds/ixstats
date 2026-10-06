@@ -30,7 +30,7 @@ Assign roles at `/admin/user-roles`. Membership tiers (such as [Premium](/help/g
 | Reference data | Government components, Economic components (incl. tax impact), Economic archetypes, Diplomatic options, Diplomatic scenarios, Military equipment, NPC personalities, Intelligence templates. See [Reference Data](/help/admin/reference-data) |
 | Vault | Cards (incl. NationStates card import and lore card batches), Vault, Achievements and article awards |
 | Community and wiki | ThinkPages, Polls, Blurbs, Stash, WikiOS settings (incl. Loreward weights), Lore scanner, Image repository |
-| Labs | MyLeague, Narrator, Onoma |
+| Labs | MyLeague, Onoma |
 
 ## Common tasks
 

@@ -230,8 +230,11 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `ecosystem.config.cjs` and run `pm2 restart ixstats-cron --update-env`:
 
 `wiki-recentchanges` → `lore-card-generation` → `card-values` → `sports-season-advance` → `national-issues` →
-`politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` → `scheduled-changes` →
+`politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `passive-income` (last).
+
+The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still listed in `CRON_ENABLED_JOBS`, remove it
+before deploying: the runner exits on an unknown job name.
 
 Enable `db-backup` (daily dump to `backups/`) and `log-retention` (prunes old logs and `CronRun` rows) with the
 first cycle, and `budget-year-rollover` (new-fiscal-year reminders) once the budget-year remap in step 8 is applied.

@@ -1,8 +1,10 @@
 # Scheduled Changes
 
+> **Retired 2026-10-06** to [docs/history/](../README.md). Deleted 2026-10-06 (D11): the service, cron job, route, router and `usePendingLocks` are gone; the `ScheduledChange` model stays until the D9 schema drop.
+
 **Last updated:** 2026-10-05
 **Status:** Apply pipeline built and tested; **nothing creates scheduled changes**. Whether to keep or delete it is open
-decision D11 in [ROADMAP.md](../roadmap/ROADMAP.md).
+decision D11 in [ROADMAP.md](../../roadmap/ROADMAP.md).
 **Routes:** no page. `GET|POST /api/cron/apply-scheduled-changes` (cron secret)
 **Code:** `src/server/api/routers/scheduledChanges.ts`, `src/server/modules/scheduled-changes/` (`service.ts`,
 `effect-value.ts`), `src/server/cron/apply-scheduled-changes.ts`, `src/app/api/cron/apply-scheduled-changes/route.ts`,
@@ -88,5 +90,5 @@ table only fills if rows are inserted by hand. With no rows:
 
 ## Related documentation
 
-- [Economy](./economy.md): how `StorytellerEffect` values enter the calculation
-- [Notifications](./notifications.md)
+- [Economy](../../systems/economy.md): how `StorytellerEffect` values enter the calculation
+- [Notifications](../../systems/notifications.md)
