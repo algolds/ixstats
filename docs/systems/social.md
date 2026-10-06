@@ -1,6 +1,6 @@
 # 💬 ThinkPages — Sovereign Feed, ThinkTanks & ThinkShare
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-06
 
 **Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
 **Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
@@ -90,6 +90,7 @@ All platform direct messaging runs on the unified ThinkShare infrastructure:
 - **Message Types**: Personal 1:1 DMs, Diplomatic and official cables, Group rooms, and pinned **System / LoreBot** streams.
 - **Classification Tiers**: `PUBLIC`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET` (metadata on diplomatic/official conversations and messages). They can be written only through the admin `sendAdminMessage`; `createConversation` accepts `diplomaticClassification` but drops it, so diplomatic conversations cannot be created with a tier from the UI.
 - **Security**: The schema reserves `signature` and `encryptedContent` message fields and an `encrypted` conversation flag, but no signing or end-to-end encryption is implemented yet; access is enforced by participant checks.
+- **Requests, Seen and online (SL-4)**: a direct message from outside the recipient's audience lands in their **Requests** folder (`ConversationParticipant.requestStatus`, `messages.respondToRequest`); direct conversations show **Seen** when both people allow read receipts (`messages.getSeenState`); a green dot marks participants who are online and share it (`server/shared/presence.ts`). Details: [Settings](./settings.md#privacy--security-privacy--privacysecuritypanel).
 - **Caching**: Feed pages are cached in `globalCache` (15 s TTL) and invalidated by pattern (`thinkpages_feed:*`) on new posts.
 
 ---

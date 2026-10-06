@@ -46,6 +46,9 @@ Read it end to end once before starting. Every command here is meant to be run b
     `wiki_restrictions`, `wiki_blocks`, `wiki_bot_passwords`, `wiki_api_sessions`, `wiki_template_links`,
     `wiki_image_links`, new `wiki_articles` / `wiki_revisions` / `wiki_logs` / `wiki_assets` / `wiki_account_links`
     columns) and five unique constraints that `db push` asks to confirm (see 5a)
+  - privacy and notification delivery (2026-10-06, additive, SL-4/SL-5): `ConversationParticipant.requestStatus`
+    (default `none`) and a `(userId, requestStatus)` index; `UserPreferences.emailEnabledAt`, `emailDigest` (default
+    false) and `lastEmailDigestAt`; a `PushSubscription` table. `db push` applies them with no data-loss prompt
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -105,6 +108,13 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
 - **PM2 processes:** give `ixstats-cron` and `ixstats-ws` the same values by adding them to their `env:` blocks in
   `ecosystem.config.cjs`. The loaders also read `.env.production.local` once `NODE_ENV=production` is in effect.
 - **`ixstats-cron`:** add `CRON_ENABLED_JOBS: ''` to its `env:` block for now (no jobs; see step 7).
+- **Notification email and push (optional, SL-5):** both are off until their variables are set, and Settings hides
+  their switches until then. Email takes `EMAIL_API_KEY` and `EMAIL_FROM` (and `EMAIL_API_URL` for an API other
+  than Resend that accepts Resend's JSON); links in emails use `APP_URL` or `NEXT_PUBLIC_APP_URL`. Push takes
+  `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (`mailto:` address); generate the pair once with
+  `node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log(c.getPublicKey('base64url'),c.getPrivateKey('base64url'))"`
+  and keep it: changing it invalidates every saved browser subscription. Set them for the web app and for
+  `ixstats-cron` (the digest job sends email). Details: [notifications.md](../systems/notifications.md#email-and-web-push-sl-5).
 
 ## 3. `next.config.js` on the server (canonical `/@user` URLs)
 
@@ -271,8 +281,12 @@ Exchange phase 2 added two jobs; enable them last, one per cycle: `exchange-cont
 contracts never awarded) → `exchange-market` (sector indices, sector fund rebalancing, company decisions, fair values).
 Until `exchange-market` runs, every sector index stays at 1,000 and queued decisions wait.
 
-That makes 23 jobs (plus the two WikiOS ones below), the full table in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs)
-lists them with schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
+Enable `notification-email-digest` (daily email summaries, SL-5) only once email is configured (step 2); it does
+nothing without it.
+
+That makes 23 jobs here, including `notification-email-digest` (plus the two WikiOS ones below): the full table of
+25 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
+schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop
 syncing until you enable it, or until the MediaWiki webhook calls `/api/wikios/inbound-sync` with the secret.

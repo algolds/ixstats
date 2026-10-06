@@ -126,7 +126,7 @@ code-health track runs throughout.
 | Cron monitoring: a `CronRun` row per run, a Discord alert on failure, last success in `/api/health` | PL-10 | M | ✅ Done (2026-10-05) |
 | Page through cron reads (the 1,000-row cap); log when the cap is hit | PL-7 | S | ✅ Done (2026-10-05): `db.ts` logs when the cap is hit; `findAllById` pages diplomatic-drift, politics-drift, thinkpages-trending, passive-income, national-issues and policy-maintenance |
 | Make `policy-maintenance` idempotent with a per-period key (confirm the `totalBudget` debit design) | PL-8 | S | ✅ Done (2026-10-05): one upkeep debit per policy per IxTime budget year (marker row in `PolicyEffectLog`); the annual period needs owner sign-off |
-| Enable the 21 jobs one per cycle, in the [runbook's order](../operations/deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle) (now including `db-backup`, `log-retention`, `stat-progression`, `thinkpages-trending` and `achievements-evaluate`) | VT-15, §9 | S | Open (ops) |
+| Enable the 23 jobs one per cycle, in the [runbook's order](../operations/deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle) (now including `db-backup`, `log-retention`, `stat-progression`, `thinkpages-trending`, `achievements-evaluate`, the two Exchange jobs and the optional `notification-email-digest`) | VT-15, §9 | S | Open (ops) |
 | New jobs: log retention; nightly backup | PL-6, PL-11 | S | ✅ Done: `db-backup` (#37) and `log-retention` (2026-10-05) |
 | Replace the cron job lock's long transaction with a lease row | PL-9 | M | ✅ Done (2026-10-05, `job_leases`) |
 
@@ -179,9 +179,10 @@ Replace each with real data, or show an empty state. All S or S–M.
 ✅ **Done (2026-10-05)**, each wired or hidden:
 - **Privacy & Safety:** blocks and mutes filter the ThinkPages and activity feeds, and a block stops new DMs; every
   control the server doesn't enforce is hidden (SL-4). Blocking also covers group chats: messages, unread counts,
-  previews and notifications.
-- **Notifications:** per-user categories and minimum urgency are enforced; email and push toggles hidden (SL-5). Admin
-  notices to one user and sports results respect preferences; country-wide and global broadcasts are unfiltered by design.
+  previews and notifications. ✅ Every remaining privacy control is now enforced and shown (2026-10-06, SL-4).
+- **Notifications:** per-user categories and minimum urgency are enforced (SL-5). Admin notices to one user and sports
+  results respect preferences; country-wide and global broadcasts are unfiltered by design. ✅ Email and push delivery
+  are built, off until configured (2026-10-06, SL-5).
 - **Admin panels:** card rake, capacity and junk batch limit wired (VT-9); the unused vault price keys removed (VT-10);
   the ThinkPages account limit wired and unread Stash/ThinkPages controls hidden (WK-11); Loreward weights read by the
   scorer (WK-8); the unused `showDefenseTab` and Intelligence switches removed.
@@ -294,11 +295,16 @@ the spine.
 - ✅ **Engagement and trending (SL-8, SL-9):** the `thinkpages-trending` job scores posts with engagement decay over
   reactions, replies, reposts and daily distinct views, sets the `trending` flag and reconciles the like/reply/repost
   counters (#49); post views are counted once per viewer per day (2026-10-05); persona follows have real counts.
-- **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
-  registry to hooks that fire (SL-6).
-- **Privacy:** DM, mention and trade-offer audiences and muted words are enforced and shown (SL-4, 2026-10-05). Left:
-  online status and read receipts need the features first; message request filtering, indexing, telemetry,
-  recommendations, Discord tag, wiki attribution and clear history stay hidden. *Needs M0 #7.*
+- ✅ **Notifications (SL-5, 2026-10-06):** email (an HTTP email API in Resend's format) and Web Push (VAPID, no
+  dependency), each off until its env vars are set, honouring the category, urgency and per-channel switches, plus a
+  daily email digest job (`notification-email-digest`); Settings shows the switches only for configured channels.
+  Turning them on is an ops step ([backlog §1](backlog.md#1-owner-and-ops-actions)). The 12 unused hooks are removed
+  and a test keeps the admin registry to hooks that fire (SL-6).
+- ✅ **Privacy (SL-4, 2026-10-06):** DM, mention and trade-offer audiences and muted words (2026-10-05), then message
+  requests (a Requests folder with accept and decline), online status (a heartbeat in Redis or memory), read receipts
+  ("Seen" when both allow it), search-engine indexing (`noindex` on the passport), Discord tag and wiki attribution on
+  public surfaces, and a confirmed, rate-limited Clear history. Diagnostics and recommendations were removed: nothing
+  sends telemetry or recommends anything ([settings.md](../systems/settings.md#privacy--security-privacy--privacysecuritypanel)).
 - ✅ **Moderation (SL-10, 2026-10-05):** a Saved posts list for bookmarks; an admin flag queue that dismisses flags or
   removes the post.
 - ✅ **Follows:** persona follows with real counts, notifications and a Following feed (SL-9, #49).

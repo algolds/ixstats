@@ -1,11 +1,13 @@
 # Notifications
 
-**Last updated:** 2026-10-05
-**Status:** Live. In-app notifications only: there is no email, push or Discord delivery. Per-user category and
-minimum-urgency preferences are enforced for single-user notifications (2026-10-05, SL-5).
+**Last updated:** 2026-10-06
+**Status:** Live. In-app notifications, plus email and Web Push delivery of single-user notifications when the server
+configures them (both off by default, 2026-10-06, SL-5). Per-user category and minimum-urgency preferences are
+enforced for single-user notifications (2026-10-05, SL-5). There is no Discord delivery.
 **Routes:** the Halo notification tray (every page except `/maps`), `/settings?tab=notifications`, `/admin/notifications`
 **Code:** `src/server/api/routers/notifications/` (`user.ts`, `preferences.ts`, `events.ts`), `src/lib/notifications/`,
-`src/components/halo/views/NotificationsView.tsx`, `src/stores/notificationStore.ts`, `src/hooks/useLiveNotifications.ts`
+`src/components/halo/views/NotificationsView.tsx`, `src/stores/notificationStore.ts`, `src/hooks/useLiveNotifications.ts`,
+`src/lib/notifications/delivery/` (email, Web Push, digest), `public/push-sw.js`
 
 A notification is a `Notification` row addressed to one user, one country, or everyone. Server code creates rows
 through `notificationAPI` or `notificationHooks`; the Halo tray lists them and the page title shows the unread
@@ -21,7 +23,8 @@ count. A separate client-only path shows toasts.
 | :--- | :--- |
 | `Notification` | One notification. `userId` set: for that user. `countryId` set: for that country's players. Both null: global. Also `title`, `message`, `description`, `href`, `type`, `category`, `priority` (default `medium`), `severity` (default `informational`), `source`, `actionable`, `deliveryMethod`, `metadata` (JSON string), `read`, `dismissed` |
 | `NotificationEventConfig` | Admin on/off switch per event key (`eventKey`, `enabled`, `category`, `source`, `triggerType`). Rows are created by `seedEvents` |
-| `UserPreferences` | Per-user preference row, keyed by Clerk id: `economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel` (read when notifying; see §3), `emailNotifications`, `pushNotifications` (stored, no control and no delivery), plus the wiki preferences |
+| `UserPreferences` | Per-user preference row, keyed by Clerk id: `economicAlerts`, `crisisAlerts`, `diplomaticAlerts`, `systemAlerts`, `notificationLevel` (read when notifying; see §3), `emailNotifications` with `emailEnabledAt` (email consent, set when the user turns email on), `emailDigest` and `lastEmailDigestAt`, `pushNotifications` (see §4), plus the wiki preferences |
+| `PushSubscription` | One browser's Web Push subscription: `endpoint` (unique), `p256dh`, `auth`, `userId` (Clerk id), `userAgent`, `lastUsedAt` |
 | `IntelligenceAlertThreshold` | Admin-set metric thresholds per country (`prisma/schema/intelligence.prisma`) |
 
 ### Who sees a notification
@@ -86,8 +89,9 @@ notifications, `high` drops `low` and `medium`. A notification with no priority 
 - A filtered `create` returns `""` and writes nothing (unlike the event guard, it does not throw). `createMany` drops
   the filtered rows and writes the rest.
 - Preference reads fail open: a database error delivers the notification.
-- Writers that bypass `notificationAPI` (`lib/sports/club-notify.ts`, the messaging module's admin broadcast (`sendAdminBroadcast`),
-  admin `createNotification`) are not filtered.
+- Two writers that bypass `notificationAPI` call `recipientAccepts` themselves: `lib/sports/club-notify.ts` (as
+  `sports`, `low`) and the messaging module's single-user admin notice (`sendAdminBroadcast`). The admin
+  `createNotification` is not filtered.
 
 ## 4. Delivery paths
 
@@ -95,7 +99,7 @@ notifications, `high` drops `low` and `medium`. A notification with no priority 
 | :--- | :--- | :--- |
 | `notificationAPI` (`api.ts`) | `create`, `createMany`, `trigger` and helpers (`notifyCountry`, `notifyGlobal`, `notifyEconomicChange`, `notifyQuickActionResult`, `notifyAdminAction`, …). About 30 server files call `notificationAPI.create` | `Notification` row |
 | `notificationHooks` (`hooks.ts`) | Domain hooks (`onDiplomaticEvent`, `onAchievementUnlock`, `onThinktankActivity`, …) that check the guard and then create rows | `Notification` row |
-| Direct `notification.create` | `lib/sports/club-notify.ts` (club match results, when the sports `clubDms` setting is on), `server/modules/messaging/conversation-operations.ts` (`sendAdminBroadcast`) and the admin `notifications.createNotification`. Not filtered by recipient preferences | `Notification` row |
+| Direct `notification.create` | `lib/sports/club-notify.ts` (club match results, when the sports `clubDms` setting is on), `server/modules/messaging/conversation-operations.ts` (`sendAdminBroadcast`) and the admin `notifications.createNotification`. The first two check recipient preferences themselves (§3) and deliver by email and push; the admin composer does neither | `Notification` row |
 | `notifyFromStore` (`notify-store.ts`, `useNotify`) | Client toast (sonner `ToastBanner` with a Cuelume sound). `priority: "low"` and `silent` skip the toast. With `persistent: true` it also adds an entry to the in-memory `useNotificationStore` | Browser memory only |
 
 Server writers include achievements, auctions and card market, budget year rollover, elections, diplomacy (embassies,
@@ -106,6 +110,30 @@ called from `countries.update`).
 
 `notifyAdminAction` sets `deliveryMethod` (`modal`, `dynamic-island` or `toast`), but the tray does not read
 `deliveryMethod`; every row is shown the same way.
+
+### Email and Web Push (SL-5)
+
+`deliverNotification` (`src/lib/notifications/delivery/deliver.ts`) runs after `notificationAPI.create` /
+`createMany` write a **single-user** row the recipient accepted (§3), and after the admin single-user notice
+(`sendAdminBroadcast` with `scope: "user"`). It never blocks or fails the write. Country-wide and global notifications
+stay in-app only, by design. Each channel is off until its environment variables are set
+(`delivery/config.ts`); Settings shows a channel's switch only when it is configured (`getDeliveryChannels`).
+
+| Channel | Env vars | Who gets what |
+| :--- | :--- | :--- |
+| Email | `EMAIL_API_KEY`, `EMAIL_FROM` (both required), `EMAIL_API_URL` (default `https://api.resend.com/emails`); links use `APP_URL` or `NEXT_PUBLIC_APP_URL` | Opt-in: only users who turned email on in Settings (`emailNotifications` and `emailEnabledAt` set; a stored `true` from before delivery existed does not count). Without the digest, each `high` or `critical` notification is emailed to the user's primary Clerk address. With the digest, nothing is emailed one by one; see §7 |
+| Web Push | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (all required) | Every accepted notification goes to each browser the user turned push on in (`PushSubscription` rows), unless `pushNotifications` is off. Urgency follows priority. A subscription the push service reports gone (404/410) is deleted |
+
+- **Email sender** (`delivery/email.ts`): one `POST` of Resend-shaped JSON (`{ from, to, subject, text, html }`) with
+  a bearer key, so any API with that shape works. No SDK.
+- **Web Push** (`delivery/web-push.ts`): VAPID ES256 JWTs (RFC 8292) and `aes128gcm` payload encryption (RFC 8291) on
+  `node:crypto`, no dependency; a test checks the encryption against RFC 8291's worked example. Subscriptions are only
+  accepted for known push services (FCM, Mozilla, Apple, Windows), so the server never posts to an address a user
+  made up. The payload is `{ title, body, href }`.
+- **Service worker** (`public/push-sw.js`): registered from Settings with scope `/push/`, so it never controls or
+  caches pages; it shows the notification and opens its link on click.
+- Generate a VAPID pair once (base64url public and private key):
+  `node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log(c.getPublicKey('base64url'),c.getPrivateKey('base64url'))"`.
 
 ## 5. The Halo tray
 
@@ -146,13 +174,21 @@ suite panel (`src/app/admin/notifications/_components/`).
 
 ## 7. Jobs
 
-There is no notification job. Notifications are written by the code paths above, including cron jobs such as
-`budget-year-rollover`, `elections` and the sports season cron.
+`notification-email-digest` (daily at 08:07 UTC; `src/lib/notifications/delivery/digest.ts`) is off unless named in
+`CRON_ENABLED_JOBS`, and does nothing while email is not configured. For each user with email on and the digest
+chosen, it emails one summary of their unread, undismissed single-user notifications created since their last digest
+(at most the last 24 hours; the newest 20 are listed, with a count of the rest). Those rows already passed the
+category and urgency switches. Nobody with nothing new is emailed. `lastEmailDigestAt` moves only after a successful
+send, so a failed send is retried the next day. It handles up to 500 users a run.
+
+Otherwise notifications are written by the code paths above, including cron jobs such as `budget-year-rollover`,
+`elections` and the sports season cron.
 
 ## 8. Known gaps
 
-- **No email or push delivery** exists; the Settings toggles for them are hidden. `emailNotifications` and
-  `pushNotifications` are still stored.
+- **Email and push are off until configured**, and cover single-user notifications written through
+  `notificationAPI`, the admin single-user notice and sports club results. The admin `createNotification` writes rows
+  directly, so it is neither filtered nor delivered.
 - **Preferences cover single-user notifications only**, and only those written through `notificationAPI` (see §3).
 - **List and badge disagree for rows keyed by internal user id.** `getUserNotifications` and single-row
   `markAsRead`/`dismissNotification` match `userId` against the Clerk id only, while `getUnreadCount` and
