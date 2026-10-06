@@ -120,6 +120,82 @@ describe("purgeDuplicateCards", () => {
     expect(moved).toBeLessThan(deleted);
   });
 
+  it.each([
+    ["listed at auction", { isLocked: true }, [{ cardInstanceId: "own_a" }]],
+    ["with an ACTIVE auction but no lock", { isLocked: false }, [{ cardInstanceId: "own_a" }]],
+    ["locked by a pending trade", { isLocked: true }, []],
+  ])(
+    "repoints an ownership %s to the keeper intact instead of merging it",
+    async (_label, lock, activeAuctions) => {
+      db.$queryRawUnsafe.mockResolvedValue([
+        { wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" },
+      ]);
+      db.card.findMany.mockResolvedValue([{ id: "keep" }, { id: "dup" }]);
+      db.cardOwnership.findMany.mockResolvedValue([
+        { id: "own_a", ownerId: "alice", quantity: 1, ...lock },
+      ]);
+      db.cardAuction.findMany.mockResolvedValue(activeAuctions);
+      // Alice also holds the keeper, which a plain merge would fold own_a into.
+      db.cardOwnership.findFirst.mockResolvedValue({ id: "own_keep_a", quantity: 3 });
+
+      const result = await callerAs(db, "admin").purgeDuplicateCards({});
+
+      expect(db.cardAuction.findMany).toHaveBeenCalledWith({
+        where: { cardInstanceId: { in: ["own_a"] }, status: "ACTIVE" },
+        select: { cardInstanceId: true },
+      });
+      // The auction (and any escrowed bid) keeps pointing at own_a, which survives with its lock.
+      expect(db.cardOwnership.update).toHaveBeenCalledTimes(1);
+      expect(db.cardOwnership.update).toHaveBeenCalledWith({
+        where: { id: "own_a" },
+        data: { cardId: "keep" },
+      });
+      expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();
+      expect(db.cardOwnership.delete).not.toHaveBeenCalled();
+      expect(db.cardAuction.updateMany).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ purgedCount: 1, groupsResolved: 1 });
+    }
+  );
+
+  it("never merges into a keeper ownership that is locked or listed", async () => {
+    db.$queryRawUnsafe.mockResolvedValue([{ wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" }]);
+    db.card.findMany.mockResolvedValue([{ id: "keep" }, { id: "dup" }]);
+    db.cardOwnership.findMany.mockResolvedValue([
+      { id: "own_a", ownerId: "alice", quantity: 1, isLocked: false },
+    ]);
+
+    await callerAs(db, "admin").purgeDuplicateCards({});
+
+    expect(db.cardOwnership.findFirst).toHaveBeenCalledWith({
+      where: {
+        cardId: "keep",
+        ownerId: "alice",
+        isLocked: false,
+        CardAuction: { none: { status: "ACTIVE" } },
+      },
+    });
+    expect(db.cardOwnership.update).toHaveBeenCalledWith({
+      where: { id: "own_a" },
+      data: { cardId: "keep" },
+    });
+    expect(db.cardOwnership.delete).not.toHaveBeenCalled();
+  });
+
+  it("merges and deletes each group inside one transaction", async () => {
+    db.$queryRawUnsafe.mockResolvedValue([{ wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" }]);
+    db.card.findMany.mockResolvedValue([{ id: "keep" }, { id: "dup" }]);
+    db.cardOwnership.findMany.mockResolvedValue([{ id: "own_a", ownerId: "alice", quantity: 1 }]);
+    db.cardWatchlist.updateMany.mockRejectedValue(new Error("deadlock"));
+
+    await expect(callerAs(db, "admin").purgeDuplicateCards({})).rejects.toThrow(/deadlock/);
+
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    const txStart = db.$transaction.mock.invocationCallOrder[0]!;
+    expect(db.card.findMany.mock.invocationCallOrder[0]!).toBeGreaterThan(txStart);
+    expect(db.cardOwnership.update.mock.invocationCallOrder[0]!).toBeGreaterThan(txStart);
+    expect(db.card.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("reports duplicate groups with their redundant counts", async () => {
     db.$queryRawUnsafe
       .mockResolvedValueOnce([{ wikiArticleTitle: "Urcea", wikiSource: "ixwiki", count: 3n }])
