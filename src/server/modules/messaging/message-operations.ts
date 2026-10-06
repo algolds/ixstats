@@ -17,6 +17,7 @@ import {
 } from "./contracts";
 import { MessagingBlockedError, MessagingForbiddenError, MessagingNotFoundError } from "./errors";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 
 const EXEMPT_ROLES = new Set(["admin", "system-owner", "owner", "staff"]);
 const EXEMPT_MEMBERSHIP_TIERS = new Set(["premium", "pro", "vip"]);
@@ -61,12 +62,13 @@ export class MessagingMessageOperations {
         where: { conversationId: targetConvId, userId: { not: actorId }, isActive: true },
         select: { userId: true },
       });
-      const blocking = await recipientsBlockingSender(
-        this.db,
-        actorId,
-        others.map((p: { userId: string }) => p.userId)
-      );
+      const otherIds = others.map((p: { userId: string }) => p.userId);
+      const blocking = await recipientsBlockingSender(this.db, actorId, otherIds);
       if (blocking.length > 0) throw new MessagingBlockedError();
+      // ...or narrows who may message them to exclude the sender (SL-4).
+      if ((await recipientsRefusing(this.db, actorId, otherIds, "directMessages")).length > 0) {
+        throw new MessagingBlockedError("This user is not accepting direct messages from you");
+      }
     }
 
     const message = await this.db.$transaction(async (tx: any) => {

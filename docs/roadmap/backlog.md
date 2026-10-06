@@ -107,7 +107,7 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| SL-4 | FLAGGED | Privacy. Blocking now covers group chats (messages, unread counts, previews, notifications). Left: the hidden toggles (DM/mention/trade permissions, online status, read receipts, indexing, telemetry, muted words, clear history) have no enforcement | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
+| SL-4 | FLAGGED | Privacy. DM, mention and trade-offer audiences and muted words are enforced and shown (2026-10-05). Left, still hidden: message request filtering, online status (no presence relay), read receipts (none written), indexing, telemetry, recommendations, Discord tag, wiki attribution, clear history | `routers/users/preferences.ts`; `server/shared/user-blocks.ts` | M |
 | SL-5 | FLAGGED | Notifications. Admin notices to one user and sports results respect recipient preferences (2026-10-05). Left: country-wide and global admin broadcasts are unfiltered by design; no email or push delivery | `lib/notifications/recipient-preferences.ts` | M |
 | SL-27 | FLAGGED | The Discord mirror, sports LLM commentary and sports TTS are off by default. `/labs/*` is gated on the server (2026-10-05) | `narrator.ts` | S |
 

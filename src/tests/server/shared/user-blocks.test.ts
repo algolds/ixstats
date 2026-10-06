@@ -64,7 +64,12 @@ describe("thinkpages.getFeed honours the viewer's block and mute lists", () => {
 
   it("excludes hidden accounts and caches per viewer", async () => {
     const db = createMockPrisma();
-    db.userConnection.findMany.mockResolvedValue([{ targetUserId: "db_x", targetCountryId: null }]);
+    // Block/mute rows only; the muted-word lookup (connectionType "keyword") finds none.
+    db.userConnection.findMany.mockImplementation(async (args: any) =>
+      args.where.connectionType === "keyword"
+        ? []
+        : [{ targetUserId: "db_x", targetCountryId: null }]
+    );
     db.user.findMany.mockResolvedValue([{ clerkUserId: "clerk_x" }]);
     db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "acc_x" }]);
     const ctx = createMockRouterContext({ db, auth: { userId: "viewer" }, user: null });
@@ -73,6 +78,24 @@ describe("thinkpages.getFeed honours the viewer's block and mute lists", () => {
     expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({
       visibility: "public",
       accountId: { notIn: ["acc_x"] },
+    });
+    const key = (globalCache.set as jest.Mock).mock.calls.at(-1)![0] as string;
+    expect(key).toContain(":viewer:viewer");
+  });
+
+  it("leaves out posts with the viewer's muted words (SL-4)", async () => {
+    const db = createMockPrisma();
+    db.userConnection.findMany.mockImplementation(async (args: any) =>
+      args.where.connectionType === "keyword"
+        ? [{ targetUserId: "election", status: "Election" }]
+        : []
+    );
+    const ctx = createMockRouterContext({ db, auth: { userId: "viewer" }, user: null });
+
+    await createCaller(ctx as never).getFeed({});
+    expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({
+      visibility: "public",
+      AND: [{ NOT: { content: { contains: "election", mode: "insensitive" } } }],
     });
     const key = (globalCache.set as jest.Mock).mock.calls.at(-1)![0] as string;
     expect(key).toContain(":viewer:viewer");

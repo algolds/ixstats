@@ -2,6 +2,7 @@
 
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
+import { containsMutedKeyword } from "~/server/shared/privacy-permissions";
 
 /** Poll with per-option vote counts, as both feeds include it. */
 export const POLL_INCLUDE = {
@@ -200,5 +201,18 @@ export async function withViewerPollVotes<T extends { poll?: { id: string } | nu
           },
         }
       : act
+  );
+}
+
+/** Leaves out feed items whose title or text contains one of the viewer's muted words (SL-4). */
+export function dropMutedItems<T extends { content?: { title?: string; description?: string } }>(
+  items: T[],
+  mutedWords: string[]
+): T[] {
+  if (mutedWords.length === 0) return items;
+  return items.filter(
+    (item) =>
+      !containsMutedKeyword(item.content?.title, mutedWords) &&
+      !containsMutedKeyword(item.content?.description, mutedWords)
   );
 }

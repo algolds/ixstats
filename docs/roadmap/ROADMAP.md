@@ -296,7 +296,9 @@ the spine.
   counters (#49); post views are counted once per viewer per day (2026-10-05); persona follows have real counts.
 - **Notifications:** email and push digests if wanted (SL-5). The 12 unused hooks are removed and a test keeps the admin
   registry to hooks that fire (SL-6).
-- **Privacy:** full enforcement of the remaining toggles (SL-4). *Needs M0 #7.*
+- **Privacy:** DM, mention and trade-offer audiences and muted words are enforced and shown (SL-4, 2026-10-05). Left:
+  online status and read receipts need the features first; message request filtering, indexing, telemetry,
+  recommendations, Discord tag, wiki attribution and clear history stay hidden. *Needs M0 #7.*
 - ✅ **Moderation (SL-10, 2026-10-05):** a Saved posts list for bookmarks; an admin flag queue that dismisses flags or
   removes the post.
 - ✅ **Follows:** persona follows with real counts, notifications and a Following feed (SL-9, #49).

@@ -8,6 +8,8 @@ import { vaultService } from "~/lib/vault/vault-service";
 import { invalidateFeeds, personaDisplayName, postAuthorsInclude } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ownHashtags } from "~/server/shared/realm-board";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 
 /** Visibilities whose posts other people can open, so they may trigger notifications. */
 const NOTIFIABLE_VISIBILITIES = new Set(["public", "unlisted"]);
@@ -88,7 +90,15 @@ const CreatePostSchema = z.object({
 
 type PostDb = Pick<
   PrismaClient,
-  "thinkpagesAccount" | "thinkpagesPost" | "poll" | "mediaAttachment" | "postMention"
+  | "thinkpagesAccount"
+  | "thinkpagesPost"
+  | "poll"
+  | "mediaAttachment"
+  | "postMention"
+  | "userConnection"
+  | "user"
+  | "countryFollow"
+  | "thinkpagesFollow"
 >;
 
 const logNotifyFailure = (kind: string) => (err: unknown) =>
@@ -120,7 +130,11 @@ const mediaAttachmentData = (postId: string, urls: string[]) =>
     fileSize: null,
   }));
 
-/** Record @mentions and notify the owning user of each mentioned persona once, never the author. */
+/**
+ * Record @mentions and notify the owning user of each mentioned persona once, never the author.
+ * Users who blocked the author, or whose mention setting excludes them (SL-4), are not notified;
+ * the mention is still recorded.
+ */
 async function recordMentions(
   db: PostDb,
   post: { id: string },
@@ -143,11 +157,20 @@ async function recordMentions(
 
   if (!notify.notifiable) return;
   // Notifications are keyed by Clerk user id.
-  const recipients = new Set(
-    mentionedAccounts
-      .map((mentioned) => mentioned.clerkUserId)
-      .filter((id): id is string => !!id && id !== notify.clerkUserId)
-  );
+  const candidates = [
+    ...new Set(
+      mentionedAccounts
+        .map((mentioned) => mentioned.clerkUserId)
+        .filter((id): id is string => !!id && id !== notify.clerkUserId)
+    ),
+  ];
+  if (candidates.length === 0) return;
+  const [blocking, refusing] = await Promise.all([
+    recipientsBlockingSender(db, notify.clerkUserId, candidates),
+    recipientsRefusing(db, notify.clerkUserId, candidates, "mentions"),
+  ]);
+  const excluded = new Set([...blocking, ...refusing]);
+  const recipients = candidates.filter((id) => !excluded.has(id));
   for (const recipient of recipients) {
     await notificationHooks
       .onSocialActivity({

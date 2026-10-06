@@ -12,7 +12,9 @@ import {
   rangeStart,
   thinkpagesFeedItem,
   withViewerPollVotes,
+  dropMutedItems,
 } from "./shared";
+import { mutedKeywords } from "~/server/shared/privacy-permissions";
 
 function countReactionTypes(reactions: Array<{ reactionType: string }>) {
   const counts: Record<string, number> = {};
@@ -165,6 +167,11 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
           followingCount = followedIds.length + followedAccountIds.length;
         }
 
+        // The viewer's muted words apply on top of the shared (cached) merge (SL-4).
+        combinedActivities = dropMutedItems(
+          combinedActivities,
+          await mutedKeywords(ctx.db, ctx.auth.userId)
+        );
         const paginatedActivities = combinedActivities.slice(0, input.limit);
 
         const activitiesWithVotes = await withViewerPollVotes(
