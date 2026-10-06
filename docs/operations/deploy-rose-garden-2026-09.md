@@ -31,7 +31,15 @@ Read it end to end once before starting. Every command here is meant to be run b
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
     `resolvedBy` and a `(status, createdAt)` index
+  - WikiOS v1 (2026-10-06, D20): the wiki tables and columns of PR #52 (`wiki_mirror_jobs`, `wiki_user_groups`,
+    `wiki_restrictions`, `wiki_blocks`, `wiki_bot_passwords`, `wiki_api_sessions`, `wiki_template_links`,
+    `wiki_image_links`, new `wiki_articles` / `wiki_revisions` / `wiki_logs` / `wiki_assets` / `wiki_account_links`
+    columns) and five unique constraints that `db push` asks to confirm (see 5a)
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
+- **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
+  `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
+  renders do nothing. The cutover is its own runbook, [wikios-v1-cutover.md](wikios-v1-cutover.md); its section
+  "Before the cutover" lists what is safe meanwhile. Do not set `WIKIOS_V1_ENABLED` in this deploy.
 
 ## What prod looked like on 2026-09-27 (read-only check)
 
@@ -146,9 +154,14 @@ bun install --frozen-lockfile && bun run db:generate        # new dependency: po
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT count(*) FROM map_layers WHERE \"worldId\" IS NULL; SELECT id, slug, \"ownerId\" FROM realms;"
 #   expect: a count (compare with the backfill's map-layer line) and the row  default|default|system
-bun run db:push:force        # answer yes: the world_configs drop and the two new unique constraints are expected
+bun run db:push:force        # answer yes: the world_configs drop, the two Realms unique constraints and WikiOS v1's five are expected
 bun scripts/realms/backfill-foundation.ts                  # dry run
 ```
+
+WikiOS v1's five unique constraints are `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`,
+`wiki_logs.logId`, `wiki_logs.mwLogId` and `lore_stash_items (stashId, contentType, pageTitle)` (in place of
+`(stashId, pageTitle)`). None can fail: the four columns are new and empty, and the stash key is weaker than the old one.
+Do not run WikiOS's manual SQL (`prisma/manual-migrations/*wikios*`) here; it is step 1 of the cutover runbook.
 
 The dry run prints `owners: N to assign, M collisions`. A **collision** is a country that two or more ordinary
 users point at; the script never guesses. For each `COLLISION <countryId>: users <a>, <b>`, decide the owner and
@@ -245,6 +258,9 @@ lists them with schedules). Each run is recorded as a `CronRun` row; `/api/healt
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop
 syncing until you enable it, or until the MediaWiki webhook calls `/api/wikios/inbound-sync` with the secret.
+
+Leave `wiki-mirror` and `wiki-render-stale` out of the list. They do nothing while `WIKIOS_V1_ENABLED` is off, and
+step 6b of the [WikiOS v1 cutover runbook](wikios-v1-cutover.md) adds them.
 
 ## 8. One-off data fixes
 

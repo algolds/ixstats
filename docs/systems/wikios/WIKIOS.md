@@ -1,13 +1,16 @@
 # WikiOS native architecture
 
-**Last updated:** 2026-10-05 (the former `systems/wikios.md` overview is merged in)
+**Last updated:** 2026-10-06 (the former `systems/wikios.md` overview is merged in)
+**WikiOS v1:** PR #52 is merged into `rose-garden` (D20, 2026-10-06) and ships switched off: until `WIKIOS_V1_ENABLED=true`
+(step 6b of the [cutover runbook](../../operations/wikios-v1-cutover.md)) WikiOS reads but refuses every write with
+`readonly`, `/w/api.php` answers `readonly`, and the mirror and background renders do nothing (`src/lib/wiki-os/v1-switch.ts`).  
 **Status:** Release candidate (Plan 170 & Plan 191 complete; platform 1.4.0)  
 **Package:** `src/lib/wiki-os/` (in-repo module, imported as `~/lib/wiki-os`; not a published package)  
 **Runtime:** TypeScript 7.0, Next.js 16 App Router  
 **Versions** (`src/lib/buildVersion.ts`): WikiOS app `WIKIOS_VERSION = 1`; Canvas editor `CANVAS_VERSION = 1`; Stash
 `STASH_VERSION = 1`; Image Repository `REPOSITORY_VERSION = 2`. Lorewards and article awards (`WikiArticleAward`) are
 versioned with Achievements.  
-**Routes:** `/wiki/*` (reader, `/wiki/[slug]/edit`, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
+**Routes:** `/wiki/*` (one catch-all route: the reader, `?action=edit`, `?action=history`, `Talk:` pages, `?source=` foreign-wiki pages), `/util/*` (utility pages, including
 `/util/repository` and `/util/lorewards`), `/stashes`  
 **Related:** [style guide](style-guide.md) · [Margin spec](wikios-margin-spec.md) ·
 [Stage 3 config plan](wikios-stage3-config-plan.md) · [Stash](../stash.md) · [Lore lifecycle](../lore-lifecycle.md)

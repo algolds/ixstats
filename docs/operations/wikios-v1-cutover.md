@@ -12,8 +12,50 @@ IxStates (port 3550) and IxWorld (port 3002) are untouched, apart from the brief
 build described in step 5.
 
 **Order matters.** Steps 0 to 7 change nothing the public can see (the canonical link MediaWiki emits after step 3
-points at the URL it already serves). Step 8 is the cutover: nginx first, then one `LocalSettings.php` line. Every
-step has a rollback line that names the backup it restores; step 12 is the full rollback.
+points at the URL it already serves), except that step 6b lets the wiki inside IxStates take edits. Step 8 is the
+cutover: nginx first, then one `LocalSettings.php` line. Every step has a rollback line that names the backup it
+restores; step 12 is the full rollback.
+
+## Before the cutover
+
+The WikiOS v1 code reaches production in an ordinary IxStates release (`scripts/deploy-production.sh`: `prisma db push`,
+build, PM2 reload). That deploy runs none of the steps below: no manual SQL, no environment variables, no MediaWiki
+configuration, no nginx takeover. The code is safe without them because of one switch, **`WIKIOS_V1_ENABLED`, off
+unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
+
+**Safe while the switch is off (the state after an ordinary deploy):**
+
+- **Schema.** Every table and column WikiOS v1 reads is in the Prisma schema, so `db push` creates them. The push asks to
+  confirm five unique constraints: `wiki_articles (source, pageId)`, `wiki_revisions (source, revId)`, `wiki_logs.logId`,
+  `wiki_logs.mwLogId`, and `lore_stash_items (stashId, contentType, pageTitle)` in place of `(stashId, pageTitle)`. None can
+  fail: the four columns are new and empty (NULLs are never duplicates), and the stash key is weaker than the old one. Run
+  `bun run db:push:force` by hand first and answer yes, as for the Realms push in the rose-garden runbook (5a); the deploy
+  script's own push then has nothing to do. Pushed alone, a deploy script stops at that prompt without changing anything.
+- **Reading.** Articles, history, diffs, categories, Special pages and search work. Full-text search uses the old query,
+  because the search vector stays empty until step 1's `search-indexes.sql`.
+- **No writes.** Page edits, reverts, moves, deletions, protections, blocks, rights changes, uploads, XML imports and bot
+  passwords are refused with MediaWiki's `readonly` error, and `/w/api.php` answers `readonly` (503) to every request.
+  People edit on classic MediaWiki, as before.
+- **Cron.** `wiki-recentchanges` (and the webhook, once step 6 exists) keeps WikiOS's copy current: MediaWiki's revision
+  always becomes WikiOS's head, nothing is parked and nothing is pushed back. `wiki-mirror` and `wiki-render-stale` do
+  nothing even when listed; leave them out of `CRON_ENABLED_JOBS` until step 6b anyway.
+- **Other readers of IxWiki.** The lore-card generator and the Lorewards sync read IxWiki pages from MediaWiki, as they did
+  before WikiOS v1.
+
+**Incomplete until the cutover (nothing breaks):**
+
+- With no background render, WikiOS fills its link, template and image tables only for pages someone opens. "What links
+  here" and page images stay incomplete until step 7b; feed cards then fall back to the picture in the article's intro.
+- The manual SQL of step 1 is not run: integer ids for api.php (`pageId`, `revId`, `logId` sequences, triggers and
+  backfills), the generated search vector and its GIN and trigram indexes, the redirect backfill and the default
+  protections. Every file is idempotent and safe to apply before the switch; `2026-09-30-wikios-stash-key.sql` can run at
+  any time.
+
+**Unsafe before the cutover:**
+
+- Turning `WIKIOS_V1_ENABLED` on before steps 1, 3 and 4. Writes would queue in an outbox with no mirror account, api.php
+  would hand out pages without ids, and background renders would go to the public MediaWiki.
+- `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file (see step 5).
 
 Files shipped by plan 417 (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`):
 
@@ -192,6 +234,9 @@ get `sessionsecretmissing` again and nothing else changes.
 ```bash
 ( cd "$IX" && bun run deploy:prod )     # scripts/deploy-production.sh (master only; takes its own db backup)
 ```
+
+The release arrives with `WIKIOS_V1_ENABLED` off (see "Before the cutover"); leave it off until step 6b. If `db push`
+stops on the unique-constraint prompt, run `bun run db:push:force` by hand and answer yes, then run the deploy again.
 
 This also runs `deploy-ixworld.sh`. It does **not** deploy WikiOS: the `wikios` process built in step 5 keeps
 serving the code it was built from until `scripts/deploy-wikios.sh` runs again, so run that script after every
@@ -556,6 +601,26 @@ made from the command line, by jobs or by imports do not announce themselves (no
 `pm2 logs wikios --lines 30 --nostream | grep sync-webhook`.
 
 **Rollback:** `sudo cp -a "$BK/www.conf" /etc/php/8.4/fpm/pool.d/www.conf && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`.
+
+## 6b. Switch WikiOS v1 on
+
+Only after steps 1 (SQL), 3 (mirror account), 4 (render engine) and 6 (webhook). The switch goes into the env file that
+IxStates, `ixstats-cron` and the `wikios` process all read (`$WK/.env.production.local` is a link to it, step 5). From here
+on WikiOS takes edits, the mirror copies them to MediaWiki, a conflicting MediaWiki edit is parked, and api.php answers.
+
+```bash
+bk "$IX/.env.production.local" env.production.local.step6b
+grep -q '^WIKIOS_V1_ENABLED=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_V1_ENABLED=true\n' >> "$IX/.env.production.local" )
+grep -c '^WIKIOS_V1_ENABLED=true$' "$IX/.env.production.local"          # expect 1
+pm2 restart wikios --update-env && pm2 restart ixstats-cron --update-env
+# and IxStates itself, its usual restart, so it reads the file again
+curl -s 'http://127.0.0.1:3560/w/api.php?action=query&meta=siteinfo&format=json' | jq -r '.error.code // "ok"'   # not "readonly"
+```
+
+Then add `wiki-mirror` and `wiki-render-stale` to `CRON_ENABLED_JOBS` (step 7b explains the render backlog).
+
+**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same restarts. WikiOS is
+read-only again; jobs already in the outbox wait there.
 
 ## 7. Pre-cutover checks (nothing public yet)
 
@@ -1016,6 +1081,8 @@ mwmaint purgeParserCache --age 0                                                
 curl -s -o /dev/null -w '%{http_code}\n' https://ixwiki.com/wiki/Main_Page      # MediaWiki again
 ```
 
+To stop WikiOS taking edits as well, turn the switch off (step 6b's rollback line).
+
 (The files in `/etc/nginx/conf.d/` and `/etc/nginx/snippets/` are inert without the `include`; the `wikios-upstream.conf`
 `map`s and `upstream` are harmless.) Undo steps 10a and 10b from their own rollback lines if the watchers misbehave.
 To also stop WikiOS: `pm2 delete wikios && pm2 save`.
@@ -1028,7 +1095,7 @@ Every one of them is copied into `$BK` before its first edit.
 |------|------|------|
 | `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite**; `"iconoir-react"` and `"motion/react"` added to `experimental.optimizePackageImports` | 5 |
 | `/ixwiki/public/projects/ixstats/public/fonts/HostGrotesk/HostGrotesk[wght].ttf` | must exist (gitignored directory): `next/font/local` fails the build without it | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411) | 1c, 3c, 4, 5 |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411); `WIKIOS_V1_ENABLED=true` (6b) | 1c, 3c, 4, 5, 6b |
 | `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
 | `/ixwiki/public/projects/ixstats/ecosystem.config.cjs` | `CRON_ENABLED_JOBS` for `ixstats-cron` names `wiki-render-stale`, `wiki-mirror` and `wiki-recentchanges` (then `pm2 restart ixstats-cron --update-env`) | 7b |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example`; `WIKIOS_LEAN_FLIGHT: "1"` added to `env` in 9a | 5, 9a |

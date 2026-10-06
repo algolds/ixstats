@@ -1,6 +1,6 @@
 # Backlog — open items
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-06
 **Status:** The single backlog. [ROADMAP.md](ROADMAP.md) is the plan that orders these items;
 [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md) says what is live.
 
@@ -44,6 +44,7 @@ but off · `DEAD` unused code or schema · `DEBT` maintainability · `OPS` an ac
 | Run `db:refund-retired-store-items -- --apply` after the exploit audit | Archetype Proposal Token retired 2026-10-05 | Refunds each purchase once at what was paid ([myvault.md](../systems/myvault.md#retired-store-items)) |
 | CSP: remove the nginx/Cloudflare override, check for violations, then drop `'unsafe-inline'` from `script-src` | PL-2, PF§1 | The nonce reaches the page (#46); `src/lib/security/csp.ts` |
 | Deploy rose-garden via the [runbook](../operations/deploy-rose-garden-2026-09.md) | ROADMAP M1 | Realms schema, backfill, Eurth |
+| WikiOS v1 cutover via its [runbook](../operations/wikios-v1-cutover.md) | D20 | Merged switched off: `WIKIOS_V1_ENABLED` stays unset (WikiOS read-only) until the runbook's step 6b |
 | Enable the 21 cron jobs one per cycle, in the runbook's order | VT-15, PF§5 | None run until named in `CRON_ENABLED_JOBS`. Auctions and trades settle only through these jobs |
 | Redis in production | PF§5 | Required for realtime across processes and shared rate limits; `/api/health` reports it |
 | Run the web process under PM2 | PL-12 | The template (cron, ws, ixtwitter) is committed; the web app still runs from `start-production.sh` |
@@ -75,16 +76,9 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| WK-2 | BUG | Edit-conflict detection is dead: `basetimestamp` is accepted and never checked | `routers/wikios/editing.ts`; `core/article-repository.ts` | S–M |
-| WK-3 | UNFINISHED | Page protection can't be set (no writer, no UI) | `wiki.prisma`; `lib/wiki-os/auth.ts` | M |
-| WK-4 | BUG | Turnstile is inert: the result is ignored and no client sends a token | `editing.ts` | S |
-| WK-5 | BUG | Uploads never send the file to MediaWiki, and a `wiki_assets` row is written first. Waits on D3 | `editing.ts`; `write-service.ts` | M |
-| WK-6 | BUG | The image picker's Commons tab has no search procedure behind it, so it is always empty | `editor/ImageSearchGrid.tsx:67` | S |
-| WK-7 | UNFINISHED | Pages can't be moved or archived (plan 312 removed the procedures) | `core/page-management-service.ts` | M |
+| WK-6 | BUG | The editor's image picker (`ImageSearchGrid`) has an empty Commons tab: `commons.search` exists (the media search's repository tab uses it) but the picker never calls it | `editor/ImageSearchGrid.tsx:66` | S |
 | WK-12 | DEAD | Narrator LLM narration has no production caller (the key is masked). Wire or retire (D10) | `routers/narrator/index.ts` | M |
-| WK-16 | BUG | Revert and rollback skip the edge-cache purge | `editing.ts` | S |
-| WK-17 | STUB | BlurHashes are generated from the filename, not the image | `core/blurhash-service.ts` | S–M |
-| WK-19 | DEAD | Watchers are never notified when a watched page changes | `wiki.prisma` | S–M |
+| WK-17 | UNFINISHED | No BlurHash is computed from an image: uploads store none (the filename-based one is gone, #52) and placeholders use the asset's size | `core/media-asset-service.ts`; `core/blurhash-service.ts` | S–M |
 
 ### Vault, cards & achievements (VT)
 
@@ -156,12 +150,9 @@ See §1 above (password rotation, CSP).
 - **Named rivers/lakes → trade modifiers:** `computeEconomicGeoModifiers` ignores named features.
 
 **WikiOS**
-- **Export durability:** the MediaWiki export queue is in memory; per-user actor attribution is a no-op.
 - **Margin:** `toggleCommentReaction`, `deleteComment`, the Stash tab, and un-hiding the Inspect tab ([margin spec](../systems/wikios/wikios-margin-spec.md)).
 - **Stash share links:** `?stash=` is never read; stashes have no visibility field or public read path (M, schema change).
 - **Guardian:** mass-blanking and homoglyph abuse filter.
-- **Portability:** `transformers/html-transformer.ts` hard-codes `https://ixwiki.com/`.
-- **Duplicate routes:** four dynamic pages exist under both `/wiki` and `/util`.
 
 **Vault**
 - **Packs:** wire the Keep/List quick actions; pack artwork.
@@ -277,7 +268,7 @@ items not already listed above:
 - **Country where the platform should be:** the dividend and many achievements still need a country; personas live in ThinkPages rather than IxnayID.
 - **Five nations per realm:** a platform default of 5 with a tier-aware cap (`min(realm cap, tier cap)`) tied to one premium definition; decide dividends and achievements per account or per nation (PA §7).
 - **Halo plugins** for ThinkPages, Messages, Vault and Maps are missing.
-- **WikiOS independence:** render from Postgres wikitext, native media, rights model, then a renderer contract and XML import/export (wikios-onoma report).
+- **WikiOS independence:** a renderer contract (wikios-onoma report). Rendering from Postgres wikitext, native media, the rights model and XML import/export shipped with WikiOS v1 (#52).
 - **Ponytail (simplification):** ~21,000 unreachable lines in `src/` (re-measure; some clusters are deleted), 16 duplication patterns with proposed homes, `audit:wiring` broken by the `minimatch: ^3` override, ~19,500 lines in `scripts/archive`.
 
 ## 5. Dead schema
