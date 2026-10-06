@@ -22,6 +22,7 @@ import { CardType, CardRarity, Prisma } from "@prisma/client";
 import { getCurrentIxCardSeason } from "./season";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import type {
   MediaWikiPageItem,
@@ -150,6 +151,9 @@ const WIKI_URL_BASES: Record<string, string> = {
 const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
 const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
 
+/** IxWiki card data: from Postgres once WikiOS v1 is on, from MediaWiki before it (v1-switch.ts). */
+const readsPostgres = (wikiSource: WikiSource) => wikiSource === "ixwiki" && isWikiosV1Enabled();
+
 class WikiLoreCardGenerator {
   /** Generate a lore card candidate from a wiki article; throws a descriptive error when it can't. */
   async generateCard(
@@ -222,7 +226,7 @@ class WikiLoreCardGenerator {
 
   /** Article content, infobox, featured image, backlinks and author info from the wiki API. */
   private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
-    if (wikiSource === "ixwiki") return this.fetchIxwikiArticleData(title);
+    if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
     try {
       // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
       if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
@@ -363,7 +367,7 @@ class WikiLoreCardGenerator {
     requestedTitles: string[],
     wikiSource: WikiSource
   ): Promise<ArticleMetadataPreview[]> {
-    if (wikiSource === "ixwiki") return this.fetchIxwikiMetadataBatch(requestedTitles);
+    if (readsPostgres(wikiSource)) return this.fetchIxwikiMetadataBatch(requestedTitles);
     // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
     const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
     const valuationCfg = await getValuationConfig(db);
@@ -499,7 +503,7 @@ class WikiLoreCardGenerator {
     titles: string[],
     wikiSource: WikiSource
   ): Promise<Map<string, CardAuthorInfo>> {
-    if (wikiSource === "ixwiki") return ixwikiAuthorInfo(titles);
+    if (readsPostgres(wikiSource)) return ixwikiAuthorInfo(titles);
     const resultMap = new Map<string, CardAuthorInfo>();
     const uniqueTitles = Array.from(
       new Set(titles.map((t) => t.trim()).filter((t) => t.length > 0))
@@ -598,8 +602,9 @@ class WikiLoreCardGenerator {
     limit = 10000,
     type: "page" | "file" | "page|file" = "page|file"
   ): Promise<string[]> {
-    if (wikiSource === "ixwiki") {
-      return ixwikiCategoryTitles(category, type === "page|file" ? ["page", "file"] : [type], limit);
+    if (readsPostgres(wikiSource)) {
+      const kinds: Array<"page" | "file"> = type === "page|file" ? ["page", "file"] : [type];
+      return ixwikiCategoryTitles(category, kinds, limit);
     }
     const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
     return this.listAll(
@@ -613,7 +618,7 @@ class WikiLoreCardGenerator {
 
   /** List all pages in the main namespace (namespace 0, excluding redirects). */
   fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
-    if (wikiSource === "ixwiki") return ixwikiMainNamespaceTitles(limit);
+    if (readsPostgres(wikiSource)) return ixwikiMainNamespaceTitles(limit);
     return this.listAll(
       wikiSource,
       { list: "allpages", apnamespace: "0", apfilterredir: "nonredirects", aplimit: "500" },
@@ -625,7 +630,7 @@ class WikiLoreCardGenerator {
 
   /** Search live wiki categories by prefix — feeds the discovery category picker. */
   async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
-    if (wikiSource === "ixwiki") {
+    if (readsPostgres(wikiSource)) {
       return CategoryService.autocomplete(prefix, Math.min(Math.max(limit, 1), 100));
     }
     try {
@@ -659,10 +664,11 @@ class WikiLoreCardGenerator {
   ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
     const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
       {};
-    if (wikiSource === "ixwiki") {
+    if (readsPostgres(wikiSource)) {
       const names = categories.map((c) => c.replace(/^Category:\s*/i, "")).slice(0, 50);
       for (const [name, { pages, files, subcats }] of await CategoryService.getCounts(names)) {
-        result[name] = result[`Category:${name}`] = { size: pages + files + subcats, pages, files, subcats };
+        const counts = { size: pages + files + subcats, pages, files, subcats };
+        result[name] = result[`Category:${name}`] = counts;
       }
       return result;
     }
@@ -731,7 +737,7 @@ class WikiLoreCardGenerator {
 
   /** Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API. */
   private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
-    if (wikiSource === "ixwiki") {
+    if (readsPostgres(wikiSource)) {
       const name = filename.replace(/^(File|Image):/i, "");
       return (await ixwikiImageUrls([name])).get(name) ?? null;
     }
@@ -907,7 +913,7 @@ class WikiLoreCardGenerator {
    * cover pages without an image.
    */
   async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
-    if (wikiSource === "ixwiki") return ixwikiRandomTitles(count, { withImage: true });
+    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: true });
     try {
       const response = await mwQuery(wikiSource, {
         generator: "random",
@@ -934,7 +940,7 @@ class WikiLoreCardGenerator {
 
   /** Random main-namespace article titles. */
   async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
-    if (wikiSource === "ixwiki") return ixwikiRandomTitles(count, { withImage: false });
+    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: false });
     try {
       const response = await mwQuery(wikiSource, {
         list: "random",

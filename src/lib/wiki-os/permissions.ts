@@ -10,6 +10,7 @@
 // is checked last.
 
 import { TRPCError } from "@trpc/server";
+import { isWikiosV1Enabled, WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { PageOperationError, talkTitleOf } from "~/lib/wiki-os/core/page-management-service";
@@ -48,7 +49,13 @@ export interface PageRestriction {
 }
 
 export type DenialCode =
-  "blocked" | "namespaceprotected" | "protectedpage" | "titleprotected" | "permissiondenied";
+  | "blocked"
+  | "namespaceprotected"
+  | "protectedpage"
+  | "titleprotected"
+  | "permissiondenied"
+  /** WikiOS v1 is not switched on (`WIKIOS_V1_ENABLED`): every write is refused, as on a read-only wiki. */
+  | "readonly";
 
 export type ActionDecision =
   { allowed: true } | { allowed: false; code: DenialCode; reason: string };
@@ -153,6 +160,7 @@ export interface ActionRequest {
 
 /** Whether the caller in `request.permissions` may perform `request.action` on `request.title`. */
 export function decideAction(request: ActionRequest): ActionDecision {
+  if (!isWikiosV1Enabled()) return deny("readonly", WIKIOS_READONLY_REASON);
   const { action, title, permissions, restrictions, now } = request;
   const { block, rights, verifiedWikiUsername } = permissions;
 
@@ -186,6 +194,7 @@ export function decideAction(request: ActionRequest): ActionDecision {
  * and the right to upload is what lets someone give a new file its page.
  */
 export function decideFilePageCreation(request: Omit<ActionRequest, "action">): ActionDecision {
+  if (!isWikiosV1Enabled()) return deny("readonly", WIKIOS_READONLY_REASON);
   const { title, permissions, restrictions, now } = request;
   const { block, rights } = permissions;
   if (block) return deny("blocked", describeBlock(block));
@@ -233,7 +242,10 @@ export async function refusals<T>(work: Promise<T>): Promise<T> {
   } catch (error) {
     if (error instanceof PageOperationError) {
       // a namespace WikiOS does not move pages in is a request that cannot be granted: BAD_REQUEST for tRPC
-      throw new TRPCError({ code: error.code === "IMMOBILE" ? "BAD_REQUEST" : error.code, message: error.message });
+      throw new TRPCError({
+        code: error.code === "IMMOBILE" ? "BAD_REQUEST" : error.code,
+        message: error.message,
+      });
     }
     throw error;
   }
@@ -326,8 +338,18 @@ export async function requireNotBlocked(ctx: WikiAuthContext): Promise<void> {
   if (block) throw forbidden("blocked", describeBlock(block));
 }
 
+/**
+ * Throws FORBIDDEN (`readonly`) while WikiOS v1 is switched off (`WIKIOS_V1_ENABLED`): for the writes that pass no
+ * page-action check of their own (bot passwords, XML imports, api.php). See `v1-switch.ts`.
+ */
+export function assertWikiosWritable(): void {
+  if (!isWikiosV1Enabled()) throw forbidden("readonly", WIKIOS_READONLY_REASON);
+}
+
 /** Throws FORBIDDEN (`permissiondenied`) unless the caller holds `right`; returns their permissions. */
 export async function requireRight(ctx: WikiAuthContext, right: Right): Promise<WikiPermissions> {
+  // every right asked for here is for a write (undelete, block, userrights, reupload, ...)
+  assertWikiosWritable();
   const permissions = await getWikiPermissions(ctx);
   if (!permissions.rights.has(right)) {
     throw forbidden("permissiondenied", `You do not have the "${right}" right.`);

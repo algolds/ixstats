@@ -11,7 +11,8 @@ import { astToPlateNodes, wikitextToAst } from "~/lib/wiki-os/transformers/wiki-
 import { parse } from "~/lib/wiki-os/wikitext/parser";
 import { escapeParamValue, rewriteTemplateParams } from "~/lib/wiki-os/wikitext/template-edit";
 
-const load = (wikitext: string): PlateNode[] => astToPlateNodes(wikitextToAst(wikitext)) as PlateNode[];
+const load = (wikitext: string): PlateNode[] =>
+  astToPlateNodes(wikitextToAst(wikitext)) as PlateNode[];
 const result = (nodes: PlateNode[]) => serializePlateToWikitext(nodes as Descendant[]);
 const save = (nodes: PlateNode[]): string => result(nodes).wikitext;
 
@@ -53,7 +54,14 @@ describe("list type toggle (item 2)", () => {
   });
 
   it("writes new items of a new numbered list with #", () => {
-    expect(save([{ type: "ol", children: [{ type: "li", level: 2, prefix: "**", children: [{ text: "x" }] }] }])).toBe("## x");
+    expect(
+      save([
+        {
+          type: "ol",
+          children: [{ type: "li", level: 2, prefix: "**", children: [{ text: "x" }] }],
+        },
+      ])
+    ).toBe("## x");
   });
 });
 
@@ -65,8 +73,12 @@ describe("table rows keep a |- when they are not first (item 4)", () => {
     return save([{ ...t, children: order.map((i) => t.children![i]!) }]);
   };
   const cellTexts = (wikitext: string): string[] =>
-    (parse(wikitext).ast.nodes[0] as { children: Array<{ children: Array<{ children: Array<{ text?: string }> }> }> }).children.map(
-      (row) => row.children.map((cell) => cell.children.map((leaf) => leaf.text ?? "").join("")).join("|")
+    (
+      parse(wikitext).ast.nodes[0] as {
+        children: Array<{ children: Array<{ children: Array<{ text?: string }> }> }>;
+      }
+    ).children.map((row) =>
+      row.children.map((cell) => cell.children.map((leaf) => leaf.text ?? "").join("")).join("|")
     );
 
   it("moving row 1 (which had no |-) to the end writes the |- it needs", () => {
@@ -91,17 +103,24 @@ describe("table rows keep a |- when they are not first (item 4)", () => {
 
   it("rows with |- keep it wherever they go", () => {
     const t = tableOf(load("{|\n|-\n| a\n|-\n| b\n|}"));
-    expect(save([{ ...t, children: [t.children![1]!, t.children![0]!] }])).toBe("{|\n|-\n| b\n|-\n| a\n|}");
+    expect(save([{ ...t, children: [t.children![1]!, t.children![0]!] }])).toBe(
+      "{|\n|-\n| b\n|-\n| a\n|}"
+    );
   });
 });
 
 describe("the template rebuilder (item 5)", () => {
-  const rewrite = (raw: string, values: Record<string, string>): string | null => rewriteTemplateParams(raw, values);
+  const rewrite = (raw: string, values: Record<string, string>): string | null =>
+    rewriteTemplateParams(raw, values);
 
   it("escapes a top-level | as {{!}} and keeps balanced templates and links as they are", () => {
     expect(escapeParamValue("a|b")).toBe("a{{!}}b");
-    expect(escapeParamValue("a {{x|1|2}} b [[T|label]] c|d")).toBe("a {{x|1|2}} b [[T|label]] c{{!}}d");
-    expect(escapeParamValue("<nowiki>|</nowiki> <!-- | --> |")).toBe("<nowiki>|</nowiki> <!-- | --> {{!}}");
+    expect(escapeParamValue("a {{x|1|2}} b [[T|label]] c|d")).toBe(
+      "a {{x|1|2}} b [[T|label]] c{{!}}d"
+    );
+    expect(escapeParamValue("<nowiki>|</nowiki> <!-- | --> |")).toBe(
+      "<nowiki>|</nowiki> <!-- | --> {{!}}"
+    );
     expect(rewrite("{{T|a=1}}", { a: "x|y" })).toBe("{{T|a=x{{!}}y}}");
   });
 
@@ -118,12 +137,18 @@ describe("the template rebuilder (item 5)", () => {
     expect(rewrite("{{T|first|second}}", { "1": "x=y", "2": "second" })).toBe("{{T|1=x=y|second}}");
     expect(rewrite("{{T|first|second}}", { "1": "first", "2": "a=b" })).toBe("{{T|first|2=a=b}}");
     // an = inside a nested template or link does not make it a name
-    expect(rewrite("{{T|first}}", { "1": "{{x|a=b}} [[L|k=v]]" })).toBe("{{T|{{x|a=b}} [[L|k=v]]}}");
+    expect(rewrite("{{T|first}}", { "1": "{{x|a=b}} [[L|k=v]]" })).toBe(
+      "{{T|{{x|a=b}} [[L|k=v]]}}"
+    );
   });
 
   it("edits the LAST occurrence of a repeated name and never rewrites the others", () => {
-    expect(rewrite("{{T|k=one|k=two|z=3}}", { k: "changed", z: "3" })).toBe("{{T|k=one|k=changed|z=3}}");
-    expect(rewrite("{{T| k = one |z=3| k = two }}", { k: "changed", z: "3" })).toBe("{{T| k = one |z=3| k = changed }}");
+    expect(rewrite("{{T|k=one|k=two|z=3}}", { k: "changed", z: "3" })).toBe(
+      "{{T|k=one|k=changed|z=3}}"
+    );
+    expect(rewrite("{{T| k = one |z=3| k = two }}", { k: "changed", z: "3" })).toBe(
+      "{{T| k = one |z=3| k = changed }}"
+    );
     // a value equal to the last one's (MediaWiki's) is no edit at all
     expect(rewrite("{{T|k=one|k=two}}", { k: "two" })).toBe("{{T|k=one|k=two}}");
     // removing the name removes every occurrence
@@ -160,7 +185,7 @@ describe("a form edit goes through the rebuilder, and an unclosed template is to
     expect(result([edited]).notices).toEqual([]);
 
     const [open] = load("{{Infobox x\n| a = 1\n| b = 2");
-    expect(open!.parseState).toBe("incomplete");
+    expect((open as { parseState?: string }).parseState).toBe("incomplete");
     const brokenEdit = { ...open!, params: { ...open!.params, a: "9" }, edited: true };
     const out = result([brokenEdit]);
     expect(out.wikitext).toBe("{{Infobox x\n| a = 1\n| b = 2");
@@ -180,13 +205,18 @@ describe("headings keep inline content intact (item 6)", () => {
         { text: " <nowiki>keep\nthis</nowiki> end\n  tail" },
       ],
     };
-    expect(save([heading])).toBe("== First second {{flag|a\n|b}} <nowiki>keep\nthis</nowiki> end tail ==");
+    expect(save([heading])).toBe(
+      "== First second {{flag|a\n|b}} <nowiki>keep\nthis</nowiki> end tail =="
+    );
   });
 
   it("joins the lines inside a link label but not inside a comment", () => {
     const heading: PlateNode = {
       type: "h3",
-      children: [{ type: "link", target: "T", internal: true, children: [{ text: "a\nb" }] }, { text: " <!-- x\ny -->" }],
+      children: [
+        { type: "link", target: "T", internal: true, children: [{ text: "a\nb" }] },
+        { text: " <!-- x\ny -->" },
+      ],
     };
     expect(save([heading])).toBe("=== [[T|a b]] <!-- x\ny --> ===");
   });
@@ -194,7 +224,10 @@ describe("headings keep inline content intact (item 6)", () => {
 
 describe("a redirect stays first (item 7)", () => {
   it("moves a #REDIRECT block that is not first to the top, with a notice", () => {
-    const [redirect, rest] = load("#REDIRECT [[Target]]\n\n[[Category:Redirects]]") as [PlateNode, PlateNode];
+    const [redirect, rest] = load("#REDIRECT [[Target]]\n\n[[Category:Redirects]]") as [
+      PlateNode,
+      PlateNode,
+    ];
     const above: PlateNode = { type: "p", children: [{ text: "Inserted above." }] };
     const out = result([above, redirect, rest]);
     expect(out.wikitext.startsWith("#REDIRECT [[Target]]")).toBe(true);
@@ -206,9 +239,14 @@ describe("a redirect stays first (item 7)", () => {
   });
 
   it("says nothing when the redirect is first, or when an empty block stands above it", () => {
-    const [redirect, rest] = load("#REDIRECT [[Target]]\n\n[[Category:Redirects]]") as [PlateNode, PlateNode];
+    const [redirect, rest] = load("#REDIRECT [[Target]]\n\n[[Category:Redirects]]") as [
+      PlateNode,
+      PlateNode,
+    ];
     expect(result([redirect, rest]).notices).toEqual([]);
-    expect(result([redirect, rest]).wikitext).toBe("#REDIRECT [[Target]]\n\n[[Category:Redirects]]");
+    expect(result([redirect, rest]).wikitext).toBe(
+      "#REDIRECT [[Target]]\n\n[[Category:Redirects]]"
+    );
     expect(result([{ type: "p", children: [{ text: "" }] }, redirect, rest]).notices).toEqual([]);
   });
 });
@@ -219,7 +257,12 @@ describe("a link with no target is kept as the text it is (item 8)", () => {
     const nodes = load(source);
     expect(nodes[0]!.children!.some((leaf) => leaf.type === "link")).toBe(false);
     expect(save(nodes)).toBe(source);
-    const edited = { ...nodes[0]!, children: nodes[0]!.children!.map((leaf) => (leaf.text ? { ...leaf, text: leaf.text.replace("Before", "Earlier") } : leaf)) };
+    const edited = {
+      ...nodes[0]!,
+      children: nodes[0]!.children!.map((leaf) =>
+        leaf.text ? { ...leaf, text: leaf.text.replace("Before", "Earlier") } : leaf
+      ),
+    };
     expect(save([edited])).toBe("Earlier [[|120px|center]] after.");
   });
 
@@ -230,12 +273,18 @@ describe("a link with no target is kept as the text it is (item 8)", () => {
     const row = t.children![0]!;
     const editedRow = {
       ...row,
-      children: row.children!.map((cell, i) => (i === 0 ? { ...cell, children: [{ text: "A" }] } : cell)),
+      children: row.children!.map((cell, i) =>
+        i === 0 ? { ...cell, children: [{ text: "A" }] } : cell
+      ),
     };
-    expect(save([{ ...t, children: [editedRow, t.children![1]!] }])).toBe("{|\n|-\n| A\n| [[|120px|center]]\n|-\n| c\n|}");
+    expect(save([{ ...t, children: [editedRow, t.children![1]!] }])).toBe(
+      "{|\n|-\n| A\n| [[|120px|center]]\n|-\n| c\n|}"
+    );
   });
 
   it("still reads [[ ]] with only spaces as text, and real links as links", () => {
-    expect(load("[[ ]] and [[Foo]]")[0]!.children!.filter((leaf) => leaf.type === "link")).toHaveLength(1);
+    expect(
+      load("[[ ]] and [[Foo]]")[0]!.children!.filter((leaf) => leaf.type === "link")
+    ).toHaveLength(1);
   });
 });

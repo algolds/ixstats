@@ -25,6 +25,12 @@ import { db } from "~/server/db";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
+/** The generator's private readers these tests call directly. */
+const generatorInternals = wikiLoreCardGenerator as unknown as {
+  getImageUrl(filename: string, wikiSource: string): Promise<string | null>;
+  fetchArticleData(title: string, wikiSource: string): Promise<unknown>;
+};
+
 const mocked = db as unknown as {
   wikiArticle: Record<"findFirst" | "findMany", jest.Mock>;
   wikiRevision: Record<"findFirst" | "groupBy", jest.Mock>;
@@ -41,7 +47,8 @@ const mocked = db as unknown as {
 const sqlOf = (call: unknown[]) => (call[0] as TemplateStringsArray).join("?");
 const day = (n: number) => new Date(Date.UTC(2026, 0, n));
 
-const BODY = "Caphiria is a constitutional monarchy on the southern coast of the continent. ".repeat(12);
+const BODY =
+  "Caphiria is a constitutional monarchy on the southern coast of the continent. ".repeat(12);
 const WIKITEXT = `{{Infobox country\n|name = Caphiria\n|image = Caphiria map.png\n}}\n'''Caphiria''' ${BODY}<ref>One</ref><ref>Two</ref>\n`;
 
 const asset = {
@@ -83,7 +90,8 @@ beforeEach(() => {
   mocked.systemConfig.findMany.mockResolvedValue([]);
   mocked.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) => {
     const sql = strings.join("?");
-    if (sql.includes("row_number()")) return sql.includes("wiki_category_members") ? categoryRows : early;
+    if (sql.includes("row_number()"))
+      return sql.includes("wiki_category_members") ? categoryRows : early;
     if (sql.includes("octet_length")) return heads;
     return titles;
   });
@@ -198,7 +206,9 @@ describe("generateCard for IxWiki", () => {
 
     // the text names "Caphiria map.png" (deleted): the first illustration left is the skyline
     expect(card?.artwork).toBe("https://ixwiki.com/images/s/s1/Caphiria_skyline.jpg");
-    expect(mocked.wikiArticle.findMany.mock.calls.some(([args]) => args.where.status === "ARCHIVED")).toBe(true);
+    expect(
+      mocked.wikiArticle.findMany.mock.calls.some(([args]) => args.where.status === "ARCHIVED")
+    ).toBe(true);
   });
 
   it("uses the placeholder when every picture of the page was deleted", async () => {
@@ -214,7 +224,9 @@ describe("generateCard for IxWiki", () => {
 
     const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
 
-    expect(card?.artwork).toMatch(/^https:\/\/ixwiki\.com\/images\/[0-9a-f]\/[0-9a-f]{2}\/Caphiria_map\.png$/);
+    expect(card?.artwork).toMatch(
+      /^https:\/\/ixwiki\.com\/images\/[0-9a-f]\/[0-9a-f]{2}\/Caphiria_map\.png$/
+    );
   });
 
   it("refuses a page Postgres lacks or has deleted, without asking a wiki", async () => {
@@ -259,8 +271,10 @@ describe("previews and credits for IxWiki", () => {
     expect(previews[0]?.extract).toContain("Caphiria is a country");
     expect(guard.calls()).toEqual([]);
     // The query reads the start of each text and the published pages only.
-    const sql = sqlOf(mocked.$queryRaw.mock.calls.find((call) => sqlOf(call).includes("octet_length"))!);
-    expect(sql).toContain("left(a.\"wikitext\"");
+    const sql = sqlOf(
+      mocked.$queryRaw.mock.calls.find((call) => sqlOf(call).includes("octet_length"))!
+    );
+    expect(sql).toContain('left(a."wikitext"');
     expect(sql).toContain(`a."status" = 'PUBLISHED'`);
   });
 
@@ -356,7 +370,9 @@ describe("previews of many pages", () => {
     const [preview] = await wikiLoreCardGenerator.fetchArticleMetadataBatch(["Big"], "ixwiki");
 
     expect(preview?.categoryCount).toBe(50);
-    const call = mocked.$queryRaw.mock.calls.find((c) => sqlOf(c).includes("wiki_category_members"))!;
+    const call = mocked.$queryRaw.mock.calls.find((c) =>
+      sqlOf(c).includes("wiki_category_members")
+    )!;
     expect(sqlOf(call)).toContain('PARTITION BY m."articleId" ORDER BY c."name"');
     expect(call).toContain(50);
   });
@@ -402,10 +418,9 @@ describe("lists for IxWiki", () => {
   it("lists a category's pages and files from its members, never asking a wiki", async () => {
     titles = [{ title: "Caphiria" }, { title: "File:Map.png" }];
 
-    expect(await wikiLoreCardGenerator.fetchCategoryMembers("Category:Nations", "ixwiki", 100)).toEqual([
-      "Caphiria",
-      "File:Map.png",
-    ]);
+    expect(
+      await wikiLoreCardGenerator.fetchCategoryMembers("Category:Nations", "ixwiki", 100)
+    ).toEqual(["Caphiria", "File:Map.png"]);
     const call = mocked.$queryRaw.mock.calls[0]!;
     expect(sqlOf(call)).toContain(`a."status" = 'PUBLISHED'`);
     const kinds = JSON.stringify(call);
@@ -464,7 +479,10 @@ describe("lists for IxWiki", () => {
     await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, "ixwiki");
 
     // The query with its embedded fragments (`Prisma.sql`) written out.
-    const [strings, ...values] = mocked.$queryRaw.mock.calls[0]! as [TemplateStringsArray, ...unknown[]];
+    const [strings, ...values] = mocked.$queryRaw.mock.calls[0]! as [
+      TemplateStringsArray,
+      ...unknown[],
+    ];
     const sql = strings.reduce((text, part, i) => {
       const value = values[i - 1] as { sql?: string } | undefined;
       return text + (typeof value?.sql === "string" ? value.sql : "?") + part;
@@ -479,7 +497,7 @@ describe("lists for IxWiki", () => {
     expect(picking).not.toContain("wikitext");
     expect(picking).not.toContain("left(");
     // ...and `left()` is in the outer query, which joins the picked ids back and keeps their random order.
-    expect(outer).toContain("left(a.\"wikitext\"");
+    expect(outer).toContain('left(a."wikitext"');
     expect(outer).toContain('JOIN wiki_articles a ON a."id" = picked."id"');
     expect(outer.trimEnd().endsWith('ORDER BY picked."r"')).toBe(true);
   });
@@ -487,7 +505,9 @@ describe("lists for IxWiki", () => {
   it("searches categories by prefix and counts their members, never asking a wiki", async () => {
     mocked.wikiCategory.findMany.mockResolvedValue([{ name: "Countries" }]);
 
-    expect(await wikiLoreCardGenerator.searchCategories("Count", "ixwiki", 10)).toEqual(["Countries"]);
+    expect(await wikiLoreCardGenerator.searchCategories("Count", "ixwiki", 10)).toEqual([
+      "Countries",
+    ]);
     expect(mocked.wikiCategory.findMany.mock.calls[0]?.[0]).toMatchObject({
       where: { hidden: false, name: { startsWith: "Count", mode: "insensitive" } },
       take: 10,
@@ -497,17 +517,19 @@ describe("lists for IxWiki", () => {
     mocked.$queryRaw.mockResolvedValueOnce([
       { slug: "countries", name: "Countries", pages: 30n, subcats: 4n, files: 2n },
     ]);
-    expect(await wikiLoreCardGenerator.getCategoriesInfo(["Category:Countries"], "ixwiki")).toEqual({
-      Countries: { size: 36, pages: 30, files: 2, subcats: 4 },
-      "Category:Countries": { size: 36, pages: 30, files: 2, subcats: 4 },
-    });
+    expect(await wikiLoreCardGenerator.getCategoriesInfo(["Category:Countries"], "ixwiki")).toEqual(
+      {
+        Countries: { size: 36, pages: 30, files: 2, subcats: 4 },
+        "Category:Countries": { size: 36, pages: 30, files: 2, subcats: 4 },
+      }
+    );
     expect(guard.calls()).toEqual([]);
   });
 
   it("gives the URL of a file from the asset WikiOS holds", async () => {
     mocked.wikiAsset.findMany.mockResolvedValue([asset]);
 
-    expect(await wikiLoreCardGenerator.getImageUrl("File:Caphiria map.png", "ixwiki")).toBe(asset.url);
+    expect(await generatorInternals.getImageUrl("File:Caphiria map.png", "ixwiki")).toBe(asset.url);
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -515,20 +537,39 @@ describe("lists for IxWiki", () => {
 describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
   /** An iiwiki that answers every query with nothing: what matters is where the request went. */
   const emptyWiki = () => ({
-    query: { pages: {}, random: [], categorymembers: [], allcategories: [], allpages: [], backlinks: [] },
+    query: {
+      pages: {},
+      random: [],
+      categorymembers: [],
+      allcategories: [],
+      allpages: [],
+      backlinks: [],
+    },
   });
 
   const calls: Array<[string, () => Promise<unknown>]> = [
-    ["fetchArticleData", () => wikiLoreCardGenerator.fetchArticleData("Elm", "iiwiki")],
-    ["fetchArticleMetadataBatch", () => wikiLoreCardGenerator.fetchArticleMetadataBatch(["Elm"], "iiwiki")],
-    ["fetchArticleAuthorInfoBatch", () => wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["Elm"], "iiwiki")],
+    ["fetchArticleData", () => generatorInternals.fetchArticleData("Elm", "iiwiki")],
+    [
+      "fetchArticleMetadataBatch",
+      () => wikiLoreCardGenerator.fetchArticleMetadataBatch(["Elm"], "iiwiki"),
+    ],
+    [
+      "fetchArticleAuthorInfoBatch",
+      () => wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["Elm"], "iiwiki"),
+    ],
     ["fetchCategoryMembers", () => wikiLoreCardGenerator.fetchCategoryMembers("Elms", "iiwiki")],
     ["searchCategories", () => wikiLoreCardGenerator.searchCategories("El", "iiwiki")],
     ["getCategoriesInfo", () => wikiLoreCardGenerator.getCategoriesInfo(["Elms"], "iiwiki")],
-    ["fetchAllMainNamespacePages", () => wikiLoreCardGenerator.fetchAllMainNamespacePages("iiwiki")],
-    ["getImageUrl", () => wikiLoreCardGenerator.getImageUrl("Elm.png", "iiwiki")],
+    [
+      "fetchAllMainNamespacePages",
+      () => wikiLoreCardGenerator.fetchAllMainNamespacePages("iiwiki"),
+    ],
+    ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki")],
     ["fetchRandomArticles", () => wikiLoreCardGenerator.fetchRandomArticles(3, "iiwiki")],
-    ["fetchRandomArticlesWithImages", () => wikiLoreCardGenerator.fetchRandomArticlesWithImages(3, "iiwiki")],
+    [
+      "fetchRandomArticlesWithImages",
+      () => wikiLoreCardGenerator.fetchRandomArticlesWithImages(3, "iiwiki"),
+    ],
   ];
 
   it.each(calls)("%s asks iiwiki and reads nothing of IxWiki's", async (_name, call) => {

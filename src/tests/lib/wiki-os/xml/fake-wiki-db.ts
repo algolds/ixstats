@@ -150,9 +150,9 @@ function runQuery<T extends Row>(rows: T[], query: Query): T[] {
   return query.take === undefined ? found : found.slice(0, query.take);
 }
 
-function pick<T extends Row>(row: T, select?: Record<string, boolean>): Partial<T> {
+function pick<T extends object>(row: T, select?: Record<string, boolean>): Partial<T> {
   if (!select) return { ...row };
-  return Object.fromEntries(Object.entries(row).filter(([key]) => select[key]));
+  return Object.fromEntries(Object.entries(row).filter(([key]) => select[key])) as Partial<T>;
 }
 
 function checkRevisionUnique(candidate: RevisionRow, ignoreId?: string): void {
@@ -308,7 +308,7 @@ const restrictionDelegate = {
 
 /** The `db` module: transactions snapshot the store and restore it if the callback throws. */
 export function createFakeDbModule() {
-  const db = {
+  const delegates = {
     wikiArticle: articleDelegate,
     wikiRevision: revisionDelegate,
     wikiAccountLink: accountLinkDelegate,
@@ -344,7 +344,11 @@ export function createFakeDbModule() {
      * `lockPageForSave`'s row lock: answers the article's id (none: no row), and calls `store.onRowLock` first, which a
      * test uses to land a save "while the import waited for the lock".
      */
-    $queryRaw: async (strings: TemplateStringsArray, source: string, title: string): Promise<Array<{ id: string }>> => {
+    $queryRaw: async (
+      strings: TemplateStringsArray,
+      source: string,
+      title: string
+    ): Promise<Array<{ id: string }>> => {
       const sql = strings.join("?").replace(/\s+/g, " ");
       if (!/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/.test(sql)) {
         throw new Error("the fake database does not understand this query");
@@ -354,8 +358,17 @@ export function createFakeDbModule() {
       const row = store.articles.find((a) => a.source === source && a.title === title);
       return row ? [{ id: row.id }] : [];
     },
+  };
+  type FakeDb = typeof delegates & {
+    $transaction: <T>(
+      callback: (tx: FakeDb) => Promise<T>,
+      options?: { maxWait?: number; timeout?: number }
+    ) => Promise<T>;
+  };
+  const db: FakeDb = {
+    ...delegates,
     $transaction: async <T>(
-      callback: (tx: typeof db) => Promise<T>,
+      callback: (tx: FakeDb) => Promise<T>,
       options?: { maxWait?: number; timeout?: number }
     ): Promise<T> => {
       transactionOptions.push(options);

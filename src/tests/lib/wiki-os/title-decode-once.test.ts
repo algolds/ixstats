@@ -49,14 +49,14 @@ describe("fetchMediaWikiPageAuthorsAndRevisions", () => {
   });
 
   it("asks MediaWiki for a title containing '%' exactly as given", async () => {
-    await expect(fetchMediaWikiPageAuthorsAndRevisions("100% Pure")).resolves.toBeNull();
+    await expect(fetchMediaWikiPageAuthorsAndRevisions("100% Pure", "iiwiki")).resolves.toBeNull();
 
     const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
     expect(url.searchParams.get("titles")).toBe("100% Pure");
   });
 
   it("does not decode an escape that is part of the title", async () => {
-    await fetchMediaWikiPageAuthorsAndRevisions("100%25_Pure");
+    await fetchMediaWikiPageAuthorsAndRevisions("100%25_Pure", "iiwiki");
 
     const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
     expect(url.searchParams.get("titles")).toBe("100%25 Pure");

@@ -13,7 +13,11 @@ jest.mock("~/server/db", () => ({
     wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
     wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
     wikiArticle: { upsert: jest.fn(), count: jest.fn().mockResolvedValue(0) },
-    wikiRevision: { findFirst: jest.fn(), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
+    wikiRevision: {
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+    },
     wikiMirrorJob: { create: jest.fn() },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
@@ -117,6 +121,7 @@ const mockDb = db as unknown as {
   wikiArticle: { upsert: jest.Mock; count: jest.Mock };
   wikiRestriction: { findMany: jest.Mock };
   wikiRevision: { findFirst: jest.Mock; create: jest.Mock };
+  wikiMirrorJob: { create: jest.Mock };
   stash: { findFirst: jest.Mock; create: jest.Mock };
   stashItem: { upsert: jest.Mock; deleteMany: jest.Mock };
   lorewardUserStats: { findUnique: jest.Mock; count: jest.Mock };
@@ -141,7 +146,6 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
       revisionId: "rev-1" as never,
-      extractedLinksCount: 0,
     });
   });
 
@@ -178,7 +182,9 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     ]);
 
     mockDb.wikiAccountLink.findFirst.mockResolvedValue(null);
-    await expect(editCaller().saveWikitext({ title: "Guarded", wikitext: "x" })).rejects.toMatchObject({
+    await expect(
+      editCaller().saveWikitext({ title: "Guarded", wikitext: "x" })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
 
@@ -197,7 +203,11 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
       typeof import("~/lib/wiki-os/core/article-repository")
     >("~/lib/wiki-os/core/article-repository");
     // the save locks the page's row first (SELECT ... FOR NO KEY UPDATE: the row exists)
-    const tx = { ...mockDb, $queryRaw: jest.fn().mockResolvedValue([{ id: "a1" }]), $executeRaw: jest.fn() };
+    const tx = {
+      ...mockDb,
+      $queryRaw: jest.fn().mockResolvedValue([{ id: "a1" }]),
+      $executeRaw: jest.fn(),
+    };
     mockDb.$transaction.mockImplementation(async (fn: (client: typeof tx) => unknown) => fn(tx));
     mockDb.user.findFirst.mockResolvedValue({ id: "db1" });
     mockDb.wikiArticle.upsert.mockResolvedValue({
@@ -271,8 +281,18 @@ describe("S5: stashPage only writes into the caller's own stashes", () => {
 });
 
 describe("S6: getAuthorProfile resolves the requested name only", () => {
-  const CALLER_COUNTRY = { id: "caller_country", name: "Callerland", flag: null };
-  const OTHER_COUNTRY = { id: "other_country", name: "Otherland", flag: null };
+  const CALLER_COUNTRY = {
+    id: "caller_country",
+    name: "Callerland",
+    slug: "callerland",
+    flag: null,
+  };
+  const OTHER_COUNTRY = { id: "other_country", name: "Otherland", slug: "otherland", flag: null };
+  // the role row as the context carries it, id included: the profile must not leak it
+  const CALLER_ROLE: { name: string; level: number } = Object.assign(
+    { name: "user", level: 100 },
+    { id: "role_caller" }
+  );
 
   const signedInCtx = () =>
     createMockRouterContext({
@@ -283,7 +303,7 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
         countryId: "caller_country",
         country: CALLER_COUNTRY,
         wikiUsername: "Caller",
-        role: { id: "role_caller", name: "user", level: 100 },
+        role: CALLER_ROLE,
       },
     });
   const anonymousCtx = () => createMockRouterContext({ auth: null, user: null });
@@ -388,7 +408,10 @@ describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keye
     ["an over-long parameter value", { template: "T", params: { k: "v".repeat(20_001) } }],
     [
       "more than 200 parameters",
-      { template: "T", params: Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`p${i}`, "v"])) },
+      {
+        template: "T",
+        params: Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`p${i}`, "v"])),
+      },
     ],
   ])("rejects %s", async (_label, input) => {
     await expect(previewCaller(userCtx())(input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
@@ -396,7 +419,9 @@ describe("S7: template preview is signed-in, bounded, sanitised and SHA-256 keye
   });
 
   it("accepts 200 parameters and values up to 20,000 characters", async () => {
-    const params = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`p${i}`, "v".repeat(100)]));
+    const params = Object.fromEntries(
+      Array.from({ length: 200 }, (_, i) => [`p${i}`, "v".repeat(100)])
+    );
     params.p0 = "v".repeat(20_000);
 
     await expect(previewCaller(userCtx())({ template: "T", params })).resolves.toBe("<p>ok</p>");
@@ -589,7 +614,11 @@ describe("S5: forum stashThread / unstashThread only touch the caller's own stas
   it("stashThread upserts into an owned stashId", async () => {
     mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
 
-    const result = await forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "mine" });
+    const result = await forumCaller().stashThread({
+      threadId: 7,
+      title: "A thread",
+      stashId: "mine",
+    });
 
     expect(result).toEqual({ success: true, stashId: "mine" });
     expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
@@ -638,11 +667,17 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
   it("caps wikios stash ids (64), contentType (32) and titles (512)", async () => {
     const caller = createCallerFactory(wikiosStashRouter)(ctx());
     const bad = { code: "BAD_REQUEST" };
-    await expect(caller.stashPage({ pageTitle: "P", stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
-    await expect(caller.stashPage({ pageTitle: "P", contentType: "c".repeat(33) })).rejects.toMatchObject(bad);
+    await expect(
+      caller.stashPage({ pageTitle: "P", stashId: "s".repeat(65) })
+    ).rejects.toMatchObject(bad);
+    await expect(
+      caller.stashPage({ pageTitle: "P", contentType: "c".repeat(33) })
+    ).rejects.toMatchObject(bad);
     await expect(caller.stashPage({ pageTitle: "p".repeat(513) })).rejects.toMatchObject(bad);
     await expect(caller.deleteStash({ id: "s".repeat(65) })).rejects.toMatchObject(bad);
-    await expect(caller.unstashPage({ pageTitle: "P", stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
+    await expect(
+      caller.unstashPage({ pageTitle: "P", stashId: "s".repeat(65) })
+    ).rejects.toMatchObject(bad);
     await expect(caller.getStashItems({ stashId: "s".repeat(65) })).rejects.toMatchObject(bad);
   });
 
@@ -652,13 +687,19 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     await expect(
       caller.resolveWikiPlaceholders({ placeholders: Array.from({ length: 201 }, () => "x") })
     ).rejects.toMatchObject(bad);
-    await expect(caller.resolveWikiPlaceholders({ placeholders: ["x".repeat(513)] })).rejects.toMatchObject(bad);
-    await expect(caller.resolveWikiPlaceholders({ text: "t".repeat(200_001) })).rejects.toMatchObject(bad);
+    await expect(
+      caller.resolveWikiPlaceholders({ placeholders: ["x".repeat(513)] })
+    ).rejects.toMatchObject(bad);
+    await expect(
+      caller.resolveWikiPlaceholders({ text: "t".repeat(200_001) })
+    ).rejects.toMatchObject(bad);
   });
 
   it("caps getAuthorProfile's username at 255 characters", async () => {
     await expect(
-      createCallerFactory(wikiosUserTalkRouter)(ctx()).getAuthorProfile({ username: "u".repeat(256) })
+      createCallerFactory(wikiosUserTalkRouter)(ctx()).getAuthorProfile({
+        username: "u".repeat(256),
+      })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
@@ -667,7 +708,13 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
       join(process.cwd(), "src/server/api/routers/wikios/discussions.ts"),
       "utf8"
     );
-    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread", "deleteComment"]) {
+    for (const name of [
+      "createThread",
+      "postComment",
+      "resolveThread",
+      "deleteThread",
+      "deleteComment",
+    ]) {
       expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
     }
     expect(source).not.toMatch(/: protectedProcedure/);
@@ -677,8 +724,12 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     const caller = createCallerFactory(wikiosDiscussionsRouter)(ctx());
     const bad = { code: "BAD_REQUEST" };
     await expect(caller.deleteThread({ threadId: "t".repeat(65) })).rejects.toMatchObject(bad);
-    await expect(caller.resolveThread({ threadId: "t".repeat(65), resolved: true })).rejects.toMatchObject(bad);
-    await expect(caller.postComment({ threadId: "t".repeat(65), content: "hi" })).rejects.toMatchObject(bad);
+    await expect(
+      caller.resolveThread({ threadId: "t".repeat(65), resolved: true })
+    ).rejects.toMatchObject(bad);
+    await expect(
+      caller.postComment({ threadId: "t".repeat(65), content: "hi" })
+    ).rejects.toMatchObject(bad);
   });
 });
 

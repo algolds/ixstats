@@ -30,7 +30,9 @@ const caller = () =>
     createMockRouterContext({ auth: null, user: null }) as never
   );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("wikios.typeahead (plan 413)", () => {
   it("is the title typeahead: title, summary snippet and thumbnail, 10 at most", async () => {

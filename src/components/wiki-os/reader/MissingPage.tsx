@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { withBasePath } from "~/lib/base-path";
 
 export interface MissingPageProps {
@@ -22,9 +23,9 @@ export function MissingPage({ title, createHref, searchHref }: MissingPageProps)
       <h1 id="wikios-missing-title" className="wikios-article-title">
         {title}
       </h1>
-      <div className="wikios-error facet-hierarchy-child rounded-lg p-6">
-        <p className="text-foreground text-sm">There is currently no text in this page.</p>
-        <p className="text-muted-foreground mt-1 text-sm">
+      <Card padding="lg" className="wikios-error">
+        <p className="text-label text-callout">There is currently no text in this page.</p>
+        <p className="text-label-secondary text-callout mt-1">
           You can search for this title in other pages
           {createHref ? ", or create the page yourself." : "."}
         </p>
@@ -38,7 +39,7 @@ export function MissingPage({ title, createHref, searchHref }: MissingPageProps)
             <Link href={withBasePath(searchHref)}>Search for this title</Link>
           </Button>
         </div>
-      </div>
+      </Card>
     </section>
   );
 }

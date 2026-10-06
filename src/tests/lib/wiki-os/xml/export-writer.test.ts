@@ -62,6 +62,8 @@ const revision = (overrides: Partial<XmlRevision> = {}): XmlRevision => ({
   model: "wikitext",
   format: "text/x-wiki",
   text: "Hello",
+  textDeleted: false,
+  commentDeleted: false,
   ...overrides,
 });
 

@@ -15,6 +15,7 @@ import {
   mwTimestamp,
   toWire,
   wrapText,
+  type JsonObject,
 } from "~/lib/wiki-os/api-compat/format";
 
 describe("toWire", () => {
@@ -46,7 +47,7 @@ describe("toWire", () => {
 });
 
 describe("wrapText", () => {
-  it("wraps text in {\"*\": ...} for v1 and returns it plain for v2", () => {
+  it('wraps text in {"*": ...} for v1 and returns it plain for v2', () => {
     expect(wrapText("hi", 1)).toEqual({ "*": "hi" });
     expect(wrapText("hi", 2)).toBe("hi");
   });
@@ -87,9 +88,12 @@ describe("ResponseBuilder", () => {
     builder.addWarning("query", "Be careful.");
     expect(builder.finish({ ok: true }, 2)).toEqual({
       ok: true,
-      warnings: { main: { warnings: "Unrecognized parameter: foo." }, query: { warnings: "Be careful." } },
+      warnings: {
+        main: { warnings: "Unrecognized parameter: foo." },
+        query: { warnings: "Be careful." },
+      },
     });
-    expect(builder.finish({ ok: true }, 1).warnings).toEqual({
+    expect((builder.finish({ ok: true }, 1) as JsonObject).warnings).toEqual({
       main: { "*": "Unrecognized parameter: foo." },
       query: { "*": "Be careful." },
     });

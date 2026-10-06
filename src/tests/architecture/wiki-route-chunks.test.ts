@@ -26,14 +26,21 @@ const LAZY = [
   "src/components/halo/plugins/wiki/components/WikiNarratorPlayer.tsx",
 ];
 
-const STATIC_IMPORT = /(?:^|\n)\s*(?:import|export)\s+(?!type\b)(?:[^"';]*?\sfrom\s+)?["']([^"']+)["']/g;
+const STATIC_IMPORT =
+  /(?:^|\n)\s*(?:import|export)\s+(?!type\b)(?:[^"';]*?\sfrom\s+)?["']([^"']+)["']/g;
 
 function resolve(from: string, specifier: string): string | null {
   let base: string;
   if (specifier.startsWith("~/")) base = path.join(ROOT, "src", specifier.slice(2));
   else if (specifier.startsWith(".")) base = path.resolve(path.dirname(from), specifier);
   else return null;
-  for (const candidate of [`${base}.ts`, `${base}.tsx`, path.join(base, "index.ts"), path.join(base, "index.tsx"), base]) {
+  for (const candidate of [
+    `${base}.ts`,
+    `${base}.tsx`,
+    path.join(base, "index.ts"),
+    path.join(base, "index.tsx"),
+    base,
+  ]) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
   }
   return null;
@@ -73,7 +80,7 @@ describe("the wiki route's static imports", () => {
       "src/components/wiki-os/shared/WikiOSLayout.tsx",
       "src/components/halo/plugins/wiki/WikiHalo.tsx",
       "src/components/mycountry/dossier/CountryActionsMenu.tsx",
-      "src/components/mycountry/shell/VaultWidget.tsx",
+      "src/components/wiki-os/shared/WikiPageTools.tsx",
     ]) {
       expect(graph.has(path.join(ROOT, required))).toBe(true);
     }

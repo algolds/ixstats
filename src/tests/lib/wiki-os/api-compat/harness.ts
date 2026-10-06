@@ -185,8 +185,9 @@ export class Bot {
       if (cookie.maxAgeSeconds === 0) delete this.jar[cookie.name];
       else this.jar[cookie.name] = cookie.value;
     }
-    this.log.push({ params: search, body: output.body });
-    return output.body;
+    const body = output.body as JsonObject; // every api.php answer is an object
+    this.log.push({ params: search, body });
+    return body;
   }
 
   get(params: Record<string, string>) {
@@ -746,14 +747,12 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         )
         .filter((p) => q.cursor === undefined || p.pageId >= q.cursor)
         .sort((a, b) => a.pageId - b.pageId);
-      return rows
-        .slice(0, q.limit + 1)
-        .map((p) => ({
-          pageId: p.pageId,
-          title: p.title,
-          namespace: p.namespace ?? 0,
-          isRedirect: p.redirect !== undefined,
-        }));
+      return rows.slice(0, q.limit + 1).map((p) => ({
+        pageId: p.pageId,
+        title: p.title,
+        namespace: p.namespace ?? 0,
+        isRedirect: p.redirect !== undefined,
+      }));
     },
     listEmbeddedIn: async (q) =>
       relatedFake(q, (title) => (data.templates?.[title] ?? []).includes(q.target)),

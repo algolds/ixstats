@@ -1046,7 +1046,7 @@ reads 1.4.0 until the RC2 cut.
 - **Router Consolidation & Deprecation Cleanup**:
   - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
   - Removed legacy `wiki` router registration from [src/server/api/root.ts](src/server/api/root.ts).
-  - Added Nginx lockdown configs and audit tools ([stage3-nginx-cutover.conf](scripts/ops/stage3-nginx-cutover.conf), [verify-stage3-cutover.ts](scripts/ops/verify-stage3-cutover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
+  - Added Nginx lockdown configs and audit tools (stage3-nginx-cutover.conf and verify-stage3-cutover.ts, since renamed [wikios-takeover.conf](scripts/ops/nginx/wikios-takeover.conf) and [verify-wikios-takeover.ts](scripts/ops/verify-wikios-takeover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
 
 
 

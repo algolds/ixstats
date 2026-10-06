@@ -10,7 +10,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, lightMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, type WikiAuthContext } from "~/lib/wiki-os/auth";
-import { refusals } from "~/lib/wiki-os/permissions";
+import { assertWikiosWritable, refusals } from "~/lib/wiki-os/permissions";
 import { getVerifiedWikiLink } from "~/lib/wiki-os/storage";
 import { BOT_GRANTS, GRANT_DESCRIPTIONS } from "~/lib/wiki-os/api-compat/grants";
 import {
@@ -20,7 +20,9 @@ import {
 } from "~/lib/wiki-os/api-compat/bot-passwords";
 
 /** The caller's WikiOS user id and verified wiki username; PRECONDITION_FAILED when they have not linked a wiki account. */
-async function requireLinkedUser(ctx: WikiAuthContext): Promise<{ userId: string; wikiUsername: string }> {
+async function requireLinkedUser(
+  ctx: WikiAuthContext
+): Promise<{ userId: string; wikiUsername: string }> {
   const userId = requireWikiUserId(ctx);
   const link = await getVerifiedWikiLink(userId);
   if (!link) {
@@ -52,6 +54,7 @@ export const wikiosBotPasswordsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      assertWikiosWritable();
       const { userId, wikiUsername } = await requireLinkedUser(ctx);
       const created = await refusals(createBotPassword(userId, input));
       return {
@@ -66,6 +69,7 @@ export const wikiosBotPasswordsRouter = createTRPCRouter({
   deleteBotPassword: lightMutationProcedure
     .input(z.object({ id: z.string().min(1).max(64) }))
     .mutation(async ({ input, ctx }) => {
+      assertWikiosWritable();
       const { userId } = await requireLinkedUser(ctx);
       await refusals(deleteBotPassword(userId, input.id));
       return { success: true as const };

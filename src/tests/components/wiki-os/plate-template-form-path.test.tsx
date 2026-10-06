@@ -31,7 +31,8 @@ jest.mock("~/components/wiki-os/editor/hooks/useTemplateSchema", () => ({
   }),
 }));
 
-const SOURCE = "{{Infobox country\n| name = Urcea <!-- official -->\n| capital = [[Urceopolis]]\n| population = 54,000,000\n}}";
+const SOURCE =
+  "{{Infobox country\n| name = Urcea <!-- official -->\n| capital = [[Urceopolis]]\n| population = 54,000,000\n}}";
 
 function renderElement() {
   const view = render(
@@ -56,7 +57,11 @@ describe("the template form (the shipped edit path) uses the selective rebuilder
     expect(mockSetNodes).toHaveBeenCalledTimes(1);
     const [, props, options] = mockSetNodes.mock.calls[0]!;
     expect(props).toEqual({
-      params: expect.objectContaining({ name: "Urcea <!-- official -->", capital: "Vilena", population: "54,000,000" }),
+      params: expect.objectContaining({
+        name: "Urcea <!-- official -->",
+        capital: "Vilena",
+        population: "54,000,000",
+      }),
       edited: true,
     });
     expect(props).not.toHaveProperty("rawWikitext");
@@ -82,12 +87,20 @@ describe("the template form (the shipped edit path) uses the selective rebuilder
   });
 
   it("shows what will be saved on the Wikitext tab, and a typed raw edit ends the form's rebuilding", () => {
-    mockElement = { ...mockElement, params: { ...(mockElement.params as object), capital: "Vilena" }, edited: true };
+    mockElement = {
+      ...mockElement,
+      params: { ...(mockElement.params as object), capital: "Vilena" },
+      edited: true,
+    };
     renderElement();
-    fireEvent.click(screen.getByText("Wikitext"));
-    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain("| capital = Vilena");
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Wikitext" }));
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toContain(
+      "| capital = Vilena"
+    );
 
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "{{Infobox country|name=Typed}}" } });
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "{{Infobox country|name=Typed}}" },
+    });
     const props = mockSetNodes.mock.calls.at(-1)![1];
     expect(props).toMatchObject({ rawWikitext: "{{Infobox country|name=Typed}}", edited: false });
   });

@@ -46,6 +46,7 @@ const revision = (wikitext: string | null) => ({
   source: "ixwiki",
   timestamp: "2026-06-01T00:00:00.000Z",
   fromShadow: true as const,
+  parked: false,
 });
 
 const entry = (revid: string, user: string, comment = "") => ({
@@ -381,6 +382,10 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
           byteDelta: 0,
           minor: false,
           parked: true,
+          sha1: null,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
         {
           revid: "r1",
@@ -391,6 +396,10 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
           byteDelta: 0,
           minor: false,
           parked: false,
+          sha1: null,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
       ],
       hasMore: false,

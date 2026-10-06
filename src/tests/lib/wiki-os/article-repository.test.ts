@@ -373,7 +373,9 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
   it("does not scan the wikitext for links on the save path: the render fills the link graph", async () => {
     const result = await save("[[Bar]] and [[Baz]]");
 
-    expect(LinkGraphService.syncArticleLinks).not.toHaveBeenCalled();
+    expect(
+      (LinkGraphService as unknown as { syncArticleLinks: jest.Mock }).syncArticleLinks
+    ).not.toHaveBeenCalled();
     expect(result).not.toHaveProperty("extractedLinksCount");
   });
 
@@ -403,7 +405,9 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
 
 describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy, not broken (m2)", () => {
   const save = () => {
-    mockUpsert.mockImplementation(async (args: { create: { title: string } }) => savedRow(args.create.title));
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
     return ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext: "new text" });
   };
   const prismaError = (code: string) =>
@@ -416,9 +420,13 @@ describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy
     await save();
 
     const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
-    expect((strings as TemplateStringsArray).join("?")).toBe("SELECT set_config('lock_timeout', ?, true)");
+    expect((strings as TemplateStringsArray).join("?")).toBe(
+      "SELECT set_config('lock_timeout', ?, true)"
+    );
     expect(values).toEqual(["10s"]);
-    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(mockQueryRaw.mock.invocationCallOrder[0]!);
+    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      mockQueryRaw.mock.invocationCallOrder[0]!
+    );
   });
 
   it("gives its transaction time to wait for the page's lock: 10 s to start, 30 s to run", async () => {
@@ -440,7 +448,10 @@ describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy
     ],
     [
       "the InternalError the database client makes of a timed-out query inside the transaction",
-      () => new InternalError("Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."),
+      () =>
+        new InternalError(
+          "Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."
+        ),
     ],
   ])("answers PageBusyError, retryable and a 409 for tRPC, for %s", async (_name, error) => {
     mockQueryRaw.mockRejectedValue(error());
@@ -448,7 +459,11 @@ describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy
     const failure = await save().catch((caught: unknown) => caught);
 
     expect(failure).toBeInstanceOf(PageBusyError);
-    expect(failure).toMatchObject({ statusCode: 409, trpcCode: "CONFLICT", message: expect.stringContaining("busy") });
+    expect(failure).toMatchObject({
+      statusCode: 409,
+      trpcCode: "CONFLICT",
+      message: expect.stringContaining("busy"),
+    });
     expect(mockRevisionCreate).not.toHaveBeenCalled();
   });
 
@@ -485,12 +500,14 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     await save();
 
     const sql = (mockQueryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join("?");
-    expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/);
+    expect(sql).toMatch(
+      /FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/
+    );
     expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixwiki", "Foo"]);
     // the row exists: the only raw statement besides the lock is the wait limit, no advisory lock
-    expect(mockExecuteRaw.mock.calls.map(([strings]) => (strings as TemplateStringsArray).join("?"))).toEqual([
-      "SELECT set_config('lock_timeout', ?, true)",
-    ]);
+    expect(
+      mockExecuteRaw.mock.calls.map(([strings]) => (strings as TemplateStringsArray).join("?"))
+    ).toEqual(["SELECT set_config('lock_timeout', ?, true)"]);
     const order = (fn: jest.Mock) => fn.mock.invocationCallOrder[0]!;
     expect(order(mockQueryRaw)).toBeLessThan(order(mockRevisionFindFirst));
     expect(order(mockRevisionFindFirst)).toBeLessThan(order(mockUpsert));
@@ -565,7 +582,10 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
 
     const failure = await save({ expectedHeadRef: "rev-gone" }).catch((error: unknown) => error);
 
-    expect((failure as EditConflictError).conflict).toEqual({ currentWikitext: "", currentRevisionRef: null });
+    expect((failure as EditConflictError).conflict).toEqual({
+      currentWikitext: "",
+      currentRevisionRef: null,
+    });
     nothingWritten();
   });
 
@@ -582,8 +602,14 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     await save({ expectedHeadRef: "rev-head" }).catch(() => undefined);
 
     // O(1) in the length of the history: the (articleId, parked, createdAt) index, no join
-    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({ articleId: "a1", parked: false });
-    expect(mockRevisionFindFirst.mock.calls[0]?.[0].orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({
+      articleId: "a1",
+      parked: false,
+    });
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].orderBy).toEqual([
+      { createdAt: "desc" },
+      { id: "desc" },
+    ]);
   });
 
   it("finds the head by title (a join) only when the page had no row to lock: the creator before it may have made it", async () => {
@@ -781,7 +807,9 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     title,
     status: "PUBLISHED",
     htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
-    revisions: [{ createdAt: new Date("2026-09-29T08:00:00Z"), byteSize: 1200, textDeleted: false }],
+    revisions: [
+      { createdAt: new Date("2026-09-29T08:00:00Z"), byteSize: 1200, textDeleted: false },
+    ],
     categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
     ...overrides,
   });
@@ -829,7 +857,9 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
 
     await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: false }])).resolves.toBe(true);
     // a placeholder: the text was never imported, its size is known
-    await expect(emptyOf([{ createdAt: at, byteSize: 300, textDeleted: false }])).resolves.toBe(false);
+    await expect(emptyOf([{ createdAt: at, byteSize: 300, textDeleted: false }])).resolves.toBe(
+      false
+    );
     // hidden by revision deletion: not an empty page
     await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: true }])).resolves.toBe(false);
     // no revision rows at all: a stub

@@ -93,7 +93,10 @@ beforeEach(() => {
   fakeWikiDb.reset();
   for (const name of readdirSync(directory)) rmSync(join(directory, name), { force: true });
   jest.mocked(authorizeAction).mockClear().mockResolvedValue(undefined);
-  jest.mocked(requireRight).mockClear().mockResolvedValue(undefined);
+  jest
+    .mocked(requireRight)
+    .mockClear()
+    .mockResolvedValue(undefined as never);
   jest.mocked(scheduleMirrorKick).mockClear();
   tables.user.seed({ id: "user-1", clerkUserId: "clerk_1" });
 });

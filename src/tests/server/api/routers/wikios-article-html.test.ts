@@ -415,7 +415,10 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
 });
 
 describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => {
-  const blankRow = (title: string, revisions: Array<{ byteSize: number; textDeleted: boolean }>) => ({
+  const blankRow = (
+    title: string,
+    revisions: Array<{ byteSize: number; textDeleted: boolean }>
+  ) => ({
     renderedView: null,
     htmlSyncedAt: null,
     title,
@@ -838,7 +841,7 @@ describe("getArticleHtml (IxWiki) template chips stay per viewer", () => {
 
   const provider = (value: string) =>
     jest.fn(
-      async () =>
+      async (..._args: unknown[]) =>
         new Map([
           ["CountryData:Aurelia:population", { key: "CountryData:Aurelia:population", value }],
         ])

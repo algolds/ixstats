@@ -35,7 +35,8 @@ describe("wikios.getPageImages callers", () => {
       }
     }
 
-    expect(calls.length).toBeGreaterThanOrEqual(5);
+    // the feed cards share one call in useWikiLeadImage
+    expect(calls.length).toBeGreaterThanOrEqual(3);
     expect(unnamed).toEqual([]);
   });
 });

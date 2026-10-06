@@ -48,7 +48,7 @@ export function RevisionView({ revisionRef, title }: { revisionRef: string; titl
           <ArticleBusy title={title} onRetry={() => void refetch()} />
         )}
         {error && error.data?.code !== "TOO_MANY_REQUESTS" && (
-          <p className="text-sm text-red-400">{error.message}</p>
+          <p className="text-red text-sm">{error.message}</p>
         )}
         {data && (
           <ArticleRenderer

@@ -146,11 +146,13 @@ same `uploadFile` service as the browser's upload (mirror section above): it nam
 ### url-only (no request)
 
 `src/lib/wiki-os/config.ts` (`wikiosConfig` and the URL helpers), `src/env.ts` (the environment variables),
-`src/lib/wiki-os/transformers/image-url.ts` and `src/lib/wiki-os/transformers/html-transformer.ts` (image and link URLs),
+`src/lib/wiki-os/transformers/image-url.ts`, `src/lib/wiki-os/transformers/html-transformer.ts` and `src/lib/wiki-os/transformers/html-links.ts` (image and link URLs),
 `src/lib/wiki-os/core/media-asset-service.ts` (an asset's canonical file URL), `src/lib/cards/lore-card-ixwiki.ts` (the file
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
-Cloudflare), `src/components/maps/core/MapWelcomeModal.tsx` (a link).
+Cloudflare), `src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
+`src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
+`/w/api.php` answers `readonly`.
 
 A browser calls none of this: `src/tests/architecture/browser-mediawiki.test.ts` fails if client code imports a module that
 calls MediaWiki or names a MediaWiki URL helper. `src/lib/wiki-os/templates/template-registry.ts` (types and pure helpers) is
@@ -167,7 +169,7 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | `src/lib/wiki-os/adapters/mediawiki/bridge/batch-reader.ts` | batched wikitext of iiwiki and AltHistory (through `http-reader.ts`). |
 | `src/lib/wiki-os/services/sister-render-service.ts` (`renderSisterArticle`, called by `src/server/api/routers/wikios/page-content.ts` `getArticleHtml`) | `action=parse&text=<that wiki's wikitext>&title=` posted to **that wiki's own** `api.php` (`sisterApiUrl(source)`: the sister's address itself, never the development proxy or `IIWIKI_DEV_PROXY_URL`, which forward GET only; through `http-reader.ts` `fetchExternalWiki`, user agent `IxStats-Builder`), so its templates resolve against its own pages (plan 415, BUG-09; they used to be rendered by IxWiki's engine). The answer is transformed, sanitized and cached per `(source, title, revision)` for ten minutes (200 pages). A failed render is a `BAD_GATEWAY`. |
 | `src/server/api/routers/wikios/categories.ts`, `src/server/api/routers/wikios/search.ts` | the `wiki: "iiwiki" \| "althistory"` branch of `searchCategories`, `getCategories`, `getCategoryTotalCounts`, `getSubcategories`, `autocompleteCategories`, `searchFiles`. |
-| `src/lib/cards/lore-card-generator.ts` | every generator read for iiwiki (article data, previews, authors, category members, category search and info, main-namespace pages, random pages, file URLs). |
+| `src/lib/cards/lore-card-generator.ts`, `src/lib/cards/lore-card-mediawiki.ts` (its `api.php` query helper and authorship parsing) | every generator read for iiwiki (article data, previews, authors, category members, category search and info, main-namespace pages, random pages, file URLs); IxWiki's too while `WIKIOS_V1_ENABLED` is off (`src/lib/wiki-os/v1-switch.ts`), since the Postgres tables it otherwise reads are filled only after the cutover. |
 | `src/server/api/routers/lore-cards/wiki.ts` | iiwiki's opensearch fallback and recent changes. |
 | `src/lib/wiki-os/adapters/ixstates/eligible-country-service.ts` | iiwiki and AltHistory country lists and pages. |
 | `src/lib/flags/flag-resolver.server.ts` | iiwiki flag `imageinfo`. |
@@ -182,14 +184,15 @@ configuration object, never from a literal:
 - **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
   `isMediaWikiUrl`): `src/app/(wiki-os)/util/repository/page.tsx`,
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
-  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
+  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/app/admin/cards/lore-batch/LoreBatchDialogs.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
-  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
+  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
 - **Detectors of a link to an IxWiki page** in stored or fed text, built from the configured host (`mediaWikiHostPattern`,
   `wikiTitleFromArticleUrl`), so they keep matching the old absolute links: `src/components/dashboard/sections/TrendingSectionWidget.tsx`,
+  `src/components/dashboard/sections/feed/externalLinks.ts`,
   `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
   `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
   `src/lib/cards/ns-image-proxy.ts`, `src/lib/forum/forum-utils.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
@@ -203,9 +206,9 @@ configuration object, never from a literal:
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The forum (`forum.ixwiki.com`, XenForo):
   `src/app/api/forum/attachment/[id]/route.ts`, `src/app/api/forum/user-cards/route.ts`, `src/components/settings/ForumAccountVerify.tsx`,
-  `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/server/modules/forum/lib/bbcode-transformer.ts`,
+  `src/server/api/routers/forum/normalize.ts`, `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/server/modules/forum/lib/bbcode-transformer.ts`,
   `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors). Accounts (`accounts.ixwiki.com`, Clerk):
-  `src/components/navigation/UserProfileMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
+  `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
   `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
@@ -241,8 +244,8 @@ Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-med
 | `list=recentchanges`, full history, `list=usercontribs`, `list=users` | `wiki_revisions` (contributions also by the verified owner's `authorId`), created pages = pages whose oldest live revision the account made, user info from revisions, the verified link and the rights engine | `bridge/pg-activity.ts`, `core/wiki-user-info.ts` |
 | `prop=images\|imageinfo` on ixwiki and then iiwiki for any title | `wiki_image_links` joined to `wiki_assets` (sister wikis for their own pages only) | `bridge/pg-site.ts`, `bridge/dispatchers.ts` |
 | `allcategories`, `categoryinfo`, `categorymembers`, `allimages` | `wiki_categories`, `wiki_category_members` (counts by member namespace), `wiki_assets` | `core/category-service.ts`, `core/media-asset-service.ts`, `routers/wikios/{categories,search}.ts` |
-| the lore-card generator's multi-prop queries, opensearch fallback | text, links, categories, images and revisions from Postgres | `src/lib/cards/lore-card-ixwiki.ts`, `routers/lore-cards/wiki.ts` |
-| the Lorewards sync's OOL page fallback | the WikiOS article | `src/lib/lorewards/sync.ts` |
+| the lore-card generator's multi-prop queries, opensearch fallback | text, links, categories, images and revisions from Postgres (MediaWiki still while `WIKIOS_V1_ENABLED` is off) | `src/lib/cards/lore-card-ixwiki.ts`, `routers/lore-cards/wiki.ts` |
+| the Lorewards sync's OOL page fallback | the WikiOS article (a page WikiOS lacks is still read from MediaWiki while `WIKIOS_V1_ENABLED` is off) | `src/lib/lorewards/sync.ts` |
 | `action=templatedata` on a `wiki_templates` miss | the `<templatedata>` block of the stored template page or its `/doc` | `templates/template-data-reader.ts` |
 | lead images stored as a proxy path under the deployment's base path | the canonical `/images/<shard>/<File>` path, resolved when read | `transformers/image-url.ts` (`extractLeadImagePath`, `resolveStoredImageUrl`) |
 

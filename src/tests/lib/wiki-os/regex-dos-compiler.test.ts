@@ -63,10 +63,11 @@ function legacyCleanWikiValue(raw: string): string {
   s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
   s = s.replace(/'{2,3}/g, "");
   s = s.replace(/\{\{[^}]*\}\}/g, "");
+  s = s.replace(/<br\s*\/?>/gi, ", ");
   s = s.replace(/<[^>]+>/g, "");
   s = s.replace(/&\w+;/g, " ");
   s = s.replace(/\s+/g, " ").trim();
-  return s;
+  return s.replace(/\s*,(?:\s*,)+/g, ",").replace(/^(?:,\s*)+|(?:\s*,)+$/g, "");
 }
 
 /** `parsePopulation` as it was. */

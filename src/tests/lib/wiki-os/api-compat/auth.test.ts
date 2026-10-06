@@ -44,10 +44,14 @@ import {
   splitBotLogin,
   tokenIsValid,
   verifyBotPassword,
-  type PermissionLoader,
 } from "~/lib/wiki-os/api-compat/auth";
 import { GRANT_RIGHTS, rightsForGrants } from "~/lib/wiki-os/api-compat/grants";
-import type { ApiSession, AuthStore, SessionUser } from "~/lib/wiki-os/api-compat/types";
+import type {
+  ApiSession,
+  AuthStore,
+  PermissionLoader,
+  SessionUser,
+} from "~/lib/wiki-os/api-compat/types";
 import { authorizeAction } from "~/lib/wiki-os/permissions";
 import { capWikiPermissions, getWikiPermissions, type Right } from "~/lib/wiki-os/rights";
 import { db } from "~/server/db";
@@ -132,18 +136,18 @@ describe("grants", () => {
     expect(upload.has("edit")).toBe(false);
 
     const replace = rightsForGrants(["uploadeditmovefile"]);
-    expect([...replace].filter((right) => ["upload", "reupload", "movefile"].includes(right)).sort()).toEqual([
-      "movefile",
-      "reupload",
-      "upload",
-    ]);
+    expect(
+      [...replace].filter((right) => ["upload", "reupload", "movefile"].includes(right)).sort()
+    ).toEqual(["movefile", "reupload", "upload"]);
   });
 
   describe("capWikiPermissions: effective rights = user rights ∩ grant rights", () => {
     beforeEach(() => {
       jest.clearAllMocks();
       (db.wikiAccountLink.findFirst as jest.Mock).mockResolvedValue(null);
-      (db.wikiUserGroup.findMany as jest.Mock).mockResolvedValue([{ group: "sysop", expiresAt: null }]);
+      (db.wikiUserGroup.findMany as jest.Mock).mockResolvedValue([
+        { group: "sysop", expiresAt: null },
+      ]);
       (db.wikiBlock.findMany as jest.Mock).mockResolvedValue([]);
       (db.wikiRevision.count as jest.Mock).mockResolvedValue(0);
       (db.wikiRestriction.findMany as jest.Mock).mockResolvedValue([]);
@@ -219,7 +223,9 @@ describe("session cookie and tokens", () => {
     expect(readLoginNonce("short", NOW)).toBeNull();
     expect(readLoginNonce(`${nonce}x`, NOW)).toBeNull();
     const [issued, random, signature] = nonce.split(".") as [string, string, string];
-    expect(readLoginNonce(`${issued}.${random}.${signature.split("").reverse().join("")}`, NOW)).toBeNull();
+    expect(
+      readLoginNonce(`${issued}.${random}.${signature.split("").reverse().join("")}`, NOW)
+    ).toBeNull();
     // a nonce a client made up, with a valid-looking shape
     expect(readLoginNonce(`${issued}.${"0".repeat(32)}.${signature}`, NOW)).toBeNull();
     expect(loginToken(nonce)).toBe(loginToken(nonce));
@@ -281,7 +287,9 @@ describe("loginWithBotPassword", () => {
   });
 
   it("starts a 24 hour session and returns the user's name and id on success", async () => {
-    const store = storeWith({ findBotPassword: jest.fn().mockResolvedValue(await record("s3cret")) });
+    const store = storeWith({
+      findBotPassword: jest.fn().mockResolvedValue(await record("s3cret")),
+    });
     const outcome = await loginWithBotPassword(
       store,
       { name: "Heku@WikiOS", password: "s3cret", now: NOW },
@@ -303,8 +311,13 @@ describe("loginWithBotPassword", () => {
   });
 
   it("fails with a reason on a wrong password, an unknown user, or a malformed login name", async () => {
-    const wrong = storeWith({ findBotPassword: jest.fn().mockResolvedValue(await record("right")) });
-    const failed = { result: "Failed", reason: expect.stringContaining("Incorrect username or password") };
+    const wrong = storeWith({
+      findBotPassword: jest.fn().mockResolvedValue(await record("right")),
+    });
+    const failed = {
+      result: "Failed",
+      reason: expect.stringContaining("Incorrect username or password"),
+    };
     expect(
       await loginWithBotPassword(wrong, { name: "Heku@WikiOS", password: "wrong", now: NOW }, "/w/")
     ).toEqual(failed);
@@ -342,7 +355,9 @@ describe("resolveSession", () => {
 
   it("is a bot session capped at its grants' rights for a valid cookie", async () => {
     const store = storeWith({
-      findSession: jest.fn().mockResolvedValue(sessionRow(new Date(NOW.getTime() + SESSION_TTL_MS))),
+      findSession: jest
+        .fn()
+        .mockResolvedValue(sessionRow(new Date(NOW.getTime() + SESSION_TTL_MS))),
     });
     const session = await resolveSession(identity(signSessionId("sid")), store, loader, NOW);
     expect(session).toMatchObject({ kind: "bot", name: "Heku", userId: 7, sessionId: "sid" });
@@ -355,10 +370,15 @@ describe("resolveSession", () => {
 
   it("slides the expiry once less than 23 hours are left", async () => {
     const store = storeWith({
-      findSession: jest.fn().mockResolvedValue(sessionRow(new Date(NOW.getTime() + 60 * 60 * 1000))),
+      findSession: jest
+        .fn()
+        .mockResolvedValue(sessionRow(new Date(NOW.getTime() + 60 * 60 * 1000))),
     });
     await resolveSession(identity(signSessionId("sid")), store, loader, NOW);
-    expect(store.extendSession).toHaveBeenCalledWith("sid", new Date(NOW.getTime() + SESSION_TTL_MS));
+    expect(store.extendSession).toHaveBeenCalledWith(
+      "sid",
+      new Date(NOW.getTime() + SESSION_TTL_MS)
+    );
   });
 
   it("ignores an expired session, an unknown one and a forged cookie", async () => {
@@ -373,9 +393,13 @@ describe("resolveSession", () => {
       "anonymous"
     );
     const forged = storeWith({
-      findSession: jest.fn().mockResolvedValue(sessionRow(new Date(NOW.getTime() + SESSION_TTL_MS))),
+      findSession: jest
+        .fn()
+        .mockResolvedValue(sessionRow(new Date(NOW.getTime() + SESSION_TTL_MS))),
     });
-    expect((await resolveSession(identity("sid.forged"), forged, loader, NOW)).kind).toBe("anonymous");
+    expect((await resolveSession(identity("sid.forged"), forged, loader, NOW)).kind).toBe(
+      "anonymous"
+    );
     expect(forged.findSession).not.toHaveBeenCalled();
   });
 

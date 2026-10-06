@@ -11,6 +11,7 @@ import { categorizeTemplate, isNoiseTemplate } from "~/lib/wiki-os/templates/tem
 import { readTemplateData } from "~/lib/wiki-os/templates/template-data-reader";
 import { renderTemplateWithRedisCache } from "~/lib/wiki-os/templates/preview-service.server";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { templatePreviewInput } from "./_shared";
 import { db } from "~/server/db";
 import type { Prisma } from "@prisma/client";
 
@@ -1281,21 +1282,8 @@ export const wikiosTemplatesRouter = createTRPCRouter({
    * Get rendered preview of a template with given parameters. Signed-in and rate limited: it
    * forwards to MediaWiki's parser, so a public endpoint would be an anonymous render proxy.
    */
-  getTemplatePreview: readOnlyProcedure
-    .input(
-      z.object({
-        template: z
-          .string()
-          .min(1)
-          .max(255)
-          .regex(/^[^{}|\[\]<>\n]+$/),
-        params: z
-          .record(z.string().max(64), z.string().max(20_000))
-          .refine((params) => Object.keys(params).length <= 200, "At most 200 parameters"),
-      })
-    )
-    .query(async ({ input }) => {
-      const preview = await renderTemplateWithRedisCache(input.template, input.params);
-      return sanitizeWikiArticleHtml(preview.html);
-    }),
+  getTemplatePreview: readOnlyProcedure.input(templatePreviewInput).query(async ({ input }) => {
+    const preview = await renderTemplateWithRedisCache(input.template, input.params);
+    return sanitizeWikiArticleHtml(preview.html);
+  }),
 });

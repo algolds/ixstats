@@ -54,7 +54,7 @@ describe("useStatValues", () => {
           },
         };
         const queries = build(t);
-        mockUseQueries.queries = queries;
+        (mockUseQueries as unknown as { queries: unknown[] }).queries = queries;
         return options.combine(results);
       }
     );

@@ -74,7 +74,7 @@ async function upload(name: string, bytes: Uint8Array, mimeType: string) {
   const { base36 } = hashFile(bytes);
   await stageBytes(base36, bytes);
   await db.$transaction((tx) =>
-    MediaAssetService.recordUpload(tx, {
+    MediaAssetService.recordUpload(tx as never, {
       name,
       mimeType,
       sizeBytes: bytes.length,
@@ -201,7 +201,7 @@ describe("a file MediaWiki holds", () => {
   it("is a redirect to MediaWiki's copy", async () => {
     const sha1 = await upload("Flag.png", PNG, "image/png");
     await MediaAssetService.markMirrored("Flag.png", sha1);
-    const { url } = tables.wikiAsset.rows[0] as { url: string };
+    const { url } = tables.wikiAsset.rows[0] as unknown as { url: string };
     await releaseStaged(sha1);
 
     const response = await get(["Flag.png"]);

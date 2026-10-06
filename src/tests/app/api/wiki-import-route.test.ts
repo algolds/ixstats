@@ -75,7 +75,7 @@ function post(body: string | Uint8Array | ReadableStream<Uint8Array>, options: P
     body,
     headers: { ...(type ? { "content-type": type } : {}), ...headers },
     duplex: "half",
-  } as RequestInit);
+  } as ConstructorParameters<typeof NextRequest>[1]);
 }
 
 /** A stream of `count` chunks of `size` bytes that records how many chunks were pulled from it. */

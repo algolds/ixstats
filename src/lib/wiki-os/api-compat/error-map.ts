@@ -19,6 +19,7 @@ const DENIAL_CODES: Readonly<Record<string, string>> = {
   protectedpage: "protectedpage",
   titleprotected: "protectedtitle",
   permissiondenied: "permissiondenied",
+  readonly: "readonly",
 };
 
 /** The upload service's refusal codes that MediaWiki spells differently (the others, `empty-file` and the like, are its own). */

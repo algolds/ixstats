@@ -9,7 +9,6 @@ import { join } from "node:path";
 const read = (file: string) => readFileSync(join(process.cwd(), file), "utf8");
 
 describe.each([
-  ["SearchModal", "src/components/wiki-os/shared/SearchModal.tsx"],
   ["HeroSpotlightSearch", "src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx"],
 ])("%s", (_name, file) => {
   const source = read(file);
@@ -20,7 +19,7 @@ describe.each([
   });
 
   it("debounces 150 ms, starts at 2 characters and stales after 60 s", () => {
-    expect(source).toMatch(/\}, 150\)|, 150\);/);
+    expect(source).toMatch(/\}, 150\)|, 150\);|useDebounce\(.*, 150\)/);
     expect(source).toMatch(/length >= (2|MIN_QUERY_LENGTH)/);
     expect(source).toContain("staleTime: 60_000");
   });

@@ -29,7 +29,6 @@ import {
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
 export { resolveImageUrl };
-import type { WikiSource } from "~/lib/wiki-os/config";
 
 // ─── Unified Infobox Data Interface ───────────────────────────────────────────
 
@@ -690,18 +689,4 @@ export function parseInfoboxWithTemplates(
   result.templateName = parsed.templateName;
 
   return result;
-}
-
-export async function fetchAndParseInfobox(
-  pageName: string,
-  wikiSource: WikiSource = "ixwiki"
-): Promise<UnifiedInfoboxData | null> {
-  try {
-    const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-    const wikitext = await getArticleWikitext(pageName, wikiSource);
-    if (!wikitext) return null;
-    return parseInfoboxWithTemplates(wikitext.wikitext, pageName);
-  } catch {
-    return null;
-  }
 }

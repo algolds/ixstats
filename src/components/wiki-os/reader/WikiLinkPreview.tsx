@@ -340,6 +340,7 @@ interface PopoverCardProps {
   titleClass: string;
   subtitle?: React.ReactNode;
   subtitleClass?: string;
+  /** Each `href` is already an IxStates link (ixstatesHref). */
   actions: Array<{ href: string; label: string; tone: keyof typeof ACTION_TONES }>;
 }
 
@@ -365,7 +366,7 @@ function PopoverCard({
         {actions.map((action) => (
           <Link
             key={action.href}
-            href={ixstatesHref(action.href)}
+            href={action.href}
             className={`rounded-control-sm text-caption flex-1 py-1 text-center font-semibold ${ACTION_TONES[action.tone]}`}
           >
             {action.label}
@@ -423,7 +424,13 @@ function MentionProfile({
           titleClass="text-yellow"
           subtitle={`${leagueData.sportPreset} · ${leagueData.archetype}`}
           subtitleClass="text-footnote text-label-secondary capitalize"
-          actions={[{ href: `/myleague/${entityId}`, label: "View workspace", tone: "yellow" }]}
+          actions={[
+            {
+              href: ixstatesHref(`/myleague/${entityId}`),
+              label: "View workspace",
+              tone: "yellow",
+            },
+          ]}
         />
       )}
 
@@ -440,7 +447,13 @@ function MentionProfile({
           title={teamData.name}
           titleClass="text-tint"
           subtitle={`Stadium Cap: ${teamData.stadiumCapacity}`}
-          actions={[{ href: `/myclub/${entityId}`, label: "View roster & stats", tone: "tint" }]}
+          actions={[
+            {
+              href: ixstatesHref(`/myclub/${entityId}`),
+              label: "View roster & stats",
+              tone: "tint",
+            },
+          ]}
         />
       )}
 
@@ -452,8 +465,8 @@ function MentionProfile({
           subtitle={countryData.paragraphs?.[0] || "Explore country details."}
           subtitleClass="text-footnote text-label-secondary line-clamp-2"
           actions={[
-            { href: `/countries/${entityId}`, label: "View profile", tone: "green" },
-            { href: "/mycountry/diplomacy", label: "Open embassy", tone: "neutral" },
+            { href: ixstatesHref(`/countries/${entityId}`), label: "View profile", tone: "green" },
+            { href: ixstatesHref("/mycountry/diplomacy"), label: "Open embassy", tone: "neutral" },
           ]}
         />
       )}
@@ -469,8 +482,8 @@ function MentionProfile({
           titleClass="text-tint"
           subtitle={authorData.country && `From ${authorData.country.name}`}
           actions={[
-            { href: "/dashboard", label: "View feed", tone: "tint" },
-            { href: "/messages", label: "Message", tone: "neutral" },
+            { href: ixstatesHref("/dashboard"), label: "View feed", tone: "tint" },
+            { href: ixstatesHref("/messages"), label: "Message", tone: "neutral" },
           ]}
         />
       )}

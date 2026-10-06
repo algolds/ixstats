@@ -3,11 +3,23 @@
 // No page is deleted: the visibility check finds no row.
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: { wikiArticle: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) } },
+  db: {
+    wikiArticle: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+  },
   isDatabaseReadOnly: true,
 }));
-jest.mock("~/lib/auth", () => ({ __esModule: true, isSystemOwner: () => false, UserManagementService: jest.fn() }));
-jest.mock("~/lib/auth/system-owner-constants", () => ({ __esModule: true, isSystemOwner: () => false }));
+jest.mock("~/lib/auth", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+  UserManagementService: jest.fn(),
+}));
+jest.mock("~/lib/auth/system-owner-constants", () => ({
+  __esModule: true,
+  isSystemOwner: () => false,
+}));
 jest.mock("~/lib/wiki-os/storage", () => ({ __esModule: true, resolveActiveCountryId: jest.fn() }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
@@ -37,7 +49,10 @@ jest.mock("~/lib/wiki-os/templates/template-resolver", () => ({
   resolveTemplates: jest.fn(),
   registerTemplateProvider: jest.fn(),
 }));
-jest.mock("~/server/shared/ixstats-template-provider", () => ({ __esModule: true, ixstatsTemplateProvider: {} }));
+jest.mock("~/server/shared/ixstats-template-provider", () => ({
+  __esModule: true,
+  ixstatsTemplateProvider: {},
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getArticleWikitextShadow: jest.fn(),
@@ -45,8 +60,14 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   getArticleHtmlShadow: jest.fn(),
   getArticleAuthors: jest.fn(),
 }));
-jest.mock("~/lib/wiki-os/core/native-search-service", () => ({ __esModule: true, getArticleSummaryFromShadow: jest.fn() }));
-jest.mock("~/server/shared/wiki-placeholders", () => ({ __esModule: true, resolveWikiPlaceholdersInternal: jest.fn() }));
+jest.mock("~/lib/wiki-os/core/native-search-service", () => ({
+  __esModule: true,
+  getArticleSummaryFromShadow: jest.fn(),
+}));
+jest.mock("~/server/shared/wiki-placeholders", () => ({
+  __esModule: true,
+  resolveWikiPlaceholdersInternal: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
   ArticleRepository: { findBySlug: jest.fn(), findMissingTitles: jest.fn() },
@@ -57,7 +78,10 @@ jest.mock("~/lib/utils/sanitize-html", () => ({
   sanitizeWikiArticleHtml: jest.fn(),
   wikiArticleSanitizerFingerprint: jest.fn(() => "test-fingerprint"),
 }));
-jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({ __esModule: true, getHeadRevisionRefs: jest.fn() }));
+jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({
+  __esModule: true,
+  getHeadRevisionRefs: jest.fn(),
+}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -66,13 +90,20 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 
-const caller = () => createCallerFactory(wikiosPageContentRouter)(createMockRouterContext({ auth: null, user: null }) as never);
+const caller = () =>
+  createCallerFactory(wikiosPageContentRouter)(
+    createMockRouterContext({ auth: null, user: null }) as never
+  );
 
 describe("wikiosPageContentRouter.getWikitext (WK-2)", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("returns the head revision ref and every alias of it with the text", async () => {
-    jest.mocked(getHeadRevisionRefs).mockResolvedValue({ revisionRef: "4321", revisionRefs: ["cuid-1", "4321"] });
+    jest
+      .mocked(getHeadRevisionRefs)
+      .mockResolvedValue({ revisionRef: "4321", revisionRefs: ["cuid-1", "4321"] });
     jest.mocked(getArticleWikitextShadow).mockResolvedValue({
       wikitext: "Text",
       revid: null,

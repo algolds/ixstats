@@ -6,19 +6,31 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
-import { detectEditConflict, getHeadRevisionRefs, revisionRefs } from "~/lib/wiki-os/core/edit-conflict";
+import {
+  detectEditConflict,
+  getHeadRevisionRefs,
+  revisionRefs,
+} from "~/lib/wiki-os/core/edit-conflict";
 
 const history = jest.mocked(ArticleRepository.getHistory);
 const findBySlug = jest.mocked(ArticleRepository.findBySlug);
 
 describe("getHeadRevisionRefs", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("is the row id of a native edit and the rev_id of a synced one, and lists both once stamped", async () => {
     history.mockResolvedValueOnce([{ id: "cuid-1", mwRevId: null }] as never);
-    expect(await getHeadRevisionRefs("Page")).toEqual({ revisionRef: "cuid-1", revisionRefs: ["cuid-1"] });
+    expect(await getHeadRevisionRefs("Page")).toEqual({
+      revisionRef: "cuid-1",
+      revisionRefs: ["cuid-1"],
+    });
     history.mockResolvedValueOnce([{ id: "cuid-2", mwRevId: 99 }] as never);
-    expect(await getHeadRevisionRefs("Page")).toEqual({ revisionRef: "99", revisionRefs: ["cuid-2", "99"] });
+    expect(await getHeadRevisionRefs("Page")).toEqual({
+      revisionRef: "99",
+      revisionRefs: ["cuid-2", "99"],
+    });
   });
 
   it("asks for the single newest revision and is null for a page with none", async () => {
@@ -34,7 +46,9 @@ describe("getHeadRevisionRefs", () => {
 });
 
 describe("detectEditConflict", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
   it("is null while the base is the head, and while neither exists", async () => {
     history.mockResolvedValue([{ id: "r1", mwRevId: null }] as never);

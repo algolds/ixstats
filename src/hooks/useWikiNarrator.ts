@@ -1,6 +1,4 @@
 "use client";
-
-// src/hooks/useWikiNarrator.ts
 // Custom hook to manage full-article audio narration using Onoma Voice (Kokoro TTS).
 // Splits the article DOM into clean text segments, manages sequential playback,
 // pre-buffers future blocks, highlights active text, and bridges state/actions
@@ -8,7 +6,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { useEngineReporter, useSpeechConfigLoader } from "~/hooks/narrator-speech";
 import { useNotify } from "~/hooks/useNotify";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useIxMediaActions } from "~/components/media/MediaContext";
@@ -111,25 +109,8 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     []
   );
 
-  // The speech config (Kokoro settings) is read on the first play, not for every reader: only a user who
-  // may use the narrator, and has pressed play, needs it. The latest answer is kept in a ref for the
-  // synchronous callbacks below. (The player reads the same cached query to label its engine.)
-  const utils = api.useUtils();
-  const speechConfigRef = useRef<RouterOutputs["onoma"]["getSpeechConfig"] | null>(null);
-  const loadSpeechConfig = useCallback(async () => {
-    try {
-      speechConfigRef.current = await utils.onoma.getSpeechConfig.fetch(undefined, {
-        staleTime: 600000,
-      });
-    } catch (err) {
-      console.warn(
-        "[Narrator] Could not read the speech config; reading with the browser voice.",
-        err
-      );
-      speechConfigRef.current = null;
-    }
-    return speechConfigRef.current;
-  }, [utils]);
+  // The speech config is read on the first play (narrator-speech.ts)
+  const { speechConfigRef, loadSpeechConfig } = useSpeechConfigLoader();
 
   const activeIdxRef = useRef(-1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -187,9 +168,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     return fetchPromise;
   }, []);
 
-  // Single source of truth for the TTS request URL so prefetch and playback always
-  // hit the same cache key. Speed is intentionally omitted — it's applied client-side
-  // via audio.playbackRate, so one cached clip is reused across every speed setting.
+  // One TTS URL for prefetch and playback (one cache key). No speed: audio.playbackRate applies it client-side.
   const buildTtsUrl = useCallback((text: string) => {
     const params = new URLSearchParams({ text, ipa: "" });
     const chosenVoice = voiceRef.current || speechConfigRef.current?.kokoro?.voice;
@@ -383,16 +362,7 @@ export function useWikiNarrator(articleRef: React.RefObject<HTMLDivElement | nul
     });
   }, [clearHighlight, setNarratorState, updatePlaybackState]);
 
-  // Tell the player which voice is actually reading, so it can say so (only when it changes).
-  const engineRef = useRef<"kokoro" | "browser" | null>(null);
-  const reportEngine = useCallback(
-    (engine: "kokoro" | "browser") => {
-      if (engineRef.current === engine) return;
-      engineRef.current = engine;
-      setNarratorState({ engine });
-    },
-    [setNarratorState]
-  );
+  const reportEngine = useEngineReporter(setNarratorState);
 
   // Synthesize and play block
   const playBlock = useCallback(

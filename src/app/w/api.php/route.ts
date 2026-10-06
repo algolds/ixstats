@@ -24,6 +24,7 @@ import { handleApiRequest, type ApiRequestInput } from "~/lib/wiki-os/api-compat
 import type { RequestFile } from "~/lib/wiki-os/api-compat/types";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import { API_DOCREF } from "~/lib/wiki-os/api-compat/format";
+import { isWikiosV1Enabled, WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -186,6 +187,14 @@ async function webAuthId(): Promise<string | null> {
 }
 
 async function handle(req: NextRequest): Promise<NextResponse> {
+  // Until WikiOS v1 is switched on, classic MediaWiki's api.php is the one bots use: this one answers
+  // MediaWiki's read-only error to every request (and reads no body).
+  if (!isWikiosV1Enabled()) {
+    return NextResponse.json(
+      { error: { code: "readonly", info: WIKIOS_READONLY_REASON, "*": API_DOCREF } },
+      { status: 503, headers: jsonHeaders("readonly") }
+    );
+  }
   const method = req.method === "POST" ? "POST" : "GET";
 
   const clientKey = resolveRateLimitIdentifier(req.headers, null);
@@ -220,7 +229,8 @@ async function handle(req: NextRequest): Promise<NextResponse> {
 
   const output = await handleApiRequest(input, deps);
   const response = NextResponse.json(output.body, { headers: jsonHeaders(output.errorCode) });
-  for (const cookie of output.setCookies) response.headers.append("Set-Cookie", serializeCookie(cookie));
+  for (const cookie of output.setCookies)
+    response.headers.append("Set-Cookie", serializeCookie(cookie));
   return response;
 }
 

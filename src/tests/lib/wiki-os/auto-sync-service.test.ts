@@ -38,9 +38,22 @@ const mockExecuteRaw = jest.fn();
 const mockTransaction = jest.fn();
 const mockJobCreate = jest.fn();
 
+/** The lease upsert of withJobLock when the lease is free: it returns the caller's own holder (its second value). */
+const leaseFree = async (_strings: TemplateStringsArray, ...values: unknown[]) => [
+  { holder: values[1] },
+];
+/** ... and when another process holds it: no row comes back. */
+const leaseTaken = async () => [];
+/** The raw statements the sync itself ran: the lease's own release left out. */
+const syncStatements = () =>
+  mockExecuteRaw.mock.calls.filter(
+    ([strings]) => !(strings as TemplateStringsArray).join("?").includes('"job_leases"')
+  );
+
 jest.mock("~/server/db", () => ({
   db: {
     $transaction: (...a: unknown[]) => mockTransaction(...a),
+    $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
     $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
     systemConfig: {
       findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
@@ -266,13 +279,12 @@ beforeEach(() => {
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
   applyEvent.mockResolvedValue("applied");
-  // withJobLock: an interactive transaction whose first statement tries the advisory lock.
-  mockQueryRaw.mockResolvedValue([{ locked: true }]);
+  // withJobLock: a lease row (job_leases) taken by one upsert, which returns the holder when the lease was free.
+  mockQueryRaw.mockImplementation(leaseFree);
   mockExecuteRaw.mockResolvedValue(0);
   mockJobCreate.mockResolvedValue({});
   mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
     callback({
-      $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
       // the park's own transaction: the parked revision and the re-push job are written together
       wikiRevision: { createMany: (...a: unknown[]) => mockRevisionCreateMany(...a) },
       wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
@@ -789,7 +801,12 @@ describe("fast-forward", () => {
     expect(importPageRevisions).toHaveBeenCalledTimes(1);
     const input = importPageRevisions.mock.calls[0]![0];
     // not parked, not hidden, 0 bytes: renderArticle shows nothing for this page, whatever HTML its old text left behind
-    expect(input.revisions[0]).toMatchObject({ mwRevId: 91, wikitext: "", byteSize: 0, textDeleted: false });
+    expect(input.revisions[0]).toMatchObject({
+      mwRevId: 91,
+      wikitext: "",
+      byteSize: 0,
+      textDeleted: false,
+    });
     expect(input.head).toMatchObject({ mwRevId: 91, wikitext: "" });
     expect(mockRevisionCreateMany).not.toHaveBeenCalled(); // not parked
   });
@@ -920,8 +937,8 @@ describe("echo", () => {
       data: expect.objectContaining({ mwLatestRevId: 91 }),
     });
     // the echo is a live revision: it is given the live revision before it as its parent (F5)
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
-    const [strings, articleId] = mockExecuteRaw.mock.calls[0]!;
+    expect(syncStatements()).toHaveLength(1);
+    const [strings, articleId] = syncStatements()[0]!;
     expect((strings as TemplateStringsArray).join("?")).toContain('SET "parentRevisionId"');
     expect(articleId).toBe("art-1");
   });
@@ -1015,7 +1032,7 @@ describe("park", () => {
       parentRevisionId: "rev-9",
       createdAt: new Date("2026-09-27T10:00:01Z"),
     });
-    expect(mockExecuteRaw).not.toHaveBeenCalled();
+    expect(syncStatements()).toHaveLength(0);
     expect(mockJobCreate).toHaveBeenCalledTimes(1);
     expect(mockJobCreate).toHaveBeenCalledWith({
       data: {
@@ -1045,8 +1062,8 @@ describe("park", () => {
     await runAutoSyncCycle();
 
     expect(order).toEqual(["parked revision", "re-push job"]);
-    // the cycle's own lock transaction, and the park's
-    expect(mockTransaction).toHaveBeenCalledTimes(2);
+    // the park's own transaction (the cycle's lock is a lease row, not a transaction)
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
   });
 
   it("does not park an edit whose re-push job could not be written: the cycle fails and will read it again", async () => {
@@ -1315,18 +1332,19 @@ describe("syncSinglePage", () => {
 // ---------------------------------------------------------------------------
 
 describe("the advisory lock", () => {
-  it("a cycle takes the transaction-scoped lock named wikios-inbound-sync, and every request of the cycle runs while it is held", async () => {
+  it("a cycle takes the lease named wikios-inbound-sync, and every request of the cycle runs while it is held", async () => {
     rcResponses = [{ changes: [change("A", 1, 1)] }];
     mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
 
     await runAutoSyncCycle();
 
-    expect(mockTransaction).toHaveBeenCalledTimes(1);
     const [strings, ...values] = mockQueryRaw.mock.calls[0]!;
-    expect((strings as string[]).join("?")).toContain("pg_try_advisory_xact_lock(hashtext(?))");
-    expect(values).toEqual(["ixstats:job:wikios-inbound-sync"]);
-    expect(mockTransaction.mock.calls[0]?.[1]).toMatchObject({ timeout: 12 * 60_000 });
+    expect((strings as string[]).join("?")).toContain('"job_leases"');
+    expect(values[0]).toBe("wikios-inbound-sync");
+    expect(values[2]).toBe((12 * 60_000) / 1000); // the lease outlasts the cycle's 9-minute budget
     expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    // released once the cycle settles
+    expect(mockExecuteRaw.mock.calls.at(-1)?.[1]).toBe("wikios-inbound-sync");
   });
 
   /** Run a cycle with the clock under test control: the waits between lock retries are not real. */
@@ -1342,7 +1360,7 @@ describe("the advisory lock", () => {
   };
 
   it("a cycle that keeps finding the lock taken tries four times, 2 s apart, then reads nothing and returns the stats it has", async () => {
-    mockQueryRaw.mockResolvedValue([{ locked: false }]);
+    mockQueryRaw.mockImplementation(leaseTaken);
     rcResponses = [{ changes: [change("A", 1, 1)] }];
 
     const stats = await cycleWithFakeTimers();
@@ -1355,9 +1373,9 @@ describe("the advisory lock", () => {
 
   it("a cycle that finds the lock taken by a single-page import runs once it is free (a retry, not a skipped cycle)", async () => {
     mockQueryRaw
-      .mockResolvedValueOnce([{ locked: false }])
-      .mockResolvedValueOnce([{ locked: false }])
-      .mockResolvedValue([{ locked: true }]);
+      .mockImplementationOnce(leaseTaken)
+      .mockImplementationOnce(leaseTaken)
+      .mockImplementation(leaseFree);
     rcResponses = [{ changes: [change("A", 1, 1)] }];
     mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
 
@@ -1406,7 +1424,7 @@ describe("the advisory lock", () => {
   });
 
   it("the webhook's single-page sync takes the same lock without waiting and answers false when it is busy", async () => {
-    mockQueryRaw.mockResolvedValue([{ locked: false }]);
+    mockQueryRaw.mockImplementation(leaseTaken);
     mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
 
     await expect(syncSinglePage("Foo")).resolves.toBe(false);
@@ -1420,11 +1438,11 @@ describe("the advisory lock", () => {
 
     await expect(syncSinglePage("Foo")).resolves.toBe(true);
 
-    expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixstats:job:wikios-inbound-sync"]);
+    expect(mockQueryRaw.mock.calls[0]?.[1]).toBe("wikios-inbound-sync");
   });
 
   it("never throws when the lock cannot even be taken (database down), and says so", async () => {
-    mockTransaction.mockRejectedValue(new Error("connection refused"));
+    mockQueryRaw.mockRejectedValue(new Error("connection refused"));
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
 
     const stats = await runAutoSyncCycle();

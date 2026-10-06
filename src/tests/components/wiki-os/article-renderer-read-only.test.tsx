@@ -5,9 +5,7 @@ import { api } from "~/trpc/react";
 import { act } from "@testing-library/react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
 import { leanEnvironment, leanMarker, stashLeanArticle } from "~/lib/wiki-os/lean-article";
-import { DEFAULT_CHROME_PREFS } from "~/lib/wiki-os/chrome-prefs";
 
 const mockToggleMargin = jest.fn();
 const mockSetWikiPage = jest.fn();
@@ -376,11 +374,8 @@ describe("ArticleRenderer first paint and signing in (plan 413)", () => {
     jest.clearAllMocks();
     mockMarginOpen = false;
     mockSignedIn = true;
-    document.cookie = "wikios_companion_collapsed=; max-age=0; path=/";
     localStorage.clear();
   });
-
-  const companion = () => screen.queryByLabelText("Article companion and table of contents");
 
   it("signing in adds the section edit links to the article that is already there, never rewriting its HTML", () => {
     mockSignedIn = false;
@@ -431,56 +426,28 @@ describe("ArticleRenderer first paint and signing in (plan 413)", () => {
     expect(view.container.querySelector("p")).toBe(paragraph);
   });
 
-  it("a re-render (the companion collapsing) does not write the article's HTML again: React 19 does that for a new {__html} object", () => {
+  it("a re-render does not write the article's HTML again: React 19 does that for a new {__html} object", () => {
     const view = renderArticle("ixwiki");
     const paragraph = view.container.querySelector("p");
     const link = view.container.querySelector(".wikios-section-edit-link");
 
-    fireEvent.click(screen.getByLabelText("Hide companion"));
+    // the parent renders again with equal props (a new categories array): the article's DOM stays
+    view.rerender(
+      <ArticleRenderer
+        title="Portal:Eurth"
+        contentHtml={content}
+        infoboxHtml={null}
+        noticesHtml={null}
+        toc={[]}
+        categories={[]}
+        lastModified={null}
+        wikiSource="ixwiki"
+        authorInfo={null}
+      />
+    );
 
     expect(view.container.querySelector("p")).toBe(paragraph);
     expect(view.container.querySelector(".wikios-section-edit-link")).toBe(link);
-  });
-
-  it("the companion is collapsed from the first render when the reader's cookie says so", () => {
-    render(
-      <WikiChromePrefsProvider prefs={{ ...DEFAULT_CHROME_PREFS, companionCollapsed: true }}>
-        <ArticleRenderer
-          title="Portal:Eurth"
-          contentHtml={content}
-          infoboxHtml={null}
-          noticesHtml={null}
-          toc={[]}
-          categories={[]}
-          lastModified={null}
-          wikiSource="ixwiki"
-          authorInfo={null}
-        />
-      </WikiChromePrefsProvider>
-    );
-
-    expect(companion()).toBeNull();
-    expect(screen.getByLabelText("Show companion")).toBeInTheDocument();
-  });
-
-  it("is open from the first render without a cookie, and hiding it saves the choice in a cookie", () => {
-    renderArticle("ixwiki");
-    expect(companion()).not.toBeNull();
-
-    fireEvent.click(screen.getByLabelText("Hide companion"));
-
-    expect(document.cookie).toContain("wikios_companion_collapsed=1");
-    expect(localStorage.getItem("wikios:companionCollapsed")).toBe("true");
-    expect(companion()).toBeNull();
-  });
-
-  it("a choice kept only in localStorage is picked up after mount and written to the cookie", () => {
-    localStorage.setItem("wikios:companionCollapsed", "true");
-
-    renderArticle("ixwiki");
-
-    expect(companion()).toBeNull();
-    expect(document.cookie).toContain("wikios_companion_collapsed=1");
   });
 });
 
@@ -561,7 +528,9 @@ describe("ArticleRenderer's parts carry the class TemplateStyles are scoped to (
   beforeEach(() => jest.clearAllMocks());
 
   it("gives the notices and the body that class, and nothing around them", () => {
-    const { container } = renderArticle("ixwiki", { noticesHtml: '<table class="ambox"><tr><td>n</td></tr></table>' });
+    const { container } = renderArticle("ixwiki", {
+      noticesHtml: '<table class="ambox"><tr><td>n</td></tr></table>',
+    });
 
     const roots = Array.from(container.querySelectorAll(".mw-parser-output"));
     expect(roots).toHaveLength(2);
@@ -569,7 +538,9 @@ describe("ArticleRenderer's parts carry the class TemplateStyles are scoped to (
     expect(roots[1]?.innerHTML).toContain("Eurth is a world.");
     // the page's own chrome (the header, the article container) is outside every root
     expect(container.querySelector("h1")?.closest(".mw-parser-output")).toBeNull();
-    expect(container.querySelector(".wikios-article")?.classList.contains("mw-parser-output")).toBe(false);
+    expect(container.querySelector(".wikios-article")?.classList.contains("mw-parser-output")).toBe(
+      false
+    );
   });
 
   it("makes the body a root whose children are the article's own elements, so `.mw-parser-output > p` matches", () => {

@@ -41,7 +41,7 @@ const post = (
       body,
       headers,
       ...(body instanceof ReadableStream ? { duplex: "half" } : {}),
-    } as RequestInit)
+    } as ConstructorParameters<typeof NextRequest>[1])
   );
 
 /** A body that streams `total` bytes in 1 MB chunks, with no Content-Length. */

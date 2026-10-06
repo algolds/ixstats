@@ -43,6 +43,7 @@ import {
 } from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
 import { sweepStagedOrphansIfDue } from "./staged-uploads";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
@@ -151,6 +152,8 @@ export async function runMirrorCycle({
 }: MirrorCycleOptions = {}): Promise<MirrorCycleResult> {
   const result: MirrorCycleResult = { skipped: false, done: 0, failed: 0, dead: 0 };
   if (process.env.SKIP_MEDIAWIKI_SYNC === "true") return { ...result, skipped: true };
+  // Before the cutover classic MediaWiki is the wiki of record: the outbox is not applied (v1-switch.ts).
+  if (!isWikiosV1Enabled()) return { ...result, skipped: true };
 
   const startedAt = Date.now();
   let dead = 0;

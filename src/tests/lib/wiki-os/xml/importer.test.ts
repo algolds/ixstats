@@ -301,7 +301,9 @@ describe("parent revisions (F5)", () => {
 
     const rows = revisionsOf("Kingdom of Testia");
     // early (2025), parked (2026-01-02 03:00), then the dump's three (03:04:05 ...)
-    const dump = rows.filter((row) => row.mwRevId !== null && [1001, 1002, 1003].includes(row.mwRevId));
+    const dump = rows.filter(
+      (row) => row.mwRevId !== null && [1001, 1002, 1003].includes(row.mwRevId)
+    );
     expect(dump).toHaveLength(3);
     expect(parentOf(dump[0]!)).toBe(early.id);
     expect(parentOf(dump[1]!)).toBe(dump[0]!.id);
@@ -323,7 +325,11 @@ describe("parent revisions (F5)", () => {
 
 describe("a dump whose newest revision blanks the page (the inbound sync's write is this one)", () => {
   it("leaves the page stale with an empty text and an empty, live, unhidden newest revision, and keeps the HTML its old text rendered (the render replaces it)", async () => {
-    const seeded = seedArticle({ wikitext: "Old text.", contentHtml: "<p>Old text.</p>", mwLatestRevId: 5 });
+    const seeded = seedArticle({
+      wikitext: "Old text.",
+      contentHtml: "<p>Old text.</p>",
+      mwLatestRevId: 5,
+    });
     seedRevision(seeded.id, { wikitext: "Old text.", createdAt: new Date("2025-12-01T00:00:00Z") });
     const xml = (() => {
       const chunks: string[] = [];
@@ -375,7 +381,9 @@ describe("a real import locks the page before it reads it (m6)", () => {
     await importFixture();
     // five pages in the dump: each locked once (the pages the dump creates take the creation lock instead)
     expect(rawStatements.filter((statement) => statement === "row lock")).toHaveLength(5);
-    expect(rawStatements.filter((statement) => statement.includes("pg_advisory_xact_lock"))).toHaveLength(4);
+    expect(
+      rawStatements.filter((statement) => statement.includes("pg_advisory_xact_lock"))
+    ).toHaveLength(4);
     expect(rawStatements.filter((statement) => statement.includes("set_config"))).toHaveLength(5);
   });
 
@@ -386,14 +394,19 @@ describe("a real import locks the page before it reads it (m6)", () => {
     store.onRowLock = (title) => {
       if (title !== "Kingdom of Testia") return;
       seeded.wikitext = "SAVED WHILE WAITING";
-      seedRevision(seeded.id, { wikitext: "SAVED WHILE WAITING", createdAt: new Date("2026-06-01T00:00:00Z") });
+      seedRevision(seeded.id, {
+        wikitext: "SAVED WHILE WAITING",
+        createdAt: new Date("2026-06-01T00:00:00Z"),
+      });
     };
 
     await importFixture();
 
     // the dump's history is filled in, but its older head did not replace the newer save
     expect(article("Kingdom of Testia").wikitext).toBe("SAVED WHILE WAITING");
-    expect(revisionsOf("Kingdom of Testia").map((row) => row.wikitext)).toContain("SAVED WHILE WAITING");
+    expect(revisionsOf("Kingdom of Testia").map((row) => row.wikitext)).toContain(
+      "SAVED WHILE WAITING"
+    );
     expect(revisionsOf("Kingdom of Testia")).toHaveLength(5);
   });
 });
@@ -1064,6 +1077,8 @@ describe("redirects", () => {
     model: "wikitext",
     format: "text/x-wiki",
     text,
+    textDeleted: false,
+    commentDeleted: false,
     ...overrides,
   });
 

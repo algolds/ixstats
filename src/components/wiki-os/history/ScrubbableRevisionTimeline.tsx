@@ -278,7 +278,7 @@ export function ScrubbableRevisionTimeline({
                   {revisions.map((r, idx) => (
                     <SelectItem key={r.id} value={String(idx)}>
                       {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
-                      {r.parked ? " (conflict — not live)" : ""}
+                      {r.parked ? " (conflict, not live)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

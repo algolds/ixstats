@@ -4,13 +4,9 @@
  * scroll spy reads no layout while scrolling.
  */
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
-import { renderToString } from "react-dom/server";
 import type { ReactNode } from "react";
 import { WikiOSHeader } from "~/components/wiki-os/reader/ArticleHeader";
 import { useScrollSpy } from "~/components/wiki-os/reader/useScrollSpy";
-import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
-import { WikiOSProfileWidget } from "~/components/wiki-os/shared/WikiOSProfileWidget";
-import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
 import { ArticleCompanionHUD } from "~/components/wiki-os/reader/ArticleCompanionHUD";
 import {
   COMPANION_COLLAPSED_COOKIE,
@@ -32,7 +28,7 @@ jest.mock("~/components/wiki-os/reader/headers/EditorialMastheadHeader", () => (
 jest.mock("~/components/wiki-os/shared/MediaThemeContext", () => ({
   useWikiMediaTheme: () => ({ getImageAttributes: () => ({}) }),
 }));
-let mockAuth = { isLoaded: false, isSignedIn: false, user: null };
+const mockAuth = { isLoaded: false, isSignedIn: false, user: null };
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => mockAuth }));
 jest.mock("~/trpc/react", () => ({
   api: { wikios: { getAuthorProfile: { useQuery: () => ({ data: undefined }) } } },
@@ -45,13 +41,6 @@ jest.mock("~/components/ui/tooltip", () => ({
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipContent: () => null,
 }));
-jest.mock("~/components/dashboard/sidebar/DashboardPlayerWidget", () => ({
-  DashboardPlayerWidget: () => null,
-}));
-jest.mock("~/components/dashboard/sidebar/DashboardQuickLinks", () => ({
-  DashboardQuickLinks: () => null,
-}));
-jest.mock("~/components/mycountry/shell/VaultWidget", () => ({ VaultWidget: () => null }));
 
 const { preload } = jest.requireMock("react-dom") as { preload: jest.Mock };
 
@@ -261,86 +250,17 @@ describe("scroll spy", () => {
 });
 
 describe("the chrome paints as the reader left it", () => {
-  const rail = (defaultCollapsed: boolean) => (
-    <DashboardSidebarLayout
-      variant="rail"
-      defaultCollapsed={defaultCollapsed}
-      disableCollapse={false}
-      expandedWidthStyle="12rem"
-      sidebarContent={<div>menu</div>}
-    >
-      <div>page</div>
-    </DashboardSidebarLayout>
-  );
-
-  it("the server's HTML has the rail at the width it will keep (collapsed by default), not 12 rem until the browser says", () => {
-    expect(renderToString(rail(true))).toContain("width:3.5rem");
-    expect(renderToString(rail(false))).toContain("width:12rem");
-  });
-
-  it("tells the page when the reader's saved choice is restored, so a cookie can carry it next time", () => {
-    localStorage.setItem("ixstats.sidebar.collapsed", "false");
-    const onCollapsedChange = jest.fn();
-
-    render(
-      <DashboardSidebarLayout
-        variant="rail"
-        defaultCollapsed
-        disableCollapse={false}
-        sidebarContent={<div>menu</div>}
-        onCollapsedChange={onCollapsedChange}
-      >
-        <div>page</div>
-      </DashboardSidebarLayout>
-    );
-
-    expect(onCollapsedChange).toHaveBeenCalledWith(false);
-    localStorage.clear();
-  });
-
-  it("the profile's place is held while the auth provider loads for a browser with a session", () => {
-    mockAuth = { isLoaded: false, isSignedIn: false, user: null };
-    const withSession = render(
-      <WikiChromePrefsProvider prefs={{ ...DEFAULT_CHROME_PREFS, mayBeSignedIn: true }}>
-        <WikiOSProfileWidget expanded={false} />
-      </WikiChromePrefsProvider>
-    );
-    expect(withSession.container.firstElementChild).toHaveClass("h-11");
-    withSession.unmount();
-
-    const anonymous = render(<WikiOSProfileWidget expanded={false} />);
-    expect(anonymous.container.firstElementChild).toBeNull();
-    anonymous.unmount();
-
-    mockAuth = { isLoaded: true, isSignedIn: false, user: null };
-    const signedOut = render(
-      <WikiChromePrefsProvider prefs={{ ...DEFAULT_CHROME_PREFS, mayBeSignedIn: true }}>
-        <WikiOSProfileWidget expanded={false} />
-      </WikiChromePrefsProvider>
-    );
-    expect(signedOut.container.firstElementChild).toBeNull();
-  });
-
   it("the companion's authorship rows hold their place until the authors arrive", () => {
     const pending = render(
-      <ArticleCompanionHUD title="X" contentHtml="<p>text</p>" authorsPending readOnly />
+      <ArticleCompanionHUD contentHtml="<p>text</p>" authorsPending readOnly />
     );
-    expect(
-      pending.container.querySelector('[aria-hidden="true"].min-h-\\[10\\.5rem\\]')
-    ).not.toBeNull();
+    expect(pending.container.querySelector('[aria-hidden="true"].min-h-42')).not.toBeNull();
     pending.unmount();
 
     const arrived = render(
-      <ArticleCompanionHUD
-        title="X"
-        contentHtml="<p>text</p>"
-        authorInfo={{ creator: "Amy" }}
-        readOnly
-      />
+      <ArticleCompanionHUD contentHtml="<p>text</p>" authorInfo={{ creator: "Amy" }} readOnly />
     );
-    expect(
-      arrived.container.querySelector('[aria-hidden="true"].min-h-\\[10\\.5rem\\]')
-    ).toBeNull();
+    expect(arrived.container.querySelector('[aria-hidden="true"].min-h-42')).toBeNull();
     expect(screen.getByText("Amy")).toBeInTheDocument();
   });
 });

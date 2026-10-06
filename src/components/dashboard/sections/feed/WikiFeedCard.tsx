@@ -139,7 +139,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
     () => (introText || blurb ? parseWikitextToHtml(introText || blurb, "ixwiki") : ""),
     [introText, blurb]
   );
-  const leadImage = useWikiLeadImage(cleanTitle, introText);
+  const leadImage = useWikiLeadImage(cleanTitle, introText, "ixwiki");
 
   const descText = activity.content?.description ?? "";
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";

@@ -23,6 +23,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { importVerdict } from "~/lib/wiki-os/permissions";
+import { isWikiosV1Enabled, WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
 import { getWikiPermissionsForAuthId, type WikiPermissions } from "~/lib/wiki-os/rights";
 import { readExport } from "~/lib/wiki-os/xml/import-reader";
 import { DEFAULT_MAX_UPLOAD_BYTES, uploadKind } from "~/lib/wiki-os/xml/import-request";
@@ -75,6 +76,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // An import writes pages: refused, like every WikiOS write, until WikiOS v1 is switched on.
+  if (!isWikiosV1Enabled()) return fail(WIKIOS_READONLY_REASON, 503);
   const access = await authorize();
   if ("failure" in access) return access.failure;
   const { permissions } = access;

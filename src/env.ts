@@ -97,6 +97,9 @@ export const env = createEnv({
     WIKIOS_TEMPLATESTYLES: z.string().optional(),
     // "true" stops the mirror worker (services/mirror-worker.ts): outbox jobs accumulate and nothing is lost
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
+    // WikiOS v1 switch, off when unset: WikiOS stays read-only (no edits, uploads, imports, api.php, mirror,
+    // render refresh or parked revisions) until the cutover turns it on. lib/wiki-os/v1-switch.ts reads it.
+    WIKIOS_V1_ENABLED: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
     CLOUDFLARE_API_TOKEN: z.string().optional(),
     CLOUDFLARE_ZONE_ID: z.string().optional(),
@@ -235,6 +238,7 @@ export const env = createEnv({
     IIWIKI_DEV_PROXY_URL: process.env.IIWIKI_DEV_PROXY_URL,
     WIKIOS_TEMPLATESTYLES: process.env.WIKIOS_TEMPLATESTYLES,
     SKIP_MEDIAWIKI_SYNC: process.env.SKIP_MEDIAWIKI_SYNC,
+    WIKIOS_V1_ENABLED: process.env.WIKIOS_V1_ENABLED,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     BOT_API_KEY: process.env.BOT_API_KEY,

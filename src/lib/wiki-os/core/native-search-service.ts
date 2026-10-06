@@ -14,6 +14,7 @@
  */
 
 import { db } from "~/server/db";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import { resolveStoredImageUrl } from "../transformers/image-url";
 import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
@@ -490,6 +491,9 @@ export class NativeSearchService {
   ): Promise<{ results: SearchResultItem[]; total: number }> {
     const trimmed = withoutNul(query).trim();
     if (!trimmed) return { results: [], total: 0 };
+    // Before the WikiOS v1 cutover the search-index migration may not have run, and `db push` alone leaves
+    // `searchVector` an empty plain column that matches nothing (no error to fall back on): the old query answers.
+    if (!isWikiosV1Enabled()) return legacyFulltext(trimmed, source, limit, offset, namespace);
 
     return withSearchIndex(
       () => indexedFulltext(trimmed, source, limit, offset, namespace),

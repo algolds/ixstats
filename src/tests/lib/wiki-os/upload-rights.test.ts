@@ -107,8 +107,11 @@ beforeEach(() => {
   });
 });
 
-const upload = (ctx: WikiAuthContext, filename: string, over: { ignoreWarnings?: boolean } = {}) =>
-  uploadFile({ ctx, bytes: png(), filename, ...over });
+const upload = (
+  ctx: WikiAuthContext,
+  filename: string,
+  over: { ignoreWarnings?: boolean; bytes?: ReturnType<typeof png> } = {}
+) => uploadFile({ ctx, bytes: png(), filename, ...over });
 
 const restrict = (title: string, action: string, level: string) =>
   tables.wikiRestriction.seed({ source: "ixwiki", title, action, level });

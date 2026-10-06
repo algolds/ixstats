@@ -34,7 +34,7 @@ export function InlineWikiArticlePreview({
     return parseWikitextToHtml(raw, wiki);
   }, [intro?.text, intro?.intro, wiki]);
 
-  const leadImage = useWikiLeadImage(cleanTitle, intro?.text || intro?.intro || "");
+  const leadImage = useWikiLeadImage(cleanTitle, intro?.text || intro?.intro || "", wiki);
 
   if (!formattedHtml && !leadImage) return null;
 

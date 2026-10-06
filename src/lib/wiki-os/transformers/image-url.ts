@@ -1,5 +1,4 @@
-// src/lib/wiki-os/image-url.ts
-// Canonical Client-safe Wiki and Wikimedia Commons image URL resolution utilities.
+// Client-safe wiki and Wikimedia Commons image URL resolution utilities.
 
 import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
@@ -16,6 +15,23 @@ import {
 } from "./html-scan";
 
 export type ExtendedWikiSource = WikiSource | "commons";
+
+/** Name fragments of icons, notice badges and system assets that are never article images. */
+const BLOCKED_ICON_TERMS = `
+  ambox red_piston piston underconstruction under_construction under-construction
+  construction road_works roadworks road-works work_in_progress wip stub cleanup
+  padlock lock- edit- magnify-clip nuvola gnome crystal_clear crystal_ commons-logo
+  wikimedia wikipedia disambig question_book wiki_letter symbol_ information_icon
+  info_icon info-icon flag_of_none no_flag traffic_cone barrier caution maintenance
+  inuse in_use in-use spanner wrench shovel worker merge split dialog- system- emblem-
+  p_vip portal- star_icon green_check cross_icon trash delete clock_ arrow
+  external-link
+`
+  .trim()
+  .split(/\s+/);
+
+/** A blocked term at the start of the name or after `_` / `-`. */
+const BLOCKED_ICON_PATTERN = new RegExp(`(?:^|[_-])(?:${BLOCKED_ICON_TERMS.join("|")})`);
 
 /**
  * Checks if a filename or image path corresponds to a maintenance/WIP template,
@@ -41,80 +57,7 @@ export function isNoticeOrUtilityIcon(filenameOrPath: string | null | undefined)
     .toLowerCase()
     .trim();
 
-  const blockedTerms = [
-    "ambox",
-    "red_piston",
-    "piston",
-    "underconstruction",
-    "under_construction",
-    "under-construction",
-    "construction",
-    "road_works",
-    "roadworks",
-    "road-works",
-    "work_in_progress",
-    "wip",
-    "stub",
-    "cleanup",
-    "padlock",
-    "lock-",
-    "edit-",
-    "magnify-clip",
-    "nuvola",
-    "gnome",
-    "crystal_clear",
-    "crystal_",
-    "commons-logo",
-    "wikimedia",
-    "wikipedia",
-    "disambig",
-    "question_book",
-    "wiki_letter",
-    "symbol_",
-    "information_icon",
-    "info_icon",
-    "info-icon",
-    "flag_of_none",
-    "no_flag",
-    "traffic_cone",
-    "barrier",
-    "caution",
-    "maintenance",
-    "inuse",
-    "in_use",
-    "in-use",
-    "spanner",
-    "wrench",
-    "shovel",
-    "worker",
-    "merge",
-    "split",
-    "dialog-",
-    "system-",
-    "emblem-",
-    "p_vip",
-    "portal-",
-    "star_icon",
-    "green_check",
-    "cross_icon",
-    "trash",
-    "delete",
-    "clock_",
-    "arrow",
-    "external-link",
-  ];
-
-  for (const term of blockedTerms) {
-    if (
-      clean.startsWith(term) ||
-      clean.includes(`_${term}`) ||
-      clean.includes(`-${term}`) ||
-      clean === `${term}.svg` ||
-      clean === `${term}.png`
-    ) {
-      return true;
-    }
-  }
+  if (BLOCKED_ICON_PATTERN.test(clean)) return true;
 
   // Generic 12-24px icon names
   if (
@@ -200,6 +143,13 @@ export function isWikimediaCommonsUrl(url: string): boolean {
   );
 }
 
+const commonsFileUrl = (filename: string): string =>
+  withBasePath(
+    `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`
+  );
+
+const restoreSvg = (filename: string): string => filename.replace(/\.svg\.png$/i, ".svg");
+
 /**
  * Converts any Wikimedia Commons / Wikipedia URL to our cached local proxy URL.
  */
@@ -222,10 +172,7 @@ export function getCommonsProxyUrl(url: string): string {
       /\/wikipedia\/(?:commons|en)\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/i
     );
     if (commonsMatch && commonsMatch[1]) {
-      const filename = commonsMatch[1].replace(/\.svg\.png$/i, ".svg");
-      return withBasePath(
-        `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(filename.replace(/ /g, "_"))}`
-      );
+      return commonsFileUrl(restoreSvg(commonsMatch[1]));
     }
 
     // Fallback: extract last segment if valid image extension
@@ -233,10 +180,7 @@ export function getCommonsProxyUrl(url: string): string {
     // (`pathname` is percent-encoded: decode the name once, `encodeURIComponent` encodes it again)
     const lastSegment = decodeURIComponent(urlObj.pathname.split("/").pop() ?? "");
     if (lastSegment && /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(lastSegment)) {
-      const cleanSeg = lastSegment.replace(/\.svg\.png$/i, ".svg");
-      return withBasePath(
-        `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(cleanSeg.replace(/ /g, "_"))}`
-      );
+      return commonsFileUrl(restoreSvg(lastSegment));
     }
   } catch (e) {
     console.error("[Image URL] Error parsing Wikimedia URL:", e);
@@ -694,6 +638,13 @@ export function resolveStoredImageUrl(stored: string | null | undefined): string
   return normalizeWikiImageUrl(stored) ?? stored;
 }
 
+/** Proxy route serving `Special:FilePath` for each wiki; ixwiki uses MD5-sharded static storage instead. */
+const FILEPATH_ROUTES: Partial<Record<ExtendedWikiSource, string>> = {
+  commons: "commons/Special:Filepath",
+  iiwiki: "iiwiki/wiki/Special:FilePath",
+  althistory: "althistory/wiki/Special:FilePath",
+};
+
 /**
  * Resolve an image filename to its canonical proxied or direct URL based on wiki source.
  */
@@ -716,26 +667,9 @@ export function resolveImageUrl(
     return normalizeWikiImageUrl(cleanName) ?? cleanName;
   }
 
-  const normalized = cleanName.replace(/ /g, "_");
-
-  if (wikiSource === "commons") {
-    return withBasePath(
-      `/api/mediawiki/commons/Special:Filepath/${encodeURIComponent(normalized)}`
-    );
-  }
-  if (wikiSource === "ixwiki") {
-    return getImageUrl(cleanName);
-  }
-  if (wikiSource === "iiwiki") {
-    return withBasePath(
-      `/api/mediawiki/iiwiki/wiki/Special:FilePath/${encodeURIComponent(normalized)}`
-    );
-  }
-  if (wikiSource === "althistory") {
-    return withBasePath(
-      `/api/mediawiki/althistory/wiki/Special:FilePath/${encodeURIComponent(normalized)}`
-    );
-  }
-
-  return getImageUrl(cleanName);
+  const route = FILEPATH_ROUTES[wikiSource];
+  if (!route) return getImageUrl(cleanName);
+  return withBasePath(
+    `/api/mediawiki/${route}/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`
+  );
 }

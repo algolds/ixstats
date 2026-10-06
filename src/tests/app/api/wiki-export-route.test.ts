@@ -1,5 +1,4 @@
 /** @jest-environment node */
-import { load as parseYaml } from "js-yaml";
 import { SaxesParser } from "saxes";
 import { NextRequest } from "next/server";
 import {
@@ -19,6 +18,9 @@ jest.mock("~/server/db", () => {
 import { auth } from "@clerk/nextjs/server";
 import { GET } from "~/app/api/wiki/export/route";
 import { rateLimiter } from "~/lib/cache/rate-limiter";
+
+// js-yaml comes with the toolchain (an override in package.json) and has no type declarations here.
+const { load: parseYaml } = require("js-yaml") as { load: (text: string) => unknown };
 
 const mockAuth = jest.mocked(auth) as unknown as jest.Mock;
 const check = jest.mocked(rateLimiter.check);

@@ -257,7 +257,7 @@ export default function ArticlePageClient({
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
                 <p className="text-body text-label-secondary mt-4">
-                  {failureCount > 0 ? "WikiOS is busy — retrying..." : "Loading article..."}
+                  {failureCount > 0 ? "WikiOS is busy, retrying..." : "Loading article..."}
                 </p>
               </div>
             )}

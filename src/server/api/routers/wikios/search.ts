@@ -21,7 +21,6 @@ import {
 } from "~/lib/wiki-os/core/native-search-service";
 import { assetUrl } from "~/lib/base-path";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
-import { db } from "~/server/db";
 import { wikiSourceSchema } from "./_shared";
 
 const searchWikiTitles = publicProcedure

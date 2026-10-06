@@ -22,7 +22,9 @@ jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
 // the editor imports its stylesheet (plan 413); Jest has no CSS transform
 jest.mock("~/styles/wiki-os/editors.css", () => ({}));
 jest.mock("~/styles/wiki-os/mediawiki-editors.css", () => ({}));
-jest.mock("~/hooks/useNavigationScroll", () => ({ useNavigationScroll: () => ({ repulsionProgress: 0 }) }));
+jest.mock("~/hooks/useNavigationScroll", () => ({
+  useNavigationScroll: () => ({ repulsionProgress: 0 }),
+}));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({
     success: jest.fn(),
@@ -39,17 +41,29 @@ jest.mock("~/components/wiki-os/editor/hooks/useWikiVisualFormatting", () => ({
   }),
 }));
 jest.mock("~/components/wiki-os/editor/components/WikiVisualToolbar", () => ({
-  WikiVisualToolbar: (props: { isDirty: boolean; onSave: () => void; handleSaveDraft: () => void; onSwitchToSource: () => void }) => (
+  WikiVisualToolbar: (props: {
+    isDirty: boolean;
+    handleSaveDraft: () => void;
+    onSwitchToSource: () => void;
+  }) => (
     <div data-testid="toolbar" data-dirty={String(props.isDirty)}>
-      <button onClick={props.onSave}>publish</button>
       <button onClick={props.handleSaveDraft}>save-draft</button>
       <button onClick={props.onSwitchToSource}>to-source</button>
     </div>
   ),
 }));
-jest.mock("~/components/wiki-os/editor/components/WikiEditorSavePanel", () => ({ WikiEditorSavePanel: () => null }));
-jest.mock("~/components/wiki-os/editor/components/WikiEditorModalHost", () => ({ WikiEditorModalHost: () => null }));
-jest.mock("~/components/wiki-os/editor/components/WikiEditorStatusBar", () => ({ WikiEditorStatusBar: () => null }));
+// the save panel's button publishes (the toolbar has none)
+jest.mock("~/components/wiki-os/editor/components/WikiEditorSavePanel", () => ({
+  WikiEditorSavePanel: (props: { onSave: () => void }) => (
+    <button onClick={props.onSave}>publish</button>
+  ),
+}));
+jest.mock("~/components/wiki-os/editor/components/WikiEditorModalHost", () => ({
+  WikiEditorModalHost: () => null,
+}));
+jest.mock("~/components/wiki-os/editor/components/WikiEditorStatusBar", () => ({
+  WikiEditorStatusBar: () => null,
+}));
 jest.mock("~/components/wiki-os/editor/plate/PlateWikiEditor", () => ({
   PlateWikiEditor: (props: {
     initialWikitext?: string;
@@ -58,7 +72,8 @@ jest.mock("~/components/wiki-os/editor/plate/PlateWikiEditor", () => ({
   }) => {
     React.useEffect(() => {
       props.onEditorReady({});
-      reportValue = (nodes) => props.onValueChange(nodes, "<p>html that must never be saved</p>", "");
+      reportValue = (nodes) =>
+        props.onValueChange(nodes, "<p>html that must never be saved</p>", "");
       props.onValueChange(mockNodes, "<p>html that must never be saved</p>", "");
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -70,7 +85,16 @@ const paragraph = (text: string) => ({ type: "p", children: [{ text }] });
 
 const setup = (props: Partial<React.ComponentProps<typeof WikiVisualEditor>> = {}) => {
   const onSave = jest.fn().mockResolvedValue(undefined);
-  render(<WikiVisualEditor title="Vesperia" initialWikitext="Start" onSave={onSave} onCancel={jest.fn()} onSwitchToSource={jest.fn()} {...props} />);
+  render(
+    <WikiVisualEditor
+      title="Vesperia"
+      initialWikitext="Start"
+      onSave={onSave}
+      onCancel={jest.fn()}
+      onSwitchToSource={jest.fn()}
+      {...props}
+    />
+  );
   return { onSave };
 };
 
@@ -122,24 +146,41 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     mockUserId = null;
     setup();
     fireEvent.click(screen.getByText("save-draft"));
-    await waitFor(() => expect(mockNotifyError).toHaveBeenCalledWith("Sign in to save a draft", expect.any(String)));
+    await waitFor(() =>
+      expect(mockNotifyError).toHaveBeenCalledWith("Sign in to save a draft", expect.any(String))
+    );
     expect(window.localStorage.length).toBe(0);
   });
 
   it("does not start from another user's draft (plan 416)", () => {
-    saveDraft("user_bob", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "Bob's draft" });
+    saveDraft("user_bob", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "Bob's draft",
+    });
     setup();
     expect(screen.getByTestId("canvas").textContent).toBe("Start");
   });
 
   it("starts from a local draft by default and ignores it when the host settles drafts itself", () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
+    saveDraft("user_alice", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "From the draft",
+    });
     setup();
     expect(screen.getByTestId("canvas").textContent).toBe("From the draft");
   });
 
   it("does not start from a draft when restoreLocalDraft is false", () => {
-    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
+    saveDraft("user_alice", {
+      title: "Vesperia",
+      source: "ixwiki",
+      mode: "visual",
+      wikitext: "From the draft",
+    });
     setup({ restoreLocalDraft: false });
     expect(screen.getByTestId("canvas").textContent).toBe("Start");
   });
@@ -147,7 +188,14 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
   it("hands the host a reader of the editor's content, and withdraws it on unmount", () => {
     const register = jest.fn();
     const view = render(
-      <WikiVisualEditor title="Vesperia" initialWikitext="Start" onSave={jest.fn()} onCancel={jest.fn()} onSwitchToSource={jest.fn()} registerContentReader={register} />
+      <WikiVisualEditor
+        title="Vesperia"
+        initialWikitext="Start"
+        onSave={jest.fn()}
+        onCancel={jest.fn()}
+        onSwitchToSource={jest.fn()}
+        registerContentReader={register}
+      />
     );
     const reader = register.mock.calls[0]![0] as () => string | null;
     expect(reader()).toBe("Edited text.");
@@ -158,7 +206,12 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
   it("tells the author when an edit could not be applied or a block was moved, and still saves", async () => {
     mockNodes = [
       { type: "p", children: [{ text: "Inserted above the redirect." }] },
-      { type: "raw-wikitext", construct: "redirect", rawWikitext: "#REDIRECT [[Target]]", children: [{ text: "" }] },
+      {
+        type: "raw-wikitext",
+        construct: "redirect",
+        rawWikitext: "#REDIRECT [[Target]]",
+        children: [{ text: "" }],
+      },
       {
         type: "template-block",
         templateName: "Infobox x",

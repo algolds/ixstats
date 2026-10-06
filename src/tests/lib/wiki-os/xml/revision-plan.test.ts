@@ -18,6 +18,9 @@ const dump = (overrides: Partial<ImportedRevision> = {}): ImportedRevision => ({
   byteDelta: 5,
   sha1: "hash-a",
   wikitext: "hello",
+  textDeleted: false,
+  commentDeleted: false,
+  userDeleted: false,
   ...overrides,
 });
 

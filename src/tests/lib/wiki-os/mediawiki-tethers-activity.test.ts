@@ -40,7 +40,13 @@ const revision = (over: Record<string, unknown> = {}) => ({
   byteDelta: 5,
   wikitext: "Some text.",
   createdAt: new Date("2026-09-27T10:00:00Z"),
-  article: { title: "Foo", namespace: 0, summary: null, leadImageUrl: null, wikitext: "Some text." },
+  article: {
+    title: "Foo",
+    namespace: 0,
+    summary: null,
+    leadImageUrl: null,
+    wikitext: "Some text.",
+  },
   ...over,
 });
 
@@ -72,17 +78,28 @@ describe("recent changes", () => {
 
     // The size is the revision's stored one, and no wikitext is read: the select names none.
     expect(await ixwikiRecentChanges(20)).toMatchObject([
-      { title: "Foo", user: "Kir", type: "edit", comment: "an edit", oldLen: 15, newLen: 20, parked: false },
+      {
+        title: "Foo",
+        user: "Kir",
+        type: "edit",
+        comment: "an edit",
+        oldLen: 15,
+        newLen: 20,
+        parked: false,
+      },
     ]);
-    expect(mocked.wikiRevision.findMany.mock.calls[0]?.[0].select.article.select).not.toHaveProperty(
-      "wikitext"
-    );
+    expect(
+      mocked.wikiRevision.findMany.mock.calls[0]?.[0].select.article.select
+    ).not.toHaveProperty("wikitext");
   });
 });
 
 describe("user contributions", () => {
   it("lists the account's revisions by the name it edited under, never asking MediaWiki", async () => {
-    mocked.wikiRevision.findMany.mockResolvedValue([revision(), revision({ id: "r2", mwRevId: null })]);
+    mocked.wikiRevision.findMany.mockResolvedValue([
+      revision(),
+      revision({ id: "r2", mwRevId: null }),
+    ]);
 
     const contribs = await ixwikiGetUserContribs("kir_x", 50, 0, 0);
 
@@ -156,7 +173,8 @@ describe("pages a user created", () => {
     await ixwikiGetUserCreatedPages("Kir");
 
     const owner = mocked.$queryRaw.mock.calls[0]!.find(
-      (value): value is Prisma.Sql => typeof value === "object" && value !== null && "sql" in value
+      (value: unknown): value is Prisma.Sql =>
+        typeof value === "object" && value !== null && "sql" in value
     );
     expect(owner?.sql).toContain(`f."authorId" IN`);
     expect(owner?.values).toEqual(["u1"]);

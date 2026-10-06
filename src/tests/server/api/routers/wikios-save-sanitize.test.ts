@@ -156,7 +156,6 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
       revisionId: "rev-1" as never,
-      extractedLinksCount: 0,
     });
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
       wikitext: "old",
@@ -164,6 +163,7 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
       source: "ixwiki",
       timestamp: "",
       fromShadow: true,
+      parked: false,
     });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
@@ -175,6 +175,11 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
           size: 1,
           byteDelta: 0,
           minor: false,
+          sha1: null,
+          parked: false,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
         {
           revid: "r1",
@@ -184,6 +189,11 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
           size: 1,
           byteDelta: 0,
           minor: false,
+          sha1: null,
+          parked: false,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
       ],
       hasMore: false,
@@ -246,6 +256,7 @@ describe("wikiosEditingRouter namespace allowlist (NEW-1)", () => {
       source: "ixwiki",
       timestamp: "",
       fromShadow: true,
+      parked: false,
     });
     await caller.revertToRevision({ title: "MediaWiki:Sidebar", revid: "r1" });
     expect(ArticleRepository.saveArticle).toHaveBeenCalledTimes(2);
@@ -303,7 +314,6 @@ describe("wikiosEditingRouter canonical titles (plan 403)", () => {
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
       revisionId: "rev-1" as never,
-      extractedLinksCount: 0,
     });
   });
 
@@ -398,7 +408,6 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
     jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
       article: {} as never,
       revisionId: "rev-1" as never,
-      extractedLinksCount: 0,
     });
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue({
       wikitext: "old",
@@ -406,6 +415,7 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
       source: "ixwiki",
       timestamp: "",
       fromShadow: true,
+      parked: false,
     });
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
@@ -417,6 +427,11 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
           size: 1,
           byteDelta: 0,
           minor: false,
+          sha1: null,
+          parked: false,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
         {
           revid: "r1",
@@ -426,6 +441,11 @@ describe("wikiosEditingRouter rights (plan 409)", () => {
           size: 1,
           byteDelta: 0,
           minor: false,
+          sha1: null,
+          parked: false,
+          textDeleted: false,
+          commentDeleted: false,
+          userDeleted: false,
         },
       ],
       hasMore: false,

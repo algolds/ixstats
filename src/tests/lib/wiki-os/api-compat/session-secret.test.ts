@@ -45,7 +45,13 @@ describe.each([
     // the login token cannot be had (next test), so a login brings a made-up one: refused before any password is checked
     const direct = await call(wiki.deps, "", {
       method: "POST",
-      body: { action: "login", lgname: "Heku@Bot", lgpassword: "bot-secret", lgtoken: "0123456789abcdef0123456789abcdef+\\", format: "json" },
+      body: {
+        action: "login",
+        lgname: "Heku@Bot",
+        lgpassword: "bot-secret",
+        lgtoken: "0123456789abcdef0123456789abcdef+\\",
+        format: "json",
+      },
     });
     expect((direct.body as Body).error.code).toBe("sessionsecretmissing");
     expect((direct.body as Body).login).toBeUndefined();
@@ -64,16 +70,31 @@ describe.each([
   it("rejects a forged session cookie, whoever signed it: with no key, a guessed one or the old development key", async () => {
     const wiki = await makeWikiDeps(data());
     // a session that exists in the store: only a valid signature could have named it
-    wiki.deps.auth.sessions.set("known-session", { id: "known-session", botPasswordId: "bp1", userId: "u-heku", expiresAt: new Date("2030-01-01T00:00:00Z"), grants: ["basic", "editpage"] } as never);
+    (wiki.deps.auth as unknown as { sessions: Map<string, unknown> }).sessions.set(
+      "known-session",
+      {
+        id: "known-session",
+        botPasswordId: "bp1",
+        userId: "u-heku",
+        expiresAt: new Date("2030-01-01T00:00:00Z"),
+        grants: ["basic", "editpage"],
+      } as never
+    );
     for (const cookie of [
       "known-session.forged",
       forgedCookie("known-session", ""),
       forgedCookie("known-session", "wikios-api-development-secret-not-for-production"),
       forgedCookie("known-session", secret ?? ""),
     ]) {
-      const read = await call(wiki.deps, "action=query&meta=userinfo&format=json", { cookies: { wikios_api_session: cookie } });
+      const read = await call(wiki.deps, "action=query&meta=userinfo&format=json", {
+        cookies: { wikios_api_session: cookie },
+      });
       expect((read.body as Body).error?.code).toBe("sessionsecretmissing");
-      const write = await call(wiki.deps, "", { method: "POST", cookies: { wikios_api_session: cookie }, body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" } });
+      const write = await call(wiki.deps, "", {
+        method: "POST",
+        cookies: { wikios_api_session: cookie },
+        body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" },
+      });
       expect((write.body as Body).error?.code).toBe("sessionsecretmissing");
     }
     expect(wiki.calls.filter((c) => c.name === "saveWikitext")).toEqual([]);
@@ -81,7 +102,9 @@ describe.each([
 
   it("keeps anonymous reads working, and anonymous writes denied", async () => {
     const wiki = await makeWikiDeps(data());
-    const siteinfo = (await call(wiki.deps, "action=query&meta=siteinfo&siprop=general&format=json")).body as Body;
+    const siteinfo = (
+      await call(wiki.deps, "action=query&meta=siteinfo&siprop=general&format=json")
+    ).body as Body;
     expect(siteinfo.query.general.sitename).toBe("IxWiki");
     const pages = (await call(wiki.deps, "action=query&list=allpages&format=json")).body as Body;
     expect(pages.query.allpages).toHaveLength(1);
@@ -89,9 +112,15 @@ describe.each([
     expect(user.query.userinfo.id).toBe(0);
     const csrf = (await call(wiki.deps, "action=query&meta=tokens&format=json")).body as Body;
     expect(csrf.query.tokens.csrftoken).toBe("+\\");
-    const parsed = (await call(wiki.deps, "action=parse&page=Alpha&prop=wikitext&format=json")).body as Body;
+    const parsed = (await call(wiki.deps, "action=parse&page=Alpha&prop=wikitext&format=json"))
+      .body as Body;
     expect(parsed.error).toBeUndefined();
-    const write = (await call(wiki.deps, "", { method: "POST", body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" } })).body as Body;
+    const write = (
+      await call(wiki.deps, "", {
+        method: "POST",
+        body: { action: "edit", title: "Alpha", text: "x", token: "+\\", format: "json" },
+      })
+    ).body as Body;
     expect(write.error.code).toBe("writeapidenied");
   });
 
@@ -99,7 +128,8 @@ describe.each([
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     await jest.isolateModulesAsync(async () => {
       // a fresh copy of the module (its "already warned" flag starts false) over a fresh copy of the env mock
-      (require("~/env").env as { WIKIOS_API_SESSION_SECRET?: string }).WIKIOS_API_SESSION_SECRET = secret;
+      (require("~/env").env as { WIKIOS_API_SESSION_SECRET?: string }).WIKIOS_API_SESSION_SECRET =
+        secret;
       const fresh = await import("~/lib/wiki-os/api-compat/auth");
       expect(() => fresh.newLoginNonce(new Date())).toThrow(/sessionsecretmissing/);
       expect(() => fresh.readSessionCookie("a.b")).toThrow(/sessionsecretmissing/);
@@ -118,11 +148,20 @@ describe("with a session secret", () => {
     const me = (await wiki.bot.get({ action: "query", meta: "userinfo", format: "json" })) as Body;
     expect(me.query.userinfo.name).toBe("Heku");
 
-    const sessionId = Object.values(wiki.bot.jar).find((value) => value.includes("."))!.split(".")[0]!;
-    for (const key of ["wikios-api-development-secret-not-for-production", "another-key-of-more-than-32-characters!!"]) {
+    const sessionId = Object.values(wiki.bot.jar)
+      .find((value) => value.includes("."))!
+      .split(".")[0]!;
+    for (const key of [
+      "wikios-api-development-secret-not-for-production",
+      "another-key-of-more-than-32-characters!!",
+    ]) {
       const forged = new Bot(wiki.deps);
       forged.jar.wikios_api_session = forgedCookie(sessionId, key);
-      const read = (await forged.get({ action: "query", meta: "userinfo", format: "json" })) as Body;
+      const read = (await forged.get({
+        action: "query",
+        meta: "userinfo",
+        format: "json",
+      })) as Body;
       expect(read.query.userinfo.id).toBe(0); // anonymous: the forged cookie opened nothing
     }
   });

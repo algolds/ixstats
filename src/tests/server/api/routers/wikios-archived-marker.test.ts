@@ -54,10 +54,6 @@ const ctxOf = (role: string | null) =>
     db: { ...fakeWikiDb.db, card: { findMany: async () => [] } },
   }) as never;
 
-const call = <T extends Parameters<typeof createCallerFactory>[0]>(
-  router: T,
-  role: string | null
-) => createCallerFactory(router)(ctxOf(role));
 const fetchMock = jest.fn();
 const realFetch = global.fetch;
 
@@ -110,51 +106,85 @@ const READERS: Array<[string, (role: string | null, title: string) => Promise<un
   ["bridge.getArticleIntro", async (_r, t) => getArticleIntro(t, "ixwiki")],
   ["bridge.getInfobox", async (_r, t) => getInfobox(t, "ixwiki")],
   ["getArticleSummaryFromShadow", async (_r, t) => getArticleSummaryFromShadow(t, "ixwiki")],
-  ["wikios.getWikitext", (r, t) => call(wikiosPageContentRouter, r).getWikitext({ title: t })],
-  ["wikios.getIntro", (r, t) => call(wikiosPageContentRouter, r).getIntro({ title: t })],
-  ["wikios.getInfobox", (r, t) => call(wikiosPageContentRouter, r).getInfobox({ title: t })],
+  [
+    "wikios.getWikitext",
+    (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getWikitext({ title: t }),
+  ],
+  [
+    "wikios.getIntro",
+    (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getIntro({ title: t }),
+  ],
+  [
+    "wikios.getInfobox",
+    (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getInfobox({ title: t }),
+  ],
   [
     "wikios.getSectionContent",
-    (r, t) => call(wikiosPageContentRouter, r).getSectionContent({ title: t, section: "x" }),
+    (r, t) =>
+      createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getSectionContent({
+        title: t,
+        section: "x",
+      }),
   ],
   [
     "wikios.getArticleHtml",
-    (r, t) => call(wikiosPageContentRouter, r).getArticleHtml({ title: t }),
+    (r, t) => createCallerFactory(wikiosPageContentRouter)(ctxOf(r)).getArticleHtml({ title: t }),
   ],
-  ["wikios.getHistory", (r, t) => call(wikiosHistoryDiffRouter, r).getHistory({ title: t })],
-  ["wikios.getBacklinks", (r, t) => call(wikiosUserTalkRouter, r).getBacklinks({ title: t })],
+  [
+    "wikios.getHistory",
+    (r, t) => createCallerFactory(wikiosHistoryDiffRouter)(ctxOf(r)).getHistory({ title: t }),
+  ],
+  [
+    "wikios.getBacklinks",
+    (r, t) => createCallerFactory(wikiosUserTalkRouter)(ctxOf(r)).getBacklinks({ title: t }),
+  ],
   [
     "countries.getWikiIntro",
-    (r, t) => call(createTRPCRouter(wikiProcedures), r).getWikiIntro({ countryName: t }),
+    (r, t) =>
+      createCallerFactory(createTRPCRouter(wikiProcedures))(ctxOf(r)).getWikiIntro({
+        countryName: t,
+      }),
   ],
   [
     "countries.parseInfobox",
     (r, t) =>
-      call(createTRPCRouter(wikiProcedures), r).parseInfobox({ pageName: t, site: "ixwiki" }),
+      createCallerFactory(createTRPCRouter(wikiProcedures))(ctxOf(r)).parseInfobox({
+        pageName: t,
+        site: "ixwiki",
+      }),
   ],
   [
     "geo.getFeatureWikiIntro",
-    (r, t) => call(geoWikiRouter, r).getFeatureWikiIntro({ wikiPageTitle: t }),
+    (r, t) =>
+      createCallerFactory(geoWikiRouter)(ctxOf(r)).getFeatureWikiIntro({ wikiPageTitle: t }),
   ],
   [
     "wikiCache.getCountryProfile",
-    (r, t) => call(wikiCacheRouter, r).getCountryProfile({ countryName: t }),
+    (r, t) => createCallerFactory(wikiCacheRouter)(ctxOf(r)).getCountryProfile({ countryName: t }),
   ],
   [
     "cards.getWikiArticleExcerpt",
     (r, t) =>
-      call(cardsCollectionsRouter, r).getWikiArticleExcerpt({
+      createCallerFactory(cardsCollectionsRouter)(ctxOf(r)).getWikiArticleExcerpt({
         articleTitle: t,
         wikiSource: "ixwiki",
       }),
   ],
   [
     "loreCards.fetchLoreMetadata",
-    (r, t) => call(loreCardsWikiRouter, r).fetchLoreMetadata({ source: "ixwiki", pageTitle: t }),
+    (r, t) =>
+      createCallerFactory(loreCardsWikiRouter)(ctxOf(r)).fetchLoreMetadata({
+        source: "ixwiki",
+        pageTitle: t,
+      }),
   ],
   [
     "loreCards.searchLoreArchive",
-    (r) => call(loreCardsWikiRouter, r).searchLoreArchive({ source: "wikios", query: "land" }),
+    (r) =>
+      createCallerFactory(loreCardsWikiRouter)(ctxOf(r)).searchLoreArchive({
+        source: "wikios",
+        query: "land",
+      }),
   ],
 ];
 
@@ -184,7 +214,10 @@ describe("the same readers still serve a published page", () => {
     ["bridge.getArticleIntro", async () => getArticleIntro("Shown land", "ixwiki")],
     [
       "wikios.getWikitext",
-      async () => call(wikiosPageContentRouter, null).getWikitext({ title: "Shown land" }),
+      async () =>
+        createCallerFactory(wikiosPageContentRouter)(ctxOf(null)).getWikitext({
+          title: "Shown land",
+        }),
     ],
   ])("%s", async (_name, read) => {
     expect(JSON.stringify(await read())).toContain(SHOWN);
@@ -193,7 +226,7 @@ describe("the same readers still serve a published page", () => {
 
 describe("searchLoreArchive", () => {
   it("lists published pages and leaves deleted ones out", async () => {
-    const found = await call(loreCardsWikiRouter, null).searchLoreArchive({
+    const found = await createCallerFactory(loreCardsWikiRouter)(ctxOf(null)).searchLoreArchive({
       source: "wikios",
       query: "land",
     });
@@ -226,13 +259,19 @@ describe("a caller with deletedhistory", () => {
   it("still reads a deleted page where the plan says so, and only there", async () => {
     const admin = "admin";
     await expect(
-      call(wikiosPageContentRouter, admin).getWikitext({ title: "Hidden land" })
+      createCallerFactory(wikiosPageContentRouter)(ctxOf(admin)).getWikitext({
+        title: "Hidden land",
+      })
     ).resolves.toMatchObject({ wikitext: TEXT(HIDDEN) });
     await expect(
-      call(wikiosPageContentRouter, admin).getArticleHtml({ title: "Hidden land" })
+      createCallerFactory(wikiosPageContentRouter)(ctxOf(admin)).getArticleHtml({
+        title: "Hidden land",
+      })
     ).resolves.toMatchObject({ title: "Hidden land" });
     await expect(
-      call(wikiosPageContentRouter, admin).checkPageExists({ title: "Hidden land" })
+      createCallerFactory(wikiosPageContentRouter)(ctxOf(admin)).checkPageExists({
+        title: "Hidden land",
+      })
     ).resolves.toMatchObject({ exists: true });
     // the repository hides it unless asked
     await expect(ArticleRepository.findBySlug("Hidden land")).resolves.toBeNull();

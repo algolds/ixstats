@@ -13,12 +13,8 @@
  */
 
 import { db } from "~/server/db";
-import {
-  ArticleRepository,
-  type ImportedHead,
-  type ImportedRestriction,
-  type ImportPageInput,
-} from "../core/article-repository";
+import { ArticleRepository } from "../core/article-repository";
+import type { ImportedHead, ImportedRestriction, ImportPageInput } from "../core/article-import";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace } from "../core/title";
 import type { EditPolicyResult } from "../namespace-policy";

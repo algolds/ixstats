@@ -17,11 +17,8 @@ import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
-import {
-  ArticleRepository,
-  type ImportedHead,
-  type ImportPageInput,
-} from "../core/article-repository";
+import { ArticleRepository } from "../core/article-repository";
+import type { ImportedHead, ImportPageInput } from "../core/article-import";
 import { toRevisionRef } from "../core/domain-types";
 import { fillRevisionParents } from "../core/revision-parents";
 import { parseRedirect } from "../core/redirect";
@@ -43,6 +40,7 @@ import {
   plainTitle,
   type MediaWikiRevision,
 } from "./inbound-mediawiki";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
 const SOURCE = "ixwiki";
 const SUMMARY_COLUMN_LIMIT = 480;
@@ -493,7 +491,7 @@ async function markRepushSkipped(title: string): Promise<void> {
  * re-push, and clear the list. Resolves to the number of articles pushed.
  */
 export async function repushSkippedParks(): Promise<number> {
-  if (mirrorBotName() === null) return 0;
+  if (mirrorBotName() === null || !isWikiosV1Enabled()) return 0;
   const titles = await readRepushSkipped();
   if (titles.length === 0) return 0;
 
@@ -620,11 +618,15 @@ async function applyRevision(
 
   // A page WikiOS deleted comes back only when MediaWiki creates it anew; an edit of the old page is a conflict.
   const deletedHere = article?.status === "ARCHIVED";
-  const decision = deletedHere
+  const decided = deletedHere
     ? rev.parentid === 0
       ? "fast-forward"
       : "park"
     : await decideFor(rev, head);
+  // Before the cutover classic MediaWiki is the wiki of record (WikiOS takes no edits, v1-switch.ts): its
+  // revision becomes WikiOS's head, as before WikiOS v1, and nothing is parked or pushed back.
+  const decision =
+    decided === "park" && !deletedHere && !isWikiosV1Enabled() ? "fast-forward" : decided;
 
   if (decision === "echo") {
     if (article && head) await recordEcho(article, head, headRev, rev);

@@ -10,7 +10,9 @@ const mockWarning = jest.fn();
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ wikios: { getTemplatePreview: { fetch: (...args: unknown[]) => mockFetch(...args) } } }),
+    useUtils: () => ({
+      wikios: { getTemplatePreview: { fetch: (...args: unknown[]) => mockFetch(...args) } },
+    }),
     wikios: { previewWikitext: { useMutation: () => ({ mutateAsync: jest.fn() }) } },
   },
 }));
@@ -26,7 +28,7 @@ import { serializePlateToWikitext } from "~/components/wiki-os/editor/plate/wiki
 
 function setup() {
   const editor = createEditor();
-  editor.children = [{ type: "p", children: [{ text: "" }] }] as Descendant[];
+  editor.children = [{ type: "p", children: [{ text: "" }] }] as unknown as Descendant[];
   editor.selection = { anchor: { path: [0, 0], offset: 0 }, focus: { path: [0, 0], offset: 0 } };
   const setIsDirty = jest.fn();
   const view = renderHook(() =>
@@ -41,8 +43,7 @@ function setup() {
 
 const inserted = (editor: ReturnType<typeof createEditor>) =>
   editor.children.find((node) => (node as { type?: string }).type === "raw-html") as
-    | { name: string; html: string; wikitext: string; params: Record<string, string> }
-    | undefined;
+    { name: string; html: string; wikitext: string; params: Record<string, string> } | undefined;
 
 describe("handleInsertTemplate when the preview fails", () => {
   beforeEach(() => {
@@ -54,7 +55,9 @@ describe("handleInsertTemplate when the preview fails", () => {
     mockFetch.mockResolvedValue("<table><tr><td>Vesperia</td></tr></table>");
     const { editor, setIsDirty, view } = setup();
 
-    await act(() => view.result.current.handleInsertTemplate("Infobox country", { name: "Vesperia" }));
+    await act(() =>
+      view.result.current.handleInsertTemplate("Infobox country", { name: "Vesperia" })
+    );
 
     expect(inserted(editor)?.html).toContain("<table><tr><td>Vesperia</td></tr></table>");
     expect(inserted(editor)?.wikitext).toBe("{{Infobox country|name=Vesperia}}");
@@ -63,13 +66,21 @@ describe("handleInsertTemplate when the preview fails", () => {
   });
 
   it("inserts it with no preview, saves as its wikitext, and warns when the call is refused", async () => {
-    mockFetch.mockRejectedValue(Object.assign(new Error("Too many requests"), { data: { code: "TOO_MANY_REQUESTS" } }));
+    mockFetch.mockRejectedValue(
+      Object.assign(new Error("Too many requests"), { data: { code: "TOO_MANY_REQUESTS" } })
+    );
     const { editor, setIsDirty, view } = setup();
 
-    await act(() => view.result.current.handleInsertTemplate("Infobox country", { name: "Vesperia" }));
+    await act(() =>
+      view.result.current.handleInsertTemplate("Infobox country", { name: "Vesperia" })
+    );
 
     const node = inserted(editor);
-    expect(node).toMatchObject({ name: "Infobox country", html: "", wikitext: "{{Infobox country|name=Vesperia}}" });
+    expect(node).toMatchObject({
+      name: "Infobox country",
+      html: "",
+      wikitext: "{{Infobox country|name=Vesperia}}",
+    });
     expect(setIsDirty).toHaveBeenCalledWith(true);
     expect(mockWarning).toHaveBeenCalledWith(
       "Template inserted without a preview",
@@ -84,13 +95,17 @@ describe("handleInsertTemplate when the preview fails", () => {
   it("says to sign in when signed out, and gives the generic reason for any other failure", async () => {
     const { editor, view } = setup();
 
-    mockFetch.mockRejectedValueOnce(Object.assign(new Error("UNAUTHORIZED"), { data: { code: "UNAUTHORIZED" } }));
+    mockFetch.mockRejectedValueOnce(
+      Object.assign(new Error("UNAUTHORIZED"), { data: { code: "UNAUTHORIZED" } })
+    );
     await act(() => view.result.current.handleInsertTemplate("Flag", { 1: "Vesperia" }));
     expect(mockWarning.mock.calls[0]?.[1]).toContain("Sign in to preview templates.");
 
     mockFetch.mockRejectedValueOnce(new Error("network down"));
     await act(() => view.result.current.handleInsertTemplate("Flag", { 1: "Vesperia" }));
     expect(mockWarning.mock.calls[1]?.[1]).toContain("The preview service did not answer.");
-    expect(editor.children.filter((node) => (node as { type?: string }).type === "raw-html")).toHaveLength(2);
+    expect(
+      editor.children.filter((node) => (node as { type?: string }).type === "raw-html")
+    ).toHaveLength(2);
   });
 });

@@ -16,10 +16,14 @@ interface PageImage {
 const usable = (img: PageImage | undefined): img is PageImage =>
   !!img && !!(img.thumbUrl || img.url);
 
-/** The first real article image: an eligible page image, else one embedded in the intro text. */
-export function useWikiLeadImage(title: string, introText: string): string | null {
+/** The first real article image of `title` on `wiki`: an eligible page image, else one embedded in the intro text. */
+export function useWikiLeadImage(
+  title: string,
+  introText: string,
+  wiki: "ixwiki" | "iiwiki"
+): string | null {
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title },
+    { title, wiki },
     { enabled: !!title, staleTime: 30 * 60_000 }
   );
 

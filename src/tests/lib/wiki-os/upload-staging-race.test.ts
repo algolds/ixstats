@@ -50,6 +50,7 @@ import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { STAGED_FILE_LOCK_NAMESPACE } from "~/lib/wiki-os/services/staged-uploads";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
+import type { MirrorJob } from "~/lib/wiki-os/services/mirror-queue";
 import { isStaged, releaseStaged } from "~/lib/wiki-os/services/upload-staging";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
@@ -96,7 +97,9 @@ const upload = (filename: string, over: { ignoreWarnings?: boolean } = {}) =>
   uploadFile({ ctx, bytes: BYTES, filename, ...over });
 
 const jobsOf = (title: string) =>
-  tables.wikiMirrorJob.rows.filter((job) => job.kind === "upload" && job.title === title);
+  tables.wikiMirrorJob.rows.filter(
+    (job) => job.kind === "upload" && job.title === title
+  ) as unknown as MirrorJob[];
 
 /** A held-back gate: `wait` resolves when `open` is called. */
 function gate() {

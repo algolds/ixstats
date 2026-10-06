@@ -178,7 +178,7 @@ function LineContent({ line }: { line: DiffLine }) {
         key={start}
         className={cn(
           "rounded-sm text-inherit",
-          line.type === "added" ? "bg-emerald-500/30" : "bg-red-500/30"
+          line.type === "added" ? "bg-green/30" : "bg-red/30"
         )}
       >
         {line.content.slice(start, end)}

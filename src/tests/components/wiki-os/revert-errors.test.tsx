@@ -71,7 +71,7 @@ const revisions = ["r2", "r1"].map((id, index) => ({
 }));
 
 const renderTimeline = () =>
-  render(<ScrubbableRevisionTimeline title="Foo" slug="foo" revisions={revisions} />);
+  render(<ScrubbableRevisionTimeline title="Foo" revisions={revisions} />);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -99,7 +99,7 @@ describe("ScrubbableRevisionTimeline revert and rollback errors", () => {
     fireEvent.click(screen.getByRole("button", { name: /Revert to this version/ }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(revertError.message);
-    expect(screen.getByRole("button", { name: "Confirm Revert" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm revert" })).toBeInTheDocument();
     expect(revertReset).toHaveBeenCalled();
   });
 });

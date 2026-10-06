@@ -135,7 +135,7 @@ test("a sister wiki's page that is not there returns null when not in DB", async
 });
 
 test("history read-through serves local revisions when present", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindMany.mockResolvedValue([
     {
       id: "rev-1",
@@ -191,7 +191,7 @@ test("history asks for one more revision than the page to tell whether an older 
     byteDelta: 1,
     sha1: null,
   });
-  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindMany.mockResolvedValue([row(3), row(2), row(1)]);
 
   const res = await getArticleHistoryShadow("Foo", 2);
@@ -206,7 +206,7 @@ test("history asks for one more revision than the page to tell whether an older 
 });
 
 test("a page after a cursor is answered from PostgreSQL only, empty past the oldest revision", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindFirst.mockResolvedValue({ id: "rev-1" });
   mockWikiRevisionFindMany.mockResolvedValue([]);
 
@@ -217,7 +217,7 @@ test("a page after a cursor is answered from PostgreSQL only, empty past the old
 });
 
 test("history lists ask for parked revisions and get them flagged; everything else never sees them", async () => {
-  mockWikiArticleFindFirst.mockResolvedValue(row({ id: "art1" }));
+  mockWikiArticleFindFirst.mockResolvedValue({ id: "art1" });
   mockWikiRevisionFindMany.mockResolvedValue([
     {
       id: "rev-2",
@@ -278,7 +278,10 @@ describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and
   it("shares one in-flight request between concurrent views", async () => {
     mockFetchAuthors.mockResolvedValue(mwData("ConcurrentPage"));
 
-    await Promise.all([getArticleAuthors("ConcurrentPage", "iiwiki"), getArticleAuthors("ConcurrentPage", "iiwiki")]);
+    await Promise.all([
+      getArticleAuthors("ConcurrentPage", "iiwiki"),
+      getArticleAuthors("ConcurrentPage", "iiwiki"),
+    ]);
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(1);
   });
@@ -325,15 +328,24 @@ describe("getArticleAuthors: a sister wiki's lookup is cached, single-flight and
     );
     mockWikiArticleFindFirst.mockResolvedValue(null);
 
-    const lookups = Array.from({ length: 7 }, (_, n) => getArticleAuthors(`Fan out ${n}`, "iiwiki"));
+    const lookups = Array.from({ length: 7 }, (_, n) =>
+      getArticleAuthors(`Fan out ${n}`, "iiwiki")
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mockFetchAuthors).toHaveBeenCalledTimes(6);
     releases.forEach((release) => release());
     const results = await Promise.all(lookups);
-    expect(results.slice(0, 6).every((r) => r.creator?.username?.startsWith("creator-of-"))).toBe(
-      true
-    );
+    expect(
+      results
+        .slice(0, 6)
+        .every(
+          (r) =>
+            typeof r.creator === "object" &&
+            r.creator !== null &&
+            r.creator.username.startsWith("creator-of-")
+        )
+    ).toBe(true);
     expect(results[6]).toMatchObject({ creator: null, totalContributors: 0 });
   });
 

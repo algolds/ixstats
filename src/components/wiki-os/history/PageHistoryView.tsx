@@ -125,7 +125,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
               {loadingOlder ? "Loading…" : `Older ${HISTORY_PAGE}`}
             </button>
             {olderError && (
-              <p role="alert" className="text-xs font-medium text-red-400">
+              <p role="alert" className="text-red text-xs font-medium">
                 {olderError}
               </p>
             )}

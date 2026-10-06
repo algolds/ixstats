@@ -36,7 +36,7 @@ describe("ParkedBadge", () => {
   it("says the edit is not live, in semantic Facet tokens (no hard-coded palette)", () => {
     render(<ParkedBadge />);
 
-    const badge = screen.getByText("conflict — not live");
+    const badge = screen.getByText("conflict, not live");
     expect(badge.className).toContain("text-destructive");
     expect(badge.className).toContain("border-destructive/40");
     expect(badge.className).not.toMatch(/(?:rose|red|amber)-\d/);
@@ -49,18 +49,17 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[revision("9001", "carol", true), revision("r2", "bob"), revision("r1", "amy")]}
       />
     );
 
     // Revision A (index 0) is the parked one and carries the badge; Revision B is not badged.
-    expect(screen.getAllByText("conflict — not live")).toHaveLength(1);
+    expect(screen.getAllByText("conflict, not live")).toHaveLength(1);
     // The picker of the comparison revision names it too (a Facet Select: its options show once open).
     fireEvent.keyDown(screen.getByRole("combobox", { name: "Compare revision" }), {
       key: "ArrowDown",
     });
-    expect(screen.getByRole("option", { name: /Latest.*conflict — not live/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Latest.*conflict, not live/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /r2 • bob/ }).textContent).not.toContain("conflict");
   });
 
@@ -68,7 +67,6 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[revision("9001", "carol", true), revision("r2", "bob"), revision("r1", "bob")]}
       />
     );
@@ -81,7 +79,6 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[revision("9001", "bob", true), revision("r2", "bob"), revision("r1", "amy")]}
       />
     );
@@ -93,7 +90,6 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         // the revision compared with (index 1) is the parked one
         revisions={[revision("r3", "bob"), revision("9001", "carol", true), revision("r1", "amy")]}
       />
@@ -107,7 +103,6 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[revision("r3", "bob"), revision("r2", "carol"), revision("r1", "amy")]}
       />
     );
@@ -123,7 +118,6 @@ describe("ScrubbableRevisionTimeline with a hidden author (MediaWiki revision de
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[hidden("r3"), hidden("r2"), revision("r1", "amy")]}
       />
     );
@@ -136,7 +130,6 @@ describe("ScrubbableRevisionTimeline with a hidden author (MediaWiki revision de
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={[revision("r3", "bob"), revision("r2", "bob"), revision("r1", "amy")]}
       />
     );

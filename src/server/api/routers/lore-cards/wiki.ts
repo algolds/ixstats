@@ -141,31 +141,18 @@ async function searchLocalLore(db: PrismaClient, query: string) {
 
 type SearchHit = { title: string; pageId?: number | string; length?: number };
 
-/** Runs `load` and logs a warning instead of failing; `fallback` stands in for the result. */
 type LegacyPreview = Awaited<
   ReturnType<typeof wikiLoreCardGenerator.fetchArticleMetadataBatch>
 >[number] & { excerpt?: string; description?: string; rarity?: string; marketValue?: number };
 
-async function warnOnError<T>(label: string, fallback: T, load: () => Promise<T>): Promise<T> {
-  try {
-    return await load();
-  } catch (e) {
-    console.warn(`[Lore Cards] ${label}:`, e);
-    return fallback;
-  }
-}
-
-/**
- * Search hits for a query: the bridge search. IxWiki's search is native (`searchPages`); only a sister
- * wiki that returned nothing falls back to its own opensearch, with the correct User-Agent.
- */
+/** Search hits: the bridge search (IxWiki's is native); an iiwiki query that found nothing asks iiwiki's opensearch. */
 async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit[]> {
-  const found = await warnOnError("searchPages error", [] as SearchHit[], () =>
+  const found = await orFallback("searchPages error", [] as SearchHit[], () =>
     searchPages(query, 25, wikiSrc)
   );
   if (found.length > 0 || wikiSrc !== "iiwiki") return found;
 
-  return warnOnError("HTTP search fallback error", [] as SearchHit[], async () => {
+  return orFallback("HTTP search fallback error", [] as SearchHit[], async () => {
     const res = await fetch(
       `${getMediaWikiApiUrl(wikiSrc)}?action=opensearch&search=${encodeURIComponent(query)}&limit=25&format=json`,
       { headers: { "User-Agent": DEFAULT_USER_AGENT }, signal: AbortSignal.timeout(6000) }
@@ -180,7 +167,7 @@ async function searchWiki(query: string, wikiSrc: WikiSource): Promise<SearchHit
 /** Recently changed article titles, used as the default list when there is no query. */
 async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
   if (wikiSrc === "iiwiki") {
-    return warnOnError("IIWiki recentchanges fetch error", [] as string[], async () => {
+    return orFallback("IIWiki recentchanges fetch error", [] as string[], async () => {
       const res = await fetch(
         `${getMediaWikiApiUrl("iiwiki")}?action=query&list=recentchanges&rclimit=30&rcnamespace=0&format=json`,
         { headers: { "User-Agent": DEFAULT_USER_AGENT } }
@@ -191,7 +178,7 @@ async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
       return [...new Set(changes.flatMap((r) => r.title || []))].filter(isArticleTitle);
     });
   }
-  return warnOnError("getRecentChanges error", [] as string[], async () => {
+  return orFallback("getRecentChanges error", [] as string[], async () => {
     const recents = await getRecentChanges(30);
     return [...new Set((recents ?? []).map((r) => r.title).filter((t) => t && isArticleTitle(t)))];
   });
@@ -301,7 +288,7 @@ async function searchRemoteLore(query: string, wikiSrc: WikiSource) {
   const titlesToFetch = results.map((r) => r.title).filter(Boolean);
   const previews =
     titlesToFetch.length > 0
-      ? await warnOnError("Error batch fetching metadata previews", [], () =>
+      ? await orFallback("Error batch fetching metadata previews", [], () =>
           wikiLoreCardGenerator.fetchArticleMetadataBatch(titlesToFetch.slice(0, 25), wikiSrc)
         )
       : [];

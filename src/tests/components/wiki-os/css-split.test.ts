@@ -123,7 +123,9 @@ describe("fonts", () => {
     expect(typography).toContain("Azeret Mono-500.ttf");
   });
 
-  const fontsPresent = existsSync(join(root, "public/fonts"));
+  // The licensed font files are not tracked (public/fonts holds only the DejaVu fallbacks): the check runs
+  // on a checkout the font pack has been copied into, which has the brand font National.
+  const fontsPresent = existsSync(join(root, "public/fonts/National-Regular.otf"));
   (fontsPresent ? it : it.skip)(
     "every /fonts file typography.css requests is in public/fonts",
     () => {

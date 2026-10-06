@@ -487,7 +487,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       });
       render(<Reader title="Nowhere" />);
 
-      expect(screen.getByText(/WikiOS is busy — retrying/)).toBeInTheDocument();
+      expect(screen.getByText(/WikiOS is busy, retrying/)).toBeInTheDocument();
     });
 
     it("shows plain loading before any failure, and still not-found for any other error", () => {

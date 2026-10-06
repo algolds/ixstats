@@ -42,7 +42,7 @@ describe("MediaAssetService MD5 Shard Path Calculation", () => {
 describe("recordUpload", () => {
   it("creates the row served from WikiOS, with no made-up blurhash and no thumbnail", async () => {
     const asset = await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Flag of Eurth.png", "s".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Flag of Eurth.png", "s".repeat(31)))
     );
 
     expect(asset).toMatchObject({
@@ -72,7 +72,7 @@ describe("recordUpload", () => {
     });
 
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Old.png", "n".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Old.png", "n".repeat(31)))
     );
 
     expect(tables.wikiAsset.rows).toHaveLength(1);
@@ -86,10 +86,10 @@ describe("recordUpload", () => {
 
   it("gives a name whose slug another file took a slug of its own", async () => {
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Flag.png", "a".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Flag.png", "a".repeat(31)))
     );
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Flag.PNG", "b".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Flag.PNG", "b".repeat(31)))
     );
 
     const slugs = tables.wikiAsset.rows.map((row) => row.slug);
@@ -102,7 +102,7 @@ describe("recordUpload", () => {
 describe("markMirrored", () => {
   it("switches the asset to MediaWiki's images path once MediaWiki holds that version", async () => {
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Flag of Eurth.png", "v".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Flag of Eurth.png", "v".repeat(31)))
     );
 
     const switched = await MediaAssetService.markMirrored("Flag of Eurth.png", "v".repeat(31));
@@ -117,7 +117,7 @@ describe("markMirrored", () => {
 
   it("leaves an asset that has moved on to a newer version, which still waits for its own job", async () => {
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("Flag.png", "2".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("Flag.png", "2".repeat(31)))
     );
 
     const switched = await MediaAssetService.markMirrored("Flag.png", "1".repeat(31));
@@ -132,13 +132,13 @@ describe("markMirrored", () => {
 describe("findDuplicates", () => {
   it("lists the other names that hold the same content", async () => {
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("A.png", "d".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("A.png", "d".repeat(31)))
     );
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("B.png", "d".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("B.png", "d".repeat(31)))
     );
     await db.$transaction((tx) =>
-      MediaAssetService.recordUpload(tx, upload("C.png", "e".repeat(31)))
+      MediaAssetService.recordUpload(tx as never, upload("C.png", "e".repeat(31)))
     );
 
     expect(await MediaAssetService.findDuplicates("d".repeat(31), "A.png")).toEqual(["B.png"]);

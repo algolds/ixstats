@@ -2,7 +2,7 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 //
 // Plan 418 (A15): the Lorewards sync reads the OOL pages from Postgres alone. A page WikiOS does not hold is
-// skipped (there is no MediaWiki fallback).
+// skipped (there is no MediaWiki fallback) once WikiOS v1 is on; before the cutover it is read from MediaWiki.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
@@ -71,5 +71,17 @@ describe("the OOL pages", () => {
 
     expect(await syncFromMainOOLPage()).toBe(0);
     expect(guard.calls()).toEqual([]);
+  });
+
+  it("before the WikiOS v1 cutover, a page WikiOS lacks is read from MediaWiki, as before v1", async () => {
+    const was = process.env.WIKIOS_V1_ENABLED;
+    process.env.WIKIOS_V1_ENABLED = "";
+    try {
+      expect(await syncFromMainOOLPage()).toBe(0); // the guard's MediaWiki answers throw: nothing to sync
+      expect(guard.ixwikiCalls()).toHaveLength(1);
+      expect(guard.ixwikiCalls()[0]).toContain("titles=IxWiki%3AOOL");
+    } finally {
+      process.env.WIKIOS_V1_ENABLED = was;
+    }
   });
 });

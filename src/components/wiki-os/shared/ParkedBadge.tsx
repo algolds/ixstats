@@ -12,7 +12,7 @@ export function ParkedBadge({ className }: { className?: string }) {
       title="Made in MediaWiki on an older version of the page: kept in the history, not the live text"
       className={cn("border-destructive/40 text-destructive px-1.5 py-0 font-semibold", className)}
     >
-      conflict — not live
+      conflict, not live
     </Badge>
   );
 }

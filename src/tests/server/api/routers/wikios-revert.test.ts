@@ -67,7 +67,12 @@ const createCaller = createCallerFactory(wikiosEditingRouter);
 const userCtx = () =>
   createMockRouterContext({
     auth: { userId: "user_1" },
-    user: { id: "db1", clerkUserId: "user_1", wikiUsername: "Linked", role: { name: "user", level: 100 } },
+    user: {
+      id: "db1",
+      clerkUserId: "user_1",
+      wikiUsername: "Linked",
+      role: { name: "user", level: 100 },
+    },
   });
 
 const adminCtx = () =>
@@ -103,25 +108,29 @@ const historyEntry = (revid: string, user: string) => ({
   size: 1,
   byteDelta: 0,
   minor: false,
+  sha1: null,
+  parked: false,
+  textDeleted: false,
+  commentDeleted: false,
+  userDeleted: false,
 });
 
 /** Explicit group memberships of the signed-in user (plan 409: a rollback needs the rollback right). */
 const mockGroups = (...groups: string[]) =>
-  (db as unknown as { wikiUserGroup: { findMany: jest.Mock } }).wikiUserGroup.findMany.mockResolvedValue(
-    groups.map((group) => ({ group, expiresAt: null }))
-  );
+  (
+    db as unknown as { wikiUserGroup: { findMany: jest.Mock } }
+  ).wikiUserGroup.findMany.mockResolvedValue(groups.map((group) => ({ group, expiresAt: null })));
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockGroups();
-  (db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }).wikiAccountLink.findFirst.mockResolvedValue(
-    { username: "Linked" }
-  );
+  (
+    db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }
+  ).wikiAccountLink.findFirst.mockResolvedValue({ username: "Linked" });
   jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(currentArticle("current text"));
   jest.mocked(ArticleRepository.saveArticle).mockResolvedValue({
     article: {} as never,
     revisionId: "rev-new" as never,
-    extractedLinksCount: 0,
   });
   jest.mocked(getArticleHistoryShadow).mockResolvedValue({
     revisions: [historyEntry("r2", "bob"), historyEntry("r1", "amy")],
@@ -155,7 +164,9 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
   });
 
   it("refuses a parked revision (a conflicting MediaWiki edit that never went live): the head is unchanged", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("parked text", "Foo bar", true));
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValue(revision("parked text", "Foo bar", true));
 
     await expect(
       createCaller(userCtx() as never).revertToRevision({ title: "Foo bar", revid: "9001" })
@@ -262,7 +273,9 @@ describe("wikiosEditingRouter.rollback (plan 402)", () => {
   });
 
   it("refuses a parked target revision, as a revert does (the history it reads leaves parked ones out; this is the second line)", async () => {
-    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision("parked text", "Foo bar", true));
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValue(revision("parked text", "Foo bar", true));
 
     await expect(
       createCaller(userCtx() as never).rollback({ title: "Foo bar" })

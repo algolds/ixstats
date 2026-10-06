@@ -38,42 +38,30 @@ describe("one chunk each", () => {
     );
   });
 
-  it("the search and create-page dialogs are fetched when first opened", () => {
+  it("the create-page dialog is fetched when first opened", () => {
     const file = "src/components/wiki-os/shared/WikiOSLayout.tsx";
-    expectDynamic(file, "SearchModal", "./SearchModal");
     expectDynamic(file, "CreatePageModal", "./CreatePageModal");
-    expect(read(file)).toContain("useMountOnFirstOpen(searchOpen)");
+    expect(read(file)).toContain("useMountOnFirstOpen(createPageOpen)");
   });
 
   it("the full-screen player is fetched when first opened", () => {
     expectDynamic("src/components/media/MiniPlayer.tsx", "FullPlayer", "./FullPlayer");
   });
 
-  it("the margin suite, TOC drawer, lightbox modal and stash manager are separate chunks", () => {
-    const renderer = "src/components/wiki-os/reader/ArticleRenderer.tsx";
-    expectDynamic(renderer, "WikiMarginDrawer", "~/components/wiki-os/margin/WikiMarginDrawer");
-    expectDynamic(renderer, "SelectionCapsule", "~/components/wiki-os/margin/SelectionCapsule");
-    expectDynamic(renderer, "MarginGutterPins", "~/components/wiki-os/margin/MarginGutterPins");
-    expectDynamic(
-      renderer,
-      "MarginShareModal",
-      "~/components/wiki-os/margin/modals/MarginShareModal"
-    );
-    expectDynamic(
-      renderer,
-      "AppleBooksTocDrawer",
-      "~/components/wiki-os/reader/AppleBooksTocDrawer"
-    );
-    expect(read(renderer)).not.toContain('from "~/components/wiki-os/margin"');
+  it("the margin suite and the lightbox modal are separate chunks", () => {
+    // the reader takes its lazy pieces from article-lazy, which loads each with next/dynamic
+    const lazy = "src/components/wiki-os/reader/article-lazy.tsx";
+    expectDynamic(lazy, "WikiMarginDrawer", "~/components/wiki-os/margin/WikiMarginDrawer");
+    expectDynamic(lazy, "SelectionCapsule", "~/components/wiki-os/margin/SelectionCapsule");
+    expectDynamic(lazy, "MarginGutterPins", "~/components/wiki-os/margin/MarginGutterPins");
+    expectDynamic(lazy, "MarginShareModal", "~/components/wiki-os/margin/modals/MarginShareModal");
+    const renderer = read("src/components/wiki-os/reader/ArticleRenderer.tsx");
+    expect(renderer).toContain('from "./article-lazy"');
+    expect(renderer).not.toMatch(/^import (?!type )[^;]*from "~\/components\/wiki-os\/margin/m);
     expectDynamic(
       "src/components/wiki-os/reader/ImageLightbox.tsx",
       "ImageLightboxModal",
       "./ImageLightboxModal"
-    );
-    expectDynamic(
-      "src/components/wiki-os/reader/StashButton.tsx",
-      "StashManagerModal",
-      "./StashManagerModal"
     );
   });
 

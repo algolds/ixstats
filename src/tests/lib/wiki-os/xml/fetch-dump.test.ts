@@ -74,6 +74,8 @@ function fakeWiki(pages: FakePage[], options: { allPagesChunk?: number } = {}) {
             model: "wikitext",
             format: "text/x-wiki",
             text: `current text of ${title}`,
+            textDeleted: false,
+            commentDeleted: false,
           },
         ],
       });

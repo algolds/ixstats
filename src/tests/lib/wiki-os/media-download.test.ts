@@ -17,7 +17,7 @@ afterAll(() => {
   globalThis.fetch = realFetch;
 });
 
-const bytesOf = (n: number, fill = 7): Uint8Array => new Uint8Array(n).fill(fill);
+const bytesOf = (n: number, fill = 7): Uint8Array<ArrayBuffer> => new Uint8Array(n).fill(fill);
 
 /** A response whose body arrives in 1 MB chunks, so a size cap has to act on the stream. */
 const streamed = (total: number, headers: Record<string, string> = {}): Response => {
@@ -84,7 +84,10 @@ describe("downloadMedia: which hosts it will fetch", () => {
   it("follows a redirect between allowlisted hosts", async () => {
     fetchMock
       .mockResolvedValueOnce(
-        new Response(null, { status: 301, headers: { Location: "https://upload.wikimedia.org/x.png" } })
+        new Response(null, {
+          status: 301,
+          headers: { Location: "https://upload.wikimedia.org/x.png" },
+        })
       )
       .mockResolvedValueOnce(new Response(bytesOf(3), { status: 200 }));
 

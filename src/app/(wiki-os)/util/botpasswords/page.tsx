@@ -186,7 +186,7 @@ export default function BotPasswordsPage() {
                     onCheckedChange={(value) => toggle(row.grant, value === true)}
                   />
                   <span>
-                    <code className="font-mono text-xs">{row.grant}</code> — {row.description}
+                    <code className="font-mono text-xs">{row.grant}</code>: {row.description}
                   </span>
                 </Label>
               ))}

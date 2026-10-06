@@ -97,6 +97,7 @@ const revision = {
   source: "ixwiki",
   timestamp: "2026-06-01T00:00:00.000Z",
   fromShadow: true as const,
+  parked: false,
 };
 
 beforeEach(() => {
@@ -123,6 +124,10 @@ beforeEach(() => {
         byteDelta: 0,
         minor: false,
         sha1: null,
+        parked: false,
+        textDeleted: false,
+        commentDeleted: false,
+        userDeleted: false,
       },
       {
         revid: "r1",
@@ -133,6 +138,10 @@ beforeEach(() => {
         byteDelta: 0,
         minor: false,
         sha1: null,
+        parked: false,
+        textDeleted: false,
+        commentDeleted: false,
+        userDeleted: false,
       },
     ],
     hasMore: false,

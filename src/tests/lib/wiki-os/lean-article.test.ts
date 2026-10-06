@@ -44,8 +44,12 @@ describe("markers", () => {
 });
 
 describe("the server's stash", () => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
   it("hands the SSR render the real HTML of a marker, and passes real HTML through", () => {
     const token = stashLeanArticle({ body: BODY, infobox: "<table></table>", notices: null });

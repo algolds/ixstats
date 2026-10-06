@@ -54,7 +54,6 @@ describe("ScrubbableRevisionTimeline diff requests", () => {
     render(
       <ScrubbableRevisionTimeline
         title="Foo"
-        slug="foo"
         revisions={["r6", "r5", "r4", "r3", "r2", "r1"].map(revision)}
       />
     );

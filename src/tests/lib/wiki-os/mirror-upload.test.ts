@@ -88,7 +88,7 @@ async function stagedUpload(bytes: Uint8Array) {
   const { base36 } = hashFile(bytes);
   await stageBytes(base36, bytes);
   await db.$transaction((tx) =>
-    MediaAssetService.recordUpload(tx, {
+    MediaAssetService.recordUpload(tx as never, {
       name: "Flag of Eurth.png",
       mimeType: "image/png",
       sizeBytes: bytes.length,
