@@ -42,6 +42,7 @@ All domain logic is partitioned into dedicated subpackages in `src/lib/<domain>/
 - **`src/lib/auth/`** — CASL permission definitions, ability builders, Clerk/Prisma user management, and system-owner security constants.
 - **`src/lib/websocket/`** — Real-time Socket.IO servers, reconnection managers, marketplace streams, and intelligence broadcasts.
 - **`src/lib/logging/`** — Security audit logs, user action tracking, and database logging middleware.
+- **`src/lib/llm/`** — OpenAI-compatible chat-completions client and the LLM host allowlist (SSRF guard), used by sports commentary.
 
 ### Simulation Engines & Mechanics
 - **`src/lib/economy/`** — GDP growth models, tax calculators, fiscal policy engines, currency converters, auctions, and trade logistics.

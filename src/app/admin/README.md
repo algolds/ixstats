@@ -13,7 +13,7 @@ The admin console at `/admin` is the operator surface for IxStats. It exposes **
 - Curate dynamic game content: government / economic components, economic archetypes, diplomatic options & scenarios, military equipment, NPC personalities, intelligence templates, national issues
 - Manage cards/vault (incl. NationStates card import and lore card batch generation), polls, blurbs, achievements/awards, and notifications
 - Run WikiOS tooling: wiki link status, LoreScanner, Commons image repository, Loreward weights and article awards
-- Labs panels: MyLeague, Narrator, Onoma, Facet lab
+- Labs panels: MyLeague, Onoma, Facet lab
 
 ## Admin Directories
 All routes below render `AdminRouter`; the section panel is chosen by `AdminRouter.renderContent()`. Only `maps/editor` and `maps/style-editor` render their own page content.
@@ -55,13 +55,12 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 | `lorescanner/` | WikiOS bulk wiki-link scanner |
 | `image-repo/` | WikiOS Commons repository / flag cache |
 | `myleague/` | MyLeague admin panel (Labs) |
-| `narrator/` | Narrator admin panel (Labs) |
 | `onoma/` | Onoma admin panel (Labs) |
 | `facet-lab/` | Facet design-system lab (`facet-materials-lab/FacetLabPanel`) |
 
 `calculations/` has a `page.tsx` (the formula editor and simulator), so `/admin/calculations` loads directly. Directories without a `page.tsx`: `facet-materials-lab/` (lab components), `wiki/components/` (sections used by `wikios-settings`, `lorescanner`, `achievements`), `_components/`, `_hooks/`.
 
-> Removed since the June README: `settings/`, `system-validation/`, `user-logs/`, `worldstudio/`, `card-packs/`, `lorewards/`, `user-management/`, `wiki/` (page), `facet-materials-lab/` (page), `studio/`, and earlier `tax-components/`, `card-balancer/`, `crisis-events/`, `ns-sync/`, `lore-cards/`. Added: `narrator/`, `onoma/`.
+> Removed since the June README: `settings/`, `system-validation/`, `user-logs/`, `worldstudio/`, `card-packs/`, `lorewards/`, `user-management/`, `wiki/` (page), `facet-materials-lab/` (page), `studio/`, and earlier `tax-components/`, `card-balancer/`, `crisis-events/`, `ns-sync/`, `lore-cards/`. Added: `onoma/` (`narrator/` was added and then removed on 2026-10-06, D10).
 
 ## Architecture & Auth
 

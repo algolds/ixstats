@@ -122,16 +122,6 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
-    name: "scheduled-changes",
-    defaultSchedule: "*/10 * * * *",
-    lockName: "scheduled-changes",
-    timeoutMs: 10 * MINUTE,
-    modulePath: "~/server/modules/scheduled-changes/service",
-    exportName: "applyDueScheduledChanges",
-    load: async () =>
-      (await import("~/server/modules/scheduled-changes/service")).applyDueScheduledChanges,
-  },
-  {
     name: "elections",
     defaultSchedule: "*/10 * * * *",
     lockName: "elections",

@@ -1,7 +1,6 @@
 "use client";
 
 import { formatExactCurrency, formatNumber } from "~/lib/utils";
-import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Slider } from "~/components/ui/slider";
@@ -51,8 +50,6 @@ export function BudgetAllocationForm({
   isCollapsed = false,
   onToggleCollapse,
 }: BudgetAllocationFormProps) {
-  const { isLocked } = usePendingLocks();
-
   const handleChange = <K extends keyof BudgetAllocationInput>(
     field: K,
     value: BudgetAllocationInput[K]
@@ -125,7 +122,7 @@ export function BudgetAllocationForm({
                 type="number"
                 value={data.allocatedAmount || ""}
                 onChange={(e) => handleChange("allocatedAmount", parseFloat(e.target.value) || 0)}
-                disabled={isReadOnly || isLocked("budgetAllocations")}
+                disabled={isReadOnly}
                 min="0"
                 step="1000000"
                 className={cn(INLINE_NUMBER, "pr-2 pl-6")}
@@ -143,7 +140,7 @@ export function BudgetAllocationForm({
                   min={0}
                   max={50}
                   step={0.1}
-                  disabled={isReadOnly || isLocked("budgetAllocations")}
+                  disabled={isReadOnly}
                   aria-labelledby={`share-${data.departmentId}`}
                   className="w-full cursor-pointer py-1"
                 />
@@ -155,7 +152,7 @@ export function BudgetAllocationForm({
                   onChange={(e) =>
                     handleChange("allocatedPercent", parseFloat(e.target.value) || 0)
                   }
-                  disabled={isReadOnly || isLocked("budgetAllocations")}
+                  disabled={isReadOnly}
                   min="0"
                   max="100"
                   step="0.1"

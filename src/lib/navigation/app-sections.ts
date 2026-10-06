@@ -527,7 +527,6 @@ export const APPS: readonly AppDefinition[] = [
         ["membership", "Membership tiers", "/admin/membership", Medal],
       ]),
       ...adminGroup("Labs", [
-        ["narrator", "AI narrator", "/admin/narrator", ChatBubble],
         ["onoma", "Onoma", "/admin/onoma", Translate],
         ["facet-lab", "Facet lab", "/admin/facet-lab", Component],
       ]),

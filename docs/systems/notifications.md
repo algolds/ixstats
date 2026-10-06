@@ -58,7 +58,7 @@ cache. An event with no config row is enabled. Two places check it:
 
 - each hook in `hooks.ts` checks its own key (`onTaxSystemChange`, …);
 - `notificationAPI.create` checks `` `${source}Notification` `` when `source` is set. For example `source: "budgetYear"` →
-  `budgetYearNotification`. Sources with no registry entry (for example `scheduled-changes`) are always enabled.
+  `budgetYearNotification`. Sources with no registry entry are always enabled.
 
 A suppressed `create` throws; callers wrap it in try/catch.
 
@@ -101,7 +101,7 @@ notifications, `high` drops `low` and `medium`. A notification with no priority 
 Server writers include achievements, auctions and card market, budget year rollover, elections, diplomacy (embassies,
 alliances, policies, influence), follows, forum, government, legislation, meetings, national issues, polls,
 quick actions, security, tax system, ThinkPages posts, ThinkTanks, trading offers, country linking, Vault admin and
-daily claims, messaging, scheduled changes, and the intelligence alert thresholds (`server/shared/intelligence-alert-thresholds.ts`,
+daily claims, messaging, and the intelligence alert thresholds (`server/shared/intelligence-alert-thresholds.ts`,
 called from `countries.update`).
 
 `notifyAdminAction` sets `deliveryMethod` (`modal`, `dynamic-island` or `toast`), but the tray does not read

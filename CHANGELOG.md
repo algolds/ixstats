@@ -14,6 +14,15 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🧹 Retirements (2026-10-06)
+
+- **Narrator retired (D10):** the `narrator` router, `src/lib/narrator/`, the admin "AI narrator" Labs panel and the
+  `NARRATOR_LLM_*` env keys are gone. Sports commentary keeps the shared chat client and LLM host allowlist, now in
+  `src/lib/llm/`. The wiki article narrator (text to speech) is unaffected.
+- **Scheduled changes deleted (D11):** the service, the `scheduled-changes` cron job and its HTTP route, the
+  `scheduledChanges` router and `usePendingLocks` (and the budget and revenue form locks it drove) are gone. Remove
+  `scheduled-changes` from `CRON_ENABLED_JOBS` if listed. The Prisma models stay until the D9 schema drop.
+
 ### 💎 Vault Cleanup (2026-10-05)
 
 - **Crafting retired for now:** every `crafting.*` call refuses (`CRAFTING_ENABLED = false`); the workbench, its

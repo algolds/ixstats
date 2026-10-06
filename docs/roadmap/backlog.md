@@ -61,7 +61,6 @@ partly done item.
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
 | MC-3 | UNFINISHED | Defense force structure can't be created (branch and unit CRUD deleted in plan 312), so PvNPC strength is 0. Waits on D2 | `security/military.ts:64-74`; `DeploymentWizard.tsx:136` | M–L |
-| MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks`) has no producer. Use or delete (D11); see [scheduled-changes.md](../systems/scheduled-changes.md) | `server/modules/scheduled-changes/service.ts` | M |
 | MC-19 | DEAD | Area models read but never written outside the seed (`Treaty`, `DiplomaticChannel`, `TaxPolicy`, `QuickActionTemplate`, `VitalityHistory`, …) | `prisma/schema/*` | S |
 
 ### Atlas, Realms & identity (AT)
@@ -81,7 +80,6 @@ partly done item.
 | WK-5 | BUG | Uploads never send the file to MediaWiki, and a `wiki_assets` row is written first. Waits on D3 | `editing.ts`; `write-service.ts` | M |
 | WK-6 | BUG | The image picker's Commons tab has no search procedure behind it, so it is always empty | `editor/ImageSearchGrid.tsx:67` | S |
 | WK-7 | UNFINISHED | Pages can't be moved or archived (plan 312 removed the procedures) | `core/page-management-service.ts` | M |
-| WK-12 | DEAD | Narrator LLM narration has no production caller (the key is masked). Wire or retire (D10) | `routers/narrator/index.ts` | M |
 | WK-16 | BUG | Revert and rollback skip the edge-cache purge | `editing.ts` | S |
 | WK-17 | STUB | BlurHashes are generated from the filename, not the image | `core/blurhash-service.ts` | S–M |
 | WK-19 | DEAD | Watchers are never notified when a watched page changes | `wiki.prisma` | S–M |
