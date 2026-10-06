@@ -32,12 +32,14 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
  *                          the Government tab shows a "1" setup badge.
  * @param baseHref Optional route prefix; when present, the tab strip becomes
  *                 link-based and the active tab is inferred from the pathname.
+ * @param indexHref Where the `overview` tab goes in link mode (default `baseHref`).
  */
 export function MyCountryTabsList({
   activeTab,
   onChangeAction,
   govComponentCount,
   baseHref,
+  indexHref,
   showGovSetupBadge = true,
   variant = "boxed",
 }: {
@@ -45,6 +47,7 @@ export function MyCountryTabsList({
   onChangeAction: (value: string) => void;
   govComponentCount: number;
   baseHref?: string;
+  indexHref?: string;
   showGovSetupBadge?: boolean;
   variant?: "boxed" | "rail" | "underline";
 }) {
@@ -103,8 +106,8 @@ export function MyCountryTabsList({
 
   const handleChange = (value: string) => {
     if (baseHref) {
-      // `overview` is the factbook index itself (`<baseHref>`, not `/overview`).
-      const href = value === "overview" ? baseHref : `${baseHref}/${value}`;
+      // `overview` is the factbook index itself (`indexHref` or `<baseHref>`, not `/overview`).
+      const href = value === "overview" ? (indexHref ?? baseHref) : `${baseHref}/${value}`;
       router.push(createUrl(href));
       onChangeAction(value);
       return;

@@ -1,6 +1,6 @@
 # Countries / Explore
 
-**Last updated:** 30 September 2026
+**Last updated:** 6 October 2026
 
 Public, read-only nation profiles plus the browse/explore experience. Anyone (signed in or not) can list all countries, search/filter/sort them, and open an individual country's public profile. Owner-side editing lives in MyCountry, not here.
 
@@ -9,8 +9,8 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 | Route | File | Purpose |
 | --- | --- | --- |
 | `/countries` | `page.tsx` | Country grid: searchable/filterable/sortable list of all countries |
-| `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The country profile (`CommandProfileView`); legacy hash links (`#economy`, `#dossier`, …) move to their routes |
-| `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Public Factbook overview (overview tab) |
+| `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The Factbook tab, opening on its overview (`CommandProfileView`); legacy hash links (`#economy`, `#dossier`, …) move to their routes |
+| `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Redirects to `/countries/[slug]` (the old Factbook index; the overview now lives at the country's URL) |
 | `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
 | `/countries/[slug]/factbook/labor` | `[slug]/(profile)/factbook/labor/page.tsx` | Factbook labor force & employment statistics |
 | `/countries/[slug]/factbook/government` | `[slug]/(profile)/factbook/government/page.tsx` | Factbook governance structure & macro spending (allocations are owner-only) |
@@ -21,18 +21,20 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 
 ## Country profile
 
-`/countries/[slug]` is **one profile, the Command view** (`_components/CommandProfileView.tsx`), with the **Factbook as the deep-dive**. There is no layout switcher any more (the `?concept=` parameter, `Alt` shortcuts and `ixstates_profile_concept_*` keys are gone; stale values are simply ignored).
+`/countries/[slug]` is the **Factbook tab**, which opens on its overview: the Command view (`_components/CommandProfileView.tsx`). The old Profile tab was merged into the Factbook in October 2026: the Factbook now leads with the hero, key facts and the domain stream the Profile showed, and its other sections (Economy, Labor, Government, Geography) follow as section pills. The Factbook's former overview card (toggle metrics, wiki intro, identity pills) was dropped from the country page because the hero, pulse, Lore and People tiles already show it. There is no layout switcher any more (the `?concept=` parameter, `Alt` shortcuts and `ixstates_profile_concept_*` keys are gone; stale values are simply ignored).
 
 The profile shell (`(profile)/layout.tsx`) loads the country (`CountryDataProvider`), shows the breadcrumb and the Country Actions button on every route, and shares the country, flag, ownership and cover banner with the routes below through `ProfileShellProvider` (`_components/ProfileShellContext.tsx`). It reads the active child segment (`useSelectedLayoutSegment`):
 
-- **Profile** (`/countries/[slug]`, segment `null`): the page renders `CommandProfileView`, which brings its own hero and tabs.
-- **Deep-dives** (`/factbook/**`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook keeps its section pills and `FactbookSidebar` (`factbook/layout.tsx`).
+- **Factbook overview** (`/countries/[slug]`, segment `null`): the page renders `CommandProfileView`, which brings its own hero, tabs and Factbook section pills (`FactbookSectionNav`).
+- **Deep-dives** (`/factbook/<section>`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook sections keep the section pills and `FactbookSidebar` (`factbook/layout.tsx`). `/factbook` itself redirects to `/countries/[slug]`.
+
+Every state of the shell (loading, error, loaded) sits in the app's standard page column, `mx-auto w-full max-w-6xl p-4 md:p-8` (`PAGE_CONTAINER` in `(profile)/layout.tsx`), so the page's left edge lines up with the rest of the app at every breakpoint and sidebar state.
 
 Navigation has two tiers:
-1. **Tier 1 (`CountryTabs.tsx`):** `Profile` (`/countries/[slug]`), `Factbook` (`/factbook`), `Dossier` (`/dossier`), `Activity` (`/activity`) — real links styled as a Facet segmented control.
-2. **Tier 2 (Factbook sections — `MyCountryTabsList.tsx`):** `Overview`, `Economy`, `Labor`, `Government`, `Geography`.
+1. **Tier 1 (`CountryTabs.tsx`, `COUNTRY_TABS`):** `Factbook` (`/countries/[slug]`, also current on every `/factbook/<section>`), `Dossier` (`/dossier`), `Activity` (`/activity`): real links styled as a Facet segmented control.
+2. **Tier 2 (Factbook sections, `FactbookSectionNav.tsx` over `MyCountryTabsList.tsx`):** `Overview` (`/countries/[slug]`), `Economy`, `Labor`, `Government`, `Geography` (`/factbook/<section>`).
 
-Legacy hash links on the bare profile URL (`#economy`, `#labor`, `#dossier`, `#activity`, …) are redirected by `legacyHashRoute` (`src/lib/country/factbook-routes.ts`); an empty or unknown hash stays on the profile, so the profile's own anchors (`#command-economy`) work.
+Legacy hash links on the bare country URL (`#economy`, `#labor`, `#dossier`, `#activity`, …) are redirected by `legacyHashRoute` (`src/lib/country/factbook-routes.ts`); `#overview`, an empty or an unknown hash stays on the Factbook overview, so its own anchors (`#command-economy`) work.
 
 ### The Command view
 
@@ -40,7 +42,7 @@ Opaque cards on real data; glass only for the bottom dock on phones:
 
 - **Hero** (`CountryHero`): the cover banner as a photo band (landscape photo, flag, media-library image or none — the owner changes it with **Change cover**; saved per country on the device), the flag tile, the name in the display face with the owner's ribbons, the motto, capital and anthem, the realm and IxnayID strip (`CountryIdentityStrip`) and the headline figures.
 - **National pulse** (`PulseBanner`): a status (rapid expansion, stable and prosperous, consolidating, economic headwinds) from real GDP growth, population growth and stability, with the readings. Hidden without a GDP growth reading.
-- **Dock**: domains with a scroll-spy (opaque side rail ≥1024px, sticky bottom bar below) and the tools (Compare, Factbook, Economic modeling, Open on map, Wiki article).
+- **Dock**: domains with a scroll-spy (opaque side rail ≥1024px, sticky bottom bar below) and the tools (Compare, Economic modeling, Open on map, Wiki article).
 - **Country DNA** (`CountryDNA` + `DnaLegend`): a radar of the nation's World Census percentile per category, with the ranks as rows; **National condition** (`ConditionMatrix`): meters for the 0–100 readings the nation has (employment, approval, stability, literacy, urbanisation), each tile named by icon and label.
 - **Tiles**: territory (map, attributes, principal cities and regions), lore (prologue; "Read the story" opens every chapter), economy (figures + GDP trend), people, state (`StateStructure`: executive, legislative and judicial branches, system, ministries; election; directives and decisions), foreign affairs (`DiplomaticMatrix`: partners vs tensions, relation/treaty/embassy counts; embassies) and the chronicle.
 
@@ -94,10 +96,10 @@ countries/
 └── [slug]/
     ├── (profile)/
     │   ├── layout.tsx                # Country shell (CountryDataProvider, breadcrumb, actions; CountryHeader + CountryTabs on deep-dives)
-    │   ├── page.tsx                  # The profile: CommandProfileView (+ legacy hash redirects)
+    │   ├── page.tsx                  # The Factbook overview: CommandProfileView (+ legacy hash redirects)
     │   ├── factbook/
-    │   │   ├── layout.tsx            # Factbook shell (FactbookMetricsProvider + FactbookSidebar)
-    │   │   ├── page.tsx              # Overview section
+    │   │   ├── layout.tsx            # Factbook section shell (section pills, FactbookMetricsProvider + FactbookSidebar)
+    │   │   ├── page.tsx              # Redirects to /countries/[slug]
     │   │   ├── economy/page.tsx      # Economy section
     │   │   ├── labor/page.tsx        # Labor section
     │   │   ├── government/page.tsx   # Government section
@@ -105,7 +107,7 @@ countries/
     │   ├── dossier/page.tsx          # Dossier tab
     │   └── activity/page.tsx         # Activity feed tab
     ├── modeling/page.tsx             # Economic scenario engine
-    ├── _components/                  # CommandProfileView, CountryHeader, CountryTabs, ProfileShellContext, FactbookSidebar, FactbookSectionContent, CountryActivityPanel
+    ├── _components/                  # CommandProfileView, CountryHeader, CountryTabs, FactbookSectionNav, ProfileShellContext, FactbookSidebar, FactbookSectionContent, CountryActivityPanel
     ├── _hooks/useCountryPageState.ts # Country Actions + cover banner state
     ├── _hooks/useCountryProfileLayer.ts # The profile's data layer
     ├── _types/                       # Domain types for profile pages

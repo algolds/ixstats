@@ -30,20 +30,21 @@ describe("Factbook Routing Utilities", () => {
     expect(sectionFromPathname("/countries/acme/factbook/government")).toBe("government");
     expect(sectionFromPathname("/countries/acme/factbook/geography")).toBe("geography");
     expect(sectionFromPathname("/countries/acme/factbook/unknown")).toBe("overview");
+    expect(sectionFromPathname("/countries/acme")).toBe("overview");
     expect(sectionFromPathname("/other/path")).toBe("overview");
   });
 
-  it("constructs canonical factbook URLs", () => {
-    expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme/factbook");
+  it("constructs canonical factbook URLs (the overview is the country's own URL)", () => {
+    expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme");
     expect(factbookSectionHref("economy", "acme")).toBe("/countries/acme/factbook/economy");
     expect(factbookSectionHref("labor", "acme")).toBe("/countries/acme/factbook/labor");
   });
 
   it("maps legacy hash fragments to nested routes", () => {
-    expect(hashToFactbookRoute("#overview")).toBe("/factbook");
+    expect(hashToFactbookRoute("#overview")).toBe("");
     expect(hashToFactbookRoute("#economy")).toBe("/factbook/economy");
     expect(hashToFactbookRoute("#dossier")).toBe("/dossier");
     expect(hashToFactbookRoute("#activity")).toBe("/activity");
-    expect(hashToFactbookRoute("#unknown")).toBe("/factbook");
+    expect(hashToFactbookRoute("#unknown")).toBe("");
   });
 });

@@ -1,6 +1,6 @@
 # Explore and Country Profiles
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-06
 **Status:** Live and public: signed-out visitors can browse every directory and profile.
 **Routes:** `/countries` · `/explore` · `/explore/collections` · `/countries/[slug]` and its `factbook/**`, `dossier`,
 `activity` and `modeling` sub-routes
@@ -40,9 +40,12 @@ most cards or top rated, and a leaderboard.
 
 ## 2. The country profile
 
-`/countries/[slug]` is one profile, the Command view (`CommandProfileView`), with the Factbook as the deep-dive. The
-`(profile)/layout.tsx` shell loads the country through `CountryDataProvider` and shows the breadcrumb and the
-**Country Actions** menu on every profile route. Tabs: Profile, Factbook (Overview, Economy, Labor, Government,
+`/countries/[slug]` is the **Factbook** tab, which opens on its overview: the hero, key facts and domain tiles of the
+Command view (`CommandProfileView`). The former Profile tab was merged into the Factbook; the other Factbook sections
+(Economy, Labor, Government, Geography) follow as section pills at `/countries/[slug]/factbook/<section>`, and
+`/countries/[slug]/factbook` redirects to `/countries/[slug]`. The `(profile)/layout.tsx` shell loads the country
+through `CountryDataProvider` and shows the breadcrumb and the **Country Actions** menu on every profile route, inside
+the app's standard page column (`max-w-6xl`, `p-4 md:p-8`). Tabs: Factbook (Overview, Economy, Labor, Government,
 Geography), Dossier and Activity. `/countries/[slug]/modeling` is the economic modeling engine.
 
 The README linked above lists every tile and its data source. In summary:

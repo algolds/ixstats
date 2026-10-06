@@ -3,9 +3,12 @@
  * (`/countries/[slug]`) and its nested factbook section routes.
  *
  * The country profile has two navigation tiers:
- *  - Tier 1 (top bar): Profile / Factbook / Dossier / Activity → `/countries/:slug` (the
- *    profile itself), `/factbook`, `/dossier`, `/activity`
- *  - Tier 2 (inner pills): five factbook sections → `/factbook`, `/factbook/economy`, ...
+ *  - Tier 1 (top bar): Factbook / Dossier / Activity → `/countries/:slug` (the Factbook, which
+ *    opens on its overview), `/dossier`, `/activity`
+ *  - Tier 2 (inner pills): five factbook sections → `/countries/:slug` (overview),
+ *    `/factbook/economy`, `/factbook/labor`, ...
+ *
+ * `/countries/:slug/factbook` is the old Factbook index; it redirects to `/countries/:slug`.
  *
  * This module centralizes the section list + pathname/hash mapping so both the
  * routes and their Jest tests use the exact same source of truth.
@@ -38,39 +41,45 @@ export function sectionFromPathname(pathname: string): FactbookSection {
   return "overview";
 }
 
-/** Canonical URL (relative) for a factbook section under a country slug. */
+/**
+ * Canonical URL (relative) for a factbook section under a country slug. The overview is the
+ * country's own URL; the other sections live under `/factbook`.
+ */
 export function factbookSectionHref(section: FactbookSection, slug: string): string {
-  const base = `/countries/${slug}/factbook`;
-  return section === "overview" ? base : `${base}/${section}`;
+  const base = `/countries/${slug}`;
+  return section === "overview" ? base : `${base}/factbook/${section}`;
 }
 
 /**
  * Legacy URL-hash deep links (`/countries/:slug#economy`, `#dossier`, ...)
- * mapped onto the equivalent nested route. Unknown hashes land on the factbook.
+ * mapped onto the equivalent nested route, relative to `/countries/:slug`. The empty route is
+ * the country's own URL (the Factbook overview). Unknown hashes land on the Factbook overview.
  */
 const HASH_ROUTE_MAP: Record<string, string> = {
-  overview: "/factbook",
+  overview: "",
   economy: "/factbook/economy",
   labor: "/factbook/labor",
   government: "/factbook/government",
   geography: "/factbook/geography",
   dossier: "/dossier",
   activity: "/activity",
-  // Legacy executive-drill kinds — default to the factbook.
-  relations: "/factbook",
-  defense: "/factbook",
-  politics: "/factbook",
+  // Legacy executive-drill kinds: default to the Factbook overview.
+  relations: "",
+  defense: "",
+  politics: "",
 };
 
 export function hashToFactbookRoute(hash: string): string {
-  return legacyHashRoute(hash) ?? "/factbook";
+  return legacyHashRoute(hash) ?? "";
 }
 
 /**
- * The route a legacy hash deep link on the bare profile URL moved to, or `null` when the hash is
- * empty or not a legacy tab (the profile renders in place; its own anchors keep working).
+ * The route a legacy hash deep link on the bare country URL moved to, or `null` when the hash is
+ * empty, not a legacy tab, or already belongs on the country's own URL (the Factbook overview
+ * renders in place; its own anchors keep working).
  */
 export function legacyHashRoute(hash: string): string | null {
   const normalized = hash.replace(/^#/, "").toLowerCase();
-  return Object.hasOwn(HASH_ROUTE_MAP, normalized) ? HASH_ROUTE_MAP[normalized]! : null;
+  const route = Object.hasOwn(HASH_ROUTE_MAP, normalized) ? HASH_ROUTE_MAP[normalized]! : null;
+  return route === "" ? null : route;
 }

@@ -1,7 +1,8 @@
 /**
- * The `(profile)` layout: the bare profile URL renders its page (the Command profile brings its
- * own hero), while the deep-dives (`/factbook/**`, `/dossier`, `/activity`) render their own
- * route pages under the country header and tabs. There is no layout switcher any more.
+ * The `(profile)` layout: the bare country URL renders its page (the Factbook overview brings its
+ * own hero, tabs and section pills), while the deep-dives (`/factbook/<section>`, `/dossier`,
+ * `/activity`) render their own route pages under the country header and tabs. The Factbook
+ * sections keep the Factbook tab current. There is no layout switcher any more.
  */
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { Suspense } from "react";
@@ -68,7 +69,7 @@ beforeEach(() => {
 });
 
 describe("(profile) layout", () => {
-  it("renders the profile page without the deep-dive header", async () => {
+  it("renders the Factbook overview page without the deep-dive header", async () => {
     await renderAt(null);
     expect(await screen.findByText("route page")).toBeTruthy();
     // The Command profile renders its own hero and tabs.
@@ -77,15 +78,26 @@ describe("(profile) layout", () => {
     expect(screen.queryByText(/Prototype/)).toBeNull();
   });
 
-  it.each(["factbook", "dossier", "activity"])(
-    "renders the %s route page under the country header and tabs",
-    async (segment) => {
+  it.each([
+    ["factbook", "Factbook", "/countries/testland"],
+    ["dossier", "Dossier", "/countries/testland/dossier"],
+    ["activity", "Activity", "/countries/testland/activity"],
+  ])(
+    "renders the %s route page under the country header with the %s tab current",
+    async (segment, label, href) => {
       await renderAt(segment);
       expect(await screen.findByText("route page")).toBeTruthy();
       expect(screen.getByRole("heading", { level: 1, name: "Testland" })).toBeTruthy();
       const tabs = screen.getByRole("navigation", { name: "Country sections" });
       const current = tabs.querySelector('[aria-current="page"]');
-      expect(current?.getAttribute("href")).toMatch(new RegExp(`/countries/testland/${segment}$`));
+      expect(current?.textContent).toBe(label);
+      expect(current?.getAttribute("href")).toMatch(new RegExp(`${href}$`));
     }
   );
+
+  it("has no Profile tab", async () => {
+    await renderAt("dossier");
+    const tabs = await screen.findByRole("navigation", { name: "Country sections" });
+    expect(tabs.textContent).not.toMatch(/Profile/);
+  });
 });

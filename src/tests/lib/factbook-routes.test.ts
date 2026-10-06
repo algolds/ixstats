@@ -57,7 +57,7 @@ describe("factbook-routes", () => {
 
   describe("factbookSectionHref", () => {
     it("generates the canonical route per section", () => {
-      expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme/factbook");
+      expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme");
       expect(factbookSectionHref("economy", "acme")).toBe("/countries/acme/factbook/economy");
       expect(factbookSectionHref("labor", "acme")).toBe("/countries/acme/factbook/labor");
       expect(factbookSectionHref("government", "acme")).toBe("/countries/acme/factbook/government");
@@ -71,35 +71,40 @@ describe("factbook-routes", () => {
       expect(hashToFactbookRoute("#labor")).toBe("/factbook/labor");
       expect(hashToFactbookRoute("#government")).toBe("/factbook/government");
       expect(hashToFactbookRoute("#geography")).toBe("/factbook/geography");
-      expect(hashToFactbookRoute("#overview")).toBe("/factbook");
+      expect(hashToFactbookRoute("#overview")).toBe("");
       expect(hashToFactbookRoute("#dossier")).toBe("/dossier");
       expect(hashToFactbookRoute("#activity")).toBe("/activity");
     });
 
-    it("defaults legacy v2 drill kinds to the factbook", () => {
-      expect(hashToFactbookRoute("#relations")).toBe("/factbook");
-      expect(hashToFactbookRoute("#defense")).toBe("/factbook");
-      expect(hashToFactbookRoute("#politics")).toBe("/factbook");
+    it("defaults legacy v2 drill kinds to the Factbook overview", () => {
+      expect(hashToFactbookRoute("#relations")).toBe("");
+      expect(hashToFactbookRoute("#defense")).toBe("");
+      expect(hashToFactbookRoute("#politics")).toBe("");
     });
 
-    it("defaults unknown and empty hashes to the factbook", () => {
-      expect(hashToFactbookRoute("")).toBe("/factbook");
-      expect(hashToFactbookRoute("#")).toBe("/factbook");
-      expect(hashToFactbookRoute("#nonsense")).toBe("/factbook");
+    it("defaults unknown and empty hashes to the Factbook overview (the country's own URL)", () => {
+      expect(hashToFactbookRoute("")).toBe("");
+      expect(hashToFactbookRoute("#")).toBe("");
+      expect(hashToFactbookRoute("#nonsense")).toBe("");
       expect(hashToFactbookRoute("#Economy")).toBe("/factbook/economy");
     });
   });
 
   describe("legacyHashRoute", () => {
-    it("redirects only known legacy tab hashes from the bare profile URL", () => {
+    it("redirects only known legacy tab hashes from the bare country URL", () => {
       expect(legacyHashRoute("#economy")).toBe("/factbook/economy");
-      expect(legacyHashRoute("#overview")).toBe("/factbook");
       expect(legacyHashRoute("#dossier")).toBe("/dossier");
       expect(legacyHashRoute("#Activity")).toBe("/activity");
-      expect(legacyHashRoute("#relations")).toBe("/factbook");
     });
 
-    it("keeps the profile in place for an empty or unknown hash", () => {
+    it("keeps the Factbook overview in place for hashes that belong on it", () => {
+      expect(legacyHashRoute("#overview")).toBeNull();
+      expect(legacyHashRoute("#relations")).toBeNull();
+      expect(legacyHashRoute("#defense")).toBeNull();
+      expect(legacyHashRoute("#politics")).toBeNull();
+    });
+
+    it("keeps the Factbook overview in place for an empty or unknown hash", () => {
       expect(legacyHashRoute("")).toBeNull();
       expect(legacyHashRoute("#")).toBeNull();
       expect(legacyHashRoute("#command-economy")).toBeNull();

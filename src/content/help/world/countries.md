@@ -20,12 +20,11 @@ To find other realms, search across them or join one, choose **Explore**, which 
 
 ## A country's profile
 
-Select a nation to open its profile at `/countries/<name>`. The header shows its flag, name, key figures and, if it has an active owner, the owner's top achievement ribbons. The profile has four tabs:
+Select a nation to open its profile at `/countries/<name>`. The header shows its flag, name, key figures and, if it has an active owner, the owner's top achievement ribbons. The profile has three tabs:
 
 | Tab | What's there |
 | --- | --- |
-| **Profile** | The nation at a glance: vitals, economy, government, land, relations and its chronicle |
-| **Factbook** | The full figures, with pages for Economy, Labor, Government and Geography |
+| **Factbook** | Opens on the **Overview**: the nation at a glance, with its vitals, economy, government, land, relations and chronicle. The other pages hold the full figures for **Economy**, **Labor**, **Government** and **Geography** |
 | **Dossier** | Its lore from the wiki, plus lore documents you write in the [Canvas editor](/help/mycountry/canvas-editor), which are kept in your own browser |
 | **Activity** | Its recent activity and history |
 

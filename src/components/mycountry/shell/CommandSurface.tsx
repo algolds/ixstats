@@ -84,13 +84,13 @@ function CommandSurfaceComponent({
 
   // Facet hierarchy: the command bar is the shell (depth 1), each section below is a card
   // (depth 2), and rows inside a card are opaque depth-3 surfaces so blur never stacks.
+  // The column is the app's standard page column (`max-w-6xl`, `p-4` phone, `p-8` from md), so
+  // MyCountry's left edge lines up with every other page; compact mode only tightens the rhythm.
   return (
     <div
       className={cn(
-        "mx-auto w-full",
-        compactMode
-          ? "max-w-6xl space-y-5 px-4 py-4 sm:px-6 sm:py-5"
-          : "max-w-[1600px] space-y-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
+        "mx-auto w-full max-w-6xl px-4 md:px-8",
+        compactMode ? "space-y-5 py-4 md:py-5" : "space-y-6 py-4 md:py-8"
       )}
     >
       {/* Permanent Unified Glass Command Bar */}

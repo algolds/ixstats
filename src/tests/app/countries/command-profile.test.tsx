@@ -139,16 +139,22 @@ describe("CommandProfileView", () => {
     expect(screen.queryByText(/Readiness/)).toBeNull();
   });
 
-  it("links the Factbook and economic modeling", () => {
+  it("is the Factbook tab's overview, with the Factbook sections and economic modeling", () => {
     render(<CommandProfileView {...base} />);
-    const factbook = screen.getAllByRole("link", { name: /^Factbook$/ })[0]!;
-    expect(factbook.getAttribute("href")).toMatch(/\/countries\/testland\/factbook$/);
     const tabs = screen.getByRole("navigation", { name: "Country sections" });
+    const factbook = within(tabs).getByRole("link", { name: /Factbook/ });
+    expect(factbook.getAttribute("href")).toMatch(/\/countries\/testland$/);
+    expect(factbook.getAttribute("aria-current")).toBe("page");
+    expect(within(tabs).queryByRole("link", { name: /Profile/ })).toBeNull();
+    // The Factbook section pills follow the tabs, with the overview current.
+    const current = screen
+      .getAllByRole("button")
+      .filter((b) => b.getAttribute("aria-current") === "page");
+    expect(current.map((b) => b.textContent)).toEqual(["Overview"]);
+    expect(screen.getByRole("button", { name: /Labor/ })).toBeTruthy();
     expect(
-      within(tabs)
-        .getByRole("link", { name: /Profile/ })
-        .getAttribute("aria-current")
-    ).toBe("page");
+      screen.getAllByRole("link", { name: /Economic modeling/ })[0]!.getAttribute("href")
+    ).toMatch(/\/countries\/testland\/modeling$/);
   });
 
   it("shows the owner strip and cover control to the owner", () => {

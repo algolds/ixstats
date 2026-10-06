@@ -28,7 +28,7 @@ import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
 import { Card } from "~/components/ui/card";
 
-/** Breadcrumb labels for the deep-dive routes (the profile itself is the country's name). */
+/** Breadcrumb labels for the deep-dive routes (the Factbook overview is the country's name). */
 const SEGMENT_LABEL: Record<string, string> = {
   factbook: "Factbook",
   dossier: "Dossier",
@@ -40,10 +40,15 @@ const SEGMENT_LABEL: Record<string, string> = {
  * query (`CountryDataProvider`), the breadcrumb and Country Actions, and shares the resolved
  * country, flag, ownership and cover with the routes below (`ProfileShellProvider`).
  *
- * - `/countries/[slug]` (this layout's own page) is the Command profile, which brings its hero
- *   and tabs itself (`CommandProfileView`).
- * - `/factbook/**`, `/dossier` and `/activity` are the deep-dives: they get the country header
- *   and the tabs here, then render their own route pages.
+ * - `/countries/[slug]` (this layout's own page) is the Factbook tab's overview, which brings its
+ *   hero, tabs and section pills itself (`CommandProfileView`).
+ * - `/factbook/<section>`, `/dossier` and `/activity` are the deep-dives: they get the country
+ *   header and the tabs here, then render their own route pages. `/factbook` itself redirects
+ *   to `/countries/[slug]`.
+ *
+ * Every state shares `PAGE_CONTAINER`, the app's standard content column (the gutter and width
+ * the realm region pages use), so the page's left edge lines up with the rest of the app at every
+ * breakpoint, with the sidebar expanded or collapsed.
  */
 export default function CountryProfileLayout({
   children,
@@ -62,9 +67,12 @@ export default function CountryProfileLayout({
   );
 }
 
+/** The app's standard page column: centred, capped at `max-w-6xl`, `p-4` phone, `p-8` from md. */
+const PAGE_CONTAINER = "mx-auto w-full max-w-6xl space-y-6 p-4 md:p-8";
+
 function ProfileShellSkeleton() {
   return (
-    <div className="container mx-auto space-y-6 px-4 py-8" role="status" aria-label="Loading">
+    <div className={PAGE_CONTAINER} role="status" aria-label="Loading">
       <Skeleton className="h-5 w-48" />
       <Skeleton className="rounded-card h-72 w-full" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -119,7 +127,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   const { country, isLoading, error, currentIxTime } = useCountryData();
   const { userProfile } = useUserCountry();
   const { flagUrl: serviceFlag } = useFlag(country?.name || "");
-  // null on the profile itself; "factbook" | "dossier" | "activity" on a deep-dive.
+  // null on the Factbook overview; "factbook" | "dossier" | "activity" on a deep-dive.
   const segment = useSelectedLayoutSegment();
   const flagUrl: string | null = country?.flag || serviceFlag || null;
 
@@ -171,7 +179,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   if (error || !country || !shell) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className={PAGE_CONTAINER}>
         <Card>
           <EmptyState
             icon={<WarningTriangle />}
@@ -193,7 +201,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   return (
     <ProfileShellProvider value={shell}>
-      <div className="container mx-auto space-y-6 px-4 py-6 sm:py-8">
+      <div className={PAGE_CONTAINER}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <ProfileBreadcrumb slug={slug} name={name} sectionLabel={sectionLabel} />
 

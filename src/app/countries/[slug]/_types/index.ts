@@ -12,8 +12,11 @@ export const toCountrySlug = (slug: string): CountrySlug => slug as CountrySlug;
 /** Banner Mode options */
 export type BannerMode = "dynamic" | "flag" | "gradient" | "custom";
 
-/** Top-level navigation: the profile itself and its three deep-dive routes. */
-export type ProfileTabType = "profile" | "factbook" | "dossier" | "activity";
+/**
+ * Top-level navigation: the Factbook (the country's own URL, which opens on its overview) and
+ * the Dossier and Activity deep-dives.
+ */
+export type ProfileTabType = "factbook" | "dossier" | "activity";
 
 /** Activity feed filters */
 export type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "social";

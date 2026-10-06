@@ -10,10 +10,10 @@ function str(value: unknown): string | null {
 }
 
 /**
- * CountryHeader — the Factbook, Dossier and Activity header: the country's hero (cover, flag,
- * name, realm and IxnayID, identity strip, headline figures) from the loaded country record.
- * The profile itself (`/countries/[slug]`) renders the same `CountryHero` from the richer
- * profile layer (wiki infobox fallbacks) inside `CommandProfileView`.
+ * CountryHeader: the header of the Factbook sections, the Dossier and Activity: the country's
+ * hero (cover, flag, name, realm and IxnayID, identity strip, headline figures) from the loaded
+ * country record. The Factbook overview (`/countries/[slug]`) renders the same `CountryHero` from
+ * the richer profile layer (wiki infobox fallbacks) inside `CommandProfileView`.
  */
 export function CountryHeader() {
   const { country, flagUrl, cover } = useProfileShell();
