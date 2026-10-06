@@ -37,6 +37,11 @@ Read it end to end once before starting. Every command here is meant to be run b
     vault transaction enum. The Exchange is on by default (`vault_isExchangeEnabled`; Admin → Vault and economy →
     System config). New ₷ wallets now start at 1,000 instead of 10,000. **No data fix:** existing wallets keep their
     balance, and seeded ₷ can't be converted to IxCredits (only ₷ converted in can go back out)
+  - Exchange phase 2 (2026-10-06, additive, VT-16): `exchange_companies.tradingOpen` (default false) and
+    `decisionValue`; `exchange_contracts.issuerCountryId`, `fundedBy` and a `(status, endIxTime)` index;
+    `exchange_sector_indices.fundSovereigns` and `unitsOutstanding`; new tables `exchange_share_listings` and
+    `exchange_company_dividends`. `db push` applies them with no data-loss prompt. **No data fix:** MVP contracts have
+    `fundedBy` NULL, which the code reads as company-funded
   - WikiOS v1 (2026-10-06, D20): the wiki tables and columns of PR #52 (`wiki_mirror_jobs`, `wiki_user_groups`,
     `wiki_restrictions`, `wiki_blocks`, `wiki_bot_passwords`, `wiki_api_sessions`, `wiki_template_links`,
     `wiki_image_links`, new `wiki_articles` / `wiki_revisions` / `wiki_logs` / `wiki_assets` / `wiki_account_links`
@@ -262,7 +267,11 @@ PR #49 added three more jobs; enable them after the list above, one per cycle: `
 post counters) → `achievements-evaluate` → `stat-progression`. `stat-progression` writes every country's stored
 stats and monthly history, so take a `bun run db:backup` first; until it runs, stored stats never move.
 
-That makes 21 jobs, the full table in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs)
+Exchange phase 2 added two jobs; enable them last, one per cycle: `exchange-contract-expiry` (refunds escrow of OPEN
+contracts never awarded) → `exchange-market` (sector indices, sector fund rebalancing, company decisions, fair values).
+Until `exchange-market` runs, every sector index stays at 1,000 and queued decisions wait.
+
+That makes 23 jobs (plus the two WikiOS ones below), the full table in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs)
 lists them with schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop

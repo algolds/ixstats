@@ -81,7 +81,7 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| VT-16 | UNFINISHED | Exchange (₷) phase 2. The MVP (conversion, companies, B2B contracts, conditional `spend`, 1,000 ₷ seed) is built (D5, 2026-10-06); left: share trading, sector indices (`SectorIndex`, `SectorIndexHistory`, `SectorPosition`), `CompanyDecision`, B2G tenders, an expiry job for lapsed OPEN contracts ([spec §8](../specs/2026-10-06-exchange-economy-design.md#8-phase-2-not-built)) | `exchange.prisma`; `lib/exchange/` | L |
+| VT-16 | UNFINISHED | Exchange (₷) leftovers. The MVP and phase 2 (share market, dividends, sector indices and funds, `EXPAND`/`ENTER_SECTOR` decisions, B2G tenders, contract expiry, notifications, relaxed out allowance) are built (2026-10-06); left: `RND`/`ACQUIRE`/`LOBBY`/`PRICE` decisions, admin- or sim-issued tenders (a ₷ faucet) and a nation ₷ treasury, an order book, an admin control for `SectorIndex.dmModifier` ([spec §8](../specs/2026-10-06-exchange-economy-design.md#still-not-built)) | `exchange.prisma`; `lib/exchange/` | M |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
 
