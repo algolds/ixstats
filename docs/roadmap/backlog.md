@@ -1,6 +1,6 @@
 # Backlog — open items
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-06
 **Status:** The single backlog. [ROADMAP.md](ROADMAP.md) is the plan that orders these items;
 [SYSTEM_STATUS.md](../systems/SYSTEM_STATUS.md) says what is live.
 
@@ -90,7 +90,7 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| VT-16 | DEAD | The Exchange (₷) economy exists only in the schema (11 of 13 models unused); wallets seeded with 10,000 ₷; `spend` has no conditional decrement. D5 | `exchange.prisma`; `lib/vault/exchange-service.ts` | L |
+| VT-16 | UNFINISHED | Exchange (₷) phase 2. The MVP (conversion, companies, B2B contracts, conditional `spend`, 1,000 ₷ seed) is built (D5, 2026-10-06); left: share trading, sector indices (`SectorIndex`, `SectorIndexHistory`, `SectorPosition`), `CompanyDecision`, B2G tenders, an expiry job for lapsed OPEN contracts ([spec §8](../specs/2026-10-06-exchange-economy-design.md#8-phase-2-not-built)) | `exchange.prisma`; `lib/exchange/` | L |
 | VT-19 | DEAD | `pdsConfig` is seeded on all 20 packs and never read | `prisma/seeds/data/card-packs.json`; `cards.prisma` | S |
 | VT-25 | DEAD | `NSImport`, `SyncCheckpoint` and `CardTrade` are unused | `cards.prisma` | S |
 
@@ -286,6 +286,8 @@ From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no acc
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
 them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop models that defense (MC-3), crisis events,
-procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. `CraftingRecipe` and `CraftingHistory` join the
+procedural realms (AT-15) or the Exchange (VT-16) would use until those are decided. **The 13 Exchange models are off
+the drop list (D5 decided "build", 2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`,
+`SectorIndexHistory`, `SectorPosition` and `CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
