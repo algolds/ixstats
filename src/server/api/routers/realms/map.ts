@@ -10,6 +10,7 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { RealmRegionError } from "~/server/modules/realms/realms.region";
 import {
   getRealmMapDisplay,
+  realmForWikiArticle,
   recomputeRealmMapAreas,
   updateRealmMapSettings,
 } from "~/server/modules/realms/realms.map";
@@ -35,6 +36,14 @@ export const realmMapRouter = createTRPCRouter({
     const realmId = await viewerRealmId(ctx, input?.realm);
     return getRealmMapDisplay(ctx.db, ctx.user ?? null, realmId);
   }),
+
+  /**
+   * The realm whose map a non-IxWiki article's coordinates embed shows: the realm whose lore index holds the
+   * article, else the only realm whose lore comes from that wiki; null leaves the embed on the viewer's realm.
+   */
+  realmForWikiArticle: publicProcedure
+    .input(z.object({ wikiSource: z.string().min(1).max(40), title: z.string().max(300) }))
+    .query(({ ctx, input }) => realmForWikiArticle(ctx.db, input.wikiSource, input.title)),
 
   /**
    * Set (or, with null, clear) the planet radius, base image, credit line and default view. The realm's map

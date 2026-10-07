@@ -207,3 +207,34 @@ export async function recomputeRealmMapAreas(
 
   return { radiusKm, updated, countriesUpdated, postgis };
 }
+
+/**
+ * The realm a wiki article's map coordinates are on, for an article from a wiki other than IxWiki: the realm
+ * whose lore index holds that article, else the only realm whose lore index comes from that wiki. Null when
+ * none (or several) qualify, or the realm is unpublished; the embed then shows the viewer's realm.
+ */
+export async function realmForWikiArticle(
+  db: Pick<PrismaClient, "realm" | "realmPage">,
+  wikiSource: string,
+  title: string
+): Promise<{ slug: string } | null> {
+  const distinctRealms = async (where: { wikiSource: string; title?: string }) =>
+    (
+      await db.realmPage.findMany({
+        where,
+        distinct: ["realmId"],
+        select: { realmId: true },
+        take: 2,
+      })
+    ).map((p) => p.realmId);
+  let realmIds = title ? await distinctRealms({ wikiSource, title }) : [];
+  if (realmIds.length !== 1) realmIds = await distinctRealms({ wikiSource });
+  const [realmId] = realmIds;
+  if (realmIds.length !== 1 || !realmId) return null;
+  const realm = await db.realm.findUnique({
+    where: { id: realmId },
+    select: { slug: true, status: true },
+  });
+  if (!realm || realm.status === "draft" || realm.status === "generating") return null;
+  return { slug: realm.slug };
+}
