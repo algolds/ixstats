@@ -173,7 +173,7 @@ function RailApp({
   return (
     <li data-app={app.tint}>
       <Popover open={open} onOpenChange={setOpen}>
-        <Tooltip content={app.label} side="right" sideOffset={8} open={open ? false : undefined}>
+        <Tooltip content={app.label} side="right" sideOffset={8} disabled={open}>
           <PopoverTrigger asChild>
             <button
               type="button"

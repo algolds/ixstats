@@ -46,9 +46,8 @@ const SEGMENT_LABEL: Record<string, string> = {
  *   header and the tabs here, then render their own route pages. `/factbook` itself redirects
  *   to `/countries/[slug]`.
  *
- * Every state shares `PAGE_CONTAINER`, the app's standard content column (the gutter and width
- * the realm region pages use), so the page's left edge lines up with the rest of the app at every
- * breakpoint, with the sidebar expanded or collapsed.
+ * Every state shares `PAGE_COLUMN`: the page has no Inspector, so it gives the shell's reserved
+ * Inspector gutter back and runs from the sidebar to the right edge, capped at 1600px.
  */
 export default function CountryProfileLayout({
   children,
@@ -67,12 +66,15 @@ export default function CountryProfileLayout({
   );
 }
 
-/** The app's standard page column: centred, capped at `max-w-6xl`, `p-4` phone, `p-8` from md. */
-const PAGE_CONTAINER = "mx-auto w-full max-w-6xl space-y-6 p-4 md:p-8";
+/** Full-width page column (no Inspector gutter), capped at 1600px, `p-4` phone, `p-8` from md. */
+const PAGE_COLUMN = {
+  className: "mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-8",
+  "data-shell-gutter": "none",
+} as const;
 
 function ProfileShellSkeleton() {
   return (
-    <div className={PAGE_CONTAINER} role="status" aria-label="Loading">
+    <div {...PAGE_COLUMN} role="status" aria-label="Loading">
       <Skeleton className="h-5 w-48" />
       <Skeleton className="rounded-card h-72 w-full" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -179,7 +181,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   if (error || !country || !shell) {
     return (
-      <div className={PAGE_CONTAINER}>
+      <div {...PAGE_COLUMN}>
         <Card>
           <EmptyState
             icon={<WarningTriangle />}
@@ -201,7 +203,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
 
   return (
     <ProfileShellProvider value={shell}>
-      <div className={PAGE_CONTAINER}>
+      <div {...PAGE_COLUMN}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <ProfileBreadcrumb slug={slug} name={name} sectionLabel={sectionLabel} />
 
