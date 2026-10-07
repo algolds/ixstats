@@ -3,8 +3,8 @@
 **Last updated:** 2026-10-07
 **Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
-**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
-(`realms.region.ts`, `realms.region-actions.ts`), `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
+**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`, `source-sync.ts`), `src/server/modules/realms/`
+(`realms.region.ts`, `realms.region-actions.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`), `src/lib/realms/sources/`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
 [region page design](../specs/2026-10-05-realm-regions-design.md)
@@ -240,13 +240,31 @@ address; description; up to five tags from `REALM_TAGS`), **Links** (community l
 (the same editor; empty text removes the rules), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
-options, optional end date) and **Board moderation**.
+options, optional end date), **Board moderation** and **Source sync** (founder only; see below).
 
 **Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
 (`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG
 sanitized), the same path flags and coats of arms use, and keep the address field as an alternative.
 `updateAppearance` accepts only an `https://` address or a file that route produced (`/images/uploads/uploaded_…`,
 `isRealmImageUrl`); pages render either through `assetUrl`.
+
+### Source sync
+
+A realm's nations, figures, borders and alliances can follow an outside source (`RealmSourceSync`, one per realm):
+a public GitHub repository read through a source adapter (`src/lib/realms/sources/adapters`; today the
+`eurth-map` layout: a JavaScript nation table, an organisation list and GeoJSON borders, read with a literal-only
+reader, never evaluated). Every value (repository, ref, file paths, field names, wiki link prefixes, alliance type
+rules, attribution, options, a free-text continent table) is the realm's own; presets
+(`src/lib/realms/sources/presets`) only fill them. Site admins (`/admin/realms` → Source sync) and the founder
+(Manage → Source sync) configure it, dry-run it (the diff, with per-entry decisions: match by hand, exclude, pin a
+field, alliance type), apply it and see the run history (`RealmSyncRun`); the `realm-source-sync` cron job runs
+realms whose schedule is due. New nations are created **unclaimed** (`ownerUserId` empty, shown as **Unclaimed**
+with **Claim** on the realm's Nations tab, the map panel and the country page); a claim hands the existing nation
+over. A sync never deletes a nation, never removes an alliance member and never changes a claimed nation's owner.
+Borders go through `src/lib/maps/realm-map-writer.ts`. Runbook: [realms-eurth-onboarding.md](realms-eurth-onboarding.md) step 4.
+
+Alliances are realm-scoped (`Alliance.realmId`): names are unique per realm, and only nations of the alliance's
+realm can be invited to or join it.
 
 ## 5. Known gaps
 
