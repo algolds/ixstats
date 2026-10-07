@@ -1,6 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "../../core";
@@ -11,11 +15,11 @@ import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
-  validateLinkage: adminProcedure
+  validateLinkage: protectedProcedure
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
       // The edited realm's political map layers and countries (ruling E-o)
-      const realmId = await viewerRealmId(ctx, input?.realm);
+      const realmId = await editableMapRealmId(ctx, input?.realm);
       const mapLayers = await ctx.db.mapLayer.findMany({
         where: { layerType: "political", isActive: true, realmId },
         select: {
@@ -160,7 +164,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
     }),
 
   /** Repair linkage: sync geometry/area from MapLayer to Country, or auto-match by name. */
-  repairLinkage: adminProcedure
+  repairLinkage: rateLimitedMutationProcedure
     .input(
       z.object({
         action: z.enum(["sync_all", "auto_match", "link_by_name"]),
@@ -172,13 +176,14 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       let repaired = 0;
-      // auto_match and link_by_name work inside the edited realm; sync_all re-syncs every linked country
-      const realmId = await viewerRealmId(ctx, input.realm);
+      // Every action works inside the edited realm (site admins anywhere; founders and map officers in theirs)
+      const realmId = await editableMapRealmId(ctx, input.realm);
 
       if (input.action === "sync_all") {
-        // Re-sync geometry + area from MapLayer → Country for all linked countries
+        // Re-sync geometry + area from MapLayer → Country for the realm's linked countries
         const linkedLayers = await ctx.db.mapLayer.findMany({
-          where: { layerType: "political", countryId: { not: null }, isActive: true },
+          where: { layerType: "political", countryId: { not: null }, isActive: true, realmId },
+          take: 50_000,
           select: {
             countryId: true,
             geometry: true,

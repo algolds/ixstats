@@ -73,6 +73,7 @@ describe("officer powers", () => {
       "board",
       "diplomacy",
       "claims",
+      "map",
     ]);
     expect(realmPowers(actor(OFFICER), realm, officers)).toEqual(["board"]);
     expect(realmPowers(actor(PLAYER), realm, officers)).toEqual([]);

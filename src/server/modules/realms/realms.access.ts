@@ -80,3 +80,28 @@ export function isRealmHiddenFrom(
   const unpublished = realm.status === "draft" || realm.status === "generating";
   return unpublished && !(viewer && canModerateRealm(viewer, { ownerId: realm.ownerId ?? "" }));
 }
+
+/**
+ * Whether `actor` may edit the realm's map (borders, region links, labels, map settings): a site admin, the
+ * founder, or an officer granted `map`. IxWorld (`DEFAULT_REALM_ID`) has no founder: only site admins edit it,
+ * whatever its realm row says.
+ */
+export function canEditRealmMap(
+  actor: RealmActor | null,
+  realm: { id: string; ownerId: string },
+  officers: readonly RealmOfficerGrant[]
+): boolean {
+  if (!actor) return false;
+  if (isSiteAdmin(actor)) return true;
+  if (realm.id === DEFAULT_REALM_ID) return false;
+  return hasRealmPower(actor, realm, officers, "map");
+}
+
+/** Whether `actor` may import a map into the realm: the same people who edit it (`canEditRealmMap`). */
+export function canImportRealmMap(
+  actor: RealmActor | null,
+  realm: { id: string; ownerId: string },
+  officers: readonly RealmOfficerGrant[]
+): boolean {
+  return canEditRealmMap(actor, realm, officers);
+}

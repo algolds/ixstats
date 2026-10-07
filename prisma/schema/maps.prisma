@@ -220,15 +220,20 @@ model Storyline {
 /// Mountain ranges, straits, bays, deserts, etc. Rendered as MapLibre text layers.
 model MapLabel {
   id            String                   @id @default(cuid())
-  countryId     String
+  /// A nation's label (its owner places it inside the nation), or null for a realm label (ocean, sea, region,
+  /// continent) that the realm's map editors place anywhere.
+  countryId     String?
+  /// The realm a realm label belongs to (null on a nation's label, whose realm is its country's).
+  realmId       String?
   text          String
-  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical
+  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical; realm labels: ocean, sea, region, continent
   coordinates   Json                     // [lng, lat] anchor point
   fontSize      Float                    @default(14)
   color         String                   @default("#374151")
   rotation      Float                    @default(0)
   letterSpacing Float                    @default(0)
   fontWeight    String                   @default("normal")
+  fontStyle     String                   @default("normal") // normal | italic
   opacity       Float                    @default(1.0)
   minZoom       Float                    @default(4)
   maxZoom       Float                    @default(18)
@@ -240,9 +245,10 @@ model MapLabel {
   reviewedAt    DateTime?
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
-  country       Country                  @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
+  country       Country?                 @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, status])
+  @@index([realmId, status])
   @@index([status, minZoom])
   @@map("map_labels")
 }
@@ -281,6 +287,7 @@ model MapLayer {
 model MapEditRequest {
   id               String    @id @default(cuid())
   countryId        String
+  realmId          String?   // the realm whose map the edit is for (null on requests filed before realms)
   userId           String
   editType         String    // "subdivision", "city", "poi", "border_adjust", "split", "merge", "redraw", "vertex_edit"
   targetId         String?   // ID of entity being edited (null for new)
@@ -300,6 +307,7 @@ model MapEditRequest {
   country          Country   @relation("CountryMapEdits", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, status])
+  @@index([realmId, status])
   @@index([userId, status])
   @@index([status, createdAt])
   @@map("map_edit_requests")
