@@ -14,6 +14,38 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🗺️ Realm Source Sync, Unclaimed Nations & Realm Alliances (2026-10-07)
+
+- **Source sync:** a realm's nations, figures, borders and alliances follow an outside source, a public GitHub
+  repository (`RealmSourceSync`, one per realm). Configure, dry-run (the diff: new nations, figure changes, claimed
+  nations left alone, borders, alliances, missing nations, entries left to staff), apply and see the run history in
+  `/admin/realms` → **Source sync** or the founder's Manage → **Source sync**; or
+  `bun scripts/realms/sync-realm-source.ts --realm <slug> [--preset <id>] [--apply]`. Staff decide per entry: match
+  by hand, exclude, pin a field so it is never overwritten, set an alliance's type. Options: add new nations, add
+  roster nations, read new nations' wiki infobox, update unclaimed nations (on), update claimed nations (off),
+  borders, alliances, continents, list missing nations. Nothing is deleted and no claimed nation changes hands.
+- **Nothing hard-coded:** repository, ref, file paths, field names, wiki link prefixes, alliance type rules,
+  attribution, options and the free-text continent table are the realm's settings; Eurth's ship as the `eurth-map`
+  preset (`src/lib/realms/sources/presets/eurth-map.json`, 115 first-guess continents). Fetched JavaScript is read
+  with a literal-only reader, never evaluated; fetches go only to raw.githubusercontent.com (validated parts, no
+  redirects, timeout, 5 MB cap).
+- **Schedule:** per realm (manual, 6 h, 12 h, daily, weekly, custom); the new `realm-source-sync` cron job runs
+  realms that are due, one at a time, each under its own lease shared with manual runs.
+- **Unclaimed nations:** the sync creates every nation up front, unclaimed, through the claim flow's baseline.
+  They are badged **Unclaimed** with **Claim** on the realm's Nations tab, in the map panel and on the country page
+  (**Claim this nation**). A claim hands the existing nation over and its infobox fills only what is still empty; a
+  nation only on the map always goes to manual review. Precedence: map figures, then the infobox, then defaults.
+- **Realm map writer:** `src/lib/maps/realm-map-writer.ts` upserts features keyed by (realm, layer, key) with
+  geometry checks, batched transactions with an explicit timeout, PostGIS geometry and geography areas written
+  directly, display names and country links. The realm map shows its source's attribution line.
+- **Realm alliances:** `Alliance.realmId`; names are unique per realm, invites and acceptances across realms are
+  refused, and the map's alliance overlay is realm-scoped.
+- **Fix:** re-running the lore import no longer turns a claimed or founded nation page back into lore.
+- **Schema:** `realm_source_syncs`, `realm_sync_runs`, `Country.externalSourceKey`, `Alliance.realmId` and
+  `Alliance.externalSourceKey`, Alliance name uniqueness per realm
+  (`prisma/migrations/20261007120000_realm_source_sync/migration.sql`; apply it before `db push`, see the deploy
+  runbook step 4).
+
 ### 🏰 Realm Links, Rules & In-World Date (2026-10-07)
 
 - **Community links:** founders and `appearance` officers add up to 8 links (forum, Discord, wiki, map, website,

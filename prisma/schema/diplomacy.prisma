@@ -742,7 +742,9 @@ model BilateralTrade {
 
 model Alliance {
   id              String             @id @default(cuid())
-  name            String             @unique
+  /// The realm the alliance belongs to; its members are nations of that realm (Realm.id, like Country.realmId)
+  realmId         String             @default("default")
+  name            String
   shortName       String?
   type            String             @default("military") // "military", "economic", "political", "regional"
   description     String?
@@ -755,6 +757,8 @@ model Alliance {
   totalGdp        Float              @default(0)
   totalPopulation Float              @default(0)
   foundedIxTime   Float              @default(0)
+  /// The organisation's id in its realm's outside source (RealmSourceSync), when the sync created it
+  externalSourceKey String?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -762,6 +766,8 @@ model Alliance {
   actions         AllianceAction[]
   documents       AllianceDocument[]
 
+  @@unique([realmId, name])
+  @@unique([realmId, externalSourceKey])
   @@index([type])
   @@index([visibility])
 }

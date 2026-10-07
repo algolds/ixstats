@@ -31,6 +31,11 @@ Read it end to end once before starting. Every command here is meant to be run b
     `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy` and `RealmClaim.rulesAcceptedAt`
     (`prisma/migrations/20261007_realm_links_rules_calendar.sql` has the same columns). `db push` applies them with
     no data-loss prompt; the in-world date is a `Realm.settings` key and needs no column
+  - realm source sync (2026-10-07): `realm_source_syncs` and `realm_sync_runs` tables, a nullable
+    `Country.externalSourceKey` (unique per realm), and `Alliance.realmId` (default `default`) with
+    `Alliance.externalSourceKey`. Alliance names become unique **per realm** instead of globally. Apply
+    `prisma/migrations/20261007120000_realm_source_sync/migration.sql` by hand in step 4 first: `db push` would
+    otherwise stop on the new `(realmId, name)` unique constraint's warning
   - a nullable `IntelligenceAlert.readAt` (2026-10-05, additive): when the owner read a threshold alert (MC-17)
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
@@ -157,6 +162,15 @@ files are:
 - `20260923_add_vault_refund_type.sql`
 - `20260927_sport_match_status_resolved_idx.sql` — use `CREATE INDEX CONCURRENTLY` for no table lock.
 
+Apply the realm source sync migration by hand **before** the deploy script, so its `db push` has nothing to ask
+about (existing alliances become IxWorld's; two alliances could never share a name before, so the per-realm unique
+key cannot fail):
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261007120000_realm_source_sync/migration.sql
+```
+
 ## 5. Deploy
 
 First promote the release on GitHub: merge `rose-garden` into `development`, then `development` into `master`
@@ -263,9 +277,25 @@ Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`]
    with `--prune` (never a page with a pending or approved claim, or with a Country); the dry run lists the
    stale pages. Approved nation-page claims found their country prefilled from the page's infobox,
    including its flag and coat of arms.
-4. `/r/eurth` lists 100 claimable nations and the lore link opens `Portal:Eurth` read-only in WikiOS.
-5. Tell Eurth players: verify your IIWiki account (Settings → IxnayID & Passport → Linked Accounts), then claim your
-   nation at `/r/eurth`. Site admins review other claims in `/admin/realms` → Claims.
+4. Configure the source sync (onboarding §4): `/admin/realms` → **Source sync** → realm `Eurth` → **Load preset**
+   `Eurth community map` → check the continent table → **Save source sync**. Or from the shell:
+   ```bash
+   bun scripts/realms/sync-realm-source.ts --realm eurth --preset eurth-map        # loads the preset + dry run
+   ```
+5. **Dry run** and read the diff: about 130 source nations, new nations unclaimed, 115 borders, 8 alliances, and
+   **Left to you** (match by hand or exclude each; nothing is guessed). Repeat until it reads right.
+6. **Apply** (settings page: runs in the background, see the run history; or the script with `--apply`). New
+   nations read their IIWiki infobox one at a time (paced, 8 s each), so allow a few minutes. Entries whose
+   infobox gave nothing are listed; re-run to retry them.
+7. Check: `/r/eurth` → **Nations** lists about 130 nations, the unclaimed ones badged **Unclaimed** with **Claim**;
+   `/maps?realm=eurth` shows the borders and `Map: Eurth community, via eurth-map by Seth Harrison`; a nation's page
+   shows **Claim this nation**; the alliances exist in Eurth only. The lore link opens `Portal:Eurth` read-only in
+   WikiOS.
+8. Choose a schedule in the sync settings (for example daily) and switch **Run on the schedule** on; then add
+   `realm-source-sync` to `CRON_ENABLED_JOBS` (step 7).
+9. Open claims: tell Eurth players to verify their IIWiki account (Settings → IxnayID & Passport → Linked Accounts),
+   then claim their nation at `/r/eurth`. Site admins review other claims in `/admin/realms` → Claims (a nation only
+   on the map always goes to review).
 
 ## 7. Turn cron jobs on, one per cycle
 
@@ -294,8 +324,16 @@ Until `exchange-market` runs, every sector index stays at 1,000 and queued decis
 Enable `notification-email-digest` (daily email summaries, SL-5) only once email is configured (step 2); it does
 nothing without it.
 
-That makes 23 jobs here, including `notification-email-digest` (plus the two WikiOS ones below): the full table of
-25 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
+Enable `realm-source-sync` (hourly at minute 37) once a realm's source sync is configured and applied (step 6b): it
+runs each realm whose own schedule is due (set per realm in its sync settings), one realm at a time, each under the
+lease `realm-source-sync:<realmId>`. It does nothing for realms with no schedule:
+
+```
+CRON_ENABLED_JOBS=...,realm-source-sync
+```
+
+That makes 24 jobs here, including `notification-email-digest` and `realm-source-sync` (plus the two WikiOS ones
+below): the full table of 26 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
 schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop

@@ -215,8 +215,10 @@ kinds, and only removes stale pages with `--prune`:
   already has a Country in the realm. Those are listed as `stale, kept` and never deleted. Run the dry run
   with `--prune` first to see what would go.
 
-A page a player has already **claimed** still flips back to `kind: "lore"` if it is no longer a roster
-nation, so don't re-run casually once claiming has started.
+A nation page with a pending or approved claim, or with a Country in the realm (claimed, or created unclaimed by
+the source sync in step 4), stays `kind: "nation"` even when the roster stops listing it: the apply prints
+`kept as nation (claimed or founded): <titles>` instead of turning it into lore. Re-running is safe once claiming
+has started.
 
 ### 3.3 What a claim's new nation starts with
 
@@ -231,7 +233,105 @@ economy.
 
 ---
 
-## 4. Onboard Eurth players
+## 4. Bring in the community map (source sync)
+
+Eurth's nation list is the **union** of the IIWiki roster (step 3) and the community map's nation list
+(`a-seth-harrison/eurth-map`, about 130 nations, some with no IIWiki page yet). The source sync creates every one of
+them up front as a real, **unclaimed** Country of the realm (`ownerUserId` empty), with figures, continent,
+borders and alliances, and keeps them in step on a schedule. Players then claim the existing nations.
+
+**Precedence for a new nation's figures:** the map's figures (forum-checked by its maintainer), then the nation's
+IIWiki infobox, then the baseline defaults. Stated land area wins; the map's traced area is used only when the map
+states none. Flag, coat of arms, leader and identity come from the infobox.
+
+Nothing about Eurth is built in: the repository, ref, file paths, field names, wiki link prefixes, alliance type
+rules, attribution line, options and continent table all live in the realm's own sync settings. Eurth's values ship
+as the **`eurth-map` preset** (`src/lib/realms/sources/presets/eurth-map.json`); loading it fills the settings once,
+and from then on the realm's settings are the only source of truth.
+
+### 4.1 Configure
+
+Either in `/admin/realms` → **Source sync** tab → realm `Eurth`, or (the founder, once Eurth has one) in
+`/r/eurth/manage` → **Source sync**:
+
+1. **Preset** → `Eurth community map` → **Load preset**. This fills the repository (`a-seth-harrison/eurth-map`,
+   branch `main`), the format (`eurth-map`), the source settings (file paths
+   `eurth-map/src/data/nations.js`, `eurth-map/src/data/organizations.js`, `eurth-map/public/nations.geojson`;
+   field names; IIWiki link prefixes; alliance type rules; the attribution
+   `Map: Eurth community, via eurth-map by Seth Harrison`), the options and the continent table (a first guess for
+   115 nations; the other 16 are left unknown).
+2. Check the **continent table** and correct any guess (free text, no fixed list), then **Save source sync**.
+
+From the command line instead (same result):
+
+```bash
+bun scripts/realms/sync-realm-source.ts --realm eurth --preset eurth-map          # loads the preset, then dry-runs
+bun scripts/realms/sync-realm-source.ts --realm eurth --configure --ref main       # change repo/ref/format later
+```
+
+### 4.2 Options
+
+| Option | Default | What it does |
+|---|---|---|
+| Add new nations | on | Creates unclaimed nations for map entries no nation matches |
+| Add roster nations | on | Creates unclaimed nations for roster pages the map does not list (from their infobox) |
+| Read new nations' wiki infobox | on | Fills what the map lacks, plus flag, arms, leader, identity; one page at a time, paced, 8 s each |
+| Update unclaimed nations | on | Keeps unclaimed nations' population, GDP per capita, land area, capital, official name, continent in step |
+| Update claimed nations too | **off** | Overwrites players' own figures with the map's. Leave off unless Eurth asks for it |
+| Update borders | on | Writes the map's borders into Eurth's map (keyed by the map's nation key) and links them |
+| Sync alliances | on | Creates the map's organisations as Eurth alliances and adds their listed nations as members |
+| Apply continents | on | Sets nations' continents from the continent table |
+| List nations the source no longer has | on | Lists them in the run's diff. A sync never deletes a nation |
+
+A sync never deletes a nation, never removes an alliance member and never changes who owns a claimed nation.
+
+### 4.3 Dry run, decide, apply
+
+1. **Dry run** (settings page, or `bun scripts/realms/sync-realm-source.ts --realm eurth`). Read the diff: new
+   nations (unclaimed), figure changes, claimed nations left alone, borders, alliances (with the type the name rules
+   gave: Treaty, Pact, Defence or Security → military; Economic → economic; else political), nations no longer in
+   the map, and **Left to you**: entries whose name matches more than one nation, or a nation another entry also
+   matches. Nothing is guessed.
+2. **Decide** on each entry left to you: **Match to a nation** (a manual match), or **Exclude** the map key. On
+   figure changes, **Pin current value** keeps a field as it is on that nation forever (the sync never overwrites a
+   pinned field). Alliance types can be changed in the diff. Decisions are kept in the realm's settings and listed
+   under **Your decisions** (clear one there). Dry-run again until the diff reads right.
+3. **Apply** (settings page: it runs in the background and appears in the run history; or the script with
+   `--apply`). Expect on prod about **130 nations** created unclaimed (the map's 130, matched to the roster where
+   they overlap, plus any roster-only pages), **115 borders**, **8 alliances** with their members.
+4. Check `/r/eurth` → **Nations**: every nation listed, unclaimed ones badged **Unclaimed** with **Claim**;
+   `/maps?realm=eurth` shows the borders and the attribution line; a nation's page shows **Unclaimed** and
+   **Claim this nation**.
+
+The local end-to-end rehearsal (2026-10-07, real GitHub source, a simulated 107-page roster with one claimed nation)
+created 132 nations (129 from the map plus 3 roster-only pages), matched 1, left the claimed nation's figures
+alone, wrote and linked 115 borders (PostGIS geometry and areas filled by the writer, 76 with neighbours), created
+8 alliances with 54 members alongside an IxWorld alliance of the same name, and a second dry run showed no changes.
+IIWiki refuses requests from outside production (HTTP 403), so every infobox read fell back: all 132 new nations
+were still created from the map's figures (defaults where the map has none) and listed under "wiki infobox gave
+nothing (re-run to retry)". On production the reads succeed; re-run the apply to fill any that failed.
+
+### 4.4 Schedule
+
+Pick **Manual only**, every 6 or 12 hours, daily, weekly or a custom number of hours, and switch **Run on the
+schedule** on. The `realm-source-sync` cron job (add it to `CRON_ENABLED_JOBS`; it runs hourly at minute 37) runs
+every realm whose interval has passed since its last applied run, one realm at a time. Each realm's run holds the
+lease `realm-source-sync:<realmId>`, so a scheduled run, an admin's apply and the script never overlap (the second
+one is recorded as failed: "Another run of this realm's sync is in progress"). A failed applied run still moves the
+schedule on, so a broken source is retried at the next interval, not every hour.
+
+### 4.5 Claims on synced nations
+
+- A claim on an unclaimed nation hands the existing Country to the claimant. Its IIWiki infobox then fills only
+  what is still empty (flag, coat of arms, leader, identity fields); the map's figures stay.
+- A claim filed on a roster page before the sync, and approved after it, takes the synced nation instead of
+  creating a second one.
+- A nation only on the map (no IIWiki page, so no `wikiSource`) can be claimed but always goes to **manual review**:
+  there is no page creator to prove.
+
+---
+
+## 5. Onboard Eurth players
 
 **Before players arrive, set up the region page.** The founder (or a site admin, while Eurth is staff-administered,
 or an officer with the `appearance` power) opens `/r/eurth/manage` and fills in:
@@ -249,12 +349,15 @@ Tell players, in order:
    Accounts** → Manage → the **IIWiki** row → enter your iiwiki username → **Get code**. Paste the shown
    token anywhere on your own `User:<YourName>` page on iiwiki **while logged in as that account**, save
    it, then come back and press **Verify**. The code is valid for 24 hours.
-2. **Claim your nation.** Go to `/r/eurth` → **Claimable nations** → find your nation → **Claim**.
+2. **Claim your nation.** Go to `/r/eurth` → **Nations** → find your nation (badged **Unclaimed**) →
+   **Claim**, or **Claim this nation** on its country page. Roster pages without a nation yet are listed under
+   **Claimable nations**.
    - If you are the verified creator of that nation's iiwiki page, the claim is **approved instantly** —
-     the country is created in Eurth and assigned to you.
+     the nation (synced, or created now for a roster page) is assigned to you.
    - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**, and
      once Eurth has a founder (4.1), the founder and officers with the **Claims** power (4.2) review it in
-     `/r/eurth/manage` → **Claims**.
+     `/r/eurth/manage` → **Claims**. A nation only on the community map has no IIWiki page to prove, so its
+     claim is always reviewed.
      Each nation-page claim there has a **Page history** link to the page's history on iiwiki; its first
      entry is the page's creator.
    - When the nation's page is a redirect, the creator check uses the page it redirects to.
@@ -302,9 +405,10 @@ directory (`/countries?realm=eurth`), and the map (`/maps?realm=eurth`).
 
 ---
 
-## 5. Optional: give Eurth a map
+## 6. Optional: a map from an image (when a realm has no source)
 
-Without this, `/maps?realm=eurth` is empty — **expected**, not a bug, until you do this step.
+Eurth's borders come from the source sync (step 4). This step is for a realm whose map exists only as an image.
+Without either, `/maps?realm=<realm>` is empty, which is **expected**.
 
 > **Warning — don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode,
 > and Quick Update always writes **IxWorld's** map — an Eurth SVG applied there replaces that layer of
@@ -351,7 +455,7 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 
 ---
 
-## 6. Known limits (tell players/admins up front)
+## 7. Known limits (tell players/admins up front)
 
 - **Lore availability is tied to iiwiki.** Eurth's lore renders live from iiwiki on every read — if iiwiki
   is down or Cloudflare-challenges the request, Eurth's lore pages are down too. This is not an IxStats
@@ -369,7 +473,7 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
   dashboard feed and trending. Handing the realm over (4.1) and the Claims officer power (4.2) shipped on
   2026-10-07. Shipped since: a realm filter on the ThinkPages
   feed and the realm board at `/r/eurth/board`, and a nation switcher in the nav and on the passport (alongside
-  **Play as** on the realm page), and the region page's links, rules and in-world date (§4).
+  **Play as** on the realm page), and the region page's links, rules and in-world date (§5), and the source sync (§4).
 
 ---
 
@@ -378,9 +482,11 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Need to… | Do this |
 |---|---|
 | Check for unresolved owner collisions or map-layer clashes/duplicates | Re-run `bun scripts/realms/backfill-foundation.ts` (no `--apply`) |
-| Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (safe, but see the re-run caveat in 3.2) |
+| Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (claimed and synced nation pages stay nations) |
+| Sync Eurth's nations, borders and alliances from the community map | `/admin/realms` → Source sync → Dry run → Apply, or `bun scripts/realms/sync-realm-source.ts --realm eurth [--apply]` |
+| Correct a continent, exclude or match a map entry, pin a field | `/admin/realms` → Source sync (or `/r/eurth/manage` → Source sync): continent table, the diff's buttons |
 | See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
-| Import or update Eurth's map | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm `Eurth` (never Quick Update) |
+| Import a realm map from an image (no source) | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm (never Quick Update) |
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
 | Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (4.1); later, the founder uses `/r/eurth/manage` → Hand over |
 | Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (4.2) |

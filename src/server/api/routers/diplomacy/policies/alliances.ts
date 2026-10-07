@@ -12,7 +12,11 @@ import {
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
 import { allianceInviteProcedures } from "./alliance-invite-procedures";
-import { autoRespondNpcAllianceInvite } from "./alliance-invites";
+import {
+  allianceNameTaken,
+  assertAllianceRealm,
+  autoRespondNpcAllianceInvite,
+} from "./alliance-invites";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
@@ -129,9 +133,16 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         });
       }
 
+      // The alliance belongs to the founding nation's realm; its name is unique within that realm.
+      const founderCountry = await ctx.db.country.findUnique({
+        where: { id: ctx.user.countryId },
+        select: { name: true, realmId: true },
+      });
+
       // Create alliance and add founder as first member
       const alliance = await ctx.db.alliance.create({
         data: {
+          ...(founderCountry?.realmId && { realmId: founderCountry.realmId }),
           name: input.name,
           shortName: input.shortName,
           type: input.type,
@@ -157,13 +168,9 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
             },
           },
         },
-      });
+      }).catch(allianceNameTaken);
 
       // Auto-news: alliance formed
-      const founderCountry = await ctx.db.country.findUnique({
-        where: { id: ctx.user.countryId },
-        select: { name: true },
-      });
       void generateDiplomaticNews(ctx.db, ctx.user.countryId, "alliance_formed", {
         allianceName: input.name,
         countryName: founderCountry?.name ?? "Unknown",
@@ -253,11 +260,12 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
 
       const targetExists = await ctx.db.country.findUnique({
         where: { id: input.targetCountryId },
-        select: { id: true },
+        select: { id: true, realmId: true },
       });
       if (!targetExists) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found." });
       }
+      await assertAllianceRealm(ctx.db, input.allianceId, targetExists.realmId);
 
       // An invite is a pending row (isActive=false, status="invited"): the target's owner must
       // accept via respondToAllianceInvite before the country becomes a member.

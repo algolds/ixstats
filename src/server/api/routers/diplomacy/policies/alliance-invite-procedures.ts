@@ -15,7 +15,11 @@ import {
   proposalExpiresAt,
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
-import { ALLIANCE_LEADER_ROLES, inviteProposerCountryIds } from "./alliance-invites";
+import {
+  ALLIANCE_LEADER_ROLES,
+  assertAllianceRealm,
+  inviteProposerCountryIds,
+} from "./alliance-invites";
 
 /** Mark a stale pending invite expired and refuse the action with a clear message. */
 async function rejectExpiredInvite(
@@ -187,6 +191,13 @@ export const allianceInviteProcedures = {
       }
       if (isProposalExpired(inviteIssuedAt(invite))) {
         await rejectExpiredInvite(ctx.db, invite);
+      }
+      if (input.choice === "accept") {
+        const invited = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { realmId: true },
+        });
+        await assertAllianceRealm(ctx.db, input.allianceId, invited?.realmId);
       }
 
       // Claim atomically so a double response cannot flip it twice.

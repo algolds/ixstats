@@ -295,6 +295,23 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
+    // Realm source sync: runs each realm whose own schedule is due (RealmSourceSync.intervalHours), one realm at
+    // a time; each realm's run also holds its own `realm-source-sync:<realmId>` lease, shared with manual runs.
+    name: "realm-source-sync",
+    defaultSchedule: "37 * * * *",
+    lockName: "realm-source-sync",
+    timeoutMs: 120 * MINUTE,
+    modulePath: "~/server/modules/realms/realms.source-sync",
+    exportName: "runDueSourceSyncs",
+    load: async () => {
+      const [{ runDueSourceSyncs, LIVE_RUN_DEPS }, { db }] = await Promise.all([
+        import("~/server/modules/realms/realms.source-sync"),
+        import("~/server/db"),
+      ]);
+      return () => runDueSourceSyncs(db, LIVE_RUN_DEPS);
+    },
+  },
+  {
     // Daily email summary for users who chose the digest (SL-5); does nothing unless EMAIL_* is set.
     name: "notification-email-digest",
     defaultSchedule: "7 8 * * *",

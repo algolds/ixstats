@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { EmptyState } from "~/components/ui/empty-state";
 import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
+import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/SourceSyncPanel";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
@@ -48,6 +49,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
+    manage.isFounder && { id: "source-sync", label: "Source sync" },
     manage.canHandOver && { id: "handover", label: "Hand over" },
   ].filter(Boolean) as Array<{ id: string; label: string }>;
 
@@ -96,6 +98,15 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         {can("diplomacy") && <EmbassiesSection slug={slug} manage={manage} />}
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}
         {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
+        {manage.isFounder && (
+          <ManageSection
+            id="source-sync"
+            title="Source sync"
+            description="Keep the realm's nations, figures, borders and alliances in step with an outside source, such as a community map. Only the founder (and site staff) manage it."
+          >
+            <SourceSyncPanel slug={slug} />
+          </ManageSection>
+        )}
         {manage.canHandOver && <HandOverSection slug={slug} manage={manage} />}
       </div>
     </div>

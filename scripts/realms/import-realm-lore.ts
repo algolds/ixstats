@@ -6,13 +6,15 @@
  * Nations come from --nation-roster (one subcategory per nation; its titles join the index even if the crawl missed
  * them; a retired roster is refused), else from pages whose lead uses Infobox country / former country.
  * A re-run adds new pages and updates kinds; rows no longer in the index stay unless --prune is given, and even then
- * a page with a pending or approved claim, or with a nation's Country, is kept.
+ * a page with a pending or approved claim, or with a nation's Country, is kept. Such a page also stays a nation when
+ * the roster stops listing it (it is never turned back into lore).
  * Page content is never copied.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
 import {
   crawlRealmCategory,
   indexNations,
+  loreDowngrades,
   nationMethod,
   prunableTitles,
   rosterTitlesNotCrawled,
@@ -47,6 +49,26 @@ function sourceArg(): ProofSource {
   return source;
 }
 
+/**
+ * Of `titles`, those a claim or a country names: a page with a pending or approved claim, or with a Country of
+ * this realm (claims and countries name their page by title). Such a page is never deleted or turned into lore.
+ */
+async function guardedTitles(client: Tx, realmId: string, titles: string[]): Promise<string[]> {
+  if (titles.length === 0) return [];
+  const claims = await client.realmClaim.findMany({
+    where: { realmId, wikiPageTitle: { in: titles }, status: { in: ["pending", "approved"] } },
+    select: { wikiPageTitle: true },
+  });
+  const countries = await client.country.findMany({
+    where: { realmId, OR: [{ wikiPageTitle: { in: titles } }, { name: { in: titles } }] },
+    select: { name: true, wikiPageTitle: true },
+  });
+  return [
+    ...claims.map((claim) => claim.wikiPageTitle),
+    ...countries.flatMap((country) => [country.name, country.wikiPageTitle]),
+  ].filter((title): title is string => !!title);
+}
+
 async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, pages: string[], nations: Set<string>) {
   const kindOf = (title: string) => (nations.has(title) ? "nation" : "lore");
   const created = await tx.realmPage.createMany({
@@ -59,36 +81,31 @@ async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, page
     where: { ...scope, title: { in: pages.filter((t) => kindOf(t) === "nation") }, kind: { not: "nation" } },
     data: { kind: "nation" },
   });
+  // A claimed or founded nation page stays a nation even when the roster no longer lists it.
+  const indexedNations = await tx.realmPage.findMany({
+    where: { ...scope, kind: "nation", title: { in: pages.filter((t) => kindOf(t) === "lore") } },
+    select: { title: true },
+  });
+  const candidates = indexedNations.map((row) => row.title);
+  const { downgrade, kept } = loreDowngrades(candidates, await guardedTitles(tx, realmId, candidates));
   const toLore = await tx.realmPage.updateMany({
-    where: { ...scope, title: { in: pages.filter((t) => kindOf(t) === "lore") }, kind: { not: "lore" } },
+    where: { ...scope, title: { in: downgrade }, kind: { not: "lore" } },
     data: { kind: "lore" },
   });
   console.log(`written: ${created.count} new rows, ${toNation.count} → nation, ${toLore.count} → lore`);
+  if (kept.length > 0) console.log(`kept as nation (claimed or founded): ${kept.join(", ")}`);
 }
 
 /**
  * The indexed rows of this realm and wiki that the new index no longer has, split into those --prune deletes and
- * those it keeps: claims and countries name their page by title, so a page with a pending or approved claim, or
- * with a Country of this realm, is never deleted.
+ * those it keeps (a page with a pending or approved claim, or with a Country of this realm, is never deleted).
  */
 async function staleRows(client: Tx, realmId: string, wikiSource: ProofSource, pages: string[]) {
   const indexed = await client.realmPage.findMany({ where: { realmId, wikiSource }, select: { title: true } });
   const current = new Set(pages);
   const stale = indexed.map((row) => row.title).filter((title) => !current.has(title));
   if (stale.length === 0) return { prune: [], kept: [] };
-  const claims = await client.realmClaim.findMany({
-    where: { realmId, wikiPageTitle: { in: stale }, status: { in: ["pending", "approved"] } },
-    select: { wikiPageTitle: true },
-  });
-  const countries = await client.country.findMany({
-    where: { realmId, OR: [{ wikiPageTitle: { in: stale } }, { name: { in: stale } }] },
-    select: { name: true, wikiPageTitle: true },
-  });
-  const guarded = [
-    ...claims.map((claim) => claim.wikiPageTitle),
-    ...countries.flatMap((country) => [country.name, country.wikiPageTitle]),
-  ].filter((title): title is string => !!title);
-  return prunableTitles(stale, pages, guarded);
+  return prunableTitles(stale, pages, await guardedTitles(client, realmId, stale));
 }
 
 async function main() {

@@ -14,6 +14,7 @@ import {
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
 import { StatCard } from "~/components/maps/core/components/StatCard";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
@@ -173,6 +174,12 @@ export function CountryOverviewTab({
 
   return (
     <>
+      {summary.claimed === false && (
+        <div className="mb-3 flex items-center gap-2">
+          <Badge variant="outline">Unclaimed</Badge>
+          <span className="text-label-secondary text-footnote">No player holds this nation yet.</span>
+        </div>
+      )}
       {/* Brief wiki intro — first paragraph only, full content in Info tab */}
       {wikiRichIntro?.paragraphs?.[0] && (
         <div className="mb-3">

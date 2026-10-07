@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Crown, Globe, UserCircle } from "iconoir-react";
 import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
+import { ClaimNationButton } from "~/components/realms/ClaimNationButton";
 
 const PILL =
   "text-footnote text-label bg-fill-4 rounded-full inline-flex h-7 items-center gap-2 px-3 font-medium";
@@ -13,15 +14,22 @@ const LINK_PILL = cn(
 export interface CountryIdentityStripProps {
   realm?: { name: string; slug: string } | null;
   sovereign?: { username: string | null; roleName?: string | null } | null;
+  /** An unclaimed nation of a realm open to claims: "Claim this nation" beside "Unclaimed" for signed-in viewers. */
+  claim?: { countryId: string; countryName: string } | null;
   className?: string;
 }
 
 /**
  * CountryIdentityStrip — provenance for a nation: the realm it belongs to (→ `/r/[realm]`) and
- * the IxnayID of the player who holds it (→ `/@handle`), or "Unclaimed". Pills on `fill-4`, so it
- * sits on any opaque card.
+ * the IxnayID of the player who holds it (→ `/@handle`), or "Unclaimed" (with "Claim this nation" when the
+ * realm takes claims). Pills on `fill-4`, so it sits on any opaque card.
  */
-export function CountryIdentityStrip({ realm, sovereign, className }: CountryIdentityStripProps) {
+export function CountryIdentityStrip({
+  realm,
+  sovereign,
+  claim,
+  className,
+}: CountryIdentityStripProps) {
   const realmName = realm?.name || "IxWorld";
   const realmSlug = realm?.slug || "default";
   const isPrimary = realmSlug === "default" || realmSlug === "ixworld";
@@ -57,6 +65,14 @@ export function CountryIdentityStrip({ realm, sovereign, className }: CountryIde
           <UserCircle aria-hidden className="size-3.5" />
           Unclaimed
         </span>
+      )}
+      {!handle && claim && !isPrimary && (
+        <ClaimNationButton
+          realmSlug={realmSlug}
+          countryId={claim.countryId}
+          countryName={claim.countryName}
+          label="Claim this nation"
+        />
       )}
     </nav>
   );
