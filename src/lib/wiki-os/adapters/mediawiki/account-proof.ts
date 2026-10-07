@@ -6,10 +6,11 @@
  * `wikiQuery` is exported for other read-only wiki queries (the realm lore import).
  */
 import { z } from "zod";
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, mediaWikiOrigin } from "~/lib/wiki-os/config";
-import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
+import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 
-export const PROOF_SOURCES = ["ixwiki", "iiwiki", "althistory"] as const;
+/** IxWiki and every sister wiki WikiOS reads (`reader: true` in `wiki-hosts.ts`). */
+export const PROOF_SOURCES = ["ixwiki", ...SISTER_READER_IDS] as const;
 export type ProofSource = (typeof PROOF_SOURCES)[number];
 
 export function isProofSource(source: string): source is ProofSource {
@@ -23,16 +24,11 @@ export class WikiApiError extends Error {
   }
 }
 
-const SITE_URLS: Record<ProofSource, string> = {
-  ixwiki: mediaWikiOrigin(),
-  iiwiki: "https://iiwiki.com",
-  althistory: "https://althistory.fandom.com",
-};
+const siteUrl = (source: ProofSource): string => WIKI_SOURCES[source].baseUrl;
 
+/** IxWiki's internal api.php; a sister wiki's own (iiwiki's development proxy when one is configured). */
 function apiUrl(source: ProofSource): string {
-  if (source === "iiwiki") return getFullIiwikiApiUrl();
-  if (source === "ixwiki") return getMediaWikiApiUrl("ixwiki");
-  return `${SITE_URLS[source]}/api.php`;
+  return getMediaWikiApiUrl(source);
 }
 
 /** MediaWiki title rules for user names: underscores are spaces, first letter upper-case. */
@@ -43,7 +39,7 @@ export function normalizeWikiUsername(name: string): string {
 
 export function wikiUserPageUrl(source: ProofSource, username: string): string {
   const title = `User:${normalizeWikiUsername(username)}`.replace(/ /g, "_");
-  return `${SITE_URLS[source]}/wiki/${encodeURI(title)}`;
+  return `${siteUrl(source)}/wiki/${encodeURI(title)}`;
 }
 
 /** One api.php `action=query` read (formatversion 2) with the allowlisted UA, parsed by `schema`; throws WikiApiError. */

@@ -164,6 +164,13 @@ client-safe; the render-engine and refresh calls are in the server-only `templat
 Read from their own wikis by design. A sister wiki's title is never tried on IxWiki and an IxWiki title is never tried on a
 sister wiki (`getPageImages` used to try iiwiki for any title).
 
+**One list of hosts.** The sister wikis are entries of `src/lib/wiki-os/wiki-hosts.ts` (`SISTER_WIKI_HOSTS`: id, name,
+https origin, api path, upload CDN hosts, whether WikiOS reads its pages, and the proxies' per-wiki behaviour). The api.php
+and media proxies (`_config.ts` `WIKIS`, `_media-response.ts`'s host allowlist), `WIKI_SOURCES` and `WikiSource`
+(`config.ts`), account proof (`PROOF_SOURCES`) and realm wiki settings are built from it, so adding a MediaWiki host is one
+entry there and a host that is not an entry is never fetched. Callers name a wiki by its id, never by a URL. The file builds
+addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getMediaWikiApiUrl`.
+
 | Call site | What it reads |
 | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/http-reader.ts` | wikitext, search, category members, page images and page authors of iiwiki and AltHistory; Commons category members and file URLs. |

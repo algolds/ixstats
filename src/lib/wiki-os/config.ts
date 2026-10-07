@@ -1,7 +1,10 @@
 // src/lib/wiki-os/config.ts
 // Single source of truth for WikiOS and MediaWiki configuration (plan 415, v1 decision D14):
 // the wiki's name, its public host and its MediaWiki endpoints are read from the environment once,
-// here. No other file spells the host or re-derives it from `process.env`.
+// here. No other file spells the host or re-derives it from `process.env`. The sister wikis' hosts are listed
+// in `wiki-hosts.ts`.
+
+import { SISTER_READER_IDS, SISTER_WIKI_HOSTS, type SisterReaderId } from "./wiki-hosts";
 
 export const DEFAULT_USER_AGENT = "IxStats-Builder";
 export const MEDIAWIKI_TARGET_VERSION = "1.45.1";
@@ -9,7 +12,8 @@ export const MEDIAWIKI_TARGET_VERSION = "1.45.1";
 /** The public host when `NEXT_PUBLIC_MEDIAWIKI_URL` is unset: the only place the host is spelled. */
 const FALLBACK_PUBLIC_BASE_URL = "https://ixwiki.com";
 
-export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
+/** IxWiki, or a sister wiki WikiOS reads pages of (`reader: true` in `wiki-hosts.ts`). */
+export type WikiSource = "ixwiki" | SisterReaderId;
 
 export interface WikiSourceConfig {
   name: string;
@@ -180,21 +184,23 @@ export const WIKI_SOURCES: Record<WikiSource, WikiSourceConfig> = {
       "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia",
     userAgent: DEFAULT_USER_AGENT,
   },
-  iiwiki: {
-    name: "IIWiki",
-    baseUrl: "https://iiwiki.com",
-    apiEndpoint: "/api.php",
-    description: "SimFic and Alt-History Encyclopedia",
-    userAgent: DEFAULT_USER_AGENT,
-  },
-  althistory: {
-    name: "AltHistory Wiki",
-    baseUrl: "https://althistory.fandom.com",
-    apiEndpoint: "/api.php",
-    description: "Alternative History and Speculative Fiction Encyclopedia",
-    userAgent: DEFAULT_USER_AGENT,
-  },
-} as const;
+  // The sister wikis WikiOS reads, from their entries in wiki-hosts.ts.
+  ...(Object.fromEntries(
+    SISTER_READER_IDS.map((id): [SisterReaderId, WikiSourceConfig] => {
+      const host = SISTER_WIKI_HOSTS[id];
+      return [
+        id,
+        {
+          name: host.name,
+          baseUrl: host.origin,
+          apiEndpoint: host.apiPath,
+          description: host.description,
+          userAgent: DEFAULT_USER_AGENT,
+        },
+      ];
+    })
+  ) as Record<SisterReaderId, WikiSourceConfig>),
+};
 
 export function getWikiBaseUrl(source: WikiSource = "ixwiki"): string {
   return WIKI_SOURCES[source]?.baseUrl ?? wikiosConfig.publicBaseUrl;
