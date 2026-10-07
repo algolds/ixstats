@@ -14,6 +14,7 @@ import { AUTO_LINK_MIN_CONFIDENCE } from "~/lib/maps/nation-name-matching";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { linkRegionMatches, realmMatchSuggestions } from "./matching";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
@@ -22,6 +23,11 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // The edited realm's political map layers and countries (ruling E-o)
       const realmId = await editableMapRealmId(ctx, input?.realm);
+      // Realm staff see owners by forum name only; account ids stay with site admins
+      const ownerLabel = (owner: { clerkUserId: string; forumUsername: string | null } | null) =>
+        owner?.forumUsername ??
+        (isSiteAdmin(ctx.user as RealmActor) ? owner?.clerkUserId : null) ??
+        null;
       const mapLayers = await ctx.db.mapLayer.findMany({
         where: { layerType: "political", isActive: true, realmId },
         take: 50_000,
@@ -152,7 +158,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
             featureName: ml.displayName ?? ml.featureId,
             areaSqKm: ml.areaSqKm,
             hasOwner: c.owner !== null,
-            ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
+            ownerName: ownerLabel(c.owner),
           };
         }),
         unlinked: unlinked.map((c) => ({
@@ -162,7 +168,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
           hasGeometry: !!c.geometry,
           hasLandArea: !!(c.landArea && c.landArea > 0),
           hasOwner: c.owner !== null,
-          ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
+          ownerName: ownerLabel(c.owner),
         })),
       };
     }),

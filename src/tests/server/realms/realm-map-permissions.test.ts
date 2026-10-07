@@ -275,6 +275,30 @@ describe("linkage and auto-match are realm-scoped", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("shows realm staff nation owners by forum name only, never their account id", async () => {
+    const unlinkedNation = (db: Db) =>
+      db.country!.findMany!.mockResolvedValue([
+        {
+          id: "c1",
+          name: "Ostia",
+          flag: null,
+          landArea: null,
+          geometry: null,
+          owner: { clerkUserId: "clerk_owner", forumUsername: null },
+        },
+      ]);
+    const validate = async (who: string) => {
+      const db = realmDb();
+      unlinkedNation(db);
+      const result = await createCallerFactory(geoEditorLinkageValidationRouter)(
+        ctxAs(db, who)
+      ).validateLinkage({ realm: "eurth" });
+      return result.unlinked[0]!.ownerName;
+    };
+    await expect(validate(MAP_OFFICER)).resolves.toBeNull();
+    await expect(validate(ADMIN)).resolves.toBe("clerk_owner");
+  });
+
   it("a map officer renames a region but not the nation linked to it", async () => {
     const db = realmDb();
     db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", featureId: "F", countryId: "c1" });

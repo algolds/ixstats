@@ -22,13 +22,20 @@ type Row = { id: string; [key: string]: unknown };
 
 /** findMany over `rows` honouring `take`, `cursor` and `skip` like Prisma's id-ordered paging. */
 function pagedFindMany(rows: Row[]) {
-  return jest.fn(async (args: { take?: number; cursor?: { id: string }; skip?: number }) => {
-    const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
-    const start = args.cursor
-      ? sorted.findIndex((r) => r.id === args.cursor!.id) + (args.skip ?? 0)
-      : 0;
-    return sorted.slice(start, start + (args.take ?? sorted.length));
-  });
+  return jest.fn(
+    async (args: {
+      where?: Record<string, unknown>;
+      take?: number;
+      cursor?: { id: string };
+      skip?: number;
+    }) => {
+      const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
+      const start = args.cursor
+        ? sorted.findIndex((r) => r.id === args.cursor!.id) + (args.skip ?? 0)
+        : 0;
+      return sorted.slice(start, start + (args.take ?? sorted.length));
+    }
+  );
 }
 
 function setup({

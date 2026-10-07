@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -45,29 +45,21 @@ export function AutoMatchReviewDialog({
     { realm },
     { enabled: open, staleTime: 0, retry: false }
   );
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Confident matches start ticked, the rest unticked; `toggled` holds the pairs the user flipped.
+  const [toggled, setToggled] = useState<Set<string>>(new Set());
   const suggestions = data?.suggestions ?? [];
+  const isSelected = (s: (typeof suggestions)[number]) =>
+    s.confidence >= AUTO_LINK_MIN_CONFIDENCE !== toggled.has(pairKey(s.featureId, s.countryId));
 
-  useEffect(() => {
-    if (!data) return;
-    setSelected(
-      new Set(
-        data.suggestions
-          .filter((s) => s.confidence >= AUTO_LINK_MIN_CONFIDENCE)
-          .map((s) => pairKey(s.featureId, s.countryId))
-      )
-    );
-  }, [data]);
-
-  const toggle = (key: string, on: boolean) =>
-    setSelected((prev) => {
+  const toggle = (key: string) =>
+    setToggled((prev) => {
       const next = new Set(prev);
-      if (on) next.add(key);
-      else next.delete(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
-  const chosen = suggestions.filter((s) => selected.has(pairKey(s.featureId, s.countryId)));
+  const chosen = suggestions.filter(isSelected);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,11 +90,7 @@ export function AutoMatchReviewDialog({
               const id = `match-${s.featureId}`;
               return (
                 <li key={key} className="flex items-center gap-2">
-                  <Checkbox
-                    id={id}
-                    checked={selected.has(key)}
-                    onCheckedChange={(v) => toggle(key, v === true)}
-                  />
+                  <Checkbox id={id} checked={isSelected(s)} onCheckedChange={() => toggle(key)} />
                   <label htmlFor={id} className="text-footnote flex min-w-0 flex-1 flex-col">
                     <span className="text-label truncate">
                       {s.featureName} to {s.countryName}
