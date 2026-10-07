@@ -128,6 +128,8 @@ interface IxWorldMapProps {
   attribution?: string | null;
   /** The realm's unclaimed nations, hatched over their fill. */
   unclaimedCountryIds?: readonly string[];
+  /** The realm whose decorative layers (altitudes, rivers, lakes) draw from vector tiles. */
+  tileRealmId?: string;
 }
 
 export interface IxWorldMapRef {
@@ -166,6 +168,7 @@ const IxWorldMap = memo(
       baseImageUrl,
       attribution,
       unclaimedCountryIds,
+      tileRealmId,
     },
     ref
   ) {
@@ -175,7 +178,6 @@ const IxWorldMap = memo(
     const [debugError, setDebugError] = useState<string | null>(null);
 
     const tooltipPopupRef = useRef<any>(null);
-    const fullLayerDataRef = useRef<Map<string, FeatureCollection>>(new Map());
     const labelFeaturesRef = useRef<FeatureCollection | null>(null);
 
     useImperativeHandle(ref, () => ({
@@ -187,6 +189,23 @@ const IxWorldMap = memo(
       },
       getMap: () => mapRef.current,
     }));
+
+    // Theme changes. The map engine already creates (or resets) the map with the current theme, so
+    // only a later change re-applies the style. Declared before the layer hooks so their effects
+    // re-push data after this empties the sources, not before it.
+    const styledThemeRef = useRef(theme);
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded || styledThemeRef.current === theme) return;
+      styledThemeRef.current = theme;
+      try {
+        // oxlint-disable-next-line
+        const newStyle = buildBaseStyle(theme, projectionMode);
+        map.setStyle(newStyle as any, { diff: true });
+      } catch (err) {
+        console.warn("[IxWorldMap] setStyle error:", err);
+      }
+    }, [theme, isLoaded]);
 
     const { updateDistanceFade } = useWorldMapInteractions({
       map: mapRef.current,
@@ -213,11 +232,11 @@ const IxWorldMap = memo(
       topCountryNames,
       updateDistanceFade,
       labelFeaturesRef,
-      fullLayerDataRef,
       theme,
       showOceanLabels,
       showPrimeMeridian: ixWorld,
       labelsVisible,
+      tileRealmId,
     });
 
     useRealmMapLayers({
@@ -248,19 +267,6 @@ const IxWorldMap = memo(
       theme,
       selectedCountryId,
     });
-
-    // Handle theme changes
-    useEffect(() => {
-      const map = mapRef.current;
-      if (!map || !isLoaded) return;
-      try {
-        // oxlint-disable-next-line
-        const newStyle = buildBaseStyle(theme, projectionMode);
-        map.setStyle(newStyle as any, { diff: true });
-      } catch (err) {
-        console.warn("[IxWorldMap] setStyle error:", err);
-      }
-    }, [theme, isLoaded]);
 
     // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {

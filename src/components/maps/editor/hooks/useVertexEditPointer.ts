@@ -16,6 +16,7 @@ import {
   type ScreenPoint,
 } from "./drag-utils";
 import { calculateSnapTarget } from "./vertex-edit-geometry";
+import { coalesceToFrame } from "~/lib/frame-coalesce";
 import { canvasPoint, createListeners, createLongPress, queryNear } from "./map-interaction";
 
 const VERTEX_LAYER = "editor-vedit-vertices-layer";
@@ -192,9 +193,9 @@ export function useVertexEditPointer({
       updateVertexEditVis();
     };
 
-    const onMouseMove = (e: MapLayerMouseEvent) => {
+    // Snapping, the topology cascade and the redraw run once per frame with the latest pointer
+    const applyMove = (e: MapLayerMouseEvent) => {
       const current: ScreenPoint = { x: e.point.x, y: e.point.y };
-      st.lastMouse = current;
       const drag = st.drag;
       if (!drag || !st.edit) return;
 
@@ -231,6 +232,12 @@ export function useVertexEditPointer({
       updateVertexEditVis(true);
       scheduleThrottledUpdate();
     };
+    const move = coalesceToFrame(applyMove);
+
+    const onMouseMove = (e: MapLayerMouseEvent) => {
+      st.lastMouse = { x: e.point.x, y: e.point.y };
+      if (st.drag && st.edit) move.schedule(e);
+    };
 
     const flushPendingUpdate = () => {
       if (st.throttleTimer) clearTimeout(st.throttleTimer);
@@ -238,6 +245,7 @@ export function useVertexEditPointer({
     };
 
     const onMouseUp = () => {
+      move.flush(); // the vertex lands where the pointer stopped
       const drag = st.drag;
       if (!drag) return;
       st.drag = null;
@@ -343,6 +351,7 @@ export function useVertexEditPointer({
     listeners.onTouch(canvas, { start: onTouchStart, move: onTouchMove, end: onTouchEnd });
 
     return () => {
+      move.cancel();
       longPress.cancel();
       listeners.dispose();
     };

@@ -99,7 +99,9 @@ export function useProvinceImporter(countryId: string) {
     onSuccess: (data) => {
       void utils.geoCore.getCountryFeatures.invalidate();
       void utils.geoCore.getWorldMap.invalidate();
+      void utils.geoCore.getWorldMapPacked.invalidate();
       void utils.geoCore.getMapBundle.invalidate();
+      void utils.geoCore.getMapBundleDetail.invalidate();
       void utils.geoCore.getCapitalCities.invalidate();
       void utils.geoCore.getCountryGeometry.invalidate();
 
@@ -119,7 +121,9 @@ export function useProvinceImporter(countryId: string) {
       // invalidations the map never visually updates after an import.
       void utils.geoCore.getCountryFeatures.invalidate();
       void utils.geoCore.getWorldMap.invalidate();
+      void utils.geoCore.getWorldMapPacked.invalidate();
       void utils.geoCore.getMapBundle.invalidate();
+      void utils.geoCore.getMapBundleDetail.invalidate();
       void utils.geoCore.getCapitalCities.invalidate();
       void utils.geoCore.getCountryGeometry.invalidate();
       void utils.geoAdmin.getProvinceImportPreview.invalidate();

@@ -24,6 +24,7 @@ import {
 } from "../utils/map-helpers";
 import { circle, fill, line } from "../utils/editor-layer-specs";
 import { createListeners } from "./map-interaction";
+import { coalesceToFrame } from "~/lib/frame-coalesce";
 
 /** Border-edit sources and their layers (z-order is array order). */
 const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
@@ -282,13 +283,19 @@ export function useBorderEditorLayers({
       }
     };
 
+    // A vertex drag re-renders the editor, so it runs once per frame with the latest pointer
+    const vertexDrag = coalesceToFrame((lngLat: [number, number]) => {
+      const vertex = draggingVertex.current;
+      if (!vertex) return;
+      const neighbors = latest.current.neighborGeometries;
+      const to = neighbors?.length ? snapToNeighborVertex(lngLat, neighbors) : lngLat;
+      latest.current.onVertexDrag(vertex, to);
+    });
+
     const handleMousemove = (e: MapLayerMouseEvent) => {
-      const { mode: current, neighborGeometries: neighbors } = latest.current;
+      const current = latest.current.mode;
       const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      if (draggingVertex.current) {
-        const to = neighbors?.length ? snapToNeighborVertex(lngLat, neighbors) : lngLat;
-        latest.current.onVertexDrag(draggingVertex.current, to);
-      }
+      if (draggingVertex.current) vertexDrag.schedule(lngLat);
 
       if (current === "brush") {
         canvas.style.cursor = "crosshair";
@@ -329,6 +336,7 @@ export function useBorderEditorLayers({
     };
 
     const handleMouseup = () => {
+      vertexDrag.flush(); // the vertex lands where the pointer stopped
       if (draggingVertex.current) {
         draggingVertex.current = null;
         canvas.style.cursor = "";
@@ -353,6 +361,7 @@ export function useBorderEditorLayers({
     });
 
     return () => {
+      vertexDrag.cancel();
       map.off("styledata", addSourcesAndLayers);
       listeners.dispose();
 

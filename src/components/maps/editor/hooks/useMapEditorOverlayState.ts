@@ -57,15 +57,18 @@ export function useMapEditorOverlayState({
 
   const [borderState, borderActions] = useBorderEditor();
   const realm = useMapRealm();
+  const [mapInstance, setMapInstance] = useEditorMapInstance(mapRef);
   // Background layers (coastline, rivers, relief) — also feed snapping and the coast-snap tool.
+  // The country editor draws terrain from tiles, so its GeoJSON (for snapping) loads once that map
+  // is up rather than ahead of it. World mode draws through the /maps viewer and loads it at once.
   const {
     mapLayers: editorMapLayers,
     toggleLayer: rawToggleEditorLayer,
     visibleLayers: editorVisibleLayers,
   } = useMapData(
     ["background", "altitudes", "rivers", "lakes", "political", "country_labels"],
-    undefined,
-    realm
+    realm,
+    { deferTiled: !isWorldMode && !mapInstance }
   );
   const scopedCountryId = !isWorldMode || activeCountryId ? activeCountryId : undefined;
   const editor = useMapEditor(scopedCountryId || undefined, {
@@ -177,8 +180,6 @@ export function useMapEditorOverlayState({
     { id: activeCountryId ?? "" },
     { enabled: !!activeCountryId, staleTime: 5 * 60_000 }
   );
-
-  const [mapInstance, setMapInstance] = useEditorMapInstance(mapRef);
 
   const toggleEditorLayer = useCallback(
     (layer: string) => rawToggleEditorLayer(layer as Parameters<typeof rawToggleEditorLayer>[0]),

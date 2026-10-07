@@ -76,6 +76,7 @@ export function useMapDataQueries({
     error,
     overlayFeatures: batchedOverlayFeatures,
     capitalsGeoJson: batchedCapitalsGeoJson,
+    realmId,
   } = useMapDataBatched(initialLayers, currentZoom, realm);
 
   const cacheOpts = { staleTime: 5 * 60_000, gcTime: 30 * 60_000 };
@@ -228,5 +229,6 @@ export function useMapDataQueries({
     isPreloading,
     overlayData,
     error,
+    realmId,
   };
 }

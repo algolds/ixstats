@@ -355,7 +355,7 @@
       "^superjson$": "<rootDir>/jest-mocks/superjson.ts"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(@t3-oss|zod|d3-delaunay|delaunator|robust-predicates)/)"
+      "node_modules/(?!(@t3-oss|zod|d3-delaunay|delaunator|robust-predicates|@mapbox/vector-tile|@mapbox/point-geometry|pbf)/)"
     ],
     "transform": {
       "^.+\\.(t|j)sx?$": [

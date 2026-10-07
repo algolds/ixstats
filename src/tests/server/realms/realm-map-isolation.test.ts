@@ -155,9 +155,9 @@ describe("/maps shows only the viewed realm's map", () => {
 
   it("the map bundle's cities, POIs, subdivisions and capitals belong to the realm's countries", async () => {
     const db = emptyDb();
-    const bundle = await geoCaller(ctxFor(db, eurthViewer())).getMapBundle({
-      layers: ["political"],
-    });
+    const caller = geoCaller(ctxFor(db, eurthViewer()));
+    const bundle = await caller.getMapBundle({ layers: ["political"] });
+    await caller.getMapBundleDetail({});
 
     // the resolved realm travels with the bundle so the client caches it under the right realm
     expect(bundle.realmId).toBe(EURTH);

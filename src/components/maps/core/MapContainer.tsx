@@ -30,7 +30,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useMapState } from "./hooks/useMapState";
 import { useMapDataQueries } from "./hooks/useMapDataQueries";
-import { getMapZoomBucket } from "~/hooks/useMapDataBatched";
+import { getZoomBand } from "~/hooks/useMapDataBatched";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
@@ -427,6 +427,7 @@ export function MapContainer({
     isPreloading,
     overlayData,
     error,
+    realmId,
   } = useMapDataQueries({
     realm,
     initialLayers,
@@ -478,13 +479,13 @@ export function MapContainer({
     onMapReadyRef.current?.(mapRef.current?.getMap() ?? null);
   }, [setMapEngineReady]);
 
-  // Only the LOD bucket matters to data loading, so ignore zoom changes inside a bucket
+  // Only the zoom band matters to data loading, so ignore zoom changes inside a band
   // instead of re-rendering the whole container after every zoom gesture.
   const { setCurrentZoom } = state;
   const handleZoomChange = useCallback(
     (zoom: number) =>
       setCurrentZoom((prev) =>
-        prev !== undefined && getMapZoomBucket(prev) === getMapZoomBucket(zoom) ? prev : zoom
+        prev !== undefined && getZoomBand(prev) === getZoomBand(zoom) ? prev : zoom
       ),
     [setCurrentZoom]
   );
@@ -555,6 +556,7 @@ export function MapContainer({
         baseImageUrl={realmDisplay?.baseImage}
         attribution={realmDisplay?.attribution}
         unclaimedCountryIds={realmDisplay?.unclaimedCountryIds}
+        tileRealmId={realmId}
       />
 
       <MapToolbars

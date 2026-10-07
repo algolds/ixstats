@@ -12,14 +12,10 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { intersect } from "@turf/intersect";
 import { featureCollection } from "@turf/helpers";
-import {
-  getAllRings,
-  rebuildGeometry,
-  projectPointToSegment,
-  distanceDeg,
-} from "~/lib/maps/border-editor";
+import { getAllRings, rebuildGeometry } from "~/lib/maps/border-editor";
 import { distanceKm } from "~/lib/maps/geo-math";
 import { SNAP_LAYER_TYPES } from "~/lib/maps/editor-prefs";
+import { buildSegmentGrid, nearestSegmentPoint, type SegmentGrid } from "~/lib/maps/segment-grid";
 
 export const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
@@ -322,16 +318,25 @@ function coordinateRuns(geom: Geometry): Position[][] {
   }
 }
 
-/** Cached bbox of a layer feature (stored on the feature itself). */
-function featureBBox(feature: Feature, geom: Geometry): BoundingBox {
-  const cached = feature as Feature & { _bbox?: BoundingBox };
-  cached._bbox ??= getGenericBBox(geom);
-  return cached._bbox;
+/** Each layer's segment grid, built on first use and kept for as long as that layer data lives. */
+const layerGrids = new WeakMap<FeatureCollection, SegmentGrid>();
+
+function layerGrid(data: FeatureCollection): SegmentGrid {
+  let grid = layerGrids.get(data);
+  if (!grid) {
+    grid = buildSegmentGrid(
+      data.features.flatMap((f) => (f.geometry ? coordinateRuns(f.geometry) : []))
+    );
+    layerGrids.set(data, grid);
+  }
+  return grid;
 }
 
 /**
  * Snap a coordinate point to visible background features (rivers, lakes, coastline,
  * elevation contour, climate zones). Only layer types present in `visibleLayers` are used.
+ * Each layer is searched through a segment grid, so a drag looks at the segments near the cursor
+ * instead of every segment of every layer on every move.
  */
 export function snapToLayerFeatures(
   point: [number, number],
@@ -341,42 +346,16 @@ export function snapToLayerFeatures(
 ): [number, number] {
   if (!worldMapLayers) return point;
 
-  let bestDist = Infinity;
-  let bestProj: [number, number] = point;
-
+  let best: { point: Position; dist: number } | null = null;
   for (const layerType of SNAP_LAYER_TYPES) {
     if (!visibleLayers.has(layerType)) continue;
-    const features = worldMapLayers.find((l) => l.type === layerType)?.data?.features ?? [];
-
-    for (const feature of features) {
-      const geom = feature.geometry;
-      if (!geom) continue;
-
-      // Skip distance checks if point is not within tolerance of feature's bounding box
-      const bbox = featureBBox(feature, geom);
-      if (
-        point[0] < bbox.minLng - tolerance ||
-        point[0] > bbox.maxLng + tolerance ||
-        point[1] < bbox.minLat - tolerance ||
-        point[1] > bbox.maxLat + tolerance
-      ) {
-        continue;
-      }
-
-      for (const run of coordinateRuns(geom)) {
-        for (let i = 0; i < run.length - 1; i++) {
-          const proj = projectPointToSegment(point, run[i] as Position, run[i + 1] as Position);
-          const d = distanceDeg(point, proj);
-          if (d < bestDist && d <= tolerance) {
-            bestDist = d;
-            bestProj = proj as [number, number];
-          }
-        }
-      }
-    }
+    const data = worldMapLayers.find((l) => l.type === layerType)?.data;
+    if (!data) continue;
+    const hit = nearestSegmentPoint(layerGrid(data), point, tolerance);
+    // Strictly nearer only: on a tie the earlier layer keeps it
+    if (hit && (!best || hit.dist < best.dist)) best = hit;
   }
-
-  return bestDist <= tolerance ? bestProj : point;
+  return best ? (best.point as [number, number]) : point;
 }
 
 /**

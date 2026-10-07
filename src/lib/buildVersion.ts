@@ -33,7 +33,7 @@ export const VERSIONS = {
 
   // Apps — own brand, ship/break independently.
   apps: {
-    ixworld: 2, // v2: Modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
+    ixworld: 3, // v3: PostGIS vector tiles for terrain, packed map data, ~1 MB first load; v2: modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
     ixvault: 2, // v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },

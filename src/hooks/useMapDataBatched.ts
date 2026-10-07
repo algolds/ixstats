@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * useMapDataBatched - Batched map data hook with two-phase loading.
+ * useMapDataBatched - /maps data: one bundle and the per-layer extras.
  *
- * Phase 1 (fast): Loads critical layers (background, political, country_labels)
- *   + overlay features + capitals. The map renders immediately with borders.
+ * Bundle: the GeoJSON layers (CRITICAL_LAYERS: background, political, labels, icecaps) + POIs and
+ *   capitals, in one request. Cities and subdivisions follow once the viewer passes zoom 3.
  *
- * Phase 2 (deferred): Loads decorative layers (altitudes, rivers, lakes, icecaps)
- *   in a separate request. These fill in after the map is already visible.
+ * Altitudes, rivers and lakes are vector tiles (`~/lib/maps/decorative-tiles`); they are
+ *   listed here with no data so their visibility toggles work. Other layers the user switches on
+ *   load one request per layer.
  *
  * Maintains the same IndexedDB + React Query two-tier cache strategy. The IndexedDB entry is the
  * shown realm's: written only from a real (non-placeholder) bundle, tagged with the realm it resolved.
@@ -29,7 +30,9 @@ import {
   type MapCacheScope,
 } from "~/lib/maps/map-idb-cache";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
-import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
+import { unpackLayers } from "~/lib/maps/geojson-pack";
+import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
+import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS, mergeLayerResults } from "./useMapData";
 
 const DEFAULT_VISIBLE: MapLayerType[] = [
   "background",
@@ -40,26 +43,23 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "country_labels",
 ];
 
-/** Decorative layers load in a deferred second request */
-const DECORATIVE_LAYERS: MapLayerType[] = [];
+const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", features: [] };
 
-/** Merge per-layer `getWorldMap` results into one record (undefined until any arrives). */
-function mergeLayerResults(
-  results: ReadonlyArray<{ data?: unknown }>
-): Record<string, unknown> | undefined {
-  let merged: Record<string, unknown> | undefined;
-  for (const r of results) {
-    if (r.data) merged = { ...merged, ...(r.data as Record<string, unknown>) };
-  }
-  return merged;
-}
+/** Zoom at which cities and subdivisions (drawn from zoom 4) start loading. */
+export const DETAIL_FETCH_ZOOM = 3;
 
 /** Server LOD bucket for a zoom level (mirrors `getZoomBucket` in geo/core/cache.ts). */
-export function getMapZoomBucket(zoom: number | undefined): 0 | 1 | 2 | undefined {
+function getMapZoomBucket(zoom: number | undefined): 0 | 1 | 2 | undefined {
   if (zoom === undefined) return undefined;
   if (zoom < 4) return 0;
   if (zoom < 7) return 1;
   return 2;
+}
+
+/** The zoom range data loading cares about: below the zoom-3 detail fetch, up to the zoom-4 overlays,
+ * up to the zoom-7 detail bucket, beyond. The map only reports zoom when this changes. */
+export function getZoomBand(zoom: number): number {
+  return [DETAIL_FETCH_ZOOM, 4, 7].filter((edge) => zoom >= edge).length;
 }
 
 /** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
@@ -102,7 +102,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     const missing = [...visibleLayers].filter(
       (layer) =>
         !CRITICAL_LAYERS.includes(layer) &&
-        !DECORATIVE_LAYERS.includes(layer) &&
+        !isTiledLayer(layer) &&
         !requestedExtraLayers.includes(layer)
     );
     if (missing.length > 0) setRequestedExtraLayers((prev) => [...prev, ...missing]);
@@ -126,21 +126,36 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     }
   );
 
-  // Phase 2: Decorative / extra layers (deferred, one request per layer)
-  // One query per layer so turning on a second extra layer fetches only that layer instead of
-  // re-downloading the first one under a new combined cache key. No zoom in the key, so
-  // zooming never re-fetches them.
-  const decorativeLayersToFetch = useMemo(
-    () => [...DECORATIVE_LAYERS, ...requestedExtraLayers],
-    [requestedExtraLayers]
+  // Cities and subdivisions draw from zoom 4: fetch them once the viewer first passes zoom 3, so
+  // they are there in time and the globe view never downloads them. Latched: zooming back out
+  // keeps them.
+  const [wantDetail, setWantDetail] = useState(false);
+  useEffect(() => {
+    if ((zoom ?? 0) >= DETAIL_FETCH_ZOOM) setWantDetail(true);
+  }, [zoom]);
+  const { data: detail } = api.geoCore.getMapBundleDetail.useQuery(
+    { realm },
+    { ...MAP_QUERY_OPTIONS, enabled: wantDetail }
   );
 
+  // Extra GeoJSON layers switched on this session, one query per layer so turning on a second
+  // one fetches only that layer. Tiled layers (altitudes, rivers, lakes) never come here.
   const decorativeData = api.useQueries(
     (t) =>
-      decorativeLayersToFetch.map((layer) =>
-        t.geoCore.getWorldMap({ layers: [layer], realm }, { ...MAP_QUERY_OPTIONS })
+      requestedExtraLayers.map((layer) =>
+        t.geoCore.getWorldMapPacked({ layers: [layer], realm }, { ...MAP_QUERY_OPTIONS })
       ),
     { combine: mergeLayerResults }
+  );
+
+  // Both phases arrive packed (the IndexedDB placeholder is already plain GeoJSON)
+  const bundleLayers = useMemo(
+    () => (criticalBundle?.worldMap ? unpackLayers(criticalBundle.worldMap) : undefined),
+    [criticalBundle?.worldMap]
+  );
+  const decorativeLayers = useMemo(
+    () => (decorativeData ? unpackLayers(decorativeData) : undefined),
+    [decorativeData]
   );
 
   // Merge both phases into a single world map record
@@ -151,25 +166,29 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     if (idbData) Object.assign(merged, idbData);
 
     // Overlay critical layers
-    if (criticalBundle?.worldMap) Object.assign(merged, criticalBundle.worldMap);
+    if (bundleLayers) Object.assign(merged, bundleLayers);
 
     // Overlay decorative layers when ready
-    if (decorativeData) Object.assign(merged, decorativeData);
+    if (decorativeLayers) Object.assign(merged, decorativeLayers);
 
-    return Object.keys(merged).length > 0 ? merged : null;
-  }, [idbData, criticalBundle?.worldMap, decorativeData]);
+    // Tiled layers draw from vector tiles: listed (for visibility) with no data, even when an
+    // older cache entry still carries them
+    for (const type of TILED_LAYERS) merged[type] = EMPTY_COLLECTION;
+
+    return bundleLayers || idbData || decorativeLayers ? merged : null;
+  }, [idbData, bundleLayers, decorativeLayers]);
 
   // Persist the server's layers (never the cache-backed placeholder) under the realm it resolved
   const persistedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!criticalBundle?.realmId || criticalIsPlaceholder) return;
-    const fresh: Record<string, unknown> = { ...criticalBundle.worldMap, ...decorativeData };
+    const fresh: Record<string, unknown> = { ...bundleLayers, ...decorativeLayers };
     const keys = Object.keys(fresh).sort().join(",");
     const marker = `${mapLayersCacheKey(cacheScope)}|${criticalBundle.realmId}|${keys}`;
     if (persistedRef.current === marker) return;
     persistedRef.current = marker;
     void setCachedMapLayers(cacheScope, fresh, criticalBundle.realmId);
-  }, [criticalBundle, criticalIsPlaceholder, decorativeData, cacheScope]);
+  }, [criticalBundle, criticalIsPlaceholder, bundleLayers, decorativeLayers, cacheScope]);
 
   const isLoading = criticalLoading && !mergedWorldMap;
 
@@ -188,11 +207,15 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
       .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
   }, [mergedWorldMap, visibleLayers]);
 
-  // Extract overlay features
+  // Overlay features: POIs from the bundle, cities and subdivisions once the detail arrives
   const overlayFeatures: MapOverlayFeatures | undefined = useMemo(() => {
     if (!criticalBundle?.features) return undefined;
-    return criticalBundle.features as unknown as MapOverlayFeatures;
-  }, [criticalBundle?.features]);
+    return {
+      pois: criticalBundle.features.pois,
+      cities: detail?.cities ?? EMPTY_COLLECTION,
+      subdivisions: detail ? unpackLayers({ s: detail.subdivisions }).s! : EMPTY_COLLECTION,
+    } as unknown as MapOverlayFeatures;
+  }, [criticalBundle?.features, detail]);
 
   // Extract capitals
   const capitalsGeoJson: CapitalsGeoJson | undefined = useMemo(() => {
@@ -219,6 +242,11 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     toggleLayer,
     isLoading,
     error: criticalError,
+    /** The realm these layers are for (tile URLs use it): the server's answer once the bundle is in;
+     * before that, without ?realm=, the viewer's realm, which is what the server resolves then too */
+    realmId:
+      (criticalIsPlaceholder ? undefined : criticalBundle?.realmId) ??
+      (realm ? undefined : viewerRealmId),
     overlayFeatures,
     capitalsGeoJson,
   };

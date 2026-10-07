@@ -64,14 +64,14 @@
       "type": "geojson",
       "data": { "type": "FeatureCollection", "features": [] },
       "cluster": true,
-      "clusterMaxZoom": 10,
+      "clusterMaxZoom": 5,
       "clusterRadius": 35
     },
     "source-story-pins": {
       "type": "geojson",
       "data": { "type": "FeatureCollection", "features": [] },
       "cluster": true,
-      "clusterMaxZoom": 8,
+      "clusterMaxZoom": 5,
       "clusterRadius": 50
     },
     "source-map-labels": {

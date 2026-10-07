@@ -12,6 +12,7 @@ import {
 } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
+import { useDecorativeTiles } from "./useDecorativeTiles";
 import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 type LayerConfig = (typeof LAYER_CONFIGS)[MapLayerType];
@@ -59,6 +60,9 @@ function addCountryLabelLayer(map: MapLibreMap) {
     id: "country-name-labels",
     type: "symbol",
     source: "source-country-labels",
+    // Names faded out by distance still took part in collision, costing placement and hiding
+    // visible names; leave them out
+    filter: [">", ["coalesce", ["get", "_distFade"], 1], 0],
     layout: {
       "text-field": ["get", "_displayName"] as unknown as string,
       "text-font": [...MAP_SYMBOL_FONTS.regular],
@@ -375,7 +379,6 @@ interface UseWorldMapLayersProps {
   topCountryNames?: Set<string>;
   updateDistanceFade: () => void;
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
-  fullLayerDataRef: React.MutableRefObject<Map<string, FeatureCollection>>;
   theme?: MapTheme;
   /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
   showOceanLabels?: boolean;
@@ -383,6 +386,8 @@ interface UseWorldMapLayersProps {
   showPrimeMeridian?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;
+  /** The realm whose decorative layers to draw from vector tiles; undefined until it is known. */
+  tileRealmId?: string;
 }
 
 export function useWorldMapLayers({
@@ -393,11 +398,11 @@ export function useWorldMapLayers({
   topCountryNames,
   updateDistanceFade,
   labelFeaturesRef,
-  fullLayerDataRef,
   theme,
   showOceanLabels = false,
   showPrimeMeridian = false,
   labelsVisible = true,
+  tileRealmId,
 }: UseWorldMapLayersProps) {
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -414,9 +419,15 @@ export function useWorldMapLayers({
   }, [map, isLoaded, theme, showOceanLabels, showPrimeMeridian]);
 
   const lastLoadedDataRef = useRef<Map<string, unknown>>(new Map());
+  const lastThemeRef = useRef(theme);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
+    // A theme change re-applies the base style, whose sources are empty: push everything again
+    if (lastThemeRef.current !== theme) {
+      lastThemeRef.current = theme;
+      lastLoadedDataRef.current.clear();
+    }
 
     const sortedLayers = [...layers].sort(
       (a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
@@ -426,6 +437,9 @@ export function useWorldMapLayers({
       const config = LAYER_CONFIGS[layer.type];
       if (!config) continue;
       const sourceId = `source-${layer.type}`;
+      // On /maps the decorative sources are vector tiles (effect below) and these layers are listed
+      // only for visibility; maps that pass their own GeoJSON (the pipeline lab) still get it pushed
+      if (map.getSource(sourceId)?.type === "vector") continue;
       const isLabels = layer.type === "country_labels";
 
       try {
@@ -435,10 +449,6 @@ export function useWorldMapLayers({
         // same points twice; and on a remount of the persistent map the label source/ref was
         // never refreshed.
         const targetSource = isLabels ? "source-country-labels" : sourceId;
-        if (layer.type === "rivers" || layer.type === "lakes") {
-          fullLayerDataRef.current.set(layer.type, layer.data);
-        }
-
         const source = map.getSource(targetSource) as GeoJSONSource | undefined;
         const changed = lastLoadedDataRef.current.get(layer.type) !== layer.data;
         if (!changed && (isLabels || source)) continue;
@@ -477,8 +487,9 @@ export function useWorldMapLayers({
     topCountryNames,
     updateDistanceFade,
     labelFeaturesRef,
-    fullLayerDataRef,
     theme,
     labelsVisible,
   ]);
+
+  useDecorativeTiles(map, isLoaded, tileRealmId);
 }

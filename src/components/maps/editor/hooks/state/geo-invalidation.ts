@@ -7,7 +7,9 @@ export function invalidateMapViews(
 ) {
   if (list) utils.geoCore.listCountries.invalidate();
   utils.geoCore.getWorldMap.invalidate();
+  utils.geoCore.getWorldMapPacked.invalidate();
   utils.geoCore.getMapBundle.invalidate();
+  utils.geoCore.getMapBundleDetail.invalidate();
   if (stats) utils.geoCore.getMapStats.invalidate();
 }
 

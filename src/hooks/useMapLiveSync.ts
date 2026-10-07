@@ -28,7 +28,9 @@ const INVALIDATE_DEBOUNCE_MS = 750;
 /** Invalidate all map-related React Query caches */
 function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
   utils.geoCore.getMapBundle.invalidate();
+  utils.geoCore.getMapBundleDetail.invalidate();
   utils.geoCore.getWorldMap.invalidate();
+  utils.geoCore.getWorldMapPacked.invalidate();
   utils.geoCore.getCountryFeatures.invalidate();
   utils.geoFeatures.getAllStoryPins.invalidate();
   utils.geoFeatures.getAllMapLabels.invalidate();

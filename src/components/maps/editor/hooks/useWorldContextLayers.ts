@@ -190,6 +190,8 @@ export function useWorldContextLayers(
 
       try {
         const existingSource = map.getSource(`source-${layer.type}`);
+        // Drawn from vector tiles (useDecorativeTiles); its GeoJSON is only for snapping
+        if (existingSource?.type === "vector") continue;
         if (!existingSource) {
           lastLoadedDataRef.current.set(layer.type, layer.data);
           addContextLayer(map, layer, config, beforeId);

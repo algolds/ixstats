@@ -14,6 +14,29 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🗺️ IxWorld Map Performance (2026-10-07) — IxWorld v3
+
+- **IxWorld 2 → 3** (`VERSIONS.apps.ixworld`). The map welcome dialog shows once more for everyone, since it
+  remembers the version it last showed.
+
+- **Vector tiles for terrain:** `/maps` draws altitudes, rivers and lakes from PostGIS vector tiles
+  (`/api/map-tiles/<realm>/<layer>/<z>/<x>/<y>`, cached for a day) instead of whole-world GeoJSON. The first load's
+  map data drops from about 6 MB of JSON to 0.88 MB plus 196 KB of tiles, and countries appear in about 3.2 s
+  instead of 5.8 s on the dev benchmark. Shapes that cross the antimeridian are split exactly as before. Climate
+  stays GeoJSON and loads when switched on.
+- **Smaller map data:** layers travel in a compact delta-encoded format (`geoCore.getWorldMapPacked`,
+  `getMapBundle`). Cities and subdivisions load once the viewer zooms past 3 (`getMapBundleDetail`).
+- **Map editor:** snapping searches a segment grid instead of every segment of every layer (about 8 ms to under
+  0.01 ms per snap on real data, same answers). Vertex and border drags process at most one move per frame, and
+  mouse-up applies the last one. The country editor draws terrain from the same vector tiles and loads the GeoJSON
+  it snaps to after its map is up: 0.8 MB of map JSON before paint instead of 4.6 MB. Each layer loads on its own,
+  so switching one on fetches only that layer.
+- **Fixes:** a failing city, POI or subdivision query no longer blanks continents, countries, rivers and lakes.
+  Countries no longer vanish on a repeat visit or after a theme change. Points of interest fully uncluster before
+  the map's max zoom. Faded-out country names no longer crowd out visible ones.
+- **Ops:** add a Cloudflare Cache Rule making `/projects/ixstats/api/map-tiles/*` (and `/api/map-tiles/*` on
+  maps.ixwiki.com) eligible for cache, respecting the origin's `Cache-Control`.
+
 ### 🧭 Realm Map Import Engine (2026-10-07)
 
 - **Background import jobs** (`MapImportJob`): a realm's political map from a flat-colour PNG/JPEG, an SVG of nations

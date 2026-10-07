@@ -19,6 +19,8 @@ import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
 import { getCachedMapLayers, type MapCacheScope } from "~/lib/maps/map-idb-cache";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
+import { unpackLayers } from "~/lib/maps/geojson-pack";
+import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
 
 /** Layers that are always visible and cannot be toggled off */
 export const LOCKED_LAYERS: MapLayerType[] = ["background"];
@@ -36,15 +38,13 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
  * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [...DEFAULT_VISIBLE];
 
-/** Critical layers load first — altitudes are the terrain base, must render with map.
- * Shared with useMapDataBatched so useMapPrefetch fills the exact bundle key /maps reads first. */
+/** The /maps bundle's layers: what the viewer needs as GeoJSON. Altitudes, rivers, lakes and climate
+ * come from vector tiles (`~/lib/maps/decorative-tiles`). Shared with useMapDataBatched so
+ * useMapPrefetch fills the exact bundle key /maps reads first. */
 export const CRITICAL_LAYERS: MapLayerType[] = [
   "background",
-  "altitudes",
   "political",
   "country_labels",
-  "rivers",
-  "lakes",
   "icecaps",
 ];
 
@@ -57,8 +57,30 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnReconnect: false,
 } as const;
 
-/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
-export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?: string) {
+/** Merge per-layer `getWorldMap*` results into one record (undefined until any arrives). */
+export function mergeLayerResults<T>(
+  results: ReadonlyArray<{ data?: Record<string, T> }>
+): Record<string, T> | undefined {
+  let merged: Record<string, T> | undefined;
+  for (const r of results) {
+    if (r.data) merged = { ...merged, ...r.data };
+  }
+  return merged;
+}
+
+const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+/**
+ * @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm
+ * @param options.deferTiled hold back the GeoJSON of the vector-tiled layers (altitudes, rivers,
+ *   lakes): the editor draws them from tiles and needs their GeoJSON only for snapping, so it loads
+ *   once the editor has painted
+ */
+export function useMapData(
+  initialLayers?: MapLayerType[],
+  realm?: string,
+  { deferTiled = false }: { deferTiled?: boolean } = {}
+) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
@@ -84,46 +106,34 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     };
   }, [cacheScope]);
 
-  // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
-  const zoomBucket = useMemo(() => {
-    if (zoom === undefined) return undefined;
-    if (zoom < 4) return 0;
-    if (zoom < 7) return 1;
-    return 2;
-  }, [zoom]);
-
-  // Fetch all layers upfront (pre-fetch climate + lakes for instant toggle)
   const allRequestedLayers = useMemo(() => {
     const layers = new Set([...ALL_PREFETCH_LAYERS, ...visibleLayers]);
-    return Array.from(layers);
-  }, [visibleLayers]);
+    return Array.from(layers).filter((layer) => !(deferTiled && isTiledLayer(layer)));
+  }, [visibleLayers, deferTiled]);
 
-  const {
-    data: layerData,
-    isLoading: queryLoading,
-    error,
-  } = api.geoCore.getWorldMap.useQuery(
-    {
-      layers: allRequestedLayers,
-      zoom:
-        zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined,
-      realm,
-    },
-    {
-      ...MAP_QUERY_OPTIONS,
-      // Use IndexedDB data as placeholder until server responds
-      placeholderData: (idbData as any) ?? undefined,
-    }
+  // One query per layer (the same keys /maps uses), so switching a layer on fetches only that
+  // layer instead of every visible layer again under a new combined key.
+  const layerData = api.useQueries(
+    (t) =>
+      allRequestedLayers.map((layer) =>
+        t.geoCore.getWorldMapPacked({ layers: [layer], realm }, { ...MAP_QUERY_OPTIONS })
+      ),
+    { combine: mergeLayerResults }
   );
 
-  // Use server data if available, otherwise IDB cache
-  const effectiveData = layerData ?? idbData;
-  const isLoading = queryLoading && !effectiveData;
+  // Server layers over the IndexedDB cache, which fills in whatever hasn't arrived yet. Tiled
+  // layers are listed (empty) until their GeoJSON arrives, so their visibility still applies.
+  const effectiveData = useMemo(() => {
+    const merged: Record<string, unknown> = {
+      ...idbData,
+      ...(layerData && unpackLayers(layerData)),
+    };
+    for (const type of TILED_LAYERS) merged[type] ??= EMPTY_COLLECTION;
+    return merged;
+  }, [idbData, layerData]);
 
   // Transform tRPC data into MapLayerData format
   const mapLayers: MapLayerData[] = useMemo(() => {
-    if (!effectiveData) return [];
-
     return Object.entries(effectiveData)
       .filter(
         ([type]) =>
@@ -155,8 +165,6 @@ export function useMapData(initialLayers?: MapLayerType[], zoom?: number, realm?
     mapLayers,
     visibleLayers,
     toggleLayer,
-    isLoading,
-    error,
   };
 }
 
@@ -188,7 +196,8 @@ export function useMapPrefetch() {
     if (warmedRef.current || !worldMap) return;
     warmedRef.current = true;
 
-    const political = (worldMap as Record<string, FeatureCollection>).political;
+    // Only properties are read here, so the packed geometry needs no decoding
+    const political = worldMap.political;
     if (!political?.features) return;
 
     // Extract unique countries from the political layer

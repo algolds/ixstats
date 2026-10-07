@@ -12,7 +12,8 @@
 const DB_NAME = "ixworld-map-cache";
 const STORE_NAME = "layers";
 // v3: entries carry the realm they belong to (older, realm-less entries are dropped on upgrade)
-const DB_VERSION = 3;
+// 4: rivers, lakes and altitudes moved to vector tiles; drop entries that still carry them
+const DB_VERSION = 4;
 const CACHE_KEY = "worldMapLayers";
 // 24 hours - matches server-side static layer TTL
 const CACHE_TTL = 24 * 60 * 60 * 1000;

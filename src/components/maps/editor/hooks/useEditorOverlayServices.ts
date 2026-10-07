@@ -76,6 +76,7 @@ export function useEditorServerMutations(editor: Editor) {
     onSuccess: () => {
       editor.refetchFeatures();
       utils.geoCore.getMapBundle.invalidate();
+      utils.geoCore.getMapBundleDetail.invalidate();
       utils.resources.getCountryResources.invalidate();
     },
     onError,

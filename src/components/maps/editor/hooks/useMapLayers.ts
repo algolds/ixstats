@@ -24,6 +24,8 @@ import {
 } from "../utils/editor-layer-specs";
 import { useMapOverlayLayers } from "./useMapOverlayLayers";
 import { useWorldContextLayers } from "./useWorldContextLayers";
+import { useDecorativeTiles } from "~/components/maps/core/hooks/useDecorativeTiles";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 interface UseMapLayersProps {
@@ -187,6 +189,9 @@ export function useMapLayers({
   const opacityKey = recordKey(layerOpacity, String);
 
   useWorldContextLayers(map, isLoaded, worldMapLayers, theme);
+  // Terrain from the same vector tiles as /maps. This map is the country editor's, which edits the
+  // viewer's own nation, so it shows the viewer's realm.
+  useDecorativeTiles(map, isLoaded, useViewerRealmId());
 
   // Country boundary and the dimmed non-player mask around it.
   useEffect(() => {
