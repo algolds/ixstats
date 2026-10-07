@@ -11,7 +11,8 @@ import {
   estimateTemperature,
   estimatePrecipitation,
 } from "~/lib/maps/geo-analytics";
-import { kmPerDegree, kmPerDegreeLng } from "~/lib/maps/planet";
+import { kmPerDegree, kmPerDegreeLng, scaleDistanceToRadius } from "~/lib/maps/planet";
+import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
 import { estimateBboxOverlap } from "./geometry";
 import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
 
@@ -254,6 +255,9 @@ export const geoProfileProcedures = {
 
       const extent: Extent = bbox ?? [-180, -90, 180, 90];
       const realmId = country.realmId;
+      // Distances measured on Earth's radius (PostGIS geography) scale to the realm's planet
+      const radiusKm = await realmRadiusKmById(ctx.db, realmId);
+      const onPlanet = (km: number) => scaleDistanceToRadius(km, radiusKm);
       // Climate and altitude layers of the country's own realm
       const layersOfType = (layerType: "climate" | "altitudes") =>
         ctx.db.mapLayer.findMany({
@@ -273,12 +277,13 @@ export const geoProfileProcedures = {
         (a, b) => a.minElev - b.minElev
       );
       const hydro = await loadHydrography(ctx.db, input.countryId, realmId, extent);
-      const { neighbors, perimeterKm, coastlineKm } = await loadNeighbours(
-        ctx.db,
-        input.countryId,
-        extent,
-        country.coastlineKm
-      );
+      const measured = await loadNeighbours(ctx.db, input.countryId, extent, country.coastlineKm);
+      const neighbors = measured.neighbors.map((n) => ({
+        ...n,
+        sharedBorderKm: Math.round(onPlanet(n.sharedBorderKm)),
+      }));
+      const perimeterKm = onPlanet(measured.perimeterKm);
+      const coastlineKm = Math.round(onPlanet(measured.coastlineKm));
 
       const profile = buildGeoProfile({
         climateDistribution,
@@ -296,8 +301,10 @@ export const geoProfileProcedures = {
         climateDistribution
       );
       const centroidLat = centroid[1] ?? 0;
-      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * kmPerDegree() : 0;
-      const ewSpanKm = bbox ? Math.abs(bbox[2] - bbox[0]) * kmPerDegreeLng(centroidLat) : 0;
+      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * kmPerDegree(radiusKm) : 0;
+      const ewSpanKm = bbox
+        ? Math.abs(bbox[2] - bbox[0]) * kmPerDegreeLng(centroidLat, radiusKm)
+        : 0;
 
       return {
         countryId: country.id,

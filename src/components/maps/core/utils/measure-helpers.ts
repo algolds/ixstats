@@ -6,6 +6,7 @@ import type {
 } from "maplibre-gl";
 import type { Feature } from "geojson";
 import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
+import { EARTH_RADIUS_KM, haversineKm as planetHaversineKm } from "~/lib/maps/planet";
 
 const DEG2RAD = Math.PI / 180;
 
@@ -137,13 +138,18 @@ const MEASURE_CURSOR = (() => {
 
 type Coord = [number, number];
 
-/** Lengths (km) of each leg between consecutive points. */
-const legLengthsKm = (pts: Coord[]) => pts.slice(1).map((p, i) => haversineKm(pts[i]!, p));
+/** Lengths (km) of each leg between consecutive points, on a planet of `radiusKm` (the realm's). */
+const legLengthsKm = (pts: Coord[], radiusKm: number) =>
+  pts.slice(1).map((p, i) => planetHaversineKm(pts[i]!, p, radiusKm));
 
-export const measureTotalKm = (pts: Coord[]) => legLengthsKm(pts).reduce((sum, d) => sum + d, 0);
+export const measureTotalKm = (pts: Coord[], radiusKm: number = EARTH_RADIUS_KM) =>
+  legLengthsKm(pts, radiusKm).reduce((sum, d) => sum + d, 0);
 
-/** Great-circle path (split at the antimeridian), vertex markers and per-leg distance labels. */
-export function buildMeasureFeatures(pts: Coord[]): Feature[] {
+/**
+ * Great-circle path (split at the antimeridian), vertex markers and per-leg distance labels, measured on a
+ * planet of `radiusKm` (the realm's; Earth's by default).
+ */
+export function buildMeasureFeatures(pts: Coord[], radiusKm: number = EARTH_RADIUS_KM): Feature[] {
   const features: Feature[] = [];
 
   if (pts.length >= 2) {
@@ -167,7 +173,7 @@ export function buildMeasureFeatures(pts: Coord[]): Feature[] {
     });
   });
 
-  legLengthsKm(pts).forEach((km, i) => {
+  legLengthsKm(pts, radiusKm).forEach((km, i) => {
     features.push({
       type: "Feature",
       properties: { kind: "label", text: formatDistance(km) },

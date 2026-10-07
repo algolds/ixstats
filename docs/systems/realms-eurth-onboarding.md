@@ -354,6 +354,25 @@ schedule on, so a broken source is retried at the next interval, not every hour.
 - A nation only on the map (no IIWiki page, so no `wikiSource`) can be claimed but always goes to **manual review**:
   there is no page creator to prove.
 
+### 4.6 Give the map officer the Map power and set up the map
+
+Eurth's map editing no longer needs a site admin. The founder appoints the community's mapper as an officer:
+`/r/eurth/manage` → **Officers** → tick **Map** ("Edit the realm's map, borders and labels, and import maps").
+The founder and Map officers edit **Eurth's map only**; IxWorld's map stays with site admins.
+
+Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
+
+1. **Credit line:** leave it empty to show the source sync's attribution, or type Eurth's own (for example the
+   community map's credit). It shows at the bottom left of `/maps?realm=eurth`.
+2. **Base map image** (optional): upload a full-globe equirectangular image (2:1, cropped to 85°N to 85°S, up to
+   5MB) or paste an `https://` address whose host allows cross-origin use. It is drawn under the borders.
+3. **Planet radius:** leave empty (Earth's 6371 km) unless Eurth's lore gives its planet a size. After changing
+   it, press **Recompute areas**. Leave **Also set nations' land area from the map** unticked unless the founder
+   wants every nation's stated land area replaced by its measured map area.
+4. **Default view and labels:** open `/maps?realm=eurth` → **World editor** → the map icon in the editor's header:
+   **Save current view as default** (where the map opens), and **Realm labels…** for Eurth's oceans, seas,
+   regions and continents.
+
 ---
 
 ## 5. Onboard Eurth players
@@ -501,9 +520,14 @@ map thumbnail, for the colour to nation step; a complete answer is cached for an
      region doesn't have never clears the country's own (its baseline land area stays). No region of
      that name → the claim still goes through, unlinked. The public map can take up to 15 minutes (its political-layer cache) to
      show the new owner.
+   - A nation drawn as **several regions** (islands, exclaves) takes every unlinked region that names it
+     (feature id, display name, or its source key), and its outline is their union.
    - **Nations that already existed** when you imported, and regions whose names don't match a title
-     exactly, are linked in the world editor: `/admin/maps/editor?realm=eurth` → **Links** tab →
-     **Auto-Match by Name**, then link any leftovers by hand.
+     exactly, are linked in the world editor (site admins, the founder and Map officers):
+     `/maps?realm=eurth` → **World editor** → **Links** tab → **Auto-Match**. It matches names ignoring case,
+     accents, hyphens, underscores and state forms ("Republic of"), and also checks the roster's nation pages
+     and the nations' source keys; it lists each match with its confidence, confident ones ticked, similar
+     spellings unticked. **Link selected**, then link any leftovers by hand.
 
 Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 (`(realmId, layerType, featureId)`), so nothing you draw here touches IxWorld's map or vice versa.
@@ -547,4 +571,6 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
 | Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (4.1); later, the founder uses `/r/eurth/manage` → Hand over |
 | Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (4.2) |
+| Let a player edit Eurth's map | `/r/eurth/manage` → Officers → tick **Map** (4.6) |
+| Set Eurth's credit line, base image or planet radius; recompute areas | `/r/eurth/manage` → **Map** (4.6) |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |

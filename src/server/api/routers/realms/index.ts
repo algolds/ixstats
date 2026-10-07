@@ -34,6 +34,7 @@ import { globalCache } from "~/lib/cache";
 import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
+import { realmMapRouter } from "./map";
 import { realmWikiRouter } from "./wiki";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
@@ -260,6 +261,8 @@ export const realmsRouter = createTRPCRouter({
 
   /** A realm's wiki: settings, world discovery, the chosen wiki map and infobox hints (see ./wiki.ts). */
   wiki: realmWikiRouter,
+  /** A realm's map: display settings for the viewer, map settings and recomputed areas (see ./map.ts). */
+  map: realmMapRouter,
 
   /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
   directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),

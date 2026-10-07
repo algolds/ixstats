@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "~/components/ui/button";
-import React from "react";
+import React, { useState } from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
@@ -10,6 +10,7 @@ import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import type { LinkageValidationData } from "../types/editor-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
+import { AutoMatchReviewDialog } from "./AutoMatchReviewDialog";
 
 const VALIDATION_TABS = [
   { value: "issues", label: "Issues" },
@@ -81,7 +82,11 @@ interface LinkageValidationPanelProps {
   };
   autoMatchMutation: {
     isPending: boolean;
-    mutate: (args: { action: "auto_match"; realm?: string }) => void;
+    mutate: (args: {
+      action: "apply_matches";
+      realm?: string;
+      matches: Array<{ featureId: string; countryId: string }>;
+    }) => void;
   };
   setActiveCountryId: (id: string | null) => void;
   setMapSelectedCountry: (country: SelectedCountry | null) => void;
@@ -103,6 +108,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
   setMapSelectedCountry,
 }: LinkageValidationPanelProps) {
   const realm = useMapRealm();
+  const [reviewOpen, setReviewOpen] = useState(false);
 
   const renderCountryFeatureRow = (item: LinkedRowItem, key: string) => (
     <div
@@ -147,14 +153,26 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => autoMatchMutation.mutate({ action: "auto_match", realm })}
+            onClick={() => setReviewOpen(true)}
             disabled={autoMatchMutation.isPending}
-            title="Auto-Match by Name"
+            title="Auto-Match by name (review first)"
           >
             <Wand2 className="h-4 w-4" />
           </Button>
         </div>
       </Card>
+
+      {reviewOpen && (
+        <AutoMatchReviewDialog
+          realm={realm}
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          isLinking={autoMatchMutation.isPending}
+          onLink={(matches) =>
+            autoMatchMutation.mutate({ action: "apply_matches", realm, matches })
+          }
+        />
+      )}
 
       <Card className="overflow-hidden">
         <div className="border-separator border-b p-2">

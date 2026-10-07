@@ -3,8 +3,8 @@
 **Last updated:** 2026-10-07
 **Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
-**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`, `source-sync.ts`, `wiki.ts`), `src/server/modules/realms/`
-(`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`, `realms.wiki.ts`), `src/lib/realms/sources/`, `src/lib/realms/realm-wiki-settings.ts`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
+**Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`, `source-sync.ts`, `wiki.ts`, `map.ts`), `src/server/modules/realms/`
+(`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`, `realms.wiki.ts`, `realms.map.ts`, `realms.map-access.ts`), `src/lib/realms/sources/`, `src/lib/realms/realm-wiki-settings.ts`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
 [region page design](../specs/2026-10-05-realm-regions-design.md)
@@ -219,10 +219,18 @@ restriction cleared, and the player loses an officer post if it was their last n
 | Who                                        | Powers                                                                                                                                                                                         |
 | :----------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Founder (`Realm.ownerId`), and site admins | Everything below, plus appointing officers; the founder alone hands the realm over from Manage                                                                                                 |
-| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook, header, rules, links, in-world date), `board` (moderation), `diplomacy` (embassies and the poll), `claims` (review the realm's claims) |
+| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook, header, rules, links, in-world date), `board` (moderation), `diplomacy` (embassies and the poll), `claims` (review the realm's claims), `map` (edit the realm's map, borders and labels, and import maps; see below) |
 
 `realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
+
+**Map editors:** `canEditRealmMap` / `canImportRealmMap` (`realms.access.ts`) allow site admins, the founder and
+officers holding `map`, in their own realm only; IxWorld's map stays with site admins, and an archived realm's map is
+read-only (`realmMapAccess`, `realms.map-access.ts`). The world editor's procedures (border edit, split and merge,
+region links, linkage validation and Auto-Match, realm labels) resolve the edited realm through `editableMapRealmId`
+(`src/server/api/trpc/realm-scope.ts`) and refuse any other realm with `FORBIDDEN`. Founders and map officers open the
+world editor from **World editor** on `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to
+it; creating a nation from a shape stays with site admins. See [maps.md](maps.md#realm-maps).
 
 **Claims reviewers:** `realms.reviewClaim` accepts site admins, the founder, and officers holding `claims` in the
 claim's realm (only the reviewer's own `RealmOfficer` row is read); `realms.listClaims` lists the realms the caller
@@ -255,8 +263,10 @@ address; description; up to five tags from `REALM_TAGS`), **Links** (community l
 officer's own claim),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
-options, optional end date), **Board moderation**, **Source sync** (founder only; see below), **Wiki** (founder only;
-see below) and **Hand over** (the founder only, `manage.canHandOver`).
+options, optional end date), **Board moderation**, **Map** (holders of `map`: planet radius, base image, credit
+line, clearing the default view, and **Recompute areas**, whose "Also set nations' land area from the map" box only
+the founder sees; see [maps.md](maps.md#realm-maps)), **Source sync** (founder only; see below), **Wiki** (founder
+only; see below) and **Hand over** (the founder only, `manage.canHandOver`).
 
 **Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
 (`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG
@@ -327,3 +337,6 @@ dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file 
 - IxWorld's ocean labels and guided tour show only on IxWorld's map (AT-2).
 - Map wiki lookups (`geoWiki.*`) use the wiki the realm's lore index was imported from (its `RealmPage.wikiSource`),
   and link to the in-site reader. IxWorld, and a realm with no lore index, keep ixwiki then iiwiki (AT-12).
+- A coordinates embed in a wiki article shows IxWorld's map in an IxWiki article; in another wiki's article, the map
+  of the realm whose lore index holds the article, else of the only realm whose lore comes from that wiki
+  (`realms.map.realmForWikiArticle`); otherwise the viewer's realm.

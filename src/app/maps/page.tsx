@@ -24,7 +24,6 @@
 import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { MapContainer } from "~/components/maps/core/MapContainer";
-import { RealmMapAttribution } from "~/components/maps/core/RealmMapAttribution";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
@@ -97,7 +96,6 @@ export default function WorldMapPage() {
         initialLayers={initialLayers}
         realm={realm}
       />
-      <RealmMapAttribution realmSlug={realm} />
     </div>
   );
 }

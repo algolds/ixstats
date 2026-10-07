@@ -280,8 +280,9 @@ async function createNationCountry(
 }
 
 /**
- * Decision 11: the realm's unlinked political region named after the nation (its feature id, or display name,
- * from the colour → nation mapping) becomes the new country's — linked, then its geometry synced, in the
+ * Decision 11: the realm's unlinked political regions named after the nation (feature id or display name, from
+ * the colour → nation mapping, or the nation's source key) become the new country's: all of them, since a nation
+ * may be drawn as several regions (islands, exclaves). Linked, then the geometry synced (their union), in the
  * approving transaction. No such region: nothing to link.
  */
 async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage): Promise<void> {
@@ -291,16 +292,19 @@ async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage):
     isActive: true,
     countryId: null,
   };
-  const region = await tx.mapLayer.findFirst({
-    where: { ...unlinked, OR: [{ featureId: page.title }, { displayName: page.title }] },
-    select: { id: true },
+  const nation = await tx.country.findUnique({
+    where: { id: countryId },
+    select: { externalSourceKey: true },
   });
+  const keys = [page.title, nation?.externalSourceKey].filter((k): k is string => !!k);
+  const named = {
+    ...unlinked,
+    OR: [{ featureId: { in: keys } }, { displayName: page.title }],
+  };
+  const region = await tx.mapLayer.findFirst({ where: named, select: { id: true } });
   if (!region) return;
   await assertCountryInFeatureRealm(tx, countryId, page.realmId);
-  const { count } = await tx.mapLayer.updateMany({
-    where: { ...unlinked, id: region.id },
-    data: { countryId },
-  });
+  const { count } = await tx.mapLayer.updateMany({ where: named, data: { countryId } });
   if (count > 0) await syncCountryGeometryFromMapLayer(tx, countryId);
 }
 
@@ -460,7 +464,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
   ): Promise<boolean> {
     // A realm nation with no wiki (only on the realm's map: the source sync leaves wikiSource empty) has no page
     // creator to prove, so its claim always goes to manual review.
-    if (country.realmId && country.realmId !== DEFAULT_REALM_ID && !country.wikiSource) return false;
+    if (country.realmId && country.realmId !== DEFAULT_REALM_ID && !country.wikiSource)
+      return false;
     const source = country.wikiSource ?? "ixwiki";
     if (!isProofSource(source)) return false;
     const link = await db.wikiAccountLink.findFirst({
@@ -589,7 +594,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     // The realm's source sync may have created the nation, unclaimed: the claim is then a claim on that country.
     const unclaimed = await findUnclaimedNation(db, realmId, title);
     if (unclaimed) {
-      const nationPage = { realmId, realmSlug: page.realm.slug, wikiSource: page.wikiSource, title };
+      const nationPage = {
+        realmId,
+        realmSlug: page.realm.slug,
+        wikiSource: page.wikiSource,
+        title,
+      };
       return { page: nationPage, realm: page.realm, unclaimedCountryId: unclaimed.id };
     }
     if (await nationExists(db, realmId, title))

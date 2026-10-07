@@ -27,7 +27,7 @@ export const MAX_REALM_TAGS = 5;
  * What an officer may be given. The founder (and site admins) hold all of them, and alone appoint officers and
  * hand the realm over.
  */
-export const REALM_POWERS = ["appearance", "board", "diplomacy", "claims"] as const;
+export const REALM_POWERS = ["appearance", "board", "diplomacy", "claims", "map"] as const;
 
 export type RealmPower = (typeof REALM_POWERS)[number];
 
@@ -36,6 +36,7 @@ export const REALM_POWER_LABELS: Record<RealmPower, string> = {
   board: "Board moderation",
   diplomacy: "Embassies and polls",
   claims: "Claims",
+  map: "Map",
 };
 
 /** What each power lets an officer do, shown beside its checkbox in the Officers section. */
@@ -44,6 +45,7 @@ export const REALM_POWER_DESCRIPTIONS: Record<RealmPower, string> = {
   board: "Mute or ban nations on the realm's board",
   diplomacy: "Propose and answer embassies, and run the realm poll",
   claims: "Review players' claims on the realm's nations",
+  map: "Edit the realm's map, borders and labels, and import maps",
 };
 
 /** The officer title a previous founder keeps when the realm is handed over and they stay on as an officer. */
