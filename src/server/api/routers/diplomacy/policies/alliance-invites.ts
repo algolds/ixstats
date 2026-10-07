@@ -1,8 +1,11 @@
 /**
- * Alliance invite helpers shared by the alliances router: who speaks for an invite, and how an
- * NPC (unowned) nation answers one.
+ * Alliance invite helpers shared by the alliances router: who speaks for an invite, how an
+ * NPC (unowned) nation answers one, and the realm rule (members come from the alliance's realm).
  */
+import { TRPCError } from "@trpc/server";
 import type { CumulativeEffects } from "~/lib/diplomacy/choice-tracker";
+import { parsePrismaError } from "~/lib/prisma-error";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { NPCPersonalitySystem } from "~/lib/diplomacy/npc-personality";
 import {
   buildNpcObservableData,
@@ -14,6 +17,39 @@ import { INVITE_STATUS } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
 
 export const ALLIANCE_LEADER_ROLES = ["founder", "leader"];
+
+/**
+ * Alliances are realm-scoped (Alliance.realmId): only a nation of the alliance's realm can be invited to, or
+ * join, it. Rows without a realm (older data, test doubles) count as IxWorld's, like Country.realmId's default.
+ */
+export async function assertAllianceRealm(
+  db: any,
+  allianceId: string,
+  countryRealmId: string | null | undefined
+): Promise<void> {
+  const alliance: { realmId?: string | null } | null = await db.alliance.findUnique({
+    where: { id: allianceId },
+    select: { realmId: true },
+  });
+  if (!alliance) throw new TRPCError({ code: "NOT_FOUND", message: "Alliance not found." });
+  if ((alliance.realmId ?? DEFAULT_REALM_ID) !== (countryRealmId ?? DEFAULT_REALM_ID)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Alliances are realm-scoped: only nations of the alliance's realm can join it.",
+    });
+  }
+}
+
+/** A second alliance of the same name in one realm surfaces as a clear message, not a database error. */
+export function allianceNameTaken(error: Error): never {
+  if (parsePrismaError(error)?.type === "unique_constraint") {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "An alliance with that name already exists in this realm.",
+    });
+  }
+  throw error;
+}
 
 /**
  * The countries that speak for a pending invite: the country that issued it, or — for

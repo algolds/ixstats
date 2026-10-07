@@ -507,7 +507,7 @@ export const overlayProcedures = {
     const realmId = await viewerRealmId(ctx, input?.realm);
     // 1. Alliance groups
     const alliances = await ctx.db.alliance.findMany({
-      where: { visibility: "public" },
+      where: { visibility: "public", realmId },
       select: {
         id: true,
         name: true,
