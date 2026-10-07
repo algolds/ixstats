@@ -8,6 +8,7 @@ import {
 import {
   isMapBaseImageUrl,
   parseRealmMapSettings,
+  realmGeoreference,
   realmRadiusKm,
   withRealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
@@ -76,11 +77,10 @@ describe("Realm.settings.map", () => {
         controlPoints: [[0, 0]],
       },
     };
+    // A malformed projection and control points are dropped like any other malformed key.
     expect(parseRealmMapSettings(settings)).toEqual({
       radiusKm: 3000,
       attribution: "Map by the Eurth community",
-      projection: { kind: "equirectangular" },
-      controlPoints: [[0, 0]],
     });
   });
 
@@ -109,6 +109,59 @@ describe("Realm.settings.map", () => {
     ).toEqual({
       maxNationsPerUser: 3,
       map: { radiusKm: 3000, defaultView: { center: [1, 2], zoom: 4 } },
+    });
+  });
+});
+
+describe("Realm.settings.map georeference", () => {
+  const points = [
+    { x: 0, y: 0, lon: -10, lat: 10 },
+    { x: 100, y: 0, lon: 10, lat: 10 },
+    { x: 0, y: 100, lon: -10, lat: -10 },
+  ];
+
+  it("reads the projection, bounds and control points, dropping a malformed one on its own", () => {
+    const settings = {
+      map: {
+        projection: "mercator",
+        bounds: { west: 10, south: -5, east: 5, north: 20 }, // west > east
+        controlPoints: points,
+        source: "iiwiki",
+        file: "File:Eurth.png",
+      },
+    };
+    expect(parseRealmMapSettings(settings)).toEqual({
+      projection: "mercator",
+      controlPoints: points,
+    });
+    expect(realmGeoreference(settings)).toEqual({ projection: "mercator", controlPoints: points });
+    expect(realmGeoreference(null)).toEqual({});
+  });
+
+  it("needs at least three control points", () => {
+    expect(parseRealmMapSettings({ map: { controlPoints: points.slice(0, 2) } })).toEqual({});
+  });
+
+  it("saves a georeference without dropping the wiki map's keys", () => {
+    const stored = {
+      maxNationsPerUser: 2,
+      map: { source: "iiwiki", file: "File:Eurth.png", radiusKm: 4000 },
+    };
+    expect(
+      withRealmMapSettings(stored, {
+        projection: "equirectangular",
+        bounds: { west: -20, south: -10, east: 20, north: 10 },
+        controlPoints: null,
+      })
+    ).toEqual({
+      maxNationsPerUser: 2,
+      map: {
+        source: "iiwiki",
+        file: "File:Eurth.png",
+        radiusKm: 4000,
+        projection: "equirectangular",
+        bounds: { west: -20, south: -10, east: 20, north: 10 },
+      },
     });
   });
 });

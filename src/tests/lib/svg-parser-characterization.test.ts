@@ -165,6 +165,8 @@ type Outcome = { error: string } | { summary: Summary; digest: string };
 
 // Re-pinned 2026-10-07 when rings became classified by containment and wound per RFC 7946 (outer
 // counter-clockwise, holes clockwise) with holes subtracted from the area; same rings, logs and properties.
+// Re-pinned again the same day when path arcs (`A`) became drawn as arcs instead of a straight line to their end:
+// only the relative_arc feature's ring changed (a half circle), so only the three digests that include it moved.
 const EXPECTED: Record<string, Outcome> = {
   politicalByLabel: {
     summary: {
@@ -193,7 +195,7 @@ const EXPECTED: Record<string, Outcome> = {
         "feature_11:Polygon",
       ],
     },
-    digest: "f54892267def84b9f2476f94c8f51184c67fea3a22b90333fa9c4c738580006f",
+    digest: "4d9f837c8826299ee642f53491b1e4ef774429fa43141486666c4193c65aaf28",
   },
   backgroundById: {
     summary: {
@@ -241,7 +243,7 @@ const EXPECTED: Record<string, Outcome> = {
         "feature_11:Polygon",
       ],
     },
-    digest: "10fef1c3a782a576feb2d2a07c2529cc1ea9df958a88a10ea8aa450ae8c1799c",
+    digest: "6bb467c50f83c2506be98bbd93fce0b855f9a813f71efcba82aa40eafbdd2a86",
   },
   calibrationFallsBack: {
     summary: {
@@ -273,7 +275,7 @@ const EXPECTED: Record<string, Outcome> = {
         "relative_arc:Polygon",
       ],
     },
-    digest: "0b13ea3e2a3bc2275607fa74ec07655b2b38742d4ffeabca4769f840a0ce4b03",
+    digest: "8fed8d1e2b928d0981abee47513ac4cc844c6b43c491656024eb68ee6ee47d29",
   },
   soleGroupFallback: {
     summary: {

@@ -149,9 +149,11 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
     const models = {
       realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
       mapLayer: {
+        findMany: jest.fn().mockResolvedValue([]),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
         upsert: jest.fn().mockResolvedValue({}),
       },
+      mapImport: { create: jest.fn().mockResolvedValue({ id: "import_1" }) },
       sharedVertex: {
         deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
         createMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -174,7 +176,7 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
         [0, 0],
       ],
     ];
-    await createCallerFactory(geoEditorProceduralRouter)(
+    const result = await createCallerFactory(geoEditorProceduralRouter)(
       createMockRouterContext({
         db,
         auth: { userId: "admin_1" },
@@ -203,7 +205,12 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
       },
     });
 
-    const [aurelia, pin] = db.mapLayer.upsert.mock.calls.map((c) => c[0]);
+    // A point is not a political region: the shared writer reports it instead of writing it.
+    expect(db.mapLayer.upsert).toHaveBeenCalledTimes(1);
+    expect(result.rejected).toEqual([
+      { layerType: "political", key: "Pin", reason: "a Point is not a Polygon or MultiPolygon" },
+    ]);
+    const [aurelia] = db.mapLayer.upsert.mock.calls.map((c) => c[0]);
     const metrics = {
       centroid: [4, 4],
       boundingBox: [0, 0, 10, 10],
@@ -212,8 +219,6 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
     expect(aurelia.create).toMatchObject({ featureId: "Aurelia", ...metrics });
     expect(aurelia.update).toMatchObject(metrics);
     expect(aurelia.create.areaSqKm).toBeGreaterThan(1_000_000);
-    expect(pin.create).not.toHaveProperty("areaSqKm");
-    expect(pin.update).not.toHaveProperty("centroid");
   });
 
   it("coerces numeric worldgen feature ids to strings for the featureId column", async () => {
@@ -289,12 +294,18 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
   function importDb() {
     const db: {
       realm: { findUnique: jest.Mock };
-      mapLayer: { updateMany: jest.Mock; upsert: jest.Mock };
+      mapLayer: { findMany: jest.Mock; updateMany: jest.Mock; upsert: jest.Mock };
+      mapImport: { create: jest.Mock };
       sharedVertex: { deleteMany: jest.Mock; createMany: jest.Mock };
       $transaction: jest.Mock;
     } = {
       realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
-      mapLayer: { updateMany: jest.fn(), upsert: jest.fn().mockResolvedValue({}) },
+      mapLayer: {
+        findMany: jest.fn().mockResolvedValue([]),
+        updateMany: jest.fn(),
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+      mapImport: { create: jest.fn().mockResolvedValue({ id: "import_1" }) },
       sharedVertex: { deleteMany: jest.fn(), createMany: jest.fn() },
       $transaction: jest.fn((fn: (tx: unknown) => unknown): unknown => fn(db)),
     };

@@ -9,8 +9,12 @@
  * - `baseImage`: a full-globe equirectangular image drawn under the political layer, an `https://` address or an
  *   image uploaded through the site's image upload route (`isMapBaseImageUrl`).
  * - `attribution`: the credit line the realm's map shows (falls back to the realm's source sync attribution).
- * - `projection`, `bounds`, `controlPoints`: georeferencing of imported maps, owned by the map import work; kept
- *   here as pass-through placeholders so a stored value is never dropped.
+ * - `projection`, `bounds`, `controlPoints`: how an imported map image's pixels become lon/lat (the map import
+ *   engine, `src/lib/maps/import/georef.ts`): equirectangular or Mercator, the lon/lat box a cropped image covers,
+ *   or at least three pixel ↔ lon/lat pairs. None set: a whole-globe equirectangular image.
+ *
+ * Other keys stored under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`) are not read
+ * here and are never dropped when the settings are saved.
  */
 import { z } from "zod";
 import { EARTH_RADIUS_KM } from "./planet";
@@ -41,12 +45,37 @@ export const RealmMapDefaultViewSchema = z.object({
 
 export type RealmMapDefaultView = z.infer<typeof RealmMapDefaultViewSchema>;
 
+export const MAP_PROJECTIONS = ["equirectangular", "mercator"] as const;
+export type MapProjection = (typeof MAP_PROJECTIONS)[number];
+
+/** Mercator cannot reach the poles; maps are cut here, as web maps are. */
+export const MERCATOR_MAX_LAT = 85.0511287798;
+
+const geoLng = z.number().finite().min(-180).max(180);
+const geoLat = z.number().finite().min(-90).max(90);
+
+/** The lon/lat box a cropped map image covers (west < east, south < north). */
+export const MapBoundsSchema = z
+  .object({ west: geoLng, south: geoLat, east: geoLng, north: geoLat })
+  .refine((b) => b.west < b.east && b.south < b.north, {
+    message: "Bounds need west < east and south < north",
+  });
+export type MapBounds = z.infer<typeof MapBoundsSchema>;
+
+/** A pixel of the map image (x right, y down, from the top-left corner) and the lon/lat it shows. */
+export const MapControlPointSchema = z.object({
+  x: z.number().finite(),
+  y: z.number().finite(),
+  lon: geoLng,
+  lat: geoLat,
+});
+export type MapControlPoint = z.infer<typeof MapControlPointSchema>;
+
 export const RealmMapSettingsSchema = z.object({
   radiusKm: z.number().min(MIN_REALM_RADIUS_KM).max(MAX_REALM_RADIUS_KM).optional(),
-  // Owned by the map import work (georeferencing); passed through untouched here.
-  projection: z.unknown().optional(),
-  bounds: z.unknown().optional(),
-  controlPoints: z.unknown().optional(),
+  projection: z.enum(MAP_PROJECTIONS).optional(),
+  bounds: MapBoundsSchema.optional(),
+  controlPoints: z.array(MapControlPointSchema).min(3).max(64).optional(),
   baseImage: z
     .string()
     .trim()
@@ -57,6 +86,14 @@ export const RealmMapSettingsSchema = z.object({
 });
 
 export type RealmMapSettings = z.infer<typeof RealmMapSettingsSchema>;
+
+/** The georeference part of the settings: what the import engine needs to place an image on the globe. */
+export const mapGeoreferenceSchema = RealmMapSettingsSchema.pick({
+  projection: true,
+  bounds: true,
+  controlPoints: true,
+});
+export type MapGeoreference = z.infer<typeof mapGeoreferenceSchema>;
 
 function settingsObject(settings: unknown): Record<string, unknown> {
   return settings && typeof settings === "object" && !Array.isArray(settings)
@@ -101,4 +138,14 @@ export function withRealmMapSettings(
     else map[key] = value;
   }
   return { ...stored, map };
+}
+
+/** Just the georeference keys of a realm's map settings. */
+export function realmGeoreference(settings: unknown): MapGeoreference {
+  const { projection, bounds, controlPoints } = parseRealmMapSettings(settings);
+  return {
+    ...(projection && { projection }),
+    ...(bounds && { bounds }),
+    ...(controlPoints && { controlPoints }),
+  };
 }

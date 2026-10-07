@@ -478,41 +478,44 @@ only from the wiki's own hosts, at most 40 MB, checks its SHA-1 against the wiki
 (at most 64 megapixels), then stores the choice in `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`,
 `attribution`, `file` with dimensions, size, type, licence and who chose it when). The **Chosen world map** card shows
 it; **Re-check** compares the wiki's current SHA-1 with the stored one and reads **Unchanged**, **Changed** (choose it
-again to use the new version) or **No longer on the wiki**. Choosing a map imports nothing yet: the map import starts
-from this choice once it is wired in. Until then, download the chosen file from its file page and continue below.
+again to use the new version) or **No longer on the wiki**. Choosing a map imports nothing by itself: **Import this
+map** on the card fetches the original again (refused if the wiki's file changed since it was chosen: Re-check and
+choose it again), starts the map import below with the map's credit line, and opens the wizard at its analysis.
 
 `realms.wiki.infoboxHints` (site admins and the founder) returns each roster nation's capital coordinates and a locator
 map thumbnail, for the colour to nation step; a complete answer is cached for an hour.
 
-> **Warning — don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode,
-> and Quick Update always writes **IxWorld's** map — an Eurth SVG applied there replaces that layer of
-> IxWorld's map. Only **Full Pipeline** has a **Target realm** setting.
+### 6.1 Import the map (the realm map import)
 
-1. Obtain a **flat-colour political map** of Eurth as a **PNG** (JPEG is accepted, but compression noise
-   adds stray colours): one solid colour per nation, equirectangular projection, at most **25 MB** and
-   **64 megapixels** (8192×8192). Hand-drawn or textured maps vectorise poorly — it must be flat colour.
-   Colours covering less than 0.01% of the image are dropped as noise. A file that isn't a readable
-   image, or is over the pixel limit, is refused with the reason ("The map image could not be read …").
-2. `/admin/maps` → **Import Pipeline** tab → switch from **Quick Update** to **Full Pipeline** → set
-   **Target realm** to `Eurth` → **Choose File** (the PNG) → **Analyse colours**. This only counts the
-   map's colours (nothing is traced yet, so it is quick even for a large map) and lists them, largest
-   first, each with its swatch, hex and share of the map.
-3. **Map colours → nations.** For each colour, pick its nation in the searchable box — the list holds
-   Eurth's existing countries plus the claimable nation pages of its lore index (step 3), and you can type
-   a name that isn't listed. Tick **Ignore** for the ocean and any other background colour. The summary
-   under the list counts the **unmapped colours that will be dropped** from the map; a nation can hold
-   only one colour (the wizard won't continue while a nation has two — merge them in the image first).
-4. **Vectorise N mapped colours** → each mapped colour is traced into one political region whose feature
-   id is the nation's name (only now is anything traced; the import stores each region's centroid,
-   bounding box and approximate area alongside its outline) → check the feature counts and any warnings/validation errors → **Proceed to
-   Import** → check that the confirmation reads "Ready to import … features into **Eurth**" → **Import
-   to Database**. The import merges into Eurth's map only; an unknown target realm is refused.
-   - The tracer is the `potrace` package (a dependency since E8 — `bun install` brings it). It is loaded
-     at run time from the `node_modules` of the directory the server was started in. If the **Pipeline
-     Log** shows `ERROR potrace could not be loaded, no region was traced: <reason>`, no regions are
-     produced: run `bun install` in that directory and restart. A single `ERROR tracing #rrggbb: …` line
-     means only that colour failed.
-5. **Regions become nations' territory:**
+> **Warning: don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode, and Quick
+> Update always writes **IxWorld's** map. Realm maps go through **Full pipeline** → **Realm map**, or the realm's
+> Manage tab → **Map import** (the founder and Map officers).
+
+1. **The file:** a **flat-colour political map** (PNG best; JPEG works, its compression noise is cleaned up), an
+   **SVG** with one shape or group per nation (named by `<title>`, Inkscape label or id), or a **GeoJSON**
+   FeatureCollection in WGS84. At most **40 MB** and **64 megapixels**. Several colours may be one nation; black (or
+   dark grey) border lines are removed so neighbours touch. Or use **Import this map** on the wiki card (§6.0).
+2. `/admin/maps` → **Import pipeline** → **Full pipeline** → **Realm map (PNG, SVG, GeoJSON)** → realm `Eurth` →
+   **Choose a file**. (Founders: `/r/eurth/manage` → **Map import**, realm fixed.)
+3. **Settings:** where the map lies on the globe: **Whole globe** (an equirectangular 2:1 world map, the default),
+   **Crop bounds** (west, south, east, north of a cropped map) or **Control points** (three or more pixels and the
+   lon/lat they show; the wiki's capitals are offered), in **Equirectangular** or **Mercator**. The extent preview
+   shows where it lands. For an image: colour tolerance, smallest region, sea colours and border-line removal. For an
+   SVG: the layer; for GeoJSON: the property that holds the nation's name. **Analyse the map**.
+4. **Analysis** runs in the background with a progress bar (a few seconds for an 8000 × 4000 map). With the
+   `map-import` cron job on it starts within a minute; otherwise the web server runs it at once.
+5. **Nations:** each region (colour, shape or property value), largest first, pre-filled from its name or a colour
+   key; the sea is ignored. Pick each region's nation (Eurth's countries and roster pages; a name not listed is
+   allowed and flagged, with close spellings to pick), **Ignore** background, or **Load a colour key** (CSV or JSON:
+   colour and nation per row) to fill the colours by nearest colour. Several regions may name one nation.
+6. **Review** (nothing is written yet): new, changed and unchanged borders, each nation's area on Eurth's planet,
+   whether its land area is filled (only when it has none) or kept, regions left out, unknown names. **Merge** changes
+   only the imported nations; **Replace** also retires every other political region of Eurth. Optionally save the
+   georeference as Eurth's. **Apply** runs in the background.
+7. **Done:** borders written, regions retired, land areas filled, neighbouring pairs. **Applied imports** lists every
+   import with **Roll back** on the latest one (it restores the borders and land areas it changed and removes the ones
+   it created).
+8. **Regions become nations' territory:**
    - **Nations claimed after the import take their region automatically.** When a nation-page claim is
      approved (instantly or by review), the new country is linked to Eurth's unlinked political region
      whose feature id (or display name) equals the nation's title, and the country takes the region's

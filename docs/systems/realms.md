@@ -265,8 +265,10 @@ officer's own claim),
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
 options, optional end date), **Board moderation**, **Map** (holders of `map`: planet radius, base image, credit
 line, clearing the default view, and **Recompute areas**, whose "Also set nations' land area from the map" box only
-the founder sees; see [maps.md](maps.md#realm-maps)), **Source sync** (founder only; see below), **Wiki** (founder
-only; see below) and **Hand over** (the founder only, `manage.canHandOver`).
+the founder sees; see [maps.md](maps.md#realm-maps)), **Map import** (holders of `map`, not in an archived realm:
+the realm map import wizard fixed to the realm, with its applied imports and Roll back; see
+[maps.md](maps.md#realm-map-import-engine)), **Source sync** (founder only; see below), **Wiki** (founder only; see
+below; the chosen map's **Import this map** starts the map import) and **Hand over** (the founder only, `manage.canHandOver`).
 
 **Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
 (`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG

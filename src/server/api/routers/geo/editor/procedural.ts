@@ -1,13 +1,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { invalidateCache } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES, PngDecodeError } from "~/lib/maps/png-realm-map";
-import { polygonMetrics } from "~/lib/maps/feature-metrics";
-import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import type { PipelineInput } from "~/lib/maps/map-pipeline";
-import { clearLayerCache } from "../core";
 
 const hexColour = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colours are #rrggbb hex");
 
@@ -83,7 +79,9 @@ export const geoEditorProceduralRouter = createTRPCRouter({
   }),
 
   /**
-   * Import pipeline result into the database as MapLayer records.
+   * Import pipeline result into the database as MapLayer records, through the shared realm map writer
+   * (~/server/modules/maps/map-import.pipeline.ts): validated geometry, batched writes, display names, a rollback
+   * snapshot; replace mode retires only the imported layer types' stale features.
    */
   importPipelineResult: adminProcedure
     .input(
@@ -101,106 +99,12 @@ export const geoEditorProceduralRouter = createTRPCRouter({
       });
       if (!realm) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown realm" });
 
-      const layers = input.layers as Record<string, import("geojson").FeatureCollection>;
-      let imported = 0;
-
-      await ctx.db.$transaction(async (tx) => {
-        if (input.mode === "replace") {
-          // Deactivate existing layers for this world
-          await tx.mapLayer.updateMany({
-            where: { realmId: input.realmId, isActive: true },
-            data: { isActive: false },
-          });
-        }
-
-        for (const [layerType, collection] of Object.entries(layers)) {
-          if (!collection?.features) continue;
-
-          for (const feature of collection.features) {
-            // Worldgen features carry numeric ids; featureId is a String column
-            const rawId = feature.properties?.featureId ?? feature.id;
-            const featureId =
-              rawId !== undefined && rawId !== null && String(rawId) !== ""
-                ? String(rawId)
-                : `${layerType}_${imported}`;
-
-            // The parser's centroid/bbox/area, so a country linked to this region later syncs real values
-            const metrics = polygonMetrics(feature.geometry);
-            await tx.mapLayer.upsert({
-              where: {
-                realmId_layerType_featureId: { realmId: input.realmId, layerType, featureId },
-              },
-              update: {
-                geometry: feature.geometry as any,
-                properties: (feature.properties ?? {}) as any,
-                ...metrics,
-                isActive: true,
-                realmId: input.realmId,
-              },
-              create: {
-                layerType,
-                featureId,
-                geometry: feature.geometry as any,
-                properties: (feature.properties ?? {}) as any,
-                ...metrics,
-                isActive: true,
-                realmId: input.realmId,
-              },
-            });
-            imported++;
-          }
-        }
+      const { writePipelineLayers } = await import("~/server/modules/maps/map-import.pipeline");
+      return writePipelineLayers(ctx.db, {
+        realmId: input.realmId,
+        layers: input.layers as Record<string, import("geojson").FeatureCollection>,
+        mode: input.mode,
+        createdBy: ctx.user.clerkUserId,
       });
-
-      // Build shared vertex index for political features
-      if (layers.political) {
-        try {
-          const { buildSharedVertexIndex } = await import("~/lib/maps/shared-vertex-builder");
-          const politicalFeatures = layers.political.features
-            .filter((f) => f.geometry?.type === "Polygon" || f.geometry?.type === "MultiPolygon")
-            .map((f) => ({
-              featureId: (f.properties?.featureId as string) ?? (f.id as string) ?? "",
-              geometry: f.geometry as import("geojson").Polygon | import("geojson").MultiPolygon,
-            }));
-
-          const sharedVertices = buildSharedVertexIndex(politicalFeatures);
-
-          // Clear existing shared vertices for this world
-          await ctx.db.sharedVertex.deleteMany({
-            where: { realmId: input.realmId },
-          });
-
-          // Insert new shared vertices
-          if (sharedVertices.length > 0) {
-            await ctx.db.sharedVertex.createMany({
-              data: sharedVertices.map((sv) => ({
-                lng: sv.lng,
-                lat: sv.lat,
-                featureRefs: sv.featureRefs as any,
-                realmId: input.realmId,
-              })),
-            });
-          }
-        } catch {
-          // Shared vertex build failed — non-blocking
-        }
-      }
-
-      // Store which regions border each other, so an imported (e.g. PNG) realm has neighbours (AT-16)
-      let adjacencyBuilt = false;
-      if (layers.political) {
-        try {
-          adjacencyBuilt = !(await rebuildAdjacency(ctx.db, input.realmId)).skipped;
-        } catch (error) {
-          // Non-blocking like the shared vertices: the layers are imported; an admin can rebuild adjacency later
-          console.error("[importPipelineResult] Adjacency rebuild failed:", error);
-        }
-      }
-
-      // Invalidate the assembled-layer cache and the cached map responses (keys carry the realm)
-      clearLayerCache();
-      invalidateCache(["geoCore.getWorldMap", "geoCore.getMapBundle"]);
-
-      return { imported, mode: input.mode, adjacencyBuilt };
     }),
 });

@@ -14,6 +14,35 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🧭 Realm Map Import Engine (2026-10-07)
+
+- **Background import jobs** (`MapImportJob`): a realm's political map from a flat-colour PNG/JPEG, an SVG of nations
+  or GeoJSON is uploaded through `/api/admin/map-import/upload` (40 MB, Content-Length checked first, stored by
+  SHA-256 in `MAP_IMPORT_DIR`), analysed off the request path (the new `map-import` cron job, PNG tracing in a worker
+  thread; else in-process in the web server), mapped to the realm's nations, dry-run, applied and rolled back. Progress,
+  stage and Cancel in the wizard. `startMapImport({ realmId, source, options, requestedBy })` is the server entry.
+- **New PNG engine:** decoded once, palette from a colour key or detected by perceptual (CIEDE2000) clustering, pixels
+  snapped through a lookup table, border lines and anti-aliasing removed so neighbours touch, specks merged into their
+  largest neighbour, every boundary traced once into a TopoJSON topology so shared borders stay identical after
+  simplification, several colours per nation. About 2 s for an 8000 × 4000 map with 130 nations (was about 2.5
+  minutes in one request).
+- **Georeferencing** (`Realm.settings.map`: `projection`, `bounds`, `controlPoints`): whole globe, a crop's bounds or
+  three or more control points, equirectangular or Mercator (inverse Mercator applied), with an extent preview.
+- **Realm SVG import** on the province importer's engine (transforms, every shape type, `<title>`/id/label names,
+  arcs, fill rules, holes by containment); **GeoJSON bulk import** with a CRS check, pixel-coordinate detection and a
+  name property; **colour-key legends** (CSV/JSON) fill the mapping by nearest colour; names are checked with the
+  editor's fuzzy matcher.
+- **Dry run, apply, rollback:** the diff (new/changed/unchanged/retired borders, unmatched regions, unknown names,
+  areas on the realm's planet), writes through the realm map writer, land area filled only where a nation has none,
+  adjacency rebuilt, caches dropped, and a `MapImport` snapshot for **Roll back**. `importPipelineResult` is now a
+  thin wrapper over the same writer (validated, batched, named, snapshotted; replace mode retires only the imported
+  layer types).
+- **Who:** site admins, the founder and Map officers (`canImportRealmMap`): the wizard is in Full pipeline and in the
+  realm's Manage tab (**Map import**); **Import this map** on the wiki panel imports the map chosen from the realm's
+  wiki, with its credit line, and shows the wiki's locator maps and capitals as helpers.
+- **Deploy:** `prisma/migrations/20261007150000_map_import_jobs/migration.sql` (additive; `db push` applies it) and,
+  optionally, `map-import` in `CRON_ENABLED_JOBS` (deploy runbook steps 4 and 7).
+
 ### 📚 Realm Wikis & IIWiki World Discovery (2026-10-07)
 
 - **Realm wiki settings:** each realm names the sister wiki its lore lives on and how its world is found there

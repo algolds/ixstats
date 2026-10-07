@@ -42,6 +42,11 @@ Read it end to end once before starting. Every command here is meant to be run b
     (`prisma/migrations/20261007_realm_map_labels.sql` has the same changes). `db push` applies them with no
     data-loss prompt. The realm map settings (planet radius, default view, base image, attribution) are the `map`
     key of `Realm.settings` and need no column
+  - realm map import (2026-10-07, additive): `map_import_jobs` (background import jobs) and `map_imports`
+    (rollback snapshots) tables (`prisma/migrations/20261007150000_map_import_jobs/migration.sql`, idempotent, has the
+    same tables). `db push` applies them with no data-loss prompt. Uploaded maps and analysis results are files in
+    `MAP_IMPORT_DIR` (default `.map-imports/` in the app directory, git-ignored); the web app and the cron runner
+    must see the same directory
   - a nullable `IntelligenceAlert.readAt` (2026-10-05, additive): when the owner read a threshold alert (MC-17)
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,
@@ -179,6 +184,13 @@ key cannot fail):
 ```bash
 docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
   < prisma/migrations/20261007120000_realm_source_sync/migration.sql
+```
+
+The map import tables can go in the same way (optional: `db push` creates them too, and the file is idempotent):
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261007150000_map_import_jobs/migration.sql
 ```
 
 ## 5. Deploy
@@ -355,8 +367,16 @@ lease `realm-source-sync:<realmId>`. It does nothing for realms with no schedule
 CRON_ENABLED_JOBS=...,realm-source-sync
 ```
 
-That makes 24 jobs here, including `notification-email-digest` and `realm-source-sync` (plus the two WikiOS ones
-below): the full table of 26 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
+Enable `map-import` (every minute) when realm staff start importing maps: it runs queued map import analyses in a
+worker thread of the cron runner, one realm at a time under `map-import:<realmId>` leases. Without it the web process
+runs analyses in-process (slower, sharing the web server's CPU); apply jobs always start in the web process:
+
+```
+CRON_ENABLED_JOBS=...,map-import
+```
+
+That makes 25 jobs here, including `notification-email-digest`, `realm-source-sync` and `map-import` (plus the two
+WikiOS ones below): the full table of 27 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
 schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
 `wiki-recentchanges` is now the **only** recent-changes sync; the in-process daemon was removed. Wiki edits stop

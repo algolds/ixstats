@@ -251,3 +251,6 @@ scripts/ops/wikios-test-mediawiki/.env.test-mediawiki
 
 # WikiOS native uploads waiting for the mirror (plan 411): WIKIOS_UPLOAD_DIR defaults to this in dev
 .wikios-uploads/
+
+# Map import uploads and results (MAP_IMPORT_DIR default)
+/.map-imports/

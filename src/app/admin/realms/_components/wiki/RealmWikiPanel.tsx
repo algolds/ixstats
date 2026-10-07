@@ -27,7 +27,7 @@ export function RealmWikiPanel({ slug }: { slug: string }) {
   return (
     <div className="flex flex-col gap-6">
       <WikiSettingsForm key={JSON.stringify(view.wiki)} slug={slug} view={view} />
-      {view.map && <ChosenWikiMap slug={slug} map={view.map} />}
+      {view.map && <ChosenWikiMap slug={slug} realmId={view.realm.id} map={view.map} />}
       {view.wiki ? (
         <WikiDiscoveryPanel key={JSON.stringify(view.wiki)} slug={slug} view={view} />
       ) : (

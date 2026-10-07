@@ -10,16 +10,19 @@
  *  - queue:      edit-request review queue (approve/reject) and per-country edit history
  *  - borders:    border editor sessions, drafts, submit, split/merge
  *  - procedural: procedural world generation and the SVG/import map pipeline
+ *  - mapImport:  background realm map imports (PNG, SVG, GeoJSON), dry runs, apply and rollback
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { geoEditorLinkageRouter } from "./linkage";
 import { geoEditorQueueRouter } from "./queue";
 import { geoEditorBordersRouter } from "./borders";
 import { geoEditorProceduralRouter } from "./procedural";
+import { geoEditorMapImportRouter } from "./map-import";
 
 export const geoEditorRouter = mergeRouters(
   geoEditorLinkageRouter,
   geoEditorQueueRouter,
   geoEditorBordersRouter,
-  geoEditorProceduralRouter
+  geoEditorProceduralRouter,
+  geoEditorMapImportRouter
 );
