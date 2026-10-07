@@ -11,10 +11,9 @@ import {
   estimateTemperature,
   estimatePrecipitation,
 } from "~/lib/maps/geo-analytics";
+import { kmPerDegree, kmPerDegreeLng } from "~/lib/maps/planet";
 import { estimateBboxOverlap } from "./geometry";
 import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
-
-const DEG_TO_KM = 111.32;
 
 /** Count and summed length/area of the realm's rivers or lakes clipped to the country, via PostGIS. */
 async function clippedLayerStats(
@@ -168,9 +167,11 @@ async function loadNeighbours(
   } catch {
     // PostGIS unavailable or geometry invalid — fall back to bbox estimation
     const [minLng, minLat, maxLng, maxLat] = extent;
-    const cosLat = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180);
     const perimeterKm = Math.round(
-      2 * ((maxLat - minLat) * DEG_TO_KM + (maxLng - minLng) * DEG_TO_KM * cosLat) * 1.3
+      2 *
+        ((maxLat - minLat) * kmPerDegree() +
+          (maxLng - minLng) * kmPerDegreeLng((minLat + maxLat) / 2)) *
+        1.3
     );
     return { neighbors: [], perimeterKm, coastlineKm: storedCoastlineKm ?? perimeterKm };
   }
@@ -295,10 +296,8 @@ export const geoProfileProcedures = {
         climateDistribution
       );
       const centroidLat = centroid[1] ?? 0;
-      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * DEG_TO_KM : 0;
-      const ewSpanKm = bbox
-        ? Math.abs(bbox[2] - bbox[0]) * DEG_TO_KM * Math.cos((centroidLat * Math.PI) / 180)
-        : 0;
+      const nsSpanKm = bbox ? Math.abs(bbox[3] - bbox[1]) * kmPerDegree() : 0;
+      const ewSpanKm = bbox ? Math.abs(bbox[2] - bbox[0]) * kmPerDegreeLng(centroidLat) : 0;
 
       return {
         countryId: country.id,

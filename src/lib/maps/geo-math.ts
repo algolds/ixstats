@@ -18,6 +18,8 @@
  * who may need to adjust measurements for their own world.
  */
 
+import { EARTH_RADIUS_KM, kmPerDegree, kmPerDegreeLng } from "./planet";
+
 /** Planet reference data */
 const IXEARTH_REFERENCE = {
   /** Lore total surface area in sq mi */
@@ -25,7 +27,7 @@ const IXEARTH_REFERENCE = {
   /** Earth total surface area in sq mi */
   earthSurfaceAreaSqMi: 196_940_000,
   /** Earth mean radius in km — used for haversine */
-  earthRadiusKm: 6_371,
+  earthRadiusKm: EARTH_RADIUS_KM,
   /** Lore planet ratio (informational, NOT applied to calculations) */
   planetRatio: 352_800_000 / 196_940_000, // ~1.7914
 } as const;
@@ -91,8 +93,8 @@ function ringAreaSqKm(ring: [number, number][]): number {
 
   // Convert square degrees to square km
   const centroidLat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
-  const latScale = 111.32; // km per degree latitude
-  const lngScale = 111.32 * Math.cos(centroidLat * DEG2RAD); // km per degree longitude
+  const latScale = kmPerDegree(); // km per degree latitude
+  const lngScale = kmPerDegreeLng(centroidLat); // km per degree longitude
   const areaSqKmEarth = area * latScale * lngScale;
 
   // Apply IxEarth scale

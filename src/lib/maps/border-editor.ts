@@ -7,6 +7,7 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { distanceDeg, projectPointToSegment } from "./planar";
+import { kmPerDegree, kmPerDegreeLng } from "./planet";
 
 // Re-exported for the editor components that import them from here
 export { distanceDeg, projectPointToSegment };
@@ -216,14 +217,11 @@ export function calculateArea(geometry: Polygon | MultiPolygon): number {
     totalArea += Math.abs(area);
   }
 
-  // Convert from square degrees to approximate sq km
-  // At equator: 1° ≈ 111.32 km. IxEarth scale is baked into the map geometry,
-  // so no additional scale factor is needed (verified: PostGIS matches roster at 0.999).
+  // Convert from square degrees to approximate sq km (planet.ts: 1° ≈ 111.32 km at the equator).
+  // IxEarth scale is baked into the map geometry, so no additional scale factor is needed
+  // (verified: PostGIS matches roster at 0.999).
   const centroid = calculateCentroid(geometry);
-  const cosLat = Math.cos((centroid[1] * Math.PI) / 180);
-  const degToKm = 111.32;
-
-  return totalArea * degToKm * degToKm * cosLat;
+  return totalArea * kmPerDegree() * kmPerDegreeLng(centroid[1]!);
 }
 
 /** Calculate centroid of a geometry. */

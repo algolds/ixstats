@@ -1,4 +1,5 @@
 import type { Geometry } from "geojson";
+import { ringAreaSqKm } from "~/lib/maps/planet";
 
 /** Recursively extract all [lng, lat] positions from a GeoJSON geometry */
 export function extractAllPositions(geometry: Geometry): [number, number][] {
@@ -45,26 +46,7 @@ export function computeApproxAreaForFeature(geometry: Geometry): number {
         closed.push([...first] as [number, number]);
       }
 
-      // Compute centroid of the ring to find latitude
-      let sumLng = 0,
-        sumLat = 0;
-      for (const [lng, lat] of closed) {
-        sumLng += lng;
-        sumLat += lat;
-      }
-      const _cLng = sumLng / closed.length;
-      const cLat = sumLat / closed.length;
-      const latRad = (cLat * Math.PI) / 180;
-      const kmPerDegLng = 111.32 * Math.cos(latRad);
-      const kmPerDegLat = 110.574;
-
-      let area = 0;
-      for (let i = 0; i < closed.length - 1; i++) {
-        const [x1, y1] = closed[i];
-        const [x2, y2] = closed[i + 1];
-        area += x1 * kmPerDegLng * (y2 * kmPerDegLat) - x2 * kmPerDegLng * (y1 * kmPerDegLat);
-      }
-      totalArea += Math.abs(area) / 2;
+      totalArea += ringAreaSqKm(closed);
     }
     return Math.round(totalArea * 100) / 100;
   } catch {

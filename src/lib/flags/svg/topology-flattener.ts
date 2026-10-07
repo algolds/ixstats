@@ -1,4 +1,5 @@
 import type { Position } from "geojson";
+import { ringAreaSqKm } from "~/lib/maps/planet";
 
 // @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
 // global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
@@ -65,23 +66,7 @@ export function calculateBoundingBox(rings: Position[][]): [number, number, numb
  * with a latitude-dependent scaling factor.
  */
 export function calculateApproxArea(rings: Position[][]): number {
-  let totalArea = 0;
-
-  for (const ring of rings) {
-    const centroid = calculateCentroid([ring]);
-    const latRad = (centroid[1] * Math.PI) / 180;
-    const kmPerDegLng = 111.32 * Math.cos(latRad);
-    const kmPerDegLat = 110.574;
-
-    let area = 0;
-    for (let i = 0; i < ring.length - 1; i++) {
-      const [x1, y1] = ring[i]!;
-      const [x2, y2] = ring[i + 1]!;
-      area += x1! * kmPerDegLng * (y2! * kmPerDegLat) - x2! * kmPerDegLng * (y1! * kmPerDegLat);
-    }
-    totalArea += Math.abs(area) / 2;
-  }
-
+  const totalArea = rings.reduce((sum, ring) => sum + ringAreaSqKm(ring), 0);
   return Math.round(totalArea * 100) / 100;
 }
 
