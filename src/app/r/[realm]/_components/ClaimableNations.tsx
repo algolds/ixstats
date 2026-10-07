@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { createUrl } from "~/lib/utils";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimStatusBadge, type MyClaim } from "./MyClaims";
@@ -15,18 +16,25 @@ interface NationPageItem {
   wikiSource: string;
 }
 
-/** Nation pages of the realm's lore index that no country has taken yet; an approved claim creates the country. */
+/**
+ * Nation pages of the realm's lore index that no country has taken yet; an approved claim creates the country.
+ * When the realm has rules, claiming waits for "I have read the realm's rules" (the server checks it too).
+ */
 export function ClaimableNations({
   realmSlug,
   pages,
+  rules = null,
 }: {
   realmSlug: string;
   pages: NationPageItem[];
+  rules?: { summary: string } | null;
 }) {
   const { isSignedIn } = useAuth();
   const notify = useNotify();
   const utils = api.useUtils();
   const [submitted, setSubmitted] = useState<ReadonlySet<string>>(new Set());
+  const [acceptedRules, setAcceptedRules] = useState(false);
+  const needsRules = !!rules && !acceptedRules;
   const { data: myClaims } = api.realms.myClaims.useQuery({ realmSlug }, { enabled: !!isSignedIn });
   // Newest first: the first claim per page is the one that counts (a rejected claim can be filed again).
   const latestClaim = new Map<string, MyClaim>();
@@ -69,6 +77,29 @@ export function ClaimableNations({
           </>
         )}
       </p>
+      {isSignedIn && rules && (
+        <div className="bg-fill-4 rounded-row mb-3 flex flex-col gap-2 p-3">
+          <p className="text-label text-footnote font-medium">
+            This realm has rules. Read them before you claim a nation.
+          </p>
+          {rules.summary && (
+            <p className="text-label-secondary text-footnote line-clamp-3">{rules.summary}</p>
+          )}
+          <Link
+            href={createUrl(`/r/${encodeURIComponent(realmSlug)}/rules`)}
+            className="text-tint text-footnote w-fit underline-offset-4 hover:underline"
+          >
+            Read the rules
+          </Link>
+          <label className="text-label text-footnote flex items-center gap-2">
+            <Checkbox
+              checked={acceptedRules}
+              onCheckedChange={(checked) => setAcceptedRules(checked === true)}
+            />
+            I have read the realm&apos;s rules
+          </label>
+        </div>
+      )}
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {pages.map((page) => {
           const mine = latestClaim.get(page.title);
@@ -90,8 +121,14 @@ export function ClaimableNations({
                     variant="outline"
                     className="ml-auto"
                     aria-label={`Claim ${page.title}`}
-                    disabled={claim.isPending || isPending}
-                    onClick={() => claim.mutate({ realmSlug, title: page.title })}
+                    disabled={claim.isPending || isPending || needsRules}
+                    onClick={() =>
+                      claim.mutate({
+                        realmSlug,
+                        title: page.title,
+                        ...(rules && { acceptedRules }),
+                      })
+                    }
                   >
                     {isPending ? "Pending review" : rejected ? "Claim again" : "Claim"}
                   </Button>

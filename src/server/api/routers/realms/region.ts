@@ -19,6 +19,7 @@ import {
   REALM_POWERS,
   REALM_TAGS,
 } from "~/lib/realms/realm-region";
+import { InWorldDateSchema, RealmLinksSchema } from "~/lib/realms/realm-community";
 import { globalCache } from "~/lib/cache";
 import {
   getRealmHappenings,
@@ -41,7 +42,10 @@ import {
   restrictBoardNation,
   updateRealmAppearance,
   updateRealmFactbook,
+  updateRealmInWorldDate,
+  updateRealmLinks,
   updateRealmOfficer,
+  updateRealmRules,
 } from "~/server/modules/realms/realms.region-actions";
 import { deleteRealm } from "~/server/modules/realms/realms.admin";
 
@@ -114,6 +118,23 @@ export const realmRegionRouter = createTRPCRouter({
   updateFactbook: rateLimitedMutationProcedure
     .input(z.object({ slug, wikitext: z.string().max(100_000) }))
     .mutation(({ ctx, input }) => updateRealmFactbook(ctx.db, ctx.user, input).catch(regionError)),
+
+  /** The rules tab; while rules exist, claiming a nation needs `acceptedRules`. Empty text removes them. */
+  updateRules: rateLimitedMutationProcedure
+    .input(z.object({ slug, wikitext: z.string().max(100_000) }))
+    .mutation(({ ctx, input }) => updateRealmRules(ctx.db, ctx.user, input).catch(regionError)),
+
+  /** Community links (forum, Discord, wiki, map, website): https only, at most `MAX_REALM_LINKS`. */
+  updateLinks: rateLimitedMutationProcedure
+    .input(z.object({ slug, links: RealmLinksSchema }))
+    .mutation(({ ctx, input }) => updateRealmLinks(ctx.db, ctx.user, input).catch(regionError)),
+
+  /** The in-world date in the header (display only), or `null` to clear it. */
+  updateInWorldDate: rateLimitedMutationProcedure
+    .input(z.object({ slug, inWorldDate: InWorldDateSchema.nullable() }))
+    .mutation(({ ctx, input }) =>
+      updateRealmInWorldDate(ctx.db, ctx.user, input).catch(regionError)
+    ),
 
   /** Founder: nation owners of the realm who could be appointed. */
   officerCandidates: protectedProcedure

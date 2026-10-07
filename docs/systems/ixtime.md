@@ -75,7 +75,7 @@ IxTime maps real-world UTC timestamps to game-world UTC timestamps through a pie
 > **Canonical Benchmark vs. Engine Configurability**  
 > The specific epoch dates (October 2020, January 2028), speed pivot (July 2025 $\equiv$ January 2040), and dilation ratios (4.0x $\to$ 2.0x) detailed below reflect our personal **canonical configuration**, which established the platform's production benchmark.  
 > 
-> IxTime is one shared clock for every realm. A realm can show its own calendar year through a display offset (`Realm.settings.yearOffset`, realms Phase 2); the simulation always uses the shared clock.
+> IxTime is one shared clock for every realm. A realm can show its own in-world date in its region header (`Realm.settings.inWorldDate`: a fixed label, or the real year plus an offset with an era; see [realms.md §4](realms.md#4-realm-page-rrealm)); the simulation always uses the shared clock.
 
 ### 1. Fundamental Anchors
 

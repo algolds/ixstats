@@ -1,6 +1,7 @@
 /**
- * Realm region Manage actions: appearance and factbook, officers, embassies, the realm poll and board
- * restrictions — each gated by `requireRealmStaff` — plus a player leaving a realm with one of their nations.
+ * Realm region Manage actions: appearance, factbook, rules, community links and the in-world date, officers,
+ * embassies, the realm poll and board restrictions — each gated by `requireRealmStaff` — plus a player leaving a
+ * realm with one of their nations.
  */
 import type { PrismaClient } from "@prisma/client";
 import {
@@ -12,11 +13,13 @@ import {
   type BoardRestriction,
   type RealmPower,
 } from "~/lib/realms/realm-region";
+import type { InWorldDate, RealmLink } from "~/lib/realms/realm-community";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { sanitizeWikiContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import { withInWorldDate } from "./realms.settings";
 import { removeFromRealmBoard } from "~/server/shared/realm-board";
 
 type ActionDb = Pick<
@@ -64,6 +67,16 @@ export async function updateRealmAppearance(
   return { success: true };
 }
 
+/** Trimmed wikitext and its rendered, sanitized HTML; both null when the text is empty. */
+function renderRealmWikitext(source: string) {
+  const wikitext = source.trim();
+  // The parser styles its output for small excerpts; the realm page styles the factbook and rules itself.
+  const html = wikitext
+    ? sanitizeWikiContent(parseWikitextToHtml(wikitext).replace(/\sclass="[^"]*"/g, ""))
+    : null;
+  return { wikitext: wikitext || null, html };
+}
+
 /** Save the factbook's wikitext and its rendered, sanitized HTML (what the front page shows). */
 export async function updateRealmFactbook(
   db: ActionDb,
@@ -71,19 +84,67 @@ export async function updateRealmFactbook(
   input: { slug: string; wikitext: string }
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
-  const wikitext = input.wikitext.trim();
-  // The parser styles its output for small excerpts; the realm page styles the factbook itself.
-  const html = wikitext
-    ? sanitizeWikiContent(parseWikitextToHtml(wikitext).replace(/\sclass="[^"]*"/g, ""))
-    : null;
+  const { wikitext, html } = renderRealmWikitext(input.wikitext);
   await db.realm.update({
     where: { id: realm.id },
     data: {
-      factbookWikitext: wikitext || null,
+      factbookWikitext: wikitext,
       factbookHtml: html,
       factbookUpdatedAt: new Date(),
       factbookUpdatedBy: actor.clerkUserId,
     },
+  });
+  return { success: true };
+}
+
+/**
+ * Save the realm's rules like the factbook (wikitext plus rendered, sanitized HTML). While rules exist, a claim
+ * needs the player to confirm reading them; empty text removes them.
+ */
+export async function updateRealmRules(
+  db: ActionDb,
+  actor: RealmActor,
+  input: { slug: string; wikitext: string }
+) {
+  const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
+  const { wikitext, html } = renderRealmWikitext(input.wikitext);
+  await db.realm.update({
+    where: { id: realm.id },
+    data: {
+      rulesWikitext: wikitext,
+      rulesHtml: html,
+      rulesUpdatedAt: new Date(),
+      rulesUpdatedBy: actor.clerkUserId,
+    },
+  });
+  return { success: true };
+}
+
+/** Replace the realm's community links (validated by `RealmLinksSchema` in the router), in the order given. */
+export async function updateRealmLinks(
+  db: ActionDb,
+  actor: RealmActor,
+  input: { slug: string; links: RealmLink[] }
+) {
+  const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
+  await db.realm.update({
+    where: { id: realm.id },
+    data: { communityLinks: input.links.map(({ label, url, kind }) => ({ label, url, kind })) },
+  });
+  return { success: true };
+}
+
+/** Set the realm's in-world date (`settings.inWorldDate`), or clear it with `null`; other settings are kept. */
+export async function updateRealmInWorldDate(
+  db: ActionDb,
+  actor: RealmActor,
+  input: { slug: string; inWorldDate: InWorldDate | null }
+) {
+  const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
+  const stored = await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } });
+  await db.realm.update({
+    where: { id: realm.id },
+    data: { settings: withInWorldDate(stored?.settings, input.inWorldDate) },
   });
   return { success: true };
 }

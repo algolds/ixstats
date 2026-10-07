@@ -14,6 +14,21 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🏰 Realm Links, Rules & In-World Date (2026-10-07)
+
+- **Community links:** founders and `appearance` officers add up to 8 links (forum, Discord, wiki, map, website,
+  other; `https://` only) in Manage → **Links**; they show in a **Community** panel on `/r/[realm]`, opened in a new
+  tab with `rel="noopener noreferrer nofollow"`.
+- **Rules:** a **Rules** tab (`/r/[realm]/rules`) with rules written in Manage → **Rules** (the factbook's WikiOS
+  editor; rendered and sanitized on save). In a realm with rules, the claim list asks for **I have read the realm's
+  rules**, and `realms.claimNationPage` / `realms.claimCountry` refuse a claim without `acceptedRules`
+  (`PRECONDITION_FAILED`); the claim records `rulesAcceptedAt`.
+- **In-world date:** a per-realm calendar label in the header's stats strip (`Realm.settings.inWorldDate`): a fixed
+  label, optionally "as of" a real date, or the real year plus an offset with an era. Display only; IxTime is
+  unchanged. Closes roadmap item 12 (per-realm calendar label).
+- **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
+  `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+
 ### 🧭 Navigation (2026-10-06)
 
 - **Realms sidebar:** the Realms app opens the realm directory (`/realms`). Its sections are **My realm**

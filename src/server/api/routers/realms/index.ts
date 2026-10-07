@@ -75,6 +75,7 @@ const CLAIM_ERROR_CODES = {
   REASON_REQUIRED: "BAD_REQUEST",
   REALM_CLOSED: "FORBIDDEN",
   SLUG_CONFLICT: "CONFLICT",
+  RULES_NOT_ACCEPTED: "PRECONDITION_FAILED",
 } as const;
 
 function claimError(error: Error): never {
@@ -98,10 +99,13 @@ export const realmsRouter = createTRPCRouter({
     .input(z.object({ slug: z.string().min(1).max(100) }))
     .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user ?? null)),
 
+  /** `acceptedRules`: the player ticked "I have read the realm's rules" (required when the realm has rules). */
   claimCountry: lightMutationProcedure
-    .input(z.object({ countryId: z.string().min(1) }))
+    .input(z.object({ countryId: z.string().min(1), acceptedRules: z.boolean().optional() }))
     .mutation(({ ctx, input }) =>
-      claims(ctx.db).claimCountry(ctx.user, input.countryId).catch(claimError)
+      claims(ctx.db)
+        .claimCountry(ctx.user, input.countryId, { acceptedRules: input.acceptedRules })
+        .catch(claimError)
     ),
 
   /** Claim a nation page of the realm's lore index; approval creates the realm's country (ruling E-f). */
@@ -110,6 +114,7 @@ export const realmsRouter = createTRPCRouter({
       z.object({
         realmSlug: z.string().min(1).max(100),
         title: z.string().trim().min(1).max(255),
+        acceptedRules: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -118,7 +123,9 @@ export const realmsRouter = createTRPCRouter({
         select: { id: true },
       });
       if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-      return claims(ctx.db).claimNationPage(ctx.user, realm.id, input.title).catch(claimError);
+      return claims(ctx.db)
+        .claimNationPage(ctx.user, realm.id, input.title, { acceptedRules: input.acceptedRules })
+        .catch(claimError);
     }),
 
   /** The player's own claims and their status (pending, approved, rejected with the reason), optionally in one realm. */

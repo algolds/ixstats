@@ -1,6 +1,6 @@
 # Realms — Places
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-07
 **Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
@@ -155,14 +155,19 @@ the embassy is active: only `thinktank` posts that carry both the partner board'
 ## 4. Realm page (`/r/[realm]`)
 
 The NationStates-style region page. Every tab shares a layout (`(region)/layout.tsx`): the banner, the name,
-description and tags, a key-stats strip (nations, population, founded, founder) and the tab bar: **Overview**,
-**Board**, **Nations**, **Map** (opens `/maps?realm=`) and, for the founder and officers, **Manage**.
+description and tags, a key-stats strip (nations, population, founded, founder, and the **in-world date** when
+set) and the tab bar: **Overview**, **Board**, **Nations**, **Rules** (once the realm has rules; always for
+`appearance` holders, with an empty state), **Map** (opens `/maps?realm=`) and, for the founder and officers,
+**Manage**.
 `realms.region.overview` serves the header and front page in one call; it hides draft and generating realms
 from everyone but their staff, like `getBySlug` (§1, visibility rule).
 
 **Overview:** the factbook (or the description), "Read the lore" to the realm's `Portal:` page, the latest five
 board posts, and claimable nations. The sidebar (stacked under the main column below 1024px) has:
 
+- **Community:** the realm's links (forum, Discord, wiki, map, website, other; `Realm.communityLinks`, at most 8,
+  `https://` only), each with its kind's icon, opened in a new tab with `rel="noopener noreferrer nofollow"`.
+  Hidden when there are none;
 - **Officers:** the founder, or "Administered by IxStats staff" when `Realm.ownerId` is `"system"`, and each
   officer's title and nation;
 - **World Census:** the realm's top five nations in one of ten categories (`achievements.getCountryLeaderboard`
@@ -178,6 +183,19 @@ board posts, and claimable nations. The sidebar (stacked under the main column b
 **Nations:** every nation, the viewer's first, with **Play as** and **Leave realm** on their own, then the viewer's
 claims in this realm (`realms.myClaims({ realmSlug })`) and the claimable nations. A claimable nation the viewer
 claimed shows **Pending review**, or the rejection's reason with **Claim again**.
+
+**Rules (`/r/[realm]/rules`):** the founder's rules (`Realm.rulesWikitext`, rendered and sanitized into `rulesHtml`
+on save like the factbook). While a realm has rules, the claim list shows their opening lines, **Read the rules**
+and an **I have read the realm's rules** checkbox, and Claim stays disabled until it is ticked. The server enforces
+it: `realms.claimNationPage` and `realms.claimCountry` take `acceptedRules` and refuse with `PRECONDITION_FAILED`
+(`RULES_NOT_ACCEPTED`) when the realm has rules and it is missing; the filed claim records `rulesAcceptedAt`.
+(`/setup` claims IxWorld nations and shows that error if IxWorld ever gets rules.)
+
+**In-world date:** a display label in the stats strip (`Realm.settings.inWorldDate`, `realmInWorldDate` /
+`withInWorldDate` in `realms.settings.ts`, formatted by `formatInWorldDate` in `src/lib/realms/realm-community.ts`):
+either a fixed label ("14 Harvest 1203 AE", optionally "as of" a real date) or real year + offset with an era
+("2041 AE"). The simulation and every date elsewhere keep the shared IxTime clock; the country page shows no current
+IxTime date, so it shows no in-world date either.
 
 **Claimed nation pages prefill their nation (AT-3):** approving a claim on a nation page (by a moderator, or at
 once for the page's verified creator) first reads the page's infobox (`fetchNationPagePrefill` in
@@ -201,7 +219,7 @@ restriction cleared, and the player loses an officer post if it was their last n
 | Who                                        | Powers                                                                                                                        |
 | :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
 | Founder (`Realm.ownerId`), and site admins | Everything below, plus claims review and appointing officers                                                                  |
-| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll) |
+| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook, header, rules, links, in-world date), `board` (moderation), `diplomacy` (embassies and the poll) |
 
 `realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
@@ -217,8 +235,9 @@ embassies, board restrictions and polls go with it, and its board group is deact
 ### Manage tab (`/r/[realm]/manage`)
 
 Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
-address; description; up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
-sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
+address; description; up to five tags from `REALM_TAGS`), **Links** (community links), **In-world date**,
+**Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered, sanitized HTML), **Rules**
+(the same editor; empty text removes the rules), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
 options, optional end date) and **Board moderation**.

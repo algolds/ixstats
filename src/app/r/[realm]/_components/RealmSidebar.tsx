@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ChatLines, Internet, Link as LinkIcon, Map as MapIcon, OpenBook } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { DiscordLogomark } from "~/lib/navigation/icons/DiscordLogomark";
+import type { RealmLinkKind } from "~/lib/realms/realm-community";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -43,6 +46,42 @@ function Panel({
 
 const nationHref = (nation: { slug: string | null; id: string }) =>
   createUrl(`/countries/${nation.slug ?? nation.id}`);
+
+const LINK_ICONS: Record<RealmLinkKind, React.ComponentType<{ className?: string }>> = {
+  forum: ChatLines,
+  discord: DiscordLogomark,
+  wiki: OpenBook,
+  map: MapIcon,
+  website: Internet,
+  other: LinkIcon,
+};
+
+/** The realm's community links (forum, Discord, wiki, map...), set by its staff in Manage. */
+export function CommunityPanel({ overview }: { overview: Overview }) {
+  if (!overview.links?.length) return null;
+  return (
+    <Panel title="Community">
+      <ul className="flex flex-col gap-1">
+        {overview.links.map((link) => {
+          const Icon = LINK_ICONS[link.kind];
+          return (
+            <li key={`${link.kind}:${link.url}`}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="hover:bg-fill-4 rounded-row text-label text-body flex items-center gap-2 p-2"
+              >
+                <Icon className="text-label-secondary size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{link.label}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
+  );
+}
 
 export function OfficersPanel({ overview }: { overview: Overview }) {
   const { founder, officers } = overview;

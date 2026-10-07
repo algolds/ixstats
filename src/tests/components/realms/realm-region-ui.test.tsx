@@ -1,7 +1,7 @@
 /**
- * Realm region pages: the header's stats and tabs (Manage only for staff), the officers panel for a
- * staff-administered realm, the realm poll, the typed "Leave realm" confirmation, and the Manage tab's
- * sections following the caller's powers.
+ * Realm region pages: the header's stats, in-world date and tabs (Manage only for staff, Rules once there are
+ * rules), the officers and community panels, the realm poll, the Rules tab, the typed "Leave realm"
+ * confirmation, and the Manage tab's sections following the caller's powers.
  */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -43,11 +43,21 @@ jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: () => undefined }));
 jest.mock("~/app/admin/realms/_components/ClaimsTab", () => ({
   ClaimsTab: () => <p>claims list</p>,
 }));
+// The WikiOS canvas editor is far too heavy for jsdom; the sections around it are what is tested here.
+jest.mock("~/app/r/[realm]/_components/manage/RealmWikitextEditor", () => ({
+  RealmWikitextEditor: ({ saveLabel }: { saveLabel: string }) => <button>{saveLabel}</button>,
+}));
 
 import { RealmRegionHeader } from "~/app/r/[realm]/_components/RealmRegionHeader";
-import { OfficersPanel, PollPanel } from "~/app/r/[realm]/_components/RealmSidebar";
+import {
+  CommunityPanel,
+  OfficersPanel,
+  PollPanel,
+} from "~/app/r/[realm]/_components/RealmSidebar";
 import { LeaveRealmButton } from "~/app/r/[realm]/_components/LeaveRealmButton";
+import { LinksSection } from "~/app/r/[realm]/_components/manage/LinksSection";
 import RealmManagePage from "~/app/r/[realm]/(region)/manage/page";
+import RealmRulesPage from "~/app/r/[realm]/(region)/rules/page";
 
 function overview(overrides: Record<string, unknown> = {}) {
   return {
@@ -66,6 +76,9 @@ function overview(overrides: Record<string, unknown> = {}) {
     founder: null,
     stats: { nations: 42, claimedNations: 30, population: 1_200_000_000 },
     factbook: null,
+    rules: null,
+    links: [],
+    inWorldDate: null,
     officers: [
       {
         title: "Foreign Minister",
@@ -103,6 +116,45 @@ describe("realm header", () => {
       "page"
     );
     expect(within(nav).queryByRole("link", { name: "Manage" })).toBeNull();
+    expect(within(nav).queryByRole("link", { name: "Rules" })).toBeNull();
+    expect(screen.queryByText("In-world date")).toBeNull();
+  });
+
+  it("shows the realm's in-world date in the stats strip", () => {
+    render(
+      <RealmRegionHeader
+        overview={overview({
+          inWorldDate: { label: "14 Harvest 1203 AE", asOf: "2026-10-01" },
+        })}
+      />
+    );
+    expect(screen.getByText("In-world date")).toBeTruthy();
+    expect(screen.getByText("14 Harvest 1203 AE")).toBeTruthy();
+    expect(screen.getByText(/^as of /)).toBeTruthy();
+  });
+
+  it("adds the Rules tab once the realm has rules, and for those who write them", () => {
+    const rules = { html: "<p>Be civil.</p>", summary: "Be civil.", updatedAt: null };
+    const { unmount } = render(<RealmRegionHeader overview={overview({ rules })} />);
+    expect(screen.getByRole("link", { name: "Rules" }).getAttribute("href")).toContain(
+      "/r/eurth/rules"
+    );
+    unmount();
+    render(
+      <RealmRegionHeader
+        overview={overview({
+          viewer: {
+            signedIn: true,
+            powers: ["appearance"],
+            isFounder: false,
+            canManage: true,
+            ownedNations: [],
+            boardRestriction: null,
+          },
+        })}
+      />
+    );
+    expect(screen.getByRole("link", { name: "Rules" })).toBeTruthy();
   });
 
   it("adds the Manage tab for the founder and officers", () => {
@@ -160,6 +212,81 @@ describe("sidebar", () => {
   });
 });
 
+describe("community panel", () => {
+  it("opens each link in a new tab without passing on the realm page", () => {
+    render(
+      <CommunityPanel
+        overview={overview({
+          links: [
+            { label: "Eurth forum", url: "https://forum.eurth.example/", kind: "forum" },
+            { label: "Discord", url: "https://discord.gg/eurth", kind: "discord" },
+          ],
+        })}
+      />
+    );
+    expect(screen.getByRole("heading", { name: "Community" })).toBeTruthy();
+    const forum = screen.getByRole("link", { name: "Eurth forum" });
+    expect(forum.getAttribute("href")).toBe("https://forum.eurth.example/");
+    expect(forum.getAttribute("target")).toBe("_blank");
+    expect(forum.getAttribute("rel")).toBe("noopener noreferrer nofollow");
+    expect(screen.getByRole("link", { name: "Discord" }).querySelector("svg")).toBeTruthy();
+  });
+
+  it("is left out when the realm has no links", () => {
+    const { container } = render(<CommunityPanel overview={overview()} />);
+    expect(container.innerHTML).toBe("");
+  });
+});
+
+/** Like the Manage page, the Rules page reads its params with `use()`. */
+async function renderRules() {
+  const params = Promise.resolve({ realm: "eurth" });
+  await act(async () => {
+    render(
+      <React.Suspense fallback={null}>
+        <RealmRulesPage params={params} />
+      </React.Suspense>
+    );
+    await params;
+  });
+}
+
+describe("Rules tab", () => {
+  afterEach(() => delete queries["realms.region.overview"]);
+
+  it("shows the rules the founder wrote", async () => {
+    queries["realms.region.overview"] = overview({
+      rules: {
+        html: "<h2>Conduct</h2><p>No godmodding.</p>",
+        summary: "Conduct No godmodding.",
+        updatedAt: new Date("2026-10-01"),
+      },
+    });
+    await renderRules();
+    expect(await screen.findByText("No godmodding.")).toBeTruthy();
+    expect(screen.getByText(/Last updated/)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Edit" })).toBeNull();
+  });
+
+  it("asks those who can write rules to write them when there are none", async () => {
+    queries["realms.region.overview"] = overview({
+      viewer: {
+        signedIn: true,
+        powers: ["appearance"],
+        isFounder: true,
+        canManage: true,
+        ownedNations: [],
+        boardRestriction: null,
+      },
+    });
+    await renderRules();
+    expect(await screen.findByText("No rules yet")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Write the rules" }).getAttribute("href")).toContain(
+      "/r/eurth/manage#rules"
+    );
+  });
+});
+
 describe("leaving a realm", () => {
   it("needs the nation's name typed before it releases the nation", () => {
     mutate.mockClear();
@@ -198,7 +325,10 @@ describe("Manage tab", () => {
     appearance: powers.includes("appearance")
       ? { description: null, bannerUrl: null, tags: [] }
       : null,
-    factbook: null,
+    factbook: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
+    rules: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
+    links: powers.includes("appearance") ? [] : null,
+    inWorldDate: powers.includes("appearance") ? { value: null } : null,
     officers: [],
     embassies: [],
     boardRestrictions: [],
@@ -228,7 +358,56 @@ describe("Manage tab", () => {
       within(nav)
         .getAllByRole("link")
         .map((a) => a.textContent)
-    ).toEqual(["Appearance", "Officers", "Claims", "Embassies", "Poll", "Board moderation"]);
+    ).toEqual([
+      "Appearance",
+      "Links",
+      "In-world date",
+      "Factbook",
+      "Rules",
+      "Officers",
+      "Claims",
+      "Embassies",
+      "Poll",
+      "Board moderation",
+    ]);
     expect(screen.getByText("claims list")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Community links" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Rules" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save rules" })).toBeTruthy();
+  });
+
+  it("gives an appearance officer the links, in-world date, factbook and rules", async () => {
+    queries["realms.region.manage"] = manage(["appearance"], false);
+    await renderManage();
+    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((a) => a.textContent)
+    ).toEqual(["Appearance", "Links", "In-world date", "Factbook", "Rules", "Officers"]);
+  });
+});
+
+describe("community links editor", () => {
+  it("won't save an address that isn't https, and saves the trimmed links", () => {
+    mutate.mockClear();
+    render(
+      <LinksSection
+        slug="eurth"
+        links={[{ label: "Forum", url: "https://forum.eurth.example/", kind: "forum" }]}
+      />
+    );
+    const save = screen.getByRole("button", { name: "Save links" }) as HTMLButtonElement;
+    const address = screen.getByLabelText("Link 1 address");
+    fireEvent.change(address, { target: { value: "javascript:alert(1)" } });
+    expect(screen.getByText("Use a full https:// address.")).toBeTruthy();
+    expect(save.disabled).toBe(true);
+    fireEvent.change(address, { target: { value: " https://forum.eurth.example/new " } });
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    expect(mutate).toHaveBeenCalledWith({
+      slug: "eurth",
+      links: [{ label: "Forum", url: "https://forum.eurth.example/new", kind: "forum" }],
+    });
   });
 });

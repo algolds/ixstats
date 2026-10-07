@@ -525,6 +525,12 @@ model Realm {
   factbookUpdatedBy String?   // Clerk userId
   tags              String[]  @default([]) // from REALM_TAGS (src/lib/realms/realm-tags.ts)
   foundedAt         DateTime? // shown as "founded"; null = createdAt
+  /// Community links, rules and the in-world date (the date lives in `settings.inWorldDate`).
+  communityLinks    Json?     // [{ label, url, kind }], https only (src/lib/realms/realm-community.ts)
+  rulesWikitext     String?   // source, edited with the WikiOS canvas editor
+  rulesHtml         String?   // rendered and sanitized on save; claimants must accept it
+  rulesUpdatedAt    DateTime?
+  rulesUpdatedBy    String?   // Clerk userId
   officers          RealmOfficer[]
   embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
   embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")
@@ -771,6 +777,7 @@ model RealmClaim {
   reviewedBy        String?   // Clerk userId of the reviewer, or "system:auto"
   reviewedAt        DateTime?
   rejectionReason   String?
+  rulesAcceptedAt   DateTime? // when the claimant confirmed reading the realm's rules (null: it had none)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -781,7 +788,7 @@ model RealmClaim {
 }
 
 /// A realm officer appointed by its founder: a custom title and a set of powers
-/// (`appearance` = factbook and header, `board` = board moderation, `diplomacy` = embassies and polls).
+/// (`appearance` = factbook, header, rules and links, `board` = board moderation, `diplomacy` = embassies and polls).
 model RealmOfficer {
   id          String   @id @default(cuid())
   realmId     String

@@ -16,12 +16,12 @@ A realm is a world that nations live in, a bit like a NationStates region. **IxW
 
 The [realm directory](/realms) lists every public, active realm (IxWorld always), with how many nations it has, how many are unclaimed, how many you own, the realm's nation limit, and recent board activity. Unlisted realms can still be opened by link.
 
-Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/r/<realm>/board`.
+Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/r/<realm>/board`. The **Community** panel links to the realm's forum, Discord, wiki or map, and the header shows the realm's **in-world date** if its founder set one.
 
 ## Claiming a nation
 
 1. Open the realm's page from the [directory](/realms) (or use **Link to Existing Country** in [Setup](/setup) for IxWorld).
-2. In the claim list, choose an unclaimed nation and submit your claim.
+2. In the claim list, choose an unclaimed nation and submit your claim. If the realm has **rules** (its **Rules** tab), read them and tick **I have read the realm's rules** first; you can't claim without it.
 3. A moderator (a site admin or the realm's founder) reviews it. If you've [verified the wiki account](/help/getting-started/ixnayid#link-your-wiki-accounts) that created that nation's wiki page, the claim is approved immediately.
 
 The directory shows **Join · claim a nation** (or **Claim another nation**) while you're under the realm's limit.
@@ -52,4 +52,5 @@ You join a board automatically on your first visit if you own a nation in the re
 ## Good to know
 
 - Founding a new realm isn't open to players yet; realms are created by admins.
-- A realm can show its own calendar year, but it still runs on the shared IxTime clock.
+- A realm can show its own in-world date (set by its founder), but it still runs on the shared IxTime clock.
+- Founders and officers with the appearance power set the realm's links, rules and in-world date in **Manage**.
