@@ -7,6 +7,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
+import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES, PngDecodeError } from "~/lib/maps/png-realm-map";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
@@ -78,7 +79,14 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       z.object({
         countryId: z.string(),
         uploadId: z.string().optional(),
-        svgContent: z.string().optional(),
+        /** SVG markup or a base64 PNG; capped at the Full Pipeline's PNG limit either way. */
+        svgContent: z
+          .string()
+          .max(
+            MAX_PNG_BASE64_LENGTH,
+            `Province maps are limited to ${MAX_PNG_BYTES / 1024 / 1024} MB`
+          )
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -96,7 +104,13 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         const pngBuffer = Buffer.from(pngBase64, "base64");
         const { extractProvincesFromPng } = await import("~/lib/flags/png-to-svg");
 
-        const result = await extractProvincesFromPng(pngBuffer);
+        // Over the pixel limit, corrupt or not an image: the uploader's input, not a server fault.
+        const result = await extractProvincesFromPng(pngBuffer).catch((error: Error) => {
+          if (error instanceof PngDecodeError) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
+          }
+          throw error;
+        });
 
         return {
           provinces: result.provinces,

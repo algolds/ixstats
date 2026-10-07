@@ -12,6 +12,7 @@ import { isSystemOwner } from "~/lib/auth";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
+import { oversizedUploadResponse } from "~/server/shared/request-size";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB (smaller than world map's 50MB)
 const VALID_EXTENSIONS = [".svg", ".png"];
@@ -23,6 +24,10 @@ export async function POST(request: NextRequest) {
     if (!session?.userId) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
+
+    // Refuse an oversize body by its Content-Length before formData() buffers it
+    const tooLarge = oversizedUploadResponse(request, MAX_FILE_SIZE);
+    if (tooLarge) return tooLarge;
 
     // Parse multipart form data
     const formData = await request.formData();
