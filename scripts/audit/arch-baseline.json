@@ -7,7 +7,6 @@
   "src/lib/maps/border-editor.ts": 1103,
   "src/app/admin/_components/platform/BotControlCard.tsx": 1089,
   "src/components/ui/facet/swipeable/SwipeableRow.tsx": 1079,
-  "src/app/admin/maps/_components/PipelineWizard.tsx": 1072,
   "src/app/admin/_components/platform/LorewardsBotSection.tsx": 1033,
   "src/lib/diplomacy/cultural-scenario-generator.ts": 1029,
   "src/lib/sports/transition.ts": 975,

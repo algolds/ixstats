@@ -3,28 +3,21 @@
 /**
  * PipelineWizard - Unified import pipeline with two modes:
  *
- * 1. Quick Update (default): Drop SVG → auto-detect layer → diff → one-click apply
- * 2. Full Pipeline: Multi-step wizard into a chosen realm — an SVG, or a flat-colour PNG/JPEG whose
- *    colours the admin maps to the realm's nations before vectorising (decisions 10–11)
+ * 1. Quick Update (default): Drop SVG → auto-detect layer → diff → one-click apply (IxWorld only)
+ * 2. Full Pipeline: the realm map import (a flat-colour PNG/JPEG, an SVG of nations or GeoJSON, analysed in
+ *    the background, mapped to the realm's nations, dry run, apply, roll back; map-import/), or the layered
+ *    Inkscape SVG pipeline (LayeredSvgPipeline)
  *
  * The Quick Update mode preserves existing featureId→countryId linkages automatically.
  */
 
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef } from "react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { useNotify } from "~/hooks/useNotify";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import {
-  MAX_PNG_BYTES,
-  MAX_PNG_MEGAPIXELS,
-  nationNameOptions,
-  rankColours,
-  type RankedColour,
-} from "~/lib/maps/png-realm-map";
-import { ColourNationMapper } from "./ColourNationMapper";
 import { LAYER_TYPES } from "./layer-types";
+import { LayeredSvgPipeline } from "./LayeredSvgPipeline";
+import { RealmMapImportWizard } from "./map-import/RealmMapImportWizard";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -37,12 +30,7 @@ import {
 import {
   Upload,
   Upload as FileUp,
-  MediaImage as FileImage,
-  Globe,
-  Eye,
-  Database,
   SystemRestart as Loader2,
-  CheckCircle,
   CheckCircle as CheckCircle2,
   WarningTriangle as AlertTriangle,
   Plus,
@@ -114,8 +102,8 @@ interface ProcessResult {
 
 type QuickStage = "select" | "processing" | "review" | "committing" | "done";
 
-export function PipelineWizard() {
-  const [mode, setMode] = useState<"quick" | "full">("quick");
+export function PipelineWizard({ initialJobId = null }: { initialJobId?: string | null }) {
+  const [mode, setMode] = useState<"quick" | "full">(initialJobId ? "full" : "quick");
 
   return (
     <div className="space-y-4">
@@ -131,7 +119,32 @@ export function PipelineWizard() {
         ]}
       />
 
-      {mode === "quick" ? <QuickUpdatePanel /> : <FullPipelinePanel />}
+      {mode === "quick" ? <QuickUpdatePanel /> : <FullPipelinePanel initialJobId={initialJobId} />}
+    </div>
+  );
+}
+
+/** Full pipeline: the realm map import (PNG, SVG, GeoJSON), or the layered Inkscape SVG pipeline. */
+function FullPipelinePanel({ initialJobId }: { initialJobId: string | null }) {
+  const [kind, setKind] = useState<"realm" | "layered">("realm");
+  return (
+    <div className="space-y-4">
+      <SegmentedControl
+        aria-label="Import kind"
+        value={kind}
+        onValueChange={setKind}
+        options={[
+          { value: "realm", label: "Realm map (PNG, SVG, GeoJSON)" },
+          { value: "layered", label: "Layered SVG (all layers)" },
+        ]}
+      />
+      {kind === "realm" ? (
+        <Card className="rounded-row p-6">
+          <RealmMapImportWizard initialJobId={initialJobId} />
+        </Card>
+      ) : (
+        <LayeredSvgPipeline />
+      )}
     </div>
   );
 }
@@ -484,515 +497,6 @@ function QuickUpdatePanel() {
           </Button>
         </div>
       )}
-    </div>
-  );
-}
-
-interface WizardPipelineResult {
-  layers: Record<string, unknown>;
-  metadata: { featureCounts: Record<string, number>; log: string[]; warnings: string[] };
-  validation: { valid: boolean; errors: string[] };
-}
-
-const RASTER_MAP_FILE = /\.(png|jpe?g)$/i;
-const MAX_PNG_MB = MAX_PNG_BYTES / 1024 / 1024;
-
-/** The file's bytes as plain base64 (the data: URL prefix stripped), for runPipeline's pngBase64. */
-function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result);
-      resolve(dataUrl.slice(dataUrl.indexOf(",") + 1));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("Could not read the file"));
-    reader.readAsDataURL(file);
-  });
-}
-
-function FullPipelinePanel() {
-  type WizardStep = "upload" | "detection" | "preview" | "import" | "complete";
-
-  const [step, setStep] = useState<WizardStep>("upload");
-  const [file, setFile] = useState<File | null>(null);
-  const [svgContent, setSvgContent] = useState<string | null>(null);
-  const [pngBase64, setPngBase64] = useState<string | null>(null);
-  const [pipelineResult, setPipelineResult] = useState<WizardPipelineResult | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [importResult, setImportResult] = useState<{ imported: number } | null>(null);
-  // Realm the layers are imported into; "" = the server default, IxWorld
-  const [targetRealmId, setTargetRealmId] = useState("");
-
-  const runPipeline = api.geoEditor.runPipeline.useMutation();
-  const importPipeline = api.geoEditor.importPipelineResult.useMutation();
-  const { data: realms } = api.realms.adminListRealms.useQuery();
-  const targetRealm = realms?.find((r) => r.id === (targetRealmId || DEFAULT_REALM_ID));
-  const realmName = targetRealm?.name ?? "IxWorld";
-
-  const loadRasterMap = async (selectedFile: File) => {
-    if (selectedFile.size > MAX_PNG_BYTES) {
-      setError(`PNG maps are limited to ${MAX_PNG_MB} MB.`);
-      return;
-    }
-    try {
-      setPngBase64(await readFileAsBase64(selectedFile));
-      setStep("detection");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not read the file");
-    }
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setError(null);
-
-    if (selectedFile.name.endsWith(".svg")) {
-      const text = await selectedFile.text();
-      setSvgContent(text);
-      setStep("detection");
-    } else if (RASTER_MAP_FILE.test(selectedFile.name)) {
-      await loadRasterMap(selectedFile);
-    } else {
-      setError("Unsupported file type. Please upload an SVG, PNG or JPEG file.");
-    }
-  };
-
-  const handleVectorised = (result: WizardPipelineResult) => {
-    setPipelineResult(result);
-    setStep("preview");
-  };
-
-  const handleRunPipeline = async () => {
-    if (!svgContent) return;
-
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      const result = await runPipeline.mutateAsync({
-        source: "svg",
-        svgContent,
-      });
-      setPipelineResult(result);
-      setStep("preview");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Pipeline failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleImport = async () => {
-    if (!pipelineResult) return;
-
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      const result = await importPipeline.mutateAsync({
-        layers: pipelineResult.layers as Record<string, unknown>,
-        mode: "merge",
-        realmId: targetRealmId || undefined,
-      });
-      setImportResult(result);
-      setStep("complete");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleReset = () => {
-    setStep("upload");
-    setFile(null);
-    setSvgContent(null);
-    setPngBase64(null);
-    setPipelineResult(null);
-    setImportResult(null);
-    setError(null);
-    setIsProcessing(false);
-  };
-
-  const steps: Array<{ id: WizardStep; label: string; icon: typeof Upload }> = [
-    { id: "upload", label: "Upload", icon: Upload },
-    { id: "detection", label: "Detect", icon: FileImage },
-    { id: "preview", label: "Preview", icon: Eye },
-    { id: "import", label: "Import", icon: Database },
-    { id: "complete", label: "Done", icon: CheckCircle },
-  ];
-
-  const currentIdx = steps.findIndex((s) => s.id === step);
-
-  return (
-    <Card className="rounded-row p-6">
-      <h3 className="text-label text-title-3 mb-4">Full pipeline wizard</h3>
-      <p className="text-label-secondary text-footnote mb-4">
-        Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
-        updates, use Quick Update mode instead.
-      </p>
-
-      {/* Step indicator */}
-      <div className="mb-6 flex items-center gap-2">
-        {steps.map((s, i) => (
-          <div key={s.id} className="flex items-center gap-2">
-            <div
-              className={`text-caption flex h-8 w-8 items-center justify-center rounded-full ${
-                i < currentIdx
-                  ? "bg-green/20 text-green"
-                  : i === currentIdx
-                    ? "bg-blue text-on-blue"
-                    : "bg-fill-3 text-label-secondary"
-              }`}
-            >
-              {i < currentIdx ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <s.icon className="h-4 w-4" />
-              )}
-            </div>
-            <span
-              className={`text-footnote ${
-                i === currentIdx ? "text-label font-medium" : "text-label-secondary"
-              }`}
-            >
-              {s.label}
-            </span>
-            {i < steps.length - 1 && <div className="bg-fill-3 mx-1 h-px w-6" />}
-          </div>
-        ))}
-      </div>
-
-      {error && (
-        <div className="border-destructive/30 text-destructive rounded-control text-body mb-4 flex items-start gap-2 border p-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {step === "upload" && (
-        <div className="flex flex-col items-center gap-4 py-8">
-          <div className="border-separator rounded-row border-2 border-dashed p-8 text-center">
-            <Upload className="text-label-secondary mx-auto mb-3 h-10 w-10" />
-            <p className="text-label text-body mb-2 font-medium">Drop your map file here</p>
-            <p className="text-label-secondary text-footnote mb-4">
-              SVG files with Inkscape layers, or flat-colour PNG/JPEG political maps (one colour per
-              nation, up to {MAX_PNG_MB} MB and {MAX_PNG_MEGAPIXELS} megapixels)
-            </p>
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <label className="text-label text-body font-medium">Target realm:</label>
-              <Select value={targetRealmId} onValueChange={setTargetRealmId}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="IxWorld (default)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {realms?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button asChild>
-              <label className="cursor-pointer">
-                Choose file
-                <input
-                  type="file"
-                  accept=".svg,.png,.jpg,.jpeg"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </label>
-            </Button>
-          </div>
-          {file && (
-            <p className="text-label-secondary text-body">
-              Selected: {file.name} ({(file.size / 1024).toFixed(0)} KB)
-            </p>
-          )}
-        </div>
-      )}
-
-      {step === "detection" && pngBase64 && (
-        <PngColourStep
-          pngBase64={pngBase64}
-          realmSlug={targetRealm?.slug}
-          realmName={realmName}
-          onVectorised={handleVectorised}
-          onError={setError}
-        />
-      )}
-
-      {step === "detection" && svgContent && (
-        <SvgDetectionStep fileName={file?.name} busy={isProcessing} onRun={handleRunPipeline} />
-      )}
-
-      {step === "preview" && pipelineResult && (
-        <PreviewStep
-          result={pipelineResult}
-          onProceed={() => setStep("import")}
-          onReset={handleReset}
-        />
-      )}
-
-      {step === "import" && pipelineResult && (
-        <ImportStep
-          featureCounts={pipelineResult.metadata.featureCounts}
-          realmName={realmName}
-          busy={isProcessing}
-          onImport={handleImport}
-          onBack={() => setStep("preview")}
-        />
-      )}
-
-      {step === "complete" && importResult && (
-        <div className="space-y-4 py-4 text-center">
-          <CheckCircle className="text-green mx-auto h-12 w-12" />
-          <p className="text-label text-title-3">Import complete</p>
-          <p className="text-label-secondary text-body">
-            {importResult.imported} features imported successfully. Shared vertex index has been
-            rebuilt.
-          </p>
-          <Button onClick={handleReset}>Import another map</Button>
-        </div>
-      )}
-
-      {pipelineResult && <PipelineLog log={pipelineResult.metadata.log} />}
-    </Card>
-  );
-}
-
-function SvgDetectionStep({
-  fileName,
-  busy,
-  onRun,
-}: {
-  fileName: string | undefined;
-  busy: boolean;
-  onRun: () => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <p className="text-label-secondary text-body">
-        File loaded: <span className="text-label font-medium">{fileName}</span>
-      </p>
-      <p className="text-label-secondary text-body">
-        The pipeline will parse this SVG file, detect layers, convert coordinates, and enrich
-        altitude features with elevation metadata.
-      </p>
-      <Button onClick={onRun} disabled={busy}>
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
-        {busy ? "Processing..." : "Run Pipeline"}
-      </Button>
-    </div>
-  );
-}
-
-function PreviewStep({
-  result,
-  onProceed,
-  onReset,
-}: {
-  result: WizardPipelineResult;
-  onProceed: () => void;
-  onReset: () => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <Card className="rounded-control p-4">
-        <h4 className="text-label text-body mb-2 font-medium">Pipeline results</h4>
-        <div className="space-y-1">
-          {Object.entries(result.metadata.featureCounts).map(([layer, count]) => (
-            <div key={layer} className="text-body flex justify-between">
-              <span className="text-label-secondary">{layer}</span>
-              <span className="text-label font-medium">{count} features</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {result.metadata.warnings.length > 0 && (
-        <div className="rounded-control border-yellow/30 border p-3">
-          <p className="text-caption text-yellow mb-1">Warnings</p>
-          {result.metadata.warnings.map((w, i) => (
-            <p key={i} className="text-footnote text-yellow">
-              {w}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {!result.validation.valid && (
-        <div className="border-destructive/30 rounded-control border p-3">
-          <p className="text-destructive text-caption mb-1">Validation errors</p>
-          {result.validation.errors.map((e, i) => (
-            <p key={i} className="text-destructive/80 text-footnote">
-              {e}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <Button onClick={onProceed} disabled={!result.validation.valid}>
-          <Database className="h-4 w-4" />
-          Proceed to import
-        </Button>
-        <Button variant="outline" onClick={onReset}>
-          Start over
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function PipelineLog({ log }: { log: string[] }) {
-  if (log.length === 0) return null;
-  return (
-    <details className="mt-4">
-      <summary className="text-label-secondary hover:text-label-secondary text-footnote cursor-pointer">
-        Pipeline Log ({log.length} entries)
-      </summary>
-      <pre className="border-separator bg-surface text-label-secondary rounded-control-sm text-footnote mt-2 max-h-40 overflow-auto border p-2">
-        {log.join("\n")}
-      </pre>
-    </details>
-  );
-}
-
-function ImportStep({
-  featureCounts,
-  realmName,
-  busy,
-  onImport,
-  onBack,
-}: {
-  featureCounts: Record<string, number>;
-  realmName: string;
-  busy: boolean;
-  onImport: () => void;
-  onBack: () => void;
-}) {
-  const total = Object.values(featureCounts).reduce((a, b) => a + b, 0);
-  return (
-    <div className="space-y-4">
-      <p className="text-label-secondary text-body">
-        Ready to import {total} features into{" "}
-        <span className="text-label font-medium">{realmName}</span>. This will merge with that
-        realm&apos;s existing map data.
-      </p>
-      <div className="flex gap-2">
-        <Button onClick={onImport} disabled={busy}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-          {busy ? "Importing..." : "Import to Database"}
-        </Button>
-        <Button variant="outline" onClick={onBack} disabled={busy}>
-          Back
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-interface PngColourStepProps {
-  pngBase64: string;
-  realmSlug: string | undefined;
-  realmName: string;
-  onVectorised: (result: WizardPipelineResult) => void;
-  onError: (message: string | null) => void;
-}
-
-/**
- * First run: detect the PNG's colours only (no tracing — quick on a large map). The admin maps them to the target realm's nations; second run:
- * vectorise the mapped colours, each region named after its nation (unmapped colours are dropped).
- */
-function PngColourStep({
-  pngBase64,
-  realmSlug,
-  realmName,
-  onVectorised,
-  onError,
-}: PngColourStepProps) {
-  const notify = useNotify();
-  const runPipeline = api.geoEditor.runPipeline.useMutation();
-  const [colours, setColours] = useState<RankedColour[] | null>(null);
-  const { data: realm, isLoading: namesLoading } = api.realms.getBySlug.useQuery(
-    { slug: realmSlug ?? "" },
-    { enabled: !!realmSlug }
-  );
-  const nationNames = useMemo(
-    () => nationNameOptions(realm?.countries, realm?.nationPages),
-    [realm]
-  );
-
-  const analyse = async () => {
-    onError(null);
-    try {
-      const result = await runPipeline.mutateAsync({ source: "png", pngBase64 });
-      const ranked = rankColours(result.detectedColors ?? []);
-      if (ranked.length === 0) {
-        onError("No colours were detected. Upload a flat-colour political map.");
-      }
-      setColours(ranked);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Colour analysis failed");
-    }
-  };
-
-  const vectorise = async (colorMapping: Record<string, string>, unmapped: number) => {
-    onError(null);
-    try {
-      const result = await runPipeline.mutateAsync({
-        source: "png",
-        pngBase64,
-        pngConfig: { colorMapping },
-      });
-      if (unmapped > 0) {
-        notify.info("Unmapped colours dropped", `${unmapped} colour(s) were left out of the map.`);
-      }
-      onVectorised(result);
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Vectorising failed");
-    }
-  };
-
-  if (colours && colours.length > 0) {
-    return (
-      <div className="space-y-2">
-        <p className="text-label-secondary text-body">
-          {colours.length} colours detected: nations of{" "}
-          <span className="text-label font-medium">{realmName}</span>
-        </p>
-        <ColourNationMapper
-          colours={colours}
-          nationNames={nationNames}
-          namesLoading={namesLoading}
-          busy={runPipeline.isPending}
-          onVectorise={vectorise}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <p className="text-label-secondary text-body">
-        The pipeline first finds the map&apos;s colours; you then name each one after a nation of{" "}
-        <span className="text-label font-medium">{realmName}</span> before it is vectorised.
-      </p>
-      <Button onClick={analyse} disabled={runPipeline.isPending}>
-        {runPipeline.isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <FileImage className="h-4 w-4" />
-        )}
-        {runPipeline.isPending ? "Analysing…" : "Analyse colours"}
-      </Button>
     </div>
   );
 }

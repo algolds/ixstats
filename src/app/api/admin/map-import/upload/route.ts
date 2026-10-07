@@ -32,12 +32,20 @@ export async function POST(request: NextRequest) {
   const realm = realmId
     ? await db.realm.findUnique({
         where: { id: realmId },
-        select: { id: true, ownerId: true, status: true, officers: { select: { userId: true, powers: true } } },
+        select: {
+          id: true,
+          ownerId: true,
+          status: true,
+          officers: { select: { userId: true, powers: true } },
+        },
       })
     : null;
   if (!realm) return NextResponse.json({ error: "Unknown realm" }, { status: 404 });
   if (realm.status === "archived") {
-    return NextResponse.json({ error: "This realm is archived and its map can't be changed" }, { status: 400 });
+    return NextResponse.json(
+      { error: "This realm is archived and its map can't be changed" },
+      { status: 400 }
+    );
   }
   // Founders and map officers are recognised by their Clerk id; site admins by their session role.
   const member = { id: "", clerkUserId: userId, role: null };
@@ -50,7 +58,10 @@ export async function POST(request: NextRequest) {
 
   const limited = await rateLimiter.check(userId, "file_upload");
   if (!limited.success) {
-    return NextResponse.json({ error: "Too many uploads. Try again in a minute." }, { status: 429 });
+    return NextResponse.json(
+      { error: "Too many uploads. Try again in a minute." },
+      { status: 429 }
+    );
   }
 
   // Refuse an oversize body by its Content-Length before formData() buffers it
@@ -60,7 +71,8 @@ export async function POST(request: NextRequest) {
   try {
     const form = await request.formData();
     const file = form.get("file");
-    if (!(file instanceof File)) return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!(file instanceof File))
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (file.size > MAX_MAP_IMPORT_BYTES) {
       return NextResponse.json(
         { error: `File too large (max ${MAX_MAP_IMPORT_BYTES / 1024 / 1024}MB)` },

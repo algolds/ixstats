@@ -15,6 +15,7 @@ import { HandOverSection } from "../../_components/manage/HandOverSection";
 import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
 import { LinksSection } from "../../_components/manage/LinksSection";
 import { MapSection } from "../../_components/manage/MapSection";
+import { MapImportSection } from "../../_components/manage/MapImportSection";
 import { ManageSection } from "../../_components/manage/ManageSection";
 import { OfficersSection } from "../../_components/manage/OfficersSection";
 import { PollsSection } from "../../_components/manage/PollsSection";
@@ -52,6 +53,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
     can("map") && { id: "map", label: "Map" },
+    can("map") && !manage.archived && { id: "map-import", label: "Map import" },
     manage.isFounder && { id: "source-sync", label: "Source sync" },
     manage.isFounder && { id: "wiki", label: "Wiki" },
     manage.canHandOver && { id: "handover", label: "Hand over" },
@@ -103,6 +105,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}
         {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
         {can("map") && !manage.archived && <MapSection slug={slug} />}
+        {can("map") && !manage.archived && <MapImportSection realmId={manage.realm.id} />}
         {manage.isFounder && (
           <ManageSection
             id="source-sync"

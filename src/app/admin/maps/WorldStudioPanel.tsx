@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
@@ -36,13 +36,26 @@ const TABS: { value: TabId; label: string }[] = [
   { value: "edits", label: "Edit queue" },
 ];
 
+const noSubscribe = () => () => undefined;
+
+/** `?importJob=<id>`: a map import started elsewhere ("Import this map" on a realm's wiki), opened in the wizard. */
+function useImportJobParam(): string | null {
+  return useSyncExternalStore(
+    noSubscribe,
+    () => new URLSearchParams(window.location.search).get("importJob"),
+    () => null
+  );
+}
+
 interface AdminMapsPageProps {
   initialTab?: TabId;
 }
 
 export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPageProps = {}) {
   usePageTitle({ title: "Admin - Atlas World Map" });
-  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const importJob = useImportJobParam();
+  const [chosenTab, setActiveTab] = useState<TabId | null>(null);
+  const activeTab = chosenTab ?? (importJob ? "pipeline" : initialTab);
 
   const { data: stats, isLoading } = api.geoCore.getMapStats.useQuery(undefined, {
     refetchInterval: 30000,
@@ -131,7 +144,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Tab content */}
       <div className="space-y-4">
-        {activeTab === "pipeline" && <PipelineWizard />}
+        {activeTab === "pipeline" && <PipelineWizard initialJobId={importJob} />}
         {activeTab === "edits" && <EditQueuePanel />}
         {activeTab === "settings" && <MapSettingsTab />}
       </div>
