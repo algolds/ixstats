@@ -12,7 +12,7 @@ Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built
 
 ### Core Foundation: "Geography is King"
 In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
-- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (`importPipelineResult`, so PNG realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
+- **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (the realm map import, its rollback and `importPipelineResult`, so imported realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
 - **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. **Geographic resources** (AT-9): the admin **Recalc** action (`geoCore.recalculateGeoProfiles`) also rewrites the country's `GeographicResource` rows from PostGIS (`src/lib/maps/geographic-resources.ts`): freshwater for its three longest rivers and three largest lakes inside the border, a fishery on the coast (the border not shared with a neighbour) when `coastlineKm > 0`, and farmland weighted by each clipped climate zone's agriculture factor. `quantity` is the measured size on a fixed scale (1000 km of river, 1000 km² of lake, 2000 km of coast, the arable share); only farmland gets a `quality` (its mean agriculture factor), so the Geography tab shows quality for farmland only. There is no geology data, so no mineral, oil, gas or forest resources are written. Like the profiles, they are display only. The Labs pipeline (`/labs/map-pipeline`) still shows sample profiles and resources (labelled as such): a generated world has no `Country` rows to attach real values to.
 - **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
   1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
@@ -22,7 +22,7 @@ In IxStates, geography is the source of truth for borders, area and adjacency. I
 
 ## Prerequisite Map Conversion & Processing Pipeline
 
-Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass parsing, affine coordinate transformation, topological repair, and compression pipeline (`src/lib/maps/map-pipeline.ts`, `src/lib/flags/svg-parser.ts`, `src/lib/maps/geojson-compress.ts`). PNG input is traced to SVG with `potrace` (`src/lib/flags/png-to-svg.ts`; flat-colour realm maps: `src/lib/maps/png-realm-map.ts`).
+Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass parsing, affine coordinate transformation, topological repair, and compression pipeline (`src/lib/maps/map-pipeline.ts`, `src/lib/flags/svg-parser.ts`, `src/lib/maps/geojson-compress.ts`). A realm's political map from a flat-colour image, an SVG of nations or GeoJSON goes through the [realm map import engine](#realm-map-import-engine) instead. The pipeline's own PNG input (`runPipeline` with `source: "png"`, traced colour by colour with `potrace` in `src/lib/flags/png-to-svg.ts`) is no longer offered by the wizard.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -65,8 +65,9 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
   what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
   realm, and a country's border by id comes from `COUNTRY_BORDER_SQL` (`src/lib/maps/geo-validation.ts`).
 - **Upload limits.** Map images decode through a 64-megapixel limit (`MAX_PNG_PIXELS`, `png-realm-map.ts`), checked
-  from the header before any pixels are decoded; province imports cap their content at the pipeline's 25 MB, and the
-  upload routes refuse an oversize body by its Content-Length before parsing it.
+  from the header before any pixels are decoded; province imports cap their content at the pipeline's 25 MB, the map
+  import's upload route (`/api/admin/map-import/upload`) at 40 MB, and the upload routes refuse an oversize body by its
+  Content-Length before parsing it.
 - **Planet figures.** The radius and degree → km factors (6371 km, 111.32 / 110.574 km per degree) live in
   `src/lib/maps/planet.ts`; its helpers take an optional radius, and a realm's own radius (`Realm.settings.map.radiusKm`)
   scales its areas and distances (see [Realm maps](#realm-maps)).
@@ -95,7 +96,8 @@ viewer shows it.
   session is saved only by its own editor. Border edits filed for review record their realm
   (`MapEditRequest.realmId`).
 - **Entry points.** Founders and map officers get **World editor** on `/maps?realm=<slug>`; site admins also have
-  `/admin/maps/editor?realm=<slug>`. The map import (Pipeline wizard) is still opened by site admins.
+  `/admin/maps/editor?realm=<slug>`. The map import wizard is in `/admin/maps` → Import pipeline → Full pipeline for
+  site admins, and in the realm's Manage tab (**Map import**) for the founder and map officers.
 
 ### Map settings (`Realm.settings.map`)
 
@@ -109,7 +111,12 @@ is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of
 | `defaultView` | `{ center: [lng, lat], zoom }` where the map opens, saved from the world editor's realm menu (**Save current view as default**); also the R home view |
 | `baseImage` | A base raster image: an `https://` address or an image uploaded through `/api/upload/image` (`isMapBaseImageUrl`) |
 | `attribution` | The credit line (at most 300 characters). Empty: the realm's source sync attribution, if any |
-| `projection`, `bounds`, `controlPoints` | Georeferencing of imported maps (the map import work); passed through untouched |
+| `projection` | `equirectangular` (default) or `mercator`: how an imported image's vertical axis maps to latitude |
+| `bounds` | `{ west, south, east, north }`: the lon/lat box a cropped image covers (west < east, south < north) |
+| `controlPoints` | At least three `{ x, y, lon, lat }` pairs (pixel from the top-left ↔ lon/lat), fitted instead of bounds |
+
+Other keys under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`) are never dropped when the
+settings are saved.
 
 ### Planet radius
 
@@ -120,7 +127,7 @@ is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of
   measure tool; the viewer's scale bar.
 - **Recompute areas** (`realms.map.recomputeAreas`, Manage → Map) measures every active polygon feature of the realm
   again: PostGIS `ST_Area(geom_postgis::geography) × (r / 6371)²`, or the flat helpers at radius r without PostGIS.
-  Run it after changing the radius or after an import (imports measure on Earth's radius). Nations' stated land area
+  Run it after changing the radius (the map import already measures on the realm's radius). Nations' stated land area
   is untouched unless the founder (or a site admin) ticks **Also set nations' land area from the map**, which sets
   each linked nation's land area to the sum of its regions.
 - Not scaled yet: river `lengthKm` properties written by imports, and the economy's own figures.
@@ -178,6 +185,110 @@ self-hosted glyphs have no oblique face, so labels are drawn upright.
 - A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
   realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
 
+## Realm Map Import Engine
+
+A realm's political map from a file: a flat-colour **PNG/JPEG/WebP**, an **SVG** with a shape or group per nation, or
+a **GeoJSON** FeatureCollection. Code: `src/lib/maps/import/` (engines, georeferencing, colour keys, name checks),
+`src/server/modules/maps/map-import.*` (jobs, storage, plan and apply, rollback, upload, wiki), router
+`geoEditor.mapImport` (`geo/editor/map-import.ts`), upload route `/api/admin/map-import/upload`, wizard
+`src/app/admin/maps/_components/map-import/`.
+
+**Who:** `canImportRealmMap` (site admins, the founder, officers with the Map power; IxWorld admin-only; archived
+realms refused) for uploads, analyses, dry runs, applies and rollbacks. Quick Update and the layered SVG pipeline stay
+admin-only.
+
+### Flow and jobs
+
+1. **Upload** (multipart, 40 MB, Content-Length checked first): the kind is read from the bytes; the file is stored by
+   its SHA-256 in `MAP_IMPORT_DIR` (default `.map-imports/` under the app, not public). Never base64 through tRPC.
+2. **Analyse** (`mapImport.start`, or `startMapImport({ realmId, source: { kind, bytes | uploadId, filename },
+   options, requestedBy })` from server code): a `MapImportJob` (status queued, running, succeeded, failed, cancelled;
+   progress 0 to 100 and a stage text) runs the engine and stores its result in `MAP_IMPORT_DIR/results/<job>.json`
+   and a summary (regions, report, georeference extent, suggested mapping) on the job.
+3. **Map regions to nations** in the wizard; **dry run** (`mapImport.preview`): new, changed, unchanged and (replace
+   mode) retired borders, unmatched regions, names that are not nations of the realm (with suggestions), and each
+   nation's area (PostGIS geography × (radiusKm / 6371)², or the flat helpers at the realm's radius).
+4. **Apply** (`mapImport.applyImport`): an apply job writes through the realm map writer (validated geometry, batched
+   transactions, display names, country links, `geom_postgis`, areas on the realm's planet), retires the rest of the
+   political layer in replace mode only, fills a nation's land area from its border **only when it has none** (option,
+   on by default; re-checked at write time), rebuilds adjacency, drops the map caches and keeps a `MapImport`
+   snapshot. Several regions may name one nation: they are merged into one border.
+5. **Roll back** (`mapImport.rollback`): the realm's latest import still in place is restored from its snapshot
+   (touched features as they were, created features deleted, linked countries' outline and land area restored). The
+   snapshot is gzipped and capped at 64 MB of JSON; over the cap the import is applied without one and says so.
+
+**Who runs jobs:** the `map-import` cron job (every minute, `runQueuedMapImports`) when it is in
+`CRON_ENABLED_JOBS`: it runs analyses, with PNG tracing in a Bun worker thread, plus apply jobs left queued for two
+minutes. Otherwise the web process runs the queue itself right after queueing, in-process, yielding to the event loop
+every 40 ms (a Node worker thread cannot load the TypeScript source there). Apply jobs always start in the web process,
+so its in-memory layer cache is dropped at once. A realm runs one job at a time (lease `map-import:<realmId>`); a
+job queued behind it is retried every few seconds; a running job silent for 10 minutes is marked failed; Cancel stops
+a running job at its next progress report. Both processes must see the same `MAP_IMPORT_DIR`.
+
+### PNG engine (`src/lib/maps/import/png/`)
+
+Decode once (sharp, 64-megapixel limit from the header) → **palette**: the colour key's colours, or the image's
+dominant colours from a 15-bit histogram clustered by CIEDE2000 (a third of the tolerance merges; anti-aliasing and
+JPEG halos join their colour) → every pixel snapped to the nearest palette colour within the tolerance (default ΔE 12)
+through a 24-bit lookup table → detected colours that exist only as thin lines are dropped → a 3×3 majority vote
+removes one-pixel lines → **border lines** (dark, nearly grey pixels, or listed line colours) and unmatched pixels are
+grown over from their neighbours, so neighbours touch → regions under the minimum (default 0.002% of the image) merge
+into their largest neighbour (on row runs) → every boundary is traced once along pixel edges, keeping only vertices
+that matter (corners and junctions), so both sides of a border list the same points → rings become polygons with
+holes by containment (`ring-assembly.ts`) → TopoJSON (shared arcs) → topological simplification (Visvalingam, 1.5 px²).
+Nations made of several colours are merged along their shared arcs (`topojson-client` merge). The report lists each
+colour's pixels and pieces, merged specks and unmatched colours. Sea colours are offered as ignored.
+
+**Performance** (synthetic 8000 × 4000 map, about 130 nations with 3 px black borders and anti-aliased edges, Bun):
+about 2 s for the PNG and 4.5 s for a JPEG of it (all distinct JPEG colours classified), plus about 0.1 s to build the
+nations' borders; the old per-colour potrace path took about 1.1 s per colour (about 2.5 minutes for 130 nations) in
+one tRPC call.
+
+### SVG and GeoJSON engines
+
+- **SVG** (`svg-engine.ts`, on the province importer's building blocks): `<path>` (arcs drawn as arcs),
+  `<polygon>`, `<polyline>`, `<rect>`, `<circle>`, `<ellipse>`, accumulated `transform`s, `fill-rule`, holes by
+  containment. A region is the nearest named `<g>` (`<title>`, Inkscape label, data-name, aria-label or a non-generic
+  id), else the shape's own name, else its fill colour; unnamed regions take the `<text>` drawn over them. A layer
+  named political, countries, nations, states or borders is read when present; sea and background shapes (named so,
+  or covering most of the drawing) are left out. Coordinates are viewBox units, georeferenced like pixels.
+- **GeoJSON** (`geojson-engine.ts`): a FeatureCollection whose `crs` names WGS84 (or none); a projected CRS is refused
+  unless every coordinate is a valid lon/lat anyway. Non-negative coordinates beyond lon/lat range are read as image
+  pixels and georeferenced. The wizard chooses the property holding the nation's name (suggested from `name`,
+  `NAME`, `admin`, `sovereignt`…); features with one value are unioned into one region.
+
+### Georeferencing (`georef.ts`)
+
+Precedence: **control points** (three or more, fitted with the SVG calibration helper's Theil-Sen then least-squares
+fit, with an RMSE warning over 1°), then **bounds** (a crop), then **whole globe** (warns when the image is not 2:1,
+or 1:1 for Mercator). In **Mercator** the vertical axis is linear in Mercator y and the latitude comes from the inverse
+Mercator (control points are fitted in Mercator space). The wizard previews the resulting extent
+(`mapImport.previewGeoreference`), offers the wiki's capital coordinates as control points, and can save the
+georeference as the realm's.
+
+### Colour keys and names
+
+A colour key (CSV: a colour and a name per row in either order, or a name with several colours; JSON:
+`{ "#hex": "Nation" }`, `{ "Nation": ["#hex", …] }` or a list of objects) fills the mapping by nearest colour
+(`colour-key.ts`). Names are checked against the realm's countries and roster pages with the world editor's matcher
+(`nation-name-matching.ts`); unknown names are allowed (a nation claimed later by that name takes the border) and
+flagged with close spellings.
+
+### Import this map (from the realm's wiki)
+
+The wiki panel's chosen map (`Realm.settings.map.source`) has **Import this map**: `mapImport.startFromWiki` fetches
+the original (`fetchChosenWikiMapOriginal`, refused with CONFLICT when the wiki's file changed since it was chosen),
+queues its analysis with the realm's credit line (stored on every imported border) and georeference, and opens the
+wizard on it. The wizard shows each nation's locator map from `realms.wiki.infoboxHints` beside its choice.
+
+### Layered SVG pipeline and `importPipelineResult`
+
+The Inkscape SVG pipeline (all layers) stays in Full pipeline (`LayeredSvgPipeline`). `importPipelineResult` is a thin
+wrapper over the same writer (`map-import.pipeline.ts`): validated geometry (lines and points accepted on
+non-political layers), batched transactions, display names from `properties.name`, a `MapImport` snapshot, and replace
+mode retires only the stale features of the layer types it imports. Quick Update (IxWorld's single-layer SVG commits)
+is unchanged.
+
 ## Viewer Performance
 
 The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/components/maps/core/hooks/`) keeps pan, zoom and hover free of React renders and redundant worker work. Rules for anyone changing it:
@@ -222,7 +333,7 @@ The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-scr
 - **Copy-on-Write Polygon Updates (`border-editor.ts`)**: `cloneRingsWithTarget` avoids full geometry deep-clones during 60fps drag operations.
 - **Two-Phase Hit-Testing (`src/components/maps/editor/utils/hit-test.ts`)**: Exact point selection wins, polygon containment second, grab-assist over empty space only.
 - **Nominal Coordinate Typing (`src/types/maps/editor-domain.ts`)**: TypeScript nominal types (`Lng`, `Lat`, `GeoPoint`, `ScreenPoint`) prevent axis-inversion coordinate bugs.
-- **Import / export**: Province SVG/PNG import in the editor (`province-importer/`); whole-map SVG, PNG or JPEG through the admin Import Pipeline (`/admin/maps` → `PipelineWizard`). The editor's Settings menu imports a GeoJSON file (points → cities, or POIs when the feature has a `category`; polygons → regions; lines are skipped) and exports every feature as a GeoJSON FeatureCollection (`src/hooks/map-editor/editor-geo-ops.ts`). An import is one undo step. There is no SVG export.
+- **Import / export**: Province SVG/PNG import in the editor (`province-importer/`); a realm's whole political map from PNG/JPEG, SVG or GeoJSON through the [realm map import](#realm-map-import-engine), and layered Inkscape SVGs through the admin Import Pipeline (`/admin/maps` → `PipelineWizard`). The editor's Settings menu imports a GeoJSON file (points → cities, or POIs when the feature has a `category`; polygons → regions; lines are skipped) and exports every feature as a GeoJSON FeatureCollection (`src/hooks/map-editor/editor-geo-ops.ts`). An import is one undo step. There is no SVG export.
 
 ### 3. Editing Model: Undo, Drafts, Confirmations
 - **Every write is undoable.** Creates, deletes, attribute edits, point drags and arrow-key nudges (a burst of nudges is one save), region reshapes with their topology-cascaded neighbours, duplicates, merges/splits, bulk delete/edit, the city placement tools and GeoJSON imports all land on the history stack (`useMapHistory`, 50 steps). Multi-feature operations record one `"batch"` action. `useHistoryReversalExecutor` replays actions as **partial** patches (only the recorded fields are sent) and keeps an id alias map, because re-creating a deleted feature gives it a new id. Undo/redo run one at a time and close any open vertex/path edit first.
@@ -266,7 +377,7 @@ Geography serves as the foundational data source across the platform:
 
 - `geo/core/` (`geoCore`) – World map geometry and bundles, country geometry/neighbors, point lookups, geo profiles, overlays, border history, and area/profile recalculation
 - `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins and storylines (`getCountryStorylines`, storyline CRUD, add/remove pins), map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
-- `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, and the map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted)
+- `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, the map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted) and the realm map import (`mapImport.*`)
 - `geo/admin/` (`geoAdmin`) – SVG uploads, province and city imports (the province and city imports are country-owner procedures, not admin-only)
 - `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features
 - `countryGeo.ts` – Geo bundles and compliance, `sampleTerrainAt`, settlement upserts (`upsertCity`, `upsertSubdivision`), rollup mode, and wiki population

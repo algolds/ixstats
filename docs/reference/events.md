@@ -49,7 +49,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 
 ## Scheduled & Batch Jobs
 
-`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (26 jobs, two of them WikiOS jobs not listed here); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
+`cron-runner.mjs` (PM2 app `ixstats-cron`, Bun) is the **only** scheduler; the web app, `server.mjs` and `ws-backend.mjs` schedule nothing. Jobs are defined in `src/server/cron/jobs.ts` (27 jobs, two of them WikiOS jobs not listed here); only those named in `CRON_ENABLED_JOBS` (comma list or `*`) run, each under a lease row in `job_leases` (`withJobLock`, `src/lib/system/job-lock.ts`) that expires after the job's timeout, so a crashed run never blocks the next. Every run is recorded as a `CronRun` row (success, skipped or failed) and a failure alerts the Discord webhook; see [monitoring.md](../operations/monitoring.md#scheduled-jobs). Schedules with a `SystemConfig` override key are read once at startup.
 
 | Job | Default schedule | Override key |
 | --- | --- | --- |
@@ -77,6 +77,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `log-retention` | `41 4 * * *` | — |
 | `notification-email-digest` | `7 8 * * *` | — |
 | `realm-source-sync` | `37 * * * *` | — |
+| `map-import` | `* * * * *` | — |
 
 - `stat-progression` persists the economic projection into each country's stored `current*` stats and writes one `HistoricalDataPoint` per IxTime month; the admin `forceRecalculation` takes the same lease.
 - `thinkpages-trending` scores posts with engagement decay, writes `TrendingTopic` and reconciles the like/reply/repost counters.
@@ -86,6 +87,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 - `log-retention` prunes user-action logs and log files older than `UserLogger`'s 90-day retention, and `CronRun` rows older than 30 days.
 - `exchange-market` recomputes the four Exchange sector indices, rebalances the sector funds (zero-sum), applies company decisions queued a day earlier and refreshes company fair values; `exchange-contract-expiry` cancels OPEN contracts never awarded within 3 days of bidding closing and refunds their escrow once ([exchange.md](../systems/exchange.md)).
 - `realm-source-sync` runs every realm whose own source sync schedule is due (`RealmSourceSync.intervalHours` since its last applied run), one realm at a time, each under the lease `realm-source-sync:<realmId>` that manual runs share ([realms-eurth-onboarding.md](../systems/realms-eurth-onboarding.md), step 4).
+- `map-import` runs queued realm map import analyses (PNG tracing in a worker thread) and any apply job the web process left queued for two minutes, one realm at a time under the lease `map-import:<realmId>`; without it the web process runs the queue in-process ([maps.md](../systems/maps.md#realm-map-import-engine)).
 - `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.
