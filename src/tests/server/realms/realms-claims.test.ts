@@ -58,11 +58,14 @@ type Where = Record<string, unknown> & { OR?: Where[] };
 
 /** Prisma-style equality where (plus OR) over rows — enough for map layer lookups and guarded links. */
 function matches(row: RegionRow, where: Where): boolean {
-  return Object.entries(where).every(([key, value]) =>
-    key === "OR"
-      ? (value as Where[]).some((w) => matches(row, w))
-      : row[key as keyof RegionRow] === value
-  );
+  return Object.entries(where).every(([key, value]) => {
+    if (key === "OR") return (value as Where[]).some((w) => matches(row, w));
+    const cell = row[key as keyof RegionRow];
+    if (value && typeof value === "object" && "in" in value) {
+      return (value as { in: unknown[] }).in.includes(cell);
+    }
+    return cell === value;
+  });
 }
 
 /** An in-memory map_layers table: finds read it, guarded updates write it. */
@@ -70,6 +73,9 @@ function mapLayerTable(rows: RegionRow[]) {
   return {
     findFirst: jest.fn(({ where }: { where: Where }) =>
       Promise.resolve(rows.find((r) => matches(r, where)) ?? null)
+    ),
+    findMany: jest.fn(({ where }: { where: Where }) =>
+      Promise.resolve(rows.filter((r) => matches(r, where)))
     ),
     updateMany: jest.fn(({ where, data }: { where: Where; data: Partial<RegionRow> }) => {
       const hit = rows.filter((r) => matches(r, where));
@@ -962,6 +968,36 @@ describe("approved nation-page claims take their map region (decision 11)", () =
         landArea: 1000,
       }),
     });
+  });
+
+  it("a nation drawn as several regions takes all of them, and its outline is their union", async () => {
+    const islands = region({
+      id: "ml-isles",
+      featureId: "aurelia_isles",
+      displayName: "Aurelia",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [5, 5],
+            [6, 5],
+            [6, 6],
+            [5, 5],
+          ],
+        ],
+      },
+      centroid: [5.5, 5.5],
+      boundingBox: [5, 5, 6, 6],
+      areaSqKm: 1000,
+    });
+    const rows = [region({ centroid: [0.5, 0.5] }), islands, ixworldRegion()];
+    const { tx, claims } = regionSetup(rows);
+    await claims.claimNationPage(actor, EURTH, "Aurelia");
+    expect(rows.map((r) => r.countryId)).toEqual(["new-c", "new-c", null]);
+    const data = tx.country.update.mock.calls[0][0].data;
+    expect(data.geometry.type).toBe("MultiPolygon");
+    expect(data.geometry.coordinates).toHaveLength(2);
+    expect(data).toMatchObject({ landArea: 2000, centroid: [3, 3], boundingBox: [0, 0, 6, 6] });
   });
 
   it("review approval matches the region by its display name too", async () => {

@@ -1,13 +1,119 @@
+import type { Feature, MultiPolygon, Polygon } from "geojson";
+import { union } from "@turf/union";
+import { featureCollection } from "@turf/helpers";
+
 /**
  * Sync helper to keep Country cached geo columns up to date with its MapLayer political geometry.
  * Collapses the double-write points in the codebase.
  */
+
+type RegionGeometry = Polygon | MultiPolygon;
+
+interface LinkedRegion {
+  geometry: unknown;
+  centroid: unknown;
+  boundingBox: unknown;
+  areaSqKm: number | null;
+}
+
+const isPolygonal = (g: unknown): g is RegionGeometry =>
+  !!g &&
+  typeof g === "object" &&
+  ((g as { type?: string }).type === "Polygon" || (g as { type?: string }).type === "MultiPolygon");
+
+/**
+ * One outline for a nation drawn as several regions: their union (touching regions merge, so no inner border is
+ * left), or, if the union fails on bad input, every region's polygons side by side.
+ */
+export function unionRegionGeometries(geometries: unknown[]): RegionGeometry | null {
+  const polygonal = geometries.filter(isPolygonal);
+  if (polygonal.length === 0) return null;
+  if (polygonal.length === 1) return polygonal[0]!;
+  try {
+    const features = polygonal.map((geometry): Feature<RegionGeometry> => ({
+      type: "Feature",
+      properties: {},
+      geometry,
+    }));
+    const merged = union(featureCollection(features));
+    if (merged && isPolygonal(merged.geometry)) return merged.geometry;
+  } catch (err) {
+    console.warn("[country-geo] region union failed, keeping the regions side by side:", err);
+  }
+  return {
+    type: "MultiPolygon",
+    coordinates: polygonal.flatMap((g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates)),
+  };
+}
+
+const asPair = (v: unknown): [number, number] | null =>
+  Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1]) ? [v[0], v[1]] : null;
+const asBox = (v: unknown): [number, number, number, number] | null =>
+  Array.isArray(v) && v.length === 4 && v.every(Number.isFinite)
+    ? (v as [number, number, number, number])
+    : null;
+
+/**
+ * The nation's cached geography from all its linked regions: their union, the area-weighted centre of their
+ * centroids, the box around their boxes and the sum of their areas. A value no region has stays absent.
+ */
+export function combineRegions(regions: LinkedRegion[]) {
+  const geometry =
+    regions.length === 1
+      ? regions[0]!.geometry
+      : unionRegionGeometries(regions.map((r) => r.geometry));
+  const areas = regions.map((r) => r.areaSqKm).filter((a): a is number => a != null);
+  const areaSqKm = areas.length > 0 ? areas.reduce((sum, a) => sum + a, 0) : null;
+
+  const centred = regions
+    .map((r) => ({ c: asPair(r.centroid), w: r.areaSqKm ?? 0 }))
+    .filter((r): r is { c: [number, number]; w: number } => r.c !== null);
+  const weight = centred.reduce((sum, r) => sum + r.w, 0);
+  const centroid =
+    centred.length === 0
+      ? null
+      : weight > 0
+        ? ([
+            centred.reduce((s, r) => s + r.c[0] * r.w, 0) / weight,
+            centred.reduce((s, r) => s + r.c[1] * r.w, 0) / weight,
+          ] as [number, number])
+        : centred[0]!.c;
+
+  const boxes = regions.map((r) => asBox(r.boundingBox)).filter((b) => b !== null);
+  const boundingBox =
+    boxes.length === 0
+      ? null
+      : regions.length === 1
+        ? regions[0]!.boundingBox
+        : [
+            Math.min(...boxes.map((b) => b[0])),
+            Math.min(...boxes.map((b) => b[1])),
+            Math.max(...boxes.map((b) => b[2])),
+            Math.max(...boxes.map((b) => b[3])),
+          ];
+  return {
+    geometry,
+    centroid: regions.length === 1 ? regions[0]!.centroid : centroid,
+    boundingBox,
+    areaSqKm,
+  };
+}
+
+/**
+ * Copy a nation's linked regions onto its cached geo columns. A nation may be drawn as several regions (islands,
+ * exclaves): all of them count, read from the nation's own realm's map. With none linked, the cache is cleared.
+ */
 export async function syncCountryGeometryFromMapLayer(db: any, countryId: string): Promise<void> {
-  const mapLayer = await db.mapLayer.findFirst({
+  const country = await db.country.findUnique?.({
+    where: { id: countryId },
+    select: { realmId: true },
+  });
+  const regions: LinkedRegion[] = await db.mapLayer.findMany({
     where: {
       layerType: "political",
       countryId,
       isActive: true,
+      ...(country?.realmId && { realmId: country.realmId }),
     },
     select: {
       geometry: true,
@@ -15,9 +121,12 @@ export async function syncCountryGeometryFromMapLayer(db: any, countryId: string
       boundingBox: true,
       areaSqKm: true,
     },
+    orderBy: { areaSqKm: "desc" },
+    take: 1000,
   });
 
-  if (mapLayer) {
+  if (regions.length > 0) {
+    const mapLayer = combineRegions(regions);
     // Only what the region actually has: a region imported without metrics must not null the country's
     // centroid, bounding box or (baseline) land area.
     await db.country.update({
