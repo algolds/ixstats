@@ -4,6 +4,7 @@ import {
   detectNationTitles,
   indexNations,
   listRosterNations,
+  loreDowngrades,
   nationMethod,
   prunableTitles,
   rosterTitlesNotCrawled,
@@ -295,5 +296,17 @@ describe("prunableTitles (--prune)", () => {
 
   it("prunes nothing when every indexed title is still current", () => {
     expect(prunableTitles(["A", "B"], ["A", "B", "C"], [])).toEqual({ prune: [], kept: [] });
+  });
+});
+
+describe("loreDowngrades (re-import)", () => {
+  it("never turns a claimed or founded nation page back into lore", () => {
+    expect(
+      loreDowngrades(["Gone From Roster", "Claimed", "Founded"], ["Claimed", "Founded", "Unrelated"])
+    ).toEqual({ downgrade: ["Gone From Roster"], kept: ["Claimed", "Founded"] });
+  });
+
+  it("downgrades every candidate when nothing protects them", () => {
+    expect(loreDowngrades(["B", "A"], [])).toEqual({ downgrade: ["A", "B"], kept: [] });
   });
 });

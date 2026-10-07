@@ -243,3 +243,20 @@ export function prunableTitles(
     kept: stale.filter((title) => guarded.has(title)),
   };
 }
+
+/**
+ * The pages a re-import may turn into lore: the titles detection now calls lore, less the protected ones (a page
+ * with a pending or approved claim, or a nation's Country). A claimed nation page stays a nation even when the
+ * roster no longer lists it. Both lists sorted.
+ */
+export function loreDowngrades(
+  loreTitles: string[],
+  protectedTitles: Iterable<string>
+): { downgrade: string[]; kept: string[] } {
+  const guarded = new Set(protectedTitles);
+  const sorted = [...loreTitles].sort();
+  return {
+    downgrade: sorted.filter((title) => !guarded.has(title)),
+    kept: sorted.filter((title) => guarded.has(title)),
+  };
+}
