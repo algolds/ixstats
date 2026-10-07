@@ -1,20 +1,18 @@
 "use client";
 
-import { api } from "~/trpc/react";
-
 /**
- * The credit line a realm's map shows when its borders come from an outside source (the realm's source sync
- * settings, e.g. a community map). Nothing for IxWorld or a realm without one.
+ * The credit line a realm's map shows: the realm's own (`Realm.settings.map.attribution`), else its source
+ * sync's (e.g. a community map its borders come from). `realms.map.display` resolves which; nothing when
+ * neither is set.
  */
-export function RealmMapAttribution({ realmSlug }: { realmSlug?: string }) {
-  const { data: attribution } = api.realms.sourceSync.mapAttribution.useQuery(
-    { slug: realmSlug ?? "" },
-    { enabled: !!realmSlug, staleTime: 60 * 60_000 }
-  );
-  if (!realmSlug || !attribution) return null;
+export function RealmMapAttribution({ text }: { text: string | null | undefined }) {
+  if (!text) return null;
   return (
-    <p className="bg-surface text-label-secondary text-caption rounded-control z-raised pointer-events-none absolute bottom-2 left-2 max-w-[70%] px-2 py-1">
-      {attribution}
+    <p
+      className="bg-surface text-label-secondary text-caption rounded-control pointer-events-auto max-w-full px-2 py-1"
+      data-testid="realm-map-attribution"
+    >
+      {text}
     </p>
   );
 }

@@ -31,6 +31,7 @@ import {
   type TransportMutation,
 } from "./EditorSettingsPopover";
 import { useGeoJsonTransfer } from "./useGeoJsonTransfer";
+import { RealmMapMenu } from "./RealmMapMenu";
 
 interface EditorHeaderProps {
   countryInfo: { name: string } | null | undefined;
@@ -281,6 +282,8 @@ export const EditorHeader = React.memo(function EditorHeader({
               <HelpCircle className={ICON} />
             </HeaderIconButton>
           )}
+
+          {isWorldMode && <RealmMapMenu mapRef={mapRef} />}
 
           <EditorSettingsPopover
             editor={editor}

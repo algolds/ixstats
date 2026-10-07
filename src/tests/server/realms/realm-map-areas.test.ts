@@ -217,3 +217,58 @@ describe("map settings", () => {
     expect(db.realm!.update).not.toHaveBeenCalled();
   });
 });
+
+describe("what the realm's map viewer shows", () => {
+  const display = (db: Db, who: string) =>
+    createCallerFactory(realmMapRouter)(ctxAs(db, who)).display({ realm: "eurth" });
+
+  it("falls back to the source sync's attribution when the realm sets none", async () => {
+    const db = realmDb();
+    db.realmSourceSync!.findUnique!.mockResolvedValue({
+      settings: { attribution: "Borders: Eurth map project" },
+    });
+    await expect(display(db, "clerk_player")).resolves.toMatchObject({
+      realmId: EURTH,
+      isIxWorld: false,
+      radiusKm: EARTH_RADIUS_KM,
+      attribution: "Borders: Eurth map project",
+      canEdit: false,
+      isFounder: false,
+    });
+  });
+
+  it("prefers the realm's own credit line, and lists its unclaimed nations", async () => {
+    const db = realmDb(HALF_EARTH);
+    db.realm!.findUnique!.mockImplementation(async () => ({
+      id: EURTH,
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: FOUNDER,
+      status: "active",
+      settings: {
+        map: {
+          radiusKm: HALF_EARTH,
+          attribution: "Map: Eurth",
+          baseImage: "/images/uploads/uploaded_eurth.png",
+        },
+      },
+      officers: [{ userId: MAP_OFFICER, powers: ["map"] }],
+    }));
+    db.country!.findMany!.mockResolvedValue([{ id: "c_open" }]);
+    const result = await display(db, MAP_OFFICER);
+    expect(result).toMatchObject({
+      radiusKm: HALF_EARTH,
+      attribution: "Map: Eurth",
+      baseImage: "/images/uploads/uploaded_eurth.png",
+      unclaimedCountryIds: ["c_open"],
+      canEdit: true,
+      isFounder: false,
+    });
+    expect(db.realmSourceSync!.findUnique).not.toHaveBeenCalled();
+    expect(db.country!.findMany!.mock.calls[0][0].where).toEqual({
+      realmId: EURTH,
+      ownerUserId: null,
+      isDemo: false,
+    });
+  });
+});

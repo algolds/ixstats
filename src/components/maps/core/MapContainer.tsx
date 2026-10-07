@@ -37,6 +37,7 @@ import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
 import { isIxWorldView } from "~/lib/realms/realm-ids";
 import { useRealmMapDisplay } from "./hooks/useRealmMapDisplay";
+import { RealmMapKey, useRealmDefaultView } from "./RealmMapKey";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -206,6 +207,8 @@ interface MapToolbarsProps {
   onToggleLayer: (layer: MapLayerType) => void;
   hasCountry: boolean;
   isAdmin: boolean;
+  /** The viewer edits this realm's map (its founder or a map officer): offer the world editor. */
+  canEditRealmMap: boolean;
   hideEditButtons: boolean;
   onEditMap: () => void;
   projectionMode: ProjectionMode;
@@ -228,6 +231,7 @@ function MapToolbars({
   onToggleLayer,
   hasCountry,
   isAdmin,
+  canEditRealmMap,
   hideEditButtons,
   onEditMap,
   projectionMode,
@@ -257,7 +261,7 @@ function MapToolbars({
           toolsVisible={toolsVisible}
           canEdit={editAllowed && hasCountry}
           onEditMap={onEditMap}
-          showWorldEditor={editAllowed && isAdmin}
+          showWorldEditor={editAllowed && (isAdmin || canEditRealmMap)}
           onOpenWorldEditor={state.handleOpenWorldEditor}
         />
       )}
@@ -444,6 +448,11 @@ export function MapContainer({
 
   const deferredOverlayData = useDeferredValue(overlayData);
 
+  useRealmDefaultView(mapRef, realmDisplay, {
+    mapReady: state.mapEngineReady,
+    explicitView: !!initialCenter || initialZoom !== undefined || !!initialCountryId,
+  });
+
   const tour = useMapTour({
     mapRef,
     projectionMode: state.projectionMode,
@@ -543,6 +552,9 @@ export function MapContainer({
         onRouteClick={state.setSelectedRouteId}
         showOceanLabels={ixWorld}
         ixWorld={ixWorld}
+        baseImageUrl={realmDisplay?.baseImage}
+        attribution={realmDisplay?.attribution}
+        unclaimedCountryIds={realmDisplay?.unclaimedCountryIds}
       />
 
       <MapToolbars
@@ -557,6 +569,7 @@ export function MapContainer({
         onToggleLayer={onToggleLayer ?? toggleLayer}
         hasCountry={!!userCountryId}
         isAdmin={isAdmin}
+        canEditRealmMap={!!realmDisplay?.canEdit}
         hideEditButtons={hideEditButtons}
         onEditMap={handleOpenMyEditorWithUser}
         projectionMode={effectiveProjection}
@@ -566,12 +579,19 @@ export function MapContainer({
         radiusKm={realmDisplay?.radiusKm}
       />
 
-      {/* Bottom-left stack: analytics legend; hidden on mobile while the bottom sheet is up. */}
+      {/* Bottom-left stack: analytics legend, realm legend, scale and credit line; hidden on
+          mobile while the bottom sheet is up. */}
       <div
         className={`pointer-events-none absolute bottom-4 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col-reverse items-start gap-2 sm:bottom-6 ${
           sidePanelOpen ? "max-sm:hidden" : ""
         }`}
       >
+        <RealmMapKey
+          display={realmDisplay}
+          mapLayers={mapLayers}
+          map={state.mapEngineReady ? (mapRef.current?.getMap() ?? null) : null}
+          showScale={showControls}
+        />
         <AnalyticsLegend overlayVisibility={state.overlayVisibility} overlayData={overlayData} />
       </div>
 
@@ -583,7 +603,7 @@ export function MapContainer({
         onProjectionChange={handleProjectionChange}
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
-        homeCenter={mapHomeCenter(ixWorld)}
+        homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixWorld)}
       />
 
       {/* Feature panels read the wiki of the realm this map shows */}
