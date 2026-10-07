@@ -6,6 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { EmptyState } from "~/components/ui/empty-state";
 import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
 import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/SourceSyncPanel";
+import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
@@ -50,6 +51,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
     manage.isFounder && { id: "source-sync", label: "Source sync" },
+    manage.isFounder && { id: "wiki", label: "Wiki" },
     manage.canHandOver && { id: "handover", label: "Hand over" },
   ].filter(Boolean) as Array<{ id: string; label: string }>;
 
@@ -105,6 +107,15 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
             description="Keep the realm's nations, figures, borders and alliances in step with an outside source, such as a community map. Only the founder (and site staff) manage it."
           >
             <SourceSyncPanel slug={slug} />
+          </ManageSection>
+        )}
+        {manage.isFounder && (
+          <ManageSection
+            id="wiki"
+            title="Wiki"
+            description="The wiki the realm's lore lives on, discovery of its nations and world maps, and the map chosen from it. Only the founder (and site staff) manage it."
+          >
+            <RealmWikiPanel slug={slug} />
           </ManageSection>
         )}
         {manage.canHandOver && <HandOverSection slug={slug} manage={manage} />}
