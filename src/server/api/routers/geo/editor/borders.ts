@@ -10,6 +10,20 @@ import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { assertFound, neighbourFeatures } from "../core/shared";
+import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
+import { scaleAreaToRadius } from "~/lib/maps/planet";
+
+type PolygonalGeometry = import("geojson").Polygon | import("geojson").MultiPolygon;
+
+/** The border editor's area measure on the realm's planet (`Realm.settings.map.radiusKm`, else Earth's). */
+async function realmAreaOf(
+  db: Parameters<typeof realmRadiusKmById>[0],
+  realmId: string,
+  flatArea: (geometry: PolygonalGeometry) => number
+) {
+  const radiusKm = await realmRadiusKmById(db, realmId);
+  return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
+}
 
 export const geoEditorBordersRouter = createTRPCRouter({
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
@@ -146,9 +160,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
       );
 
       if (input.applyDirectly) {
-        // Admin direct apply — update geometry immediately
-        const { calculateArea, calculateCentroid, calculateBBox } =
-          await import("~/lib/maps/border-editor");
+        // Direct apply (the realm's map editors) — update geometry immediately
+        const {
+          calculateArea: flatArea,
+          calculateCentroid,
+          calculateBBox,
+        } = await import("~/lib/maps/border-editor");
+        const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
         const geom = input.proposedGeometry as unknown as
           import("geojson").Polygon | import("geojson").MultiPolygon;
         await validateGeometryValid(ctx.db, input.proposedGeometry);
@@ -290,8 +308,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         `Feature not found: ${input.featureId}`
       );
 
-      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        splitPolygon,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
       const geometry = feature.geometry as unknown as
         import("geojson").Polygon | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
@@ -404,8 +427,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         });
       }
 
-      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        mergeGeometries,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;

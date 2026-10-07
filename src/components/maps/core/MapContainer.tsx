@@ -36,6 +36,7 @@ import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
 import { isIxWorldView } from "~/lib/realms/realm-ids";
+import { useRealmMapDisplay } from "./hooks/useRealmMapDisplay";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -211,6 +212,8 @@ interface MapToolbarsProps {
   onProjectionChange: (mode: ProjectionMode) => void;
   onOpenWelcome: () => void;
   realm: string | undefined;
+  /** The realm's planet radius (km), for the measure tool. */
+  radiusKm: number | undefined;
 }
 
 function MapToolbars({
@@ -231,6 +234,7 @@ function MapToolbars({
   onProjectionChange,
   onOpenWelcome,
   realm,
+  radiusKm,
 }: MapToolbarsProps) {
   const isMobile = useIsMobile();
   const editAllowed = !hideEditButtons && !state.isEditing && !state.isWorldEditing;
@@ -264,6 +268,7 @@ function MapToolbars({
           mapRef={mapRef}
           onActiveChange={state.setIsMeasuring}
           headless
+          radiusKm={radiusKm}
         />
       )}
 
@@ -388,6 +393,8 @@ export function MapContainer({
   const userCountryId = userProfile?.countryId ?? null;
   // Ocean labels, the prime meridian, the home view and the guided tour describe IxWorld only (AT-2).
   const ixWorld = isIxWorldView(realm, userProfile?.country?.realmId);
+  // The realm's planet radius, default view, base image, credit line and unclaimed nations
+  const realmDisplay = useRealmMapDisplay(realm);
 
   // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
   // fetched after useMapState runs, so they are handed over through a ref-backed getter.
@@ -556,6 +563,7 @@ export function MapContainer({
         onProjectionChange={handleProjectionChange}
         onOpenWelcome={handleOpenWelcome}
         realm={realm}
+        radiusKm={realmDisplay?.radiusKm}
       />
 
       {/* Bottom-left stack: analytics legend; hidden on mobile while the bottom sheet is up. */}

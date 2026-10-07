@@ -34,6 +34,7 @@ import { globalCache } from "~/lib/cache";
 import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
+import { realmMapRouter } from "./map";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
 async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): Promise<void> {
@@ -256,6 +257,9 @@ export const realmsRouter = createTRPCRouter({
 
   /** A realm's source sync: settings, dry runs, applied runs and history (see ./source-sync.ts). */
   sourceSync: realmSourceSyncRouter,
+
+  /** A realm's map: display settings for the viewer, map settings and recomputed areas (see ./map.ts). */
+  map: realmMapRouter,
 
   /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
   directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),

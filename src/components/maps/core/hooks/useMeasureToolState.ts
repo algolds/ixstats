@@ -15,12 +15,18 @@ type Coord = [number, number];
 interface UseMeasureToolStateOptions {
   mapRef: React.RefObject<IxWorldMapRef | null>;
   onActiveChange?: (active: boolean) => void;
+  /** The realm's planet radius (km); distances are measured on it. */
+  radiusKm?: number;
 }
 
-export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolStateOptions) {
+export function useMeasureToolState({
+  mapRef,
+  onActiveChange,
+  radiusKm,
+}: UseMeasureToolStateOptions) {
   const [active, setActive] = useState(false);
   const [points, setPoints] = useState<Coord[]>([]);
-  const totalDistance = useMemo(() => measureTotalKm(points), [points]);
+  const totalDistance = useMemo(() => measureTotalKm(points, radiusKm), [points, radiusKm]);
   const draggingIndexRef = useRef<number | null>(null);
   const pointsRef = useRef<Coord[]>([]);
   const activeRef = useRef(false);
@@ -38,9 +44,12 @@ export function useMeasureToolState({ mapRef, onActiveChange }: UseMeasureToolSt
     (pts: Coord[]) => {
       const source = mapRef.current?.getMap()?.getSource(MEASURE_SOURCE_ID) as
         GeoJSONSource | undefined;
-      source?.setData({ type: "FeatureCollection", features: buildMeasureFeatures(pts) });
+      source?.setData({
+        type: "FeatureCollection",
+        features: buildMeasureFeatures(pts, radiusKm),
+      });
     },
-    [mapRef]
+    [mapRef, radiusKm]
   );
 
   const clearPoints = useCallback(() => {

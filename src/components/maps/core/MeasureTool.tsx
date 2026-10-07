@@ -17,15 +17,18 @@ interface MeasureToolProps {
   onActiveChange?: (active: boolean) => void;
   /** When true, hides the inline button (button rendered elsewhere via ref.toggle) */
   headless?: boolean;
+  /** The realm's planet radius (km); distances are measured on it. Earth's by default. */
+  radiusKm?: number;
 }
 
 export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function MeasureTool(
-  { mapRef, onActiveChange, headless = false },
+  { mapRef, onActiveChange, headless = false, radiusKm },
   ref
 ) {
   const { active, points, totalDistance, clearPoints, handleToggle } = useMeasureToolState({
     mapRef,
     onActiveChange,
+    radiusKm,
   });
 
   // Expose toggle via ref for external control (headless mode)
