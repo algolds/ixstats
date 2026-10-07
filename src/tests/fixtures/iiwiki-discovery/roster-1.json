@@ -1,0 +1,13 @@
+{
+  "continue": {
+    "cmcontinue": "page|524f53544552|1204",
+    "continue": "-||"
+  },
+  "query": {
+    "categorymembers": [
+      { "pageid": 1201, "ns": 14, "title": "Category:Aurelian Commonwealth" },
+      { "pageid": 1202, "ns": 14, "title": "Category:Nanto (Eurth)" },
+      { "pageid": 1203, "ns": 14, "title": "Category:Tavok" }
+    ]
+  }
+}

@@ -5,10 +5,24 @@
  * `[wiki]/[...path]` proxies media for the external wikis; the local ixwiki media
  * route (`ixwiki/[...path]`) keeps its own handler because it also registers assets.
  * Static segments win over `[wiki]` in Next.js routing. Both media routes are image-only
- * (see `_media-response.ts`).
+ * (see `_media-response.ts`). The sister wikis' entries are built from `~/lib/wiki-os/wiki-hosts.ts`: adding a
+ * wiki there adds it here.
  */
-import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
-import { mediaWikiApiUrl, mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
+import {
+  getMediaWikiApiUrl,
+  mediaWikiApiUrl,
+  mediaWikiOrigin,
+  wikiosConfig,
+} from "~/lib/wiki-os/config";
+import {
+  SISTER_READER_IDS,
+  SISTER_WIKI_HOSTS,
+  SISTER_WIKI_IDS,
+  sisterWikiApiUrl,
+  type SisterReaderId,
+  type SisterWikiHost,
+  type SisterWikiId,
+} from "~/lib/wiki-os/wiki-hosts";
 
 export const WIKI_USER_AGENT = "IxStats-Builder";
 
@@ -53,44 +67,36 @@ export const WIKIS = {
     detectCloudflare: false,
     resolveRetries: 0,
   },
-  iiwiki: {
-    label: "IIWiki",
-    siteUrl: "https://iiwiki.com",
-    apiUrl: () => "https://iiwiki.com/api.php",
-    // Dev proxy URL bypasses the Cloudflare 403 on imageinfo lookups.
-    imageInfoApiUrl: () => getFullIiwikiApiUrl(),
-    corsOrigins: ["https://iiwiki.com", "https://www.iiwiki.com", ...DEV_ORIGINS],
-    allowedActions: READ_ACTIONS,
-    detectCloudflare: true,
-    resolveRetries: 0,
-    directImagePrefix: "images/",
-  },
-  althistory: {
-    label: "AltHistory",
-    siteUrl: "https://althistory.fandom.com",
-    apiUrl: () => "https://althistory.fandom.com/api.php",
-    imageInfoApiUrl: () => "https://althistory.fandom.com/api.php",
-    corsOrigins: ["*"],
-    allowedActions: READ_ACTIONS,
-    detectCloudflare: false,
-    resolveRetries: 2,
-  },
-  commons: {
-    label: "Commons",
-    siteUrl: "https://commons.wikimedia.org",
-    apiUrl: () => "https://commons.wikimedia.org/w/api.php",
-    imageInfoApiUrl: () => "https://commons.wikimedia.org/w/api.php",
-    corsOrigins: ["https://commons.wikimedia.org", "https://upload.wikimedia.org", ...DEV_ORIGINS],
-    allowedActions: READ_ACTIONS,
-    detectCloudflare: false,
-    resolveRetries: 0,
-  },
-} as const satisfies Record<string, WikiConfig>;
+  // The sister wikis, one per entry of wiki-hosts.ts.
+  ...(Object.fromEntries(
+    SISTER_WIKI_IDS.map((id): [SisterWikiId, WikiConfig] => [id, sisterWikiConfig(id)])
+  ) as Record<SisterWikiId, WikiConfig>),
+} satisfies Record<string, WikiConfig>;
 
-type WikiKey = keyof typeof WIKIS;
+/** A sister wiki's proxy configuration, from its entry in wiki-hosts.ts. */
+function sisterWikiConfig(id: SisterWikiId): WikiConfig {
+  const host: SisterWikiHost = SISTER_WIKI_HOSTS[id];
+  const ownApi = sisterWikiApiUrl(host);
+  const reader = (SISTER_READER_IDS as readonly string[]).includes(id);
+  return {
+    label: host.name,
+    siteUrl: host.origin,
+    apiUrl: () => ownApi,
+    // A wiki WikiOS reads resolves files through its configured api.php (iiwiki's development proxy gets past
+    // the Cloudflare 403 on imageinfo lookups).
+    imageInfoApiUrl: () => (reader ? getMediaWikiApiUrl(id as SisterReaderId) : ownApi),
+    corsOrigins: host.proxy.anyCorsOrigin
+      ? ["*"]
+      : [host.origin, ...host.proxy.extraCorsOrigins, ...DEV_ORIGINS],
+    allowedActions: READ_ACTIONS,
+    detectCloudflare: host.proxy.detectCloudflare,
+    resolveRetries: host.proxy.resolveRetries,
+    ...(host.proxy.directImagePrefix && { directImagePrefix: host.proxy.directImagePrefix }),
+  };
+}
 
 export function getWiki(key: string): WikiConfig | null {
-  return Object.prototype.hasOwnProperty.call(WIKIS, key) ? WIKIS[key as WikiKey] : null;
+  return Object.hasOwn(WIKIS, key) ? (WIKIS as Record<string, WikiConfig>)[key]! : null;
 }
 
 /** Query parameters the api.php proxy forwards (everything else is dropped). */

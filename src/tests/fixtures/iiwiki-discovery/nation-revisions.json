@@ -1,0 +1,73 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "redirects": [{ "from": "Rostervania", "to": "Republic of Rostervania" }],
+    "pages": [
+      {
+        "pageid": 3101,
+        "ns": 0,
+        "title": "Aurelian Commonwealth",
+        "revisions": [
+          {
+            "slots": {
+              "main": {
+                "contentmodel": "wikitext",
+                "contentformat": "text/x-wiki",
+                "content": "{{Infobox country\n| conventional_long_name = Aurelian Commonwealth\n| common_name = Aurelia\n| image_flag = Flag of Aurelia.svg\n| image_coat = Coat of arms of Aurelia.png\n| image_map = Aurelia (orthographic projection).svg\n| map_caption = Aurelia in Eurth\n| capital = [[Port Aurel]]<br/>{{coord|12|30|N|45|15|E|type:city}}\n| largest_city = capital\n| population_estimate = 41,200,000\n}}\nThe '''Aurelian Commonwealth''' is a nation on [[Eurth]].\n\n== History ==\nFounded in 1802."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 3102,
+        "ns": 0,
+        "title": "Nanto (Eurth)",
+        "revisions": [
+          {
+            "slots": {
+              "main": {
+                "contentmodel": "wikitext",
+                "contentformat": "text/x-wiki",
+                "content": "{{Infobox country\n|conventional_long_name=Kingdom of Nanto\n|flag=[[File:Nanto flag.png|125px|border]]\n|coat_of_arms=Nanto_arms.svg\n|capital=Kessu\n|latd=10|latm=30|latNS=S|longd=120|longEW=W\n|locator_map=<!-- none yet -->\n}}\n'''Nanto''' is an island kingdom."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 3103,
+        "ns": 0,
+        "title": "Tavok",
+        "revisions": [
+          {
+            "slots": {
+              "main": {
+                "contentmodel": "wikitext",
+                "contentformat": "text/x-wiki",
+                "content": "'''Tavok''' is a country in [[Aurelia (continent)|Aurelia]]. {{Eurth-stub}}"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "pageid": 3104,
+        "ns": 0,
+        "title": "Republic of Rostervania",
+        "revisions": [
+          {
+            "slots": {
+              "main": {
+                "contentmodel": "wikitext",
+                "contentformat": "text/x-wiki",
+                "content": "{{Infobox former country\n| native_name = Rostervanska Republika\n| flag_image = Rostervania flag.png\n| capital = Rostgrad\n| coordinates = {{coord|-33.5|151.2|display=inline}}\n| locator_map = Rostervania locator.png\n| image_map2 = Rostervania regions.png\n}}\nThe '''Republic of Rostervania'''..."
+              }
+            }
+          }
+        ]
+      },
+      { "ns": 0, "title": "Maps of Eurth", "missing": true }
+    ]
+  }
+}

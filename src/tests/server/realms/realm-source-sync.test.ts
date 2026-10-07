@@ -59,6 +59,7 @@ function syncDb(over: Record<string, unknown> = {}) {
   const db: any = {
     realm: {
       findUnique: jest.fn().mockResolvedValue({ id: "eurth-id", slug: "eurth", name: "Eurth", ownerId: "clerk_founder" }),
+      update: jest.fn().mockResolvedValue({}),
     },
     realmSourceSync: {
       findUnique: jest.fn().mockResolvedValue(configRow),
@@ -150,6 +151,36 @@ describe("realms.sourceSync permissions: site admins and the realm's founder onl
     const { create, update } = db.realmSourceSync.upsert.mock.calls[0][0];
     expect(create).toMatchObject({ realmId: "eurth-id", repo: preset.repo, presetId: "eurth-map", enabled: false });
     expect(Object.keys(update.continentMap)).toHaveLength(115);
+  });
+
+  it("fills the realm's wiki settings from the preset when the realm has none, and only then", async () => {
+    const db = syncDb();
+    db.realm.findUnique.mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: "clerk_founder",
+      settings: { maxNationsPerUser: 2 },
+    });
+    const result = await caller(db, admin).loadPreset({ slug: "eurth", presetId: "eurth-map" });
+    expect(result).toMatchObject({ wikiFilled: true });
+    expect(db.realm.update).toHaveBeenCalledWith({
+      where: { id: "eurth-id" },
+      data: { settings: { maxNationsPerUser: 2, wiki: preset.wiki } },
+    });
+
+    db.realm.update.mockClear();
+    db.realm.findUnique.mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: "clerk_founder",
+      settings: { wiki: { ...preset.wiki, keyword: "Eurthian" } },
+    });
+    expect(await caller(db, admin).loadPreset({ slug: "eurth", presetId: "eurth-map" })).toMatchObject({
+      wikiFilled: false,
+    });
+    expect(db.realm.update).not.toHaveBeenCalled();
   });
 
   it("refuses a manual match to a nation of another realm", async () => {

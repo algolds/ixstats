@@ -23,6 +23,11 @@ import {
   type RealmSyncOptions,
 } from "~/lib/realms/sources/config";
 import { fetchRepoFile } from "~/lib/realms/sources/fetch";
+import {
+  realmWikiSettings,
+  withRealmWikiSettings,
+  type RealmWikiSettings,
+} from "~/lib/realms/realm-wiki-settings";
 import { planSourceSync, type SyncPlan } from "~/lib/realms/sources/plan";
 import { dueSyncs } from "~/lib/realms/sources/schedule";
 import { sourcePreset } from "~/lib/realms/sources/presets";
@@ -222,7 +227,20 @@ export async function loadSourcePreset(db: PrismaClient, actor: RealmActor | nul
     update: { ...data, ...(preset.intervalHours !== undefined && { intervalHours: preset.intervalHours }) },
     create: { realmId, ...data, intervalHours: preset.intervalHours ?? null, enabled: false },
   });
-  return { success: true, presetId: preset.id };
+  const wikiFilled = preset.wiki ? await fillRealmWikiFromPreset(db, realmId, preset.wiki) : false;
+  return { success: true, presetId: preset.id, wikiFilled };
+}
+
+/** The preset's wiki values become the realm's wiki settings, unless the realm already has its own. */
+async function fillRealmWikiFromPreset(
+  db: Pick<PrismaClient, "realm">,
+  realmId: string,
+  wiki: RealmWikiSettings
+): Promise<boolean> {
+  const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
+  if (!realm || realmWikiSettings(realm.settings)) return false;
+  await db.realm.update({ where: { id: realmId }, data: { settings: withRealmWikiSettings(realm.settings, wiki) } });
+  return true;
 }
 
 export interface ReadDeps {

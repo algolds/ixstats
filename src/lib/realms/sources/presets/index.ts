@@ -1,10 +1,12 @@
 /**
  * Source presets: a known source's values (repository, ref, adapter, file paths, field names, attribution,
- * options, continent table), loaded into a realm's sync config with one action ("Load preset" in the settings,
- * `--preset <id>` in the script). Loading copies the values; from then on the realm's config is the only source
- * of truth, and editing a preset never changes a realm that already loaded it.
+ * options, continent table, and the realm's wiki: the world's sister wiki, root category, keyword, roster and
+ * portal), loaded into a realm's sync config with one action ("Load preset" in the settings, `--preset <id>` in
+ * the script). Loading copies the values; from then on the realm's config is the only source of truth, and editing
+ * a preset never changes a realm that already loaded it.
  */
 import { z } from "zod";
+import { realmWikiSettingsSchema } from "~/lib/realms/realm-wiki-settings";
 import {
   continentMapSchema,
   intervalHoursSchema,
@@ -27,6 +29,8 @@ export const sourcePresetSchema = z.object({
   settings: z.record(z.string(), z.unknown()),
   options: realmSyncOptionsSchema.optional(),
   continentMap: continentMapSchema.optional(),
+  /** The realm's wiki (`Realm.settings.wiki`), filled when the realm has none yet. */
+  wiki: realmWikiSettingsSchema.optional(),
 });
 export type SourcePreset = z.infer<typeof sourcePresetSchema>;
 

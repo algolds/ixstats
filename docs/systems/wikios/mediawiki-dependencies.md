@@ -164,6 +164,13 @@ client-safe; the render-engine and refresh calls are in the server-only `templat
 Read from their own wikis by design. A sister wiki's title is never tried on IxWiki and an IxWiki title is never tried on a
 sister wiki (`getPageImages` used to try iiwiki for any title).
 
+**One list of hosts.** The sister wikis are entries of `src/lib/wiki-os/wiki-hosts.ts` (`SISTER_WIKI_HOSTS`: id, name,
+https origin, api path, upload CDN hosts, whether WikiOS reads its pages, and the proxies' per-wiki behaviour). The api.php
+and media proxies (`_config.ts` `WIKIS`, `_media-response.ts`'s host allowlist), `WIKI_SOURCES` and `WikiSource`
+(`config.ts`), account proof (`PROOF_SOURCES`) and realm wiki settings are built from it, so adding a MediaWiki host is one
+entry there and a host that is not an entry is never fetched. Callers name a wiki by its id, never by a URL. The file builds
+addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getMediaWikiApiUrl`.
+
 | Call site | What it reads |
 | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/bridge/http-reader.ts` | wikitext, search, category members, page images and page authors of iiwiki and AltHistory; Commons category members and file URLs. |
@@ -174,6 +181,8 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 | `src/server/api/routers/lore-cards/wiki.ts` | iiwiki's opensearch fallback and recent changes. |
 | `src/lib/wiki-os/adapters/ixstates/eligible-country-service.ts` | iiwiki and AltHistory country lists and pages. |
 | `src/lib/flags/flag-resolver.server.ts` | iiwiki flag `imageinfo`. |
+| `src/lib/realms/sources/wiki-discovery-client.ts` (the reader), `src/lib/realms/sources/iiwiki-discovery.ts`, `src/lib/realms/sources/wiki-file-info.ts`, `src/server/modules/realms/realms.wiki.ts` (callers: `routers/realms/wiki.ts`) | a realm's world on its own sister wiki (`Realm.settings.wiki`): the roster's `categorymembers`, nation pages' `revisions`, map categories' files, the portal's `images` and `pageimages`, and `imageinfo` with `url\|size\|mime\|sha1\|extmetadata`. Started by a site admin or the realm's founder (world discovery, "Use this map", Re-check, the infobox hints export). One request at a time, a pause between, a cap per step, Retry-After honoured; a 403 or a challenge page ends that discovery with what it gathered and **never** marks the host offline for the rest of the app (`markExternalHostOffline` is not used). |
+| `src/lib/realms/sources/wiki-file-original.ts` | the original bytes of one file of a realm's wiki (its `imageinfo` URL), straight from the wiki (never wsrv.nl, which may re-encode), through `_media-response.ts` `fetchFromAllowedHost` with every hop narrowed to that wiki's own hosts; image only, 40 MB, the SHA-1 imageinfo gave, 64 megapixels read from the header. Media-bytes. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
 
 ### Files that only build or recognise an IxWiki address (no request to MediaWiki)

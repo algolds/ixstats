@@ -1,0 +1,10 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "categorymembers": [
+      { "pageid": 1204, "ns": 0, "title": "Rostervania" },
+      { "pageid": 1205, "ns": 14, "title": "Category:Maps of Eurth" },
+      { "pageid": 1206, "ns": 10, "title": "Template:Eurth country" }
+    ]
+  }
+}

@@ -74,6 +74,14 @@
     "applyContinents": true,
     "missingNations": "flag"
   },
+  "wiki": {
+    "source": "iiwiki",
+    "rootCategory": "Category:Eurth",
+    "keyword": "Eurth",
+    "rosterCategory": "Category:Countries (Eurth)",
+    "portalTitle": "Portal:Eurth",
+    "mapCategories": []
+  },
   "continentMap": {
     "Abantium": "Europa",
     "Adaptus": "Europa",
