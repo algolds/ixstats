@@ -54,3 +54,5 @@ You join a board automatically on your first visit if you own a nation in the re
 - Founding a new realm isn't open to players yet; realms are created by admins.
 - A realm can show its own in-world date (set by its founder), but it still runs on the shared IxTime clock.
 - Founders and officers with the appearance power set the realm's links, rules and in-world date in **Manage**.
+- Founders and officers with the map power edit their realm's map: borders, which region belongs to which nation, and labels for its oceans, seas, regions and continents (**World editor** on the realm's map). In **Manage** → **Map** they set the map's credit line, a base image and the planet's size.
+- On a realm's map, nations nobody has claimed yet are drawn hatched; the legend at the bottom left lists every nation by colour.
