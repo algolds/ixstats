@@ -53,6 +53,10 @@ Read it end to end once before starting. Every command here is meant to be run b
   - privacy and notification delivery (2026-10-06, additive, SL-4/SL-5): `ConversationParticipant.requestStatus`
     (default `none`) and a `(userId, requestStatus)` index; `UserPreferences.emailEnabledAt`, `emailDigest` (default
     false) and `lastEmailDigestAt`; a `PushSubscription` table. `db push` applies them with no data-loss prompt
+  - map geometry sync triggers (2026-10-07): `prisma/migrations/20261007_map_geometry_sync_triggers.sql` (re)creates
+    the PostGIS triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and `points_of_interest`,
+    and backfills rows still missing it. **`db push` cannot create triggers**: run the file by hand after the deploy
+    script (step 5b). Idempotent; on prod, where the archived setup script installed them, it only backfills
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -225,6 +229,19 @@ pm2 logs ixstats-ws --lines 30 --nostream       # expect "[WS] ✓ ThinkPages We
 ```
 
 `ixstats-ixtwitter` already points at `scripts/run-ixtwitter-sync.ts`. `server.mjs` no longer schedules any jobs.
+
+### 5b. Map geometry triggers (after the deploy script)
+
+The spatial SQL (country geo profiles, terrain lookups, containment checks) reads `geom_postgis`, which only these
+triggers keep in step with the GeoJSON columns. Install or refresh them and backfill, then check nothing is missing:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261007_map_geometry_sync_triggers.sql
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT count(*) FROM map_layers WHERE geom_postgis IS NULL;"
+#   expect: 0, or only rows whose GeoJSON is invalid (the run printed a WARNING naming each)
+```
 
 ## 6. Smoke checks (browser)
 

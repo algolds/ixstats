@@ -2,7 +2,8 @@
 
 /**
  * Bootstraps an EMPTY local development database from the repository alone:
- * enables PostGIS, pushes the Prisma schema, and seeds the reference catalogs.
+ * enables PostGIS, pushes the Prisma schema, installs the PostGIS geometry sync
+ * triggers `db push` cannot create, and seeds the reference catalogs.
  *
  *   docker compose -f docker-compose.dev.yml up -d
  *   bun run db:bootstrap
@@ -17,6 +18,10 @@ import { spawnSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "postgres", "db"]);
+
+/** The map tables' geometry → geom_postgis triggers (and their backfill); idempotent. */
+export const MAP_GEOMETRY_TRIGGERS_SQL =
+  "prisma/migrations/20261007_map_geometry_sync_triggers.sql";
 
 export interface BootstrapGuardInput {
   nodeEnv: string | undefined;
@@ -94,6 +99,16 @@ async function main(): Promise<void> {
   }
 
   run("bunx", ["prisma", "db", "push", "--skip-generate"]);
+  console.log("🗺️  Installing the map geometry sync triggers...");
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    MAP_GEOMETRY_TRIGGERS_SQL,
+  ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 
   console.log(`
