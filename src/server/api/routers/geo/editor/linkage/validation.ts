@@ -1,23 +1,36 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { clearLayerCache } from "../../core";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { findAllById } from "~/lib/system/find-all-by-id";
+import { AUTO_LINK_MIN_CONFIDENCE } from "~/lib/maps/nation-name-matching";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
+import { linkRegionMatches, realmMatchSuggestions } from "./matching";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 
 export const geoEditorLinkageValidationRouter = createTRPCRouter({
   /** Validate country ↔ map feature linkage. Returns inconsistencies. */
-  validateLinkage: adminProcedure
+  validateLinkage: protectedProcedure
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
       // The edited realm's political map layers and countries (ruling E-o)
-      const realmId = await viewerRealmId(ctx, input?.realm);
+      const realmId = await editableMapRealmId(ctx, input?.realm);
+      // Realm staff see owners by forum name only; account ids stay with site admins
+      const ownerLabel = (owner: { clerkUserId: string; forumUsername: string | null } | null) =>
+        owner?.forumUsername ??
+        (isSiteAdmin(ctx.user as RealmActor) ? owner?.clerkUserId : null) ??
+        null;
       const mapLayers = await ctx.db.mapLayer.findMany({
         where: { layerType: "political", isActive: true, realmId },
+        take: 50_000,
         select: {
           id: true,
           featureId: true,
@@ -32,6 +45,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
       // Get all countries with their owners
       const countries = await ctx.db.country.findMany({
         where: { isDemo: false, realmId },
+        take: 50_000,
         select: {
           id: true,
           name: true,
@@ -144,7 +158,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
             featureName: ml.displayName ?? ml.featureId,
             areaSqKm: ml.areaSqKm,
             hasOwner: c.owner !== null,
-            ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
+            ownerName: ownerLabel(c.owner),
           };
         }),
         unlinked: unlinked.map((c) => ({
@@ -154,94 +168,73 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
           hasGeometry: !!c.geometry,
           hasLandArea: !!(c.landArea && c.landArea > 0),
           hasOwner: c.owner !== null,
-          ownerName: c.owner?.forumUsername ?? c.owner?.clerkUserId ?? null,
+          ownerName: ownerLabel(c.owner),
         })),
       };
     }),
 
-  /** Repair linkage: sync geometry/area from MapLayer to Country, or auto-match by name. */
-  repairLinkage: adminProcedure
+  /**
+   * Auto-Match's review list: each unlinked region of the edited realm with the nation its name points to and
+   * how sure the match is (exact, normalised, state form, or a similar spelling).
+   */
+  suggestLinkageMatches: protectedProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const realmId = await editableMapRealmId(ctx, input?.realm);
+      return realmMatchSuggestions(ctx.db, realmId);
+    }),
+
+  /**
+   * Repair linkage: sync geometry/area from MapLayer to Country, auto-match by name (the confident matches
+   * only), link the matches picked from the review list, or link one feature by hand.
+   */
+  repairLinkage: rateLimitedMutationProcedure
     .input(
       z.object({
-        action: z.enum(["sync_all", "auto_match", "link_by_name"]),
+        action: z.enum(["sync_all", "auto_match", "apply_matches", "link_by_name"]),
         /** For link_by_name: map featureId to countryId */
         featureId: z.string().optional(),
         countryId: z.string().optional(),
+        /** For apply_matches: the reviewed region → nation pairs (several regions may share a nation). */
+        matches: z
+          .array(z.object({ featureId: z.string().min(1), countryId: z.string().min(1) }))
+          .max(5000)
+          .optional(),
         ...realmScopeInput.shape,
       })
     )
     .mutation(async ({ ctx, input }) => {
       let repaired = 0;
-      // auto_match and link_by_name work inside the edited realm; sync_all re-syncs every linked country
-      const realmId = await viewerRealmId(ctx, input.realm);
+      // Every action works inside the edited realm (site admins anywhere; founders and map officers in theirs)
+      const realmId = await editableMapRealmId(ctx, input.realm);
 
       if (input.action === "sync_all") {
-        // Re-sync geometry + area from MapLayer → Country for all linked countries
-        const linkedLayers = await ctx.db.mapLayer.findMany({
-          where: { layerType: "political", countryId: { not: null }, isActive: true },
-          select: {
-            countryId: true,
-            geometry: true,
-            centroid: true,
-            boundingBox: true,
-            areaSqKm: true,
-          },
-        });
-
-        for (const ml of linkedLayers) {
-          if (!ml.countryId) continue;
-          await syncCountryGeometryFromMapLayer(ctx.db, ml.countryId);
+        // Re-sync geometry + area from MapLayer → Country for the realm's linked countries, once per nation
+        const linkedLayers = await findAllById((page) =>
+          ctx.db.mapLayer.findMany({
+            where: { layerType: "political", countryId: { not: null }, isActive: true, realmId },
+            select: { id: true, countryId: true },
+            ...page,
+          })
+        );
+        for (const countryId of new Set(linkedLayers.map((ml) => ml.countryId))) {
+          if (!countryId) continue;
+          await syncCountryGeometryFromMapLayer(ctx.db, countryId);
           repaired++;
         }
       }
 
       if (input.action === "auto_match") {
-        // Try to match unlinked countries to unlinked features by name
-        const unlinkedLayers = await ctx.db.mapLayer.findMany({
-          where: { layerType: "political", countryId: null, isActive: true, realmId },
-          select: {
-            id: true,
-            featureId: true,
-            displayName: true,
-            geometry: true,
-            centroid: true,
-            boundingBox: true,
-            areaSqKm: true,
-          },
-        });
-        const unlinkedCountries = await ctx.db.country.findMany({
-          where: {
-            isDemo: false,
-            realmId,
-            id: {
-              notIn: (
-                await ctx.db.mapLayer.findMany({
-                  where: { layerType: "political", countryId: { not: null } },
-                  select: { countryId: true },
-                })
-              )
-                .map((m) => m.countryId!)
-                .filter(Boolean),
-            },
-          },
-          select: { id: true, name: true },
-        });
+        const { suggestions } = await realmMatchSuggestions(ctx.db, realmId);
+        repaired = await linkRegionMatches(
+          ctx.db,
+          realmId,
+          suggestions.filter((s) => s.confidence >= AUTO_LINK_MIN_CONFIDENCE)
+        );
+      }
 
-        const countryNameMap = new Map(unlinkedCountries.map((c) => [c.name.toLowerCase(), c]));
-
-        for (const layer of unlinkedLayers) {
-          const name = (layer.displayName || featureIdToDisplayName(layer.featureId)).toLowerCase();
-          const match = countryNameMap.get(name);
-          if (match) {
-            await ctx.db.mapLayer.update({
-              where: { id: layer.id },
-              data: { countryId: match.id },
-            });
-            await syncCountryGeometryFromMapLayer(ctx.db, match.id);
-            repaired++;
-            countryNameMap.delete(name);
-          }
-        }
+      if (input.action === "apply_matches") {
+        repaired = await linkRegionMatches(ctx.db, realmId, input.matches ?? []);
       }
 
       if (input.action === "link_by_name" && input.featureId && input.countryId) {

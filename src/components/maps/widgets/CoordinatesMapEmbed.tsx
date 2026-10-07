@@ -19,7 +19,8 @@ interface CoordinatesMapEmbedProps {
   options?: string; // height=400|width=100%|interactive=yes|title=My Title
   /**
    * The realm slug whose map the coordinates are on. Omitted: IxWorld inside an IxWiki article (its lore is
-   * IxWorld's, whoever reads it), else the viewer's realm.
+   * IxWorld's, whoever reads it); inside another wiki's article, the realm whose lore index holds it; else the
+   * viewer's realm.
    */
   realm?: string;
 }
@@ -33,12 +34,24 @@ export function buildPopupTitleNode(title: string): HTMLDivElement {
   return titleEl;
 }
 
-/** The realm whose map an embed's coordinates are on: the given slug, IxWorld in an IxWiki article, else the viewer's. */
+/**
+ * The realm whose map an embed's coordinates are on: the given slug, IxWorld in an IxWiki article, else undefined:
+ * another wiki's article asks `realms.map.realmForWikiArticle` (`needsWikiRealmLookup`), anything else shows the
+ * viewer's realm.
+ */
 export function embedRealm(
   realm: string | undefined,
   wiki: { isWikiPage: boolean; articleSource: string }
 ): string | undefined {
   return realm ?? (wiki.isWikiPage && wiki.articleSource === "ixwiki" ? IXWORLD_SLUG : undefined);
+}
+
+/** A non-IxWiki article without an explicit realm: its realm is looked up from its wiki and title. */
+export function needsWikiRealmLookup(
+  realm: string | undefined,
+  wiki: { isWikiPage: boolean; articleSource: string }
+): boolean {
+  return !realm && wiki.isWikiPage && wiki.articleSource !== "ixwiki";
 }
 
 export function CoordinatesMapEmbed({
@@ -48,7 +61,9 @@ export function CoordinatesMapEmbed({
   options = "",
   realm: realmProp,
 }: CoordinatesMapEmbedProps) {
-  const realm = embedRealm(realmProp, useWikiContext());
+  const wiki = useWikiContext();
+  const explicitRealm = embedRealm(realmProp, wiki);
+  const lookupRealm = needsWikiRealmLookup(explicitRealm, wiki);
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -78,9 +93,21 @@ export function CoordinatesMapEmbed({
   const interactiveVal = parsedOptions.interactive !== "no";
   const titleVal = parsedOptions.title || "";
 
+  // Another wiki's article: the realm whose lore index holds it (else the viewer's realm)
+  const { data: wikiRealm, isFetched: wikiRealmFetched } =
+    api.realms.map.realmForWikiArticle.useQuery(
+      { wikiSource: wiki.articleSource, title: wiki.articleTitle ?? "" },
+      { enabled: lookupRealm && isInViewport, staleTime: 60 * 60_000 }
+    );
+  const realm = explicitRealm ?? wikiRealm?.slug ?? undefined;
+
   const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
     { layers: ["political"], realm },
-    { enabled: isInViewport, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
+    {
+      enabled: isInViewport && (!lookupRealm || wikiRealmFetched),
+      staleTime: 30 * 60_000,
+      gcTime: 2 * 60 * 60_000,
+    }
   );
 
   const worldPolitical = (worldMap as any)?.political as FeatureCollection | undefined;

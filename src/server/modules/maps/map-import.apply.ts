@@ -15,7 +15,7 @@ import { checkNationName, type NationSuggestion } from "~/lib/maps/import/nation
 import type { EngineResult, MapImportApply } from "~/lib/maps/import/options";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { isPostGISAvailable } from "~/lib/maps/geo-validation";
-import { planetAreaScale, polygonalAreaSqKm } from "~/lib/maps/planet";
+import { polygonalAreaSqKm, scaleAreaToRadius } from "~/lib/maps/planet";
 import { deactivateOtherFeatures, writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
 import { captureMapSnapshot, packSnapshot } from "~/lib/maps/realm-map-snapshot";
 import type { MapGeoreference } from "~/lib/maps/realm-map-settings";
@@ -80,7 +80,7 @@ async function measureAreas(
            FROM jsonb_to_recordset($1::jsonb) AS t(key text, g jsonb)`,
         JSON.stringify(features.map((f) => ({ key: f.key, g: f.geometry })))
       );
-      const scale = planetAreaScale(radiusKm);
+      const scale = scaleAreaToRadius(1, radiusKm);
       for (const row of rows) if (typeof row.area === "number") areas.set(row.key, row.area * scale);
       if (areas.size === features.length) return areas;
     } catch (error) {
@@ -213,7 +213,7 @@ export async function planMapImport(
             rmseDegrees: georef.rmseDegrees,
           }
         : null,
-      areaScale: planetAreaScale(settings.radiusKm),
+      areaScale: scaleAreaToRadius(1, settings.radiusKm),
     },
   };
 }

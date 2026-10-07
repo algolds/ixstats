@@ -36,6 +36,12 @@ Read it end to end once before starting. Every command here is meant to be run b
     `Alliance.externalSourceKey`. Alliance names become unique **per realm** instead of globally. Apply
     `prisma/migrations/20261007120000_realm_source_sync/migration.sql` by hand in step 4 first: `db push` would
     otherwise stop on the new `(realmId, name)` unique constraint's warning
+  - realm maps (2026-10-07, additive): `MapLabel.countryId` becomes nullable, with new `MapLabel.realmId` and
+    `MapLabel.fontStyle` (default `normal`) and a `(realmId, status)` index, so a realm labels oceans and regions;
+    a nullable `MapEditRequest.realmId` with a `(realmId, status)` index
+    (`prisma/migrations/20261007_realm_map_labels.sql` has the same changes). `db push` applies them with no
+    data-loss prompt. The realm map settings (planet radius, default view, base image, attribution) are the `map`
+    key of `Realm.settings` and need no column
   - a nullable `IntelligenceAlert.readAt` (2026-10-05, additive): when the owner read a threshold alert (MC-17)
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,

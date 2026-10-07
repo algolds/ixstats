@@ -5,13 +5,12 @@
 import type { PrismaClient } from "@prisma/client";
 import type { NationCandidate } from "~/lib/maps/import/nation-names";
 import {
-  readRealmMapSettings,
+  parseRealmMapSettings,
   withRealmMapSettings,
   type MapGeoreference,
   type RealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
-import type { RealmActor } from "~/server/modules/realms/realms.access";
-import { canImportRealmMap } from "./map-import.access";
+import { canImportRealmMap, type RealmActor } from "~/server/modules/realms/realms.access";
 
 export type MapImportErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT";
 
@@ -45,17 +44,39 @@ export async function findImportRealm(
   return realm;
 }
 
-/** The realm, when `actor` may import its map; NOT_FOUND or FORBIDDEN otherwise. */
+/**
+ * The realm, when `actor` may import its map (canImportRealmMap: site admins, the founder, officers with the
+ * `map` power; IxWorld is admin-only) and it is not archived; NOT_FOUND, FORBIDDEN or BAD_REQUEST otherwise.
+ */
 export async function loadImportRealm(
   db: Pick<PrismaClient, "realm">,
   actor: RealmActor,
   realmId: string
 ): Promise<ImportRealm> {
-  const realm = await findImportRealm(db, realmId);
-  if (!canImportRealmMap(actor, realm)) {
-    throw new MapImportError("FORBIDDEN", "Only site admins and the realm's founder import its map");
+  const realm = await db.realm.findUnique({
+    where: { id: realmId },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      ownerId: true,
+      settings: true,
+      status: true,
+      officers: { select: { userId: true, powers: true } },
+    },
+  });
+  if (!realm) throw new MapImportError("NOT_FOUND", "Realm not found");
+  if (!canImportRealmMap(actor, realm, realm.officers ?? [])) {
+    throw new MapImportError(
+      "FORBIDDEN",
+      "Only site admins, the realm's founder and officers with the Map power import its map"
+    );
   }
-  return realm;
+  if (realm.status === "archived") {
+    throw new MapImportError("BAD_REQUEST", "This realm is archived and its map can't be changed");
+  }
+  const { status: _status, officers: _officers, ...rest } = realm;
+  return rest;
 }
 
 export interface RealmCountry {
@@ -87,7 +108,7 @@ export async function realmNations(
   };
 }
 
-export const realmMapSettings = (realm: ImportRealm): RealmMapSettings => readRealmMapSettings(realm.settings);
+export const realmMapSettings = (realm: ImportRealm): RealmMapSettings => parseRealmMapSettings(realm.settings);
 
 /** Save a georeference as the realm's (Realm.settings.map); other settings keys are kept. */
 export async function saveRealmGeoreference(

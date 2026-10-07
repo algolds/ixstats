@@ -6,7 +6,7 @@ import type { Polygon } from "geojson";
 import { applyMapImportPlan, planMapImport } from "~/server/modules/maps/map-import.apply";
 import { listMapImports, rollbackMapImport } from "~/server/modules/maps/map-import.history";
 import { writePipelineLayers } from "~/server/modules/maps/map-import.pipeline";
-import { canImportRealmMap } from "~/server/modules/maps/map-import.access";
+import { canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { findImportRealm } from "~/server/modules/maps/map-import.realm";
 import { polygonalAreaSqKm } from "~/lib/maps/planet";
 import { mapImportApplySchema, type EngineResult } from "~/lib/maps/import/options";
@@ -202,13 +202,21 @@ describe("importPipelineResult on the shared writer", () => {
   });
 });
 
-describe("canImportRealmMap", () => {
-  it("allows site admins and the founder, nobody else", () => {
-    const realm = { ownerId: "founder_1" };
-    expect(canImportRealmMap(admin, realm)).toBe(true);
-    expect(canImportRealmMap(founder, realm)).toBe(true);
-    expect(canImportRealmMap(stranger, realm)).toBe(false);
+describe("canImportRealmMap (who reaches the import)", () => {
+  it("allows site admins, the founder and officers with the Map power; IxWorld is admin-only", () => {
+    const realm = { id: "r1", ownerId: "founder_1" };
+    expect(canImportRealmMap(admin, realm, [])).toBe(true);
+    expect(canImportRealmMap(founder, realm, [])).toBe(true);
+    expect(canImportRealmMap(stranger, realm, [])).toBe(false);
     expect(canImportRealmMap(stranger, realm, [{ userId: "someone", powers: ["board", "claims"] }])).toBe(false);
-    expect(canImportRealmMap(null, realm)).toBe(false);
+    expect(canImportRealmMap(stranger, realm, [{ userId: "someone", powers: ["map"] }])).toBe(true);
+    expect(canImportRealmMap(founder, { id: "default", ownerId: "founder_1" }, [])).toBe(false);
+    expect(canImportRealmMap(null, realm, [])).toBe(false);
+  });
+
+  it("refuses an archived realm's map", async () => {
+    const db = setup();
+    db.realm.rows[0].status = "archived";
+    await expect(listMapImports(db as never, admin, "r1")).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

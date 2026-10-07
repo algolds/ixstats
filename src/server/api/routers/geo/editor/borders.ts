@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -8,15 +8,29 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { assertFound, neighbourFeatures } from "../core/shared";
+import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
+import { scaleAreaToRadius } from "~/lib/maps/planet";
+
+type PolygonalGeometry = import("geojson").Polygon | import("geojson").MultiPolygon;
+
+/** The border editor's area measure on the realm's planet (`Realm.settings.map.radiusKm`, else Earth's). */
+async function realmAreaOf(
+  db: Parameters<typeof realmRadiusKmById>[0],
+  realmId: string,
+  flatArea: (geometry: PolygonalGeometry) => number
+) {
+  const radiusKm = await realmRadiusKmById(db, realmId);
+  return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
+}
 
 export const geoEditorBordersRouter = createTRPCRouter({
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
-  startBorderEditSession: adminProcedure
+  startBorderEditSession: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
@@ -91,7 +105,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Save border edit draft (auto-save editor state). */
-  saveBorderEditDraft: adminProcedure
+  saveBorderEditDraft: rateLimitedMutationProcedure
     .input(
       z.object({
         sessionId: z.string(),
@@ -99,19 +113,23 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.mapEditorSession.update({
-        where: { id: input.sessionId },
+      // Only the session's own editor saves into it (session ids are `<userId>_<featureId>`).
+      const { count } = await ctx.db.mapEditorSession.updateMany({
+        where: { id: input.sessionId, userId: ctx.auth?.userId ?? "system" },
         data: {
           sessionData: input.sessionData as any,
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
+      if (count === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Editor session not found" });
+      }
       return { ok: true };
     }),
 
-  /** Submit a border edit for review (or apply directly for admins). */
-  submitBorderEdit: adminProcedure
+  /** Submit a border edit for review, or apply it directly (site admins, the founder, map officers). */
+  submitBorderEdit: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -132,7 +150,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
@@ -142,9 +160,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
       );
 
       if (input.applyDirectly) {
-        // Admin direct apply — update geometry immediately
-        const { calculateArea, calculateCentroid, calculateBBox } =
-          await import("~/lib/maps/border-editor");
+        // Direct apply (the realm's map editors) — update geometry immediately
+        const {
+          calculateArea: flatArea,
+          calculateCentroid,
+          calculateBBox,
+        } = await import("~/lib/maps/border-editor");
+        const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
         const geom = input.proposedGeometry as unknown as
           import("geojson").Polygon | import("geojson").MultiPolygon;
         await validateGeometryValid(ctx.db, input.proposedGeometry);
@@ -249,6 +271,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const editRequest = await ctx.db.mapEditRequest.create({
         data: {
           countryId: feature.countryId ?? "unknown",
+          realmId,
           userId: ctx.auth!.userId ?? "system",
           editType: "border_adjust",
           editSubtype: input.editSubtype,
@@ -266,7 +289,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Split a country into two new features. */
-  splitCountry: adminProcedure
+  splitCountry: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -277,7 +300,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
@@ -285,8 +308,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         `Feature not found: ${input.featureId}`
       );
 
-      const { splitPolygon, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        splitPolygon,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
       const geometry = feature.geometry as unknown as
         import("geojson").Polygon | import("geojson").MultiPolygon;
       const result = splitPolygon(geometry, input.splitLine);
@@ -371,7 +399,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Merge two or more countries into one. */
-  mergeCountries: adminProcedure
+  mergeCountries: rateLimitedMutationProcedure
     .input(
       z.object({
         featureIds: z.array(z.string()).min(2),
@@ -380,7 +408,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const features = await ctx.db.mapLayer.findMany({
         where: {
           layerType: "political",
@@ -399,8 +427,13 @@ export const geoEditorBordersRouter = createTRPCRouter({
         });
       }
 
-      const { mergeGeometries, calculateArea, calculateCentroid, calculateBBox } =
-        await import("~/lib/maps/border-editor");
+      const {
+        mergeGeometries,
+        calculateArea: flatArea,
+        calculateCentroid,
+        calculateBBox,
+      } = await import("~/lib/maps/border-editor");
+      const calculateArea = await realmAreaOf(ctx.db, realmId, flatArea);
 
       // Merge all geometries
       type GeoType = import("geojson").Polygon | import("geojson").MultiPolygon;
@@ -467,7 +500,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
     }),
 
   /** Clean up the current editor geometry (dedupe vertices, remove spikes). */
-  repairBorderGeometry: adminProcedure
+  repairBorderGeometry: rateLimitedMutationProcedure
     .input(z.object({ geometry: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ input }) => {
       const { sanitizeRegionShape } = await import("~/lib/maps/border-editor");

@@ -1,6 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import {
+  createTRPCRouter,
+  adminProcedure,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
@@ -12,9 +18,9 @@ import { assertFound, requirePoliticalLayer } from "../../core/shared";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
-   * Admin: Link a map feature to a Country record.
+   * Link a map feature to a Country record (site admins, or the realm's founder and map officers).
    */
-  assignCountryGeometry: adminProcedure
+  assignCountryGeometry: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -24,7 +30,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // Verify feature exists (featureId is unique only within a realm)
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
       // Verify the country exists and belongs to the feature's realm
@@ -60,15 +66,15 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Unlink a map feature from a Country record.
+   * Unlink a map feature from a Country record (site admins, the realm's founder and map officers).
    */
-  unlinkCountryGeometry: adminProcedure
+  unlinkCountryGeometry: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
       const mapLayer = await requirePoliticalLayer(
         ctx.db,
         input.featureId,
-        await viewerRealmId(ctx, input.realm)
+        await editableMapRealmId(ctx, input.realm)
       );
 
       const previousCountryId = mapLayer.countryId;
@@ -99,9 +105,9 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Get all details for a specific map feature.
+   * All details of a map feature (site admins, the realm's founder and map officers).
    */
-  getFeatureDetails: adminProcedure
+  getFeatureDetails: protectedProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
       const feature = assertFound(
@@ -110,7 +116,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
             layerType: "political",
             featureId: input.featureId,
             isActive: true,
-            realmId: await viewerRealmId(ctx, input.realm),
+            realmId: await editableMapRealmId(ctx, input.realm),
           },
           include: {
             country: {
@@ -139,9 +145,10 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     }),
 
   /**
-   * Admin: Update properties (displayName, countryId, properties, wikiPageTitle) of a map feature.
+   * Update properties (displayName, countryId, properties, wikiPageTitle) of a map feature. Renaming the
+   * linked nation (and its wiki page) is for site admins only: realm map editors rename the region.
    */
-  updateFeatureProperties: adminProcedure
+  updateFeatureProperties: rateLimitedMutationProcedure
     .input(
       z.object({
         featureId: z.string(),
@@ -153,7 +160,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const renamesNation = !!ctx.user && isSiteAdmin(ctx.user as RealmActor);
       const feature = assertFound(
         await ctx.db.mapLayer.findFirst({
           where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
@@ -182,7 +190,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
 
       // Update Country name and slug if displayName is changed and country is linked
-      if (targetCountryId && input.displayName !== undefined) {
+      if (renamesNation && targetCountryId && input.displayName !== undefined) {
         const slug = input.displayName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
@@ -197,7 +205,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       }
 
       // Update wikiPageTitle on Country if linked
-      if (targetCountryId && input.wikiPageTitle !== undefined) {
+      if (renamesNation && targetCountryId && input.wikiPageTitle !== undefined) {
         await ctx.db.country.update({
           where: { id: targetCountryId },
           data: { wikiPageTitle: input.wikiPageTitle },

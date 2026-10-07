@@ -148,6 +148,31 @@ server**.
   The proxy allows about 100 requests a minute and one crawl of Eurth uses about 110, so **wait a minute
   between the dry run and `--apply`** (an HTTP 429 means just that; nothing is written, retry).
 
+### 3.0 Set Eurth's wiki (once)
+
+The realm's wiki settings (`Realm.settings.wiki`) say where Eurth's world lives on IIWiki. The lore import and
+discovery (§6.0) read them. Set them in `/admin/realms` → **Wiki** tab → realm `Eurth` (or, once Eurth has a founder,
+`/r/eurth/manage` → **Wiki**): **Preset** → `Eurth community map` → **Fill from preset**, check the values, then
+**Save wiki settings**. Loading the `eurth-map` preset in **Source sync** (§4.1) fills them too when Eurth has none.
+
+| Field | Eurth's value |
+|---|---|
+| Wiki | `IIWiki` (`iiwiki`) |
+| Root category | `Category:Eurth` |
+| Keyword | `Eurth` |
+| Nation roster category | `Category:Countries (Eurth)` |
+| Portal page | `Portal:Eurth` |
+| Map categories | empty (`Category:Maps of Eurth`, `Category:Eurth maps`, `Category:Maps (Eurth)` and the root's map subcategories are always searched) |
+
+Titles are stored the way MediaWiki spells them (`category:countries_(Eurth)` is saved as `Category:Countries (Eurth)`).
+A retired roster is refused. Only wikis listed in `src/lib/wiki-os/wiki-hosts.ts` can be chosen: a new MediaWiki host is
+a new entry there (a code change reviewed like any other), never a URL typed into a setting.
+
+With the settings saved, `bun scripts/realms/import-realm-lore.ts --realm eurth` is the whole command: the settings fill
+`--source`, `--category`, `--keyword` and `--nation-roster`, and the output gains a line
+`using Category:Eurth, keyword Eurth, roster Category:Countries (Eurth)` after the `realm` line. A flag given on the
+command line still wins; with `--source` naming a different wiki, the settings are ignored and every value must be given.
+
 ### 3.1 Dry run
 
 ```bash
@@ -329,6 +354,25 @@ schedule on, so a broken source is retried at the next interval, not every hour.
 - A nation only on the map (no IIWiki page, so no `wikiSource`) can be claimed but always goes to **manual review**:
   there is no page creator to prove.
 
+### 4.6 Give the map officer the Map power and set up the map
+
+Eurth's map editing no longer needs a site admin. The founder appoints the community's mapper as an officer:
+`/r/eurth/manage` → **Officers** → tick **Map** ("Edit the realm's map, borders and labels, and import maps").
+The founder and Map officers edit **Eurth's map only**; IxWorld's map stays with site admins.
+
+Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
+
+1. **Credit line:** leave it empty to show the source sync's attribution, or type Eurth's own (for example the
+   community map's credit). It shows at the bottom left of `/maps?realm=eurth`.
+2. **Base map image** (optional): upload a full-globe equirectangular image (2:1, cropped to 85°N to 85°S, up to
+   5MB) or paste an `https://` address whose host allows cross-origin use. It is drawn under the borders.
+3. **Planet radius:** leave empty (Earth's 6371 km) unless Eurth's lore gives its planet a size. After changing
+   it, press **Recompute areas**. Leave **Also set nations' land area from the map** unticked unless the founder
+   wants every nation's stated land area replaced by its measured map area.
+4. **Default view and labels:** open `/maps?realm=eurth` → **World editor** → the map icon in the editor's header:
+   **Save current view as default** (where the map opens), and **Realm labels…** for Eurth's oceans, seas,
+   regions and continents.
+
 ---
 
 ## 5. Onboard Eurth players
@@ -410,6 +454,36 @@ directory (`/countries?realm=eurth`), and the map (`/maps?realm=eurth`).
 Eurth's borders come from the source sync (step 4). This step is for a realm whose map exists only as an image.
 Without either, `/maps?realm=<realm>` is empty, which is **expected**.
 
+### 6.0 Find the map on the realm's wiki (discovery)
+
+With the realm's wiki set (§3.0), `/admin/realms` → **Wiki** → **Discover from wiki** (or Manage → **Wiki**) reads, step
+by step with progress:
+
+1. **The roster:** the nations of the roster category (the lore import's rule: one subcategory or page per nation, at
+   most 400), with entries that look like a category of pages flagged. Without a roster category, nations are found by
+   their infobox in a capped crawl (300 pages, depth 2).
+2. **Each nation's infobox**, 50 pages a request: counts of nations with and without an infobox (and missing pages),
+   and per nation its flag, coat of arms, capital, the capital's `{{coord}}` (or `latd`/`longd`) coordinates and its
+   locator map files (`image_map`, `locator_map`, `map`, …).
+3. **Candidate world maps:** files of the map categories, the portal's images and its page image, best first (large,
+   about twice as wide as tall, PNG or SVG; flags, arms, locators and banners left out), each with a thumbnail, size,
+   licence, author and credit line.
+
+Reads go one at a time with a pause between, capped per step, and honour Retry-After. IIWiki answers only the production
+server: elsewhere the first step reports **The wiki stopped answering part-way** (HTTP 403) and shows what it read;
+**Continue** picks up from there. A refused discovery does not affect the rest of the site's IIWiki reads.
+
+**Use this map** fetches the file's original straight from the wiki (not through the image proxy's re-encoding service),
+only from the wiki's own hosts, at most 40 MB, checks its SHA-1 against the wiki's and reads its size from the header
+(at most 64 megapixels), then stores the choice in `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`,
+`attribution`, `file` with dimensions, size, type, licence and who chose it when). The **Chosen world map** card shows
+it; **Re-check** compares the wiki's current SHA-1 with the stored one and reads **Unchanged**, **Changed** (choose it
+again to use the new version) or **No longer on the wiki**. Choosing a map imports nothing yet: the map import starts
+from this choice once it is wired in. Until then, download the chosen file from its file page and continue below.
+
+`realms.wiki.infoboxHints` (site admins and the founder) returns each roster nation's capital coordinates and a locator
+map thumbnail, for the colour to nation step; a complete answer is cached for an hour.
+
 > **Warning — don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode,
 > and Quick Update always writes **IxWorld's** map — an Eurth SVG applied there replaces that layer of
 > IxWorld's map. Only **Full Pipeline** has a **Target realm** setting.
@@ -446,9 +520,14 @@ Without either, `/maps?realm=<realm>` is empty, which is **expected**.
      region doesn't have never clears the country's own (its baseline land area stays). No region of
      that name → the claim still goes through, unlinked. The public map can take up to 15 minutes (its political-layer cache) to
      show the new owner.
+   - A nation drawn as **several regions** (islands, exclaves) takes every unlinked region that names it
+     (feature id, display name, or its source key), and its outline is their union.
    - **Nations that already existed** when you imported, and regions whose names don't match a title
-     exactly, are linked in the world editor: `/admin/maps/editor?realm=eurth` → **Links** tab →
-     **Auto-Match by Name**, then link any leftovers by hand.
+     exactly, are linked in the world editor (site admins, the founder and Map officers):
+     `/maps?realm=eurth` → **World editor** → **Links** tab → **Auto-Match**. It matches names ignoring case,
+     accents, hyphens, underscores and state forms ("Republic of"), and also checks the roster's nation pages
+     and the nations' source keys; it lists each match with its confidence, confident ones ticked, similar
+     spellings unticked. **Link selected**, then link any leftovers by hand.
 
 Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 (`(realmId, layerType, featureId)`), so nothing you draw here touches IxWorld's map or vice versa.
@@ -482,7 +561,9 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Need to… | Do this |
 |---|---|
 | Check for unresolved owner collisions or map-layer clashes/duplicates | Re-run `bun scripts/realms/backfill-foundation.ts` (no `--apply`) |
-| Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (claimed and synced nation pages stay nations) |
+| Set where Eurth's world lives on IIWiki | `/admin/realms` → Wiki (or `/r/eurth/manage` → Wiki) → Fill from preset → Save (§3.0) |
+| Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (claimed and synced nation pages stay nations); `--realm eurth --apply` is enough once §3.0 is done |
+| Find and choose Eurth's world map on IIWiki, or check it has changed | `/admin/realms` → Wiki → Discover from wiki → Use this map; Re-check on the Chosen world map card (§6.0) |
 | Sync Eurth's nations, borders and alliances from the community map | `/admin/realms` → Source sync → Dry run → Apply, or `bun scripts/realms/sync-realm-source.ts --realm eurth [--apply]` |
 | Correct a continent, exclude or match a map entry, pin a field | `/admin/realms` → Source sync (or `/r/eurth/manage` → Source sync): continent table, the diff's buttons |
 | See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
@@ -490,4 +571,6 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
 | Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (4.1); later, the founder uses `/r/eurth/manage` → Hand over |
 | Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (4.2) |
+| Let a player edit Eurth's map | `/r/eurth/manage` → Officers → tick **Map** (4.6) |
+| Set Eurth's credit line, base image or planet radius; recompute areas | `/r/eurth/manage` → **Map** (4.6) |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |

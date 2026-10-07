@@ -68,13 +68,115 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
   from the header before any pixels are decoded; province imports cap their content at the pipeline's 25 MB, and the
   upload routes refuse an oversize body by its Content-Length before parsing it.
 - **Planet figures.** The radius and degree → km factors (6371 km, 111.32 / 110.574 km per degree) live in
-  `src/lib/maps/planet.ts`; its helpers take an optional radius for a realm with its own planet size.
+  `src/lib/maps/planet.ts`; its helpers take an optional radius, and a realm's own radius (`Realm.settings.map.radiusKm`)
+  scales its areas and distances (see [Realm maps](#realm-maps)).
 - **IxWorld only.** The 56.1842° prime meridian, the home view and the R shortcut follow `mapHomeCenter(ixWorld)`;
   other realms' maps centre on the origin with no meridian line. The style editor's preview sources
   (`/api/maps/editor-source/[layer]`) are admin-only and serve one realm (`?realm=`, IxWorld by default).
 
 - **MapLibre web worker.** MapLibre 6 finds its worker next to its own module, which is a bundled chunk under Turbopack, so `src/lib/maps/load-maplibre.ts` points it at `/maplibre/maplibre-gl-worker.mjs`. `scripts/setup/copy-maplibre-worker.mjs` copies that file and `maplibre-gl-shared.mjs` into the gitignored `public/maplibre/`; it runs from `postinstall`, `build`, `build:fast` and `start-development.sh`. If the files are missing, every map stalls with "Worker failed to load".
 - **Direct dependencies.** Map code imports individual `@turf/*` packages (`@turf/intersect`, `@turf/union`, …). They are declared in `package.json` next to `@turf/turf`; an import of a package that is only a transitive dependency resolves under a hoisted `node_modules` but fails ("Module not found") under isolated installs.
+
+## Realm Maps
+
+Every realm has its own map (`MapLayer.realmId`). What follows is what a realm's own staff can do with it and how the
+viewer shows it.
+
+### Who edits a realm's map
+
+- **The Map power.** A realm officer can hold `map` ("Edit the realm's map, borders and labels, and import maps").
+  `canEditRealmMap` / `canImportRealmMap` (`src/server/modules/realms/realms.access.ts`) allow site admins, the
+  founder and map officers; IxWorld stays with site admins, and an archived realm is read-only (`realmMapAccess`).
+- **World editor procedures are realm-scoped.** Border edit, split and merge (`geo/editor/borders.ts`), region links
+  (`linkage/assignment.ts`), linkage validation and Auto-Match (`linkage/validation.ts`) and realm labels
+  (`geo/features/realm-labels.ts`) call `editableMapRealmId` (`src/server/api/trpc/realm-scope.ts`): the edited
+  realm (`?realm=`, else the caller's) once the caller may edit it, else `FORBIDDEN`. A map officer renames a region
+  but not the nation linked to it; creating a nation from a shape and rebuilding adjacency stay admin-only. A draft
+  session is saved only by its own editor. Border edits filed for review record their realm
+  (`MapEditRequest.realmId`).
+- **Entry points.** Founders and map officers get **World editor** on `/maps?realm=<slug>`; site admins also have
+  `/admin/maps/editor?realm=<slug>`. The map import (Pipeline wizard) is still opened by site admins.
+
+### Map settings (`Realm.settings.map`)
+
+`src/lib/maps/realm-map-settings.ts` is the zod schema; every key is optional and read on its own (a malformed value
+is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of `map`) through
+`realms.map.updateSettings`, and read by the viewer through `realms.map.display`.
+
+| Key | Meaning |
+| :-- | :------ |
+| `radiusKm` | The planet radius, 500 to 50,000 km (default 6371). Scales areas and distances measured on the realm's map |
+| `defaultView` | `{ center: [lng, lat], zoom }` where the map opens, saved from the world editor's realm menu (**Save current view as default**); also the R home view |
+| `baseImage` | A base raster image: an `https://` address or an image uploaded through `/api/upload/image` (`isMapBaseImageUrl`) |
+| `attribution` | The credit line (at most 300 characters). Empty: the realm's source sync attribution, if any |
+| `projection`, `bounds`, `controlPoints` | Georeferencing of imported maps (the map import work); passed through untouched |
+
+### Planet radius
+
+- `src/lib/maps/planet.ts` scales Earth's figures: `scaleAreaToRadius` (`area × (r / 6371)²`), `scaleDistanceToRadius`
+  and `haversineKm(a, b, r)`. Stored `MapLayer.areaSqKm` values are areas on the realm's planet.
+- Applied to: areas the border editor stores on edit, split and merge; the editor's live area readout
+  (`useRealmPlanetRadius`); the geo profile's perimeter, coastline, shared borders and spans (`geo-profile.ts`); the
+  measure tool; the viewer's scale bar.
+- **Recompute areas** (`realms.map.recomputeAreas`, Manage → Map) measures every active polygon feature of the realm
+  again: PostGIS `ST_Area(geom_postgis::geography) × (r / 6371)²`, or the flat helpers at radius r without PostGIS.
+  Run it after changing the radius or after an import (imports measure on Earth's radius). Nations' stated land area
+  is untouched unless the founder (or a site admin) ticks **Also set nations' land area from the map**, which sets
+  each linked nation's land area to the sum of its regions.
+- Not scaled yet: river `lengthKm` properties written by imports, and the economy's own figures.
+
+### Viewer
+
+`MapContainer` reads `realms.map.display` (`useRealmMapDisplay`) for the realm it shows:
+
+- **Default view:** opened once per realm (`useRealmDefaultView`) unless the URL asks for a place (`?lat=&lng=`,
+  `?zoom=`, a country).
+- **Base image:** a MapLibre `image` source pinned at `[-180, 85]`, `[180, 85]`, `[180, -85]`, `[-180, -85]` and a
+  raster layer under the first data layer (`src/components/maps/core/utils/realm-map-layers.ts`), credited in the
+  attribution control. **Limits:** a full-globe equirectangular image, 2:1, cropped to 85°N to 85°S (the Web Mercator
+  limit). MapLibre stretches it linearly between the corners in the map's projection, so features drift toward the
+  mid-latitudes on Mercator; a Web Mercator image registers exactly. The whole image is one GPU texture: keep it at
+  most 8192 × 4096 (many GPUs cap textures at 8192 or 16384 px). Uploads are at most 5MB; an `https://` host must
+  send CORS headers or WebGL refuses the image.
+- **Credit line:** `RealmMapAttribution` at the bottom left (the realm's own, else its source sync's).
+- **Political legend** (`RealmMapLegend`, realm maps only): each nation once, by its colour, collapsed until opened.
+- **Unclaimed nations** (no owner, `display.unclaimedCountryIds`): a diagonal hatch (`fill-pattern`, layer
+  `realm-unclaimed-hatch`) over their fill, under the borders, with a legend entry; same meaning as the source sync's
+  **Unclaimed** badge. IxWorld's unowned countries keep their usual fill.
+- **Scale bar and coordinates** (`RealmMapScale`): the scale bar measures the middle of the view with `haversineKm` at
+  the realm's radius (MapLibre's own assumes Earth), and the cursor's coordinates show beside it. Both are written to
+  the DOM once per animation frame, never through React state.
+
+### Realm labels
+
+`MapLabel.countryId` is optional and `MapLabel.realmId` names the realm of a **realm label**: an ocean, sea, region or
+continent (`src/lib/maps/realm-labels.ts`) that the realm's map editors place anywhere, with size, weight, colour,
+letter spacing and zoom range (`geoFeatures.listRealmLabels` / `createRealmLabel` / `updateRealmLabel` /
+`deleteRealmLabel`). The world editor's realm menu (**Realm labels…**) manages them; `geoFeatures.getAllMapLabels`
+returns them with the nations' labels (`realmLabel: true`), and the viewer shows them at their own zoom range, globe
+view included (nations' labels start at zoom 4). `fontStyle` (`italic` for oceans and seas) is stored, but the
+self-hosted glyphs have no oblique face, so labels are drawn upright.
+
+### Auto-Match and nations with several regions
+
+- **Auto-Match** (world editor → Links → the wand) reads the edited realm's unlinked regions and nations in id-ordered
+  pages (`findAllById`, never the 1,000-row guard) and matches names after normalising case, accents, hyphens,
+  underscores, punctuation, a leading "The" and state forms ("Republic of", "Kingdom of"…), against each nation's
+  name, wiki page title, `externalSourceKey` and the roster's nation page titles (`src/lib/maps/nation-name-matching.ts`,
+  `linkage/matching.ts`). Confidence: same name 100%, same normalised name 95%, same without the state form 85%,
+  similar spelling (edit similarity ≥ 0.8) scaled below 80%. `geoEditor.suggestLinkageMatches` is the review list;
+  `repairLinkage` `apply_matches` links the picked pairs and `auto_match` alone links matches of at least 85%.
+- **Several regions per nation:** Auto-Match and a claimed nation page (`takeMapRegion`) link every region that names
+  the nation (feature id, display name or source key), and `syncCountryGeometryFromMapLayer` reads all the nation's
+  active regions in its own realm and stores their union (`@turf/union`), summed area, joint bounding box and
+  area-weighted centre.
+
+### Not done yet
+
+- Per-realm overrides of the fixed elevation and climate colour keys (`getZoneByColor`, `resolveClimateFromColor`):
+  every realm still reads IxWorld's keys.
+- A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
+  realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
 
 ## Viewer Performance
 
@@ -154,7 +256,7 @@ The overlay architecture (`src/lib/maps/overlay-registry.ts`) enables declarativ
 
 Geography serves as the foundational data source across the platform:
 - **Spatial Boundaries**: `MapLayer` plus the cached geometry columns on `Country` (`src/lib/country-geo/sync.ts`) and `BorderHistory` are authoritative for geometry, area, centroid and bounding box. `Territory` is used only by the demo seed. Adjacency is computed live with PostGIS `ST_Touches`.
-- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel` foreign-key linked to `Country.id`.
+- **Settlements**: `City`, `Subdivision`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel` foreign-key linked to `Country.id` (a realm label has no country and names its realm instead).
 - **Admin lock**: `editableByOwner: false` on a subdivision, city, peak, named river or lake stops its country's owner from changing or deleting it (`geoFeatures` update/delete, `countryGeo` upserts of an existing row and `populateFromWiki`, topology cascades; an owner's batch simplify skips it). Admins can always edit (`server/shared/map-feature-lock.ts`). No UI sets the flag yet.
 - **Attribute Rollups**: `hybrid` (default), `top-down`, and `bottom-up` rollup modes aggregate population and GDP only. Bottom-up overwrites the national figures, and with no approved subdivisions it falls back to the sum of city populations.
 
@@ -169,7 +271,7 @@ Geography serves as the foundational data source across the platform:
 - `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features
 - `countryGeo.ts` – Geo bundles and compliance, `sampleTerrainAt`, settlement upserts (`upsertCity`, `upsertSubdivision`), rollup mode, and wiki population
 - `transport/` – Friction-based transit corridor generation, route CRUD, travel-time and national mobility queries
-- `realms/` (`realms`) – Realm lookup, nation claims and the claims review queue (see [Realms](../architecture/realms-framework-spec.md))
+- `realms/` (`realms`) – Realm lookup, nation claims and the claims review queue (see [Realms](../architecture/realms-framework-spec.md)); `realms.map` serves a realm's map display and settings and recomputes its areas ([Realm maps](#realm-maps))
 
 ---
 

@@ -11,6 +11,10 @@ import {
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/maps/border-editor";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  formatPlanetArea,
+  useRealmPlanetRadius,
+} from "~/components/maps/core/hooks/useRealmMapDisplay";
 
 interface BorderEditorPanelProps {
   featureId: string | null;
@@ -40,6 +44,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
   brushTargetId,
   onBrushTargetChange,
 }: BorderEditorPanelProps) {
+  const radiusKm = useRealmPlanetRadius();
   const vertices = geometry ? getVertices(geometry) : [];
   const ringCount = geometry
     ? geometry.type === "Polygon"
@@ -80,10 +85,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
           </div>
           {areaKm2 !== null && (
             <div className="text-label-secondary text-footnote">
-              Area:{" "}
-              {areaKm2 > 1000000
-                ? `${(areaKm2 / 1000000).toFixed(2)}M km²`
-                : `${Math.round(areaKm2).toLocaleString()} km²`}
+              Area: {formatPlanetArea(areaKm2, radiusKm)}
             </div>
           )}
         </div>

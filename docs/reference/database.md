@@ -50,7 +50,7 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 ```
 
 ## Migration & Tooling
-- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->31<!-- END_DOCS:COUNT:migrations --> migrations)
+- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->32<!-- END_DOCS:COUNT:migrations --> migrations)
 - `bun run db:migrate:force` – Development migrations (protected by default)
 - `bun run db:migrate:deploy` – Production-safe migration execution
 - `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)

@@ -6,6 +6,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { EmptyState } from "~/components/ui/empty-state";
 import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
 import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/SourceSyncPanel";
+import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
@@ -13,6 +14,7 @@ import { FactbookSection } from "../../_components/manage/FactbookSection";
 import { HandOverSection } from "../../_components/manage/HandOverSection";
 import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
 import { LinksSection } from "../../_components/manage/LinksSection";
+import { MapSection } from "../../_components/manage/MapSection";
 import { ManageSection } from "../../_components/manage/ManageSection";
 import { OfficersSection } from "../../_components/manage/OfficersSection";
 import { PollsSection } from "../../_components/manage/PollsSection";
@@ -49,7 +51,9 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
+    can("map") && { id: "map", label: "Map" },
     manage.isFounder && { id: "source-sync", label: "Source sync" },
+    manage.isFounder && { id: "wiki", label: "Wiki" },
     manage.canHandOver && { id: "handover", label: "Hand over" },
   ].filter(Boolean) as Array<{ id: string; label: string }>;
 
@@ -98,6 +102,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         {can("diplomacy") && <EmbassiesSection slug={slug} manage={manage} />}
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}
         {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
+        {can("map") && !manage.archived && <MapSection slug={slug} />}
         {manage.isFounder && (
           <ManageSection
             id="source-sync"
@@ -105,6 +110,15 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
             description="Keep the realm's nations, figures, borders and alliances in step with an outside source, such as a community map. Only the founder (and site staff) manage it."
           >
             <SourceSyncPanel slug={slug} />
+          </ManageSection>
+        )}
+        {manage.isFounder && (
+          <ManageSection
+            id="wiki"
+            title="Wiki"
+            description="The wiki the realm's lore lives on, discovery of its nations and world maps, and the map chosen from it. Only the founder (and site staff) manage it."
+          >
+            <RealmWikiPanel slug={slug} />
           </ManageSection>
         )}
         {manage.canHandOver && <HandOverSection slug={slug} manage={manage} />}

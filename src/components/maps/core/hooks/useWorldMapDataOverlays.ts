@@ -75,7 +75,9 @@ export function useWorldMapDataOverlays({
       const currentZoom = map.getZoom();
 
       const features = rawFeatures.filter((f) => {
-        if (currentZoom >= 4.0) {
+        // A realm's own labels (oceans, continents) set their own zoom range, globe view included
+        const realmLabel = f.properties?.realmLabel === true;
+        if (currentZoom >= 4.0 || realmLabel) {
           const minZ = f.properties?.minZoom ?? 4;
           const maxZ = f.properties?.maxZoom ?? 18;
           if (currentZoom >= minZ && currentZoom <= maxZ) return true;

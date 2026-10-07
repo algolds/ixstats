@@ -21,6 +21,10 @@ import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover
 import type { BorderEditorState, BorderEditorActions } from "~/hooks/useBorderEditor";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Slider } from "~/components/ui/slider";
+import {
+  formatPlanetArea,
+  useRealmPlanetRadius,
+} from "~/components/maps/core/hooks/useRealmMapDisplay";
 
 interface BorderEditorToolOptionsProps {
   countryName?: string;
@@ -86,6 +90,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
   onExit,
 }: BorderEditorToolOptionsProps) {
   const notify = useNotify();
+  const radiusKm = useRealmPlanetRadius();
   return (
     <FacetMaterial
       layer="chrome"
@@ -163,9 +168,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         {borderState.areaKm2 !== null && (
           <span className="text-label-secondary text-caption select-none">
-            {borderState.areaKm2 > 1000000
-              ? `${(borderState.areaKm2 / 1000000).toFixed(2)}M km²`
-              : `${Math.round(borderState.areaKm2).toLocaleString()} km²`}
+            {formatPlanetArea(borderState.areaKm2, radiusKm)}
           </span>
         )}
 

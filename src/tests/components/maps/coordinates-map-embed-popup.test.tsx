@@ -1,4 +1,8 @@
-import { buildPopupTitleNode, embedRealm } from "~/components/maps/widgets/CoordinatesMapEmbed";
+import {
+  buildPopupTitleNode,
+  embedRealm,
+  needsWikiRealmLookup,
+} from "~/components/maps/widgets/CoordinatesMapEmbed";
 
 describe("buildPopupTitleNode", () => {
   it("renders a wiki-supplied title as text, never as HTML", () => {
@@ -28,5 +32,20 @@ describe("embedRealm", () => {
 
   it("an explicit realm wins", () => {
     expect(embedRealm("eurth", { isWikiPage: true, articleSource: "ixwiki" })).toBe("eurth");
+  });
+
+  it("looks up the realm of another wiki's article, and of nothing else", () => {
+    expect(needsWikiRealmLookup(undefined, { isWikiPage: true, articleSource: "iiwiki" })).toBe(
+      true
+    );
+    expect(needsWikiRealmLookup(undefined, { isWikiPage: true, articleSource: "ixwiki" })).toBe(
+      false
+    );
+    expect(needsWikiRealmLookup(undefined, { isWikiPage: false, articleSource: "iiwiki" })).toBe(
+      false
+    );
+    expect(needsWikiRealmLookup("eurth", { isWikiPage: true, articleSource: "iiwiki" })).toBe(
+      false
+    );
   });
 });

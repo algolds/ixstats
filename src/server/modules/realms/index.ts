@@ -14,6 +14,8 @@ export { BuilderRealmError, listBuilderRealms, resolveBuilderRealm } from "./rea
 export { listMyNations } from "./realms.my-nations";
 export { DEFAULT_REALM_ID, resolveViewerRealmId } from "./realms.context";
 export {
+  canEditRealmMap,
+  canImportRealmMap,
   canModerateRealm,
   hasRealmPower,
   realmPowers,
@@ -40,3 +42,4 @@ export {
   type NationAssignedEvent,
 } from "./realms.claims";
 export { getRealmHub } from "./realms.hub";
+export { realmMapAccess, type RealmMapAccess } from "./realms.map-access";

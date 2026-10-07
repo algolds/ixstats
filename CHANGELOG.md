@@ -14,6 +14,59 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 📚 Realm Wikis & IIWiki World Discovery (2026-10-07)
+
+- **Realm wiki settings:** each realm names the sister wiki its lore lives on and how its world is found there
+  (`Realm.settings.wiki`: wiki, root category, keyword, nation roster category, portal page, extra map categories;
+  `src/lib/realms/realm-wiki-settings.ts`). Site admins edit them in `/admin/realms` → **Wiki**, the founder in
+  Manage → **Wiki**. The `eurth-map` preset carries Eurth's values and fills them when the realm has none.
+  `bun scripts/realms/import-realm-lore.ts --realm eurth` alone now works once they are set; flags still win.
+- **World discovery** (`src/lib/realms/sources/iiwiki-discovery.ts`): the roster (lore import's roster rule), each
+  nation's infobox hints (flag, coat of arms, capital and its `{{coord}}`, locator map files), and candidate world
+  maps (the world's map categories, the portal's images and page image) ranked for a flat political map, each with
+  its original URL, size, type, SHA-1, licence and author. Run step by step from the panel with progress; reads are
+  sequential, paced and capped, Retry-After is honoured, and a 403 returns what was gathered with `blocked` instead of
+  an error (Continue resumes). A refused discovery no longer takes the wiki offline for the whole app.
+- **Use this map / Re-check:** the original file is fetched straight from the wiki (never through wsrv.nl, which may
+  re-encode colours), only from that wiki's hosts with every redirect re-checked, at most 40 MB, its SHA-1 checked
+  against the wiki's and its dimensions read from the header (64 megapixels at most) before anything decodes it. The
+  choice is stored as `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`, `attribution`, `file`) for the map
+  import; Re-check compares the wiki's current SHA-1 (unchanged, changed or missing).
+- **Infobox hints export:** `realms.wiki.infoboxHints` gives each roster nation its capital coordinates and a proxied
+  locator map thumbnail, for the map import's colour to nation step.
+- **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
+  `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
+  built from it, so adding a host is one entry and no setting can name a URL.
+### 🗺️ Realm-Owned Maps & Map Display (2026-10-07)
+
+- **Map officer power:** a realm officer can hold **Map** ("Edit the realm's map, borders and labels, and import
+  maps"). The world editor's border edit, split, merge, region links, linkage validation, Auto-Match and labels now
+  check the edited realm (`editableMapRealmId`): site admins anywhere, the founder and map officers in their own realm
+  only, IxWorld admin-only, archived realms read-only. Founders and map officers get **World editor** on
+  `/maps?realm=<slug>`. A map officer renames a region, not the nation linked to it.
+- **Realm map settings** (`Realm.settings.map`, `src/lib/maps/realm-map-settings.ts`; Manage → **Map**): planet
+  radius (default 6371 km), base map image (upload or `https://`), credit line, default view (saved from the world
+  editor's new realm menu).
+- **Planet radius:** scales the areas the border editor stores, the editor's area readout, the geo profile's
+  perimeter, coastline, borders and spans, the measure tool and the scale bar. **Recompute areas** re-measures the
+  realm's map (PostGIS geography area × (r/6371)²) and leaves nations' stated land area alone unless the founder ticks
+  **Also set nations' land area from the map**.
+- **Viewer:** the realm's default view, its base image under the borders, its credit line (else the source sync's), a
+  collapsible political legend, unclaimed nations hatched with a legend entry, a scale bar measured on the realm's
+  radius and the cursor's coordinates.
+- **Realm labels:** a realm's map editors label its oceans, seas, regions and continents (size, weight, colour,
+  zoom range); they show from globe view.
+- **Auto-Match:** realm-scoped, read in pages past the 1,000-row guard, and fuzzy (case, accents, hyphens,
+  underscores, "The", state forms like "Republic of", plus the roster's nation pages and the nations' source keys),
+  with a review list of suggested matches and their confidence before anything uncertain is linked.
+- **Nations with several regions:** Auto-Match and claimed nation pages link every region that names the nation,
+  and the nation's outline is the union of its regions (summed area, joint bounding box).
+- **Coordinates embeds** in another wiki's article show the map of the realm whose lore index holds the article.
+- **Fix:** a world editor draft session can only be saved by its own editor.
+- **Schema (additive):** `MapLabel.countryId` optional, `MapLabel.realmId` and `MapLabel.fontStyle`,
+  `MapEditRequest.realmId` (`prisma/migrations/20261007_realm_map_labels.sql`; `db push` applies them, see the
+  deploy runbook).
+
 ### 🗺️ Realm Source Sync, Unclaimed Nations & Realm Alliances (2026-10-07)
 
 - **Source sync:** a realm's nations, figures, borders and alliances follow an outside source, a public GitHub

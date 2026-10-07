@@ -6,6 +6,7 @@
  * Any new caller that needs non-image content must get its own narrowly scoped route.
  */
 import { NextResponse } from "next/server";
+import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 import { MEDIA_CORS_HEADERS, WIKIS } from "./_config";
 
 /** Largest image body the proxies will relay (Content-Length checked first, then while streaming). */
@@ -17,12 +18,10 @@ const IMAGE_CACHE_CONTROL = "public, max-age=86400, stale-while-revalidate=60480
 const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 const MAX_REDIRECTS = 3;
 
-/** CDN hosts the wikis' `imageinfo` lookups resolve to, in addition to the wikis' own hosts. */
-const MEDIA_CDN_HOSTS = ["upload.wikimedia.org", "static.wikia.nocookie.net"] as const;
-
+/** The configured wikis' hosts, plus the CDN hosts their `imageinfo` lookups resolve to (`wiki-hosts.ts`). */
 const ALLOWED_MEDIA_HOSTS: ReadonlySet<string> = new Set([
   ...Object.values(WIKIS).map((wiki) => new URL(wiki.siteUrl).hostname),
-  ...MEDIA_CDN_HOSTS,
+  ...Object.values(SISTER_WIKI_HOSTS).flatMap((host) => host.mediaHosts),
 ]);
 
 /** True when `rawUrl` is an http(s) URL whose host belongs to a configured wiki or its media CDN. */
@@ -50,16 +49,18 @@ export function encodePath(segments: string[]): string {
 
 /**
  * GET `url`, following redirects by hand so every hop is re-checked against the host allowlist.
- * Returns null when a hop leaves the allowlist or the redirect chain is too long.
+ * Returns null when a hop leaves the allowlist or the redirect chain is too long. `narrower` restricts every hop
+ * further (a caller that may fetch from one wiki only); it never widens the allowlist.
  */
 export async function fetchFromAllowedHost(
   url: string,
   headers: HeadersInit,
-  timeoutMs: number
+  timeoutMs: number,
+  narrower?: (url: URL) => boolean
 ): Promise<Response | null> {
   let target = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    if (!isAllowedMediaUrl(target)) return null;
+    if (!isAllowedMediaUrl(target) || (narrower && !narrower(new URL(target)))) return null;
     const res = await fetch(target, {
       method: "GET",
       headers,

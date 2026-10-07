@@ -1,6 +1,7 @@
 /**
  * Map import upload: the PNG/JPEG/SVG/GeoJSON file of a realm map import, as multipart form data (field `file`),
- * for the realm in `?realm=<realm id>`. Site admins and the realm's founder. The body is refused by its
+ * for the realm in `?realm=<realm id>`. Site admins, the realm's founder and its officers with the Map power
+ * (canImportRealmMap; IxWorld is admin-only, an archived realm is read-only). The body is refused by its
  * Content-Length before it is read when it is over the limit (MAX_MAP_IMPORT_BYTES), and again by the file's own
  * size. Returns the upload id the wizard passes to geoEditor.mapImport.start, with the file's kind and size.
  */
@@ -11,6 +12,7 @@ import { rateLimiter } from "~/lib/cache";
 import { MAX_MAP_IMPORT_BYTES } from "~/lib/maps/import/options";
 import { oversizedUploadResponse } from "~/server/shared/request-size";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { acceptMapUpload } from "~/server/modules/maps/map-import.upload";
 import { MapImportError } from "~/server/modules/maps/map-import.realm";
 
@@ -27,11 +29,21 @@ export async function POST(request: NextRequest) {
 
   const realmId = request.nextUrl.searchParams.get("realm") ?? "";
   const realm = realmId
-    ? await db.realm.findUnique({ where: { id: realmId }, select: { id: true, ownerId: true } })
+    ? await db.realm.findUnique({
+        where: { id: realmId },
+        select: { id: true, ownerId: true, status: true, officers: { select: { userId: true, powers: true } } },
+      })
     : null;
   if (!realm) return NextResponse.json({ error: "Unknown realm" }, { status: 404 });
-  if (realm.ownerId !== userId) {
-    const admin = await requireAdminSession("Only site admins and the realm's founder import its map");
+  if (realm.status === "archived") {
+    return NextResponse.json({ error: "This realm is archived and its map can't be changed" }, { status: 400 });
+  }
+  // Founders and map officers are recognised by their Clerk id; site admins by their session role.
+  const member = { id: "", clerkUserId: userId, role: null };
+  if (!canImportRealmMap(member, realm, realm.officers ?? [])) {
+    const admin = await requireAdminSession(
+      "Only site admins, the realm's founder and officers with the Map power import its map"
+    );
     if (admin instanceof NextResponse) return admin;
   }
 

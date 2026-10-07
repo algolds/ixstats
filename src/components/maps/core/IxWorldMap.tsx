@@ -15,6 +15,7 @@ import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
+import { useRealmMapLayers } from "./hooks/useRealmMapLayers";
 import { Card } from "~/components/ui/card";
 
 // MapLibre types imported dynamically since the module requires browser APIs
@@ -121,6 +122,12 @@ interface IxWorldMapProps {
   showOceanLabels?: boolean;
   /** The map shows IxWorld: its prime meridian line and home view centre (56.1842°); else the origin. */
   ixWorld?: boolean;
+  /** The realm's base image (full-globe equirectangular), drawn under the political layer. */
+  baseImageUrl?: string | null;
+  /** The realm's credit line, also attached to its base image. */
+  attribution?: string | null;
+  /** The realm's unclaimed nations, hatched over their fill. */
+  unclaimedCountryIds?: readonly string[];
 }
 
 export interface IxWorldMapRef {
@@ -156,6 +163,9 @@ const IxWorldMap = memo(
       onRouteClick,
       showOceanLabels = false,
       ixWorld = false,
+      baseImageUrl,
+      attribution,
+      unclaimedCountryIds,
     },
     ref
   ) {
@@ -208,6 +218,16 @@ const IxWorldMap = memo(
       showOceanLabels,
       showPrimeMeridian: ixWorld,
       labelsVisible,
+    });
+
+    useRealmMapLayers({
+      map: mapRef.current,
+      isLoaded,
+      layers,
+      theme,
+      baseImageUrl,
+      attribution,
+      unclaimedCountryIds,
     });
 
     useWorldMapOverlayFeatures({

@@ -23,7 +23,7 @@ const OFFICER = "clerk_officer";
 const PLAYER = "clerk_player";
 const ADMIN = "clerk_admin";
 const admin = { name: "admin", level: 10 };
-const ALL_POWERS = ["appearance", "board", "diplomacy", "claims"];
+const ALL_POWERS = ["appearance", "board", "diplomacy", "claims", "map"];
 const notify = notifyRealmFounderChanged as jest.Mock;
 
 function realmRow(overrides: Record<string, unknown> = {}) {

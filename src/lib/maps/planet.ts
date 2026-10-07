@@ -77,9 +77,32 @@ export function polygonalAreaSqKm(
 }
 
 /**
- * The factor that turns an area measured on Earth (e.g. PostGIS geography) into one on a planet of `radiusKm`:
- * (radiusKm / 6371)². 1 without a radius.
+ * A distance measured on Earth's radius (PostGIS geography, haversine at 6371 km) as it is on a planet of
+ * `radiusKm`: distances scale with the radius.
  */
-export function planetAreaScale(radiusKm?: number | null): number {
-  return radiusKm && radiusKm > 0 ? scale(radiusKm) ** 2 : 1;
+export function scaleDistanceToRadius(km: number, radiusKm: number = EARTH_RADIUS_KM): number {
+  return km * scale(radiusKm);
+}
+
+/**
+ * An area measured on Earth's radius (PostGIS geography, the flat helpers above without a radius) as it is on a
+ * planet of `radiusKm`: areas scale with the square of the radius, `area × (r / 6371)²`.
+ */
+export function scaleAreaToRadius(areaSqKm: number, radiusKm: number = EARTH_RADIUS_KM): number {
+  return areaSqKm * scale(radiusKm) ** 2;
+}
+
+/** Great-circle (haversine) distance in km between two `[lng, lat]` points on a planet of `radiusKm`. */
+export function haversineKm(
+  a: readonly [number, number] | Position,
+  b: readonly [number, number] | Position,
+  radiusKm: number = EARTH_RADIUS_KM
+): number {
+  const rad = Math.PI / 180;
+  const dLat = (b[1]! - a[1]!) * rad;
+  const dLng = (b[0]! - a[0]!) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[1]! * rad) * Math.cos(b[1]! * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * radiusKm * Math.asin(Math.min(1, Math.sqrt(h)));
 }

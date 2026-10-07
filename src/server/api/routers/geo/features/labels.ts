@@ -160,11 +160,21 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
   getAllMapLabels: cachedPublicProcedure
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
-      const labels = await ctx.db.mapLabel.findMany({
-        where: { status: "approved", country: { realmId: await viewerRealmId(ctx, input?.realm) } },
-        take: 2000,
-        include: { country: { select: { name: true, slug: true } } },
-      });
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      // The realm's nations' labels, then the realm's own labels (oceans, seas, regions, continents)
+      const [nationLabels, realmLabels] = await Promise.all([
+        ctx.db.mapLabel.findMany({
+          where: { status: "approved", country: { realmId } },
+          take: 2000,
+          include: { country: { select: { name: true, slug: true } } },
+        }),
+        ctx.db.mapLabel.findMany({
+          where: { status: "approved", realmId, countryId: null },
+          take: 500,
+          include: { country: { select: { name: true, slug: true } } },
+        }),
+      ]);
+      const labels = [...realmLabels, ...nationLabels];
 
       return {
         type: "FeatureCollection" as const,
@@ -182,12 +192,14 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
               rotation: l.rotation,
               letterSpacing: l.letterSpacing,
               fontWeight: l.fontWeight,
+              fontStyle: l.fontStyle,
               opacity: l.opacity,
               minZoom: l.minZoom,
               maxZoom: l.maxZoom,
               wikiPageTitle: l.wikiPageTitle,
               countryId: l.countryId,
-              countryName: l.country.name,
+              countryName: l.country?.name ?? null,
+              realmLabel: l.countryId === null,
             },
           })),
       };
