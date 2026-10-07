@@ -101,6 +101,7 @@
     "postinstall": "node scripts/setup/copy-maplibre-worker.mjs && prisma generate",
     "prebuild": "node ./scripts/write-build-version.js",
     "preview": "bun run build && bun run start:next",
+    "realm:source-sync": "bun scripts/realms/sync-realm-source.ts",
     "redis:start": "./scripts/setup-redis.sh start",
     "redis:stats": "./scripts/setup-redis.sh stats",
     "redis:stop": "./scripts/setup-redis.sh stop",
