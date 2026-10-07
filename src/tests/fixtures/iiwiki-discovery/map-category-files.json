@@ -1,0 +1,11 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "categorymembers": [
+      { "pageid": 5001, "ns": 6, "title": "File:Eurth political map 2024.png" },
+      { "pageid": 5002, "ns": 6, "title": "File:Eurth physical.jpg" },
+      { "pageid": 5003, "ns": 6, "title": "File:Eurth locator blank.svg" },
+      { "pageid": 5004, "ns": 6, "title": "File:Eurth square sketch.png" }
+    ]
+  }
+}
