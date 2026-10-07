@@ -369,8 +369,10 @@ describe("Manage tab", () => {
       "Embassies",
       "Poll",
       "Board moderation",
+      "Source sync",
     ]);
     expect(screen.getByText("claims list")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Source sync" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Community links" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Rules" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Save rules" })).toBeTruthy();
