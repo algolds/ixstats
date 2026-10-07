@@ -174,11 +174,22 @@ export async function fetchUserPageHistory(
   return { revisions, complete: !data.continue };
 }
 
-/** Author of the page's first revision, normalised; null if the page does not exist. */
+/**
+ * Author of the page's first revision, normalised; null if the page does not exist. A redirect is followed
+ * (`redirects=1`): the creator is the target page's, never the redirect's, which anyone who moved or aliased
+ * the article may have made.
+ */
 export async function fetchPageCreator(source: ProofSource, title: string): Promise<string | null> {
   const data = await wikiQuery(
     source,
-    { prop: "revisions", titles: title, rvlimit: "1", rvdir: "newer", rvprop: "user" },
+    {
+      prop: "revisions",
+      titles: title,
+      redirects: "1",
+      rvlimit: "1",
+      rvdir: "newer",
+      rvprop: "user",
+    },
     RevisionsSchema
   );
   const creator = data.query.pages[0]?.revisions?.[0]?.user;

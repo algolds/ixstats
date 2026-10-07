@@ -204,3 +204,42 @@ export async function indexNations(
   const nations = new Set(await listRosterNations(query, method.roster));
   return { pages: [...new Set([...crawled, ...nations])].sort(), nations };
 }
+
+/**
+ * Roster nations the crawl did not find, sorted. They join the index anyway (`indexNations`), but each is worth a
+ * look before applying: a page renamed or outside the category tree, or a roster entry that is not a nation.
+ */
+export function rosterTitlesNotCrawled(crawled: string[], nations: Iterable<string>): string[] {
+  const found = new Set(crawled);
+  return [...nations].filter((title) => !found.has(title)).sort();
+}
+
+/** Words that name a kind of page rather than a nation ("Cities of Aurelia", "Flags (Eurth)", "Eurth maps"). */
+const NON_NATION_ENTRY =
+  /\b(?:categor(?:y|ies)|templates?|maps?|flags?|cities|towns|people|history|geography|politics|economy|culture|military|lists?|images|files|portals?|stubs?|redirects?|users?)\b/i;
+
+/**
+ * Roster entries that look like a subcategory of pages rather than a nation, sorted. Only a warning: a
+ * conservative word list, so a real nation that happens to match is never dropped from the index.
+ */
+export function suspectRosterEntries(nations: Iterable<string>): string[] {
+  return [...nations].filter((title) => NON_NATION_ENTRY.test(title)).sort();
+}
+
+/**
+ * The indexed titles a re-import may delete: those no longer in the index, less the protected ones (a page with
+ * a pending or approved claim, or a nation's Country, which name their page by title). Both lists sorted.
+ */
+export function prunableTitles(
+  indexed: string[],
+  pages: string[],
+  protectedTitles: Iterable<string>
+): { prune: string[]; kept: string[] } {
+  const current = new Set(pages);
+  const guarded = new Set(protectedTitles);
+  const stale = indexed.filter((title) => !current.has(title)).sort();
+  return {
+    prune: stale.filter((title) => !guarded.has(title)),
+    kept: stale.filter((title) => guarded.has(title)),
+  };
+}

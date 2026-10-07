@@ -4,6 +4,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { parseWikiSource, publicArticleUrl } from "~/lib/wiki-os/config";
 
 type Claim = RouterOutputs["realms"]["listClaims"][number];
 type Claimant = Claim["user"];
@@ -50,6 +51,20 @@ function ClaimedNation({ claim }: { claim: Claim }) {
   );
 }
 
+/** The claimed page's history on its own wiki: who created it (and so who may claim it) is its first entry. */
+function PageHistoryLink({ claim }: { claim: Claim }) {
+  if (claim.country || !claim.wikiPageTitle) return null;
+  const href = `${publicArticleUrl(claim.wikiPageTitle, parseWikiSource(claim.wikiSource))}?action=history`;
+  return (
+    <>
+      {" · "}
+      <a href={href} target="_blank" rel="noreferrer" className="text-tint hover:underline">
+        Page history
+      </a>
+    </>
+  );
+}
+
 /** Pending claims the caller may review; `realmId` narrows them to one realm (a founder's Manage tab). */
 export function ClaimsTab({ realmId }: { realmId?: string } = {}) {
   const utils = api.useUtils();
@@ -91,6 +106,7 @@ export function ClaimsTab({ realmId }: { realmId?: string } = {}) {
             <p className="text-label-secondary text-footnote">
               Claimed by <ClaimantName user={claim.user} /> on{" "}
               {new Date(claim.createdAt).toLocaleDateString()}
+              <PageHistoryLink claim={claim} />
             </p>
           </div>
           <div className="flex items-center gap-2">

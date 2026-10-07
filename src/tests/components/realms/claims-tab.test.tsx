@@ -29,6 +29,9 @@ describe("ClaimsTab", () => {
     expect(screen.getByText(/Aurelia/)).toBeInTheDocument();
     expect(screen.getByText(/new nation from IIWiki/i)).toBeInTheDocument();
     expect(screen.queryByText(/Unknown nation/)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Page history" }).getAttribute("href")).toMatch(
+      /^https:\/\/iiwiki\.com\/.*Aurelia\?action=history$/
+    );
   });
 
   it("names a country claim by its country", () => {
@@ -43,5 +46,6 @@ describe("ClaimsTab", () => {
     render(<ClaimsTab />);
     expect(screen.getByText(/Borea/)).toBeInTheDocument();
     expect(screen.queryByText(/new nation/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Page history" })).not.toBeInTheDocument();
   });
 });

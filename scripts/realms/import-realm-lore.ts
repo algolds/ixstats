@@ -1,18 +1,31 @@
 /**
  * One-time realm lore index import (rulings E-a..E-e, E-d′). Dry run by default — the dry run is the preview; --apply writes.
  *   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth \
- *     [--nation-roster "Category:Countries (Eurth)"] [--apply]
+ *     [--nation-roster "Category:Countries (Eurth)"] [--prune] [--apply]
  * Crawls the category tree (keyword subcategories only, depth 5, 5,000 pages) and records the index as RealmPage rows.
  * Nations come from --nation-roster (one subcategory per nation; its titles join the index even if the crawl missed
  * them; a retired roster is refused), else from pages whose lead uses Infobox country / former country.
+ * A re-run adds new pages and updates kinds; rows no longer in the index stay unless --prune is given, and even then
+ * a page with a pending or approved claim, or with a nation's Country, is kept.
  * Page content is never copied.
  */
-import { PrismaClient } from "@prisma/client";
-import { crawlRealmCategory, indexNations, nationMethod, type WikiQuery } from "~/lib/realms/lore-import";
+import { PrismaClient, type Prisma } from "@prisma/client";
+import {
+  crawlRealmCategory,
+  indexNations,
+  nationMethod,
+  prunableTitles,
+  rosterTitlesNotCrawled,
+  suspectRosterEntries,
+  type WikiQuery,
+} from "~/lib/realms/lore-import";
 import { isProofSource, wikiQuery, type ProofSource } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");
+const prune = process.argv.includes("--prune");
+
+type Tx = Prisma.TransactionClient;
 
 function optionalArg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -34,23 +47,48 @@ function sourceArg(): ProofSource {
   return source;
 }
 
-async function writeIndex(realmId: string, wikiSource: ProofSource, pages: string[], nations: Set<string>) {
+async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, pages: string[], nations: Set<string>) {
   const kindOf = (title: string) => (nations.has(title) ? "nation" : "lore");
-  const created = await db.realmPage.createMany({
+  const created = await tx.realmPage.createMany({
     data: pages.map((title) => ({ realmId, wikiSource, title, kind: kindOf(title) })),
     skipDuplicates: true,
   });
   // Rows from an earlier import keep their id; only their kind follows the new detection.
   const scope = { realmId, wikiSource };
-  const toNation = await db.realmPage.updateMany({
+  const toNation = await tx.realmPage.updateMany({
     where: { ...scope, title: { in: pages.filter((t) => kindOf(t) === "nation") }, kind: { not: "nation" } },
     data: { kind: "nation" },
   });
-  const toLore = await db.realmPage.updateMany({
+  const toLore = await tx.realmPage.updateMany({
     where: { ...scope, title: { in: pages.filter((t) => kindOf(t) === "lore") }, kind: { not: "lore" } },
     data: { kind: "lore" },
   });
   console.log(`written: ${created.count} new rows, ${toNation.count} → nation, ${toLore.count} → lore`);
+}
+
+/**
+ * The indexed rows of this realm and wiki that the new index no longer has, split into those --prune deletes and
+ * those it keeps: claims and countries name their page by title, so a page with a pending or approved claim, or
+ * with a Country of this realm, is never deleted.
+ */
+async function staleRows(client: Tx, realmId: string, wikiSource: ProofSource, pages: string[]) {
+  const indexed = await client.realmPage.findMany({ where: { realmId, wikiSource }, select: { title: true } });
+  const current = new Set(pages);
+  const stale = indexed.map((row) => row.title).filter((title) => !current.has(title));
+  if (stale.length === 0) return { prune: [], kept: [] };
+  const claims = await client.realmClaim.findMany({
+    where: { realmId, wikiPageTitle: { in: stale }, status: { in: ["pending", "approved"] } },
+    select: { wikiPageTitle: true },
+  });
+  const countries = await client.country.findMany({
+    where: { realmId, OR: [{ wikiPageTitle: { in: stale } }, { name: { in: stale } }] },
+    select: { name: true, wikiPageTitle: true },
+  });
+  const guarded = [
+    ...claims.map((claim) => claim.wikiPageTitle),
+    ...countries.flatMap((country) => [country.name, country.wikiPageTitle]),
+  ].filter((title): title is string => !!title);
+  return prunableTitles(stale, pages, guarded);
 }
 
 async function main() {
@@ -73,9 +111,48 @@ async function main() {
     `pages ${pages.length} (crawled ${crawl.pages.length}), nations ${nations.size}, categories ${crawl.categoriesVisited.length}, truncated ${crawl.truncated ? "yes" : "no"}`
   );
   console.log(`nation method: ${method.kind === "roster" ? `roster ${method.roster}` : "infobox heuristic"}`);
-  for (const title of [...nations].sort().slice(0, 20)) console.log(`  nation: ${title}`);
+  for (const title of [...nations].sort()) console.log(`  nation: ${title}`);
 
-  if (apply) await writeIndex(realm.id, source, pages, nations);
+  if (method.kind === "roster") {
+    const missing = rosterTitlesNotCrawled(crawl.pages, nations);
+    if (missing.length > 0) {
+      console.warn(
+        `WARNING: ${missing.length} roster titles not among the crawled pages (indexed anyway; check each is a live nation page in the category tree):`
+      );
+      for (const title of missing) console.warn(`  not crawled: ${title}`);
+    }
+    const suspects = suspectRosterEntries(nations);
+    if (suspects.length > 0) {
+      console.warn(
+        `WARNING: ${suspects.length} roster entries look like a subcategory of pages rather than a nation (kept; remove them from the roster if so):`
+      );
+      for (const title of suspects) console.warn(`  suspect: ${title}`);
+    }
+  }
+
+  const stale = await staleRows(db, realm.id, source, pages);
+  if (stale.prune.length + stale.kept.length > 0) {
+    const verb = !prune ? "would stay (pass --prune to delete)" : apply ? "will be deleted" : "would be deleted";
+    console.log(`stale rows no longer in the index: ${stale.prune.length} ${verb}, ${stale.kept.length} kept (claimed or founded)`);
+    for (const title of stale.prune) console.log(`  stale: ${title}`);
+    for (const title of stale.kept) console.log(`  stale, kept: ${title}`);
+  }
+
+  if (!apply) return;
+  await db.$transaction(
+    async (tx) => {
+      await writeIndex(tx, realm.id, source, pages, nations);
+      // Read again inside the transaction: a claim filed since the preview protects its page too.
+      const prunable = prune ? (await staleRows(tx, realm.id, source, pages)).prune : [];
+      if (prunable.length > 0) {
+        const removed = await tx.realmPage.deleteMany({
+          where: { realmId: realm.id, wikiSource: source, title: { in: prunable } },
+        });
+        console.log(`pruned: ${removed.count} stale rows`);
+      }
+    },
+    { timeout: 120_000 }
+  );
 }
 
 main()

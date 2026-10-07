@@ -15,6 +15,7 @@ import {
   replaceInlineTemplates,
   replacePipedLinks,
   replaceSimpleLinks,
+  stripComments,
   stripHtmlTags,
   unpackInternalLinks,
 } from "./clean-markup-passes";
@@ -229,6 +230,59 @@ export function parsePopulation(text: string): number | null {
   // Plain numeric
   const num = parseFloat(clean.replace(/[,\s]/g, ""));
   return !isNaN(num) && num > 0 ? Math.round(num) : null;
+}
+
+// ── Money parsing ──────────────────────────────────────────────────
+
+/** The magnitude words and abbreviations a money figure may follow its number with ("$1.5 trillion", "€2.3bn"). */
+const MAGNITUDES: Readonly<Record<string, number>> = {
+  thousand: 1e3,
+  k: 1e3,
+  million: 1e6,
+  mn: 1e6,
+  m: 1e6,
+  billion: 1e9,
+  bn: 1e9,
+  b: 1e9,
+  trillion: 1e12,
+  tn: 1e12,
+  t: 1e12,
+};
+
+/**
+ * A money figure at the start of a value: an optional "approx." or "~", an optional currency symbol or code
+ * ("$", "€", "US$", "Int$", "USD", "NSD"), the number (thousands grouped by commas or spaces, an optional
+ * decimal part, never followed by more digit groups it could not read) and the word after it. Anchored, so it
+ * reads one figure and stops.
+ */
+const MONEY =
+  /^(?:(?:approx\.?|approximately|about|around|c\.|ca\.|est\.|~|≈)\s*)?(?:[A-Za-z]{0,4}\s?[$€£¥₹₩₽₺₱₦¤]|[A-Z]{2,4}(?![A-Za-z]))?\s*(\d+(?:[, ]\d{3}(?!\d))*(?:\.\d+)?)(?![.,]?\d)(?:\s*([A-Za-z]+))?/;
+
+/** A number-wrapping template (`{{formatnum:45000}}`, `{{nts|45000}}`, `{{nowrap|$45,000}}`) as its first argument. */
+const NUMBER_TEMPLATE = /\{\{\s*(?:formatnum|nts|nowrap|val)\s*[:|]([^{}|]*)[^{}]*\}\}/;
+
+/**
+ * Parse a money figure such as a GDP or GDP per capita: "$45,000", "US$ 45,000", "Int$ 32,100", "€2.3 billion",
+ * "$1.5 trillion", "1.5tn", "{{formatnum:45000}}", "45,000 (2025 est.)". Null when the value does not start
+ * with a figure, or the figure is followed by a magnitude this does not know ("45 quadrillion"): a wrong
+ * number is worse than none.
+ */
+export function parseMoney(text: string): number | null {
+  let clean = replaceInlineTemplates(stripComments(text), NUMBER_TEMPLATE, (m) => m[1] ?? "");
+  clean = replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => "");
+  clean = stripHtmlTags(unpackInternalLinks(clean))
+    .replace(/&nbsp;|&#160;|[   ]/gi, " ")
+    .replace(/'{2,3}/g, "")
+    .trim();
+  const match = MONEY.exec(clean);
+  if (!match) return null;
+  const num = parseFloat(match[1]!.replace(/[, ]/g, ""));
+  const word = match[2]?.toLowerCase();
+  const magnitude = word ? MAGNITUDES[word] : undefined;
+  // An unknown "-illion" is a magnitude this cannot scale by; any other word (USD, est, dollars) is a label.
+  if (word && magnitude === undefined && word.endsWith("illion")) return null;
+  const amount = num * (magnitude ?? 1);
+  return Number.isFinite(amount) && amount > 0 ? Math.round(amount) : null;
 }
 
 // ── Wikitext cleanup ───────────────────────────────────────────────

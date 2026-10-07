@@ -28,7 +28,8 @@ type ClaimErrorCode =
   | "FORBIDDEN"
   | "NOT_PENDING"
   | "REASON_REQUIRED"
-  | "REALM_CLOSED";
+  | "REALM_CLOSED"
+  | "SLUG_CONFLICT";
 
 export class ClaimError extends Error {
   constructor(
@@ -160,14 +161,47 @@ async function nationExists(
 const nationTaken = () =>
   new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
-/** A concurrent approval that created the same (realm, name) first surfaces as a unique violation. */
+/** Whether a unique violation is on Country.slug (Postgres names the column, or the constraint, as its target). */
+function isSlugViolation(error: Error): boolean {
+  const target = (error as { meta?: { target?: unknown } }).meta?.target;
+  const fields: unknown[] = Array.isArray(target) ? target : [target];
+  return fields.some((field) => typeof field === "string" && field.includes("slug"));
+}
+
+/**
+ * A concurrent approval that created the same (realm, name) first surfaces as a unique violation. A slug
+ * taken between the free-slug search and the create is not that: it stays an error, so the claim stays pending
+ * for another try instead of being rejected as another player's nation.
+ */
 function uniqueAsTaken(error: Error): never {
-  throw parsePrismaError(error)?.type === "unique_constraint" ? nationTaken() : error;
+  if (parsePrismaError(error)?.type !== "unique_constraint") throw error;
+  if (isSlugViolation(error)) {
+    throw new ClaimError(
+      "SLUG_CONFLICT",
+      "The nation's URL slug was taken while it was being created; try again"
+    );
+  }
+  throw nationTaken();
+}
+
+/**
+ * The first free slug for a new nation: the title's slug, then -<realm slug> when that is taken elsewhere
+ * (E-g), then -<realm slug>-2, -3… A title with no Latin letters or digits slugs to "nation".
+ */
+async function freeNationSlug(tx: ClaimsTx, page: NationPage): Promise<string> {
+  const base = generateSlug(page.title) || "nation";
+  const isTaken = async (slug: string) =>
+    !!(await tx.country.findUnique({ where: { slug }, select: { id: true } }));
+  if (!(await isTaken(base))) return base;
+  const realmBase = `${base}-${page.realmSlug}`;
+  let slug = realmBase;
+  for (let n = 2; await isTaken(slug); n++) slug = `${realmBase}-${n}`;
+  return slug;
 }
 
 /**
  * Ruling E-f: the claimed nation's Country with baseline data, prefilled from the page's infobox when it gave
- * anything (AT-3). A slug taken elsewhere gets -<realm slug> (E-g).
+ * anything (AT-3), at the first free slug (`freeNationSlug`).
  */
 async function createNationCountry(
   tx: ClaimsTx,
@@ -175,14 +209,13 @@ async function createNationCountry(
   prefill: NationPagePrefill | null
 ) {
   if (await nationExists(tx, page.realmId, page.title)) throw nationTaken();
-  const slug = generateSlug(page.title);
-  const slugTaken = await tx.country.findUnique({ where: { slug }, select: { id: true } });
+  const slug = await freeNationSlug(tx, page);
   const identity = prefill && Object.keys(prefill.identity).length > 0 ? prefill.identity : null;
   return tx.country
     .create({
       data: {
         ...buildBaselineCountryData(page.title, prefill?.country),
-        slug: slugTaken ? `${slug}-${page.realmSlug}` : slug,
+        slug,
         realmId: page.realmId,
         wikiSource: page.wikiSource,
         wikiPageTitle: page.title,

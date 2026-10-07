@@ -89,7 +89,7 @@ login that fails is a failed job, never an anonymous write). Only the realm `ixw
 
 | Call site | What it reads | Callers |
 | --- | --- | --- |
-| `src/lib/wiki-os/adapters/mediawiki/account-proof.ts` `fetchWikiUser`, `fetchUserPageHistory`, `fetchPageCreator`, `wikiQuery` | `list=users`, a user page's revisions with their authors, a page's first revision | The self-service wiki-link proof (`ixnayid/linking.ts`, `modules/identity/identity.wiki-links.ts`), the admin link (`admin/users.ts`), realm claims (`modules/realms/realms.claims.ts`, `routers/realms/index.ts`), and the admin link of an account WikiOS has no trace of or whose MediaWiki id it cannot know (`src/lib/wiki-os/adapters/ixstates/user-sync.ts` `findLinkableWikiAccount`: `fetchWikiUser`, admin-triggered). Also reads iiwiki and AltHistory accounts. |
+| `src/lib/wiki-os/adapters/mediawiki/account-proof.ts` `fetchWikiUser`, `fetchUserPageHistory`, `fetchPageCreator`, `wikiQuery` | `list=users`, a user page's revisions with their authors, a page's first revision (a redirect is followed to its target, `redirects=1`) | The self-service wiki-link proof (`ixnayid/linking.ts`, `modules/identity/identity.wiki-links.ts`), the admin link (`admin/users.ts`), realm claims (`modules/realms/realms.claims.ts`, `routers/realms/index.ts`), and the admin link of an account WikiOS has no trace of or whose MediaWiki id it cannot know (`src/lib/wiki-os/adapters/ixstates/user-sync.ts` `findLinkableWikiAccount`: `fetchWikiUser`, admin-triggered). Also reads iiwiki and AltHistory accounts. |
 
 ### admin-refresh
 
@@ -185,7 +185,8 @@ configuration object, never from a literal:
 - **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
   `isMediaWikiUrl`): `src/app/(wiki-os)/util/repository/page.tsx`,
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
-  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/app/admin/cards/lore-batch/LoreBatchDialogs.tsx`, `src/components/cards/display/CardDetailsModal.tsx`,
+  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/app/admin/cards/lore-batch/LoreBatchDialogs.tsx`,
+  `src/app/admin/realms/_components/ClaimsTab.tsx` (a claimed nation page's history on its own wiki), `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
   `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,

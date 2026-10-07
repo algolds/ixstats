@@ -13,6 +13,7 @@
 
 import {
   parseInfobox,
+  parseMoney,
   parsePopulation,
   extractCoordsFromFields,
   cleanWikiValue,
@@ -537,6 +538,9 @@ const NUMERIC_FIELDS_LOWER = new Set([
   "urbanization",
 ]);
 
+/** The numeric fields that are money (the GDP_* ones): read with `parseMoney` ("$", "US$", "trillion", "bn"). */
+const MONEY_FIELD = /^GDP_/;
+
 // ─── Image/File Extraction Helpers ──────────────────────────────────────────
 
 const IMAGE_FIELDS = new Set<string>([
@@ -623,7 +627,9 @@ export function parseInfoboxWithTemplates(
     if (unifiedKey) {
       const isNumeric = NUMERIC_FIELDS.has(unifiedKey) || NUMERIC_FIELDS_LOWER.has(unifiedKey);
       if (isNumeric) {
-        const num = parsePopulation(field.rawValue);
+        const num = MONEY_FIELD.test(unifiedKey)
+          ? parseMoney(field.rawValue)
+          : parsePopulation(field.rawValue);
         if (num !== null) {
           (result as any)[unifiedKey] = num;
         } else {
@@ -664,19 +670,19 @@ export function parseInfoboxWithTemplates(
   }
 
   if (typeof result.GDP_nominal === "string") {
-    const gdpNum = parsePopulation(result.GDP_nominal);
+    const gdpNum = parseMoney(result.GDP_nominal);
     if (gdpNum !== null) result.gdp_nominal = gdpNum;
   } else if (typeof result.GDP_nominal === "number") {
     result.gdp_nominal = result.GDP_nominal;
   }
   if (typeof result.GDP_PPP === "string") {
-    const gdpPppNum = parsePopulation(result.GDP_PPP);
+    const gdpPppNum = parseMoney(result.GDP_PPP);
     if (gdpPppNum !== null) result.gdp_ppp = gdpPppNum;
   } else if (typeof result.GDP_PPP === "number") {
     result.gdp_ppp = result.GDP_PPP;
   }
   if (typeof result.GDP_nominal_per_capita === "string") {
-    const gdpPcNum = parsePopulation(result.GDP_nominal_per_capita);
+    const gdpPcNum = parseMoney(result.GDP_nominal_per_capita);
     if (gdpPcNum !== null) result.gdpPerCapita = gdpPcNum;
   } else if (typeof result.GDP_nominal_per_capita === "number") {
     result.gdpPerCapita = result.GDP_nominal_per_capita;
