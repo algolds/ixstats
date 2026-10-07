@@ -12,8 +12,12 @@
  *   centroid and bounding box. Its land area is never written here: which area a nation shows (a stated figure,
  *   or the measured one as a fallback) is the caller's decision, so the measured areas are returned.
  * - Only the given keys are touched: no other feature, and no other layer type, is deactivated or changed.
+ *   A replacing import retires the rest of one layer itself, with `deactivateOtherFeatures`.
+ * - A realm on a planet of its own size passes `areaScale` ((radiusKm / 6371)², planet.ts) so the stored areas
+ *   are its own; PostGIS measures on Earth.
+ * - Non-political layers (rivers, lakes, relief) may pass `geometryKinds: "any"` to accept lines and points too.
  */
-import type { MultiPolygon, Polygon, Position } from "geojson";
+import type { Geometry, MultiPolygon, Polygon, Position } from "geojson";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { polygonMetrics } from "./feature-metrics";
 import { isPostGISAvailable } from "./geo-validation";
@@ -21,7 +25,8 @@ import { isPostGISAvailable } from "./geo-validation";
 export interface RealmMapFeatureInput {
   /** Stable key within the realm and layer (becomes MapLayer.featureId). */
   key: string;
-  geometry: Polygon | MultiPolygon;
+  /** Polygon or MultiPolygon; any GeoJSON geometry with `geometryKinds: "any"`. */
+  geometry: Polygon | MultiPolygon | Geometry;
   /** Display name (MapLayer.displayName); left unchanged when absent. */
   name?: string | null;
   /** Link the feature to this country of the realm. Absent leaves an existing link as it is. */
@@ -38,6 +43,10 @@ export interface RealmMapWriteOptions {
   transactionTimeoutMs?: number;
   /** Copy a linked feature's outline, centroid and bounding box onto its country (default true). */
   syncCountryGeometry?: boolean;
+  /** "polygonal" (default): Polygon and MultiPolygon only. "any": lines and points are accepted too. */
+  geometryKinds?: "polygonal" | "any";
+  /** Multiplies every measured area (a realm's own planet size); default 1. */
+  areaScale?: number;
 }
 
 export interface RealmMapWriteResult {
@@ -70,10 +79,30 @@ function ringProblem(ring: unknown): string | null {
   return null;
 }
 
-/** Why a geometry cannot be written, or null when it can. */
-export function geometryProblem(geometry: unknown): string | null {
+const LINE_TYPES = new Set(["Point", "MultiPoint", "LineString", "MultiLineString"]);
+
+/** Every position of a point or line geometry, or null when its nesting is wrong. */
+function linePositions(type: string, coordinates: unknown[]): unknown[] | null {
+  if (type === "Point") return [coordinates];
+  if (type === "MultiPoint" || type === "LineString") return coordinates;
+  if (type === "MultiLineString") {
+    return coordinates.every(Array.isArray) ? (coordinates as unknown[][]).flat() : null;
+  }
+  return null;
+}
+
+/** Why a geometry cannot be written, or null when it can (`kinds: "any"` also accepts lines and points). */
+export function geometryProblem(
+  geometry: unknown,
+  kinds: "polygonal" | "any" = "polygonal"
+): string | null {
   const g = geometry as { type?: unknown; coordinates?: unknown } | null;
   if (!g || !Array.isArray(g.coordinates) || g.coordinates.length === 0) return "no coordinates";
+  if (kinds === "any" && typeof g.type === "string" && LINE_TYPES.has(g.type)) {
+    const points = linePositions(g.type, g.coordinates);
+    if (!points || !points.every(isPosition)) return "a position is not a finite lon/lat pair in range";
+    return g.type.endsWith("LineString") && points.length < 2 ? "a line has fewer than two positions" : null;
+  }
   const polygons =
     g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : null;
   if (!polygons) return `a ${String(g.type)} is not a Polygon or MultiPolygon`;
@@ -95,7 +124,8 @@ async function writeOne(
   layerType: string,
   feature: RealmMapFeatureInput,
   postgis: boolean,
-  syncCountry: boolean
+  syncCountry: boolean,
+  areaScale: number
 ): Promise<number | null> {
   const metrics = polygonMetrics(feature.geometry);
   const geometry = feature.geometry as unknown as Prisma.InputJsonValue;
@@ -103,7 +133,7 @@ async function writeOne(
     geometry,
     properties: (feature.properties ?? {}) as Prisma.InputJsonValue,
     ...(metrics && { centroid: metrics.centroid, boundingBox: metrics.boundingBox }),
-    areaSqKm: feature.areaKm2 ?? metrics?.areaSqKm ?? null,
+    areaSqKm: feature.areaKm2 ?? (metrics ? metrics.areaSqKm * areaScale : null),
     isActive: true,
     ...(feature.name && { displayName: feature.name }),
   };
@@ -123,8 +153,9 @@ async function writeOne(
       row.id,
       JSON.stringify(feature.geometry)
     );
-    const value = measured[0]?.area;
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    const raw = measured[0]?.area;
+    const value = typeof raw === "number" ? raw * areaScale : NaN;
+    if (Number.isFinite(value) && value > 0) {
       area = value;
       await tx.mapLayer.update({ where: { id: row.id }, data: { areaSqKm: value } });
     }
@@ -169,7 +200,7 @@ export async function writeRealmMapFeatures(
   );
   const valid: RealmMapFeatureInput[] = [];
   for (const feature of features) {
-    const problem = geometryProblem(feature.geometry);
+    const problem = geometryProblem(feature.geometry, options.geometryKinds);
     if (problem) result.rejected.push({ key: feature.key, reason: problem });
     else if (feature.countryId && !linkable.has(feature.countryId))
       result.rejected.push({ key: feature.key, reason: "its country is not in this realm" });
@@ -186,7 +217,15 @@ export async function writeRealmMapFeatures(
           for (const feature of batch)
             out.push([
               feature.key,
-              await writeOne(tx, realmId, layerType, feature, postgis, options.syncCountryGeometry ?? true),
+              await writeOne(
+                tx,
+                realmId,
+                layerType,
+                feature,
+                postgis,
+                options.syncCountryGeometry ?? true,
+                options.areaScale ?? 1
+              ),
             ]);
           return out;
         },
@@ -202,4 +241,21 @@ export async function writeRealmMapFeatures(
     }
   }
   return result;
+}
+
+/**
+ * Retire (isActive = false) every active feature of one realm layer whose key is not in `keep`: what a replacing
+ * import does to the features its new map no longer has. Other layers are never touched. Returns how many.
+ */
+export async function deactivateOtherFeatures(
+  db: Pick<PrismaClient, "mapLayer">,
+  realmId: string,
+  layerType: string,
+  keep: readonly string[]
+): Promise<number> {
+  const { count } = await db.mapLayer.updateMany({
+    where: { realmId, layerType, isActive: true, featureId: { notIn: [...keep] } },
+    data: { isActive: false },
+  });
+  return count;
 }

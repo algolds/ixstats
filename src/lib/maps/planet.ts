@@ -75,3 +75,11 @@ export function polygonalAreaSqKm(
   }
   return 0;
 }
+
+/**
+ * The factor that turns an area measured on Earth (e.g. PostGIS geography) into one on a planet of `radiusKm`:
+ * (radiusKm / 6371)². 1 without a radius.
+ */
+export function planetAreaScale(radiusKm?: number | null): number {
+  return radiusKm && radiusKm > 0 ? scale(radiusKm) ** 2 : 1;
+}

@@ -312,6 +312,23 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
+    // Realm map imports (docs/systems/maps.md): runs queued analyses (PNG tracing in a worker thread) and any
+    // apply job the web process left queued, one realm at a time under `map-import:<realmId>` leases.
+    name: "map-import",
+    defaultSchedule: "* * * * *",
+    lockName: "map-import",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/modules/maps/map-import.jobs",
+    exportName: "runQueuedMapImports",
+    load: async () => {
+      const [{ runQueuedMapImports }, { db }] = await Promise.all([
+        import("~/server/modules/maps/map-import.jobs"),
+        import("~/server/db"),
+      ]);
+      return () => runQueuedMapImports(db);
+    },
+  },
+  {
     // Daily email summary for users who chose the digest (SL-5); does nothing unless EMAIL_* is set.
     name: "notification-email-digest",
     defaultSchedule: "7 8 * * *",
