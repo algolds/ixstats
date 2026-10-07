@@ -14,6 +14,33 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 🗺️ Map Safety & Correctness (2026-10-07)
+
+- **Upload bombs:** province imports cap their content at 25 MB (`geoAdmin.parseProvinceUpload`), the PNG province
+  extractor reads the image header first and decodes through the shared 64-megapixel limit (an oversize or corrupt
+  image is `BAD_REQUEST`), and `/api/admin/upload-svg` and `/api/upload-province` answer 413 from the Content-Length
+  before buffering the body.
+- **Lakes stay holes:** the SVG parser (and so PNG maps traced with potrace) and the province importer classify rings
+  by containment instead of winding (`src/lib/maps/ring-assembly.ts`), honour an explicit `fill-rule: nonzero`, and
+  wind output per RFC 7946. A lake no longer becomes the outer ring or a separate filled polygon, a nation with
+  islands keeps its holes, and every approximate-area helper subtracts holes.
+- **Fresh databases get the geometry triggers:** `prisma/migrations/20261007_map_geometry_sync_triggers.sql`
+  (re)creates the triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and
+  `points_of_interest`, with a backfill; `db:bootstrap` applies it and the
+  [deploy runbook](./docs/operations/deploy-rose-garden-2026-09.md) runs it after the deploy script (step 5b).
+- **Realm-scoped spatial SQL:** subdivision and city spatial profiles, terrain lookups (`countryGeo.sampleTerrainAt`
+  takes `?realm=`) and country border lookups match the realm of what they measure, so IxWorld's climate,
+  altitudes, rivers and lakes are no longer attributed to other realms.
+- **Border snapping works:** `snapPointToCountryBorder` cast the GeoJSON column to geometry, which PostgreSQL refuses,
+  so points were never snapped; it reads `geom_postgis`.
+- **Style editor sources:** `/api/maps/editor-source/[layer]` is admin-only, serves one realm (`?realm=`, IxWorld by
+  default), is rate limited (`map_editor_source`, 120/min per admin) and privately cacheable.
+- **IxWorld leftovers:** the 56.1842° prime meridian line, home view and R shortcut apply to IxWorld only (other
+  realms centre on the origin); a coordinates embed in an IxWiki article shows IxWorld's map.
+- **Planet figures:** the radius and degree → km factors live in `src/lib/maps/planet.ts` (no behaviour change).
+- **Docs:** [maps.md](./docs/systems/maps.md) (pipeline, runtime requirements),
+  [rate-limiting.md](./docs/operations/rate-limiting.md), [local-dev-setup.md](./docs/operations/local-dev-setup.md).
+
 ### 🏰 Realm Links, Rules & In-World Date (2026-10-07)
 
 - **Community links:** founders and `appearance` officers add up to 8 links (forum, Discord, wiki, map, website,
