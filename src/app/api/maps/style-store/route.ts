@@ -40,11 +40,13 @@ export async function GET(request: NextRequest) {
     // 3. Set glyphs URL dynamically so Maputnik can load fonts
     styleJson.glyphs = getMapGlyphsUrl();
 
-    // 4. Update data URLs of geojson sources for Maputnik preview
+    // 4. Update data URLs of geojson sources for Maputnik preview (one realm's data: ?realm=, IxWorld by default)
+    const realm = new URL(request.url).searchParams.get("realm");
+    const realmQuery = realm ? `?realm=${encodeURIComponent(realm)}` : "";
     if (styleJson.sources) {
       for (const [key, source] of Object.entries(styleJson.sources as Record<string, any>)) {
         if (source.type === "geojson") {
-          source.data = `/api/maps/editor-source/${key}`;
+          source.data = `/api/maps/editor-source/${key}${realmQuery}`;
         }
       }
     }
