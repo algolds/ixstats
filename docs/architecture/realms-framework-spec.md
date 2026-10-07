@@ -42,7 +42,7 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned. The effective cap is min(realm cap, tier cap): 1 for free accounts, 5 for MyCountry Premium (`realms.nation-cap.ts`) |
 | 16 | Vault income | One dividend per account, from its primary (earliest-created owned) nation — not the active one, so switching cannot farm payouts |
 | 17 | Simulation | Identical in every realm |
-| 18 | Time | One shared IxTime clock; per-realm calendar label (display only) — not implemented yet (planned) |
+| 18 | Time | One shared IxTime clock; per-realm in-world date label (display only, `Realm.settings.inWorldDate`; built 2026-10-07, see [realms.md §4](../systems/realms.md#4-realm-page-rrealm)) |
 | 19 | Visibility | `public` or `unlisted` only — never private |
 | 20 | Founder powers | Settings, claim queue, remove nations (data kept → claimable; appeal to site admin), moderate their realm's WikiOS articles and feed posts. One check: `canModerateRealm(user, realmId)` = site admin ∨ `realm.ownerId === user.id` |
 | 21 | Lifecycle | Automatic founder succession (60 days unseen → earliest active nation owner; admin override); archived realms are read-only, excluded from crons and payouts |
@@ -129,7 +129,7 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   claim is re-verified and upgraded in place; claims, verification and Play as are rate-limited; the
   backfill refuses `--apply` while owner collisions remain or IxWorld is not owned by `system`.
 
-**Not implemented yet (planned):** the per-realm calendar label (decision 18), founder tooling (settings
+**Not implemented yet (planned):** founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
 ThinkPages feed and its global-feed setting, and the nav chip (a player switches with **Play as** on each
 realm's page, or with the nation switcher in the nav user menu and on their passport's Realms tab). Also

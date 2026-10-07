@@ -975,6 +975,64 @@ describe("realm status (AT-7)", () => {
   });
 });
 
+describe("realm rules", () => {
+  const RULES = "<p>Be civil. No godmodding.</p>";
+  const ruledCountry = {
+    ...country,
+    realmId: EURTH,
+    realm: { settings: null, status: "active", slug: "eurth", rulesHtml: RULES },
+  };
+
+  it("refuses a country claim until the player accepts the rules, before any wiki check", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue(ruledCountry);
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
+      code: "RULES_NOT_ACCEPTED",
+    });
+    await expect(claims.claimCountry(actor, "c1", { acceptedRules: false })).rejects.toMatchObject(
+      { code: "RULES_NOT_ACCEPTED" }
+    );
+    expect(deps.fetchPageCreator).not.toHaveBeenCalled();
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+  });
+
+  it("records when the rules were accepted on the claim it files", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue(ruledCountry);
+    deps.fetchPageCreator.mockResolvedValue("Someone else");
+    await expect(claims.claimCountry(actor, "c1", { acceptedRules: true })).resolves.toMatchObject(
+      { status: "pending" }
+    );
+    expect(db.realmClaim.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ countryId: "c1", rulesAcceptedAt: expect.any(Date) }),
+    });
+  });
+
+  it("applies to nation page claims too", async () => {
+    const { db, claims } = pageSetup();
+    db.realmPage.findFirst.mockResolvedValue({
+      ...nationPage,
+      realm: { ...nationPage.realm, rulesHtml: RULES },
+    });
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
+      code: "RULES_NOT_ACCEPTED",
+    });
+    await expect(
+      claims.claimNationPage(actor, EURTH, "Aurelia", { acceptedRules: true })
+    ).resolves.toMatchObject({ status: "approved" });
+    expect(db.realmClaim.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ wikiPageTitle: "Aurelia", rulesAcceptedAt: expect.any(Date) }),
+    });
+  });
+
+  it("needs nothing in a realm without rules, and records no acceptance", async () => {
+    const { db, deps, claims } = setup();
+    deps.fetchPageCreator.mockResolvedValue("Someone else");
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
+    expect(db.realmClaim.create.mock.calls[0][0].data).not.toHaveProperty("rulesAcceptedAt");
+  });
+});
+
 describe("claimants see their claims and hear about rejections (AT-5)", () => {
   const pending = {
     id: "cl1",

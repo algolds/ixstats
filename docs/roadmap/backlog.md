@@ -174,7 +174,6 @@ See §1 above (password rotation, CSP).
 - Archived realms: read-only, excluded from crons and payouts (decision 21)
 - Per-realm feed and a global-feed setting (decision 2): the dashboard feed and trending are not realm-scoped
 - WikiOS front page as a portal to every realm's lore; realm-tagged forum (decision 3)
-- Per-realm calendar label (a new realm settings key)
 - Procedural realm generation: the wizard option and the `Realm.seed` / `generationParams` writes (M)
 
 **MyCountry statecraft** ([design PRDs](../systems/mycountry-design-philosophy-and-prds.md), [game loops](../systems/statecraft/statecraft-game-loops.md))

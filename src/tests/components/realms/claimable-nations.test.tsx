@@ -15,6 +15,13 @@ const mockNotify = { success: jest.fn(), info: jest.fn(), error: jest.fn(), warn
 let mockSignedIn = true;
 let options: MutationOptions = {};
 
+// Radix checkboxes measure themselves; jsdom has no ResizeObserver.
+global.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => (
@@ -119,6 +126,31 @@ describe("ClaimableNations", () => {
       "Claim failed",
       "This nation already belongs to another player"
     );
+  });
+
+  it("in a realm with rules, claiming waits for the player to confirm reading them", () => {
+    render(
+      <ClaimableNations
+        realmSlug="eurth"
+        pages={pages}
+        rules={{ summary: "Be civil. No godmodding." }}
+      />
+    );
+    expect(screen.getByText("Be civil. No godmodding.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Read the rules" })).toHaveAttribute(
+      "href",
+      "/r/eurth/rules"
+    );
+    const claim = screen.getByRole("button", { name: "Claim Aurelia" });
+    expect(claim).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "I have read the realm's rules" }));
+    expect(claim).toBeEnabled();
+    fireEvent.click(claim);
+    expect(mockMutate).toHaveBeenCalledWith({
+      realmSlug: "eurth",
+      title: "Aurelia",
+      acceptedRules: true,
+    });
   });
 
   it("signed-out visitors get a sign-in link that returns to the realm instead of Claim buttons", () => {

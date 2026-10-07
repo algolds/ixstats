@@ -32,7 +32,7 @@ export const REALM_POWERS = ["appearance", "board", "diplomacy"] as const;
 export type RealmPower = (typeof REALM_POWERS)[number];
 
 export const REALM_POWER_LABELS: Record<RealmPower, string> = {
-  appearance: "Factbook and header",
+  appearance: "Factbook, header, rules and links",
   board: "Board moderation",
   diplomacy: "Embassies and polls",
 };

@@ -224,7 +224,7 @@ shipped system.
 | 9 | Public founding application (decisions 6–7) | PF§4 | M |
 | 10 | Per-realm ThinkPages feed plus a global-feed setting. **Partial (#49):** a realm filter on the ThinkPages feed and realm boards; the dashboard feed and trending are not realm-scoped | PF§4 | M |
 | 11 | WikiOS portal to every realm's lore; realm-tagged forum | PF§4 | M |
-| 12 | Per-realm calendar label (a new settings key; there is no `yearOffset` field today) | PF§4 | S–M |
+| 12 | ✅ **Done (2026-10-07):** per-realm in-world date label (`Realm.settings.inWorldDate`), plus community links and realm rules accepted before claiming ([design](../specs/2026-10-05-realm-regions-design.md)) | PF§4 | S–M |
 | 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, PF§4 | M |
 | 14 | ✅ **Done (2026-10-05):** PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
 | 15 | ✅ **Done (2026-10-05):** Admin Realm Users tab supports several realms per user | AT-19 | S |

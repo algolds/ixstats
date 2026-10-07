@@ -27,6 +27,10 @@ Read it end to end once before starting. Every command here is meant to be run b
   - realm region pages (2026-10-05, additive): `Realm` banner, factbook, tags and `foundedAt` columns;
     `realm_officers`, `realm_embassies` and `realm_board_bans` tables; a nullable `Poll.realmId`. `db push` applies
     them with no data-loss prompt
+  - realm links, rules and in-world date (2026-10-07, additive): nullable `Realm.communityLinks`, `rulesWikitext`,
+    `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy` and `RealmClaim.rulesAcceptedAt`
+    (`prisma/migrations/20261007_realm_links_rules_calendar.sql` has the same columns). `db push` applies them with
+    no data-loss prompt; the in-world date is a `Realm.settings` key and needs no column
   - a nullable `IntelligenceAlert.readAt` (2026-10-05, additive): when the owner read a threshold alert (MC-17)
   - ThinkPages post views (2026-10-05, additive, SL-8): a `ThinkpagesPostViewDay` table (post, day, views)
   - ThinkPages flag queue (2026-10-05, additive, SL-10): `PostFlag.status` (default `open`), `resolvedAt`,

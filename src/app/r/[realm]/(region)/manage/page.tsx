@@ -9,9 +9,12 @@ import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
+import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
+import { LinksSection } from "../../_components/manage/LinksSection";
 import { ManageSection } from "../../_components/manage/ManageSection";
 import { OfficersSection } from "../../_components/manage/OfficersSection";
 import { PollsSection } from "../../_components/manage/PollsSection";
+import { RulesSection } from "../../_components/manage/RulesSection";
 
 /** The Manage tab: the sections the founder or an officer's powers allow. */
 export default function RealmManagePage({ params }: { params: Promise<{ realm: string }> }) {
@@ -35,7 +38,10 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
   const can = (power: string) => manage.powers.includes(power as never);
   const sections = [
     manage.appearance && { id: "appearance", label: "Appearance" },
+    manage.links && { id: "links", label: "Links" },
+    manage.inWorldDate && { id: "calendar", label: "In-world date" },
     manage.factbook && { id: "factbook", label: "Factbook" },
+    manage.rules && { id: "rules", label: "Rules" },
     { id: "officers", label: "Officers" },
     manage.isFounder && { id: "claims", label: "Claims" },
     can("diplomacy") && { id: "embassies", label: "Embassies" },
@@ -67,9 +73,14 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           </p>
         )}
         {manage.appearance && <AppearanceSection slug={slug} appearance={manage.appearance} />}
+        {manage.links && <LinksSection slug={slug} links={manage.links} />}
+        {manage.inWorldDate && (
+          <InWorldDateSection slug={slug} inWorldDate={manage.inWorldDate.value} />
+        )}
         {manage.factbook && (
           <FactbookSection slug={slug} realmName={manage.realm.name} factbook={manage.factbook} />
         )}
+        {manage.rules && <RulesSection slug={slug} rules={manage.rules} />}
         <OfficersSection slug={slug} manage={manage} />
         {manage.isFounder && (
           <ManageSection

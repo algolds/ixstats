@@ -1,6 +1,6 @@
 # Eurth Onboarding Runbook
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-07
 
 **Audience:** the site admin deploying the Realms feature and bringing up Eurth, the first realm outside
 IxWorld. Exact commands, no fluff. Background/decisions: [`docs/architecture/realms-framework-spec.md`](../architecture/realms-framework-spec.md).
@@ -233,6 +233,16 @@ economy.
 
 ## 4. Onboard Eurth players
 
+**Before players arrive, set up the region page.** The founder (or a site admin, while Eurth is staff-administered,
+or an officer with the `appearance` power) opens `/r/eurth/manage` and fills in:
+
+- **Links:** Eurth's forum, Discord invite, wiki portal and map (up to 8, `https://` only). They appear in the
+  **Community** panel of `/r/eurth`.
+- **Rules:** the community's rules. They get a **Rules** tab, and every claim in Eurth asks the player to tick
+  **I have read the realm's rules** first (the server refuses a claim without it).
+- **In-world date:** Eurth's calendar label for the header, either fixed ("14 Harvest 1203 AE", update it as the
+  story moves) or the real year plus an offset with an era. Display only; the simulation stays on IxTime.
+
 Tell players, in order:
 
 1. **Verify your IIWiki account.** In IxStats: `/settings` → **IxnayID & Passport** section → **Linked
@@ -319,12 +329,12 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
   nation on `/r/eurth` (and back the same way on `/r/ixworld`). The active one shows **Active**.
 - **No founder account yet.** The realm's `ownerId` is `"system"` until an Eurth admin is handed the
   realm; until then, site admins are the only ones who can act on Eurth's claims.
-- **Not shipped yet** (later phases, don't promise these): a public founding application form, the
-  per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
+- **Not shipped yet** (later phases, don't promise these): a public founding application form, founder
+  removal/succession tooling
   (including a founder raising their own realm's nation cap — today only site admins can, in
   `/admin/realms`), and realm-scoped dashboard feed and trending. Shipped since: a realm filter on the ThinkPages
   feed and the realm board at `/r/eurth/board`, and a nation switcher in the nav and on the passport (alongside
-  **Play as** on the realm page).
+  **Play as** on the realm page), and the region page's links, rules and in-world date (§4).
 
 ---
 

@@ -1,6 +1,7 @@
 # Realms as NationStates-style regions — design
 
-**Last updated:** 2026-10-05 · **Status:** built on `rose-garden` (2026-10-05); see [realms.md §4](../systems/realms.md#4-realm-page-rrealm)
+**Last updated:** 2026-10-07 · **Status:** built on `rose-garden` (2026-10-05; links, rules and the in-world date
+2026-10-07); see [realms.md §4](../systems/realms.md#4-realm-page-rrealm)
 
 Turns `/r/[realm]` into a NationStates-style region page. Decisions below were made by the owner on 2026-10-05; the
 current-state audit is summarised at the end. Related: [realms.md](../systems/realms.md),
@@ -22,6 +23,9 @@ current-state audit is summarised at the end. Related: [realms.md](../systems/re
 | Founders of existing realms | **Site admins assign** founders in `/admin/realms`; until then the realm shows "Administered by IxStats staff" and site admins act as founder |
 | Directory (`/realms`) | **Tags** (fixed list chosen by founders), **search and sort** (name; nations, activity, newest), **banner cards** |
 | Leaving | **Players can abandon a nation:** a confirmed "Leave realm" releases it (it becomes unclaimed) |
+| Community links (2026-10-07) | Up to **8 links** (forum, Discord, wiki, map, website, other), `https://` only, in a sidebar **Community** panel; edited under the `appearance` power |
+| Rules (2026-10-07) | A **Rules tab** with founder-written rules (same editor and sanitizing as the factbook, `appearance` power). **Claiming a nation in a realm with rules needs "I have read the realm's rules"**, checked on the server |
+| In-world date (2026-10-07) | A display-only label in the stats strip: a fixed label (optionally "as of" a real date) or real year + offset with an era. The simulation keeps IxTime |
 
 ## Front page (Overview)
 
@@ -47,6 +51,10 @@ On phones (below 1024px) the sidebar panels stack under the main column in the o
 - `Realm`: `bannerUrl`, `factbookWikitext` and `factbookHtml` (sanitized), `factbookUpdatedAt`, `factbookUpdatedBy`,
   `tags String[]`, `foundedAt` (nullable; null shows `createdAt`). `ownerId` stays the founder (`"system"` =
   staff-administered).
+- 2026-10-07 (`prisma/migrations/20261007_realm_links_rules_calendar.sql`, additive): `Realm.communityLinks Json?`
+  (`[{ label, url, kind }]`, `src/lib/realms/realm-community.ts`), `rulesWikitext`, `rulesHtml` (sanitized),
+  `rulesUpdatedAt`, `rulesUpdatedBy`; `RealmClaim.rulesAcceptedAt`. The in-world date is `Realm.settings.inWorldDate`
+  (`{ mode: "fixed", label, asOf? }` or `{ mode: "offset", offset, era? }`, zod-validated), no column.
 - `RealmOfficer`: `realmId`, `userId` (Clerk id), `title`, `powers String[]` (`appearance`, `board`, `diplomacy`),
   `appointedBy`, timestamps; unique `(realmId, userId)`.
 - `RealmEmbassy`: `fromRealmId`, `toRealmId`, `pairKey` (unique pair), `status` (`proposed` / `active` /
@@ -61,7 +69,8 @@ On phones (below 1024px) the sidebar panels stack under the main column in the o
 
 - Access: `canModerateRealm` becomes power-aware — `realmPower(ctx, realm, power)` checks site admin, founder, or an
   officer holding that power. Claims review stays founder/site admin.
-- Procedures (rate-limited mutations): factbook and appearance update, officer appoint/update/remove, embassy
+- Procedures (rate-limited mutations): factbook and appearance update, rules, community links and in-world date
+  (`updateRules`, `updateLinks`, `updateInWorldDate`; `appearance` power), officer appoint/update/remove, embassy
   propose/accept/close, poll create/close/vote, board mute/ban/lift, `leaveRealm` (release own nation, confirmed),
   admin `assignFounder`, directory with tags/search/sort.
 - `getBySlug` enforces status and visibility (drafts hidden from non-admins; archived read-only).

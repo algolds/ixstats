@@ -18,6 +18,8 @@ import { PlayAsNation } from "../../_components/PlayAsNation";
 export default function RealmNationsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
+  // Shared with the region layout's header query: the rules a claim needs accepted.
+  const { data: overview } = api.realms.region.overview.useQuery({ slug });
   const ownsHere = !!realm?.countries.some((c) => c.mine);
   const { data: profile } = api.users.getProfile.useQuery(undefined, { enabled: ownsHere });
   const [query, setQuery] = useState("");
@@ -96,7 +98,11 @@ export default function RealmNationsPage({ params }: { params: Promise<{ realm: 
       <MyClaims realmSlug={realm.slug} />
 
       {realm.claimsOpen && realm.nationPages.length > 0 && (
-        <ClaimableNations realmSlug={realm.slug} pages={realm.nationPages} />
+        <ClaimableNations
+          realmSlug={realm.slug}
+          pages={realm.nationPages}
+          rules={overview?.rules ?? null}
+        />
       )}
     </div>
   );

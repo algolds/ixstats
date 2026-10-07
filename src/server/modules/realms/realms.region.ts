@@ -1,10 +1,12 @@
 /**
  * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): what /r/[realm] shows — banner, key
- * stats, factbook, officers, embassies, the realm poll, the latest board posts and happenings — and the
- * staff checks every Manage action goes through.
+ * stats and in-world date, factbook, rules, community links, officers, embassies, the realm poll, the latest
+ * board posts and happenings — and the staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
+import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { resolveDisplayNames } from "~/server/shared/display-names";
 import {
   activeBoardRestrictions,
@@ -19,6 +21,7 @@ import {
   realmPowers,
   type RealmActor,
 } from "./realms.access";
+import { realmInWorldDate } from "./realms.settings";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
 
@@ -162,6 +165,15 @@ export async function realmPoll(
 }
 
 const BOARD_PREVIEW_SIZE = 5;
+const RULES_SUMMARY_LENGTH = 280;
+
+/** The rules' opening as plain text, for the claim form beside "Read the rules". */
+function rulesSummary(html: string): string {
+  const text = stripHtml(html);
+  return text.length > RULES_SUMMARY_LENGTH
+    ? `${text.slice(0, RULES_SUMMARY_LENGTH).trimEnd()}…`
+    : text;
+}
 
 /** The board's latest posts for the front page (the full board is on its own tab). */
 async function boardPreview(db: OverviewDb, realmId: string) {
@@ -220,6 +232,10 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       createdAt: true,
       factbookHtml: true,
       factbookUpdatedAt: true,
+      rulesHtml: true,
+      rulesUpdatedAt: true,
+      communityLinks: true,
+      settings: true,
       officers: {
         orderBy: { createdAt: "asc" },
         select: { userId: true, title: true, powers: true },
@@ -295,6 +311,15 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     factbook: realm.factbookHtml
       ? { html: realm.factbookHtml, updatedAt: realm.factbookUpdatedAt }
       : null,
+    rules: realm.rulesHtml
+      ? {
+          html: realm.rulesHtml,
+          summary: rulesSummary(realm.rulesHtml),
+          updatedAt: realm.rulesUpdatedAt,
+        }
+      : null,
+    links: parseRealmLinks(realm.communityLinks),
+    inWorldDate: formatInWorldDate(realmInWorldDate(realm.settings)),
     officers: realm.officers.map((o) => ({
       title: o.title,
       powers: o.powers,
@@ -500,6 +525,10 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       tags: true,
       factbookWikitext: true,
       factbookUpdatedAt: true,
+      rulesWikitext: true,
+      rulesUpdatedAt: true,
+      communityLinks: true,
+      settings: true,
       ownerId: true,
     },
   });
@@ -586,6 +615,11 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     factbook: can("appearance")
       ? { wikitext: realm.factbookWikitext ?? "", updatedAt: realm.factbookUpdatedAt }
       : null,
+    rules: can("appearance")
+      ? { wikitext: realm.rulesWikitext ?? "", updatedAt: realm.rulesUpdatedAt }
+      : null,
+    links: can("appearance") ? parseRealmLinks(realm.communityLinks) : null,
+    inWorldDate: can("appearance") ? { value: realmInWorldDate(realm.settings) } : null,
     officers: officers.map((o) => ({
       userId: o.userId,
       title: o.title,

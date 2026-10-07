@@ -12,6 +12,7 @@ import { buttonVariants } from "~/components/ui/button";
 import { ClaimableNations } from "../_components/ClaimableNations";
 import {
   CensusPanel,
+  CommunityPanel,
   EmbassiesPanel,
   HappeningsPanel,
   OfficersPanel,
@@ -126,7 +127,11 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
         {hub &&
           (hub.claimsOpen ? (
             hub.nationPages.length > 0 && (
-              <ClaimableNations realmSlug={hub.slug} pages={hub.nationPages} />
+              <ClaimableNations
+                realmSlug={hub.slug}
+                pages={hub.nationPages}
+                rules={overview.rules}
+              />
             )
           ) : (
             <p className="text-label-secondary text-footnote">
@@ -138,6 +143,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
       </div>
 
       <aside className="flex flex-col gap-4" aria-label="Realm panels">
+        <CommunityPanel overview={overview} />
         <OfficersPanel overview={overview} />
         <CensusPanel slug={realm.slug} />
         <PollPanel slug={realm.slug} overview={overview} />

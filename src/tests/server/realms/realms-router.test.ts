@@ -302,6 +302,37 @@ describe("realms.claimNationPage", () => {
     ).rejects.toThrow("Authentication required");
     expect(db.realm.findUnique).not.toHaveBeenCalled();
   });
+
+  /** A realm whose founder wrote rules: claims need "I have read the realm's rules". */
+  function rulesDb() {
+    const db = claimDb();
+    db.realmPage.findFirst.mockResolvedValue({
+      wikiSource: "iiwiki",
+      realm: { slug: "eurth", settings: null, status: "active", rulesHtml: "<p>Be civil.</p>" },
+    } as never);
+    return db;
+  }
+
+  it("refuses a claim in a realm with rules until the player accepts them", async () => {
+    const db = rulesDb();
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringMatching(/rules/) });
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia", acceptedRules: false })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+    expect(db.wikiAccountLink.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("files the claim once the rules are accepted, recording when", async () => {
+    const db = rulesDb();
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia", acceptedRules: true })
+    ).resolves.toMatchObject({ status: "pending" });
+    const data = db.realmClaim.create.mock.calls[0][0].data;
+    expect(data.rulesAcceptedAt).toBeInstanceOf(Date);
+  });
 });
 
 describe("realms.adminCreateRealm", () => {

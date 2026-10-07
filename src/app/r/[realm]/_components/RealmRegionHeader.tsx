@@ -11,32 +11,60 @@ import { assetUrl } from "~/lib/base-path";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
-/** The tabs of a realm page. The map opens the atlas on this realm. */
-function realmTabs(slug: string, canManage: boolean) {
+/**
+ * The tabs of a realm page. The map opens the atlas on this realm; Rules shows once the realm has rules (and
+ * always to those who can write them).
+ */
+function realmTabs(slug: string, canManage: boolean, showRules: boolean) {
   const base = `/r/${encodeURIComponent(slug)}`;
   return [
     { href: base, label: "Overview", exact: true },
     { href: `${base}/board`, label: "Board" },
     { href: `${base}/nations`, label: "Nations" },
+    ...(showRules ? [{ href: `${base}/rules`, label: "Rules" }] : []),
     { href: `/maps?realm=${encodeURIComponent(slug)}`, label: "Map", external: true },
     ...(canManage ? [{ href: `${base}/manage`, label: "Manage" }] : []),
   ];
 }
 
-function StatItem({ label, value }: { label: string; value: React.ReactNode }) {
+function StatItem({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+}) {
   return (
     <div className="min-w-0">
       <dt className="text-label-secondary text-caption">{label}</dt>
       <dd className="text-label text-headline truncate tabular-nums">{value}</dd>
+      {hint && <dd className="text-label-secondary text-caption truncate">{hint}</dd>}
     </div>
   );
 }
 
+/** A fixed in-world date's "as of" real date (YYYY-MM-DD), read as a calendar day. */
+const asOfHint = (asOf: string | null | undefined) =>
+  asOf
+    ? `as of ${new Date(`${asOf}T00:00:00Z`).toLocaleDateString(undefined, {
+        timeZone: "UTC",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`
+    : undefined;
+
 /** The realm's banner, name, key stats and tab bar, shared by every tab. */
 export function RealmRegionHeader({ overview }: { overview: Overview }) {
   const pathname = usePathname();
-  const { realm, stats, founder, viewer } = overview;
-  const tabs = realmTabs(realm.slug, viewer.canManage);
+  const { realm, stats, founder, viewer, inWorldDate } = overview;
+  const tabs = realmTabs(
+    realm.slug,
+    viewer.canManage,
+    !!overview.rules || viewer.powers.includes("appearance")
+  );
   const isActive = (tab: (typeof tabs)[number]) => {
     const href = createUrl(tab.href);
     return "exact" in tab && tab.exact ? pathname === href : pathname?.startsWith(href);
@@ -86,7 +114,9 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
           </div>
         </div>
 
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <dl
+          className={cn("grid grid-cols-2 gap-3", inWorldDate ? "sm:grid-cols-5" : "sm:grid-cols-4")}
+        >
           <StatItem label="Nations" value={stats.nations.toLocaleString()} />
           <StatItem label="Population" value={formatCompact(stats.population)} />
           <StatItem label="Founded" value={new Date(realm.foundedAt).getFullYear()} />
@@ -109,6 +139,13 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
               )
             }
           />
+          {inWorldDate && (
+            <StatItem
+              label="In-world date"
+              value={inWorldDate.label}
+              hint={asOfHint(inWorldDate.asOf)}
+            />
+          )}
         </dl>
 
         {realm.status !== "active" && (

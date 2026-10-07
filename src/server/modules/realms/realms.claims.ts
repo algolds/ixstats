@@ -29,7 +29,8 @@ type ClaimErrorCode =
   | "NOT_PENDING"
   | "REASON_REQUIRED"
   | "REALM_CLOSED"
-  | "SLUG_CONFLICT";
+  | "SLUG_CONFLICT"
+  | "RULES_NOT_ACCEPTED";
 
 export class ClaimError extends Error {
   constructor(
@@ -103,6 +104,7 @@ interface FiledClaim {
   countryId: string | null;
   wikiSource?: string;
   wikiPageTitle?: string;
+  rulesAcceptedAt?: Date;
 }
 
 const AUTO_REVIEWER = "system:auto";
@@ -124,6 +126,28 @@ const notPending = () => new ClaimError("NOT_PENDING", "This claim was already d
 function assertRealmOpen(realmId: string, status: string | null | undefined): void {
   if (!isRealmOpen(realmId, status))
     throw new ClaimError("REALM_CLOSED", "This realm is not open for claims");
+}
+
+/** What the claimant confirmed when filing: that they read the realm's rules. */
+export interface ClaimOptions {
+  acceptedRules?: boolean;
+}
+
+/**
+ * A realm with rules (`Realm.rulesHtml`) takes claims only from players who confirmed reading them; the claim
+ * records when. A realm without rules (or IxWorld without a realm row) needs nothing.
+ */
+function rulesAcceptance(
+  realm: { rulesHtml?: string | null } | null | undefined,
+  options: ClaimOptions
+): { rulesAcceptedAt?: Date } {
+  if (!realm?.rulesHtml) return {};
+  if (!options.acceptedRules)
+    throw new ClaimError(
+      "RULES_NOT_ACCEPTED",
+      "This realm has rules: read them and confirm you have before claiming a nation"
+    );
+  return { rulesAcceptedAt: new Date() };
 }
 const pending = (claimId: string) => ({ claimId, status: "pending" as const, autoApproved: false });
 const RIVAL_REJECTION = "Another claim for this nation was approved";
@@ -420,7 +444,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         ownerUserId: true,
         wikiSource: true,
         wikiPageTitle: true,
-        realm: { select: { settings: true, status: true, slug: true } },
+        realm: { select: { settings: true, status: true, slug: true, rulesHtml: true } },
       },
     });
     if (!country) throw new ClaimError("NOT_FOUND", "Country not found");
@@ -476,11 +500,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     return pending(claim.id);
   }
 
-  async function claimCountry(actor: RealmActor, countryId: string) {
+  async function claimCountry(actor: RealmActor, countryId: string, options: ClaimOptions = {}) {
     const country = await loadClaimable(actor, countryId);
+    const accepted = rulesAcceptance(country.realm, options);
     return fileClaim(
       actor,
-      { realmId: country.realmId, userId: actor.id, countryId },
+      { realmId: country.realmId, userId: actor.id, countryId, ...accepted },
       { countryId },
       {
         kind: "country",
@@ -496,12 +521,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     actor: RealmActor,
     realmId: string,
     title: string
-  ): Promise<NationPage> {
+  ): Promise<{ page: NationPage; realm: { rulesHtml: string | null } }> {
     const page = await db.realmPage.findFirst({
       where: { realmId, kind: "nation", title },
       select: {
         wikiSource: true,
-        realm: { select: { slug: true, settings: true, status: true } },
+        realm: { select: { slug: true, settings: true, status: true, rulesHtml: true } },
       },
     });
     if (!page) throw new ClaimError("NOT_FOUND", "That page is not a nation of this realm");
@@ -509,12 +534,21 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     if (await nationExists(db, realmId, title))
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
     await assertUnderCap(actor, realmId, page.realm.settings);
-    return { realmId, realmSlug: page.realm.slug, wikiSource: page.wikiSource, title };
+    return {
+      page: { realmId, realmSlug: page.realm.slug, wikiSource: page.wikiSource, title },
+      realm: page.realm,
+    };
   }
 
   /** Claim a nation page of the realm's lore index; approval (now or by review) creates its Country. */
-  async function claimNationPage(actor: RealmActor, realmId: string, title: string) {
-    const page = await loadClaimablePage(actor, realmId, title);
+  async function claimNationPage(
+    actor: RealmActor,
+    realmId: string,
+    title: string,
+    options: ClaimOptions = {}
+  ) {
+    const { page, realm } = await loadClaimablePage(actor, realmId, title);
+    const accepted = rulesAcceptance(realm, options);
     const verified = await isVerifiedCreator(actor.id, {
       name: title,
       wikiSource: page.wikiSource,
@@ -528,6 +562,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         countryId: null,
         wikiSource: page.wikiSource,
         wikiPageTitle: title,
+        ...accepted,
       },
       { realmId, wikiPageTitle: title },
       { kind: "page", page },
