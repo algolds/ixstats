@@ -8,6 +8,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 import { parsePrismaError } from "~/lib/prisma-error";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   isProofSource,
@@ -17,6 +18,12 @@ import {
 import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { canModerateRealm, isRealmOpen, isSiteAdmin, type RealmActor } from "./realms.access";
+import {
+  existingNationPage,
+  fillEmptyFromPrefill,
+  findUnclaimedNation,
+  hasMapRegion,
+} from "./realms.handover";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import type { NationPagePrefill } from "./realms.prefill";
@@ -74,7 +81,10 @@ type ClaimsDb = Pick<
   PrismaClient,
   "country" | "user" | "wikiAccountLink" | "realmClaim" | "realmPage" | "$transaction"
 >;
-type ClaimsTx = Pick<Prisma.TransactionClient, "country" | "user" | "realmClaim" | "mapLayer">;
+type ClaimsTx = Pick<
+  Prisma.TransactionClient,
+  "country" | "user" | "realmClaim" | "mapLayer" | "nationalIdentity"
+>;
 
 /** A nation page of a realm's lore index — the claimable unit before its Country exists. */
 interface NationPage {
@@ -86,7 +96,14 @@ interface NationPage {
 
 /** What an approval hands over: an existing country, or a nation page whose country is created then. */
 type ClaimTarget =
-  | { kind: "country"; countryId: string; countryName: string; realmSlug: string | null }
+  | {
+      kind: "country";
+      countryId: string;
+      countryName: string;
+      realmSlug: string | null;
+      /** An unclaimed realm nation's wiki page: its infobox fills what the nation still lacks. */
+      wikiPage?: { wikiSource: string; title: string } | null;
+    }
   | { kind: "page"; page: NationPage };
 
 interface ClaimDecision {
@@ -210,9 +227,13 @@ function uniqueAsTaken(error: Error): never {
 
 /**
  * The first free slug for a new nation: the title's slug, then -<realm slug> when that is taken elsewhere
- * (E-g), then -<realm slug>-2, -3… A title with no Latin letters or digits slugs to "nation".
+ * (E-g), then -<realm slug>-2, -3… A title with no Latin letters or digits slugs to "nation". Also used by the
+ * realm source sync for the unclaimed nations it creates.
  */
-async function freeNationSlug(tx: ClaimsTx, page: NationPage): Promise<string> {
+export async function freeNationSlug(
+  tx: Pick<ClaimsTx, "country">,
+  page: Pick<NationPage, "title" | "realmSlug">
+): Promise<string> {
   const base = generateSlug(page.title) || "nation";
   const isTaken = async (slug: string) =>
     !!(await tx.country.findUnique({ where: { slug }, select: { id: true } }));
@@ -286,6 +307,7 @@ async function handOver(
 ): Promise<HandOver> {
   if (target.kind === "country") {
     await assignNation(tx, { userId: claim.userId, countryId: target.countryId });
+    await fillEmptyFromPrefill(tx, target.countryId, prefill);
     const rivals = await rejectRivals(tx, {
       countryId: target.countryId,
       status: "pending",
@@ -294,9 +316,13 @@ async function handOver(
     return { country: { id: target.countryId, name: target.countryName }, rivals };
   }
   const { page } = target;
-  const country = await createNationCountry(tx, page, prefill);
+  // The nation may exist unclaimed (created by the realm's source sync since the claim was filed): hand it over.
+  const unclaimed = await findUnclaimedNation(tx, page.realmId, page.title);
+  const country = unclaimed ?? (await createNationCountry(tx, page, prefill));
   await assignNation(tx, { userId: claim.userId, countryId: country.id });
-  await takeMapRegion(tx, country.id, page);
+  if (unclaimed) await fillEmptyFromPrefill(tx, country.id, prefill);
+  if (!unclaimed || !(await hasMapRegion(tx, country.id)))
+    await takeMapRegion(tx, country.id, page);
   await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
   const rivals = await rejectRivals(tx, {
     realmId: page.realmId,
@@ -318,7 +344,12 @@ function claimTarget(claim: {
   wikiSource: string | null;
   wikiPageTitle: string | null;
   realm: { slug: string };
-  country: { name: string } | null;
+  country: {
+    name: string;
+    realmId?: string;
+    wikiSource?: string | null;
+    wikiPageTitle?: string | null;
+  } | null;
 }): ClaimTarget | null {
   if (claim.countryId) {
     return {
@@ -326,6 +357,7 @@ function claimTarget(claim: {
       countryId: claim.countryId,
       countryName: claim.country?.name ?? "",
       realmSlug: claim.realm.slug,
+      wikiPage: claim.country ? existingNationPage(claim.country) : null,
     };
   }
   if (!claim.wikiPageTitle || !claim.wikiSource) return null;
@@ -389,10 +421,14 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     }
   }
 
-  /** AT-3: a nation page's prefill, read before the approving transaction; null for an existing country. */
+  /**
+   * AT-3: a nation page's prefill, read before the approving transaction. An existing country has one only when
+   * it is an unclaimed realm nation with a wiki page (it then fills only what is still empty).
+   */
   async function prefillFor(target: ClaimTarget): Promise<NationPagePrefill | null> {
-    if (target.kind !== "page" || !deps.fetchNationPrefill) return null;
-    return deps.fetchNationPrefill(target.page.wikiSource, target.page.title).catch((e: Error) => {
+    const page = target.kind === "page" ? target.page : target.wikiPage;
+    if (!page || !deps.fetchNationPrefill) return null;
+    return deps.fetchNationPrefill(page.wikiSource, page.title).catch((e: Error) => {
       console.warn("[realms] nation page prefill failed:", e);
       return null;
     });
@@ -409,8 +445,16 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
 
   async function isVerifiedCreator(
     userId: string,
-    country: { name: string; wikiSource: string | null; wikiPageTitle: string | null }
+    country: {
+      name: string;
+      wikiSource: string | null;
+      wikiPageTitle: string | null;
+      realmId?: string;
+    }
   ): Promise<boolean> {
+    // A realm nation with no wiki (only on the realm's map: the source sync leaves wikiSource empty) has no page
+    // creator to prove, so its claim always goes to manual review.
+    if (country.realmId && country.realmId !== DEFAULT_REALM_ID && !country.wikiSource) return false;
     const source = country.wikiSource ?? "ixwiki";
     if (!isProofSource(source)) return false;
     const link = await db.wikiAccountLink.findFirst({
@@ -512,6 +556,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         countryId,
         countryName: country.name,
         realmSlug: country.realm?.slug ?? null,
+        wikiPage: existingNationPage(country),
       },
       await isVerifiedCreator(actor.id, country)
     );
@@ -521,7 +566,11 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     actor: RealmActor,
     realmId: string,
     title: string
-  ): Promise<{ page: NationPage; realm: { rulesHtml: string | null } }> {
+  ): Promise<{
+    page: NationPage;
+    realm: { rulesHtml: string | null };
+    unclaimedCountryId?: string;
+  }> {
     const page = await db.realmPage.findFirst({
       where: { realmId, kind: "nation", title },
       select: {
@@ -531,6 +580,12 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     });
     if (!page) throw new ClaimError("NOT_FOUND", "That page is not a nation of this realm");
     assertRealmOpen(realmId, page.realm.status);
+    // The realm's source sync may have created the nation, unclaimed: the claim is then a claim on that country.
+    const unclaimed = await findUnclaimedNation(db, realmId, title);
+    if (unclaimed) {
+      const nationPage = { realmId, realmSlug: page.realm.slug, wikiSource: page.wikiSource, title };
+      return { page: nationPage, realm: page.realm, unclaimedCountryId: unclaimed.id };
+    }
     if (await nationExists(db, realmId, title))
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
     await assertUnderCap(actor, realmId, page.realm.settings);
@@ -547,7 +602,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     title: string,
     options: ClaimOptions = {}
   ) {
-    const { page, realm } = await loadClaimablePage(actor, realmId, title);
+    const { page, realm, unclaimedCountryId } = await loadClaimablePage(actor, realmId, title);
+    if (unclaimedCountryId) return claimCountry(actor, unclaimedCountryId, options);
     const accepted = rulesAcceptance(realm, options);
     const verified = await isVerifiedCreator(actor.id, {
       name: title,
@@ -597,7 +653,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       include: {
         realm: { select: { ownerId: true, slug: true, status: true } },
         user: { select: { clerkUserId: true } },
-        country: { select: { name: true } },
+        country: { select: { name: true, realmId: true, wikiSource: true, wikiPageTitle: true } },
       },
     });
     if (!claim) throw new ClaimError("NOT_FOUND", "Claim not found");
