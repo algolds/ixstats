@@ -152,7 +152,11 @@ export async function startMapImportApply(
       realmId: parent.realmId,
       kind: parent.kind,
       dryRun: false,
-      options: { apply, georef: (parent.options as MapImportOptions).georef ?? null } as Prisma.InputJsonValue,
+      options: {
+        apply,
+        georef: (parent.options as MapImportOptions).georef ?? null,
+        attribution: (parent.options as MapImportOptions).attribution ?? null,
+      } as Prisma.InputJsonValue,
       requestedBy: actor.clerkUserId,
       parentJobId: parent.id,
       uploadId: parent.uploadId,
@@ -335,7 +339,11 @@ async function runApply(
 ): Promise<ApplySummary> {
   if (!job.parentJobId) throw new MapImportError("BAD_REQUEST", "The apply job has no analysis");
   const realm = await findImportRealm(db, job.realmId);
-  const stored = (job.options ?? {}) as { apply?: unknown; georef?: MapGeoreference | null };
+  const stored = (job.options ?? {}) as {
+    apply?: unknown;
+    georef?: MapGeoreference | null;
+    attribution?: string | null;
+  };
   const apply = mapImportApplySchema.parse(stored.apply ?? {});
   progress.write(5, "Reading the analysis");
   const result = await readImportResult(job.parentJobId);
@@ -344,7 +352,11 @@ async function runApply(
   const plan = await planMapImport(db, realm, result, apply, georef);
   if (progress.isCancelled()) throw new ImportCancelledError();
   progress.write(30, `Writing ${plan.features.length} borders`);
-  const applied = await applyMapImportPlan(db, realm, plan, { jobId: job.id, requestedBy: job.requestedBy });
+  const applied = await applyMapImportPlan(db, realm, plan, {
+    jobId: job.id,
+    requestedBy: job.requestedBy,
+    attribution: stored.attribution ?? null,
+  });
   if (apply.saveGeoreference && result.space === "pixel") {
     progress.write(95, "Saving the georeference");
     await saveRealmGeoreference(db, realm, georef);

@@ -31,6 +31,7 @@ import {
   saveRealmGeoreference,
 } from "~/server/modules/maps/map-import.realm";
 import { isUploadId } from "~/server/modules/maps/map-import.storage";
+import { startWikiMapImport } from "~/server/modules/maps/map-import.wiki";
 
 function importError(error: unknown): never {
   if (error instanceof MapImportError) throw new TRPCError({ code: error.code, message: error.message });
@@ -80,6 +81,16 @@ export const geoEditorMapImportRouter = createTRPCRouter({
         ).catch(importError);
         return { jobId };
       }),
+
+    /**
+     * "Import this map": fetch the original of the map chosen from the realm's wiki and queue its analysis with
+     * the realm's credit line and georeference.
+     */
+    startFromWiki: rateLimitedMutationProcedure
+      .input(z.object({ realmId: id }))
+      .mutation(({ ctx, input }) =>
+        startWikiMapImport(ctx.db, ctx.user, input.realmId).catch(importError)
+      ),
 
     /** One job's status, progress and summary (polled by the wizard). */
     job: protectedProcedure

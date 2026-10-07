@@ -21,6 +21,7 @@ const STATUS: Record<MapImportError["code"], number> = {
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  BAD_GATEWAY: 502,
 };
 
 export async function POST(request: NextRequest) {

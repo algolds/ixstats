@@ -63,6 +63,8 @@ export const mapImportOptionsSchema = z.object({
   geojson: geojsonEngineOptionsSchema.default({}),
   /** Overrides the realm's stored georeference for this import. */
   georef: mapGeoreferenceSchema.optional(),
+  /** The map's credit line (e.g. its wiki file's author), stored on every imported border. */
+  attribution: z.string().trim().max(300).optional(),
 });
 export type MapImportOptions = z.infer<typeof mapImportOptionsSchema>;
 export type MapImportOptionsInput = z.input<typeof mapImportOptionsSchema>;

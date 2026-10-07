@@ -12,7 +12,7 @@ import {
 } from "~/lib/maps/realm-map-settings";
 import { canImportRealmMap, type RealmActor } from "~/server/modules/realms/realms.access";
 
-export type MapImportErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT";
+export type MapImportErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT" | "BAD_GATEWAY";
 
 export class MapImportError extends Error {
   constructor(

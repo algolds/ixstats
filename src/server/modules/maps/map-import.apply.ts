@@ -233,7 +233,7 @@ export async function applyMapImportPlan(
   db: PrismaClient,
   realm: ImportRealm,
   plan: MapImportPlan,
-  context: { jobId: string | null; requestedBy: string }
+  context: { jobId: string | null; requestedBy: string; attribution?: string | null }
 ): Promise<AppliedImport> {
   const { diff, features } = plan;
   if (features.length === 0) throw new Error("Nothing to import: map at least one region to a nation");
@@ -260,6 +260,7 @@ export async function applyMapImportPlan(
         importJobId: context.jobId,
         sourceKeys: f.sourceKeys,
         importHash: f.hash,
+        ...(context.attribution && { attribution: context.attribution }),
       },
     })),
     { layerType: LAYER, areaScale: diff.areaScale }
