@@ -567,10 +567,10 @@ export async function snapPointToCountryBorder(
     const centroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
       `SELECT ST_X(geom_centroid) as c_lng, ST_Y(geom_centroid) as c_lat
        FROM (
-         SELECT ST_Centroid(geometry::geometry) as geom_centroid
+         SELECT ST_Centroid(geom_postgis) as geom_centroid
          FROM subdivisions
-         WHERE "countryId" = $1
-         ORDER BY geometry::geometry <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
+         WHERE "countryId" = $1 AND geom_postgis IS NOT NULL
+         ORDER BY geom_postgis <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
          LIMIT 1
        ) sub`,
       countryId,
