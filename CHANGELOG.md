@@ -14,6 +14,30 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
 reads 1.4.0 until the RC2 cut.
 
+### 📚 Realm Wikis & IIWiki World Discovery (2026-10-07)
+
+- **Realm wiki settings:** each realm names the sister wiki its lore lives on and how its world is found there
+  (`Realm.settings.wiki`: wiki, root category, keyword, nation roster category, portal page, extra map categories;
+  `src/lib/realms/realm-wiki-settings.ts`). Site admins edit them in `/admin/realms` → **Wiki**, the founder in
+  Manage → **Wiki**. The `eurth-map` preset carries Eurth's values and fills them when the realm has none.
+  `bun scripts/realms/import-realm-lore.ts --realm eurth` alone now works once they are set; flags still win.
+- **World discovery** (`src/lib/realms/sources/iiwiki-discovery.ts`): the roster (lore import's roster rule), each
+  nation's infobox hints (flag, coat of arms, capital and its `{{coord}}`, locator map files), and candidate world
+  maps (the world's map categories, the portal's images and page image) ranked for a flat political map, each with
+  its original URL, size, type, SHA-1, licence and author. Run step by step from the panel with progress; reads are
+  sequential, paced and capped, Retry-After is honoured, and a 403 returns what was gathered with `blocked` instead of
+  an error (Continue resumes). A refused discovery no longer takes the wiki offline for the whole app.
+- **Use this map / Re-check:** the original file is fetched straight from the wiki (never through wsrv.nl, which may
+  re-encode colours), only from that wiki's hosts with every redirect re-checked, at most 40 MB, its SHA-1 checked
+  against the wiki's and its dimensions read from the header (64 megapixels at most) before anything decodes it. The
+  choice is stored as `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`, `attribution`, `file`) for the map
+  import; Re-check compares the wiki's current SHA-1 (unchanged, changed or missing).
+- **Infobox hints export:** `realms.wiki.infoboxHints` gives each roster nation its capital coordinates and a proxied
+  locator map thumbnail, for the map import's colour to nation step.
+- **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
+  `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
+  built from it, so adding a host is one entry and no setting can name a URL.
+
 ### 🗺️ Realm Source Sync, Unclaimed Nations & Realm Alliances (2026-10-07)
 
 - **Source sync:** a realm's nations, figures, borders and alliances follow an outside source, a public GitHub
