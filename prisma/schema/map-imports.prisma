@@ -1,0 +1,54 @@
+// IxStates — Community map imports (a realm's political map from a PNG, SVG or GeoJSON file)
+
+/// One background map import (docs/systems/maps.md, "Realm map import engine"). An analyse job (dryRun) decodes
+/// and traces the uploaded file and stores the regions it found; an apply job (parentJobId = the analyse job)
+/// writes the mapped regions into the realm's political layer through the realm map writer. Plain id columns,
+/// no relations, so the shared Realm model needs no back-relation fields.
+model MapImportJob {
+  id          String    @id @default(cuid())
+  realmId     String // Realm.id
+  kind        String // png | svg | geojson
+  status      String    @default("queued") // queued | running | succeeded | failed | cancelled
+  progress    Int       @default(0) // 0-100
+  stage       String? // what the job is doing now, for the wizard
+  dryRun      Boolean   @default(true) // true: analyse only; false: apply a dry run's result
+  /// What the job was asked to do (mapImportOptionsSchema): engine settings, georeference, colour key, mapping
+  options     Json      @default("{}")
+  /// The outcome: palette or regions, report, diff or written counts (MapImportSummary)
+  result      Json?
+  error       String?
+  requestedBy String // Clerk userId, "cron" or "script"
+  uploadId    String? // the uploaded file's content id (SHA-256) in the map import store
+  filename    String?
+  parentJobId String? // an apply job's analyse job
+  startedAt   DateTime?
+  heartbeatAt DateTime? // last progress write; a running job silent for long is treated as interrupted
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([realmId, createdAt])
+  @@index([status, createdAt])
+  @@map("map_import_jobs")
+}
+
+/// What one applied map import replaced, for rollback: the touched features as they were before (gzipped JSON,
+/// capped in size), the keys the import created, and the land areas it filled.
+model MapImport {
+  id                String    @id @default(cuid())
+  realmId           String // Realm.id
+  jobId             String? // MapImportJob.id (null for an importPipelineResult write)
+  layerTypes        String[]  @default([])
+  mode              String // merge | replace
+  createdBy         String // Clerk userId
+  summary           Json? // written, rejected, deactivated, land areas filled
+  snapshot          Bytes? // gzipped MapImportSnapshot JSON; null when it was over the cap
+  snapshotBytes     Int       @default(0) // uncompressed size
+  rollbackAvailable Boolean   @default(true)
+  rolledBackAt      DateTime?
+  rolledBackBy      String?
+  createdAt         DateTime  @default(now())
+
+  @@index([realmId, createdAt])
+  @@map("map_imports")
+}
