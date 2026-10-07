@@ -62,6 +62,12 @@ describe("nation names", () => {
   it("matches case-, accent- and punctuation-blind, preferring the realm's country", () => {
     expect(checkNationName("kiziauke", candidates)).toEqual({ status: "matched", name: "Kíziáuke", countryId: "c1" });
     expect(autoMatchNations(["BOREALIS", "Nowhere"], candidates)).toEqual({ BOREALIS: "Borealis", Nowhere: null });
+    // The editor's matcher drops state forms: "Republic of Borealis" is Borealis.
+    expect(checkNationName("Republic of Borealis", candidates)).toEqual({
+      status: "matched",
+      name: "Borealis",
+      countryId: "c2",
+    });
   });
 
   it("suggests close names for an unknown one instead of guessing", () => {
