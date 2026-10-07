@@ -4,7 +4,7 @@
     "tsBuildInfoFile": ".next/cache/tsbuildinfo.scripts",
     "incremental": true
   },
-  "include": ["src/proxy.ts", "src/instrumentation.ts", "src/content", "scripts", "prisma/seeds"],
+  "include": ["src/proxy.ts", "src/instrumentation.ts", "src/instrumentation-node.ts", "src/content", "scripts", "prisma/seeds"],
   "exclude": [
     "scripts/archive",
     "scripts/verification/fixtures",

@@ -364,6 +364,23 @@ function buildGovernment(
   };
 }
 
+type ElectionResultRow = NonNullable<ProfileState["election"]>["results"][number];
+
+/** Results are per candidate, so a party fielding several candidates appears more than once. */
+export function resultsByParty(
+  candidates: readonly (ElectionResultRow & { partyId: string })[]
+): ElectionResultRow[] {
+  const parties = new Map<string, ElectionResultRow>();
+  for (const { partyId, partyName, color, votePercentage, seatsWon } of candidates) {
+    const p = parties.get(partyId);
+    if (p) {
+      p.votePercentage += votePercentage;
+      p.seatsWon += seatsWon;
+    } else parties.set(partyId, { partyName, color, votePercentage, seatsWon });
+  }
+  return [...parties.values()].sort((a, b) => b.seatsWon - a.seatsWon);
+}
+
 function buildElection(
   status: Output<"elections", "getElectionStatus"> | undefined
 ): ProfileState["election"] {
@@ -373,12 +390,7 @@ function buildElection(
     lastName: last?.name ?? null,
     lastIxTime: last?.scheduledIxTime ?? null,
     turnout: realNumber(last?.turnout),
-    results: (last?.results ?? []).map(({ partyName, color, votePercentage, seatsWon }) => ({
-      partyName,
-      color,
-      votePercentage,
-      seatsWon,
-    })),
+    results: resultsByParty(last?.results ?? []),
     upcomingName: upcoming?.name ?? null,
     upcomingIxTime: upcoming?.scheduledIxTime ?? null,
     totalSeats: status.totalSeats,

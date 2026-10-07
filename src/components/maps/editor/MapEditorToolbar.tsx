@@ -122,7 +122,7 @@ function SingleToolButton({
       content={tool.label}
       shortcut={tool.shortcut}
       side={horizontal ? "top" : "right"}
-      open={isToolDisabled ? false : undefined}
+      disabled={isToolDisabled}
     >
       <Button
         variant={isActive ? "default" : "ghost"}
@@ -179,7 +179,7 @@ function GroupToolButton({
         content={activeTool.label}
         shortcut={activeTool.shortcut}
         side={horizontal ? "top" : "right"}
-        open={isToolDisabled || isOpen ? false : undefined}
+        disabled={isToolDisabled || isOpen}
       >
         <PopoverTrigger asChild>
           <Button

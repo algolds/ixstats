@@ -25,6 +25,9 @@ interface TooltipProps extends React.ComponentProps<typeof TooltipPrimitive.Root
   side?: "top" | "right" | "bottom" | "left";
   sideOffset?: number;
   contentClassName?: string;
+  /** Keep the tooltip shut (e.g. while its trigger's popover is open). Use this rather than
+   *  `open={x ? false : undefined}`, which flips Radix between controlled and uncontrolled. */
+  disabled?: boolean;
 }
 
 function Tooltip({
@@ -34,8 +37,23 @@ function Tooltip({
   side,
   sideOffset = 4,
   contentClassName,
-  ...props
+  disabled,
+  open,
+  onOpenChange,
+  ...rest
 }: TooltipProps) {
+  const [shown, setShown] = React.useState(false);
+  const props =
+    disabled === undefined
+      ? { ...rest, open, onOpenChange }
+      : {
+          ...rest,
+          open: !disabled && shown,
+          onOpenChange: (next: boolean) => {
+            setShown(next);
+            onOpenChange?.(next);
+          },
+        };
   // If content is passed as a prop, render full compound structure automatically
   if (content !== undefined) {
     return (
