@@ -163,6 +163,8 @@ type Summary = {
 };
 type Outcome = { error: string } | { summary: Summary; digest: string };
 
+// Re-pinned 2026-10-07 when rings became classified by containment and wound per RFC 7946 (outer
+// counter-clockwise, holes clockwise) with holes subtracted from the area; same rings, logs and properties.
 const EXPECTED: Record<string, Outcome> = {
   politicalByLabel: {
     summary: {
@@ -191,7 +193,7 @@ const EXPECTED: Record<string, Outcome> = {
         "feature_11:Polygon",
       ],
     },
-    digest: "4d74b50c3b4018dd49de692bd3b490cd02c89d89f66088ce67d334830150e0ea",
+    digest: "f54892267def84b9f2476f94c8f51184c67fea3a22b90333fa9c4c738580006f",
   },
   backgroundById: {
     summary: {
@@ -239,7 +241,7 @@ const EXPECTED: Record<string, Outcome> = {
         "feature_11:Polygon",
       ],
     },
-    digest: "3fa63d0e34a0bfb5de4411f34aa2094003c001ee0595923f809e37cccbe7b3c2",
+    digest: "10fef1c3a782a576feb2d2a07c2529cc1ea9df958a88a10ea8aa450ae8c1799c",
   },
   calibrationFallsBack: {
     summary: {
@@ -271,7 +273,7 @@ const EXPECTED: Record<string, Outcome> = {
         "relative_arc:Polygon",
       ],
     },
-    digest: "514454b8f5f2083a6adec9042e4326499f92ff462a9411c06da69f636bd276e7",
+    digest: "0b13ea3e2a3bc2275607fa74ec07655b2b38742d4ffeabca4769f840a0ce4b03",
   },
   soleGroupFallback: {
     summary: {
@@ -288,7 +290,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 100, height: 50 },
       geometryTypes: ["a:Polygon"],
     },
-    digest: "539e93fd3a72ffbd858bf3f1efc611ad40a7febd5de4f6a3b713f59651d3a804",
+    digest: "316c1eb846b069ca2f4633ff0970db91a6680443ebb9233aa2728e28f9ea201b",
   },
   nestedLabelFallback: {
     summary: {
@@ -305,7 +307,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 200, height: 100 },
       geometryTypes: ["lake:Polygon"],
     },
-    digest: "f5f515cffc8be841019d0f2ced43017eb33813a193aaa22e49b2efcbfb06e5c4",
+    digest: "b91b895388e3cbf58709560ba9c711ce3cca7a3e0f550964b59a573b16ec2825",
   },
   largestGroupFallback: {
     summary: {
@@ -322,7 +324,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 200, height: 100 },
       geometryTypes: ["p2:Polygon", "p3:Polygon"],
     },
-    digest: "59a65dd490f89954cd150c2c178009e2d1f7b7f030620390899e2f02b4f7591b",
+    digest: "e534eb6b1d0f43f67bf83c915de5ff034163e4dbac112bce6a06d7884f2fb64c",
   },
   rootPathsFallback: {
     summary: {
@@ -339,7 +341,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 10, height: 10 },
       geometryTypes: ["p:Polygon"],
     },
-    digest: "76755db5dc4f1402beb7e5cee70665ef744b4d03a11b11ec165eb0b8103eb4fe",
+    digest: "b478db1dfdfdb65f21e70bb18a434c1955a51adfc15faa381b4f5252261126cd",
   },
   noViewBoxDefaults: {
     summary: {
@@ -354,7 +356,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 25625, height: 15729 },
       geometryTypes: ["p:Polygon"],
     },
-    digest: "01ed1b61d8ebeae17793cad1ea1724f87c6a11bbe5a2d834d32f1198dc6d85b6",
+    digest: "441955fedda30d5ba75a4c8ab330767528b4dafaa6b9fb490861221c213a0b0f",
   },
   shortViewBox: {
     summary: {
@@ -369,7 +371,7 @@ const EXPECTED: Record<string, Outcome> = {
       viewBox: { width: 25625, height: 15729 },
       geometryTypes: ["p:Polygon"],
     },
-    digest: "40d9a5a46b1ce812abaab8dabfc03c6c758ea131042472c4477bc3421a95cbf0",
+    digest: "0685f34d8a328c1f9a1902e4f8ad56bfdf92c735cb73d87b4f9398dcc659dcff",
   },
   zeroViewBox: {
     summary: {

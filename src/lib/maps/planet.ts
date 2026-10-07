@@ -7,7 +7,7 @@
  * optional planet radius and scales Earth's figures by `radiusKm / EARTH_RADIUS_KM`, so without one it returns
  * exactly the values the map code has always used. Pure, client-safe.
  */
-import type { Position } from "geojson";
+import type { Geometry, Position } from "geojson";
 
 /** Earth's mean radius in km: the haversine radius. */
 export const EARTH_RADIUS_KM = 6_371;
@@ -51,4 +51,27 @@ export function ringAreaSqKm(ring: Position[], radiusKm: number = EARTH_RADIUS_K
     area += x1! * kmLng * (y2! * kmLat) - x2! * kmLng * (y1! * kmLat);
   }
   return Math.abs(area) / 2;
+}
+
+/** Approximate area (km²) of a polygon given as `[outer, ...holes]`: the outer ring less its holes. */
+export function polygonAreaSqKm(rings: Position[][], radiusKm: number = EARTH_RADIUS_KM): number {
+  const [outer, ...holes] = rings;
+  if (!outer) return 0;
+  const area = holes.reduce(
+    (sum, hole) => sum - ringAreaSqKm(hole, radiusKm),
+    ringAreaSqKm(outer, radiusKm)
+  );
+  return Math.max(0, area);
+}
+
+/** Approximate area (km²) of a Polygon or MultiPolygon, holes subtracted; 0 for any other geometry. */
+export function polygonalAreaSqKm(
+  geometry: Geometry | null | undefined,
+  radiusKm: number = EARTH_RADIUS_KM
+): number {
+  if (geometry?.type === "Polygon") return polygonAreaSqKm(geometry.coordinates, radiusKm);
+  if (geometry?.type === "MultiPolygon") {
+    return geometry.coordinates.reduce((sum, poly) => sum + polygonAreaSqKm(poly, radiusKm), 0);
+  }
+  return 0;
 }

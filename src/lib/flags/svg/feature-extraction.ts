@@ -1,21 +1,22 @@
 /**
  * Per-path feature extraction for the SVG → GeoJSON parser: reference geometry
- * reuse, SVG → WGS84 conversion, ring closure and outer/hole classification.
+ * reuse, SVG → WGS84 conversion, ring closure and outer/hole classification
+ * (by containment under the path's fill rule: lib/maps/ring-assembly).
  */
 
-import type { MultiPolygon, Polygon } from "geojson";
 import type { ParsedFeature } from "../svg-parser";
 import type { SvgCoordinateConfig } from "../svg-coordinate-config";
 import { svgToWgs84 } from "../svg-coordinate-config";
 import { pathCommandsToRings } from "./command-evaluator";
 import type { ReferenceGeometry } from "./reference-geometry";
+import { assembleRings } from "~/lib/maps/ring-assembly";
 import {
-  ringArea,
   calculateCentroid,
   calculateBoundingBox,
-  calculateApproxArea,
   extractFillColor,
+  extractFillRule,
   extractStrokeColor,
+  roundedAreaSqKm,
 } from "./topology-flattener";
 import { SVG_NS, inkscapeLabel, parseAbsolutePath, type XmlElement } from "./xml";
 
@@ -79,46 +80,15 @@ function closeRing(ring: Ring): Ring {
   return ring;
 }
 
-function buildGeometry(closedRings: Ring[]): Polygon | MultiPolygon {
-  if (closedRings.length === 1) {
-    return {
-      type: "Polygon",
-      coordinates: [closedRings[0]!],
-    };
-  }
-
-  // Determine which rings are outer (CCW in GeoJSON) vs holes (CW)
-  const outerRings = closedRings.filter((r) => ringArea(r) > 0);
-  const holeRings = closedRings.filter((r) => ringArea(r) <= 0);
-
-  if (outerRings.length === 0) {
-    return {
-      type: outerRings.length <= 1 && holeRings.length === 0 ? "Polygon" : "MultiPolygon",
-      coordinates:
-        closedRings.length === 1
-          ? [closedRings[0]!.slice().reverse()]
-          : closedRings.map((r) => [r.slice().reverse()]),
-    } as Polygon | MultiPolygon;
-  }
-  if (outerRings.length === 1 && holeRings.length > 0) {
-    return {
-      type: "Polygon",
-      coordinates: [outerRings[0]!, ...holeRings.map((r) => r.slice().reverse())],
-    };
-  }
-  return {
-    type: "MultiPolygon",
-    coordinates: outerRings.map((outer) => [outer]),
-  };
-}
-
 /**
  * No reference — fall back to SVG coordinate conversion. Returns null (after
  * logging why) when the path yields no usable rings.
  */
 function convertSvgFeature(
   d: string,
-  base: Pick<ParsedFeature, "featureId" | "displayName" | "properties">,
+  base: Pick<ParsedFeature, "featureId" | "displayName" | "properties"> & {
+    fillRule?: "evenodd" | "nonzero";
+  },
   options: FeatureExtractionOptions,
   log: string[]
 ): ParsedFeature | null {
@@ -148,14 +118,15 @@ function convertSvgFeature(
   }
 
   const closedRings = validRings.map((ring) => closeRing(ring));
+  const geometry = assembleRings(closedRings, base.fillRule);
   return {
     featureId,
     displayName: base.displayName,
-    geometry: buildGeometry(closedRings),
+    geometry,
     properties: base.properties,
     centroid: calculateCentroid(closedRings),
     boundingBox: calculateBoundingBox(closedRings),
-    areaSqKm: calculateApproxArea(closedRings),
+    areaSqKm: roundedAreaSqKm(geometry),
   };
 }
 
@@ -206,7 +177,13 @@ export function extractFeatures(
         continue; // skip SVG coordinate conversion
       }
 
-      const feature = convertSvgFeature(d, { featureId, displayName, properties }, options, log);
+      const fillRule = extractFillRule(pathEl);
+      const feature = convertSvgFeature(
+        d,
+        { featureId, displayName, properties, fillRule },
+        options,
+        log
+      );
       if (feature) features.push(feature);
     } catch (err) {
       log.push(

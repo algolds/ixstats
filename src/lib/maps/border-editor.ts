@@ -207,14 +207,18 @@ export function findNearestEdge(
   return best;
 }
 
-/** Calculate approximate area of a geometry in square kilometers. */
+/** Calculate approximate area of a geometry in square kilometers: each polygon's outer ring less its holes. */
 export function calculateArea(geometry: Polygon | MultiPolygon): number {
-  const rings = getAllRings(geometry);
+  const polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
   let totalArea = 0;
 
-  for (const ring of rings) {
-    const area = shoelaceArea(ring);
-    totalArea += Math.abs(area);
+  for (const [outer, ...holes] of polygons) {
+    if (!outer) continue;
+    const area = holes.reduce(
+      (sum, hole) => sum - Math.abs(shoelaceArea(hole)),
+      Math.abs(shoelaceArea(outer))
+    );
+    totalArea += Math.max(0, area);
   }
 
   // Convert from square degrees to approximate sq km (planet.ts: 1° ≈ 111.32 km at the equator).
