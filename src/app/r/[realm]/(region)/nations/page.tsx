@@ -3,9 +3,12 @@
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
+import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { createUrl } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
+import { ClaimNationButton } from "~/components/realms/ClaimNationButton";
 import { ClaimableNations } from "../../_components/ClaimableNations";
 import { LeaveRealmButton } from "../../_components/LeaveRealmButton";
 import { MyClaims } from "../../_components/MyClaims";
@@ -13,11 +16,12 @@ import { PlayAsNation } from "../../_components/PlayAsNation";
 
 /**
  * Every nation of the realm, the viewer's own first (with Play as and Leave realm), then the viewer's claims here
- * and the claimable pages.
+ * and the claimable pages. Unclaimed nations are badged, with Claim for signed-in viewers while claims are open.
  */
 export default function RealmNationsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
+  const { isSignedIn } = useAuth();
   // Shared with the region layout's header query: the rules a claim needs accepted.
   const { data: overview } = api.realms.region.overview.useQuery({ slug });
   const ownsHere = !!realm?.countries.some((c) => c.mine);
@@ -69,11 +73,18 @@ export default function RealmNationsPage({ params }: { params: Promise<{ realm: 
                   {c.flag && (
                     <img src={c.flag} alt="" className="h-4 w-6 rounded-sm object-cover" />
                   )}
-                  <span className="text-label truncate">{c.name}</span>
+                  <span className={c.claimed ? "text-label truncate" : "text-label-secondary truncate"}>
+                    {c.name}
+                  </span>
                   {!c.claimed && (
-                    <span className="text-label-secondary text-footnote ml-auto">unclaimed</span>
+                    <Badge variant="outline" className="ml-auto">
+                      Unclaimed
+                    </Badge>
                   )}
                 </Link>
+                {!c.claimed && isSignedIn && realm.claimsOpen && (
+                  <ClaimNationButton realmSlug={realm.slug} countryId={c.id} countryName={c.name} />
+                )}
                 {c.mine && (
                   <>
                     <PlayAsNation

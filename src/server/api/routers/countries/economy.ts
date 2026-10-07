@@ -45,7 +45,7 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const LEAN_INCLUDE = {
   storytellerEffects: { where: { isActive: true }, orderBy: { ixTimeTimestamp: "desc" } },
   owner: { select: SOVEREIGN_OWNER_SELECT },
-  realm: { select: { id: true, name: true, slug: true } },
+  realm: { select: { id: true, name: true, slug: true, status: true } },
 } satisfies Prisma.CountryInclude;
 
 const ECONOMIC_INCLUDE = {

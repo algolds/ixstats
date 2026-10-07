@@ -21,6 +21,7 @@ const MAP_SUMMARY_SELECT = {
   landArea: true,
   leader: true,
   governmentType: true,
+  ownerUserId: true,
   nationalIdentity: { select: { capitalCity: true } },
 } satisfies Prisma.CountrySelect;
 
@@ -42,6 +43,8 @@ function mapSummary(c: Prisma.CountryGetPayload<{ select: typeof MAP_SUMMARY_SEL
     leader: c.leader,
     governmentType: c.governmentType,
     capitalCity: c.nationalIdentity?.capitalCity ?? null,
+    /** Whether a player holds the nation (never the owner's id: this is a public read). */
+    claimed: c.ownerUserId !== null,
   };
 }
 

@@ -533,6 +533,7 @@ function CommandBody({
         ]}
         realm={identity.realm}
         sovereign={identity.sovereign}
+        claim={identity.claim}
         stats={headlineVitals(vitals)}
         cover={cover}
         countrySlug={layer.slug}

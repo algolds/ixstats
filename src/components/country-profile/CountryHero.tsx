@@ -151,6 +151,7 @@ interface CountryHeroProps {
   facts?: readonly { label: string; value: string | null | undefined }[];
   realm?: CountryIdentityStripProps["realm"];
   sovereign?: CountryIdentityStripProps["sovereign"];
+  claim?: CountryIdentityStripProps["claim"];
   /** Headline figures (population, GDP, GDP per capita, land area). */
   stats?: readonly VitalStat[];
   cover?: HeroCover | null;
@@ -178,6 +179,7 @@ export function CountryHero({
   facts = [],
   realm,
   sovereign,
+  claim,
   stats = [],
   cover,
   countrySlug,
@@ -241,7 +243,7 @@ export function CountryHero({
           )}
 
           <div className="flex flex-col gap-4">
-            <CountryIdentityStrip realm={realm} sovereign={sovereign} />
+            <CountryIdentityStrip realm={realm} sovereign={sovereign} claim={claim} />
             {shownFacts.length > 0 && (
               <dl className="flex flex-wrap gap-x-8 gap-y-3">
                 {shownFacts.map((f) => (

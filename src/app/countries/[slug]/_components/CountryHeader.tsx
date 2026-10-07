@@ -1,6 +1,7 @@
 "use client";
 
 import { CountryHero } from "~/components/country-profile/CountryHero";
+import { claimableNation } from "~/lib/realms/claimable-nation";
 import { headlineVitals } from "~/components/country-profile/vitals";
 import { realNumber } from "../_utils/profileLayer";
 import { useProfileShell } from "./ProfileShellContext";
@@ -55,6 +56,7 @@ export function CountryHeader() {
             }
           : null
       }
+      claim={claimableNation(c)}
       stats={stats}
       cover={cover}
       countrySlug={str(c.slug) ?? name.replace(/\s+/g, "_")}

@@ -17,6 +17,7 @@
 import { useMemo } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { claimableNation } from "~/lib/realms/claimable-nation";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import type { WikiSource } from "~/lib/wiki-os/config";
@@ -287,6 +288,7 @@ function buildIdentity(
           roleName: firstStr(owner.role?.displayName, owner.role?.name),
         }
       : null,
+    claim: claimableNation(c),
   };
 }
 
