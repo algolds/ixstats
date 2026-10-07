@@ -27,6 +27,17 @@ export function signedRingArea(ring: Position[]): number {
   return area / 2;
 }
 
+/** Planar area (coordinate units²) of a polygon given as `[outer, ...holes]`: the outer ring less its holes. */
+export function polygonPlanarArea(rings: Position[][]): number {
+  const [outer, ...holes] = rings;
+  if (!outer) return 0;
+  const size = (ring: Position[]) => Math.abs(signedRingArea(ring));
+  return Math.max(
+    0,
+    holes.reduce((area, hole) => area - size(hole), size(outer))
+  );
+}
+
 function closeRing(ring: Ring): Ring {
   const first = ring[0];
   const last = ring[ring.length - 1];

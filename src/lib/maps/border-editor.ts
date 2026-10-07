@@ -8,6 +8,7 @@
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { distanceDeg, projectPointToSegment } from "./planar";
 import { kmPerDegree, kmPerDegreeLng } from "./planet";
+import { polygonPlanarArea } from "./ring-assembly";
 
 // Re-exported for the editor components that import them from here
 export { distanceDeg, projectPointToSegment };
@@ -210,16 +211,7 @@ export function findNearestEdge(
 /** Calculate approximate area of a geometry in square kilometers: each polygon's outer ring less its holes. */
 export function calculateArea(geometry: Polygon | MultiPolygon): number {
   const polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
-  let totalArea = 0;
-
-  for (const [outer, ...holes] of polygons) {
-    if (!outer) continue;
-    const area = holes.reduce(
-      (sum, hole) => sum - Math.abs(shoelaceArea(hole)),
-      Math.abs(shoelaceArea(outer))
-    );
-    totalArea += Math.max(0, area);
-  }
+  const totalArea = polygons.reduce((sum, rings) => sum + polygonPlanarArea(rings), 0);
 
   // Convert from square degrees to approximate sq km (planet.ts: 1° ≈ 111.32 km at the equator).
   // IxEarth scale is baked into the map geometry, so no additional scale factor is needed
