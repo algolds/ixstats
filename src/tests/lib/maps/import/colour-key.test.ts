@@ -5,7 +5,13 @@ import { checkNationName, suggestNations, autoMatchNations } from "~/lib/maps/im
 describe("parseColourKey", () => {
   it("reads a CSV with a header, either column order and several colours per nation", () => {
     const key = parseColourKey(
-      ["colour,nation", "#FF0000,Aurelia", "Borealis,#00ff00", "Aurelia,#ee0000,#dd0000", "#abc,Cyrene"].join("\n")
+      [
+        "colour,nation",
+        "#FF0000,Aurelia",
+        "Borealis,#00ff00",
+        "Aurelia,#ee0000,#dd0000",
+        "#abc,Cyrene",
+      ].join("\n")
     );
     expect(key.problems).toEqual([]);
     expect(key.entries).toEqual([
@@ -25,10 +31,14 @@ describe("parseColourKey", () => {
   });
 
   it("reads the JSON shapes", () => {
-    expect(parseColourKey('{"#ff0000": "Aurelia"}').entries).toEqual([{ hex: "#ff0000", nation: "Aurelia" }]);
+    expect(parseColourKey('{"#ff0000": "Aurelia"}').entries).toEqual([
+      { hex: "#ff0000", nation: "Aurelia" },
+    ]);
     expect(parseColourKey('{"Aurelia": ["#ff0000", "#ee0000"]}').entries).toHaveLength(2);
     expect(
-      parseColourKey('[{"color": "#00ff00", "name": "Borealis"}, {"nation": "Cyrene", "colours": ["#0000ff"]}]').entries
+      parseColourKey(
+        '[{"color": "#00ff00", "name": "Borealis"}, {"nation": "Cyrene", "colours": ["#0000ff"]}]'
+      ).entries
     ).toEqual([
       { hex: "#00ff00", nation: "Borealis" },
       { hex: "#0000ff", nation: "Cyrene" },
@@ -60,8 +70,15 @@ describe("nation names", () => {
   ];
 
   it("matches case-, accent- and punctuation-blind, preferring the realm's country", () => {
-    expect(checkNationName("kiziauke", candidates)).toEqual({ status: "matched", name: "Kíziáuke", countryId: "c1" });
-    expect(autoMatchNations(["BOREALIS", "Nowhere"], candidates)).toEqual({ BOREALIS: "Borealis", Nowhere: null });
+    expect(checkNationName("kiziauke", candidates)).toEqual({
+      status: "matched",
+      name: "Kíziáuke",
+      countryId: "c1",
+    });
+    expect(autoMatchNations(["BOREALIS", "Nowhere"], candidates)).toEqual({
+      BOREALIS: "Borealis",
+      Nowhere: null,
+    });
     // The editor's matcher drops state forms: "Republic of Borealis" is Borealis.
     expect(checkNationName("Republic of Borealis", candidates)).toEqual({
       status: "matched",

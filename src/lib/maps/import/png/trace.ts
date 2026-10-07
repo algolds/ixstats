@@ -76,7 +76,8 @@ export async function traceLabelRings(
         aheadLeft = at(i - 1, j - 1) === label;
         aheadRight = at(i, j - 1) === label;
       }
-      if (!aheadLeft) d = (d + 3) % 4; // turn left (also at a corner touch: 4-connected)
+      if (!aheadLeft)
+        d = (d + 3) % 4; // turn left (also at a corner touch: 4-connected)
       else if (aheadRight) d = (d + 1) % 4; // turn right
       if (significant(i, j)) ring.push([i, j]);
     } while (i !== si || j !== sj || d !== sd);
@@ -98,7 +99,8 @@ export async function traceLabelRings(
       if (north === label && east === label && south === label && west === label) continue;
       // Each side on a boundary starts a ring unless it was walked already: north, east, south, west.
       if (north !== label && !(visited[p]! & SIDE_N)) push(rings, label, trace(label, x + 1, y, 2));
-      if (east !== label && !(visited[p]! & SIDE_E)) push(rings, label, trace(label, x + 1, y + 1, 3));
+      if (east !== label && !(visited[p]! & SIDE_E))
+        push(rings, label, trace(label, x + 1, y + 1, 3));
       if (south !== label && !(visited[p]! & SIDE_S)) push(rings, label, trace(label, x, y + 1, 0));
       if (west !== label && !(visited[p]! & SIDE_W)) push(rings, label, trace(label, x, y, 1));
     }

@@ -15,9 +15,15 @@ import { extractFillColor, extractFillRule } from "~/lib/flags/svg/topology-flat
 import { featureIdToDisplayName } from "~/lib/flags/svg-parser";
 import { assembleRings } from "~/lib/maps/ring-assembly";
 import { elementToRings } from "~/lib/maps/province-importer/svg-element-converter";
-import { applyMatrixToRings, getAccumulatedTransform } from "~/lib/maps/province-importer/svg-transform";
+import {
+  applyMatrixToRings,
+  getAccumulatedTransform,
+} from "~/lib/maps/province-importer/svg-transform";
 import { collectShapeElements } from "~/lib/maps/province-importer/svg-layer-detector";
-import { extractAllTextLabels, matchLabelsToProvinces } from "~/lib/maps/province-importer/svg-text-matcher";
+import {
+  extractAllTextLabels,
+  matchLabelsToProvinces,
+} from "~/lib/maps/province-importer/svg-text-matcher";
 import {
   SVG_NS,
   elementChildren,
@@ -36,15 +42,26 @@ const WATER_NAME = /\b(ocean|sea|water|lakes?|background|bg)\b/i;
 
 /** A meaningful name on an element: its `<title>`, Inkscape label, data-name, aria-label or id (null if none). */
 export function elementName(el: XmlElement): string | null {
-  const title = elementChildren(el).find((c) => svgTag(c) === "title")?.textContent?.trim();
-  const candidates = [title, inkscapeLabel(el), el.getAttribute("data-name"), el.getAttribute("aria-label")];
+  const title = elementChildren(el)
+    .find((c) => svgTag(c) === "title")
+    ?.textContent?.trim();
+  const candidates = [
+    title,
+    inkscapeLabel(el),
+    el.getAttribute("data-name"),
+    el.getAttribute("aria-label"),
+  ];
   for (const value of candidates) if (value && !GENERIC_ID.test(value.trim())) return value.trim();
   const id = el.getAttribute("id")?.trim();
   return id && !GENERIC_ID.test(id) ? featureIdToDisplayName(id) : null;
 }
 
 function viewBoxOf(root: XmlElement): { x: number; y: number; width: number; height: number } {
-  const parts = root.getAttribute("viewBox")?.split(/[\s,]+/).map(Number) ?? [];
+  const parts =
+    root
+      .getAttribute("viewBox")
+      ?.split(/[\s,]+/)
+      .map(Number) ?? [];
   if (parts.length >= 4 && parts.every(Number.isFinite) && parts[2]! > 0 && parts[3]! > 0) {
     return { x: parts[0]!, y: parts[1]!, width: parts[2]!, height: parts[3]! };
   }
@@ -73,7 +90,11 @@ function regionOf(
   layer: XmlElement,
   index: number
 ): { key: string; name: string | null } {
-  for (let p = shape.parentNode as XmlElement | null; p && p !== layer; p = p.parentNode as XmlElement | null) {
+  for (
+    let p = shape.parentNode as XmlElement | null;
+    p && p !== layer;
+    p = p.parentNode as XmlElement | null
+  ) {
     if (p.nodeType !== 1 || svgTag(p) !== "g") continue;
     const name = elementName(p);
     if (name) return { key: `g:${name}`, name };
@@ -100,7 +121,10 @@ export function runSvgEngine(svgText: string, rawOptions: unknown = {}): EngineR
   const shapes = collectShapeElements(layer, root);
   log.push(`${shapes.length} filled shapes`);
 
-  const pieces = new Map<string, { name: string | null; colour?: string; geometries: Array<Polygon | MultiPolygon> }>();
+  const pieces = new Map<
+    string,
+    { name: string | null; colour?: string; geometries: Array<Polygon | MultiPolygon> }
+  >();
   let skipped = 0;
   let background = 0;
   for (const [index, shape] of shapes.entries()) {
@@ -150,23 +174,37 @@ export function runSvgEngine(svgText: string, rawOptions: unknown = {}): EngineR
   // Regions without a name take the text label drawn over them.
   const unnamed = regions.map((r, i) => ({ r, i })).filter(({ r }) => !r.name);
   if (unnamed.length > 0) {
-    const labels = extractAllTextLabels(root, root).map((l) => ({ ...l, x: l.x - viewBox.x, y: l.y - viewBox.y }));
+    const labels = extractAllTextLabels(root, root).map((l) => ({
+      ...l,
+      x: l.x - viewBox.x,
+      y: l.y - viewBox.y,
+    }));
     const spatial = unnamed.map(({ i }) => {
-      const coords = (features[i]!.geometry.type === "Polygon"
-        ? [features[i]!.geometry.coordinates as number[][][]]
-        : (features[i]!.geometry.coordinates as number[][][][])
+      const coords = (
+        features[i]!.geometry.type === "Polygon"
+          ? [features[i]!.geometry.coordinates as number[][][]]
+          : (features[i]!.geometry.coordinates as number[][][][])
       ).flat(2);
       const xs = coords.map((p) => p[0]!);
       const ys = coords.map((p) => p[1]!);
-      const bbox: [number, number, number, number] = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
-      return { centroid: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2] as [number, number], bbox };
+      const bbox: [number, number, number, number] = [
+        Math.min(...xs),
+        Math.min(...ys),
+        Math.max(...xs),
+        Math.max(...ys),
+      ];
+      return {
+        centroid: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2] as [number, number],
+        bbox,
+      };
     });
     const matches = matchLabelsToProvinces(labels, spatial);
     for (const [index, text] of matches) unnamed[index]!.r.name = text;
     if (matches.size) log.push(`Named ${matches.size} regions from their text labels`);
   }
   const stillUnnamed = regions.filter((r) => !r.name).length;
-  if (stillUnnamed) warnings.push(`${stillUnnamed} region(s) have no name: name them in the mapping step`);
+  if (stillUnnamed)
+    warnings.push(`${stillUnnamed} region(s) have no name: name them in the mapping step`);
   if (regions.length === 0) throw new Error("No filled shapes were found in the SVG");
 
   return {

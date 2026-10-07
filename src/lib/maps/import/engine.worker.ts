@@ -26,7 +26,10 @@ parentPort?.on(
       );
       port.postMessage({ type: "result", result });
     } catch (error) {
-      port.postMessage({ type: "error", message: error instanceof Error ? error.message : String(error) });
+      port.postMessage({
+        type: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 );

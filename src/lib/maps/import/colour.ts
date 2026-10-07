@@ -27,7 +27,7 @@ function linear(channel: number): number {
 }
 
 function labF(t: number): number {
-  return t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116;
+  return t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116;
 }
 
 /** CIE L*a*b* (D65) of an sRGB colour. */
@@ -94,9 +94,7 @@ export function deltaE2000([l1, a1, b1]: Lab, [l2, a2, b2]: Lab): number {
   const sc = 1 + 0.045 * cpMean;
   const sh = 1 + 0.015 * cpMean * t;
   const rt = -Math.sin(2 * dTheta * DEG) * rc;
-  return Math.sqrt(
-    (dL / sl) ** 2 + (dC / sc) ** 2 + (dH / sh) ** 2 + rt * (dC / sc) * (dH / sh)
-  );
+  return Math.sqrt((dL / sl) ** 2 + (dC / sc) ** 2 + (dH / sh) ** 2 + rt * (dC / sc) * (dH / sh));
 }
 
 /** Relative luminance-like lightness (0 black, 100 white): the L* of the colour. */
@@ -145,7 +143,10 @@ export function nearestColourFast(
 }
 
 /** The nearest of `palette` (Lab) to `lab`, with its distance; index -1 for an empty palette. */
-export function nearestColour(lab: Lab, palette: readonly Lab[]): { index: number; distance: number } {
+export function nearestColour(
+  lab: Lab,
+  palette: readonly Lab[]
+): { index: number; distance: number } {
   let index = -1;
   let distance = Infinity;
   for (let i = 0; i < palette.length; i++) {

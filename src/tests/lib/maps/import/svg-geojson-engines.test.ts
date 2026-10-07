@@ -1,14 +1,21 @@
 /** @jest-environment node */
 import type { MultiPolygon, Polygon } from "geojson";
 import { runSvgEngine } from "~/lib/maps/import/svg-engine";
-import { GeojsonImportError, inspectGeojson, runGeojsonEngine } from "~/lib/maps/import/geojson-engine";
+import {
+  GeojsonImportError,
+  inspectGeojson,
+  runGeojsonEngine,
+} from "~/lib/maps/import/geojson-engine";
 import { buildNationGeometries } from "~/lib/maps/import/build";
 import { resolveGeoreference } from "~/lib/maps/import/georef";
 import { arcToPoints } from "~/lib/flags/svg/arc";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
 
 const area = (g: Polygon | MultiPolygon) =>
-  (g.type === "Polygon" ? [g.coordinates] : g.coordinates).reduce((s, p) => s + polygonPlanarArea(p), 0);
+  (g.type === "Polygon" ? [g.coordinates] : g.coordinates).reduce(
+    (s, p) => s + polygonPlanarArea(p),
+    0
+  );
 const xs = (g: Polygon | MultiPolygon) =>
   (g.type === "Polygon" ? g.coordinates.flat() : g.coordinates.flat(2)).map((p) => p[0]!);
 
@@ -31,11 +38,14 @@ const SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.
 describe("realm SVG engine", () => {
   const result = runSvgEngine(SVG);
   const byName = Object.fromEntries(result.regions.map((r) => [r.name ?? r.key, r]));
-  const geometryOf = (key: string) => result.features!.features.find((f) => f.properties.key === key)!.geometry;
+  const geometryOf = (key: string) =>
+    result.features!.features.find((f) => f.properties.key === key)!.geometry;
 
   it("names regions from <title>, id and inkscape:label, and leaves out the sea", () => {
     expect(Object.keys(byName)).toEqual(expect.arrayContaining(["Aurelia", "Borealis", "Cyrene"]));
-    expect(result.regions.find((r) => r.colour === "#3366cc" || r.colour === "#2255aa")).toBeUndefined();
+    expect(
+      result.regions.find((r) => r.colour === "#3366cc" || r.colour === "#2255aa")
+    ).toBeUndefined();
     expect(result.width).toBe(400);
     expect(result.height).toBe(200);
   });
@@ -94,7 +104,15 @@ const fc = (features: unknown[], extra: Record<string, unknown> = {}) =>
   JSON.stringify({ type: "FeatureCollection", features, ...extra });
 const square = (x: number, y: number, size: number) => ({
   type: "Polygon",
-  coordinates: [[[x, y], [x + size, y], [x + size, y + size], [x, y + size], [x, y]]],
+  coordinates: [
+    [
+      [x, y],
+      [x + size, y],
+      [x + size, y + size],
+      [x, y + size],
+      [x, y],
+    ],
+  ],
 });
 
 describe("GeoJSON engine", () => {
@@ -102,7 +120,17 @@ describe("GeoJSON engine", () => {
     { type: "Feature", properties: { NAME: "Aurelia", id: 1 }, geometry: square(0, 0, 10) },
     { type: "Feature", properties: { NAME: "Aurelia", id: 2 }, geometry: square(10, 0, 10) },
     { type: "Feature", properties: { NAME: "Borealis", id: 3 }, geometry: square(30, 0, 5) },
-    { type: "Feature", properties: { NAME: "River" }, geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] } },
+    {
+      type: "Feature",
+      properties: { NAME: "River" },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [0, 0],
+          [1, 1],
+        ],
+      },
+    },
   ]);
 
   it("suggests the name property and finds lon/lat coordinates", () => {
@@ -124,13 +152,19 @@ describe("GeoJSON engine", () => {
   });
 
   it("refuses a projected CRS whose coordinates are not lon/lat", () => {
-    const mercator = fc([{ type: "Feature", properties: { NAME: "A" }, geometry: square(1e6, 1e6, 1e5) }], {
-      crs: { type: "name", properties: { name: "urn:ogc:def:crs:EPSG::3857" } },
-    });
+    const mercator = fc(
+      [{ type: "Feature", properties: { NAME: "A" }, geometry: square(1e6, 1e6, 1e5) }],
+      {
+        crs: { type: "name", properties: { name: "urn:ogc:def:crs:EPSG::3857" } },
+      }
+    );
     expect(() => inspectGeojson(mercator)).toThrow(GeojsonImportError);
-    const harmless = fc([{ type: "Feature", properties: { NAME: "A" }, geometry: square(1, 1, 1) }], {
-      crs: { type: "name", properties: { name: "EPSG:3857" } },
-    });
+    const harmless = fc(
+      [{ type: "Feature", properties: { NAME: "A" }, geometry: square(1, 1, 1) }],
+      {
+        crs: { type: "name", properties: { name: "EPSG:3857" } },
+      }
+    );
     expect(inspectGeojson(harmless).warnings[0]).toMatch(/valid longitude\/latitude/);
   });
 
@@ -143,8 +177,8 @@ describe("GeoJSON engine", () => {
     expect(result.space).toBe("pixel");
     expect(result.width).toBe(700);
     expect(result.report.warnings[0]).toMatch(/pixels/);
-    expect(() => runGeojsonEngine(fc([{ type: "Feature", properties: {}, geometry: square(-500, 0, 10) }]))).toThrow(
-      GeojsonImportError
-    );
+    expect(() =>
+      runGeojsonEngine(fc([{ type: "Feature", properties: {}, geometry: square(-500, 0, 10) }]))
+    ).toThrow(GeojsonImportError);
   });
 });

@@ -57,7 +57,11 @@ function parse(text: string): { features: Feature[]; crs: string | null } {
   } catch (error) {
     throw new GeojsonImportError(`The file is not valid JSON: ${(error as Error).message}`);
   }
-  const fc = data as { type?: string; features?: unknown; crs?: { properties?: { name?: unknown } } };
+  const fc = data as {
+    type?: string;
+    features?: unknown;
+    crs?: { properties?: { name?: unknown } };
+  };
   if (fc?.type !== "FeatureCollection" || !Array.isArray(fc.features)) {
     throw new GeojsonImportError("The file is not a GeoJSON FeatureCollection");
   }
@@ -93,7 +97,8 @@ export function inspectGeojson(text: string): GeojsonInspection {
       values.set(key, set);
     }
   }
-  if (polygons === 0) throw new GeojsonImportError("The FeatureCollection has no Polygon or MultiPolygon features");
+  if (polygons === 0)
+    throw new GeojsonImportError("The FeatureCollection has no Polygon or MultiPolygon features");
 
   const inRange = bbox[0] >= -180 && bbox[2] <= 180 && bbox[1] >= -90 && bbox[3] <= 90;
   let space: "lonlat" | "pixel" = "lonlat";
@@ -103,7 +108,9 @@ export function inspectGeojson(text: string): GeojsonInspection {
         `The GeoJSON is in ${crs}, not WGS84 longitude/latitude: reproject it to EPSG:4326 (for example with QGIS or mapshaper) and upload it again`
       );
     }
-    warnings.push(`The file names the CRS ${crs}, but every coordinate is a valid longitude/latitude: read as WGS84`);
+    warnings.push(
+      `The file names the CRS ${crs}, but every coordinate is a valid longitude/latitude: read as WGS84`
+    );
   } else if (!inRange) {
     if (bbox[0] < 0 || bbox[1] < 0) {
       throw new GeojsonImportError(
@@ -120,8 +127,18 @@ export function inspectGeojson(text: string): GeojsonInspection {
     .map(([name, set]) => ({ name, distinct: set.size, samples: [...set].slice(0, 5) }))
     .sort((a, b) => b.distinct - a.distinct);
   const suggested =
-    properties.find((p) => NAME_HINT.test(p.name) && p.distinct > 1) ?? properties.find((p) => p.distinct > 1) ?? null;
-  return { features: features.length, polygons, space, bbox, properties, suggestedNameProperty: suggested?.name ?? null, warnings };
+    properties.find((p) => NAME_HINT.test(p.name) && p.distinct > 1) ??
+    properties.find((p) => p.distinct > 1) ??
+    null;
+  return {
+    features: features.length,
+    polygons,
+    space,
+    bbox,
+    properties,
+    suggestedNameProperty: suggested?.name ?? null,
+    warnings,
+  };
 }
 
 export function runGeojsonEngine(text: string, rawOptions: unknown = {}): EngineResult {
@@ -132,7 +149,9 @@ export function runGeojsonEngine(text: string, rawOptions: unknown = {}): Engine
   const nameProperty = options.nameProperty?.trim() || inspection.suggestedNameProperty;
   const log = [
     `${inspection.features} features, ${inspection.polygons} polygons`,
-    nameProperty ? `Nation names from the "${nameProperty}" property` : "No name property: one region per feature",
+    nameProperty
+      ? `Nation names from the "${nameProperty}" property`
+      : "No name property: one region per feature",
   ];
 
   const groups = new Map<string, Array<Polygon | MultiPolygon>>();

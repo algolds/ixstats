@@ -4,7 +4,9 @@
  * Content-Length before it is read, the file's kind taken from its bytes.
  */
 const realmFindUnique = jest.fn();
-jest.mock("~/server/db", () => ({ db: { realm: { findUnique: (...args: unknown[]) => realmFindUnique(...args) } } }));
+jest.mock("~/server/db", () => ({
+  db: { realm: { findUnique: (...args: unknown[]) => realmFindUnique(...args) } },
+}));
 const requireAdminSession = jest.fn();
 jest.mock("~/server/shared/route-auth", () => ({
   requireAdminSession: (...args: unknown[]) => requireAdminSession(...args),
@@ -38,24 +40,37 @@ afterAll(() => {
 beforeEach(() => {
   auth.mockResolvedValue({ userId: "founder_1" });
   realmFindUnique.mockResolvedValue({ id: "r1", ownerId: "founder_1" });
-  requireAdminSession.mockResolvedValue(NextResponse.json({ error: "Admin access required" }, { status: 403 }));
+  requireAdminSession.mockResolvedValue(
+    NextResponse.json({ error: "Admin access required" }, { status: 403 })
+  );
 });
 
 function request(options: { contentLength?: number; realm?: string; file?: File | null }) {
   const headers = new Headers();
-  if (options.contentLength !== undefined) headers.set("content-length", String(options.contentLength));
+  if (options.contentLength !== undefined)
+    headers.set("content-length", String(options.contentLength));
   const form = new FormData();
   if (options.file) form.set("file", options.file);
   const formData = jest.fn().mockResolvedValue(form);
-  const url = new URL(`https://ixstats.test/api/admin/map-import/upload${options.realm ? `?realm=${options.realm}` : ""}`);
+  const url = new URL(
+    `https://ixstats.test/api/admin/map-import/upload${options.realm ? `?realm=${options.realm}` : ""}`
+  );
   return { req: { headers, formData, nextUrl: url } as unknown as NextRequest, formData };
 }
 
-const geojson = new File(['{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"A"},"geometry":{"type":"Polygon","coordinates":[[[0,0],[1,0],[1,1],[0,0]]]}},{"type":"Feature","properties":{"NAME":"B"},"geometry":{"type":"Polygon","coordinates":[[[2,0],[3,0],[3,1],[2,0]]]}}]}'], "eurth.geojson");
+const geojson = new File(
+  [
+    '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"NAME":"A"},"geometry":{"type":"Polygon","coordinates":[[[0,0],[1,0],[1,1],[0,0]]]}},{"type":"Feature","properties":{"NAME":"B"},"geometry":{"type":"Polygon","coordinates":[[[2,0],[3,0],[3,1],[2,0]]]}}]}',
+  ],
+  "eurth.geojson"
+);
 
 describe("POST /api/admin/map-import/upload", () => {
   it("answers 413 for a body over the limit without reading it", async () => {
-    const { req, formData } = request({ realm: "r1", contentLength: MAX_MAP_IMPORT_BYTES + 2 * MB });
+    const { req, formData } = request({
+      realm: "r1",
+      contentLength: MAX_MAP_IMPORT_BYTES + 2 * MB,
+    });
     const response = await POST(req);
     expect(response.status).toBe(413);
     expect(formData).not.toHaveBeenCalled();
@@ -87,7 +102,9 @@ describe("POST /api/admin/map-import/upload", () => {
   it("lets a site admin upload to any realm, and refuses a file of no known kind", async () => {
     auth.mockResolvedValue({ userId: "admin_1" });
     requireAdminSession.mockResolvedValue({ userId: "admin_1" });
-    const response = await POST(request({ realm: "r1", file: new File(["hello"], "notes.txt") }).req);
+    const response = await POST(
+      request({ realm: "r1", file: new File(["hello"], "notes.txt") }).req
+    );
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(/PNG, JPEG or WebP/);
   });
@@ -98,7 +115,9 @@ describe("sniffMapKind", () => {
     const bytes = (text: string) => new TextEncoder().encode(text);
     expect(sniffMapKind(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 0]))).toBe("png");
     expect(sniffMapKind(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe("png");
-    expect(sniffMapKind(bytes('<?xml version="1.0"?>\n<!-- map -->\n<svg viewBox="0 0 1 1"/>'))).toBe("svg");
+    expect(
+      sniffMapKind(bytes('<?xml version="1.0"?>\n<!-- map -->\n<svg viewBox="0 0 1 1"/>'))
+    ).toBe("svg");
     expect(sniffMapKind(bytes('  {"type":"FeatureCollection"}'))).toBe("geojson");
     expect(sniffMapKind(bytes("GIF89a"))).toBeNull();
   });

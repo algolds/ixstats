@@ -21,7 +21,12 @@ import { captureMapSnapshot, packSnapshot } from "~/lib/maps/realm-map-snapshot"
 import type { MapGeoreference } from "~/lib/maps/realm-map-settings";
 import { normalizeNationName } from "~/lib/realms/sources/matching";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { realmMapSettings, realmNations, type ImportRealm, type RealmCountry } from "./map-import.realm";
+import {
+  realmMapSettings,
+  realmNations,
+  type ImportRealm,
+  type RealmCountry,
+} from "./map-import.realm";
 
 const SQKM_TO_SQMI = 0.386102;
 const LAYER = "political";
@@ -53,7 +58,10 @@ export interface MapImportDiff {
   newNames: Array<{ nation: string; suggestions: NationSuggestion[] }>;
   missingKeys: string[];
   empty: string[];
-  georef: Pick<GeorefResolution, "method" | "projection" | "extent" | "warnings" | "rmseDegrees"> | null;
+  georef: Pick<
+    GeorefResolution,
+    "method" | "projection" | "extent" | "warnings" | "rmseDegrees"
+  > | null;
   areaScale: number;
 }
 
@@ -81,27 +89,42 @@ async function measureAreas(
         JSON.stringify(features.map((f) => ({ key: f.key, g: f.geometry })))
       );
       const scale = scaleAreaToRadius(1, radiusKm);
-      for (const row of rows) if (typeof row.area === "number") areas.set(row.key, row.area * scale);
+      for (const row of rows)
+        if (typeof row.area === "number") areas.set(row.key, row.area * scale);
       if (areas.size === features.length) return areas;
     } catch (error) {
       console.warn("[map-import] PostGIS area failed, using the flat estimate:", error);
     }
   }
-  for (const f of features) if (!areas.has(f.key)) areas.set(f.key, polygonalAreaSqKm(f.geometry, radiusKm));
+  for (const f of features)
+    if (!areas.has(f.key)) areas.set(f.key, polygonalAreaSqKm(f.geometry, radiusKm));
   return areas;
 }
 
 /** The georeference an import uses: the job's own, else the realm's stored one. */
-export function importGeoreference(realm: ImportRealm, own: MapGeoreference | undefined): MapGeoreference {
+export function importGeoreference(
+  realm: ImportRealm,
+  own: MapGeoreference | undefined
+): MapGeoreference {
   const stored = realmMapSettings(realm);
-  return own ?? { projection: stored.projection, bounds: stored.bounds, controlPoints: stored.controlPoints };
+  return (
+    own ?? {
+      projection: stored.projection,
+      bounds: stored.bounds,
+      controlPoints: stored.controlPoints,
+    }
+  );
 }
 
 /** The feature key a nation's border is written under: its existing feature's, else the nation's name. */
 function featureKeyFor(
   nation: string,
   country: RealmCountry | undefined,
-  existing: ReadonlyArray<{ featureId: string; displayName: string | null; countryId: string | null }>
+  existing: ReadonlyArray<{
+    featureId: string;
+    displayName: string | null;
+    countryId: string | null;
+  }>
 ): string {
   const byCountry = country && existing.find((f) => f.countryId === country.id);
   if (byCountry) return byCountry.featureId;
@@ -121,7 +144,8 @@ export async function planMapImport(
   georefInput: MapGeoreference
 ): Promise<MapImportPlan> {
   const settings = realmMapSettings(realm);
-  const georef = result.space === "pixel" ? resolveGeoreference(georefInput, result.width, result.height) : null;
+  const georef =
+    result.space === "pixel" ? resolveGeoreference(georefInput, result.width, result.height) : null;
   const built = buildNationGeometries(result, apply.mapping, georef?.transform ?? null);
   const { countries, candidates } = await realmNations(db, realm.id);
   const existing = await db.mapLayer.findMany({
@@ -132,19 +156,35 @@ export async function planMapImport(
   const newNames: MapImportDiff["newNames"] = [];
   const byKey = new Map<
     string,
-    { nation: string; country: RealmCountry | undefined; key: string; keys: string[]; geometry: Polygon | MultiPolygon }
+    {
+      nation: string;
+      country: RealmCountry | undefined;
+      key: string;
+      keys: string[];
+      geometry: Polygon | MultiPolygon;
+    }
   >();
   for (const n of built.nations) {
     const check = checkNationName(n.nation, candidates);
     const country =
-      check.status === "matched" && check.countryId ? countries.find((c) => c.id === check.countryId) : undefined;
+      check.status === "matched" && check.countryId
+        ? countries.find((c) => c.id === check.countryId)
+        : undefined;
     if (check.status === "new") newNames.push({ nation: n.nation, suggestions: check.suggestions });
     const name = check.status === "matched" ? check.name : n.nation;
     const key = featureKeyFor(name, country, existing);
     const same = byKey.get(key);
     // Two spellings of one nation become one border.
-    const geometry = same ? (tidyGeometry(unionGeometries([same.geometry, n.geometry])) ?? same.geometry) : n.geometry;
-    byKey.set(key, { nation: name, country, key, keys: [...(same?.keys ?? []), ...n.keys], geometry });
+    const geometry = same
+      ? (tidyGeometry(unionGeometries([same.geometry, n.geometry])) ?? same.geometry)
+      : n.geometry;
+    byKey.set(key, {
+      nation: name,
+      country,
+      key,
+      keys: [...(same?.keys ?? []), ...n.keys],
+      geometry,
+    });
   }
   const planned = [...byKey.values()];
 
@@ -155,7 +195,9 @@ export async function planMapImport(
         select: { featureId: true, geometry: true, isActive: true },
       })
     : [];
-  const currentHash = new Map(current.map((c) => [c.featureId, c.isActive ? hashGeometry(c.geometry) : null]));
+  const currentHash = new Map(
+    current.map((c) => [c.featureId, c.isActive ? hashGeometry(c.geometry) : null])
+  );
   const areas = await measureAreas(db, planned, settings.radiusKm);
 
   const features: PlannedFeature[] = planned.map((p) => {
@@ -169,11 +211,18 @@ export async function planMapImport(
       countryId: p.country?.id ?? null,
       countryName: p.country?.name ?? null,
       sourceKeys: p.keys,
-      status: before === undefined || before === null ? "new" : before === hash ? "unchanged" : "changed",
+      status:
+        before === undefined || before === null ? "new" : before === hash ? "unchanged" : "changed",
       areaKm2: areas.get(p.key) ?? null,
       landArea: {
         current: stated,
-        action: !p.country ? "none" : hasStated ? "keep" : apply.fillMissingLandArea ? "fill" : "none",
+        action: !p.country
+          ? "none"
+          : hasStated
+            ? "keep"
+            : apply.fillMissingLandArea
+              ? "fill"
+              : "none",
       },
       geometry: p.geometry,
       hash,
@@ -183,7 +232,11 @@ export async function planMapImport(
   const written = new Set(keys);
   const countryName = new Map(countries.map((c) => [c.id, c.name]));
   const others = existing.filter((f) => !written.has(f.featureId));
-  const mapped = new Set(Object.entries(apply.mapping).filter(([, v]) => v?.trim()).map(([k]) => k));
+  const mapped = new Set(
+    Object.entries(apply.mapping)
+      .filter(([, v]) => v?.trim())
+      .map(([k]) => k)
+  );
   return {
     features,
     diff: {
@@ -236,7 +289,8 @@ export async function applyMapImportPlan(
   context: { jobId: string | null; requestedBy: string; attribution?: string | null }
 ): Promise<AppliedImport> {
   const { diff, features } = plan;
-  if (features.length === 0) throw new Error("Nothing to import: map at least one region to a nation");
+  if (features.length === 0)
+    throw new Error("Nothing to import: map at least one region to a nation");
   const keys = features.map((f) => f.key);
   const snapshot = await captureMapSnapshot(db, realm.id, [
     {
@@ -267,7 +321,9 @@ export async function applyMapImportPlan(
   );
   const written = new Set(writeResult.written);
   const deactivated =
-    diff.mode === "replace" ? await deactivateOtherFeatures(db, realm.id, LAYER, writeResult.written) : 0;
+    diff.mode === "replace"
+      ? await deactivateOtherFeatures(db, realm.id, LAYER, writeResult.written)
+      : 0;
 
   const landAreasFilled: string[] = [];
   for (const f of features) {
@@ -275,9 +331,15 @@ export async function applyMapImportPlan(
     const area = writeResult.areas[f.key] ?? f.areaKm2;
     if (!area || !(area > 0)) continue;
     // Re-read: a stated land area set since the dry run is never overwritten.
-    const country = await db.country.findUnique({ where: { id: f.countryId }, select: { landArea: true } });
+    const country = await db.country.findUnique({
+      where: { id: f.countryId },
+      select: { landArea: true },
+    });
     if (country?.landArea && country.landArea > 0) continue;
-    await db.country.update({ where: { id: f.countryId }, data: { landArea: area, areaSqMi: area * SQKM_TO_SQMI } });
+    await db.country.update({
+      where: { id: f.countryId },
+      data: { landArea: area, areaSqMi: area * SQKM_TO_SQMI },
+    });
     landAreasFilled.push(f.nation);
   }
 

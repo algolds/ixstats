@@ -25,7 +25,8 @@ export async function runImportEngineInline(
   if (kind === "png") return runPngEngine(bytes, options.png, ctx);
   const text = new TextDecoder("utf-8").decode(bytes);
   progress(10, kind === "svg" ? "Reading the SVG" : "Reading the GeoJSON");
-  const result = kind === "svg" ? runSvgEngine(text, options.svg) : runGeojsonEngine(text, options.geojson);
+  const result =
+    kind === "svg" ? runSvgEngine(text, options.svg) : runGeojsonEngine(text, options.geojson);
   progress(99, "Done");
   return result;
 }
@@ -81,7 +82,8 @@ export async function runImportEngine(
     });
     worker.on("error", (error) => finish(() => reject(error)));
     worker.on("exit", (code) => {
-      if (code !== 0) finish(() => reject(new Error(`The import engine stopped (exit code ${code})`)));
+      if (code !== 0)
+        finish(() => reject(new Error(`The import engine stopped (exit code ${code})`)));
     });
     worker.postMessage({ kind, bytes, options }, []);
   });

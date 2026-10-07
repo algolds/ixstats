@@ -28,7 +28,10 @@ export interface NationSuggestion {
 const MIN_SUGGESTION = 0.6;
 
 const similarity = (a: string, b: string) =>
-  Math.max(nameSimilarity(normalizeName(a), normalizeName(b)), nameSimilarity(coreName(a), coreName(b)));
+  Math.max(
+    nameSimilarity(normalizeName(a), normalizeName(b)),
+    nameSimilarity(coreName(a), coreName(b))
+  );
 
 /** The best few nations for `value`, most similar first. */
 export function suggestNations(
@@ -62,7 +65,9 @@ export function checkNationName(
   // A country wins over a roster page of the same name.
   const nations = [...candidates]
     .sort((a, b) => Number(!!b.countryId) - Number(!!a.countryId))
-    .filter((c, i, all) => all.findIndex((o) => normalizeName(o.name) === normalizeName(c.name)) === i)
+    .filter(
+      (c, i, all) => all.findIndex((o) => normalizeName(o.name) === normalizeName(c.name)) === i
+    )
     .map((c) => ({ id: c.countryId ?? `page:${c.name}`, name: c.name }));
   const [best] = suggestRegionMatches([{ featureId: name, displayName: name }], nations);
   if (best && best.confidence >= AUTO_LINK_MIN_CONFIDENCE) {

@@ -32,7 +32,8 @@ const whole = resolveGeoreference(undefined, MAP_W, MAP_H).transform;
 /** The palette colour of the result nearest a truth colour, or undefined when none is within ΔE 12. */
 function keyFor(result: EngineResult, rgb: Rgb): string | undefined {
   const lab = rgbToLab(rgb);
-  return result.regions.find((r) => r.colour && deltaE2000(rgbToLab(hexToRgb(r.colour)), lab) < 12)?.key;
+  return result.regions.find((r) => r.colour && deltaE2000(rgbToLab(hexToRgb(r.colour)), lab) < 12)
+    ?.key;
 }
 
 function mapping(result: EngineResult): Record<string, string> {
@@ -46,7 +47,10 @@ function mapping(result: EngineResult): Record<string, string> {
 }
 
 const planarArea = (g: Polygon | MultiPolygon) =>
-  (g.type === "Polygon" ? [g.coordinates] : g.coordinates).reduce((s, p) => s + polygonPlanarArea(p), 0);
+  (g.type === "Polygon" ? [g.coordinates] : g.coordinates).reduce(
+    (s, p) => s + polygonPlanarArea(p),
+    0
+  );
 
 function nationsOf(result: EngineResult, transform = whole) {
   const built = buildNationGeometries(result, mapping(result), transform);
@@ -64,7 +68,8 @@ describe("PNG engine: anti-aliased map with black border lines", () => {
   it("finds the true colours only, not the blends or the border lines", () => {
     const colours = result.regions.map((r) => r.colour);
     expect(colours).toHaveLength(6); // ocean, red, green, yellow, brown, the purple speck
-    for (const rgb of [OCEAN, RED, GREEN, YELLOW, BROWN, PURPLE]) expect(keyFor(result, rgb)).toBeDefined();
+    for (const rgb of [OCEAN, RED, GREEN, YELLOW, BROWN, PURPLE])
+      expect(keyFor(result, rgb)).toBeDefined();
     expect(result.report.filledPixels).toBeGreaterThan(0);
   });
 

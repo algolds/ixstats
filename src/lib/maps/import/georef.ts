@@ -102,7 +102,8 @@ function controlPointTransform(
 /** The lon/lat box a transform maps the image onto (corners and edge midpoints). */
 function extentOf(transform: PixelToLonLat, width: number, height: number): MapBounds {
   const samples: Array<[number, number]> = [];
-  for (const fx of [0, 0.5, 1]) for (const fy of [0, 0.5, 1]) samples.push(transform(fx * width, fy * height));
+  for (const fx of [0, 0.5, 1])
+    for (const fy of [0, 0.5, 1]) samples.push(transform(fx * width, fy * height));
   const lons = samples.map((s) => s[0]);
   const lats = samples.map((s) => s[1]);
   return {
@@ -142,7 +143,13 @@ export function resolveGeoreference(
 
   if (georef?.bounds) {
     const transform = boxTransform(georef.bounds, width, height, projection);
-    return { transform, method: "bounds", projection, extent: extentOf(transform, width, height), warnings };
+    return {
+      transform,
+      method: "bounds",
+      projection,
+      extent: extentOf(transform, width, height),
+      warnings,
+    };
   }
 
   const whole: MapBounds =

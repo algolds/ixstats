@@ -1,5 +1,7 @@
 /** @jest-environment node */
-jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" } }));
+jest.mock("~/env", () => ({
+  env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
+}));
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory } from "~/server/api/trpc";
@@ -9,11 +11,21 @@ import { admin, fakeDb, stranger } from "~/tests/server/maps/map-import-fakes";
 
 function caller(user: typeof admin) {
   const db = fakeDb();
-  db.realm.rows.push({ id: "r1", slug: "eurth", name: "Eurth", ownerId: "founder_1", settings: { map: { projection: "mercator" } } });
+  db.realm.rows.push({
+    id: "r1",
+    slug: "eurth",
+    name: "Eurth",
+    ownerId: "founder_1",
+    settings: { map: { projection: "mercator" } },
+  });
   db.country.rows.push({ id: "c1", name: "Aurelia", realmId: "r1", landArea: null });
   db.realmPage.rows.push({ realmId: "r1", kind: "nation", title: "Borealis" });
   return createCallerFactory(geoEditorMapImportRouter)(
-    createMockRouterContext({ db, auth: { userId: user.clerkUserId }, user: { ...user, country: null } }) as never
+    createMockRouterContext({
+      db,
+      auth: { userId: user.clerkUserId },
+      user: { ...user, country: null },
+    }) as never
   );
 }
 
@@ -31,7 +43,9 @@ describe("geoEditor.mapImport", () => {
     await expect(
       api.start({ realmId: "r1", uploadId: "a".repeat(64), kind: "png", filename: "x.png" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(api.saveGeoreference({ realmId: "r1", georef: { projection: "mercator" } })).rejects.toMatchObject({
+    await expect(
+      api.saveGeoreference({ realmId: "r1", georef: { projection: "mercator" } })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -43,7 +57,10 @@ describe("geoEditor.mapImport", () => {
       height: 300,
       georef: { bounds: { west: -20, south: 30, east: 40, north: 60 } },
     });
-    expect(preview).toMatchObject({ method: "bounds", extent: { west: -20, south: 30, east: 40, north: 60 } });
+    expect(preview).toMatchObject({
+      method: "bounds",
+      extent: { west: -20, south: 30, east: 40, north: 60 },
+    });
     await expect(
       api.previewGeoreference({
         width: 100,

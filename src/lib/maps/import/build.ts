@@ -43,7 +43,10 @@ function rings(geometry: Polygon | MultiPolygon): Position[][] {
 }
 
 /** Rounded rings without repeated points; rings that no longer enclose anything are dropped. */
-export function tidyGeometry(geometry: Polygon | MultiPolygon, decimals = true): Polygon | MultiPolygon | null {
+export function tidyGeometry(
+  geometry: Polygon | MultiPolygon,
+  decimals = true
+): Polygon | MultiPolygon | null {
   const kept: Position[][] = [];
   for (const ring of rings(geometry)) {
     const out: Position[] = [];
@@ -66,14 +69,20 @@ export function tidyGeometry(geometry: Polygon | MultiPolygon, decimals = true):
 export function unionGeometries(geometries: Array<Polygon | MultiPolygon>): Polygon | MultiPolygon {
   if (geometries.length === 1) return geometries[0]!;
   try {
-    const merged = union(featureCollection(geometries.map((g) => ({ type: "Feature" as const, properties: {}, geometry: g }))));
+    const merged = union(
+      featureCollection(
+        geometries.map((g) => ({ type: "Feature" as const, properties: {}, geometry: g }))
+      )
+    );
     if (merged?.geometry) return merged.geometry;
   } catch {
     // fall through: keep the pieces side by side
   }
   return {
     type: "MultiPolygon",
-    coordinates: geometries.flatMap((g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates)),
+    coordinates: geometries.flatMap((g) =>
+      g.type === "Polygon" ? [g.coordinates] : g.coordinates
+    ),
   };
 }
 
@@ -121,7 +130,9 @@ export function buildNationGeometries(
   for (const [nation, keys] of byNation) {
     const merged = nationGeometry(result, keys);
     const placed =
-      merged && result.space === "pixel" && transform ? transformPolygonal(merged, transform) : merged;
+      merged && result.space === "pixel" && transform
+        ? transformPolygonal(merged, transform)
+        : merged;
     const geometry = placed ? tidyGeometry(placed) : null;
     if (geometry) nations.push({ nation, keys, geometry });
     else empty.push(nation);

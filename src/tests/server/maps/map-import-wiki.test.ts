@@ -1,5 +1,7 @@
 /** @jest-environment node */
-jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" } }));
+jest.mock("~/env", () => ({
+  env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
+}));
 jest.mock("~/server/db", () => ({ db: {} }));
 const fetchOriginal = jest.fn();
 jest.mock("~/server/modules/realms/realms.wiki", () => {
@@ -11,7 +13,10 @@ jest.mock("~/server/modules/realms/realms.wiki", () => {
       super(message);
     }
   }
-  return { RealmWikiError, fetchChosenWikiMapOriginal: (...args: unknown[]) => fetchOriginal(...args) };
+  return {
+    RealmWikiError,
+    fetchChosenWikiMapOriginal: (...args: unknown[]) => fetchOriginal(...args),
+  };
 });
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -63,22 +68,38 @@ describe("Import this map (from the realm's wiki)", () => {
     const { jobId, filename } = await startWikiMapImport(db, admin, "r1", { kick: false });
     expect(filename).toBe("Eurth political map.png");
     const job = db.mapImportJob.rows.find((r: { id: string }) => r.id === jobId);
-    expect(job).toMatchObject({ kind: "png", dryRun: true, filename: "Eurth political map.png", requestedBy: "admin_1" });
+    expect(job).toMatchObject({
+      kind: "png",
+      dryRun: true,
+      filename: "Eurth political map.png",
+      requestedBy: "admin_1",
+    });
     expect(job.options.attribution).toBe("Map by A. Cartographer (CC BY-SA)");
-    expect(job.options.georef).toEqual({ bounds: { west: -180, south: -60, east: 180, north: 80 } });
+    expect(job.options.georef).toEqual({
+      bounds: { west: -180, south: -60, east: 180, north: 80 },
+    });
   });
 
   it("passes on the wiki's refusal when the file changed since it was chosen", async () => {
     const db = setup();
-    fetchOriginal.mockRejectedValue(new (RealmWikiError as never as new (c: string, m: string) => Error)("CONFLICT", "The wiki's file changed"));
-    await expect(startWikiMapImport(db, admin, "r1", { kick: false })).rejects.toMatchObject({ code: "CONFLICT" });
+    fetchOriginal.mockRejectedValue(
+      new (RealmWikiError as never as new (c: string, m: string) => Error)(
+        "CONFLICT",
+        "The wiki's file changed"
+      )
+    );
+    await expect(startWikiMapImport(db, admin, "r1", { kick: false })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
     expect(db.mapImportJob.rows).toHaveLength(0);
   });
 
   it("is only for the realm's map staff", async () => {
     const db = setup();
     fetchOriginal.mockClear();
-    await expect(startWikiMapImport(db, stranger, "r1", { kick: false })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(startWikiMapImport(db, stranger, "r1", { kick: false })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
     expect(fetchOriginal).not.toHaveBeenCalled();
   });
 });

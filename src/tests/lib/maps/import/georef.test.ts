@@ -21,7 +21,11 @@ describe("resolveGeoreference", () => {
   });
 
   it("places a crop by its bounds", () => {
-    const geo = resolveGeoreference({ bounds: { west: -20, south: 30, east: 40, north: 60 } }, 600, 300);
+    const geo = resolveGeoreference(
+      { bounds: { west: -20, south: 30, east: 40, north: 60 } },
+      600,
+      300
+    );
     expect(geo.method).toBe("bounds");
     expect(geo.transform(0, 0)).toEqual([-20, 60]);
     expect(geo.transform(300, 150)).toEqual([10, 45]);
@@ -43,12 +47,18 @@ describe("resolveGeoreference", () => {
   });
 
   it("round-trips the Mercator formulas", () => {
-    for (const lat of [-80, -45, 0, 12.5, 66]) expect(inverseMercatorY(mercatorY(lat))).toBeCloseTo(lat, 9);
+    for (const lat of [-80, -45, 0, 12.5, 66])
+      expect(inverseMercatorY(mercatorY(lat))).toBeCloseTo(lat, 9);
   });
 
   it("fits control points (equirectangular)", () => {
     // A 1000×500 crop covering lon -50..50, lat 0..50.
-    const toPixel = (lon: number, lat: number) => ({ x: (lon + 50) * 10, y: (50 - lat) * 10, lon, lat });
+    const toPixel = (lon: number, lat: number) => ({
+      x: (lon + 50) * 10,
+      y: (50 - lat) * 10,
+      lon,
+      lat,
+    });
     const geo = resolveGeoreference(
       { controlPoints: [toPixel(-40, 40), toPixel(30, 45), toPixel(10, 5), toPixel(-20, 10)] },
       1000,

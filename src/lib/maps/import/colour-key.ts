@@ -26,7 +26,13 @@ export interface ColourKey {
 export const MAX_COLOUR_KEY_ENTRIES = 2000;
 const NAME_MAX = 200;
 
-function add(key: ColourKey, seen: Map<string, string>, rawHex: unknown, rawNation: unknown, where: string) {
+function add(
+  key: ColourKey,
+  seen: Map<string, string>,
+  rawHex: unknown,
+  rawNation: unknown,
+  where: string
+) {
   const hex = typeof rawHex === "string" ? normalizeHex(rawHex) : null;
   const nation = typeof rawNation === "string" ? rawNation.trim().slice(0, NAME_MAX) : "";
   if (!hex || !nation) {

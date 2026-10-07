@@ -44,7 +44,13 @@ import {
   realmNations,
   saveRealmGeoreference,
 } from "./map-import.realm";
-import { mapUploadSize, readImportResult, readMapUpload, saveImportResult, saveMapUpload } from "./map-import.storage";
+import {
+  mapUploadSize,
+  readImportResult,
+  readMapUpload,
+  saveImportResult,
+  saveMapUpload,
+} from "./map-import.storage";
 
 export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
 export const STALE_AFTER_MS = 10 * 60_000;
@@ -59,7 +65,10 @@ export interface AnalyseSummary {
   height: number;
   regions: ImportRegion[];
   report: EngineReport;
-  georef: Pick<GeorefResolution, "method" | "projection" | "extent" | "warnings" | "rmseDegrees"> | null;
+  georef: Pick<
+    GeorefResolution,
+    "method" | "projection" | "extent" | "warnings" | "rmseDegrees"
+  > | null;
   /** Region key → nation: the colour key's or source's names matched to the realm (null = left to the admin). */
   suggestedMapping: Record<string, string | null>;
 }
@@ -101,14 +110,20 @@ async function defaultDb(): Promise<PrismaClient> {
  * Queue an analyse job for a realm's map from a file's bytes or an earlier upload. Returns the job id. Server
  * only; the caller has checked who may import (the tRPC router does, with canImportRealmMap).
  */
-export async function startMapImport(input: StartMapImportInput, deps: MapImportDeps = {}): Promise<string> {
+export async function startMapImport(
+  input: StartMapImportInput,
+  deps: MapImportDeps = {}
+): Promise<string> {
   const db = deps.db ?? (await defaultDb());
   await findImportRealm(db, input.realmId);
   const options = mapImportOptionsSchema.parse(input.options ?? {});
   let uploadId = input.source.uploadId;
   if (input.source.bytes) {
     if (input.source.bytes.byteLength > MAX_MAP_IMPORT_BYTES) {
-      throw new MapImportError("BAD_REQUEST", `Map files are limited to ${MAX_MAP_IMPORT_BYTES / 1024 / 1024} MB`);
+      throw new MapImportError(
+        "BAD_REQUEST",
+        `Map files are limited to ${MAX_MAP_IMPORT_BYTES / 1024 / 1024} MB`
+      );
     }
     uploadId = await saveMapUpload(input.source.bytes);
   }
@@ -205,16 +220,29 @@ const toView = (job: Prisma.MapImportJobGetPayload<object>): MapImportJobView =>
   result: (job.result as MapImportSummary | null) ?? null,
 });
 
-export async function getMapImportJob(db: PrismaClient, actor: RealmActor, jobId: string): Promise<MapImportJobView> {
+export async function getMapImportJob(
+  db: PrismaClient,
+  actor: RealmActor,
+  jobId: string
+): Promise<MapImportJobView> {
   const job = await db.mapImportJob.findUnique({ where: { id: jobId } });
   if (!job) throw new MapImportError("NOT_FOUND", "Import not found");
   await loadImportRealm(db, actor, job.realmId);
   return toView(job);
 }
 
-export async function listMapImportJobs(db: PrismaClient, actor: RealmActor, realmId: string, take = 20) {
+export async function listMapImportJobs(
+  db: PrismaClient,
+  actor: RealmActor,
+  realmId: string,
+  take = 20
+) {
   await loadImportRealm(db, actor, realmId);
-  const jobs = await db.mapImportJob.findMany({ where: { realmId }, orderBy: { createdAt: "desc" }, take });
+  const jobs = await db.mapImportJob.findMany({
+    where: { realmId },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
   return jobs.map((job) => {
     const { result: _result, ...rest } = toView(job);
     return rest;
@@ -272,7 +300,11 @@ function progressWriter(db: PrismaClient, jobId: string) {
       .then(() =>
         db.mapImportJob.updateMany({
           where: { id: jobId, status: "running" },
-          data: { progress: Math.max(0, Math.min(100, Math.round(percent))), stage, heartbeatAt: new Date() },
+          data: {
+            progress: Math.max(0, Math.min(100, Math.round(percent))),
+            stage,
+            heartbeatAt: new Date(),
+          },
         })
       )
       .then(({ count }) => {
@@ -294,12 +326,20 @@ async function runAnalyse(
   if (!job.uploadId) throw new MapImportError("BAD_REQUEST", "The job has no uploaded file");
   progress.write(1, "Reading the upload");
   const bytes = await readMapUpload(job.uploadId);
-  const runEngine = deps.runEngine ?? (await import("~/lib/maps/import/run-engine")).runImportEngine;
-  const result = await runEngine(job.kind as MapImportKind, bytes, options, progress.write, progress.isCancelled);
+  const runEngine =
+    deps.runEngine ?? (await import("~/lib/maps/import/run-engine")).runImportEngine;
+  const result = await runEngine(
+    job.kind as MapImportKind,
+    bytes,
+    options,
+    progress.write,
+    progress.isCancelled
+  );
   if (progress.isCancelled()) throw new ImportCancelledError();
 
   const georefInput: MapGeoreference = importGeoreference(realm, options.georef);
-  const georef = result.space === "pixel" ? resolveGeoreference(georefInput, result.width, result.height) : null;
+  const georef =
+    result.space === "pixel" ? resolveGeoreference(georefInput, result.width, result.height) : null;
   await saveImportResult(job.id, result);
 
   const { candidates } = await realmNations(db, realm.id);
@@ -311,7 +351,8 @@ async function runAnalyse(
   const suggestedMapping: Record<string, string | null> = {};
   for (const region of result.regions) {
     // A colour key's or source's own name is kept even when the realm has no such nation yet.
-    suggestedMapping[region.key] = region.water || !region.name ? null : (matched[region.name] ?? region.name);
+    suggestedMapping[region.key] =
+      region.water || !region.name ? null : (matched[region.name] ?? region.name);
   }
   return {
     phase: "analyse",
@@ -370,7 +411,8 @@ export async function recoverStaleMapImports(db: PrismaClient, now = new Date())
     where: { status: "running", heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) } },
     data: {
       status: "failed",
-      error: "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
+      error:
+        "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
       finishedAt: now,
     },
   });
@@ -395,13 +437,21 @@ export async function runMapImportJob(
       const now = new Date();
       const claimed = await db.mapImportJob.updateMany({
         where: { id: jobId, status: "queued" },
-        data: { status: "running", startedAt: now, heartbeatAt: now, progress: 0, stage: "Starting" },
+        data: {
+          status: "running",
+          startedAt: now,
+          heartbeatAt: now,
+          progress: 0,
+          stage: "Starting",
+        },
       });
       if (claimed.count === 0) return "gone" as const;
       const job = (await db.mapImportJob.findUnique({ where: { id: jobId } }))!;
       const progress = progressWriter(db, jobId);
       try {
-        const summary = job.dryRun ? await runAnalyse(db, job, progress, deps) : await runApply(db, job, progress);
+        const summary = job.dryRun
+          ? await runAnalyse(db, job, progress, deps)
+          : await runApply(db, job, progress);
         await progress.flush();
         await db.mapImportJob.updateMany({
           where: { id: jobId, status: "running" },
@@ -421,7 +471,9 @@ export async function runMapImportJob(
           data: {
             status: cancelled ? "cancelled" : "failed",
             stage: cancelled ? "Cancelled" : "Failed",
-            error: cancelled ? null : (error instanceof Error ? error.message : String(error)).slice(0, 1000),
+            error: cancelled
+              ? null
+              : (error instanceof Error ? error.message : String(error)).slice(0, 1000),
             finishedAt: new Date(),
           },
         });
@@ -477,7 +529,10 @@ export async function runQueuedMapImports(db: PrismaClient) {
 
 /** Whether the cron runner runs map imports (then the web process leaves analyses to it). */
 export async function cronRunsMapImports(): Promise<boolean> {
-  const [{ resolveEnabledJobs }, { env }] = await Promise.all([import("~/server/cron/jobs"), import("~/env")]);
+  const [{ resolveEnabledJobs }, { env }] = await Promise.all([
+    import("~/server/cron/jobs"),
+    import("~/env"),
+  ]);
   return resolveEnabledJobs(env.CRON_ENABLED_JOBS).enabled.some((job) => job.name === "map-import");
 }
 

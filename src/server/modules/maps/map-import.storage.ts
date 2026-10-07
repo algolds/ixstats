@@ -13,7 +13,9 @@ const UPLOAD_ID = /^[0-9a-f]{64}$/;
 const JOB_ID = /^[a-z0-9]{8,40}$/i;
 
 export function mapImportDir(): string {
-  return process.env.MAP_IMPORT_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), ".map-imports");
+  return (
+    process.env.MAP_IMPORT_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), ".map-imports")
+  );
 }
 
 export const isUploadId = (id: string) => UPLOAD_ID.test(id);

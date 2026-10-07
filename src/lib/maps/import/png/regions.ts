@@ -72,7 +72,11 @@ function find(parent: Int32Array, i: number): number {
 }
 
 /** Visit each pair of overlapping runs in rows y and y + 1 (overlap length > 0). */
-function forOverlaps(runs: Runs, y: number, visit: (upper: number, lower: number, overlap: number) => void) {
+function forOverlaps(
+  runs: Runs,
+  y: number,
+  visit: (upper: number, lower: number, overlap: number) => void
+) {
   let a = runs.rowStart[y]!;
   const aEnd = runs.rowStart[y + 1]!;
   let b = runs.rowStart[y + 1]!;
@@ -139,7 +143,12 @@ export async function mergeSmallRegions(
   const mergedInto = new Int32Array(regionCount);
   for (let r = 0; r < regionCount; r++) mergedInto[r] = r;
   const current = (r: number) => find(mergedInto, r);
-  const stats: RegionStats = { partsPerLabel: new Map(), mergedPerLabel: new Map(), mergedCount: 0, mergedPixels: 0 };
+  const stats: RegionStats = {
+    partsPerLabel: new Map(),
+    mergedPerLabel: new Map(),
+    mergedCount: 0,
+    mergedPixels: 0,
+  };
 
   const small = [...Array(regionCount).keys()]
     .filter((r) => area[r]! < minPixels && regionLabel[r] !== 0)
@@ -181,7 +190,10 @@ export async function mergeSmallRegions(
     const target = current(r);
     if (target === r) {
       if (regionLabel[r] !== 0) {
-        stats.partsPerLabel.set(regionLabel[r]!, (stats.partsPerLabel.get(regionLabel[r]!) ?? 0) + 1);
+        stats.partsPerLabel.set(
+          regionLabel[r]!,
+          (stats.partsPerLabel.get(regionLabel[r]!) ?? 0) + 1
+        );
       }
       continue;
     }
@@ -189,7 +201,11 @@ export async function mergeSmallRegions(
     if (label === regionLabel[r]) continue;
     for (let k = firstRun[r]!; k < firstRun[r + 1]!; k++) {
       const run = runsOf[k]!;
-      labels.fill(label, runs.row[run]! * width + runs.start[run]!, runs.row[run]! * width + runs.end[run]!);
+      labels.fill(
+        label,
+        runs.row[run]! * width + runs.start[run]!,
+        runs.row[run]! * width + runs.end[run]!
+      );
     }
   }
   return stats;

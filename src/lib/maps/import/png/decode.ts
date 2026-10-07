@@ -13,7 +13,9 @@ export interface DecodedImage {
   data: Uint8Array;
 }
 
-export async function imageDimensions(bytes: Uint8Array): Promise<{ width: number; height: number }> {
+export async function imageDimensions(
+  bytes: Uint8Array
+): Promise<{ width: number; height: number }> {
   const sharp = (await import("sharp")).default;
   const metadata = await sharp(bytes)
     .metadata()

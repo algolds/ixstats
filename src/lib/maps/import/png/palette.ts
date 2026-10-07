@@ -28,7 +28,8 @@ export interface Histogram {
   total: number;
 }
 
-export const binOf = (r: number, g: number, b: number) => ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+export const binOf = (r: number, g: number, b: number) =>
+  ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
 
 export async function colourHistogram(data: Uint8Array, ctx: EngineContext): Promise<Histogram> {
   const counts = new Uint32Array(32768);
@@ -59,8 +60,16 @@ export async function colourHistogram(data: Uint8Array, ctx: EngineContext): Pro
 }
 
 /** A dark, nearly grey colour (a drawn border line), or one near an explicit line colour. */
-export function isBorderColour(lab: Lab, options: PngEngineOptions, borderLabs: readonly Lab[]): boolean {
-  if (options.borderLightness > 0 && lab[0] < options.borderLightness && Math.hypot(lab[1], lab[2]) < 20) {
+export function isBorderColour(
+  lab: Lab,
+  options: PngEngineOptions,
+  borderLabs: readonly Lab[]
+): boolean {
+  if (
+    options.borderLightness > 0 &&
+    lab[0] < options.borderLightness &&
+    Math.hypot(lab[1], lab[2]) < 20
+  ) {
     return true;
   }
   return borderLabs.some((b) => deltaE2000(lab, b) <= options.tolerance);
@@ -134,7 +143,11 @@ export function autoPalette(hist: Histogram, options: PngEngineOptions): Palette
         nearest = c;
       }
     }
-    if (nearest && (distance < options.tolerance / 3 || (distance < options.tolerance && count < nearest.count / 10))) {
+    if (
+      nearest &&
+      (distance < options.tolerance / 3 ||
+        (distance < options.tolerance && count < nearest.count / 10))
+    ) {
       nearest.count += count;
       continue;
     }
@@ -149,7 +162,11 @@ export function autoPalette(hist: Histogram, options: PngEngineOptions): Palette
 }
 
 /** The largest image colours no palette colour is near (for the report), from the unmatched-pixel histogram. */
-export function topUnmatched(counts: Uint32Array, sums: Float64Array, limit = 20): Array<{ hex: string; pixels: number }> {
+export function topUnmatched(
+  counts: Uint32Array,
+  sums: Float64Array,
+  limit = 20
+): Array<{ hex: string; pixels: number }> {
   const out: Array<{ hex: string; pixels: number }> = [];
   for (let i = 0; i < counts.length; i++) {
     const n = counts[i]!;

@@ -1,7 +1,11 @@
 /** @jest-environment node */
-jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" } }));
+jest.mock("~/env", () => ({
+  env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test", CRON_ENABLED_JOBS: "" },
+}));
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/lib/maps/geo-validation", () => ({ isPostGISAvailable: jest.fn().mockResolvedValue(false) }));
+jest.mock("~/lib/maps/geo-validation", () => ({
+  isPostGISAvailable: jest.fn().mockResolvedValue(false),
+}));
 jest.mock("~/lib/system/job-lock", () => ({
   withJobLock: jest.fn(async (_db: unknown, name: string, fn: () => Promise<unknown>) => {
     const held = (globalThis as { heldLeases?: Set<string> }).heldLeases ?? new Set<string>();
@@ -50,7 +54,15 @@ afterAll(() => {
 
 const square = (x: number) => ({
   type: "Polygon" as const,
-  coordinates: [[[x, 0], [x + 10, 0], [x + 10, 10], [x, 10], [x, 0]]],
+  coordinates: [
+    [
+      [x, 0],
+      [x + 10, 0],
+      [x + 10, 10],
+      [x, 10],
+      [x, 0],
+    ],
+  ],
 });
 
 /** A lon/lat engine result: two regions, as the GeoJSON engine would give. */
@@ -75,13 +87,26 @@ const result: EngineResult = {
 
 function setup() {
   const db = fakeDb();
-  db.realm.rows.push({ id: "r1", slug: "eurth", name: "Eurth", ownerId: "founder_1", settings: { map: { radiusKm: 3185.5 } } });
+  db.realm.rows.push({
+    id: "r1",
+    slug: "eurth",
+    name: "Eurth",
+    ownerId: "founder_1",
+    settings: { map: { radiusKm: 3185.5 } },
+  });
   db.country.rows.push({ id: "c_aur", name: "Aurelia", realmId: "r1", landArea: null });
   db.realmPage.rows.push({ realmId: "r1", kind: "nation", title: "Borealis" });
-  const runEngine = jest.fn(async (_kind: string, _bytes: Uint8Array, _options: unknown, progress: (p: number, s: string) => void) => {
-    progress(50, "Tracing borders");
-    return result;
-  });
+  const runEngine = jest.fn(
+    async (
+      _kind: string,
+      _bytes: Uint8Array,
+      _options: unknown,
+      progress: (p: number, s: string) => void
+    ) => {
+      progress(50, "Tracing borders");
+      return result;
+    }
+  );
   return { db, runEngine };
 }
 
@@ -91,10 +116,19 @@ describe("map import jobs: lifecycle", () => {
   it("queues an analysis, runs it off the request and stores its summary", async () => {
     const { db, runEngine } = setup();
     const jobId = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "eurth.geojson" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "eurth.geojson" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false, runEngine }
     );
-    expect(db.mapImportJob.rows[0]).toMatchObject({ id: jobId, status: "queued", dryRun: true, kind: "geojson" });
+    expect(db.mapImportJob.rows[0]).toMatchObject({
+      id: jobId,
+      status: "queued",
+      dryRun: true,
+      kind: "geojson",
+    });
     expect(db.mapImportJob.rows[0].uploadId).toMatch(/^[0-9a-f]{64}$/);
 
     expect(await runMapImportJob(db, jobId, { runEngine })).toBe("ran");
@@ -111,7 +145,11 @@ describe("map import jobs: lifecycle", () => {
   it("applies an analysis: writes the borders, keeps a snapshot and fills only a missing land area", async () => {
     const { db, runEngine } = setup();
     const jobId = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "eurth.geojson" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "eurth.geojson" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false, runEngine }
     );
     await runMapImportJob(db, jobId, { runEngine });
@@ -141,7 +179,11 @@ describe("map import jobs: lifecycle", () => {
   it("runs one job per realm at a time: a job whose realm lease is held stays queued", async () => {
     const { db, runEngine } = setup();
     const jobId = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "a.geojson" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "a.geojson" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false }
     );
     held.add(mapImportLockName("r1"));
@@ -159,37 +201,62 @@ describe("map import jobs: lifecycle", () => {
   it("records an engine failure on the job", async () => {
     const { db } = setup();
     const jobId = await startMapImport(
-      { realmId: "r1", source: { kind: "png", bytes, filename: "bad.png" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "png", bytes, filename: "bad.png" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false }
     );
     const runEngine = jest.fn().mockRejectedValue(new Error("The map image could not be read"));
     await runMapImportJob(db, jobId, { runEngine });
-    expect(db.mapImportJob.rows[0]).toMatchObject({ status: "failed", error: "The map image could not be read" });
+    expect(db.mapImportJob.rows[0]).toMatchObject({
+      status: "failed",
+      error: "The map image could not be read",
+    });
   });
 
   it("cancels a queued job, and a running job stops at its next progress report", async () => {
     const { db } = setup();
     const queued = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "a.geojson" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "a.geojson" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false }
     );
     await cancelMapImportJob(db as never, admin, queued);
     expect(db.mapImportJob.rows[0].status).toBe("cancelled");
-    await expect(cancelMapImportJob(db as never, admin, queued)).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(cancelMapImportJob(db as never, admin, queued)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
 
     const running = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "b.geojson" }, requestedBy: "admin_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "b.geojson" },
+        requestedBy: "admin_1",
+      },
       { db, kick: false }
     );
-    const runEngine = jest.fn(async (_k: string, _b: Uint8Array, _o: unknown, progress: (p: number, s: string) => void, isCancelled: () => boolean) => {
-      await cancelMapImportJob(db as never, admin, running);
-      progress(40, "Tracing borders");
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      progress(60, "Simplifying borders");
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      expect(isCancelled()).toBe(true); // the engine stops at its next slice; this one returns
-      return result;
-    });
+    const runEngine = jest.fn(
+      async (
+        _k: string,
+        _b: Uint8Array,
+        _o: unknown,
+        progress: (p: number, s: string) => void,
+        isCancelled: () => boolean
+      ) => {
+        await cancelMapImportJob(db as never, admin, running);
+        progress(40, "Tracing borders");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        progress(60, "Simplifying borders");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        expect(isCancelled()).toBe(true); // the engine stops at its next slice; this one returns
+        return result;
+      }
+    );
     await runMapImportJob(db, running, { runEngine });
     expect(db.mapImportJob.rows[1].status).toBe("cancelled");
   });
@@ -213,7 +280,11 @@ describe("map import jobs: lifecycle", () => {
       startMapImport(
         {
           realmId: "r1",
-          source: { kind: "png", bytes: new Uint8Array(MAX_MAP_IMPORT_BYTES + 1), filename: "big.png" },
+          source: {
+            kind: "png",
+            bytes: new Uint8Array(MAX_MAP_IMPORT_BYTES + 1),
+            filename: "big.png",
+          },
           requestedBy: "admin_1",
         },
         { db, kick: false }
@@ -221,7 +292,11 @@ describe("map import jobs: lifecycle", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
       startMapImport(
-        { realmId: "r1", source: { kind: "png", uploadId: "0".repeat(64), filename: "x.png" }, requestedBy: "admin_1" },
+        {
+          realmId: "r1",
+          source: { kind: "png", uploadId: "0".repeat(64), filename: "x.png" },
+          requestedBy: "admin_1",
+        },
         { db, kick: false }
       )
     ).rejects.toBeInstanceOf(MapImportError);
@@ -232,7 +307,11 @@ describe("map import jobs: who may see and apply them", () => {
   it("lets the founder in and keeps other players out", async () => {
     const { db, runEngine } = setup();
     const jobId = await startMapImport(
-      { realmId: "r1", source: { kind: "geojson", bytes, filename: "a.geojson" }, requestedBy: "founder_1" },
+      {
+        realmId: "r1",
+        source: { kind: "geojson", bytes, filename: "a.geojson" },
+        requestedBy: "founder_1",
+      },
       { db, kick: false, runEngine }
     );
     await expect(getMapImportJob(db, founder, jobId)).resolves.toMatchObject({ id: jobId });

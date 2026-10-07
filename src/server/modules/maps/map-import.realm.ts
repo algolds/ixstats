@@ -12,7 +12,8 @@ import {
 } from "~/lib/maps/realm-map-settings";
 import { canImportRealmMap, type RealmActor } from "~/server/modules/realms/realms.access";
 
-export type MapImportErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT" | "BAD_GATEWAY";
+export type MapImportErrorCode =
+  "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT" | "BAD_GATEWAY";
 
 export class MapImportError extends Error {
   constructor(
@@ -108,7 +109,8 @@ export async function realmNations(
   };
 }
 
-export const realmMapSettings = (realm: ImportRealm): RealmMapSettings => parseRealmMapSettings(realm.settings);
+export const realmMapSettings = (realm: ImportRealm): RealmMapSettings =>
+  parseRealmMapSettings(realm.settings);
 
 /** Save a georeference as the realm's (Realm.settings.map); other settings keys are kept. */
 export async function saveRealmGeoreference(

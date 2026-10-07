@@ -6,7 +6,11 @@
  */
 import type { FeatureCollection } from "geojson";
 import type { PrismaClient } from "@prisma/client";
-import { deactivateOtherFeatures, writeRealmMapFeatures, type RealmMapFeatureInput } from "~/lib/maps/realm-map-writer";
+import {
+  deactivateOtherFeatures,
+  writeRealmMapFeatures,
+  type RealmMapFeatureInput,
+} from "~/lib/maps/realm-map-writer";
 import { captureMapSnapshot, packSnapshot } from "~/lib/maps/realm-map-snapshot";
 import { refreshRealmMap } from "./map-import.apply";
 
@@ -32,7 +36,10 @@ function layerFeatures(layerType: string, collection: FeatureCollection): RealmM
     .map((feature, index) => {
       // Worldgen features carry numeric ids; featureId is a String column
       const rawId = feature.properties?.featureId ?? feature.id;
-      const key = rawId !== undefined && rawId !== null && String(rawId) !== "" ? String(rawId) : `${layerType}_${index}`;
+      const key =
+        rawId !== undefined && rawId !== null && String(rawId) !== ""
+          ? String(rawId)
+          : `${layerType}_${index}`;
       const rawName = feature.properties?.name ?? feature.properties?.displayName;
       return {
         key,
@@ -43,7 +50,11 @@ function layerFeatures(layerType: string, collection: FeatureCollection): RealmM
     });
 }
 
-async function rebuildSharedVertices(db: PrismaClient, realmId: string, political: FeatureCollection) {
+async function rebuildSharedVertices(
+  db: PrismaClient,
+  realmId: string,
+  political: FeatureCollection
+) {
   try {
     const { buildSharedVertexIndex } = await import("~/lib/maps/shared-vertex-builder");
     const sharedVertices = buildSharedVertexIndex(
@@ -70,9 +81,14 @@ async function rebuildSharedVertices(db: PrismaClient, realmId: string, politica
   }
 }
 
-export async function writePipelineLayers(db: PrismaClient, input: PipelineLayerWrite): Promise<PipelineLayerResult> {
+export async function writePipelineLayers(
+  db: PrismaClient,
+  input: PipelineLayerWrite
+): Promise<PipelineLayerResult> {
   const entries = Object.entries(input.layers).flatMap(([layerType, collection]) =>
-    collection?.features ? [{ layerType, collection, features: layerFeatures(layerType, collection) }] : []
+    collection?.features
+      ? [{ layerType, collection, features: layerFeatures(layerType, collection) }]
+      : []
   );
   const result: PipelineLayerResult = {
     imported: 0,
@@ -103,7 +119,12 @@ export async function writePipelineLayers(db: PrismaClient, input: PipelineLayer
     result.imported += written.written.length;
     result.rejected.push(...written.rejected.map((r) => ({ layerType: entry.layerType, ...r })));
     if (input.mode === "replace") {
-      result.deactivated += await deactivateOtherFeatures(db, input.realmId, entry.layerType, written.written);
+      result.deactivated += await deactivateOtherFeatures(
+        db,
+        input.realmId,
+        entry.layerType,
+        written.written
+      );
     }
   }
 
@@ -114,7 +135,12 @@ export async function writePipelineLayers(db: PrismaClient, input: PipelineLayer
       layerTypes: entries.map((e) => e.layerType),
       mode: input.mode,
       createdBy: input.createdBy,
-      summary: { written: result.imported, rejected: result.rejected.length, deactivated: result.deactivated, source: "pipeline" },
+      summary: {
+        written: result.imported,
+        rejected: result.rejected.length,
+        deactivated: result.deactivated,
+        source: "pipeline",
+      },
       snapshot: packed.bytes,
       snapshotBytes: packed.size,
       rollbackAvailable: packed.bytes !== null,

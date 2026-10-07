@@ -162,7 +162,13 @@ export async function majorityFilter(
       const p = row + x;
       const l = labels[p]!;
       if (l === 0) continue;
-      if (labels[p - 1] === l && labels[p + 1] === l && labels[p - width] === l && labels[p + width] === l) continue;
+      if (
+        labels[p - 1] === l &&
+        labels[p + 1] === l &&
+        labels[p - width] === l &&
+        labels[p + width] === l
+      )
+        continue;
       let same = 0;
       let distinct = 0;
       for (let k = 0; k < 8; k++) {

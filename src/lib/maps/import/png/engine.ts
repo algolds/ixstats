@@ -14,7 +14,13 @@ import type { Feature, MultiPolygon, Polygon } from "geojson";
 import { assembleRings } from "~/lib/maps/ring-assembly";
 import { decodeImage } from "./decode";
 import { clearLineLabels, fillUnlabelled, majorityFilter, snapToPalette } from "./label-raster";
-import { autoPalette, colourHistogram, keyPalette, topUnmatched, type PaletteEntry } from "./palette";
+import {
+  autoPalette,
+  colourHistogram,
+  keyPalette,
+  topUnmatched,
+  type PaletteEntry,
+} from "./palette";
 import { mergeSmallRegions } from "./regions";
 import { traceLabelRings } from "./trace";
 import { pngEngineOptionsSchema, type EngineResult, type ImportRegion } from "../options";
@@ -32,11 +38,15 @@ const topoSimplify = require("topojson-simplify") as {
 export interface PixelTopology {
   type: "Topology";
   arcs: number[][][];
-  objects: Record<string, { type: string; geometries?: Array<{ type: string; properties?: { key: string } }> }>;
+  objects: Record<
+    string,
+    { type: string; geometries?: Array<{ type: string; properties?: { key: string } }> }
+  >;
 }
 
 /** Below this many pixels a region is a speck: 0.002% of the image, at least 16 pixels. */
-export const defaultMinRegionPixels = (pixels: number) => Math.max(16, Math.round(pixels * 0.00002));
+export const defaultMinRegionPixels = (pixels: number) =>
+  Math.max(16, Math.round(pixels * 0.00002));
 
 export async function runPngEngine(
   bytes: Uint8Array,
@@ -63,11 +73,20 @@ export async function runPngEngine(
 
   ctx.progress(8, "Finding the map's colours");
   const hist = await colourHistogram(image.data, ctx);
-  const palette: PaletteEntry[] = options.colourKey?.length ? keyPalette(options) : autoPalette(hist, options);
+  const palette: PaletteEntry[] = options.colourKey?.length
+    ? keyPalette(options)
+    : autoPalette(hist, options);
   if (hist.transparent > 0) {
-    palette.push({ hex: "#000000", rgb: [0, 0, 0], lab: [0, 0, 0], water: true, transparent: true });
+    palette.push({
+      hex: "#000000",
+      rgb: [0, 0, 0],
+      lab: [0, 0, 0],
+      water: true,
+      transparent: true,
+    });
   }
-  if (palette.length === 0) throw new Error("No colours were found: upload a flat-colour political map");
+  if (palette.length === 0)
+    throw new Error("No colours were found: upload a flat-colour political map");
   if (palette.length > 65000) throw new Error("The map has too many colours");
   log.push(
     options.colourKey?.length
@@ -90,7 +109,8 @@ export async function runPngEngine(
   const lineLabels = options.colourKey?.length
     ? new Set<number>()
     : await clearLineLabels(labels, width, height, palette.length, ctx);
-  if (lineLabels.size > 0) log.push(`Dropped ${lineLabels.size} colour(s) that only appear as thin lines`);
+  if (lineLabels.size > 0)
+    log.push(`Dropped ${lineLabels.size} colour(s) that only appear as thin lines`);
   const voted = options.majorityFilter ? await majorityFilter(labels, width, height, ctx) : 0;
   const filled = await fillUnlabelled(labels, width, height, ctx);
   if (voted) log.push(`Majority vote changed ${voted} pixels`);
@@ -109,7 +129,13 @@ export async function runPngEngine(
   for (let p = 0; p < labels.length; p++) if (labels[p]) counts[labels[p]! - 1]!++;
 
   ctx.progress(55, "Tracing borders");
-  const rings = await traceLabelRings(labels, width, height, ctx, stageProgress(ctx.progress, 55, 75, "Tracing borders"));
+  const rings = await traceLabelRings(
+    labels,
+    width,
+    height,
+    ctx,
+    stageProgress(ctx.progress, 55, 75, "Tracing borders")
+  );
   lap("trace");
 
   ctx.progress(76, "Assembling regions");
@@ -131,12 +157,21 @@ export async function runPngEngine(
       water: entry.water || undefined,
     });
     if (!labelRings?.length) continue;
-    features.push({ type: "Feature", properties: { key }, geometry: assembleRings(labelRings, "evenodd") });
+    features.push({
+      type: "Feature",
+      properties: { key },
+      geometry: assembleRings(labelRings, "evenodd"),
+    });
     await ctx.tick();
   }
   const empty = regions.filter((r) => !r.pixels);
   if (empty.length > 0) {
-    warnings.push(`${empty.length} palette colour(s) cover no pixels: ${empty.slice(0, 10).map((r) => r.key).join(", ")}`);
+    warnings.push(
+      `${empty.length} palette colour(s) cover no pixels: ${empty
+        .slice(0, 10)
+        .map((r) => r.key)
+        .join(", ")}`
+    );
   }
   lap("assemble");
 
@@ -145,7 +180,9 @@ export async function runPngEngine(
   await ctx.tick();
   ctx.progress(92, "Simplifying borders");
   const simplified =
-    options.simplify > 0 ? topoSimplify.simplify(topoSimplify.presimplify(topology), options.simplify) : topology;
+    options.simplify > 0
+      ? topoSimplify.simplify(topoSimplify.presimplify(topology), options.simplify)
+      : topology;
   lap("topology");
   const vertices = simplified.arcs.reduce((sum, arc) => sum + arc.length, 0);
   log.push(`Topology: ${simplified.arcs.length} shared arcs, ${vertices} vertices`);

@@ -9,13 +9,22 @@ import { mapGeoreferenceSchema } from "~/lib/maps/realm-map-settings";
 export const MAP_IMPORT_KINDS = ["png", "svg", "geojson"] as const;
 export type MapImportKind = (typeof MAP_IMPORT_KINDS)[number];
 
-export const MAP_IMPORT_STATUSES = ["queued", "running", "succeeded", "failed", "cancelled"] as const;
+export const MAP_IMPORT_STATUSES = [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+] as const;
 export type MapImportStatus = (typeof MAP_IMPORT_STATUSES)[number];
 
 /** Largest file the import accepts (PNG, JPEG, SVG or GeoJSON). */
 export const MAX_MAP_IMPORT_BYTES = 40 * 1024 * 1024;
 
-const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colours are #rrggbb hex").transform((h) => h.toLowerCase());
+const hex = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, "Colours are #rrggbb hex")
+  .transform((h) => h.toLowerCase());
 
 export const colourKeyEntrySchema = z.object({
   hex,

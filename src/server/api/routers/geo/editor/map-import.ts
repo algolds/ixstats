@@ -6,7 +6,11 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import {
   MAP_IMPORT_KINDS,
   mapImportApplySchema,
@@ -34,7 +38,8 @@ import { isUploadId } from "~/server/modules/maps/map-import.storage";
 import { startWikiMapImport } from "~/server/modules/maps/map-import.wiki";
 
 function importError(error: unknown): never {
-  if (error instanceof MapImportError) throw new TRPCError({ code: error.code, message: error.message });
+  if (error instanceof MapImportError)
+    throw new TRPCError({ code: error.code, message: error.message });
   if (error instanceof GeorefError || error instanceof z.ZodError) {
     throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
   }
@@ -54,7 +59,13 @@ export const geoEditorMapImportRouter = createTRPCRouter({
         listMapImportJobs(ctx.db, ctx.user, realm.id),
         listMapImports(ctx.db, ctx.user, realm.id),
       ]);
-      return { realm: { id: realm.id, slug: realm.slug, name: realm.name }, mapSettings: realmMapSettings(realm), nations: candidates, jobs, imports };
+      return {
+        realm: { id: realm.id, slug: realm.slug, name: realm.name },
+        mapSettings: realmMapSettings(realm),
+        nations: candidates,
+        jobs,
+        imports,
+      };
     }),
 
     /** Queue an analysis of an uploaded file. */
@@ -99,7 +110,9 @@ export const geoEditorMapImportRouter = createTRPCRouter({
 
     cancel: rateLimitedMutationProcedure
       .input(z.object({ jobId: id }))
-      .mutation(({ ctx, input }) => cancelMapImportJob(ctx.db, ctx.user, input.jobId).catch(importError)),
+      .mutation(({ ctx, input }) =>
+        cancelMapImportJob(ctx.db, ctx.user, input.jobId).catch(importError)
+      ),
 
     /** The dry-run diff of an analysed import under a mapping: nothing is written. */
     preview: protectedProcedure
@@ -112,15 +125,27 @@ export const geoEditorMapImportRouter = createTRPCRouter({
     applyImport: rateLimitedMutationProcedure
       .input(z.object({ jobId: id, apply: mapImportApplySchema }))
       .mutation(async ({ ctx, input }) => ({
-        jobId: await startMapImportApply(ctx.db, ctx.user, input.jobId, input.apply, { db: ctx.db }).catch(importError),
+        jobId: await startMapImportApply(ctx.db, ctx.user, input.jobId, input.apply, {
+          db: ctx.db,
+        }).catch(importError),
       })),
 
     /** The lon/lat box an image of this size covers under a georeference (the wizard's preview). */
     previewGeoreference: protectedProcedure
-      .input(z.object({ width: z.number().positive(), height: z.number().positive(), georef: mapGeoreferenceSchema }))
+      .input(
+        z.object({
+          width: z.number().positive(),
+          height: z.number().positive(),
+          georef: mapGeoreferenceSchema,
+        })
+      )
       .query(({ input }) => {
         try {
-          const { method, projection, extent, warnings, rmseDegrees } = resolveGeoreference(input.georef, input.width, input.height);
+          const { method, projection, extent, warnings, rmseDegrees } = resolveGeoreference(
+            input.georef,
+            input.width,
+            input.height
+          );
           return { method, projection, extent, warnings, rmseDegrees: rmseDegrees ?? null };
         } catch (error) {
           return importError(error);
@@ -139,6 +164,8 @@ export const geoEditorMapImportRouter = createTRPCRouter({
     /** Undo the realm's latest applied import from its snapshot. */
     rollback: rateLimitedMutationProcedure
       .input(z.object({ importId: id }))
-      .mutation(({ ctx, input }) => rollbackMapImport(ctx.db, ctx.user, input.importId).catch(importError)),
+      .mutation(({ ctx, input }) =>
+        rollbackMapImport(ctx.db, ctx.user, input.importId).catch(importError)
+      ),
   }),
 });

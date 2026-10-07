@@ -31,7 +31,12 @@ function table(prefix: string, defaults: () => Row = () => ({})) {
   const api = {
     rows,
     create: jest.fn(async ({ data, select }: Row) => {
-      const row = { id: newId(prefix), createdAt: new Date(Date.now() + counter), ...defaults(), ...data };
+      const row = {
+        id: newId(prefix),
+        createdAt: new Date(Date.now() + counter),
+        ...defaults(),
+        ...data,
+      };
       rows.push(row);
       return pick(row, select);
     }),
@@ -88,7 +93,12 @@ export function fakeDb(): any {
     realm: table("r"),
     country: table("c"),
     realmPage: table("p"),
-    mapLayer: table("m", () => ({ isActive: true, countryId: null, displayName: null, neighbors: null })),
+    mapLayer: table("m", () => ({
+      isActive: true,
+      countryId: null,
+      displayName: null,
+      neighbors: null,
+    })),
     mapImportJob: table("j", () => ({
       status: "queued",
       progress: 0,
@@ -110,5 +120,9 @@ export function fakeDb(): any {
 }
 
 export const admin = { id: "u_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
-export const founder = { id: "u_founder", clerkUserId: "founder_1", role: { name: "user", level: 100 } };
+export const founder = {
+  id: "u_founder",
+  clerkUserId: "founder_1",
+  role: { name: "user", level: 100 },
+};
 export const stranger = { id: "u_x", clerkUserId: "someone", role: { name: "user", level: 100 } };

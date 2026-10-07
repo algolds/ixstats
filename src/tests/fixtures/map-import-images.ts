@@ -81,7 +81,9 @@ export function paint(options: PaintOptions = {}, width = MAP_W, height = MAP_H)
         if (differs) rgb = [10, 10, 10];
       }
       if (options.noise) {
-        rgb = rgb.map((c) => Math.max(0, Math.min(255, Math.round(c + (random() * 2 - 1) * options.noise!)))) as Rgb;
+        rgb = rgb.map((c) =>
+          Math.max(0, Math.min(255, Math.round(c + (random() * 2 - 1) * options.noise!)))
+        ) as Rgb;
       }
       raw.set(rgb, (y * width + x) * 3);
     }
@@ -89,7 +91,12 @@ export function paint(options: PaintOptions = {}, width = MAP_W, height = MAP_H)
   return raw;
 }
 
-export function encode(raw: Buffer, format: "png" | "jpeg", width = MAP_W, height = MAP_H): Promise<Buffer> {
+export function encode(
+  raw: Buffer,
+  format: "png" | "jpeg",
+  width = MAP_W,
+  height = MAP_H
+): Promise<Buffer> {
   const image = sharp(raw, { raw: { width, height, channels: 3 } });
   return (format === "png" ? image.png() : image.jpeg({ quality: 85 })).toBuffer();
 }

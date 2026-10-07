@@ -130,7 +130,10 @@ describe("Realm.settings.map georeference", () => {
         file: "File:Eurth.png",
       },
     };
-    expect(parseRealmMapSettings(settings)).toEqual({ projection: "mercator", controlPoints: points });
+    expect(parseRealmMapSettings(settings)).toEqual({
+      projection: "mercator",
+      controlPoints: points,
+    });
     expect(realmGeoreference(settings)).toEqual({ projection: "mercator", controlPoints: points });
     expect(realmGeoreference(null)).toEqual({});
   });
@@ -140,7 +143,10 @@ describe("Realm.settings.map georeference", () => {
   });
 
   it("saves a georeference without dropping the wiki map's keys", () => {
-    const stored = { maxNationsPerUser: 2, map: { source: "iiwiki", file: "File:Eurth.png", radiusKm: 4000 } };
+    const stored = {
+      maxNationsPerUser: 2,
+      map: { source: "iiwiki", file: "File:Eurth.png", radiusKm: 4000 },
+    };
     expect(
       withRealmMapSettings(stored, {
         projection: "equirectangular",

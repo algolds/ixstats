@@ -53,7 +53,12 @@ export function arcToPoints(
   const cy = sin * cxp + cos * cyp + (y1 + y2) / 2;
 
   const theta1 = angleBetween(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
-  let delta = angleBetween((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+  let delta = angleBetween(
+    (x1p - cxp) / rx,
+    (y1p - cyp) / ry,
+    (-x1p - cxp) / rx,
+    (-y1p - cyp) / ry
+  );
   if (!sweep && delta > 0) delta -= 2 * Math.PI;
   else if (sweep && delta < 0) delta += 2 * Math.PI;
 

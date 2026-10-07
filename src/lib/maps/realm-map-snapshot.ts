@@ -89,30 +89,48 @@ export async function captureMapSnapshot(
     for (const key of scope.keys) {
       if (!existing.has(key)) snapshot.created.push({ layerType: scope.layerType, featureId: key });
     }
-    for (const row of rows) if (row.countryId && (!scope.wholeLayer || scope.keys.includes(row.featureId))) countryIds.add(row.countryId);
+    for (const row of rows)
+      if (row.countryId && (!scope.wholeLayer || scope.keys.includes(row.featureId)))
+        countryIds.add(row.countryId);
     for (const id of scope.countryIds) countryIds.add(id);
   }
   if (countryIds.size > 0) {
     snapshot.countries = (await db.country.findMany({
       where: { id: { in: [...countryIds] }, realmId },
-      select: { id: true, geometry: true, centroid: true, boundingBox: true, landArea: true, areaSqMi: true },
+      select: {
+        id: true,
+        geometry: true,
+        centroid: true,
+        boundingBox: true,
+        landArea: true,
+        areaSqMi: true,
+      },
     })) as SnapshotCountry[];
   }
   return snapshot;
 }
 
 /** The snapshot gzipped for storage, or null (with its size) when it is over the cap. */
-export function packSnapshot(snapshot: MapImportSnapshot): { bytes: Uint8Array<ArrayBuffer> | null; size: number } {
+export function packSnapshot(snapshot: MapImportSnapshot): {
+  bytes: Uint8Array<ArrayBuffer> | null;
+  size: number;
+} {
   const json = JSON.stringify(snapshot);
   const size = Buffer.byteLength(json);
   if (size > MAX_SNAPSHOT_BYTES) return { bytes: null, size };
   const zipped = gzipSync(json);
-  return { bytes: new Uint8Array(zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength)), size };
+  return {
+    bytes: new Uint8Array(
+      zipped.buffer.slice(zipped.byteOffset, zipped.byteOffset + zipped.byteLength)
+    ),
+    size,
+  };
 }
 
 export function unpackSnapshot(bytes: Uint8Array): MapImportSnapshot {
   const snapshot = JSON.parse(gunzipSync(bytes).toString("utf8")) as MapImportSnapshot;
-  if (snapshot?.version !== 1 || !Array.isArray(snapshot.rows)) throw new Error("Unreadable map import snapshot");
+  if (snapshot?.version !== 1 || !Array.isArray(snapshot.rows))
+    throw new Error("Unreadable map import snapshot");
   return snapshot;
 }
 
@@ -154,7 +172,13 @@ export async function restoreMapSnapshot(
             neighbors: json(row.neighbors),
           };
           const saved = await tx.mapLayer.upsert({
-            where: { realmId_layerType_featureId: { realmId, layerType: row.layerType, featureId: row.featureId } },
+            where: {
+              realmId_layerType_featureId: {
+                realmId,
+                layerType: row.layerType,
+                featureId: row.featureId,
+              },
+            },
             update: data,
             create: { ...data, realmId, layerType: row.layerType, featureId: row.featureId },
             select: { id: true },
@@ -175,7 +199,9 @@ export async function restoreMapSnapshot(
 
   for (const layerType of new Set(snapshot.created.map((c) => c.layerType))) {
     const keys = snapshot.created.filter((c) => c.layerType === layerType).map((c) => c.featureId);
-    const { count } = await db.mapLayer.deleteMany({ where: { realmId, layerType, featureId: { in: keys } } });
+    const { count } = await db.mapLayer.deleteMany({
+      where: { realmId, layerType, featureId: { in: keys } },
+    });
     result.deleted += count;
   }
 

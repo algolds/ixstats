@@ -31,19 +31,27 @@ export function sniffMapKind(bytes: Uint8Array): MapImportKind | null {
   ) {
     return "png";
   }
-  const head = new TextDecoder("utf-8").decode(bytes.subarray(0, 4096)).replace(/^﻿/, "").trimStart();
-  if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?<svg[\s>]/i.test(head)) return "svg";
+  const head = new TextDecoder("utf-8")
+    .decode(bytes.subarray(0, 4096))
+    .replace(/^﻿/, "")
+    .trimStart();
+  if (/^(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE[^>]*>\s*)?<svg[\s>]/i.test(head))
+    return "svg";
   if (head.startsWith("{")) return "geojson";
   return null;
 }
 
 function svgSize(text: string): { width: number | null; height: number | null } {
   const tag = /<svg\b[^>]*>/i.exec(text)?.[0] ?? "";
-  const viewBox = /viewBox\s*=\s*["']([^"']+)["']/i.exec(tag)?.[1]?.split(/[\s,]+/).map(Number);
+  const viewBox = /viewBox\s*=\s*["']([^"']+)["']/i
+    .exec(tag)?.[1]
+    ?.split(/[\s,]+/)
+    .map(Number);
   if (viewBox && viewBox.length >= 4 && viewBox[2]! > 0 && viewBox[3]! > 0) {
     return { width: viewBox[2]!, height: viewBox[3]! };
   }
-  const attr = (name: string) => parseFloat(new RegExp(`\\b${name}\\s*=\\s*["']([\\d.]+)`, "i").exec(tag)?.[1] ?? "");
+  const attr = (name: string) =>
+    parseFloat(new RegExp(`\\b${name}\\s*=\\s*["']([\\d.]+)`, "i").exec(tag)?.[1] ?? "");
   const width = attr("width");
   const height = attr("height");
   return width > 0 && height > 0 ? { width, height } : { width: null, height: null };
@@ -53,7 +61,10 @@ function svgSize(text: string): { width: number | null; height: number | null } 
 export async function acceptMapUpload(bytes: Uint8Array, filename: string): Promise<MapUploadInfo> {
   const kind = sniffMapKind(bytes);
   if (!kind) {
-    throw new MapImportError("BAD_REQUEST", "Upload a PNG, JPEG or WebP image, an SVG drawing or a GeoJSON file");
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "Upload a PNG, JPEG or WebP image, an SVG drawing or a GeoJSON file"
+    );
   }
   let width: number | null = null;
   let height: number | null = null;
@@ -77,5 +88,13 @@ export async function acceptMapUpload(bytes: Uint8Array, filename: string): Prom
     throw new MapImportError("BAD_REQUEST", error instanceof Error ? error.message : String(error));
   }
   const uploadId = await saveMapUpload(bytes);
-  return { uploadId, kind, filename: filename.slice(0, 200), size: bytes.byteLength, width, height, geojson };
+  return {
+    uploadId,
+    kind,
+    filename: filename.slice(0, 200),
+    size: bytes.byteLength,
+    width,
+    height,
+    geojson,
+  };
 }
