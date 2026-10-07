@@ -34,6 +34,8 @@ interface MapKeyboardControlsProps {
   measureAvailable?: boolean;
   /** A desktop side panel is open: shift the bottom-right controls clear of it. */
   sidePanelOpen?: boolean;
+  /** Where R (reset view) flies: the realm's home centre (mapHomeCenter), the origin by default. */
+  homeCenter?: [number, number];
 }
 
 /** Focus targets whose own keyboard handling must win over map shortcuts. */
@@ -66,11 +68,13 @@ const PAN_STEPS: Record<string, [number, number]> = Object.fromEntries([
   ...keyed<[number, number]>(["d", "D", "ArrowRight"], [1, 0]),
 ]);
 
-const MAP_ACTIONS: Record<string, (map: MapLibreMap) => void> = Object.fromEntries([
-  ...keyed(["+", "="], (map: MapLibreMap) => map.zoomIn({ duration: 200 })),
-  ...keyed(["-", "_"], (map: MapLibreMap) => map.zoomOut({ duration: 200 })),
-  ...keyed(["r", "R"], (map: MapLibreMap) =>
-    map.flyTo({ center: MAP_DEFAULTS.center, zoom: MAP_DEFAULTS.zoom, duration: 1200 })
+type MapAction = (map: MapLibreMap, homeCenter: [number, number]) => void;
+
+const MAP_ACTIONS: Record<string, MapAction> = Object.fromEntries([
+  ...keyed<MapAction>(["+", "="], (map) => map.zoomIn({ duration: 200 })),
+  ...keyed<MapAction>(["-", "_"], (map) => map.zoomOut({ duration: 200 })),
+  ...keyed<MapAction>(["r", "R"], (map, homeCenter) =>
+    map.flyTo({ center: homeCenter, zoom: MAP_DEFAULTS.zoom, duration: 1200 })
   ),
 ]);
 
@@ -83,6 +87,7 @@ export function MapKeyboardControls({
   onProjectionChange,
   measureAvailable = true,
   sidePanelOpen = false,
+  homeCenter = MAP_DEFAULTS.center,
 }: MapKeyboardControlsProps) {
   const [showHelp, setShowHelp] = useState(false);
 
@@ -116,13 +121,13 @@ export function MapKeyboardControls({
         map.panBy([pan[0] * PAN_AMOUNT, pan[1] * PAN_AMOUNT], { duration: 200 });
       } else if (mapAction) {
         e.preventDefault();
-        mapAction(map);
+        mapAction(map, homeCenter);
       } else if (stateActions[e.key]) {
         e.preventDefault();
         stateActions[e.key]!();
       }
     },
-    [mapRef, showHelp, onEscapePress, projectionMode, onProjectionChange]
+    [mapRef, showHelp, onEscapePress, projectionMode, onProjectionChange, homeCenter]
   );
 
   useEffect(() => {

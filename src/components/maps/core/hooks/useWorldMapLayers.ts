@@ -8,6 +8,7 @@ import {
   WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
   MAP_LAYER_TYPES,
+  IXWORLD_PRIME_MERIDIAN_LNG,
 } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
@@ -131,8 +132,12 @@ function addOceanLabelLayer(map: MapLibreMap) {
   });
 }
 
-/** Graticule lines and ocean/sea name labels, created once and refreshed in place. */
-function syncGraticuleAndOceanLabels(map: MapLibreMap, showOceanLabels: boolean) {
+/** Graticule lines (IxWorld's prime meridian only on IxWorld) and ocean/sea name labels, refreshed in place. */
+function syncGraticuleAndOceanLabels(
+  map: MapLibreMap,
+  showOceanLabels: boolean,
+  showPrimeMeridian: boolean
+) {
   const graticuleData = {
     type: "FeatureCollection" as const,
     features: [
@@ -140,10 +145,14 @@ function syncGraticuleAndOceanLabels(map: MapLibreMap, showOceanLabels: boolean)
         [-180, 0],
         [180, 0],
       ]),
-      graticuleLine(2, "Prime Meridian", [
-        [56.1842, -90],
-        [56.1842, 90],
-      ]),
+      ...(showPrimeMeridian
+        ? [
+            graticuleLine(2, "Prime Meridian", [
+              [IXWORLD_PRIME_MERIDIAN_LNG, -90],
+              [IXWORLD_PRIME_MERIDIAN_LNG, 90],
+            ]),
+          ]
+        : []),
     ],
   };
 
@@ -370,6 +379,8 @@ interface UseWorldMapLayersProps {
   theme?: MapTheme;
   /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
   showOceanLabels?: boolean;
+  /** IxWorld's prime meridian line; off unless the map shows IxWorld. */
+  showPrimeMeridian?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;
 }
@@ -385,6 +396,7 @@ export function useWorldMapLayers({
   fullLayerDataRef,
   theme,
   showOceanLabels = false,
+  showPrimeMeridian = false,
   labelsVisible = true,
 }: UseWorldMapLayersProps) {
   useEffect(() => {
@@ -395,11 +407,11 @@ export function useWorldMapLayers({
   useEffect(() => {
     if (!map || !isLoaded) return;
     try {
-      syncGraticuleAndOceanLabels(map, showOceanLabels);
+      syncGraticuleAndOceanLabels(map, showOceanLabels, showPrimeMeridian);
     } catch (err) {
       console.error("[useWorldMapLayers] Failed to add base components", err);
     }
-  }, [map, isLoaded, theme]);
+  }, [map, isLoaded, theme, showOceanLabels, showPrimeMeridian]);
 
   const lastLoadedDataRef = useRef<Map<string, unknown>>(new Map());
 
