@@ -5,6 +5,7 @@ import type { CityFormData } from "~/hooks/useMapEditor";
 import { CoordinatePicker } from "./CoordinatePicker";
 import { ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { CITY_TYPE_OPTIONS } from "../optionLists";
@@ -22,8 +23,9 @@ function ElevationField({
   form: CityFormData;
   onChange: (form: CityFormData) => void;
 }) {
+  const realm = useMapRealm();
   const sampleTerrain = api.countryGeo.sampleTerrainAt.useQuery(
-    { lng: form.coordinates?.[0] ?? 0, lat: form.coordinates?.[1] ?? 0 },
+    { lng: form.coordinates?.[0] ?? 0, lat: form.coordinates?.[1] ?? 0, realm },
     { enabled: !!form.coordinates?.[0] && !!form.coordinates?.[1] }
   );
   const derivedFromZone = form.elevation === sampleTerrain.data?.midpoint;

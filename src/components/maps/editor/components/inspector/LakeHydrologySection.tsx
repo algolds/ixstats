@@ -6,6 +6,7 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 import { geometryAreaSqKm, geometryAreaSqMi, ringPerimeterKm } from "~/lib/maps/geo-math";
 import { calculateSimpleCentroid } from "~/lib/maps/map-utils";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { Geometry } from "geojson";
 import { Card } from "~/components/ui/card";
 import { MetricCard, ReadoutRow, ReadoutTile } from "./InspectorPrimitives";
@@ -104,8 +105,9 @@ function useSurfaceSample(
   fallback: [number, number] | undefined
 ) {
   const centroid = polyGeom ? calculateSimpleCentroid(polyGeom as unknown as Geometry) : fallback;
+  const realm = useMapRealm();
   return api.countryGeo.sampleTerrainAt.useQuery(
-    { lng: centroid?.[0] ?? 0, lat: centroid?.[1] ?? 0 },
+    { lng: centroid?.[0] ?? 0, lat: centroid?.[1] ?? 0, realm },
     { enabled: !!centroid && (centroid[0] !== 0 || centroid[1] !== 0) }
   );
 }

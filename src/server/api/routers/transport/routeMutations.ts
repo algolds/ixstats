@@ -494,10 +494,7 @@ async function computeRouteLengthAndDifficulty(
   if (samplePoints.length >= 2) {
     try {
       // Sample the route's own realm only; another realm's altitude layer must not set difficulty
-      const realmId = countryId
-        ? (await db.country.findUnique({ where: { id: countryId }, select: { realmId: true } }))
-            ?.realmId
-        : undefined;
+      const realmId = countryId ? await countryRealmId(db, countryId) : DEFAULT_REALM_ID;
       const results = await Promise.all(
         samplePoints.map(([lng, lat]) => getTerrainAtPoint(db as PrismaClient, lng, lat, realmId))
       );

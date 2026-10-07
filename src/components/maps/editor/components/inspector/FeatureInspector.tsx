@@ -15,6 +15,7 @@ import { getFeatureIcon } from "../featureTypeIcons";
 import { CITY_TYPES } from "../../optionLists";
 import { resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Card } from "~/components/ui/card";
@@ -259,8 +260,9 @@ export const FeatureInspector = React.memo(function FeatureInspector({
   };
 
   const coords = feature.coordinates;
+  const realm = useMapRealm();
   const sampleTerrain = api.countryGeo.sampleTerrainAt.useQuery(
-    { lng: coords?.[0] ?? 0, lat: coords?.[1] ?? 0 },
+    { lng: coords?.[0] ?? 0, lat: coords?.[1] ?? 0, realm },
     { enabled: !!coords && coords[0] !== 0 && coords[1] !== 0 }
   );
 

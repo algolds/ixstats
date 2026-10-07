@@ -5,6 +5,7 @@ import { SeaWaves as Waves, Compass } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm, polylineLengthMi, bearing, compassDirection } from "~/lib/maps/geo-math";
 import { api } from "~/trpc/react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { Geometry } from "geojson";
 import { routeVertices } from "~/components/maps/editor/utils/map-helpers";
 import { Card } from "~/components/ui/card";
@@ -58,8 +59,9 @@ function courseLabel(source: Coord | null, mouth: Coord | null) {
 const formatMeters = (m: number | null) => (m != null ? `${m.toLocaleString()} m` : "—");
 
 function useSampledElevation(point: Coord | null) {
+  const realm = useMapRealm();
   return api.countryGeo.sampleTerrainAt.useQuery(
-    { lng: point?.[0] ?? 0, lat: point?.[1] ?? 0 },
+    { lng: point?.[0] ?? 0, lat: point?.[1] ?? 0, realm },
     { enabled: !!point && (point[0] !== 0 || point[1] !== 0) }
   );
 }
