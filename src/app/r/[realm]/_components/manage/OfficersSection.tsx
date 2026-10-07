@@ -11,6 +11,7 @@ import { Label } from "~/components/ui/label";
 import { SearchField } from "~/components/ui/search-field";
 import {
   MAX_OFFICERS,
+  REALM_POWER_DESCRIPTIONS,
   REALM_POWER_LABELS,
   REALM_POWERS,
   type RealmPower,
@@ -29,12 +30,12 @@ function PowerChecks({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-2">
+    <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
       {REALM_POWERS.map((power) => (
         <label
           key={power}
           htmlFor={`${idPrefix}-${power}`}
-          className="text-label text-footnote flex items-center gap-2"
+          className="text-label text-footnote flex items-start gap-2"
         >
           <Checkbox
             id={`${idPrefix}-${power}`}
@@ -44,7 +45,10 @@ function PowerChecks({
               onChange(checked ? [...value, power] : value.filter((p) => p !== power))
             }
           />
-          {REALM_POWER_LABELS[power]}
+          <span>
+            {REALM_POWER_LABELS[power]}
+            <span className="text-label-secondary block">{REALM_POWER_DESCRIPTIONS[power]}</span>
+          </span>
         </label>
       ))}
     </div>
@@ -220,7 +224,7 @@ export function OfficersSection({ slug, manage }: { slug: string; manage: RealmM
       title="Officers"
       description={
         manage.isFounder
-          ? `Appoint up to ${MAX_OFFICERS} players who own a nation here, with a title and the powers they need. Only you review claims and appoint officers.`
+          ? `Appoint up to ${MAX_OFFICERS} players who own a nation here, with a title and the powers they need. Only you appoint officers and hand the realm over.`
           : "The realm's officers. The founder appoints them and sets their powers."
       }
     >

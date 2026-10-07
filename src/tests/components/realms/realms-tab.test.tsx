@@ -1,9 +1,28 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { RealmsTab } from "~/app/admin/realms/_components/RealmsTab";
 
+// Radix checkboxes measure themselves; jsdom has no ResizeObserver.
+global.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 const mutate = jest.fn();
-const assignFounder = jest.fn();
+const transferOwner = jest.fn();
 const deleteRealm = jest.fn();
+const users = [
+  {
+    clerkUserId: "clerk_leader",
+    isActive: true,
+    nations: [{ id: "c1", name: "Aurelia", realmId: "r_eurth" }],
+  },
+  {
+    clerkUserId: "clerk_gone",
+    isActive: false,
+    nations: [{ id: "c2", name: "Borea", realmId: "r_eurth" }],
+  },
+];
 const realm = {
   id: "r_eurth",
   slug: "eurth",
@@ -30,10 +49,10 @@ jest.mock("~/trpc/react", () => ({
       },
       adminCreateRealm: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
       adminUpdateRealm: { useMutation: () => ({ mutate, isPending: false }) },
-      adminListUsers: { useQuery: () => ({ data: [] }) },
+      adminListUsers: { useQuery: () => ({ data: users }) },
       region: {
-        assignFounder: {
-          useMutation: () => ({ mutateAsync: assignFounder, isPending: false }),
+        adminTransferOwner: {
+          useMutation: () => ({ mutate: transferOwner, isPending: false }),
         },
         deleteRealm: { useMutation: () => ({ mutate: deleteRealm, isPending: false }) },
       },
@@ -42,10 +61,7 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 describe("RealmsTab nation cap (decision 15)", () => {
-  beforeEach(() => {
-    mutate.mockClear();
-    assignFounder.mockClear();
-  });
+  beforeEach(() => mutate.mockClear());
 
   it("shows a staff-administered realm's founder as IxStats staff", () => {
     render(<RealmsTab />);
@@ -71,8 +87,38 @@ describe("RealmsTab nation cap (decision 15)", () => {
     expect(mutate).toHaveBeenCalledWith(
       expect.objectContaining({ id: "r_eurth", maxNationsPerUser: 5 })
     );
-    // The founder was left as it was: nothing to assign.
-    expect(assignFounder).not.toHaveBeenCalled();
+    // Editing never changes the founder: that goes through Transfer.
+    expect(transferOwner).not.toHaveBeenCalled();
+  });
+});
+
+describe("RealmsTab transfer", () => {
+  beforeEach(() => transferOwner.mockClear());
+
+  it("hands the realm to an active player once its slug is typed, optionally keeping the founder", () => {
+    realm.ownerId = "clerk_founder";
+    render(<RealmsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Transfer Eurth" }));
+    // Deactivated accounts are not offered.
+    expect(screen.queryByRole("button", { name: /Borea/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find the new founder" }), {
+      target: { value: "aur" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Aurelia/ }));
+    const confirm = screen.getByRole("button", { name: "Transfer realm" });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Keep previous owner as officer" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Realm slug" }), {
+      target: { value: "eurth" },
+    });
+    fireEvent.click(confirm);
+    expect(transferOwner).toHaveBeenCalledWith({
+      realmId: "r_eurth",
+      newOwnerId: "clerk_leader",
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: true,
+    });
+    realm.ownerId = "system";
   });
 });
 

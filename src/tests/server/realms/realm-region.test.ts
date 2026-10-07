@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
  * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): officer powers, the Manage actions'
- * permission checks, embassies, the realm poll, board restrictions, leaving a realm and founder assignment.
+ * permission checks, embassies, the realm poll, board restrictions and leaving a realm (handing a realm over:
+ * realm-ownership-transfer.test.ts).
  */
 jest.mock("~/server/db", () => ({ db: {} }));
 
@@ -71,6 +72,7 @@ describe("officer powers", () => {
       "appearance",
       "board",
       "diplomacy",
+      "claims",
     ]);
     expect(realmPowers(actor(OFFICER), realm, officers)).toEqual(["board"]);
     expect(realmPowers(actor(PLAYER), realm, officers)).toEqual([]);
@@ -427,34 +429,6 @@ describe("leaving a realm", () => {
       callerAs(OFFICER, db).region.abandonNation({ countryId: "c5", confirmName: "Aurelia" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(db.country.update).not.toHaveBeenCalled();
-  });
-});
-
-describe("founder assignment", () => {
-  it("is for site admins only", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(FOUNDER, db).region.assignFounder({ realmId: "eurth", clerkUserId: PLAYER })
-    ).rejects.toThrow();
-    expect(db.realm.update).not.toHaveBeenCalled();
-  });
-
-  it("sets the founder, or hands the realm back to staff", async () => {
-    const db = makeDb();
-    db.user.findUnique.mockResolvedValue({ id: "db_player" });
-    await callerAs(ADMIN, db, admin).region.assignFounder({
-      realmId: "eurth",
-      clerkUserId: PLAYER,
-    });
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: { ownerId: PLAYER },
-    });
-    await callerAs(ADMIN, db, admin).region.assignFounder({ realmId: "eurth", clerkUserId: null });
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: { ownerId: "system" },
-    });
   });
 });
 

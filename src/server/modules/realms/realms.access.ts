@@ -17,8 +17,9 @@ export function isSiteAdmin(actor: RealmActor): boolean {
 }
 
 /**
- * The realm's founder powers (claims review, appointing officers, and every officer power): site admins or the
- * realm's founder (`Realm.ownerId` is a Clerk id).
+ * The realm's founder powers (appointing officers, and every officer power including claims review): site admins
+ * or the realm's founder (`Realm.ownerId` is a Clerk id). Officers granted `claims` review claims too; see
+ * `hasRealmPower`.
  */
 export function canModerateRealm(actor: RealmActor, realm: { ownerId: string }): boolean {
   return isSiteAdmin(actor) || realm.ownerId === actor.clerkUserId;

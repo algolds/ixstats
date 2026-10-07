@@ -9,6 +9,7 @@ import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
+import { HandOverSection } from "../../_components/manage/HandOverSection";
 import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
 import { LinksSection } from "../../_components/manage/LinksSection";
 import { ManageSection } from "../../_components/manage/ManageSection";
@@ -43,10 +44,11 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     manage.factbook && { id: "factbook", label: "Factbook" },
     manage.rules && { id: "rules", label: "Rules" },
     { id: "officers", label: "Officers" },
-    manage.isFounder && { id: "claims", label: "Claims" },
+    can("claims") && { id: "claims", label: "Claims" },
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
+    manage.canHandOver && { id: "handover", label: "Hand over" },
   ].filter(Boolean) as Array<{ id: string; label: string }>;
 
   return (
@@ -82,18 +84,19 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         )}
         {manage.rules && <RulesSection slug={slug} rules={manage.rules} />}
         <OfficersSection slug={slug} manage={manage} />
-        {manage.isFounder && (
+        {can("claims") && (
           <ManageSection
             id="claims"
             title="Claims"
-            description="Players asking to take a nation of the realm. Only the founder (and site staff) review them."
+            description="Players asking to take a nation of the realm. The founder, officers with the Claims power and site staff review them."
           >
-            <ClaimsTab realmId={manage.realm.id} />
+            <ClaimsTab realmId={manage.realm.id} canApproveOwn={manage.isFounder} />
           </ManageSection>
         )}
         {can("diplomacy") && <EmbassiesSection slug={slug} manage={manage} />}
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}
         {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
+        {manage.canHandOver && <HandOverSection slug={slug} manage={manage} />}
       </div>
     </div>
   );

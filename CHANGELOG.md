@@ -28,6 +28,24 @@ reads 1.4.0 until the RC2 cut.
   unchanged. Closes roadmap item 12 (per-realm calendar label).
 - **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
   `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+### 🏰 Realm Ownership & Claims Officers (2026-10-07)
+
+- **Transfer a realm (site admins):** `/admin/realms` → Realms → **Transfer** hands a realm to an active account
+  (found by nation or Clerk id) or back to IxStats staff, confirmed by typing the realm's slug (checked on the
+  server). `realms.region.adminTransferOwner` replaces `assignFounder`; the Founder column is display-only. IxWorld
+  stays with staff.
+- **Hand over (founders):** Manage → **Hand over** lets a founder pass their realm to an officer or a player who owns
+  a nation in it (`realms.region.handOver`), with the same typed confirmation.
+- **Audit and notices:** every handover writes an `AdminAuditLog` row (`REALM_OWNER_TRANSFERRED`, previous and new
+  owner) and notifies the new founder (and a founder staff replaced). **Keep previous owner as officer** keeps the
+  old founder on as a "Former founder" officer with every power; otherwise they lose the founder's powers.
+- **`claims` officer power:** "Claims: review players' claims on the realm's nations". Officers holding it see the
+  Manage tab's Claims section and approve or reject claims in that realm only (`reviewClaim`, `listClaims`); they
+  can't approve their own claim. The Officers section now describes each power. No schema change (`powers` is a
+  string list).
+- **Docs:** [Eurth onboarding](./docs/systems/realms-eurth-onboarding.md) §4.1–4.2 (hand Eurth to its leaders, give
+  reviewers the Claims power), [realms.md](./docs/systems/realms.md) Governance and the
+  [region design](./docs/specs/2026-10-05-realm-regions-design.md) amendments.
 
 ### 🧭 Navigation (2026-10-06)
 

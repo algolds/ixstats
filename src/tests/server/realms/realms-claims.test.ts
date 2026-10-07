@@ -274,7 +274,7 @@ describe("reviewClaim", () => {
     userId: "u1",
     countryId: "c1",
     realmId: "default",
-    realm: { ownerId: "system" },
+    realm: { ownerId: "system", officers: [] },
     user: { clerkUserId: "clerk_u1" },
     country: { name: "Aurelia" },
   };
@@ -380,11 +380,21 @@ describe("reviewClaim", () => {
 });
 
 describe("listClaims", () => {
-  it("scopes a realm founder to the realms they own", async () => {
+  it("scopes a player to the realms they found or review claims for as an officer", async () => {
     const { db, claims } = setup();
     await claims.listClaims({ id: "u7", clerkUserId: "clerk_founder", role: null }, "pending");
     expect(db.realmClaim.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: "pending", realm: { ownerId: "clerk_founder" } } })
+      expect.objectContaining({
+        where: {
+          status: "pending",
+          realm: {
+            OR: [
+              { ownerId: "clerk_founder" },
+              { officers: { some: { userId: "clerk_founder", powers: { has: "claims" } } } },
+            ],
+          },
+        },
+      })
     );
   });
 
@@ -403,6 +413,85 @@ describe("listClaims", () => {
     expect(include.user.select.wikiAccountLinks).toEqual({
       where: { verifiedAt: { not: null } },
       select: { source: true, username: true },
+    });
+  });
+});
+
+describe("officers with the claims power", () => {
+  const founder = { id: "f1", clerkUserId: "clerk_founder", role: null };
+  const officer = { id: "o1", clerkUserId: "clerk_officer", role: null };
+  /** The review query returns only the reviewer's own grant in the claim's realm (`officers` where userId). */
+  const claimIn = (officers: object[], claimant = "clerk_u1") => ({
+    id: "cl1",
+    status: "pending",
+    userId: "u1",
+    countryId: "c1",
+    realmId: "default",
+    realm: { ownerId: "clerk_founder", slug: "eurth", status: "active", officers },
+    user: { clerkUserId: claimant },
+    country: { name: "Aurelia" },
+  });
+  const grant = (powers: string[]) => [{ userId: "clerk_officer", powers }];
+
+  it("review a claim in their own realm, looked up by their own grant", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(claimIn(grant(["claims"])));
+    await expect(claims.reviewClaim(officer, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    expect(db.realmClaim.findUnique.mock.calls[0][0].include.realm.select.officers).toEqual({
+      where: { userId: "clerk_officer" },
+      select: { userId: true, powers: true },
+    });
+    expect(db.realmClaim.updateMany).toHaveBeenNthCalledWith(1, {
+      where: { id: "cl1", status: "pending" },
+      data: expect.objectContaining({ status: "approved", reviewedBy: "clerk_officer" }),
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+
+    const other = setup();
+    other.db.realmClaim.findUnique.mockResolvedValue(claimIn(grant(["claims"])));
+    await expect(
+      other.claims.reviewClaim(officer, "cl1", { approve: false, reason: "Not your page" })
+    ).resolves.toEqual({ status: "rejected" });
+  });
+
+  it("can't review a claim in another realm, where they hold no grant", async () => {
+    const { db, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(claimIn([]));
+    await expect(claims.reviewClaim(officer, "cl1", { approve: true })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses officers without the claims power", async () => {
+    const { db, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(claimIn(grant(["board", "diplomacy"])));
+    await expect(
+      claims.reviewClaim(officer, "cl1", { approve: false, reason: "Not your page" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("can't approve their own claim; the founder and site admins still can approve theirs", async () => {
+    const { db, deps, claims } = setup();
+    db.realmClaim.findUnique.mockResolvedValue(claimIn(grant(["claims"]), "clerk_officer"));
+    await expect(claims.reviewClaim(officer, "cl1", { approve: true })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+
+    const own = setup();
+    own.db.realmClaim.findUnique.mockResolvedValue(claimIn([], "clerk_founder"));
+    await expect(own.claims.reviewClaim(founder, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    const staff = setup();
+    staff.db.realmClaim.findUnique.mockResolvedValue(claimIn([], "clerk_a1"));
+    await expect(staff.claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
     });
   });
 });
@@ -686,7 +775,14 @@ describe("reviewClaim — nation page claims", () => {
     expect(db.realmClaim.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
         include: expect.objectContaining({
-          realm: { select: { ownerId: true, slug: true, status: true } },
+          realm: {
+            select: {
+              ownerId: true,
+              slug: true,
+              status: true,
+              officers: { where: { userId: "clerk_a1" }, select: { userId: true, powers: true } },
+            },
+          },
         }),
       })
     );
