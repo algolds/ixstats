@@ -74,6 +74,7 @@ const CLAIM_ERROR_CODES = {
   NOT_PENDING: "CONFLICT",
   REASON_REQUIRED: "BAD_REQUEST",
   REALM_CLOSED: "FORBIDDEN",
+  SLUG_CONFLICT: "CONFLICT",
 } as const;
 
 function claimError(error: Error): never {

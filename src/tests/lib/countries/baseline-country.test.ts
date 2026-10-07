@@ -31,6 +31,7 @@ describe("buildBaselineCountryData", () => {
     expect(data.flag).toBeUndefined();
     expect(data.coatOfArms).toBeUndefined();
     expect(data.governmentType).toBeUndefined();
+    expect(data.leader).toBeUndefined();
     expect(data).not.toHaveProperty("slug");
   });
 
@@ -59,6 +60,7 @@ describe("buildBaselineCountryData", () => {
       baselineGdpPerCapita: 20_000,
       flag: "https://example.test/flag.png",
       government: "Republic",
+      leader: "Queen Mara",
       inflationRate: 0,
       lifeExpectancy: 81,
     });
@@ -70,6 +72,7 @@ describe("buildBaselineCountryData", () => {
       baselineGdpPerCapita: 20_000,
       flag: "https://example.test/flag.png",
       governmentType: "Republic",
+      leader: "Queen Mara",
       nominalGDP: 4_000_000 * 20_000,
       inflationRate: 2.0, // 0 is treated as "not given", as createCountry always did
       lifeExpectancy: 81,

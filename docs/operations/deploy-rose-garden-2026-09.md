@@ -253,6 +253,12 @@ Full detail and player instructions: [`docs/systems/realms-eurth-onboarding.md`]
    bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" \
      --keyword Eurth --nation-roster "Category:Countries (Eurth)" --apply
    ```
+   The dry run lists every nation, then warns about any roster title that is not among the crawled pages
+   (`not crawled`) and any roster entry that looks like a subcategory rather than a nation (`suspect`). Check
+   each one before `--apply`. Re-running later adds new pages, updates kinds, and only removes stale pages
+   with `--prune` (never a page with a pending or approved claim, or with a Country); the dry run lists the
+   stale pages. Approved nation-page claims found their country prefilled from the page's infobox,
+   including its flag and coat of arms.
 4. `/r/eurth` lists 100 claimable nations and the lore link opens `Portal:Eurth` read-only in WikiOS.
 5. Tell Eurth players: verify your IIWiki account (Settings → IxnayID & Passport → Linked Accounts), then claim your
    nation at `/r/eurth`. Site admins review other claims in `/admin/realms` → Claims.

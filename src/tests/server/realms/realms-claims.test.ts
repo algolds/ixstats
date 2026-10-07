@@ -33,6 +33,13 @@ const uniqueViolation = () =>
       meta: { modelName: "Country", target: ["realmId", "name"] },
     }
   );
+/** What Postgres raises when another country took the new nation's slug between the free-slug search and the create. */
+const slugViolation = () =>
+  new Prisma.PrismaClientKnownRequestError("Unique constraint failed on the fields: (`slug`)", {
+    code: "P2002",
+    clientVersion: "6.19.3",
+    meta: { modelName: "Country", target: ["slug"] },
+  });
 
 interface RegionRow {
   id: string;
@@ -481,6 +488,33 @@ describe("claimNationPage", () => {
     expect(db.country.create.mock.calls[0][0].data.slug).toBe("aurelia-eurth");
   });
 
+  it("numbers the realm slug when that is taken too, instead of failing the claim", async () => {
+    const { db, deps, claims } = pageSetup({
+      takenSlugs: ["aurelia", "aurelia-eurth", "aurelia-eurth-2"],
+    });
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(db.country.create.mock.calls[0][0].data.slug).toBe("aurelia-eurth-3");
+    expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
+  });
+
+  it("a title with no Latin letters or digits gets a fallback slug, not an empty one", async () => {
+    const { db, claims } = pageSetup({ takenSlugs: ["nation"] });
+    await claims.claimNationPage(actor, EURTH, "Ἀθῆναι");
+    expect(db.country.create.mock.calls[0][0].data.slug).toBe("nation-eurth");
+  });
+
+  it("a slug taken mid-create is a slug conflict, never 'belongs to another player'", async () => {
+    const { db, deps, claims } = pageSetup();
+    db.country.create.mockRejectedValue(slugViolation());
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
+      name: "ClaimError",
+      code: "SLUG_CONFLICT",
+    });
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
   it.each([
     [
       "the creator is someone else",
@@ -733,6 +767,21 @@ describe("reviewClaim — nation page claims", () => {
         rejectionReason: expect.stringContaining("another player"),
       }),
     });
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
+  it("a slug taken mid-create leaves the claim pending for another try instead of rejecting it", async () => {
+    const { db, deps, claims } = pageSetup();
+    db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    db.country.create.mockRejectedValue(slugViolation());
+    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).rejects.toMatchObject({
+      name: "ClaimError",
+      code: "SLUG_CONFLICT",
+    });
+    expect(db.realmClaim.updateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "rejected" }) })
+    );
+    expect(deps.onClaimRejected).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).not.toHaveBeenCalled();
   });
 

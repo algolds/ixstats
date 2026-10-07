@@ -17,6 +17,7 @@ export interface BaselineCountryInitial {
   flag?: string;
   coatOfArms?: string;
   government?: string;
+  leader?: string;
   nominalGDP?: number;
   realGDPGrowthRate?: number;
   inflationRate?: number;
@@ -38,6 +39,7 @@ function baselineFields(name: string, initial: BaselineCountryInitial) {
     flag: initial.flag || undefined,
     coatOfArms: initial.coatOfArms || undefined,
     governmentType: initial.government || undefined,
+    leader: initial.leader || undefined,
     baselineDate: now,
     lastCalculated: now,
     localGrowthFactor: 1.0,

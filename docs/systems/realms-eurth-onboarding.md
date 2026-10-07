@@ -164,12 +164,27 @@ DRY RUN — pass --apply to write
 realm Eurth (<realm id>) ← iiwiki
 pages <P> (crawled <C>), nations <N>, categories <K>, truncated no
 nation method: roster Category:Countries (Eurth)
-  nation: <first 20 nation titles, A–Z, one per line>
+  nation: <every nation title, A–Z, one per line>
+WARNING: <M> roster titles not among the crawled pages (indexed anyway; ...)
+  not crawled: <title>
+WARNING: <S> roster entries look like a subcategory of pages rather than a nation (kept; ...)
+  suspect: <title>
+stale rows no longer in the index: <n> would stay (pass --prune to delete), <n> kept (claimed or founded)
+  stale: <title>
 ```
+
+The dry run lists **every** nation, so read the whole list. The two `WARNING` blocks and the `stale rows`
+block only appear when they have something to say.
 
 Live read-only checks on 2026-09-28 found `C` = 2746 crawled pages in `K` = 49 categories, not truncated,
 in about 25 s, and `N` = 100 roster nations. `P` can be a little higher than `C`: roster nation titles the
-crawl missed are added to the index.
+crawl missed are added to the index. Each of those titles is printed as `not crawled`: check that
+each is a live nation page (not a redirect, a renamed page or a typo in the roster) before applying.
+
+A `suspect` line is a roster entry whose title has a word like `Category`, `templates`, `maps`, `flags`,
+`cities`, `people` or `history`, so it may be a subcategory of pages rather than a nation. It is only a
+warning: the entry is still indexed as a nation. If it really is not a nation, remove it from the roster
+category on iiwiki and run the dry run again.
 
 If `truncated yes` appears, the crawl hit the 5,000-page / depth-5 cap — that would be unusual for Eurth;
 investigate before applying (a runaway category, not expected here).
@@ -191,9 +206,28 @@ bun scripts/realms/import-realm-lore.ts \
 ```
 
 This writes `RealmPage` rows (`kind: "nation"` for the ~100 roster nations, `kind: "lore"` for everything
-else). Re-running the import later (e.g. iiwiki adds pages) is safe and idempotent — it upserts kinds and
-skips duplicates — except that a page a player has already **claimed** will flip back to `kind: "lore"` if
-it no longer matches; don't re-run casually once claiming has started.
+else) in one transaction. Re-running the import later (e.g. iiwiki adds pages) adds new pages, updates
+kinds, and only removes stale pages with `--prune`:
+
+- Without `--prune`, a page that is no longer in the index (deleted or moved out of the category tree) keeps
+  its row. The dry run lists these as `stale`.
+- With `--prune`, those rows are deleted, except a page with a pending or approved claim, or a page that
+  already has a Country in the realm. Those are listed as `stale, kept` and never deleted. Run the dry run
+  with `--prune` first to see what would go.
+
+A page a player has already **claimed** still flips back to `kind: "lore"` if it is no longer a roster
+nation, so don't re-run casually once claiming has started.
+
+### 3.3 What a claim's new nation starts with
+
+When a claim on a nation page is approved, the new country is prefilled from the page's infobox: population,
+GDP per capita (or GDP divided by population), area, continent, government, leader (the head of state, else
+the first leader listed), flag, coat of arms, and national identity (official name, capital, motto, currency,
+languages and so on). Flags and coats of arms are stored as IxStats media proxy paths
+(`/api/mediawiki/iiwiki/wiki/Special:FilePath/<file>`). GDP figures may carry a currency symbol or code
+(`$`, `€`, `US$`, `Int$`, `USD`) and a magnitude (`billion`, `trillion`, `bn`, `tn`). A figure that cannot
+be read, or a GDP per capita under $100, falls back to the baseline default instead of founding a near-zero
+economy.
 
 ---
 
@@ -209,6 +243,9 @@ Tell players, in order:
    - If you are the verified creator of that nation's iiwiki page, the claim is **approved instantly** —
      the country is created in Eurth and assigned to you.
    - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**.
+     Each nation-page claim there has a **Page history** link to the page's history on iiwiki; its first
+     entry is the page's creator.
+   - When the nation's page is a redirect, the creator check uses the page it redirects to.
 
 Default cap is **one nation per player per realm**. A site admin can raise it (1–20) in `/admin/realms` →
 **Realms** tab → the realm's pencil (edit) button → **Nations per player** → the check (save) button. It is

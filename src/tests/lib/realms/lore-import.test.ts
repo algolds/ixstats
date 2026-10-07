@@ -5,6 +5,9 @@ import {
   indexNations,
   listRosterNations,
   nationMethod,
+  prunableTitles,
+  rosterTitlesNotCrawled,
+  suspectRosterEntries,
   type WikiQuery,
 } from "~/lib/realms/lore-import";
 
@@ -246,5 +249,51 @@ describe("indexNations", () => {
       pages: ["A", "B", "C"],
       nations: new Set(["B"]),
     });
+  });
+});
+
+describe("the dry run's roster warnings", () => {
+  it("lists the roster titles the crawl did not find", () => {
+    expect(
+      rosterTitlesNotCrawled(["A", "B", "C"], new Set(["Nanto (Eurth)", "B", "Abantium"]))
+    ).toEqual(["Abantium", "Nanto (Eurth)"]);
+  });
+
+  it("flags roster entries that look like subcategories of pages, never a plain nation name", () => {
+    expect(
+      suspectRosterEntries([
+        "Nanto (Eurth)",
+        "Abantium",
+        "Cities of Abantium",
+        "Eurth maps",
+        "Flags (Eurth)",
+        "History of Nanto",
+        "Eurth templates",
+        "People of Eurth",
+      ])
+    ).toEqual([
+      "Cities of Abantium",
+      "Eurth maps",
+      "Eurth templates",
+      "Flags (Eurth)",
+      "History of Nanto",
+      "People of Eurth",
+    ]);
+  });
+});
+
+describe("prunableTitles (--prune)", () => {
+  it("deletes only indexed titles no longer in the index, keeping the claimed or founded ones", () => {
+    expect(
+      prunableTitles(
+        ["A", "Gone", "Claimed", "B", "Founded"],
+        ["A", "B", "New"],
+        ["Claimed", "Founded", "A"]
+      )
+    ).toEqual({ prune: ["Gone"], kept: ["Claimed", "Founded"] });
+  });
+
+  it("prunes nothing when every indexed title is still current", () => {
+    expect(prunableTitles(["A", "B"], ["A", "B", "C"], [])).toEqual({ prune: [], kept: [] });
   });
 });

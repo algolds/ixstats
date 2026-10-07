@@ -9,6 +9,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
 }));
 
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import {
   EMPTY_PREFILL,
   fetchNationPagePrefill,
@@ -60,6 +61,57 @@ describe("prefillFromInfobox", () => {
       "iiwiki"
     );
     expect(prefill).toEqual({ country: {}, identity: {} });
+  });
+
+  it("keeps a sister wiki's flag and coat of arms as this app's media proxy paths", () => {
+    const prefill = prefillFromInfobox(
+      { name: "Aurelia", image_flag: "Flag of Aurelia.svg", image_coat: "Aurelia arms.png" },
+      "iiwiki"
+    );
+    expect(prefill.country).toEqual({
+      flag: "/api/mediawiki/iiwiki/wiki/Special:FilePath/Flag_of_Aurelia.svg",
+      coatOfArms: "/api/mediawiki/iiwiki/wiki/Special:FilePath/Aurelia_arms.png",
+    });
+  });
+
+  it("drops an image value that is neither https nor the app's media proxy", () => {
+    for (const flagUrl of [
+      "javascript:alert(1)",
+      "http://iiwiki.com/flag.png",
+      "/somewhere/else.png",
+      "/api/mediawiki/../admin",
+    ]) {
+      expect(prefillFromInfobox({ name: "X", flagUrl }, "iiwiki").country.flag).toBeUndefined();
+    }
+  });
+
+  it("names the head of state as the leader", () => {
+    expect(
+      prefillFromInfobox({ name: "X", head_of_state: "Queen Mara II" }, "iiwiki").country
+    ).toEqual({ leader: "Queen Mara II" });
+    expect(
+      prefillFromInfobox({ name: "X", leader_name1: "Chancellor Vey" }, "iiwiki").country
+    ).toEqual({ leader: "Chancellor Vey" });
+  });
+
+  it("rejects a GDP per capita below the plausibility floor, given or computed", () => {
+    expect(prefillFromInfobox({ name: "X", gdpPerCapita: 2 }, "iiwiki").country).toEqual({});
+    const computed = prefillFromInfobox(
+      { name: "X", population: 30_000_000, gdp_nominal: 1_500 },
+      "iiwiki"
+    );
+    expect(computed.country).toEqual({ baselinePopulation: 30_000_000 });
+  });
+
+  it("founds the economy a page's money-formatted infobox gives", () => {
+    const data = parseInfoboxWithTemplates(
+      "{{Infobox country\n| population_estimate = 30,000,000\n| GDP_nominal = $1.5 trillion\n}}",
+      "Aurelia"
+    );
+    expect(prefillFromInfobox(data, "iiwiki").country).toMatchObject({
+      baselinePopulation: 30_000_000,
+      baselineGdpPerCapita: 50_000,
+    });
   });
 
   it("gives nothing without an infobox", () => {

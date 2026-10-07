@@ -103,6 +103,30 @@ describe("account-proof", () => {
     await expect(fetchPageCreator("ixwiki", "Aurelia")).resolves.toBe("Founder Name");
   });
 
+  it("follows a redirect: the page creator is the target page's, not the redirect's", async () => {
+    const fetchMock = jest.fn().mockReturnValueOnce(
+      json({
+        query: {
+          redirects: [{ from: "Aurelia", to: "Federal Republic of Aurelia" }],
+          pages: [
+            {
+              pageid: 12,
+              title: "Federal Republic of Aurelia",
+              revisions: [{ user: "Founder_Name" }],
+            },
+          ],
+        },
+      })
+    );
+    global.fetch = fetchMock as any;
+    await expect(fetchPageCreator("ixwiki", "Aurelia")).resolves.toBe("Founder Name");
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("titles")).toBe("Aurelia");
+    expect(url.searchParams.get("redirects")).toBe("1");
+    expect(url.searchParams.get("rvdir")).toBe("newer"); // the first revision
+    expect(url.searchParams.get("rvlimit")).toBe("1");
+  });
+
   it("reports a truncated window, and a hidden author or content as null (unattributable)", async () => {
     global.fetch = jest.fn().mockReturnValueOnce(
       json({

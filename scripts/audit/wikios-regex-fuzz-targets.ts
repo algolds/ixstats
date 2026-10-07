@@ -489,6 +489,10 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/transformers/infobox-parser");
     return (s) => m.parsePopulation(s);
   }),
+  wikitext("transformers/infobox-parser#parseMoney", async () => {
+    const m = await import("~/lib/wiki-os/transformers/infobox-parser");
+    return (s) => m.parseMoney(s);
+  }),
   wikitext("transformers/infobox-parser#cleanWikiValue", async () => {
     const m = await import("~/lib/wiki-os/transformers/infobox-parser");
     return (s) => m.cleanWikiValue(s);
