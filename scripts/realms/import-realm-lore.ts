@@ -2,6 +2,8 @@
  * One-time realm lore index import (rulings E-a..E-e, E-d′). Dry run by default — the dry run is the preview; --apply writes.
  *   bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth \
  *     [--nation-roster "Category:Countries (Eurth)"] [--prune] [--apply]
+ * Once the realm's wiki is set (/admin/realms → Wiki, `Realm.settings.wiki`), `--realm eurth` alone is enough: the
+ * settings fill --source, --category, --keyword and --nation-roster, and a flag given on the command line wins.
  * Crawls the category tree (keyword subcategories only, depth 5, 5,000 pages) and records the index as RealmPage rows.
  * Nations come from --nation-roster (one subcategory per nation; its titles join the index even if the crawl missed
  * them; a retired roster is refused), else from pages whose lead uses Infobox country / former country.
@@ -15,13 +17,20 @@ import {
   crawlRealmCategory,
   indexNations,
   loreDowngrades,
+  loreImportOptions,
   nationMethod,
   prunableTitles,
   rosterTitlesNotCrawled,
   suspectRosterEntries,
   type WikiQuery,
 } from "~/lib/realms/lore-import";
-import { isProofSource, wikiQuery, type ProofSource } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { realmWikiSettings } from "~/lib/realms/realm-wiki-settings";
+import {
+  isProofSource,
+  PROOF_SOURCES,
+  wikiQuery,
+  type ProofSource,
+} from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");
@@ -43,9 +52,8 @@ function arg(name: string): string {
   return value;
 }
 
-function sourceArg(): ProofSource {
-  const source = arg("source");
-  if (!isProofSource(source)) throw new Error(`--source must be ixwiki, iiwiki or althistory (got "${source}")`);
+function proofSource(source: string): ProofSource {
+  if (!isProofSource(source)) throw new Error(`--source must be one of ${PROOF_SOURCES.join(", ")} (got "${source}")`);
   return source;
 }
 
@@ -109,20 +117,35 @@ async function staleRows(client: Tx, realmId: string, wikiSource: ProofSource, p
 }
 
 async function main() {
-  const method = nationMethod(optionalArg("nation-roster")); // refuses a retired roster before any request
+  nationMethod(optionalArg("nation-roster")); // refuses a retired roster before any request
   const slug = arg("realm");
-  const source = sourceArg();
-  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true, name: true } });
+  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true, name: true, settings: true } });
   if (!realm) {
     console.error(`no realm with slug "${slug}" — create it in /admin/realms first`);
     process.exitCode = 1;
     return;
   }
+  // Flags win; the realm's wiki settings fill the rest.
+  const wiki = realmWikiSettings(realm.settings);
+  const options = loreImportOptions(
+    {
+      source: optionalArg("source"),
+      category: optionalArg("category"),
+      keyword: optionalArg("keyword"),
+      roster: optionalArg("nation-roster"),
+    },
+    wiki
+  );
+  const source = proofSource(options.source);
+  const method = nationMethod(options.roster);
   console.log(apply ? "APPLY mode — writing" : "DRY RUN — pass --apply to write");
   console.log(`realm ${realm.name} (${realm.id}) ← ${source}`);
+  if (wiki?.source === source) {
+    console.log(`using ${options.category}, keyword ${options.keyword}, roster ${options.roster ?? "none"}`);
+  }
 
   const query: WikiQuery = (params, schema) => wikiQuery(source, params, schema);
-  const crawl = await crawlRealmCategory(query, { rootCategory: arg("category"), keyword: arg("keyword") });
+  const crawl = await crawlRealmCategory(query, { rootCategory: options.category, keyword: options.keyword });
   const { pages, nations } = await indexNations(query, crawl.pages, method);
   console.log(
     `pages ${pages.length} (crawled ${crawl.pages.length}), nations ${nations.size}, categories ${crawl.categoriesVisited.length}, truncated ${crawl.truncated ? "yes" : "no"}`

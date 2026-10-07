@@ -26,13 +26,13 @@ const NS_CATEGORY = 14;
 const SKIP_SUBCATEGORY = /\b(redirects|templates|users|stubs)\b/i;
 
 /** MediaWiki continuation: every value is passed back verbatim on the next request. */
-const ContinueSchema = z.record(z.string(), z.string()).optional();
+export const ContinueSchema = z.record(z.string(), z.string()).optional();
 
 /**
  * Runs a query, following MediaWiki continuation until the wiki stops returning a `continue` object. A repeated
  * `continue` (e.g. a proxy that strips continue params) throws rather than looping forever.
  */
-async function queryAll<T extends { continue?: Record<string, string> }>(
+export async function queryAll<T extends { continue?: Record<string, string> }>(
   query: WikiQuery,
   params: Record<string, string>,
   schema: z.ZodType<T>
@@ -179,6 +179,51 @@ export async function listRosterNations(query: WikiQuery, rosterCategory: string
     else if (m.ns === NS_MAIN) titles.add(m.title);
   }
   return [...titles].sort();
+}
+
+/** What the import script was given on its command line (each flag optional). */
+export interface LoreImportArgs {
+  source?: string;
+  category?: string;
+  keyword?: string;
+  roster?: string;
+}
+
+export interface LoreImportOptions {
+  source: string;
+  category: string;
+  keyword: string;
+  roster: string | undefined;
+}
+
+/** The part of a realm's wiki settings (`realm-wiki-settings.ts`) the import reads. */
+export interface LoreImportDefaults {
+  source: string;
+  rootCategory: string;
+  keyword: string;
+  rosterCategory: string | null;
+}
+
+/**
+ * The import's options: a flag given on the command line wins, else the realm's wiki settings fill it, so
+ * `--realm eurth` alone is enough once the realm's wiki is configured. The settings apply only to their own wiki:
+ * with `--source` naming another wiki, every other value must be given too. Throws naming what is still missing.
+ */
+export function loreImportOptions(args: LoreImportArgs, defaults: LoreImportDefaults | null): LoreImportOptions {
+  const fill = defaults && (args.source === undefined || args.source === defaults.source) ? defaults : null;
+  const options = {
+    source: args.source ?? fill?.source,
+    category: args.category ?? fill?.rootCategory,
+    keyword: args.keyword ?? fill?.keyword,
+    roster: args.roster ?? fill?.rosterCategory ?? undefined,
+  };
+  const missing = (["source", "category", "keyword"] as const).filter((key) => !options[key]);
+  if (missing.length > 0) {
+    throw new Error(
+      `missing ${missing.map((key) => `--${key}`).join(", ")}: pass them, or set the realm's wiki in /admin/realms → Wiki`
+    );
+  }
+  return options as LoreImportOptions;
 }
 
 type NationMethod = { kind: "infobox" } | { kind: "roster"; roster: string };
