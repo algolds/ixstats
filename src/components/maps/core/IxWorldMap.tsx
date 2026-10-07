@@ -2,7 +2,7 @@
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
-import { MAP_DEFAULTS, buildBaseStyle } from "~/lib/maps/map-config";
+import { MAP_DEFAULTS, buildBaseStyle, mapHomeCenter } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 import { Suspense } from "react";
@@ -119,6 +119,8 @@ interface IxWorldMapProps {
   onRouteClick?: (routeId: string) => void;
   /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
   showOceanLabels?: boolean;
+  /** The map shows IxWorld: its prime meridian line and home view centre (56.1842°); else the origin. */
+  ixWorld?: boolean;
 }
 
 export interface IxWorldMapRef {
@@ -153,6 +155,7 @@ const IxWorldMap = memo(
       overlayData,
       onRouteClick,
       showOceanLabels = false,
+      ixWorld = false,
     },
     ref
   ) {
@@ -203,6 +206,7 @@ const IxWorldMap = memo(
       fullLayerDataRef,
       theme,
       showOceanLabels,
+      showPrimeMeridian: ixWorld,
       labelsVisible,
     });
 
@@ -247,7 +251,7 @@ const IxWorldMap = memo(
       const init = () => {
         const handle = acquireSurface("world", {
           container: el,
-          initialCenter: initialCenter || MAP_DEFAULTS.center,
+          initialCenter: initialCenter || mapHomeCenter(ixWorld),
           initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
           minZoom: MAP_DEFAULTS.minZoom,
           maxZoom: MAP_DEFAULTS.maxZoom,

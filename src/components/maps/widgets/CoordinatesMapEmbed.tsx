@@ -9,12 +9,19 @@ import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import type { FeatureCollection } from "geojson";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { addGeoLayers } from "~/components/maps/shared/geo-layers";
+import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
+import { IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 
 interface CoordinatesMapEmbedProps {
   lat: number;
   lng: number;
   zoom?: number;
   options?: string; // height=400|width=100%|interactive=yes|title=My Title
+  /**
+   * The realm slug whose map the coordinates are on. Omitted: IxWorld inside an IxWiki article (its lore is
+   * IxWorld's, whoever reads it), else the viewer's realm.
+   */
+  realm?: string;
 }
 
 /** Popup title as a text node: the title comes from wiki markup, so it is never parsed as HTML. */
@@ -26,12 +33,22 @@ export function buildPopupTitleNode(title: string): HTMLDivElement {
   return titleEl;
 }
 
+/** The realm whose map an embed's coordinates are on: the given slug, IxWorld in an IxWiki article, else the viewer's. */
+export function embedRealm(
+  realm: string | undefined,
+  wiki: { isWikiPage: boolean; articleSource: string }
+): string | undefined {
+  return realm ?? (wiki.isWikiPage && wiki.articleSource === "ixwiki" ? IXWORLD_SLUG : undefined);
+}
+
 export function CoordinatesMapEmbed({
   lat,
   lng,
   zoom = 5,
   options = "",
+  realm: realmProp,
 }: CoordinatesMapEmbedProps) {
+  const realm = embedRealm(realmProp, useWikiContext());
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -62,7 +79,7 @@ export function CoordinatesMapEmbed({
   const titleVal = parsedOptions.title || "";
 
   const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ["political"] },
+    { layers: ["political"], realm },
     { enabled: isInViewport, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
   );
 

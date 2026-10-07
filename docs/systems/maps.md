@@ -1,6 +1,6 @@
 # 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-07
 
 **Parent App Suite:** Atlas (app version 2 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
@@ -34,7 +34,7 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
-1. **Vector SVG Parsing (`svg-parser.ts`)**: Server-side parsing with `@xmldom/xmldom` and `svg-path-parser`. Can extract Inkscape layer groups (`political`, `rivers`, `lakes`, `altitudes`, `climate`), flattens Bezier curves, and resolves polygon hole winding order. The map pipeline (`map-pipeline.ts`) asks only for `political` and `altitudes`; the other layers arrive through per-layer `SvgUploadManager` uploads.
+1. **Vector SVG Parsing (`svg-parser.ts`)**: Server-side parsing with `@xmldom/xmldom` and `svg-path-parser`. Can extract Inkscape layer groups (`political`, `rivers`, `lakes`, `altitudes`, `climate`), flattens Bezier curves, and tells outer rings from holes by containment, not winding (`src/lib/maps/ring-assembly.ts`): a ring inside an odd number of rings is a hole of the smallest ring containing it, so a lake stays a lake whichever way it was drawn, and an island in it is land again. A path's explicit `fill-rule: nonzero` follows the windings instead, as a browser draws it. Output is RFC 7946 (outer rings counter-clockwise, holes clockwise), and every area helper subtracts holes. The PNG path's potrace output and the province importer (per shape) go through the same assembly. The map pipeline (`map-pipeline.ts`) asks only for `political` and `altitudes`; the other layers arrive through per-layer `SvgUploadManager` uploads.
 2. **Affine WGS84 Transformation (`src/lib/flags/svg-coordinate-config.ts`)**: Converts 2D SVG pixel viewBox space (`25625 × 15729` for IxEarth) to geographic coordinates with an isotropic affine transform (~22.77 px per degree).
 3. **Topology Locking (`src/lib/maps/shared-vertex-builder.ts`)**: Merges shared boundary vertices between adjacent nations into a unified vertex lookup topology, preventing tearing or slivers.
 4. **GeoJSON Optimization (`geojson-compress.ts`)**: Radial-distance plus Douglas-Peucker geometry simplification (`@turf/simplify`, which comes in through `@turf/turf`), coordinate precision truncation (4 decimal places, $\sim 11\text{m}$, for political borders; 3 for decorative layers), and consecutive duplicate-point removal. Sutherland-Hodgman antimeridian clipping lives in `src/lib/maps/map-utils.ts`.
@@ -56,6 +56,22 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
 ---
 
 ## Runtime Requirements
+
+- **PostGIS geometry triggers.** The spatial SQL reads `geom_postgis`, which triggers fill from the GeoJSON columns of
+  `map_layers`, `subdivisions`, `cities` and `points_of_interest`. `db push` cannot create triggers, so they live in
+  `prisma/migrations/20261007_map_geometry_sync_triggers.sql` (idempotent, with a backfill). `db:bootstrap` applies
+  it; on an existing database run it by hand after `db push` (see the deploy runbook).
+- **Realm-scoped spatial SQL.** Realms share one coordinate space. Every raw join on `map_layers` matches the realm of
+  what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
+  realm, and a country's border by id comes from `COUNTRY_BORDER_SQL` (`src/lib/maps/geo-validation.ts`).
+- **Upload limits.** Map images decode through a 64-megapixel limit (`MAX_PNG_PIXELS`, `png-realm-map.ts`), checked
+  from the header before any pixels are decoded; province imports cap their content at the pipeline's 25 MB, and the
+  upload routes refuse an oversize body by its Content-Length before parsing it.
+- **Planet figures.** The radius and degree → km factors (6371 km, 111.32 / 110.574 km per degree) live in
+  `src/lib/maps/planet.ts`; its helpers take an optional radius for a realm with its own planet size.
+- **IxWorld only.** The 56.1842° prime meridian, the home view and the R shortcut follow `mapHomeCenter(ixWorld)`;
+  other realms' maps centre on the origin with no meridian line. The style editor's preview sources
+  (`/api/maps/editor-source/[layer]`) are admin-only and serve one realm (`?realm=`, IxWorld by default).
 
 - **MapLibre web worker.** MapLibre 6 finds its worker next to its own module, which is a bundled chunk under Turbopack, so `src/lib/maps/load-maplibre.ts` points it at `/maplibre/maplibre-gl-worker.mjs`. `scripts/setup/copy-maplibre-worker.mjs` copies that file and `maplibre-gl-shared.mjs` into the gitignored `public/maplibre/`; it runs from `postinstall`, `build`, `build:fast` and `start-development.sh`. If the files are missing, every map stalls with "Worker failed to load".
 - **Direct dependencies.** Map code imports individual `@turf/*` packages (`@turf/intersect`, `@turf/union`, …). They are declared in `package.json` next to `@turf/turf`; an import of a package that is only a transitive dependency resolves under a hoisted `node_modules` but fails ("Module not found") under isolated installs.

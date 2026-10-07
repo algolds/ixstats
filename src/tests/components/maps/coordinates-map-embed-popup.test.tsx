@@ -1,4 +1,4 @@
-import { buildPopupTitleNode } from "~/components/maps/widgets/CoordinatesMapEmbed";
+import { buildPopupTitleNode, embedRealm } from "~/components/maps/widgets/CoordinatesMapEmbed";
 
 describe("buildPopupTitleNode", () => {
   it("renders a wiki-supplied title as text, never as HTML", () => {
@@ -13,5 +13,20 @@ describe("buildPopupTitleNode", () => {
     const node = buildPopupTitleNode("Capital");
     expect(node.style.fontWeight).toBe("bold");
     expect(node.style.fontSize).toBe("12px");
+  });
+});
+
+describe("embedRealm", () => {
+  it("puts an IxWiki article's coordinates on IxWorld's map, whoever reads it", () => {
+    expect(embedRealm(undefined, { isWikiPage: true, articleSource: "ixwiki" })).toBe("ixworld");
+  });
+
+  it("leaves other wikis' articles and non-article pages to the viewer's realm", () => {
+    expect(embedRealm(undefined, { isWikiPage: true, articleSource: "iiwiki" })).toBeUndefined();
+    expect(embedRealm(undefined, { isWikiPage: false, articleSource: "ixwiki" })).toBeUndefined();
+  });
+
+  it("an explicit realm wins", () => {
+    expect(embedRealm("eurth", { isWikiPage: true, articleSource: "ixwiki" })).toBe("eurth");
   });
 });

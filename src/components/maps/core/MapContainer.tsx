@@ -23,6 +23,7 @@ import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
 import { MapRealmProvider } from "./MapRealmContext";
 import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
+import { mapHomeCenter } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef, MapLayerData } from "./IxWorldMap";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -385,7 +386,7 @@ export function MapContainer({
     retry: false,
   });
   const userCountryId = userProfile?.countryId ?? null;
-  // Ocean labels and the guided tour describe IxWorld only (AT-2).
+  // Ocean labels, the prime meridian, the home view and the guided tour describe IxWorld only (AT-2).
   const ixWorld = isIxWorldView(realm, userProfile?.country?.realmId);
 
   // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
@@ -534,6 +535,7 @@ export function MapContainer({
         overlayData={deferredOverlayData}
         onRouteClick={state.setSelectedRouteId}
         showOceanLabels={ixWorld}
+        ixWorld={ixWorld}
       />
 
       <MapToolbars
@@ -573,6 +575,7 @@ export function MapContainer({
         onProjectionChange={handleProjectionChange}
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
+        homeCenter={mapHomeCenter(ixWorld)}
       />
 
       {/* Feature panels read the wiki of the realm this map shows */}

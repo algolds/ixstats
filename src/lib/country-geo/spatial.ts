@@ -31,7 +31,8 @@ export async function findSubdivisionAtPoint(
 }
 
 /**
- * Compute and update spatial profiles (climate, elevation, water) for a Subdivision
+ * Compute and update spatial profiles (climate, elevation, water) for a Subdivision, from the base
+ * layers of its country's realm only.
  */
 export async function updateSubdivisionSpatialProfile(
   db: any,
@@ -57,7 +58,9 @@ export async function updateSubdivisionSpatialProfile(
         ml.properties->>'fill' as fill,
         ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0 as "intersectAreaSqKm"
       FROM subdivisions s
+      JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = co."realmId"
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -93,7 +96,9 @@ export async function updateSubdivisionSpatialProfile(
         ml.properties->>'fill' as fill,
         ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0 as "intersectAreaSqKm"
       FROM subdivisions s
+      JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'altitudes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = co."realmId"
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -140,7 +145,9 @@ export async function updateSubdivisionSpatialProfile(
       SELECT 
         COALESCE(SUM(ST_Length(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000.0), 0.0) as "riverLengthKm"
       FROM subdivisions s
+      JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'rivers' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = co."realmId"
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -152,7 +159,9 @@ export async function updateSubdivisionSpatialProfile(
       SELECT 
         COALESCE(SUM(ST_Area(ST_Intersection(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))::geography) / 1000000.0), 0.0) as "lakeAreaSqKm"
       FROM subdivisions s
+      JOIN "Country" co ON co.id = s."countryId"
       JOIN map_layers ml ON ml."layerType" = 'lakes' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = co."realmId"
       WHERE s.id = $1
         AND ST_Intersects(ST_MakeValid(s.geom_postgis), ST_MakeValid(ml.geom_postgis))
     `,
@@ -185,7 +194,8 @@ export async function updateSubdivisionSpatialProfile(
 }
 
 /**
- * Compute and update spatial profile (climate, water access) for a City
+ * Compute and update spatial profile (climate, water access) for a City, from the base layers of its
+ * country's realm only.
  */
 export async function updateCitySpatialProfile(db: any, cityId: string): Promise<any> {
   const city = await db.city.findUnique({
@@ -205,7 +215,9 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
       `
       SELECT ml.properties->>'fill' as fill
       FROM cities c
+      JOIN "Country" co ON co.id = c."countryId"
       JOIN map_layers ml ON ml."layerType" = 'climate' AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = co."realmId"
       WHERE c.id = $1
         AND ST_Covers(ml.geom_postgis, c.geom_postgis)
       LIMIT 1
@@ -225,7 +237,9 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
         ml."layerType" as "type",
         COALESCE(MIN(ST_Distance(c.geom_postgis::geography, ml.geom_postgis::geography) / 1000.0), 9999.0) as "distance"
       FROM cities c
+      JOIN "Country" co ON co.id = c."countryId"
       JOIN map_layers ml ON ml."isActive" = true AND ml.geom_postgis IS NOT NULL AND ml."layerType" IN ('rivers', 'lakes')
+        AND ml."worldId" = co."realmId"
       WHERE c.id = $1
       GROUP BY ml."layerType"
     `,

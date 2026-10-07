@@ -13,6 +13,7 @@
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
 import { createEmptyWorldGraph, type WorldGraph } from "./types";
+import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 
 // Public API
 
@@ -147,9 +148,8 @@ export function cellAreaKm2(graph: WorldGraph, i: number): number {
 
   // Simplified: treat each cell as a flat polygon at its latitude
   const lat = cellLat(graph, i);
-  const latRad = (lat * Math.PI) / 180;
-  const kmPerDegLng = 111.32 * Math.cos(latRad);
-  const kmPerDegLat = 110.574;
+  const kmPerDegLng = kmPerDegreeLng(lat);
+  const kmPerDegLat = kmPerDegreeLat();
 
   let area = 0;
   for (let j = 0; j < verts.length - 1; j++) {

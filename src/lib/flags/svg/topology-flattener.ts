@@ -1,4 +1,6 @@
-import type { Position } from "geojson";
+import type { Geometry, Position } from "geojson";
+import { polygonalAreaSqKm } from "~/lib/maps/planet";
+import { assembleRings, signedRingArea, type FillRule } from "~/lib/maps/ring-assembly";
 
 // @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
 // global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
@@ -10,13 +12,7 @@ type XmlElement = import("@xmldom/xmldom").Element;
  * Positive = counter-clockwise (outer ring in GeoJSON), negative = clockwise (hole).
  */
 export function ringArea(ring: Position[]): number {
-  let area = 0;
-  for (let i = 0; i < ring.length - 1; i++) {
-    const [x1, y1] = ring[i]!;
-    const [x2, y2] = ring[i + 1]!;
-    area += x1! * y2! - x2! * y1!;
-  }
-  return area / 2;
+  return signedRingArea(ring);
 }
 
 /**
@@ -61,28 +57,16 @@ export function calculateBoundingBox(rings: Position[][]): [number, number, numb
 }
 
 /**
- * Approximate area in square kilometers using the Shoelace formula
- * with a latitude-dependent scaling factor.
+ * Approximate area in square kilometers of the polygons the rings make (Shoelace formula with a
+ * latitude-dependent scaling factor): rings are classified by containment, so holes are subtracted.
  */
 export function calculateApproxArea(rings: Position[][]): number {
-  let totalArea = 0;
+  return rings.length === 0 ? 0 : roundedAreaSqKm(assembleRings(rings));
+}
 
-  for (const ring of rings) {
-    const centroid = calculateCentroid([ring]);
-    const latRad = (centroid[1] * Math.PI) / 180;
-    const kmPerDegLng = 111.32 * Math.cos(latRad);
-    const kmPerDegLat = 110.574;
-
-    let area = 0;
-    for (let i = 0; i < ring.length - 1; i++) {
-      const [x1, y1] = ring[i]!;
-      const [x2, y2] = ring[i + 1]!;
-      area += x1! * kmPerDegLng * (y2! * kmPerDegLat) - x2! * kmPerDegLng * (y1! * kmPerDegLat);
-    }
-    totalArea += Math.abs(area) / 2;
-  }
-
-  return Math.round(totalArea * 100) / 100;
+/** A Polygon/MultiPolygon's approximate area in km² (holes subtracted), to two decimals. */
+export function roundedAreaSqKm(geometry: Geometry): number {
+  return Math.round(polygonalAreaSqKm(geometry) * 100) / 100;
 }
 
 /**
@@ -118,6 +102,21 @@ export function extractFillColor(el: XmlElement, style: string): string | undefi
     parent = parent.parentNode;
   }
 
+  return undefined;
+}
+
+/**
+ * The SVG fill rule an element is drawn with (its own `fill-rule` style or attribute, else its nearest
+ * ancestor's), or undefined when none is given anywhere.
+ */
+export function extractFillRule(el: XmlElement): FillRule | undefined {
+  let node: XmlElement | null = el;
+  while (node && node.nodeType === 1) {
+    const styled = (node.getAttribute("style") ?? "").match(/(?:^|;)\s*fill-rule\s*:\s*([^;]+)/i);
+    const rule = (styled?.[1] ?? node.getAttribute("fill-rule") ?? "").trim().toLowerCase();
+    if (rule === "evenodd" || rule === "nonzero") return rule;
+    node = node.parentNode as XmlElement | null;
+  }
   return undefined;
 }
 

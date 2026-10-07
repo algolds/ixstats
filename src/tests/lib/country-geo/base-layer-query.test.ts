@@ -13,20 +13,12 @@ const band = (featureId: string, elevationMin: number, elevationMax: number) => 
 });
 
 describe("getTerrainAtPoint", () => {
-  it("filters by realm (worldId) when a realmId is given", async () => {
+  it("filters by the realm it is given (worldId): realms share coordinates", async () => {
     const { db, $queryRawUnsafe } = dbReturning([]);
     await getTerrainAtPoint(db, 10, 20, "r_eurth");
     const [sql, ...params] = $queryRawUnsafe.mock.calls[0];
     expect(sql).toContain(`"worldId" = $3`);
     expect(params).toEqual([10, 20, "r_eurth"]);
-  });
-
-  it("keeps the cross-realm behaviour when no realmId is given", async () => {
-    const { db, $queryRawUnsafe } = dbReturning([]);
-    await getTerrainAtPoint(db, 10, 20);
-    const [sql, ...params] = $queryRawUnsafe.mock.calls[0];
-    expect(sql).not.toContain("worldId");
-    expect(params).toEqual([10, 20]);
   });
 
   it("picks the highest overlapping altitude band regardless of row order", async () => {
@@ -55,6 +47,9 @@ describe("getTerrainAtPoint", () => {
     const db = {
       $queryRawUnsafe: jest.fn().mockRejectedValue(new Error("boom")),
     } as unknown as PrismaClient;
-    expect(await getTerrainAtPoint(db, 0, 0)).toEqual({ elevationZone: null, climateZone: null });
+    expect(await getTerrainAtPoint(db, 0, 0, "r1")).toEqual({
+      elevationZone: null,
+      climateZone: null,
+    });
   });
 });

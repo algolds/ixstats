@@ -190,7 +190,8 @@ bun run dev                                      # http://localhost:3000
 ```
 
 `bun run db:bootstrap` (`scripts/setup/bootstrap-dev-db.ts`) enables PostGIS (`CREATE EXTENSION postgis`), pushes the
-Prisma schema and runs the reference-catalog seeds. It refuses to run when `NODE_ENV` is `production`, when
+Prisma schema, installs the map geometry sync triggers `db push` cannot create
+(`prisma/migrations/20261007_map_geometry_sync_triggers.sql`) and runs the reference-catalog seeds. It refuses to run when `NODE_ENV` is `production`, when
 `DATABASE_URL` points at a non-local host (unless `--allow-remote`), or when the database already holds countries or
 users. `bun run dev:db` (setup, then dev) and `bun run fresh` (clean reinstall, then setup) use the same path.
 

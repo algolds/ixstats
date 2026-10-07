@@ -7,6 +7,8 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { distanceDeg, projectPointToSegment } from "./planar";
+import { kmPerDegree, kmPerDegreeLng } from "./planet";
+import { polygonPlanarArea } from "./ring-assembly";
 
 // Re-exported for the editor components that import them from here
 export { distanceDeg, projectPointToSegment };
@@ -206,24 +208,16 @@ export function findNearestEdge(
   return best;
 }
 
-/** Calculate approximate area of a geometry in square kilometers. */
+/** Calculate approximate area of a geometry in square kilometers: each polygon's outer ring less its holes. */
 export function calculateArea(geometry: Polygon | MultiPolygon): number {
-  const rings = getAllRings(geometry);
-  let totalArea = 0;
+  const polygons = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  const totalArea = polygons.reduce((sum, rings) => sum + polygonPlanarArea(rings), 0);
 
-  for (const ring of rings) {
-    const area = shoelaceArea(ring);
-    totalArea += Math.abs(area);
-  }
-
-  // Convert from square degrees to approximate sq km
-  // At equator: 1° ≈ 111.32 km. IxEarth scale is baked into the map geometry,
-  // so no additional scale factor is needed (verified: PostGIS matches roster at 0.999).
+  // Convert from square degrees to approximate sq km (planet.ts: 1° ≈ 111.32 km at the equator).
+  // IxEarth scale is baked into the map geometry, so no additional scale factor is needed
+  // (verified: PostGIS matches roster at 0.999).
   const centroid = calculateCentroid(geometry);
-  const cosLat = Math.cos((centroid[1] * Math.PI) / 180);
-  const degToKm = 111.32;
-
-  return totalArea * degToKm * degToKm * cosLat;
+  return totalArea * kmPerDegree() * kmPerDegreeLng(centroid[1]!);
 }
 
 /** Calculate centroid of a geometry. */

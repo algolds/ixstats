@@ -1,6 +1,17 @@
+/**
+ * GeoJSON for the Maputnik style editor's preview sources (`/api/maps/style-store` points each geojson source here).
+ * Admins only, like the style editor itself: the overlays carry every approved feature's full geometry. One realm
+ * per request (`?realm=<slug>`, IxWorld by default), rate limited per admin, and privately cacheable for a minute.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
+import { rateLimiter } from "~/lib/cache";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { requireAdminSession } from "~/server/shared/route-auth";
+
+/** Maputnik loads every source of a style at once; this leaves room for several reloads a minute. */
+const EDITOR_SOURCE_LIMIT = { maxRequests: 120, windowMs: 60_000 } as const;
 
 const COUNTRY_REF = { country: { select: { name: true, slug: true } } } as const;
 
@@ -24,11 +35,11 @@ const countryProps = (row: CountryRow) => ({
   countrySlug: row.country?.slug || "",
 });
 
-/** Approved DB records of each overlay, as the GeoJSON features Maputnik previews. */
-const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
-  capitals: async () => {
+/** Approved DB records of each overlay in one realm, as the GeoJSON features Maputnik previews. */
+const OVERLAY_FEATURES: Record<string, (realmId: string) => Promise<object[]>> = {
+  capitals: async (realmId) => {
     const cities = await db.city.findMany({
-      where: { isNationalCapital: true, status: "approved" },
+      where: { isNationalCapital: true, status: "approved", country: { realmId } },
       select: {
         id: true,
         name: true,
@@ -49,9 +60,9 @@ const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
       })
     );
   },
-  subdivisions: async () => {
+  subdivisions: async (realmId) => {
     const subdivisions = await db.subdivision.findMany({
-      where: { status: "approved" },
+      where: { status: "approved", country: { realmId } },
       select: {
         id: true,
         name: true,
@@ -78,9 +89,9 @@ const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
         },
       }));
   },
-  cities: async () => {
+  cities: async (realmId) => {
     const cities = await db.city.findMany({
-      where: { isNationalCapital: false, status: "approved" },
+      where: { isNationalCapital: false, status: "approved", country: { realmId } },
       select: {
         id: true,
         name: true,
@@ -104,9 +115,9 @@ const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
       })
     );
   },
-  pois: async () => {
+  pois: async (realmId) => {
     const pois = await db.pointOfInterest.findMany({
-      where: { status: "approved" },
+      where: { status: "approved", country: { realmId } },
       select: {
         id: true,
         name: true,
@@ -131,9 +142,9 @@ const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
       })
     );
   },
-  storyPins: async () => {
+  storyPins: async (realmId) => {
     const pins = await db.storyPin.findMany({
-      where: { status: "approved" },
+      where: { status: "approved", country: { realmId } },
       select: {
         id: true,
         title: true,
@@ -157,9 +168,9 @@ const OVERLAY_FEATURES: Record<string, () => Promise<object[]>> = {
       })
     );
   },
-  mapLabels: async () => {
+  mapLabels: async (realmId) => {
     const labels = await db.mapLabel.findMany({
-      where: { status: "approved" },
+      where: { status: "approved", country: { realmId } },
       select: {
         id: true,
         text: true,
@@ -199,25 +210,56 @@ const OVERLAY_ALIASES = new Map(
   })
 );
 
+/** The `?realm=` slug's realm id (IxWorld when absent), or null when no realm has that slug. */
+async function requestedRealmId(request: NextRequest): Promise<string | null> {
+  const slug = request.nextUrl.searchParams.get("realm");
+  if (!slug) return DEFAULT_REALM_ID;
+  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true } });
+  return realm?.id ?? null;
+}
+
+const PRIVATE_CACHE = { "Cache-Control": "private, max-age=60" };
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ layer: string }> }
 ) {
   try {
+    const admin = await requireAdminSession();
+    if (admin instanceof NextResponse) return admin;
+
+    const limit = await rateLimiter.check(admin.userId, "map_editor_source", EDITOR_SOURCE_LIMIT);
+    if (!limit.success) {
+      const retryAfter = Math.ceil((limit.resetAt.getTime() - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
+    const realmId = await requestedRealmId(request);
+    if (!realmId) return NextResponse.json({ error: "Unknown realm" }, { status: 404 });
+
     const { layer } = await params;
     let dbLayerType = layer.replace(/^source-/, "");
 
     const overlay = OVERLAY_ALIASES.get(dbLayerType);
     if (overlay) {
-      const features = await OVERLAY_FEATURES[overlay]!();
-      return NextResponse.json({ type: "FeatureCollection", features }, { status: 200 });
+      const features = await OVERLAY_FEATURES[overlay]!(realmId);
+      return NextResponse.json(
+        { type: "FeatureCollection", features },
+        { status: 200, headers: PRIVATE_CACHE }
+      );
     }
 
     if (dbLayerType === "country-labels") dbLayerType = "country_labels";
 
     // Default fallback to base layers in MapLayer table
-    const fc = await loadLayerFromDB(db, dbLayerType, 2);
-    return NextResponse.json(fc ?? { type: "FeatureCollection", features: [] }, { status: 200 });
+    const fc = await loadLayerFromDB(db, dbLayerType, 2, realmId);
+    return NextResponse.json(fc ?? { type: "FeatureCollection", features: [] }, {
+      status: 200,
+      headers: PRIVATE_CACHE,
+    });
   } catch (error) {
     console.error("❌ Map editor source query failed:", error);
     return NextResponse.json(

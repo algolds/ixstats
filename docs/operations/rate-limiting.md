@@ -99,6 +99,7 @@ There is no "heavy mutation" tier; `heavyMutationProcedure` and similar builders
 Other callers of the limiter:
 - `commons` router (`src/server/api/routers/commons.ts`): its own 100/min `commons` namespace.
 - Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/onoma/tts` (`onoma-tts`), `/api/upload/image` (`file_upload`), and the WikiOS `wiki_proxy` bucket (see [WikiOS buckets](#wikios-buckets)).
+- `/api/maps/editor-source/[layer]` (the style editor's Maputnik preview sources, admins only): its own `map_editor_source` bucket, 120 per minute per admin, since Maputnik loads every source of a style at once.
 
 `publicProcedure`, `protectedProcedure`, `countryOwnerProcedure`, `premiumProcedure` and the `cached*Procedure` builders apply **no** rate limit.
 

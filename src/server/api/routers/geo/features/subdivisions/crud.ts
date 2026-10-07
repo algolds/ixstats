@@ -4,6 +4,7 @@ import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/serve
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { getTerrainForArea } from "~/lib/country-geo";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { clipAndValidatePolygon, checkNameUniqueness } from "~/lib/maps/geo-validation";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
 import { assertFound, assertOwnCountry } from "../../core/shared";
@@ -59,12 +60,17 @@ export const geoFeaturesSubdivisionsCrudRouter = createTRPCRouter({
         },
       });
 
-      // Get terrain breakdown for the subdivision (informational)
+      // Get terrain breakdown for the subdivision from its country's realm (informational)
       let terrainInfo: Awaited<ReturnType<typeof getTerrainForArea>> | null = null;
       try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { realmId: true },
+        });
         terrainInfo = await getTerrainForArea(
           ctx.db as any,
-          alignedGeometry as unknown as import("geojson").Geometry
+          alignedGeometry as unknown as import("geojson").Geometry,
+          country?.realmId ?? DEFAULT_REALM_ID
         );
       } catch {
         // Terrain query failed — non-blocking

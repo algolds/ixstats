@@ -1,5 +1,6 @@
 import { getTerrainAtPoint } from "./base-layer-query";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   findSubdivisionAtPoint,
   updateCitySpatialProfile,
@@ -181,7 +182,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
       where: { id: countryId },
       select: { realmId: true },
     });
-    const terrain = await getTerrainAtPoint(db, lng, lat, realmRow?.realmId ?? undefined);
+    const terrain = await getTerrainAtPoint(db, lng, lat, realmRow?.realmId ?? DEFAULT_REALM_ID);
     if (terrain.elevationZone) {
       autoElevation = Math.round(
         (terrain.elevationZone.elevationMin + terrain.elevationZone.elevationMax) / 2

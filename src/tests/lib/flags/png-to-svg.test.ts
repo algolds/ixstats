@@ -4,6 +4,7 @@ import {
   convertPngToSvg,
   createColorMask,
   extractColors,
+  extractProvincesFromPng,
 } from "~/lib/flags/png-to-svg";
 import { parseSvgToGeoJson } from "~/lib/flags/svg-parser";
 import { PngDecodeError } from "~/lib/maps/png-realm-map";
@@ -84,6 +85,7 @@ describe("decoding the map image", () => {
     ["extractColors", (png) => extractColors(png)],
     ["createColorMask", (png) => createColorMask(png, "#ff0000")],
     ["convertPngToSvg", (png) => convertPngToSvg(png, { colorMapping: { "#ff0000": "Aurelia" } })],
+    ["extractProvincesFromPng", (png) => extractProvincesFromPng(png)],
   ];
 
   it.each(decoders)("%s turns an unreadable image into a PngDecodeError", async (_name, decode) => {
@@ -96,5 +98,20 @@ describe("decoding the map image", () => {
       name: "PngDecodeError",
       message: expect.stringMatching(/64 megapixels/),
     });
+  });
+});
+
+describe("extractProvincesFromPng — decompression bombs", () => {
+  it("refuses an oversize image from its header, before decoding a pixel", async () => {
+    const huge = await pngClaimingSize(9000, 9000);
+    await expect(extractProvincesFromPng(huge)).rejects.toMatchObject({
+      name: "PngDecodeError",
+      message: expect.stringMatching(/it is 9000×9000 pixels$/),
+    });
+  });
+
+  it("still decodes an ordinary map", async () => {
+    const result = await extractProvincesFromPng(await twoNationPng(), { minRegionPixels: 10 });
+    expect(result).toMatchObject({ width: 40, height: 20 });
   });
 });

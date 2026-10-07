@@ -3,7 +3,7 @@ import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/serve
 import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clipAndValidatePolygon } from "~/lib/maps/geo-validation";
+import { clipAndValidatePolygon, COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
 import { assertOwnCountry } from "../../core/shared";
@@ -103,12 +103,9 @@ export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
 
-      // Load country geometry from the map_layers table (needed for the pure-math generator)
-      const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string }>>(
-        `SELECT ST_AsGeoJSON(geom_postgis) as geom_geojson
-         FROM map_layers
-         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-         LIMIT 1`,
+      // Load the country's border in its own realm (needed for the pure-math generator)
+      const rows = await ctx.db.$queryRawUnsafe<Array<{ geom_geojson: string | null }>>(
+        `SELECT ST_AsGeoJSON(${COUNTRY_BORDER_SQL}) as geom_geojson`,
         input.countryId
       );
       if (rows.length === 0 || !rows[0]?.geom_geojson) {

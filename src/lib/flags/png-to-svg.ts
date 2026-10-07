@@ -50,9 +50,13 @@ async function decodeRgb(pngBuffer: Buffer) {
     });
 }
 
-/** The image's dimensions from its header, refusing unreadable or over-limit images like decodeRgb. */
+/**
+ * The image's dimensions from its header (no pixels are decoded), refusing unreadable or over-limit images like
+ * decodeRgb. Callers read it before a full decode so an oversize image is turned away early.
+ */
 async function imageSize(pngBuffer: Buffer): Promise<{ width: number; height: number }> {
   const sharp = (await import("sharp")).default;
+  // metadata() reads the header only; the size check below names the image's dimensions.
   const metadata = await sharp(pngBuffer)
     .metadata()
     .catch((err: Error) => {
@@ -134,6 +138,7 @@ export async function createColorMask(
   // Convert mask to PNG for potrace
   return sharp(mask, {
     raw: { width: info.width, height: info.height, channels: 1 },
+    limitInputPixels: MAX_PNG_PIXELS,
   })
     .png()
     .toBuffer();
@@ -335,7 +340,7 @@ interface PngProvinceConfig {
  * separated by thin dark boundary lines (e.g., rasterized political maps).
  *
  * Pipeline:
- *   1. Decode PNG → raw RGB via sharp
+ *   1. Decode PNG → raw RGB via sharp (at most MAX_PNG_PIXELS; anything else is a PngDecodeError)
  *   2. Classify pixels: boundary (dark) / ocean (blue-hue) / land
  *   3. Erode land mask to clean anti-aliased edges between land & boundary
  *   4. Connected component labeling (scan-line flood fill)
@@ -347,7 +352,6 @@ export async function extractProvincesFromPng(
   pngBuffer: Buffer,
   config: PngProvinceConfig = {}
 ): Promise<PngProvinceResult> {
-  const sharp = (await import("sharp")).default;
   const log: string[] = [];
 
   const threshold = config.boundaryThreshold ?? 130;
@@ -355,11 +359,9 @@ export async function extractProvincesFromPng(
   const simplifyTol = config.simplifyTolerance ?? 1.5;
   const erosionPasses = config.erosionPasses ?? 2;
 
-  // Step 1: Decode
-  const { data, info } = await sharp(pngBuffer)
-    .removeAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+  // Step 1: Decode (the header first, so an image over the pixel limit is refused before any pixel buffer)
+  await imageSize(pngBuffer);
+  const { data, info } = await decodeRgb(pngBuffer);
   const W = info.width;
   const H = info.height;
   const N = W * H;

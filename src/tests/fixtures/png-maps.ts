@@ -20,6 +20,29 @@ export function twoNationPng(): Promise<Buffer> {
     .toBuffer();
 }
 
+/**
+ * A 60×30 flat-colour map in a blue ocean: Lakeland (red, x 4–28) with a blue 8×8 lake in its middle, and a red
+ * island east of it (x 40–52) — the shapes a traced map must turn into a polygon with a hole plus an island.
+ */
+export function lakeAndIslandPng(): Promise<Buffer> {
+  const [width, height] = [60, 30];
+  const raw = Buffer.alloc(width * height * 3);
+  const inside = (x: number, y: number, x0: number, y0: number, x1: number, y1: number) =>
+    x >= x0 && x < x1 && y >= y0 && y < y1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const land =
+        (inside(x, y, 4, 4, 28, 26) && !inside(x, y, 12, 11, 20, 19)) ||
+        inside(x, y, 40, 8, 52, 20);
+      const rgb: Rgb = land ? [255, 0, 0] : [0, 0, 255];
+      raw.set(rgb, (y * width + x) * 3);
+    }
+  }
+  return sharp(raw, { raw: { width, height, channels: 3 } })
+    .png()
+    .toBuffer();
+}
+
 const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
   let c = n;
   for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;

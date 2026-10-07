@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server";
 import { upsertCity } from "~/lib/country-geo";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 import { assertOwnCountry } from "../core/shared";
 
@@ -68,7 +69,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
         try {
           const containResult = (await ctx.db.$queryRawUnsafe(
             `SELECT ST_Covers(
-               ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+               ST_MakeValid(${COUNTRY_BORDER_SQL}),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,
             input.countryId,

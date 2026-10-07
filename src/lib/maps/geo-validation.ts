@@ -12,6 +12,15 @@ import { TRPCError } from "@trpc/server";
 import { toPolygonal } from "./polygonal-geometry";
 
 /**
+ * The country's border ($1 = country id) as a scalar subquery: its political feature in the country's own realm.
+ * Realms share one coordinate space and the same country id can have a political row in another realm's layer,
+ * so the realm is matched as well as the country.
+ */
+export const COUNTRY_BORDER_SQL = `(SELECT ml.geom_postgis FROM map_layers ml
+  JOIN "Country" co ON co.id = ml."countryId" AND ml."worldId" = co."realmId"
+  WHERE ml."layerType" = 'political' AND ml."countryId" = $1 AND ml.geom_postgis IS NOT NULL LIMIT 1)`;
+
+/**
  * Validate that coordinates are within valid WGS84 bounds.
  * Throws TRPCError BAD_REQUEST if invalid.
  */
@@ -90,7 +99,7 @@ export async function validatePointContainment(
   try {
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+         ST_MakeValid(${COUNTRY_BORDER_SQL}),
          ST_SetSRID(ST_MakePoint($2, $3), 4326)
        ) as is_inside`,
       countryId,
@@ -140,7 +149,7 @@ export async function validatePolygonContainment(
     const geoJson = JSON.stringify(geometry);
     const result = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
       `SELECT ST_Covers(
-         ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+         ST_MakeValid(${COUNTRY_BORDER_SQL}),
          ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
        ) as is_inside`,
       countryId,
@@ -191,7 +200,7 @@ export async function clipAndValidatePolygon(
     const result = await db.$queryRawUnsafe<Array<{ clipped: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_Intersection(
-           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+           ST_MakeValid(${COUNTRY_BORDER_SQL}),
            ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON($2), 4326))
          )
        ) as clipped`,
@@ -509,9 +518,8 @@ export async function snapPointToCountryBorder(
       `SELECT
          ST_Covers(ST_MakeValid(geom_postgis), ST_SetSRID(ST_MakePoint($2, $3), 4326)) as is_inside,
          ST_Distance(ST_MakeValid(geom_postgis)::geography, ST_SetSRID(ST_MakePoint($2, $3), 4326)::geography) as distance_meters
-       FROM map_layers
-       WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-       LIMIT 1`,
+       FROM (SELECT ${COUNTRY_BORDER_SQL} AS geom_postgis) border
+       WHERE geom_postgis IS NOT NULL`,
       countryId,
       lng,
       lat
@@ -537,7 +545,7 @@ export async function snapPointToCountryBorder(
     const closestResult = await db.$queryRawUnsafe<Array<{ closest_point: string }>>(
       `SELECT ST_AsGeoJSON(
          ST_ClosestPoint(
-           ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+           ST_MakeValid(${COUNTRY_BORDER_SQL}),
            ST_SetSRID(ST_MakePoint($2, $3), 4326)
          )
        ) as closest_point`,
@@ -559,10 +567,10 @@ export async function snapPointToCountryBorder(
     const centroidResult = await db.$queryRawUnsafe<Array<{ c_lng: number; c_lat: number }>>(
       `SELECT ST_X(geom_centroid) as c_lng, ST_Y(geom_centroid) as c_lat
        FROM (
-         SELECT ST_Centroid(geometry::geometry) as geom_centroid
+         SELECT ST_Centroid(geom_postgis) as geom_centroid
          FROM subdivisions
-         WHERE "countryId" = $1
-         ORDER BY geometry::geometry <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
+         WHERE "countryId" = $1 AND geom_postgis IS NOT NULL
+         ORDER BY geom_postgis <-> ST_SetSRID(ST_MakePoint($2, $3), 4326)
          LIMIT 1
        ) sub`,
       countryId,
@@ -584,9 +592,8 @@ export async function snapPointToCountryBorder(
         Array<{ c_lng: number; c_lat: number }>
       >(
         `SELECT ST_X(ST_Centroid(geom_postgis)) as c_lng, ST_Y(ST_Centroid(geom_postgis)) as c_lat
-         FROM map_layers
-         WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL
-         LIMIT 1`,
+         FROM (SELECT ${COUNTRY_BORDER_SQL} AS geom_postgis) border
+         WHERE geom_postgis IS NOT NULL`,
         countryId
       );
       if (countryCentroidResult[0]) {
@@ -609,7 +616,7 @@ export async function snapPointToCountryBorder(
 
           const insideCheck = await db.$queryRawUnsafe<Array<{ is_inside: boolean }>>(
             `SELECT ST_Covers(
-               ST_MakeValid((SELECT geom_postgis FROM map_layers WHERE "layerType" = 'political' AND "countryId" = $1 AND geom_postgis IS NOT NULL LIMIT 1)),
+               ST_MakeValid(${COUNTRY_BORDER_SQL}),
                ST_SetSRID(ST_MakePoint($2, $3), 4326)
              ) as is_inside`,
             countryId,

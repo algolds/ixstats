@@ -9,16 +9,16 @@
  */
 
 import { DOMParser } from "@xmldom/xmldom";
-import type { Polygon, MultiPolygon, Position } from "geojson";
+import type { Polygon, MultiPolygon } from "geojson";
 import type { ProvinceFeature, ProvinceParseConfig, ProvinceParseResult } from "./types";
 import {
   extractFillColor,
   featureIdToDisplayName,
   calculateCentroid,
   calculateBoundingBox,
-  calculateApproxArea,
-  ringArea,
 } from "~/lib/flags/svg-parser";
+import { extractFillRule, roundedAreaSqKm } from "~/lib/flags/svg/topology-flattener";
+import { assembleRings, type FillRule } from "~/lib/maps/ring-assembly";
 import { elementToRings, SHAPE_TAGS } from "./svg-element-converter";
 import { getAccumulatedTransform, applyMatrixToRings } from "./svg-transform";
 import {
@@ -393,21 +393,29 @@ function shapeRings(el: XmlElement, ctx: ParseCtx): Ring[] {
   return applyMatrixToRings(rings, getAccumulatedTransform(el, ctx.container));
 }
 
+/** One shape's rings and the fill rule it is drawn with. */
+interface ShapeRings {
+  rings: Ring[];
+  fillRule?: FillRule;
+}
+
 function buildFeature(
   sourceId: string,
   { name, confidence }: { name: string; confidence: number },
   color: string | undefined,
-  rings: Ring[]
+  shapes: ShapeRings[]
 ): ProvinceFeature {
+  const rings = shapes.flatMap((shape) => shape.rings);
+  const geometry = buildGeometry(shapes);
   return {
     sourceId,
     name,
-    geometry: buildGeometry(rings),
+    geometry,
     color,
     confidence,
     centroid: calculateCentroid(rings),
     bbox: calculateBoundingBox(rings),
-    areaSqKm: calculateApproxArea(rings),
+    areaSqKm: roundedAreaSqKm(geometry),
     included: true,
   };
 }
@@ -440,7 +448,9 @@ function parseSingleElement(
       return null;
     }
 
-    return buildFeature(sourceId, detectProvinceName(el, sourceId, parentGroup), color, validRings);
+    return buildFeature(sourceId, detectProvinceName(el, sourceId, parentGroup), color, [
+      { rings: validRings, fillRule: extractFillRule(el) },
+    ]);
   } catch (err) {
     ctx.log.push(
       `  Error parsing ${sourceId}: ${err instanceof Error ? err.message : String(err)}`
@@ -463,23 +473,25 @@ function mergeGroupShapes(
     shapes.map((el) => extractFillColor(el, el.getAttribute("style") || "")).find(Boolean) ??
     undefined;
 
-  const allRings = shapes.flatMap((el) => {
+  const shapeParts = shapes.flatMap((el): ShapeRings[] => {
     try {
-      return shapeRings(el, ctx).filter((ring) => ring.length >= ctx.minRingSize);
+      const rings = shapeRings(el, ctx).filter((ring) => ring.length >= ctx.minRingSize);
+      return rings.length > 0 ? [{ rings, fillRule: extractFillRule(el) }] : [];
     } catch {
       return []; // Skip malformed elements
     }
   });
+  const ringCount = shapeParts.reduce((sum, part) => sum + part.rings.length, 0);
 
-  if (allRings.length === 0) {
+  if (ringCount === 0) {
     ctx.log.push(`  Skipping group "${named.name}": no valid rings from ${shapes.length} shapes`);
     return null;
   }
 
   ctx.log.push(
-    `  Merged ${shapes.length} shapes into province "${named.name}" (${allRings.length} rings)`
+    `  Merged ${shapes.length} shapes into province "${named.name}" (${ringCount} rings)`
   );
-  return buildFeature(groupId, named, color, allRings);
+  return buildFeature(groupId, named, color, shapeParts);
 }
 
 /**
@@ -542,62 +554,17 @@ function isGenericId(id: string): boolean {
 }
 
 /**
- * Build a Polygon or MultiPolygon from coordinate rings.
- * Closes rings if needed, detects outer vs hole rings by winding order.
+ * Build a Polygon or MultiPolygon from each shape's rings: outer rings and holes are told apart by
+ * containment within a shape (lib/maps/ring-assembly), so one shape never punches a hole in another.
  */
-function buildGeometry(rings: Ring[]): Polygon | MultiPolygon {
-  const closedRings = rings.map((ring) => {
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    return first && last && (first[0] !== last[0] || first[1] !== last[1])
-      ? [...ring, first]
-      : ring;
+function buildGeometry(shapes: ShapeRings[]): Polygon | MultiPolygon {
+  const polygons = shapes.flatMap(({ rings, fillRule }) => {
+    const geometry = assembleRings(rings, fillRule);
+    return geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
   });
-
-  if (closedRings.length === 1) {
-    const ring = closedRings[0]!;
-    // Ensure outer ring is CCW (positive signed area) per GeoJSON RFC 7946
-    return {
-      type: "Polygon",
-      coordinates: [ringArea(ring as Position[]) < 0 ? ring.slice().reverse() : ring],
-    };
-  }
-
-  // Outer rings are CCW (positive area), holes CW
-  const outerRings = closedRings.filter((r) => ringArea(r as Position[]) > 0);
-  const holeRings = closedRings.filter((r) => ringArea(r as Position[]) <= 0);
-
-  // All rings are CW — reverse them to make outer rings
-  if (outerRings.length === 0) {
-    return { type: "MultiPolygon", coordinates: closedRings.map((r) => [r.slice().reverse()]) };
-  }
-
-  if (outerRings.length === 1 && holeRings.length > 0) {
-    return {
-      type: "Polygon",
-      coordinates: [outerRings[0]!, ...holeRings.map((r) => r.slice().reverse())],
-    };
-  }
-
-  // Multiple outer rings → MultiPolygon, each hole going to the outer ring containing it
-  // (else the nearest outer by centroid distance)
-  const outerWithHoles: Ring[][] = outerRings.map((outer) => [outer]);
-  const outerCentroids = outerRings.map(ringCentroid);
-
-  for (const hole of holeRings) {
-    const holeCentroid = ringCentroid(hole);
-    const containing = outerRings.findIndex((outer) => pointInRing(holeCentroid, outer));
-    const nearest = outerCentroids.reduce(
-      (best, c, i) => {
-        const dist = (c[0] - holeCentroid[0]) ** 2 + (c[1] - holeCentroid[1]) ** 2;
-        return dist < best.dist ? { dist, idx: i } : best;
-      },
-      { dist: Infinity, idx: 0 }
-    ).idx;
-    outerWithHoles[containing === -1 ? nearest : containing]!.push(hole.slice().reverse());
-  }
-
-  return { type: "MultiPolygon", coordinates: outerWithHoles };
+  return polygons.length === 1
+    ? { type: "Polygon", coordinates: polygons[0]! }
+    : { type: "MultiPolygon", coordinates: polygons };
 }
 
 function countGeometryVertices(geom: Polygon | MultiPolygon): number {
@@ -743,17 +710,6 @@ function mergeProvinceCluster(cluster: ProvinceFeature[]): ProvinceFeature {
   };
 }
 
-/** Centroid of a coordinate ring, excluding a closing duplicate point. */
-function ringCentroid(ring: Ring): [number, number] {
-  const closed =
-    ring.length > 1 && ring[0]![0] === ring.at(-1)![0] && ring[0]![1] === ring.at(-1)![1];
-  const points = closed ? ring.slice(0, -1) : ring;
-  return [
-    points.reduce((s, p) => s + p[0], 0) / points.length,
-    points.reduce((s, p) => s + p[1], 0) / points.length,
-  ];
-}
-
 /**
  * Clean a group/element ID into a human-readable province name, e.g. "baía-sul-rg" → "Baía Sul"
  * and "nova_terra_pb" → "Nova Terra": drops common trailing abbreviations (rg, av, pb, sr, wasg,
@@ -767,18 +723,4 @@ function cleanGroupIdToName(id: string): string {
     .split(/\s+/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-}
-
-/** Ray-casting point-in-ring test. */
-function pointInRing(point: [number, number], ring: Ring): boolean {
-  let inside = false;
-  const [px, py] = point;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i]!;
-    const [xj, yj] = ring[j]!;
-    if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
-      inside = !inside;
-    }
-  }
-  return inside;
 }

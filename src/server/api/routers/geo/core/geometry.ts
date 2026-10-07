@@ -1,4 +1,5 @@
 import type { Geometry } from "geojson";
+import { polygonAreaSqKm, ringAreaSqKm } from "~/lib/maps/planet";
 
 /** Recursively extract all [lng, lat] positions from a GeoJSON geometry */
 export function extractAllPositions(geometry: Geometry): [number, number][] {
@@ -17,54 +18,44 @@ export function extractAllPositions(geometry: Geometry): [number, number][] {
   return positions;
 }
 
+/** A ring closed if needed, or null when it has too few points to enclose anything. */
+function closedRing(ring: [number, number][]): [number, number][] | null {
+  if (ring.length < 3) return null;
+  const first = ring[0]!;
+  const last = ring[ring.length - 1]!;
+  return first[0] !== last[0] || first[1] !== last[1] ? [...ring, [first[0], first[1]]] : ring;
+}
+
+/** A polygon's rings closed, with too-short rings left out (a polygon with no outer ring is empty). */
+function closedPolygon(rings: [number, number][][]): [number, number][][] {
+  const closed = rings.map(closedRing);
+  return closed[0] ? closed.filter((ring): ring is [number, number][] => ring !== null) : [];
+}
+
 /**
  * Approximate area in square kilometers using the Shoelace formula
- * with a latitude-dependent scaling factor.
+ * with a latitude-dependent scaling factor. Polygon holes are subtracted;
+ * a line's rings are measured as if closed.
  */
 export function computeApproxAreaForFeature(geometry: Geometry): number {
   try {
-    const coords: [number, number][][] = [];
-    if (geometry.type === "Polygon") {
-      coords.push(...(geometry.coordinates as [number, number][][]));
-    } else if (geometry.type === "MultiPolygon") {
-      coords.push(...(geometry.coordinates as [number, number][][][]).flat());
-    } else if (geometry.type === "LineString") {
-      coords.push(geometry.coordinates as [number, number][]);
-    } else if (geometry.type === "MultiLineString") {
-      coords.push(...(geometry.coordinates as [number, number][][]));
-    }
-
     let totalArea = 0;
-    for (const ring of coords) {
-      if (ring.length < 3) continue;
-      // Close the ring if not closed
-      const closed = [...ring];
-      const first = closed[0];
-      const last = closed[closed.length - 1];
-      if (first[0] !== last[0] || first[1] !== last[1]) {
-        closed.push([...first] as [number, number]);
+    if (geometry.type === "Polygon") {
+      totalArea = polygonAreaSqKm(closedPolygon(geometry.coordinates as [number, number][][]));
+    } else if (geometry.type === "MultiPolygon") {
+      totalArea = (geometry.coordinates as [number, number][][][]).reduce(
+        (sum, polygon) => sum + polygonAreaSqKm(closedPolygon(polygon)),
+        0
+      );
+    } else if (geometry.type === "LineString" || geometry.type === "MultiLineString") {
+      const lines =
+        geometry.type === "LineString"
+          ? [geometry.coordinates as [number, number][]]
+          : (geometry.coordinates as [number, number][][]);
+      for (const line of lines) {
+        const ring = closedRing(line);
+        if (ring) totalArea += ringAreaSqKm(ring);
       }
-
-      // Compute centroid of the ring to find latitude
-      let sumLng = 0,
-        sumLat = 0;
-      for (const [lng, lat] of closed) {
-        sumLng += lng;
-        sumLat += lat;
-      }
-      const _cLng = sumLng / closed.length;
-      const cLat = sumLat / closed.length;
-      const latRad = (cLat * Math.PI) / 180;
-      const kmPerDegLng = 111.32 * Math.cos(latRad);
-      const kmPerDegLat = 110.574;
-
-      let area = 0;
-      for (let i = 0; i < closed.length - 1; i++) {
-        const [x1, y1] = closed[i];
-        const [x2, y2] = closed[i + 1];
-        area += x1 * kmPerDegLng * (y2 * kmPerDegLat) - x2 * kmPerDegLng * (y1 * kmPerDegLat);
-      }
-      totalArea += Math.abs(area) / 2;
     }
     return Math.round(totalArea * 100) / 100;
   } catch {

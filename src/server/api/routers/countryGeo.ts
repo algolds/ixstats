@@ -22,6 +22,7 @@ import {
   distributeSubdivisionDemographicsToCities,
 } from "~/lib/country-geo";
 import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 const GEO_CACHE_KEYS = [
   "geoCore.getCountryFeatures",
@@ -162,9 +163,11 @@ export const countryGeoRouter = createTRPCRouter({
    * by `src/lib/map-pipeline.ts:186`.
    */
   sampleTerrainAt: cachedPublicProcedure
-    .input(z.object({ lng: z.number(), lat: z.number() }))
+    .input(z.object({ lng: z.number(), lat: z.number(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
-      const result = await getTerrainAtPoint(ctx.db, input.lng, input.lat);
+      // The viewed realm's altitude layer only: realms share coordinates
+      const realmId = await viewerRealmId(ctx, input.realm);
+      const result = await getTerrainAtPoint(ctx.db, input.lng, input.lat, realmId);
       if (!result.elevationZone) return null;
       const { elevationMin, elevationMax, zoneId, zoneName, color } = result.elevationZone;
       const midpoint = Math.round((elevationMin + elevationMax) / 2);

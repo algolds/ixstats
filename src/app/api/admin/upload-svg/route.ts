@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { oversizedUploadResponse } from "~/server/shared/request-size";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
@@ -28,6 +29,10 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdminSession();
     if (admin instanceof NextResponse) return admin;
+
+    // Refuse an oversize body by its Content-Length before formData() buffers it
+    const tooLarge = oversizedUploadResponse(request, MAX_FILE_SIZE);
+    if (tooLarge) return tooLarge;
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -102,4 +107,4 @@ export async function POST(request: NextRequest) {
 }
 
 // App Router uses FormData natively — no body parser config needed.
-// The 50MB limit is enforced in the handler above.
+// The 50MB limit is enforced in the handler above: on Content-Length before parsing, on the file after.

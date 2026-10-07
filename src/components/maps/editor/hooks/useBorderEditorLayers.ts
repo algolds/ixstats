@@ -11,6 +11,7 @@ import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import type { Position, Polygon, MultiPolygon, FeatureCollection } from "geojson";
 import type { VertexRef } from "~/lib/maps/border-editor";
 import { getVertices, getAllRings } from "~/lib/maps/border-editor";
+import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 import {
   EMPTY_FC,
   collection,
@@ -112,13 +113,13 @@ const SNAP_TO_NEIGHBOR_DEGREES = 0.05;
 
 function getCircleCoords(center: [number, number], radiusKm: number): number[][] {
   const steps = 64;
-  const kmPerDegreeLng = 111.32 * Math.cos((center[1] * Math.PI) / 180);
-  const kmPerDegreeLat = 110.574;
+  const kmLng = kmPerDegreeLng(center[1]);
+  const kmLat = kmPerDegreeLat();
   return Array.from({ length: steps + 1 }, (_, i) => {
     const angle = (i * 2 * Math.PI) / steps;
     return [
-      center[0] + (radiusKm * Math.cos(angle)) / kmPerDegreeLng,
-      center[1] + (radiusKm * Math.sin(angle)) / kmPerDegreeLat,
+      center[0] + (radiusKm * Math.cos(angle)) / kmLng,
+      center[1] + (radiusKm * Math.sin(angle)) / kmLat,
     ];
   });
 }

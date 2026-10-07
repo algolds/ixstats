@@ -3,8 +3,8 @@
  * geometry reuse for features that already exist in the reference layer.
  */
 
-import type { Feature, FeatureCollection, MultiPolygon, Polygon, Position } from "geojson";
-import { calculateApproxArea } from "./topology-flattener";
+import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson";
+import { roundedAreaSqKm } from "./topology-flattener";
 
 export interface ReferenceGeometry {
   geometry: Polygon | MultiPolygon;
@@ -93,16 +93,11 @@ export function buildReferenceGeometryMap(
     const geom = feat.geometry as Polygon | MultiPolygon;
     const allCoords = flattenCoordinates(geom.coordinates);
     if (allCoords.length === 0) continue;
-    // Approximate area using the reference rings
-    const refRings =
-      geom.type === "Polygon"
-        ? (geom.coordinates as Position[][])
-        : (geom.coordinates as Position[][][]).flat();
     refGeometryMap.set(fid, {
       geometry: geom,
       centroid: averagePosition(allCoords),
       bbox: boundsOf(allCoords),
-      area: calculateApproxArea(refRings as [number, number][][]),
+      area: roundedAreaSqKm(geom), // holes subtracted
     });
   }
   log.push(`Reference geometry available for ${refGeometryMap.size} features`);
