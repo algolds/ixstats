@@ -1,0 +1,50 @@
+// IxStates — Realm source sync (a realm's nations, borders and alliances kept in step with an outside source)
+
+/// Where a realm's nation list comes from, and how often it is re-read (docs/systems/realms-eurth-onboarding.md).
+/// One per realm. Plain id columns, no relations, so the shared Realm model needs no back-relation fields
+/// (as for RealmBoard). Every value is the realm's own: a preset (src/lib/realms/sources/presets) only fills it.
+model RealmSourceSync {
+  id            String    @id @default(cuid())
+  realmId       String    @unique // Realm.id
+  enabled       Boolean   @default(false) // the scheduled job runs only enabled syncs with an interval
+  provider      String    @default("github")
+  repo          String // owner/repo
+  ref           String    @default("main") // branch, tag or commit
+  format        String // source adapter id (src/lib/realms/sources/adapters)
+  /// The adapter's settings: file paths, field names, wiki link prefixes, alliance type rules, attribution
+  settings      Json      @default("{}")
+  /// Hours between scheduled runs; null = manual only
+  intervalHours Int?
+  /// What a run may change (realmSyncOptionsSchema)
+  options       Json      @default("{}")
+  /// Source nation key → continent (free text)
+  continentMap  Json      @default("{}")
+  /// Staff decisions per source key: exclude, match to a country, fields the sync never overwrites
+  overrides     Json      @default("{}")
+  presetId      String? // the preset last loaded, for reference only
+  updatedBy     String? // Clerk userId
+  lastRunAt     DateTime? // last applied run (scheduled or manual); the schedule counts from it
+  lastStatus    String? // success | partial | failed
+  lastSummary   Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([enabled])
+  @@map("realm_source_syncs")
+}
+
+/// One dry run or applied run of a realm's source sync, with the per-nation changes it found or made.
+model RealmSyncRun {
+  id          String    @id @default(cuid())
+  realmId     String // Realm.id
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  dryRun      Boolean
+  triggeredBy String // Clerk userId, "cron" or "script"
+  status      String    @default("running") // running | success | partial | failed
+  summary     Json?
+  errors      Json? // string[]
+
+  @@index([realmId, startedAt])
+  @@map("realm_sync_runs")
+}
