@@ -574,6 +574,8 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     realm: { id: staff.id, slug: staff.slug, name: staff.name, status: staff.status },
     powers,
     isFounder,
+    /** Only the realm's own founder hands it over here; site admins transfer from /admin/realms. */
+    canHandOver: staff.ownerId === actor.clerkUserId && staff.status !== "archived",
     archived: staff.status === "archived",
     appearance: can("appearance")
       ? {

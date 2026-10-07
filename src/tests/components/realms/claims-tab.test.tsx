@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
 
 const baseClaim = {
@@ -9,6 +9,7 @@ const baseClaim = {
 };
 let mockClaims: object[] = [];
 
+jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: { id: "clerk_officer" } }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), info: jest.fn(), error: jest.fn(), warning: jest.fn() }),
 }));
@@ -47,5 +48,40 @@ describe("ClaimsTab", () => {
     expect(screen.getByText(/Borea/)).toBeInTheDocument();
     expect(screen.queryByText(/new nation/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Page history" })).not.toBeInTheDocument();
+  });
+
+  it("lets an officer approve others' claims but not their own", () => {
+    const country = { id: "c1", name: "Borea", slug: "borea", flag: null, wikiPageTitle: null };
+    const own = { clerkUserId: "clerk_officer", wikiUsername: "Officer" };
+    mockClaims = [
+      { ...baseClaim, country, wikiSource: null, wikiPageTitle: null },
+      {
+        ...baseClaim,
+        id: "cl2",
+        user: { ...baseClaim.user, ...own },
+        country: { ...country, id: "c2", name: "Calder" },
+        wikiSource: null,
+        wikiPageTitle: null,
+      },
+    ];
+    render(<ClaimsTab realmId="eurth-id" canApproveOwn={false} />);
+    const [others, mine] = screen.getAllByRole("listitem");
+    expect(within(others!).getByRole("button", { name: "Approve" })).toBeEnabled();
+    expect(within(mine!).getByRole("button", { name: "Approve" })).toBeDisabled();
+    expect(within(mine!).getByRole("button", { name: "Reject" })).toBeEnabled();
+  });
+
+  it("lets the founder and site admins approve their own claims", () => {
+    mockClaims = [
+      {
+        ...baseClaim,
+        user: { ...baseClaim.user, clerkUserId: "clerk_officer" },
+        country: { id: "c1", name: "Borea", slug: "borea", flag: null, wikiPageTitle: null },
+        wikiSource: null,
+        wikiPageTitle: null,
+      },
+    ];
+    render(<ClaimsTab />);
+    expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled();
   });
 });

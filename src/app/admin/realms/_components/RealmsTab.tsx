@@ -35,7 +35,9 @@ import {
   TableCell,
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
+import { STAFF_FOUNDER_ID } from "~/lib/realms/realm-region";
 import { DeleteRealmButton } from "./DeleteRealmButton";
+import { TransferRealmButton } from "./TransferRealmButton";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green/10 text-green border-green/20",
@@ -195,56 +197,14 @@ function NewRealmForm() {
   );
 }
 
-const STAFF = "system";
-
 /**
- * A realm's founder (decision: site admins assign them). Players holding a nation in the realm are listed
- * first; "IxStats staff" hands the realm back to staff.
+ * A realm's founder (decision: site admins assign them). Changing it goes through the Transfer action, which
+ * asks for the realm's slug and records the handover in the admin audit log.
  */
-function FounderCell({
-  realmId,
-  editing,
-  current,
-  draft,
-  onChange,
-}: {
-  realmId: string;
-  editing: boolean;
-  current: string;
-  draft: string | undefined;
-  onChange: (clerkUserId: string) => void;
-}) {
-  const { data: users } = api.realms.adminListUsers.useQuery(undefined, { enabled: editing });
-  const label = (user: NonNullable<typeof users>[number]) =>
-    user.nations.map((n) => n.name).join(", ") || user.clerkUserId;
-  const here = (user: NonNullable<typeof users>[number]) =>
-    user.nations.some((n) => n.realmId === realmId);
-  const sorted = [...(users ?? [])].sort(
-    (a, b) => Number(here(b)) - Number(here(a)) || label(a).localeCompare(label(b))
-  );
-  const currentUser = users?.find((u) => u.clerkUserId === current);
-
+function FounderCell({ current }: { current: string }) {
   return (
     <TableCell className="text-label-secondary text-footnote px-4">
-      {editing ? (
-        <Select value={draft ?? current} onValueChange={onChange}>
-          <SelectTrigger size="sm" aria-label="Founder">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={STAFF}>IxStats staff</SelectItem>
-            {current !== STAFF && !currentUser && (
-              <SelectItem value={current}>{current.slice(0, 12)}...</SelectItem>
-            )}
-            {sorted.map((user) => (
-              <SelectItem key={user.clerkUserId} value={user.clerkUserId}>
-                {label(user)}
-                {here(user) ? "" : " (no nation here)"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : current === STAFF ? (
+      {current === STAFF_FOUNDER_ID ? (
         "IxStats staff"
       ) : (
         <span className="font-mono">{current.slice(0, 12)}...</span>
@@ -256,9 +216,6 @@ function FounderCell({
 export function RealmsTab() {
   const notify = useNotify();
   const { data: realms, isLoading, refetch } = api.realms.adminListRealms.useQuery();
-  const assignFounder = api.realms.region.assignFounder.useMutation({
-    onError: (error) => notify.error("Could not assign the founder", error.message),
-  });
   const updateMutation = api.realms.adminUpdateRealm.useMutation({
     onSuccess: () => {
       refetch();
@@ -274,7 +231,6 @@ export function RealmsTab() {
     visibility?: string;
     description?: string;
     maxNationsPerUser?: string;
-    founder?: string;
   }>({});
 
   if (isLoading) {
@@ -305,20 +261,10 @@ export function RealmsTab() {
       visibility: realm.visibility,
       description: realm.description ?? "",
       maxNationsPerUser: String(realm.maxNationsPerUser),
-      founder: realm.ownerId,
     });
   }
 
-  async function saveEdit(id: string) {
-    const realm = realms?.find((r) => r.id === id);
-    if (realm && editForm.founder && editForm.founder !== realm.ownerId) {
-      await assignFounder
-        .mutateAsync({
-          realmId: id,
-          clerkUserId: editForm.founder === STAFF ? null : editForm.founder,
-        })
-        .catch(() => undefined);
-    }
+  function saveEdit(id: string) {
     updateMutation.mutate({
       id,
       name: editForm.name,
@@ -422,13 +368,7 @@ export function RealmsTab() {
                     draft={editForm.maxNationsPerUser}
                     onChange={(v) => setEditForm((f) => ({ ...f, maxNationsPerUser: v }))}
                   />
-                  <FounderCell
-                    realmId={realm.id}
-                    editing={isEditing}
-                    current={realm.ownerId}
-                    draft={editForm.founder}
-                    onChange={(v) => setEditForm((f) => ({ ...f, founder: v }))}
-                  />
+                  <FounderCell current={realm.ownerId} />
                   <TableCell className="text-label-secondary text-footnote px-4">
                     {new Date(realm.updatedAt).toLocaleDateString()}
                   </TableCell>
@@ -439,8 +379,8 @@ export function RealmsTab() {
                           variant="ghost"
                           size="icon-sm"
                           aria-label={`Save ${realm.name}`}
-                          onClick={() => void saveEdit(realm.id)}
-                          disabled={updateMutation.isPending || assignFounder.isPending}
+                          onClick={() => saveEdit(realm.id)}
+                          disabled={updateMutation.isPending}
                           className="text-green"
                         >
                           {updateMutation.isPending ? (
@@ -468,6 +408,7 @@ export function RealmsTab() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        <TransferRealmButton realm={realm} />
                         <DeleteRealmButton
                           realm={{ ...realm, countryCount: realm._count.countries }}
                         />

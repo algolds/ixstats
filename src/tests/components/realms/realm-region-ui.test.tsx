@@ -1,7 +1,8 @@
 /**
  * Realm region pages: the header's stats and tabs (Manage only for staff), the officers panel for a
  * staff-administered realm, the realm poll, the typed "Leave realm" confirmation, and the Manage tab's
- * sections following the caller's powers.
+ * sections following the caller's powers (Claims for the founder and officers holding it, Hand over for the
+ * founder).
  */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -190,16 +191,21 @@ async function renderManage() {
 }
 
 describe("Manage tab", () => {
-  const manage = (powers: string[], isFounder: boolean) => ({
+  const manage = (
+    powers: string[],
+    isFounder: boolean,
+    { canHandOver = false, officers = [] as object[] } = {}
+  ) => ({
     realm: { id: "eurth", slug: "eurth", name: "Eurth", status: "active" },
     powers,
     isFounder,
+    canHandOver,
     archived: false,
     appearance: powers.includes("appearance")
       ? { description: null, bannerUrl: null, tags: [] }
       : null,
     factbook: null,
-    officers: [],
+    officers,
     embassies: [],
     boardRestrictions: [],
     polls: [],
@@ -219,8 +225,23 @@ describe("Manage tab", () => {
     expect(screen.queryByRole("heading", { name: "Appearance" })).toBeNull();
   });
 
-  it("gives the founder claims review and every section", async () => {
-    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy"], true);
+  it("gives an officer with the claims power the Claims section", async () => {
+    queries["realms.region.manage"] = manage(["claims"], false);
+    await renderManage();
+    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((a) => a.textContent)
+    ).toEqual(["Officers", "Claims"]);
+    expect(screen.getByText("claims list")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Hand over" })).toBeNull();
+  });
+
+  it("gives the founder claims review, every section and the hand-over", async () => {
+    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true, {
+      canHandOver: true,
+    });
     queries["realms.directory"] = [];
     await renderManage();
     const nav = await screen.findByRole("navigation", { name: "Manage sections" });
@@ -228,7 +249,60 @@ describe("Manage tab", () => {
       within(nav)
         .getAllByRole("link")
         .map((a) => a.textContent)
-    ).toEqual(["Appearance", "Officers", "Claims", "Embassies", "Poll", "Board moderation"]);
+    ).toEqual([
+      "Appearance",
+      "Officers",
+      "Claims",
+      "Embassies",
+      "Poll",
+      "Board moderation",
+      "Hand over",
+    ]);
     expect(screen.getByText("claims list")).toBeTruthy();
+  });
+
+  it("leaves the hand-over out for site admins acting as founder", async () => {
+    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true);
+    queries["realms.directory"] = [];
+    await renderManage();
+    const nav = await screen.findByRole("navigation", { name: "Manage sections" });
+    expect(within(nav).queryByRole("link", { name: "Hand over" })).toBeNull();
+    expect(within(nav).getByRole("link", { name: "Claims" })).toBeTruthy();
+  });
+
+  it("hands the realm to an officer once the realm slug is typed", async () => {
+    mutate.mockClear();
+    queries["realms.region.manage"] = manage(["appearance", "board", "diplomacy", "claims"], true, {
+      canHandOver: true,
+      officers: [
+        {
+          userId: "clerk_minister",
+          title: "Foreign Minister",
+          powers: ["diplomacy"],
+          appointedAt: new Date(),
+          name: "Borea",
+          nation: null,
+        },
+      ],
+    });
+    queries["realms.directory"] = [];
+    await renderManage();
+    const section = await screen.findByRole("region", { name: "Hand over" });
+    fireEvent.click(within(section).getByRole("button", { name: "Borea (Foreign Minister)" }));
+    const confirm = within(section).getByRole("button", {
+      name: "Hand over realm",
+    }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.change(within(section).getByLabelText(/Type the realm slug/), {
+      target: { value: "eurth" },
+    });
+    expect(confirm.disabled).toBe(false);
+    fireEvent.click(confirm);
+    expect(mutate).toHaveBeenCalledWith({
+      slug: "eurth",
+      newOwnerId: "clerk_minister",
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: true,
+    });
   });
 });

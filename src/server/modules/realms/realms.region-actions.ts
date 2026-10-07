@@ -8,13 +8,12 @@ import {
   MAX_OFFICERS,
   MAX_REALM_TAGS,
   REALM_TAGS,
-  STAFF_FOUNDER_ID,
   type BoardRestriction,
   type RealmPower,
 } from "~/lib/realms/realm-region";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { sanitizeWikiContent } from "~/lib/utils/sanitize-html";
-import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
+import { isRealmPublished, type RealmActor } from "./realms.access";
 import { releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { removeFromRealmBoard } from "~/server/shared/realm-board";
@@ -405,28 +404,4 @@ export async function abandonNation(
     }
   });
   return { success: true, realmId: nation.realmId, name: nation.name };
-}
-
-/** Site admins: set a realm's founder (a Clerk user id), or hand it back to staff (`null`). */
-export async function assignRealmFounder(
-  db: ActionDb,
-  actor: RealmActor,
-  input: { realmId: string; clerkUserId: string | null }
-) {
-  if (!isSiteAdmin(actor))
-    throw new RealmRegionError("FORBIDDEN", "Only site admins assign founders");
-  if (input.clerkUserId) {
-    const user = await db.user.findUnique({
-      where: { clerkUserId: input.clerkUserId },
-      select: { id: true },
-    });
-    if (!user) throw new RealmRegionError("NOT_FOUND", "No user with that id");
-  }
-  const ownerId = input.clerkUserId ?? STAFF_FOUNDER_ID;
-  await db.$transaction(async (tx) => {
-    await tx.realm.update({ where: { id: input.realmId }, data: { ownerId } });
-    // The founder holds every power already; drop a now-redundant officer post.
-    await tx.realmOfficer.deleteMany({ where: { realmId: input.realmId, userId: ownerId } });
-  });
-  return { success: true };
 }

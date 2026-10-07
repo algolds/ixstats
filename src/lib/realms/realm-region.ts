@@ -24,10 +24,10 @@ export type RealmTag = (typeof REALM_TAGS)[number];
 export const MAX_REALM_TAGS = 5;
 
 /**
- * What an officer may be given. The founder (and site admins) hold all of them, and alone review claims and
- * appoint officers.
+ * What an officer may be given. The founder (and site admins) hold all of them, and alone appoint officers and
+ * hand the realm over.
  */
-export const REALM_POWERS = ["appearance", "board", "diplomacy"] as const;
+export const REALM_POWERS = ["appearance", "board", "diplomacy", "claims"] as const;
 
 export type RealmPower = (typeof REALM_POWERS)[number];
 
@@ -35,7 +35,19 @@ export const REALM_POWER_LABELS: Record<RealmPower, string> = {
   appearance: "Factbook and header",
   board: "Board moderation",
   diplomacy: "Embassies and polls",
+  claims: "Claims",
 };
+
+/** What each power lets an officer do, shown beside its checkbox in the Officers section. */
+export const REALM_POWER_DESCRIPTIONS: Record<RealmPower, string> = {
+  appearance: "Edit the factbook, banner, description and tags",
+  board: "Mute or ban nations on the realm's board",
+  diplomacy: "Propose and answer embassies, and run the realm poll",
+  claims: "Review players' claims on the realm's nations",
+};
+
+/** The officer title a previous founder keeps when the realm is handed over and they stay on as an officer. */
+export const FORMER_FOUNDER_TITLE = "Former founder";
 
 /** Board restrictions: a mute stops board posts; a ban takes the nation off the board (posts and chat). */
 export const BOARD_RESTRICTIONS = ["mute", "ban"] as const;

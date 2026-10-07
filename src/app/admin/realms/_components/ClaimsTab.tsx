@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useUser } from "~/context/auth-context";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { parseWikiSource, publicArticleUrl } from "~/lib/wiki-os/config";
@@ -65,10 +66,18 @@ function PageHistoryLink({ claim }: { claim: Claim }) {
   );
 }
 
-/** Pending claims the caller may review; `realmId` narrows them to one realm (a founder's Manage tab). */
-export function ClaimsTab({ realmId }: { realmId?: string } = {}) {
+/**
+ * Pending claims the caller may review; `realmId` narrows them to one realm (the Manage tab of its founder or an
+ * officer holding the Claims power). Without `canApproveOwn` (officers), the caller's own claims can't be
+ * approved here: the founder or another reviewer decides them.
+ */
+export function ClaimsTab({
+  realmId,
+  canApproveOwn = true,
+}: { realmId?: string; canApproveOwn?: boolean } = {}) {
   const utils = api.useUtils();
   const notify = useNotify();
+  const { user: viewer } = useUser();
   const { data: allClaims, isLoading } = api.realms.listClaims.useQuery({ status: "pending" });
   const claims = realmId ? allClaims?.filter((claim) => claim.realm.id === realmId) : allClaims;
   const [reasons, setReasons] = useState<Record<string, string>>({});
@@ -93,49 +102,57 @@ export function ClaimsTab({ realmId }: { realmId?: string } = {}) {
 
   return (
     <ul className="divide-separator divide-y">
-      {claims.map((claim) => (
-        <li
-          key={claim.id}
-          className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <p className="text-label text-headline">
-              <ClaimedNation claim={claim} />{" "}
-              <span className="text-label-secondary">· {claim.realm.name}</span>
-            </p>
-            <p className="text-label-secondary text-footnote">
-              Claimed by <ClaimantName user={claim.user} /> on{" "}
-              {new Date(claim.createdAt).toLocaleDateString()}
-              <PageHistoryLink claim={claim} />
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input
-              value={reasons[claim.id] ?? ""}
-              onChange={(e) => setReasons((r) => ({ ...r, [claim.id]: e.target.value }))}
-              placeholder="Reason (required to reject)"
-              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-56"
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={review.isPending}
-              onClick={() =>
-                review.mutate({ claimId: claim.id, approve: false, reason: reasons[claim.id] })
-              }
-            >
-              Reject
-            </Button>
-            <Button
-              size="sm"
-              disabled={review.isPending}
-              onClick={() => review.mutate({ claimId: claim.id, approve: true })}
-            >
-              Approve
-            </Button>
-          </div>
-        </li>
-      ))}
+      {claims.map((claim) => {
+        const ownClaim = !canApproveOwn && claim.user.clerkUserId === viewer?.id;
+        return (
+          <li
+            key={claim.id}
+            className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p className="text-label text-headline">
+                <ClaimedNation claim={claim} />{" "}
+                <span className="text-label-secondary">· {claim.realm.name}</span>
+              </p>
+              <p className="text-label-secondary text-footnote">
+                Claimed by <ClaimantName user={claim.user} /> on{" "}
+                {new Date(claim.createdAt).toLocaleDateString()}
+                <PageHistoryLink claim={claim} />
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={reasons[claim.id] ?? ""}
+                onChange={(e) => setReasons((r) => ({ ...r, [claim.id]: e.target.value }))}
+                placeholder="Reason (required to reject)"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-56"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={review.isPending}
+                onClick={() =>
+                  review.mutate({ claimId: claim.id, approve: false, reason: reasons[claim.id] })
+                }
+              >
+                Reject
+              </Button>
+              <Button
+                size="sm"
+                disabled={review.isPending || ownClaim}
+                title={
+                  ownClaim
+                    ? "Your own claim: the founder or another reviewer approves it"
+                    : undefined
+                }
+                onClick={() => review.mutate({ claimId: claim.id, approve: true })}
+              >
+                Approve
+              </Button>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

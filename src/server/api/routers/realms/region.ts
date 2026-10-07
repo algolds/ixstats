@@ -29,7 +29,6 @@ import {
 import {
   abandonNation,
   appointRealmOfficer,
-  assignRealmFounder,
   closeRealmEmbassy,
   closeRealmPoll,
   createRealmPoll,
@@ -44,6 +43,11 @@ import {
   updateRealmOfficer,
 } from "~/server/modules/realms/realms.region-actions";
 import { deleteRealm } from "~/server/modules/realms/realms.admin";
+import {
+  adminTransferRealmOwner,
+  handOverRealm,
+  listHandOverCandidates,
+} from "~/server/modules/realms/realms.transfer";
 
 function regionError(error: Error): never {
   if (error instanceof RealmRegionError)
@@ -196,8 +200,40 @@ export const realmRegionRouter = createTRPCRouter({
     .input(z.object({ realmId: z.string().min(1), confirmSlug: z.string().max(100) }))
     .mutation(({ ctx, input }) => deleteRealm(ctx.db, ctx.user, input).catch(regionError)),
 
-  /** Site admins: set a realm's founder, or hand it back to staff (`clerkUserId: null`). */
-  assignFounder: adminProcedure
-    .input(z.object({ realmId: z.string().min(1), clerkUserId: z.string().min(1).nullable() }))
-    .mutation(({ ctx, input }) => assignRealmFounder(ctx.db, ctx.user, input).catch(regionError)),
+  /**
+   * Site admins: hand a realm to a player (an active account, by Clerk id) or back to staff (`newOwnerId: null`),
+   * confirmed by its slug. Recorded in the admin audit log; the previous founder may stay on as an officer.
+   */
+  adminTransferOwner: adminProcedure
+    .input(
+      z.object({
+        realmId: z.string().min(1),
+        newOwnerId: z.string().min(1).max(200).nullable(),
+        confirmSlug: z.string().max(100),
+        keepPreviousAsOfficer: z.boolean().default(false),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      adminTransferRealmOwner(ctx.db, ctx.user, input).catch(regionError)
+    ),
+
+  /** Founder: nation owners of the realm who could take it over. */
+  handOverCandidates: protectedProcedure
+    .input(z.object({ slug, query: z.string().max(100).default("") }))
+    .query(({ ctx, input }) => listHandOverCandidates(ctx.db, ctx.user, input).catch(regionError)),
+
+  /**
+   * Founder: hand the realm to a nation owner or officer of it, confirmed by its slug; `keepPreviousAsOfficer`
+   * keeps the founder on as an officer with every power.
+   */
+  handOver: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        slug,
+        newOwnerId: z.string().min(1).max(200),
+        confirmSlug: z.string().max(100),
+        keepPreviousAsOfficer: z.boolean().default(false),
+      })
+    )
+    .mutation(({ ctx, input }) => handOverRealm(ctx.db, ctx.user, input).catch(regionError)),
 });

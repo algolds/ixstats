@@ -1,10 +1,10 @@
 # Realms — Places
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-07
 **Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`), `src/server/modules/realms/`
-(`realms.region.ts`, `realms.region-actions.ts`), `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
+(`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`), `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
 `src/server/api/routers/thinkpages/thinktanks/realm-board.ts`, `src/server/api/routers/thinkpages/realm-feed.ts`
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
 [region page design](../specs/2026-10-05-realm-regions-design.md)
@@ -198,15 +198,28 @@ restriction cleared, and the player loses an officer post if it was their last n
 
 ### Governance
 
-| Who                                        | Powers                                                                                                                        |
-| :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| Founder (`Realm.ownerId`), and site admins | Everything below, plus claims review and appointing officers                                                                  |
-| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll) |
+| Who                                        | Powers                                                                                                                                                              |
+| :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Founder (`Realm.ownerId`), and site admins | Everything below, plus appointing officers; the founder alone hands the realm over from Manage                                                                      |
+| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook and header), `board` (moderation), `diplomacy` (embassies and the poll), `claims` (review the realm's claims) |
 
 `realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
-Site admins assign founders in `/admin/realms` (the Founder column, `realms.region.assignFounder`); until then a
-realm is administered by staff.
+
+**Claims reviewers:** `realms.reviewClaim` accepts site admins, the founder, and officers holding `claims` in the
+claim's realm (only the reviewer's own `RealmOfficer` row is read); `realms.listClaims` lists the realms the caller
+founds or reviews for. An officer can't approve their own claim (they may still reject it); the founder and site
+admins can.
+
+**Handing a realm over** (`realms.transfer.ts`): site admins transfer any realm in `/admin/realms` (the Transfer
+action, `realms.region.adminTransferOwner`) to an active account picked from the user list (by nation or Clerk id),
+or back to IxStats staff; IxWorld stays with staff. The founder hands their own realm to a player who owns a nation
+in it or is one of its officers (Manage → **Hand over**, `realms.region.handOver`, candidates from
+`handOverCandidates`). Both need the realm's slug typed (checked on the server), write an `AdminAuditLog` row
+(`REALM_OWNER_TRANSFERRED`, `changes` holding `previousOwnerId`, `newOwnerId`, `keptPreviousAsOfficer` and `via`),
+drop the new founder's officer post, and notify the new founder (and a previous founder staff replaced). The
+previous founder loses the founder's powers unless **Keep previous owner as officer** is ticked: they stay on as a
+"Former founder" officer holding every power. Until a realm is handed to a player it is administered by staff.
 
 **Deleting a realm (AT-8):** site admins delete a realm created by mistake from `/admin/realms`
 (`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses IxWorld, and any realm
@@ -218,10 +231,11 @@ embassies, board restrictions and polls go with it, and its board group is deact
 
 Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
 address; description; up to five tags from `REALM_TAGS`), **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered,
-sanitized HTML), **Officers**, **Claims** (founder only; the admin claims list narrowed to the realm),
+sanitized HTML), **Officers** (each power with a one-line description), **Claims** (the founder and officers
+holding `claims`; the admin claims list narrowed to the realm, with Approve disabled on an officer's own claim),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
-options, optional end date) and **Board moderation**.
+options, optional end date), **Board moderation** and **Hand over** (the founder only, `manage.canHandOver`).
 
 **Banner and thumbnail uploads:** the Appearance fields upload through the site's image upload route
 (`/api/upload/image` via `uploadImageFile`: signed in, rate limited, PNG/JPG/GIF/WEBP/SVG only, 5MB, SVG

@@ -1,6 +1,6 @@
 # Eurth Onboarding Runbook
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-07
 
 **Audience:** the site admin deploying the Realms feature and bringing up Eurth, the first realm outside
 IxWorld. Exact commands, no fluff. Background/decisions: [`docs/architecture/realms-framework-spec.md`](../architecture/realms-framework-spec.md).
@@ -128,9 +128,9 @@ In `/admin/realms` → **Realms** tab → **New realm**, fill in exactly:
 | Description | `Realistic geofiction and political simulation, loosely based on NationStates. Lore on IIWiki (Portal:Eurth); community at eurth.org.` |
 | Visibility | `public` |
 
-The realm is created **active**, owned by `system` (shown as `system` in the Owner column). It stays that
-way until an Eurth admin has their own IxStats account and is handed the realm — until then, **site
-admins moderate Eurth's claims** from the Claims tab (step 4 below).
+The realm is created **active**, owned by `system` (shown as **IxStats staff** in the Founder column). It
+stays that way until an Eurth leader has their own IxStats account and is handed the realm (section 4.1).
+Until then, **site admins moderate Eurth's claims** from the Claims tab (step 4 below).
 
 ---
 
@@ -242,7 +242,9 @@ Tell players, in order:
 2. **Claim your nation.** Go to `/r/eurth` → **Claimable nations** → find your nation → **Claim**.
    - If you are the verified creator of that nation's iiwiki page, the claim is **approved instantly** —
      the country is created in Eurth and assigned to you.
-   - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**.
+   - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**, and
+     once Eurth has a founder (4.1), the founder and officers with the **Claims** power (4.2) review it in
+     `/r/eurth/manage` → **Claims**.
      Each nation-page claim there has a **Page history** link to the page's history on iiwiki; its first
      entry is the page's creator.
    - When the nation's page is a redirect, the creator check uses the page it redirects to.
@@ -250,6 +252,39 @@ Tell players, in order:
 Default cap is **one nation per player per realm**. A site admin can raise it (1–20) in `/admin/realms` →
 **Realms** tab → the realm's pencil (edit) button → **Nations per player** → the check (save) button. It is
 stored as `Realm.settings.maxNationsPerUser`; other keys in `Realm.settings` are kept.
+
+### 4.1 Hand Eurth to its leaders
+
+Eurth is run by its own leaders. Once the leader has an IxStats account (ideally with their Eurth nation
+claimed, so they are easy to find):
+
+1. `/admin/realms` → **Realms** tab → Eurth's row → the **Transfer Eurth** button (crown icon).
+2. Search by the leader's nation name or Clerk id and pick them. Only active accounts are listed; players
+   with a nation in Eurth come first. **IxStats staff** hands a realm back to staff.
+3. If Eurth already has a player founder you want to keep on, tick **Keep previous owner as officer**: they
+   become a "Former founder" officer with every power. Otherwise they lose the founder's powers.
+4. Type `eurth` in the slug box and press **Transfer realm**.
+
+The leader becomes Eurth's founder (`Realm.ownerId`), is notified ("You now found Eurth") with a link to
+`/r/eurth/manage`, and any officer post they held is dropped (the founder holds every power). The handover
+is recorded in the admin audit log (`AdminAuditLog`, action `REALM_OWNER_TRANSFERRED`, with the previous
+and new owner in `changes`). No SQL is needed.
+
+When the community changes leaders later, the founder hands Eurth on themselves: `/r/eurth/manage` →
+**Hand over** → pick an officer or a player who owns a nation in Eurth → optionally keep themselves on as
+an officer → type `eurth` → **Hand over realm**. It is audited the same way. Site admins can still
+transfer it from `/admin/realms` at any time.
+
+### 4.2 Give claim reviewers the Claims power
+
+The founder lets trusted players review claims without making them founder: `/r/eurth/manage` →
+**Officers** → appoint the player (they must own a nation in Eurth) or edit an existing officer → tick
+**Claims** ("Review players' claims on the realm's nations") → **Appoint** / **Save**.
+
+Officers with **Claims** see the **Claims** section of `/r/eurth/manage` and can approve or reject Eurth's
+pending claims, and only Eurth's. They can't approve their own claim: the founder, another reviewer or a
+site admin approves it (they can still reject it, to withdraw). Site admins keep reviewing every realm's
+claims in `/admin/realms` → **Claims**.
 
 Eurth's lore reads live inside WikiOS at `/wiki/<Title>?source=iiwiki` (read-only — edit/history/talk
 links point at iiwiki, not IxStats). The realm hub (`/r/eurth`) links to the lore portal, the country
@@ -317,12 +352,12 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 - **A second nation doesn't take over.** A player who already plays a nation (say in IxWorld) keeps
   acting as it after their Eurth claim is approved; they switch with **Play as <nation>** next to their
   nation on `/r/eurth` (and back the same way on `/r/ixworld`). The active one shows **Active**.
-- **No founder account yet.** The realm's `ownerId` is `"system"` until an Eurth admin is handed the
-  realm; until then, site admins are the only ones who can act on Eurth's claims.
+- **Staff-run until handed over.** The realm's `ownerId` is `"system"` until an Eurth leader is handed the
+  realm (4.1); until then, site admins are the only ones who can act on Eurth's claims.
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, the
-  per-realm calendar label (not implemented yet — planned), founder moderation/removal/succession tooling
-  (including a founder raising their own realm's nation cap — today only site admins can, in
-  `/admin/realms`), and realm-scoped dashboard feed and trending. Shipped since: a realm filter on the ThinkPages
+  per-realm calendar label (not implemented yet — planned), a founder raising their own realm's nation cap
+  (today only site admins can, in `/admin/realms`), and realm-scoped dashboard feed and trending. Handing
+  the realm over (4.1) and the Claims officer power (4.2) shipped on 2026-10-07. Shipped since: a realm filter on the ThinkPages
   feed and the realm board at `/r/eurth/board`, and a nation switcher in the nav and on the passport (alongside
   **Play as** on the realm page).
 
@@ -336,5 +371,7 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (safe, but see the re-run caveat in 3.2) |
 | See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
 | Import or update Eurth's map | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm `Eurth` (never Quick Update) |
-| Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab |
+| Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
+| Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (4.1); later, the founder uses `/r/eurth/manage` → Hand over |
+| Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (4.2) |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |

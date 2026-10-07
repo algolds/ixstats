@@ -16,7 +16,13 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
-import { canModerateRealm, isRealmOpen, isSiteAdmin, type RealmActor } from "./realms.access";
+import {
+  canModerateRealm,
+  hasRealmPower,
+  isRealmOpen,
+  isSiteAdmin,
+  type RealmActor,
+} from "./realms.access";
 import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import type { NationPagePrefill } from "./realms.prefill";
@@ -560,14 +566,35 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const claim = await db.realmClaim.findUnique({
       where: { id: claimId },
       include: {
-        realm: { select: { ownerId: true, slug: true, status: true } },
+        realm: {
+          select: {
+            ownerId: true,
+            slug: true,
+            status: true,
+            // Only the reviewer's own grant matters: an officer holding `claims` reviews this realm's claims.
+            officers: {
+              where: { userId: actor.clerkUserId },
+              select: { userId: true, powers: true },
+            },
+          },
+        },
         user: { select: { clerkUserId: true } },
         country: { select: { name: true } },
       },
     });
     if (!claim) throw new ClaimError("NOT_FOUND", "Claim not found");
-    if (!canModerateRealm(actor, claim.realm))
+    if (!hasRealmPower(actor, claim.realm, claim.realm.officers, "claims"))
       throw new ClaimError("FORBIDDEN", "Only this realm's moderators can review claims");
+    // Officers can't approve their own claims; the founder and site admins can.
+    if (
+      decision.approve &&
+      claim.user.clerkUserId === actor.clerkUserId &&
+      !canModerateRealm(actor, claim.realm)
+    )
+      throw new ClaimError(
+        "FORBIDDEN",
+        "The founder or another reviewer must approve your own claim"
+      );
     const target = claimTarget(claim);
     if (claim.status !== "pending" || !target) throw notPending();
     const notice = {
@@ -615,7 +642,17 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
   }
 
   async function listClaims(actor: RealmActor, status: string) {
-    const scope = isSiteAdmin(actor) ? {} : { realm: { ownerId: actor.clerkUserId } };
+    // The founder's realms, and the realms where the caller is an officer holding `claims`.
+    const scope = isSiteAdmin(actor)
+      ? {}
+      : {
+          realm: {
+            OR: [
+              { ownerId: actor.clerkUserId },
+              { officers: { some: { userId: actor.clerkUserId, powers: { has: "claims" } } } },
+            ],
+          },
+        };
     return db.realmClaim.findMany({
       where: { status, ...scope },
       orderBy: { createdAt: "asc" },
