@@ -22,6 +22,6 @@ export function isWikiosV1Enabled(): boolean {
   return ON.test(process.env.WIKIOS_V1_ENABLED?.trim() ?? "");
 }
 
-/** Why a WikiOS write is refused while the switch is off (MediaWiki's `readonly` error carries it). */
+/** Why a WikiOS write is refused whenever editing is off (MediaWiki's `readonly` error carries it). */
 export const WIKIOS_READONLY_REASON =
-  "WikiOS is read-only until the WikiOS v1 cutover: classic MediaWiki is still the wiki you edit.";
+  "WikiOS editing is turned off. Classic MediaWiki is still the wiki you edit.";
