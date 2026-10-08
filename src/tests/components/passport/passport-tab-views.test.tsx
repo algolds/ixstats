@@ -182,6 +182,26 @@ describe("PassportRealmsTab", () => {
     expect(document.body.textContent).not.toContain("•");
   });
 
+  it("leaves unknown population and GDP out instead of showing zero", () => {
+    const nation = row("a", "one", "member");
+    nation.country = { ...nation.country, currentPopulation: 0, currentTotalGdp: 0 };
+    render(<PassportRealmsTab realms={[nation]} handle="alex" />);
+
+    expect(screen.queryByText("Population")).not.toBeInTheDocument();
+    expect(screen.queryByText("GDP")).not.toBeInTheDocument();
+    expect(screen.queryByText("0")).not.toBeInTheDocument();
+    expect(screen.queryByText("$0")).not.toBeInTheDocument();
+    expect(screen.getByText("Approval")).toBeInTheDocument();
+  });
+
+  it("wraps the figures rather than fitting them into fixed columns that truncate on a phone", () => {
+    render(<PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" />);
+    const figures = screen.getByTestId("passport-nation-figures");
+    expect(figures.className).toContain("flex-wrap");
+    expect(figures.className).not.toMatch(/grid-cols-3/);
+    for (const stat of figures.children) expect(stat.className).toContain("shrink-0");
+  });
+
   it("shows the recruited count only when someone was recruited", () => {
     const { rerender } = render(
       <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" />

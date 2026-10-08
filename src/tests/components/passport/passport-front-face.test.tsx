@@ -148,6 +148,15 @@ describe("PassportFrontFace", () => {
     expect(classes).toEqual(expect.arrayContaining(["lg:grid", "lg:grid-flow-col"]));
   });
 
+  it("puts the divider on a plain cell around the Lorewards button, not on the rounded button", () => {
+    renderFace();
+    const cell = screen.getByTestId("passport-lorewards-cell");
+    const button = screen.getByRole("button", { name: /Lorewards/ });
+    expect(button.parentElement).toBe(cell);
+    expect(cell.parentElement?.className).toContain("lg:divide-x");
+    expect(cell.className).not.toMatch(/rounded/);
+  });
+
   it("shows the join month", () => {
     renderFace();
     expect(screen.getByText("Since Oct 2025")).toBeInTheDocument();

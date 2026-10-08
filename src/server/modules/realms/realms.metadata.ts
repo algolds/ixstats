@@ -78,7 +78,7 @@ function clip(text: string): string {
 function realmDescription(source: RealmMetadataSource): string | null {
   const text = source.description ?? source.factbookText;
   if (text) return clip(text);
-  if (source.tags.length > 0) return source.tags.join(", ");
+  if (source.tags.length > 0) return clip(source.tags.join(", "));
   return realmCountsLine(source.nationCount, source.openCount);
 }
 

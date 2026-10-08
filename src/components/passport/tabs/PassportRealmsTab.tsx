@@ -31,10 +31,11 @@ const LINK_CLASS =
 
 /**
  * Format an amount in passport information grammar ("1.25 billion"), scaled by
- * the shared `getScaledValue`. `prefix` is "$" for GDP.
+ * the shared `getScaledValue`. `prefix` is "$" for GDP. Null for an unknown (missing or
+ * non-positive) amount, which the row leaves out rather than showing "0".
  */
-function formatPassportAmount(num: number | null | undefined, prefix = ""): string {
-  if (!num || num <= 0) return `${prefix}0`;
+function formatPassportAmount(num: number | null | undefined, prefix = ""): string | null {
+  if (!num || num <= 0) return null;
   const { value, suffix } = getScaledValue(num);
   if (!suffix) return `${prefix}${num.toLocaleString()}`;
   return `${prefix}${value >= 10 ? value.toFixed(1) : value.toFixed(2)} ${PASSPORT_SCALE_WORDS[suffix]}`;
@@ -79,6 +80,8 @@ function RealmRoleBadge({ role }: { role: RealmItem["role"] }) {
 function NationRow({ item }: { item: RealmItem }) {
   const { country } = item;
   const meta = [country.continent, country.governmentType].filter(Boolean).join(" · ");
+  const population = formatPassportAmount(country.currentPopulation);
+  const gdp = formatPassportAmount(country.currentTotalGdp, "$");
   return (
     <li className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
@@ -110,14 +113,21 @@ function NationRow({ item }: { item: RealmItem }) {
         </div>
       </div>
 
-      <div className="grid shrink-0 grid-cols-3 gap-x-4 tabular-nums sm:gap-x-6">
+      {/* Figures wrap onto a new line instead of truncating ("399.1 mi") on a narrow phone. */}
+      <div
+        data-testid="passport-nation-figures"
+        className="flex shrink-0 flex-wrap gap-x-4 gap-y-2 tabular-nums sm:gap-x-6"
+      >
+        {population && (
+          <Stat size="sm" label="Population" value={population} className="shrink-0" />
+        )}
+        {gdp && <Stat size="sm" label="GDP" value={gdp} className="shrink-0" />}
         <Stat
           size="sm"
-          label="Population"
-          value={formatPassportAmount(country.currentPopulation)}
+          label="Approval"
+          value={`${Math.round(country.currentPublicApproval)}%`}
+          className="shrink-0"
         />
-        <Stat size="sm" label="GDP" value={formatPassportAmount(country.currentTotalGdp, "$")} />
-        <Stat size="sm" label="Approval" value={`${Math.round(country.currentPublicApproval)}%`} />
       </div>
     </li>
   );

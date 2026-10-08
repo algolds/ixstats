@@ -67,6 +67,13 @@ describe("realmMetadata", () => {
     expect(realmMetadata(source({ nationCount: 0, openCount: 0 })).description).toBeUndefined();
   });
 
+  it("cuts a long tag list short at a word, like the factbook", () => {
+    const tags = Array.from({ length: 40 }, (_, i) => `Tag${i}`);
+    const description = realmMetadata(source({ tags })).description ?? "";
+    expect(description.length).toBeLessThanOrEqual(161);
+    expect(description.endsWith("…")).toBe(true);
+  });
+
   it("keeps an unlisted realm out of search results but still unfurls it", () => {
     expect(realmMetadata(source()).robots).toBeUndefined();
     const meta = realmMetadata(source({ unlisted: true }));

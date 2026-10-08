@@ -14,6 +14,7 @@ import type {
   PassportRibbon,
   PassportVault,
 } from "~/components/passport/types";
+import type { CardInstance } from "~/types/cards-display";
 
 jest.mock("~/components/cards/display/CardDisplay", () => ({
   CardDisplay: ({ card }: { card: { title: string } }) => <div>{card.title}</div>,
@@ -35,7 +36,41 @@ const ribbon = (key: string, rarity: string, pinned = false): PassportRibbon => 
   pinned,
 });
 
-const vault = {
+/** A top card as `identity.vault` maps an ownership row; only title, rarity and value matter here. */
+const card = (
+  id: string,
+  title: string,
+  rarity: CardInstance["rarity"],
+  marketValue: number
+): CardInstance => ({
+  id,
+  title,
+  description: null,
+  artwork: "",
+  artworkVariants: null,
+  cardType: "NATION",
+  rarity,
+  season: 1,
+  nsCardId: null,
+  nsSeason: null,
+  nsData: null,
+  wikiSource: null,
+  wikiArticleTitle: null,
+  wikiUrl: null,
+  countryId: null,
+  stats: {},
+  ownershipId: `o_${id}`,
+  marketValue,
+  totalSupply: 1,
+  level: 1,
+  evolutionStage: 0,
+  enhancements: null,
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+  lastTrade: null,
+});
+
+const vault: PassportVault = {
   totalCards: 10,
   deckValue: 12_400,
   collectorLevel: 3,
@@ -44,10 +79,10 @@ const vault = {
   credits: 1250,
   focus: { categoryCount: 5, categoryTotal: 12, topCategory: "MILITARY" },
   topCards: [
-    { id: "c1", ownershipId: "o1", title: "Imperial Crown", rarity: "LEGENDARY", marketValue: 900 },
-    { id: "c2", ownershipId: "o2", title: "Senate Seal", rarity: "ULTRA_RARE", marketValue: 400 },
+    card("c1", "Imperial Crown", "LEGENDARY", 900),
+    card("c2", "Senate Seal", "ULTRA_RARE", 400),
   ],
-} as unknown as PassportVault;
+};
 
 const achievements: PassportAchievements = {
   unlockedCount: 2,

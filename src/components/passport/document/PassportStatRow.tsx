@@ -35,23 +35,26 @@ export const PassportStatRow = React.memo(function PassportStatRow({
     // single-row grid (which cannot wrap) carries the dividers, so no line starts with a border.
     <div className="border-separator divide-separator flex flex-wrap items-center gap-x-5 border-y lg:grid lg:auto-cols-max lg:grid-flow-col lg:justify-start lg:gap-x-0 lg:divide-x">
       {lorewards && (
-        <button
-          type="button"
-          onClick={onOpenLorewards}
-          aria-haspopup="dialog"
-          className={cn(
-            CELL,
-            "rounded-control hover:bg-fill-3 focus-visible:outline-tint -ml-2 px-2 transition-colors focus-visible:outline-2 lg:mr-3"
-          )}
-        >
-          {lorewards.rank !== null && (
-            <span className="text-tint font-semibold">#{lorewards.rank.toLocaleString()}</span>
-          )}{" "}
-          <span className="text-label">Lorewards</span>{" "}
-          <span className="text-label-secondary">
-            · {lorewards.totalScore.toLocaleString()} pts
-          </span>
-        </button>
+        // A plain cell carries the divider, so the rounded button never gets a curved border.
+        <div data-testid="passport-lorewards-cell" className="flex items-center lg:pr-3">
+          <button
+            type="button"
+            onClick={onOpenLorewards}
+            aria-haspopup="dialog"
+            className={cn(
+              CELL,
+              "rounded-control hover:bg-fill-3 focus-visible:outline-tint -ml-2 px-2 transition-colors focus-visible:outline-2"
+            )}
+          >
+            {lorewards.rank !== null && (
+              <span className="text-tint font-semibold">#{lorewards.rank.toLocaleString()}</span>
+            )}{" "}
+            <span className="text-label">Lorewards</span>{" "}
+            <span className="text-label-secondary">
+              · {lorewards.totalScore.toLocaleString()} pts
+            </span>
+          </button>
+        </div>
       )}
       {holdings && <span className={cn(CELL, "text-label lg:px-5 lg:first:pl-0")}>{holdings}</span>}
       {since && (
