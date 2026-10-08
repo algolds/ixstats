@@ -13,3 +13,14 @@ export {
   type ForumUserAuthor,
   type ReadsDb,
 } from "./reads";
+export {
+  createThread,
+  editPost,
+  MAX_POST_HTML,
+  replyToThread,
+  TITLE_MAX,
+  TITLE_MIN,
+  type ForumActor,
+  type PostInput,
+  type WritesDb,
+} from "./writes";

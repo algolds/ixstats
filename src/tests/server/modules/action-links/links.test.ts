@@ -1,5 +1,10 @@
 /** @jest-environment node */
-import { ActionLinkError, linkedPosts, syncPostActionLinks } from "~/server/modules/action-links";
+import {
+  ActionLinkError,
+  linkedPosts,
+  syncPostActionLinks,
+  validatePostActionTokens,
+} from "~/server/modules/action-links";
 import { MAX_ACTIONS_PER_POST } from "~/lib/action-links";
 
 type Row = { id: string; countryId: string; visibility: string };
@@ -88,6 +93,31 @@ describe("syncPostActionLinks", () => {
       where: { postSource: "native", postRef: "p1", activityId: { notIn: [] } },
     });
     expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("validatePostActionTokens", () => {
+  it("returns the owned token ids without writing anything", async () => {
+    const { db, tx } = fakeDb([{ id: "a1", countryId: "c1", visibility: "public" }]);
+    await expect(validatePostActionTokens(db as never, { countryId: "c1", body: "[ixaction=a1]" })).resolves.toEqual([
+      "a1",
+    ]);
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
+  });
+
+  it("skips the ownership query for a body with no tokens", async () => {
+    const { db } = fakeDb([]);
+    await expect(validatePostActionTokens(db as never, { countryId: null, body: "plain" })).resolves.toEqual([]);
+    expect(db.activityFeed.findMany).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["another country's action", "c1", "[ixaction=a2]", "BAD_REQUEST"],
+    ["a poster with no country", null, "[ixaction=a1]", "FORBIDDEN"],
+  ])("refuses %s", async (_label, countryId, body, code) => {
+    const { db } = fakeDb([{ id: "a2", countryId: "c2", visibility: "public" }]);
+    await expect(validatePostActionTokens(db as never, { countryId, body })).rejects.toMatchObject({ code });
   });
 });
 

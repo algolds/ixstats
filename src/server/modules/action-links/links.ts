@@ -9,11 +9,15 @@ import { ActionLinkError } from "./errors";
 
 export type LinksDb = Pick<PrismaClient, "activityFeed" | "postActionLink" | "$transaction">;
 
-export async function syncPostActionLinks(
-  db: LinksDb,
-  input: { postSource: PostSource; postRef: string; countryId: string | null; body: string }
+/**
+ * The token parse, the per-post cap and the ownership check, with no writes, so a caller can refuse a post before
+ * saving it. Returns the linked activity ids.
+ */
+export async function validatePostActionTokens(
+  db: Pick<PrismaClient, "activityFeed">,
+  input: { countryId: string | null; body: string }
 ): Promise<string[]> {
-  const { postSource, postRef, countryId } = input;
+  const { countryId } = input;
   const ids = parseActionTokens(input.body);
   if (ids.length > MAX_ACTIONS_PER_POST) {
     throw new ActionLinkError("BAD_REQUEST", `A post can link at most ${MAX_ACTIONS_PER_POST} actions`);
@@ -21,16 +25,24 @@ export async function syncPostActionLinks(
   if (ids.length > 0 && !countryId) {
     throw new ActionLinkError("FORBIDDEN", "Only a nation's posts can link its actions");
   }
-  const owner = countryId;
-  if (ids.length > 0 && owner) {
+  if (ids.length > 0 && countryId) {
     const owned = await db.activityFeed.findMany({
-      where: { id: { in: ids }, countryId: owner, visibility: "public" },
+      where: { id: { in: ids }, countryId, visibility: "public" },
       select: { id: true },
     });
     if (owned.length !== ids.length) {
       throw new ActionLinkError("BAD_REQUEST", "A linked action is not one of your nation's public actions");
     }
   }
+  return ids;
+}
+
+export async function syncPostActionLinks(
+  db: LinksDb,
+  input: { postSource: PostSource; postRef: string; countryId: string | null; body: string }
+): Promise<string[]> {
+  const { postSource, postRef, countryId: owner } = input;
+  const ids = await validatePostActionTokens(db, input);
   await db.$transaction(async (tx) => {
     await tx.postActionLink.deleteMany({ where: { postSource, postRef, activityId: { notIn: ids } } });
     if (ids.length > 0 && owner) {

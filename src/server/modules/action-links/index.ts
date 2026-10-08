@@ -1,5 +1,5 @@
 export { ActionLinkError, type ActionLinkErrorCode } from "./errors";
-export { linkedPosts, syncPostActionLinks, type LinksDb } from "./links";
+export { linkedPosts, syncPostActionLinks, validatePostActionTokens, type LinksDb } from "./links";
 export {
   addPostToChain,
   createChain,
