@@ -56,10 +56,17 @@ const asOfHint = (asOf: string | null | undefined) =>
       })}`
     : undefined;
 
+/** The founder's passport when they have a handle, else their nation here. */
+function founderHref(founder: NonNullable<Overview["founder"]>) {
+  if (founder.handle) return createUrl(`/@${encodeURIComponent(founder.handle)}`);
+  return founder.nation?.slug ? createUrl(`/countries/${founder.nation.slug}`) : null;
+}
+
 /** The realm's banner, name, key stats and tab bar, shared by every tab. */
 export function RealmRegionHeader({ overview }: { overview: Overview }) {
   const pathname = usePathname();
   const { realm, stats, founder, viewer, inWorldDate } = overview;
+  const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
     viewer.canManage,
@@ -124,11 +131,8 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
             label="Founder"
             value={
               founder ? (
-                founder.nation?.slug ? (
-                  <Link
-                    href={createUrl(`/countries/${founder.nation.slug}`)}
-                    className="hover:underline"
-                  >
+                founderLink ? (
+                  <Link href={founderLink} className="hover:underline">
                     {founder.name}
                   </Link>
                 ) : (

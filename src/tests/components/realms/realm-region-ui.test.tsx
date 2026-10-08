@@ -189,6 +189,28 @@ describe("sidebar", () => {
     );
   });
 
+  it("links officers and the founder with a handle to their passport", () => {
+    const founder = {
+      name: "Borovia",
+      handle: "bora",
+      nation: { id: "c2", name: "Borovia", slug: "borovia", flag: null },
+    };
+    const officers = [
+      { title: "Foreign Minister", powers: [], name: "Aurelia", handle: "aure", nation: null },
+      { title: "Archivist", powers: [], name: "Cassia", handle: "cass", nation: null },
+    ];
+    render(<OfficersPanel overview={overview({ founder, officers })} />);
+    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
+    expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toMatch(/\/@aure$/);
+    expect(screen.getByRole("link", { name: "Cassia" }).getAttribute("href")).toMatch(/\/@cass$/);
+  });
+
+  it("links the header's founder to their passport when they have a handle", () => {
+    const founder = { name: "Borovia", handle: "bora", nation: null };
+    render(<RealmRegionHeader overview={overview({ founder })} />);
+    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
+  });
+
   it("lets a nation owner vote in the realm poll", () => {
     mutate.mockClear();
     const poll = {

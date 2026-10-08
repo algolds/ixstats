@@ -67,7 +67,7 @@ export function toRealmMemberships(
   }));
 }
 
-/** Memberships inside one realm, matched by slug or id (for `/r/[realm]/[username]`). */
+/** Memberships inside one realm, matched by slug or id (for the realm passport, `/r/{realm}/@{handle}`). */
 export function filterByRealm(memberships: RealmMembership[], realm: string): RealmMembership[] {
   const key = realm.toLowerCase();
   return memberships.filter((m) => m.slug.toLowerCase() === key || m.id.toLowerCase() === key);

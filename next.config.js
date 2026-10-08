@@ -193,10 +193,16 @@ const config = {
 
   async rewrites() {
     // /@username is the canonical passport URL; it renders the /id/[username] page.
+    // /r/realm/@username is the realm passport; a folder named @x would be a parallel-route slot, so
+    // it renders /r/[realm]/(region)/u/[username].
     const passportRewrites = [
       {
         source: "/@:username",
         destination: "/id/:username",
+      },
+      {
+        source: "/r/:realm/@:username",
+        destination: "/r/:realm/u/:username",
       },
     ];
 
