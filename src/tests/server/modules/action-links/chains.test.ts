@@ -11,13 +11,21 @@ const admin = { id: "u_a", clerkUserId: "admin", countryId: "c9", role: { name: 
 const officer = { id: "u_o", clerkUserId: "officer", countryId: "c2", role: { name: "user", level: 100 } };
 const owner = { id: "u_c1", clerkUserId: "c1owner", countryId: "c1", role: { name: "user", level: 100 } };
 
-function chainDb(chain: { status: string; countryId?: string; kind?: string }) {
+function chainDb(
+  chain: { status: string; countryId?: string; kind?: string },
+  owner: { id: string; clerkUserId: string } | null = { id: "u_c1", clerkUserId: "c1owner" }
+) {
   const row = { id: "s1", countryId: "c1", kind: "chain", title: "Pact", ...chain };
   return {
     storyline: {
       findFirst: jest.fn(async () => ({
         ...row,
-        country: { realmId: "r1", realm: { ownerId: "founder", officers: [{ userId: "officer", powers: ["board"] }] } },
+        country: {
+          realmId: "r1",
+          ownerUserId: owner?.id ?? null,
+          owner: owner ? { clerkUserId: owner.clerkUserId } : null,
+          realm: { ownerId: "founder", officers: [{ userId: "officer", powers: ["board"] }] },
+        },
         _count: { actionLinks: 2 },
       })),
       updateMany: jest.fn(async () => ({ count: 1 })),
@@ -27,7 +35,7 @@ function chainDb(chain: { status: string; countryId?: string; kind?: string }) {
       aggregate: jest.fn(async () => ({ _max: { chainOrder: 3 } })),
       updateMany: jest.fn(async () => ({ count: 1 })),
     },
-    user: { findFirst: jest.fn(async () => ({ clerkUserId: "c1owner" })) },
+    user: { findFirst: jest.fn(async () => ({ clerkUserId: "c1player" })) },
   };
 }
 
@@ -109,7 +117,26 @@ describe("reviewChain", () => {
       expect.objectContaining({ where: { id: "s1", status: "submitted" } })
     );
     expect(queueAchievementCheck).toHaveBeenCalledWith("c1owner", "c1");
+    expect(db.user.findFirst).not.toHaveBeenCalled();
     expect(onApproved).toHaveBeenCalledWith("s1");
+  });
+
+  it("queues the achievement for whoever has the country active when it has no owner", async () => {
+    const db = chainDb({ status: "submitted" }, null);
+    await reviewChain(db as never, officer, approve, jest.fn(async () => undefined));
+    expect(db.user.findFirst).toHaveBeenCalledWith({ where: { countryId: "c1" }, select: { clerkUserId: true } });
+    expect(queueAchievementCheck).toHaveBeenCalledWith("c1player", "c1");
+  });
+
+  it("keeps the approval and still runs the wiki write when the recipient lookup fails", async () => {
+    const db = chainDb({ status: "submitted" }, null);
+    db.user.findFirst.mockRejectedValueOnce(new Error("db down"));
+    const onApproved = jest.fn(async () => undefined);
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(reviewChain(db as never, officer, approve, onApproved)).resolves.toBeUndefined();
+    expect(onApproved).toHaveBeenCalledWith("s1");
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it("forbids reviewing your own country's chain, even as admin", async () => {
@@ -117,6 +144,12 @@ describe("reviewChain", () => {
     await expect(reviewChain(db as never, { ...admin, countryId: "c1" }, approve, jest.fn())).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+  });
+
+  it("forbids the chain country's owner even with another nation active, even as admin", async () => {
+    const db = chainDb({ status: "submitted" }, { id: admin.id, clerkUserId: admin.clerkUserId });
+    await expect(reviewChain(db as never, admin, approve, jest.fn())).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.storyline.updateMany).not.toHaveBeenCalled();
   });
 
   it("forbids a user without the board power", async () => {
@@ -149,6 +182,12 @@ describe("reviewChain", () => {
     const onApproved = jest.fn(async () => {
       throw new Error("wiki down");
     });
+    await expect(reviewChain(db as never, admin, approve, onApproved)).resolves.toBeUndefined();
+  });
+
+  it("keeps the approval when the wiki write rejects with a non-Error value", async () => {
+    const db = chainDb({ status: "submitted" });
+    const onApproved = jest.fn(() => Promise.reject(undefined));
     await expect(reviewChain(db as never, admin, approve, onApproved)).resolves.toBeUndefined();
   });
 });

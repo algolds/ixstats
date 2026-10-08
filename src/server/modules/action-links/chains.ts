@@ -105,17 +105,40 @@ export async function submitChain(
 }
 
 const REVIEW_INCLUDE = {
-  country: { select: { realmId: true, realm: { select: { ownerId: true, officers: true } } } },
+  country: {
+    select: {
+      realmId: true,
+      ownerUserId: true,
+      owner: { select: { clerkUserId: true } },
+      realm: { select: { ownerId: true, officers: true } },
+    },
+  },
 } as const;
 
-function canReview(
-  actor: ChainActor,
-  chain: { countryId: string; country: { realm: { ownerId: string; officers: { userId: string; powers: string[] }[] } | null } }
-): boolean {
-  if (actor.countryId === chain.countryId) return false;
+interface ReviewedChain {
+  countryId: string;
+  country: {
+    ownerUserId: string | null;
+    realm: { ownerId: string; officers: { userId: string; powers: string[] }[] } | null;
+  };
+}
+
+/** Never one of the chain's own country: neither its active player nor its owner (who may have another nation active). */
+function canReview(actor: ChainActor, chain: ReviewedChain): boolean {
+  if (actor.countryId === chain.countryId || chain.country.ownerUserId === actor.id) return false;
   if (isSiteAdmin(actor)) return true;
   const realm = chain.country.realm;
   return realm !== null && hasRealmPower(actor, realm, realm.officers, "board");
+}
+
+/** Achievements are keyed by Clerk id: the country's owner, else whoever has it active. */
+async function achievementRecipient(
+  db: ChainsDb,
+  chain: { countryId: string; country: { owner: { clerkUserId: string } | null } }
+): Promise<string | undefined> {
+  if (chain.country.owner) return chain.country.owner.clerkUserId;
+  const player = await db.user.findFirst({ where: { countryId: chain.countryId }, select: { clerkUserId: true } });
+  return player?.clerkUserId;
 }
 
 export async function reviewChain(
@@ -143,10 +166,14 @@ export async function reviewChain(
   if (won.count === 0) throw new ActionLinkError("CONFLICT", "This chain was already reviewed");
   if (!input.approve) return;
 
-  const owner = await db.user.findFirst({ where: { countryId: chain.countryId }, select: { clerkUserId: true } });
-  queueAchievementCheck(owner?.clerkUserId, chain.countryId);
-  await onApproved(chain.id).catch((error: Error) => {
-    console.warn(`[action-links] wiki append for chain ${chain.id} failed; the cron will retry:`, error.message);
+  // The approval is committed: nothing below may turn it into a failed mutation.
+  try {
+    queueAchievementCheck(await achievementRecipient(db, chain), chain.countryId);
+  } catch (error) {
+    console.warn(`[action-links] achievement check for chain ${chain.id} not queued:`, error);
+  }
+  await onApproved(chain.id).catch((error) => {
+    console.warn(`[action-links] wiki append for chain ${chain.id} failed; the cron will retry:`, error);
   });
 }
 
