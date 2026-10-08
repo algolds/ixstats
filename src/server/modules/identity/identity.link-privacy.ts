@@ -38,7 +38,7 @@ export async function loadLinkPrivacy(identity: ResolvedIdentity): Promise<Passp
 
 /**
  * Whether search engines may index the passport at `handle` (`searchEngineIndexing`). A handle
- * with no user (a country or an external wiki name) is indexable; a read error is not.
+ * with no user (an external wiki or forum name) is indexable; a read error is not.
  */
 export async function passportIndexable(handle: string): Promise<boolean> {
   try {

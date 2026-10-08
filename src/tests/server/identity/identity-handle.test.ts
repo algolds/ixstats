@@ -6,6 +6,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   HANDLE_PATTERN,
   RESERVED_HANDLES,
+  needsCanonicalRedirect,
   normalizeHandle,
   pickAvailableHandle,
   slugifyHandle,
@@ -122,5 +123,26 @@ describe("pickAvailableHandle", () => {
     const base = "a".repeat(24);
     const taken = new Set([base, ...Array.from({ length: 8 }, (_, i) => `${"a".repeat(22)}_${i + 2}`)]);
     expect(pickAvailableHandle(base, taken)).toBe(`${"a".repeat(21)}_10`);
+  });
+});
+
+describe("needsCanonicalRedirect", () => {
+  it("redirects a legacy segment to the stored handle", () => {
+    expect(needsCanonicalRedirect("Kir Forum", "kir")).toBe(true);
+    expect(needsCanonicalRedirect("clerk_abc", "kir")).toBe(true);
+  });
+
+  it("does not redirect when the segment normalises to the stored handle", () => {
+    expect(needsCanonicalRedirect("kir", "kir")).toBe(false);
+    expect(needsCanonicalRedirect("@KIR", "kir")).toBe(false);
+  });
+
+  it("never redirects me", () => {
+    expect(needsCanonicalRedirect("me", "kir")).toBe(false);
+    expect(needsCanonicalRedirect("@Me", "kir")).toBe(false);
+  });
+
+  it("does not redirect when there is no stored handle", () => {
+    expect(needsCanonicalRedirect("Kir Forum", null)).toBe(false);
   });
 });

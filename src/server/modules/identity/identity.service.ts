@@ -29,6 +29,7 @@ import {
   toRealmMemberships,
 } from "./identity.mappers";
 import type { IdentityCountry } from "./identity.selects";
+import { needsCanonicalRedirect } from "./identity.handle";
 import { resolveIdentity, resolveIdentityNations } from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
@@ -123,6 +124,19 @@ async function loadVerifiedWikiName(userId: string | undefined): Promise<string 
     })
     .catch(() => null);
   return link?.username ?? null;
+}
+
+/**
+ * The handle every display and share surface uses, never the URL segment: the stored handle, else
+ * the computed one (verified wiki name, forum name, the segment unless it is `me`, Clerk id). An
+ * identity with no user (an external wiki or forum name) keeps its segment.
+ */
+function canonicalHandleOf(identity: ResolvedIdentity, verifiedWikiName: string | null): string {
+  const { user, handle } = identity;
+  if (!user) return handle;
+  if (user.handle) return user.handle;
+  const segment = handle.toLowerCase() === "me" ? null : handle;
+  return verifiedWikiName || user.forumUsername || segment || user.clerkUserId;
 }
 
 type LoreStats = Awaited<ReturnType<typeof loadLoreStats>>;
@@ -289,7 +303,10 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
 
   const realms = membershipsOf(identity, nations);
   return {
-    handle: identity.handle,
+    /** The canonical handle (stored, else computed); share links use this, never the URL segment. */
+    handle: canonicalHandleOf(identity, verifiedWikiName),
+    /** True when the URL segment is a legacy name and the page should 301 to `/@{handle}`. */
+    canonicalRedirect: needsCanonicalRedirect(identity.handle, user?.handle ?? null),
     account: passportAccount(identity, clerk, settings.signature),
     /** Which sections the owner shows; a false section is absent from this payload. */
     privacy: shown,

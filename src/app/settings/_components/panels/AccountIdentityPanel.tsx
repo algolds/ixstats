@@ -18,6 +18,7 @@ import {
   OpenNewWindow as ExternalLink,
   ShieldCheck,
   Crown,
+  AtSign,
 } from "iconoir-react";
 import type { UserResource } from "@clerk/types";
 import { UserButton } from "~/context/auth-context";
@@ -31,6 +32,7 @@ import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Card } from "~/components/ui/card";
@@ -53,8 +55,18 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
   // Forum link state
   const [showForumInput, setShowForumInput] = useState(false);
+  const [handleDraft, setHandleDraft] = useState("");
 
   // Mutations
+
+  const setHandle = api.ixnayid.setHandle.useMutation({
+    onSuccess: ({ handle }) => {
+      notify.success(`Your passport is now at @${handle}`);
+      setHandleDraft("");
+      void utils.ixnayid.getStatus.invalidate();
+    },
+    onError: (err) => notify.error(err.message || "Failed to change handle"),
+  });
 
   const unlinkForum = api.ixnayid.unlinkForum.useMutation({
     onSuccess: () => {
@@ -80,6 +92,10 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
     user?.username ||
     "me";
   const passportUrl = `/@${passportHandle}`;
+  const canChangeHandle = status?.canChangeHandle ?? false;
+  const draftHandle = handleDraft.trim().replace(/^@/, "").toLowerCase();
+  const canSaveHandle =
+    canChangeHandle && !setHandle.isPending && draftHandle !== "" && draftHandle !== status?.handle;
   const countryFactbookUrl = userProfile?.country?.slug
     ? `/countries/${userProfile.country.slug}`
     : null;
@@ -185,7 +201,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="secondary" size="sm" onClick={handleCopyPassport}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleCopyPassport}
+              disabled={!status?.passportHandle}
+            >
               {copiedHandle ? (
                 <>
                   <Check aria-hidden className="text-success" />
@@ -210,6 +232,46 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
         </div>
       </Card>
+
+      {/* Passport handle: one self-service change */}
+      <SettingsGroup
+        title="Passport handle"
+        description="The address of your IxStates Passport."
+        footer={
+          status &&
+          (canChangeHandle
+            ? "You can change your handle once. Links to your old handle stop working."
+            : "You have used your one handle change.")
+        }
+      >
+        <SettingsRow
+          label={status?.handle ? `@${status.handle}` : "No handle yet"}
+          description="3 to 24 lowercase letters, numbers or underscores."
+          icon={AtSign}
+          glyphClass="bg-tint/15 text-tint"
+        >
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSaveHandle) setHandle.mutate({ handle: draftHandle });
+            }}
+          >
+            <Input
+              value={handleDraft}
+              onChange={(e) => setHandleDraft(e.target.value)}
+              placeholder={status?.handle ?? "new_handle"}
+              aria-label="New passport handle"
+              maxLength={25}
+              disabled={!canChangeHandle || setHandle.isPending}
+              className="h-8 w-44"
+            />
+            <Button type="submit" variant="secondary" size="sm" disabled={!canSaveHandle}>
+              {setHandle.isPending ? "Saving..." : "Change"}
+            </Button>
+          </form>
+        </SettingsRow>
+      </SettingsGroup>
 
       {/* Account credentials & linked accounts */}
       <SettingsGroup

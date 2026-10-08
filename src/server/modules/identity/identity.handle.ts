@@ -40,6 +40,16 @@ export function validateHandle(raw: string): HandleValidation {
   return { ok: true, handle };
 }
 
+/**
+ * Whether a passport URL segment should 301 to the stored handle: only when one is stored and the
+ * segment does not already normalise to it. `/@me` never redirects.
+ */
+export function needsCanonicalRedirect(segment: string, storedHandle: string | null): boolean {
+  if (!storedHandle) return false;
+  const normalized = normalizeHandle(segment);
+  return normalized !== "me" && normalized !== storedHandle;
+}
+
 /** Turns a display name or username into a valid, non-reserved handle candidate. */
 export function slugifyHandle(source: string): string {
   const slug = source

@@ -58,8 +58,9 @@ describe("ixnayid.getStatus wiki state", () => {
     const status = await caller().getStatus();
     expect(status.wiki.linked).toBe(false);
     expect(status.wiki.username).toBeNull();
-    // and the passport handle never comes from an unverified wiki name
-    expect(status.passportHandle).toBe("kir-republic");
+    // and the passport handle never comes from an unverified wiki name, nor from the country
+    // (a country name or slug no longer resolves a passport)
+    expect(status.passportHandle).toBe("clerk_1");
   });
 
   it("queries only verified ixwiki links", async () => {

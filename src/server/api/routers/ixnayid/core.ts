@@ -1,6 +1,16 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+} from "~/server/api/trpc";
 import { db } from "~/server/db";
+import {
+  HandleClaimError,
+  setUserHandle,
+} from "~/server/modules/identity/identity.handle-claim";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
 
 const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
 
@@ -62,6 +72,40 @@ function linkedAccounts(
   };
 }
 
+/** Admin rights (as `adminProcedure` grants them), dropped while playing as another user. */
+function callerIsAdmin(ctx: { user: RealmActor; impersonatorId?: string | null }): boolean {
+  return !ctx.impersonatorId && isSiteAdmin(ctx.user);
+}
+
+/**
+ * The passport link: the stored handle, else the first available identity. Country slugs and names
+ * are skipped (they no longer resolve a passport), and so is the generic "admin" session name.
+ */
+function passportHandleOf(
+  user: { id: string; clerkUserId: string | null; handle: string | null; forumUsername: string | null } | null,
+  verifiedWikiName: string | null,
+  sessionUsername: string | null | undefined
+): string | null {
+  if (user?.handle) return user.handle;
+  return (
+    [
+      verifiedWikiName,
+      user?.forumUsername,
+      sessionUsername !== "admin" ? sessionUsername : null,
+      user?.clerkUserId,
+      user?.id,
+    ].find(Boolean) || null
+  );
+}
+
+const HANDLE_ERROR_CODES = {
+  FORMAT: "BAD_REQUEST",
+  RESERVED: "BAD_REQUEST",
+  TAKEN: "CONFLICT",
+  ALREADY_CHANGED: "FORBIDDEN",
+  NO_USER: "NOT_FOUND",
+} as const;
+
 export const ixnayidCoreRouter = createTRPCRouter({
   /** All linked accounts at once. */
   getStatus: protectedProcedure.query(async ({ ctx }) => {
@@ -70,6 +114,8 @@ export const ixnayidCoreRouter = createTRPCRouter({
       select: {
         id: true,
         clerkUserId: true,
+        handle: true,
+        handleChangedAt: true,
         countryId: true,
         forumUserId: true,
         forumUsername: true,
@@ -91,27 +137,35 @@ export const ixnayidCoreRouter = createTRPCRouter({
           select: { username: true, verifiedAt: true },
         })
       : null;
-    const verifiedWikiName = verifiedWikiLink?.username ?? null;
     const sessionUsername = (ctx.user as { username?: string | null }).username;
-    // First available identity wins; the generic "admin" session name is skipped.
-    const passportHandle =
-      [
-        verifiedWikiName,
-        user?.forumUsername,
-        country?.slug,
-        country?.name,
-        sessionUsername !== "admin" ? sessionUsername : null,
-        user?.clerkUserId,
-        user?.id,
-      ].find(Boolean) || null;
 
     return {
-      passportHandle,
+      passportHandle: passportHandleOf(user, verifiedWikiLink?.username ?? null, sessionUsername),
+      /** The stored IxStates Passport handle, null until one is claimed. */
+      handle: user?.handle ?? null,
+      /** The single self-service change is still available (admins may always change it). */
+      canChangeHandle: !user?.handleChangedAt || callerIsAdmin(ctx),
       countrySlug:
         country?.slug ?? (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
       ...linkedAccounts(user, verifiedWikiLink),
     };
   }),
+
+  /** Claim or change the signed-in user's IxStates Passport handle. */
+  setHandle: lightMutationProcedure
+    .input(z.object({ handle: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await setUserHandle({
+          userId: ctx.user.id,
+          handle: input.handle,
+          isAdmin: callerIsAdmin(ctx),
+        });
+      } catch (error) {
+        if (!(error instanceof HandleClaimError)) throw error;
+        throw new TRPCError({ code: HANDLE_ERROR_CODES[error.code], message: error.message });
+      }
+    }),
 
   // A lookup previews an account before linking it.
   lookupForumUser: protectedProcedure
