@@ -16,7 +16,10 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
-import { geoFeaturesStorylinesRouter } from "~/server/api/routers/geo/features/storylines";
+import {
+  assertStorylineInCountry,
+  geoFeaturesStorylinesRouter,
+} from "~/server/api/routers/geo/features/storylines";
 import { geoFeaturesStoryPinsRouter } from "~/server/api/routers/geo/features/storyPins";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateCache } from "~/lib/cache";
@@ -41,18 +44,20 @@ type Who = typeof owner | typeof admin;
 
 /** Storyline "s1" and pin "p1" belong to c1; anything else is not found for c1. */
 function setup() {
-  const inC1 = (id: string, mine: string) => (where: { id: string; countryId?: string }) =>
-    where.id === mine && (where.countryId === undefined || where.countryId === "c1")
-      ? { id: mine, countryId: "c1" }
-      : null;
+  const inC1 =
+    (id: string, mine: string) => (where: { id: string; countryId?: string; kind?: string }) =>
+      where.id === mine && (where.countryId === undefined || where.countryId === "c1")
+        ? { id: mine, countryId: "c1" }
+        : null;
   return {
     user: {
       findUnique: jest.fn(async () => ({ id: "u_owner", countryId: "c1", role: { name: "user" } })),
     },
     country: { findUnique: jest.fn(async () => ({ id: "c1" })) },
     storyline: {
-      findFirst: jest.fn(async ({ where }: { where: { id: string; countryId?: string } }) =>
-        inC1("s", "s1")(where)
+      findFirst: jest.fn(
+        async ({ where }: { where: { id: string; countryId?: string; kind?: string } }) =>
+          inC1("s", "s1")(where)
       ),
       findMany: jest.fn(async () => [{ id: "s1", title: "Founding", pins: [] }]),
       create: jest.fn(async ({ data }: { data: { title: string } }) => ({
@@ -245,5 +250,17 @@ describe("storylines (AT-14)", () => {
       pins(db).updateStoryPin({ countryId: "c1", pinId: "p1", storylineId: "s_other" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(db.storyPin.update).not.toHaveBeenCalled();
+  });
+
+  it("lists and accepts only map storylines, never story chains", async () => {
+    const db = setup();
+    await storylines(db).getCountryStorylines({ countryId: "c1" });
+    expect(db.storyline.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { countryId: "c1", kind: "map" } })
+    );
+    await assertStorylineInCountry(db as never, "s1", "c1");
+    expect(db.storyline.findFirst).toHaveBeenLastCalledWith(
+      expect.objectContaining({ where: { id: "s1", countryId: "c1", kind: "map" } })
+    );
   });
 });
