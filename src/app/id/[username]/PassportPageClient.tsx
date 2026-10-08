@@ -9,6 +9,7 @@ import { DashboardColumn } from "~/components/dashboard/DashboardColumn";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { MidRibbonPassportDocument } from "~/components/passport/MidRibbonPassportDocument";
+import { PassportVisitorFooter } from "~/components/passport/PassportVisitorFooter";
 import { DEFAULT_PASSPORT_TAB, parsePassportTab } from "~/components/passport/passport-tabs";
 import type { PassportTabType } from "~/components/passport/types";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -16,7 +17,7 @@ import { Card } from "~/components/ui/card";
 
 /** The passport page body; `page.tsx` (server) resolves the canonical redirect first. */
 export function PassportPageClient({ handle }: { handle: string }) {
-  const { user: currentClerkUser, isSignedIn } = useUser();
+  const { user: currentClerkUser, isSignedIn, isLoaded } = useUser();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<PassportTabType>(
     () => parsePassportTab(searchParams.get("tab")) ?? DEFAULT_PASSPORT_TAB
@@ -114,6 +115,11 @@ export function PassportPageClient({ handle }: { handle: string }) {
           viewerSignedIn={Boolean(isSignedIn)}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
+        />
+        <PassportVisitorFooter
+          signedOut={isLoaded && !isSignedIn}
+          handle={data.handle}
+          realm={data.primaryNation}
         />
       </div>
     </DashboardColumn>

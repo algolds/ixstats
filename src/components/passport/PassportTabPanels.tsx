@@ -51,14 +51,22 @@ function HiddenSection({
   );
 }
 
-function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) {
+function RealmsPanel({
+  handle,
+  isOwner,
+  recruitedCount,
+}: {
+  handle: string;
+  isOwner: boolean;
+  recruitedCount: number;
+}) {
   const { data, isLoading } = api.ixnayid.getRealms.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
   return (
     <>
       {/* The owner's own nations across realms, to switch which one they play as. */}
       {isOwner && <NationSwitcher className="border-separator rounded-row mb-6 border py-2" />}
-      <PassportRealmsTab realms={data ?? []} handle={handle} />
+      <PassportRealmsTab realms={data ?? []} handle={handle} recruitedCount={recruitedCount} />
     </>
   );
 }
@@ -131,7 +139,7 @@ export const PassportTabBody = React.memo(function PassportTabBody({
   const isOwner = data.account.isOwner;
   switch (activeTab) {
     case "realms":
-      return <RealmsPanel handle={handle} isOwner={isOwner} />;
+      return <RealmsPanel handle={handle} isOwner={isOwner} recruitedCount={data.recruitedCount} />;
     case "work":
       return <WorkPanel handle={handle} wiki={data.wiki} forum={data.forum} />;
     case "collection":

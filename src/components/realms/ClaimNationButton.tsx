@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
 import { createUrl } from "~/lib/utils";
+import { useInviteVia } from "./use-invite-via";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -40,6 +41,8 @@ export function ClaimNationButton({
   const { isSignedIn } = useAuth();
   const notify = useNotify();
   const utils = api.useUtils();
+  // An invite link's handle (`?via=`) rides along with the claim.
+  const via = useInviteVia();
   const [open, setOpen] = useState(false);
   const [acceptedRules, setAcceptedRules] = useState(false);
   const { data: overview } = api.realms.region.overview.useQuery(
@@ -102,7 +105,9 @@ export function ClaimNationButton({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
               disabled={claim.isPending || (!!rules && !acceptedRules)}
-              onClick={() => claim.mutate({ countryId, ...(rules && { acceptedRules }) })}
+              onClick={() =>
+                claim.mutate({ countryId, ...(rules && { acceptedRules }), ...(via && { via }) })
+              }
             >
               Claim {countryName}
             </Button>

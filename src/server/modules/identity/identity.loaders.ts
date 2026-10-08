@@ -240,7 +240,9 @@ export async function loadThinkpagesAccount(user: IdentityUser | null) {
  * The user's personal ThinkPages persona ("you", not a nation or a character): the passport card's
  * stored name, avatar and bio, read without a Clerk call.
  */
-export async function loadPersonalPersona(user: IdentityUser | null) {
+export async function loadPersonalPersona(
+  user: Pick<IdentityUser, "clerkUserId"> | null
+) {
   if (!user) return null;
   return orNull(
     db.thinkpagesAccount.findFirst({

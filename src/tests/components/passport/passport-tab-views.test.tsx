@@ -56,6 +56,7 @@ const passport: PassportPayload = {
   },
   realmCount: 1,
   nationCount: 1,
+  recruitedCount: 0,
   wiki: {
     linked: true,
     username: "Alex",

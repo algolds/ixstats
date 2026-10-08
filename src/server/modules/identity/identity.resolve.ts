@@ -219,21 +219,53 @@ export async function resolveHandleOwnerClerkId(rawHandle: string): Promise<stri
  * stored handle yet.
  */
 export async function resolveCanonicalHandle(segment: string): Promise<{ handle: string } | null> {
+  const lookup = segmentLookup(segment);
+  if (!lookup) return null;
+  // Handle column only.
+  const select = { handle: true } as const;
+  const user =
+    (lookup.stored
+      ? await db.user.findUnique({ where: { handle: lookup.stored }, select })
+      : null) ?? (await db.user.findFirst({ where: lookup.legacy, orderBy: NEWEST_FIRST, select }));
+  return user?.handle ? { handle: user.handle } : null;
+}
+
+/**
+ * How a segment names a user without a viewer, in findPerson's order: the stored handle it can be (null when
+ * it cannot be one), then the legacy-name filter. Null for an empty segment or `me`.
+ */
+function segmentLookup(segment: string) {
   const handle = segment.replace(/^@/, "").trim();
   if (!handle || handle.toLowerCase() === "me") return null;
-  // Same order as findPerson without a viewer: stored handle, then legacy names. Handle column only.
   const valid = validateHandle(handle);
-  const byHandle = valid.ok
-    ? await db.user.findUnique({ where: { handle: valid.handle }, select: { handle: true } })
-    : null;
-  const user =
-    byHandle ??
-    (await db.user.findFirst({
-      where: legacyNameWhere(handle, handle.replace(/_$/, ""), null),
-      orderBy: NEWEST_FIRST,
-      select: { handle: true },
-    }));
-  return user?.handle ? { handle: user.handle } : null;
+  return {
+    stored: valid.ok ? valid.handle : null,
+    legacy: legacyNameWhere(handle, handle.replace(/_$/, ""), null),
+  };
+}
+
+const HANDLE_USER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  handle: true,
+  forumUsername: true,
+} satisfies Prisma.UserSelect;
+
+export type HandleUser = Prisma.UserGetPayload<{ select: typeof HANDLE_USER_SELECT }>;
+
+/**
+ * The user a handle names (an invite's `via`): stored handle, then legacy names, no viewer. Database reads
+ * only, no external wiki or forum lookups. Null when it names nobody.
+ */
+export async function resolveHandleUser(segment: string): Promise<HandleUser | null> {
+  const lookup = segmentLookup(segment);
+  if (!lookup) return null;
+  const select = HANDLE_USER_SELECT;
+  return (
+    (lookup.stored
+      ? await db.user.findUnique({ where: { handle: lookup.stored }, select })
+      : null) ?? (await db.user.findFirst({ where: lookup.legacy, orderBy: NEWEST_FIRST, select }))
+  );
 }
 
 /**

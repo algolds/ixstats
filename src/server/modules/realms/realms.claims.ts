@@ -60,6 +60,8 @@ export interface NationAssignedEvent {
   clerkUserId: string;
   countryId: string;
   countryName: string;
+  /** The approved claim's inviter (User.id), present only when it has one. */
+  inviterUserId?: string;
 }
 
 /** A claim turned down (by a moderator, or automatically when a rival claim won): the claimant is told why. */
@@ -81,6 +83,11 @@ interface ClaimsDeps {
    * before the approving transaction; a failure creates the nation with the plain baseline.
    */
   fetchNationPrefill?: (wikiSource: string, title: string) => Promise<NationPagePrefill>;
+  /**
+   * The user (User.id) an invite's `via` handle names: stored handle first, then legacy names (as the passport
+   * resolver reads them). Null when it names nobody.
+   */
+  resolveInviter?: (via: string) => Promise<string | null>;
 }
 
 type ClaimsDb = Pick<
@@ -128,6 +135,8 @@ interface FiledClaim {
   wikiSource?: string;
   wikiPageTitle?: string;
   rulesAcceptedAt?: Date;
+  /** Who invited the claimant (`/r/{slug}?via=`), when the invite held up. */
+  invitedByUserId?: string;
 }
 
 const AUTO_REVIEWER = "system:auto";
@@ -151,9 +160,11 @@ function assertRealmOpen(realmId: string, status: string | null | undefined): vo
     throw new ClaimError("REALM_CLOSED", "This realm is not open for claims");
 }
 
-/** What the claimant confirmed when filing: that they read the realm's rules. */
+/** What the claimant confirmed when filing (that they read the realm's rules), and the invite they came by. */
 export interface ClaimOptions {
   acceptedRules?: boolean;
+  /** The inviter's handle from `/r/{slug}?via=`; one that does not hold up is ignored, never an error. */
+  via?: string;
 }
 
 /**
@@ -343,6 +354,21 @@ async function handOver(
   return { country, rivals };
 }
 
+/** The nation-assigned event for a claimant, with the claim's inviter when it has one. */
+function assignedEvent(
+  claimant: { userId: string; clerkUserId: string },
+  country: { id: string; name: string },
+  inviterUserId: string | null | undefined
+): NationAssignedEvent {
+  return {
+    userId: claimant.userId,
+    clerkUserId: claimant.clerkUserId,
+    countryId: country.id,
+    countryName: country.name,
+    ...(inviterUserId ? { inviterUserId } : {}),
+  };
+}
+
 const targetName = (target: ClaimTarget) =>
   target.kind === "country" ? target.countryName : target.page.title;
 const targetRealmSlug = (target: ClaimTarget) =>
@@ -529,19 +555,61 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       })
       .catch(ownershipAsClaimError);
     await notifyRejected(rivalNotices(target, rivals));
-    await deps.onNationAssigned({
-      userId: actor.id,
-      clerkUserId: actor.clerkUserId,
-      countryId: country.id,
-      countryName: country.name,
-    });
+    await deps.onNationAssigned(
+      assignedEvent(
+        { userId: actor.id, clerkUserId: actor.clerkUserId },
+        country,
+        filed.invitedByUserId
+      )
+    );
     return { claimId, status: "approved" as const, autoApproved: true };
+  }
+
+  /**
+   * The inviter a `via` handle names (User.id), only when it is another player who holds a nation in the realm.
+   * Anything else, a failed lookup included, is no inviter: an invite never fails a claim.
+   */
+  async function inviterFor(
+    claimantId: string,
+    realmId: string,
+    via: string | undefined
+  ): Promise<string | null> {
+    const handle = via?.trim();
+    if (!handle || !deps.resolveInviter) return null;
+    const inviterId = await deps.resolveInviter(handle).catch(() => null);
+    if (!inviterId || inviterId === claimantId) return null;
+    const held = await db.country.findFirst({
+      where: { realmId, ownerUserId: inviterId },
+      select: { id: true },
+    });
+    return held ? inviterId : null;
+  }
+
+  /**
+   * The claim with its inviter: the player's pending claim keeps the inviter it has; one without gets the `via`
+   * inviter (a guarded write, so a concurrent first inviter is never replaced); a new claim files with it.
+   */
+  async function withInviter(
+    filed: FiledClaim,
+    existing: { id: string; invitedByUserId?: string | null } | null,
+    via: string | undefined
+  ): Promise<FiledClaim> {
+    if (existing?.invitedByUserId) return { ...filed, invitedByUserId: existing.invitedByUserId };
+    const inviter = await inviterFor(filed.userId, filed.realmId, via);
+    if (!inviter) return filed;
+    if (existing) {
+      await db.realmClaim.updateMany({
+        where: { id: existing.id, invitedByUserId: null },
+        data: { invitedByUserId: inviter },
+      });
+    }
+    return { ...filed, invitedByUserId: inviter };
   }
 
   /** File (or reuse) the player's claim; the verified creator's is approved at once, everyone else's waits. */
   async function fileClaim(
     actor: RealmActor,
-    filed: FiledClaim,
+    claim: { filed: FiledClaim; via?: string },
     pendingWhere: Prisma.RealmClaimWhereInput,
     target: ClaimTarget,
     verified: boolean
@@ -549,10 +617,11 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const existing = await db.realmClaim.findFirst({
       where: { ...pendingWhere, userId: actor.id, status: "pending" },
     });
+    const filed = await withInviter(claim.filed, existing, claim.via);
     if (verified) return autoApprove(actor, filed, existing?.id ?? null, target);
     if (existing) return pending(existing.id);
-    const claim = await db.realmClaim.create({ data: { ...filed, status: "pending" } });
-    return pending(claim.id);
+    const created = await db.realmClaim.create({ data: { ...filed, status: "pending" } });
+    return pending(created.id);
   }
 
   async function claimCountry(actor: RealmActor, countryId: string, options: ClaimOptions = {}) {
@@ -560,7 +629,10 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const accepted = rulesAcceptance(country.realm, options);
     return fileClaim(
       actor,
-      { realmId: country.realmId, userId: actor.id, countryId, ...accepted },
+      {
+        filed: { realmId: country.realmId, userId: actor.id, countryId, ...accepted },
+        via: options.via,
+      },
       { countryId },
       {
         kind: "country",
@@ -629,12 +701,15 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     return fileClaim(
       actor,
       {
-        realmId,
-        userId: actor.id,
-        countryId: null,
-        wikiSource: page.wikiSource,
-        wikiPageTitle: title,
-        ...accepted,
+        filed: {
+          realmId,
+          userId: actor.id,
+          countryId: null,
+          wikiSource: page.wikiSource,
+          wikiPageTitle: title,
+          ...accepted,
+        },
+        via: options.via,
       },
       { realmId, wikiPageTitle: title },
       { kind: "page", page },
@@ -733,12 +808,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     }
     const { country, rivals } = handed;
     await notifyRejected(rivalNotices(target, rivals));
-    await deps.onNationAssigned({
-      userId: claim.userId,
-      clerkUserId: claim.user.clerkUserId,
-      countryId: country.id,
-      countryName: country.name,
-    });
+    await deps.onNationAssigned(
+      assignedEvent(
+        { userId: claim.userId, clerkUserId: claim.user.clerkUserId },
+        country,
+        claim.invitedByUserId
+      )
+    );
     return { status: "approved" as const };
   }
 

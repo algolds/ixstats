@@ -8,6 +8,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { createUrl } from "~/lib/utils";
+import { withVia } from "~/lib/realms/realm-invite";
+import { useInviteVia } from "~/components/realms/use-invite-via";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimStatusBadge, type MyClaim } from "./MyClaims";
 
@@ -32,6 +34,8 @@ export function ClaimableNations({
   const { isSignedIn } = useAuth();
   const notify = useNotify();
   const utils = api.useUtils();
+  // An invite link's handle rides along with the claim and through sign-in.
+  const via = useInviteVia();
   const [submitted, setSubmitted] = useState<ReadonlySet<string>>(new Set());
   const [acceptedRules, setAcceptedRules] = useState(false);
   const needsRules = !!rules && !acceptedRules;
@@ -59,7 +63,7 @@ export function ClaimableNations({
     onError: (error) => notify.error("Claim failed", error.message),
   });
   const signInHref = createUrl(
-    `/sign-in?redirect_url=${encodeURIComponent(createUrl(`/r/${realmSlug}`))}`
+    `/sign-in?redirect_url=${encodeURIComponent(createUrl(withVia(`/r/${realmSlug}`, via)))}`
   );
 
   return (
@@ -127,6 +131,7 @@ export function ClaimableNations({
                         realmSlug,
                         title: page.title,
                         ...(rules && { acceptedRules }),
+                        ...(via && { via }),
                       })
                     }
                   >

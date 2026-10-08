@@ -11,6 +11,7 @@ jest.mock("~/server/db", () => {
     userConnection: { findMany: jest.fn().mockResolvedValue([]) },
     passportPreference: { findUnique: jest.fn().mockResolvedValue(null) },
     realm: { findMany: jest.fn() },
+    realmClaim: { count: jest.fn().mockResolvedValue(0) },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
@@ -46,7 +47,10 @@ import {
 } from "~/server/modules/identity/identity.resolve";
 import type { IdentityCountry } from "~/server/modules/identity/identity.selects";
 
-const mocked = db as unknown as { realm: { findMany: jest.Mock } };
+const mocked = db as unknown as {
+  realm: { findMany: jest.Mock };
+  realmClaim: { count: jest.Mock };
+};
 const forum = { getMember: jest.fn(), lookupUser: jest.fn() } as never;
 
 const user = {
@@ -129,6 +133,16 @@ describe("getPassport realm figures", () => {
     const data = await getPassport(query, forum);
     expect(data?.primaryNation?.country.id).toBe("c_big");
     expect(data?.realmCount).toBe(2);
+  });
+
+  it("counts the players the holder recruited (approved invited claims)", async () => {
+    holds([nation("c_a", "r_member", 30)]);
+    mocked.realmClaim.count.mockResolvedValueOnce(4);
+    const data = await getPassport(query, forum);
+    expect(data?.recruitedCount).toBe(4);
+    expect(mocked.realmClaim.count).toHaveBeenCalledWith({
+      where: { invitedByUserId: "db_1", status: "approved" },
+    });
   });
 
   it("has no primary nation and zero counts when nothing is held", async () => {

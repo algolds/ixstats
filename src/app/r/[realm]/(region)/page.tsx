@@ -10,6 +10,7 @@ import { timeAgo } from "~/lib/format/compact";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { buttonVariants } from "~/components/ui/button";
 import { ClaimableNations } from "../_components/ClaimableNations";
+import { RealmInvitePanel } from "../_components/RealmInvitePanel";
 import {
   CensusPanel,
   CommunityPanel,
@@ -55,6 +56,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
+        <RealmInvitePanel realmSlug={realm.slug} realmName={realm.name} />
         <Section
           title="Factbook"
           action={

@@ -20,7 +20,7 @@ import {
   type ExtendedAchievementData,
 } from "./definitions";
 import { getScaleThresholds } from "./scaling";
-import { achievementRequiresCountry } from "./scope";
+import { achievementRequiresCountry, RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 import { completeAchievementCheck, dequeueAchievementCheck, queueAchievementCheck } from "./queue";
 import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { awardAchievementCard } from "~/lib/cards/card-service";
@@ -40,8 +40,10 @@ async function unlockAchievement(
   userId: string,
   achievement: Achievement
 ): Promise<boolean> {
-  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus)
-  const creditReward = achievementBonus(await getBonusConfig(db), achievement.rarity);
+  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus); recruiting pays nothing
+  const creditReward = RECRUITER_ACHIEVEMENT_IDS.has(achievement.key)
+    ? 0
+    : achievementBonus(await getBonusConfig(db), achievement.rarity);
   let cardIds: string[] = [];
   let packIds: string[] = [];
   let titles: string[] = [];
@@ -442,9 +444,10 @@ class AchievementService {
     let loreCardCount = 0;
     let retiredCardCount = 0;
     let distinctCountryIdCount = 0;
+    let recruitedCount = 0;
 
     if (user?.id) {
-      const [loreCount, retiredCount, distinctCountries] = await Promise.all([
+      const [loreCount, retiredCount, distinctCountries, recruited] = await Promise.all([
         db.cardOwnership
           .count({
             where: {
@@ -471,11 +474,15 @@ class AchievementService {
             return countryIds.size;
           })
           .catch(() => 0),
+        db.realmClaim
+          .count({ where: { invitedByUserId: user.id, status: "approved" } })
+          .catch(() => 0),
       ]);
 
       loreCardCount = loreCount;
       retiredCardCount = retiredCount;
       distinctCountryIdCount = distinctCountries;
+      recruitedCount = recruited;
     }
 
     return {
@@ -486,6 +493,7 @@ class AchievementService {
       loreCardCount,
       retiredCardCount,
       distinctCountryIdCount,
+      recruitedCount,
       existingKeys: existingAchievements.map((a) => a.achievementId),
     };
   }

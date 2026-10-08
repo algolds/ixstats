@@ -2,6 +2,7 @@ import { type PrismaClient } from "@prisma/client";
 import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./definitions";
 import { getCardRewardForAchievement } from "./card-rewards";
 import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./scaling";
+import { RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 
 const CREDITS_BY_RARITY: Record<string, number> = {
   Common: 5,
@@ -18,6 +19,7 @@ const TITLE_BY_ID: Record<string, string> = {
 };
 
 function buildRewards(id: string, rarity: string) {
+  if (RECRUITER_ACHIEVEMENT_IDS.has(id)) return { credits: 0, cardIds: [] };
   const cardId = getCardRewardForAchievement(id);
   const rewards: { credits: number; cardIds: string[]; cardPacks?: string[]; titles?: string[] } = {
     credits: CREDITS_BY_RARITY[rarity] || 5,
@@ -148,6 +150,9 @@ const FIXED_CONDITIONS: Record<string, FixedCondition> = {
   "collect-lore-keeper": ["GENERAL", "loreCardCount", ">=", 50],
   "collect-archaeologist": ["GENERAL", "retiredCardCount", ">=", 10],
   "collect-diplomat": ["DIPLOMATIC", "distinctCountryIdCount", ">=", 20],
+  "social-recruiter": ["SOCIAL", "recruitedCount", ">=", 1],
+  "social-envoy": ["SOCIAL", "recruitedCount", ">=", 5],
+  "social-founders-hand": ["SOCIAL", "recruitedCount", ">=", 25],
 };
 
 function determineCondition(id: string, rarity?: AchievementRarity): ConditionConfig {

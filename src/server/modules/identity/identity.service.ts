@@ -30,6 +30,7 @@ import {
   toAwardHistory,
   toRealmMemberships,
 } from "./identity.mappers";
+import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
 import { needsCanonicalRedirect } from "./identity.handle";
@@ -302,6 +303,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     nations,
     vault,
     achievements,
+    recruitedCount,
   ] = await Promise.all([
     loadWikiInfo(wikiName),
     loadVerifiedWikiName(user?.id),
@@ -315,6 +317,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     shown.achievements && user
       ? loadAchievementsShowcase(user.clerkUserId, settings.pinnedRibbonKeys)
       : null,
+    loadRecruitedCount(user?.id),
   ]);
   const [loreRank, online] = await Promise.all([
     loreStats ? loadLoreRank(loreStats.totalScore) : null,
@@ -337,6 +340,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const realms = await membershipsOf(identity, nations);
   return {
     ...nationSummaryOf(realms),
+    /** Players who joined a realm by the holder's invite (approved invited claims). */
+    recruitedCount,
     /** The canonical handle (stored, else computed); share links use this, never the URL segment. */
     handle: canonicalHandleOf(identity, verifiedWikiName),
     /** True when the URL segment is a legacy name and the page should 301 to `/@{handle}`. */

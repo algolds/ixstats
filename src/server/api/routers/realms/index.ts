@@ -22,6 +22,10 @@ import {
   type NationAssignedEvent,
 } from "~/server/modules/realms";
 import { notifyClaimRejected } from "~/server/modules/realms/realms.notices";
+import {
+  resolveInviterUserId,
+  resolveRealmInviter,
+} from "~/server/modules/identity/identity.invites";
 import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parsePrismaError } from "~/lib/prisma-error";
@@ -57,6 +61,8 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
     )
     .catch((e: Error) => console.error("[realms] new-player bonus failed:", e));
   queueAchievementCheck(event.clerkUserId, event.countryId);
+  // The inviter's recruiter achievements count approved invited claims (account-level, no country).
+  queueAchievementCheck(event.inviterUserId);
   await ActivityHooks.User.onCountryLink(event.clerkUserId, event.countryId, false);
   await globalCache.delete(`user_profile:${event.clerkUserId}`);
 }
@@ -67,7 +73,17 @@ const claims = (db: PrismaClient) =>
     onNationAssigned: (event) => onNationAssigned(db, event),
     onClaimRejected: notifyClaimRejected,
     fetchNationPrefill: fetchNationPagePrefill,
+    resolveInviter: resolveInviterUserId,
   });
+
+/**
+ * An invite's `via` handle (`/r/{slug}?via=`). One too long to be a handle or name is dropped, never refused:
+ * an invite that does not hold up never fails a claim.
+ */
+const inviteVia = z
+  .string()
+  .optional()
+  .transform((via) => (via && via.length <= 100 ? via : undefined));
 
 const CLAIM_ERROR_CODES = {
   NOT_FOUND: "NOT_FOUND",
@@ -102,12 +118,24 @@ export const realmsRouter = createTRPCRouter({
     .input(z.object({ slug: z.string().min(1).max(100) }))
     .query(({ ctx, input }) => getRealmHub(ctx.db, input.slug, ctx.user ?? null)),
 
-  /** `acceptedRules`: the player ticked "I have read the realm's rules" (required when the realm has rules). */
+  /**
+   * `acceptedRules`: the player ticked "I have read the realm's rules" (required when the realm has rules).
+   * `via`: the handle of the player whose invite link they came by.
+   */
   claimCountry: lightMutationProcedure
-    .input(z.object({ countryId: z.string().min(1), acceptedRules: z.boolean().optional() }))
+    .input(
+      z.object({
+        countryId: z.string().min(1),
+        acceptedRules: z.boolean().optional(),
+        via: inviteVia,
+      })
+    )
     .mutation(({ ctx, input }) =>
       claims(ctx.db)
-        .claimCountry(ctx.user, input.countryId, { acceptedRules: input.acceptedRules })
+        .claimCountry(ctx.user, input.countryId, {
+          acceptedRules: input.acceptedRules,
+          via: input.via,
+        })
         .catch(claimError)
     ),
 
@@ -118,6 +146,7 @@ export const realmsRouter = createTRPCRouter({
         realmSlug: z.string().min(1).max(100),
         title: z.string().trim().min(1).max(255),
         acceptedRules: z.boolean().optional(),
+        via: inviteVia,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -127,9 +156,20 @@ export const realmsRouter = createTRPCRouter({
       });
       if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
       return claims(ctx.db)
-        .claimNationPage(ctx.user, realm.id, input.title, { acceptedRules: input.acceptedRules })
+        .claimNationPage(ctx.user, realm.id, input.title, {
+          acceptedRules: input.acceptedRules,
+          via: input.via,
+        })
         .catch(claimError);
     }),
+
+  /**
+   * The Join panel's "@handle invited you": the inviter's handle and name, only when `via` names a player
+   * holding a nation in this realm; null otherwise. Nothing else about them.
+   */
+  inviter: rateLimitedPublicProcedure
+    .input(z.object({ slug: z.string().min(1).max(100), via: z.string().trim().min(1).max(100) }))
+    .query(({ input }) => resolveRealmInviter(input.slug, input.via)),
 
   /** The player's own claims and their status (pending, approved, rejected with the reason), optionally in one realm. */
   myClaims: protectedProcedure

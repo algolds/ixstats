@@ -86,6 +86,9 @@ export interface ExtendedAchievementData {
   retiredCardCount?: number;
   distinctCountryIdCount?: number;
 
+  /** Approved realm claims naming the user as inviter (`RealmClaim.invitedByUserId`). */
+  recruitedCount?: number;
+
   /**
    * Live percentile thresholds for scale metrics (population/GDP/GDP-per-capita),
    * keyed by metric then percentile. Populated per-check by the achievement
@@ -898,6 +901,38 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     points: 50,
     iconUrl: "🤝",
     condition: (data) => (data.distinctCountryIdCount ?? 0) >= 20,
+  },
+
+  // RECRUITER ACHIEVEMENTS (3): players who joined a realm by the user's invite link
+  {
+    id: "social-recruiter",
+    title: "Recruiter",
+    description: "Bring a player into a realm with your invite link",
+    category: "Social",
+    rarity: "Common",
+    points: 10,
+    iconUrl: "📨",
+    condition: (data) => (data.recruitedCount ?? 0) >= 1,
+  },
+  {
+    id: "social-envoy",
+    title: "Envoy",
+    description: "Bring 5 players into realms with your invite links",
+    category: "Social",
+    rarity: "Uncommon",
+    points: 30,
+    iconUrl: "🕊️",
+    condition: (data) => (data.recruitedCount ?? 0) >= 5,
+  },
+  {
+    id: "social-founders-hand",
+    title: "Founder's Hand",
+    description: "Bring 25 players into realms with your invite links",
+    category: "Social",
+    rarity: "Rare",
+    points: 60,
+    iconUrl: "🏰",
+    condition: (data) => (data.recruitedCount ?? 0) >= 25,
   },
 ];
 
