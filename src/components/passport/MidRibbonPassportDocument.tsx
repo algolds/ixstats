@@ -9,6 +9,7 @@ import { PassportFrontFace } from "./document/PassportFrontFace";
 import { PassportTabRibbon, passportTabId, passportTabPanelId } from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
+import { passportRibbonCounts } from "./passport-tabs";
 import type { PassportPayload, PassportTabType } from "./types";
 import { Card } from "~/components/ui/card";
 import { useUserCosmetics } from "~/hooks/usePublicCosmetics";
@@ -70,10 +71,9 @@ export function MidRibbonPassportDocument({
   const handleEdit = useCallback(() => setIsFlipped(true), []);
   const handleDone = useCallback(() => setIsFlipped(false), []);
   const handleOpenLorewards = useCallback(() => setIsLorewardsModalOpen(true), []);
-  const handleOpenVault = useCallback(() => onSelectTab("vault"), [onSelectTab]);
   const tabIdBase = `passport-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const ribbonCounts = { realms: data.realmCount, vault: data.vault?.totalCards };
+  const ribbonCounts = passportRibbonCounts(data);
 
   // Facet springs: the flip is interruptible (spring-smooth); Reduce Motion cross-fades.
   const flipTransition = shouldReduceMotion ? REDUCED_MOTION_FADE : springSmooth;
@@ -134,12 +134,7 @@ export function MidRibbonPassportDocument({
                   transition={shouldReduceMotion ? REDUCED_MOTION_FADE : springSmooth}
                   style={{ willChange: shouldReduceMotion ? undefined : "transform, opacity" }}
                 >
-                  <PassportTabBody
-                    activeTab={activeTab}
-                    handle={data.handle}
-                    data={data}
-                    onOpenVault={handleOpenVault}
-                  />
+                  <PassportTabBody activeTab={activeTab} handle={data.handle} data={data} />
                 </motion.div>
               </AnimatePresence>
             </div>

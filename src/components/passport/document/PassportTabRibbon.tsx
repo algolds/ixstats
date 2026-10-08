@@ -2,17 +2,16 @@
 
 import React from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Clock, Crown, Globe, Page, Trophy } from "iconoir-react";
+import { Clock, Crown, Globe, Page } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { hitSlop } from "~/components/ui/button";
 import { REDUCED_MOTION_FADE, springSnappy } from "~/lib/design/motion";
 import type { PassportTabType } from "../types";
 
 const RIBBON_TABS: Array<{ id: PassportTabType; label: string; icon: typeof Globe }> = [
-  { id: "overview", label: "Overview", icon: Page },
   { id: "realms", label: "Realms", icon: Globe },
-  { id: "work", label: "Work", icon: Trophy },
-  { id: "vault", label: "Vault", icon: Crown },
+  { id: "work", label: "Work", icon: Page },
+  { id: "collection", label: "Collection", icon: Crown },
   { id: "history", label: "History", icon: Clock },
 ];
 
@@ -113,9 +112,6 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
                   : "text-label-secondary hover:text-label hover:bg-fill-4"
               )}
             >
-              <span aria-hidden className="tabular-nums opacity-60">
-                {String(idx + 1).padStart(2, "0")}.
-              </span>
               <Icon aria-hidden className="size-3.5" />
               <span>{tab.label}</span>
               {count !== undefined && count > 0 && (
