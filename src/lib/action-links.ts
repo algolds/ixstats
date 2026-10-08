@@ -16,11 +16,28 @@ export function parseActionTokens(body: string): string[] {
   return [...new Set(Array.from(body.matchAll(TOKEN), (m) => m[1]!))];
 }
 
+const PARAGRAPH = /<p(\s[^>]*)?>([\s\S]*?)<\/p>/gi;
+const EMPTY_PARAGRAPH = /<p(?:\s[^>]*)?>(?:\s|&nbsp;)*<\/p>/gi;
+
+/**
+ * Moves every token out of its `<p>` so cutting the html on tokens leaves balanced fragments:
+ * `<p>a [t] b</p>` becomes `<p>a </p>[t]<p> b</p>` (the opening tag's attributes are kept). Paragraphs
+ * the lift leaves empty are dropped; tokens and empty paragraphs elsewhere are untouched.
+ */
+export function liftActionTokens(html: string): string {
+  return html.replace(PARAGRAPH, (block, attrs: string | undefined, inner: string) => {
+    if (!inner.includes("[ixaction=")) return block;
+    const open = `<p${attrs ?? ""}>`;
+    const lifted = `${open}${inner.replace(TOKEN, (token) => `</p>${token}${open}`)}</p>`;
+    return lifted.replace(EMPTY_PARAGRAPH, "");
+  });
+}
+
 export type BodySegment = { kind: "html"; text: string } | { kind: "action"; id: string };
 
-/** `body` cut on its `[ixaction=<id>]` tokens, in order; empty html segments are dropped. */
+/** `body` cut on its `[ixaction=<id>]` tokens (lifted out of paragraphs first), in order; empty html segments are dropped. */
 export function splitActionTokens(body: string): BodySegment[] {
-  return body
+  return liftActionTokens(body)
     .split(TOKEN)
     .flatMap((part, i): BodySegment[] =>
       i % 2 === 1 ? [{ kind: "action", id: part }] : part ? [{ kind: "html", text: part }] : []

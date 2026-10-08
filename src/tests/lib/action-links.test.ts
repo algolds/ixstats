@@ -2,6 +2,7 @@
 import {
   chainWikiSection,
   MAX_ACTIONS_PER_POST,
+  liftActionTokens,
   parseActionTokens,
   postPermalinkPath,
   splitActionTokens,
@@ -26,10 +27,9 @@ describe("parseActionTokens", () => {
   });
 
   it("caps at a known limit the caller can check", () => {
-    const body = Array.from(
-      { length: MAX_ACTIONS_PER_POST + 1 },
-      (_, i) => `[ixaction=a${i}]`
-    ).join(" ");
+    const body = Array.from({ length: MAX_ACTIONS_PER_POST + 1 }, (_, i) => `[ixaction=a${i}]`).join(
+      " "
+    );
     expect(parseActionTokens(body)).toHaveLength(MAX_ACTIONS_PER_POST + 1);
   });
 });
@@ -50,12 +50,7 @@ describe("chainWikiSection", () => {
       title: "The Northern Pact",
       approvedIxTime: Date.UTC(2041, 2, 5),
       entries: [
-        {
-          title: "Signed treaty",
-          type: "diplomatic",
-          ixTime: Date.UTC(2041, 0, 2),
-          url: "https://x/p/1",
-        },
+        { title: "Signed treaty", type: "diplomatic", ixTime: Date.UTC(2041, 0, 2), url: "https://x/p/1" },
       ],
     });
     expect(text).toContain("== Story chain: The Northern Pact ==");
@@ -95,5 +90,38 @@ describe("splitActionTokens", () => {
       { kind: "html", text: "b" },
     ]);
     expect(splitActionTokens("")).toEqual([]);
+  });
+
+  it("keeps both halves of a paragraph as balanced html around the token", () => {
+    expect(splitActionTokens("<p>before [ixaction=a1] after</p>")).toEqual([
+      { kind: "html", text: "<p>before </p>" },
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<p> after</p>" },
+    ]);
+  });
+});
+
+describe("liftActionTokens", () => {
+  it("lifts a mid-paragraph token between two paragraphs", () => {
+    expect(liftActionTokens("<p>before [ixaction=a1] after</p>")).toBe(
+      "<p>before </p>[ixaction=a1]<p> after</p>"
+    );
+  });
+
+  it("leaves no empty paragraph for a token at the start or end", () => {
+    expect(liftActionTokens("<p>[ixaction=a1] after</p>")).toBe("[ixaction=a1]<p> after</p>");
+    expect(liftActionTokens("<p>before [ixaction=a1]</p>")).toBe("<p>before </p>[ixaction=a1]");
+    expect(liftActionTokens("<p>[ixaction=a1]</p>")).toBe("[ixaction=a1]");
+  });
+
+  it("lifts two tokens in one paragraph and keeps the opening tag attributes", () => {
+    expect(liftActionTokens('<p class="x">a [ixaction=a1] b [ixaction=b2] c</p>')).toBe(
+      '<p class="x">a </p>[ixaction=a1]<p class="x"> b </p>[ixaction=b2]<p class="x"> c</p>'
+    );
+  });
+
+  it("leaves tokens outside paragraphs and other paragraphs untouched", () => {
+    const html = "<p></p><p>plain</p>[ixaction=a1]<div>x</div>";
+    expect(liftActionTokens(html)).toBe(html);
   });
 });
