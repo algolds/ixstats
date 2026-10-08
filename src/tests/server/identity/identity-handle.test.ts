@@ -6,6 +6,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   HANDLE_PATTERN,
   RESERVED_HANDLES,
+  chooseBackfillHandle,
   needsCanonicalRedirect,
   normalizeHandle,
   pickAvailableHandle,
@@ -144,5 +145,38 @@ describe("needsCanonicalRedirect", () => {
 
   it("does not redirect when there is no stored handle", () => {
     expect(needsCanonicalRedirect("Kir Forum", null)).toBe(false);
+  });
+});
+
+describe("chooseBackfillHandle", () => {
+  const none = { wiki: null, forum: null, persona: null, nation: null };
+
+  it("prefers the verified wiki name, then forum, persona and nation names", () => {
+    const all = { wiki: "Kir Wiki", forum: "KirForum", persona: "Kir Persona", nation: "Caphiria" };
+    expect(chooseBackfillHandle(all)).toEqual({ source: "wiki", handle: "kir_wiki" });
+    expect(chooseBackfillHandle({ ...all, wiki: null })).toEqual({
+      source: "forum",
+      handle: "kirforum",
+    });
+    expect(chooseBackfillHandle({ ...none, persona: "Kir Persona", nation: "Caphiria" })).toEqual({
+      source: "persona",
+      handle: "kir_persona",
+    });
+    expect(chooseBackfillHandle({ ...none, nation: "Caphiria" })).toEqual({
+      source: "nation",
+      handle: "caphiria",
+    });
+  });
+
+  it("skips a name whose slug has no letter or digit", () => {
+    expect(chooseBackfillHandle({ ...none, wiki: "日本", forum: "!!!", nation: "Urcea" })).toEqual({
+      source: "nation",
+      handle: "urcea",
+    });
+    expect(chooseBackfillHandle({ ...none, wiki: "   ", forum: "___" })).toBeNull();
+  });
+
+  it("gives no handle without a usable name, never a Clerk or row id", () => {
+    expect(chooseBackfillHandle(none)).toBeNull();
   });
 });

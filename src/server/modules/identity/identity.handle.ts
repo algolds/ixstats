@@ -70,3 +70,29 @@ export function pickAvailableHandle(base: string, taken: ReadonlySet<string>): s
     if (!taken.has(candidate)) return candidate;
   }
 }
+
+/** Where a backfilled handle came from, in the order `chooseBackfillHandle` tries them. */
+export type BackfillSource = "wiki" | "forum" | "persona" | "nation";
+
+/** The names a handle-less user can be given a handle from; null where they have none. */
+export type BackfillNames = Record<BackfillSource, string | null>;
+
+const BACKFILL_ORDER: readonly BackfillSource[] = ["wiki", "forum", "persona", "nation"];
+
+/**
+ * The handle a backfill gives a user: the first name, in order verified wiki name, forum name,
+ * personal ThinkPages persona name, primary owned nation name, whose slug has a letter or digit
+ * (a name of only symbols slugifies to underscores and is skipped). Null when none qualifies, so the
+ * user keeps no handle rather than one minted from a Clerk id or row id.
+ */
+export function chooseBackfillHandle(
+  names: BackfillNames
+): { source: BackfillSource; handle: string } | null {
+  for (const source of BACKFILL_ORDER) {
+    const name = names[source]?.trim();
+    if (!name) continue;
+    const handle = slugifyHandle(name);
+    if (/[a-z0-9]/.test(handle)) return { source, handle };
+  }
+  return null;
+}
