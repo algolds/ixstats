@@ -29,6 +29,7 @@ const VISIBLE = {
   vaultCards: true,
   historyStream: true,
   achievements: true,
+  linkPreview: true,
 };
 
 function payload(overrides: Partial<PassportPayload> = {}): PassportPayload {

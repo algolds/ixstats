@@ -162,3 +162,38 @@ export interface IdentityHistoryPage {
   items: IdentityEventPayload[];
   nextCursor: string | null;
 }
+
+/** The primary nation on the passport card. */
+export interface PassportCardNation {
+  name: string;
+  slug: string;
+  /** Raw stored `Country.flag`; resolve with `assetUrl` (src/lib/base-path.ts) before rendering. */
+  flagUrl: string | null;
+  realm: { name: string; slug: string };
+  role: RealmRole;
+}
+
+/**
+ * The slim public passport summary (`getPassportCard`) for the front face, page metadata and the
+ * OG image. Hidden sections are null. `{ preview: false }` when the holder turned link previews off.
+ */
+export type PassportCard =
+  | { preview: false }
+  | {
+      preview: true;
+      /** The canonical handle (stored, else computed), as `getPassport` returns it. */
+      handle: string;
+      /** Personal ThinkPages persona name, else the forum name, else the handle (no Clerk call). */
+      displayName: string;
+      /** Raw stored personal ThinkPages persona image; null when none. */
+      avatarUrl: string | null;
+      primaryNation: PassportCardNation | null;
+      /** Null when hidden (accolades off, or wiki attribution off for visitors) or when there are no stats. */
+      lorewards: { score: number; rank: number | null } | null;
+      realmCount: number;
+      nationCount: number;
+      joinedAt: Date | null;
+      signature: string | null;
+      /** Personal ThinkPages persona bio. */
+      bio: string | null;
+    };

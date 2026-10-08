@@ -137,6 +137,40 @@ async function findUserAndCountry(handle: string, stripped: string, viewerClerkI
   return { user, country: country ?? (await findThinkpagesCountry(user.clerkUserId)) };
 }
 
+type FoundUser = Awaited<ReturnType<typeof findUserAndCountry>>;
+type LinkedNames = Pick<ResolvedIdentity, "wikiName" | "forumUserId" | "forumUsername">;
+
+/** The linked names of a found user (wiki name falls back to the country's page or name). */
+function linkedNamesOf({ user, country }: FoundUser): LinkedNames | null {
+  if (!user) return null;
+  return {
+    wikiName: user.wikiUsername || country?.wikiPageTitle || country?.name || null,
+    forumUserId: user.forumUserId ?? null,
+    forumUsername: user.forumUsername ?? null,
+  };
+}
+
+function toIdentity(
+  handle: string,
+  found: FoundUser,
+  linked: LinkedNames,
+  viewerClerkId: string | null
+): ResolvedIdentity {
+  return {
+    handle,
+    strippedHandle: handle.replace(/_$/, ""),
+    ...found,
+    ...linked,
+    isOwner: Boolean(viewerClerkId && found.user?.clerkUserId === viewerClerkId),
+  };
+}
+
+/** The URL segment as a handle, and the user and country it names. */
+async function findBySegment(rawHandle: string, viewerClerkId: string | null) {
+  const handle = rawHandle.replace(/^@/, "").trim();
+  return { handle, found: await findUserAndCountry(handle, handle.replace(/_$/, ""), viewerClerkId) };
+}
+
 /**
  * Resolve a handle. `forum` is optional: only the Passport needs forum-only identities, so the
  * other tabs skip the XenForo round-trip.
@@ -146,28 +180,26 @@ export async function resolveIdentity(
   viewerClerkId: string | null,
   forum?: IdentityForumGateway
 ): Promise<ResolvedIdentity | null> {
-  const handle = rawHandle.replace(/^@/, "").trim();
-  const strippedHandle = handle.replace(/_$/, "");
-  const { user, country } = await findUserAndCountry(handle, strippedHandle, viewerClerkId);
+  const { handle, found } = await findBySegment(rawHandle, viewerClerkId);
+  const linked =
+    linkedNamesOf(found) ??
+    (await findExternalNames([...new Set([handle, handle.replace(/_$/, "")])], forum));
 
-  const linked = user
-    ? {
-        wikiName: user.wikiUsername || country?.wikiPageTitle || country?.name || null,
-        forumUserId: user.forumUserId ?? null,
-        forumUsername: user.forumUsername ?? null,
-      }
-    : await findExternalNames([...new Set([handle, strippedHandle])], forum);
+  if (!found.user && !linked.wikiName && !linked.forumUserId) return null;
+  return toIdentity(handle, found, linked, viewerClerkId);
+}
 
-  if (!user && !linked.wikiName && !linked.forumUserId) return null;
-
-  return {
-    handle,
-    strippedHandle,
-    user,
-    country,
-    ...linked,
-    isOwner: Boolean(viewerClerkId && user?.clerkUserId === viewerClerkId),
-  };
+/**
+ * Resolve a handle to a user only: database reads, no external wiki or forum lookups (for the
+ * passport card). Null when the handle names no user, including external wiki or forum names.
+ */
+export async function resolveUserIdentity(
+  rawHandle: string,
+  viewerClerkId: string | null
+): Promise<ResolvedIdentity | null> {
+  const { handle, found } = await findBySegment(rawHandle, viewerClerkId);
+  const linked = linkedNamesOf(found);
+  return linked ? toIdentity(handle, found, linked, viewerClerkId) : null;
 }
 
 /**

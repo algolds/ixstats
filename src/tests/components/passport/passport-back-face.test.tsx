@@ -14,6 +14,7 @@ const settings = {
     vaultCards: true,
     historyStream: true,
     achievements: true,
+    linkPreview: true,
   },
   signature: "A. Pav",
   pinnedRibbonKeys: ["econ-first-million"],

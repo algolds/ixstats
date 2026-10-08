@@ -32,6 +32,7 @@ const passport: PassportPayload = {
     vaultCards: true,
     historyStream: true,
     achievements: true,
+    linkPreview: true,
   },
   primaryNation: {
     id: "default",

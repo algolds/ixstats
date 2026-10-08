@@ -47,12 +47,16 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
-import { getPassport, getWork } from "~/server/modules/identity/identity.service";
+import { getHistory, getPassport, getWork } from "~/server/modules/identity/identity.service";
 import {
   resolveHandleOwnerClerkId,
   resolveIdentity,
 } from "~/server/modules/identity/identity.resolve";
-import { loadAuthoredArticleRows } from "~/server/modules/identity/identity.loaders";
+import {
+  loadAuthoredArticleRows,
+  loadNativeRevisions,
+  loadWikiContribs,
+} from "~/server/modules/identity/identity.loaders";
 import { passportIndexable } from "~/server/modules/identity/identity.link-privacy";
 import { recordHeartbeat, resetPresenceForTests } from "~/server/shared/presence";
 
@@ -72,6 +76,14 @@ const holder = {
   countryId: null,
 };
 const forum = { getMember: jest.fn(), lookupUser: jest.fn() };
+const REVISION = {
+  id: "rev1",
+  summary: "Expanded the history section",
+  minor: false,
+  parked: false,
+  createdAt: new Date("2026-09-01"),
+  article: { title: "Imperial Senate", slug: "imperial-senate" },
+};
 
 function asViewer(viewerClerkId: string | null) {
   (resolveIdentity as jest.Mock).mockResolvedValue({
@@ -95,6 +107,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetPresenceForTests();
   findConfigs.mockResolvedValue([]);
+  (loadNativeRevisions as jest.Mock).mockResolvedValue([]);
 });
 
 describe("linked names on the passport", () => {
@@ -129,6 +142,23 @@ describe("linked names on the passport", () => {
     withConfig({ showWikiAttribution: false });
     await getWork(asViewer("visitor"));
     expect(loadAuthoredArticleRows).not.toHaveBeenCalled();
+  });
+
+  it("drops wiki items from the History tab when attribution is off", async () => {
+    (loadNativeRevisions as jest.Mock).mockResolvedValue([REVISION]);
+    withConfig({ showWikiAttribution: false });
+    const page = await getHistory({ ...asViewer("visitor"), limit: 50 });
+    expect(page.items.some((item) => item.system === "wikios")).toBe(false);
+    expect(page.items.map((item) => item.type)).toEqual(["realm.joined"]);
+    expect(loadWikiContribs).not.toHaveBeenCalled();
+    expect(loadNativeRevisions).not.toHaveBeenCalled();
+  });
+
+  it("keeps wiki items in the History tab for the owner", async () => {
+    (loadNativeRevisions as jest.Mock).mockResolvedValue([REVISION]);
+    withConfig({ showWikiAttribution: false });
+    const page = await getHistory({ ...asViewer("clerk_1"), limit: 50 });
+    expect(page.items.some((item) => item.system === "wikios")).toBe(true);
   });
 });
 

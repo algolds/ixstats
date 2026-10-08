@@ -16,6 +16,7 @@ import {
   loadLoreRank,
   loadLoreStats,
   loadNativeRevisions,
+  loadPersonalPersona,
   loadSportTeams,
   loadThinkpagesAccount,
   loadWikiContribs,
@@ -32,7 +33,11 @@ import {
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
 import { needsCanonicalRedirect } from "./identity.handle";
-import { resolveIdentity, resolveIdentityNations } from "./identity.resolve";
+import {
+  resolveIdentity,
+  resolveIdentityNations,
+  resolveUserIdentity,
+} from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
@@ -40,6 +45,8 @@ import type {
   IdentityForumGateway,
   IdentityForumMember,
   IdentityHistoryPage,
+  PassportCard,
+  PassportCardNation,
   PassportForumStats,
   PassportLorewards,
   RealmMembership,
@@ -81,6 +88,17 @@ async function membershipsOf(
   return toRealmMemberships(nations, primary?.id ?? null, roles);
 }
 
+/** The primary nation and the realm and nation counts, from the holder's realm rows. */
+function nationSummaryOf(realms: RealmMembership[]) {
+  return {
+    /** The primary nation's realm row (country, realm, realm role); null when no nation is held. */
+    primaryNation: realms.find((r) => r.isPrimary) ?? null,
+    /** Distinct realms the holder has a nation in. */
+    realmCount: new Set(realms.map((r) => r.id)).size,
+    nationCount: realms.length,
+  };
+}
+
 /** The wiki activity feed; Lorewards laurels are left out when the owner hides their accolades. */
 async function loadWikiFeed(identity: ResolvedIdentity, visibility: PassportVisibility) {
   const [contribs, revisions, comments, awards] = await Promise.all([
@@ -100,25 +118,32 @@ function hasLiveWikiData(info: WikiInfo): info is NonNullable<WikiInfo> {
 }
 
 /**
- * Keep the user's linked forum ids current with what the passport just resolved.
+ * Refresh the signed-in user's own linked forum name from XenForo. Called only from their own
+ * `ixnayid.getStatus`, never from a public read. Never throws: a forum or write failure is ignored.
  *
- * Wiki identity is deliberately NOT synced here: `getPassport` is a public read path and the wiki name it
- * resolves can be derived from a country name. Only a verified `WikiAccountLink` (identity.wiki-links.ts)
- * may set the legacy `User.wikiUsername` / `wikiUserId` columns.
+ * Wiki identity is deliberately NOT synced here: only a verified `WikiAccountLink`
+ * (identity.wiki-links.ts) may set the legacy `User.wikiUsername` / `wikiUserId` columns.
  */
-function syncLinkedAccounts(identity: ResolvedIdentity, member: IdentityForumMember | null): void {
-  const { user } = identity;
-  if (!user || !member || user.forumUserId === member.user_id) return;
-  db.user
-    .update({
+export async function syncOwnForumAccount(
+  user: { id: string; forumUserId: number | null; forumUsername: string | null },
+  forum: Pick<IdentityForumGateway, "getMember">
+): Promise<void> {
+  if (!user.forumUserId) return;
+  try {
+    const member = await forum.getMember(user.forumUserId);
+    if (!member) return;
+    if (member.user_id === user.forumUserId && member.username === user.forumUsername) return;
+    await db.user.update({
       where: { id: user.id },
       data: {
         forumUserId: member.user_id,
         forumUsername: member.username,
         lastForumSync: new Date(),
       },
-    })
-    .catch(() => null);
+    });
+  } catch {
+    // Best effort: the stored name stays as it was.
+  }
 }
 
 /** The user's verified ixwiki link, or null. Only this proves the passport's wiki account is theirs. */
@@ -288,7 +313,6 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
       : null,
   ]);
   const loreRank = loreStats ? await loadLoreRank(loreStats.totalScore) : null;
-  syncLinkedAccounts(identity, member);
 
   const [{ hideDiscord, hideWiki }, online] = await Promise.all([
     loadLinkPrivacy(identity),
@@ -310,6 +334,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
 
   const realms = await membershipsOf(identity, nations);
   return {
+    ...nationSummaryOf(realms),
     /** The canonical handle (stored, else computed); share links use this, never the URL segment. */
     handle: canonicalHandleOf(identity, verifiedWikiName),
     /** True when the URL segment is a legacy name and the page should 301 to `/@{handle}`. */
@@ -317,11 +342,6 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     account: passportAccount(identity, clerk, settings.signature),
     /** Which sections the owner shows; a false section is absent from this payload. */
     privacy: shown,
-    /** The primary nation's realm row (country, realm, realm role); null when no nation is held. */
-    primaryNation: realms.find((r) => r.isPrimary) ?? null,
-    /** Distinct realms the holder has a nation in. */
-    realmCount: new Set(realms.map((r) => r.id)).size,
-    nationCount: realms.length,
     /** Shown online (heartbeat in the last two minutes and `showOnlineStatus` on). */
     online,
     wiki: hideWiki
@@ -338,6 +358,66 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     discord: hideDiscord
       ? { linked: false, username: null }
       : { linked: Boolean(user?.discordUserId), username: user?.discordUsername ?? null },
+  };
+}
+
+/** The card's primary nation line: flag, name, realm and realm role. */
+function toCardNation(row: RealmMembership | null): PassportCardNation | null {
+  if (!row) return null;
+  const { country, name, slug, role } = row;
+  return {
+    name: country.name,
+    slug: country.slug,
+    flagUrl: country.flagUrl,
+    realm: { name, slug },
+    role,
+  };
+}
+
+/** Lorewards score and rank, or null without loading them when hidden from this viewer. */
+async function loadCardLorewards(identity: ResolvedIdentity, shown: boolean) {
+  if (!shown) return null;
+  const stats = await loadLoreStats(identity.wikiName);
+  if (!stats) return null;
+  return { score: stats.totalScore, rank: await loadLoreRank(stats.totalScore) };
+}
+
+/**
+ * The slim public passport summary for the front face, page metadata and the OG image (callable
+ * from server components directly). Database reads only: no MediaWiki, XenForo or Clerk call, no
+ * write. Null when the handle names no user (external wiki or forum names have no card).
+ * `{ preview: false }` when the holder turned link previews off.
+ */
+export async function getPassportCard(query: IdentityQuery): Promise<PassportCard | null> {
+  const identity = await resolveUserIdentity(query.handle, query.viewerClerkId);
+  const user = identity?.user;
+  if (!identity || !user) return null;
+  const [settings, { hideWiki }] = await Promise.all([
+    loadPassportSettings(user.id),
+    loadLinkPrivacy(identity),
+  ]);
+  if (!settings.visibility.linkPreview) return { preview: false };
+
+  const [realms, persona, verifiedWikiName, lorewards] = await Promise.all([
+    resolveIdentityNations(identity).then((nations) => membershipsOf(identity, nations)),
+    loadPersonalPersona(user),
+    user.handle ? null : loadVerifiedWikiName(user.id),
+    loadCardLorewards(identity, settings.visibility.accolades && !hideWiki),
+  ]);
+  const handle = canonicalHandleOf(identity, verifiedWikiName);
+  const { primaryNation, realmCount, nationCount } = nationSummaryOf(realms);
+  return {
+    preview: true,
+    handle,
+    displayName: persona?.displayName || user.forumUsername || handle,
+    avatarUrl: persona?.profileImageUrl || null,
+    primaryNation: toCardNation(primaryNation),
+    lorewards,
+    realmCount,
+    nationCount,
+    joinedAt: user.createdAt,
+    signature: settings.signature,
+    bio: persona?.bio?.trim() || null,
   };
 }
 
@@ -397,19 +477,23 @@ export async function getWork(query: IdentityQuery): Promise<IdentityWork> {
 
 /**
  * Tab 4 — the cross-platform History stream, newest first, paged by event id. Empty when the owner
- * hides their activity history.
+ * hides their activity history; without wiki items when wiki attribution is off for this viewer.
  */
 export async function getHistory(
   query: IdentityQuery & { limit: number; cursor?: string | null }
 ): Promise<IdentityHistoryPage> {
   const identity = await resolveIdentity(query.handle, query.viewerClerkId);
   if (!identity) return { items: [], nextCursor: null };
-  const settings = await loadPassportSettings(identity.user?.id);
+  const [settings, { hideWiki }] = await Promise.all([
+    loadPassportSettings(identity.user?.id),
+    loadLinkPrivacy(identity),
+  ]);
   if (!settings.visibility.historyStream) return { items: [], nextCursor: null };
   const nations = await resolveIdentityNations(identity);
   const nationIds = nations.map((n) => n.id);
+  // Wiki attribution off hides wiki activity here exactly as it does on the Work tab.
   const [feed, directives] = await Promise.all([
-    loadWikiFeed(identity, settings.visibility),
+    hideWiki ? [] : loadWikiFeed(identity, settings.visibility),
     loadDirectives(nationIds),
   ]);
   const events = buildHistoryEvents({

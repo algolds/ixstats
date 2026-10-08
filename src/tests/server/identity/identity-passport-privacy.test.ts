@@ -138,6 +138,7 @@ const ALL_HIDDEN = {
   showVault: false,
   showHistory: false,
   showAchievements: false,
+  showLinkPreview: false,
   signature: "  A. Pav  ",
   pinnedRibbonKeys: ["a", "b", "c", "d"],
 };
@@ -168,6 +169,7 @@ beforeEach(() => {
 
 describe("toPassportSettings", () => {
   it("defaults every section to visible when the user has no row", () => {
+    expect(DEFAULT_PASSPORT_VISIBILITY.linkPreview).toBe(true);
     expect(toPassportSettings(null)).toEqual({
       visibility: DEFAULT_PASSPORT_VISIBILITY,
       signature: null,
@@ -178,6 +180,7 @@ describe("toPassportSettings", () => {
   it("maps stored columns, trims the signature and caps pins at three", () => {
     const settings = toPassportSettings(ALL_HIDDEN);
     expect(Object.values(settings.visibility).every((v) => v === false)).toBe(true);
+    expect(settings.visibility.linkPreview).toBe(false);
     expect(settings.signature).toBe("A. Pav");
     expect(settings.pinnedRibbonKeys).toEqual(["a", "b", "c"]);
   });
@@ -243,6 +246,12 @@ describe("getPassport enforces privacy server-side", () => {
     expect(passport?.privacy.vaultCards).toBe(false);
   });
 
+  it("never writes to the database (a public read)", async () => {
+    forum.getMember.mockResolvedValue({ ...member, user_id: 10, username: "alex_renamed" });
+    await getPassport(asViewer("someone_else"), forum);
+    expect((db as unknown as { user: { update: jest.Mock } }).user.update).not.toHaveBeenCalled();
+  });
+
   it("reads the preference row by the user's database id", async () => {
     await getPassport(asViewer(null), forum);
     expect(mocked.passportPreference.findUnique).toHaveBeenCalledWith(
@@ -303,6 +312,13 @@ describe("updateOwnPassportSettings", () => {
       })
     );
     expect(saved.visibility.vaultCards).toBe(false);
+  });
+
+  it("persists the link preview switch like the other toggles", async () => {
+    await updateOwnPassportSettings(user, { visibility: { linkPreview: false } });
+    expect(mocked.passportPreference.upsert.mock.calls[0]![0].update).toEqual({
+      showLinkPreview: false,
+    });
   });
 
   it("keeps only pins for achievements the user has unlocked", async () => {
