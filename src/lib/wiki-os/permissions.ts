@@ -10,7 +10,8 @@
 // is checked last.
 
 import { TRPCError } from "@trpc/server";
-import { isWikiosV1Enabled, WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
+import { isWikiosEditingEnabled, refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
+import { WIKIOS_READONLY_REASON } from "~/lib/wiki-os/v1-switch";
 import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { PageOperationError, talkTitleOf } from "~/lib/wiki-os/core/page-management-service";
@@ -54,7 +55,7 @@ export type DenialCode =
   | "protectedpage"
   | "titleprotected"
   | "permissiondenied"
-  /** WikiOS v1 is not switched on (`WIKIOS_V1_ENABLED`): every write is refused, as on a read-only wiki. */
+  /** WikiOS editing is off (editing-switch.ts): every write is refused, as on a read-only wiki. */
   | "readonly";
 
 export type ActionDecision =
@@ -160,7 +161,7 @@ export interface ActionRequest {
 
 /** Whether the caller in `request.permissions` may perform `request.action` on `request.title`. */
 export function decideAction(request: ActionRequest): ActionDecision {
-  if (!isWikiosV1Enabled()) return deny("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) return deny("readonly", WIKIOS_READONLY_REASON);
   const { action, title, permissions, restrictions, now } = request;
   const { block, rights, verifiedWikiUsername } = permissions;
 
@@ -194,7 +195,7 @@ export function decideAction(request: ActionRequest): ActionDecision {
  * and the right to upload is what lets someone give a new file its page.
  */
 export function decideFilePageCreation(request: Omit<ActionRequest, "action">): ActionDecision {
-  if (!isWikiosV1Enabled()) return deny("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) return deny("readonly", WIKIOS_READONLY_REASON);
   const { title, permissions, restrictions, now } = request;
   const { block, rights } = permissions;
   if (block) return deny("blocked", describeBlock(block));
@@ -262,6 +263,7 @@ export async function authorizeAction(
   rawTitle: string,
   source = "ixwiki"
 ): Promise<void> {
+  await refreshWikiosEditingFlag();
   const title = requireCanonicalTitle(rawTitle, source);
   const permissions = await getWikiPermissions(ctx);
   const restrictions =
@@ -281,6 +283,7 @@ export async function authorizeFilePageCreation(
   rawTitle: string,
   source = "ixwiki"
 ): Promise<void> {
+  await refreshWikiosEditingFlag();
   const title = requireCanonicalTitle(rawTitle, source);
   const [permissions, restrictions] = await Promise.all([
     getWikiPermissions(ctx),
@@ -305,6 +308,7 @@ export async function authorizeMove(
   to: string,
   { moveTalk, leaveRedirect }: { moveTalk: boolean; leaveRedirect: boolean }
 ): Promise<void> {
+  await refreshWikiosEditingFlag();
   const writeSource = leaveRedirect ? "create" : "edit";
   await authorizeAction(ctx, "move", from);
   await authorizeAction(ctx, writeSource, from);
@@ -326,6 +330,7 @@ export async function authorizeProtection(
   title: string,
   levels: ReadonlyArray<RestrictionLevel | null>
 ): Promise<void> {
+  await refreshWikiosEditingFlag();
   await authorizeAction(ctx, "protect", title);
   for (const level of levels) {
     if (level) await requireRight(ctx, rightForLevel(level));
@@ -334,20 +339,22 @@ export async function authorizeProtection(
 
 /** Throws FORBIDDEN (`blocked`) when the caller is blocked: for writes that are not page edits, such as margin discussions and annotations. */
 export async function requireNotBlocked(ctx: WikiAuthContext): Promise<void> {
+  await refreshWikiosEditingFlag();
   const { block } = await getWikiPermissions(ctx);
   if (block) throw forbidden("blocked", describeBlock(block));
 }
 
 /**
- * Throws FORBIDDEN (`readonly`) while WikiOS v1 is switched off (`WIKIOS_V1_ENABLED`): for the writes that pass no
- * page-action check of their own (bot passwords, XML imports, api.php). See `v1-switch.ts`.
+ * Throws FORBIDDEN (`readonly`) while WikiOS editing is off (editing-switch.ts): for the writes that pass no
+ * page-action check of their own (bot passwords, XML imports, api.php). Async callers await `refreshWikiosEditingFlag()` first.
  */
 export function assertWikiosWritable(): void {
-  if (!isWikiosV1Enabled()) throw forbidden("readonly", WIKIOS_READONLY_REASON);
+  if (!isWikiosEditingEnabled()) throw forbidden("readonly", WIKIOS_READONLY_REASON);
 }
 
 /** Throws FORBIDDEN (`permissiondenied`) unless the caller holds `right`; returns their permissions. */
 export async function requireRight(ctx: WikiAuthContext, right: Right): Promise<WikiPermissions> {
+  await refreshWikiosEditingFlag();
   // every right asked for here is for a write (undelete, block, userrights, reupload, ...)
   assertWikiosWritable();
   const permissions = await getWikiPermissions(ctx);
@@ -362,6 +369,7 @@ export async function requireGroupChange(
   ctx: WikiAuthContext,
   groups: readonly ExplicitGroup[]
 ): Promise<void> {
+  await refreshWikiosEditingFlag();
   const { rights } = await requireRight(ctx, "userrights");
   const allowed = changeableGroups(rights);
   const refused = groups.find((group) => !allowed.includes(group));
