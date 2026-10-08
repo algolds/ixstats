@@ -7,14 +7,16 @@
  */
 import type { Metadata } from "next";
 import { withBasePath } from "~/lib/base-path";
-import { lorewardsLabel, realmsAndNations } from "~/lib/passport/passport-labels";
+import {
+  PASSPORT_GENERIC_DESCRIPTION,
+  PASSPORT_TITLE,
+  lorewardsLabel,
+  realmsAndNations,
+} from "~/lib/passport/passport-labels";
 import { NOINDEX, orNullLogged, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
 import { passportIndexable } from "./identity.link-privacy";
 import { getPassportCard } from "./identity.service";
 import type { PassportCard } from "./identity.types";
-
-const PASSPORT_TITLE = "IxStates Passport";
-const GENERIC_DESCRIPTION = "Nations, realms and standing across IxStates.";
 
 type PreviewCard = Extract<PassportCard, { preview: true }>;
 
@@ -40,11 +42,11 @@ export function passportMetadata(card: PassportCard | null, indexable: boolean):
   if (!card) return robots;
   if (!card.preview) {
     return {
-      ...socialMetadata(PASSPORT_TITLE, GENERIC_DESCRIPTION, {
+      ...socialMetadata(PASSPORT_TITLE, PASSPORT_GENERIC_DESCRIPTION, {
         type: "website",
         siteName: SITE_NAME,
         title: PASSPORT_TITLE,
-        description: GENERIC_DESCRIPTION,
+        description: PASSPORT_GENERIC_DESCRIPTION,
       }),
       ...robots,
     };

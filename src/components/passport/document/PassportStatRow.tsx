@@ -2,20 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { realmsAndNations } from "~/lib/passport/passport-labels";
-
-/** "Since Oct 2025"; null when the join date is unknown. */
-export function sinceLabel(joinedAt: string | null): string | null {
-  if (!joinedAt) return null;
-  const date = new Date(joinedAt);
-  if (Number.isNaN(date.getTime())) return null;
-  const month = date.toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-  return `Since ${month}`;
-}
+import { realmsAndNations, sinceLabel } from "~/lib/passport/passport-labels";
 
 interface PassportStatRowProps {
   /** Null when hidden from this viewer or when there are no Lorewards stats. */

@@ -11,8 +11,7 @@ import {
   PassportFrontFace,
   type PassportFaceData,
 } from "~/components/passport/document/PassportFrontFace";
-import { sinceLabel } from "~/components/passport/document/PassportStatRow";
-import { realmsAndNations } from "~/lib/passport/passport-labels";
+import { realmsAndNations, sinceLabel } from "~/lib/passport/passport-labels";
 
 function face(over: Partial<PassportFaceData> = {}): PassportFaceData {
   return {

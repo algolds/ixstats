@@ -1,10 +1,8 @@
 /** The guilloché background is deterministic hairline rosettes, reusable by the OG image. */
 import { describe, expect, it } from "@jest/globals";
 import { render } from "@testing-library/react";
-import {
-  PassportGuilloche,
-  guillochePaths,
-} from "~/components/passport/document/PassportGuilloche";
+import { PassportGuilloche } from "~/components/passport/document/PassportGuilloche";
+import { guillochePaths } from "~/lib/passport/guilloche";
 
 describe("guillochePaths", () => {
   it("is deterministic", () => {

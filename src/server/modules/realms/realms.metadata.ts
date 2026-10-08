@@ -2,10 +2,11 @@
  * Page metadata for `/r/{slug}` and its pages (`src/app/r/[realm]/(region)/layout.tsx`): what link unfurlers
  * (Discord, Slack) and search engines read. Draft and generating realms give nothing, so the root
  * defaults stand and nothing about an unpublished realm leaks. Images are left to the route's
- * `opengraph-image.tsx`, which Next attaches on its own.
+ * `opengraph-image.tsx`, which Next attaches on its own and which reads the same source.
  */
 import type { Metadata } from "next";
 import type { PrismaClient } from "@prisma/client";
+import { realmCountsLine } from "~/lib/realms/realm-region";
 import { NOINDEX, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import { isRealmOpen, isRealmPublished } from "./realms.access";
@@ -23,6 +24,8 @@ export interface RealmMetadataSource {
   nationCount: number;
   /** Unclaimed nations while the realm takes claims; 0 once it is closed (archived). */
   openCount: number;
+  /** Raw stored region banner (`Realm.bannerUrl`), trimmed; null when none. Resolve before use. */
+  bannerUrl: string | null;
 }
 
 const DESCRIPTION_MAX = 160;
@@ -42,6 +45,7 @@ export async function loadRealmMetadataSource(
       description: true,
       factbookHtml: true,
       tags: true,
+      bannerUrl: true,
     },
   });
   if (!realm || !isRealmPublished(realm.id, realm.status)) return null;
@@ -58,6 +62,7 @@ export async function loadRealmMetadataSource(
     tags: realm.tags,
     nationCount,
     openCount: isRealmOpen(realm.id, realm.status) ? nationCount - claimedCount : 0,
+    bannerUrl: realm.bannerUrl?.trim() || null,
   };
 }
 
@@ -69,19 +74,12 @@ function clip(text: string): string {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
-/** "12 nations · 4 open to claim", "1 nation"; null for a realm with no nations. */
-function countsLine({ nationCount, openCount }: RealmMetadataSource): string | null {
-  if (nationCount < 1) return null;
-  const nations = `${nationCount} ${nationCount === 1 ? "nation" : "nations"}`;
-  return openCount > 0 ? `${nations} · ${openCount} open to claim` : nations;
-}
-
 /** The founder's description, else the factbook, else the tags, else the nation counts. */
 function realmDescription(source: RealmMetadataSource): string | null {
   const text = source.description ?? source.factbookText;
   if (text) return clip(text);
   if (source.tags.length > 0) return source.tags.join(", ");
-  return countsLine(source);
+  return realmCountsLine(source.nationCount, source.openCount);
 }
 
 /**

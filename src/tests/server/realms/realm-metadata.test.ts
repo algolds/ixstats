@@ -23,6 +23,7 @@ function source(over: Partial<RealmMetadataSource> = {}): RealmMetadataSource {
     tags: [],
     nationCount: 12,
     openCount: 4,
+    bannerUrl: null,
     ...over,
   };
 }
@@ -87,6 +88,7 @@ describe("loadRealmMetadataSource", () => {
     description: "  ",
     factbookHtml: "<p>The <b>Eurth</b> factbook.</p>",
     tags: ["Modern"],
+    bannerUrl: " /images/uploads/eurth-banner.png " as string | null,
   };
 
   type RealmRow = typeof row;
@@ -111,10 +113,22 @@ describe("loadRealmMetadataSource", () => {
       tags: ["Modern"],
       nationCount: 12,
       openCount: 4,
+      bannerUrl: "/images/uploads/eurth-banner.png",
     });
     expect(db.realm.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { slug: "eurth" } })
     );
+  });
+
+  it("gives no banner when none is set", async () => {
+    const db = dbWith({ ...row, bannerUrl: null });
+    await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toMatchObject({
+      bannerUrl: null,
+    });
+    const blank = dbWith({ ...row, bannerUrl: "  " });
+    await expect(loadRealmMetadataSource(blank as never, "eurth")).resolves.toMatchObject({
+      bannerUrl: null,
+    });
   });
 
   it("counts no open nations for an archived realm and flags unlisted ones", async () => {

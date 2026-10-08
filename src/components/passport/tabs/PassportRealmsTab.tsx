@@ -8,9 +8,9 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Stat } from "~/components/ui/stat";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { REALM_ROLE_LABEL } from "~/lib/passport/passport-labels";
 import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
-import { REALM_ROLE_LABEL } from "../realm-role";
 
 interface PassportRealmsTabProps {
   realms: RealmItem[];
