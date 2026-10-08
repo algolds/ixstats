@@ -159,7 +159,13 @@ describe("getThreadPosts", () => {
   it("returns posts in createdAt order with the category summary and total", async () => {
     const db = readDb({ thread: threadIn(general) });
     const out = await getThreadPosts(db as never, user, "t1", 1);
-    expect(out.category).toEqual({ key: "general", name: "General", icAllowed: false });
+    expect(out.category).toEqual({
+      key: "general",
+      name: "General",
+      icAllowed: false,
+      visibility: general.visibility,
+      postRole: general.postRole,
+    });
     expect(out.thread).toMatchObject({ id: "t1", title: "Hello" });
     expect(out.posts).toEqual([{ id: "p1" }]);
     expect(out.total).toBe(1);

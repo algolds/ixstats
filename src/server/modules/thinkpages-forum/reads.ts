@@ -107,7 +107,18 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
     }),
     db.forumPost.count({ where }),
   ]);
-  return { thread, category: { key: category.key, name: category.name, icAllowed: category.icAllowed }, posts, total };
+  return {
+    thread,
+    category: {
+      key: category.key,
+      name: category.name,
+      icAllowed: category.icAllowed,
+      visibility: category.visibility,
+      postRole: category.postRole,
+    },
+    posts,
+    total,
+  };
 }
 
 /** Where a post sits for the `/thinkpages/post/<id>` permalink (ruling P5); null when the viewer cannot see it. */
