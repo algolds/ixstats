@@ -4,7 +4,7 @@
 
 import React, { useCallback, useImperativeHandle, forwardRef } from "react";
 import { Plate, PlateContent } from "platejs/react";
-import { Transforms, Node as SlateNode } from "slate";
+import { Editor, Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { cn } from "~/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";
@@ -23,6 +23,8 @@ export interface GlassPlateEditorRef {
   insertText: (text: string) => void;
   clear: () => void;
   focus: () => void;
+  /** Focus, first putting the caret at the end of the document when nothing is selected. */
+  focusEnd: () => void;
   getContent: () => string;
   getPlainText: () => string;
   getBbcode: () => string;
@@ -142,6 +144,16 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
         },
         focus: () => {
           try {
+            ReactEditor.focus(editor as any);
+          } catch {
+            // ignore if not mounted
+          }
+        },
+        focusEnd: () => {
+          try {
+            if (!editor.selection) {
+              Transforms.select(editor as any, Editor.end(editor as any, []));
+            }
             ReactEditor.focus(editor as any);
           } catch {
             // ignore if not mounted

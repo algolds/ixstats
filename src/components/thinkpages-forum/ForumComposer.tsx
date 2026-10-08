@@ -65,17 +65,20 @@ export function ForumComposer({
   });
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
     const target = event.target as Element;
     // Portaled popovers (persona list, action picker) bubble through React but sit outside the surface.
     if (!event.currentTarget.contains(target) || target.closest(OWN_FOCUS)) return;
     // Without this the browser moves focus to the body after the handler and the caret is lost.
     event.preventDefault();
-    editorRef.current?.focus();
+    editorRef.current?.focusEnd();
   }, []);
 
   const insertToken = useCallback((token: string) => {
-    editorRef.current?.focus();
+    editorRef.current?.focusEnd();
     editorRef.current?.insertText(token);
+    // The popover returns focus to its trigger on close; take it back so typing continues.
+    requestAnimationFrame(() => editorRef.current?.focusEnd());
   }, []);
 
   const canSubmit = plain.trim().length > 0 && (!titleField || title.trim().length > 0) && !pending;

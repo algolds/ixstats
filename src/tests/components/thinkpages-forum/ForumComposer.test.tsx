@@ -1,14 +1,14 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const editorFocus = jest.fn();
+const editorFocusEnd = jest.fn();
 const editorInsert = jest.fn();
 const editorClear = jest.fn();
 
 interface MockEditorProps {
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
-  ref?: React.Ref<{ focus: () => void; insertText: (t: string) => void; clear: () => void }>;
+  ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
 jest.mock(
@@ -17,7 +17,7 @@ jest.mock(
     function Editor({ ref, onChange, placeholder }: MockEditorProps) {
       React.useImperativeHandle(
         ref,
-        () => ({ focus: editorFocus, insertText: editorInsert, clear: editorClear }),
+        () => ({ focusEnd: editorFocusEnd, insertText: editorInsert, clear: editorClear }),
         []
       );
       return (
@@ -64,14 +64,22 @@ describe("ForumComposer", () => {
     const surface = container.querySelector("[data-slot='forum-composer']");
     expect(surface).not.toBeNull();
     fireEvent.mouseDown(surface as Element);
-    expect(editorFocus).toHaveBeenCalledTimes(1);
+    expect(editorFocusEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores non-primary mouse buttons", () => {
+    const { container } = render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
+    fireEvent.mouseDown(container.querySelector("[data-slot='forum-composer']") as Element, {
+      button: 2,
+    });
+    expect(editorFocusEnd).not.toHaveBeenCalled();
   });
 
   it("does not steal focus from the editor or from form controls", () => {
     render(<ForumComposer icAllowed={false} titleField onSubmit={jest.fn()} />);
     fireEvent.mouseDown(screen.getByTestId("editor"));
     fireEvent.mouseDown(screen.getByPlaceholderText("Thread title"));
-    expect(editorFocus).not.toHaveBeenCalled();
+    expect(editorFocusEnd).not.toHaveBeenCalled();
   });
 
   it("shows the persona select only when icAllowed", () => {
@@ -82,10 +90,22 @@ describe("ForumComposer", () => {
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
-  it("inserts the picked action token into the editor", () => {
+  it("focuses at the end, inserts the picked action token, then refocuses on the next frame", () => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = jest.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      frames.push(cb);
+      return frames.length;
+    });
     render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
     fireEvent.click(screen.getByText("Attach action"));
     expect(editorInsert).toHaveBeenCalledWith("[ixaction=a1]");
+    expect(editorFocusEnd.mock.invocationCallOrder[0]).toBeLessThan(
+      editorInsert.mock.invocationCallOrder[0] ?? 0
+    );
+    expect(editorFocusEnd).toHaveBeenCalledTimes(1);
+    frames.forEach((cb) => cb(0));
+    expect(editorFocusEnd).toHaveBeenCalledTimes(2);
+    raf.mockRestore();
   });
 
   it("disables Post while empty and submits html with a null persona", async () => {
