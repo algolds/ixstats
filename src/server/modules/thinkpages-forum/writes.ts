@@ -5,6 +5,7 @@
  * (P9), and a post inside a submitted or approved story chain can no longer change (P6).
  */
 import type { PrismaClient } from "@prisma/client";
+import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
 import { sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
 import {
   ActionLinkError,
@@ -50,6 +51,11 @@ function prepareBody(html: string): PreparedBody {
   const contentHtml = sanitizeUserContent(html);
   const plainText = stripHtml(contentHtml);
   if (!plainText) throw new ForumError("BAD_REQUEST", "A post needs some text.");
+  // A token inside a tag or attribute would never render as a card and must never be cut by the renderer.
+  const rendered = countTextActionTokens(contentHtml);
+  if (rendered !== countActionTokens(contentHtml) || rendered !== countActionTokens(plainText)) {
+    throw new ForumError("BAD_REQUEST", "Action links must be plain text in the post body");
+  }
   return { contentHtml, plainText };
 }
 

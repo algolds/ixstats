@@ -85,6 +85,32 @@ describe("PostBody", () => {
     expect(screen.getByText("First action")).toBeInTheDocument();
   });
 
+  it.each([
+    ["title", '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>'],
+    ["href", '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>'],
+  ])("renders a token inside a %s attribute as inert text, with no live element", (_, html) => {
+    const { container } = render(<PostBody html={html} cards={new Map()} cardsReady />);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("[onerror]")).toBeNull();
+    const handlers = Array.from(container.querySelectorAll("*")).flatMap((el) =>
+      el.getAttributeNames().filter((name) => name.startsWith("on"))
+    );
+    expect(handlers).toEqual([]);
+    expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
+  });
+
+  it("still renders a card for a token in a list item", () => {
+    const cardMap = new Map([["a1", card("a1", "First action")]]);
+    const { container } = render(
+      <PostBody html="<ul><li>one [ixaction=a1] two</li></ul>" cards={cardMap} cardsReady />
+    );
+    expect(screen.getByText("First action")).toBeInTheDocument();
+    expect(Array.from(container.querySelectorAll("li")).map((li) => li.textContent)).toEqual([
+      "one ",
+      " two",
+    ]);
+  });
+
   it("renders the HTML once when there are no tokens", () => {
     const { container } = render(
       <PostBody html="<p>plain post</p>" cards={new Map()} cardsReady />

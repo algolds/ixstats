@@ -170,6 +170,21 @@ describe("createThread", () => {
     expect(refused.db.$transaction).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["title", '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>'],
+    ["alt", '<p>hi <img src="https://e.com/a.png" alt="[ixaction=abc] <b>x</b>"></p>'],
+    ["href", '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>'],
+    ["data-title", '<p><span data-title="[ixaction=abc] <i>">x</span></p>'],
+    ["split by a tag", "<p>[ixaction=<b>abc</b>]</p>"],
+  ])("refuses an action token inside a %s", async (_, html) => {
+    const { db } = writeDb();
+    await expect(createThread(db as never, user, { ...NEW_THREAD, html })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Action links must be plain text in the post body",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
   it("strips scripts and event handlers before storing", async () => {
     const { db, tx } = writeDb();
     const html = '<p>Hi<script>alert(1)</script><img src="x.png" onerror="alert(2)"></p>';
@@ -380,6 +395,23 @@ describe("replyToThread", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(tx.forumPost.create).not.toHaveBeenCalled();
     expect(tx.forumThread.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("attribute tokens on reply and edit", () => {
+  const html = '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>';
+
+  it("refuses them on a reply and an edit before anything is written", async () => {
+    const reply = writeDb({ thread: threadIn("general") });
+    await expect(
+      replyToThread(reply.db as never, user, { threadId: "t1", html })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(reply.db.$transaction).not.toHaveBeenCalled();
+    const edit = writeDb({ post: postBy("u_p") });
+    await expect(editPost(edit.db as never, user, { postId: "p1", html })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(edit.db.forumPost.update).not.toHaveBeenCalled();
   });
 });
 
