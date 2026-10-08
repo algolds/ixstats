@@ -17,7 +17,7 @@
 import { db } from "~/server/db";
 import { withJobLock } from "~/lib/system/job-lock";
 import { alertDeadJobs } from "./mirror-alerts";
-import { MIRROR_LOCK_NAME } from "./mirror-outbox";
+import { MIRROR_LOCK_NAME, MIRROR_SOURCE } from "./mirror-outbox";
 import { runPageJob } from "./mirror-page-ops";
 import { runUploadJob } from "./mirror-upload";
 import { withinAttempt } from "../adapters/mediawiki/attempt-scope";
@@ -43,7 +43,7 @@ import {
 } from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
 import { sweepStagedOrphansIfDue } from "./staged-uploads";
-import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
+import { refreshWikiosEditingFlag } from "~/lib/wiki-os/editing-switch";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
@@ -55,6 +55,13 @@ export const MAX_CYCLE_MS = DEFAULT_DEADLINE_MS + ATTEMPT_TIMEOUT_MS;
  * allows its job the same: more than any cycle can take, so a lock transaction never expires mid-attempt.
  */
 export const LOCK_TIMEOUT_MS = 10 * 60_000;
+
+/** Jobs not finished yet: after the editing switch goes off, the worker keeps going until this is 0. */
+function outboxWaiting(): Promise<number> {
+  return db.wikiMirrorJob.count({
+    where: { source: MIRROR_SOURCE, state: { in: ["pending", "running"] } },
+  });
+}
 
 export interface MirrorCycleOptions {
   maxJobs?: number;
@@ -152,8 +159,9 @@ export async function runMirrorCycle({
 }: MirrorCycleOptions = {}): Promise<MirrorCycleResult> {
   const result: MirrorCycleResult = { skipped: false, done: 0, failed: 0, dead: 0 };
   if (process.env.SKIP_MEDIAWIKI_SYNC === "true") return { ...result, skipped: true };
-  // Before the cutover classic MediaWiki is the wiki of record: the outbox is not applied (v1-switch.ts).
-  if (!isWikiosV1Enabled()) return { ...result, skipped: true };
+  // Editing off (editing-switch.ts): the mirror still drains what was queued while it was on.
+  if (!(await refreshWikiosEditingFlag()) && (await outboxWaiting()) === 0)
+    return { ...result, skipped: true };
 
   const startedAt = Date.now();
   let dead = 0;

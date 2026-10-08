@@ -1,9 +1,11 @@
 /** @jest-environment node */
 /**
- * The WikiOS v1 switch (`WIKIOS_V1_ENABLED`, lib/wiki-os/v1-switch.ts). Off, an ordinary deploy is safe before
- * the cutover's operator steps: WikiOS takes no writes, api.php answers `readonly`, and the mirror, the
- * background renders and the parked-revision re-push do nothing, and full-text search does not read the search vector
- * the manual SQL fills. The other suites run with it on (setupTests.ts).
+ * The two WikiOS switches. The v1 switch (`WIKIOS_V1_ENABLED`, lib/wiki-os/v1-switch.ts) off keeps an ordinary
+ * deploy safe before the cutover's operator steps: the background renders and the parked-revision re-push do
+ * nothing, and full-text search does not read the search vector the manual SQL fills. With it off, WikiOS writes
+ * and the outbound mirror follow the admin editing switch (lib/wiki-os/editing-switch.ts, a SystemConfig row):
+ * off, WikiOS takes no writes, api.php answers `readonly`, and the mirror only drains jobs already queued; on,
+ * writes and the mirror run. The other suites run with the v1 switch on (setupTests.ts).
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -13,7 +15,12 @@ jest.mock("~/server/db", () => ({
     wikiBlock: { findMany: jest.fn() },
     wikiRevision: { count: jest.fn() },
     wikiRestriction: { findMany: jest.fn() },
-    wikiMirrorJob: { findMany: jest.fn(), count: jest.fn() },
+    wikiMirrorJob: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+      updateMany: jest.fn(),
+      deleteMany: jest.fn(),
+    },
     wikiArticle: { findMany: jest.fn(), count: jest.fn() },
     $queryRawUnsafe: jest.fn(),
     systemConfig: { findUnique: jest.fn() },
@@ -23,6 +30,10 @@ jest.mock("~/lib/auth", () => ({ __esModule: true, isSystemOwner: () => true }))
 jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
 jest.mock("~/lib/wiki-os/api-compat/deps", () => ({ createApiDeps: jest.fn() }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({
+  ...jest.requireActual("~/lib/wiki-os/services/staged-uploads"),
+  sweepStagedOrphansIfDue: jest.fn().mockResolvedValue(null),
+}));
 
 import { NextRequest } from "next/server";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
@@ -34,6 +45,10 @@ import {
 } from "~/lib/wiki-os/permissions";
 import { rightsForGroups, type WikiPermissions } from "~/lib/wiki-os/rights";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import {
+  __resetWikiosEditingCacheForTests,
+  refreshWikiosEditingFlag,
+} from "~/lib/wiki-os/editing-switch";
 import { runMirrorCycle } from "~/lib/wiki-os/services/mirror-worker";
 import { renderStaleBatch } from "~/lib/wiki-os/services/render-service";
 import { repushSkippedParks } from "~/lib/wiki-os/services/inbound-revision-sync";
@@ -53,6 +68,13 @@ beforeEach(() => {
   was = process.env.WIKIOS_V1_ENABLED;
   delete process.env.WIKIOS_V1_ENABLED;
   jest.clearAllMocks();
+  // the editing switch is off (no row) and the outbox empty unless a test says otherwise
+  __resetWikiosEditingCacheForTests();
+  jest.mocked(db.systemConfig.findUnique).mockResolvedValue(null as never);
+  jest.mocked(db.wikiMirrorJob.count).mockResolvedValue(0 as never);
+  jest.mocked(db.wikiMirrorJob.findMany).mockResolvedValue([] as never);
+  jest.mocked(db.wikiMirrorJob.updateMany).mockResolvedValue({ count: 0 } as never);
+  jest.mocked(db.wikiMirrorJob.deleteMany).mockResolvedValue({ count: 0 } as never);
 });
 afterEach(() => {
   process.env.WIKIOS_V1_ENABLED = was;
@@ -138,5 +160,83 @@ describe("off: full-text search", () => {
     });
     expect(db.wikiArticle.findMany).toHaveBeenCalledTimes(1);
     expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+  });
+});
+
+describe("admin editing switch (WIKIOS_V1_ENABLED off)", () => {
+  let skipSync: string | undefined;
+  beforeEach(() => {
+    skipSync = process.env.SKIP_MEDIAWIKI_SYNC;
+    delete process.env.SKIP_MEDIAWIKI_SYNC;
+  });
+  afterEach(() => {
+    if (skipSync === undefined) delete process.env.SKIP_MEDIAWIKI_SYNC;
+    else process.env.SKIP_MEDIAWIKI_SYNC = skipSync;
+  });
+
+  async function editing(on: boolean) {
+    jest
+      .mocked(db.systemConfig.findUnique)
+      .mockResolvedValue({ value: on ? "true" : "false" } as never);
+    await refreshWikiosEditingFlag(true);
+  }
+
+  it("allows writes when the switch is on", async () => {
+    await editing(true);
+    expect(decideAction({ ...request, action: "edit" })).toEqual({ allowed: true });
+    expect(decideFilePageCreation(request)).toEqual({ allowed: true });
+    expect(() => assertWikiosWritable()).not.toThrow();
+  });
+
+  it("refuses writes with readonly when the switch is off", async () => {
+    await editing(false);
+    expect(decideAction({ ...request, action: "edit" })).toMatchObject({
+      allowed: false,
+      code: "readonly",
+    });
+    expect(() => assertWikiosWritable()).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
+  });
+
+  it("an async entry reads the switch itself, so a cold cache does not refuse a write", async () => {
+    jest.mocked(db.systemConfig.findUnique).mockResolvedValue({ value: "true" } as never);
+    const ctx = { auth: { userId: null }, user: null } as unknown as WikiAuthContext;
+    // requireRight awaits the read, passes the readonly gate, and only then reaches the rights check
+    await expect(requireRight(ctx, "block")).rejects.toMatchObject({
+      message: expect.stringContaining('You do not have the "block" right.'),
+    });
+    expect(db.systemConfig.findUnique).toHaveBeenCalledTimes(1);
+  });
+
+  it("the v1 switch forces it on without reading the row", async () => {
+    process.env.WIKIOS_V1_ENABLED = "true";
+    await expect(refreshWikiosEditingFlag()).resolves.toBe(true);
+    expect(db.systemConfig.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("the mirror runs when the switch is on", async () => {
+    await editing(true);
+    const result = await runMirrorCycle({ maxJobs: 1 });
+    expect(result.skipped).toBe(false);
+  });
+
+  it("the mirror drains pending jobs after the switch goes off", async () => {
+    await editing(false);
+    jest.mocked(db.wikiMirrorJob.count).mockResolvedValue(3 as never);
+    const result = await runMirrorCycle({ maxJobs: 1 });
+    expect(result.skipped).toBe(false);
+    expect(db.wikiMirrorJob.count).toHaveBeenCalledWith({
+      where: { source: "ixwiki", state: { in: ["pending", "running"] } },
+    });
+  });
+
+  it("the mirror skips when the switch is off and the outbox is empty", async () => {
+    await editing(false);
+    const result = await runMirrorCycle({ maxJobs: 1 });
+    expect(result.skipped).toBe(true);
+  });
+
+  it("background renders stay off without the full cutover", async () => {
+    await editing(true);
+    await expect(renderStaleBatch()).resolves.toEqual({ rendered: 0, failed: 0 });
   });
 });

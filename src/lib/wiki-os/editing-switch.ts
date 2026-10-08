@@ -30,6 +30,7 @@ export function isWikiosEditingEnabled(): boolean {
 }
 
 export function refreshWikiosEditingFlag(force = false): Promise<boolean> {
+  if (isWikiosV1Enabled()) return Promise.resolve(true);
   if (!force && !stale()) return Promise.resolve(cached);
   inFlight ??= db.systemConfig
     .findUnique({ where: { key: WIKIOS_EDITING_KEY }, select: { value: true } })
