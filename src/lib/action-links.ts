@@ -19,7 +19,7 @@ export function parseActionTokens(body: string): string[] {
 /** Where a linked post lives: native posts by the ThinkPages permalink, imported ones on the old forum. */
 export function postPermalinkPath(source: PostSource, postRef: string): string {
   return source === "native"
-    ? `/thinkpages/p/${encodeURIComponent(postRef)}`
+    ? `/thinkpages/post/${encodeURIComponent(postRef)}`
     : `https://forum.ixwiki.com/posts/${encodeURIComponent(postRef)}/`;
 }
 

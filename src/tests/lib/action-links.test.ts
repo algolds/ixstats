@@ -34,7 +34,7 @@ describe("parseActionTokens", () => {
 
 describe("postPermalinkPath", () => {
   it("points native posts at the ThinkPages permalink", () => {
-    expect(postPermalinkPath("native", "p1")).toBe("/thinkpages/p/p1");
+    expect(postPermalinkPath("native", "p1")).toBe("/thinkpages/post/p1");
   });
 
   it("points imported XenForo posts at the forum", () => {
