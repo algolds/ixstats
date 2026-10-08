@@ -9,7 +9,7 @@ jest.mock("~/server/db", () => {
     user: { findUnique: jest.fn(), findFirst: jest.fn() },
     country: { findFirst: jest.fn() },
     thinkpagesAccount: { findFirst: jest.fn() },
-    realmClaim: { count: jest.fn() },
+    realmClaim: { findMany: jest.fn() },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
@@ -30,7 +30,7 @@ const mocked = db as unknown as {
   user: { findUnique: jest.Mock; findFirst: jest.Mock };
   country: { findFirst: jest.Mock };
   thinkpagesAccount: { findFirst: jest.Mock };
-  realmClaim: { count: jest.Mock };
+  realmClaim: { findMany: jest.Mock };
 };
 
 const kir = {
@@ -40,12 +40,30 @@ const kir = {
   forumUsername: "Kir Forum",
 };
 
+/** Realm slug → status, for the open-realm filter. */
+const REALMS: Record<string, string> = { eurth: "active", unlisted: "active", drafty: "draft" };
+
+interface MemberWhere {
+  ownerUserId: string;
+  realmId?: string;
+  realm?: { slug: string; status: string };
+}
+
+/** Kir holds a nation in every realm; the filter decides which realms count. */
+function kirHoldsEverywhere() {
+  mocked.country.findFirst.mockImplementation(({ where }: { where: MemberWhere }) => {
+    if (where.ownerUserId !== "db_kir") return Promise.resolve(null);
+    const open = where.realm ? REALMS[where.realm.slug] === where.realm.status : true;
+    return Promise.resolve(open ? { id: "c1" } : null);
+  });
+}
+
 beforeEach(() => {
   mocked.user.findUnique.mockReset().mockResolvedValue(null);
   mocked.user.findFirst.mockReset().mockResolvedValue(null);
   mocked.country.findFirst.mockReset().mockResolvedValue(null);
   mocked.thinkpagesAccount.findFirst.mockReset().mockResolvedValue(null);
-  mocked.realmClaim.count.mockReset();
+  mocked.realmClaim.findMany.mockReset();
 });
 
 describe("resolveInviterUserId", () => {
@@ -73,16 +91,24 @@ describe("resolveInviterUserId", () => {
 describe("resolveRealmInviter", () => {
   it("names a member of the realm by handle and persona name, nothing else", async () => {
     mocked.user.findUnique.mockResolvedValue(kir);
-    mocked.country.findFirst.mockResolvedValue({ id: "c1" });
+    kirHoldsEverywhere();
     mocked.thinkpagesAccount.findFirst.mockResolvedValue({ displayName: "Kir of Caphiria" });
     await expect(resolveRealmInviter("eurth", "kir")).resolves.toEqual({
       handle: "kir",
       displayName: "Kir of Caphiria",
     });
     expect(mocked.country.findFirst).toHaveBeenCalledWith({
-      where: { ownerUserId: "db_kir", realm: { slug: "eurth" } },
+      where: { ownerUserId: "db_kir", realm: { slug: "eurth", status: "active" } },
       select: { id: true },
     });
+  });
+
+  it("names nobody in a realm that takes no claims (draft, generating), though they hold a nation", async () => {
+    mocked.user.findUnique.mockResolvedValue(kir);
+    kirHoldsEverywhere();
+    await expect(resolveRealmInviter("drafty", "kir")).resolves.toBeNull();
+    // An unlisted realm is reachable by link and open for claims.
+    await expect(resolveRealmInviter("unlisted", "kir")).resolves.not.toBeNull();
   });
 
   it("reads IxWorld membership by its realm id", async () => {
@@ -116,17 +142,19 @@ describe("resolveRealmInviter", () => {
 });
 
 describe("loadRecruitedCount", () => {
-  it("counts the holder's approved invited claims", async () => {
-    mocked.realmClaim.count.mockResolvedValue(4);
-    await expect(loadRecruitedCount("db_kir")).resolves.toBe(4);
-    expect(mocked.realmClaim.count).toHaveBeenCalledWith({
+  it("counts the holder's distinct recruits (approved invited claimants)", async () => {
+    mocked.realmClaim.findMany.mockResolvedValue([{ userId: "p1" }, { userId: "p2" }]);
+    await expect(loadRecruitedCount("db_kir")).resolves.toBe(2);
+    expect(mocked.realmClaim.findMany).toHaveBeenCalledWith({
       where: { invitedByUserId: "db_kir", status: "approved" },
+      distinct: ["userId"],
+      select: { userId: true },
     });
   });
 
   it("is zero without a user or when the count fails", async () => {
     await expect(loadRecruitedCount(undefined)).resolves.toBe(0);
-    mocked.realmClaim.count.mockRejectedValue(new Error("db down"));
+    mocked.realmClaim.findMany.mockRejectedValue(new Error("db down"));
     await expect(loadRecruitedCount("db_kir")).resolves.toBe(0);
   });
 });

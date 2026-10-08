@@ -178,6 +178,23 @@ describe("claim invites", () => {
     expect(deps.resolveInviter).not.toHaveBeenCalled();
     expect(db.realmClaim.updateMany).not.toHaveBeenCalled();
   });
+
+  it("keeps the stored inviter when a concurrent claim recorded one first", async () => {
+    const { db, deps, claims } = setup();
+    db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir" });
+    db.realmClaim.findFirst.mockResolvedValue({ id: "old", userId: "u1", invitedByUserId: null });
+    // The guarded attach loses the race: the row has an inviter by now.
+    db.realmClaim.updateMany.mockResolvedValueOnce({ count: 0 });
+    db.realmClaim.findUnique.mockResolvedValue({ invitedByUserId: "u_first" });
+    await claims.claimCountry(actor, "c1", { via: "ambassador" });
+    expect(db.realmClaim.findUnique).toHaveBeenCalledWith({
+      where: { id: "old" },
+      select: { invitedByUserId: true },
+    });
+    expect(deps.onNationAssigned).toHaveBeenCalledWith(
+      expect.objectContaining({ inviterUserId: "u_first" })
+    );
+  });
 });
 
 describe("the inviter on approval", () => {

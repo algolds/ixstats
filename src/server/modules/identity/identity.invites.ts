@@ -4,6 +4,7 @@
  */
 import { db } from "~/server/db";
 import { DEFAULT_REALM_ID, isIxWorldView } from "~/lib/realms/realm-ids";
+import { countRecruits } from "~/lib/realms/recruits";
 import { normalizeHandle } from "./identity.handle";
 import { loadPersonalPersona } from "./identity.loaders";
 import { resolveHandleUser } from "./identity.resolve";
@@ -20,8 +21,9 @@ export async function resolveInviterUserId(via: string): Promise<string | null> 
 }
 
 /**
- * The inviter a realm's Join panel names: only a user holding a nation in that realm
- * (`Country.ownerUserId`). Null otherwise, so a `via` naming anyone else shows nothing.
+ * The inviter a realm's Join panel names: only a user holding a nation (`Country.ownerUserId`) in that realm
+ * while it takes claims. Null otherwise, so a `via` naming anyone else, or a draft or generating realm's
+ * member, shows nothing.
  */
 export async function resolveRealmInviter(
   realmSlug: string,
@@ -29,10 +31,11 @@ export async function resolveRealmInviter(
 ): Promise<RealmInviter | null> {
   const user = await resolveHandleUser(via);
   if (!user) return null;
-  // IxWorld nations count even when IxWorld has no realm row (the relation filter needs one).
+  // The claims rule (realms.access `isRealmOpen`): IxWorld is always open, even without a realm row; any
+  // other realm only while active. Unlisted realms count: they are reachable by link.
   const inRealm = isIxWorldView(realmSlug)
     ? { realmId: DEFAULT_REALM_ID }
-    : { realm: { slug: realmSlug } };
+    : { realm: { slug: realmSlug, status: "active" } };
   const member = await db.country.findFirst({
     where: { ownerUserId: user.id, ...inRealm },
     select: { id: true },
@@ -43,11 +46,11 @@ export async function resolveRealmInviter(
   return { handle, displayName: persona?.displayName || user.forumUsername || handle };
 }
 
-/** The holder's approved claims that name them as inviter; 0 without a user or when the count fails. */
+/** The holder's distinct recruits (`countRecruits`); 0 without a user or when the count fails. */
 export async function loadRecruitedCount(userId: string | null | undefined): Promise<number> {
   if (!userId) return 0;
   try {
-    return await db.realmClaim.count({ where: { invitedByUserId: userId, status: "approved" } });
+    return await countRecruits(db, userId);
   } catch {
     return 0;
   }

@@ -24,6 +24,7 @@ import { achievementRequiresCountry, RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 import { completeAchievementCheck, dequeueAchievementCheck, queueAchievementCheck } from "./queue";
 import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { awardAchievementCard } from "~/lib/cards/card-service";
+import { countRecruits } from "~/lib/realms/recruits";
 import { eventBus } from "~/lib/event-bus";
 import { ActivityHooks } from "~/lib/activity";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -474,9 +475,7 @@ class AchievementService {
             return countryIds.size;
           })
           .catch(() => 0),
-        db.realmClaim
-          .count({ where: { invitedByUserId: user.id, status: "approved" } })
-          .catch(() => 0),
+        countRecruits(db, user.id).catch(() => 0),
       ]);
 
       loreCardCount = loreCount;

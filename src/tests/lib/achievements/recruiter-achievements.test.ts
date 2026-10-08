@@ -1,10 +1,16 @@
 /** @jest-environment node */
 /**
- * Recruiter achievements count the player's approved invited claims (`RealmClaim.invitedByUserId`):
- * Recruiter (1), Envoy (5), Founder's Hand (25). They are account-level and pay nothing: no IxCredits,
- * no cards (owner ruling: achievements only).
+ * Recruiter achievements count the player's distinct recruits (claimants of approved claims naming them as
+ * inviter, `RealmClaim.invitedByUserId`): Recruiter (1), Envoy (5), Founder's Hand (25). They are
+ * account-level, so a nation-less inviter queued by User.id unlocks them, and pay nothing: no IxCredits, no
+ * cards (owner ruling: achievements only).
  */
 
+jest.mock("~/server/db", () => {
+  const { createMockPrisma } =
+    jest.requireActual<typeof import("~/tests/helpers/mock-db")>("~/tests/helpers/mock-db");
+  return { __esModule: true, db: createMockPrisma() };
+});
 jest.mock("~/lib/vault/vault-bonus", () => ({
   ...jest.requireActual("~/lib/vault/vault-bonus"),
   getBonusConfig: jest.fn(),
@@ -23,7 +29,13 @@ jest.mock("~/lib/achievements/scaling", () => ({
 }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { getAchievementById } from "~/lib/achievements/definitions";
+import { db } from "~/server/db";
+import {
+  getAchievementById,
+  type CountryDataForAchievements,
+  type ExtendedAchievementData,
+} from "~/lib/achievements/definitions";
+import { queueAchievementCheck, resetAchievementQueue } from "~/lib/achievements/queue";
 import {
   ACCOUNT_LEVEL_ACHIEVEMENT_IDS,
   ACCOUNT_LEVEL_METRICS,
@@ -32,14 +44,35 @@ import {
 import { syncAchievements } from "~/lib/achievements/sync";
 import { achievementService } from "~/lib/achievements/service";
 import { getBonusConfig, grantBonus, VAULT_BONUS_DEFAULTS } from "~/lib/vault/vault-bonus";
-import { createMockPrisma } from "~/tests/helpers/mock-db";
+import type { MockPrismaProxy } from "~/tests/helpers/mock-db";
+
+/** The mocked client: `db` (typed as the PrismaClient) and its jest handles are the same object. */
+const mockDb = jest.requireMock<{ db: MockPrismaProxy }>("~/server/db").db;
 
 const CLERK_ID = "clerk_recruiter";
+const USER_ID = "db_recruiter";
 const LADDER = [
   ["social-recruiter", "Recruiter", 1],
   ["social-envoy", "Envoy", 5],
   ["social-founders-hand", "Founder's Hand", 25],
 ] as const;
+
+/** A country for the definition conditions' data type; recruiter conditions never read it. */
+const COUNTRY: CountryDataForAchievements = {
+  id: "c1",
+  currentTotalGdp: 0,
+  currentGdpPerCapita: 0,
+  currentPopulation: 0,
+  economicTier: "Tier 5",
+  adjustedGdpGrowth: 0,
+  populationGrowthRate: 0,
+  actualGdpGrowth: 0,
+  createdAt: new Date(0),
+};
+const withRecruits = (recruitedCount?: number): ExtendedAchievementData => ({
+  country: COUNTRY,
+  recruitedCount,
+});
 
 interface SyncedRow {
   key: string;
@@ -50,16 +83,46 @@ interface SyncedRow {
   rewardsJson: string;
 }
 
+/** What `syncAchievements` writes for each built-in definition, by key. */
 async function syncedRows(): Promise<Map<string, SyncedRow>> {
-  const db = createMockPrisma();
   jest.spyOn(console, "log").mockImplementation(() => {});
-  await syncAchievements(db as never);
-  const calls = db.achievement.upsert.mock.calls as [{ create: SyncedRow }][];
-  return new Map(calls.map(([args]) => [args.create.key, args.create]));
+  mockDb.achievement.upsert.mockClear();
+  await syncAchievements(db);
+  const rows: SyncedRow[] = mockDb.achievement.upsert.mock.calls.map(
+    ([args]: [{ create: SyncedRow }]) => args.create
+  );
+  return new Map(rows.map((row) => [row.key, row]));
+}
+
+/** `claimants`: the approved invited claims' claimant ids (the database answers them distinct). */
+async function recruiterWith(claimants: string[], countryId: string | null = null) {
+  const rows = await syncedRows();
+  const user = { id: USER_ID, clerkUserId: CLERK_ID, createdAt: new Date(), countryId };
+  mockDb.user.findUnique.mockResolvedValue(user);
+  mockDb.user.findFirst.mockResolvedValue(user);
+  mockDb.userAchievement.findMany.mockResolvedValue([]);
+  mockDb.userAchievement.create.mockResolvedValue({});
+  mockDb.thinkpagesPost.count.mockResolvedValue(0);
+  mockDb.cardOwnership.count.mockResolvedValue(0);
+  mockDb.cardOwnership.findMany.mockResolvedValue([]);
+  mockDb.realmClaim.findMany.mockResolvedValue(
+    [...new Set(claimants)].map((userId) => ({ userId }))
+  );
+  mockDb.achievement.findMany.mockResolvedValue(
+    LADDER.map(([id]) => ({
+      ...rows.get(id),
+      description: "",
+      points: 10,
+      iconUrl: null,
+      triggerType: "SOCIAL",
+      isActive: true,
+    }))
+  );
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetAchievementQueue();
   jest.mocked(getBonusConfig).mockResolvedValue(VAULT_BONUS_DEFAULTS);
 });
 
@@ -67,9 +130,9 @@ describe("recruiter achievement definitions", () => {
   it.each(LADDER)("%s (%s) unlocks at %d recruits, not one fewer", (id, title, threshold) => {
     const def = getAchievementById(id);
     expect(def).toMatchObject({ title, category: "Social" });
-    expect(def!.condition({ recruitedCount: threshold } as never)).toBe(true);
-    expect(def!.condition({ recruitedCount: threshold - 1 } as never)).toBe(false);
-    expect(def!.condition({} as never)).toBe(false);
+    expect(def?.condition(withRecruits(threshold))).toBe(true);
+    expect(def?.condition(withRecruits(threshold - 1))).toBe(false);
+    expect(def?.condition(withRecruits())).toBe(false);
   });
 
   it("are account-level, read only recruitedCount and climb in rarity", () => {
@@ -78,7 +141,7 @@ describe("recruiter achievement definitions", () => {
       expect(ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has(id)).toBe(true);
       expect(RECRUITER_ACHIEVEMENT_IDS.has(id)).toBe(true);
     }
-    expect(LADDER.map(([id]) => getAchievementById(id)!.rarity)).toEqual([
+    expect(LADDER.map(([id]) => getAchievementById(id)?.rarity)).toEqual([
       "Common",
       "Uncommon",
       "Rare",
@@ -88,68 +151,69 @@ describe("recruiter achievement definitions", () => {
   it("sync as recruitedCount rules with no credits or cards", async () => {
     const rows = await syncedRows();
     for (const [id, , threshold] of LADDER) {
-      const row = rows.get(id)!;
-      expect(JSON.parse(row.conditionJson)).toEqual({
+      const row = rows.get(id);
+      expect(JSON.parse(row?.conditionJson ?? "{}")).toEqual({
         metric: "recruitedCount",
         operator: ">=",
         value: threshold,
       });
-      expect(JSON.parse(row.rewardsJson)).toEqual({ credits: 0, cardIds: [] });
+      expect(JSON.parse(row?.rewardsJson ?? "{}")).toEqual({ credits: 0, cardIds: [] });
     }
   });
 });
 
 describe("evaluating recruiter achievements", () => {
-  async function setup(recruited: number) {
-    const rows = await syncedRows();
-    const db = createMockPrisma();
-    db.user.findUnique.mockResolvedValue({
-      id: "db_recruiter",
-      createdAt: new Date(),
-      countryId: null,
-    });
-    db.userAchievement.findMany.mockResolvedValue([]);
-    db.thinkpagesPost.count.mockResolvedValue(0);
-    db.cardOwnership.count.mockResolvedValue(0);
-    db.cardOwnership.findMany.mockResolvedValue([]);
-    db.realmClaim.count.mockResolvedValue(recruited);
-    db.achievement.findMany.mockResolvedValue(
-      LADDER.map(([id]) => ({
-        ...rows.get(id)!,
-        description: "",
-        points: 10,
-        iconUrl: null,
-        triggerType: "SOCIAL",
-        isActive: true,
-      }))
-    );
-    return db;
-  }
-
-  it("counts the user's approved invited claims", async () => {
-    const db = await setup(0);
-    await achievementService.checkAndUnlock(CLERK_ID, null, db as never);
-    expect(db.realmClaim.count).toHaveBeenCalledWith({
-      where: { invitedByUserId: "db_recruiter", status: "approved" },
+  it("counts the user's distinct recruits", async () => {
+    await recruiterWith([]);
+    await achievementService.checkAndUnlock(CLERK_ID, null, db);
+    expect(mockDb.realmClaim.findMany).toHaveBeenCalledWith({
+      where: { invitedByUserId: USER_ID, status: "approved" },
+      distinct: ["userId"],
+      select: { userId: true },
     });
   });
 
   it.each([
-    [0, []],
-    [1, ["social-recruiter"]],
-    [4, ["social-recruiter"]],
-    [5, ["social-envoy", "social-recruiter"]],
-    [25, ["social-envoy", "social-founders-hand", "social-recruiter"]],
-  ])("%d recruits unlock %j", async (recruited, expected) => {
-    const db = await setup(recruited);
-    const unlocked = await achievementService.checkAndUnlock(CLERK_ID, null, db as never);
+    [[], []],
+    [["p1"], ["social-recruiter"]],
+    [["p1", "p1", "p1", "p1", "p1"], ["social-recruiter"]],
+    [
+      ["p1", "p2", "p3", "p4", "p5"],
+      ["social-envoy", "social-recruiter"],
+    ],
+    [
+      Array.from({ length: 25 }, (_, n) => `p${n}`),
+      ["social-envoy", "social-founders-hand", "social-recruiter"],
+    ],
+  ])("claimants %j unlock %j", async (claimants, expected) => {
+    await recruiterWith(claimants);
+    const unlocked = await achievementService.checkAndUnlock(CLERK_ID, null, db);
     expect(unlocked.sort()).toEqual(expected);
   });
 
   it("pays no IxCredits for a recruiter unlock", async () => {
-    const db = await setup(25);
-    await achievementService.checkAndUnlock(CLERK_ID, null, db as never);
-    expect(db.userAchievement.create).toHaveBeenCalledTimes(3);
+    await recruiterWith(Array.from({ length: 25 }, (_, n) => `p${n}`));
+    await achievementService.checkAndUnlock(CLERK_ID, null, db);
+    expect(mockDb.userAchievement.create).toHaveBeenCalledTimes(3);
     expect(grantBonus).not.toHaveBeenCalled();
+  });
+});
+
+describe("the queued check from an approval", () => {
+  it("a nation-less inviter queued by User.id unlocks Recruiter with one recruit", async () => {
+    await recruiterWith(["p1"]);
+    queueAchievementCheck(USER_ID);
+
+    const unlocked = await achievementService.processNextQueueItem();
+
+    expect(unlocked).toEqual(["social-recruiter"]);
+    expect(mockDb.user.findFirst).toHaveBeenCalledWith({
+      where: { OR: [{ id: USER_ID }, { clerkUserId: USER_ID }] },
+      select: { clerkUserId: true, countryId: true },
+    });
+    expect(mockDb.country.findUnique).not.toHaveBeenCalled();
+    expect(mockDb.userAchievement.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: CLERK_ID, achievementId: "social-recruiter" }),
+    });
   });
 });

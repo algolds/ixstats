@@ -597,13 +597,25 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     if (existing?.invitedByUserId) return { ...filed, invitedByUserId: existing.invitedByUserId };
     const inviter = await inviterFor(filed.userId, filed.realmId, via);
     if (!inviter) return filed;
-    if (existing) {
-      await db.realmClaim.updateMany({
-        where: { id: existing.id, invitedByUserId: null },
-        data: { invitedByUserId: inviter },
-      });
-    }
-    return { ...filed, invitedByUserId: inviter };
+    const stored = existing ? await attachInviter(existing.id, inviter) : inviter;
+    return stored ? { ...filed, invitedByUserId: stored } : filed;
+  }
+
+  /**
+   * Record the inviter on a pending claim that has none; when a concurrent request recorded one first (the
+   * guarded write matched nothing), that stored inviter is the claim's.
+   */
+  async function attachInviter(claimId: string, inviter: string): Promise<string | null> {
+    const { count } = await db.realmClaim.updateMany({
+      where: { id: claimId, invitedByUserId: null },
+      data: { invitedByUserId: inviter },
+    });
+    if (count > 0) return inviter;
+    const claim = await db.realmClaim.findUnique({
+      where: { id: claimId },
+      select: { invitedByUserId: true },
+    });
+    return claim?.invitedByUserId ?? null;
   }
 
   /** File (or reuse) the player's claim; the verified creator's is approved at once, everyone else's waits. */
