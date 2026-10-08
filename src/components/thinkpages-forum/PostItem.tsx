@@ -56,7 +56,13 @@ export const PostItem = memo(function PostItem({
   }
 
   return (
-    <Card id={`post-${post.id}`} content="prose" padding="md" className="scroll-mt-24">
+    // The thread column already bounds the measure; lift prose's 70ch child cap so the header and body span the card.
+    <Card
+      id={`post-${post.id}`}
+      content="prose"
+      padding="md"
+      className="scroll-mt-24 [&>*]:max-w-none"
+    >
       <header className="mb-1 flex items-center gap-2">
         <p className="text-subhead flex min-w-0 flex-1 gap-1">
           <AuthorName

@@ -121,7 +121,7 @@ function forumDb(thread: object = {}) {
     user: {
       findMany: jest.fn(async () => [
         rawUser,
-        { ...rawUser, id: "u2", handle: null, wikiUsername: null, discordUsername: null },
+        { ...rawUser, id: "u2", handle: null, wikiUsername: null, discordUsername: "disc#2" },
       ]),
     },
     thinkpagesAccount: { findMany: jest.fn(async () => [rawPersona]) },
@@ -216,6 +216,27 @@ describe("thinkpagesForum router", () => {
     expect(Object.keys(out.authors.users.u2!).sort()).toEqual([...ALLOWED_USER_FIELDS].sort());
     expect(out.authors.users.u2!.name).toBe("Member");
     expect(JSON.stringify(out)).not.toContain("secret@example.com");
+    expect(JSON.stringify(out)).not.toContain("disc#2");
+  });
+
+  it("offers an admin no reply and no Edit on a hidden thread, or on their own hidden post", async () => {
+    const own = { authorUserId: "u_admin", authorPersonaId: null, editedAt: null, createdAt: when };
+    const posts = [
+      { ...own, id: "p1", contentHtml: "<p>mine</p>", hidden: false },
+      { ...own, id: "p2", contentHtml: "<p>hidden</p>", hidden: true },
+    ];
+    const hiddenThread = forumDb({ hidden: true });
+    hiddenThread.forumPost.findMany.mockResolvedValue(posts as never);
+    const out = await caller(admin, hiddenThread).thread({ threadId: "t1", page: 1 });
+    expect(out.canReply).toBe(false);
+    expect(out.posts.map((p) => p.isOwn)).toEqual([false, false]);
+
+    const openThread = forumDb();
+    openThread.forumPost.findMany.mockResolvedValue(posts as never);
+    const visible = await caller(admin, openThread).thread({ threadId: "t1", page: 1 });
+    expect(visible.canReply).toBe(true);
+    expect(visible.posts.map((p) => p.isOwn)).toEqual([true, false]);
+    expect(visible.posts.every((p) => !("hidden" in p))).toBe(true);
   });
 
   it("gives an anonymous reader no Edit and no reply", async () => {

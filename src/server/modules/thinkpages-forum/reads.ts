@@ -103,6 +103,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
         contentHtml: true,
         editedAt: true,
         createdAt: true,
+        hidden: true,
       },
     }),
     db.forumPost.count({ where }),
@@ -175,7 +176,7 @@ export async function authorsOf(
     uniqueUsers.length
       ? db.user.findMany({
           where: { id: { in: uniqueUsers } },
-          select: { id: true, handle: true, wikiUsername: true, discordUsername: true },
+          select: { id: true, handle: true, wikiUsername: true, country: { select: { name: true } } },
         })
       : [],
     uniquePersonas.length
@@ -187,7 +188,8 @@ export async function authorsOf(
   ]);
   return {
     users: new Map<string, ForumUserAuthor>(
-      users.map((u) => [u.id, { name: u.handle ?? u.wikiUsername ?? u.discordUsername ?? "Member", handle: u.handle }])
+      // Public names only: never the Discord name, which a linked account would otherwise publish.
+      users.map((u) => [u.id, { name: u.handle ?? u.wikiUsername ?? u.country?.name ?? "Member", handle: u.handle }])
     ),
     personas: new Map<string, ForumPersonaAuthor>(
       personas.map((p) => [p.id, { displayName: p.displayName, username: p.username }])

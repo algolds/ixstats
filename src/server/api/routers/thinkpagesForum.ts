@@ -99,14 +99,15 @@ export const thinkpagesForumRouter = createTRPCRouter({
   thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
     const viewer = viewerOf(ctx.user);
     const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
-    const open = !result.thread.locked && !result.thread.archived;
+    // Hidden content stays readable to admins but refuses writes (writes.ts), so it offers neither reply nor Edit.
+    const writable = !result.thread.locked && !result.thread.archived && !result.thread.hidden;
     return {
       ...result,
-      posts: result.posts.map((post) => ({
+      posts: result.posts.map(({ hidden, ...post }) => ({
         ...post,
-        isOwn: viewer !== null && post.authorUserId === viewer.id,
+        isOwn: viewer !== null && post.authorUserId === viewer.id && writable && !hidden,
       })),
-      canReply: viewer !== null && open && canPostIn(viewer, result.category),
+      canReply: viewer !== null && writable && canPostIn(viewer, result.category),
       authors: await authorMaps(ctx.db, [result.thread, ...result.posts]),
     };
   }),

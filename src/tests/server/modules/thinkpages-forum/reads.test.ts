@@ -243,25 +243,27 @@ describe("resolvePostLocation", () => {
 });
 
 describe("authorsOf", () => {
-  it("names users handle, then wiki name, then discord name, then Member, never the forum name or clerk id", async () => {
+  it("names users handle, then wiki name, then country name, then Member, never the discord or forum name or clerk id", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
-      { id: "u1", handle: "heku", wikiUsername: "Heku", discordUsername: "h" },
-      { id: "u2", handle: null, wikiUsername: "WikiName", discordUsername: "d" },
-      { id: "u3", handle: null, wikiUsername: null, discordUsername: "disc" },
-      { id: "u4", handle: null, wikiUsername: null, discordUsername: null },
+      { id: "u1", handle: "heku", wikiUsername: "Heku", country: { name: "Caphiria" } },
+      { id: "u2", handle: null, wikiUsername: "WikiName", country: { name: "Caphiria" } },
+      { id: "u3", handle: null, wikiUsername: null, country: { name: "Aurelia" } },
+      { id: "u4", handle: null, wikiUsername: null, country: null },
     ]);
     db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "a1", displayName: "The Voice", username: "voice" }]);
     const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4", "u1"], ["a1"]);
     expect(out.users.get("u1")).toEqual({ name: "heku", handle: "heku" });
     expect(out.users.get("u2")).toEqual({ name: "WikiName", handle: null });
-    expect(out.users.get("u3")).toEqual({ name: "disc", handle: null });
+    expect(out.users.get("u3")).toEqual({ name: "Aurelia", handle: null });
     expect(out.users.get("u4")).toEqual({ name: "Member", handle: null });
     expect(out.personas.get("a1")).toEqual({ displayName: "The Voice", username: "voice" });
     expect(db.user.findMany).toHaveBeenCalledTimes(1);
     expect(db.user.findMany.mock.calls[0]![0].where).toEqual({ id: { in: ["u1", "u2", "u3", "u4"] } });
     expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("clerkUserId");
     expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("name");
+    expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("discordUsername");
+    expect(db.user.findMany.mock.calls[0]![0].select.country).toEqual({ select: { name: true } });
   });
 
   it("skips queries for empty id lists and ignores null persona ids", async () => {
