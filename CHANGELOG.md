@@ -11,8 +11,103 @@ capability integer. Each release entry below lists which components advanced and
 ## [Unreleased] — `rose-garden` (1.4 RC2)
 
 Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 → 2026-10-05) is listed first, then
-2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`) still
-reads 1.4.0 until the RC2 cut.
+2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`)
+reads 1.4.1 (the realms audit below); RC2 is not cut yet.
+
+### 🏛️ Realms Audit and Eurth Onboarding (2026-10-07) — platform 1.4.1
+
+- **Platform 1.4.0 → 1.4.1** (`VERSIONS.platform.patch`): fixes and page work, no capability integer moves.
+- **Realm page (`/r/[realm]`):** a **Join** card (nations waiting for a player, a few names, a link to Nations)
+  replaces the full claimable list on Overview. The header shows **Open to claim** and "N played", hides a zero
+  population and says "Administered by IxStats staff". The factbook no longer repeats the description: staff get
+  "Write the factbook", visitors a lore card ("Read the lore on IIWiki"). Empty Officers and Census panels are hidden;
+  the banner placeholder wears the Realms tint. The Nations tab says "No nation has been founded yet" instead of
+  "No nation matches", shows "Pending review" for the viewer's pending claims and loads flags through `assetUrl`.
+  A read-only board no longer invites posting, and the board counts the realm's nations, not its board members.
+- **Base path:** realm and directory links no longer wrap `<Link href>` in `createUrl` (Next adds `basePath`
+  itself, so production got `/projects/ixstates/projects/ixstates/...`) and the active tab is highlighted again.
+  `createUrl` stays only inside `redirect_url`. About 25 other pages (country profile among them) still have the
+  pattern.
+- **Realm fixes:** a failed load shows an error with Try again instead of a 404; claiming waits for the realm's
+  rules to load and refreshes the realm, MyCountry and "Play as"; Manage scrolls to `#factbook`/`#rules` and hides
+  Map in archived realms; Passport never links a realm by id; another realm's map no longer shows IxWorld's notes
+  (IxTime, climate, IxWiki) in its welcome dialog.
+- **Security and correctness (server):**
+  - A board ban or mute binds the player who held the nation, so abandoning or re-claiming it no longer lifts it
+    (`realm-board.ts`, from the claim history; nations never claimed still can't be traced without a schema change).
+  - A wiki page counts as taken by the country that carries it (`wikiSource`/`wikiPageTitle`), not by name, so
+    renaming a nation no longer makes its page claimable again.
+  - Factbook and rules HTML go through `sanitizeRealmContent` (no `style`, `class`, `id`, `data-*`), on save and
+    on read: a full-page overlay could be drawn before.
+  - Map mutations return NOT_FOUND for an unknown or hidden slug instead of falling back to IxWorld; archived
+    realms refuse wiki changes and source syncs; happenings hide draft embassy partners; officers lose their post
+    when an admin reassigns or releases their last nation.
+  - Cached reads key a signed-in viewer's `?realm=` reads per viewer (`cacheRealmKey`), so a draft realm seen by
+    its staff is never served to anyone else; sovereignty relations are listed per realm.
+- **Eurth source sync:**
+  - A map entry's wiki link binds only to one of the realm's pages, directly or through a redirect no other nation
+    lands on ("Salvia" → `Sanctum Imperium Catholicum`; "Deseti" → `Orioni` stays unlinked). Other links leave the
+    nation without a wiki page, so its claim goes to manual review instead of to a stranger.
+  - Roster and map names match across a trailing qualifier ("Nanto (Eurth)" and "Nanto"); likely respellings are
+    held back with a warning. Figures in `secondaryFields` rank below the infobox. NPC entries are created and
+    claimable like any other nation.
+  - A re-run re-reads unclaimed nations whose infobox never landed; map areas use the planet radius; loading a
+    preset again fills only what is missing (`--force-preset` overwrites).
+  - The infobox reader (`fetchNationPagePrefill`, also used by approved claims) follows a redirect once, so a
+    nation whose link names a redirect ("Mito" → `Mitō`, "Pentium" → `Republic of Pentium`) gets its flag, leader
+    and identity.
+  - Runbook (`docs/systems/realms-eurth-onboarding.md`) renumbered and corrected.
+- **Local data:** Eurth synced on the dev database (135 unclaimed nations, 115 borders, 8 alliances), founded
+  9 January 2004 (Portal:Eurth), with links to eurth.org, Portal:Eurth, the NationStates region and the map.
+  `Ymutz Mizlan` carries the roster page `Ymutztlaclan-Mizlanuzco`.
+
+### 🌍 Eurth in IxWorld, and a repeatable realm map pipeline (2026-10-07)
+
+The Eurth community map (`a-seth-harrison/eurth-map`; art © Stijn Vogels & Colucci Giovanni, Alemi Cartographic
+Society, used with permission) now lives in the IxWorld map system and looks and behaves like IxWorld's own map.
+Everything is realm-generic: a realm's map is built from its **map pipeline config** (`Realm.settings.map.pipeline`),
+filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spec:
+`docs/specs/2026-10-07-eurth-map-port.md`; runbook for any realm: `docs/systems/realm-maps.md`.
+
+- **IxWorld style by default:** a realm map opens on the standard vector style, centred on its land; bottom-left is
+  the scale only, and the realm's credit line sits in the standard attribution block. Countries use the map's own
+  colours (the source sync stores them as `properties.fill`). The per-nation legend and the unclaimed hatch are
+  gone (the country panel says "Unclaimed").
+- **Physical layers traced from the art** (PNG layer engine): IxWorld's altitude bands (Eurth's 6 legend bands
+  mapped to IxWorld's 8 and the coast band), rivers (centre lines), lakes, ice caps and Köppen climate zones. A
+  realm's `climateKey` drives the climate legend, the pin readout and the Geography tab. Coasts, borders and zones
+  are smoothed as one coverage (`ST_CoverageSimplify`), so neighbours still share edges; smoothing is stamped and
+  idempotent, and the source sync applies it after writing borders.
+- **Raster art, optional:** the map's art is reprojected into Web Mercator tiles (`MAP_RASTER_DIR`,
+  `/api/map-rasters`); base maps and overlays are switches in the layer panel, off by default, with their keys
+  inside the panel. While a base map is on, country fills show under the pointer only.
+- **Ocean and sea labels:** realm labels render through IxWorld's own ocean-label layer (ranks major, medium,
+  minor); Eurth has 83 from the art.
+- **Borders repaired on write:** valid polygons, no repeated points, no strip shared by two neighbours (Eurth: 70
+  overlapping pairs, 13,055 km², and 6 invalid shapes to none). Neighbour queries use `ST_Intersects` (country
+  panel, geo bundle, national issues), so nations meeting along a repaired border are neighbours.
+- **Map pipeline:** `realms.mapPipeline` (get, save, load preset, start, run, runs, cancel; founder, Map officers and
+  site admins) runs the steps repair, physical, rasters, labels, flags, default view and areas as a `map-pipeline`
+  map import job, with dry runs and history; `/admin/realms` → Map and `/r/<realm>/manage` → Map pipeline.
+  `scripts/realms/build-realm-map.ts` runs the same job; the per-step scripts are thin wrappers.
+- **Nations fit the IxStats economy:** realm nations take growth by economic tier from `Realm.settings.nationDefaults`
+  (defaults: IxWorld's medians), editable in `/admin/realms` → Nations and applied to unclaimed nations with a
+  preview; any country's growth is editable in the admin Country Inspector. A new country's max GDP growth follows
+  the tier rule (it was a flat 5%).
+- **Flags local, like IxWorld's:** realm flags and coats of arms are stored in `public/flags/`
+  (`<realm>--<country>.png`, `scripts/realms/localize-realm-flags.ts`); images a wiki confirms missing are cleared.
+- **Country panel and pages:** the capital shows; a realm nation's wiki intro comes from its own page
+  (`wikiSource`/`wikiPageTitle`, redirects followed); the flag lookup uses the map's realm; no "Unknown" region chip,
+  and new countries store an unknown continent or region as empty, as IxWorld does.
+- **Area measuring:** Distance and Area modes; spherical on the realm's radius, antimeridian and polar rings handled.
+- **Fixes found on the way:**
+  - **Security:** deleted `/api/flags/download` and `/api/flags/save-metadata`, unauthenticated routes that wrote any
+    fetched URL to any path (path traversal) and overwrote the flag metadata. **Production still has them**: deploy.
+  - Infobox parsing fills `{{PAGENAME}}` and ignores commented-out fields (broken flags on 26 Eurth nations).
+  - The WikiOS reader no longer says an article "does not exist" when its wiki failed to answer (only `NOT_FOUND`
+    does; a sister wiki's missing page now returns `NOT_FOUND`).
+  - The infobox reader follows a redirect; a cached read keys a signed-in viewer's `?realm=` per viewer (a draft
+    realm is never served to others); sovereignty relations are listed per realm.
 
 ### 🗺️ IxWorld Map Performance (2026-10-07) — IxWorld v3
 
@@ -217,8 +312,30 @@ reads 1.4.0 until the RC2 cut.
   listed there (both pages still exist).
 - **My realm** is the filterable directory that was `/explore` (search, tier, continent, region, population, sort,
   compare), scoped to your realm or `?realm=`. `/explore` redirects to it. The shuffled card grid is retired.
-- **MyCountry icon:** the sidebar and the Halo tray use the MyCountry crown logo (the logo's globe with its crown
-  badge, in one colour).
+- **MyCountry icon:** the sidebar and the Halo tray show the MyCountry logo's crown badge (`MyCountryLogo`'s gold
+  disc and crown, in its own colours), drawn as one SVG that scales with the icon box.
+- **Maps and Realms icons:** Maps uses iconoir's solid Compass. Realms has its own mark (`RealmsLogomark`): iconoir's
+  Hexagon, filled, with iconoir's Community figures cut out of it, a realm as people sharing a world. Both take the
+  sidebar tint. Realms' Explore row now uses Search, so the people glyph isn't repeated under the app.
+- **One icon family:** every app now wears a solid mark with a cut-out in its tint. Vault has its own mark
+  (`VaultLogomark`): a collectible card with the ccy-icons BNB glyph cut out (`CurrencyIcon` reads the glyph from it).
+  Forum uses iconoir's solid MultiBubble (sidebar and Halo), Labs its solid RoundFlask. Utilities (Home, Help, Admin,
+  Settings) stay line icons. Realms gets its own tint (`data-app="realms"`) instead of the default.
+- **One colour per app:** the app tints are a palette now, not a list. MyCountry gold and the IxWiki navy (the
+  original logo's `#1d4e89`, replacing indigo) are fixed; every other app sits evenly between them in OKLCH hue at
+  one shared lightness, at least 30 degrees from any other (`app-palette.test.ts`). Labs gets its own green and
+  MyLeague and MyClub wear it; Maps moves to cyan, Forum to red, Vault to raspberry. The default (Home, Help,
+  Settings, Admin) is a warm ink instead of indigo, so the apps carry the colour. The crimson Intel tint is gone (Defense and Intelligence wear MyCountry's gold) and so is Sports'
+  teal. Halo's private colour map is deleted: its tray and accent use the app tints.
+- **MyCountry icon colours:** the crown badge paints with literal colours, so it shows without the app's CSS.
+- **Posting no longer breaks the editor:** after a ThinkPages post (and in every composer on the shared rich
+  editor: Forum, Messages) the editor threw "Cannot resolve a DOM node from Slate node" and stopped taking
+  input. Clearing assigned `editor.children` directly, which Slate never renders; it now uses
+  `editor.tf.setValue`, and a guard test forbids the direct assignment.
+- **Dashboard hero alignment:** from 1280px, where the right-hand panel is pinned, the MyCountry hero starts
+  level with the panel's first card instead of one Halo band (72px) higher.
+- **Coloured sidebar icons:** every sidebar icon wears its tint, not just the current row's: section rows,
+  the Settings and Admin footer links, and every app in the collapsed icon rail. Labels stay in the label colour.
 
 ### 🧹 Retirements (2026-10-06)
 

@@ -1,9 +1,11 @@
 "use client";
-import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle, useState, memo, useMemo } from "react";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import { MAP_DEFAULTS, buildBaseStyle, mapHomeCenter } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
+import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
+import { oceanLabelFeatures } from "~/lib/maps/ocean-labels";
 
 import { Suspense } from "react";
 import { acquireSurface } from "~/lib/maps/map-engine";
@@ -118,18 +120,21 @@ interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   overlayData?: Record<string, unknown>;
   onRouteClick?: (routeId: string) => void;
-  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
+  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). A realm's own labels (oceans, seas,
+   * regions, continents from `overlayFeatures.mapLabels`) join them in the same layer and style. */
   showOceanLabels?: boolean;
   /** The map shows IxWorld: its prime meridian line and home view centre (56.1842°); else the origin. */
   ixWorld?: boolean;
   /** The realm's base image (full-globe equirectangular), drawn under the political layer. */
   baseImageUrl?: string | null;
-  /** The realm's credit line, also attached to its base image. */
-  attribution?: string | null;
-  /** The realm's unclaimed nations, hatched over their fill. */
-  unclaimedCountryIds?: readonly string[];
   /** The realm whose decorative layers (altitudes, rivers, lakes) draw from vector tiles. */
   tileRealmId?: string;
+  /** The realm whose raster art `rasterLayers` are. */
+  rasterRealmId?: string | null;
+  /** The realm's raster art switched on (base map, overlays), in drawing order. */
+  rasterLayers?: readonly RealmRasterLayer[];
+  /** A base map's art is shown: political fills and borders give way to it. */
+  artMode?: boolean;
 }
 
 export interface IxWorldMapRef {
@@ -166,9 +171,10 @@ const IxWorldMap = memo(
       showOceanLabels = false,
       ixWorld = false,
       baseImageUrl,
-      attribution,
-      unclaimedCountryIds,
       tileRealmId,
+      rasterRealmId,
+      rasterLayers,
+      artMode = false,
     },
     ref
   ) {
@@ -224,6 +230,13 @@ const IxWorldMap = memo(
       tooltipPopupRef,
     });
 
+    // The realm's art prints its own ocean and region names, so its labels give way to it in art mode
+    const realmMapLabels = artMode ? undefined : overlayFeatures?.mapLabels;
+    const oceanLabels = useMemo(
+      () => oceanLabelFeatures(showOceanLabels, realmMapLabels),
+      [showOceanLabels, realmMapLabels]
+    );
+
     useWorldMapLayers({
       map: mapRef.current,
       isLoaded,
@@ -233,10 +246,11 @@ const IxWorldMap = memo(
       updateDistanceFade,
       labelFeaturesRef,
       theme,
-      showOceanLabels,
+      oceanLabels,
       showPrimeMeridian: ixWorld,
       labelsVisible,
       tileRealmId,
+      artMode,
     });
 
     useRealmMapLayers({
@@ -245,8 +259,8 @@ const IxWorldMap = memo(
       layers,
       theme,
       baseImageUrl,
-      attribution,
-      unclaimedCountryIds,
+      rasterRealmId,
+      rasterLayers,
     });
 
     useWorldMapOverlayFeatures({

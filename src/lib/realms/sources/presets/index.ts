@@ -1,11 +1,13 @@
 /**
  * Source presets: a known source's values (repository, ref, adapter, file paths, field names, attribution,
- * options, continent table, and the realm's wiki: the world's sister wiki, root category, keyword, roster and
- * portal), loaded into a realm's sync config with one action ("Load preset" in the settings, `--preset <id>` in
- * the script). Loading copies the values; from then on the realm's config is the only source of truth, and editing
- * a preset never changes a realm that already loaded it.
+ * options, continent table, the realm's wiki: the world's sister wiki, root category, keyword, roster and
+ * portal, and its map pipeline: art, raster layers, physical layers, labels, flags, default view and smoothing),
+ * loaded into a realm's sync config and map pipeline with one action each ("Load preset" in the settings,
+ * `--preset <id>` in the scripts). Loading copies the values; from then on the realm's config is the only source of
+ * truth, and editing a preset never changes a realm that already loaded it.
  */
 import { z } from "zod";
+import { realmMapPipelineSchema } from "~/lib/maps/realm-map-pipeline";
 import { realmWikiSettingsSchema } from "~/lib/realms/realm-wiki-settings";
 import {
   continentMapSchema,
@@ -31,6 +33,8 @@ export const sourcePresetSchema = z.object({
   continentMap: continentMapSchema.optional(),
   /** The realm's wiki (`Realm.settings.wiki`), filled when the realm has none yet. */
   wiki: realmWikiSettingsSchema.optional(),
+  /** The realm's map pipeline (`Realm.settings.map.pipeline`), filled by the map panel's "Load preset". */
+  mapPipeline: realmMapPipelineSchema.optional(),
 });
 export type SourcePreset = z.infer<typeof sourcePresetSchema>;
 

@@ -17,6 +17,18 @@ describe("DashboardColumn", () => {
     expect(content.parentElement?.className).not.toMatch(/\bflex\b/);
   });
 
+  it("starts the hero level with the Inspector's first card where the Inspector is pinned (xl)", () => {
+    render(
+      <DashboardColumn heroSection={<div data-testid="hero" />}>
+        <p>Content</p>
+      </DashboardColumn>
+    );
+    // The Inspector sits at --shell-top-offset and pads 1.5rem; the hero clears the same band.
+    expect(screen.getByTestId("hero").parentElement?.className).toContain(
+      "xl:pt-[calc(var(--shell-top-offset)+1.5rem)]"
+    );
+  });
+
   it("renders without a hero", () => {
     render(
       <DashboardColumn>

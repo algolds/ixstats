@@ -96,3 +96,10 @@ export function isRealmImageUrl(url: string): boolean {
   if (UPLOADED_IMAGE.test(value)) return !value.includes("..");
   return /^https:\/\/[^\s]+$/i.test(value);
 }
+
+/** "12 nations · 4 open to claim", "1 nation"; null for a realm with no nations. */
+export function realmCountsLine(nationCount: number, openCount: number): string | null {
+  if (nationCount < 1) return null;
+  const nations = `${nationCount} ${nationCount === 1 ? "nation" : "nations"}`;
+  return openCount > 0 ? `${nations} · ${openCount} open to claim` : nations;
+}

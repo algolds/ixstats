@@ -471,7 +471,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   // Auth guard
   if (!user) {
     return (
-      <div className="flex h-full items-center justify-center p-4">
+      <div className="flex h-full items-center justify-center px-4 pt-(--shell-top-offset) pb-4">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -499,7 +499,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   }
   if (isEdit && countryLoadError) {
     return (
-      <div className="flex w-full flex-1 items-start justify-center px-4 pt-24 sm:pt-28 lg:pt-32">
+      <div className="flex w-full flex-1 items-start justify-center px-4 pt-(--shell-top-offset)">
         <Card role="alert" className="rounded-card w-full max-w-md space-y-4 p-6 text-center">
           <WarningTriangle aria-hidden="true" className="text-destructive mx-auto h-6 w-6" />
           <div className="space-y-1">

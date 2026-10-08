@@ -122,6 +122,15 @@ describe("SourceList", () => {
     expect(row).toHaveTextContent("New");
   });
 
+  it("lists Home's sections inline, with no Home row to expand", () => {
+    const { nav } = setup("/vault");
+    expect(within(nav).queryByRole("button", { name: "Expand Home" })).toBeNull();
+    expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/dashboard");
+    expect(within(nav).getByRole("link", { name: "Messages" })).toBeVisible();
+    expect(within(nav).getByRole("link", { name: "ThinkTanks" })).toBeVisible();
+    expect(within(nav).queryByRole("link", { name: "ThinkPages" })).toBeNull();
+  });
+
   it("shows the messages unread count on the Messages row", () => {
     const { nav } = setup("/dashboard", {
       badges: { "messages-unread": { kind: "count", value: 7 } },
@@ -336,16 +345,33 @@ describe("SourceList external sections", () => {
 describe("SourceList section tint", () => {
   afterEach(cleanup);
 
-  it("scopes a section's own tint on its row, so the Labs app tint does not recolour MyLeague", () => {
-    const { nav } = setup("/myleague");
-    const row = within(nav).getByRole("link", { name: "MyLeague" });
+  it("scopes a section's own tint on its row, so Home's tint does not recolour ThinkTanks", () => {
+    const { nav } = setup("/thinkpages");
+    const row = within(nav).getByRole("link", { name: "ThinkTanks" });
     expect(row).toHaveAttribute("aria-current", "page");
-    expect(row.closest("li")).toHaveAttribute("data-app", "sports");
+    expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
   });
 
-  it("leaves rows without a section tint to inherit the app's", () => {
+  it("leaves rows without a section tint to inherit the app's (MyLeague wears Labs')", () => {
     const { nav } = setup("/myleague");
-    const onoma = within(nav).getByRole("link", { name: "Onoma" }).closest("li");
-    expect(onoma).not.toHaveAttribute("data-app");
+    const myleague = within(nav).getByRole("link", { name: "MyLeague" }).closest("li");
+    expect(myleague).not.toHaveAttribute("data-app");
+  });
+});
+
+describe("SourceList icon colour", () => {
+  afterEach(cleanup);
+
+  it("tints every row's icon, not just the current one: apps, sections and footer links", () => {
+    const { nav } = setup("/vault/marketplace", { expanded: ["home", "mycountry"] });
+    const grey = within(nav)
+      .getAllByRole("link")
+      .filter((link) => {
+        const icon = link.querySelector("svg");
+        const tinted = icon?.closest(".text-tint");
+        return icon && !(tinted && link.contains(tinted));
+      })
+      .map((link) => link.textContent);
+    expect(grey).toEqual([]);
   });
 });

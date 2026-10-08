@@ -8,6 +8,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { createUrl } from "~/lib/utils";
+import { withVia } from "~/lib/realms/realm-invite";
+import { useInviteVia } from "~/components/realms/use-invite-via";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimStatusBadge, type MyClaim } from "./MyClaims";
 
@@ -32,6 +34,8 @@ export function ClaimableNations({
   const { isSignedIn } = useAuth();
   const notify = useNotify();
   const utils = api.useUtils();
+  // An invite link's handle rides along with the claim and through sign-in.
+  const via = useInviteVia();
   const [submitted, setSubmitted] = useState<ReadonlySet<string>>(new Set());
   const [acceptedRules, setAcceptedRules] = useState(false);
   const needsRules = !!rules && !acceptedRules;
@@ -48,6 +52,8 @@ export function ClaimableNations({
         notify.success(`${title} is yours`, "Manage it from MyCountry.");
         void utils.realms.getBySlug.invalidate({ slug: realmSlug });
         void utils.realms.region.invalidate();
+        void utils.realms.myNations.invalidate();
+        void utils.users.getProfile.invalidate();
         return;
       }
       setSubmitted((titles) => new Set(titles).add(title));
@@ -58,9 +64,7 @@ export function ClaimableNations({
     },
     onError: (error) => notify.error("Claim failed", error.message),
   });
-  const signInHref = createUrl(
-    `/sign-in?redirect_url=${encodeURIComponent(createUrl(`/r/${realmSlug}`))}`
-  );
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(createUrl(withVia(`/r/${realmSlug}`, via)))}`;
 
   return (
     <section className="border-separator bg-surface rounded-card border p-6">
@@ -86,7 +90,7 @@ export function ClaimableNations({
             <p className="text-label-secondary text-footnote line-clamp-3">{rules.summary}</p>
           )}
           <Link
-            href={createUrl(`/r/${encodeURIComponent(realmSlug)}/rules`)}
+            href={`/r/${encodeURIComponent(realmSlug)}/rules`}
             className="text-tint text-footnote w-fit underline-offset-4 hover:underline"
           >
             Read the rules
@@ -109,7 +113,7 @@ export function ClaimableNations({
             <li key={page.title} className="hover:bg-fill-3 rounded-row flex flex-col gap-1 p-2">
               <div className="flex items-center gap-2">
                 <Link
-                  href={createUrl(wikiReaderPath(page.title, parseWikiSource(page.wikiSource)))}
+                  href={wikiReaderPath(page.title, parseWikiSource(page.wikiSource))}
                   className="text-label text-body truncate hover:underline"
                 >
                   {page.title}
@@ -127,6 +131,7 @@ export function ClaimableNations({
                         realmSlug,
                         title: page.title,
                         ...(rules && { acceptedRules }),
+                        ...(via && { via }),
                       })
                     }
                   >

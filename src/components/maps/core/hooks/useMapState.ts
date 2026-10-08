@@ -52,7 +52,7 @@ function prefetchCountry(utils: ReturnType<typeof api.useUtils>, country: Hovere
   const { displayName, countryId } = country;
   if (!displayName) return;
   void utils.countries.getWikiRichIntro.prefetch(
-    { countryName: displayName },
+    { countryName: displayName, countryId: countryId ?? undefined },
     { staleTime: 24 * 60 * 60_000 }
   );
   if (!countryId) return;

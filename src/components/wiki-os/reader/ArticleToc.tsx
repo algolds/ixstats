@@ -7,9 +7,9 @@ import { Button } from "~/components/ui/button";
 const SCROLL_TOP_OFFSET = 90;
 
 /**
- * Header button that opens the Inspector sheet: "Contents" when the article has headings, "Page info"
- * when the sheet holds only the page info. Renders nothing without `onClick` (no Inspector), and
- * from 1280px up, where the Inspector already sits in the gutter.
+ * Header button that opens the contents sheet: "Contents" when the article has headings, "Page info"
+ * when the sheet holds only the page info. Renders nothing without `onClick` (contents turned off).
+ * From 1280px it hides while the contents aside is on screen (layout.css).
  */
 export function TocButton({ tocLength, onClick }: { tocLength: number; onClick?: () => void }) {
   if (!onClick) return null;
@@ -23,7 +23,7 @@ export function TocButton({ tocLength, onClick }: { tocLength: number; onClick?:
       onClick={onClick}
       title={name}
       aria-label={name}
-      className="border-separator bg-surface text-label-secondary hover:text-label rounded-control gap-2 xl:hidden"
+      className="wikios-toc-button border-separator bg-surface text-label-secondary hover:text-label rounded-control gap-2"
     >
       <List className="h-3.5 w-3.5" aria-hidden="true" />
       {label}

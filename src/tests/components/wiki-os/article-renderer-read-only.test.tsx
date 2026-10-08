@@ -118,6 +118,9 @@ function renderArticle(
 const marginQuery = api.wikios.getArticleMarginData.useQuery as jest.Mock;
 const annotationsQuery = api.wikios.getAnnotations.useQuery as jest.Mock;
 
+// Page info starts hidden in the aside; these tests read what it shows.
+beforeEach(() => localStorage.setItem("wikios:railCollapsed", "false"));
+
 describe("ArticleRenderer loads the margin drawer only once it is opened (plan 413)", () => {
   beforeEach(() => {
     jest.clearAllMocks();

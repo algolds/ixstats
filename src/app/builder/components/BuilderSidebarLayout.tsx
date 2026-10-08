@@ -76,13 +76,7 @@ export function BuilderSidebarLayout({
   const headerElement = studioHeader || notchBar;
 
   return (
-    <div
-      className={cn(
-        "flex min-h-[calc(100vh-1px)] w-full flex-1 flex-col",
-        "pt-24 sm:pt-28 lg:pt-32"
-      )}
-      data-builder-content
-    >
+    <div className="flex min-h-[calc(100vh-1px)] w-full flex-1 flex-col">
       {heroSection && <div className="container mx-auto px-4 pt-2 sm:pt-4">{heroSection}</div>}
 
       {/* Docked Studio Header (Non-sticky, directly in normal flow above main container) */}

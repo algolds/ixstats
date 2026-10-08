@@ -6,16 +6,19 @@ import {
   addMeasureLayers,
   bindMeasureInteractions,
   buildMeasureFeatures,
+  measurePerimeterKm,
   measureTotalKm,
   removeMeasureLayers,
+  type MeasureMode,
 } from "../utils/measure-helpers";
+import { sphericalRingAreaSqKm } from "~/lib/maps/planet";
 
 type Coord = [number, number];
 
 interface UseMeasureToolStateOptions {
   mapRef: React.RefObject<IxWorldMapRef | null>;
   onActiveChange?: (active: boolean) => void;
-  /** The realm's planet radius (km); distances are measured on it. */
+  /** The realm's planet radius (km); distances and areas are measured on it. */
   radiusKm?: number;
 }
 
@@ -26,7 +29,10 @@ export function useMeasureToolState({
 }: UseMeasureToolStateOptions) {
   const [active, setActive] = useState(false);
   const [points, setPoints] = useState<Coord[]>([]);
+  const [mode, setMode] = useState<MeasureMode>("distance");
   const totalDistance = useMemo(() => measureTotalKm(points, radiusKm), [points, radiusKm]);
+  const areaSqKm = useMemo(() => sphericalRingAreaSqKm(points, radiusKm), [points, radiusKm]);
+  const perimeterKm = useMemo(() => measurePerimeterKm(points, radiusKm), [points, radiusKm]);
   const draggingIndexRef = useRef<number | null>(null);
   const pointsRef = useRef<Coord[]>([]);
   const activeRef = useRef(false);
@@ -46,11 +52,16 @@ export function useMeasureToolState({
         GeoJSONSource | undefined;
       source?.setData({
         type: "FeatureCollection",
-        features: buildMeasureFeatures(pts, radiusKm),
+        features: buildMeasureFeatures(pts, radiusKm, mode),
       });
     },
-    [mapRef, radiusKm]
+    [mapRef, radiusKm, mode]
   );
+
+  // Switching between distance and area keeps the points and redraws them in the new mode.
+  useEffect(() => {
+    if (activeRef.current) updateMapLayers(pointsRef.current);
+  }, [updateMapLayers]);
 
   const clearPoints = useCallback(() => {
     setPoints([]);
@@ -137,5 +148,15 @@ export function useMeasureToolState({
     else setActive(true);
   }, [active, deactivate]);
 
-  return { active, points, totalDistance, clearPoints, handleToggle };
+  return {
+    active,
+    mode,
+    setMode,
+    points,
+    totalDistance,
+    areaSqKm,
+    perimeterKm,
+    clearPoints,
+    handleToggle,
+  };
 }

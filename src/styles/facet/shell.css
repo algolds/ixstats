@@ -10,10 +10,10 @@
    Shell variables (read them; don't redefine them in feature code):
    --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (16rem / 4rem collapsed; 0 below).
                            From 1280px it is proportional: 1 unit, clamped to 14rem..18rem.
-   --shell-inspector-width The right-hand column every page reserves from 1280px (1.25 units,
-                           clamped to 18rem..22rem; 0 below, where the Inspector is a sheet). The
-                           Inspector pins into it; <main> pads for it, so the content column is
-                           the same width and position on every page (sidebar : content :
+   --shell-inspector-width The right-hand column a page with an Inspector reserves from 1280px
+                           (1.25 units, clamped to 18rem..22rem; 0 below, where the Inspector is a
+                           sheet, and 0 on pages without one, which run the full width). The
+                           Inspector pins into it; <main> pads for it (sidebar : content :
                            inspector = 1 : 4 : 1.25).
    --shell-unit            100vw / 6.25, the 1 of that ratio. Read-only helper for the two above.
    --shell-tabbar-height   Space the TabBar takes at the bottom below 1024px (0 at ≥1024px).
@@ -22,8 +22,6 @@
    --shell-halo-reserve    Width kept clear in the middle of a page toolbar for Halo.
 
    Hooks for feature code:
-   [data-shell-gutter="none"] A page marker (anywhere in the page) that opts the page out of the
-                           reserved Inspector gutter: --shell-inspector-width is 0 for the shell.
    [data-shell-page-title] A page's own title (`shellPageTitleProps`). Hidden wherever that
                            page's <ShellPageHeader> shows (phones, or every width with
                            phoneOnly={false}), so the title is never shown twice.
@@ -74,19 +72,17 @@
     --shell-inspector-width: 0px;
   }
 
-  /* A page with nothing for the Inspector gives the gutter back and runs the full content width
-     (WikiOS tool pages: Recent changes, Categories, Utilities...). It marks itself with
-     data-shell-gutter="none"; :has() reads that on first paint, so there is no layout shift, and
-     <main>, Halo and the fixed bars all follow because they read this variable. */
-  [data-app-shell]:has([data-shell-gutter="none"]) {
+  /* Only a page with an Inspector keeps the gutter; every other page runs the full content width.
+     The Inspector's aside is plain server markup, so :has() reads it on first paint (no layout
+     shift), and <main>, Halo and the fixed bars all follow because they read this variable. */
+  [data-app-shell]:not(:has([data-slot="inspector"])) {
     --shell-inspector-width: 0px;
   }
 }
 
 @layer components {
-  /* The sidebar pushes content, the Inspector gutter is reserved on the right (whether or not the
-     page has an Inspector, so the content column never changes width between pages), and the tab
-     bar reserves the bottom. */
+  /* The sidebar pushes content, a page with an Inspector reserves its gutter on the right, and the
+     tab bar reserves the bottom. */
   [data-shell-main] {
     padding-left: var(--shell-sidebar-width);
     padding-right: var(--shell-inspector-width);
@@ -104,5 +100,12 @@
     :root:has([data-shell-page-header="phone"]) [data-shell-page-title] {
       display: none;
     }
+  }
+
+  /* Halo centres on what the page shows. A page with an Inspector fills the gutter too (the
+     dashboard's trending panel), so Halo centres from the sidebar to the window edge; otherwise the
+     gutter is empty and Halo stays over the content column. */
+  [data-app-shell]:has([data-slot="inspector"]) [data-slot="shell-halo"] {
+    right: 0;
   }
 }

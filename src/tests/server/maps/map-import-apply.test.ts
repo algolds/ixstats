@@ -207,9 +207,11 @@ describe("applyMapImportPlan and rollback", () => {
       db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === key);
     expect(row("Old Kingdom").isActive).toBe(false);
     expect(row("lake-1").isActive).toBe(true); // another layer is never touched
-    expect(row("borealis-key").geometry).toEqual(
-      plan.features.find((f) => f.key === "borealis-key")!.geometry
-    );
+    // Stored repaired: the planned square as a MultiPolygon.
+    expect(row("borealis-key").geometry).toEqual({
+      type: "MultiPolygon",
+      coordinates: [plan.features.find((f) => f.key === "borealis-key")!.geometry.coordinates],
+    });
     expect(db.country.rows[0].landArea).toBeGreaterThan(0);
     expect(db.country.rows[1].landArea).toBe(51_000); // a stated land area is kept
 
@@ -225,6 +227,19 @@ describe("applyMapImportPlan and rollback", () => {
     await expect(rollbackMapImport(db as never, admin, applied.mapImportId)).rejects.toMatchObject({
       code: "CONFLICT",
     });
+  });
+
+  it("planning the same map again finds every border unchanged, although the stored copy was repaired", async () => {
+    const db = setup();
+    const realm = await findImportRealm(db, "r1");
+    const plan = await planMapImport(db as never, realm, result, apply("merge"), {});
+    await applyMapImportPlan(db as never, realm, plan, { jobId: "j1", requestedBy: "admin_1" });
+    const again = await planMapImport(db as never, realm, result, apply("merge"), {});
+    expect(again.diff.features.map((f) => f.status)).toEqual([
+      "unchanged",
+      "unchanged",
+      "unchanged",
+    ]);
   });
 
   it("only the latest import still in place can be rolled back, and only by its staff", async () => {

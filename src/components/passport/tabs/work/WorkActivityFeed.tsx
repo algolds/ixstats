@@ -14,9 +14,9 @@ import {
 } from "iconoir-react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils/cn";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import type { WorkPayload } from "../../types";
+import { formatWorkDay, WORK_LINK, WORK_ROW, WorkSectionTitle } from "./WorkSection";
 
 type FeedItem = WorkPayload["wikiActivityFeed"][number];
 
@@ -56,60 +56,43 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
   contributionsUser,
 }: WorkActivityFeedProps) {
   return (
-    <div className="space-y-3 pt-2">
-      <div className="flex items-center justify-between">
-        <h4 className="text-subhead text-label-secondary flex items-center gap-2">
-          <EditPencil aria-hidden className="size-4" />
-          <span>
-            Full WikiOS and database activity stream{" "}
-            <span className="tabular-nums">({feed.length})</span>
-          </span>
-        </h4>
-        <Link
-          href={`/util/contributions/${encodeURIComponent(contributionsUser)}`}
-          className="text-tint text-footnote flex items-center gap-0.5 hover:underline"
-        >
-          <span>View all</span>
-          <ArrowUpRight aria-hidden className="size-3.5" />
-        </Link>
-      </div>
+    <section className="space-y-1">
+      <WorkSectionTitle
+        icon={<EditPencil />}
+        trailing={
+          <Link
+            href={`/util/contributions/${encodeURIComponent(contributionsUser)}`}
+            className={WORK_LINK}
+          >
+            <span>View all</span>
+            <ArrowUpRight aria-hidden className="size-3.5" />
+          </Link>
+        }
+      >
+        Wiki activity <span className="tabular-nums">({feed.length})</span>
+      </WorkSectionTitle>
 
-      <ul className="grid grid-cols-1 gap-2">
+      <ul className="divide-separator divide-y">
         {feed.map((item, idx) => {
           const style = FEED_STYLE[item.type];
           const Icon = style.icon;
           return (
-            <li
-              key={`${item.id}-${idx}`}
-              className={cn(
-                "bg-surface-secondary text-label rounded-row",
-                "flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"
-              )}
-            >
+            <li key={`${item.id}-${idx}`} className={WORK_ROW}>
               <div className="flex min-w-0 flex-1 items-start gap-3">
-                <div
-                  aria-hidden
-                  className="bg-surface text-label-secondary rounded-row flex size-9 shrink-0 items-center justify-center"
-                >
-                  <Icon className="size-4" />
-                </div>
+                <Icon aria-hidden className="text-label-secondary mt-0.5 size-4 shrink-0" />
 
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant={style.badge}>{style.label}</Badge>
                     <span className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
                       <Clock aria-hidden className="size-3.5" />
-                      {new Date(item.timestamp).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {formatWorkDay(item.timestamp)}
                     </span>
                     {item.byteDiff !== null && <ByteDiff bytes={item.byteDiff} />}
                     {item.parked && <ParkedBadge />}
                   </div>
 
-                  <h4 className="text-label text-headline truncate">{item.title}</h4>
+                  <h3 className="text-label text-headline truncate">{item.title}</h3>
 
                   {item.summary && (
                     <p className="text-label-secondary text-footnote line-clamp-1 italic">
@@ -119,18 +102,16 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center justify-end pt-1 sm:pt-0">
-                <Button asChild variant="secondary" size="sm">
-                  <Link href={item.url}>
-                    <span>View in WikiOS</span>
-                    <ArrowRight aria-hidden />
-                  </Link>
-                </Button>
-              </div>
+              <Button asChild variant="secondary" size="sm" className="shrink-0 self-start">
+                <Link href={item.url}>
+                  <span>View in WikiOS</span>
+                  <ArrowRight aria-hidden />
+                </Link>
+              </Button>
             </li>
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 });

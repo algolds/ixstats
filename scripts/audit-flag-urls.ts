@@ -30,8 +30,6 @@ const issues: FlagAuditIssue[] = [];
 // Expected production URLs
 const EXPECTED_FLAG_PATHS = {
   metadata: `${BASE_PATH}/flags/metadata.json`,
-  apiDownload: `${BASE_PATH}/api/flags/download`,
-  apiSave: `${BASE_PATH}/api/flags/save-metadata`,
   publicFlags: `${BASE_PATH}/flags/`,
   placeholder: `${BASE_PATH}/placeholder-flag.svg`,
 };

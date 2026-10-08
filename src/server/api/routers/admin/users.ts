@@ -8,6 +8,7 @@ import { isSystemOwner } from "~/lib/auth";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 import {
   adminAssignNation,
+  dropOfficerPostWithoutNation,
   NationOwnershipError,
   pointActiveNation,
   releaseNation,
@@ -87,11 +88,16 @@ export const adminUsersRouter = createTRPCRouter({
         if (!user) return;
         const country = await tx.country.findUnique({
           where: { id: input.countryId },
-          select: { ownerUserId: true },
+          select: { ownerUserId: true, realmId: true },
         });
         // An owned nation is released whether or not it is the active one (a player may own several).
-        if (country?.ownerUserId === user.id) await releaseNation(tx, input.countryId);
-        else if (user.countryId === input.countryId) await pointActiveNation(tx, user.id, null);
+        if (country?.ownerUserId === user.id) {
+          await releaseNation(tx, input.countryId);
+          await dropOfficerPostWithoutNation(tx, country.realmId, {
+            id: user.id,
+            clerkUserId: input.userId,
+          });
+        } else if (user.countryId === input.countryId) await pointActiveNation(tx, user.id, null);
       });
 
       await globalCache.delete(`user_profile:${input.userId}`);

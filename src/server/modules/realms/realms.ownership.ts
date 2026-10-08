@@ -65,6 +65,20 @@ export async function releaseNation(tx: OwnershipTx, countryId: string): Promise
   await tx.user.updateMany({ where: { countryId }, data: { countryId: null } });
 }
 
+/**
+ * Officers hold their post only while they own a nation of the realm: once `user` owns none there, their officer
+ * post in `realmId` is removed (a realm's founder holds no officer row, so keeps every power).
+ */
+export async function dropOfficerPostWithoutNation(
+  tx: Pick<Prisma.TransactionClient, "country" | "realmOfficer">,
+  realmId: string,
+  user: { id: string; clerkUserId: string }
+): Promise<void> {
+  const stillHolds = await tx.country.count({ where: { realmId, ownerUserId: user.id } });
+  if (stillHolds > 0) return;
+  await tx.realmOfficer.deleteMany({ where: { realmId, userId: user.clerkUserId } });
+}
+
 /** Move only the active pointer. Used for the system-owner override and for un-pointing without releasing. */
 export async function pointActiveNation(
   tx: OwnershipTx,
@@ -95,8 +109,8 @@ export async function activateOwnedNation(
 /**
  * Admin override: give `countryId` to the user. The previous owner loses it; the user keeps every nation they
  * already own, in this realm and others, so the assignment must fit their nation cap (CAP_REACHED otherwise —
- * unassign one first). The active pointer follows assignNation's rule. System owners only move their active
- * pointer.
+ * unassign one first). The active pointer follows assignNation's rule, and a previous owner left without a nation
+ * in the realm loses any officer post there. System owners only move their active pointer.
  */
 export async function adminAssignNation(
   database: Pick<PrismaClient, "user" | "country" | "$transaction">,
@@ -114,10 +128,12 @@ export async function adminAssignNation(
     }
     const target = await tx.country.findUnique({
       where: { id: input.countryId },
-      select: { id: true },
+      select: { id: true, realmId: true, owner: { select: { id: true, clerkUserId: true } } },
     });
     if (!target) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
     await releaseNation(tx, input.countryId);
     await assignNation(tx, { userId: user.id, countryId: input.countryId });
+    if (target.owner && target.owner.id !== user.id)
+      await dropOfficerPostWithoutNation(tx, target.realmId, target.owner);
   });
 }

@@ -124,6 +124,29 @@ describe("claiming an unclaimed nation the source sync created", () => {
     expect(db.realmClaim.update).toHaveBeenCalledWith({ where: { id: "cl1" }, data: { countryId: "c-sync" } });
   });
 
+  it("finds the nation by its wiki page, not its name: a renamed nation is handed over, never duplicated", async () => {
+    const { db, claims } = setup();
+    db.country.findFirst.mockImplementation(async ({ where }: any) =>
+      where.name === "Aurelia" ? null : { id: "c-sync", name: "Free Aurelia", ownerUserId: null }
+    );
+    // A create would look for a free slug: none is taken.
+    const byId = db.country.findUnique.getMockImplementation();
+    db.country.findUnique.mockImplementation(async (args: any) => (args.where.slug ? null : byId(args)));
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({ status: "approved" });
+    expect(db.country.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          realmId: EURTH,
+          OR: [
+            { wikiSource: "iiwiki", wikiPageTitle: "Aurelia" },
+            { wikiPageTitle: null, name: "Aurelia" },
+          ],
+        },
+      })
+    );
+    expect(db.country.create).not.toHaveBeenCalled();
+  });
+
   it("a nation only on the realm's map (no wiki) always goes to manual review", async () => {
     const { db, deps, claims } = setup();
     db.country.findUnique.mockResolvedValue({ ...unclaimed, wikiSource: null, wikiPageTitle: null });

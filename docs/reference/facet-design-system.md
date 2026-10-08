@@ -50,17 +50,25 @@ Facet's own:
 - `facet-on-dark` (utility) rebinds `red yellow green blue indigo` to their dark-theme values for its subtree. Use it for content on a fixed dark scrim or overlay (a reveal stage) so it stays legible in light mode. Only raw role utilities such as `text-green` and `bg-yellow` pick it up; derived tokens (`*-ink`, `success`, `destructive`) are not rebound.
 - App tints come from `data-app` on the app root, which sets `--tint*` for its subtree. Never inline `--tint`.
 
-| `data-app` | Tint |
-|---|---|
-| none, `admin` | Indigo |
-| `mycountry` | Gold |
-| `intel` | Crimson (also resets the primary to monochrome) |
-| `maps` | Sky |
-| `thinkpages` | Emerald |
-| `vault` | Copper |
-| `forum` | Orange |
-| `wiki` | Ink indigo |
-| `sports` | Teal |
+The app palette has one colour per app, never shared:
+
+- **Brand colours.** Two tints are logo colours and fixed: MyCountry gold, and the IxWiki navy from the original logo (`#1d4e89`).
+- **Even spacing.** The rest sit evenly in the two OKLCH hue gaps those leave, at one lightness per mode (0.50 light, 0.78 dark), so no app reads louder than another.
+- **Ink default.** The default (Home, Help, Settings, Admin) is not a colour but a warm ink, chroma under 0.04, so the apps carry the colour. A colourful default could only be violet, the free hue between the wiki navy and Realms.
+- **Enforced.** `app-palette.test.ts` holds every pair at least 30 degrees apart in hue in both modes, and every non-brand tint at the shared lightness.
+- **Adding a tint.** Nine hues is the ceiling: one more drops the spacing below 30 degrees. A new app or section wears its parent's tint unless one is removed.
+
+| `data-app` | Tint | OKLCH hue |
+|---|---|---|
+| none, `admin` | Warm ink (Home, Help, Settings, Admin) | none (60, chroma 0.03) |
+| `mycountry` | Gold (brand) | 49 light, 84 dark |
+| `wiki` | IxWiki navy (brand) | 255 |
+| `labs` | Green (also MyLeague and MyClub) | 127 |
+| `thinkpages` | Emerald | 170 |
+| `maps` | Cyan | 212 |
+| `realms` | Purple | 302 |
+| `vault` | Raspberry | 338 |
+| `forum` | Red | 13 |
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
 

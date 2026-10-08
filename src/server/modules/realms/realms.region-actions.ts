@@ -14,9 +14,9 @@ import {
 } from "~/lib/realms/realm-region";
 import type { InWorldDate, RealmLink } from "~/lib/realms/realm-community";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
-import { sanitizeWikiContent } from "~/lib/utils/sanitize-html";
+import { sanitizeRealmContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, type RealmActor } from "./realms.access";
-import { releaseNation } from "./realms.ownership";
+import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { withInWorldDate } from "./realms.settings";
 import { removeFromRealmBoard } from "~/server/shared/realm-board";
@@ -70,9 +70,7 @@ export async function updateRealmAppearance(
 function renderRealmWikitext(source: string) {
   const wikitext = source.trim();
   // The parser styles its output for small excerpts; the realm page styles the factbook and rules itself.
-  const html = wikitext
-    ? sanitizeWikiContent(parseWikitextToHtml(wikitext).replace(/\sclass="[^"]*"/g, ""))
-    : null;
+  const html = wikitext ? sanitizeRealmContent(parseWikitextToHtml(wikitext)) : null;
   return { wikitext: wikitext || null, html };
 }
 
@@ -434,7 +432,7 @@ export async function liftBoardRestriction(
 
 /**
  * A player leaves a realm with one of their nations: it is released (unclaimed) and stops being their active
- * nation, and any board restriction on it is cleared. Officers who no longer own a nation in the realm lose
+ * nation; a board restriction on it still binds them. Officers who no longer own a nation in the realm lose
  * their post.
  */
 export async function abandonNation(
@@ -452,17 +450,10 @@ export async function abandonNation(
     throw new RealmRegionError("BAD_REQUEST", "Type the nation's name to confirm");
 
   await db.$transaction(async (tx) => {
+    // A board restriction on the nation stays: it keeps binding this player, never its next claimant
+    // (restrictionHolders in realm-board.ts).
     await releaseNation(tx, nation.id);
-    // A board restriction belongs to the player who held the nation, not to its next owner.
-    await tx.realmBoardBan.deleteMany({ where: { countryId: nation.id } });
-    const stillHolds = await tx.country.count({
-      where: { realmId: nation.realmId, ownerUserId: actor.id },
-    });
-    if (stillHolds === 0) {
-      await tx.realmOfficer.deleteMany({
-        where: { realmId: nation.realmId, userId: actor.clerkUserId },
-      });
-    }
+    await dropOfficerPostWithoutNation(tx, nation.realmId, actor);
   });
   return { success: true, realmId: nation.realmId, name: nation.name };
 }

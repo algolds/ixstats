@@ -268,7 +268,7 @@ export function useGlassPlateEditor({
   useEffect(() => {
     if (!value || value === "") {
       if (lastEmittedHtmlRef.current !== "" && lastEmittedPlainRef.current !== "") {
-        editor.children = [{ type: "p", children: [{ text: "" }] }];
+        editor.tf.setValue([{ type: "p", children: [{ text: "" }] }]);
         lastEmittedHtmlRef.current = "";
         lastEmittedPlainRef.current = "";
         setVersion((v) => v + 1);
@@ -279,7 +279,7 @@ export function useGlassPlateEditor({
     if (value !== lastEmittedHtmlRef.current && value !== lastEmittedPlainRef.current) {
       try {
         const newNodes = parsoidHtmlToSlate(value);
-        editor.children = newNodes;
+        editor.tf.setValue(newNodes);
         lastEmittedHtmlRef.current = value;
         setVersion((v) => v + 1);
       } catch (e) {

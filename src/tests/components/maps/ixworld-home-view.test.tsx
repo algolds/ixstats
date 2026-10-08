@@ -63,7 +63,6 @@ describe("graticule", () => {
         projectionMode: "mercator",
         updateDistanceFade: jest.fn(),
         labelFeaturesRef: { current: null },
-        fullLayerDataRef: { current: new Map() },
         showPrimeMeridian,
       })
     );

@@ -4,6 +4,10 @@
  *
  * - Geometry is checked before anything is written: Polygon or MultiPolygon, lon/lat in range, closed rings of
  *   at least four finite positions. A bad feature is rejected (and reported) instead of written.
+ * - Polygons are then repaired (realm-geometry-repair.ts): repeated points dropped and, with PostGIS, made valid
+ *   with only their polygonal parts kept, so what is stored (feature and country) is a valid MultiPolygon.
+ * - After a political write, overlaps between the written features and the rest of the realm's political layer
+ *   are removed (each strip goes to one side; see realm-geometry-repair.ts). Other realms are never touched.
  * - Writes go in batches, each in its own transaction with an explicit timeout, so a large map never trips the
  *   default interactive-transaction timeout and one bad batch does not undo the others.
  * - Where PostGIS is installed the writer fills `geom_postgis` itself (ST_MakeValid of the GeoJSON), never
@@ -16,11 +20,23 @@
  * - A realm on a planet of its own size passes `areaScale` ((radiusKm / 6371)², planet.ts) so the stored areas
  *   are its own; PostGIS measures on Earth.
  * - Non-political layers (rivers, lakes, relief) may pass `geometryKinds: "any"` to accept lines and points too.
+ * - A layer traced from pixel art passes `coverage`: after the write the whole layer (with PostGIS) is made one
+ *   smooth coverage (realm-geometry-repair.ts, smoothLayerCoverage): no pixel steps, shared edges still shared.
+ *   Every feature of the layer is then stamped as smoothed (`properties.coverage`, stampLayerCoverage). The whole
+ *   layer is smoothed, so pass every feature's unsmoothed outline (realm-layer-repair.ts does): a feature smoothed
+ *   before would have its corners rounded again.
  */
 import type { Geometry, MultiPolygon, Polygon, Position } from "geojson";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { polygonMetrics } from "./feature-metrics";
 import { isPostGISAvailable } from "./geo-validation";
+import {
+  findOverlapTrims,
+  repairPolygonalGeometry,
+  smoothLayerCoverage,
+  stampLayerCoverage,
+  storeFeatureGeometries,
+} from "./realm-geometry-repair";
 
 export interface RealmMapFeatureInput {
   /** Stable key within the realm and layer (becomes MapLayer.featureId). */
@@ -47,6 +63,8 @@ export interface RealmMapWriteOptions {
   geometryKinds?: "polygonal" | "any";
   /** Multiplies every measured area (a realm's own planet size); default 1. */
   areaScale?: number;
+  /** Smooth the whole layer as a coverage after the write: tolerance in degrees, rounds of corner cutting. */
+  coverage?: { tolerance: number; smooth: number };
 }
 
 export interface RealmMapWriteResult {
@@ -54,6 +72,10 @@ export interface RealmMapWriteResult {
   rejected: { key: string; reason: string }[];
   /** Each written feature's area in km² (PostGIS geography area when available, else the given or approximate). */
   areas: Record<string, number | null>;
+  /** Political features (written or neighbouring) that gave an overlap strip to a neighbour: km² given. */
+  trimmed: Record<string, number>;
+  /** Features of the layer stored again by the coverage smoothing (`coverage`). */
+  smoothed: number;
 }
 
 export const DEFAULT_MAP_WRITE_BATCH = 20;
@@ -100,8 +122,11 @@ export function geometryProblem(
   if (!g || !Array.isArray(g.coordinates) || g.coordinates.length === 0) return "no coordinates";
   if (kinds === "any" && typeof g.type === "string" && LINE_TYPES.has(g.type)) {
     const points = linePositions(g.type, g.coordinates);
-    if (!points || !points.every(isPosition)) return "a position is not a finite lon/lat pair in range";
-    return g.type.endsWith("LineString") && points.length < 2 ? "a line has fewer than two positions" : null;
+    if (!points || !points.every(isPosition))
+      return "a position is not a finite lon/lat pair in range";
+    return g.type.endsWith("LineString") && points.length < 2
+      ? "a line has fewer than two positions"
+      : null;
   }
   const polygons =
     g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : null;
@@ -117,6 +142,80 @@ export function geometryProblem(
 }
 
 type WriterTx = Prisma.TransactionClient;
+
+const isPolygonal = (geometry: Geometry): geometry is Polygon | MultiPolygon =>
+  geometry.type === "Polygon" || geometry.type === "MultiPolygon";
+
+const errorReason = (error: unknown) =>
+  (error instanceof Error ? error.message : String(error)).slice(0, 200);
+
+/** The feature with its polygon repaired, or why it cannot be written. Lines and points pass unchanged. */
+async function repairFeature(
+  db: PrismaClient,
+  feature: RealmMapFeatureInput,
+  postgis: boolean
+): Promise<RealmMapFeatureInput | string> {
+  if (!isPolygonal(feature.geometry)) return feature;
+  try {
+    const geometry = await repairPolygonalGeometry(db, feature.geometry, postgis);
+    return geometry ? { ...feature, geometry } : "no polygonal area is left after repair";
+  } catch (error) {
+    return errorReason(error);
+  }
+}
+
+/** Give each overlap strip between the written features and their neighbours to one side; record the result. */
+async function removeOverlaps(
+  db: PrismaClient,
+  realmId: string,
+  options: RealmMapWriteOptions,
+  timeout: number,
+  result: RealmMapWriteResult
+): Promise<void> {
+  const areaScale = options.areaScale ?? 1;
+  const changes = await db.$transaction(
+    async (tx) => {
+      const trims = await findOverlapTrims(tx, realmId, { keys: result.written, areaScale });
+      const areas = await storeFeatureGeometries(tx, realmId, trims, {
+        areaScale,
+        syncCountryGeometry: options.syncCountryGeometry,
+      });
+      return trims.map((t) => ({ key: t.key, removedKm2: t.removedKm2, area: areas[t.key] }));
+    },
+    { timeout, maxWait: timeout }
+  );
+  for (const { key, removedKm2, area } of changes) {
+    result.trimmed[key] = removedKm2;
+    if (key in result.areas && typeof area === "number") result.areas[key] = area;
+  }
+}
+
+/** Make the layer one smooth coverage (see `coverage`); record the new areas of the written features. */
+async function smoothCoverage(
+  db: PrismaClient,
+  realmId: string,
+  layerType: string,
+  options: RealmMapWriteOptions,
+  timeout: number,
+  result: RealmMapWriteResult
+): Promise<void> {
+  const coverage = options.coverage;
+  if (!coverage) return;
+  const areas = await db.$transaction(
+    async (tx) => {
+      const updates = await smoothLayerCoverage(tx, realmId, { layerType, ...coverage });
+      result.smoothed = updates.length;
+      return storeFeatureGeometries(tx, realmId, updates, {
+        areaScale: options.areaScale ?? 1,
+        syncCountryGeometry: options.syncCountryGeometry,
+      });
+    },
+    { timeout, maxWait: timeout }
+  );
+  for (const [key, area] of Object.entries(areas)) {
+    if (key in result.areas && typeof area === "number") result.areas[key] = area;
+  }
+}
 
 async function writeOne(
   tx: WriterTx,
@@ -140,7 +239,13 @@ async function writeOne(
   const row = await tx.mapLayer.upsert({
     where: { realmId_layerType_featureId: { realmId, layerType, featureId: feature.key } },
     update: { ...fields, ...(feature.countryId && { countryId: feature.countryId }) },
-    create: { ...fields, realmId, layerType, featureId: feature.key, countryId: feature.countryId ?? null },
+    create: {
+      ...fields,
+      realmId,
+      layerType,
+      featureId: feature.key,
+      countryId: feature.countryId ?? null,
+    },
     select: { id: true },
   });
   let area = fields.areaSqKm;
@@ -173,6 +278,41 @@ async function writeOne(
 }
 
 /**
+ * After a write with PostGIS: the coverage smoothing (`coverage`), overlap removal (political layer) and, last, the
+ * smoothing record, so it hashes the outlines as they stay. A failure leaves the features written as they are.
+ */
+async function afterWrite(
+  db: PrismaClient,
+  realmId: string,
+  layerType: string,
+  options: RealmMapWriteOptions,
+  timeout: number,
+  result: RealmMapWriteResult
+): Promise<void> {
+  let smoothed = false;
+  if (options.coverage) {
+    try {
+      await smoothCoverage(db, realmId, layerType, options, timeout, result);
+      smoothed = true;
+    } catch (error) {
+      // The features are written; the steps stay until the next write or the repair script.
+      console.error("[realm-map-writer] Coverage smoothing failed:", error);
+    }
+  }
+  if (layerType === "political") {
+    try {
+      await removeOverlaps(db, realmId, options, timeout, result);
+    } catch (error) {
+      // The features are written; the strips stay until the next write or the repair script.
+      console.error("[realm-map-writer] Overlap removal failed:", error);
+    }
+  }
+  if (smoothed && options.coverage) {
+    await stampLayerCoverage(db, realmId, { layerType, ...options.coverage });
+  }
+}
+
+/**
  * Upsert features into a realm's map layer. Linked countries must be in the realm (checked here); a feature
  * whose country is elsewhere is rejected.
  */
@@ -185,7 +325,13 @@ export async function writeRealmMapFeatures(
   const layerType = options.layerType ?? "political";
   const batchSize = Math.max(1, options.batchSize ?? DEFAULT_MAP_WRITE_BATCH);
   const timeout = options.transactionTimeoutMs ?? DEFAULT_MAP_WRITE_TIMEOUT_MS;
-  const result: RealmMapWriteResult = { written: [], rejected: [], areas: {} };
+  const result: RealmMapWriteResult = {
+    written: [],
+    rejected: [],
+    areas: {},
+    trimmed: {},
+    smoothed: 0,
+  };
 
   const linkIds = [...new Set(features.flatMap((f) => (f.countryId ? [f.countryId] : [])))];
   const linkable = new Set(
@@ -198,16 +344,19 @@ export async function writeRealmMapFeatures(
         ).map((c) => c.id)
       : []
   );
+  const postgis = await isPostGISAvailable(db);
   const valid: RealmMapFeatureInput[] = [];
   for (const feature of features) {
-    const problem = geometryProblem(feature.geometry, options.geometryKinds);
-    if (problem) result.rejected.push({ key: feature.key, reason: problem });
-    else if (feature.countryId && !linkable.has(feature.countryId))
-      result.rejected.push({ key: feature.key, reason: "its country is not in this realm" });
-    else valid.push(feature);
+    const problem =
+      geometryProblem(feature.geometry, options.geometryKinds) ??
+      (feature.countryId && !linkable.has(feature.countryId)
+        ? "its country is not in this realm"
+        : null);
+    const ready = problem ?? (await repairFeature(db, feature, postgis));
+    if (typeof ready === "string") result.rejected.push({ key: feature.key, reason: ready });
+    else valid.push(ready);
   }
 
-  const postgis = await isPostGISAvailable(db);
   for (let i = 0; i < valid.length; i += batchSize) {
     const batch = valid.slice(i, i + batchSize);
     try {
@@ -236,9 +385,12 @@ export async function writeRealmMapFeatures(
         result.areas[key] = area;
       }
     } catch (error) {
-      const reason = (error instanceof Error ? error.message : String(error)).slice(0, 200);
+      const reason = errorReason(error);
       for (const feature of batch) result.rejected.push({ key: feature.key, reason });
     }
+  }
+  if (postgis && result.written.length > 0) {
+    await afterWrite(db, realmId, layerType, options, timeout, result);
   }
   return result;
 }

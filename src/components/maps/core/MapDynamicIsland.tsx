@@ -146,6 +146,7 @@ function SearchResults({
   hasResults,
   query,
   onSelect,
+  realm,
 }: {
   grouped: [string, MapSearchResult[]][];
   flatResults: MapSearchResult[];
@@ -154,6 +155,8 @@ function SearchResults({
   hasResults: boolean;
   query: string;
   onSelect: (result: MapSearchResult) => void;
+  /** The realm the map shows, whose nations' flags the results show. */
+  realm?: string;
 }) {
   return (
     <>
@@ -198,7 +201,7 @@ function SearchResults({
                   )}
                 >
                   {result.type === "country" ? (
-                    <FlagIcon name={result.name} />
+                    <FlagIcon name={result.name} realm={realm} />
                   ) : (
                     <Icon
                       className={cn(
@@ -302,6 +305,7 @@ export function MapDynamicIsland({
       hasResults={hasResults}
       query={query}
       onSelect={handleSelect}
+      realm={realm}
     />
   );
 

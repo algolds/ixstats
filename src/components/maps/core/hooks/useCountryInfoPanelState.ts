@@ -5,6 +5,7 @@ import { useCountryPanelData } from "~/hooks/useCountryPanelData";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 import type { NeighborTarget, SelectedCountry } from "../IxWorldMap";
+import { useMapRealm } from "../MapRealmContext";
 
 import { formatNumber, formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
 
@@ -34,10 +35,12 @@ export function useCountryInfoPanelState({
 
   const displayName = summary?.name ?? country.displayName;
   const wikiName = country.displayName;
-  const { flagUrl } = useFlag(displayName);
+  // The name is looked up in the realm the map shows: a realm's nation is not in the viewer's realm
+  const { flagUrl } = useFlag(displayName, useMapRealm());
 
   const { data: wikiRichIntro } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: wikiName },
+    // The country's id reads its own wiki page (realm nations name theirs) instead of its name.
+    { countryName: wikiName, countryId: country.countryId ?? undefined },
     {
       enabled: !!wikiName,
       staleTime: 24 * 60 * 60_000,

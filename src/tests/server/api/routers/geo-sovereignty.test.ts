@@ -187,3 +187,14 @@ describe("public reads", () => {
     ]);
   });
 });
+
+describe("getSovereigntyRelations", () => {
+  it("lists only the viewer's realm (rule E-h)", async () => {
+    db.realm.findUnique.mockResolvedValue({ id: "r_eurth", status: "active", ownerId: "system" });
+    db.countrySovereignty.findMany.mockResolvedValue([]);
+    await callerAs(db, null).getSovereigntyRelations({ realm: "eurth" });
+    expect(db.countrySovereignty.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { isActive: true, sovereign: { realmId: "r_eurth" } } })
+    );
+  });
+});

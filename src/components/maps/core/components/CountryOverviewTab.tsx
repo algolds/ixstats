@@ -7,6 +7,7 @@ import {
   Dollar as DollarSign,
   StatUp as TrendingUp,
   MapPin,
+  City,
   Crown,
   Tournament as Swords,
   Shield,
@@ -44,6 +45,12 @@ interface CountryOverviewTabProps {
 }
 
 type Section = "overview" | "info" | "geography";
+
+/** A continent or region worth a filter chip: none for a blank or "Unknown" one. */
+function knownPlace(value: string | null | undefined): string | null {
+  const place = value?.trim();
+  return place && place.toLowerCase() !== "unknown" ? place : null;
+}
 
 const SOVEREIGNTY_LABELS = SOVEREIGNTY_TYPE_MAP as Record<string, { label: string; short: string }>;
 
@@ -168,8 +175,8 @@ export function CountryOverviewTab({
   setActiveModal,
 }: CountryOverviewTabProps) {
   const geographyFilters = [
-    { type: "continent", value: summary.continent },
-    { type: "region", value: summary.region },
+    { type: "continent", value: knownPlace(summary.continent) },
+    { type: "region", value: knownPlace(summary.region) },
   ] as const;
 
   return (
@@ -228,9 +235,14 @@ export function CountryOverviewTab({
         />
         <StatCard icon={MapPin} label="Land area" value={formatArea(summary.landArea)} />
         <StatCard icon={Crown} label="Econ. Tier" value={summary.economicTier ?? "—"} />
+        {summary.capitalCity && (
+          <div className="col-span-2">
+            <StatCard icon={City} label="Capital" value={summary.capitalCity} />
+          </div>
+        )}
       </div>
 
-      {(summary.continent || summary.region) && (
+      {geographyFilters.some((f) => f.value) && (
         <div className="mt-4">
           <Eyebrow className="block">Geography</Eyebrow>
           <div className="mt-1 flex flex-wrap gap-2">

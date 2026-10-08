@@ -798,12 +798,14 @@ model RealmClaim {
   reviewedAt        DateTime?
   rejectionReason   String?
   rulesAcceptedAt   DateTime? // when the claimant confirmed reading the realm's rules (null: it had none)
+  invitedByUserId   String? // User.id of the member who invited the claimant; plain column, no relation
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([realmId, status])
   @@index([userId])
   @@index([countryId])
+  @@index([invitedByUserId])
   @@map("realm_claims")
 }
 

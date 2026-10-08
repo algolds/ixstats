@@ -82,10 +82,10 @@ describe("AppShell", () => {
     expect(shell).toHaveAttribute("data-app", "vault");
   });
 
-  it("applies a section's tint override to the canvas (MyLeague is teal, not Labs' sky)", () => {
+  it("paints MyLeague in Labs' colour, the app it lives under", () => {
     mockPathname = "/myleague";
     const { container } = render(<Shell />);
-    expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-app", "sports");
+    expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-app", "labs");
   });
 
   it("auto-opens the daily reward on routes with chrome, not on chromeless ones", () => {

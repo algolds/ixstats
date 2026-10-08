@@ -48,8 +48,8 @@ const APP_TINTS = [
   { value: "vault", label: "Vault" },
   { value: "forum", label: "Forum" },
   { value: "wiki", label: "Wiki" },
-  { value: "intel", label: "Intel" },
-  { value: "sports", label: "Sports" },
+  { value: "realms", label: "Realms" },
+  { value: "labs", label: "Labs" },
 ] as const;
 
 type AppTint = (typeof APP_TINTS)[number]["value"];

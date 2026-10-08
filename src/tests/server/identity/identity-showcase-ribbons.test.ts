@@ -17,6 +17,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";

@@ -137,7 +137,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
           Transforms.insertText(editor as any, text);
         },
         clear: () => {
-          editor.children = [{ type: "p", children: [{ text: "" }] }];
+          editor.tf.setValue([{ type: "p", children: [{ text: "" }] }]);
           ReactEditor.focus(editor as any);
         },
         focus: () => {

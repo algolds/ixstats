@@ -6,7 +6,11 @@ import type {
 } from "maplibre-gl";
 import type { Feature } from "geojson";
 import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
-import { EARTH_RADIUS_KM, haversineKm as planetHaversineKm } from "~/lib/maps/planet";
+import {
+  EARTH_RADIUS_KM,
+  haversineKm as planetHaversineKm,
+  sphericalRingAreaSqKm,
+} from "~/lib/maps/planet";
 
 const DEG2RAD = Math.PI / 180;
 
@@ -130,6 +134,21 @@ export function formatDistance(km: number): string {
   return `${km.toFixed(1)} km (${mi.toFixed(1)} mi)`;
 }
 
+const SQ_MI_PER_SQ_KM = 0.386102;
+const SQ_FT_PER_SQ_KM = 10_763_910.4;
+
+/** Whole numbers with thousands separators from 100 up, one decimal below. */
+const formatAreaNumber = (n: number) =>
+  n >= 100 ? Math.round(n).toLocaleString("en-US") : n.toFixed(1);
+
+export function formatArea(sqKm: number): string {
+  if (sqKm < 1) {
+    const sqM = Math.round(sqKm * 1e6).toLocaleString("en-US");
+    return `${sqM} m² (${Math.round(sqKm * SQ_FT_PER_SQ_KM).toLocaleString("en-US")} ft²)`;
+  }
+  return `${formatAreaNumber(sqKm)} km² (${formatAreaNumber(sqKm * SQ_MI_PER_SQ_KM)} mi²)`;
+}
+
 /** Custom SVG cursor: blue crosshair with center dot */
 const MEASURE_CURSOR = (() => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><line x1="12" y1="2" x2="12" y2="9" stroke="%233b82f6" stroke-width="2"/><line x1="12" y1="15" x2="12" y2="22" stroke="%233b82f6" stroke-width="2"/><line x1="2" y1="12" x2="9" y2="12" stroke="%233b82f6" stroke-width="2"/><line x1="15" y1="12" x2="22" y2="12" stroke="%233b82f6" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="%233b82f6"/></svg>`;
@@ -145,23 +164,109 @@ const legLengthsKm = (pts: Coord[], radiusKm: number) =>
 export const measureTotalKm = (pts: Coord[], radiusKm: number = EARTH_RADIUS_KM) =>
   legLengthsKm(pts, radiusKm).reduce((sum, d) => sum + d, 0);
 
+/** Perimeter (km) of the polygon the points outline, closed back to the first point. */
+export const measurePerimeterKm = (pts: Coord[], radiusKm: number = EARTH_RADIUS_KM) =>
+  measureTotalKm([...pts, ...pts.slice(0, 1)], radiusKm);
+
+/** Distance measures a path; area measures the polygon the points outline (closed implicitly). */
+export type MeasureMode = "distance" | "area";
+
+/** Great-circle path through the points, densified per leg; `closed` adds the leg back to the first. */
+function greatCirclePath(pts: Coord[], closed: boolean): Coord[] {
+  const ring = closed ? [...pts, pts[0]!] : pts;
+  const path: Coord[] = [ring[0]!];
+  for (let i = 1; i < ring.length; i++) {
+    const leg = interpolateGreatCircle(
+      ring[i - 1]!,
+      ring[i]!,
+      segmentCount(ring[i - 1]!, ring[i]!)
+    );
+    path.push(...leg.slice(1));
+  }
+  return path;
+}
+
+/** The path with each longitude shifted by whole turns to stay within 180° of the one before. */
+function unwrapLongitudes(path: Coord[]): Coord[] {
+  const out: Coord[] = [];
+  for (const [lng, lat] of path) {
+    const prev = out[out.length - 1];
+    out.push([prev ? lng + Math.round((prev[0] - lng) / 360) * 360 : lng, lat]);
+  }
+  return out;
+}
+
 /**
- * Great-circle path (split at the antimeridian), vertex markers and per-leg distance labels, measured on a
- * planet of `radiusKm` (the realm's; Earth's by default).
+ * Fill ring of the polygon: its great-circle outline with continuous longitudes, so a polygon across the
+ * antimeridian stays one shape (MapLibre wraps longitudes past ±180°). An outline that winds all the way round in
+ * longitude encloses a pole; it is closed along the pole on its side.
  */
-export function buildMeasureFeatures(pts: Coord[], radiusKm: number = EARTH_RADIUS_KM): Feature[] {
+function areaFillRing(pts: Coord[]): Coord[] {
+  const outline = unwrapLongitudes(greatCirclePath(pts, true));
+  const first = outline[0]!;
+  const last = outline[outline.length - 1]!;
+  if (Math.abs(last[0] - first[0]) < 180) return outline;
+  const meanLat = outline.reduce((sum, p) => sum + p[1], 0) / outline.length;
+  const poleLat = meanLat >= 0 ? 90 : -90;
+  return [...outline, [last[0], poleLat], [first[0], poleLat], first];
+}
+
+/** Mean direction of the points on the sphere, as `[lng, lat]`. */
+function sphericalCentroid(pts: Coord[]): Coord {
+  let x = 0;
+  let y = 0;
+  let z = 0;
+  for (const [lng, lat] of pts) {
+    x += Math.cos(lat * DEG2RAD) * Math.cos(lng * DEG2RAD);
+    y += Math.cos(lat * DEG2RAD) * Math.sin(lng * DEG2RAD);
+    z += Math.sin(lat * DEG2RAD);
+  }
+  return [Math.atan2(y, x) / DEG2RAD, Math.atan2(z, Math.hypot(x, y)) / DEG2RAD];
+}
+
+const labelFeature = (text: string, at: Coord): Feature => ({
+  type: "Feature",
+  properties: { kind: "label", text },
+  geometry: { type: "Point", coordinates: at },
+});
+
+/** Distance mode labels each leg with its length; area mode labels the polygon with its area. */
+function measureLabels(pts: Coord[], radiusKm: number, mode: MeasureMode): Feature[] {
+  if (mode === "distance") {
+    return legLengthsKm(pts, radiusKm).map((km, i) =>
+      labelFeature(formatDistance(km), sphericalMidpoint(pts[i]!, pts[i + 1]!))
+    );
+  }
+  if (pts.length < 3) return [];
+  return [labelFeature(formatArea(sphericalRingAreaSqKm(pts, radiusKm)), sphericalCentroid(pts))];
+}
+
+/**
+ * Great-circle path (split at the antimeridian), vertex markers and labels, measured on a planet of `radiusKm`
+ * (the realm's; Earth's by default). Distance mode labels each leg; area mode closes the path, fills the polygon
+ * from three points on and labels its spherical area.
+ */
+export function buildMeasureFeatures(
+  pts: Coord[],
+  radiusKm: number = EARTH_RADIUS_KM,
+  mode: MeasureMode = "distance"
+): Feature[] {
+  const polygon = mode === "area" && pts.length >= 3;
   const features: Feature[] = [];
 
+  if (polygon) {
+    features.push({
+      type: "Feature",
+      properties: { kind: "area" },
+      geometry: { type: "Polygon", coordinates: [areaFillRing(pts)] },
+    });
+  }
+
   if (pts.length >= 2) {
-    const path: Coord[] = [pts[0]!];
-    for (let i = 1; i < pts.length; i++) {
-      const leg = interpolateGreatCircle(pts[i - 1]!, pts[i]!, segmentCount(pts[i - 1]!, pts[i]!));
-      path.push(...leg.slice(1));
-    }
     features.push({
       type: "Feature",
       properties: { kind: "line" },
-      geometry: buildMeasureLineGeometry(path),
+      geometry: buildMeasureLineGeometry(greatCirclePath(pts, polygon)),
     });
   }
 
@@ -173,14 +278,7 @@ export function buildMeasureFeatures(pts: Coord[], radiusKm: number = EARTH_RADI
     });
   });
 
-  legLengthsKm(pts, radiusKm).forEach((km, i) => {
-    features.push({
-      type: "Feature",
-      properties: { kind: "label", text: formatDistance(km) },
-      geometry: { type: "Point", coordinates: sphericalMidpoint(pts[i]!, pts[i + 1]!) },
-    });
-  });
-
+  features.push(...measureLabels(pts, radiusKm, mode));
   return features;
 }
 
@@ -190,6 +288,12 @@ const MEASURE_POINT_LAYER_ID = "measure-points";
 const ofKind = (kind: string) => ["==", ["get", "kind"], kind];
 
 const MEASURE_LAYERS = [
+  {
+    id: "measure-fill",
+    type: "fill",
+    filter: ofKind("area"),
+    paint: { "fill-color": "#3b82f6", "fill-opacity": 0.15 },
+  },
   {
     id: "measure-line",
     type: "line",

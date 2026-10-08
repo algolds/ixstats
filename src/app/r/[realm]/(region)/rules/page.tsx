@@ -5,7 +5,6 @@ import Link from "next/link";
 import { EditPencil } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { createUrl } from "~/lib/utils";
 import { buttonVariants } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 
@@ -21,7 +20,7 @@ export default function RealmRulesPage({ params }: { params: Promise<{ realm: st
 
   const { realm, rules, viewer } = overview;
   const canEdit = viewer.powers.includes("appearance");
-  const editHref = createUrl(`/r/${encodeURIComponent(realm.slug)}/manage#rules`);
+  const editHref = `/r/${encodeURIComponent(realm.slug)}/manage#rules`;
 
   if (!rules)
     return (

@@ -14,6 +14,7 @@ import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/edito
 import { geoEditorLinkageValidationRouter } from "~/server/api/routers/geo/editor/linkage/validation";
 import { geoFeaturesRealmLabelsRouter } from "~/server/api/routers/geo/features/realm-labels";
 import { geoFeaturesLabelsRouter } from "~/server/api/routers/geo/features/labels";
+import { realmMapPipelineRouter } from "~/server/api/routers/realms/map-pipeline";
 import { canEditRealmMap, canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import {
@@ -107,8 +108,6 @@ const LABEL = {
   text: "Sunless Sea",
   labelType: "sea" as const,
   coordinates: [10, 20] as [number, number],
-  fontSize: 16,
-  color: "#2874a6",
 };
 
 beforeEach(() => clearTrpcMemoryCache());
@@ -330,7 +329,7 @@ describe("realm labels", () => {
         labelType: "sea",
         realmId: EURTH,
         countryId: null,
-        fontStyle: "normal",
+        metadata: { rank: "medium" },
       });
     }
   });
@@ -361,17 +360,37 @@ describe("realm labels", () => {
     });
     expect(db.mapLabel!.delete).not.toHaveBeenCalled();
 
-    db.mapLabel!.findFirst!.mockResolvedValue({ id: "l1" });
+    db.mapLabel!.findFirst!.mockResolvedValue({ id: "l1", metadata: { seedKey: "Sunless Sea" } });
     await labels(db, MAP_OFFICER).updateRealmLabel({
       labelId: "l1",
-      fontStyle: "italic",
-      fontSize: 20,
+      rank: "minor",
+      text: "Sunless Bay",
       realm: "eurth",
     });
-    expect(db.mapLabel!.update!.mock.calls[0][0]).toMatchObject({
+    expect(db.mapLabel!.update!.mock.calls[0][0]).toEqual({
       where: { id: "l1" },
-      data: { fontStyle: "italic", fontSize: 20 },
+      data: { text: "Sunless Bay", metadata: { seedKey: "Sunless Sea", rank: "minor" } },
+      select: expect.any(Object),
     });
+  });
+
+  it("lists the realm's labels for its editors with each one's rank", async () => {
+    const db = realmDb();
+    db.mapLabel!.findMany!.mockResolvedValue([
+      {
+        id: "l1",
+        text: "Auraid Bay",
+        labelType: "sea",
+        coordinates: [6, 38],
+        metadata: { rank: "minor" },
+      },
+      { id: "l2", text: "Argic Ocean", labelType: "ocean", coordinates: [0, 80], metadata: null },
+    ]);
+    const list = await labels(db, MAP_OFFICER).listRealmLabels({ realm: "eurth" });
+    expect(list).toEqual([
+      { id: "l1", text: "Auraid Bay", labelType: "sea", coordinates: [6, 38], rank: "minor" },
+      { id: "l2", text: "Argic Ocean", labelType: "ocean", coordinates: [0, 80], rank: "major" },
+    ]);
   });
 
   it("the public map lists the realm's own labels next to its nations' labels", async () => {
@@ -384,7 +403,7 @@ describe("realm labels", () => {
               text: "Sunless Sea",
               labelType: "sea",
               coordinates: [10, 20],
-              fontStyle: "italic",
+              metadata: { rank: "minor" },
               countryId: null,
               country: null,
             },
@@ -397,9 +416,41 @@ describe("realm labels", () => {
     expect(result.features).toHaveLength(1);
     expect(result.features[0]!.properties).toMatchObject({
       text: "Sunless Sea",
-      fontStyle: "italic",
+      rank: "minor",
       countryName: null,
       realmLabel: true,
     });
+  });
+});
+
+describe("the map pipeline (realms.mapPipeline) is for the realm's map editors", () => {
+  const pipeline = (db: Db, who: string) =>
+    createCallerFactory(realmMapPipelineRouter)(ctxAs(db, who));
+
+  it.each([FOUNDER, MAP_OFFICER, ADMIN])("%s reads Eurth's pipeline", async (who) => {
+    await expect(pipeline(realmDb(), who).get({ realm: "eurth" })).resolves.toMatchObject({
+      realm: { slug: "eurth" },
+      pipeline: null,
+    });
+  });
+
+  it.each([BOARD_OFFICER, PLAYER])("%s may not read or run it", async (who) => {
+    const caller = pipeline(realmDb(), who);
+    await expect(caller.get({ realm: "eurth" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller.start({ realm: "eurth", steps: ["repair"], dryRun: true })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("IxWorld's pipeline is for site admins only; an archived realm's is read-only", async () => {
+    await expect(pipeline(realmDb(), FOUNDER).get({ realm: "ixworld" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      pipeline(realmDb({ [EURTH]: "archived" }), FOUNDER).loadPreset({
+        realm: "eurth",
+        presetId: "eurth-map",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

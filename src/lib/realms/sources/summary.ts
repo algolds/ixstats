@@ -11,8 +11,13 @@ export interface AppliedResult {
   alliancesCreated: number;
   alliancesUpdated: number;
   membersAdded: number;
-  /** New nations whose wiki infobox gave nothing (wiki unreachable, slow, or no infobox): re-run to retry. */
+  /**
+   * Nations whose wiki infobox gave nothing (wiki unreachable, slow, or no infobox). A re-run reads each again
+   * while it is unclaimed and still has no flag, coat of arms, leader or government.
+   */
   infoboxEmpty: string[];
+  /** Existing unclaimed nations a re-read infobox filled (only fields that were empty). */
+  refilled: string[];
   errors: string[];
 }
 
@@ -26,6 +31,7 @@ export function summarizePlan(plan: SyncPlan, countryNames: ReadonlyMap<string, 
     updates: plan.updates,
     skippedClaimed: plan.skippedClaimed,
     locked: plan.locked,
+    refills: plan.refills,
     features: plan.features.map((f) => ({
       key: f.key,
       action: f.action,
@@ -54,7 +60,9 @@ export function summarizePlan(plan: SyncPlan, countryNames: ReadonlyMap<string, 
 export type SyncSummary = ReturnType<typeof summarizePlan> & { applied?: AppliedResult };
 
 const figure = (value: string | number | null) =>
-  typeof value === "number" ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : (value ?? "none");
+  typeof value === "number"
+    ? value.toLocaleString("en-US", { maximumFractionDigits: 2 })
+    : (value ?? "none");
 
 /** The run as plain text lines (the script prints these). */
 export function summaryLines(summary: SyncSummary): string[] {
@@ -69,19 +77,28 @@ export function summaryLines(summary: SyncSummary): string[] {
         ` pop ${figure(n.population)}, gdppc ${figure(n.gdpPerCapita)}, area ${figure(n.landArea)}, continent ${n.continent ?? "unknown"}`
     );
   for (const u of summary.updates) {
-    const changes = u.changes.map((ch) => `${ch.field} ${figure(ch.from)} -> ${figure(ch.to)}`).join("; ");
-    lines.push(`  update: ${u.name} [${u.key}]${u.bindKey ? " (key stored)" : ""}${changes ? `: ${changes}` : ""}`);
+    const changes = u.changes
+      .map((ch) => `${ch.field} ${figure(ch.from)} -> ${figure(ch.to)}`)
+      .join("; ");
+    lines.push(
+      `  update: ${u.name} [${u.key}]${u.bindKey ? " (key stored)" : ""}${changes ? `: ${changes}` : ""}`
+    );
   }
-  for (const s of summary.skippedClaimed) lines.push(`  claimed, left alone: ${s.name} (${s.fields.join(", ")})`);
-  for (const s of summary.locked) lines.push(`  pinned, left alone: ${s.name} (${s.fields.join(", ")})`);
-  for (const f of summary.features) lines.push(`  border ${f.action}: ${f.key}${f.nation ? ` -> ${f.nation}` : " (unlinked)"}`);
+  for (const s of summary.skippedClaimed)
+    lines.push(`  claimed, left alone: ${s.name} (${s.fields.join(", ")})`);
+  for (const s of summary.locked)
+    lines.push(`  pinned, left alone: ${s.name} (${s.fields.join(", ")})`);
+  for (const r of summary.refills) lines.push(`  wiki infobox read again: ${r.name}`);
+  for (const f of summary.features)
+    lines.push(`  border ${f.action}: ${f.key}${f.nation ? ` -> ${f.nation}` : " (unlinked)"}`);
   for (const a of summary.alliances)
     lines.push(
       `  alliance ${a.isNew ? "new" : "update"}: ${a.name}${a.shortName ? ` (${a.shortName})` : ""}` +
         `${a.type ? ` ${a.type}` : ""}${a.addMembers.length ? `, adds ${a.addMembers.join(", ")}` : ""}` +
         `${a.notInSource.length ? `; in IxStats only: ${a.notInSource.join(", ")}` : ""}`
     );
-  for (const m of summary.unknownMembers) lines.push(`  alliance member skipped: ${m.organization} / ${m.member}: ${m.reason}`);
+  for (const m of summary.unknownMembers)
+    lines.push(`  alliance member skipped: ${m.organization} / ${m.member}: ${m.reason}`);
   for (const m of summary.missing) lines.push(`  missing from the source: ${m.name} [${m.key}]`);
   for (const u of summary.unmatched)
     lines.push(
@@ -95,8 +112,12 @@ export function summaryLines(summary: SyncSummary): string[] {
       `written: ${applied.created} nations created, ${applied.updated} updated, ${applied.features} borders, ` +
         `${applied.alliancesCreated} alliances created, ${applied.alliancesUpdated} updated, ${applied.membersAdded} members added`
     );
+    if (applied.refilled.length)
+      lines.push(`  wiki infobox filled: ${applied.refilled.join(", ")}`);
     if (applied.infoboxEmpty.length)
-      lines.push(`  wiki infobox gave nothing (re-run to retry): ${applied.infoboxEmpty.join(", ")}`);
+      lines.push(
+        `  wiki infobox gave nothing (re-run to retry): ${applied.infoboxEmpty.join(", ")}`
+      );
     for (const e of applied.errors) lines.push(`  ERROR ${e}`);
   }
   return lines;

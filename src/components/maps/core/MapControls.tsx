@@ -16,10 +16,25 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetMaterial } from "~/components/ui/facet";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils/cn";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
+import type { ClimateKey, RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
+import { rasterLegendPath } from "~/lib/maps/raster-tiles";
+import { withBasePath } from "~/lib/base-path";
 import type { OverlayVisibility } from "./IxWorldMap";
+import type { RasterSelection } from "./hooks/useRealmMapDisplay";
+
+/** A realm's raster art switches: one base map (or none) and the overlays. */
+export interface RasterControls {
+  /** The realm the art belongs to (its key images are served under it). */
+  realmId: string;
+  layers: readonly RealmRasterLayer[];
+  selection: RasterSelection;
+  onBaseChange: (id: string | null) => void;
+  onToggleOverlay: (id: string) => void;
+}
 
 interface MapControlsProps {
   visibleLayers: Set<MapLayerType>;
@@ -46,9 +61,35 @@ interface MapControlsProps {
   onOpenWorldEditor?: () => void;
   /** Responsive layout variant: desktop horizontal bar, mobile FAB, or auto */
   variant?: "desktop" | "mobile" | "auto";
+  /** The vector layer types the realm has (`display.layerTypes`); undefined offers every switch (IxWorld). */
+  layerTypes?: readonly string[];
+  /** The realm's climate classification for the climate legend; null or undefined: IxWorld's Trewartha key. */
+  climateKey?: ClimateKey | null;
+  /** The realm's raster art switches, when it has any. */
+  raster?: RasterControls;
 }
 
-const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes"];
+const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes", "icecaps"];
+
+/** The layer switches a map offers: countries always, the others when the realm has that layer. */
+function toggleableLayers(layerTypes: readonly string[] | undefined): MapLayerType[] {
+  return TOGGLEABLE_LAYERS.filter(
+    (layer) => layer === "political" || !layerTypes || layerTypes.includes(layer)
+  );
+}
+
+/** The climate legend: the realm's own classification when it has one, else IxWorld's Trewartha key. */
+function climateLegend(climateKey: ClimateKey | null | undefined) {
+  if (!climateKey) return getClimateLegend();
+  return climateKey.zones.map((z) => ({
+    code: z.code,
+    label: `${z.code}: ${z.name}`,
+    color: z.color,
+  }));
+}
+
+/** The base map choice meaning "no base map" (not a valid layer id). */
+const NO_BASE = "_none";
 
 // Overlay toggles come from the registry: "feature" overlays live in the Layers panel,
 // "fill" + "analytics" overlays in the Analytics panel.
@@ -80,6 +121,9 @@ export function MapControls({
   onEditMap,
   showWorldEditor,
   onOpenWorldEditor,
+  layerTypes,
+  climateKey,
+  raster,
 }: MapControlsProps) {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -199,48 +243,15 @@ export function MapControls({
       </FacetMaterial>
 
       {openPanel === "layers" && (
-        <DropdownPanel label="Map layers">
-          <PanelSection title="Map layers">
-            {TOGGLEABLE_LAYERS.map((layer) => (
-              <CheckboxRow
-                key={layer}
-                label={LAYER_CONFIGS[layer].label}
-                checked={visibleLayers.has(layer)}
-                onChange={() => onToggleLayer(layer)}
-              />
-            ))}
-          </PanelSection>
-
-          {overlayVisibility && onToggleOverlay && (
-            <PanelSection title="Features">
-              <OverlayRows
-                items={FEATURE_OVERLAYS}
-                overlayVisibility={overlayVisibility}
-                onToggleOverlay={onToggleOverlay}
-              />
-              <ToggleAllRow
-                overlayVisibility={overlayVisibility}
-                onToggleOverlay={onToggleOverlay}
-              />
-            </PanelSection>
-          )}
-
-          {visibleLayers.has("climate") && (
-            <PanelSection title="Climate zones">
-              <div className="max-h-40 overflow-y-auto">
-                {getClimateLegend().map((entry) => (
-                  <div key={entry.code} className="flex items-center gap-2 py-0.5">
-                    <span
-                      className="border-separator inline-block h-2.5 w-2.5 shrink-0 rounded-xs border"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="text-label text-footnote">{entry.label}</span>
-                  </div>
-                ))}
-              </div>
-            </PanelSection>
-          )}
-        </DropdownPanel>
+        <LayersPanel
+          visibleLayers={visibleLayers}
+          onToggleLayer={onToggleLayer}
+          overlayVisibility={overlayVisibility}
+          onToggleOverlay={onToggleOverlay}
+          layerTypes={layerTypes}
+          climateKey={climateKey}
+          raster={raster}
+        />
       )}
 
       {openPanel === "analytics" && overlayVisibility && onToggleOverlay && (
@@ -255,6 +266,139 @@ export function MapControls({
         </DropdownPanel>
       )}
     </div>
+  );
+}
+
+type LayersPanelProps = Pick<
+  MapControlsProps,
+  | "visibleLayers"
+  | "onToggleLayer"
+  | "overlayVisibility"
+  | "onToggleOverlay"
+  | "layerTypes"
+  | "climateKey"
+  | "raster"
+>;
+
+function LayersPanel({
+  visibleLayers,
+  onToggleLayer,
+  overlayVisibility,
+  onToggleOverlay,
+  layerTypes,
+  climateKey,
+  raster,
+}: LayersPanelProps) {
+  const bases = raster?.layers.filter((l) => l.kind === "base") ?? [];
+  return (
+    <DropdownPanel label="Map layers">
+      {raster && bases.length > 0 && <BaseMapSection raster={raster} bases={bases} />}
+
+      <PanelSection title="Map layers">
+        {toggleableLayers(layerTypes).map((layer) => (
+          <CheckboxRow
+            key={layer}
+            label={LAYER_CONFIGS[layer].label}
+            checked={visibleLayers.has(layer)}
+            onChange={() => onToggleLayer(layer)}
+          />
+        ))}
+        {/* The art carries its own names: they start off while a base map is shown */}
+        {raster?.selection.base && (
+          <CheckboxRow
+            label={LAYER_CONFIGS.country_labels.label}
+            checked={visibleLayers.has("country_labels")}
+            onChange={() => onToggleLayer("country_labels")}
+          />
+        )}
+        {raster?.layers
+          .filter((l) => l.kind === "overlay")
+          .map((overlay) => (
+            <CheckboxRow
+              key={overlay.id}
+              label={overlay.label}
+              checked={raster.selection.overlays.includes(overlay.id)}
+              onChange={() => raster.onToggleOverlay(overlay.id)}
+            />
+          ))}
+      </PanelSection>
+
+      {overlayVisibility && onToggleOverlay && (
+        <PanelSection title="Features">
+          <OverlayRows
+            items={FEATURE_OVERLAYS}
+            overlayVisibility={overlayVisibility}
+            onToggleOverlay={onToggleOverlay}
+          />
+          <ToggleAllRow overlayVisibility={overlayVisibility} onToggleOverlay={onToggleOverlay} />
+        </PanelSection>
+      )}
+
+      {raster && <RasterKeys raster={raster} />}
+
+      {visibleLayers.has("climate") && (
+        <PanelSection title="Climate zones">
+          <div className="max-h-40 overflow-y-auto">
+            {climateLegend(climateKey).map((entry) => (
+              <div key={entry.code} className="flex items-center gap-2 py-0.5">
+                <span
+                  className="border-separator inline-block h-2.5 w-2.5 shrink-0 rounded-xs border"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-label text-footnote">{entry.label}</span>
+              </div>
+            ))}
+          </div>
+        </PanelSection>
+      )}
+    </DropdownPanel>
+  );
+}
+
+/**
+ * The key image of each raster layer that is switched on and has one, where the climate key shows for Climate
+ * Zones; opens full size in a new tab.
+ */
+function RasterKeys({ raster }: { raster: RasterControls }) {
+  const { base, overlays } = raster.selection;
+  return raster.layers
+    .filter((l) => l.legend && (l.id === base || overlays.includes(l.id)))
+    .map((layer) => {
+      const src = withBasePath(rasterLegendPath(raster.realmId, layer));
+      return (
+        <PanelSection key={layer.id} title={`${layer.label} key`}>
+          <a href={src} target="_blank" rel="noreferrer" className="block px-2 py-1">
+            <img src={src} alt={`${layer.label} key`} className="w-full rounded-xs" />
+          </a>
+        </PanelSection>
+      );
+    });
+}
+
+/** One base map at a time, or none (the map's own fills then show). */
+function BaseMapSection({
+  raster,
+  bases,
+}: {
+  raster: RasterControls;
+  bases: readonly RealmRasterLayer[];
+}) {
+  return (
+    <PanelSection title="Base map">
+      <div className="px-2 pt-1 pb-2">
+        <SegmentedControl
+          aria-label="Base map"
+          size="sm"
+          scrollable
+          value={raster.selection.base ?? NO_BASE}
+          onValueChange={(value) => raster.onBaseChange(value === NO_BASE ? null : value)}
+          options={[
+            ...bases.map((base) => ({ value: base.id, label: base.label })),
+            { value: NO_BASE, label: "None" },
+          ]}
+        />
+      </div>
+    </PanelSection>
   );
 }
 

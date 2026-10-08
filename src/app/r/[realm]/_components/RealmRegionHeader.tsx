@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Globe, MapPin } from "iconoir-react";
-import type { RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 
@@ -56,23 +57,65 @@ const asOfHint = (asOf: string | null | undefined) =>
       })}`
     : undefined;
 
+/** The founder's passport when they have a handle, else their nation here. `<Link>` adds the base path. */
+function founderHref(founder: NonNullable<Overview["founder"]>) {
+  if (founder.handle) return `/@${encodeURIComponent(founder.handle)}`;
+  return founder.nation?.slug ? `/countries/${founder.nation.slug}` : null;
+}
+
+/** Share, plus "Copy invite link" (carrying the viewer's passport handle) for those who hold a nation here. */
+function RealmShare({
+  slug,
+  name,
+  holdsNation,
+}: {
+  slug: string;
+  name: string;
+  holdsNation: boolean;
+}) {
+  const { data: status } = api.ixnayid.getStatus.useQuery(undefined, { enabled: holdsNation });
+  const handle = holdsNation ? status?.passportHandle : null;
+  const base = `/r/${encodeURIComponent(slug)}`;
+  return (
+    <ShareSheet
+      path={base}
+      title={`${name} on IxStates`}
+      imagePath={`${base}/opengraph-image`}
+      downloadName={`ixstates-realm-${slug}.png`}
+      extraLinks={
+        handle
+          ? [{ label: "Copy invite link", path: `${base}?via=${encodeURIComponent(handle)}` }]
+          : []
+      }
+    />
+  );
+}
+
 /** The realm's banner, name, key stats and tab bar, shared by every tab. */
-export function RealmRegionHeader({ overview }: { overview: Overview }) {
+export function RealmRegionHeader({
+  overview,
+  openToClaim,
+}: {
+  overview: Overview;
+  /** Nation pages and unclaimed nations a player can still take; 0 while claims are closed. */
+  openToClaim: number;
+}) {
   const pathname = usePathname();
   const { realm, stats, founder, viewer, inWorldDate } = overview;
+  const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
     viewer.canManage,
     !!overview.rules || viewer.powers.includes("appearance")
   );
   const isActive = (tab: (typeof tabs)[number]) => {
-    const href = createUrl(tab.href);
+    const href = tab.href;
     return "exact" in tab && tab.exact ? pathname === href : pathname?.startsWith(href);
   };
 
   return (
     <header className="border-separator bg-surface rounded-card overflow-hidden border">
-      <div className="bg-fill-3 relative h-32 w-full sm:h-44">
+      <div className="bg-tint-fill relative h-32 w-full sm:h-44">
         {realm.bannerUrl ? (
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
@@ -81,7 +124,7 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Globe className="text-label-secondary size-10" aria-hidden="true" />
+            <Globe className="text-tint size-10" aria-hidden="true" />
           </div>
         )}
       </div>
@@ -112,30 +155,39 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
               </ul>
             )}
           </div>
+          <RealmShare
+            slug={realm.slug}
+            name={realm.name}
+            holdsNation={viewer.signedIn && viewer.ownedNations.length > 0}
+          />
         </div>
 
-        <dl
-          className={cn("grid grid-cols-2 gap-3", inWorldDate ? "sm:grid-cols-5" : "sm:grid-cols-4")}
-        >
-          <StatItem label="Nations" value={stats.nations.toLocaleString()} />
-          <StatItem label="Population" value={formatCompact(stats.population)} />
+        <dl className="grid grid-cols-2 gap-x-8 gap-y-3 sm:flex sm:flex-wrap">
+          <StatItem
+            label="Nations"
+            value={stats.nations.toLocaleString()}
+            hint={stats.nations > 0 ? `${stats.claimedNations.toLocaleString()} played` : undefined}
+          />
+          {openToClaim > 0 && (
+            <StatItem label="Open to claim" value={openToClaim.toLocaleString()} />
+          )}
+          {stats.population > 0 && (
+            <StatItem label="Population" value={formatCompact(stats.population)} />
+          )}
           <StatItem label="Founded" value={new Date(realm.foundedAt).getFullYear()} />
           <StatItem
             label="Founder"
             value={
               founder ? (
-                founder.nation?.slug ? (
-                  <Link
-                    href={createUrl(`/countries/${founder.nation.slug}`)}
-                    className="hover:underline"
-                  >
+                founderLink ? (
+                  <Link href={founderLink} className="hover:underline">
                     {founder.name}
                   </Link>
                 ) : (
                   founder.name
                 )
               ) : (
-                "IxStats staff"
+                "Administered by IxStats staff"
               )
             }
           />
@@ -161,7 +213,7 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
             {tabs.map((tab) => (
               <li key={tab.label}>
                 <Link
-                  href={createUrl(tab.href)}
+                  href={tab.href}
                   aria-current={isActive(tab) ? "page" : undefined}
                   className={cn(
                     "rounded-control text-footnote flex items-center gap-2 px-3 py-2 font-medium whitespace-nowrap",

@@ -49,9 +49,7 @@ export function LinksSection({ slug, links }: { slug: string; links: RealmLink[]
       description={`Your forum, Discord, wiki, map or website, in the realm page's Community panel (up to ${MAX_REALM_LINKS}). Full https:// addresses only.`}
     >
       <div className="flex flex-col gap-3">
-        {rows.length === 0 && (
-          <p className="text-label-secondary text-footnote">No links yet.</p>
-        )}
+        {rows.length === 0 && <p className="text-label-secondary text-footnote">No links yet.</p>}
         {rows.map((row, index) => (
           <div key={index} className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -119,7 +117,11 @@ export function LinksSection({ slug, links }: { slug: string; links: RealmLink[]
             onClick={() =>
               save.mutate({
                 slug,
-                links: rows.map((row) => ({ ...row, label: row.label.trim(), url: row.url.trim() })),
+                links: rows.map((row) => ({
+                  ...row,
+                  label: row.label.trim(),
+                  url: row.url.trim(),
+                })),
               })
             }
           >

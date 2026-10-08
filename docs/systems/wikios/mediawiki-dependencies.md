@@ -106,6 +106,7 @@ login that fails is a failed job, never an anonymous write). Only the realm `ixw
 | `src/app/api/mediawiki/ixwiki/[...path]/route.ts`, `src/app/api/mediawiki/_media-response.ts` | `images/...`, `images/thumb/...`, `Special:FilePath/<name>`, `thumb.php?f=<name>&width=<n>` | Image-only proxy (image/* only, 15 MB cap). Rate-limited. Registers the file in `wiki_assets` on first sight. This is a file download, not a wiki read: the bytes of an uploaded file are not in Postgres. |
 | `src/app/api/_lib/image-proxy.ts`, `src/app/api/download/external-image/route.ts` | allow-listed external image hosts (ixwiki.com among them) | Generic image download proxy. |
 | `src/app/api/mediawiki/[wiki]/[...path]/route.ts` | the same shapes, for iiwiki, AltHistory and Commons | Sister wikis (below). |
+| `src/lib/og/og-assets.server.ts` (`fetchOgImage`, for the `/@handle` and `/r/{realm}` `opengraph-image` routes) | a stored flag, realm banner or avatar URL | Only from the app's origin, the media proxies' wiki hosts (`isAllowedMediaUrl`) or a short avatar-host list; never localhost or an IP, no redirects, 3 s, 6 MB counted as it streams, image types satori draws only. |
 | `src/lib/wiki-os/services/blurhash-backfill.ts` (`scripts/wikios-backfill-blurhash.ts`, `bun run wiki:backfill:blurhash`) | each PNG, JPEG, GIF and WebP asset without a BlurHash: its `/images/...` file, through `media-download.ts` (the media proxies' host allowlist, 10 MB cap, every redirect re-checked), or its staged copy | Operator script (WK-17), one file at a time with a pause between; a dry run by default. |
 
 ### Public `api.php` proxy (IxWiki: closed)
@@ -151,7 +152,8 @@ same `uploadFile` service as the browser's upload (mirror section above): it nam
 `src/lib/wiki-os/core/media-asset-service.ts` (an asset's canonical file URL), `src/lib/cards/lore-card-ixwiki.ts` (the file
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
-Cloudflare), `src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
+Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUBLIC_APP_URL` is unset),
+`src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
 `/w/api.php` answers `readonly`.
 
@@ -166,7 +168,8 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 
 **One list of hosts.** The sister wikis are entries of `src/lib/wiki-os/wiki-hosts.ts` (`SISTER_WIKI_HOSTS`: id, name,
 https origin, api path, upload CDN hosts, whether WikiOS reads its pages, and the proxies' per-wiki behaviour). The api.php
-and media proxies (`_config.ts` `WIKIS`, `_media-response.ts`'s host allowlist), `WIKI_SOURCES` and `WikiSource`
+and media proxies (`_config.ts` `WIKIS`; the media host allowlist `isAllowedMediaUrl` in `src/lib/wiki-os/media-hosts.ts`, which
+`_media-response.ts`, `media-download.ts` and the link-card images share), `WIKI_SOURCES` and `WikiSource`
 (`config.ts`), account proof (`PROOF_SOURCES`) and realm wiki settings are built from it, so adding a MediaWiki host is one
 entry there and a host that is not an entry is never fetched. Callers name a wiki by its id, never by a URL. The file builds
 addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getMediaWikiApiUrl`.

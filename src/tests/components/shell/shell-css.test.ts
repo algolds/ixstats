@@ -55,11 +55,17 @@ describe("shell.css hooks", () => {
     );
   });
 
-  it("lets a page opt out of the Inspector gutter in CSS alone, so there is no layout shift", () => {
-    // :has() on the shell root reads the page's marker on first paint: <main>, Halo and the fixed
-    // bars all read --shell-inspector-width, so zeroing it there frees every one of them.
+  it("releases the Inspector gutter on any page without an Inspector, in CSS alone", () => {
+    // :has() reads the Inspector's server-rendered aside on first paint: <main>, Halo and the fixed
+    // bars all read --shell-inspector-width, so zeroing it frees every one of them.
     expect(css).toMatch(
-      /\[data-app-shell\]:has\(\[data-shell-gutter="none"\]\) \{[^}]*--shell-inspector-width: 0px;/
+      /\[data-app-shell\]:not\(:has\(\[data-slot="inspector"\]\)\) \{[^}]*--shell-inspector-width: 0px;/
+    );
+  });
+
+  it("centres Halo over the Inspector too when the page has one, in CSS on first paint", () => {
+    expect(css).toMatch(
+      /\[data-app-shell\]:has\(\[data-slot="inspector"\]\) \[data-slot="shell-halo"\] \{[^}]*right: 0;/
     );
   });
 });

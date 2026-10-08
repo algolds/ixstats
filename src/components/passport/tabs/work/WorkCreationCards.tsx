@@ -12,27 +12,11 @@ import {
   Trophy,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils/cn";
 import type { WorkPayload } from "../../types";
+import { formatWorkDay, WORK_LINK, WORK_ROW, WorkSectionTitle } from "./WorkSection";
 
-/** An inset work card inside the passport (the passport itself is the opaque card). */
-const CARD_CLASS = cn(
-  "bg-surface-secondary text-label rounded-row",
-  "flex flex-col justify-between space-y-3 p-4"
-);
-
-const CARD_FOOTER = "border-separator flex items-center justify-between border-t pt-3";
-
-/** Trailing card action link (tint, never colour alone: text + arrow). */
-const CARD_LINK =
-  "text-tint text-footnote rounded-control-sm focus-visible:outline-tint inline-flex cursor-pointer items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2";
-
-function formatDay(date: Date | string) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+function Summary({ children }: { children: React.ReactNode }) {
+  return <p className="text-label-secondary text-footnote mt-1 line-clamp-2">{children}</p>;
 }
 
 export const WorkArticleCards = React.memo(function WorkArticleCards({
@@ -41,53 +25,43 @@ export const WorkArticleCards = React.memo(function WorkArticleCards({
   articles: WorkPayload["authoredArticles"];
 }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-subhead text-label-secondary flex items-center gap-2">
-          <BookOpen aria-hidden className="size-4" />
-          <span>
-            Authored wiki pages <span className="tabular-nums">({articles.length})</span>
-          </span>
-        </h4>
-        <Link href="/wiki" className={CARD_LINK}>
-          <span>Open WikiOS</span>
-          <ArrowUpRight aria-hidden className="size-3.5" />
-        </Link>
-      </div>
+    <section className="space-y-1">
+      <WorkSectionTitle
+        icon={<BookOpen />}
+        trailing={
+          <Link href="/wiki" className={WORK_LINK}>
+            <span>Open WikiOS</span>
+            <ArrowUpRight aria-hidden className="size-3.5" />
+          </Link>
+        }
+      >
+        Authored wiki pages <span className="tabular-nums">({articles.length})</span>
+      </WorkSectionTitle>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <ul className="divide-separator divide-y">
         {articles.map((item) => (
-          <article key={item.id} className={CARD_CLASS}>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          <li key={item.id} className={WORK_ROW}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="info">
                   <FileText aria-hidden />
-                  Authored Page
+                  Authored page
                 </Badge>
                 <span className="text-label-secondary text-footnote tabular-nums">
-                  {formatDay(item.updatedAt || item.createdAt)}
+                  {formatWorkDay(item.updatedAt || item.createdAt)}
                 </span>
               </div>
-              <div>
-                <h3 className="text-label text-headline line-clamp-1">{item.title}</h3>
-                {item.summary && (
-                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
-                    {item.summary}
-                  </p>
-                )}
-              </div>
+              <h3 className="text-label text-headline mt-2 line-clamp-1">{item.title}</h3>
+              {item.summary && <Summary>{item.summary}</Summary>}
             </div>
-            <div className={CARD_FOOTER}>
-              <span className="text-label-secondary text-footnote">WikiOS</span>
-              <Link href={`/wiki/${encodeURIComponent(item.title)}`} className={CARD_LINK}>
-                <span>Read article</span>
-                <ArrowRight aria-hidden className="size-3.5" />
-              </Link>
-            </div>
-          </article>
+            <Link href={`/wiki/${encodeURIComponent(item.title)}`} className={WORK_LINK}>
+              <span>Read article</span>
+              <ArrowRight aria-hidden className="size-3.5" />
+            </Link>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 });
 
@@ -98,7 +72,7 @@ interface WorkCreationCardsProps {
   sportTeams: WorkPayload["sportTeams"];
 }
 
-/** Onoma language packs, MyCountry directives and MyLeague clubs in one grid. */
+/** Onoma language packs, MyCountry directives and MyLeague clubs in one list. */
 export const WorkCreationCards = React.memo(function WorkCreationCards({
   showHeading,
   conlangs,
@@ -106,102 +80,80 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
   sportTeams,
 }: WorkCreationCardsProps) {
   return (
-    <div className="space-y-3 pt-2">
-      {showHeading && (
-        <h4 className="text-subhead text-label-secondary">Realm and system creations</h4>
-      )}
+    <section className="space-y-1">
+      {showHeading && <WorkSectionTitle>Creations in realms and systems</WorkSectionTitle>}
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <ul className="divide-separator divide-y">
         {conlangs.map((item) => (
-          <article key={item.id} className={CARD_CLASS}>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          <li key={item.id} className={WORK_ROW}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
                   <Globe aria-hidden />
-                  Language Pack
+                  Language pack
                 </Badge>
                 {item.culturalFamily && (
                   <span className="text-label-secondary text-footnote">{item.culturalFamily}</span>
                 )}
               </div>
-              <div>
-                <h3 className="text-label text-headline">{item.name}</h3>
-                {item.description && (
-                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
-                    {item.description}
-                  </p>
-                )}
-              </div>
+              <h3 className="text-label text-headline mt-2">{item.name}</h3>
+              {item.description && <Summary>{item.description}</Summary>}
             </div>
-            <div className={CARD_FOOTER}>
-              <span className="text-label-secondary text-footnote">Onoma</span>
-              <Link href={`/onoma/pack/${item.slug || item.id}`} className={CARD_LINK}>
-                <span>View pack</span>
-                <ArrowRight aria-hidden className="size-3.5" />
-              </Link>
-            </div>
-          </article>
+            <Link href={`/onoma/pack/${item.slug || item.id}`} className={WORK_LINK}>
+              <span>View pack</span>
+              <ArrowRight aria-hidden className="size-3.5" />
+            </Link>
+          </li>
         ))}
 
         {directives.map((item) => (
-          <article key={item.id} className={CARD_CLASS}>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          <li key={item.id} className={WORK_ROW}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="warning">
                   <Flash aria-hidden />
                   Directive
                 </Badge>
-                <span className="text-label-secondary text-footnote">{item.tier} Tier</span>
-              </div>
-              <div>
-                <h3 className="text-label text-headline">{item.goal}</h3>
-                {item.summary && (
-                  <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
-                    {item.summary}
-                  </p>
+                <span className="text-label-secondary text-footnote">{item.tier} tier</span>
+                {item.category && (
+                  <span className="text-label-secondary text-footnote capitalize">
+                    {item.category}
+                  </span>
                 )}
               </div>
+              <h3 className="text-label text-headline mt-2">{item.goal}</h3>
+              {item.summary && <Summary>{item.summary}</Summary>}
             </div>
-            <div className={CARD_FOOTER}>
-              <span className="text-label-secondary text-footnote capitalize">
-                {item.category || "Governance"}
-              </span>
-              <Badge variant="success">{item.status}</Badge>
-            </div>
-          </article>
+            <Badge variant="success" className="shrink-0 self-start sm:self-center">
+              {item.status}
+            </Badge>
+          </li>
         ))}
 
         {sportTeams.map((item) => (
-          <article key={item.id} className={CARD_CLASS}>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+          <li key={item.id} className={WORK_ROW}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="success">
                   <Trophy aria-hidden />
-                  Athletic Club
+                  Athletic club
                 </Badge>
                 {item.city && (
                   <span className="text-label-secondary text-footnote">{item.city}</span>
                 )}
               </div>
-              <div>
-                <h3 className="text-label text-headline">{item.name}</h3>
-                {item.shortName && (
-                  <p className="text-label-secondary text-footnote mt-0.5">
-                    Abbreviation: {item.shortName}
-                  </p>
-                )}
-              </div>
+              <h3 className="text-label text-headline mt-2">{item.name}</h3>
+              {item.shortName && (
+                <p className="text-label-secondary text-footnote mt-0.5">{item.shortName}</p>
+              )}
             </div>
-            <div className={CARD_FOOTER}>
-              <span className="text-label-secondary text-footnote">MyLeague</span>
-              <Link href="/sports" className={CARD_LINK}>
-                <span>View club</span>
-                <ArrowRight aria-hidden className="size-3.5" />
-              </Link>
-            </div>
-          </article>
+            <Link href="/sports" className={WORK_LINK}>
+              <span>View club</span>
+              <ArrowRight aria-hidden className="size-3.5" />
+            </Link>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 });

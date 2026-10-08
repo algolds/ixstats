@@ -215,13 +215,20 @@
           ["match", ["get", "rank"], "major", 26, "medium", 18, 14]
         ],
         "text-letter-spacing": ["match", ["get", "rank"], "major", 0.2, "medium", 0.1, 0.05],
+        "text-transform": ["match", ["get", "wbType"], ["region", "continent"], "uppercase", "none"],
         "text-allow-overlap": false,
         "text-max-width": 12,
         "text-padding": 5
       },
       "paint": {
-        "text-color": ["match", ["get", "rank"], "major", "#4a5d55", "medium", "#516d66", "#6c837b"],
-        "text-halo-color": "rgba(242, 236, 218, 0.6)",
+        "text-color": [
+          "match",
+          ["get", "wbType"],
+          ["region", "continent"],
+          "#5e4c3c",
+          ["match", ["get", "rank"], "major", "#4a5d55", "medium", "#516d66", "#6c837b"]
+        ],
+        "text-halo-color": ["match", ["get", "wbType"], ["region", "continent"], "rgba(242, 236, 218, 0.6)", "rgba(242, 236, 218, 0.6)"],
         "text-halo-width": 1,
         "text-opacity": [
           "step",

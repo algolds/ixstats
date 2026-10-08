@@ -19,6 +19,8 @@ export interface PipelineLayerWrite {
   layers: Record<string, FeatureCollection | null | undefined>;
   mode: "merge" | "replace";
   createdBy: string;
+  /** The background job writing it (a realm map pipeline run), recorded on the map import. */
+  jobId?: string | null;
 }
 
 export interface PipelineLayerResult {
@@ -132,6 +134,7 @@ export async function writePipelineLayers(
   const record = await db.mapImport.create({
     data: {
       realmId: input.realmId,
+      jobId: input.jobId ?? null,
       layerTypes: entries.map((e) => e.layerType),
       mode: input.mode,
       createdBy: input.createdBy,

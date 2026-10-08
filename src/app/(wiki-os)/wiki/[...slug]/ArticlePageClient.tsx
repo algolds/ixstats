@@ -16,8 +16,6 @@ import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { WikiEditGate } from "~/components/wiki-os/editor/WikiEditGate";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
-import { articleUsesInspector } from "~/lib/wiki-os/article-gutter";
 import {
   articleHtmlInput,
   getWikiBaseUrl,
@@ -63,6 +61,11 @@ function hasViewerChips(
 /** "Busy" (TOO_MANY_REQUESTS): the page may exist, the lookup was refused for now. Not "no such page". */
 function isBusyError(error: { data?: { code?: string } | null }): boolean {
   return error.data?.code === "TOO_MANY_REQUESTS";
+}
+
+/** Only a missing page is "not found"; a busy WikiOS or a wiki that failed to answer gets "try again". */
+function isNotFoundError(error: { data?: { code?: string } | null }): boolean {
+  return error.data?.code === "NOT_FOUND";
 }
 
 export interface ArticlePageClientProps {
@@ -209,15 +212,6 @@ export default function ArticlePageClient({
     handleExitEdit();
   }, [refetch, handleExitEdit]);
 
-  // The Inspector gutter is decided before the article loads (the column must not jump when it
-  // arrives); a missing article and the editor give it back.
-  const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
-  const inspector = articleUsesInspector({
-    reading: mode === "reading",
-    notFound: Boolean(error) && !article,
-    showToc: showWikiToc,
-  });
-
   // Main Page
   if (isMainPage) {
     return (
@@ -228,11 +222,7 @@ export default function ArticlePageClient({
   }
 
   return (
-    <WikiOSLayout
-      readOnly={!isIxWiki}
-      inspector={inspector}
-      articleView={mode === "reading" ? "read" : "edit"}
-    >
+    <WikiOSLayout readOnly={!isIxWiki} articleView={mode === "reading" ? "read" : "edit"}>
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
           <WikiEditGate title={title} onClose={handleExitEdit}>
@@ -261,10 +251,10 @@ export default function ArticlePageClient({
                 </p>
               </div>
             )}
-            {error && !article && isBusyError(error) && (
+            {error && !article && !isNotFoundError(error) && (
               <ArticleBusy title={title} onRetry={() => void refetch()} />
             )}
-            {error && !article && !isBusyError(error) && (
+            {error && !article && isNotFoundError(error) && (
               <ArticleNotFound
                 title={title}
                 wikiSource={wikiSource}

@@ -26,7 +26,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 4,
-    patch: 0,
+    patch: 1,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },

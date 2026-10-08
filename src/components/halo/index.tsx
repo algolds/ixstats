@@ -6,7 +6,6 @@ import { stripBasePath } from "~/lib/base-path";
 import { motion, AnimatePresence, type PanInfo } from "motion/react";
 import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
-import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -89,11 +88,10 @@ function CommandPaletteContent({
 
   const diPathname = usePathname();
   const prevNavRef = useRef(diPathname);
-  const sectionInfo = getSectionForPath(diPathname || "/");
 
   // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
-  const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
+  const pluginAccentColor = activePlugin?.accentColor ?? "var(--tint)";
   const isWikiActive = activePlugin?.id === "wiki";
 
   const { activeSectionId, tocEntries } = useWikiContext();

@@ -22,6 +22,7 @@ import type { SuperJSONResult } from "superjson";
 import type { createTRPCContext } from "~/server/api/trpc";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
@@ -102,6 +103,21 @@ function safeJsonStringify(obj: unknown): string {
     }
     return value;
   });
+}
+
+/**
+ * The realm part of a cached read's key. The viewer's active realm, unless it is IxWorld (ruling E-q). When the
+ * input names a realm, a signed-in caller gets their own entry: a draft realm's slug resolves for its staff but
+ * falls back to IxWorld for everyone else (AT-6), so one shared entry would serve one the other's answer.
+ */
+export function cacheRealmKey(opts: {
+  activeRealmId?: string;
+  realmSlug?: string;
+  userId?: string;
+}): string | undefined {
+  const active = opts.activeRealmId === DEFAULT_REALM_ID ? undefined : opts.activeRealmId;
+  const viewer = opts.realmSlug && opts.userId ? `v:${opts.userId}` : undefined;
+  return [active, viewer].filter(Boolean).join(":") || undefined;
 }
 
 /**

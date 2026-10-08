@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { buildTile } from "~/server/api/routers/geo/core/tiles";
 import { isTiledLayer } from "~/lib/maps/decorative-tiles";
-import { DEFAULT_REALM_ID, isRealmHiddenFrom, isRealmPublished } from "~/server/modules/realms";
+import { PRIVATE_TILE_CACHE, realmTileAccess } from "~/server/modules/maps/realm-tile-access";
 
 const MAX_TILE_ZOOM = 6;
 const notFound = () => new NextResponse(null, { status: 404 });
@@ -18,26 +17,6 @@ function tileCoords(z: string, x: string, y: string): [number, number, number] |
 
 const PUBLIC_CACHE = "public, max-age=86400";
 
-/** The Cache-Control for this realm's tiles, or null when it doesn't exist or the viewer may not
- * see it. */
-async function cachePolicy(realmId: string): Promise<string | null> {
-  if (realmId === DEFAULT_REALM_ID) return PUBLIC_CACHE;
-  const realm = await db.realm.findUnique({
-    where: { id: realmId },
-    select: { status: true, ownerId: true },
-  });
-  if (!realm) return null;
-  if (isRealmPublished(realmId, realm.status)) return PUBLIC_CACHE;
-  const { userId } = await auth();
-  const viewer = userId
-    ? await db.user.findUnique({
-        where: { clerkUserId: userId },
-        select: { id: true, clerkUserId: true, role: { select: { name: true, level: true } } },
-      })
-    : null;
-  return isRealmHiddenFrom(viewer, realm) ? null : "private, no-store";
-}
-
 /** One vector tile of a realm's decorative map layer (altitudes, rivers, lakes) */
 export async function GET(
   _request: NextRequest,
@@ -47,8 +26,9 @@ export async function GET(
   const coords = tileCoords(z, x, y);
   if (!isTiledLayer(layer) || !coords) return notFound();
   try {
-    const cacheControl = await cachePolicy(realm);
-    if (!cacheControl) return notFound();
+    const access = await realmTileAccess(realm);
+    if (!access) return notFound();
+    const cacheControl = access === "public" ? PUBLIC_CACHE : PRIVATE_TILE_CACHE;
     // Copied into an ArrayBuffer-backed view, which is what a Response body accepts
     const tile = new Uint8Array(await buildTile(db, realm, layer, ...coords));
     return new NextResponse(tile, {

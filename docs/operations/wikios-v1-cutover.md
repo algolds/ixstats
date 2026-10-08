@@ -33,12 +33,15 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   script's own push then has nothing to do. Pushed alone, a deploy script stops at that prompt without changing anything.
 - **Reading.** Articles, history, diffs, categories, Special pages and search work. Full-text search uses the old query,
   because the search vector stays empty until step 1's `search-indexes.sql`.
-- **No writes.** Page edits, reverts, moves, deletions, protections, blocks, rights changes, uploads, XML imports and bot
-  passwords are refused with MediaWiki's `readonly` error, and `/w/api.php` answers `readonly` (503) to every request.
-  People edit on classic MediaWiki, as before.
+- **No writes, unless an administrator turns editing on.** With the switch off, WikiOS writes follow a second switch,
+  the admin editing toggle (`/admin/wikios-settings`, Editing; SystemConfig row `wikios_editing_enabled`), which is off
+  until someone turns it on. While it is off, page edits, reverts, moves, deletions, protections, blocks, rights changes,
+  uploads, XML imports and bot passwords are refused with MediaWiki's `readonly` error, and `/w/api.php` answers
+  `readonly` (503) to every request. People edit on classic MediaWiki, as before. See "The editing toggle" below.
 - **Cron.** `wiki-recentchanges` (and the webhook, once step 6 exists) keeps WikiOS's copy current: MediaWiki's revision
-  always becomes WikiOS's head, nothing is parked and nothing is pushed back. `wiki-mirror` and `wiki-render-stale` do
-  nothing even when listed; leave them out of `CRON_ENABLED_JOBS` until step 6b anyway.
+  always becomes WikiOS's head, nothing is parked and nothing is pushed back. `wiki-render-stale` does nothing even when
+  listed. `wiki-mirror` does nothing while the editing toggle is off and the outbox is empty; it drains any jobs already
+  queued. Leave both out of `CRON_ENABLED_JOBS` until the toggle goes on or step 6b, whichever comes first.
 - **Other readers of IxWiki.** The lore-card generator and the Lorewards sync read IxWiki pages from MediaWiki, as they did
   before WikiOS v1.
 
@@ -55,7 +58,31 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
 
 - Turning `WIKIOS_V1_ENABLED` on before steps 1, 3 and 4. Writes would queue in an outbox with no mirror account, api.php
   would hand out pages without ids, and background renders would go to the public MediaWiki.
+- Turning the editing toggle on before steps 1, 1b and 3. The toggle refuses only when step 3's mirror settings are
+  missing; it does not check steps 1 and 1b (see below).
 - `NEXT_PUBLIC_WIKIOS_STANDALONE` in any env file (see step 5).
+
+**The editing toggle (before the cutover):**
+
+- **Where.** `/admin/wikios-settings`, Editing section; stored as the SystemConfig row `wikios_editing_enabled`
+  (`src/lib/wiki-os/editing-switch.ts`). Every process (IxStates, `ixstats-cron`, `wikios`) reads the row at most every
+  15 seconds, so a flip reaches all of them within 15 seconds. Each flip is written to the admin audit log and DMed to
+  the admin on Discord. `WIKIOS_V1_ENABLED=true` forces it on and locks the switch.
+- **What it unlocks.** On, WikiOS takes edits (and `/w/api.php` stops answering `readonly`), and each edit is queued for
+  the mirror, which copies it to classic MediaWiki. Inbound sync, background renders, search and the other readers stay
+  on `WIKIOS_V1_ENABLED`. Add `wiki-mirror` to `CRON_ENABLED_JOBS` before the first flip; without it the outbox drains
+  only through the in-process run a couple of seconds after each write.
+- **Precondition.** It cannot be turned on while any of `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` or
+  `WIKIOS_MEDIAWIKI_API` is unset (step 3); the page lists the missing names.
+- **Protections caveat.** Run steps 1 (its default protections backfill) and 1b (the rights import, which also copies
+  protections) before the first flip. The toggle does not check them. Until they have run, WikiOS knows only the
+  protections it has seen in MediaWiki's log since its sync started: a page MediaWiki protected before then is
+  unprotected in WikiOS, anyone with wiki rights can edit it there, and the mirror account pushes the edit to MediaWiki
+  past its protection. Template, Module, MediaWiki, File, Project and Help pages are still guarded by the namespace
+  rights. The confirmation dialog says the same.
+- **Turning it off.** New WikiOS edits are refused; jobs already in the outbox keep draining to MediaWiki. To make them
+  wait instead, set `SKIP_MEDIAWIKI_SYNC=true` (restart `ixstats-cron`, `wikios` and IxStates) or drop `wiki-mirror` from
+  `CRON_ENABLED_JOBS`.
 
 Files shipped by plan 417 (all in the IxStats checkout, `/ixwiki/public/projects/ixstats/`):
 
@@ -619,8 +646,10 @@ curl -s 'http://127.0.0.1:3560/w/api.php?action=query&meta=siteinfo&format=json'
 
 Then add `wiki-mirror` and `wiki-render-stale` to `CRON_ENABLED_JOBS` (step 7b explains the render backlog).
 
-**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same restarts. WikiOS is
-read-only again; jobs already in the outbox wait there.
+**Rollback:** `sudo cp -a "$BK/env.production.local.step6b" "$IX/.env.production.local"`, the same restarts. WikiOS
+follows the editing toggle again (read-only unless it is on: turn it off in `/admin/wikios-settings` too). Jobs already
+in the outbox keep draining to MediaWiki while `wiki-mirror` runs; to make them wait there, also set
+`SKIP_MEDIAWIKI_SYNC=true` in the same file before the restarts, or drop `wiki-mirror` from `CRON_ENABLED_JOBS`.
 
 ## 7. Pre-cutover checks (nothing public yet)
 

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { parseInWorldDate, type InWorldDate } from "~/lib/realms/realm-community";
+import { readNationGrowthTable, type NationGrowthTable } from "~/lib/realms/nation-growth-defaults";
 
 const RealmSettingsSchema = z.object({
   maxNationsPerUser: z.number().int().min(1).max(20).catch(1).default(1),
@@ -41,4 +42,25 @@ export function withInWorldDate(
 ): Prisma.JsonObject {
   const { inWorldDate: _previous, ...rest } = storedSettings(settings);
   return inWorldDate ? { ...rest, inWorldDate } : rest;
+}
+
+/** The growth table the realm's new nations get (`settings.nationDefaults`), else IxStats's defaults. */
+export function realmNationDefaults(
+  settings: Prisma.JsonValue | null | undefined
+): NationGrowthTable {
+  return readNationGrowthTable(storedSettings(settings).nationDefaults);
+}
+
+/** Whether the realm stores its own growth table (otherwise it follows IxStats's defaults). */
+export function hasNationDefaults(settings: Prisma.JsonValue | null | undefined): boolean {
+  return storedSettings(settings).nationDefaults !== undefined;
+}
+
+/** `Realm.settings` with the growth table set, or removed (`null`: IxStats's defaults); other keys are kept. */
+export function withNationDefaults(
+  settings: Prisma.JsonValue | null | undefined,
+  table: NationGrowthTable | null
+): Prisma.JsonObject {
+  const { nationDefaults: _previous, ...rest } = storedSettings(settings);
+  return table ? { ...rest, nationDefaults: table } : rest;
 }

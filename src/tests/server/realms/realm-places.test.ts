@@ -7,7 +7,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { Prisma } from "@prisma/client";
 import { realmsRouter } from "~/server/api/routers/realms";
-import { DIRECTORY_REALM_WHERE } from "~/server/api/routers/realms/places";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 

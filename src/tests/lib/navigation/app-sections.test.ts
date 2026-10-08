@@ -127,29 +127,25 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("folds ThinkPages into Home as emerald-tinted sections", () => {
+  it("folds ThinkPages into Home under ThinkTanks, emerald-tinted", () => {
     expect(APPS.map((app) => app.id)).not.toContain("thinkpages");
     const home = getApp("home");
-    expect(home.sections.filter((s) => !s.conditional).map((s) => s.label)).toEqual([
-      "Dashboard",
+    expect(home.sections.map((s) => s.label)).toEqual([
+      "What's new",
+      "Home",
       "Messages",
       "ThinkTanks",
-      "ThinkPages",
     ]);
     expect(home.sections.find((s) => s.label === "ThinkTanks")).toMatchObject({
       href: "/thinktanks",
       tint: "thinkpages",
     });
-    expect(home.sections.find((s) => s.label === "ThinkPages")).toMatchObject({
-      href: "/thinkpages",
-      tint: "thinkpages",
-    });
   });
 
   it.each([
-    ["/thinkpages", "thinkpages"],
-    ["/thinkpages/post/abc", "thinkpages"],
-    ["/thinkpages/profile/someone", "thinkpages"],
+    ["/thinkpages", "thinktanks"],
+    ["/thinkpages/post/abc", "thinktanks"],
+    ["/thinkpages/profile/someone", "thinktanks"],
     ["/thinktanks", "thinktanks"],
     ["/thinktanks/abc", "thinktanks"],
   ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
@@ -160,12 +156,12 @@ describe("app section map routes", () => {
     expect(getTintForPath(home, active)).toBe("thinkpages");
   });
 
-  it("gives /mycountry/intelligence (no row of its own) Defense's highlight and crimson tint", () => {
+  it("gives /mycountry/intelligence (no row of its own) Defense's highlight in MyCountry's gold", () => {
     const mycountry = getAppForPath("/mycountry/intelligence")!;
     expect(mycountry.id).toBe("mycountry");
     const active = getActiveSectionId(mycountry, "/mycountry/intelligence", null);
     expect(active).toBe("defense");
-    expect(getTintForPath(mycountry, active)).toBe("intel");
+    expect(getTintForPath(mycountry, active)).toBe("mycountry");
   });
 
   it("keeps Home untinted on its own pages", () => {
@@ -267,10 +263,10 @@ describe("app section map resolvers", () => {
   });
 
   it("uses a section's tint over the app's", () => {
-    const mycountry = getApp("mycountry");
-    expect(getTintForPath(mycountry, "defense")).toBe("intel");
-    expect(getTintForPath(mycountry, "economy")).toBe("mycountry");
-    expect(getTintForPath(getApp("countries"), "countries")).toBeUndefined();
+    expect(getTintForPath(getApp("home"), "thinktanks")).toBe("thinkpages");
+    // Defense and Intelligence wear MyCountry's gold: the crimson intel tint is gone
+    expect(getTintForPath(getApp("mycountry"), "defense")).toBe("mycountry");
+    expect(getTintForPath(getApp("home"), "dashboard")).toBeUndefined();
   });
 
   it("keeps Maps and the full-screen map editors chromeless", () => {

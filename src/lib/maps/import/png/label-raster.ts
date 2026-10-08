@@ -203,13 +203,15 @@ export async function majorityFilter(
 /**
  * Give every unlabelled pixel (border lines, unmatched colours) to the nearest labelled region: each pass, a
  * pixel with a labelled 4-neighbour takes the most common such label (as it was before the pass, so growth is
- * even in every direction). Pixels with no labelled pixel anywhere in reach stay 0. Returns how many were filled.
+ * even in every direction). Pixels with no labelled pixel anywhere in reach stay 0. A `barrier` label never
+ * spreads (the sea of a map whose land is filled), so it only bounds the growth. Returns how many were filled.
  */
 export async function fillUnlabelled(
   labels: Uint16Array,
   width: number,
   height: number,
-  ctx: EngineContext
+  ctx: EngineContext,
+  barrier = 0
 ): Promise<number> {
   let remaining = 0;
   for (let p = 0; p < labels.length; p++) if (labels[p] === 0) remaining++;
@@ -236,7 +238,7 @@ export async function fillUnlabelled(
       let bestCount = 0;
       for (let k = 0; k < 4; k++) {
         const l = around[k]!;
-        if (l === 0) continue;
+        if (l === 0 || l === barrier) continue;
         let count = 0;
         for (let m = 0; m < 4; m++) if (around[m] === l) count++;
         if (count > bestCount) {

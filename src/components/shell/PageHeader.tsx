@@ -7,8 +7,9 @@
  * The toolbar is sticky at `--shell-header-top` and turns into a `facet-chrome` bar with the compact title once the large title has
  * scrolled under it. It holds the optional back button and trailing actions, and keeps the middle
  * `--shell-halo-reserve` clear so Halo can float over it. Without a back button or actions the
- * toolbar takes no space until it collapses. Only opacity animates (`duration-fast`); Reduce Motion
- * makes it instant.
+ * toolbar is an empty band of the same height until it collapses: with no top bar the page starts
+ * at the top of the window, and the band keeps the large title clear of Halo. Only opacity animates
+ * (`duration-fast`); Reduce Motion makes it instant.
  *
  * ```tsx
  * <PageHeader
@@ -148,7 +149,7 @@ export function PageHeader({
       <div
         ref={toolbarRef}
         data-slot="page-header-toolbar"
-        className={cn("z-sticky sticky top-(--shell-header-top)", !hasToolbarContent && "h-0")}
+        className={cn("z-sticky sticky top-(--shell-header-top)", !hasToolbarContent && "h-14")}
       >
         <div
           className={cn(

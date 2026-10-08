@@ -7,6 +7,8 @@
  *  - owners of a nation in the realm are members: they post, chat and write docs;
  *  - realm moderators (site admins, the realm's founder and officers with the `board` power) manage it;
  *  - a nation muted on the board cannot post; a banned nation's owner is not a member (no posts, no chat).
+ *    A restriction is stored on a nation but binds the player who held it (`restrictionHolders`): it follows them
+ *    when they abandon the nation and never passes to its next claimant.
  * ThinktankMember rows are kept in step with ownership when the board is opened (`openRealmBoard`) so
  * the group chat (a ThinkShare conversation) and the roster work unchanged.
  */
@@ -28,7 +30,7 @@ export const isRealmBoard = (group: { type: string }) => group.type === REALM_BO
 
 type BoardDb = Pick<
   PrismaClient,
-  "realmBoard" | "realm" | "user" | "country" | "realmOfficer" | "realmBoardBan"
+  "realmBoard" | "realm" | "user" | "country" | "realmOfficer" | "realmBoardBan" | "realmClaim"
 >;
 
 interface RealmBoardRestriction {
@@ -44,7 +46,7 @@ interface RealmBoardAccess {
   realmId: string | null;
   /** The caller's nations in the realm (empty when signed out or they own none). */
   ownedCountryIds: string[];
-  /** A mute or ban on one of the caller's nations; a ban outranks a mute. Never set for managers. */
+  /** A mute or ban binding the caller (`userBoardRestriction`); a ban outranks a mute. Never set for managers. */
   restriction: RealmBoardRestriction | null;
 }
 
@@ -57,21 +59,102 @@ const NO_ACCESS: RealmBoardAccess = {
   restriction: null,
 };
 
-/** Board mutes and bans in force on any of `countryIds` (expired ones are ignored). */
+/** Board mutes and bans in force on any of `countryIds`, or on any nation of the realm when omitted. */
 export async function activeBoardRestrictions(
   db: Pick<PrismaClient, "realmBoardBan">,
   realmId: string,
-  countryIds: string[]
+  countryIds?: string[]
 ) {
-  if (countryIds.length === 0) return [];
+  if (countryIds?.length === 0) return [];
   return db.realmBoardBan.findMany({
     where: {
       realmId,
-      countryId: { in: countryIds },
+      ...(countryIds && { countryId: { in: countryIds } }),
       OR: [{ until: null }, { until: { gt: new Date() } }],
     },
-    select: { countryId: true, kind: true, until: true, reason: true },
+    select: { countryId: true, kind: true, until: true, reason: true, createdAt: true },
   });
+}
+
+/** An approved claim: who was handed which nation, and when. */
+interface NationClaimRecord {
+  userId: string;
+  countryId: string;
+  reviewedAt: Date;
+}
+
+/** The approved claims in the realm on any of `countryIds`, or by `userId` when given. */
+async function approvedClaims(
+  db: Pick<PrismaClient, "realmClaim">,
+  realmId: string,
+  filter: { countryIds?: string[]; userId?: string }
+): Promise<NationClaimRecord[]> {
+  if (filter.countryIds?.length === 0) return [];
+  const rows = await db.realmClaim.findMany({
+    where: {
+      realmId,
+      status: "approved",
+      reviewedAt: { not: null },
+      countryId: filter.countryIds ? { in: filter.countryIds } : { not: null },
+      ...(filter.userId && { userId: filter.userId }),
+    },
+    select: { userId: true, countryId: true, reviewedAt: true },
+  });
+  return rows.flatMap(({ userId, countryId, reviewedAt }) =>
+    countryId && reviewedAt ? [{ userId, countryId, reviewedAt }] : []
+  );
+}
+
+/**
+ * The players (User ids) a board restriction binds. It is stored on a nation but meant for the player who held
+ * the nation when it was imposed: the one whose approved claim was the nation's latest by then (so it follows
+ * them after they abandon or re-claim it), and the nation's current owner unless they claimed it only after the
+ * restriction (so the next claimant never inherits it). A nation that changed hands without a claim (an admin
+ * assignment) is judged by its current owner alone.
+ */
+export function restrictionHolders(
+  restriction: { countryId: string; createdAt: Date },
+  claims: NationClaimRecord[],
+  currentOwnerId: string | null
+): string[] {
+  const onNation = claims.filter((c) => c.countryId === restriction.countryId);
+  if (onNation.length === 0) return currentOwnerId ? [currentOwnerId] : [];
+  const at = restriction.createdAt.getTime();
+  const heldThen = onNation
+    .filter((c) => c.reviewedAt.getTime() <= at)
+    .sort((a, b) => b.reviewedAt.getTime() - a.reviewedAt.getTime())[0];
+  const ownerClaimedSince = onNation.some(
+    (c) => c.userId === currentOwnerId && c.reviewedAt.getTime() > at
+  );
+  const holders = new Set<string>();
+  if (heldThen) holders.add(heldThen.userId);
+  if (currentOwnerId && !ownerClaimedSince) holders.add(currentOwnerId);
+  return [...holders];
+}
+
+/**
+ * The strongest board restriction binding `userId` in the realm: on a nation they own, or on one they held
+ * (by an approved claim) when it was restricted.
+ */
+export async function userBoardRestriction(
+  db: Pick<PrismaClient, "realmBoardBan" | "realmClaim">,
+  realmId: string,
+  userId: string,
+  ownedCountryIds: string[]
+): Promise<RealmBoardRestriction | null> {
+  const claimed = await approvedClaims(db, realmId, { userId });
+  const owned = new Set(ownedCountryIds);
+  const nations = [...new Set([...ownedCountryIds, ...claimed.map((c) => c.countryId)])];
+  const restrictions = await activeBoardRestrictions(db, realmId, nations);
+  if (restrictions.length === 0) return null;
+  const claims = await approvedClaims(db, realmId, {
+    countryIds: [...new Set(restrictions.map((r) => r.countryId))],
+  });
+  return strongestRestriction(
+    restrictions.filter((r) =>
+      restrictionHolders(r, claims, owned.has(r.countryId) ? userId : null).includes(userId)
+    )
+  );
 }
 
 /** The strongest of `rows`: any ban over a mute, then the one that lasts longest. */
@@ -118,7 +201,7 @@ export async function getRealmBoardAccess(
   const isManager = hasRealmPower(user, realm, officers, "board");
   const restriction = isManager
     ? null
-    : strongestRestriction(await activeBoardRestrictions(db, board.realmId, ownedCountryIds));
+    : await userBoardRestriction(db, board.realmId, user.id, ownedCountryIds);
   const isMember = isManager || (ownedCountryIds.length > 0 && restriction?.kind !== "ban");
   const role =
     realm.ownerId === clerkUserId ? "owner" : isManager ? "admin" : isMember ? "member" : null;
@@ -206,14 +289,41 @@ export async function ensureRealmBoard(
 
 type SyncDb = Pick<
   PrismaClient,
-  "thinktankMember" | "thinktankGroup" | "conversationParticipant" | "country" | "realmBoardBan"
+  | "thinktankMember"
+  | "thinktankGroup"
+  | "conversationParticipant"
+  | "country"
+  | "realmBoardBan"
+  | "realmClaim"
 >;
+
+/** The Clerk ids of nation owners in the realm whom a board ban binds (`restrictionHolders`). */
+async function bannedOwners(
+  db: Pick<PrismaClient, "realmBoardBan" | "realmClaim">,
+  realmId: string,
+  owners: Array<{ id: string; ownerUserId: string | null; owner: { clerkUserId: string } | null }>
+): Promise<Set<string>> {
+  const bans = (await activeBoardRestrictions(db, realmId)).filter((r) => r.kind === "ban");
+  if (bans.length === 0) return new Set();
+  const claims = await approvedClaims(db, realmId, {
+    countryIds: [...new Set(bans.map((r) => r.countryId))],
+  });
+  const ownerOf = new Map(owners.map((c) => [c.id, c.ownerUserId]));
+  const banned = new Set(
+    bans.flatMap((r) => restrictionHolders(r, claims, ownerOf.get(r.countryId) ?? null))
+  );
+  return new Set(
+    owners.flatMap((c) =>
+      c.ownerUserId && banned.has(c.ownerUserId) && c.owner ? [c.owner.clerkUserId] : []
+    )
+  );
+}
 
 /**
  * Keep ThinktankMember rows (and the chat's participants) in step with nation ownership:
  *  - the caller joins on first open when they are a member (a later "Leave" is respected);
- *  - members who no longer own a nation in the realm (or whose every nation there is banned from the board),
- *    and are not its founder, are deactivated.
+ *  - members who no longer own a nation in the realm (or whom a board ban binds), and are not its founder, are
+ *    deactivated.
  */
 export async function syncRealmBoardMembers(
   db: SyncDb,
@@ -227,26 +337,13 @@ export async function syncRealmBoardMembers(
     }),
     db.country.findMany({
       where: { realmId: board.realmId, ownerUserId: { not: null } },
-      select: { id: true, owner: { select: { clerkUserId: true } } },
+      select: { id: true, ownerUserId: true, owner: { select: { clerkUserId: true } } },
     }),
   ]);
-  const banned = new Set(
-    (
-      await activeBoardRestrictions(
-        db,
-        board.realmId,
-        owners.map((c) => c.id)
-      )
-    )
-      .filter((r) => r.kind === "ban")
-      .map((r) => r.countryId)
-  );
-  // A ban on any of a player's nations takes the player off the board (as getRealmBoardAccess decides).
-  const bannedOwners = new Set(
-    owners.filter((c) => banned.has(c.id)).map((c) => c.owner?.clerkUserId)
-  );
+  // A ban binding a player takes them off the board, whichever nations they own (as getRealmBoardAccess decides).
+  const banned = await bannedOwners(db, board.realmId, owners);
   const ownerIds = new Set(
-    owners.map((c) => c.owner?.clerkUserId).filter((id) => id && !bannedOwners.has(id))
+    owners.map((c) => c.owner?.clerkUserId).filter((id) => id && !banned.has(id))
   );
 
   const keep = (userId: string) =>

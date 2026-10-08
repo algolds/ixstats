@@ -25,7 +25,11 @@ const files = {
 describe("the eurth-map preset", () => {
   it("is the only place the Eurth values live, and its settings validate", () => {
     const preset = sourcePreset("eurth-map")!;
-    expect(preset).toMatchObject({ repo: "a-seth-harrison/eurth-map", ref: "main", format: "eurth-map" });
+    expect(preset).toMatchObject({
+      repo: "a-seth-harrison/eurth-map",
+      ref: "main",
+      format: "eurth-map",
+    });
     expect(settings.files).toEqual({
       nations: "eurth-map/src/data/nations.js",
       organizations: "eurth-map/src/data/organizations.js",
@@ -67,18 +71,56 @@ describe("the eurth-map adapter", () => {
       landArea: 248153,
       capital: "Tyyrik",
       color: "#0a3d2a",
+      secondary: [],
     });
     expect(byKey["Bainbridge-Islands"]!.wikiTitle).toBe("Bainbridge Islands");
     expect(byKey.Kiziauke!.wikiTitle).toBe("Kíziáuke");
-    expect(byKey.Deseti).toMatchObject({ population: null, gdpPerCapita: null, landArea: null, capital: null });
+    expect(byKey.Deseti).toMatchObject({
+      population: null,
+      gdpPerCapita: null,
+      landArea: null,
+      capital: null,
+    });
+  });
+
+  it("reads the entries' secondary-source fields as figure names", () => {
+    const snapshot = jsNationTableAdapter.parse(files, settings);
+    const byKey = Object.fromEntries(snapshot.nations.map((n) => [n.key, n]));
+    expect(byKey.Mito).toMatchObject({
+      secondary: ["gdpPerCapita", "landArea", "capital"],
+    });
+    expect(byKey["Bainbridge-Islands"]).toMatchObject({
+      secondary: ["population", "gdpPerCapita", "landArea", "capital"],
+    });
+    const unmapped = jsNationTableAdapter.parse(
+      { nations: `const t = { X: { pop: 5, secondaryFields: ["pop", "unknown"] } };` },
+      {
+        ...settings,
+        files: { nations: "t.js" },
+        bindings: { nations: "t" },
+        nationFields: { population: "pop" },
+      }
+    );
+    // Without the settings naming the list field, it is not read.
+    expect(unmapped.nations[0]).toMatchObject({ secondary: [] });
   });
 
   it("reads field names from the settings, not from the code", () => {
     const renamed = jsNationTableAdapter.parse(
       { nations: `const t = { X: { pop: 5, cap: "Y" } };` },
-      { ...settings, files: { nations: "t.js" }, bindings: { nations: "t" }, nationFields: { population: "pop", capital: "cap" } }
+      {
+        ...settings,
+        files: { nations: "t.js" },
+        bindings: { nations: "t" },
+        nationFields: { population: "pop", capital: "cap" },
+      }
     );
-    expect(renamed.nations[0]).toMatchObject({ key: "X", population: 5, capital: "Y", gdpPerCapita: null });
+    expect(renamed.nations[0]).toMatchObject({
+      key: "X",
+      population: 5,
+      capital: "Y",
+      gdpPerCapita: null,
+    });
   });
 
   it("maps organisations: acronym as short name, colour, members, and the type rules' suggestion", () => {
@@ -115,10 +157,21 @@ describe("the eurth-map adapter", () => {
         nations: `const nations = { A: { population: -5 }, B: "not an entry", C: { population: 1e30 } };`,
         borders: JSON.stringify({
           type: "FeatureCollection",
-          features: [{ type: "Feature", id: "A", properties: { id: "A" }, geometry: { type: "Point", coordinates: [0, 0] } }],
+          features: [
+            {
+              type: "Feature",
+              id: "A",
+              properties: { id: "A" },
+              geometry: { type: "Point", coordinates: [0, 0] },
+            },
+          ],
         }),
       },
-      { ...settings, files: { nations: "n.js", borders: "b.json" }, bindings: { nations: "nations" } }
+      {
+        ...settings,
+        files: { nations: "n.js", borders: "b.json" },
+        bindings: { nations: "nations" },
+      }
     );
     expect(snapshot.nations.map((n) => n.key)).toEqual(["A", "C"]);
     expect(snapshot.nations[0]!.population).toBeNull();
@@ -130,19 +183,28 @@ describe("the eurth-map adapter", () => {
 describe("helpers", () => {
   it("wikiTitleFromLink only reads links on the realm wiki's prefixes, decoding them", () => {
     const prefixes = ["https://iiwiki.com/w/"];
-    expect(wikiTitleFromLink("https://iiwiki.com/w/Nova_Occidentalis", prefixes)).toBe("Nova Occidentalis");
-    expect(wikiTitleFromLink("https://iiwiki.com/w/K%C3%ADzi%C3%A1uke?x=1#top", prefixes)).toBe("Kíziáuke");
+    expect(wikiTitleFromLink("https://iiwiki.com/w/Nova_Occidentalis", prefixes)).toBe(
+      "Nova Occidentalis"
+    );
+    expect(wikiTitleFromLink("https://iiwiki.com/w/K%C3%ADzi%C3%A1uke?x=1#top", prefixes)).toBe(
+      "Kíziáuke"
+    );
     expect(wikiTitleFromLink("https://evil.example/w/Tavok", prefixes)).toBeNull();
     expect(wikiTitleFromLink(null, prefixes)).toBeNull();
   });
 
   it("splitAcronym and allianceTypeFor follow the configured rules", () => {
-    expect(splitAcronym("Oriental States (OS)")).toEqual({ name: "Oriental States", shortName: "OS" });
+    expect(splitAcronym("Oriental States (OS)")).toEqual({
+      name: "Oriental States",
+      shortName: "OS",
+    });
     expect(splitAcronym("No Acronym")).toEqual({ name: "No Acronym", shortName: null });
     const rules = settings.allianceTypeRules;
     expect(allianceTypeFor("Tricontinental Defence Treaty Organisation", rules)).toBe("military");
     expect(allianceTypeFor("Argic Economic Community", rules)).toBe("economic");
     expect(allianceTypeFor("Oriental States", rules, "political")).toBe("political");
-    expect(allianceTypeFor("Anything", [{ keywords: ["Anything"], type: "regional" }])).toBe("regional");
+    expect(allianceTypeFor("Anything", [{ keywords: ["Anything"], type: "regional" }])).toBe(
+      "regional"
+    );
   });
 });

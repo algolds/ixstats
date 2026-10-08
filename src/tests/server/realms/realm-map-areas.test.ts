@@ -178,6 +178,31 @@ describe("Recompute areas", () => {
     expect(db.mapLayer!.findMany!.mock.calls[0][0].where).toMatchObject({ realmId: EURTH });
   });
 
+  it("refuses an unknown realm slug, even for a site admin, instead of falling back to IxWorld", async () => {
+    const db = realmDb();
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId: "clerk_admin" },
+      user: {
+        id: "db_admin",
+        clerkUserId: "clerk_admin",
+        role: { name: "admin", level: 10 },
+        country: null,
+      },
+      rateLimitIdentifier: `admin_${Math.random()}`,
+    }) as never;
+    const map = createCallerFactory(realmMapRouter)(ctx);
+    await expect(
+      map.recomputeAreas({ realm: "eruth", alsoSetLandArea: true })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(map.updateSettings({ realm: "eruth", radiusKm: 1000 })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(db.country!.updateMany).not.toHaveBeenCalled();
+    expect(db.realm!.update).not.toHaveBeenCalled();
+  });
+
   it("a player who is neither founder nor map officer cannot recompute", async () => {
     const db = realmDb();
     await expect(recompute(db, "clerk_player")).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -219,6 +244,43 @@ describe("map settings", () => {
 });
 
 describe("what the realm's map viewer shows", () => {
+  it("lists the realm's raster layers in drawing order, its climate key and the layer types it has", async () => {
+    const db = realmDb();
+    const layer = { label: "L", version: "0a1b2c3d", maxZoom: 5 };
+    const climateKey = {
+      system: "Köppen",
+      zones: [{ code: "Af", name: "Rainforest", color: "#0000fe" }],
+    };
+    db.realm!.findUnique!.mockImplementation(async () => ({
+      id: EURTH,
+      slug: "eurth",
+      name: "Eurth",
+      ownerId: FOUNDER,
+      status: "active",
+      settings: {
+        map: {
+          rasterLayers: [
+            { ...layer, id: "climate", kind: "overlay", order: 1 },
+            { ...layer, id: "geography", kind: "base" },
+          ],
+          climateKey,
+        },
+      },
+      officers: [],
+    }));
+    db.mapLayer!.groupBy!.mockResolvedValue([{ layerType: "political" }, { layerType: "climate" }]);
+    const result = await createCallerFactory(realmMapRouter)(ctxAs(db, "clerk_player")).display({
+      realm: "eurth",
+    });
+    expect(result.rasterLayers.map((l) => l.id)).toEqual(["geography", "climate"]);
+    expect(result.climateKey).toEqual(climateKey);
+    expect(result.layerTypes).toEqual(["climate", "political"]);
+    expect(db.mapLayer!.groupBy).toHaveBeenCalledWith({
+      by: ["layerType"],
+      where: { realmId: EURTH, isActive: true },
+    });
+  });
+
   const display = (db: Db, who: string) =>
     createCallerFactory(realmMapRouter)(ctxAs(db, who)).display({ realm: "eurth" });
 
@@ -237,7 +299,7 @@ describe("what the realm's map viewer shows", () => {
     });
   });
 
-  it("prefers the realm's own credit line, and lists its unclaimed nations", async () => {
+  it("prefers the realm's own credit line, and adds nothing realm-only about unclaimed nations", async () => {
     const db = realmDb(HALF_EARTH);
     db.realm!.findUnique!.mockImplementation(async () => ({
       id: EURTH,
@@ -254,21 +316,16 @@ describe("what the realm's map viewer shows", () => {
       },
       officers: [{ userId: MAP_OFFICER, powers: ["map"] }],
     }));
-    db.country!.findMany!.mockResolvedValue([{ id: "c_open" }]);
     const result = await display(db, MAP_OFFICER);
     expect(result).toMatchObject({
       radiusKm: HALF_EARTH,
       attribution: "Map: Eurth",
       baseImage: "/images/uploads/uploaded_eurth.png",
-      unclaimedCountryIds: ["c_open"],
       canEdit: true,
       isFounder: false,
     });
     expect(db.realmSourceSync!.findUnique).not.toHaveBeenCalled();
-    expect(db.country!.findMany!.mock.calls[0][0].where).toEqual({
-      realmId: EURTH,
-      ownerUserId: null,
-      isDemo: false,
-    });
+    expect(result).toMatchObject({ rasterLayers: [], climateKey: null, layerTypes: [] });
+    expect(result).not.toHaveProperty("unclaimedCountryIds");
   });
 });

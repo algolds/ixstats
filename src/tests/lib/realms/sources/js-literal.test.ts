@@ -48,6 +48,12 @@ describe("readBoundLiteral: the source's own files", () => {
   it("refuses a file without the binding", () => {
     expect(() => readBoundLiteral("const other = {};", "nations")).toThrow(LiteralParseError);
   });
+
+  it("refuses a transformed literal unless told to read the plain literal and ignore the transform", () => {
+    const source = `export const ZONES = [{ code: "Af" }].map((z) => ({ ...z, evil: run() }));`;
+    expect(() => readBoundLiteral(source, "ZONES")).toThrow(/after the literal/);
+    expect(readBoundLiteral(source, "ZONES", "ignore")).toEqual([{ code: "Af" }]);
+  });
 });
 
 describe("readLiteral: values", () => {

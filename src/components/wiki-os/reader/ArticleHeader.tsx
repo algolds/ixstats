@@ -269,7 +269,7 @@ export function WikiOSHeader({
     <div
       ref={cardRef}
       style={containerStyle}
-      className="wikios-header rounded-card border-separator shadow-card relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden border select-none"
+      className="wikios-header rounded-card shadow-card relative z-10 mb-6 flex w-full cursor-default flex-col justify-end overflow-hidden select-none"
     >
       {/* Backdrop: Centered & Contained Vector Artwork for SVGs / Full-Bleed for Photos */}
       {backdropUrl ? (

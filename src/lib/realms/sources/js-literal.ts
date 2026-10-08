@@ -276,12 +276,19 @@ class Reader {
 
 /**
  * Read the literal bound to `binding` (`const <binding> = <literal>`) in a JavaScript data file, without
- * evaluating anything. Throws LiteralParseError on anything that is not a plain literal.
+ * evaluating anything. Throws LiteralParseError on anything that is not a plain literal. A literal the file then
+ * transforms (`= [ … ].map(…)`) is refused unless `transformed` is "ignore": the caller then reads the plain
+ * literal and does what the transform does itself.
  */
-export function readBoundLiteral(source: string, binding: string): LiteralValue {
+export function readBoundLiteral(
+  source: string,
+  binding: string,
+  transformed: "refuse" | "ignore" = "refuse"
+): LiteralValue {
   const reader = new Reader(source);
   reader.seekBinding(binding);
   const value = reader.value(0);
+  if (transformed === "ignore") return value;
   reader.skip();
   const next = reader.peek();
   if (next !== "" && next !== ";" && next !== "\n" && !/[A-Za-z_$]/.test(next))

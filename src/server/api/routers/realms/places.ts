@@ -4,9 +4,10 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
+import { nationPageTaken } from "~/server/modules/realms/realms.handover";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   ensureRealmBoard,
   getRealmBoardAccess,
@@ -17,14 +18,6 @@ import {
 /** How far back "board activity" in the directory looks. */
 const BOARD_ACTIVITY_WINDOW_DAYS = 7;
 
-/**
- * Realms the directory lists: active public realms, plus IxWorld whatever its row says (AT-6). Unlisted realms are
- * reachable by link only and never listed; draft and generating realms are shown only to their staff, by link.
- */
-export const DIRECTORY_REALM_WHERE = {
-  OR: [{ id: DEFAULT_REALM_ID }, { visibility: "public", status: "active" }],
-};
-
 /** How many nations a nation search returns at most. */
 export const NATION_SEARCH_LIMIT = 20;
 
@@ -32,24 +25,24 @@ type NationPage = { realmId: string; title: string; wikiSource: string };
 
 /**
  * The nation pages of realms' lore indexes that no country has taken yet: claimable through
- * `realms.claimNationPage`. A claimed page's country carries the page title (country names are unique per realm),
- * as in getRealmHub.
+ * `realms.claimNationPage`. A page is taken by the country carrying its page reference (even after a rename), or
+ * by name for a country without one, as in getRealmHub.
  */
 async function unclaimedNationPages<P extends NationPage>(
   db: PrismaClient,
   pages: P[]
 ): Promise<P[]> {
   if (pages.length === 0) return [];
-  const taken = await db.country.findMany({
+  const titles = [...new Set(pages.map((page) => page.title))];
+  const countries = await db.country.findMany({
     where: {
       realmId: { in: [...new Set(pages.map((page) => page.realmId))] },
-      name: { in: [...new Set(pages.map((page) => page.title))] },
+      OR: [{ wikiPageTitle: { in: titles } }, { wikiPageTitle: null, name: { in: titles } }],
     },
-    select: { realmId: true, name: true },
+    select: { realmId: true, name: true, wikiSource: true, wikiPageTitle: true },
   });
-  const key = (realmId: string, name: string) => JSON.stringify([realmId, name]);
-  const named = new Set(taken.map((country) => key(country.realmId, country.name)));
-  return pages.filter((page) => !named.has(key(page.realmId, page.title)));
+  const taken = nationPageTaken(countries);
+  return pages.filter((page) => !taken(page));
 }
 
 /** Open realms with their nation counts, board activity and the viewer's own holdings. */

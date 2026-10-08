@@ -10,7 +10,7 @@ export function EditorSkeleton() {
     <div
       role="status"
       aria-label="Loading the country editor"
-      className="flex w-full flex-1 flex-col pt-24 sm:pt-28 lg:pt-32"
+      className="flex w-full flex-1 flex-col pt-(--shell-top-offset)"
     >
       <div className="mx-auto w-full max-w-6xl px-4 pb-4">
         <Card className="rounded-card flex flex-col gap-4 p-4 sm:p-6">

@@ -36,6 +36,8 @@ interface MapKeyboardControlsProps {
   sidePanelOpen?: boolean;
   /** Where R (reset view) flies: the realm's home centre (mapHomeCenter), the origin by default. */
   homeCenter?: [number, number];
+  /** The realm's credit line (its map or art), shown with IxStates' own. */
+  attribution?: string | null;
 }
 
 /** Focus targets whose own keyboard handling must win over map shortcuts. */
@@ -88,6 +90,7 @@ export function MapKeyboardControls({
   measureAvailable = true,
   sidePanelOpen = false,
   homeCenter = MAP_DEFAULTS.center,
+  attribution,
 }: MapKeyboardControlsProps) {
   const [showHelp, setShowHelp] = useState(false);
 
@@ -137,14 +140,20 @@ export function MapKeyboardControls({
 
   return (
     <>
-      {/* Bottom-right: copyright + keyboard shortcut button. Sits left of MapLibre's compact
-          attribution button and moves clear of the desktop side panel when one is open. */}
+      {/* Bottom-right: the realm's credit line, copyright + keyboard shortcut button. Sits left of
+          MapLibre's compact attribution button and moves clear of the desktop side panel when one is open. */}
       <div
         className={`absolute right-12 bottom-3 z-10 flex items-center gap-2 ${
           sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : ""
         }`}
       >
-        <span className="text-label-secondary text-footnote text-right leading-tight select-none">
+        <span className="text-label-secondary text-footnote max-w-[60vw] text-right leading-tight select-none">
+          {attribution && (
+            <>
+              <span>{attribution}</span>
+              <br />
+            </>
+          )}
           © 2026 Ixnay
           <br />
           Powered by IxStates

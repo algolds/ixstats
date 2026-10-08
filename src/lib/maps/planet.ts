@@ -77,6 +77,36 @@ export function polygonalAreaSqKm(
 }
 
 /**
+ * Area (km²) inside one ring of `[lng, lat]` vertices joined by great-circle edges, on a planet of `radiusKm`. Exact
+ * for great-circle edges, unlike the flat helpers above: sums the spherical excess between each edge and the equator
+ * (tan(E/2) = tan(Δλ/2)·(t₁ + t₂)/(1 + t₁t₂), t = tan(φ/2)). Edges take the short way across the antimeridian; a ring
+ * that winds all the way round in longitude encloses a pole. Unsigned and implicitly closed; of the two sides of the
+ * ring, the smaller one is measured.
+ */
+export function sphericalRingAreaSqKm(
+  ring: readonly (readonly [number, number] | Position)[],
+  radiusKm: number = EARTH_RADIUS_KM
+): number {
+  if (ring.length < 3) return 0;
+  const rad = Math.PI / 180;
+  let excess = 0;
+  let lngTurn = 0;
+  ring.forEach((a, i) => {
+    const b = ring[(i + 1) % ring.length]!;
+    const dLng = ((((b[0]! - a[0]!) % 360) + 540) % 360) - 180;
+    const ta = Math.tan((a[1]! * rad) / 2);
+    const tb = Math.tan((b[1]! * rad) / 2);
+    lngTurn += dLng;
+    excess += 2 * Math.atan2(Math.tan((dLng * rad) / 2) * (ta + tb), 1 + ta * tb);
+  });
+  // Around a pole the sum is measured from the equator, so the pole's side is a hemisphere less it: always the
+  // smaller side. Otherwise the sum is one side; the other is the rest of the sphere.
+  const side = Math.abs(excess);
+  const smaller = Math.abs(lngTurn) > 180 ? 2 * Math.PI - side : Math.min(side, 4 * Math.PI - side);
+  return smaller * radiusKm ** 2;
+}
+
+/**
  * A distance measured on Earth's radius (PostGIS geography, haversine at 6371 km) as it is on a planet of
  * `radiusKm`: distances scale with the radius.
  */

@@ -280,9 +280,13 @@ describe("a country's geo profile uses its own realm's base layers", () => {
     });
     await geoCaller(ctxFor(db, null)).getCountryGeoProfile({ countryId: "c_eu" });
 
-    expect(wheres(db, "mapLayer").slice(0, 2).map(realmOf)).toEqual([EURTH, EURTH]);
-    const hydroSql = db.$queryRawUnsafe!.mock.calls.slice(0, 2).map((c: [string]) => c[0]);
-    for (const sql of hydroSql) expect(sql).toContain(`ml."worldId" = c."realmId"`);
+    // Climate and altitude zones are clipped to the nation in PostGIS, like rivers and lakes
+    const sqls = db.$queryRawUnsafe!.mock.calls.map((c: [string]) => c[0]);
+    const zoneAndHydroSql = sqls.filter((sql: string) =>
+      /ST_Intersection\(ml\.geom_postgis|"layerType" = '(rivers|lakes)'/.test(sql)
+    );
+    expect(zoneAndHydroSql).toHaveLength(4);
+    for (const sql of zoneAndHydroSql) expect(sql).toContain(`ml."worldId" = c."realmId"`);
   });
 });
 

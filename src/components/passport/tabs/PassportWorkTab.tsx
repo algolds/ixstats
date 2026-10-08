@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { OpenBook as BookOpen } from "iconoir-react";
+import { ChatBubble, OpenBook as BookOpen } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
-import type { PassportWiki, WorkPayload } from "../types";
+import type { PassportForum, PassportWiki, WorkPayload } from "../types";
 import { WorkActivityFeed } from "./work/WorkActivityFeed";
 import {
   WorkCategoryFilter,
@@ -16,7 +16,39 @@ import { Card } from "~/components/ui/card";
 interface PassportWorkTabProps {
   work: WorkPayload;
   wiki: PassportWiki;
-  cleanUsername: string;
+  /** Forum counters lead the tab; `forum.stats` is null when hidden or unavailable. */
+  forum: PassportForum;
+  handle: string;
+}
+
+function counted(n: number, one: string, many: string): string {
+  return `${n.toLocaleString()} ${n === 1 ? one : many}`;
+}
+
+/** The holder's forum standing in one line: title, messages, reactions, trophy points. */
+function ForumCounters({ stats }: { stats: NonNullable<PassportForum["stats"]> }) {
+  const parts = [
+    stats.userTitle,
+    counted(stats.messageCount, "message", "messages"),
+    counted(stats.reactionScore, "reaction", "reactions"),
+    counted(stats.trophyPoints, "trophy point", "trophy points"),
+  ].filter((part): part is string => Boolean(part));
+  return (
+    <div
+      role="group"
+      aria-label="Forum"
+      className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-2 gap-y-1 tabular-nums"
+    >
+      <ChatBubble aria-hidden className="text-tint size-4 shrink-0" />
+      <span className="text-label font-medium">Forum</span>
+      {parts.map((part) => (
+        <React.Fragment key={part}>
+          <span aria-hidden>·</span>
+          <span>{part}</span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
 }
 
 function matchesSearch(query: string, title: string, summary: string | null): boolean {
@@ -28,7 +60,8 @@ function matchesSearch(query: string, title: string, summary: string | null): bo
 export const PassportWorkTab = React.memo(function PassportWorkTab({
   work,
   wiki,
-  cleanUsername,
+  forum,
+  handle,
 }: PassportWorkTabProps) {
   const [selected, setSelected] = useState<WorkCategoryFilterValue>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,15 +76,21 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
   };
   const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
+  const header = forum.stats ? <ForumCounters stats={forum.stats} /> : null;
+
   if (total === 0 && !wiki.linked) {
     return (
-      <Card variant="well" padding="none" className="border-separator border">
-        <EmptyState
-          icon={<BookOpen />}
-          title="No published work"
-          message={`@${cleanUsername} has not published any WikiOS articles, language packs or directives yet.`}
-        />
-      </Card>
+      <div className="space-y-6">
+        {header}
+        <Card variant="well" padding="none">
+          <EmptyState
+            compact
+            icon={<BookOpen />}
+            title="No published work"
+            message={`@${handle} has not published any WikiOS articles, language packs or directives yet.`}
+          />
+        </Card>
+      </div>
     );
   }
 
@@ -69,6 +108,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
 
   return (
     <div className="space-y-6">
+      {header}
       <WorkCategoryFilter
         selected={selected}
         onSelect={setSelected}
@@ -86,7 +126,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
       )}
 
       {shows("feed") && feed.length > 0 && (
-        <WorkActivityFeed feed={feed} contributionsUser={wiki.username || cleanUsername} />
+        <WorkActivityFeed feed={feed} contributionsUser={wiki.username || handle} />
       )}
     </div>
   );

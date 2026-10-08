@@ -84,6 +84,11 @@ describe("PageHeader", () => {
     );
   });
 
+  it("keeps a toolbar band without actions, so the large title starts clear of Halo", () => {
+    const { container } = render(<PageHeader title="Help center" />);
+    expect(container.querySelector('[data-slot="page-header-toolbar"]')).toHaveClass("h-14");
+  });
+
   it("keeps the toolbar sticky at the shell's header offset", () => {
     const { container } = render(<PageHeader title="Help Center" />);
     const toolbar = container.querySelector('[data-slot="page-header-toolbar"]')!;

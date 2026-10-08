@@ -19,6 +19,13 @@
 import type { ComponentType, SVGProps } from "react";
 import { DiscordLogomark } from "./icons/DiscordLogomark";
 import { MyCountryLogomark } from "./icons/MyCountryLogomark";
+import { RealmsLogomark } from "./icons/RealmsLogomark";
+import { VaultLogomark } from "./icons/VaultLogomark";
+import {
+  Compass as SolidCompass,
+  MultiBubble as SolidMultiBubble,
+  RoundFlask as SolidRoundFlask,
+} from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
 import {
   Activity,
@@ -40,7 +47,6 @@ import {
   Database,
   Download,
   FireFlame,
-  Flask,
   Folder,
   Gamepad,
   Gift,
@@ -49,6 +55,7 @@ import {
   HelpCircle,
   HomeSimple,
   Journal,
+  LightBulbOn,
   List,
   Lock,
   Mail,
@@ -86,7 +93,7 @@ export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
 type AppTint =
-  "admin" | "mycountry" | "intel" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "sports";
+  "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "realms" | "labs";
 
 type AppId =
   | "home"
@@ -123,7 +130,7 @@ interface AppSection {
   match?: string[];
   /** For query sections: also current when the page has no query (the page's default tab). */
   isDefault?: boolean;
-  /** Overrides the app tint while this section is current (e.g. Defense is crimson). */
+  /** Overrides the app tint while this section is current (e.g. ThinkPages under Home). */
   tint?: AppTint;
   /**
    * Sub-heading the section is listed under. Consecutive sections with the same `group` form one
@@ -170,6 +177,8 @@ export interface AppDefinition {
   navSettingBypass?: { admin?: boolean; labsAccess?: boolean };
   /** `footer`: listed below the main apps, and opens as an area of its own (Admin, Settings). */
   placement?: "main" | "footer";
+  /** Sections are listed as top-level rows, always shown, with no app row to expand (Home). */
+  inline?: true;
 }
 
 /** The admin console's sections of one sidebar group: `[id, label, href, icon]` rows. */
@@ -198,30 +207,8 @@ export const APPS: readonly AppDefinition[] = [
       "/thinktanks",
     ],
     requiresAuth: true,
+    inline: true,
     sections: [
-      { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: StatsReport },
-      {
-        id: "messages",
-        label: "Messages",
-        href: "/messages",
-        icon: Mail,
-        badge: "messages-unread",
-      },
-      // ThinkPages is part of Home; these pages keep their emerald tint through the section tint.
-      {
-        id: "thinktanks",
-        label: "ThinkTanks",
-        href: "/thinktanks",
-        icon: Group,
-        tint: "thinkpages",
-      },
-      {
-        id: "thinkpages",
-        label: "ThinkPages",
-        href: "/thinkpages",
-        icon: ChatLines,
-        tint: "thinkpages",
-      },
       // Listed only while this build is unseen; Help keeps a permanent changelog row.
       {
         id: "whats-new",
@@ -230,6 +217,23 @@ export const APPS: readonly AppDefinition[] = [
         icon: Clock,
         badge: "whats-new",
         conditional: true,
+      },
+      { id: "dashboard", label: "Home", href: "/dashboard", icon: HomeSimple },
+      {
+        id: "messages",
+        label: "Messages",
+        href: "/messages",
+        icon: Mail,
+        badge: "messages-unread",
+      },
+      // ThinkPages is part of Home under ThinkTanks; its pages keep their emerald section tint.
+      {
+        id: "thinktanks",
+        label: "ThinkTanks",
+        href: "/thinktanks",
+        icon: LightBulbOn,
+        tint: "thinkpages",
+        match: ["/thinkpages"],
       },
     ],
   },
@@ -270,8 +274,7 @@ export const APPS: readonly AppDefinition[] = [
         label: "Defense",
         href: "/mycountry/defense",
         icon: Shield,
-        tint: "intel",
-        // Intelligence has no row of its own; its page keeps Defense's highlight and crimson tint.
+        // Intelligence has no row of its own; its page keeps Defense's highlight.
         match: ["/mycountry/intelligence"],
         requires: "mycountry-premium",
       },
@@ -281,7 +284,7 @@ export const APPS: readonly AppDefinition[] = [
     id: "maps",
     label: "Maps",
     href: "/maps",
-    icon: MapIcon,
+    icon: SolidCompass,
     tint: "maps",
     match: ["/maps"],
     navSetting: "showMapsTab",
@@ -291,7 +294,7 @@ export const APPS: readonly AppDefinition[] = [
     id: "vault",
     label: "Vault",
     href: "/vault",
-    icon: MultiplePages,
+    icon: VaultLogomark,
     tint: "vault",
     match: ["/vault"],
     requiresAuth: true,
@@ -391,7 +394,7 @@ export const APPS: readonly AppDefinition[] = [
     id: "forum",
     label: "Forum",
     href: "/forum",
-    icon: ChatBubble,
+    icon: SolidMultiBubble,
     tint: "forum",
     match: ["/forum"],
     navSetting: "showForumTab",
@@ -410,32 +413,31 @@ export const APPS: readonly AppDefinition[] = [
     label: "Realms",
     // /realms is the landing page for exploring, searching and joining realms.
     href: "/realms",
-    icon: Globe,
+    icon: RealmsLogomark,
+    tint: "realms",
     match: ["/realms", "/r", "/countries", "/explore", "/leaderboards"],
     sections: [
       // The nations of the viewer's realm (/countries follows the active nation's realm).
       { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
-      { id: "explore", label: "Explore", href: "/realms", icon: Community, match: ["/r"] },
+      { id: "explore", label: "Explore", href: "/realms", icon: Search, match: ["/r"] },
     ],
   },
   {
     id: "labs",
     label: "Labs",
     href: "/labs/onoma",
-    icon: Flask,
-    // Onoma's brand is blue; the sky `maps` tint is the closest app tint.
-    tint: "maps",
+    icon: SolidRoundFlask,
+    tint: "labs",
     match: ["/labs", "/myleague", "/myclub"],
     requiresAuth: true,
     navSetting: "showLabsTab",
     navSettingBypass: { admin: true, labsAccess: true },
-    // Labs with a shipped entry point. Onoma keeps its own in-app navigation (src/app/labs/onoma);
-    // the sports sections carry their own tint, which the sidebar applies while one is current.
+    // Labs with a shipped entry point. Onoma keeps its own in-app navigation (src/app/labs/onoma).
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
       { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
-      { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy, tint: "sports" },
-      { id: "myclub", label: "MyClub", href: "/myclub", icon: Group, tint: "sports" },
+      { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
+      { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
     ],
   },
   {

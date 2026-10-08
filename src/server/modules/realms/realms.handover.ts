@@ -10,17 +10,65 @@ import type { NationPagePrefill } from "./realms.prefill";
 
 type HandOverTx = Pick<Prisma.TransactionClient, "country" | "nationalIdentity" | "mapLayer">;
 
+/** A nation page of a realm's lore index: the wiki and title its nation's Country carries. */
+export interface NationPageRef {
+  realmId: string;
+  wikiSource: string;
+  title: string;
+}
+
 /**
- * The realm's unclaimed Country carrying a nation page's title (country names are unique per realm, and the sync
- * names a roster nation after its page), or null when there is none or it already has an owner.
+ * The realm's nation of `page`: the Country carrying the page reference (`wikiSource`, `wikiPageTitle`), or, for a
+ * Country stored without one (older rows, a sync without a wiki), the one named after the page. Keyed on the
+ * reference, a renamed nation keeps its page taken.
+ */
+export function nationOfPageWhere(page: NationPageRef): Prisma.CountryWhereInput {
+  return {
+    realmId: page.realmId,
+    OR: [
+      { wikiSource: page.wikiSource, wikiPageTitle: page.title },
+      { wikiPageTitle: null, name: page.title },
+    ],
+  };
+}
+
+interface CountryPageFields {
+  realmId: string;
+  name: string;
+  wikiSource?: string | null;
+  wikiPageTitle?: string | null;
+}
+
+const pageKey = (realmId: string, wikiSource: string | null, title: string) =>
+  JSON.stringify([realmId, wikiSource, title]);
+
+/**
+ * Whether a nation page is taken by one of `countries`, matched as `nationOfPageWhere` does: by page reference,
+ * or by name for a country without one.
+ */
+export function nationPageTaken(countries: CountryPageFields[]): (page: NationPageRef) => boolean {
+  const keys = new Set(
+    countries.map((c) =>
+      c.wikiPageTitle
+        ? pageKey(c.realmId, c.wikiSource ?? null, c.wikiPageTitle)
+        : pageKey(c.realmId, null, c.name)
+    )
+  );
+  return (page) =>
+    keys.has(pageKey(page.realmId, page.wikiSource, page.title)) ||
+    keys.has(pageKey(page.realmId, null, page.title));
+}
+
+/**
+ * The realm's unclaimed nation of a page (`nationOfPageWhere`; the sync creates roster nations up front), or null
+ * when there is none or it already has an owner.
  */
 export async function findUnclaimedNation(
   tx: Pick<Prisma.TransactionClient, "country">,
-  realmId: string,
-  title: string
+  page: NationPageRef
 ): Promise<{ id: string; name: string } | null> {
   const country = await tx.country.findFirst({
-    where: { realmId, name: title },
+    where: nationOfPageWhere(page),
     select: { id: true, name: true, ownerUserId: true },
   });
   return country && country.ownerUserId === null ? { id: country.id, name: country.name } : null;

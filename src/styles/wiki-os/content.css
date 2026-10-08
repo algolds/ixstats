@@ -156,13 +156,6 @@
     display: block;
   }
 
-  /* Invisible sentinel for TOC pill visibility detection */
-
-  .wikios-title-sentinel {
-    height: 0;
-    overflow: hidden;
-  }
-
   /* Header */
 
   .wikios-sticky-toc-header {

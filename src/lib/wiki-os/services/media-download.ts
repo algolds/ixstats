@@ -4,7 +4,8 @@
 // re-checked. The endpoint is public, so it must not be a way to make this server fetch or buffer anything.
 
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
-import { fetchFromAllowedHost, isAllowedMediaUrl } from "~/app/api/mediawiki/_media-response";
+import { fetchFromAllowedHost } from "~/app/api/mediawiki/_media-response";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 
 /** Largest file `downloadMedia` returns. */
 export const MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024;

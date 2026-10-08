@@ -5,6 +5,7 @@
 import { type Achievement, type PrismaClient } from "@prisma/client";
 import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { awardAchievementCard } from "~/lib/cards/card-service";
+import { RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 
 /**
  * Records an unlock for the user and pays out its credits, commemorative cards and packs.
@@ -15,8 +16,10 @@ export async function unlockAchievement(
   userId: string,
   achievement: Achievement
 ): Promise<boolean> {
-  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus)
-  const creditReward = achievementBonus(await getBonusConfig(db), achievement.rarity);
+  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus); recruiting pays nothing
+  const creditReward = RECRUITER_ACHIEVEMENT_IDS.has(achievement.key)
+    ? 0
+    : achievementBonus(await getBonusConfig(db), achievement.rarity);
   let cardIds: string[] = [];
   let packIds: string[] = [];
   let titles: string[] = [];

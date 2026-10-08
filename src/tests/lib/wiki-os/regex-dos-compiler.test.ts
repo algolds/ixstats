@@ -8,7 +8,10 @@
  */
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { disagreements, fixtureTexts, randomTexts } from "../../helpers/wikitext-fuzz";
-import { parseInfoboxWithTemplates } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
+import {
+  parseInfoboxWithTemplates,
+  preprocessInfoboxSource,
+} from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import {
   hasReferencesTag,
   hasReflist,
@@ -916,7 +919,9 @@ describe("unified-parser: infobox values are cleaned by scanning", () => {
       disagreements(
         texts,
         (t) => parseInfoboxWithTemplates(t, "Urcea"),
-        (t) => legacyParseInfoboxWithTemplates(t, "Urcea")
+        // The legacy parser had no source preprocessing (comments across fields, page-name magic words): give
+        // it the same preprocessed source, so this compares value cleaning only.
+        (t) => legacyParseInfoboxWithTemplates(preprocessInfoboxSource(t, "Urcea"), "Urcea")
       )
     ).toEqual([]);
   });
@@ -930,7 +935,9 @@ describe("unified-parser: infobox values are cleaned by scanning", () => {
       disagreements(
         deepValues,
         (t) => parseInfoboxWithTemplates(t, "Urcea"),
-        (t) => legacyParseInfoboxWithTemplates(t, "Urcea")
+        // The legacy parser had no source preprocessing (comments across fields, page-name magic words): give
+        // it the same preprocessed source, so this compares value cleaning only.
+        (t) => legacyParseInfoboxWithTemplates(preprocessInfoboxSource(t, "Urcea"), "Urcea")
       )
     ).toEqual([]);
 

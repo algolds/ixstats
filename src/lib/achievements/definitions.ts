@@ -11,7 +11,7 @@
  * - Condition function for auto-unlock detection
  */
 
-import { SOCIAL_ACHIEVEMENTS } from "./definitions-social";
+import { RECRUITER_ACHIEVEMENTS, SOCIAL_ACHIEVEMENTS } from "./definitions-social";
 import { meetsScale, RARITY_PERCENTILE } from "./scaling";
 
 type AchievementCategory =
@@ -88,6 +88,9 @@ export interface ExtendedAchievementData {
   loreCardCount?: number;
   retiredCardCount?: number;
   distinctCountryIdCount?: number;
+
+  /** Approved realm claims naming the user as inviter (`RealmClaim.invitedByUserId`). */
+  recruitedCount?: number;
 
   /**
    * Live percentile thresholds for scale metrics (population/GDP/GDP-per-capita),
@@ -853,6 +856,9 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     iconUrl: "🤝",
     condition: (data) => (data.distinctCountryIdCount ?? 0) >= 20,
   },
+
+  // RECRUITER ACHIEVEMENTS (3): players who joined a realm by the user's invite link
+  ...RECRUITER_ACHIEVEMENTS,
 ];
 
 /**

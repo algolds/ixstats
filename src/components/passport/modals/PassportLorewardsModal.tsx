@@ -34,7 +34,7 @@ interface PassportLorewardsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wiki?: PassportWiki;
-  cleanUsername: string;
+  handle: string;
 }
 
 const MONTH_NAMES = [
@@ -58,9 +58,9 @@ export function PassportLorewardsModal({
   open,
   onOpenChange,
   wiki,
-  cleanUsername,
+  handle,
 }: PassportLorewardsModalProps) {
-  const wikiUsername = wiki?.username || cleanUsername;
+  const wikiUsername = wiki?.username || handle;
   const stats = wiki?.lorewards;
   const awardHistory = wiki?.awardHistory ?? [];
 
@@ -183,7 +183,7 @@ export function PassportLorewardsModal({
               )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
-                <h4
+                <h3
                   id="lorewards-calendar-title"
                   className="text-headline text-label flex items-center gap-2"
                 >
@@ -191,7 +191,7 @@ export function PassportLorewardsModal({
                   <span>
                     {MONTH_NAMES[calMonth - 1]} <span className="tabular-nums">{calYear}</span>
                   </span>
-                </h4>
+                </h3>
 
                 <div className="flex items-center gap-1">
                   <Button
@@ -244,7 +244,7 @@ export function PassportLorewardsModal({
                         key={day}
                         className={cn(
                           "rounded-control-sm text-footnote flex h-6 items-center justify-center tabular-nums select-none",
-                          status === "winner" && "bg-yellow/15 text-yellow-ink font-semibold",
+                          status === "winner" && "bg-caution/15 text-caution-ink font-semibold",
                           status === "runner-up" && "bg-fill-3 text-label font-medium",
                           !status && "text-label-secondary",
                           isToday && "ring-tint ring-1"
@@ -267,10 +267,7 @@ export function PassportLorewardsModal({
               {/* Legend */}
               <div className="border-separator text-label-secondary text-footnote flex items-center justify-between border-t pt-2">
                 <span className="flex items-center gap-1">
-                  <span
-                    aria-hidden
-                    className="bg-caution/15 ring-caution/40 size-2.5 rounded-xs ring-1"
-                  />
+                  <span aria-hidden className="bg-caution/15 size-2.5 rounded-xs" />
                   <span>Winner</span>
                 </span>
                 <span className="flex items-center gap-1">
@@ -293,7 +290,7 @@ export function PassportLorewardsModal({
               )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
-                <h4
+                <h3
                   id="lorewards-history-title"
                   className="text-headline text-label flex items-center gap-2"
                 >
@@ -301,7 +298,7 @@ export function PassportLorewardsModal({
                   <span>
                     Laurels history <span className="tabular-nums">({awardHistory.length})</span>
                   </span>
-                </h4>
+                </h3>
                 <Link
                   href="/wiki"
                   className="text-tint text-footnote flex items-center gap-0.5 hover:underline"
@@ -316,11 +313,11 @@ export function PassportLorewardsModal({
                   No previous laurels recorded yet.
                 </p>
               ) : (
-                <ul className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
+                <ul className="divide-separator max-h-[220px] divide-y overflow-y-auto pr-1">
                   {awardHistory.map((award, i) => (
                     <li
                       key={award.id || `${award.date}-${i}`}
-                      className="bg-surface rounded-row text-footnote flex items-center justify-between gap-2 p-2"
+                      className="text-footnote flex items-center justify-between gap-2 py-2"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         <Badge

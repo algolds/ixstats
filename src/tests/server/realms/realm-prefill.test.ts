@@ -119,6 +119,30 @@ describe("prefillFromInfobox", () => {
   });
 });
 
+describe("infobox image fields (real IIWiki shapes)", () => {
+  it("fills {{PAGENAME}} with the page's title", () => {
+    const data = parseInfoboxWithTemplates(
+      "{{Infobox country\n| image_flag = Flag of {{PAGENAME}}.png\n| image_coat = Coat of arms of {{ PAGENAME }}.png\n}}",
+      "Yosai"
+    );
+    expect(data).toMatchObject({
+      image_flag: "Flag of Yosai.png",
+      image_coat: "Coat of arms of Yosai.png",
+    });
+  });
+
+  it("ignores a commented-out duplicate field", () => {
+    const data = parseInfoboxWithTemplates(
+      "{{Infobox country\n|image_flag = Flag Dominion of Kori-Chi (Gallambria).svg\n<!--|image_flag =        Flag of Kōri-Chi.png-->\n|image_coat = Coat of Arms of Kōri-Chi.svg\n<!--|image_coat = Government seal of Kōri-Chi.png\n|symbol_type = Government Seal-->\n}}",
+      "Kōri-Chi"
+    );
+    expect(data).toMatchObject({
+      image_flag: "Flag Dominion of Kori-Chi (Gallambria).svg",
+      image_coat: "Coat of Arms of Kōri-Chi.svg",
+    });
+  });
+});
+
 describe("fetchNationPagePrefill", () => {
   beforeEach(() => fetchArticle.mockReset());
 
@@ -133,6 +157,15 @@ describe("fetchNationPagePrefill", () => {
       officialName: "Kingdom of Borea",
       capitalCity: "Nord",
     });
+  });
+
+  it("follows a redirect once to the page that has the infobox", async () => {
+    fetchArticle
+      .mockResolvedValueOnce({ wikitext: "#REDIRECT [[Mitō]]" })
+      .mockResolvedValueOnce({ wikitext: "{{Infobox country\n| capital = Kaiyō\n}}" });
+    const prefill = await fetchNationPagePrefill("iiwiki", "Mito");
+    expect(fetchArticle).toHaveBeenNthCalledWith(2, "Mitō", "iiwiki");
+    expect(prefill.identity).toMatchObject({ capitalCity: "Kaiyō" });
   });
 
   it("falls back to the baseline when the wiki fails or the page is missing", async () => {

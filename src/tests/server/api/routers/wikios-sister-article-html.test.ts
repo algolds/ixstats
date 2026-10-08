@@ -148,9 +148,10 @@ describe("wikios.getArticleHtml for another wiki's page", () => {
   it("says the page does not exist on that wiki when the wiki has no such page", async () => {
     jest.mocked(getArticleWikitext).mockResolvedValue(null);
 
-    await expect(caller().getArticleHtml({ title: "Nowhere", wikiSource: "iiwiki" })).rejects.toThrow(
-      /not found on iiwiki/
-    );
+    // NOT_FOUND, so the reader says "not found" only for a missing page, never for a wiki that failed to answer.
+    await expect(
+      caller().getArticleHtml({ title: "Nowhere", wikiSource: "iiwiki" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND", message: expect.stringMatching(/not found on iiwiki/) });
     expect(guard.calls()).toEqual([]);
   });
 

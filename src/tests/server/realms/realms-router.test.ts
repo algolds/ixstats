@@ -1,9 +1,16 @@
 /** @jest-environment node */
 jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/server/modules/identity/identity.invites", () => ({
+  resolveInviterUserId: jest.fn((via: string) =>
+    Promise.resolve(via === "ambassador" ? "u_inviter" : null)
+  ),
+  resolveRealmInviter: jest.fn().mockResolvedValue({ handle: "ambassador", displayName: "Amb" }),
+}));
 
 import { Prisma } from "@prisma/client";
 import { realmsRouter } from "~/server/api/routers/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { resolveRealmInviter } from "~/server/modules/identity/identity.invites";
 
 function caller(
   findUnique: jest.Mock,
@@ -130,6 +137,48 @@ describe("realms.getBySlug", () => {
     expect(realm).not.toHaveProperty("pages");
     expect(realm).not.toHaveProperty("_count");
     expect(JSON.stringify(realm)).not.toContain("u1");
+  });
+
+  it("keeps a renamed nation's page taken: pages match countries by page reference, by name only without one", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [
+        {
+          id: "c1",
+          name: "New Gallambria",
+          slug: "gallambria-eurth",
+          flag: null,
+          ownerUserId: "u1",
+          wikiSource: "iiwiki",
+          wikiPageTitle: "Gallambria",
+        },
+        {
+          id: "c2",
+          name: "Borea",
+          slug: "borea",
+          flag: null,
+          ownerUserId: null,
+          wikiSource: "ixwiki",
+          wikiPageTitle: null,
+        },
+      ],
+      pages: [
+        { title: "Aurelia", wikiSource: "iiwiki" },
+        { title: "Borea", wikiSource: "iiwiki" },
+        { title: "Gallambria", wikiSource: "iiwiki" },
+      ],
+      _count: { pages: 3 },
+    });
+    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
+    expect(realm?.nationPages).toEqual([{ title: "Aurelia", wikiSource: "iiwiki" }]);
+    expect(JSON.stringify(realm)).not.toContain("wikiPageTitle");
   });
 
   it("a realm without a lore index has no nation pages and no lore source", async () => {
@@ -295,6 +344,17 @@ describe("realms.claimNationPage", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
+  it("refuses a page whose nation was renamed (taken by page reference, not name)", async () => {
+    const db = claimDb();
+    db.country.findFirst.mockImplementation(async ({ where }: any) =>
+      where.name === "Aurelia" ? null : { id: "c1", name: "New Aurelia", ownerUserId: "u9" }
+    );
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+  });
+
   it("requires sign-in", async () => {
     const db = claimDb();
     await expect(
@@ -332,6 +392,76 @@ describe("realms.claimNationPage", () => {
     ).resolves.toMatchObject({ status: "pending" });
     const data = db.realmClaim.create.mock.calls[0][0].data;
     expect(data.rulesAcceptedAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("realm invites through the router", () => {
+  const player = { id: "u1", clerkUserId: "clerk_u1", countryId: null, role: null };
+
+  function inviteDb() {
+    return {
+      realm: { findUnique: jest.fn().mockResolvedValue({ id: "eurth-id" }) },
+      realmPage: {
+        findFirst: jest.fn().mockResolvedValue({
+          wikiSource: "iiwiki",
+          realm: { slug: "eurth", settings: null, status: "active" },
+        }),
+      },
+      country: {
+        // The inviter holds a nation in Eurth; no nation named Aurelia exists yet.
+        findFirst: jest.fn(({ where }: { where: { ownerUserId?: string } }) =>
+          Promise.resolve(where.ownerUserId === "u_inviter" ? { id: "held" } : null)
+        ),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      user: { findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }) },
+      wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+      realmClaim: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn(({ data }: { data: object }) => Promise.resolve({ id: "cl1", ...data })),
+      },
+      $transaction: jest.fn(),
+    };
+  }
+
+  function inviteCaller(db: object, signedIn = true) {
+    const ctx = createMockRouterContext({
+      db,
+      auth: signedIn ? { userId: player.clerkUserId } : null,
+      user: signedIn ? player : null,
+    });
+    return realmsRouter.createCaller(ctx as never);
+  }
+
+  it("a claim by invite link records its inviter", async () => {
+    const db = inviteDb();
+    await inviteCaller(db).claimNationPage({
+      realmSlug: "eurth",
+      title: "Aurelia",
+      via: "ambassador",
+    });
+    expect(db.realmClaim.create.mock.calls[0]?.[0]).toMatchObject({
+      data: { invitedByUserId: "u_inviter", status: "pending" },
+    });
+  });
+
+  it("an overlong via is dropped, never refused", async () => {
+    const db = inviteDb();
+    await expect(
+      inviteCaller(db).claimNationPage({
+        realmSlug: "eurth",
+        title: "Aurelia",
+        via: "x".repeat(300),
+      })
+    ).resolves.toMatchObject({ status: "pending" });
+    expect(db.realmClaim.create.mock.calls[0]?.[0]).not.toHaveProperty("data.invitedByUserId");
+  });
+
+  it("the public inviter lookup asks the identity module for that realm's member", async () => {
+    await expect(
+      inviteCaller({}, false).inviter({ slug: "eurth", via: " ambassador " })
+    ).resolves.toEqual({ handle: "ambassador", displayName: "Amb" });
+    expect(resolveRealmInviter).toHaveBeenCalledWith("eurth", "ambassador");
   });
 });
 

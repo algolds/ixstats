@@ -108,7 +108,7 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
            AND ml2.id != ml1.id
            AND ml1.geom_postgis IS NOT NULL
            AND ml2.geom_postgis IS NOT NULL
-           AND ST_Touches(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
+           AND ST_Intersects(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
          WHERE ml1.id = $1`,
         mapLayer.id
       )) as Array<{

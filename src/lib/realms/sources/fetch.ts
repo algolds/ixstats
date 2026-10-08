@@ -8,6 +8,8 @@ import { refSchema, repoPathSchema, repoSchema } from "./config";
 export const RAW_GITHUB_HOST = "raw.githubusercontent.com";
 /** The largest file a run reads. */
 export const MAX_SOURCE_FILE_BYTES = 5 * 1024 * 1024;
+/** The largest map art file the map pipeline reads (an 8000 × 4000 PNG is 4 to 25 MB). */
+export const MAX_ART_FILE_BYTES = 25 * 1024 * 1024;
 export const SOURCE_FETCH_TIMEOUT_MS = 20_000;
 
 export class SourceFetchError extends Error {
@@ -42,11 +44,11 @@ export function rawGithubUrl({ repo, ref, path }: RepoFileRef): URL {
   return url;
 }
 
-async function readCapped(response: Response, maxBytes: number): Promise<string> {
+async function readCapped(response: Response, maxBytes: number): Promise<Uint8Array> {
   const declared = Number(response.headers.get("content-length") ?? Number.NaN);
   if (Number.isFinite(declared) && declared > maxBytes)
     throw new SourceFetchError(`File is larger than ${maxBytes} bytes`);
-  if (!response.body) return "";
+  if (!response.body) return new Uint8Array(0);
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -66,11 +68,19 @@ async function readCapped(response: Response, maxBytes: number): Promise<string>
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return new TextDecoder("utf-8").decode(bytes);
+  return bytes;
 }
 
 /** The text of one repository file. Throws SourceFetchError on any refusal, HTTP error, redirect or timeout. */
 export async function fetchRepoFile(file: RepoFileRef, options: FetchOptions = {}): Promise<string> {
+  return new TextDecoder("utf-8").decode(await fetchRepoBytes(file, options));
+}
+
+/**
+ * The bytes of one repository file (map art: images, data files), up to MAX_SOURCE_FILE_BYTES unless `maxBytes`
+ * says otherwise. Throws SourceFetchError on any refusal, HTTP error, redirect or timeout.
+ */
+export async function fetchRepoBytes(file: RepoFileRef, options: FetchOptions = {}): Promise<Uint8Array> {
   const url = rawGithubUrl(file);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? SOURCE_FETCH_TIMEOUT_MS);

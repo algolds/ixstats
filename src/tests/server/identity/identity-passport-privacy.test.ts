@@ -18,6 +18,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
@@ -34,7 +35,7 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
   loadLoreStats: jest.fn(),
   loadLoreAwards: jest.fn(),
   loadLoreRank: jest.fn().mockResolvedValue(4),
-  loadThinkpagesAccount: jest.fn().mockResolvedValue(null),
+  loadPersonalPersona: jest.fn().mockResolvedValue(null),
   loadClerkProfile: jest.fn().mockResolvedValue(null),
   loadWikiContribs: jest.fn().mockResolvedValue([]),
   loadNativeRevisions: jest.fn().mockResolvedValue([]),
@@ -60,6 +61,7 @@ import { loadAchievementsShowcase, loadUnlocks } from "~/server/modules/identity
 import {
   loadLoreAwards,
   loadLoreStats,
+  loadPersonalPersona,
   loadWikiContribs,
 } from "~/server/modules/identity/identity.loaders";
 import {
@@ -81,7 +83,6 @@ const owner = {
   forumUsername: "alex",
   discordUserId: null,
   discordUsername: null,
-  role: null,
   createdAt: new Date("2024-01-01"),
   countryId: null,
 };
@@ -93,8 +94,6 @@ const member = {
   message_count: 120,
   reaction_score: 44,
   trophy_points: 12,
-  register_date: 1_600_000_000,
-  is_staff: false,
 };
 const forum = { getMember: jest.fn(), lookupUser: jest.fn() };
 
@@ -138,6 +137,7 @@ const ALL_HIDDEN = {
   showVault: false,
   showHistory: false,
   showAchievements: false,
+  showLinkPreview: false,
   signature: "  A. Pav  ",
   pinnedRibbonKeys: ["a", "b", "c", "d"],
 };
@@ -147,7 +147,6 @@ function asViewer(viewerClerkId: string | null) {
     handle: "alex",
     strippedHandle: "alex",
     user: owner,
-    country: null,
     wikiName: "Alex",
     forumUserId: 9,
     forumUsername: "alex",
@@ -168,6 +167,7 @@ beforeEach(() => {
 
 describe("toPassportSettings", () => {
   it("defaults every section to visible when the user has no row", () => {
+    expect(DEFAULT_PASSPORT_VISIBILITY.linkPreview).toBe(true);
     expect(toPassportSettings(null)).toEqual({
       visibility: DEFAULT_PASSPORT_VISIBILITY,
       signature: null,
@@ -178,6 +178,7 @@ describe("toPassportSettings", () => {
   it("maps stored columns, trims the signature and caps pins at three", () => {
     const settings = toPassportSettings(ALL_HIDDEN);
     expect(Object.values(settings.visibility).every((v) => v === false)).toBe(true);
+    expect(settings.visibility.linkPreview).toBe(false);
     expect(settings.signature).toBe("A. Pav");
     expect(settings.pinnedRibbonKeys).toEqual(["a", "b", "c"]);
   });
@@ -243,6 +244,47 @@ describe("getPassport enforces privacy server-side", () => {
     expect(passport?.privacy.vaultCards).toBe(false);
   });
 
+  it("never writes to the database (a public read)", async () => {
+    forum.getMember.mockResolvedValue({ ...member, user_id: 10, username: "alex_renamed" });
+    await getPassport(asViewer("someone_else"), forum);
+    expect((db as unknown as { user: { update: jest.Mock } }).user.update).not.toHaveBeenCalled();
+  });
+
+  it("returns only the fields the passport shows", async () => {
+    const passport = await getPassport(asViewer(null), forum);
+    expect(Object.keys(passport ?? {}).sort()).toEqual(
+      [
+        "account",
+        "forum",
+        "handle",
+        "nationCount",
+        "online",
+        "primaryNation",
+        "privacy",
+        "realmCount",
+        "recruitedCount",
+        "showcase",
+        "thinkpages",
+        "vault",
+        "wiki",
+      ].sort()
+    );
+    expect(Object.keys(passport?.forum ?? {}).sort()).toEqual(["linked", "stats", "username"]);
+    expect(passport?.account).not.toHaveProperty("roleName");
+    expect(passport?.thinkpages).toEqual({ bio: null });
+  });
+
+  it("takes the bio from the personal persona, never a nation or character persona", async () => {
+    (loadPersonalPersona as jest.Mock).mockResolvedValueOnce({
+      displayName: "Alex",
+      profileImageUrl: null,
+      bio: "Cartographer of the southern sea.",
+    });
+    const passport = await getPassport(asViewer(null), forum);
+    expect(passport?.thinkpages.bio).toBe("Cartographer of the southern sea.");
+    expect(loadPersonalPersona).toHaveBeenCalledWith(owner);
+  });
+
   it("reads the preference row by the user's database id", async () => {
     await getPassport(asViewer(null), forum);
     expect(mocked.passportPreference.findUnique).toHaveBeenCalledWith(
@@ -303,6 +345,13 @@ describe("updateOwnPassportSettings", () => {
       })
     );
     expect(saved.visibility.vaultCards).toBe(false);
+  });
+
+  it("persists the link preview switch like the other toggles", async () => {
+    await updateOwnPassportSettings(user, { visibility: { linkPreview: false } });
+    expect(mocked.passportPreference.upsert.mock.calls[0]![0].update).toEqual({
+      showLinkPreview: false,
+    });
   });
 
   it("keeps only pins for achievements the user has unlocked", async () => {

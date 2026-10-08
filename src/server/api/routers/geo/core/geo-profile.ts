@@ -12,9 +12,14 @@ import {
   estimatePrecipitation,
 } from "~/lib/maps/geo-analytics";
 import { kmPerDegree, kmPerDegreeLng, scaleDistanceToRadius } from "~/lib/maps/planet";
-import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
+import { parseRealmMapSettings, realmRadiusKm } from "~/lib/maps/realm-map-settings";
 import { estimateBboxOverlap } from "./geometry";
-import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
+import {
+  buildClimateZones,
+  buildElevationZones,
+  countryZoneFills,
+  type Extent,
+} from "./profile-zones";
 
 /** Count and summed length/area of the realm's rivers or lakes clipped to the country, via PostGIS. */
 async function clippedLayerStats(
@@ -255,25 +260,25 @@ export const geoProfileProcedures = {
 
       const extent: Extent = bbox ?? [-180, -90, 180, 90];
       const realmId = country.realmId;
+      const realm = await ctx.db.realm.findUnique({
+        where: { id: realmId },
+        select: { settings: true },
+      });
       // Distances measured on Earth's radius (PostGIS geography) scale to the realm's planet
-      const radiusKm = await realmRadiusKmById(ctx.db, realmId);
+      const radiusKm = realmRadiusKm(realm?.settings);
       const onPlanet = (km: number) => scaleDistanceToRadius(km, radiusKm);
-      // Climate and altitude layers of the country's own realm
-      const layersOfType = (layerType: "climate" | "altitudes") =>
-        ctx.db.mapLayer.findMany({
-          where: { layerType, isActive: true, realmId },
-          select: LAYER_SELECT,
-        });
-      const [climateLayers, altitudeLayers] = await Promise.all([
-        layersOfType("climate"),
-        layersOfType("altitudes"),
+      // Climate and altitude layers of the country's own realm, its zones named by its climate key
+      const [climateFills, altitudeFills] = await Promise.all([
+        countryZoneFills(ctx.db, country, "climate", extent),
+        countryZoneFills(ctx.db, country, "altitudes", extent),
       ]);
+      const climateKey = parseRealmMapSettings(realm?.settings).climateKey ?? null;
 
       const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
-      const climateDistribution = buildClimateZones(climateLayers, extent, true).sort(
+      const climateDistribution = buildClimateZones(climateFills, true, climateKey).sort(
         (a, b) => b.areaSqKm - a.areaSqKm
       );
-      const elevationProfile = buildElevationZones(altitudeLayers, extent).sort(
+      const elevationProfile = buildElevationZones(altitudeFills).sort(
         (a, b) => a.minElev - b.minElev
       );
       const hydro = await loadHydrography(ctx.db, input.countryId, realmId, extent);

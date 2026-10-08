@@ -20,7 +20,7 @@ const borders: FeatureCollection = {
 };
 
 /** A map whose every method is a no-op mock, except the sources this test cares about. */
-function fakeMap(riversType: "vector" | "geojson" = "vector") {
+function fakeMap(riversType: "vector" | "geojson" = "vector", styleLayers: string[] = []) {
   const politicalSetData = jest.fn();
   const riversSetData = jest.fn();
   const sources: Record<string, object> = {
@@ -34,7 +34,8 @@ function fakeMap(riversType: "vector" | "geojson" = "vector") {
     {
       get: (_t, name: string) => {
         if (name === "getSource") return (id: string) => sources[id];
-        if (name === "getLayer") return () => undefined;
+        if (name === "getLayer")
+          return (id: string) => (styleLayers.includes(id) ? { id } : undefined);
         if (!methods.has(name)) methods.set(name, jest.fn());
         return methods.get(name);
       },
@@ -137,5 +138,56 @@ describe("useWorldMapLayers with tiled layers", () => {
       })
     );
     expect(riversSetData).toHaveBeenCalledWith(rivers);
+  });
+});
+
+describe("art mode (a realm's base map art is shown)", () => {
+  const POLITICAL_LAYERS = ["fill-political", "stroke-political", "sovereignty-border"];
+  const layers = [{ type: "political" as const, data: borders, visible: true }];
+
+  it("clears the political fill except under the pointer and hides the borders", () => {
+    const { map, method } = fakeMap("vector", POLITICAL_LAYERS);
+    renderHook(() => useWorldMapLayers({ ...baseProps, map, layers, artMode: true }));
+    expect(method("setPaintProperty")).toHaveBeenCalledWith("fill-political", "fill-opacity", [
+      "case",
+      ["boolean", ["feature-state", "hover"], false],
+      0.35,
+      0,
+    ]);
+    expect(method("setLayoutProperty")).toHaveBeenCalledWith(
+      "stroke-political",
+      "visibility",
+      "none"
+    );
+    expect(method("setLayoutProperty")).toHaveBeenCalledWith(
+      "sovereignty-border",
+      "visibility",
+      "none"
+    );
+  });
+
+  it("restores the usual fill and borders when the art is switched off", () => {
+    const { map, method } = fakeMap("vector", POLITICAL_LAYERS);
+    const { rerender } = renderHook(
+      ({ artMode }) => useWorldMapLayers({ ...baseProps, map, layers, artMode }),
+      { initialProps: { artMode: true } }
+    );
+    rerender({ artMode: false });
+    expect(method("setPaintProperty")).toHaveBeenLastCalledWith(
+      "sovereignty-border",
+      "line-opacity",
+      0.7
+    );
+    expect(method("setPaintProperty")).toHaveBeenCalledWith("fill-political", "fill-opacity", [
+      "case",
+      ["boolean", ["feature-state", "hover"], false],
+      0.6,
+      0.45,
+    ]);
+    expect(method("setLayoutProperty")).toHaveBeenLastCalledWith(
+      "sovereignty-border",
+      "visibility",
+      "visible"
+    );
   });
 });

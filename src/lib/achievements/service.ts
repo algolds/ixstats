@@ -23,6 +23,7 @@ import { getScaleThresholds } from "./scaling";
 import { achievementRequiresCountry } from "./scope";
 import { completeAchievementCheck, dequeueAchievementCheck, queueAchievementCheck } from "./queue";
 import { unlockAchievement } from "./unlock";
+import { countRecruits } from "~/lib/realms/recruits";
 import { eventBus } from "~/lib/event-bus";
 import { ActivityHooks } from "~/lib/activity";
 import { notificationHooks } from "~/lib/notifications/hooks";
@@ -342,9 +343,10 @@ class AchievementService {
     let loreCardCount = 0;
     let retiredCardCount = 0;
     let distinctCountryIdCount = 0;
+    let recruitedCount = 0;
 
     if (user?.id) {
-      const [loreCount, retiredCount, distinctCountries] = await Promise.all([
+      const [loreCount, retiredCount, distinctCountries, recruited] = await Promise.all([
         db.cardOwnership
           .count({
             where: {
@@ -371,11 +373,13 @@ class AchievementService {
             return countryIds.size;
           })
           .catch(() => 0),
+        countRecruits(db, user.id).catch(() => 0),
       ]);
 
       loreCardCount = loreCount;
       retiredCardCount = retiredCount;
       distinctCountryIdCount = distinctCountries;
+      recruitedCount = recruited;
     }
 
     return {
@@ -386,6 +390,7 @@ class AchievementService {
       loreCardCount,
       retiredCardCount,
       distinctCountryIdCount,
+      recruitedCount,
       existingKeys: existingAchievements.map((a) => a.achievementId),
     };
   }

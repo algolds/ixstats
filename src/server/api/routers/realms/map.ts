@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { mutationRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { RealmRegionError } from "~/server/modules/realms/realms.region";
 import {
   getRealmMapDisplay,
@@ -25,7 +25,7 @@ function mapError(error: Error): never {
   throw error;
 }
 
-/** A mutation names its realm by slug; without one it would fall back to the caller's active nation's realm. */
+/** A mutation names its realm by slug, resolved strictly (an unknown slug is NOT_FOUND, never IxWorld). */
 const realmInput = z.object({ realm: z.string().min(1).max(100) });
 
 const settingsShape = RealmMapSettingsSchema.shape;
@@ -59,7 +59,7 @@ export const realmMapRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await mutationRealmId(ctx, input.realm);
       const { realm: _realm, ...changes } = input;
       return updateRealmMapSettings(ctx.db, ctx.user, realmId, changes).catch(mapError);
     }),
@@ -71,7 +71,7 @@ export const realmMapRouter = createTRPCRouter({
   recomputeAreas: rateLimitedMutationProcedure
     .input(realmInput.extend({ alsoSetLandArea: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await mutationRealmId(ctx, input.realm);
       const result = await recomputeRealmMapAreas(ctx.db, ctx.user, realmId, {
         alsoSetLandArea: input.alsoSetLandArea,
       }).catch(mapError);

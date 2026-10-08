@@ -1,14 +1,7 @@
 "use client";
 // Animating page transition wrapper for WikiOS routes.
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { cn } from "~/lib/utils/cn";
@@ -23,66 +16,14 @@ interface WikiOSContentWrapperProps {
 }
 
 /**
- * Whether the sticky `row` has stuck under its `top`: a zero-height sentinel just before it has
- * scrolled above the covered band. The row looks the same at rest; chrome is for when it floats.
+ * The article tools row (views, and page tools when there is no page header). It scrolls with the
+ * page: pinned under the Halo band it floated over the article text with content showing above it.
  */
-function useStuck(row: RefObject<HTMLElement | null>, sentinel: RefObject<HTMLElement | null>) {
-  const [stuck, setStuck] = useState(false);
-  useEffect(() => {
-    const target = sentinel.current;
-    const el = row.current;
-    if (!target || !el || typeof IntersectionObserver === "undefined") return;
-    const top = Math.round(parseFloat(getComputedStyle(el).top) || 0);
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry) return;
-        const rootTop = entry.rootBounds?.top ?? top;
-        setStuck(!entry.isIntersecting && entry.boundingClientRect.bottom <= rootTop + 1);
-      },
-      { rootMargin: `-${top}px 0px 0px 0px`, threshold: 0 }
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [row, sentinel]);
-  return stuck;
-}
-
-/**
- * The article tools row (views, and page tools when there is no page header). Sticky under the
- * Halo band, in the raised layer so the page header's z-sticky toolbar always paints above it. The
- * surface carries the row's 8px side inset and cancels it with a negative margin, so the content
- * lines up at rest and the chrome pill that appears when stuck frames it without any layout shift.
- */
-function ArticleToolsRow({
-  children,
-  className,
-  rowClassName,
-}: {
-  children: ReactNode;
-  className?: string;
-  /** On the sticky row itself (spacing must live here: a wrapper would be its containing block). */
-  rowClassName?: string;
-}) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const stuck = useStuck(rowRef, sentinelRef);
+function ArticleToolsRow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <>
-      <div ref={sentinelRef} aria-hidden className="h-0" />
-      <div
-        ref={rowRef}
-        data-slot="wiki-article-tools"
-        data-stuck={stuck ? "" : undefined}
-        className={cn("z-raised sticky top-(--shell-top-offset) px-2 pb-4", rowClassName)}
-      >
-        <div
-          data-slot="wiki-article-tools-surface"
-          className={cn("rounded-card -mx-2 -my-1 px-2 py-1", stuck && "facet-chrome", className)}
-        >
-          {children}
-        </div>
-      </div>
-    </>
+    <div data-slot="wiki-article-tools" className={cn("px-2 pb-4", className)}>
+      {children}
+    </div>
   );
 }
 
@@ -145,7 +86,7 @@ export function WikiOSContentWrapper({
           {tabs && <ArticleToolsRow>{tabs}</ArticleToolsRow>}
         </>
       ) : tabs ? (
-        <ArticleToolsRow rowClassName="pt-2" className="flex flex-wrap items-center gap-2">
+        <ArticleToolsRow className="flex flex-wrap items-center gap-2 pt-2">
           {tabs}
           <div className="ml-auto flex items-center gap-2">{actions}</div>
         </ArticleToolsRow>

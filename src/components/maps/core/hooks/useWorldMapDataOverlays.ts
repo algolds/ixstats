@@ -67,7 +67,10 @@ export function useWorldMapDataOverlays({
     if (!map || !isLoaded || !overlayFeatures?.mapLabels) return;
 
     lastMapLabelsRef.current = null;
-    const rawFeatures: Feature[] = overlayFeatures.mapLabels.features || [];
+    // A realm's own labels (oceans, seas, regions, continents) draw in the ocean-label layer
+    const rawFeatures: Feature[] = (overlayFeatures.mapLabels.features || []).filter(
+      (f) => f.properties?.realmLabel !== true
+    );
     const focusKey = selectedCountryId || null;
 
     const updateFilteredLabels = () => {
@@ -75,9 +78,7 @@ export function useWorldMapDataOverlays({
       const currentZoom = map.getZoom();
 
       const features = rawFeatures.filter((f) => {
-        // A realm's own labels (oceans, continents) set their own zoom range, globe view included
-        const realmLabel = f.properties?.realmLabel === true;
-        if (currentZoom >= 4.0 || realmLabel) {
+        if (currentZoom >= 4.0) {
           const minZ = f.properties?.minZoom ?? 4;
           const maxZ = f.properties?.maxZoom ?? 18;
           if (currentZoom >= minZ && currentZoom <= maxZ) return true;

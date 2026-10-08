@@ -57,6 +57,10 @@ const isAreaApp = (app: AppDefinition) => app.placement === "footer";
 export const isPending = (badge: NavBadge | undefined) =>
   badge?.kind === "action" || (badge?.kind === "count" && badge.value > 0);
 
+/** Action and conditional rows exist only while their badge does. */
+export const isListed = (s: Section, badges: NavBadges) =>
+  (!s.action && !s.conditional) || Boolean(s.badge && badges[s.badge]);
+
 function Trailing({ badge }: { badge: NavBadge | undefined }) {
   if (!badge) return null;
   if (badge.kind === "count") {
@@ -126,7 +130,7 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
             className="bg-tint-fill rounded-control absolute inset-0"
           />
         )}
-        <Icon aria-hidden className="relative size-4 shrink-0" />
+        <Icon aria-hidden className="text-tint relative size-4 shrink-0" />
         <span className="relative min-w-0 flex-1 truncate">{section.label}</span>
         <span className="relative">
           <Trailing badge={badge} />
@@ -185,24 +189,24 @@ function SectionRows({
   collapsibleGroups,
   id,
   hidden = false,
+  flat = false,
 }: {
   app: AppDefinition;
   ctx: Ctx;
   collapsibleGroups: boolean;
   id?: string;
+  /** Rows sit level with the app rows instead of indented under one (`inline` apps). */
+  flat?: boolean;
   /** Collapsed but still mounted, so the toggle's `aria-controls` always resolves. */
   hidden?: boolean;
 }) {
-  // Action and conditional rows exist only while their badge does.
-  const visible = app.sections.filter(
-    (s) => (!s.action && !s.conditional) || (s.badge && ctx.badges[s.badge])
-  );
+  const visible = app.sections.filter((s) => isListed(s, ctx.badges));
   const rowCtx = app.id === ctx.activeAppId ? ctx : { ...ctx, activeSectionId: undefined };
   return (
     <div
       id={id}
       hidden={hidden}
-      className={cn("flex flex-col", !collapsibleGroups && "pl-4")}
+      className={cn("flex flex-col", !collapsibleGroups && !flat && "pl-4")}
       data-app={app.tint}
     >
       {groupSections(visible).map(({ group, sections }, index) => {
@@ -323,7 +327,9 @@ function FooterLinks({
               onClick={onNavigate}
               className={cn(sourceRowClassName, focusRing, "text-label hover:bg-fill-4")}
             >
-              <Icon aria-hidden className="text-label-secondary size-5 shrink-0" />
+              <span data-app={a.tint} className="text-tint inline-flex shrink-0">
+                <Icon aria-hidden className="size-5" />
+              </span>
               <span className="min-w-0 flex-1 truncate">{a.label}</span>
             </Link>
           </li>
@@ -416,9 +422,15 @@ export function SourceList({
       <ul className="flex flex-col gap-0.5">
         {apps
           .filter((a) => !isAreaApp(a))
-          .map((a) => (
-            <AppRow key={a.id} app={a} isCurrent={a.id === current?.id} ctx={ctx} />
-          ))}
+          .map((a) =>
+            a.inline ? (
+              <li key={a.id}>
+                <SectionRows app={a} ctx={ctx} collapsibleGroups={false} flat />
+              </li>
+            ) : (
+              <AppRow key={a.id} app={a} isCurrent={a.id === current?.id} ctx={ctx} />
+            )
+          )}
       </ul>
       <FooterLinks apps={apps.filter(isAreaApp)} onNavigate={onNavigate} />
     </nav>

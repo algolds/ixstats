@@ -8,7 +8,7 @@ import {
   ChatBubble as MessageSquare,
   Flash,
   Globe,
-  Spark as Sparkles,
+  Community,
   Crown,
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
@@ -19,20 +19,20 @@ import { Card } from "~/components/ui/card";
 
 interface PassportHistoryTabProps {
   history: HistoryItem[];
-  cleanUsername: string;
+  handle: string;
 }
 
 export const PassportHistoryTab = React.memo(function PassportHistoryTab({
   history,
-  cleanUsername,
+  handle,
 }: PassportHistoryTabProps) {
   if (!history || history.length === 0) {
     return (
-      <Card variant="well" padding="none" className="border-separator border">
+      <Card variant="well" padding="none">
         <EmptyState
           icon={<Clock />}
           title="No activity yet"
-          message={`@${cleanUsername} has no recorded activity yet.`}
+          message={`@${handle} has no recorded activity yet.`}
         />
       </Card>
     );
@@ -49,7 +49,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
       case "realm":
         return { label: "Realm", icon: Globe };
       case "thinkpages":
-        return { label: "ThinkPages", icon: Sparkles };
+        return { label: "ThinkPages", icon: Community };
       case "vault":
         return { label: "Vault", icon: Crown };
       default:
@@ -63,7 +63,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
         Activity history <span className="tabular-nums">({history.length})</span>
       </h2>
 
-      <ol className="border-separator relative ml-4 space-y-4 border-l pl-6">
+      <ol className="border-separator relative ml-4 border-l pl-6">
         {history.map((event) => {
           const badge = getSystemBadge(event.system);
           const Icon = badge.icon;
@@ -74,42 +74,43 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
           });
 
           return (
-            <li key={event.id} className="relative">
+            <li
+              key={event.id}
+              className="border-separator relative space-y-2 border-b py-4 first:pt-0 last:border-b-0 last:pb-0"
+            >
               {/* Timeline dot */}
               <span
                 aria-hidden
-                className="bg-fill ring-surface absolute top-4 -left-[31px] size-3 rounded-full ring-4"
+                className="bg-fill ring-surface absolute top-4 -left-[31px] size-3 rounded-full ring-4 in-[li:first-child]:top-0"
               />
 
-              <Card variant="well" className="space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default">
-                      <Icon aria-hidden />
-                      {badge.label}
-                    </Badge>
-                    <span className="text-label-secondary text-footnote tabular-nums">
-                      {formattedDate}
-                    </span>
-                  </div>
-
-                  {event.objectUrl && (
-                    <Link
-                      href={event.objectUrl}
-                      className="text-tint text-footnote inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
-                    >
-                      <span>View</span>
-                      <ExternalLink aria-hidden className="size-3.5" />
-                    </Link>
-                  )}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">
+                    <Icon aria-hidden />
+                    {badge.label}
+                  </Badge>
+                  <span className="text-label-secondary text-footnote tabular-nums">
+                    {formattedDate}
+                  </span>
                 </div>
 
-                <h4 className="text-label text-headline">{event.title}</h4>
-
-                {event.description && (
-                  <p className="text-label-secondary text-footnote">{event.description}</p>
+                {event.objectUrl && (
+                  <Link
+                    href={event.objectUrl}
+                    className="text-tint text-footnote inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
+                  >
+                    <span>View</span>
+                    <ExternalLink aria-hidden className="size-3.5" />
+                  </Link>
                 )}
-              </Card>
+              </div>
+
+              <h3 className="text-label text-headline">{event.title}</h3>
+
+              {event.description && (
+                <p className="text-label-secondary text-footnote">{event.description}</p>
+              )}
             </li>
           );
         })}

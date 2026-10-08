@@ -34,9 +34,7 @@ function CallToAction({
     return (
       <>
         <Button asChild>
-          <Link
-            href={createUrl(`/sign-in?redirect_url=${encodeURIComponent(createUrl("/realms"))}`)}
-          >
+          <Link href={`/sign-in?redirect_url=${encodeURIComponent(createUrl("/realms"))}`}>
             Sign in to play
           </Link>
         </Button>

@@ -129,8 +129,8 @@ export const APP_IDS = [
   "vault",
   "forum",
   "wiki",
-  "intel",
-  "sports",
+  "realms",
+  "labs",
   "admin",
 ] as const;
 type AppId = (typeof APP_IDS)[number];
@@ -144,43 +144,57 @@ interface TintSet {
   onTint: string;
 }
 
-/** App tints. `strong` = one Tailwind step darker (light) / lighter (dark). */
+/** Apps whose tint is their logo's colour, exempt from the palette's shared lightness. */
+export const BRAND_TINTS = ["mycountry", "wiki"] as const;
+
+/** The OKLCH lightness every non-brand tint is drawn at (chroma 0.16 light / 0.13 dark, cut to sRGB). */
+export const APP_TINT_LIGHTNESS = { light: 0.5, dark: 0.78 } as const;
+
+/**
+ * App tints: one colour per app, never shared. Two are brand colours: MyCountry's gold (OKLCH hue 49 light,
+ * 84 dark) and the IxWiki navy from the original logo (hue 255). The rest sit evenly in the two gaps those
+ * leave, at one lightness per mode (`APP_TINT_LIGHTNESS`): labs 127, thinkpages 170, maps 212 between gold
+ * and navy; realms 302, vault 338, forum 13 between navy and gold. Any two are at least 30 degrees apart
+ * (app-palette.test.ts). `strong` is 0.06 darker (light) / 0.07 lighter (dark). The default (Home, Help,
+ * Settings, Admin) is not a colour but a warm ink, OKLCH 0.42 / 0.78 at hue 60 and chroma under 0.04, so
+ * the apps carry the colour.
+ */
 export const APP_TINTS = {
   default: {
-    light: { tint: "#4338ca", strong: "#3730a3", onTint: "#ffffff" },
-    dark: { tint: "#818cf8", strong: "#a5b4fc", onTint: "#0b0c0f" },
+    light: { tint: "#5a493d", strong: "#46372b", onTint: "#ffffff" },
+    dark: { tint: "#c3b4a8", strong: "#d7cbc2", onTint: "#0b0c0f" },
   },
   mycountry: {
     light: { tint: "#b45309", strong: "#92400e", onTint: "#ffffff" },
     dark: { tint: "#fbbf24", strong: "#fcd34d", onTint: "#1c1917" },
   },
-  maps: {
-    light: { tint: "#0369a1", strong: "#075985", onTint: "#ffffff" },
-    dark: { tint: "#38bdf8", strong: "#7dd3fc", onTint: "#0b0c0f" },
+  wiki: {
+    light: { tint: "#1d4e89", strong: "#163b69", onTint: "#ffffff" },
+    dark: { tint: "#89b3e6", strong: "#abc9ed", onTint: "#0b0c0f" },
+  },
+  labs: {
+    light: { tint: "#4f7002", strong: "#425d03", onTint: "#ffffff" },
+    dark: { tint: "#a1c768", strong: "#bcda93", onTint: "#0b0c0f" },
   },
   thinkpages: {
-    light: { tint: "#047857", strong: "#065f46", onTint: "#ffffff" },
-    dark: { tint: "#34d399", strong: "#6ee7b7", onTint: "#052e16" },
+    light: { tint: "#04755b", strong: "#03614b", onTint: "#ffffff" },
+    dark: { tint: "#4cd2ab", strong: "#87e3c4", onTint: "#0b0c0f" },
+  },
+  maps: {
+    light: { tint: "#057080", strong: "#025d6b", onTint: "#ffffff" },
+    dark: { tint: "#26cde7", strong: "#78dff4", onTint: "#0b0c0f" },
+  },
+  realms: {
+    light: { tint: "#7546ad", strong: "#64349a", onTint: "#ffffff" },
+    dark: { tint: "#c7a3fc", strong: "#d8c1fe", onTint: "#0b0c0f" },
   },
   vault: {
-    light: { tint: "#9a3412", strong: "#7c2d12", onTint: "#ffffff" },
-    dark: { tint: "#fdba74", strong: "#fed7aa", onTint: "#1c1917" },
+    light: { tint: "#993582", strong: "#862270", onTint: "#ffffff" },
+    dark: { tint: "#ed96d4", strong: "#f9b5e5", onTint: "#0b0c0f" },
   },
   forum: {
-    light: { tint: "#c2410c", strong: "#9a3412", onTint: "#ffffff" },
-    dark: { tint: "#fb923c", strong: "#fdba74", onTint: "#1c1917" },
-  },
-  wiki: {
-    light: { tint: "#3730a3", strong: "#312e81", onTint: "#ffffff" },
-    dark: { tint: "#a5b4fc", strong: "#c7d2fe", onTint: "#0b0c0f" },
-  },
-  intel: {
-    light: { tint: "#be123c", strong: "#9f1239", onTint: "#ffffff" },
-    dark: { tint: "#fb7185", strong: "#fda4af", onTint: "#1c0a0f" },
-  },
-  sports: {
-    light: { tint: "#0f766e", strong: "#115e59", onTint: "#ffffff" },
-    dark: { tint: "#2dd4bf", strong: "#5eead4", onTint: "#042f2e" },
+    light: { tint: "#aa2e49", strong: "#961739", onTint: "#ffffff" },
+    dark: { tint: "#ff93a0", strong: "#ffb8be", onTint: "#0b0c0f" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */

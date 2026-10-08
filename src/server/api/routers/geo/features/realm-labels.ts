@@ -1,10 +1,12 @@
 /**
- * Realm labels: oceans, seas, regions and continents on a realm's map (`MapLabel` with `realmId`, no nation).
+ * Realm labels: oceans, seas, regions and continents on a realm's map (`MapLabel` with `realmId`, no nation), drawn
+ * in IxWorld's ocean-label style by kind and rank (`src/lib/maps/ocean-labels.ts`).
  * The realm's map editors manage them (site admins anywhere; the founder and officers holding the Map power in
  * their own realm; IxWorld stays with site admins). Nations' own labels stay in `labels.ts`.
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -13,30 +15,16 @@ import {
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import {
-  REALM_LABEL_FONT_STYLES,
-  REALM_LABEL_FONT_WEIGHTS,
-  REALM_LABEL_TYPES,
-} from "~/lib/maps/realm-labels";
+import { REALM_LABEL_RANKS, REALM_LABEL_TYPES, realmLabelRank } from "~/lib/maps/realm-labels";
+import { realmLabelData, storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
 import { coordinatesSchema } from "../core/shared";
 
-const styleFields = {
-  fontSize: z.number().min(8).max(64),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  fontStyle: z.enum(REALM_LABEL_FONT_STYLES),
-  fontWeight: z.enum(REALM_LABEL_FONT_WEIGHTS),
-  letterSpacing: z.number().min(0).max(1),
-  rotation: z.number().min(-180).max(180),
-  opacity: z.number().min(0.1).max(1),
-  minZoom: z.number().min(0).max(18),
-  maxZoom: z.number().min(0).max(22),
-};
-
+/** A realm label is a name, a kind, an anchor and a rank; its look is IxWorld's ocean-label style for that rank. */
 const labelFields = {
   text: z.string().trim().min(1).max(100),
   labelType: z.enum(REALM_LABEL_TYPES),
   coordinates: coordinatesSchema,
-  ...styleFields,
+  rank: z.enum(REALM_LABEL_RANKS),
 };
 
 const LABEL_SELECT = {
@@ -44,15 +32,7 @@ const LABEL_SELECT = {
   text: true,
   labelType: true,
   coordinates: true,
-  fontSize: true,
-  color: true,
-  fontStyle: true,
-  fontWeight: true,
-  letterSpacing: true,
-  rotation: true,
-  opacity: true,
-  minZoom: true,
-  maxZoom: true,
+  metadata: true,
 } as const;
 
 async function afterLabelWrite() {
@@ -61,16 +41,19 @@ async function afterLabelWrite() {
 }
 
 /** The realm label, if it is one of this realm's (a nation's label never is). */
-async function requireRealmLabel(
-  db: { mapLabel: { findFirst: (args: object) => Promise<unknown> } },
-  labelId: string,
-  realmId: string
-) {
+async function requireRealmLabel(db: PrismaClient, labelId: string, realmId: string) {
   const label = await db.mapLabel.findFirst({
     where: { id: labelId, realmId, countryId: null },
-    select: { id: true },
+    select: { id: true, metadata: true },
   });
   if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Label not found" });
+  return label;
+}
+
+/** The label's metadata with a new rank, keeping what else it holds (a seeded label's key). */
+function withRank(metadata: Prisma.JsonValue, rank: string): Prisma.InputJsonObject {
+  const kept = metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+  return { ...kept, rank };
 }
 
 export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
@@ -79,12 +62,16 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
     .input(realmScopeInput.optional())
     .query(async ({ ctx, input }) => {
       const realmId = await editableMapRealmId(ctx, input?.realm);
-      return ctx.db.mapLabel.findMany({
+      const rows = await ctx.db.mapLabel.findMany({
         where: { realmId, countryId: null },
         orderBy: { text: "asc" },
         take: 500,
         select: LABEL_SELECT,
       });
+      return rows.map(({ metadata, ...label }) => ({
+        ...label,
+        rank: realmLabelRank(label.labelType, storedRealmLabelRank(metadata)),
+      }));
     }),
 
   createRealmLabel: rateLimitedMutationProcedure
@@ -92,21 +79,14 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
       z.object({
         ...realmScopeInput.shape,
         ...labelFields,
-        fontStyle: labelFields.fontStyle.default("normal"),
-        fontWeight: labelFields.fontWeight.default("normal"),
-        letterSpacing: labelFields.letterSpacing.default(0),
-        rotation: labelFields.rotation.default(0),
-        opacity: labelFields.opacity.default(1),
-        minZoom: labelFields.minZoom.default(0),
-        maxZoom: labelFields.maxZoom.default(22),
+        rank: labelFields.rank.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await editableMapRealmId(ctx, input.realm);
-      const { realm: _realm, ...data } = input;
       const label = await ctx.db.mapLabel.create({
         data: {
-          ...data,
+          ...realmLabelData(input),
           realmId,
           countryId: null,
           status: "approved",
@@ -128,11 +108,14 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await editableMapRealmId(ctx, input.realm);
-      await requireRealmLabel(ctx.db, input.labelId, realmId);
-      const { realm: _realm, labelId, ...changes } = input;
+      const existing = await requireRealmLabel(ctx.db, input.labelId, realmId);
+      const { realm: _realm, labelId, rank, ...changes } = input;
       const label = await ctx.db.mapLabel.update({
         where: { id: labelId },
-        data: Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined)),
+        data: {
+          ...Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined)),
+          ...(rank ? { metadata: withRank(existing.metadata, rank) } : {}),
+        },
         select: LABEL_SELECT,
       });
       await afterLabelWrite();

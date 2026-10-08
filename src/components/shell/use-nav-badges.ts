@@ -18,12 +18,13 @@ export function useNavBadges(signedIn: boolean): NavBadges {
 
   // The input is optional and the server reads the user from the session. The shell is the only
   // reader of this no-argument entry; the Messages hooks invalidate it when mail is read or moved,
-  // which is how an unread change reaches this badge. Polled lightly, as other unread badges.
+  // which is how an unread change reaches this badge. New mail elsewhere arrives by polling.
+  // ponytail: 15s poll (paused in background tabs); push it over a per-user socket room if that lags.
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(undefined, {
     enabled: signedIn,
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 15_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
   // Pending issues, as the old dashboard player widget counted them (shown on Directives).
   const countryId = signedIn ? country?.id : undefined;

@@ -47,6 +47,7 @@ function makeDb(conv: Record<string, unknown>, restriction: Record<string, unkno
         .fn()
         .mockResolvedValue(restriction ? [{ countryId: "c1", until: null, ...restriction }] : []),
     },
+    realmClaim: { findMany: jest.fn().mockResolvedValue([]) },
     userConnection: { findMany: jest.fn().mockResolvedValue([]) },
   };
   return db;

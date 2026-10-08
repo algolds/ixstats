@@ -1,8 +1,9 @@
 /**
  * Connected regions of the label raster, found on its runs (a row's stretches of one label) rather than pixel by
  * pixel: a map has a few hundred runs per row, so labelling and merging stay cheap at 64 megapixels. Regions are
- * 4-connected. A region smaller than the minimum (a speck of colour, a sliver left by anti-aliasing, an island too
- * small to keep) is merged into its largest neighbour and takes its label. Pure.
+ * 4-connected (optionally across the image's east and west edges, which meet on a whole-globe map). A region
+ * smaller than the minimum (a speck of colour, a sliver left by anti-aliasing, an island too small to keep) is
+ * merged into its largest neighbour and takes its label. Pure.
  */
 import type { EngineContext } from "../progress";
 
@@ -15,7 +16,7 @@ export interface RegionStats {
   mergedPixels: number;
 }
 
-interface Runs {
+export interface Runs {
   start: Int32Array;
   end: Int32Array;
   label: Uint16Array;
@@ -72,7 +73,7 @@ function find(parent: Int32Array, i: number): number {
 }
 
 /** Visit each pair of overlapping runs in rows y and y + 1 (overlap length > 0). */
-function forOverlaps(
+export function forOverlaps(
   runs: Runs,
   y: number,
   visit: (upper: number, lower: number, overlap: number) => void
@@ -89,27 +90,43 @@ function forOverlaps(
   }
 }
 
+/** The raster's connected regions: each run's region, and each region's pixel count and label. */
+export interface RegionMap {
+  runs: Runs;
+  /** Region of each run. */
+  region: Int32Array;
+  area: number[];
+  regionLabel: number[];
+}
+
 /**
- * Merge every region smaller than `minPixels` into its largest neighbour (label 0, unfilled, never merges and
- * never absorbs), rewriting the label raster in place.
+ * The connected regions of the label raster (label 0 included). With `wrapX`, a row's first and last runs of one
+ * label are one region: the image's west and east edges are the same meridian.
  */
-export async function mergeSmallRegions(
+export async function findRegions(
   labels: Uint16Array,
   width: number,
   height: number,
-  minPixels: number,
-  ctx: EngineContext
-): Promise<RegionStats> {
+  ctx: EngineContext,
+  wrapX = false
+): Promise<RegionMap> {
   const runs = buildRuns(labels, width, height);
   const parent = new Int32Array(runs.count);
   for (let i = 0; i < runs.count; i++) parent[i] = i;
-  for (let y = 0; y + 1 < height; y++) {
-    forOverlaps(runs, y, (a, b) => {
-      if (runs.label[a] !== runs.label[b]) return;
-      const ra = find(parent, a);
-      const rb = find(parent, b);
-      if (ra !== rb) parent[Math.max(ra, rb)] = Math.min(ra, rb);
-    });
+  const union = (a: number, b: number) => {
+    const ra = find(parent, a);
+    const rb = find(parent, b);
+    if (ra !== rb) parent[Math.max(ra, rb)] = Math.min(ra, rb);
+  };
+  for (let y = 0; y < height; y++) {
+    if (y + 1 < height) {
+      forOverlaps(runs, y, (a, b) => {
+        if (runs.label[a] === runs.label[b]) union(a, b);
+      });
+    }
+    const first = runs.rowStart[y]!;
+    const last = runs.rowStart[y + 1]! - 1;
+    if (wrapX && last > first && runs.label[first] === runs.label[last]) union(first, last);
     if ((y & 255) === 0) await ctx.tick();
   }
 
@@ -130,6 +147,21 @@ export async function mergeSmallRegions(
     region[i] = id;
     area[id]! += runs.end[i]! - runs.start[i]!;
   }
+  return { runs, region, area, regionLabel };
+}
+
+/**
+ * Merge every region smaller than `minPixels` into its largest neighbour (label 0, unfilled, never merges and
+ * never absorbs), rewriting the label raster in place.
+ */
+export async function mergeSmallRegions(
+  labels: Uint16Array,
+  width: number,
+  height: number,
+  minPixels: number,
+  ctx: EngineContext
+): Promise<RegionStats> {
+  const { runs, region, area, regionLabel } = await findRegions(labels, width, height, ctx);
 
   // Each region's runs (counting sort).
   const regionCount = area.length;

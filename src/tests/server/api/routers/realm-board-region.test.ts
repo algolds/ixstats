@@ -112,6 +112,73 @@ describe("board access on the region page", () => {
   });
 });
 
+describe("a board restriction follows the player who held the nation", () => {
+  const BANNED_AT = new Date("2026-05-01");
+  const day = (iso: string) => new Date(iso);
+  const NEXT = "user_next_owner";
+
+  /** c_eurth was claimed by OWNER, banned, then left; NEXT claimed it afterwards. OWNER now owns c_other. */
+  function abandonedDb() {
+    const db = makeDb();
+    db.country.findMany.mockImplementation(async ({ where }: any) => {
+      if (where.ownerUserId === `db_${OWNER}`) return [{ id: "c_other" }];
+      if (where.ownerUserId === `db_${NEXT}`) return [{ id: "c_eurth" }];
+      return [];
+    });
+    const claims = [
+      { userId: `db_${OWNER}`, countryId: "c_eurth", reviewedAt: day("2026-04-01") },
+      { userId: `db_${OWNER}`, countryId: "c_other", reviewedAt: day("2026-04-02") },
+      { userId: `db_${NEXT}`, countryId: "c_eurth", reviewedAt: day("2026-06-01") },
+    ];
+    db.realmClaim.findMany.mockImplementation(async ({ where }: any) =>
+      claims.filter(
+        (c) =>
+          (!where.userId || c.userId === where.userId) &&
+          (!where.countryId?.in || where.countryId.in.includes(c.countryId))
+      )
+    );
+    db.realmBoardBan.findMany.mockImplementation(async ({ where }: any) =>
+      !where.countryId || where.countryId.in.includes("c_eurth")
+        ? [{ countryId: "c_eurth", kind: "ban", until: null, reason: "Spam", createdAt: BANNED_AT }]
+        : []
+    );
+    return db;
+  }
+
+  it("keeps a banned player off the board after they abandon the nation", async () => {
+    const access = await getRealmBoardAccess(abandonedDb() as never, "board1", OWNER);
+    expect(access.ownedCountryIds).toEqual(["c_other"]);
+    expect(access.isMember).toBe(false);
+    expect(access.restriction).toMatchObject({ kind: "ban", reason: "Spam" });
+  });
+
+  it("never passes the restriction to the nation's next claimant", async () => {
+    const access = await getRealmBoardAccess(abandonedDb() as never, "board1", NEXT);
+    expect(access).toMatchObject({ isMember: true, restriction: null });
+  });
+
+  it("drops the banned player from the board on sync, and keeps the next claimant", async () => {
+    const db = abandonedDb();
+    db.thinktankMember.findMany.mockResolvedValue([
+      { id: "m1", userId: OWNER, isActive: true },
+      { id: "m2", userId: NEXT, isActive: true },
+    ]);
+    db.country.findMany.mockResolvedValue([
+      { id: "c_other", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
+      { id: "c_eurth", ownerUserId: `db_${NEXT}`, owner: { clerkUserId: NEXT } },
+    ]);
+    await syncRealmBoardMembers(
+      db as never,
+      { groupId: "board1", realmId: "eurth", conversationId: "conv1", realmOwnerId: FOUNDER },
+      null
+    );
+    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
+      where: { groupId: "board1", userId: { in: [OWNER] } },
+      data: { isActive: false },
+    });
+  });
+});
+
 describe("posting to a realm board", () => {
   it("refuses a muted nation's post with the reason", async () => {
     const db = makeDb({ kind: "mute", until: null });
@@ -202,8 +269,8 @@ describe("board membership sync", () => {
     const db = makeDb();
     db.thinktankMember.findMany.mockResolvedValue([{ id: "m1", userId: OWNER, isActive: true }]);
     db.country.findMany.mockResolvedValue([
-      { id: "c_x", owner: { clerkUserId: OWNER } },
-      { id: "c_y", owner: { clerkUserId: OWNER } },
+      { id: "c_x", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
+      { id: "c_y", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
     ]);
     db.realmBoardBan.findMany.mockResolvedValue([
       { countryId: "c_x", kind: "ban", until: null, reason: null },

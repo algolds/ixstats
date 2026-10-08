@@ -5,6 +5,7 @@
  *
  * Who: site admins and the realm's founder (canModerateRealm). Runs of one realm never overlap: each holds the
  * job lease `realm-source-sync:<realmId>`, whether it was started by a moderator, the script or the scheduled job.
+ * An archived realm keeps its settings and run history readable, but takes no changes and no runs.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
@@ -23,21 +24,32 @@ import {
   type RealmSyncOptions,
 } from "~/lib/realms/sources/config";
 import { fetchRepoFile } from "~/lib/realms/sources/fetch";
+import { scaleAreaToRadius } from "~/lib/maps/planet";
+import { realmRadiusKm } from "~/lib/maps/realm-map-settings";
+import { readRealmMapPipeline } from "~/lib/maps/realm-map-pipeline";
 import {
   realmWikiSettings,
   withRealmWikiSettings,
   type RealmWikiSettings,
 } from "~/lib/realms/realm-wiki-settings";
-import { planSourceSync, type SyncPlan } from "~/lib/realms/sources/plan";
+import {
+  geometryHash,
+  infoboxNeedsRead,
+  planSourceSync,
+  type SyncPlan,
+} from "~/lib/realms/sources/plan";
 import { dueSyncs } from "~/lib/realms/sources/schedule";
 import { sourcePreset } from "~/lib/realms/sources/presets";
 import { summarizePlan, type SyncSummary } from "~/lib/realms/sources/summary";
+import { resolveWikiRedirects } from "~/lib/realms/sources/wiki-redirects";
+import { isProofSource, wikiQuery } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { withJobLock } from "~/lib/system/job-lock";
 import { WIKI_SOURCES } from "~/lib/wiki-os/config";
 import type { InfoboxFacts } from "~/lib/realms/sources/stats";
 import { canModerateRealm, type RealmActor } from "./realms.access";
 import { fetchNationPagePrefill } from "./realms.prefill";
 import { applySyncPlan, type ApplyDeps } from "./realms.source-apply";
+import { realmNationDefaults } from "./realms.settings";
 
 type SyncErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT";
 
@@ -90,20 +102,30 @@ interface RealmRef {
   slug: string;
   name: string;
   ownerId: string;
+  status: string;
 }
 
+const ARCHIVED_MESSAGE = "This realm is archived: its source sync can't be changed or run";
+
+/** The realm a moderator manages the sync of. An archived realm is refused unless only read (`allowArchived`). */
 export async function loadManagedRealm(
   db: Pick<PrismaClient, "realm">,
   actor: RealmActor,
-  slug: string
+  slug: string,
+  { allowArchived = false }: { allowArchived?: boolean } = {}
 ): Promise<RealmRef> {
   const realm = await db.realm.findUnique({
     where: { slug },
-    select: { id: true, slug: true, name: true, ownerId: true },
+    select: { id: true, slug: true, name: true, ownerId: true, status: true },
   });
   if (!realm) throw new SourceSyncError("NOT_FOUND", "Realm not found");
   if (!canModerateRealm(actor, realm))
-    throw new SourceSyncError("FORBIDDEN", "Only site admins and the realm's founder manage its source sync");
+    throw new SourceSyncError(
+      "FORBIDDEN",
+      "Only site admins and the realm's founder manage its source sync"
+    );
+  if (realm.status === "archived" && !allowArchived)
+    throw new SourceSyncError("FORBIDDEN", ARCHIVED_MESSAGE);
   return realm;
 }
 
@@ -148,7 +170,7 @@ export async function loadSourceSyncConfig(
 
 /** The settings page: the realm's config (or null), its last runs, and the realm's nations for manual matches. */
 export async function getSourceSyncView(db: PrismaClient, actor: RealmActor, slug: string) {
-  const realm = await loadManagedRealm(db, actor, slug);
+  const realm = await loadManagedRealm(db, actor, slug, { allowArchived: true });
   const [row, runs, countries] = await Promise.all([
     db.realmSourceSync.findUnique({ where: { realmId: realm.id } }),
     db.realmSyncRun.findMany({
@@ -164,7 +186,14 @@ export async function getSourceSyncView(db: PrismaClient, actor: RealmActor, slu
   ]);
   return {
     realm,
-    config: row ? { ...toConfig(row), presetId: row.presetId, lastRunAt: row.lastRunAt, lastStatus: row.lastStatus } : null,
+    config: row
+      ? {
+          ...toConfig(row),
+          presetId: row.presetId,
+          lastRunAt: row.lastRunAt,
+          lastStatus: row.lastStatus,
+        }
+      : null,
     runs: runs.map((run) => ({
       ...run,
       summary: run.summary as SyncSummary | null,
@@ -203,32 +232,70 @@ export async function saveSourceSyncConfig(
   return { success: true };
 }
 
+/** The config fields a preset fills. */
+const PRESET_FIELDS = [
+  "provider",
+  "repo",
+  "ref",
+  "format",
+  "settings",
+  "options",
+  "continentMap",
+] as const;
+type PresetField = (typeof PRESET_FIELDS)[number];
+
+const blankValue = (value: Prisma.JsonValue) =>
+  value === null || value === "" || (typeof value === "object" && Object.keys(value).length === 0);
+
 /**
- * Fill a realm's config from a preset. Loading copies every value the preset has (repository, ref, format,
- * settings, options, continent table); the schedule switch stays off and staff overrides are kept.
+ * Fill a realm's config from a preset. A realm with no config takes every value the preset has (repository, ref,
+ * format, settings, options, continent table, schedule), with the schedule switch off. A realm that has one keeps
+ * every value it already has and takes only the empty ones, so loading a preset again never undoes staff's
+ * continent corrections or options; `force` overwrites them all. Staff overrides are always kept.
  */
-export async function loadSourcePreset(db: PrismaClient, actor: RealmActor | null, realmId: string, presetId: string) {
+export async function loadSourcePreset(
+  db: PrismaClient,
+  actor: RealmActor | null,
+  realmId: string,
+  presetId: string,
+  { force = false }: { force?: boolean } = {}
+) {
   const preset = sourcePreset(presetId);
   if (!preset) throw new SourceSyncError("NOT_FOUND", `No preset "${presetId}"`);
-  const settings = validateSettings(preset.format, preset.settings);
-  const data = {
+  const values = {
     provider: preset.provider,
     repo: preset.repo,
     ref: preset.ref,
     format: preset.format,
-    settings: settings as Prisma.InputJsonValue,
+    settings: validateSettings(preset.format, preset.settings) as Prisma.InputJsonValue,
     options: realmSyncOptionsSchema.parse(preset.options ?? {}),
     continentMap: preset.continentMap ?? {},
-    presetId: preset.id,
-    updatedBy: actor?.clerkUserId ?? "script",
   };
+  const existing = await db.realmSourceSync.findUnique({ where: { realmId } });
+  const filled = PRESET_FIELDS.filter((field) => force || !existing || blankValue(existing[field]));
+  const update: Partial<typeof values> = {};
+  for (const field of filled) Object.assign(update, { [field]: values[field] });
+  const updatedBy = actor?.clerkUserId ?? "script";
   await db.realmSourceSync.upsert({
     where: { realmId },
-    update: { ...data, ...(preset.intervalHours !== undefined && { intervalHours: preset.intervalHours }) },
-    create: { realmId, ...data, intervalHours: preset.intervalHours ?? null, enabled: false },
+    update: {
+      ...update,
+      ...((force || !existing?.presetId) && { presetId: preset.id }),
+      ...(force && preset.intervalHours !== undefined && { intervalHours: preset.intervalHours }),
+      updatedBy,
+    },
+    create: {
+      realmId,
+      ...values,
+      presetId: preset.id,
+      intervalHours: preset.intervalHours ?? null,
+      enabled: false,
+      updatedBy,
+    },
   });
   const wikiFilled = preset.wiki ? await fillRealmWikiFromPreset(db, realmId, preset.wiki) : false;
-  return { success: true, presetId: preset.id, wikiFilled };
+  const kept: PresetField[] = PRESET_FIELDS.filter((field) => !filled.includes(field));
+  return { success: true, presetId: preset.id, wikiFilled, filled, kept };
 }
 
 /** The preset's wiki values become the realm's wiki settings, unless the realm already has its own. */
@@ -239,18 +306,27 @@ async function fillRealmWikiFromPreset(
 ): Promise<boolean> {
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm || realmWikiSettings(realm.settings)) return false;
-  await db.realm.update({ where: { id: realmId }, data: { settings: withRealmWikiSettings(realm.settings, wiki) } });
+  await db.realm.update({
+    where: { id: realmId },
+    data: { settings: withRealmWikiSettings(realm.settings, wiki) },
+  });
   return true;
 }
 
 export interface ReadDeps {
   fetchFile?: typeof fetchRepoFile;
+  /** Where the source's wiki links redirect (link -> target page); skipped when absent. */
+  resolveRedirects?: (wikiSource: string, titles: string[]) => Promise<Record<string, string>>;
 }
 
 /** Read and parse the source's files. Throws on an unreadable required file or a malformed one. */
-export async function readSourceSnapshot(config: SourceSyncConfig, deps: ReadDeps = {}): Promise<SourceSnapshot> {
+export async function readSourceSnapshot(
+  config: SourceSyncConfig,
+  deps: ReadDeps = {}
+): Promise<SourceSnapshot> {
   const adapter = sourceAdapter(config.format);
-  if (!adapter) throw new SourceSyncError("BAD_REQUEST", `Unknown source format "${config.format}"`);
+  if (!adapter)
+    throw new SourceSyncError("BAD_REQUEST", `Unknown source format "${config.format}"`);
   const settings = validateSettings(config.format, config.settings);
   const fetchFile = deps.fetchFile ?? fetchRepoFile;
   const files: Record<string, string | null> = {};
@@ -261,7 +337,9 @@ export async function readSourceSnapshot(config: SourceSyncConfig, deps: ReadDep
     } catch (error) {
       if (file.required) throw error;
       files[file.role] = null;
-      warnings.push(`${file.role} not read: ${error instanceof Error ? error.message : String(error)}`);
+      warnings.push(
+        `${file.role} not read: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
   const snapshot = adapter.parse(files, settings);
@@ -284,7 +362,8 @@ export function settingsAttribution(settings: Record<string, unknown>): string |
 export async function buildSyncPlan(
   db: PrismaClient,
   config: SourceSyncConfig,
-  snapshot: SourceSnapshot
+  snapshot: SourceSnapshot,
+  resolveRedirects?: ReadDeps["resolveRedirects"]
 ): Promise<{ plan: SyncPlan; countryNames: Map<string, string> }> {
   const realmId = config.realmId;
   const [countries, pages, features, alliances] = await Promise.all([
@@ -300,10 +379,15 @@ export async function buildSyncPlan(
         baselineGdpPerCapita: true,
         landArea: true,
         continent: true,
+        wikiSource: true,
+        flag: true,
         nationalIdentity: { select: { capitalCity: true, officialName: true } },
       },
     }),
-    db.realmPage.findMany({ where: { realmId, kind: "nation" }, select: { title: true } }),
+    db.realmPage.findMany({
+      where: { realmId },
+      select: { title: true, kind: true, wikiSource: true },
+    }),
     db.mapLayer.findMany({
       where: { realmId, layerType: "political", isActive: true },
       select: { featureId: true, countryId: true, properties: true },
@@ -323,26 +407,59 @@ export async function buildSyncPlan(
   ]);
   const linkedFeatureByCountry: Record<string, string> = {};
   for (const f of features) if (f.countryId) linkedFeatureByCountry[f.countryId] ??= f.featureId;
+  const wikiSource = settingsWikiSource(config.settings);
+  const redirects = await linkRedirects(snapshot, wikiSource, resolveRedirects);
   const plan = planSourceSync({
     snapshot,
-    countries: countries.map(({ nationalIdentity, ...c }) => ({
+    countries: countries.map(({ nationalIdentity, flag, ...c }) => ({
       ...c,
       capital: nationalIdentity?.capitalCity ?? null,
       officialName: nationalIdentity?.officialName ?? null,
+      infoboxEmpty: infoboxNeedsRead({ flag }),
     })),
-    rosterPages: pages,
+    rosterPages: pages.filter((p) => p.kind === "nation"),
+    realmPageTitles: pages.filter((p) => p.wikiSource === wikiSource).map((p) => p.title),
+    wikiRedirects: redirects.map,
     features: features.map((f) => {
-      const hash = (f.properties as { sourceHash?: unknown } | null)?.sourceHash;
-      return { featureId: f.featureId, countryId: f.countryId, sourceHash: typeof hash === "string" ? hash : null };
+      const { sourceHash, fill } = (f.properties ?? {}) as { sourceHash?: unknown; fill?: unknown };
+      return {
+        featureId: f.featureId,
+        countryId: f.countryId,
+        sourceHash: typeof sourceHash === "string" ? sourceHash : null,
+        fill: typeof fill === "string" ? fill : null,
+      };
     }),
-    alliances: alliances.map(({ members, ...a }) => ({ ...a, activeMemberIds: members.map((m) => m.countryId) })),
+    alliances: alliances.map(({ members, ...a }) => ({
+      ...a,
+      activeMemberIds: members.map((m) => m.countryId),
+    })),
     linkedFeatureByCountry,
     options: config.options,
     overrides: config.overrides,
     continentMap: config.continentMap,
-    wikiSource: settingsWikiSource(config.settings),
+    wikiSource,
   });
+  if (redirects.error) plan.warnings.push(redirects.error);
   return { plan, countryNames: new Map(countries.map((c) => [c.id, c.name])) };
+}
+
+/** The source's wiki links that redirect. A failed lookup only warns: the links are then checked as written. */
+async function linkRedirects(
+  snapshot: SourceSnapshot,
+  wikiSource: string | null,
+  resolve: ReadDeps["resolveRedirects"]
+): Promise<{ map: Record<string, string>; error?: string }> {
+  const titles = snapshot.nations.flatMap((n) => (n.wikiTitle ? [n.wikiTitle] : []));
+  if (!resolve || !wikiSource || titles.length === 0) return { map: {} };
+  try {
+    return { map: await resolve(wikiSource, titles) };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return {
+      map: {},
+      error: `Wiki redirects could not be checked (${reason}); links were matched as written`,
+    };
+  }
 }
 
 export interface RunInput {
@@ -363,7 +480,13 @@ export async function prefillInfobox(wikiSource: string, title: string): Promise
 }
 
 /** What production runs use: the real fetch and the wiki infobox reader. */
-export const LIVE_RUN_DEPS: RunDeps = { fetchInfobox: prefillInfobox };
+export const LIVE_RUN_DEPS: RunDeps = {
+  fetchInfobox: prefillInfobox,
+  resolveRedirects: (wikiSource, titles) =>
+    isProofSource(wikiSource)
+      ? resolveWikiRedirects((params, schema) => wikiQuery(wikiSource, params, schema), titles)
+      : Promise.resolve({}),
+};
 
 export interface RunOutcome {
   runId: string;
@@ -402,17 +525,46 @@ async function finishRun(
   return { runId, ...outcome };
 }
 
-async function executeRun(db: PrismaClient, input: RunInput, runId: string, deps: RunDeps): Promise<RunOutcome> {
+/** The realm's border smoothing (its map pipeline's `coverage`) with the source's borders, or none. */
+function borderSmoothing(settings: Prisma.JsonValue, snapshot: SourceSnapshot) {
+  const coverage = readRealmMapPipeline(settings).pipeline?.coverage;
+  if (!coverage) return undefined;
+  const sourceRaw = new Map(
+    snapshot.features.map((f) => [
+      f.key,
+      { geometry: f.geometry, sourceHash: geometryHash(f.geometry) },
+    ])
+  );
+  return { coverage, sourceRaw };
+}
+
+async function executeRun(
+  db: PrismaClient,
+  input: RunInput,
+  runId: string,
+  deps: RunDeps
+): Promise<RunOutcome> {
   const config = await loadSourceSyncConfig(db, input.realmId);
   if (!config)
-    return finishRun(db, runId, { status: "failed", summary: null, errors: ["This realm has no source sync configured"] }, null, true);
+    return finishRun(
+      db,
+      runId,
+      { status: "failed", summary: null, errors: ["This realm has no source sync configured"] },
+      null,
+      true
+    );
   try {
-    const realm = await db.realm.findUnique({ where: { id: input.realmId }, select: { slug: true } });
+    const realm = await db.realm.findUnique({
+      where: { id: input.realmId },
+      select: { slug: true, status: true, settings: true },
+    });
     if (!realm) throw new SourceSyncError("NOT_FOUND", "Realm not found");
+    if (realm.status === "archived") throw new SourceSyncError("FORBIDDEN", ARCHIVED_MESSAGE);
     const snapshot = await readSourceSnapshot(config, deps);
-    const { plan, countryNames } = await buildSyncPlan(db, config, snapshot);
+    const { plan, countryNames } = await buildSyncPlan(db, config, snapshot, deps.resolveRedirects);
     const summary: SyncSummary = summarizePlan(plan, countryNames);
-    if (input.dryRun) return finishRun(db, runId, { status: "success", summary, errors: [] }, config, true);
+    if (input.dryRun)
+      return finishRun(db, runId, { status: "success", summary, errors: [] }, config, true);
     const applied = await applySyncPlan(
       db,
       {
@@ -420,6 +572,9 @@ async function executeRun(db: PrismaClient, input: RunInput, runId: string, deps
         realmSlug: realm.slug,
         wikiSource: settingsWikiSource(config.settings),
         attribution: settingsAttribution(config.settings),
+        areaScale: scaleAreaToRadius(1, realmRadiusKm(realm.settings)),
+        nationDefaults: realmNationDefaults(realm.settings),
+        borderSmoothing: borderSmoothing(realm.settings, snapshot),
       },
       plan,
       deps
@@ -427,13 +582,23 @@ async function executeRun(db: PrismaClient, input: RunInput, runId: string, deps
     return finishRun(
       db,
       runId,
-      { status: applied.errors.length > 0 ? "partial" : "success", summary: { ...summary, applied }, errors: applied.errors },
+      {
+        status: applied.errors.length > 0 ? "partial" : "success",
+        summary: { ...summary, applied },
+        errors: applied.errors,
+      },
       config,
       false
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    return finishRun(db, runId, { status: "failed", summary: null, errors: [reason] }, config, input.dryRun);
+    return finishRun(
+      db,
+      runId,
+      { status: "failed", summary: null, errors: [reason] },
+      config,
+      input.dryRun
+    );
   }
 }
 
@@ -441,21 +606,36 @@ async function executeRun(db: PrismaClient, input: RunInput, runId: string, deps
  * One run of a realm's sync under its lease. A run already holding the lease makes this one fail at once
  * ("already running") instead of waiting or overlapping.
  */
-export async function runSourceSync(db: PrismaClient, input: RunInput, deps: RunDeps = {}): Promise<RunOutcome> {
+export async function runSourceSync(
+  db: PrismaClient,
+  input: RunInput,
+  deps: RunDeps = {}
+): Promise<RunOutcome> {
   const runId =
     input.runId ??
-    (await db.realmSyncRun.create({
-      data: { realmId: input.realmId, dryRun: input.dryRun, triggeredBy: input.triggeredBy },
-      select: { id: true },
-    })).id;
-  const outcome = await withJobLock(db, sourceSyncLockName(input.realmId), () => executeRun(db, input, runId, deps), {
-    timeoutMs: SOURCE_SYNC_LOCK_MS,
-  });
+    (
+      await db.realmSyncRun.create({
+        data: { realmId: input.realmId, dryRun: input.dryRun, triggeredBy: input.triggeredBy },
+        select: { id: true },
+      })
+    ).id;
+  const outcome = await withJobLock(
+    db,
+    sourceSyncLockName(input.realmId),
+    () => executeRun(db, input, runId, deps),
+    {
+      timeoutMs: SOURCE_SYNC_LOCK_MS,
+    }
+  );
   if (outcome.ran) return outcome.result;
   return finishRun(
     db,
     runId,
-    { status: "failed", summary: null, errors: ["Another run of this realm's sync is in progress"] },
+    {
+      status: "failed",
+      summary: null,
+      errors: ["Another run of this realm's sync is in progress"],
+    },
     null,
     true
   );
@@ -465,41 +645,71 @@ export async function runSourceSync(db: PrismaClient, input: RunInput, deps: Run
  * An applied run started from the settings page: the run row is created now and returned, and the run goes on
  * in the background (it may read many wiki pages). The page follows it through the run history.
  */
-export async function startSourceSyncApply(db: PrismaClient, realmId: string, triggeredBy: string, deps: RunDeps = {}) {
+export async function startSourceSyncApply(
+  db: PrismaClient,
+  realmId: string,
+  triggeredBy: string,
+  deps: RunDeps = {}
+) {
   const config = await loadSourceSyncConfig(db, realmId);
   if (!config) throw new SourceSyncError("BAD_REQUEST", "Save a source first");
   const run = await db.realmSyncRun.create({
     data: { realmId, dryRun: false, triggeredBy },
     select: { id: true },
   });
-  void runSourceSync(db, { realmId, dryRun: false, triggeredBy, runId: run.id }, deps).catch((error: unknown) =>
-    console.error("[realm-source-sync] background run failed:", error)
+  void runSourceSync(db, { realmId, dryRun: false, triggeredBy, runId: run.id }, deps).catch(
+    (error: unknown) => console.error("[realm-source-sync] background run failed:", error)
   );
   return { runId: run.id };
 }
 
 /**
  * The scheduled job: every enabled realm whose interval has passed, one realm at a time (longest overdue
- * first). Returns what it did for the CronRun record.
+ * first); archived realms are skipped. Returns what it did for the CronRun record.
  */
-export async function runDueSourceSyncs(db: PrismaClient, deps: RunDeps = {}, now: Date = new Date()) {
-  const syncs = await db.realmSourceSync.findMany({
+export async function runDueSourceSyncs(
+  db: PrismaClient,
+  deps: RunDeps = {},
+  now: Date = new Date()
+) {
+  const enabled = await db.realmSourceSync.findMany({
     where: { enabled: true, intervalHours: { not: null } },
     select: { realmId: true, enabled: true, intervalHours: true, lastRunAt: true },
   });
+  const archived = enabled.length
+    ? new Set(
+        (
+          await db.realm.findMany({
+            where: { id: { in: enabled.map((s) => s.realmId) }, status: "archived" },
+            select: { id: true },
+          })
+        ).map((r) => r.id)
+      )
+    : new Set<string>();
+  const syncs = enabled.filter((s) => !archived.has(s.realmId));
   const due = dueSyncs(syncs, now);
   const results: Array<{ realmId: string; status: string; runId: string }> = [];
   for (const sync of due) {
-    const outcome = await runSourceSync(db, { realmId: sync.realmId, dryRun: false, triggeredBy: "cron" }, deps);
+    const outcome = await runSourceSync(
+      db,
+      { realmId: sync.realmId, dryRun: false, triggeredBy: "cron" },
+      deps
+    );
     results.push({ realmId: sync.realmId, status: outcome.status, runId: outcome.runId });
   }
   return { checked: syncs.length, ran: results.length, results };
 }
 
 /** The attribution line a realm's map shows, from its source settings; null when none is set. */
-export async function realmMapAttribution(db: Pick<PrismaClient, "realm" | "realmSourceSync">, slug: string) {
+export async function realmMapAttribution(
+  db: Pick<PrismaClient, "realm" | "realmSourceSync">,
+  slug: string
+) {
   const realm = await db.realm.findUnique({ where: { slug }, select: { id: true } });
   if (!realm) return null;
-  const row = await db.realmSourceSync.findUnique({ where: { realmId: realm.id }, select: { settings: true } });
+  const row = await db.realmSourceSync.findUnique({
+    where: { realmId: realm.id },
+    select: { settings: true },
+  });
   return row ? settingsAttribution((row.settings ?? {}) as Record<string, unknown>) : null;
 }

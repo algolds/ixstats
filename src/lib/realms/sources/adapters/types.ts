@@ -7,6 +7,10 @@ import type { MultiPolygon, Polygon } from "geojson";
 import type { z } from "zod";
 import type { AllianceType } from "../config";
 
+/** The figures a source nation carries, each of which the source may mark as from a less-trusted secondary source. */
+export type SourceFigureField =
+  "officialName" | "population" | "gdpPerCapita" | "landArea" | "capital";
+
 export interface SourceNation {
   /** Stable key in the source (becomes Country.externalSourceKey and the map feature id). */
   key: string;
@@ -21,6 +25,11 @@ export interface SourceNation {
   landArea: number | null;
   capital: string | null;
   color: string | null;
+  /**
+   * Figures the source took from a secondary source (older, less trusted): they rank below the wiki infobox on a
+   * new nation and never change an existing one.
+   */
+  secondary: SourceFigureField[];
 }
 
 export interface SourceOrganization {

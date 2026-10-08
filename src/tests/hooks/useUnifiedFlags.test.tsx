@@ -51,6 +51,19 @@ describe("useUnifiedFlags hooks (Plan 164)", () => {
       expect(result.current.isPlaceholder).toBe(false);
     });
 
+    test("resolves the name in the realm it is asked for (a realm map's nations)", () => {
+      renderHook(() => useFlag("Tagmatium", "eurth"));
+      expect(api.countries.flags.resolveBatch.useQuery).toHaveBeenLastCalledWith(
+        { countryNames: ["Tagmatium"], realm: "eurth" },
+        expect.anything()
+      );
+      renderHook(() => useFlag("France"));
+      expect(api.countries.flags.resolveBatch.useQuery).toHaveBeenLastCalledWith(
+        { countryNames: ["France"] },
+        expect.anything()
+      );
+    });
+
     test("returns null for empty country name", () => {
       const { result } = renderHook(() => useFlag(""));
       expect(result.current.flagUrl).toBeNull();

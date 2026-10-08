@@ -11,7 +11,8 @@ const TELLS: Record<string, RegExp> = {
   eyebrow: /<Eyebrow\b|\btext-eyebrow\b/g,
   statLabel: /\btext-stat-label\b/g,
   emDash: /—/g,
-  sparks: /\bSparks\b/g,
+  // Also catches `Spark as Sparkles` import aliases, which hid decorative sparks from the bare name.
+  sparks: /\bSparks\b|\bSpark\s+as\s+\w+/g,
   // Engines disagree on some code points: V8 (Node) counts U+2605 ★ as Extended_Pictographic,
   // JavaScriptCore (Bun, which CI runs Jest under) does not. Excluding them keeps the count
   // identical whichever runtime writes the baseline.

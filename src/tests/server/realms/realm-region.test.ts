@@ -169,6 +169,19 @@ describe("Manage permissions", () => {
     expect(data.factbookHtml).not.toContain("class=");
   });
 
+  it("saves factbook and rules HTML without style, class or id, so it can't overlay the page", async () => {
+    const db = makeDb();
+    const overlay = `<div class='fixed inset-0 z-50' style="position:fixed;inset:0;z-index:99999"><a href="https://evil.example">Session expired, sign in</a></div>`;
+    await callerAs(FOUNDER, db).region.updateFactbook({ slug: "eurth", wikitext: overlay });
+    await callerAs(FOUNDER, db).region.updateRules({ slug: "eurth", wikitext: overlay });
+    const [factbook, rules] = db.realm.update.mock.calls.map((call: any) => call[0].data);
+    for (const html of [factbook.factbookHtml, rules.rulesHtml]) {
+      expect(html).toContain("Session expired, sign in");
+      expect(html).not.toMatch(/\s(style|class|id)=/);
+      expect(html).not.toContain("z-index");
+    }
+  });
+
   it("refuses a non-https banner", async () => {
     const db = makeDb();
     await expect(
@@ -391,7 +404,7 @@ describe("board restrictions", () => {
 });
 
 describe("leaving a realm", () => {
-  it("releases the nation, clears its board restriction and drops the officer post", async () => {
+  it("releases the nation, keeps its board restriction and drops the officer post", async () => {
     const db = makeDb();
     db.country.findUnique.mockResolvedValue({
       id: "c5",
@@ -409,7 +422,8 @@ describe("leaving a realm", () => {
       where: { countryId: "c5" },
       data: { countryId: null },
     });
-    expect(db.realmBoardBan.deleteMany).toHaveBeenCalledWith({ where: { countryId: "c5" } });
+    // The restriction stays: it follows the player who held the nation (see realm-board.ts).
+    expect(db.realmBoardBan.deleteMany).not.toHaveBeenCalled();
     expect(db.realmOfficer.deleteMany).toHaveBeenCalledWith({
       where: { realmId: "eurth", userId: OFFICER },
     });
@@ -470,6 +484,41 @@ describe("overview and happenings", () => {
     expect(overview?.realm.foundedAt).toEqual(new Date("2026-01-01"));
   });
 
+  it("re-sanitizes factbook and rules HTML stored before the stricter sanitizer", async () => {
+    const db = overviewDb();
+    const stored = `<p>Hi</p><div class='fixed inset-0 z-50' style="position:fixed;inset:0;z-index:99999" id="x"><a href="https://evil.example">Session expired</a></div>`;
+    db.realm.findUnique.mockResolvedValue({
+      ...(await db.realm.findUnique()),
+      factbookHtml: stored,
+      rulesHtml: stored,
+    });
+    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    for (const html of [overview?.factbook?.html, overview?.rules?.html]) {
+      expect(html).toContain("Session expired");
+      expect(html).not.toMatch(/\s(style|class|id)=/);
+    }
+  });
+
+  it("gives the founder and officers their passport handle, null until claimed", async () => {
+    const db = overviewDb("active", FOUNDER);
+    const realm = await db.realm.findUnique();
+    db.realm.findUnique.mockResolvedValue({
+      ...realm,
+      officers: [{ userId: OFFICER, title: "Archivist", powers: [] }],
+    });
+    db.user.findMany.mockImplementation(async ({ select }: { select: { handle?: boolean } }) =>
+      select.handle
+        ? [
+            { clerkUserId: FOUNDER, handle: "bora" },
+            { clerkUserId: OFFICER, handle: null },
+          ]
+        : []
+    );
+    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(overview?.founder).toMatchObject({ handle: "bora" });
+    expect(overview?.officers).toEqual([expect.objectContaining({ handle: null })]);
+  });
+
   it("hides a draft realm's overview from players", async () => {
     const db = overviewDb("draft", FOUNDER);
     expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
@@ -517,6 +566,22 @@ describe("overview and happenings", () => {
     ]);
     expect(items[0]?.href).toBe("/r/terra");
     expect(nextCursor).toBeNull();
+  });
+
+  it("leaves embassies with draft or generating partners out of the happenings (AT-6)", async () => {
+    const db = makeDb();
+    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
+    const hidden = { status: { notIn: ["draft", "generating"] } };
+    expect(db.realmEmbassy.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [
+            { fromRealmId: "eurth", toRealm: hidden },
+            { toRealmId: "eurth", fromRealm: hidden },
+          ],
+        }),
+      })
+    );
   });
 
   it("pages through the history with a cursor", async () => {

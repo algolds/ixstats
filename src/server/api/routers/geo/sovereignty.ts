@@ -5,37 +5,41 @@ import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { clearLayerCache } from "./core";
 
 export const geoSovereigntyRouter = createTRPCRouter({
-  /** Get all active sovereignty relationships (public, cached) */
-  getSovereigntyRelations: cachedPublicProcedure.query(async ({ ctx }) => {
-    const relations = await ctx.db.countrySovereignty.findMany({
-      where: { isActive: true },
-      include: {
-        sovereign: { select: { id: true, name: true, flag: true, slug: true } },
-        subject: { select: { id: true, name: true, flag: true, slug: true } },
-      },
-      orderBy: [{ sovereign: { name: "asc" } }, { subject: { name: "asc" } }],
-    });
-    return relations.map((r) => ({
-      id: r.id,
-      sovereignId: r.sovereignId,
-      sovereignName: r.sovereign.name,
-      sovereignFlag: normalizeFlagUrl(r.sovereign.flag),
-      sovereignSlug: r.sovereign.slug,
-      subjectId: r.subjectId,
-      subjectName: r.subject.name,
-      subjectFlag: normalizeFlagUrl(r.subject.flag),
-      subjectSlug: r.subject.slug,
-      relationshipType: r.relationshipType,
-      autonomyLevel: r.autonomyLevel,
-      description: r.description,
-      establishedDate: r.establishedDate,
-      isActive: r.isActive,
-      createdAt: r.createdAt,
-    }));
-  }),
+  /** The viewer's realm's active sovereignty relationships (public, cached; rule E-h). */
+  getSovereigntyRelations: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      const relations = await ctx.db.countrySovereignty.findMany({
+        where: { isActive: true, sovereign: { realmId } },
+        include: {
+          sovereign: { select: { id: true, name: true, flag: true, slug: true } },
+          subject: { select: { id: true, name: true, flag: true, slug: true } },
+        },
+        orderBy: [{ sovereign: { name: "asc" } }, { subject: { name: "asc" } }],
+      });
+      return relations.map((r) => ({
+        id: r.id,
+        sovereignId: r.sovereignId,
+        sovereignName: r.sovereign.name,
+        sovereignFlag: normalizeFlagUrl(r.sovereign.flag),
+        sovereignSlug: r.sovereign.slug,
+        subjectId: r.subjectId,
+        subjectName: r.subject.name,
+        subjectFlag: normalizeFlagUrl(r.subject.flag),
+        subjectSlug: r.subject.slug,
+        relationshipType: r.relationshipType,
+        autonomyLevel: r.autonomyLevel,
+        description: r.description,
+        establishedDate: r.establishedDate,
+        isActive: r.isActive,
+        createdAt: r.createdAt,
+      }));
+    }),
 
   /** Get sovereignty info for a specific country (subjects + sovereign) */
   getCountrySovereignty: cachedPublicProcedure

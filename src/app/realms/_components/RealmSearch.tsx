@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
-import { createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
 import { RealmAvatar } from "./RealmAvatar";
@@ -18,7 +17,7 @@ const NATION_QUERY_MIN = 2;
 const REALM_HITS_SHOWN = 6;
 
 function NationRow({ nation }: { nation: NationHit }) {
-  const nationsTab = createUrl(realmHref(nation.realm.slug, "nations"));
+  const nationsTab = realmHref(nation.realm.slug, "nations");
   return (
     <li className="flex items-center gap-3 py-2">
       {nation.flag ? (
@@ -29,7 +28,7 @@ function NationRow({ nation }: { nation: NationHit }) {
       <div className="min-w-0 flex-1">
         {nation.kind === "country" ? (
           <Link
-            href={createUrl(`/countries/${nation.slug ?? nation.id}`)}
+            href={`/countries/${nation.slug ?? nation.id}`}
             className="text-label text-body block truncate hover:underline"
           >
             {nation.name}
@@ -39,7 +38,7 @@ function NationRow({ nation }: { nation: NationHit }) {
         )}
         <p className="text-label-secondary text-footnote truncate">
           {nation.kind === "page" ? "Nation page in " : "In "}
-          <Link href={createUrl(realmHref(nation.realm.slug))} className="hover:underline">
+          <Link href={realmHref(nation.realm.slug)} className="hover:underline">
             {nation.realm.name}
           </Link>
         </p>
@@ -97,7 +96,7 @@ function RealmResults({ realms, query }: { realms: DirectoryRealm[]; query: stri
           {hits.slice(0, REALM_HITS_SHOWN).map((realm) => (
             <li key={realm.id}>
               <Link
-                href={createUrl(realmHref(realm.slug))}
+                href={realmHref(realm.slug)}
                 className="hover:bg-fill-3 rounded-row flex items-center gap-3 p-2"
               >
                 <RealmAvatar thumbnail={realm.thumbnail} className="size-8" />

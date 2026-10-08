@@ -595,6 +595,18 @@ function extractFilename(value: string): string {
 
 // ─── Main Parser ──────────────────────────────────────────────────────────────
 
+/** The page-name magic words a template fills in from the page it is on ("Flag of {{PAGENAME}}.png"). */
+const PAGE_NAME_WORDS = /\{\{\s*(?:FULL|BASE|ROOT|SUB)?PAGENAME\s*\}\}/g;
+
+/**
+ * The infobox source as MediaWiki would read it: comments gone first (a commented-out `|image_flag = …` line is not
+ * a field), and the page-name magic words filled with the page's title when it is known.
+ */
+export function preprocessInfoboxSource(wikitext: string, pageTitle?: string): string {
+  const text = stripComments(wikitext);
+  return pageTitle ? text.replace(PAGE_NAME_WORDS, pageTitle) : text;
+}
+
 export function parseInfoboxWithTemplates(
   wikitext: string,
   countryName?: string
@@ -602,7 +614,7 @@ export function parseInfoboxWithTemplates(
   // Guard against excessively large wikitext (potential regex DoS)
   if (wikitext.length > 500_000) return null;
 
-  const parsed = parseInfobox(wikitext);
+  const parsed = parseInfobox(preprocessInfoboxSource(wikitext, countryName));
   if (!parsed) return null;
 
   const result: UnifiedInfoboxData = {

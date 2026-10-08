@@ -1,6 +1,7 @@
 /**
  * Social achievement definitions (ThinkPages, story chains, followers, trending posts).
- * Spread into ACHIEVEMENT_DEFINITIONS in ./definitions at the Social position.
+ * Spread into ACHIEVEMENT_DEFINITIONS in ./definitions: SOCIAL_ACHIEVEMENTS at the Social
+ * position, RECRUITER_ACHIEVEMENTS at the end of the list.
  */
 
 import type { AchievementDefinition } from "./definitions";
@@ -85,5 +86,39 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     points: 80,
     iconUrl: "🔥",
     condition: (data) => (data.trendingPostCount ?? 0) >= 1,
+  },
+];
+
+/** Recruiter achievements: players who joined a realm by the user's invite link. */
+export const RECRUITER_ACHIEVEMENTS: AchievementDefinition[] = [
+  {
+    id: "social-recruiter",
+    title: "Recruiter",
+    description: "Bring a player into a realm with your invite link",
+    category: "Social",
+    rarity: "Common",
+    points: 10,
+    iconUrl: "📨",
+    condition: (data) => (data.recruitedCount ?? 0) >= 1,
+  },
+  {
+    id: "social-envoy",
+    title: "Envoy",
+    description: "Bring 5 players into realms with your invite links",
+    category: "Social",
+    rarity: "Uncommon",
+    points: 30,
+    iconUrl: "🕊️",
+    condition: (data) => (data.recruitedCount ?? 0) >= 5,
+  },
+  {
+    id: "social-founders-hand",
+    title: "Founder's Hand",
+    description: "Bring 25 players into realms with your invite links",
+    category: "Social",
+    rarity: "Rare",
+    points: 60,
+    iconUrl: "🏰",
+    condition: (data) => (data.recruitedCount ?? 0) >= 25,
   },
 ];

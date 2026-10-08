@@ -14,6 +14,7 @@ import {
 } from "../wiki/components";
 
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
+import { EditingSection } from "./EditingSection";
 import { MirrorStatusSection } from "./MirrorStatusSection";
 
 export function WikiOSSettingsPanel() {
@@ -29,6 +30,8 @@ export function WikiOSSettingsPanel() {
       <PageHeader title="WikiOS settings" />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
+
+      <EditingSection />
 
       <MirrorStatusSection />
 

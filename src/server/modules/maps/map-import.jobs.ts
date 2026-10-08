@@ -2,13 +2,15 @@
  * Background map import jobs (MapImportJob). A job is queued by the wizard (or by another importer through
  * `startMapImport`) and run off the request path:
  *
+ *   - map-pipeline: a realm map pipeline run (realm-map-pipeline.job.ts), any of its steps, dry run or apply;
  *   - analyse (dryRun): read the upload, run the engine (a worker thread under Bun), store the result file and a
  *     summary (regions, report, georeference, suggested mapping);
  *   - apply: plan the analysed result with the admin's mapping and write it (map-import.apply.ts).
  *
  * Who runs them: the `map-import` cron job when it is enabled (CRON_ENABLED_JOBS), else the web process right
- * after queueing, in-process. Apply jobs always start in the web process, so its map caches are dropped at once;
- * the cron job picks them up only if they were left queued. A realm runs one job at a time (the job lease
+ * after queueing, in-process. Import apply jobs always start in the web process, so its map caches are dropped at
+ * once; the cron job picks them up only if they were left queued. Pipeline runs are left to the cron job when it
+ * runs (they build tiles and trace images). A realm runs one job at a time (the job lease
  * `map-import:<realmId>`); a running job that stops reporting progress for STALE_AFTER_MS is marked failed.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -51,6 +53,13 @@ import {
   saveImportResult,
   saveMapUpload,
 } from "./map-import.storage";
+import type { PipelineDeps } from "./realm-map-pipeline.context";
+import {
+  MAP_PIPELINE_KIND,
+  pipelineError,
+  runMapPipelineJob,
+  type PipelineSummary,
+} from "./realm-map-pipeline.job";
 
 export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
 export const STALE_AFTER_MS = 10 * 60_000;
@@ -78,7 +87,7 @@ export interface ApplySummary extends AppliedImport {
   nations: number;
 }
 
-export type MapImportSummary = AnalyseSummary | ApplySummary;
+export type MapImportSummary = AnalyseSummary | ApplySummary | PipelineSummary;
 
 export interface StartMapImportInput {
   realmId: string;
@@ -100,6 +109,8 @@ export interface MapImportDeps {
     progress: ProgressFn,
     isCancelled: () => boolean
   ) => Promise<EngineResult>;
+  /** A realm map pipeline run's replaceable parts (the CLI's local checkout, tests). */
+  pipeline?: PipelineDeps;
 }
 
 async function defaultDb(): Promise<PrismaClient> {
@@ -239,7 +250,7 @@ export async function listMapImportJobs(
 ) {
   await loadImportRealm(db, actor, realmId);
   const jobs = await db.mapImportJob.findMany({
-    where: { realmId },
+    where: { realmId, kind: { notIn: [MAP_PIPELINE_KIND] } },
     orderBy: { createdAt: "desc" },
     take,
   });
@@ -405,6 +416,17 @@ async function runApply(
   return { phase: "apply", nations: plan.features.length, ...applied };
 }
 
+/** The job's work by kind: a pipeline run, an analysis or an apply. */
+function runJob(
+  db: PrismaClient,
+  job: Prisma.MapImportJobGetPayload<object>,
+  progress: ReturnType<typeof progressWriter>,
+  deps: MapImportDeps
+): Promise<MapImportSummary> {
+  if (job.kind === MAP_PIPELINE_KIND) return runMapPipelineJob(db, job, progress, deps.pipeline);
+  return job.dryRun ? runAnalyse(db, job, progress, deps) : runApply(db, job, progress);
+}
+
 /** Mark running jobs that stopped reporting (a restarted process) as failed. Returns how many. */
 export async function recoverStaleMapImports(db: PrismaClient, now = new Date()): Promise<number> {
   const { count } = await db.mapImportJob.updateMany({
@@ -449,16 +471,16 @@ export async function runMapImportJob(
       const job = (await db.mapImportJob.findUnique({ where: { id: jobId } }))!;
       const progress = progressWriter(db, jobId);
       try {
-        const summary = job.dryRun
-          ? await runAnalyse(db, job, progress, deps)
-          : await runApply(db, job, progress);
+        const summary = await runJob(db, job, progress, deps);
+        const failed = summary.phase === "pipeline" ? pipelineError(summary) : "";
         await progress.flush();
         await db.mapImportJob.updateMany({
           where: { id: jobId, status: "running" },
           data: {
-            status: "succeeded",
+            status: failed ? "failed" : "succeeded",
             progress: 100,
-            stage: "Done",
+            stage: failed ? "Failed" : "Done",
+            error: failed || null,
             result: summary as unknown as Prisma.InputJsonValue,
             finishedAt: new Date(),
           },
@@ -488,7 +510,8 @@ export async function runMapImportJob(
 
 /**
  * Run queued jobs, oldest first, one at a time; a realm whose lease is held is skipped for this pass. `applyOnly`
- * runs only apply jobs; `minAgeMs` leaves younger jobs to the process that queued them.
+ * runs only import apply jobs (never a pipeline run); `minApplyAgeMs` leaves younger import applies to the process
+ * that queued them.
  */
 export async function processMapImportQueue(
   db: PrismaClient,
@@ -506,9 +529,12 @@ export async function processMapImportQueue(
         status: "queued",
         id: { notIn: [...seen] },
         realmId: { notIn: [...busyRealms] },
-        ...(options.applyOnly && { dryRun: false }),
+        // Pipeline runs (applied ones too) are heavy: the cron runner takes them when it runs
+        ...(options.applyOnly && { dryRun: false, kind: { notIn: [MAP_PIPELINE_KIND] } }),
         ...(!options.applyOnly &&
-          options.minApplyAgeMs && { OR: [{ dryRun: true }, { createdAt: { lt: applyCutoff } }] }),
+          options.minApplyAgeMs && {
+            OR: [{ dryRun: true }, { kind: MAP_PIPELINE_KIND }, { createdAt: { lt: applyCutoff } }],
+          }),
       },
       orderBy: { createdAt: "asc" },
       select: { id: true, realmId: true },

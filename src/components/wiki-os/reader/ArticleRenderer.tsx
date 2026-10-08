@@ -7,7 +7,8 @@ import {
   type TocEntry,
 } from "~/lib/wiki-os/transformers/html-transformer";
 import { StickyToc } from "~/components/wiki-os/reader/StickyToc";
-import { Inspector } from "~/components/ui/inspector";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useWikiSetting } from "~/components/wiki-os/shared/useWikiSetting";
 import { InfoboxWithMap } from "~/components/wiki-os/reader/InfoboxWithMap";
 import { useImageLightbox } from "~/components/wiki-os/reader/ImageLightbox";
@@ -39,6 +40,8 @@ import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/l
 import { CategoriesBar } from "./ArticleCategories";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
+import { Button } from "~/components/ui/button";
+import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { SourceWikiNote } from "./SourceWikiNote";
 import { useEmbedAssets } from "./useEmbedAssets";
 import {
@@ -120,7 +123,6 @@ export function ArticleRenderer({
   wikiSource,
   authorInfo,
 }: ArticleRendererProps) {
-  const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   // In lean mode (lib/wiki-os/lean-article.ts) the three parts arrive as markers, and the real HTML is
   // read from where the server rendered it: the DOM in the browser, the server's stash in the SSR render.
@@ -151,6 +153,19 @@ export function ArticleRenderer({
   // The setting gates the whole Inspector: off, the page opts out of the gutter (ArticlePageClient).
   const showWikiToc = useWikiSetting("wikios:showWikiToc", true);
   const tocVisible = showWikiToc && toc.length > 0;
+  // From 1280px the sidebar shows only the contents until the page info is opened (remembered
+  // per browser).
+  const wide = useMediaQuery("(min-width: 1280px)");
+  const railCollapsed = useWikiSetting("wikios:railCollapsed", true);
+  const asideShown = showWikiToc && !marginOpen;
+  const toggleRail = () => {
+    try {
+      localStorage.setItem("wikios:railCollapsed", String(!railCollapsed));
+    } catch {
+      return;
+    }
+    window.dispatchEvent(new Event("wikios-settings-changed"));
+  };
 
   const marginDrawerMounted = useMountOnFirstOpen(marginOpen);
 
@@ -479,22 +494,42 @@ export function ArticleRenderer({
 
   const narrator = useWikiNarrator(contentRef);
 
+  const companion = (
+    <ArticleCompanionHUD
+      contentHtml={contentHtml}
+      lastModified={lastModified}
+      authorInfo={authors}
+      authorsPending={!authorInfo && authorsQuery.isLoading}
+      categories={categories}
+      awardsData={awardsData}
+      marginThreadsCount={(marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)}
+      marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
+      onOpenMargin={(tab) => {
+        setMarginTab(tab || "threads");
+        setMarginOpen(true);
+        setTocOpen(false);
+      }}
+      onOpenHistory={() => {
+        setActiveModal("history");
+        setTocOpen(false);
+      }}
+      onOpenBacklinks={() => {
+        setActiveModal("backlinks");
+        setTocOpen(false);
+      }}
+      narrator={narrator}
+      readOnly={readOnly}
+    />
+  );
+
   return (
     <div
-      ref={titleRef}
       className={cn(
-        "wikios-article wikios-reader-container relative flex items-start justify-center transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
-        // The margin drawer (20rem, 25rem wider) overlays the Inspector gutter from 1280px, so the
-        // article only makes room for what sticks out past the gutter.
-        marginOpen &&
-          (marginExpanded
-            ? "lg:mr-[400px] xl:mr-[max(0px,calc(25rem-var(--shell-inspector-width)))]"
-            : "lg:mr-80 xl:mr-[max(0px,calc(20rem-var(--shell-inspector-width)))]")
+        "wikios-article wikios-reader-container relative flex items-start justify-between transition-[margin-right,padding-right] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        marginOpen && (marginExpanded ? "lg:mr-[400px]" : "lg:mr-80")
       )}
       style={containerStyle}
     >
-      <div ref={titleRef} className="wikios-title-sentinel" />
-
       {/* Reading vessel: the header spans it, the body is centred at the reading width (layout.css) */}
       <div className="wikios-reading-vessel w-full min-w-0 flex-1">
         {/* Redesigned Custom WikiOSHeader */}
@@ -632,52 +667,51 @@ export function ArticleRenderer({
         </div>
       </div>
 
-      {/* Contents and page info in the shell's reserved gutter (a sheet below 1280px). Outside the
-          margin drawer's way: while it is open the aside steps aside. */}
-      {showWikiToc && (
-        <Inspector
-          title="Contents"
-          open={tocOpen}
-          onOpenChange={setTocOpen}
-          className={cn("pl-2", marginOpen && "xl:hidden")}
+      {/* Contents and page info: a sticky aside in the article row from 1280px, a sheet below.
+          Hiding the sidebar folds the page info away and keeps the contents inline in the row. Out
+          of the margin drawer's way: while that is open the aside steps aside and the header's
+          Contents button opens the sheet. It is in the server HTML (CSS shows it from xl, so it
+          never pops in); after hydration only while wide, so the sheet is the one copy below xl. */}
+      {asideShown && (wide || !hydrated) && (
+        <aside
+          aria-label="Contents"
+          data-slot="wiki-contents-aside"
+          className={cn(
+            "sticky top-(--shell-top-offset) ml-8 hidden max-h-[calc(100vh-var(--shell-top-offset))] w-60 shrink-0 flex-col gap-3 self-start overflow-y-auto border-l pr-1 pb-6 pl-3 xl:flex 2xl:w-70",
+            railCollapsed ? "border-transparent" : "border-separator"
+          )}
         >
-          <div className="flex flex-col gap-4">
-            {tocVisible && (
-              <StickyToc
-                entries={toc}
-                contentRef={contentRef}
-                onNavigate={() => setTocOpen(false)}
-              />
-            )}
-            <ArticleCompanionHUD
-              contentHtml={contentHtml}
-              lastModified={lastModified}
-              authorInfo={authors}
-              authorsPending={!authorInfo && authorsQuery.isLoading}
-              categories={categories}
-              awardsData={awardsData}
-              marginThreadsCount={
-                (marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)
-              }
-              marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
-              onOpenMargin={(tab) => {
-                setMarginTab(tab || "threads");
-                setMarginOpen(true);
-                setTocOpen(false);
-              }}
-              onOpenHistory={() => {
-                setActiveModal("history");
-                setTocOpen(false);
-              }}
-              onOpenBacklinks={() => {
-                setActiveModal("backlinks");
-                setTocOpen(false);
-              }}
-              narrator={narrator}
-              readOnly={readOnly}
-            />
-          </div>
-        </Inspector>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-label-secondary self-end"
+            aria-expanded={!railCollapsed}
+            onClick={toggleRail}
+          >
+            {railCollapsed && <NavArrowLeft aria-hidden />}
+            {railCollapsed ? "Page info" : "Hide"}
+            {!railCollapsed && <NavArrowRight aria-hidden />}
+          </Button>
+          {tocVisible && <StickyToc entries={toc} contentRef={contentRef} />}
+          {!railCollapsed && companion}
+        </aside>
+      )}
+      {showWikiToc && !(wide && asideShown) && (
+        <Sheet open={tocOpen} onOpenChange={setTocOpen}>
+          <SheetContent>
+            <SheetTitle>Contents</SheetTitle>
+            <div className="flex flex-col gap-4">
+              {tocVisible && (
+                <StickyToc
+                  entries={toc}
+                  contentRef={contentRef}
+                  onNavigate={() => setTocOpen(false)}
+                />
+              )}
+              {companion}
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
 
       {lightboxPortal}
