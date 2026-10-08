@@ -25,6 +25,9 @@ const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Colour must be a #rrggbb
 /** Pins in storyline order: explicit order first, then by year (matches getStoryPinFull). */
 const PIN_ORDER = [{ storylineOrder: "asc" as const }, { ixTimeYear: "asc" as const }];
 
+/** Story chains (kind "chain", src/server/modules/action-links) share the table but never appear on the map. */
+const MAP_KIND = { kind: "map" as const };
+
 /** NOT_FOUND unless the storyline exists and belongs to `countryId`. */
 export async function assertStorylineInCountry(
   db: Pick<typeof prisma, "storyline">,
@@ -32,7 +35,10 @@ export async function assertStorylineInCountry(
   countryId: string
 ) {
   assertFound(
-    await db.storyline.findFirst({ where: { id: storylineId, countryId }, select: { id: true } }),
+    await db.storyline.findFirst({
+      where: { id: storylineId, countryId, ...MAP_KIND },
+      select: { id: true },
+    }),
     "Storyline not found"
   );
 }
@@ -54,7 +60,7 @@ export const geoFeaturesStorylinesRouter = createTRPCRouter({
       await assertCountryWriteAccess(ctx, input.countryId);
       const [storylines, unassignedPins] = await Promise.all([
         ctx.db.storyline.findMany({
-          where: { countryId: input.countryId },
+          where: { countryId: input.countryId, ...MAP_KIND },
           orderBy: { createdAt: "asc" },
           include: {
             pins: {
