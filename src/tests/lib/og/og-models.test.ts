@@ -12,7 +12,7 @@ import {
   guillocheDataUri,
   passportOgModel,
   realmOgModel,
-  type PassportOgCard,
+  type PassportOgSource,
 } from "~/lib/og/og-models";
 import { guillochePaths } from "~/lib/passport/guilloche";
 import {
@@ -21,7 +21,7 @@ import {
   lorewardsLabel,
 } from "~/lib/passport/passport-labels";
 
-type PreviewCard = Extract<NonNullable<PassportOgCard>, { preview: true }>;
+type PreviewCard = Extract<NonNullable<PassportOgSource>, { preview: true }>;
 
 function card(over: Partial<PreviewCard> = {}): PreviewCard {
   return {

@@ -1,7 +1,7 @@
 /**
  * What the link-unfurl images print, as plain data (no JSX, no I/O): the passport card for
  * `/@handle` and the realm passport, and the realm card for `/r/{realm}`. The renderers in
- * `src/lib/og/*Image.tsx` lay these out; the routes fetch the data and the images.
+ * `src/lib/og/PassportOgCard.tsx` and `RealmOgCard.tsx` lay these out; the routes fetch the data and the images.
  *
  * The passport card shows only what the passport's front face shows an anonymous visitor: name,
  * handle, portrait, the primary nation line and the three facts. Never the signature or the bio.
@@ -21,7 +21,7 @@ import { realmCountsLine } from "~/lib/realms/realm-region";
  * The slice of `getPassportCard` (src/server/modules/identity) the card reads. Null for an unknown
  * handle; `{ preview: false }` when the holder turned link previews off.
  */
-export type PassportOgCard =
+export type PassportOgSource =
   | null
   | { preview: false }
   | {
@@ -135,7 +135,7 @@ function nameSize(name: string, [steps, smallest]: SizeSteps): number {
 }
 
 function cardNation(
-  nation: NonNullable<Extract<PassportOgCard, { preview: true }>["primaryNation"]>
+  nation: NonNullable<Extract<PassportOgSource, { preview: true }>["primaryNation"]>
 ): PassportOgNation {
   return {
     name: clipText(nation.name.replace(/_/g, " "), OG_TEXT_MAX.nation),
@@ -145,7 +145,7 @@ function cardNation(
   };
 }
 
-function cardStats(card: Extract<PassportOgCard, { preview: true }>): PassportOgStat[] {
+function cardStats(card: Extract<PassportOgSource, { preview: true }>): PassportOgStat[] {
   const stats: PassportOgStat[] = [];
   if (card.lorewards) {
     const { score, rank } = card.lorewards;
@@ -163,7 +163,7 @@ function cardStats(card: Extract<PassportOgCard, { preview: true }>): PassportOg
 }
 
 /** The passport card's content; the generic IxStates Passport card when there is no one to show. */
-export function passportOgModel(card: PassportOgCard): PassportOgModel {
+export function passportOgModel(card: PassportOgSource): PassportOgModel {
   if (!card?.preview) {
     return { kind: "generic", title: PASSPORT_TITLE, description: PASSPORT_GENERIC_DESCRIPTION };
   }
