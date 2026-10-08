@@ -29,6 +29,11 @@ describe("EditingSection", () => {
     render(<EditingSection />);
     fireEvent.click(screen.getByRole("switch", { name: "WikiOS editing" }));
     expect(screen.getByText(/Anyone with wiki rights can edit in WikiOS/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Page protections set in MediaWiki before WikiOS started syncing are not enforced until the protections backfill \(cutover runbook steps 1 and 1b\) has run\./
+      )
+    ).toBeInTheDocument();
     expect(mutate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Turn on" }));
     expect(mutate).toHaveBeenCalledWith({ enabled: true });

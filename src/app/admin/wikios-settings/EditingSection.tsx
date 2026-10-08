@@ -93,7 +93,7 @@ export function EditingSection() {
             </AlertDialogTitle>
             <AlertDialogDescription className="text-footnote">
               {pending
-                ? "Anyone with wiki rights can edit in WikiOS. Every edit is copied to classic MediaWiki."
+                ? "Anyone with wiki rights can edit in WikiOS. Every edit is copied to classic MediaWiki. Page protections set in MediaWiki before WikiOS started syncing are not enforced until the protections backfill (cutover runbook steps 1 and 1b) has run."
                 : "New WikiOS edits are refused. Edits already made keep copying to MediaWiki."}
             </AlertDialogDescription>
           </AlertDialogHeader>
