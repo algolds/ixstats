@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { passportIndexable } from "~/server/modules/identity/identity.link-privacy";
-import { passportMetadata } from "~/server/modules/identity/identity.metadata";
-import { getPassportCard } from "~/server/modules/identity/identity.service";
+import { passportPageMetadata } from "~/server/modules/identity/identity.metadata";
 
 interface PassportLayoutProps {
   children: ReactNode;
@@ -20,11 +18,7 @@ export async function generateMetadata({
 }: Pick<PassportLayoutProps, "params">): Promise<Metadata> {
   const { username } = await params;
   const handle = decodeURIComponent(username).replace(/^@/, "");
-  const [indexable, card] = await Promise.all([
-    passportIndexable(handle),
-    getPassportCard({ handle, viewerClerkId: null }).catch(() => null),
-  ]);
-  return passportMetadata(card, indexable);
+  return passportPageMetadata(handle);
 }
 
 export default function PassportLayout({ children }: PassportLayoutProps) {

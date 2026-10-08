@@ -1,12 +1,16 @@
 /**
- * Page metadata for `/@handle` (`src/app/id/[username]/layout.tsx`): what link unfurlers (Discord,
- * Slack) and search engines read. Pure: built from `getPassportCard` and `passportIndexable`.
- * Images are left to the route's `opengraph-image.tsx`, which Next attaches on its own.
+ * Page metadata for `/@handle` (`src/app/id/[username]/layout.tsx`) and the realm passport
+ * `/r/{realm}/@handle` (`src/app/r/[realm]/(region)/u/[username]/layout.tsx`): what link unfurlers
+ * (Discord, Slack) and search engines read. `passportMetadata` is pure; `passportPageMetadata`
+ * reads `getPassportCard` and `passportIndexable` for it. Images are left to the route's
+ * `opengraph-image.tsx`, which Next attaches on its own.
  */
 import type { Metadata } from "next";
 import { withBasePath } from "~/lib/base-path";
 import { lorewardsLabel, realmsAndNations } from "~/lib/passport/passport-labels";
-import { NOINDEX, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
+import { NOINDEX, orNullLogged, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
+import { passportIndexable } from "./identity.link-privacy";
+import { getPassportCard } from "./identity.service";
 import type { PassportCard } from "./identity.types";
 
 const PASSPORT_TITLE = "IxStates Passport";
@@ -61,4 +65,16 @@ export function passportMetadata(card: PassportCard | null, indexable: boolean):
     alternates: { canonical: url },
     ...robots,
   };
+}
+
+/**
+ * The passport page's metadata for `handle` as an anonymous visitor sees it, with the indexing rule.
+ * A failed card read is logged and leaves only the indexing rule.
+ */
+export async function passportPageMetadata(handle: string): Promise<Metadata> {
+  const [indexable, card] = await Promise.all([
+    passportIndexable(handle),
+    orNullLogged(getPassportCard({ handle, viewerClerkId: null }), `passport card @${handle}`),
+  ]);
+  return passportMetadata(card, indexable);
 }

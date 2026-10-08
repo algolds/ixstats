@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "@jest/globals";
 import { resolveUrl } from "next/dist/lib/metadata/resolvers/resolve-url";
-import { siteMetadataBase } from "~/lib/site-metadata";
+import { orNullLogged, siteMetadataBase } from "~/lib/site-metadata";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 describe("siteMetadataBase", () => {
@@ -34,5 +34,23 @@ describe("siteMetadataBase", () => {
     expect(resolveUrl("/projects/ixstates/id/alex/opengraph-image?1", base).href).toBe(
       "https://example.org/projects/ixstates/id/alex/opengraph-image?1"
     );
+  });
+});
+
+describe("orNullLogged", () => {
+  it("passes a value through", async () => {
+    await expect(orNullLogged(Promise.resolve(3), "x")).resolves.toBe(3);
+  });
+
+  it("logs a failure with the [metadata] prefix and returns null", async () => {
+    const logged = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(
+      orNullLogged(Promise.reject(new Error("boom")), "realm eurth")
+    ).resolves.toBeNull();
+    expect(logged).toHaveBeenCalledWith(
+      "[metadata] realm eurth failed:",
+      expect.objectContaining({ message: "boom" })
+    );
+    logged.mockRestore();
   });
 });

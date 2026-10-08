@@ -4,10 +4,23 @@
  * card with previews on names the holder and their standing; previews off gives the generic
  * IxStates Passport card; an unknown handle adds nothing but the indexing rule.
  */
-import { afterEach, describe, expect, it } from "@jest/globals";
+jest.mock("~/server/modules/identity/identity.service", () => ({ getPassportCard: jest.fn() }));
+jest.mock("~/server/modules/identity/identity.link-privacy", () => ({
+  passportIndexable: jest.fn(),
+}));
+
+import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
 import { lorewardsLabel } from "~/lib/passport/passport-labels";
-import { passportMetadata } from "~/server/modules/identity/identity.metadata";
+import {
+  passportMetadata,
+  passportPageMetadata,
+} from "~/server/modules/identity/identity.metadata";
+import { passportIndexable } from "~/server/modules/identity/identity.link-privacy";
+import { getPassportCard } from "~/server/modules/identity/identity.service";
 import type { PassportCard } from "~/server/modules/identity/identity.types";
+
+const cardMock = jest.mocked(getPassportCard);
+const indexableMock = jest.mocked(passportIndexable);
 
 type PreviewCard = Extract<PassportCard, { preview: true }>;
 
@@ -108,6 +121,13 @@ describe("passportMetadata with link previews on", () => {
     expect(meta.openGraph).not.toHaveProperty("images");
   });
 
+  it("never shows the signature, bio or join date", () => {
+    const text = JSON.stringify(passportMetadata(card(), true));
+    for (const hidden of ["Personal note", "Private bio", "2024", "Since"]) {
+      expect(text).not.toContain(hidden);
+    }
+  });
+
   it("keeps the noindex rule when the holder turned indexing off", () => {
     expect(passportMetadata(card(), true).robots).toBeUndefined();
     expect(passportMetadata(card(), false).robots).toEqual(NOINDEX);
@@ -135,5 +155,40 @@ describe("passportMetadata for an unknown handle", () => {
   it("adds nothing beyond the indexing rule", () => {
     expect(passportMetadata(null, true)).toEqual({});
     expect(passportMetadata(null, false)).toEqual({ robots: NOINDEX });
+  });
+});
+
+describe("passportPageMetadata", () => {
+  beforeEach(() => {
+    cardMock.mockReset();
+    indexableMock.mockReset();
+    indexableMock.mockResolvedValue(true);
+  });
+
+  it("reads the anonymous card and builds the person's metadata with canonical /@handle", async () => {
+    cardMock.mockResolvedValue(card());
+    const meta = await passportPageMetadata("alex");
+    expect(cardMock).toHaveBeenCalledWith({ handle: "alex", viewerClerkId: null });
+    expect(meta.title).toBe("Alex Pav (@alex) · IxStates Passport");
+    expect(meta.alternates).toEqual({ canonical: "/@alex" });
+    expect(meta.robots).toBeUndefined();
+  });
+
+  it("merges the noindex rule", async () => {
+    cardMock.mockResolvedValue(card());
+    indexableMock.mockResolvedValue(false);
+    expect((await passportPageMetadata("alex")).robots).toEqual(NOINDEX);
+  });
+
+  it("logs a failed card read and keeps only the indexing rule", async () => {
+    const logged = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    cardMock.mockRejectedValue(new Error("db down"));
+    indexableMock.mockResolvedValue(false);
+    await expect(passportPageMetadata("alex")).resolves.toEqual({ robots: NOINDEX });
+    expect(logged).toHaveBeenCalledWith(
+      "[metadata] passport card @alex failed:",
+      expect.objectContaining({ message: "db down" })
+    );
+    logged.mockRestore();
   });
 });

@@ -44,3 +44,16 @@ export function socialMetadata(
     twitter: { card: "summary_large_image", title, description },
   };
 }
+
+/**
+ * `promise`'s value, or null after logging the error with a `[metadata]` prefix: a failed read
+ * leaves the page on the root defaults instead of failing the request.
+ */
+export async function orNullLogged<T>(promise: Promise<T>, what: string): Promise<T | null> {
+  try {
+    return await promise;
+  } catch (error) {
+    console.error(`[metadata] ${what} failed:`, error);
+    return null;
+  }
+}

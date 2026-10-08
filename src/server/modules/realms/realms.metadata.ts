@@ -1,19 +1,17 @@
 /**
- * Page metadata for `/r/{slug}` (`src/app/r/[realm]/(region)/layout.tsx`): what link unfurlers
+ * Page metadata for `/r/{slug}` and its pages (`src/app/r/[realm]/(region)/layout.tsx`): what link unfurlers
  * (Discord, Slack) and search engines read. Draft and generating realms give nothing, so the root
  * defaults stand and nothing about an unpublished realm leaks. Images are left to the route's
  * `opengraph-image.tsx`, which Next attaches on its own.
  */
 import type { Metadata } from "next";
 import type { PrismaClient } from "@prisma/client";
-import { withBasePath } from "~/lib/base-path";
 import { NOINDEX, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import { isRealmOpen, isRealmPublished } from "./realms.access";
 
 /** What the realm page's metadata is built from. */
 export interface RealmMetadataSource {
-  slug: string;
   name: string;
   /** Unlisted realms are kept out of search results (they still unfurl when shared). */
   unlisted: boolean;
@@ -38,7 +36,6 @@ export async function loadRealmMetadataSource(
     where: { slug },
     select: {
       id: true,
-      slug: true,
       name: true,
       status: true,
       visibility: true,
@@ -54,7 +51,6 @@ export async function loadRealmMetadataSource(
     db.country.count({ where: { realmId: realm.id, ownerUserId: { not: null } } }),
   ]);
   return {
-    slug: realm.slug,
     name: realm.name,
     unlisted: realm.visibility === "unlisted",
     description: realm.description?.trim() || null,
@@ -88,10 +84,13 @@ function realmDescription(source: RealmMetadataSource): string | null {
   return countsLine(source);
 }
 
-/** The realm page's metadata; `{}` for a draft or unknown realm (null source). */
+/**
+ * The realm pages' metadata; `{}` for a draft or unknown realm (null source). No canonical and no
+ * og:url: it is set by the `(region)` layout, so every child page (board, nations, rules, the realm
+ * passport) inherits it and would otherwise be canonicalised to the overview.
+ */
 export function realmMetadata(source: RealmMetadataSource | null): Metadata {
   if (!source) return {};
-  const url = withBasePath(`/r/${source.slug}`);
   const description = realmDescription(source) ?? undefined;
   return {
     ...socialMetadata(source.name, description, {
@@ -99,9 +98,7 @@ export function realmMetadata(source: RealmMetadataSource | null): Metadata {
       siteName: SITE_NAME,
       title: source.name,
       description,
-      url,
     }),
-    alternates: { canonical: url },
     ...(source.unlisted ? NOINDEX : {}),
   };
 }

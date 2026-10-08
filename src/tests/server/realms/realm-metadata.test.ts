@@ -1,12 +1,12 @@
 /** @jest-environment node */
 /**
- * Realm page metadata (`/r/{slug}` link unfurls): the realm's name, a short description from its own
- * description, factbook or tags, and a canonical `/r/{slug}`. Draft and unknown realms add nothing,
- * so the root defaults stand and nothing about an unpublished realm leaks.
+ * Realm page metadata (`/r/{slug}` link unfurls): the realm's name and a short description from its
+ * own description, factbook or tags; no canonical (the realm's pages inherit it). Draft and unknown
+ * realms add nothing, so the root defaults stand and nothing about an unpublished realm leaks.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
 
-import { afterEach, describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import {
   loadRealmMetadataSource,
   realmMetadata,
@@ -16,7 +16,6 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 function source(over: Partial<RealmMetadataSource> = {}): RealmMetadataSource {
   return {
-    slug: "eurth",
     name: "Eurth",
     unlisted: false,
     description: null,
@@ -28,31 +27,19 @@ function source(over: Partial<RealmMetadataSource> = {}): RealmMetadataSource {
   };
 }
 
-const ORIGINAL_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH;
-
-afterEach(() => {
-  if (ORIGINAL_BASE_PATH === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
-  else process.env.NEXT_PUBLIC_BASE_PATH = ORIGINAL_BASE_PATH;
-});
-
 describe("realmMetadata", () => {
-  it("titles the page with the realm name and points canonical at /r/{slug}", () => {
+  it("titles the page with the realm name and fills og and twitter tags", () => {
     const meta = realmMetadata(source());
     expect(meta.title).toBe("Eurth");
-    expect(meta.alternates).toEqual({ canonical: "/r/eurth" });
-    expect(meta.openGraph).toMatchObject({
-      title: "Eurth",
-      url: "/r/eurth",
-      siteName: "IxStates",
-      type: "website",
-    });
+    expect(meta.openGraph).toMatchObject({ title: "Eurth", siteName: "IxStates", type: "website" });
     expect(meta.twitter).toMatchObject({ card: "summary_large_image", title: "Eurth" });
     expect(meta.openGraph).not.toHaveProperty("images");
   });
 
-  it("puts the base path in front of the canonical path", () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
-    expect(realmMetadata(source()).alternates).toEqual({ canonical: "/projects/ixstates/r/eurth" });
+  it("sets no canonical or og:url, which every page under the realm would inherit", () => {
+    const meta = realmMetadata(source());
+    expect(meta).not.toHaveProperty("alternates");
+    expect(meta.openGraph).not.toHaveProperty("url");
   });
 
   it("prefers the realm's own description", () => {
@@ -94,7 +81,6 @@ describe("realmMetadata", () => {
 describe("loadRealmMetadataSource", () => {
   const row = {
     id: "r1",
-    slug: "eurth",
     name: "Eurth",
     status: "active",
     visibility: "public",
@@ -118,7 +104,6 @@ describe("loadRealmMetadataSource", () => {
   it("loads the realm's text and counts for an active realm", async () => {
     const db = dbWith(row);
     await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toEqual({
-      slug: "eurth",
       name: "Eurth",
       unlisted: false,
       description: null,

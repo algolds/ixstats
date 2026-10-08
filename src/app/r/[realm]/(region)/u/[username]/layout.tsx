@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { passportIndexable } from "~/server/modules/identity/identity.link-privacy";
+import { passportPageMetadata } from "~/server/modules/identity/identity.metadata";
 
 interface RealmPassportLayoutProps {
   children: ReactNode;
@@ -9,14 +9,16 @@ interface RealmPassportLayoutProps {
 
 /**
  * The realm passport carries the passport's indexing rule (SL-4): `noindex, nofollow` when the holder
- * turned "Search engine indexing" off. `/r/{realm}/@handle` rewrites to this route.
+ * turned "Search engine indexing" off. `/r/{realm}/@handle` rewrites to this route. It also carries
+ * the passport's own title, og tags and canonical `/@handle`, replacing the realm's from the
+ * `(region)` layout, so a realm passport link unfurls as the person.
  */
 export async function generateMetadata({
   params,
 }: Pick<RealmPassportLayoutProps, "params">): Promise<Metadata> {
   const { username } = await params;
   const handle = decodeURIComponent(username).replace(/^@/, "");
-  return (await passportIndexable(handle)) ? {} : { robots: { index: false, follow: false } };
+  return passportPageMetadata(handle);
 }
 
 export default function RealmPassportLayout({ children }: RealmPassportLayoutProps) {
