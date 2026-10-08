@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * The passport payload carries the canonical handle (`data.handle`), never the URL segment, and says
  * whether the segment should redirect to it (`canonicalRedirect`).

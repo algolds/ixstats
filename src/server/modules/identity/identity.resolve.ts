@@ -4,6 +4,7 @@
  * forum name, wiki name, Clerk id or id, then external wiki/forum names. A country name, slug or id
  * does not resolve a person (country-name passport URLs are dropped).
  */
+import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { validateHandle } from "./identity.handle";
@@ -34,26 +35,40 @@ async function findViewerMatch(viewerClerkId: string | null, names: string[]) {
   return linked.some((name) => (name ? names.includes(name.toLowerCase()) : false)) ? viewer : null;
 }
 
-function findUserByHandle(handle: string, stripped: string, viewerClerkId: string | null) {
+/** Legacy names a passport segment may carry: Clerk id, forum name, wiki name, user id, and `me`. */
+function legacyNameWhere(
+  handle: string,
+  stripped: string,
+  viewerClerkId: string | null
+): Prisma.UserWhereInput {
   const isSelf = handle === "me" || handle === viewerClerkId;
+  return {
+    OR: [
+      ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
+      { clerkUserId: handle },
+      { forumUsername: insensitive(handle) },
+      { wikiUsername: insensitive(handle) },
+      { id: handle },
+      ...(stripped !== handle
+        ? [
+            { forumUsername: insensitive(stripped) },
+            { wikiUsername: insensitive(stripped) },
+            { clerkUserId: stripped },
+          ]
+        : []),
+    ],
+  };
+}
+
+const NEWEST_FIRST: Prisma.UserOrderByWithRelationInput[] = [
+  { updatedAt: "desc" },
+  { createdAt: "desc" },
+];
+
+function findUserByHandle(handle: string, stripped: string, viewerClerkId: string | null) {
   return db.user.findFirst({
-    where: {
-      OR: [
-        ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
-        { clerkUserId: handle },
-        { forumUsername: insensitive(handle) },
-        { wikiUsername: insensitive(handle) },
-        { id: handle },
-        ...(stripped !== handle
-          ? [
-              { forumUsername: insensitive(stripped) },
-              { wikiUsername: insensitive(stripped) },
-              { clerkUserId: stripped },
-            ]
-          : []),
-      ],
-    },
-    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    where: legacyNameWhere(handle, stripped, viewerClerkId),
+    orderBy: NEWEST_FIRST,
     include: IDENTITY_USER_INCLUDE,
   });
 }
@@ -172,7 +187,18 @@ export async function resolveHandleOwnerClerkId(rawHandle: string): Promise<stri
 export async function resolveCanonicalHandle(segment: string): Promise<{ handle: string } | null> {
   const handle = segment.replace(/^@/, "").trim();
   if (!handle || handle.toLowerCase() === "me") return null;
-  const user = await findPerson(handle, handle.replace(/_$/, ""), null);
+  // Same order as findPerson without a viewer: stored handle, then legacy names. Handle column only.
+  const valid = validateHandle(handle);
+  const byHandle = valid.ok
+    ? await db.user.findUnique({ where: { handle: valid.handle }, select: { handle: true } })
+    : null;
+  const user =
+    byHandle ??
+    (await db.user.findFirst({
+      where: legacyNameWhere(handle, handle.replace(/_$/, ""), null),
+      orderBy: NEWEST_FIRST,
+      select: { handle: true },
+    }));
   return user?.handle ? { handle: user.handle } : null;
 }
 

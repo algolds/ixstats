@@ -1,6 +1,7 @@
 /**
- * Changing a user's IxStates Passport handle (`ixnayid.setHandle`). The self-service change is
- * allowed once (`User.handleChangedAt`); admins may always change their handle.
+ * Claiming or changing a user's IxStates Passport handle (`ixnayid.setHandle`). A first claim (no
+ * stored handle) is free; changing a stored handle is allowed once (`User.handleChangedAt`), and
+ * admins may always change theirs.
  */
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
@@ -48,7 +49,8 @@ export async function setUserHandle(input: {
   });
   if (!current) throw new HandleClaimError("NO_USER", "No account found.");
   if (current.handle === handle) return { handle };
-  if (current.handleChangedAt && !input.isAdmin) {
+  const isChange = current.handle !== null;
+  if (isChange && current.handleChangedAt && !input.isAdmin) {
     throw new HandleClaimError("ALREADY_CHANGED", "You have already changed your handle once.");
   }
 
@@ -61,7 +63,8 @@ export async function setUserHandle(input: {
   try {
     const saved = await db.user.update({
       where: { id: input.userId },
-      data: { handle, handleChangedAt: new Date() },
+      // Only a change of a stored handle uses up the one self-service change.
+      data: isChange ? { handle, handleChangedAt: new Date() } : { handle },
       select: { handle: true },
     });
     return { handle: saved.handle ?? handle };

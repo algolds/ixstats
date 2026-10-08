@@ -113,6 +113,20 @@ describe("resolveCanonicalHandle", () => {
     await expect(resolveCanonicalHandle("@kir")).resolves.toEqual({ handle: "kir" });
   });
 
+  it("selects only the handle, with no relation includes", async () => {
+    storedHandles({ kir });
+    await resolveCanonicalHandle("kir");
+    mocked.user.findUnique.mockResolvedValue(null);
+    mocked.user.findFirst.mockResolvedValue(kir);
+    await resolveCanonicalHandle("Kir Forum");
+    const calls = [...mocked.user.findUnique.mock.calls, ...mocked.user.findFirst.mock.calls];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const [args] of calls) {
+      expect(args).toEqual(expect.objectContaining({ select: { handle: true } }));
+      expect(args).not.toHaveProperty("include");
+    }
+  });
+
   it("is null for me, an unknown name, or a user without a stored handle", async () => {
     await expect(resolveCanonicalHandle("me")).resolves.toBeNull();
     await expect(resolveCanonicalHandle("nobody")).resolves.toBeNull();

@@ -121,6 +121,37 @@ describe("ixnayid.setHandle", () => {
     expect(mocked.user.update).not.toHaveBeenCalled();
   });
 
+  it("lets a user without a handle claim one without using up the change", async () => {
+    storedUser(null, null);
+    await expect(caller().setHandle({ handle: "kir_first" })).resolves.toEqual({
+      handle: "kir_first",
+    });
+    expect(mocked.user.update).toHaveBeenCalledWith({
+      where: { id: "db_1" },
+      data: { handle: "kir_first" },
+      select: { handle: true },
+    });
+  });
+
+  it("allows one change after a first claim, then refuses the next", async () => {
+    storedUser("kir_first", null);
+    await expect(caller().setHandle({ handle: "kir_second" })).resolves.toEqual({
+      handle: "kir_second",
+    });
+    expect(mocked.user.update).toHaveBeenCalledWith({
+      where: { id: "db_1" },
+      data: { handle: "kir_second", handleChangedAt: expect.any(Date) },
+      select: { handle: true },
+    });
+
+    mocked.user.update.mockClear();
+    storedUser("kir_second", CHANGED);
+    await expect(caller().setHandle({ handle: "kir_third" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(mocked.user.update).not.toHaveBeenCalled();
+  });
+
   it("lets an admin change their handle again", async () => {
     storedUser("kir_new", CHANGED);
     await expect(
