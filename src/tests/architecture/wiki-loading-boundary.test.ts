@@ -5,6 +5,10 @@
  * WikiOS routes need the real 404, 307 and 308: no `loading.tsx` may be an ancestor of
  * `src/app/(wiki-os)`. The loading UI lives in `_components/RootLoading.tsx` and every other
  * top-level route segment re-exports it from its own `loading.tsx`.
+ *
+ * The passport redirects need the real 308 too: `/id/[username]` (canonical handle) and the legacy
+ * `/r/[realm]/[username]` have no `loading.tsx` above them. `/r`'s loading UI sits in the realm's
+ * `(region)` group instead, below the legacy path.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +25,10 @@ const NOT_LOADING_SEGMENTS = new Set([
 ]);
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
+/** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
+const REDIRECT_SEGMENTS = new Set(["id", "r"]);
+/** The redirect pages, relative to src/app. */
+const REDIRECT_PAGES = ["id/[username]/page.tsx", "r/[realm]/[username]/page.tsx"];
 
 const LOADING_FILE = /^loading\.(?:tsx?|jsx?)$/;
 const PAGE_FILE = /^page\.(?:tsx?|jsx?)$/;
@@ -65,10 +73,28 @@ describe("no loading.tsx above the WikiOS routes", () => {
   });
 });
 
+describe("no loading.tsx above the passport redirects", () => {
+  it.each(REDIRECT_PAGES)("%s has none in any ancestor directory", (page) => {
+    const file = path.join(APP, page);
+    expect(fs.existsSync(file)).toBe(true);
+    const offenders: string[] = [];
+    for (let dir = path.dirname(file); dir.startsWith(APP); dir = path.dirname(dir)) {
+      if (hasLoading(dir)) offenders.push(path.relative(process.cwd(), dir));
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps the realm pages' loading UI inside the (region) group", () => {
+    const source = fs.readFileSync(path.join(APP, "r/[realm]/(region)/loading.tsx"), "utf8");
+    expect(source).toContain('from "~/app/_components/RootLoading"');
+  });
+});
+
 describe("the non-wiki route segments keep their loading UI", () => {
   const segments = fs
     .readdirSync(APP, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && !NOT_LOADING_SEGMENTS.has(entry.name))
+    .filter((entry) => !REDIRECT_SEGMENTS.has(entry.name))
     .map((entry) => entry.name)
     .filter((name) => {
       let hasPage = false;

@@ -1,7 +1,7 @@
 /**
  * getPassport is a public read. It must not write an unverified wiki identity (derived from a country
- * name) into User.wikiUsername/wikiUserId, must report wiki "linked" only for a verified link, and must
- * not show estimated wiki edit counts or groups.
+ * name) into User.wikiUsername/wikiUserId, must report wiki "linked" only for a verified link, and
+ * carries no wiki edit count or groups (nothing shows them), so a user's passport makes no MediaWiki call.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -16,6 +16,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
@@ -31,7 +32,7 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
   loadLoreStats: jest.fn().mockResolvedValue(null),
   loadLoreAwards: jest.fn().mockResolvedValue([]),
   loadLoreRank: jest.fn().mockResolvedValue(null),
-  loadThinkpagesAccount: jest.fn().mockResolvedValue(null),
+  loadPersonalPersona: jest.fn().mockResolvedValue(null),
   loadClerkProfile: jest.fn().mockResolvedValue(null),
   loadWikiContribs: jest.fn().mockResolvedValue([]),
   loadNativeRevisions: jest.fn().mockResolvedValue([]),
@@ -64,7 +65,6 @@ const countryOwner = {
   forumUsername: null,
   discordUserId: null,
   discordUsername: null,
-  role: null,
   createdAt: new Date(),
   countryId: "c1",
 };
@@ -75,7 +75,6 @@ function identityWithCountryDerivedWikiName() {
     handle: "kir-republic",
     strippedHandle: "kir-republic",
     user: countryOwner,
-    country: { id: "c1", name: "Kir Republic" },
     wikiName: "Kir Republic",
     forumUserId: null,
     forumUsername: null,
@@ -119,17 +118,28 @@ describe("getPassport wiki identity", () => {
     );
   });
 
-  it("omits the edit count and groups when there is no live MediaWiki data", async () => {
-    (loadWikiInfo as jest.Mock).mockResolvedValue(UNKNOWN);
+  it("carries no edit count or groups, and asks MediaWiki nothing, for a user", async () => {
+    (loadWikiInfo as jest.Mock).mockClear().mockResolvedValue(LIVE);
     const passport = await getPassport({ handle: "kir-republic", viewerClerkId: null }, forum);
-    expect(passport?.wiki.editCount).toBeNull();
-    expect(passport?.wiki.groups).toEqual([]);
+    expect(Object.keys(passport?.wiki ?? {}).sort()).toEqual(
+      ["awardHistory", "linked", "lorewards", "username"].sort()
+    );
+    expect(loadWikiInfo).not.toHaveBeenCalled();
   });
 
-  it("shows MediaWiki's real edit count and groups when available", async () => {
-    (loadWikiInfo as jest.Mock).mockResolvedValue(LIVE);
-    const passport = await getPassport({ handle: "kir-republic", viewerClerkId: null }, forum);
-    expect(passport?.wiki.editCount).toBe(1234);
-    expect(passport?.wiki.groups).toEqual(["sysop"]);
+  it("reports an external wiki name as linked when MediaWiki knows it", async () => {
+    (resolveIdentity as jest.Mock).mockResolvedValue({
+      handle: "Some Editor",
+      strippedHandle: "Some Editor",
+      user: null,
+      wikiName: "Some Editor",
+      forumUserId: null,
+      forumUsername: null,
+      isOwner: false,
+    });
+    (loadWikiInfo as jest.Mock).mockResolvedValue(UNKNOWN);
+    const passport = await getPassport({ handle: "Some Editor", viewerClerkId: null }, forum);
+    expect(passport?.wiki).toMatchObject({ linked: true, username: "Some Editor" });
+    expect(loadWikiInfo).toHaveBeenCalledWith("Some Editor");
   });
 });

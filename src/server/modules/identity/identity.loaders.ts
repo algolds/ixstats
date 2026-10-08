@@ -3,6 +3,7 @@
  * unavailable system (MediaWiki, Clerk, a table) never blanks the whole passport.
  */
 import { db } from "~/server/db";
+import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import { archivedTitlesAmong } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type {
@@ -225,12 +226,18 @@ export async function loadDirectives(
   );
 }
 
-export async function loadThinkpagesAccount(user: IdentityUser | null) {
+/**
+ * The user's personal ThinkPages persona ("you", not a nation or a character): the passport card's
+ * stored name, avatar and bio, read without a Clerk call.
+ */
+export async function loadPersonalPersona(
+  user: Pick<IdentityUser, "clerkUserId"> | null
+) {
   if (!user) return null;
   return orNull(
     db.thinkpagesAccount.findFirst({
-      where: { clerkUserId: user.clerkUserId, isActive: true },
-      select: { username: true, bio: true, postCount: true, followerCount: true },
+      where: { clerkUserId: user.clerkUserId, isActive: true, accountType: PERSONAL_ACCOUNT_TYPE },
+      select: { displayName: true, profileImageUrl: true, bio: true },
     })
   );
 }

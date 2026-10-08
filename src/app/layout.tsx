@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/ChunkLoadErrorBoundary";
 import { Toaster } from "~/components/ui/toast";
 import { withBasePath } from "~/lib/base-path";
+import { siteMetadataBase } from "~/lib/site-metadata";
 import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
@@ -45,6 +46,8 @@ const isClerkConfigured = Boolean(
 );
 
 export const metadata: Metadata = {
+  // Absolute base for canonical, og:url and OG image URLs (origin only; see siteMetadataBase).
+  metadataBase: siteMetadataBase(),
   title: "IxStats — Nations, economy, lore",
   description: "Statistics and simulation game",
   icons: [{ rel: "icon", url: withBasePath("/favicon.ico") }],

@@ -93,10 +93,13 @@ type OverviewDb = Pick<
   | "activityFeed"
 >;
 
-/** Officers (and the founder) shown with the name of their nation in this realm, else their display name. */
+/**
+ * Officers (and the founder) shown with the name of their nation in this realm, else their display name, plus
+ * their passport handle (null until claimed) so realm pages link them to `/@handle`.
+ */
 async function staffNames(db: OverviewDb, realmId: string, clerkUserIds: string[]) {
   if (clerkUserIds.length === 0) return new Map<string, StaffPerson>();
-  const [nations, names] = await Promise.all([
+  const [nations, names, users] = await Promise.all([
     db.country.findMany({
       where: { realmId, owner: { clerkUserId: { in: clerkUserIds } } },
       orderBy: { name: "asc" },
@@ -109,12 +112,18 @@ async function staffNames(db: OverviewDb, realmId: string, clerkUserIds: string[
       },
     }),
     resolveDisplayNames(db, clerkUserIds),
+    db.user.findMany({
+      where: { clerkUserId: { in: clerkUserIds } },
+      select: { clerkUserId: true, handle: true },
+    }),
   ]);
+  const handles = new Map(users.map((u) => [u.clerkUserId, u.handle]));
   const people = new Map<string, StaffPerson>();
   for (const id of clerkUserIds) {
     const nation = nations.find((n) => n.owner?.clerkUserId === id) ?? null;
     people.set(id, {
       name: nation?.name ?? names.get(id) ?? "Unknown user",
+      handle: handles.get(id) ?? null,
       nation: nation
         ? { id: nation.id, name: nation.name, slug: nation.slug, flag: nation.flag }
         : null,
@@ -125,6 +134,7 @@ async function staffNames(db: OverviewDb, realmId: string, clerkUserIds: string[
 
 interface StaffPerson {
   name: string;
+  handle: string | null;
   nation: { id: string; name: string; slug: string | null; flag: string | null } | null;
 }
 
@@ -322,7 +332,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     officers: realm.officers.map((o) => ({
       title: o.title,
       powers: o.powers,
-      ...(people.get(o.userId) ?? { name: "Unknown user", nation: null }),
+      ...(people.get(o.userId) ?? { name: "Unknown user", handle: null, nation: null }),
     })),
     embassies: partnerLooks,
     poll: await realmPoll(db, realm.id, viewer, ownedNations.length > 0),
@@ -630,7 +640,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       title: o.title,
       powers: o.powers,
       appointedAt: o.createdAt,
-      ...(people.get(o.userId) ?? { name: "Unknown user", nation: null }),
+      ...(people.get(o.userId) ?? { name: "Unknown user", handle: null, nation: null }),
     })),
     embassies: embassies.map((e) => {
       const outgoing = e.fromRealmId === staff.id;

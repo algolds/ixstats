@@ -1,61 +1,27 @@
-"use client";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { orNullLogged } from "~/lib/site-metadata";
+import { db } from "~/server/db";
+import { loadRealmMetadataSource, realmMetadata } from "~/server/modules/realms";
+import { RegionLayoutClient } from "./RegionLayoutClient";
 
-import { use } from "react";
-import { notFound } from "next/navigation";
-import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
-import { EmptyState } from "~/components/ui/empty-state";
-import { Skeleton } from "~/components/ui/skeleton";
-import { RealmRegionHeader } from "../_components/RealmRegionHeader";
-
-/** A realm's pages (Overview, Board, Nations, Manage) share its banner, stats strip and tab bar. */
-export default function RealmRegionLayout({
-  params,
-  children,
-}: {
+interface RealmRegionLayoutProps {
+  children: ReactNode;
   params: Promise<{ realm: string }>;
-  children: React.ReactNode;
-}) {
-  const { realm: slug } = use(params);
-  const {
-    data: overview,
-    isLoading,
-    error,
-    refetch,
-  } = api.realms.region.overview.useQuery({ slug });
-  // Shared with the Overview and Nations tabs: what is still open to claim.
-  const { data: hub } = api.realms.getBySlug.useQuery({ slug });
+}
 
-  if (isLoading)
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
-        <Skeleton className="rounded-card h-72 w-full" />
-      </div>
-    );
-  // A missing or hidden realm is a 404; a failed load (network, rate limit) is not.
-  if (error && error.data?.code !== "NOT_FOUND")
-    return (
-      <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
-        <EmptyState
-          title="This realm could not be loaded"
-          message={error.message}
-          action={
-            <Button variant="secondary" size="sm" onClick={() => void refetch()}>
-              Try again
-            </Button>
-          }
-        />
-      </div>
-    );
-  if (!overview) notFound();
-  const openToClaim = hub?.claimsOpen
-    ? hub.nationPages.length + hub.countries.filter((c) => !c.claimed).length
-    : 0;
+/**
+ * Link unfurls (Discord, Slack) and search engines read the realm's name and a short description
+ * from here; the card image comes from `opengraph-image.tsx`. No canonical: every page below inherits
+ * this. Draft and unknown realms add nothing beyond the root defaults.
+ */
+export async function generateMetadata({
+  params,
+}: Pick<RealmRegionLayoutProps, "params">): Promise<Metadata> {
+  const { realm: slug } = await params;
+  return realmMetadata(await orNullLogged(loadRealmMetadataSource(db, slug), `realm ${slug}`));
+}
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
-      <RealmRegionHeader overview={overview} openToClaim={openToClaim} />
-      {children}
-    </div>
-  );
+export default function RealmRegionLayout({ params, children }: RealmRegionLayoutProps) {
+  return <RegionLayoutClient params={params}>{children}</RegionLayoutClient>;
 }

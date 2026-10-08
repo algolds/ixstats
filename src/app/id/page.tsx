@@ -9,6 +9,7 @@ import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 
 export default function IdAccountHubPage() {
   const { user } = useUser();
@@ -33,7 +34,7 @@ export default function IdAccountHubPage() {
             <UserProfile.Page
               label="IxnayID and passport"
               url="ixnayid"
-              labelIcon={<Crown className="h-4 w-4" />}
+              labelIcon={<Crown className="size-4" />}
             >
               <div className="py-2">
                 <AccountIdentityPanel user={user} />
@@ -42,21 +43,23 @@ export default function IdAccountHubPage() {
             <UserProfile.Link
               label="Public passport"
               url={`/@${username}`}
-              labelIcon={<ExternalLink className="h-4 w-4" />}
+              labelIcon={<ExternalLink className="size-4" />}
             />
           </UserProfile>
         </div>
       </SignedIn>
       <SignedOut>
-        <Card padding="lg" className="flex flex-col items-center justify-center gap-4 text-center">
-          <Crown className="text-label h-10 w-10" />
-          <h2 className="text-label text-title-2">Sign in to use IxnayID</h2>
-          <p className="text-label-secondary text-footnote max-w-md">
-            Your passport, security settings and realm memberships are on your account.
-          </p>
-          <SignInButton mode="modal">
-            <Button type="button">Sign in to IxStates</Button>
-          </SignInButton>
+        <Card>
+          <EmptyState
+            icon={<Crown />}
+            title="Sign in to use IxnayID"
+            message="Your passport, security settings and realm memberships are on your account."
+            action={
+              <SignInButton mode="modal">
+                <Button type="button">Sign in to IxStates</Button>
+              </SignInButton>
+            }
+          />
         </Card>
       </SignedOut>
     </div>

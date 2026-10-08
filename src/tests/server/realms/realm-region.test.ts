@@ -499,6 +499,26 @@ describe("overview and happenings", () => {
     }
   });
 
+  it("gives the founder and officers their passport handle, null until claimed", async () => {
+    const db = overviewDb("active", FOUNDER);
+    const realm = await db.realm.findUnique();
+    db.realm.findUnique.mockResolvedValue({
+      ...realm,
+      officers: [{ userId: OFFICER, title: "Archivist", powers: [] }],
+    });
+    db.user.findMany.mockImplementation(async ({ select }: { select: { handle?: boolean } }) =>
+      select.handle
+        ? [
+            { clerkUserId: FOUNDER, handle: "bora" },
+            { clerkUserId: OFFICER, handle: null },
+          ]
+        : []
+    );
+    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(overview?.founder).toMatchObject({ handle: "bora" });
+    expect(overview?.officers).toEqual([expect.objectContaining({ handle: null })]);
+  });
+
   it("hides a draft realm's overview from players", async () => {
     const db = overviewDb("draft", FOUNDER);
     expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();

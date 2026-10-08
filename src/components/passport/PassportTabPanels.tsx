@@ -7,12 +7,11 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
+import { PassportCollectionTab } from "./tabs/PassportCollectionTab";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
-import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
 import { PassportRealmsTab } from "./tabs/PassportRealmsTab";
-import { PassportVaultTab } from "./tabs/PassportVaultTab";
 import { PassportWorkTab } from "./tabs/PassportWorkTab";
-import type { PassportPayload, PassportTabType, PassportWiki } from "./types";
+import type { PassportForum, PassportPayload, PassportTabType, PassportWiki } from "./types";
 import { Card } from "~/components/ui/card";
 
 const HISTORY_PAGE_SIZE = 50;
@@ -52,14 +51,22 @@ function HiddenSection({
   );
 }
 
-function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) {
+function RealmsPanel({
+  handle,
+  isOwner,
+  recruitedCount,
+}: {
+  handle: string;
+  isOwner: boolean;
+  recruitedCount: number;
+}) {
   const { data, isLoading } = api.ixnayid.getRealms.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
   return (
     <>
       {/* The owner's own nations across realms, to switch which one they play as. */}
       {isOwner && <NationSwitcher className="border-separator rounded-row mb-6 border py-2" />}
-      <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />
+      <PassportRealmsTab realms={data ?? []} handle={handle} recruitedCount={recruitedCount} />
     </>
   );
 }
@@ -72,10 +79,18 @@ const EMPTY_WORK = {
   wikiActivityFeed: [],
 };
 
-function WorkPanel({ handle, wiki }: { handle: string; wiki: PassportWiki }) {
+function WorkPanel({
+  handle,
+  wiki,
+  forum,
+}: {
+  handle: string;
+  wiki: PassportWiki;
+  forum: PassportForum;
+}) {
   const { data, isLoading } = api.ixnayid.getWork.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
-  return <PassportWorkTab work={data ?? EMPTY_WORK} wiki={wiki} cleanUsername={handle} />;
+  return <PassportWorkTab work={data ?? EMPTY_WORK} wiki={wiki} forum={forum} handle={handle} />;
 }
 
 function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean }) {
@@ -89,7 +104,7 @@ function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean })
 
   return (
     <div className="space-y-6">
-      <PassportHistoryTab history={history} cleanUsername={handle} />
+      <PassportHistoryTab history={history} handle={handle} />
       {enabled && hasNextPage && (
         <div className="flex justify-center">
           <Button
@@ -110,32 +125,31 @@ interface PassportTabBodyProps {
   activeTab: PassportTabType;
   handle: string;
   data: PassportPayload;
-  onOpenVault?: () => void;
 }
 
 /**
- * Renders the active passport tab. Overview and Vault reuse the passport payload the header
- * already loaded; Realms, Work and History each fetch their own focused procedure on first open.
+ * Renders the active passport tab. Collection reuses the passport payload the front face already
+ * loaded; Realms, Work and History each fetch their own focused procedure on first open.
  */
 export const PassportTabBody = React.memo(function PassportTabBody({
   activeTab,
   handle,
   data,
-  onOpenVault,
 }: PassportTabBodyProps) {
   const isOwner = data.account.isOwner;
   switch (activeTab) {
-    case "overview":
-      return <PassportOverviewTab data={data} cleanUsername={handle} onOpenVault={onOpenVault} />;
     case "realms":
-      return <RealmsPanel handle={handle} isOwner={isOwner} />;
+      return <RealmsPanel handle={handle} isOwner={isOwner} recruitedCount={data.recruitedCount} />;
     case "work":
-      return <WorkPanel handle={handle} wiki={data.wiki} />;
-    case "vault":
-      return data.vault ? (
-        <PassportVaultTab vault={data.vault} cleanUsername={handle} />
-      ) : (
-        <HiddenSection what="Vault collection" handle={handle} isOwner={isOwner} />
+      return <WorkPanel handle={handle} wiki={data.wiki} forum={data.forum} />;
+    case "collection":
+      return (
+        <PassportCollectionTab
+          vault={data.vault}
+          achievements={data.showcase.achievements}
+          handle={handle}
+          isOwner={isOwner}
+        />
       );
     case "history":
       // The server returns an empty stream when the owner hides it; skip the fetch entirely.

@@ -47,6 +47,21 @@ function Panel({
 const nationHref = (nation: { slug: string | null; id: string }) =>
   `/countries/${nation.slug ?? nation.id}`;
 
+type StaffPerson = Overview["officers"][number];
+
+/** A founder or officer: links to their passport when they have a handle, else to their nation here. */
+function StaffName({ person }: { person: Pick<StaffPerson, "name" | "handle" | "nation"> }) {
+  const href = person.handle
+    ? `/@${encodeURIComponent(person.handle)}`
+    : person.nation && nationHref(person.nation);
+  if (!href) return <>{person.name}</>;
+  return (
+    <Link href={href} className="hover:underline">
+      {person.name}
+    </Link>
+  );
+}
+
 const LINK_ICONS: Record<RealmLinkKind, React.ComponentType<{ className?: string }>> = {
   forum: ChatLines,
   discord: DiscordLogomark,
@@ -93,17 +108,7 @@ export function OfficersPanel({ overview }: { overview: Overview }) {
         <li className="flex items-baseline justify-between gap-2">
           <span className="text-label-secondary text-footnote">Founder</span>
           <span className="text-label text-body truncate">
-            {founder ? (
-              founder.nation ? (
-                <Link href={nationHref(founder.nation)} className="hover:underline">
-                  {founder.name}
-                </Link>
-              ) : (
-                founder.name
-              )
-            ) : (
-              "Administered by IxStats staff"
-            )}
+            {founder ? <StaffName person={founder} /> : "Administered by IxStats staff"}
           </span>
         </li>
         {officers.map((officer) => (
@@ -113,13 +118,7 @@ export function OfficersPanel({ overview }: { overview: Overview }) {
           >
             <span className="text-label-secondary text-footnote truncate">{officer.title}</span>
             <span className="text-label text-body truncate">
-              {officer.nation ? (
-                <Link href={nationHref(officer.nation)} className="hover:underline">
-                  {officer.name}
-                </Link>
-              ) : (
-                officer.name
-              )}
+              <StaffName person={officer} />
             </span>
           </li>
         ))}

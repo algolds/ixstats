@@ -173,6 +173,21 @@
 @utility animate-facet-fade-out {
   animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
 }
+/* IxStates Passport open entrance: the cover swings open from its left spine, once, on first
+   load. Skipped under Reduce Motion (OS or html[data-motion="reduced"]). */
+@keyframes passport-open {
+  from {
+    opacity: 0;
+    transform: perspective(1800px) rotateY(-24deg);
+  }
+}
+@utility animate-passport-open {
+  transform-origin: left center;
+  animation: passport-open 400ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  @variant motion-reduce {
+    animation: none;
+  }
+}
 /* Side / top sheets slide from their edge (`sheet-from-*` sets the edge). */
 @utility animate-sheet-in {
   animation: facet-sheet-in 280ms var(--ease-out-facet) both;

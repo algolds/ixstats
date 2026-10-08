@@ -4,7 +4,7 @@
  * is never fetched, and adding an entry is all a new MediaWiki host needs.
  */
 import { getWiki, WIKIS } from "~/app/api/mediawiki/_config";
-import { isAllowedMediaUrl } from "~/app/api/mediawiki/_media-response";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 import { PROOF_SOURCES } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { WIKI_SOURCES } from "~/lib/wiki-os/config";
 import {
@@ -54,6 +54,13 @@ describe("sister wiki hosts", () => {
     expect(isAllowedMediaUrl("https://static.wikia.nocookie.net/x/a.png")).toBe(true);
     expect(isAllowedMediaUrl("https://upload.wikimedia.org/x/a.png")).toBe(true);
     expect(isAllowedMediaUrl("https://iiwiki.com.evil.example/a.png")).toBe(false);
+    expect(isAllowedMediaUrl("ftp://iiwiki.com/a.png")).toBe(false);
+  });
+
+  it("allow every configured wiki's own host, IxWiki's included", () => {
+    for (const wiki of Object.values(WIKIS)) {
+      expect(isAllowedMediaUrl(`${wiki.siteUrl}/images/a.png`)).toBe(true);
+    }
   });
 
   it("give each wiki its own file hosts", () => {

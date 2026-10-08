@@ -18,6 +18,14 @@ export const ACCOUNT_LEVEL_METRICS: ReadonlySet<string> = new Set([
   "loreCardCount",
   "retiredCardCount",
   "distinctCountryIdCount",
+  "recruitedCount",
+]);
+
+/** Recruiter achievements (approved invited claims): achievements only, no IxCredits or cards (owner ruling). */
+export const RECRUITER_ACHIEVEMENT_IDS: ReadonlySet<string> = new Set([
+  "social-recruiter",
+  "social-envoy",
+  "social-founders-hand",
 ]);
 
 /** Built-in definitions whose condition reads only account-level metrics. */
@@ -44,6 +52,8 @@ export const ACCOUNT_LEVEL_ACHIEVEMENT_IDS: ReadonlySet<string> = new Set([
   "collect-lore-keeper",
   "collect-archaeologist",
   "collect-diplomat",
+  // Recruiting: approved claims filed through the user's invite links
+  ...RECRUITER_ACHIEVEMENT_IDS,
 ]);
 
 /**

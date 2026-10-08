@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Globe, MapPin } from "iconoir-react";
-import type { RouterOutputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
@@ -56,6 +57,40 @@ const asOfHint = (asOf: string | null | undefined) =>
       })}`
     : undefined;
 
+/** The founder's passport when they have a handle, else their nation here. `<Link>` adds the base path. */
+function founderHref(founder: NonNullable<Overview["founder"]>) {
+  if (founder.handle) return `/@${encodeURIComponent(founder.handle)}`;
+  return founder.nation?.slug ? `/countries/${founder.nation.slug}` : null;
+}
+
+/** Share, plus "Copy invite link" (carrying the viewer's passport handle) for those who hold a nation here. */
+function RealmShare({
+  slug,
+  name,
+  holdsNation,
+}: {
+  slug: string;
+  name: string;
+  holdsNation: boolean;
+}) {
+  const { data: status } = api.ixnayid.getStatus.useQuery(undefined, { enabled: holdsNation });
+  const handle = holdsNation ? status?.passportHandle : null;
+  const base = `/r/${encodeURIComponent(slug)}`;
+  return (
+    <ShareSheet
+      path={base}
+      title={`${name} on IxStates`}
+      imagePath={`${base}/opengraph-image`}
+      downloadName={`ixstates-realm-${slug}.png`}
+      extraLinks={
+        handle
+          ? [{ label: "Copy invite link", path: `${base}?via=${encodeURIComponent(handle)}` }]
+          : []
+      }
+    />
+  );
+}
+
 /** The realm's banner, name, key stats and tab bar, shared by every tab. */
 export function RealmRegionHeader({
   overview,
@@ -67,6 +102,7 @@ export function RealmRegionHeader({
 }) {
   const pathname = usePathname();
   const { realm, stats, founder, viewer, inWorldDate } = overview;
+  const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
     viewer.canManage,
@@ -119,6 +155,11 @@ export function RealmRegionHeader({
               </ul>
             )}
           </div>
+          <RealmShare
+            slug={realm.slug}
+            name={realm.name}
+            holdsNation={viewer.signedIn && viewer.ownedNations.length > 0}
+          />
         </div>
 
         <dl className="grid grid-cols-2 gap-x-8 gap-y-3 sm:flex sm:flex-wrap">
@@ -138,8 +179,8 @@ export function RealmRegionHeader({
             label="Founder"
             value={
               founder ? (
-                founder.nation?.slug ? (
-                  <Link href={`/countries/${founder.nation.slug}`} className="hover:underline">
+                founderLink ? (
+                  <Link href={founderLink} className="hover:underline">
                     {founder.name}
                   </Link>
                 ) : (

@@ -1,8 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
-
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Check, EditPencil as Edit3, Pin, RotateCameraLeft as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -10,16 +8,18 @@ import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { tweenFast } from "~/lib/design/motion";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
 import { Card } from "~/components/ui/card";
 
-const MotionCard = motion.create(Card);
-
-const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
+const VISIBILITY_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
   {
     key: "achievements",
     title: "Achievements",
@@ -32,13 +32,27 @@ const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; 
   { key: "historyStream", title: "Activity history", hint: "Your activity stream" },
 ];
 
+/** Sharing controls: they change how the link looks elsewhere, not which sections it shows. */
+const SHARING_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
+  {
+    key: "linkPreview",
+    title: "Link previews",
+    hint: "Show your card when your link is shared",
+    ariaLabel: "Show link previews",
+  },
+];
+
 /** Signature ribbon slots on the passport's showcase shelf. */
 const MAX_PINS = 3;
 const MAX_SIGNATURE = 60;
 
 interface PassportBackFaceProps {
   isFlipped: boolean;
-  shouldReduceMotion: boolean;
   displayName: string;
   /** Only the owner can flip the passport; settings are loaded for the owner only. */
   isOwner: boolean;
@@ -52,11 +66,16 @@ interface PassportBackFaceProps {
  */
 export const PassportBackFace = React.memo(function PassportBackFace({
   isFlipped,
-  shouldReduceMotion,
   displayName,
   isOwner,
   onDone,
 }: PassportBackFaceProps) {
+  const doneRef = useRef<HTMLButtonElement>(null);
+  // The front face goes inert on flip, which drops focus; hand it to the back face instead.
+  useEffect(() => {
+    if (isFlipped) doneRef.current?.focus({ preventScroll: true });
+  }, [isFlipped]);
+
   const utils = api.useUtils();
   const settings = api.ixnayid.getPassportSettings.useQuery(undefined, { enabled: isOwner });
   const savedSignature = settings.data?.signature ?? "";
@@ -98,22 +117,31 @@ export const PassportBackFace = React.memo(function PassportBackFace({
     onDone();
   };
 
-  return (
-    <MotionCard
-      className={cn(
-        "absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
-        !isFlipped ? "pointer-events-none" : ""
-      )}
-      style={
-        shouldReduceMotion
-          ? undefined
-          : ({
-              transform: "rotateY(180deg)",
-              willChange: "transform, opacity",
-            } as React.CSSProperties)
+  const renderToggle = (toggle: (typeof SHARING_TOGGLES)[number]) => (
+    <FacetRow
+      key={toggle.key}
+      title={toggle.title}
+      subtitle={toggle.hint}
+      trailing={
+        <Switch
+          aria-label={toggle.ariaLabel ?? `Show ${toggle.title}`}
+          checked={visibility?.[toggle.key] ?? true}
+          disabled={!visibility || busy}
+          onCheckedChange={(value) => update.mutate({ visibility: { [toggle.key]: value } })}
+        />
       }
-      animate={{ opacity: isFlipped ? 1 : 0 }}
-      transition={tweenFast}
+    />
+  );
+
+  return (
+    <Card
+      data-testid="passport-back-face"
+      inert={!isFlipped}
+      className={cn(
+        "absolute inset-0 min-h-full w-full [transform:rotateY(180deg)] space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
+        "motion-reduce:[transform:none] motion-reduce:transition-opacity motion-reduce:duration-150",
+        !isFlipped && "motion-reduce:pointer-events-none motion-reduce:opacity-0"
+      )}
     >
       <div className="relative space-y-6">
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
@@ -127,7 +155,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
             </div>
           </div>
 
-          <Button type="button" variant="default" onClick={handleDone}>
+          <Button ref={doneRef} type="button" variant="default" onClick={handleDone}>
             <Check aria-hidden />
             <span>Done</span>
           </Button>
@@ -174,23 +202,10 @@ export const PassportBackFace = React.memo(function PassportBackFace({
               header="Public passport sections"
               footer="Saved to your account. A hidden section is not sent to anyone viewing your passport, including you."
             >
-              {VISIBILITY_TOGGLES.map((toggle) => (
-                <FacetRow
-                  key={toggle.key}
-                  title={toggle.title}
-                  subtitle={toggle.hint}
-                  trailing={
-                    <Switch
-                      aria-label={`Show ${toggle.title}`}
-                      checked={visibility?.[toggle.key] ?? true}
-                      disabled={!visibility || busy}
-                      onCheckedChange={(value) =>
-                        update.mutate({ visibility: { [toggle.key]: value } })
-                      }
-                    />
-                  }
-                />
-              ))}
+              {VISIBILITY_TOGGLES.map(renderToggle)}
+            </FacetListSection>
+            <FacetListSection header="Sharing">
+              {SHARING_TOGGLES.map(renderToggle)}
             </FacetListSection>
           </FacetList>
         </div>
@@ -251,6 +266,6 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           </Button>
         </div>
       </div>
-    </MotionCard>
+    </Card>
   );
 });

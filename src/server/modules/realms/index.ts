@@ -44,3 +44,8 @@ export {
 } from "./realms.claims";
 export { getRealmHub } from "./realms.hub";
 export { realmMapAccess, type RealmMapAccess } from "./realms.map-access";
+export {
+  loadRealmMetadataSource,
+  realmMetadata,
+  type RealmMetadataSource,
+} from "./realms.metadata";

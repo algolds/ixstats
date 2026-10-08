@@ -13,6 +13,7 @@ const mockMutate = jest.fn();
 const mockInvalidate = jest.fn();
 const mockNotify = { success: jest.fn(), info: jest.fn(), error: jest.fn(), warning: jest.fn() };
 let mockSignedIn = true;
+let mockSearch = "";
 let options: MutationOptions = {};
 
 // Radix checkboxes measure themselves; jsdom has no ResizeObserver.
@@ -34,6 +35,7 @@ jest.mock("~/context/auth-context", () => ({
   useAuth: () => ({ isLoaded: true, isSignedIn: mockSignedIn }),
 }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
+jest.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(mockSearch) }));
 jest.mock("~/trpc/react", () => ({
   api: {
     realms: {
@@ -70,6 +72,7 @@ describe("ClaimableNations", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSignedIn = true;
+    mockSearch = "";
     options = {};
   });
 
@@ -163,6 +166,27 @@ describe("ClaimableNations", () => {
     expect(signIn).toHaveAttribute(
       "href",
       `/sign-in?redirect_url=${encodeURIComponent("/r/eurth")}`
+    );
+  });
+
+  it("an invite link's via rides along with the claim", () => {
+    mockSearch = "via=ambassador";
+    renderList();
+    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
+    expect(mockMutate).toHaveBeenCalledWith({
+      realmSlug: "eurth",
+      title: "Aurelia",
+      via: "ambassador",
+    });
+  });
+
+  it("an invite link's via survives sign-in through the redirect URL", () => {
+    mockSignedIn = false;
+    mockSearch = "via=ambassador";
+    renderList();
+    expect(screen.getByRole("link", { name: /sign in to claim/i })).toHaveAttribute(
+      "href",
+      `/sign-in?redirect_url=${encodeURIComponent("/r/eurth?via=ambassador")}`
     );
   });
 });

@@ -12,14 +12,14 @@ import {
 } from "~/components/passport/document/PassportTabRibbon";
 import type { PassportTabType } from "~/components/passport/types";
 
-function Harness({ initial = "overview" as PassportTabType }) {
+function Harness({ initial = "realms" as PassportTabType }) {
   const [tab, setTab] = useState<PassportTabType>(initial);
   return (
     <>
       <PassportTabRibbon
         activeTab={tab}
         onSelectTab={setTab}
-        counts={{ realms: 3 }}
+        counts={{ collection: 5 }}
         idBase="pp"
       />
       <div role="tabpanel" id={passportTabPanelId("pp")} aria-labelledby={passportTabId("pp", tab)}>
@@ -35,13 +35,7 @@ describe("PassportTabRibbon", () => {
     const tablist = screen.getByRole("tablist", { name: "Passport sections" });
     const tabs = screen.getAllByRole("tab");
     expect(tablist).toContainElement(tabs[0]!);
-    expect(tabs.map((t) => t.textContent)).toEqual([
-      "01.Overview",
-      "02.Realms3",
-      "03.Work",
-      "04.Vault",
-      "05.History",
-    ]);
+    expect(tabs.map((t) => t.textContent)).toEqual(["Realms", "Work", "Collection5", "History"]);
     for (const t of tabs) expect(t).not.toHaveAttribute("aria-pressed");
   });
 
@@ -51,40 +45,43 @@ describe("PassportTabRibbon", () => {
     expect(work).toHaveAttribute("aria-selected", "true");
     expect(work).toHaveAttribute("aria-controls", "pp-panel");
     expect(work).toHaveAttribute("tabindex", "0");
-    const overview = screen.getByRole("tab", { name: /Overview/ });
-    expect(overview).toHaveAttribute("aria-selected", "false");
-    expect(overview).toHaveAttribute("tabindex", "-1");
+    const realms = screen.getByRole("tab", { name: /Realms/ });
+    expect(realms).toHaveAttribute("aria-selected", "false");
+    expect(realms).toHaveAttribute("tabindex", "-1");
     expect(screen.getByRole("tabpanel", { name: /Work/ })).toHaveTextContent("work body");
   });
 
   it("selects on click", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByRole("tab", { name: /Vault/ }));
-    expect(screen.getByRole("tab", { name: /Vault/ })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("tab", { name: /Collection/ }));
+    expect(screen.getByRole("tab", { name: /Collection/ })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
   });
 
   it("moves focus and selection with the arrow keys, wrapping, and Home/End", () => {
     render(<Harness />);
-    const overview = screen.getByRole("tab", { name: /Overview/ });
-    overview.focus();
-
-    fireEvent.keyDown(overview, { key: "ArrowRight" });
     const realms = screen.getByRole("tab", { name: /Realms/ });
-    expect(realms).toHaveFocus();
-    expect(realms).toHaveAttribute("aria-selected", "true");
+    realms.focus();
 
-    fireEvent.keyDown(realms, { key: "End" });
+    fireEvent.keyDown(realms, { key: "ArrowRight" });
+    const work = screen.getByRole("tab", { name: /Work/ });
+    expect(work).toHaveFocus();
+    expect(work).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(work, { key: "End" });
     const history = screen.getByRole("tab", { name: /History/ });
     expect(history).toHaveFocus();
     expect(history).toHaveAttribute("aria-selected", "true");
 
     fireEvent.keyDown(history, { key: "ArrowRight" });
-    expect(screen.getByRole("tab", { name: /Overview/ })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: /Realms/ })).toHaveFocus();
 
-    fireEvent.keyDown(screen.getByRole("tab", { name: /Overview/ }), { key: "ArrowLeft" });
+    fireEvent.keyDown(screen.getByRole("tab", { name: /Realms/ }), { key: "ArrowLeft" });
     expect(screen.getByRole("tab", { name: /History/ })).toHaveAttribute("aria-selected", "true");
 
     fireEvent.keyDown(screen.getByRole("tab", { name: /History/ }), { key: "Home" });
-    expect(screen.getByRole("tab", { name: /Overview/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Realms/ })).toHaveAttribute("aria-selected", "true");
   });
 });

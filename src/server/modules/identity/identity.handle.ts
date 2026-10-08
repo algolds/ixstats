@@ -1,0 +1,98 @@
+/**
+ * IxStates Passport handles: pure format, reserved-word and slug rules (no DB).
+ * Availability against stored handles is the caller's job; `pickAvailableHandle` only
+ * de-duplicates against a set the caller supplies.
+ */
+
+export const HANDLE_PATTERN = /^[a-z0-9_]{3,24}$/;
+
+const HANDLE_MAX = 24;
+const HANDLE_MIN = 3;
+
+/** Handles that would collide with passport sub-routes or reserved URL segments. */
+export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
+  "me",
+  "admin",
+  "embed",
+  "settings",
+  "board",
+  "nations",
+  "rules",
+  "manage",
+  "happenings",
+  "api",
+  "id",
+  "new",
+]);
+
+export type HandleValidation = { ok: true; handle: string } | { ok: false; reason: "format" | "reserved" };
+
+/** Lowercases, strips one leading `@`, trims. */
+export function normalizeHandle(raw: string): string {
+  const trimmed = raw.trim().toLowerCase();
+  return (trimmed.startsWith("@") ? trimmed.slice(1) : trimmed).trim();
+}
+
+export function validateHandle(raw: string): HandleValidation {
+  const handle = normalizeHandle(raw);
+  if (RESERVED_HANDLES.has(handle)) return { ok: false, reason: "reserved" };
+  if (!HANDLE_PATTERN.test(handle)) return { ok: false, reason: "format" };
+  return { ok: true, handle };
+}
+
+/**
+ * Whether a passport URL segment should 308 to the stored handle: only when one is stored and the
+ * segment does not already normalise to it. `/@me` never redirects.
+ */
+export function needsCanonicalRedirect(segment: string, storedHandle: string | null): boolean {
+  if (!storedHandle) return false;
+  const normalized = normalizeHandle(segment);
+  return normalized !== "me" && normalized !== storedHandle;
+}
+
+/** Turns a display name or username into a valid, non-reserved handle candidate. */
+export function slugifyHandle(source: string): string {
+  const slug = source
+    .toLowerCase()
+    .replace(/[\s-]/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, HANDLE_MAX)
+    .padEnd(HANDLE_MIN, "_");
+  return RESERVED_HANDLES.has(slug) ? `${slug}_1` : slug;
+}
+
+/** Returns `base`, else `base_2`, `base_3`, ... keeping the result within 24 characters. */
+export function pickAvailableHandle(base: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) {
+    const suffix = `_${n}`;
+    const candidate = `${base.slice(0, HANDLE_MAX - suffix.length)}${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
+
+/** Where a backfilled handle came from, in the order `chooseBackfillHandle` tries them. */
+export type BackfillSource = "wiki" | "forum" | "persona" | "nation";
+
+/** The names a handle-less user can be given a handle from; null where they have none. */
+export type BackfillNames = Record<BackfillSource, string | null>;
+
+const BACKFILL_ORDER: readonly BackfillSource[] = ["wiki", "forum", "persona", "nation"];
+
+/**
+ * The handle a backfill gives a user: the first name, in order verified wiki name, forum name,
+ * personal ThinkPages persona name, primary owned nation name, whose slug has a letter or digit
+ * (a name of only symbols slugifies to underscores and is skipped). Null when none qualifies, so the
+ * user keeps no handle rather than one minted from a Clerk id or row id.
+ */
+export function chooseBackfillHandle(
+  names: BackfillNames
+): { source: BackfillSource; handle: string } | null {
+  for (const source of BACKFILL_ORDER) {
+    const name = names[source]?.trim();
+    if (!name) continue;
+    const handle = slugifyHandle(name);
+    if (/[a-z0-9]/.test(handle)) return { source, handle };
+  }
+  return null;
+}

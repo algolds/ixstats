@@ -1,6 +1,19 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  lightMutationProcedure,
+  protectedProcedure,
+} from "~/server/api/trpc";
 import { db } from "~/server/db";
+import {
+  HandleClaimError,
+  setUserHandle,
+} from "~/server/modules/identity/identity.handle-claim";
+import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
+import { syncOwnForumAccount } from "~/server/modules/identity/identity.service";
+import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
+import { forumGateway } from "./forum-gateway";
 
 const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
 
@@ -62,14 +75,29 @@ function linkedAccounts(
   };
 }
 
+/** Admin rights (as `adminProcedure` grants them), dropped while playing as another user. */
+function callerIsAdmin(ctx: { user: RealmActor; impersonatorId?: string | null }): boolean {
+  return !ctx.impersonatorId && isSiteAdmin(ctx.user);
+}
+
+const HANDLE_ERROR_CODES = {
+  FORMAT: "BAD_REQUEST",
+  RESERVED: "BAD_REQUEST",
+  TAKEN: "CONFLICT",
+  ALREADY_CHANGED: "FORBIDDEN",
+  NO_USER: "NOT_FOUND",
+} as const;
+
 export const ixnayidCoreRouter = createTRPCRouter({
-  /** All linked accounts at once. */
+  /** All linked accounts at once; also refreshes the caller's own linked forum name. */
   getStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
       where: { id: ctx.user.id },
       select: {
         id: true,
         clerkUserId: true,
+        handle: true,
+        handleChangedAt: true,
         countryId: true,
         forumUserId: true,
         forumUsername: true,
@@ -81,6 +109,8 @@ export const ixnayidCoreRouter = createTRPCRouter({
       },
     });
 
+    // The owner's own call keeps their linked forum name current (fire-and-forget, never throws).
+    if (user) void syncOwnForumAccount(user, forumGateway);
     const country = user ? await resolveUserCountry(user) : null;
 
     // Wiki is "linked" only through a VERIFIED ixwiki link (token proven on the wiki user page, or
@@ -91,27 +121,35 @@ export const ixnayidCoreRouter = createTRPCRouter({
           select: { username: true, verifiedAt: true },
         })
       : null;
-    const verifiedWikiName = verifiedWikiLink?.username ?? null;
-    const sessionUsername = (ctx.user as { username?: string | null }).username;
-    // First available identity wins; the generic "admin" session name is skipped.
-    const passportHandle =
-      [
-        verifiedWikiName,
-        user?.forumUsername,
-        country?.slug,
-        country?.name,
-        sessionUsername !== "admin" ? sessionUsername : null,
-        user?.clerkUserId,
-        user?.id,
-      ].find(Boolean) || null;
 
     return {
-      passportHandle,
+      /** The passport handle (`passportHandleOf`): the one every share and invite link carries. */
+      passportHandle: user ? await passportHandleOf(user, verifiedWikiLink?.username ?? null) : null,
+      /** The stored IxStates Passport handle, null until one is claimed. */
+      handle: user?.handle ?? null,
+      /** The single self-service change is still available (admins may always change it). */
+      canChangeHandle: !user?.handleChangedAt || callerIsAdmin(ctx),
       countrySlug:
         country?.slug ?? (country?.name ? country.name.toLowerCase().replace(/ /g, "_") : null),
       ...linkedAccounts(user, verifiedWikiLink),
     };
   }),
+
+  /** Claim or change the signed-in user's IxStates Passport handle. */
+  setHandle: lightMutationProcedure
+    .input(z.object({ handle: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await setUserHandle({
+          userId: ctx.user.id,
+          handle: input.handle,
+          isAdmin: callerIsAdmin(ctx),
+        });
+      } catch (error) {
+        if (!(error instanceof HandleClaimError)) throw error;
+        throw new TRPCError({ code: HANDLE_ERROR_CODES[error.code], message: error.message });
+      }
+    }),
 
   // A lookup previews an account before linking it.
   lookupForumUser: protectedProcedure

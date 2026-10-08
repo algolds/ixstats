@@ -1,6 +1,7 @@
 /**
  * Pure mappers from resolved identity rows to the passport's Realms and History payloads.
  */
+import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { isAwardWinner, type LoreAwardRow } from "./identity.feed";
 import type { IdentityCountry } from "./identity.selects";
 import type {
@@ -8,28 +9,47 @@ import type {
   IdentityEventPayload,
   IdentityHistoryPage,
   RealmMembership,
+  RealmRole,
   WikiActivityItem,
   WikiActivityType,
 } from "./identity.types";
 
-/** The realm a country belongs to. `realm` is always selected; the FK guarantees the row exists. */
+/** The realm a country belongs to; IxWorld is named even when its realm row is missing. */
 function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
-  return country.realm ?? { id: country.realmId, name: country.realmId, slug: country.realmId };
+  if (country.realm) return country.realm;
+  if (country.realmId === DEFAULT_REALM_ID) {
+    return { id: DEFAULT_REALM_ID, name: "IxWorld", slug: IXWORLD_SLUG };
+  }
+  return { id: country.realmId, name: country.realmId, slug: country.realmId };
 }
 
 function countrySlug(country: { slug: string | null; name: string }): string {
   return country.slug ?? country.name.toLowerCase().replace(/ /g, "_");
 }
 
+/** The primary nation: the linked `User.countryId` when it is held, else the highest-GDP held nation. */
+export function primaryNationOf<T extends { id: string; currentTotalGdp: number }>(
+  nations: readonly T[],
+  linkedCountryId: string | null
+): T | null {
+  const linked = nations.find((n) => n.id === linkedCountryId);
+  if (linked) return linked;
+  return nations.reduce<T | null>(
+    (best, n) => (best && best.currentTotalGdp >= n.currentTotalGdp ? best : n),
+    null
+  );
+}
+
+/** One row per held nation, with the holder's role in its realm (member unless founder or officer). */
 export function toRealmMemberships(
   nations: IdentityCountry[],
-  featuredCountryIds: ReadonlyArray<string>,
-  role: string
+  primaryCountryId: string | null,
+  roles: ReadonlyMap<string, RealmRole>
 ): RealmMembership[] {
   return nations.map((c) => ({
     ...realmOf(c),
-    role,
-    isFeatured: featuredCountryIds.includes(c.id),
+    role: roles.get(c.realmId) ?? "member",
+    isPrimary: c.id === primaryCountryId,
     country: {
       id: c.id,
       name: c.name,
@@ -47,7 +67,7 @@ export function toRealmMemberships(
   }));
 }
 
-/** Memberships inside one realm, matched by slug or id (for `/r/[realm]/[username]`). */
+/** Memberships inside one realm, matched by slug or id (for the realm passport, `/r/{realm}/@{handle}`). */
 export function filterByRealm(memberships: RealmMembership[], realm: string): RealmMembership[] {
   const key = realm.toLowerCase();
   return memberships.filter((m) => m.slug.toLowerCase() === key || m.id.toLowerCase() === key);
@@ -96,6 +116,12 @@ const WIKI_VERB: Record<WikiActivityType, string> = {
   minor_edit: "Edited",
 };
 
+/** "Category: … · Tier: … · Status: …", without the category when the directive has none. */
+function directiveDescription(dir: DirectiveRow): string {
+  const parts = [`Tier: ${dir.tier}`, `Status: ${dir.status}`];
+  return (dir.category ? [`Category: ${dir.category}`, ...parts] : parts).join(" · ");
+}
+
 function wikiEventDescription(item: WikiActivityItem): string {
   if (item.summary) return item.summary;
   if (!item.byteDiff) return "WikiOS Contribution";
@@ -104,6 +130,7 @@ function wikiEventDescription(item: WikiActivityItem): string {
 
 interface HistorySources {
   identityId: string;
+  /** The passport handle (`passportHandleOf`), never the URL segment: the join event links to it. */
   handle: string;
   feed: WikiActivityItem[];
   directives: DirectiveRow[];
@@ -134,7 +161,7 @@ export function buildHistoryEvents(sources: HistorySources): IdentityEventPayloa
       system: "mycountry",
       type: "mycountry.directive_enacted",
       title: `Enacted Directive: ${dir.goal}`,
-      description: `Category: ${dir.category || "Governance"} · Tier: ${dir.tier} · Status: ${dir.status}`,
+      description: directiveDescription(dir),
       timestamp: new Date(dir.createdAt),
       objectId: dir.id,
       objectUrl: "/mycountry",

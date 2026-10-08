@@ -117,7 +117,7 @@ describe("achievement scope", () => {
     const countryBound = ACHIEVEMENT_DEFINITIONS.filter(
       (d) => !ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has(d.id)
     );
-    expect(countryBound.length).toBe(ACHIEVEMENT_DEFINITIONS.length - 19);
+    expect(countryBound.length).toBe(ACHIEVEMENT_DEFINITIONS.length - 22);
     for (const def of countryBound) {
       expect(
         achievementRequiresCountry({ key: def.id, conditionJson: conditions.get(def.id) ?? null })

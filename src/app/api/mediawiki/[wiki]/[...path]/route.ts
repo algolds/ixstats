@@ -17,10 +17,10 @@ import {
   fetchFromAllowedHost,
   hasMalformedPercentEncoding,
   imageOnlyResponse,
-  isAllowedMediaUrl,
   isUnsafeSegment,
   type ImageRequest,
 } from "../../_media-response";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 import { wikiMediaRateLimitResponse } from "../../_rate-limit";
 
 const corsHeaders = MEDIA_CORS_HEADERS;

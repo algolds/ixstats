@@ -24,6 +24,8 @@ export interface PassportVisibility {
   historyStream: boolean;
   /** Unlocked achievements and the ribbons derived from them. */
   achievements: boolean;
+  /** Rich link previews (page metadata and the OG card); off returns `{ preview: false }`. */
+  linkPreview: boolean;
 }
 
 const PASSPORT_VISIBILITY_KEYS = [
@@ -33,6 +35,7 @@ const PASSPORT_VISIBILITY_KEYS = [
   "vaultCards",
   "historyStream",
   "achievements",
+  "linkPreview",
 ] as const satisfies ReadonlyArray<keyof PassportVisibility>;
 
 /** Every section is public until the owner hides it (the passport's behaviour before persistence). */
@@ -43,6 +46,7 @@ export const DEFAULT_PASSPORT_VISIBILITY: PassportVisibility = {
   vaultCards: true,
   historyStream: true,
   achievements: true,
+  linkPreview: true,
 };
 
 export const MAX_PINNED_RIBBONS = 3;
@@ -62,6 +66,7 @@ const COLUMN_OF = {
   vaultCards: "showVault",
   historyStream: "showHistory",
   achievements: "showAchievements",
+  linkPreview: "showLinkPreview",
 } as const satisfies Record<keyof PassportVisibility, string>;
 
 type PreferenceColumns = { [K in (typeof COLUMN_OF)[keyof typeof COLUMN_OF]]: boolean };
@@ -78,6 +83,7 @@ const PREFERENCE_SELECT = {
   showVault: true,
   showHistory: true,
   showAchievements: true,
+  showLinkPreview: true,
   signature: true,
   pinnedRibbonKeys: true,
 } as const;

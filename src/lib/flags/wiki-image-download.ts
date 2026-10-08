@@ -11,14 +11,11 @@
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
-import {
-  fetchFromAllowedHost,
-  isAllowedMediaUrl,
-  readCapped,
-} from "~/app/api/mediawiki/_media-response";
+import { fetchFromAllowedHost, readCapped } from "~/app/api/mediawiki/_media-response";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 import { asFileTitle } from "~/lib/realms/sources/wiki-file-info";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 
 export const MAX_FLAG_BYTES = 5 * 1024 * 1024;
 const MAX_FLAG_PIXELS = 25_000_000;

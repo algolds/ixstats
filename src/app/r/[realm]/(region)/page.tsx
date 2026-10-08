@@ -10,6 +10,8 @@ import { timeAgo } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { WIKI_SOURCES, parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { buttonVariants } from "~/components/ui/button";
+import { useRealmInviter } from "~/components/realms/use-invite-via";
+import { RealmInvitePanel } from "../_components/RealmInvitePanel";
 import {
   CensusPanel,
   CommunityPanel,
@@ -80,6 +82,8 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
   const { data: overview } = api.realms.region.overview.useQuery({ slug });
   const { data: hub } = api.realms.getBySlug.useQuery({ slug });
   const { isSignedIn } = useAuth();
+  // A valid invite brings its own Join panel (RealmInvitePanel), which takes the place of JoinRealm.
+  const invite = useRealmInviter(slug);
   usePageTitle({ title: overview ? `${overview.realm.name} · Realm` : "Realm" });
   if (!overview) return null;
 
@@ -100,6 +104,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
+        <RealmInvitePanel realmSlug={realm.slug} realmName={realm.name} />
         {(factbook || canEditFactbook || lore) && (
           <Section
             title={factbook || canEditFactbook ? "Factbook" : "Lore"}
@@ -143,9 +148,9 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
 
         {hub &&
           (hub.claimsOpen ? (
-            viewer.ownedNations.length === 0 && (
-              <JoinRealm hub={hub} base={base} signedIn={!!isSignedIn} />
-            )
+            viewer.ownedNations.length === 0 &&
+            !invite.inviter &&
+            !invite.pending && <JoinRealm hub={hub} base={base} signedIn={!!isSignedIn} />
           ) : (
             <p className="text-label-secondary text-footnote">
               {hub.status === "archived"

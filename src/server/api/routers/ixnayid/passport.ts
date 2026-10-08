@@ -19,22 +19,7 @@ import {
   MAX_PINNED_RIBBONS,
   MAX_SIGNATURE_LENGTH,
 } from "~/server/modules/identity/identity.privacy";
-import type {
-  IdentityForumGateway,
-  IdentityForumMember,
-} from "~/server/modules/identity/identity.types";
-
-/** Forum access for the identity module, which may not import the forum module itself. */
-const forumGateway: IdentityForumGateway = {
-  lookupUser: async (name) => (await import("~/server/modules/forum")).lookupForumUser(name),
-  getMember: async (userId) => {
-    const { cachedFetch, cacheKey, xfFetch } = await import("~/server/modules/forum");
-    const response = await cachedFetch(cacheKey("member", userId), "member", () =>
-      xfFetch<{ user: IdentityForumMember }>(`/users/${userId}/`)
-    );
-    return response?.user ?? null;
-  },
-};
+import { forumGateway } from "./forum-gateway";
 
 const handleInput = z.object({ handle: z.string().min(1).max(200) });
 
@@ -46,6 +31,7 @@ const visibilityInput = z
     vaultCards: z.boolean(),
     historyStream: z.boolean(),
     achievements: z.boolean(),
+    linkPreview: z.boolean(),
   })
   .partial();
 

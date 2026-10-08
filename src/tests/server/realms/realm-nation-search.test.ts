@@ -8,7 +8,8 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { rateLimiter } from "~/lib/cache";
 import { realmsRouter } from "~/server/api/routers/realms";
-import { DIRECTORY_REALM_WHERE, NATION_SEARCH_LIMIT } from "~/server/api/routers/realms/places";
+import { NATION_SEARCH_LIMIT } from "~/server/api/routers/realms/places";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 

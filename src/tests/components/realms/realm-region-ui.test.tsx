@@ -5,7 +5,7 @@
  * officers holding it, Hand over for the founder).
  */
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/r/eurth",
@@ -187,6 +187,46 @@ describe("realm header", () => {
   });
 });
 
+describe("realm share", () => {
+  const holder = {
+    signedIn: true,
+    powers: [],
+    isFounder: false,
+    canManage: false,
+    ownedNations: [{ id: "c1", name: "Aurelia", slug: "aurelia" }],
+    boardRestriction: null,
+  };
+
+  afterEach(() => {
+    delete queries["ixnayid.getStatus"];
+  });
+
+  it("offers the canonical link and card, and no invite to a viewer without a nation here", async () => {
+    queries["ixnayid.getStatus"] = { passportHandle: "alex" };
+    render(<RealmRegionHeader overview={overview()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(await screen.findByRole("button", { name: "Copy link" })).toBeTruthy();
+    // The stable card route outside the (region) group (src/app/r/[realm]/opengraph-image.tsx); the
+    // group's own image is served at a hashed path.
+    expect(screen.getByRole("link", { name: "Download card" }).getAttribute("href")).toBe(
+      "/r/eurth/opengraph-image"
+    );
+    expect(screen.queryByRole("button", { name: "Copy invite link" })).toBeNull();
+  });
+
+  it("adds Copy invite link carrying the viewer's handle when they hold a nation here", async () => {
+    queries["ixnayid.getStatus"] = { passportHandle: "alex" };
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<RealmRegionHeader overview={overview({ viewer: holder })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Copy invite link" }));
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/r/eurth?via=alex`)
+    );
+  });
+});
+
 describe("sidebar", () => {
   it("says a realm without a founder is administered by staff, and lists officers", () => {
     render(<OfficersPanel overview={overview()} />);
@@ -195,6 +235,28 @@ describe("sidebar", () => {
     expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toContain(
       "/countries/aurelia"
     );
+  });
+
+  it("links officers and the founder with a handle to their passport", () => {
+    const founder = {
+      name: "Borovia",
+      handle: "bora",
+      nation: { id: "c2", name: "Borovia", slug: "borovia", flag: null },
+    };
+    const officers = [
+      { title: "Foreign Minister", powers: [], name: "Aurelia", handle: "aure", nation: null },
+      { title: "Archivist", powers: [], name: "Cassia", handle: "cass", nation: null },
+    ];
+    render(<OfficersPanel overview={overview({ founder, officers })} />);
+    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
+    expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toMatch(/\/@aure$/);
+    expect(screen.getByRole("link", { name: "Cassia" }).getAttribute("href")).toMatch(/\/@cass$/);
+  });
+
+  it("links the header's founder to their passport when they have a handle", () => {
+    const founder = { name: "Borovia", handle: "bora", nation: null };
+    render(<RealmRegionHeader overview={overview({ founder })} />);
+    expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
   });
 
   it("lets a nation owner vote in the realm poll", () => {
