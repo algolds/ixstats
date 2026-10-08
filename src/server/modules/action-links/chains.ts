@@ -59,12 +59,17 @@ export async function addPostToChain(db: ChainsDb, input: PostInChain): Promise<
   const { countryId, storylineId, postSource, postRef } = input;
   await requireOpenChain(db, countryId, storylineId);
   const post = { postSource, postRef, countryId };
-  if ((await db.postActionLink.count({ where: post })) === 0) {
+  // Only unchained links or this chain's own may move; a link in another chain stays put (that chain may be locked).
+  const movable = { ...post, OR: [{ storylineId: null }, { storylineId }] };
+  if ((await db.postActionLink.count({ where: movable })) === 0) {
+    if ((await db.postActionLink.count({ where: post })) > 0) {
+      throw new ActionLinkError("CONFLICT", "That post is already in another story chain");
+    }
     throw new ActionLinkError("NOT_FOUND", "That post links none of your nation's actions");
   }
   const last = await db.postActionLink.aggregate({ where: { storylineId }, _max: { chainOrder: true } });
   await db.postActionLink.updateMany({
-    where: post,
+    where: movable,
     data: { storylineId, chainOrder: (last._max.chainOrder ?? 0) + 1 },
   });
 }
