@@ -11,7 +11,8 @@ jest.mock("~/lib/wiki-os/config", () => ({
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
-import { appendChainToWiki } from "~/server/modules/action-links";
+import { db as serverDb } from "~/server/db";
+import { appendChainToWiki, syncPendingChainWikis } from "~/server/modules/action-links";
 
 function db(chain: object | null) {
   return {
@@ -51,6 +52,7 @@ describe("appendChainToWiki", () => {
     expect(save.title).toBe("Northern Pact");
     expect(save.wikitext.startsWith(`Intro.\n\n${MARKER}\n== Story chain: Pact ==`)).toBe(true);
     expect(save.wikitext).toContain("https://wiki.test");
+    expect(save.wikitext).toContain("/thinkpages/post/p1 Signed]");
     expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
   });
 
@@ -101,5 +103,14 @@ describe("appendChainToWiki", () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     await appendChainToWiki(db(CHAIN) as never, "s1");
     expect(jest.mocked(commitWikitextSave).mock.calls[1]![1].expectedHeadRef).toBeNull();
+  });
+});
+
+describe("syncPendingChainWikis", () => {
+  it("retries the longest-waiting chains first, so failing ones cannot starve the rest", async () => {
+    const findMany = jest.fn(async () => []);
+    Object.assign(serverDb, { storyline: { findMany } });
+    await expect(syncPendingChainWikis()).resolves.toEqual({ synced: 0, failed: 0 });
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { reviewedAt: "asc" }, take: 50 }));
   });
 });

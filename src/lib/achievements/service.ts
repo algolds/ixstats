@@ -520,7 +520,10 @@ class AchievementService {
       }),
       db.storyline
         .count({ where: { countryId, kind: "chain", status: "approved" } })
-        .catch(() => 0),
+        .catch((error) => {
+          console.warn(`[Achievements] story chain count for ${countryId} unavailable, using 0:`, error);
+          return 0;
+        }),
     ]);
 
     const militaryBranches = await db.militaryBranch.findMany({

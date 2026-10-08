@@ -71,7 +71,12 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
 /** Cron entry: retry every approved chain whose wiki section is not written yet. */
 export async function syncPendingChainWikis(): Promise<{ synced: number; failed: number }> {
   const { db } = await import("~/server/db");
-  const pending = await db.storyline.findMany({ where: PENDING, select: { id: true }, take: 50 });
+  const pending = await db.storyline.findMany({
+    where: PENDING,
+    select: { id: true },
+    orderBy: { reviewedAt: "asc" },
+    take: 50,
+  });
   let synced = 0;
   let failed = 0;
   for (const { id } of pending) {

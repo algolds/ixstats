@@ -202,11 +202,11 @@ model StoryPin {
 /// Storylines — Narrative chains connecting story pins into sequential historical arcs.
 /// Each storyline belongs to a country and groups related story pins in order.
 model Storyline {
-  id          String     @id @default(cuid())
-  title       String     @db.VarChar(200)
-  description String?    @db.Text
-  countryId   String
-  color       String?    @db.VarChar(7) // hex color for map connection lines
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(200)
+  description   String?          @db.Text
+  countryId     String
+  color         String?          @db.VarChar(7) // hex color for map connection lines
   /// "map" (pins joined by connection lines) or "chain" (action-linked posts, reviewed then written to the wiki).
   kind          String           @default("map")
   /// Chains only: open, submitted, approved, rejected (rejected returns to open with reviewNote).
@@ -218,10 +218,10 @@ model Storyline {
   /// Set when the approved chain's section is written; null on an approved chain means the cron retries it.
   wikiSyncedAt  DateTime?
   actionLinks   PostActionLink[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  country     Country    @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
-  pins        StoryPin[] @relation("StorylinePins")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  country       Country          @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
+  pins          StoryPin[]       @relation("StorylinePins")
 
   @@index([countryId])
   @@index([kind, status])
