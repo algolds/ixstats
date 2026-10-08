@@ -151,10 +151,12 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
         },
         focusEnd: () => {
           try {
+            // Focus the DOM node synchronously: ReactEditor.focus defers while operations are
+            // pending, and keystrokes in that gap would reach the previously focused field.
+            ReactEditor.toDOMNode(editor as any, editor as any).focus({ preventScroll: true });
             if (!editor.selection) {
               Transforms.select(editor as any, Editor.end(editor as any, []));
             }
-            ReactEditor.focus(editor as any);
           } catch {
             // ignore if not mounted
           }
