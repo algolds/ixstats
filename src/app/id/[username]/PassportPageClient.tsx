@@ -16,7 +16,7 @@ import { Card } from "~/components/ui/card";
 
 /** The passport page body; `page.tsx` (server) resolves the canonical redirect first. */
 export function PassportPageClient({ cleanUsername }: { cleanUsername: string }) {
-  const { user: currentClerkUser } = useUser();
+  const { user: currentClerkUser, isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<PassportTabType>(
     () => parsePassportTab(searchParams.get("tab")) ?? DEFAULT_PASSPORT_TAB
@@ -35,12 +35,13 @@ export function PassportPageClient({ cleanUsername }: { cleanUsername: string })
 
   const isOwner = Boolean(data?.account.isOwner);
 
-  // Display name and avatar come from Clerk
+  // Display name and avatar come from Clerk; the payload handle is the last resort, never the URL.
   const displayName =
     (isOwner && currentClerkUser ? currentClerkUser.fullName || currentClerkUser.username : null) ||
     data?.account.clerkDisplayName ||
     data?.account.clerkUsername ||
-    cleanUsername;
+    data?.handle ||
+    "";
 
   const avatarUrl =
     (isOwner && currentClerkUser ? currentClerkUser.imageUrl : null) ||
@@ -48,7 +49,7 @@ export function PassportPageClient({ cleanUsername }: { cleanUsername: string })
     null;
 
   usePageTitle({
-    title: `${displayName} (@${cleanUsername}) · Identity passport`,
+    title: data ? `${displayName} (@${data.handle}) · IxStates Passport` : "IxStates Passport",
   });
 
   const handleSelectTab = useCallback((tab: PassportTabType) => {
@@ -94,7 +95,7 @@ export function PassportPageClient({ cleanUsername }: { cleanUsername: string })
             <EmptyState
               icon={<AlertTriangle className="text-caution" />}
               title="Identity not found"
-              message={`No public passport or registered identity exists for @${cleanUsername}.`}
+              message="No public passport or registered identity exists for this handle."
             />
           </Card>
         </div>
@@ -106,11 +107,11 @@ export function PassportPageClient({ cleanUsername }: { cleanUsername: string })
     <DashboardColumn>
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
         <MidRibbonPassportDocument
-          cleanUsername={cleanUsername}
           displayName={displayName}
           avatarUrl={avatarUrl}
           data={data}
           isOwner={isOwner}
+          viewerSignedIn={Boolean(isSignedIn)}
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
         />
