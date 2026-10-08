@@ -19,6 +19,8 @@ model PassportPreference {
   showHistory      Boolean  @default(true)
   /// Unlocked achievements and the ribbons derived from them (passport and country-page rack).
   showAchievements Boolean  @default(true)
+  /// Rich link previews (Open Graph card) for this passport.
+  showLinkPreview  Boolean  @default(true)
   /// Signature inscription shown on the passport front; null falls back to the display name.
   signature        String?  @db.VarChar(60)
   /// Up to 3 achievement keys the owner pinned to the signature ribbon shelf, in display order.
