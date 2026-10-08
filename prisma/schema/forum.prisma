@@ -1,0 +1,60 @@
+/// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
+/// section; realm sections (scope "realm") come in phase 2, moderation models in phase 3.
+model ForumCategory {
+  id          String        @id @default(cuid())
+  scope       String        @default("site") // "site" | "realm"
+  realmId     String?
+  key         String
+  name        String
+  description String?
+  order       Int           @default(0)
+  visibility  String        @default("public") // "public" | "staff" | "reporter_staff"
+  postRole    String        @default("any") // "any" | "staff" (who may start threads)
+  icAllowed   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  threads     ForumThread[]
+
+  @@unique([scope, realmId, key])
+  @@index([scope, realmId, order])
+  @@map("forum_categories")
+}
+
+model ForumThread {
+  id              String        @id @default(cuid())
+  categoryId      String
+  category        ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title           String        @db.VarChar(200)
+  authorUserId    String
+  authorPersonaId String?
+  pinned          Boolean       @default(false)
+  locked          Boolean       @default(false)
+  hidden          Boolean       @default(false)
+  archived        Boolean       @default(false)
+  postCount       Int           @default(0)
+  lastPostAt      DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  xenforoThreadId Int?          @unique
+  posts           ForumPost[]
+
+  @@index([categoryId, pinned, lastPostAt])
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id                 String      @id @default(cuid())
+  threadId           String
+  thread             ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorUserId       String
+  authorPersonaId    String?
+  contentHtml        String      @db.Text
+  plainText          String      @db.Text
+  hidden             Boolean     @default(false)
+  editedAt           DateTime?
+  importedAuthorName String?
+  createdAt          DateTime    @default(now())
+  xenforoPostId      Int?        @unique
+
+  @@index([threadId, createdAt])
+  @@index([authorUserId])
+  @@map("forum_posts")
+}
