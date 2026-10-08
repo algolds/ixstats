@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import {
@@ -16,6 +17,13 @@ import {
 } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
+import { parseRedirect } from "~/lib/wiki-os/core/redirect";
+import {
+  getWikiBaseUrl,
+  parseWikiSource,
+  wikiReaderPath,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [
@@ -178,63 +186,108 @@ async function fetchWikiPageImages(name: string): Promise<Array<{
   return null;
 }
 
+/** The wikis a country's name is looked up on when it names no page of its own, in order. */
+const NAME_LOOKUP_WIKIS = ["ixwiki", "iiwiki"] as const;
+
+/** A country's own wiki page: realm nations name theirs (`Country.wikiSource` + `wikiPageTitle`). */
+interface WikiPageRef {
+  title: string;
+  wiki: WikiSource;
+}
+
+/** The wiki pages of the given countries that name one, by country id. */
+async function countryWikiPages(
+  db: PrismaClient,
+  countryIds: string[]
+): Promise<Map<string, WikiPageRef>> {
+  if (countryIds.length === 0) return new Map();
+  const rows = await db.country.findMany({
+    where: { id: { in: countryIds } },
+    select: { id: true, wikiSource: true, wikiPageTitle: true },
+  });
+  return new Map(
+    rows.flatMap(({ id, wikiSource, wikiPageTitle }): Array<[string, WikiPageRef]> => {
+      const title = wikiPageTitle?.trim();
+      return title ? [[id, { title, wiki: parseWikiSource(wikiSource) }]] : [];
+    })
+  );
+}
+
+/** A page's wikitext and the title it was read under, following one redirect to the page it names. */
+async function readArticle(
+  title: string,
+  wiki: WikiSource
+): Promise<{ title: string; wikitext: string } | null> {
+  const article = await getArticleWikitextShadow(title, wiki);
+  const target = parseRedirect(article?.wikitext);
+  if (!target) return article ? { title, wikitext: article.wikitext } : null;
+  const resolved = await getArticleWikitextShadow(target.title, wiki);
+  return resolved ? { title: target.title, wikitext: resolved.wikitext } : null;
+}
+
+/** An article's link: IxWiki pages open in the WikiOS reader, a sister wiki's on that wiki. */
+function articleUrl(title: string, wiki: WikiSource): string {
+  return wiki === "ixwiki"
+    ? wikiReaderPath(title)
+    : `${getWikiBaseUrl(wiki)}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+}
+
+/** The lead's paragraphs as HTML; its wiki links open `wiki`'s pages in the reader. */
+function richIntroParagraphs(wikitext: string, wiki: WikiSource): string[] {
+  const beforeFirstHeading = leadSection(wikitext, /\{\{\s*Infobox/i);
+
+  // Clean wikitext templates, refs, categories, files
+  const cleanContent = stripCommonWikiMarkup(beforeFirstHeading)
+    .replace(/\n\n+/g, "|||PARA|||")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n/g, " ")
+    .trim();
+
+  // Convert wiki links to HTML
+  const linkBase = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+  const processedContent = cleanContent
+    .replace(/\[\[([^[\]|]+)\|([^[\]]+?)\]\]/g, (_, pg: string, display: string) => {
+      if (pg.toLowerCase().includes("template:")) return "";
+      return `<a href="${linkBase}${wikiReaderPath(pg, wiki)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${display}</a>`;
+    })
+    .replace(/\[\[([^[\]]+?)\]\]/g, (_, pg: string) => {
+      if (pg.toLowerCase().includes("template:")) return "";
+      return `<a href="${linkBase}${wikiReaderPath(pg, wiki)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${pg}</a>`;
+    })
+    .replace(
+      /\[([^\s\]]+)\s+([^\]]+)\]/g,
+      '<a href="$1" class="external-link text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline" target="_blank">$2</a>'
+    )
+    .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
+    .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>');
+
+  // Split into paragraphs, filter short/empty
+  return processedContent
+    .split("|||PARA|||")
+    .map((p) => p.trim())
+    .filter((p) => p.length > 50)
+    .slice(0, 5);
+}
+
 /**
- * Fetch raw wikitext intro, clean it, and convert wiki markup to HTML paragraphs.
+ * Fetch raw wikitext intro, clean it, and convert wiki markup to HTML paragraphs. A country's own page is
+ * read on its own wiki; without one, its name is looked up on IxWiki and then on iiwiki.
  */
 async function fetchWikiRichIntro(
-  name: string
+  name: string,
+  page: WikiPageRef | undefined
 ): Promise<{ paragraphs: string[]; wikiUrl: string } | null> {
-  for (const wiki of ["ixwiki", "iiwiki"] as const) {
+  const candidates = page ? [page] : NAME_LOOKUP_WIKIS.map((wiki) => ({ title: name, wiki }));
+  for (const { title, wiki } of candidates) {
     try {
-      const article = await getArticleWikitextShadow(name, wiki);
+      const article = await readArticle(title, wiki);
       if (!article) continue;
-
-      const wikitext = article.wikitext;
-      const wikiUrl =
-        wiki === "ixwiki"
-          ? `/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`
-          : `https://iiwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
-
-      const beforeFirstHeading = leadSection(wikitext, /\{\{\s*Infobox/i);
-
-      // Clean wikitext templates, refs, categories, files
-      const cleanContent = stripCommonWikiMarkup(beforeFirstHeading)
-        .replace(/\n\n+/g, "|||PARA|||")
-        .replace(/[ \t]+/g, " ")
-        .replace(/\n/g, " ")
-        .trim();
-
-      // Convert wiki links to HTML
-      const linkBase = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
-      const processedContent = cleanContent
-        .replace(/\[\[([^[\]|]+)\|([^[\]]+?)\]\]/g, (_, pg: string, display: string) => {
-          if (pg.toLowerCase().includes("template:")) return "";
-          return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${display}</a>`;
-        })
-        .replace(/\[\[([^[\]]+?)\]\]/g, (_, pg: string) => {
-          if (pg.toLowerCase().includes("template:")) return "";
-          return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${pg}</a>`;
-        })
-        .replace(
-          /\[([^\s\]]+)\s+([^\]]+)\]/g,
-          '<a href="$1" class="external-link text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline" target="_blank">$2</a>'
-        )
-        .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
-        .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>');
-
-      // Split into paragraphs, filter short/empty
-      const paragraphs = processedContent
-        .split("|||PARA|||")
-        .map((p) => p.trim())
-        .filter((p) => p.length > 50)
-        .slice(0, 5);
-
+      const paragraphs = richIntroParagraphs(article.wikitext, wiki);
       if (paragraphs.length > 0) {
-        return { paragraphs, wikiUrl };
+        return { paragraphs, wikiUrl: articleUrl(article.title, wiki) };
       }
     } catch (err) {
-      console.error(`[Wiki] Error fetching rich intro for ${name} from ${wiki}:`, err);
-      continue;
+      console.error(`[Wiki] Error fetching rich intro for ${title} from ${wiki}:`, err);
     }
   }
   return null;
@@ -337,23 +390,35 @@ export const wikiProcedures = {
       return fetchWikiPageImages(name);
     }),
 
+  /** `countryId` reads the country's own page when it names one; it is part of the cache key. */
   getWikiRichIntro: cachedStaticProcedure
-    .input(z.object({ countryName: z.string() }))
-    .query(async ({ input }) => {
+    .input(z.object({ countryName: z.string(), countryId: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
       const name = input.countryName.trim();
       if (!name) return null;
-      return fetchWikiRichIntro(name);
+      const pages = await countryWikiPages(ctx.db, input.countryId ? [input.countryId] : []);
+      return fetchWikiRichIntro(name, input.countryId ? pages.get(input.countryId) : undefined);
     }),
 
   getBulkWikiRichIntros: cachedStaticProcedure
-    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
-    .query(async ({ input }) => {
-      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+    .input(
+      z.object({
+        countries: z
+          .array(z.object({ countryName: z.string(), countryId: z.string().optional() }))
+          .max(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const countries = input.countries
+        .map((c) => ({ name: c.countryName.trim(), id: c.countryId }))
+        .filter((c) => c.name);
+      const ids = countries.flatMap((c) => (c.id ? [c.id] : []));
+      const pages = await countryWikiPages(ctx.db, ids);
       const results: Record<string, Awaited<ReturnType<typeof fetchWikiRichIntro>>> = {};
       // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
       await Promise.all(
-        names.map(async (name) => {
-          results[name] = await fetchWikiRichIntro(name);
+        countries.map(async ({ name, id }) => {
+          results[name] = await fetchWikiRichIntro(name, id ? pages.get(id) : undefined);
         })
       );
       return results;

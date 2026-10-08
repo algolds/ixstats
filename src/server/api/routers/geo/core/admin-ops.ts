@@ -6,7 +6,13 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import type { PrismaClient } from "@prisma/client";
 import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
 import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
-import { buildClimateZones, buildElevationZones, LAYER_SELECT, type Extent } from "./profile-zones";
+import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
+import {
+  buildClimateZones,
+  buildElevationZones,
+  countryZoneFills,
+  type Extent,
+} from "./profile-zones";
 import { requirePoliticalLayer } from "./shared";
 
 /** Computes and stores one country's geo profile; throws "no geometry" when it has none. */
@@ -20,6 +26,7 @@ async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
       geometry: true,
       boundingBox: true,
       realmId: true,
+      realm: { select: { settings: true } },
     },
   });
   if (!country?.geometry) throw new Error("no geometry");
@@ -30,18 +37,15 @@ async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
     -180, -90, 180, 90,
   ];
 
-  // Climate/altitude layers of the country's own realm
-  const layersOfType = (layerType: "climate" | "altitudes") =>
-    db.mapLayer.findMany({
-      where: { layerType, isActive: true, realmId: country.realmId },
-      select: LAYER_SELECT,
-    });
-  const [climateLayers, altitudeLayers] = await Promise.all([
-    layersOfType("climate"),
-    layersOfType("altitudes"),
+  // Climate/altitude layers of the country's own realm, its zones named by its climate key
+  const place = { id: countryId, realmId: country.realmId };
+  const [climateFills, altitudeFills] = await Promise.all([
+    countryZoneFills(db, place, "climate", extent),
+    countryZoneFills(db, place, "altitudes", extent),
   ]);
-  const climateDistribution = buildClimateZones(climateLayers, extent, false);
-  const elevationProfile = buildElevationZones(altitudeLayers, extent);
+  const climateKey = parseRealmMapSettings(country.realm?.settings).climateKey ?? null;
+  const climateDistribution = buildClimateZones(climateFills, false, climateKey);
+  const elevationProfile = buildElevationZones(altitudeFills);
 
   const profile = buildGeoProfile({
     climateDistribution,

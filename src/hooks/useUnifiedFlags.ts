@@ -30,9 +30,10 @@ interface UseBulkFlagsResult {
 // Flag preloader result
 
 /**
- * Hook for loading a single flag
+ * Hook for loading a single flag. `realm` names the realm the country is in (a realm map's nations); without it
+ * the name is looked up in the viewer's realm.
  */
-export function useFlag(countryName?: string): UseFlagResult {
+export function useFlag(countryName?: string, realm?: string): UseFlagResult {
   const cleanName = countryName?.replace(/ \(Demo\)$/, "").trim();
   const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
 
@@ -41,7 +42,7 @@ export function useFlag(countryName?: string): UseFlagResult {
     isLoading,
     isError,
   } = api.countries.flags.resolveBatch.useQuery(
-    { countryNames: cleanName ? [cleanName] : [] },
+    { countryNames: cleanName ? [cleanName] : [], ...(realm && { realm }) },
     {
       enabled: Boolean(cleanName),
       staleTime: 1000 * 60 * 60, // 1 hour

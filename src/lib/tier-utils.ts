@@ -73,13 +73,13 @@ const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }>
 
 // Deterministic Tier Calculation Functions
 
+/** The highest tier whose minimum the GDP per capita reaches (so 24,999.50 is Developing, not a gap). */
 export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
+  let found = "Impoverished" as EconomicTier;
   for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {
-    if (gdpPerCapita >= info.min && gdpPerCapita <= info.max) {
-      return tier as EconomicTier;
-    }
+    if (gdpPerCapita >= info.min) found = tier as EconomicTier;
   }
-  return "Impoverished" as EconomicTier;
+  return found;
 }
 
 export function getPopulationTierFromPopulation(population: number): PopulationTier {

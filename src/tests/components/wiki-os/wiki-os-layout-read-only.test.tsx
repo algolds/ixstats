@@ -104,29 +104,4 @@ describe("WikiOSLayout without a rail", () => {
     act(() => void window.dispatchEvent(new Event("wikios:edit")));
     expect(mockPush).toHaveBeenCalledWith("/wiki/Portal:Eurth?action=edit");
   });
-
-  describe("Inspector gutter", () => {
-    const marker = (container: HTMLElement) =>
-      container.querySelector('[data-shell-gutter="none"]') !== null;
-
-    it("opts out of the gutter by default, so a tool page runs the full content width", () => {
-      mockPathname = "/util/recent-changes";
-      const { container } = render(
-        <WikiOSLayout>
-          <p>changes</p>
-        </WikiOSLayout>
-      );
-      expect(marker(container)).toBe(true);
-    });
-
-    it("keeps the gutter for an article that puts its contents in the Inspector", () => {
-      mockPathname = "/wiki/Aurelia";
-      const { container } = render(
-        <WikiOSLayout inspector>
-          <p>article</p>
-        </WikiOSLayout>
-      );
-      expect(marker(container)).toBe(false);
-    });
-  });
 });

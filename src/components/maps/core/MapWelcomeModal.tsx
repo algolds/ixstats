@@ -32,7 +32,7 @@ const STORAGE_KEY = "ixworld-welcome-seen";
 interface MapWelcomeModalProps {
   /** Only show after the map is ready */
   isMapReady: boolean;
-  /** Omitted when the map has no tour (non-IxWorld realms); the tour button is then hidden. */
+  /** Omitted when the map has no tour (non-IxWorld realms); the tour button and IxWorld's notes are then hidden. */
   onStartTour?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
@@ -287,9 +287,12 @@ export function MapWelcomeModal({
           </AnimatePresence>
         </div>
 
-        <div className="px-6 pb-2">
-          <WorldNotes currentIxTime={currentIxTime} />
-        </div>
+        {/* IxTime, the climate system and IxWiki are IxWorld's; another realm's map has its own. */}
+        {onStartTour && (
+          <div className="px-6 pb-2">
+            <WorldNotes currentIxTime={currentIxTime} />
+          </div>
+        )}
 
         <WelcomeFooter
           page={currentPage}

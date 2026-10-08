@@ -132,6 +132,48 @@ describe("realms.getBySlug", () => {
     expect(JSON.stringify(realm)).not.toContain("u1");
   });
 
+  it("keeps a renamed nation's page taken: pages match countries by page reference, by name only without one", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [
+        {
+          id: "c1",
+          name: "New Gallambria",
+          slug: "gallambria-eurth",
+          flag: null,
+          ownerUserId: "u1",
+          wikiSource: "iiwiki",
+          wikiPageTitle: "Gallambria",
+        },
+        {
+          id: "c2",
+          name: "Borea",
+          slug: "borea",
+          flag: null,
+          ownerUserId: null,
+          wikiSource: "ixwiki",
+          wikiPageTitle: null,
+        },
+      ],
+      pages: [
+        { title: "Aurelia", wikiSource: "iiwiki" },
+        { title: "Borea", wikiSource: "iiwiki" },
+        { title: "Gallambria", wikiSource: "iiwiki" },
+      ],
+      _count: { pages: 3 },
+    });
+    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
+    expect(realm?.nationPages).toEqual([{ title: "Aurelia", wikiSource: "iiwiki" }]);
+    expect(JSON.stringify(realm)).not.toContain("wikiPageTitle");
+  });
+
   it("a realm without a lore index has no nation pages and no lore source", async () => {
     const findUnique = jest.fn().mockResolvedValue({
       id: "default",
@@ -293,6 +335,17 @@ describe("realms.claimNationPage", () => {
     await expect(
       claimCaller(taken).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("refuses a page whose nation was renamed (taken by page reference, not name)", async () => {
+    const db = claimDb();
+    db.country.findFirst.mockImplementation(async ({ where }: any) =>
+      where.name === "Aurelia" ? null : { id: "c1", name: "New Aurelia", ownerUserId: "u9" }
+    );
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
 
   it("requires sign-in", async () => {

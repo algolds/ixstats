@@ -7,8 +7,9 @@
    --------------------------------------------------------------------------- */
 
 @layer components {
+  /* No background of its own: the shell's facet-canvas wash runs behind the whole page. A fill here
+     started under the Halo band and left the canvas showing as a grey strip above it. */
   .wikios-root {
-    background: var(--wikios-bg);
     color: var(--wikios-text);
     font-family: var(--wikios-font-ui);
   }
@@ -121,8 +122,6 @@
     border: none;
     box-shadow: none;
   }
-
-  /* Collapsed state */
 
   /* ===========================================================================
      WIKIOS MAIN PAGE
@@ -450,5 +449,16 @@
   100% {
     box-shadow: var(--shadow-card);
     filter: brightness(1);
+  }
+}
+
+/* Utilities layer: it has to beat the Button's own display utility. */
+@layer utilities {
+  /* The header's Contents button is for when the contents are not on screen: below 1280px, and
+     from 1280px only while the aside is hidden (collapsed, or out of the margin drawer's way). */
+  @media (min-width: 1280px) {
+    .wikios-article:has([data-slot="wiki-contents-aside"]) .wikios-toc-button {
+      display: none;
+    }
   }
 }

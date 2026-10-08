@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
+  cacheRealmKey,
   shouldSkipCache,
   createCacheMiddlewareFactory,
   clearTrpcMemoryCache,
@@ -8,6 +9,21 @@ import {
 
 type CacheMiddlewareOpts = Parameters<ReturnType<typeof createCacheMiddlewareFactory>>[0];
 const ctx = {} as CacheMiddlewareOpts["ctx"];
+
+describe("cacheRealmKey", () => {
+  it("shares IxWorld reads and keys other active realms", () => {
+    expect(cacheRealmKey({ activeRealmId: "default" })).toBeUndefined();
+    expect(cacheRealmKey({ activeRealmId: "r_eurth" })).toBe("r_eurth");
+  });
+
+  it("keeps a signed-in viewer's read of a named realm apart (staff may see a draft others may not)", () => {
+    const staff = cacheRealmKey({ realmSlug: "draft", userId: "user_staff" });
+    const anon = cacheRealmKey({ realmSlug: "draft" });
+    expect(anon).toBeUndefined();
+    expect(staff).toBe("v:user_staff");
+    expect(staff).not.toBe(anon);
+  });
+});
 
 describe("shouldSkipCache", () => {
   it("caches queries whose names used to match the mutation regexes", () => {

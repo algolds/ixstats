@@ -9,6 +9,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   parseRealmMapSettings,
   realmRadiusKm,
+  realmRasterLayers,
   withRealmMapSettings,
   type RealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
@@ -32,12 +33,13 @@ export async function realmRadiusKmById(
   return realmRadiusKm(realm?.settings);
 }
 
-type DisplayDb = Pick<PrismaClient, "realm" | "realmSourceSync" | "country">;
+type DisplayDb = Pick<PrismaClient, "realm" | "realmSourceSync" | "mapLayer">;
 
 /**
  * What the realm's map viewer shows beyond its layers: the planet radius (scale bar, measured areas), the
- * default view, the base image, the credit line (the realm's own, else its source sync's), the nations nobody
- * has claimed (drawn hatched), and whether the viewer may open the world editor on it.
+ * default view, the base image, the credit line (the realm's own, else its source sync's), its raster layers and
+ * climate key, the vector layer types it has (so the controls offer only those), and whether the viewer may open
+ * the world editor on it.
  */
 export async function getRealmMapDisplay(
   db: DisplayDb,
@@ -62,15 +64,11 @@ export async function getRealmMapDisplay(
       : null;
   }
 
-  // Unclaimed nations (no owner) are a realm idea: IxWorld's unowned countries keep their usual fill.
-  const unclaimed = isIxWorld
-    ? []
-    : await db.country.findMany({
-        where: { realmId, ownerUserId: null, isDemo: false },
-        select: { id: true },
-        take: 10_000,
-      });
   const access = await realmMapAccess(db, viewer, realmId);
+  const layerTypes = await db.mapLayer.groupBy({
+    by: ["layerType"],
+    where: { realmId, isActive: true },
+  });
 
   return {
     realmId,
@@ -81,7 +79,9 @@ export async function getRealmMapDisplay(
     defaultView: settings.defaultView ?? null,
     baseImage: settings.baseImage ?? null,
     attribution,
-    unclaimedCountryIds: unclaimed.map((c) => c.id),
+    rasterLayers: realmRasterLayers(settings),
+    climateKey: settings.climateKey ?? null,
+    layerTypes: layerTypes.map((l) => l.layerType).sort(),
     canEdit: access.canEdit,
     isFounder: access.canEdit && access.isFounder,
   };

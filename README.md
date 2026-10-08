@@ -2,7 +2,7 @@
 
 ### The Operating System for Worldbuilding.
 
-[![Version](https://img.shields.io/badge/version-1.4.0%20%22Lobster%20Crosby%22-teal.svg?style=flat-square)](src/lib/buildVersion.ts)
+[![Version](https://img.shields.io/badge/version-1.4.1%20%22Lobster%20Crosby%22-teal.svg?style=flat-square)](src/lib/buildVersion.ts)
 [![Release Channel](https://img.shields.io/badge/channel-Release%20Candidate-14b8a6.svg?style=flat-square)](src/lib/buildVersion.ts)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black.svg?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61dafb.svg?style=flat-square&logo=react)](https://react.dev/)
@@ -182,7 +182,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.4.0 "Lobster Crosby"** | **Release Candidate** |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.4.1 "Lobster Crosby"** | **Release Candidate** |
 | **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
 | | IxVault | v2 | Cards, Credits & Marketplace |

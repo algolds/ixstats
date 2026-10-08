@@ -1,7 +1,7 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Canonical Standard v2  
-**Platform Release:** IxStates 1.4.0 "Lobster Crosby" (Release Candidate)  
+**Platform Release:** IxStates 1.4.1 "Lobster Crosby" (Release Candidate)  
 **Last Updated:** September 2026  
 
 ---
@@ -23,7 +23,7 @@ Versioning communicates:
 
 ```text
 ====================================================================================================
-                            IXSTATES 1.4.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
+                            IXSTATES 1.4.1 "LOBSTER CROSBY" — OPERATING TAXONOMY
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -139,7 +139,7 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.4.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
+   *Current:* **`IxStates 1.4.1 "Lobster Crosby"`** (Channel: *Release Candidate*).
 2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 2`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
 4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.

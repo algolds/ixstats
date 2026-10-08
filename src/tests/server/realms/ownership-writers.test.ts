@@ -37,6 +37,7 @@ function db(user: any, country: any) {
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
+    realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
   };
   return d;
 }
@@ -70,6 +71,37 @@ describe("adminAssignNation", () => {
       where: { id: "u1", countryId: null },
       data: { countryId: "c2" },
     });
+  });
+
+  it("the previous owner loses their officer post when that was their last nation in the realm", async () => {
+    const d = db(
+      { id: "u1", clerkUserId: "clerk_u1", countryId: null },
+      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u_old", clerkUserId: "clerk_old" } }
+    );
+    await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
+    expect(d.country.count).toHaveBeenCalledWith({ where: { realmId: "eurth", ownerUserId: "u_old" } });
+    expect(d.realmOfficer.deleteMany).toHaveBeenCalledWith({
+      where: { realmId: "eurth", userId: "clerk_old" },
+    });
+  });
+
+  it("keeps the officer post of a previous owner who still holds a nation there, or who gets it back", async () => {
+    const stillHolds = db(
+      { id: "u1", clerkUserId: "clerk_u1", countryId: null },
+      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u_old", clerkUserId: "clerk_old" } }
+    );
+    stillHolds.country.count.mockImplementation(async ({ where }: any) =>
+      where.ownerUserId === "u_old" ? 1 : 0
+    );
+    await adminAssignNation(stillHolds, { clerkUserId: "clerk_u1", countryId: "c2" });
+    expect(stillHolds.realmOfficer.deleteMany).not.toHaveBeenCalled();
+
+    const same = db(
+      { id: "u1", clerkUserId: "clerk_u1", countryId: "c2" },
+      { ...country, realmId: "eurth", ownerUserId: null, owner: { id: "u1", clerkUserId: "clerk_u1" } }
+    );
+    await adminAssignNation(same, { clerkUserId: "clerk_u1", countryId: "c2" });
+    expect(same.realmOfficer.deleteMany).not.toHaveBeenCalled();
   });
 
   it("a user at their cap in c2's realm is CAP_REACHED; nothing they own is released", async () => {
@@ -178,11 +210,22 @@ describe("admin.unassignUserFromCountry", () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       country: {
-        findUnique: jest.fn().mockResolvedValue({ ownerUserId }),
+        findUnique: jest.fn().mockResolvedValue({ ownerUserId, realmId: "eurth" }),
         update: jest.fn().mockResolvedValue({}),
+        count: jest.fn().mockResolvedValue(0),
       },
+      realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
     });
   }
+
+  it("an officer who loses their last nation in the realm loses the post", async () => {
+    const { caller, db: d } = setup({ id: "u1", countryId: "c1" }, "u1");
+    await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
+    expect(d.country.count).toHaveBeenCalledWith({ where: { realmId: "eurth", ownerUserId: "u1" } });
+    expect(d.realmOfficer.deleteMany).toHaveBeenCalledWith({
+      where: { realmId: "eurth", userId: "clerk_u1" },
+    });
+  });
 
   it("the owner loses the nation (released for everyone)", async () => {
     const { caller, db: d } = setup({ id: "u1", countryId: "c1" }, "u1");

@@ -12,7 +12,7 @@ export {
 } from "./realms.nation-cap";
 export { BuilderRealmError, listBuilderRealms, resolveBuilderRealm } from "./realms.builder";
 export { listMyNations } from "./realms.my-nations";
-export { DEFAULT_REALM_ID, resolveViewerRealmId } from "./realms.context";
+export { DEFAULT_REALM_ID, findRealmIdBySlug, resolveViewerRealmId } from "./realms.context";
 export {
   canEditRealmMap,
   canImportRealmMap,
@@ -30,6 +30,7 @@ export {
   activateOwnedNation,
   adminAssignNation,
   assignNation,
+  dropOfficerPostWithoutNation,
   NationOwnershipError,
   pointActiveNation,
   releaseNation,

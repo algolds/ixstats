@@ -33,6 +33,11 @@ This is destructive. It will:
 - **Drop** `world_configs` (1 row today) and `territory_claims` (0 rows today).
 - Swap `Country` name uniqueness from global to **per-realm** (`@@unique([realmId, name])`).
 - Add `realm_pages`, `realm_claims`, `wiki_account_links` tables.
+- Add the realm region tables `realm_officers`, `realm_embassies`, `realm_board_bans` and `realm_boards` (plus the
+  region page's columns on `realms`: banner, factbook, links, rules, in-world date).
+- Add the source sync tables `realm_source_syncs` and `realm_sync_runs`, `externalSourceKey` on countries and
+  alliances, and `realmId` on alliances (alliance names become unique per realm).
+- Add the map import tables `map_import_jobs` and `map_imports`.
 - Add `ownerUserId` and `lastSeenAt` columns.
 - Change `MapLayer`'s unique key to `(worldId, layerType, featureId)` (per-realm map features).
 
@@ -129,8 +134,8 @@ In `/admin/realms` → **Realms** tab → **New realm**, fill in exactly:
 | Visibility | `public` |
 
 The realm is created **active**, owned by `system` (shown as **IxStats staff** in the Founder column). It
-stays that way until an Eurth leader has their own IxStats account and is handed the realm (section 4.1).
-Until then, **site admins moderate Eurth's claims** from the Claims tab (step 4 below).
+stays that way until an Eurth leader has their own IxStats account and is handed the realm (section 5.1).
+Until then, **site admins moderate Eurth's claims** from the Claims tab (step 5 below).
 
 ---
 
@@ -251,7 +256,8 @@ When a claim on a nation page is approved, the new country is prefilled from the
 GDP per capita (or GDP divided by population), area, continent, government, leader (the head of state, else
 the first leader listed), flag, coat of arms, and national identity (official name, capital, motto, currency,
 languages and so on). Flags and coats of arms are stored as IxStats media proxy paths
-(`/api/mediawiki/iiwiki/wiki/Special:FilePath/<file>`). GDP figures may carry a currency symbol or code
+(`/api/mediawiki/iiwiki/wiki/Special:FilePath/<file>`) until the map pipeline's `flags` step makes them local files
+(step 4.7). GDP figures may carry a currency symbol or code
 (`$`, `€`, `US$`, `Int$`, `USD`) and a magnitude (`billion`, `trillion`, `bn`, `tn`). A figure that cannot
 be read, or a GDP per capita under $100, falls back to the baseline default instead of founding a near-zero
 economy.
@@ -267,7 +273,23 @@ borders and alliances, and keeps them in step on a schedule. Players then claim 
 
 **Precedence for a new nation's figures:** the map's figures (forum-checked by its maintainer), then the nation's
 IIWiki infobox, then the baseline defaults. Stated land area wins; the map's traced area is used only when the map
-states none. Flag, coat of arms, leader and identity come from the infobox.
+states none. Flag, coat of arms, leader and identity come from the infobox. A figure the map lists in an entry's
+`secondaryFields` (taken from an older, less-trusted source; 93 of the 130 entries have some) ranks **below** the
+infobox, and never changes a nation that already exists.
+
+**What the sync does not take from the map as is:**
+
+- **Wiki links to other pages.** A map entry's `iiwikiLink` is kept only when it names one of Eurth's own indexed
+  pages (step 3, any kind). About 17 of the 130 links do not (pages of other worlds, or renamed pages): those
+  nations are created **without** a wiki page, so a claim on them is always reviewed (a claim on a nation with a
+  wiki page is approved instantly for that page's creator, so a foreign page would hand it to the wrong person).
+  Each one is a warning in the diff. Re-run the lore import first if a link names a real Eurth page it missed.
+- **NPC entries** (`npc: true` on the map, 4 today: Mito, Goankok, Kirvina, Tetlacatian) are created like any other
+  nation and can be claimed (owner decision 2026-10-07). The sync does not read the flag.
+- **Roster titles with a qualifier.** A roster page `Nanto (Eurth)` and the map's `Nanto` are one nation (a trailing
+  `(...)` on one side only is ignored when matching; two different qualifiers never match). A roster page that only
+  looks like a map entry spelled another way (`Ymutztlaclan-Mizlanuzco` and `Ymutz Mizlan`) is **not** created: the
+  diff warns about it. If it really is a different nation, a claim on its page creates it.
 
 Nothing about Eurth is built in: the repository, ref, file paths, field names, wiki link prefixes, alliance type
 rules, attribution line, options and continent table all live in the realm's own sync settings. Eurth's values ship
@@ -284,7 +306,7 @@ Either in `/admin/realms` → **Source sync** tab → realm `Eurth`, or (the fou
    `eurth-map/src/data/nations.js`, `eurth-map/src/data/organizations.js`, `eurth-map/public/nations.geojson`;
    field names; IIWiki link prefixes; alliance type rules; the attribution
    `Map: Eurth community, via eurth-map by Seth Harrison`), the options and the continent table (a first guess for
-   115 nations; the other 16 are left unknown).
+   115 nations; the other 15 are left unknown).
 2. Check the **continent table** and correct any guess (free text, no fixed list), then **Save source sync**.
 
 From the command line instead (same result):
@@ -294,13 +316,18 @@ bun scripts/realms/sync-realm-source.ts --realm eurth --preset eurth-map        
 bun scripts/realms/sync-realm-source.ts --realm eurth --configure --ref main       # change repo/ref/format later
 ```
 
+Loading the preset again (in the settings or with `--preset`) fills only what Eurth's config lacks: corrected
+continents and changed options stay. The script prints what it filled and what it kept;
+`--preset eurth-map --force-preset` overwrites everything with the preset's values (staff decisions are always
+kept).
+
 ### 4.2 Options
 
 | Option | Default | What it does |
 |---|---|---|
 | Add new nations | on | Creates unclaimed nations for map entries no nation matches |
 | Add roster nations | on | Creates unclaimed nations for roster pages the map does not list (from their infobox) |
-| Read new nations' wiki infobox | on | Fills what the map lacks, plus flag, arms, leader, identity; one page at a time, paced, 8 s each |
+| Read new nations' wiki infobox | on | Fills what the map lacks, plus flag, arms, leader, identity; one page at a time with a 750 ms pause between reads, each read giving up after 8 s. Also re-reads unclaimed nations whose infobox never landed (no flag, arms, leader or government), filling only empty fields |
 | Update unclaimed nations | on | Keeps unclaimed nations' population, GDP per capita, land area, capital, official name, continent in step |
 | Update claimed nations too | **off** | Overwrites players' own figures with the map's. Leave off unless Eurth asks for it |
 | Update borders | on | Writes the map's borders into Eurth's map (keyed by the map's nation key) and links them |
@@ -315,26 +342,37 @@ A sync never deletes a nation, never removes an alliance member and never change
 1. **Dry run** (settings page, or `bun scripts/realms/sync-realm-source.ts --realm eurth`). Read the diff: new
    nations (unclaimed), figure changes, claimed nations left alone, borders, alliances (with the type the name rules
    gave: Treaty, Pact, Defence or Security → military; Economic → economic; else political), nations no longer in
-   the map, and **Left to you**: entries whose name matches more than one nation, or a nation another entry also
-   matches. Nothing is guessed.
+   the map, and **Left to you**: entries whose name matches more than one nation, a nation another entry also
+   matches. **Warnings** lists map links that are not Eurth pages and roster pages held
+   back as possible duplicates. Nothing is guessed.
 2. **Decide** on each entry left to you: **Match to a nation** (a manual match), or **Exclude** the map key. On
    figure changes, **Pin current value** keeps a field as it is on that nation forever (the sync never overwrites a
    pinned field). Alliance types can be changed in the diff. Decisions are kept in the realm's settings and listed
    under **Your decisions** (clear one there). Dry-run again until the diff reads right.
 3. **Apply** (settings page: it runs in the background and appears in the run history; or the script with
-   `--apply`). Expect on prod about **130 nations** created unclaimed (the map's 130, matched to the roster where
-   they overlap, plus any roster-only pages), **115 borders**, **8 alliances** with their members.
+   `--apply`). Expect on prod about **135 nations** created unclaimed (the map's 130, matched to the roster where
+   they overlap, plus the 5 roster-only pages not held back), **115 borders**, **8 alliances** with their members.
+   Then link the one roster page held back as a respelling, `Ymutztlaclan-Mizlanuzco`, to the map's `Ymutz Mizlan`
+   (its map link names a page that does not exist; owner decision 2026-10-07), so a claim on the page takes that
+   nation instead of creating a second one, and re-run the sync to read its infobox:
+   ```sql
+   UPDATE "Country" SET "wikiSource" = 'iiwiki', "wikiPageTitle" = 'Ymutztlaclan-Mizlanuzco'
+   WHERE "realmId" = (SELECT id FROM realms WHERE slug = 'eurth') AND "externalSourceKey" = 'Ymutz-Mizlan';
+   ```
 4. Check `/r/eurth` → **Nations**: every nation listed, unclaimed ones badged **Unclaimed** with **Claim**;
    `/maps?realm=eurth` shows the borders and the attribution line; a nation's page shows **Unclaimed** and
    **Claim this nation**.
 
 The local end-to-end rehearsal (2026-10-07, real GitHub source, a simulated 107-page roster with one claimed nation)
-created 132 nations (129 from the map plus 3 roster-only pages), matched 1, left the claimed nation's figures
+(before NPC entries, wiki-link checks and secondary figures were handled) created 132 nations (129 from the map
+plus 3 roster-only pages), matched 1, left the claimed nation's figures
 alone, wrote and linked 115 borders (PostGIS geometry and areas filled by the writer, 76 with neighbours), created
 8 alliances with 54 members alongside an IxWorld alliance of the same name, and a second dry run showed no changes.
 IIWiki refuses requests from outside production (HTTP 403), so every infobox read fell back: all 132 new nations
 were still created from the map's figures (defaults where the map has none) and listed under "wiki infobox gave
-nothing (re-run to retry)". On production the reads succeed; re-run the apply to fill any that failed.
+nothing (re-run to retry)". On production the reads succeed; re-run the apply to fill any that failed: it reads the
+infobox again for every unclaimed nation that still has no flag, arms, leader or government, and lists those it
+filled under "wiki infobox filled".
 
 ### 4.4 Schedule
 
@@ -343,7 +381,8 @@ schedule** on. The `realm-source-sync` cron job (add it to `CRON_ENABLED_JOBS`; 
 every realm whose interval has passed since its last applied run, one realm at a time. Each realm's run holds the
 lease `realm-source-sync:<realmId>`, so a scheduled run, an admin's apply and the script never overlap (the second
 one is recorded as failed: "Another run of this realm's sync is in progress"). A failed applied run still moves the
-schedule on, so a broken source is retried at the next interval, not every hour.
+schedule on, so a broken source is retried at the next interval, not every hour. An archived realm's sync never runs, scheduled or
+by hand, and its settings can be read but not changed.
 
 ### 4.5 Claims on synced nations
 
@@ -358,12 +397,14 @@ schedule on, so a broken source is retried at the next interval, not every hour.
 
 Eurth's map editing no longer needs a site admin. The founder appoints the community's mapper as an officer:
 `/r/eurth/manage` → **Officers** → tick **Map** ("Edit the realm's map, borders and labels, and import maps").
+While Eurth's `ownerId` is still `"system"` (no founder yet, §5.1), a **site admin** appoints officers from the same
+page.
 The founder and Map officers edit **Eurth's map only**; IxWorld's map stays with site admins.
 
 Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
 
 1. **Credit line:** leave it empty to show the source sync's attribution, or type Eurth's own (for example the
-   community map's credit). It shows at the bottom left of `/maps?realm=eurth`.
+   community map's credit). It shows in the bottom-right credit block of `/maps?realm=eurth`, above "© 2026 Ixnay".
 2. **Base map image** (optional): upload a full-globe equirectangular image (2:1, cropped to 85°N to 85°S, up to
    5MB) or paste an `https://` address whose host allows cross-origin use. It is drawn under the borders.
 3. **Planet radius:** leave empty (Earth's 6371 km) unless Eurth's lore gives its planet a size. After changing
@@ -371,7 +412,60 @@ Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
    wants every nation's stated land area replaced by its measured map area.
 4. **Default view and labels:** open `/maps?realm=eurth` → **World editor** → the map icon in the editor's header:
    **Save current view as default** (where the map opens), and **Realm labels…** for Eurth's oceans, seas,
-   regions and continents.
+   regions and continents. Without a default view the map opens at 0°, 0°, which on Eurth is open ocean. Use
+   IxWorld's opening zoom (1.8) centred on Europa, the region with the most nations and land (the local dev DB
+   has `{"center":[108.3,32.9],"zoom":1.8}`, from the area-weighted centroid of Europa's nations).
+
+### 4.7 Eurth's map pipeline (art, physical layers, labels, flags)
+
+Eurth's map is built by the generic realm map pipeline: **[realm-maps.md](realm-maps.md)** is the runbook (config
+fields, art sources, steps, idempotency, panel, CLI, production notes). Everything Eurth-specific is data in the
+`eurth-map` source preset (`src/lib/realms/sources/presets/eurth-map.json`, key `mapPipeline`), loaded into
+`Realm.settings.map.pipeline`. The art is read from `a-seth-harrison/eurth-map` at the source sync's ref (CC BY-NC-ND,
+credited in the map's credit line).
+
+**Eurth's values (the preset):**
+
+| Config | Eurth |
+|---|---|
+| Art | `blank` = `Eurth Blank Map Borders.png`; `geography` = `Overlays/Eurth-Geography-Map-10-3-2026 No Legend.png`; `climate-map` = `Overlays/Eurth-Climate-Map.png`; `climate-key` = `eurth-map/src/data/climates.js`; `climate-overlay`, `tectonic`, `currents`, `legend-geography`, `legend-climate` = `eurth-map/public/layers/{climate,tectonic,currents,legend-geo,legend-climate}.webp` |
+| Rasters | `geography` (base, Geography, legend), `geography-grey` (base, Grey, `grey`), `climate` (overlay 1, legend), `tectonic` (overlay 2), `currents` (overlay 3) |
+| Physical | land `blank` (`landMaxSum` 720); climate `climate-map` with the Köppen key from `climate-key` (`CLIMATE_ZONES`, link prefix `WIKI`); ice and elevation from `geography` (`iceMinChannel` 235, `elevationTolerance` 1.5); rivers `#5184c8` |
+| Labels | 83 oceans, seas, regions and continents, typed into the preset (read from the geography art) |
+| Flags, view, smoothing | `flags.localize`; `defaultView: "auto"` (Europa, 40 nations: `[108.3, 32.9]`, zoom 1.8); `coverage` 0.045° (one source pixel), 2 rounds |
+
+**Elevation bands.** The legend has six land bands; each takes the IxWorld band whose range holds its lowest
+elevation (the next band up when a lower Eurth band already took it). The tints are sampled from the map itself (the
+legend swatches differ by up to ΔE 2.7):
+
+| Eurth band | Map tint | IxWorld style |
+|---|---|---|
+| 0–50 m | `#a5bb8c` | `coastlines` (the whole land) |
+| 50–500 m | `#b8c9a4` | `Altitude-1` |
+| 500–2,000 m | `#c6d4b5` | `Altitude-3` |
+| 2,000–4,000 m | `#d7e2cd` | `Altitude-5` |
+| 4,000–8,000 m | `#dacaab` | `Altitude-7` |
+| 8,000 m and above | `#ffffff` | `Altitude-8` |
+
+**Run it** (`/r/eurth/manage` → Map, or from the app directory):
+
+```bash
+bun scripts/realms/build-realm-map.ts --realm eurth --preset eurth-map          # load the preset, dry run every step
+bun scripts/realms/build-realm-map.ts --realm eurth --apply                     # apply every step
+bun scripts/realms/build-realm-map.ts --realm eurth --steps flags --apply       # after a source sync apply or claim approvals
+```
+
+Re-run `flags` after every source sync apply and after claim approvals (new nations get media proxy paths from their
+infobox); on production copy the new `public/flags/eurth--*` files and `metadata.json` to
+`.next/standalone/public/flags/` and restart ([realm-maps.md §7](realm-maps.md#7-production-notes)). Borders a source
+sync writes are smoothed by the sync itself (Eurth's pipeline has `coverage`).
+
+**Local result (2026-10-07):** a dry run of every step against the stored map reports `unchanged` for physical
+(altitudes 1,078, lakes 62, climate 677, ice 1, rivers 398 features, 0 changes), rasters (5 layers, versions as built),
+labels (83), flags (202 images local, 0 to do), default view and areas. The first `repair` apply stamped the 115
+borders, smoothing them once from the source's outlines (they moved at most 0.039°, under one source pixel); a second
+run reports `unchanged`. Known source issue: the map's own shapes give a 1,837 km² area to both Tetlacatian and
+Manamana (the repair hands it to Manamana). Ask the map's maintainer which is right.
 
 ---
 
@@ -399,7 +493,7 @@ Tell players, in order:
    - If you are the verified creator of that nation's iiwiki page, the claim is **approved instantly** —
      the nation (synced, or created now for a roster page) is assigned to you.
    - Otherwise the claim goes to **pending**; a site admin reviews it in `/admin/realms` → **Claims**, and
-     once Eurth has a founder (4.1), the founder and officers with the **Claims** power (4.2) review it in
+     once Eurth has a founder (5.1), the founder and officers with the **Claims** power (5.2) review it in
      `/r/eurth/manage` → **Claims**. A nation only on the community map has no IIWiki page to prove, so its
      claim is always reviewed.
      Each nation-page claim there has a **Page history** link to the page's history on iiwiki; its first
@@ -410,7 +504,7 @@ Default cap is **one nation per player per realm**. A site admin can raise it (1
 **Realms** tab → the realm's pencil (edit) button → **Nations per player** → the check (save) button. It is
 stored as `Realm.settings.maxNationsPerUser`; other keys in `Realm.settings` are kept.
 
-### 4.1 Hand Eurth to its leaders
+### 5.1 Hand Eurth to its leaders
 
 Eurth is run by its own leaders. Once the leader has an IxStats account (ideally with their Eurth nation
 claimed, so they are easy to find):
@@ -432,9 +526,10 @@ When the community changes leaders later, the founder hands Eurth on themselves:
 an officer → type `eurth` → **Hand over realm**. It is audited the same way. Site admins can still
 transfer it from `/admin/realms` at any time.
 
-### 4.2 Give claim reviewers the Claims power
+### 5.2 Give claim reviewers the Claims power
 
-The founder lets trusted players review claims without making them founder: `/r/eurth/manage` →
+The founder (or a site admin, while Eurth's `ownerId` is `"system"`) lets trusted players review claims without
+making them founder: `/r/eurth/manage` →
 **Officers** → appoint the player (they must own a nation in Eurth) or edit an existing officer → tick
 **Claims** ("Review players' claims on the realm's nations") → **Appoint** / **Save**.
 
@@ -549,10 +644,10 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
   acting as it after their Eurth claim is approved; they switch with **Play as <nation>** next to their
   nation on `/r/eurth` (and back the same way on `/r/ixworld`). The active one shows **Active**.
 - **Staff-run until handed over.** The realm's `ownerId` is `"system"` until an Eurth leader is handed the
-  realm (4.1); until then, site admins are the only ones who can act on Eurth's claims.
+  realm (5.1); until then, site admins act on Eurth's claims and appoint its officers.
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, a founder
   raising their own realm's nation cap (today only site admins can, in `/admin/realms`), and realm-scoped
-  dashboard feed and trending. Handing the realm over (4.1) and the Claims officer power (4.2) shipped on
+  dashboard feed and trending. Handing the realm over (5.1) and the Claims officer power (5.2) shipped on
   2026-10-07. Shipped since: a realm filter on the ThinkPages
   feed and the realm board at `/r/eurth/board`, and a nation switcher in the nav and on the passport (alongside
   **Play as** on the realm page), and the region page's links, rules and in-world date (§5), and the source sync (§4).
@@ -568,12 +663,14 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 | Re-import Eurth's lore after iiwiki changes | Re-run the step 3 command with `--apply` (claimed and synced nation pages stay nations); `--realm eurth --apply` is enough once §3.0 is done |
 | Find and choose Eurth's world map on IIWiki, or check it has changed | `/admin/realms` → Wiki → Discover from wiki → Use this map; Re-check on the Chosen world map card (§6.0) |
 | Sync Eurth's nations, borders and alliances from the community map | `/admin/realms` → Source sync → Dry run → Apply, or `bun scripts/realms/sync-realm-source.ts --realm eurth [--apply]` |
+| Reload the preset over Eurth's edited config | `bun scripts/realms/sync-realm-source.ts --realm eurth --preset eurth-map --force-preset` (otherwise it fills only empty values) |
 | Correct a continent, exclude or match a map entry, pin a field | `/admin/realms` → Source sync (or `/r/eurth/manage` → Source sync): continent table, the diff's buttons |
 | See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
 | Import a realm map from an image (no source) | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm (never Quick Update) |
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
-| Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (4.1); later, the founder uses `/r/eurth/manage` → Hand over |
-| Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (4.2) |
+| Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (5.1); later, the founder uses `/r/eurth/manage` → Hand over |
+| Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (5.2) |
 | Let a player edit Eurth's map | `/r/eurth/manage` → Officers → tick **Map** (4.6) |
 | Set Eurth's credit line, base image or planet radius; recompute areas | `/r/eurth/manage` → **Map** (4.6) |
+| Build Eurth's map (art tiles, physical layers, labels, flags, view, smoothing) | `/r/eurth/manage` → Map → dry run, then apply; or `bun scripts/realms/build-realm-map.ts --realm eurth [--steps …] [--apply]` (4.7, [realm-maps.md](realm-maps.md)) |
 | See who owns what in Eurth | `/admin/realms` → User Access tab, or `/countries?realm=eurth` |

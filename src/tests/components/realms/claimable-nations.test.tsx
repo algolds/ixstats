@@ -50,7 +50,9 @@ jest.mock("~/trpc/react", () => ({
         getBySlug: { invalidate: mockInvalidate },
         region: { invalidate: jest.fn() },
         myClaims: { invalidate: jest.fn() },
+        myNations: { invalidate: jest.fn() },
       },
+      users: { getProfile: { invalidate: jest.fn() } },
     }),
   },
 }));

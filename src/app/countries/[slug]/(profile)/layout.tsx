@@ -69,7 +69,6 @@ export default function CountryProfileLayout({
 /** Full-width page column (no Inspector gutter), capped at 1600px, `p-4` phone, `p-8` from md. */
 const PAGE_COLUMN = {
   className: "mx-auto w-full max-w-[1600px] space-y-6 p-4 md:p-8",
-  "data-shell-gutter": "none",
 } as const;
 
 function ProfileShellSkeleton() {

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { RealmAvatar } from "./RealmAvatar";
 import { openToJoinCount, plural, realmHref, type DirectoryRealm } from "./realm-directory";
@@ -49,7 +48,7 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <Link
-                    href={createUrl(realmHref(realm.slug))}
+                    href={realmHref(realm.slug)}
                     className="text-label text-body truncate font-medium hover:underline"
                   >
                     {realm.name}
@@ -61,7 +60,7 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
                 </p>
               </div>
               <Link
-                href={createUrl(realmHref(realm.slug, "nations"))}
+                href={realmHref(realm.slug, "nations")}
                 className="text-tint text-footnote shrink-0 underline-offset-4 hover:underline"
                 aria-label={`See the nations of ${realm.name}`}
               >

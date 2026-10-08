@@ -60,7 +60,7 @@ export function GlobalBuilderLoading({
     <div
       role="status"
       aria-label={message}
-      className={cn("flex min-h-screen w-full flex-col pt-24 sm:pt-28 lg:pt-32", className)}
+      className={cn("flex min-h-screen w-full flex-col pt-(--shell-top-offset)", className)}
     >
       <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8">
         <Card className="rounded-card flex items-center justify-between gap-3 p-3">

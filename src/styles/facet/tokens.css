@@ -535,11 +535,11 @@
      nested scopes and appearance changes resolve correctly. */
   :root,
   [data-app="admin"] {
-    --tint-light: #4338ca;
-    --tint-light-strong: #3730a3;
+    --tint-light: #5a493d;
+    --tint-light-strong: #46372b;
     --on-tint-light: #ffffff;
-    --tint-dark: #818cf8;
-    --tint-dark-strong: #a5b4fc;
+    --tint-dark: #c3b4a8;
+    --tint-dark-strong: #d7cbc2;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="mycountry"] {
@@ -550,61 +550,93 @@
     --tint-dark-strong: #fcd34d;
     --on-tint-dark: #1c1917;
   }
-  [data-app="maps"] {
-    --tint-light: #0369a1;
-    --tint-light-strong: #075985;
+  [data-app="wiki"] {
+    --tint-light: #1d4e89;
+    --tint-light-strong: #163b69;
     --on-tint-light: #ffffff;
-    --tint-dark: #38bdf8;
-    --tint-dark-strong: #7dd3fc;
+    --tint-dark: #89b3e6;
+    --tint-dark-strong: #abc9ed;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="labs"] {
+    --tint-light: #4f7002;
+    --tint-light-strong: #425d03;
+    --on-tint-light: #ffffff;
+    --tint-dark: #a1c768;
+    --tint-dark-strong: #bcda93;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="thinkpages"] {
-    --tint-light: #047857;
-    --tint-light-strong: #065f46;
+    --tint-light: #04755b;
+    --tint-light-strong: #03614b;
     --on-tint-light: #ffffff;
-    --tint-dark: #34d399;
-    --tint-dark-strong: #6ee7b7;
-    --on-tint-dark: #052e16;
-  }
-  [data-app="vault"] {
-    --tint-light: #9a3412;
-    --tint-light-strong: #7c2d12;
-    --on-tint-light: #ffffff;
-    --tint-dark: #fdba74;
-    --tint-dark-strong: #fed7aa;
-    --on-tint-dark: #1c1917;
-  }
-  [data-app="forum"] {
-    --tint-light: #c2410c;
-    --tint-light-strong: #9a3412;
-    --on-tint-light: #ffffff;
-    --tint-dark: #fb923c;
-    --tint-dark-strong: #fdba74;
-    --on-tint-dark: #1c1917;
-  }
-  [data-app="wiki"] {
-    --tint-light: #3730a3;
-    --tint-light-strong: #312e81;
-    --on-tint-light: #ffffff;
-    --tint-dark: #a5b4fc;
-    --tint-dark-strong: #c7d2fe;
+    --tint-dark: #4cd2ab;
+    --tint-dark-strong: #87e3c4;
     --on-tint-dark: #0b0c0f;
   }
-  [data-app="intel"] {
-    --tint-light: #be123c;
-    --tint-light-strong: #9f1239;
+  [data-app="maps"] {
+    --tint-light: #057080;
+    --tint-light-strong: #025d6b;
     --on-tint-light: #ffffff;
-    --tint-dark: #fb7185;
-    --tint-dark-strong: #fda4af;
-    --on-tint-dark: #1c0a0f;
+    --tint-dark: #26cde7;
+    --tint-dark-strong: #78dff4;
+    --on-tint-dark: #0b0c0f;
   }
-  [data-app="sports"] {
-    --tint-light: #0f766e;
-    --tint-light-strong: #115e59;
+  [data-app="realms"] {
+    --tint-light: #7546ad;
+    --tint-light-strong: #64349a;
     --on-tint-light: #ffffff;
-    --tint-dark: #2dd4bf;
-    --tint-dark-strong: #5eead4;
-    --on-tint-dark: #042f2e;
+    --tint-dark: #c7a3fc;
+    --tint-dark-strong: #d8c1fe;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="vault"] {
+    --tint-light: #993582;
+    --tint-light-strong: #862270;
+    --on-tint-light: #ffffff;
+    --tint-dark: #ed96d4;
+    --tint-dark-strong: #f9b5e5;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="forum"] {
+    --tint-light: #aa2e49;
+    --tint-light-strong: #961739;
+    --on-tint-light: #ffffff;
+    --tint-dark: #ff93a0;
+    --tint-dark-strong: #ffb8be;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="vault"] {
+    --tint-light: #993582;
+    --tint-light-strong: #862270;
+    --on-tint-light: #ffffff;
+    --tint-dark: #ed96d4;
+    --tint-dark-strong: #f9b5e5;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="forum"] {
+    --tint-light: #aa2e49;
+    --tint-light-strong: #961739;
+    --on-tint-light: #ffffff;
+    --tint-dark: #ff93a0;
+    --tint-dark-strong: #ffb8be;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="vault"] {
+    --tint-light: #a03273;
+    --tint-light-strong: #8c1d62;
+    --on-tint-light: #ffffff;
+    --tint-dark: #f494c6;
+    --tint-dark-strong: #feb4d9;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="forum"] {
+    --tint-light: #ab2f3f;
+    --tint-light-strong: #97182f;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fe9498;
+    --tint-dark-strong: #feb9ba;
+    --on-tint-dark: #0b0c0f;
   }
 
   :root,
@@ -734,7 +766,7 @@
     --accent-fill-mix: 18%;
   }
 
-  /* Declared on every scope so a nested app (intel inside MyCountry) resets to monochrome. */
+  /* Declared on every scope so a nested app (ThinkPages inside Home) resets to monochrome. */
   :root,
   [data-app] {
     --primary-fill: var(--primary-mono);

@@ -3,6 +3,7 @@
 import React from "react";
 import { Coins } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { BNB_GLYPH } from "~/lib/navigation/icons/VaultLogomark";
 
 interface CurrencyIconProps extends React.HTMLAttributes<HTMLSpanElement> {
   code?: string | null;
@@ -97,10 +98,7 @@ const CCY_VECTORS: Record<string, CcyVectorDef> = {
     fillRule: "evenodd",
   },
   // Binance Coin - (ccy-icons)
-  BNB: {
-    viewBox: "0 0 384 381",
-    path: "M117.512 159.61l73.765-73.762 73.801 73.8L308 116.727 191.277 0 74.594 116.688zm-73.23-12.618l42.917 42.918-42.918 42.918L1.36 189.91zm73.23 73.23l73.765 73.762 73.801-73.796 42.945 42.898-116.746 116.746L74.59 263.148l-.063-.058zm263.687-30.292l-42.918 42.922-42.926-42.918 42.922-42.926zm0 0M234.813 189.895h.019l-43.555-43.555-32.187 32.187h-.004l-3.695 3.7-7.688 7.687.059.063 43.515 43.515 43.555-43.554.02-.024zm0 0",
-  },
+  BNB: BNB_GLYPH,
   // Ripple - (ccy-icons)
   XRP: {
     viewBox: "0 0 512 445",

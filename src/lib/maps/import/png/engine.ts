@@ -44,6 +44,17 @@ export interface PixelTopology {
   >;
 }
 
+/** One TopoJSON topology of the traced regions (shared arcs), simplified once when `simplify` > 0 (px²). */
+export function simplifiedTopology(
+  features: Array<Feature<Polygon | MultiPolygon, { key: string }>>,
+  simplify: number
+): PixelTopology {
+  const topology = topoServer.topology({ regions: { type: "FeatureCollection", features } });
+  return simplify > 0
+    ? topoSimplify.simplify(topoSimplify.presimplify(topology), simplify)
+    : topology;
+}
+
 /** Below this many pixels a region is a speck: 0.002% of the image, at least 16 pixels. */
 export const defaultMinRegionPixels = (pixels: number) =>
   Math.max(16, Math.round(pixels * 0.00002));
@@ -175,14 +186,8 @@ export async function runPngEngine(
   }
   lap("assemble");
 
-  ctx.progress(85, "Building shared borders");
-  const topology = topoServer.topology({ regions: { type: "FeatureCollection", features } });
-  await ctx.tick();
-  ctx.progress(92, "Simplifying borders");
-  const simplified =
-    options.simplify > 0
-      ? topoSimplify.simplify(topoSimplify.presimplify(topology), options.simplify)
-      : topology;
+  ctx.progress(85, "Building and simplifying shared borders");
+  const simplified = simplifiedTopology(features, options.simplify);
   lap("topology");
   const vertices = simplified.arcs.reduce((sum, arc) => sum + arc.length, 0);
   log.push(`Topology: ${simplified.arcs.length} shared arcs, ${vertices} vertices`);

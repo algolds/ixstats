@@ -1,7 +1,7 @@
 /**
  * Neighbor resolution for the National Issues engine (plan 002, Phase 3).
  *
- * Uses live PostGIS ST_Touches over the active political map_layers to find a
+ * Uses live PostGIS ST_Intersects over the active political map_layers to find a
  * country's real neighbors — gated + memoized per evaluation so the engine never
  * pays the spatial-join cost more than once per country per request.
  */
@@ -24,7 +24,8 @@ function enabled(): boolean {
 }
 
 /**
- * Resolve real neighbor names/countryIds via PostGIS ST_Touches. Returns [] when
+ * Resolve real neighbor names/countryIds via PostGIS ST_Intersects (not ST_Touches, which is false when
+ * neighbours overlap by a rounding sliver along their border). Returns [] when
  * gated off, when the country has no political map layer, or on any spatial error.
  * Cached for 60s per country.
  */
@@ -51,7 +52,7 @@ export async function resolveNeighbors(countryId: string, db: PrismaClient): Pro
          AND ml2.id != ml1.id
          AND ml1.geom_postgis IS NOT NULL
          AND ml2.geom_postgis IS NOT NULL
-         AND ST_Touches(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
+         AND ST_Intersects(ST_MakeValid(ml1.geom_postgis), ST_MakeValid(ml2.geom_postgis))
        WHERE ml1.id = $1`,
       mapLayer.id
     )) as Array<{ featureId: string; displayName: string | null; countryId: string | null }>;

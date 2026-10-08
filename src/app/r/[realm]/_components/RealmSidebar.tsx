@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn, createUrl, formatPercent, formatYears } from "~/lib/utils";
+import { cn, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact, timeAgo } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 
@@ -45,7 +45,7 @@ function Panel({
 }
 
 const nationHref = (nation: { slug: string | null; id: string }) =>
-  createUrl(`/countries/${nation.slug ?? nation.id}`);
+  `/countries/${nation.slug ?? nation.id}`;
 
 const LINK_ICONS: Record<RealmLinkKind, React.ComponentType<{ className?: string }>> = {
   forum: ChatLines,
@@ -85,6 +85,8 @@ export function CommunityPanel({ overview }: { overview: Overview }) {
 
 export function OfficersPanel({ overview }: { overview: Overview }) {
   const { founder, officers } = overview;
+  // A staff-run realm without officers: the header already says so.
+  if (!founder && officers.length === 0) return null;
   return (
     <Panel title="Officers">
       <ul className="flex flex-col gap-2">
@@ -188,7 +190,7 @@ export function CensusPanel({ slug }: { slug: string }) {
                 {index + 1}
               </span>
               <Link
-                href={createUrl(`/countries/${row.countryId}`)}
+                href={`/countries/${row.countryId}`}
                 className="text-label text-body min-w-0 flex-1 truncate hover:underline"
               >
                 {row.countryName}
@@ -201,7 +203,7 @@ export function CensusPanel({ slug }: { slug: string }) {
         </ol>
       )}
       <Link
-        href={createUrl(`/leaderboards?realm=${encodeURIComponent(slug)}`)}
+        href={`/leaderboards?realm=${encodeURIComponent(slug)}`}
         className="text-tint text-footnote mt-3 inline-block hover:underline"
       >
         Full rankings
@@ -312,7 +314,7 @@ export function EmbassiesPanel({ overview }: { overview: Overview }) {
         {overview.embassies.map((realm) => (
           <li key={realm.slug}>
             <Link
-              href={createUrl(`/r/${encodeURIComponent(realm.slug)}`)}
+              href={`/r/${encodeURIComponent(realm.slug)}`}
               className="hover:bg-fill-4 rounded-row text-label text-body flex items-center gap-2 p-2"
             >
               {realm.thumbnail ? (
@@ -338,7 +340,7 @@ export function HappeningLine({ item }: { item: Happening }) {
   return (
     <li className="text-footnote">
       {item.href ? (
-        <Link href={createUrl(item.href)} className="text-label hover:underline">
+        <Link href={item.href} className="text-label hover:underline">
           {item.text}
         </Link>
       ) : (
@@ -358,7 +360,7 @@ export function HappeningsPanel({ slug }: { slug: string }) {
       action={
         items?.length ? (
           <Link
-            href={createUrl(`/r/${encodeURIComponent(slug)}/happenings`)}
+            href={`/r/${encodeURIComponent(slug)}/happenings`}
             className="text-tint text-footnote hover:underline"
           >
             See all

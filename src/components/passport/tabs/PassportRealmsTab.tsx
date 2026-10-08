@@ -208,21 +208,23 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       )}
                     </p>
 
-                    <div className="pt-1">
-                      <Button asChild variant="secondary" size="sm">
-                        {country ? (
-                          <Link href={`/countries/${country.slug}`}>
-                            <span>View country</span>
-                            <ArrowRight aria-hidden />
-                          </Link>
-                        ) : (
-                          <Link href={`/r/${item.slug || item.id}`}>
-                            <span>View realm</span>
-                            <ArrowRight aria-hidden />
-                          </Link>
-                        )}
-                      </Button>
-                    </div>
+                    {(country || item.slug) && (
+                      <div className="pt-1">
+                        <Button asChild variant="secondary" size="sm">
+                          {country ? (
+                            <Link href={`/countries/${country.slug}`}>
+                              <span>View country</span>
+                              <ArrowRight aria-hidden />
+                            </Link>
+                          ) : (
+                            <Link href={`/r/${item.slug}`}>
+                              <span>View realm</span>
+                              <ArrowRight aria-hidden />
+                            </Link>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

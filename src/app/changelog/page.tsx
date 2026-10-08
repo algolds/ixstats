@@ -13,11 +13,54 @@ export const metadata: Metadata = {
 
 const RELEASES: Release[] = [
   {
+    version: "1.4.1",
+    releaseName: "Lobster Crosby",
+    date: "October 2026",
+    channel: "Release Candidate",
+    isCurrent: true,
+    tagline: "Fuller realm pages, Eurth's nations and map, and a round of realm fixes.",
+    items: [
+      {
+        id: "v141-realm-pages",
+        category: "improvement",
+        title: "Realm pages",
+        description:
+          "A realm's front page now shows how to join, how many nations are open to claim and where its lore lives.",
+        highlights: [
+          "Join card with the nations waiting for a player",
+          "Open to claim count in the realm header",
+          "Empty panels stay out of the way until a realm fills them",
+        ],
+        link: { href: "/realms", label: "Browse realms" },
+      },
+      {
+        id: "v141-eurth",
+        category: "feature",
+        title: "Eurth's nations and map",
+        description:
+          "Eurth's nations, borders and alliances come from its community map, ready to claim.",
+        highlights: [
+          "Nations from the community map and the IIWiki roster",
+          "Wiki links checked so only a nation's own page author is approved at once",
+          "Duplicate entries between the map and the roster merged into one nation",
+        ],
+        link: { href: "/r/eurth", label: "Visit Eurth" },
+      },
+      {
+        id: "v141-realm-fixes",
+        category: "fix",
+        title: "Realm fixes",
+        description:
+          "Board bans now stay with the player, renamed nations keep their wiki page, and realm links work under the site's path.",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     releaseName: "Lobster Crosby",
     date: "August 2026",
     channel: "Release Candidate",
-    isCurrent: true,
+    isCurrent: false,
     tagline:
       "Unified messaging, Statecraft policy builder, TypeScript 7 and Bun 1.4, and the Facet design system.",
     items: [

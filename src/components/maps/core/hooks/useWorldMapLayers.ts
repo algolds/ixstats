@@ -1,21 +1,23 @@
 import { useEffect, useRef } from "react";
-import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import type { ExpressionSpecification, Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerData } from "../IxWorldMap";
 import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
 import {
   LAYER_CONFIGS,
-  WATER_BODY_LABELS,
   MAP_SYMBOL_FONTS,
   MAP_LAYER_TYPES,
   IXWORLD_PRIME_MERIDIAN_LNG,
 } from "~/lib/maps/map-config";
+import type { OceanLabelFeature } from "~/lib/maps/ocean-labels";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
 import { useDecorativeTiles } from "./useDecorativeTiles";
 import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 
 type LayerConfig = (typeof LAYER_CONFIGS)[MapLayerType];
+
+const NO_OCEAN_LABELS: OceanLabelFeature[] = [];
 
 /** Rivers fade in with zoom (thin, faint at globe view). */
 const RIVER_LINE_OPACITY = [
@@ -35,17 +37,6 @@ const RIVER_LINE_OPACITY = [
 ];
 
 const lineOpacity = (type: MapLayerType) => (type === "rivers" ? RIVER_LINE_OPACITY : 0.9) as any;
-
-/** `["match", ["get", "rank"], "major", a, "medium", b, c]` for ocean-label styling. */
-const byRank = (major: unknown, medium: unknown, rest: unknown) => [
-  "match",
-  ["get", "rank"],
-  "major",
-  major,
-  "medium",
-  medium,
-  rest,
-];
 
 const graticuleLine = (id: number, label: string, coordinates: number[][]) => ({
   type: "Feature" as const,
@@ -94,52 +85,10 @@ function addCountryLabelLayer(map: MapLibreMap) {
   });
 }
 
-function addOceanLabelLayer(map: MapLibreMap) {
-  map.addLayer({
-    id: "ocean-labels",
-    type: "symbol",
-    source: "source-ocean-labels",
-    layout: {
-      "text-field": ["get", "name"] as unknown as string,
-      "text-font": [...MAP_SYMBOL_FONTS.regular],
-      "text-size": [
-        "interpolate",
-        ["linear"],
-        ["zoom"],
-        0.5,
-        byRank(14, 10, 8),
-        3,
-        byRank(20, 14, 11),
-        6,
-        byRank(26, 18, 14),
-      ] as unknown as number,
-      "text-letter-spacing": byRank(0.2, 0.1, 0.05) as unknown as number,
-      "text-allow-overlap": false,
-      "text-max-width": 12,
-      "text-padding": 5,
-    },
-    paint: {
-      "text-color": byRank("#1a5276", "#2874a6", "#3498db") as unknown as string,
-      "text-halo-color": "rgba(179, 205, 224, 0.6)",
-      "text-halo-width": 1,
-      "text-opacity": [
-        "step",
-        ["zoom"],
-        ["match", ["get", "rank"], "major", 0.8, 0],
-        1.5,
-        byRank(0.9, 0.7, 0),
-        3,
-        0.9,
-      ] as unknown as number,
-    },
-    minzoom: 0.5,
-  });
-}
-
 /** Graticule lines (IxWorld's prime meridian only on IxWorld) and ocean/sea name labels, refreshed in place. */
 function syncGraticuleAndOceanLabels(
   map: MapLibreMap,
-  showOceanLabels: boolean,
+  oceanLabels: OceanLabelFeature[],
   showPrimeMeridian: boolean
 ) {
   const graticuleData = {
@@ -160,17 +109,7 @@ function syncGraticuleAndOceanLabels(
     ],
   };
 
-  const oceanLabelsData = {
-    type: "FeatureCollection" as const,
-    features: showOceanLabels
-      ? WATER_BODY_LABELS.map((wb, i) => ({
-          type: "Feature" as const,
-          id: i + 1,
-          geometry: { type: "Point" as const, coordinates: wb.coordinates },
-          properties: { name: wb.name, wbType: wb.type, rank: wb.rank },
-        }))
-      : [],
-  };
+  const oceanLabelsData = { type: "FeatureCollection" as const, features: oceanLabels };
 
   const graticuleSource = map.getSource("graticule") as GeoJSONSource | undefined;
   if (graticuleSource) {
@@ -185,18 +124,12 @@ function syncGraticuleAndOceanLabels(
     });
   }
 
+  // The theme style carries the `ocean-labels` layer and its look (src/lib/map-styles/*.json)
   const oceanSource = map.getSource("source-ocean-labels") as GeoJSONSource | undefined;
   if (oceanSource) {
     oceanSource.setData(oceanLabelsData);
-    return;
-  }
-  map.addSource("source-ocean-labels", {
-    type: "geojson",
-    data: oceanLabelsData,
-    generateId: true,
-  });
-  if (showOceanLabels && oceanLabelsData.features.length > 0 && !map.getLayer("ocean-labels")) {
-    addOceanLabelLayer(map);
+  } else {
+    map.addSource("source-ocean-labels", { type: "geojson", data: oceanLabelsData });
   }
 }
 
@@ -305,65 +238,89 @@ function addFillLayers(
   if (layer.type === "political") addSovereigntyLayers(map, layer, sourceId);
 }
 
+/** Hover highlight on the political fill: over `rest` normally, over nothing in art mode. */
+const politicalFillOpacity = (rest: number, artMode: boolean): ExpressionSpecification => [
+  "case",
+  ["boolean", ["feature-state", "hover"], false],
+  artMode ? 0.35 : 0.6,
+  artMode ? 0 : rest,
+];
+
+/**
+ * The political layer's look. In art mode (a realm's base map art is shown, which carries names and borders of its
+ * own) the fill is transparent except under the pointer and the borders are hidden; the selected country keeps its
+ * own highlight layer.
+ */
+function applyPoliticalVisibility(map: MapLibreMap, isVisible: boolean, artMode: boolean) {
+  const config = LAYER_CONFIGS.political;
+  const setVisibility = (id: string, visible: boolean) =>
+    map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+  if (map.getLayer("fill-political")) {
+    map.setPaintProperty(
+      "fill-political",
+      "fill-opacity",
+      isVisible ? politicalFillOpacity(config.fillOpacity, artMode) : 0
+    );
+  }
+  for (const id of ["stroke-political", "sovereignty-border"]) {
+    if (map.getLayer(id)) setVisibility(id, isVisible && !artMode);
+  }
+  if (map.getLayer("stroke-political"))
+    map.setPaintProperty("stroke-political", "line-opacity", 0.8);
+  if (map.getLayer("sovereignty-border")) {
+    map.setPaintProperty("sovereignty-border", "line-opacity", 0.7);
+  }
+  if (map.getLayer("sovereignty-labels")) {
+    map.setPaintProperty("sovereignty-labels", "text-opacity", isVisible ? 1 : 0);
+  }
+  if (map.getLayer("country-name-labels")) {
+    map.setPaintProperty(
+      "country-name-labels",
+      "text-opacity",
+      isVisible ? COUNTRY_LABEL_OPACITY : 0
+    );
+  }
+}
+
 /**
  * Show/hide every known layer. Hidden layers are switched off with `visibility: none` rather
  * than opacity 0: MapLibre still tiles, builds buckets for and draws a layer at opacity 0, so
  * hidden climate, biomes, ice caps etc. used to cost worker and GPU time on every pan/zoom.
  * The political fill is the exception — it stays queryable (hover/click) at opacity 0.
  */
-function applyLayerVisibility(map: MapLibreMap, layers: MapLayerData[], labelsVisible: boolean) {
+function applyLayerVisibility(
+  map: MapLibreMap,
+  layers: MapLayerData[],
+  labelsVisible: boolean,
+  artMode: boolean
+) {
   const politicalVisible = layers.some((l) => l.type === "political" && l.visible);
   const setVisibility = (id: string, visible: boolean) =>
     map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
 
   for (const type of MAP_LAYER_TYPES) {
     const config = LAYER_CONFIGS[type];
-    if (type === "country_labels" || !config) continue;
+    if (type === "country_labels" || type === "political" || !config) continue;
     const isVisible = !!layers.find((l) => l.type === type)?.visible;
     const fillLayerId = `fill-${type}`;
     const strokeLayerId = `stroke-${type}`;
 
     if (map.getLayer(fillLayerId)) {
-      if (type === "political") {
-        map.setPaintProperty(
-          fillLayerId,
-          "fill-opacity",
-          isVisible
-            ? ["case", ["boolean", ["feature-state", "hover"], false], 0.6, config.fillOpacity]
-            : 0
-        );
+      if (config.type === "line" && type !== "altitudes") {
+        map.setPaintProperty(fillLayerId, "line-opacity", lineOpacity(type));
       } else {
-        if (config.type === "line" && type !== "altitudes") {
-          map.setPaintProperty(fillLayerId, "line-opacity", lineOpacity(type));
-        } else {
-          const opacity = type === "altitudes" && !politicalVisible ? 1 : config.fillOpacity;
-          map.setPaintProperty(fillLayerId, "fill-opacity", opacity);
-        }
-        setVisibility(fillLayerId, isVisible);
+        const opacity = type === "altitudes" && !politicalVisible ? 1 : config.fillOpacity;
+        map.setPaintProperty(fillLayerId, "fill-opacity", opacity);
       }
+      setVisibility(fillLayerId, isVisible);
     }
 
     if (map.getLayer(strokeLayerId)) {
       map.setPaintProperty(strokeLayerId, "line-opacity", 0.8);
       setVisibility(strokeLayerId, isVisible);
     }
-
-    if (type !== "political") continue;
-    if (map.getLayer("sovereignty-border")) {
-      map.setPaintProperty("sovereignty-border", "line-opacity", 0.7);
-      setVisibility("sovereignty-border", isVisible);
-    }
-    if (map.getLayer("sovereignty-labels")) {
-      map.setPaintProperty("sovereignty-labels", "text-opacity", isVisible ? 1 : 0);
-    }
-    if (map.getLayer("country-name-labels")) {
-      map.setPaintProperty(
-        "country-name-labels",
-        "text-opacity",
-        isVisible ? COUNTRY_LABEL_OPACITY : 0
-      );
-    }
   }
+  applyPoliticalVisibility(map, politicalVisible, artMode);
 
   if (map.getLayer("country-name-labels")) {
     const labelsLayer = layers.find((l) => l.type === "country_labels");
@@ -380,14 +337,16 @@ interface UseWorldMapLayersProps {
   updateDistanceFade: () => void;
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
   theme?: MapTheme;
-  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). */
-  showOceanLabels?: boolean;
+  /** The ocean-label layer's names: IxWorld's water names on IxWorld (AT-2), and the realm's own labels. */
+  oceanLabels?: OceanLabelFeature[];
   /** IxWorld's prime meridian line; off unless the map shows IxWorld. */
   showPrimeMeridian?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;
   /** The realm whose decorative layers to draw from vector tiles; undefined until it is known. */
   tileRealmId?: string;
+  /** A realm's base map art is shown: political fills and borders give way to the art's. */
+  artMode?: boolean;
 }
 
 export function useWorldMapLayers({
@@ -399,10 +358,11 @@ export function useWorldMapLayers({
   updateDistanceFade,
   labelFeaturesRef,
   theme,
-  showOceanLabels = false,
+  oceanLabels = NO_OCEAN_LABELS,
   showPrimeMeridian = false,
   labelsVisible = true,
   tileRealmId,
+  artMode = false,
 }: UseWorldMapLayersProps) {
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -412,11 +372,11 @@ export function useWorldMapLayers({
   useEffect(() => {
     if (!map || !isLoaded) return;
     try {
-      syncGraticuleAndOceanLabels(map, showOceanLabels, showPrimeMeridian);
+      syncGraticuleAndOceanLabels(map, oceanLabels, showPrimeMeridian);
     } catch (err) {
       console.error("[useWorldMapLayers] Failed to add base components", err);
     }
-  }, [map, isLoaded, theme, showOceanLabels, showPrimeMeridian]);
+  }, [map, isLoaded, theme, oceanLabels, showPrimeMeridian]);
 
   const lastLoadedDataRef = useRef<Map<string, unknown>>(new Map());
   const lastThemeRef = useRef(theme);
@@ -479,7 +439,7 @@ export function useWorldMapLayers({
       }
     }
 
-    applyLayerVisibility(map, layers, labelsVisible);
+    applyLayerVisibility(map, layers, labelsVisible, artMode);
   }, [
     map,
     isLoaded,
@@ -489,6 +449,7 @@ export function useWorldMapLayers({
     labelFeaturesRef,
     theme,
     labelsVisible,
+    artMode,
   ]);
 
   useDecorativeTiles(map, isLoaded, tileRealmId);

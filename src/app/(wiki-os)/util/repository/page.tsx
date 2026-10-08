@@ -475,7 +475,7 @@ export default function RepositoryPage() {
               Browse categories
             </SheetTitle>
           </SheetHeader>
-          <div className="h-[calc(100vh-64px)] overflow-y-auto">
+          <div className="h-dvh overflow-y-auto">
             <CommonsCategoryBrowser
               activeCategories={activeCategories}
               browsingCategory={browsingCategory}

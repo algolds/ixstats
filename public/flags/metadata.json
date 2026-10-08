@@ -1,5 +1,5 @@
 {
-  "lastUpdateTime": 1784772210754,
+  "lastUpdateTime": 1791423619256,
   "flags": {
     "abalos": {
       "fileName": "abalos.svg",
@@ -3684,6 +3684,2228 @@
         "name": "Local",
         "baseUrl": "",
         "priority": 0
+      }
+    },
+    "eurth--adaptus": {
+      "fileName": "eurth--adaptus.jpg",
+      "originalUrl": "https://iiwiki.com/images/2/2e/Flag_of_Adaptus.jpg",
+      "downloadedAt": 1791420128726,
+      "fileSize": 30668,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--adaptus--arms": {
+      "fileName": "eurth--adaptus--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/ca/Coat_of_Arms_of_Adaptus.png",
+      "downloadedAt": 1791420129442,
+      "fileSize": 35308,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--afropa": {
+      "fileName": "eurth--afropa.png",
+      "originalUrl": "https://iiwiki.com/images/3/3f/Flag_of_Afropa.png",
+      "downloadedAt": 1791420129717,
+      "fileSize": 13571,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--afropa--arms": {
+      "fileName": "eurth--afropa--arms.png",
+      "originalUrl": "https://iiwiki.com/images/8/8f/Coat_of_Arms_of_Afropa.png",
+      "downloadedAt": 1791420130533,
+      "fileSize": 51949,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ahrana": {
+      "fileName": "eurth--ahrana.png",
+      "originalUrl": "https://iiwiki.com/images/d/d1/Flag_of_Ahrana.png",
+      "downloadedAt": 1791420130792,
+      "fileSize": 35108,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ahrana--arms": {
+      "fileName": "eurth--ahrana--arms.png",
+      "originalUrl": "https://iiwiki.com/images/a/a9/Coat_of_Arms_of_the_Kingdom_of_Ahrana.png",
+      "downloadedAt": 1791420131698,
+      "fileSize": 698962,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--akwisia": {
+      "fileName": "eurth--akwisia.png",
+      "originalUrl": "https://iiwiki.com/images/e/ee/Flag_of_Akwisia.png",
+      "downloadedAt": 1791420132043,
+      "fileSize": 24016,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--aldace": {
+      "fileName": "eurth--aldace.png",
+      "originalUrl": "https://iiwiki.com/images/d/db/Flag_of_Aldace.png",
+      "downloadedAt": 1791420132310,
+      "fileSize": 153563,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--aldace--arms": {
+      "fileName": "eurth--aldace--arms.png",
+      "originalUrl": "https://iiwiki.com/images/a/ae/Coat_of_Arms_%28Aldace%29.png",
+      "downloadedAt": 1791420132978,
+      "fileSize": 500304,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--alvernia": {
+      "fileName": "eurth--alvernia.png",
+      "originalUrl": "https://iiwiki.com/images/e/e6/Flag_of_Alvernia.png",
+      "downloadedAt": 1791420133325,
+      "fileSize": 21634,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--andalla": {
+      "fileName": "eurth--andalla.png",
+      "originalUrl": "https://iiwiki.com/images/9/9a/Flag_of_Andalla.png",
+      "downloadedAt": 1791420133544,
+      "fileSize": 18216,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--andalla--arms": {
+      "fileName": "eurth--andalla--arms.png",
+      "originalUrl": "https://iiwiki.com/images/5/52/Coat_of_Arms_of_Andalla.png",
+      "downloadedAt": 1791420134273,
+      "fileSize": 936992,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--arneland": {
+      "fileName": "eurth--arneland.png",
+      "originalUrl": "https://iiwiki.com/images/8/80/Flag_of_Arneland.png",
+      "downloadedAt": 1791420134545,
+      "fileSize": 215784,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--arneland--arms": {
+      "fileName": "eurth--arneland--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/cf/Coat_of_arms_of_Arneland.png",
+      "downloadedAt": 1791420135681,
+      "fileSize": 178211,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--aurora": {
+      "fileName": "eurth--aurora.png",
+      "originalUrl": "https://iiwiki.com/images/e/ee/Flag_of_Aurora.svg",
+      "downloadedAt": 1791420135914,
+      "fileSize": 83651,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--aurora--arms": {
+      "fileName": "eurth--aurora--arms.png",
+      "originalUrl": "https://iiwiki.com/images/5/5e/Aurora_coa.png",
+      "downloadedAt": 1791420136626,
+      "fileSize": 404560,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ayubi": {
+      "fileName": "eurth--ayubi.png",
+      "originalUrl": "https://iiwiki.com/images/9/92/Flag_of_Ayubi.png",
+      "downloadedAt": 1791420136852,
+      "fileSize": 13986,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ayubi--arms": {
+      "fileName": "eurth--ayubi--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/2/26/Emblem_of_the_Arab_Kingdom_of_Syria_%281920%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420137069,
+      "fileSize": 109508,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--bainbridge-islands": {
+      "fileName": "eurth--bainbridge-islands.png",
+      "originalUrl": "https://iiwiki.com/images/3/35/Flag_of_Bainbridge_Islands.png",
+      "downloadedAt": 1791420137309,
+      "fileSize": 47060,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--bainbridge-islands--arms": {
+      "fileName": "eurth--bainbridge-islands--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Royal_Coat_of_Arms_of_Hawaii.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420137611,
+      "fileSize": 610461,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--baltica": {
+      "fileName": "eurth--baltica.png",
+      "originalUrl": "https://iiwiki.com/images/1/14/Flag_of_Baltica.png",
+      "downloadedAt": 1791420137839,
+      "fileSize": 3038,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--baltica--arms": {
+      "fileName": "eurth--baltica--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/e2/North_Baltican_Federation_CoA.png",
+      "downloadedAt": 1791420138457,
+      "fileSize": 225157,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--bamraland": {
+      "fileName": "eurth--bamraland.png",
+      "originalUrl": "https://iiwiki.com/images/9/98/Flag_of_Bamraland.png",
+      "downloadedAt": 1791420138683,
+      "fileSize": 18927,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--bashan": {
+      "fileName": "eurth--bashan.png",
+      "originalUrl": "https://iiwiki.com/images/7/77/Flag_of_the_Bashan_Protectorate.svg",
+      "downloadedAt": 1791420138912,
+      "fileSize": 40710,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--bashan--arms": {
+      "fileName": "eurth--bashan--arms.png",
+      "originalUrl": "https://iiwiki.com/images/a/ad/Coat_of_Arms_of_the_Bashan_Protectorate.svg",
+      "downloadedAt": 1791420139918,
+      "fileSize": 263348,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--burkini": {
+      "fileName": "eurth--burkini.png",
+      "originalUrl": "https://iiwiki.com/images/c/c0/Flag_of_Burkini.png",
+      "downloadedAt": 1791420140153,
+      "fileSize": 69385,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--burkini--arms": {
+      "fileName": "eurth--burkini--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/99/Emblem_of_Niimi%2C_Okayama.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420140285,
+      "fileSize": 56536,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--centennia-cardina": {
+      "fileName": "eurth--centennia-cardina.png",
+      "originalUrl": "https://iiwiki.com/images/3/32/The_Gloam.png",
+      "downloadedAt": 1791420140514,
+      "fileSize": 4923,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--centennia-cardina--arms": {
+      "fileName": "eurth--centennia-cardina--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/32/Centennia_Cardina_coat-of-arms_.png",
+      "downloadedAt": 1791420142311,
+      "fileSize": 565451,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--charkov": {
+      "fileName": "eurth--charkov.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Flag_of_.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420142961,
+      "fileSize": 5697,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cherkessk": {
+      "fileName": "eurth--cherkessk.png",
+      "originalUrl": "https://iiwiki.com/images/9/91/Flag_of_Cherkessk.png",
+      "downloadedAt": 1791420143279,
+      "fileSize": 523220,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cherkessk--arms": {
+      "fileName": "eurth--cherkessk--arms.png",
+      "originalUrl": "https://iiwiki.com/images/9/9b/CoA_CHERKESSK.png",
+      "downloadedAt": 1791420143879,
+      "fileSize": 114388,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cristina": {
+      "fileName": "eurth--cristina.png",
+      "originalUrl": "https://iiwiki.com/images/7/72/Flag_of_Cristina.png",
+      "downloadedAt": 1791420144149,
+      "fileSize": 31568,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cristina--arms": {
+      "fileName": "eurth--cristina--arms.png",
+      "originalUrl": "https://iiwiki.com/images/4/46/Coat_of_Arms_of_Cristina.png",
+      "downloadedAt": 1791420144763,
+      "fileSize": 102880,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cruciastada": {
+      "fileName": "eurth--cruciastada.png",
+      "originalUrl": "https://iiwiki.com/images/2/2f/Flag_of_Cruciatst%C3%A2da.png",
+      "downloadedAt": 1791420145223,
+      "fileSize": 279855,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--cruciastada--arms": {
+      "fileName": "eurth--cruciastada--arms.png",
+      "originalUrl": "https://iiwiki.com/images/2/2a/Cruciatst%C3%A2da_Coat_of_Arms.png",
+      "downloadedAt": 1791420145766,
+      "fileSize": 58202,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--damak-var": {
+      "fileName": "eurth--damak-var.png",
+      "originalUrl": "https://iiwiki.com/images/3/3d/Flag_of_Damak_Var.png",
+      "downloadedAt": 1791420145998,
+      "fileSize": 54193,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--damak-var--arms": {
+      "fileName": "eurth--damak-var--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/e9/Coat_of_arms_of_Damak_Var.png",
+      "downloadedAt": 1791420147142,
+      "fileSize": 33102,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--deltannia": {
+      "fileName": "eurth--deltannia.png",
+      "originalUrl": "https://iiwiki.com/images/7/7e/Flag_of_Deltannia.png",
+      "downloadedAt": 1791420147386,
+      "fileSize": 9456,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--deltannia--arms": {
+      "fileName": "eurth--deltannia--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Nordland_v%C3%A5pen.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420147496,
+      "fileSize": 92798,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--denawar": {
+      "fileName": "eurth--denawar.png",
+      "originalUrl": "https://iiwiki.com/images/a/a8/PFRD_FLAG.png",
+      "downloadedAt": 1791420147724,
+      "fileSize": 31552,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--denawar--arms": {
+      "fileName": "eurth--denawar--arms.png",
+      "originalUrl": "https://iiwiki.com/images/1/1b/PFRD_emblem.png",
+      "downloadedAt": 1791420148274,
+      "fileSize": 73246,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--dniester": {
+      "fileName": "eurth--dniester.png",
+      "originalUrl": "https://iiwiki.com/images/5/5b/Republicdniesterflag.png",
+      "downloadedAt": 1791420148641,
+      "fileSize": 166120,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--dniester--arms": {
+      "fileName": "eurth--dniester--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/ca/Coat_of_arms_of_Dniester.png",
+      "downloadedAt": 1791420150022,
+      "fileSize": 448072,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--dolchland": {
+      "fileName": "eurth--dolchland.jpg",
+      "originalUrl": "https://iiwiki.com/images/e/e5/Flag_of_Dolchland.jpeg",
+      "downloadedAt": 1791420150297,
+      "fileSize": 15429,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--dolchland--arms": {
+      "fileName": "eurth--dolchland--arms.png",
+      "originalUrl": "https://iiwiki.com/images/f/fc/Greater_Arms_of_Dolchland.png",
+      "downloadedAt": 1791420151107,
+      "fileSize": 1232862,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--doria": {
+      "fileName": "eurth--doria.jpg",
+      "originalUrl": "https://iiwiki.com/images/9/9d/Republic_Doria.jpeg",
+      "downloadedAt": 1791420151387,
+      "fileSize": 8417,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--duchy-of-verde": {
+      "fileName": "eurth--duchy-of-verde.png",
+      "originalUrl": "https://iiwiki.com/images/0/00/Flag_of_the_Duchy_of_Verde.png",
+      "downloadedAt": 1791420151750,
+      "fileSize": 48066,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--eemsmerschen": {
+      "fileName": "eurth--eemsmerschen.jpg",
+      "originalUrl": "https://iiwiki.com/images/0/0c/Eemsmerschen.jpg",
+      "downloadedAt": 1791420151987,
+      "fileSize": 54549,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--eemsmerschen--arms": {
+      "fileName": "eurth--eemsmerschen--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/37/Emblem_of_Eemsmerschen.png",
+      "downloadedAt": 1791420152483,
+      "fileSize": 58074,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--elde": {
+      "fileName": "eurth--elde.png",
+      "originalUrl": "https://iiwiki.com/images/2/2a/Flag_of_the_Grand_Duchy_of_Elde.png",
+      "downloadedAt": 1791420152754,
+      "fileSize": 518720,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--elde--arms": {
+      "fileName": "eurth--elde--arms.png",
+      "originalUrl": "https://iiwiki.com/images/9/98/Coat_of_Arms_of_Elde.png",
+      "downloadedAt": 1791420153371,
+      "fileSize": 494566,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--erisoria": {
+      "fileName": "eurth--erisoria.png",
+      "originalUrl": "https://iiwiki.com/images/f/f2/Erisoria_Flag.png",
+      "downloadedAt": 1791420153636,
+      "fileSize": 233746,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--erisoria--arms": {
+      "fileName": "eurth--erisoria--arms.png",
+      "originalUrl": "https://iiwiki.com/images/2/2c/Erisorian_Coat_of_Arms.png",
+      "downloadedAt": 1791420154374,
+      "fileSize": 397166,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--esonice": {
+      "fileName": "eurth--esonice.png",
+      "originalUrl": "https://iiwiki.com/images/2/20/Flag_of_Esonice.png",
+      "downloadedAt": 1791420154613,
+      "fileSize": 14602,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--esonice--arms": {
+      "fileName": "eurth--esonice--arms.png",
+      "originalUrl": "https://iiwiki.com/images/0/09/Liyana%27s_symbol.png",
+      "downloadedAt": 1791420156483,
+      "fileSize": 27965,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--euandria": {
+      "fileName": "eurth--euandria.png",
+      "originalUrl": "https://iiwiki.com/images/e/ea/Flag_of_Euandria.png",
+      "downloadedAt": 1791420156723,
+      "fileSize": 10796,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--flaca-vul": {
+      "fileName": "eurth--flaca-vul.png",
+      "originalUrl": "https://iiwiki.com/images/2/2a/Flag_of_Flaca_Vul.png",
+      "downloadedAt": 1791420157362,
+      "fileSize": 117051,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--florentia": {
+      "fileName": "eurth--florentia.png",
+      "originalUrl": "https://iiwiki.com/images/f/fb/Flag_of_the_Most_Serene_Florentian_People%27s_Empire.png",
+      "downloadedAt": 1791420157603,
+      "fileSize": 334938,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--florentia--arms": {
+      "fileName": "eurth--florentia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/36/Blason_Royaume_de_Lysie_V2.png",
+      "downloadedAt": 1791420158479,
+      "fileSize": 1597610,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--gaellicia": {
+      "fileName": "eurth--gaellicia.png",
+      "originalUrl": "https://iiwiki.com/images/4/46/Gaelliciasaltireflag.svg",
+      "downloadedAt": 1791420158709,
+      "fileSize": 28969,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--galahinda": {
+      "fileName": "eurth--galahinda.png",
+      "originalUrl": "https://iiwiki.com/images/b/b5/Flag_of_Galahinda.png",
+      "downloadedAt": 1791420158933,
+      "fileSize": 28277,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--galicia": {
+      "fileName": "eurth--galicia.png",
+      "originalUrl": "https://iiwiki.com/images/a/a8/Galicia_Flag.png",
+      "downloadedAt": 1791420159188,
+      "fileSize": 24893,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--gallambria": {
+      "fileName": "eurth--gallambria.png",
+      "originalUrl": "https://iiwiki.com/images/d/d4/National_Flag_of_Gallambria.svg",
+      "downloadedAt": 1791420159453,
+      "fileSize": 42335,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--gallambria--arms": {
+      "fileName": "eurth--gallambria--arms.png",
+      "originalUrl": "https://iiwiki.com/images/5/56/Coat_of_Arms_of_the_United_Kingdom_of_Gallambria.svg",
+      "downloadedAt": 1791420160507,
+      "fileSize": 282397,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--garindina": {
+      "fileName": "eurth--garindina.png",
+      "originalUrl": "https://iiwiki.com/images/2/29/Flagof_Garindina.png",
+      "downloadedAt": 1791420160749,
+      "fileSize": 24711,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--garindina--arms": {
+      "fileName": "eurth--garindina--arms.jpg",
+      "originalUrl": "https://iiwiki.com/images/c/c6/CoA_Garindina.jpeg",
+      "downloadedAt": 1791420161268,
+      "fileSize": 26686,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--giokto": {
+      "fileName": "eurth--giokto.png",
+      "originalUrl": "https://iiwiki.com/images/4/40/Flag_of_Giokto.png",
+      "downloadedAt": 1791420161503,
+      "fileSize": 5313,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--giokto--arms": {
+      "fileName": "eurth--giokto--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8d/Emblem_of_Djibouti.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420161634,
+      "fileSize": 232601,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--girkmand": {
+      "fileName": "eurth--girkmand.jpg",
+      "originalUrl": "https://iiwiki.com/images/2/24/Flag_of_Girkmand.jpg",
+      "downloadedAt": 1791420161880,
+      "fileSize": 8384,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--goankok": {
+      "fileName": "eurth--goankok.png",
+      "originalUrl": "https://iiwiki.com/images/8/81/Flag_of_Goankok.png",
+      "downloadedAt": 1791420162147,
+      "fileSize": 11585,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--goankok--arms": {
+      "fileName": "eurth--goankok--arms.png",
+      "originalUrl": "https://iiwiki.com/images/4/43/Emblem_of_Goankok.png",
+      "downloadedAt": 1791420162668,
+      "fileSize": 5797,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--great-anglia": {
+      "fileName": "eurth--great-anglia.png",
+      "originalUrl": "https://iiwiki.com/images/a/a8/Flag_of_Great_Anglia.png",
+      "downloadedAt": 1791420162927,
+      "fileSize": 82162,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--great-anglia--arms": {
+      "fileName": "eurth--great-anglia--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3b/POL_wojew%C3%B3dztwo_pomorskie_COA.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420163064,
+      "fileSize": 250318,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--great-media": {
+      "fileName": "eurth--great-media.png",
+      "originalUrl": "https://iiwiki.com/images/d/d5/Flag_of_Great_M%C3%A8dia.png",
+      "downloadedAt": 1791420163475,
+      "fileSize": 317471,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--great-media--arms": {
+      "fileName": "eurth--great-media--arms.png",
+      "originalUrl": "https://iiwiki.com/images/8/8c/Coat_of_arms_M%C3%A8dia.png",
+      "downloadedAt": 1791420164646,
+      "fileSize": 869977,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--helsium": {
+      "fileName": "eurth--helsium.png",
+      "originalUrl": "https://iiwiki.com/images/6/61/Flag_of_Helsium.png",
+      "downloadedAt": 1791420164902,
+      "fileSize": 531705,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--helsium--arms": {
+      "fileName": "eurth--helsium--arms.png",
+      "originalUrl": "https://iiwiki.com/images/8/87/Emblem_of_Helsium.png",
+      "downloadedAt": 1791420165689,
+      "fileSize": 629186,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--hexanesa": {
+      "fileName": "eurth--hexanesa.png",
+      "originalUrl": "https://iiwiki.com/images/e/ef/Flag_of_the_Hexanesa.png",
+      "downloadedAt": 1791420165914,
+      "fileSize": 9845,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ide-jima": {
+      "fileName": "eurth--ide-jima.png",
+      "originalUrl": "https://iiwiki.com/images/f/fe/Flag_of_Ide_Jima.png",
+      "downloadedAt": 1791420166177,
+      "fileSize": 42377,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ide-jima--arms": {
+      "fileName": "eurth--ide-jima--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/87/Regional_Emblem_of_Macau.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420166525,
+      "fileSize": 75405,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ionio": {
+      "fileName": "eurth--ionio.png",
+      "originalUrl": "https://iiwiki.com/images/9/95/Flag_of_Ionio.png",
+      "downloadedAt": 1791420166764,
+      "fileSize": 14025,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ionio--arms": {
+      "fileName": "eurth--ionio--arms.png",
+      "originalUrl": "https://iiwiki.com/images/7/76/Coat_of_arms_of_Ionio.png",
+      "downloadedAt": 1791420167381,
+      "fileSize": 190273,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--iverica": {
+      "fileName": "eurth--iverica.png",
+      "originalUrl": "https://iiwiki.com/images/e/e8/Flag_of_Iverica.png",
+      "downloadedAt": 1791420167618,
+      "fileSize": 84461,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--iverica--arms": {
+      "fileName": "eurth--iverica--arms.png",
+      "originalUrl": "https://iiwiki.com/images/a/a9/Coat_of_arms_of_Iverica.svg",
+      "downloadedAt": 1791420169062,
+      "fileSize": 144282,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--iwenland": {
+      "fileName": "eurth--iwenland.png",
+      "originalUrl": "https://iiwiki.com/images/9/95/Flag_of_Iwenland.svg",
+      "downloadedAt": 1791420169328,
+      "fileSize": 3893,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--iwenland--arms": {
+      "fileName": "eurth--iwenland--arms.png",
+      "originalUrl": "https://iiwiki.com/images/d/d7/Coat_of_arms_of_Iwenland.svg",
+      "downloadedAt": 1791420170492,
+      "fileSize": 1947732,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kalnija": {
+      "fileName": "eurth--kalnija.png",
+      "originalUrl": "https://iiwiki.com/images/4/4d/Kalnijan_Flag.png",
+      "downloadedAt": 1791420170827,
+      "fileSize": 79732,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kalnija--arms": {
+      "fileName": "eurth--kalnija--arms.png",
+      "originalUrl": "https://iiwiki.com/images/f/f4/CoA_of_Kalnija.png",
+      "downloadedAt": 1791420171619,
+      "fileSize": 28228,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kirvina": {
+      "fileName": "eurth--kirvina.png",
+      "originalUrl": "https://iiwiki.com/images/9/9d/Flag_of_Kirvina.png",
+      "downloadedAt": 1791420171871,
+      "fileSize": 116773,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kolhar": {
+      "fileName": "eurth--kolhar.png",
+      "originalUrl": "https://iiwiki.com/images/c/c5/Flag_of_the_Federal_State_of_Kolhar.svg",
+      "downloadedAt": 1791420172140,
+      "fileSize": 40965,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kotowari": {
+      "fileName": "eurth--kotowari.png",
+      "originalUrl": "https://iiwiki.com/images/d/d1/Flag_of_Kotowari.png",
+      "downloadedAt": 1791420172403,
+      "fileSize": 11331,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kotowari--arms": {
+      "fileName": "eurth--kotowari--arms.png",
+      "originalUrl": "https://iiwiki.com/images/2/25/Coat_of_Arms_Kotowari_2.png",
+      "downloadedAt": 1791420173137,
+      "fileSize": 236952,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kiziauke": {
+      "fileName": "eurth--kiziauke.png",
+      "originalUrl": "https://iiwiki.com/images/f/fa/KSSR_flag.svg",
+      "downloadedAt": 1791420173367,
+      "fileSize": 28789,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kori-chi--arms": {
+      "fileName": "eurth--kori-chi--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/e1/Government_seal_of_K%C5%8Dri-Chi.png",
+      "downloadedAt": 1791420173971,
+      "fileSize": 95855,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--llalta": {
+      "fileName": "eurth--llalta.png",
+      "originalUrl": "https://iiwiki.com/images/1/12/Flag_of_Llalta.png",
+      "downloadedAt": 1791420174199,
+      "fileSize": 2965,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--lysia": {
+      "fileName": "eurth--lysia.png",
+      "originalUrl": "https://iiwiki.com/images/9/91/Flag_of_Lysia.png",
+      "downloadedAt": 1791420175483,
+      "fileSize": 3888,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--lysia--arms": {
+      "fileName": "eurth--lysia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/cb/Coat_of_arms_of_Lysia.png",
+      "downloadedAt": 1791420176063,
+      "fileSize": 10964,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--manamana": {
+      "fileName": "eurth--manamana.png",
+      "originalUrl": "https://iiwiki.com/images/9/9d/Flag_of_Manamana.png",
+      "downloadedAt": 1791420176300,
+      "fileSize": 54426,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--manamana--arms": {
+      "fileName": "eurth--manamana--arms.png",
+      "originalUrl": "https://iiwiki.com/images/d/d7/Coat_of_arms_of_Manamana.svg",
+      "downloadedAt": 1791420176818,
+      "fileSize": 158369,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--marcendy": {
+      "fileName": "eurth--marcendy.jpg",
+      "originalUrl": "https://iiwiki.com/images/e/e4/MarcendyFlag.jpg",
+      "downloadedAt": 1791420177109,
+      "fileSize": 60893,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--marchyydion": {
+      "fileName": "eurth--marchyydion.jpg",
+      "originalUrl": "https://iiwiki.com/images/8/88/Flag_of_Marchyydion.jpg",
+      "downloadedAt": 1791420177366,
+      "fileSize": 133190,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--miiros": {
+      "fileName": "eurth--miiros.png",
+      "originalUrl": "https://iiwiki.com/images/a/a9/Flag_of_Miiros.png",
+      "downloadedAt": 1791420177608,
+      "fileSize": 58166,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--miiros--arms": {
+      "fileName": "eurth--miiros--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/db/Emblem_of_the_House_of_Chakri.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420177783,
+      "fileSize": 375868,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mito": {
+      "fileName": "eurth--mito.png",
+      "originalUrl": "https://iiwiki.com/images/0/0e/Flag_of_Mito.png",
+      "downloadedAt": 1791420178037,
+      "fileSize": 137086,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mito--arms": {
+      "fileName": "eurth--mito--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/e9/Emblem_of_Mito.png",
+      "downloadedAt": 1791420179917,
+      "fileSize": 83448,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--nanto-eurth": {
+      "fileName": "eurth--nanto-eurth.png",
+      "originalUrl": "https://iiwiki.com/images/d/d1/Flag_of_Nanto.png",
+      "downloadedAt": 1791420180183,
+      "fileSize": 56863,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--narva": {
+      "fileName": "eurth--narva.png",
+      "originalUrl": "https://iiwiki.com/images/d/d0/Flag_of_Narva.png",
+      "downloadedAt": 1791420180416,
+      "fileSize": 22324,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--neusrya--arms": {
+      "fileName": "eurth--neusrya--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/c9/Neusrya_coa.png",
+      "downloadedAt": 1791420180929,
+      "fileSize": 167166,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--niederoestereich": {
+      "fileName": "eurth--niederoestereich.png",
+      "originalUrl": "https://iiwiki.com/images/7/76/Flag_of_Niederoestereich.png",
+      "downloadedAt": 1791420181153,
+      "fileSize": 61774,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--niederoestereich--arms": {
+      "fileName": "eurth--niederoestereich--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/58/Coat_of_arms_of_Cuba.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420181364,
+      "fileSize": 485487,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--north-dniester": {
+      "fileName": "eurth--north-dniester.png",
+      "originalUrl": "https://iiwiki.com/images/1/1b/Flag_of_North_Dniester.png",
+      "downloadedAt": 1791420181616,
+      "fileSize": 309415,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--north-dniester--arms": {
+      "fileName": "eurth--north-dniester--arms.png",
+      "originalUrl": "https://iiwiki.com/images/b/bb/Coat_of_Arms_of_North_Dniester.png",
+      "downloadedAt": 1791420182295,
+      "fileSize": 286179,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--nova-occidentalis": {
+      "fileName": "eurth--nova-occidentalis.png",
+      "originalUrl": "https://iiwiki.com/images/7/71/Nova_occidentalis_flag.svg",
+      "downloadedAt": 1791420182540,
+      "fileSize": 310072,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--obereland": {
+      "fileName": "eurth--obereland.png",
+      "originalUrl": "https://iiwiki.com/images/9/97/Flag_of_Obereland.png",
+      "downloadedAt": 1791420182774,
+      "fileSize": 27007,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--obereland--arms": {
+      "fileName": "eurth--obereland--arms.png",
+      "originalUrl": "https://iiwiki.com/images/9/99/Emblem_of_Obereland.png",
+      "downloadedAt": 1791420183544,
+      "fileSize": 66756,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--orioni": {
+      "fileName": "eurth--orioni.png",
+      "originalUrl": "https://iiwiki.com/images/a/a8/Flag_of_Orioni.png",
+      "downloadedAt": 1791420183777,
+      "fileSize": 5157,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--orioni--arms": {
+      "fileName": "eurth--orioni--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/3d/Symbol_of_Orioni.png",
+      "downloadedAt": 1791420184661,
+      "fileSize": 3864,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--oyussa": {
+      "fileName": "eurth--oyussa.png",
+      "originalUrl": "https://iiwiki.com/images/3/33/Flag_of_Oyussa.png",
+      "downloadedAt": 1791420184921,
+      "fileSize": 54192,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--pentium": {
+      "fileName": "eurth--pentium.png",
+      "originalUrl": "https://iiwiki.com/images/b/b2/Pentian_banner.png",
+      "downloadedAt": 1791420185177,
+      "fileSize": 56373,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--piekinigaje": {
+      "fileName": "eurth--piekinigaje.png",
+      "originalUrl": "https://iiwiki.com/images/8/84/Flag_of_Piekinigaje.png",
+      "downloadedAt": 1791420185514,
+      "fileSize": 766245,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--poja": {
+      "fileName": "eurth--poja.png",
+      "originalUrl": "https://iiwiki.com/images/5/58/Flag_of_Poja.png",
+      "downloadedAt": 1791420185889,
+      "fileSize": 56344,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--prymont": {
+      "fileName": "eurth--prymont.png",
+      "originalUrl": "https://iiwiki.com/images/5/5f/Flag_of_Prymont.png",
+      "downloadedAt": 1791420186139,
+      "fileSize": 51635,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--qubdi": {
+      "fileName": "eurth--qubdi.png",
+      "originalUrl": "https://iiwiki.com/images/8/83/Flag_of_Qubdi.png",
+      "downloadedAt": 1791420186384,
+      "fileSize": 45875,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--qubdi--arms": {
+      "fileName": "eurth--qubdi--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/71/Coptic_cross.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420186567,
+      "fileSize": 179481,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ralzawr": {
+      "fileName": "eurth--ralzawr.png",
+      "originalUrl": "https://iiwiki.com/images/b/b3/Flag_of_Ralzawr.svg",
+      "downloadedAt": 1791420186803,
+      "fileSize": 64125,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--red-iberos": {
+      "fileName": "eurth--red-iberos.png",
+      "originalUrl": "https://iiwiki.com/images/7/73/Flag_of_Red_Iberos.png",
+      "downloadedAt": 1791420187066,
+      "fileSize": 63900,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--red-iberos--arms": {
+      "fileName": "eurth--red-iberos--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/00/Emblem_of_Italy.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420187218,
+      "fileSize": 336670,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--rhodellia": {
+      "fileName": "eurth--rhodellia.png",
+      "originalUrl": "https://iiwiki.com/images/c/cb/Flag_of_Rhodellia.png",
+      "downloadedAt": 1791420187477,
+      "fileSize": 2373,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--rhodellia--arms": {
+      "fileName": "eurth--rhodellia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/ed/Rhodellian_Cross.png",
+      "downloadedAt": 1791420188028,
+      "fileSize": 39983,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--rohini": {
+      "fileName": "eurth--rohini.png",
+      "originalUrl": "https://iiwiki.com/images/3/32/Flag_of_Rohini.png",
+      "downloadedAt": 1791420188277,
+      "fileSize": 10907,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--rohini--arms": {
+      "fileName": "eurth--rohini--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Burgas-coat-of-arms.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420188416,
+      "fileSize": 284284,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sahra": {
+      "fileName": "eurth--sahra.png",
+      "originalUrl": "https://iiwiki.com/images/c/ca/Flag_of_Sahra.png",
+      "downloadedAt": 1791420188769,
+      "fileSize": 143866,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--salvia": {
+      "fileName": "eurth--salvia.png",
+      "originalUrl": "https://iiwiki.com/images/2/24/SICflag.png",
+      "downloadedAt": 1791420189014,
+      "fileSize": 60825,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--salvia--arms": {
+      "fileName": "eurth--salvia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/7/71/SalviaCoA.png",
+      "downloadedAt": 1791420189732,
+      "fileSize": 296090,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--san-giorgio": {
+      "fileName": "eurth--san-giorgio.png",
+      "originalUrl": "https://iiwiki.com/images/f/fa/Flag_of_San_Giorgio.png",
+      "downloadedAt": 1791420189992,
+      "fileSize": 39897,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--san-giorgio--arms": {
+      "fileName": "eurth--san-giorgio--arms.png",
+      "originalUrl": "https://iiwiki.com/images/9/96/Coat_of_arms_of_San_Giorgio.png",
+      "downloadedAt": 1791420190479,
+      "fileSize": 16797,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--san-jorge": {
+      "fileName": "eurth--san-jorge.png",
+      "originalUrl": "https://iiwiki.com/images/b/b7/Flag_of_San_Jorge.png",
+      "downloadedAt": 1791420190709,
+      "fileSize": 22160,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--san-jorge--arms": {
+      "fileName": "eurth--san-jorge--arms.png",
+      "originalUrl": "https://iiwiki.com/images/a/ae/Coat_of_arms_of_San_Jorge.png",
+      "downloadedAt": 1791420191353,
+      "fileSize": 511929,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sokhanistan": {
+      "fileName": "eurth--sokhanistan.png",
+      "originalUrl": "https://iiwiki.com/images/b/bf/Flag_of_Sokhanistan.png",
+      "downloadedAt": 1791420191604,
+      "fileSize": 38987,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sporsia": {
+      "fileName": "eurth--sporsia.png",
+      "originalUrl": "https://iiwiki.com/images/f/f3/Flag_of_Sporsia.png",
+      "downloadedAt": 1791420191939,
+      "fileSize": 40892,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--stedoria": {
+      "fileName": "eurth--stedoria.png",
+      "originalUrl": "https://iiwiki.com/images/2/21/Flag_of_Stedoria.png",
+      "downloadedAt": 1791420192209,
+      "fileSize": 12135,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--stedoria--arms": {
+      "fileName": "eurth--stedoria--arms.png",
+      "originalUrl": "https://iiwiki.com/images/7/79/Emblem_of_the_Independent_State_of_Stedoria.png",
+      "downloadedAt": 1791420192859,
+      "fileSize": 255429,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--suminto": {
+      "fileName": "eurth--suminto.png",
+      "originalUrl": "https://iiwiki.com/images/e/ed/Suminto_flag.png",
+      "downloadedAt": 1791420193130,
+      "fileSize": 51391,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sunseong": {
+      "fileName": "eurth--sunseong.jpg",
+      "originalUrl": "https://iiwiki.com/images/b/b9/SunseongFlag.jpg",
+      "downloadedAt": 1791420193367,
+      "fileSize": 36929,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sunseong--arms": {
+      "fileName": "eurth--sunseong--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/30/Coat_of_arms_of_Sunseong.png",
+      "downloadedAt": 1791420193871,
+      "fileSize": 22305,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sunset-sea-islands": {
+      "fileName": "eurth--sunset-sea-islands.png",
+      "originalUrl": "https://iiwiki.com/images/6/65/Flag_of_Sunset_Sea_Islands.png",
+      "downloadedAt": 1791420194098,
+      "fileSize": 14838,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--sunset-sea-islands--arms": {
+      "fileName": "eurth--sunset-sea-islands--arms.png",
+      "originalUrl": "https://iiwiki.com/images/7/71/Radiance.png",
+      "downloadedAt": 1791420194836,
+      "fileSize": 17412,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--suverina": {
+      "fileName": "eurth--suverina.png",
+      "originalUrl": "https://iiwiki.com/images/d/d2/Flag_of_Suverina.png",
+      "downloadedAt": 1791420195170,
+      "fileSize": 48131,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--suverina--arms": {
+      "fileName": "eurth--suverina--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Coat_of_arms_of_Moldova.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420195348,
+      "fileSize": 229701,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tabaristan": {
+      "fileName": "eurth--tabaristan.png",
+      "originalUrl": "https://iiwiki.com/images/8/84/Flag_of_Tabaristan.png",
+      "downloadedAt": 1791420195706,
+      "fileSize": 3733,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tagmatium": {
+      "fileName": "eurth--tagmatium.png",
+      "originalUrl": "https://iiwiki.com/images/e/e5/Flag_of_Tagmatium.png",
+      "downloadedAt": 1791420195993,
+      "fileSize": 17636,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tagmatium--arms": {
+      "fileName": "eurth--tagmatium--arms.png",
+      "originalUrl": "https://iiwiki.com/images/0/09/Coat_of_arms_of_Tagmatium.png",
+      "downloadedAt": 1791420196453,
+      "fileSize": 30832,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tamurin": {
+      "fileName": "eurth--tamurin.png",
+      "originalUrl": "https://iiwiki.com/images/6/6b/Flag_of_Tamurin.png",
+      "downloadedAt": 1791420196702,
+      "fileSize": 13997,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tamurin--arms": {
+      "fileName": "eurth--tamurin--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Emblem_of_Sri_Lanka.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420196918,
+      "fileSize": 645937,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tavok": {
+      "fileName": "eurth--tavok.png",
+      "originalUrl": "https://iiwiki.com/images/9/95/Flag_of_Tavok.png",
+      "downloadedAt": 1791420197199,
+      "fileSize": 509578,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--tavok--arms": {
+      "fileName": "eurth--tavok--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/38/Emblem_of_Tavok.png",
+      "downloadedAt": 1791420197878,
+      "fileSize": 404294,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ulfheimr": {
+      "fileName": "eurth--ulfheimr.png",
+      "originalUrl": "https://iiwiki.com/images/6/66/Flag_of_Ulfheimr.png",
+      "downloadedAt": 1791420198214,
+      "fileSize": 55493,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--variota": {
+      "fileName": "eurth--variota.png",
+      "originalUrl": "https://iiwiki.com/images/e/e7/Flag_of_Variota.png",
+      "downloadedAt": 1791420198442,
+      "fileSize": 23471,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--variota--arms": {
+      "fileName": "eurth--variota--arms.png",
+      "originalUrl": "https://iiwiki.com/images/d/d4/Coat_of_arms_of_Variota.png",
+      "downloadedAt": 1791420198889,
+      "fileSize": 110634,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--vasqqa": {
+      "fileName": "eurth--vasqqa.png",
+      "originalUrl": "https://iiwiki.com/images/2/28/Flag_of_Vasqqa.png",
+      "downloadedAt": 1791420199131,
+      "fileSize": 19363,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--velaheria": {
+      "fileName": "eurth--velaheria.png",
+      "originalUrl": "https://iiwiki.com/images/e/e5/DPR_Velaheria_Flag.png",
+      "downloadedAt": 1791420199466,
+      "fileSize": 87305,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--velaheria--arms": {
+      "fileName": "eurth--velaheria--arms.png",
+      "originalUrl": "https://iiwiki.com/images/2/27/Coat_of_arms_of_Velaheria.png",
+      "downloadedAt": 1791420200291,
+      "fileSize": 67736,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--verraine": {
+      "fileName": "eurth--verraine.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Flag_of_.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420200370,
+      "fileSize": 5697,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--volhynia": {
+      "fileName": "eurth--volhynia.png",
+      "originalUrl": "https://iiwiki.com/images/f/fd/Flag_of_Volhynia_.png",
+      "downloadedAt": 1791420200948,
+      "fileSize": 344027,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--volhynia--arms": {
+      "fileName": "eurth--volhynia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/d/d5/COA_of_Volhynia_2.png",
+      "downloadedAt": 1791420201484,
+      "fileSize": 283129,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--volsci": {
+      "fileName": "eurth--volsci.png",
+      "originalUrl": "https://iiwiki.com/images/2/20/Flag_of_Volsci.png",
+      "downloadedAt": 1791420201996,
+      "fileSize": 38729,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--volsci--arms": {
+      "fileName": "eurth--volsci--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/0/05/Coat_of_arms_of_the_Brazilian_Air_Force.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420202231,
+      "fileSize": 345936,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--vosarkia": {
+      "fileName": "eurth--vosarkia.png",
+      "originalUrl": "https://iiwiki.com/images/b/b1/FlagVosarkia.png",
+      "downloadedAt": 1791420202669,
+      "fileSize": 15771,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--vosarkia--arms": {
+      "fileName": "eurth--vosarkia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/ee/COAVosarkia.png",
+      "downloadedAt": 1791420203220,
+      "fileSize": 44223,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--wajoka--arms": {
+      "fileName": "eurth--wajoka--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Featheredserpentnotchedplatevol2mississip86.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420203581,
+      "fileSize": 52317,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--welkija--arms": {
+      "fileName": "eurth--welkija--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/ed/Image_2025-06-12_210732324.png",
+      "downloadedAt": 1791420204134,
+      "fileSize": 203170,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--west-anglia": {
+      "fileName": "eurth--west-anglia.png",
+      "originalUrl": "https://iiwiki.com/images/3/36/Flag_of_West_Anglia.svg",
+      "downloadedAt": 1791420204582,
+      "fileSize": 13516,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--west-anglia--arms": {
+      "fileName": "eurth--west-anglia--arms.png",
+      "originalUrl": "https://iiwiki.com/images/3/39/Coat_of_arms_of_West_Anglia.svg",
+      "downloadedAt": 1791420205394,
+      "fileSize": 974081,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--yien--arms": {
+      "fileName": "eurth--yien--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/36/Escudo_de_Anz%C3%A1.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420206254,
+      "fileSize": 51101,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ymutz-mizlan": {
+      "fileName": "eurth--ymutz-mizlan.png",
+      "originalUrl": "https://iiwiki.com/images/5/5b/YmutzMizlanFlag.png",
+      "downloadedAt": 1791420206804,
+      "fileSize": 282525,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ymutz-mizlan--arms": {
+      "fileName": "eurth--ymutz-mizlan--arms.png",
+      "originalUrl": "https://iiwiki.com/images/6/67/CoAYM.png",
+      "downloadedAt": 1791420207553,
+      "fileSize": 874070,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--yuropa": {
+      "fileName": "eurth--yuropa.png",
+      "originalUrl": "https://iiwiki.com/images/8/80/Flag_of_Yuropa.png",
+      "downloadedAt": 1791420209279,
+      "fileSize": 19590,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--yuropa--arms": {
+      "fileName": "eurth--yuropa--arms.png",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/9/91/Emblem_of_the_Islamic_Republic_of_Iran_%281980%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "downloadedAt": 1791420210423,
+      "fileSize": 51487,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--zekistan": {
+      "fileName": "eurth--zekistan.png",
+      "originalUrl": "https://iiwiki.com/images/a/a6/Flag_of_Zekistan.png",
+      "downloadedAt": 1791420211031,
+      "fileSize": 36112,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--zekistan--arms": {
+      "fileName": "eurth--zekistan--arms.png",
+      "originalUrl": "https://iiwiki.com/images/4/4e/Coat_of_arms_of_Zekistan.png",
+      "downloadedAt": 1791420211561,
+      "fileSize": 55979,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--zuydland": {
+      "fileName": "eurth--zuydland.png",
+      "originalUrl": "https://iiwiki.com/images/1/12/Flag_of_Zuydland.png",
+      "downloadedAt": 1791420212153,
+      "fileSize": 136455,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--zuydland--arms": {
+      "fileName": "eurth--zuydland--arms.png",
+      "originalUrl": "https://iiwiki.com/images/5/50/Coat_of_Arms_of_Zuydland.png",
+      "downloadedAt": 1791420212890,
+      "fileSize": 507656,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--abantium": {
+      "fileName": "eurth--abantium.png",
+      "originalUrl": "https://iiwiki.com/images/b/bd/Flag_of_Abantium.png",
+      "downloadedAt": 1791423538293,
+      "fileSize": 11572,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--caliveis": {
+      "fileName": "eurth--caliveis.png",
+      "originalUrl": "https://iiwiki.com/images/3/33/Flag_of_Caliveis.png",
+      "downloadedAt": 1791423539874,
+      "fileSize": 69703,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--caliveis--arms": {
+      "fileName": "eurth--caliveis--arms.png",
+      "originalUrl": "https://iiwiki.com/images/c/c6/Coat_of_arms_of_Caliveis.png",
+      "downloadedAt": 1791423540997,
+      "fileSize": 45208,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--coedana": {
+      "fileName": "eurth--coedana.png",
+      "originalUrl": "https://iiwiki.com/images/9/90/Flag_of_Gotneska.png",
+      "downloadedAt": 1791423541679,
+      "fileSize": 129843,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--ealis": {
+      "fileName": "eurth--ealis.png",
+      "originalUrl": "https://iiwiki.com/images/3/31/Flag_of_Ealis.png",
+      "downloadedAt": 1791423542442,
+      "fileSize": 173899,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--eidolmanta": {
+      "fileName": "eurth--eidolmanta.png",
+      "originalUrl": "https://iiwiki.com/images/8/80/Flag_of_Eidolmanta.png",
+      "downloadedAt": 1791423543149,
+      "fileSize": 10283,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--luterna": {
+      "fileName": "eurth--luterna.png",
+      "originalUrl": "https://iiwiki.com/images/5/50/Flag_of_Luterna.png",
+      "downloadedAt": 1791423543659,
+      "fileSize": 390,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--luterna--arms": {
+      "fileName": "eurth--luterna--arms.png",
+      "originalUrl": "https://iiwiki.com/images/4/45/Coat_of_arms_of_Luterna.png",
+      "downloadedAt": 1791423544321,
+      "fileSize": 187540,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mekabiri": {
+      "fileName": "eurth--mekabiri.png",
+      "originalUrl": "https://iiwiki.com/images/8/80/Flag_of_Mekabiri.png",
+      "downloadedAt": 1791423544967,
+      "fileSize": 17691,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mekabiri--arms": {
+      "fileName": "eurth--mekabiri--arms.png",
+      "originalUrl": "https://iiwiki.com/images/e/ee/Emblem_of_Mekabiri.png",
+      "downloadedAt": 1791423545526,
+      "fileSize": 88391,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mikochi": {
+      "fileName": "eurth--mikochi.png",
+      "originalUrl": "https://iiwiki.com/images/4/46/Flag_of_Mikochi.png",
+      "downloadedAt": 1791423546043,
+      "fileSize": 29740,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--mikochi--arms": {
+      "fileName": "eurth--mikochi--arms.png",
+      "originalUrl": "https://iiwiki.com/images/8/87/Coat_of_arms_of_Mikochi.png",
+      "downloadedAt": 1791423546545,
+      "fileSize": 5020,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--neusrya": {
+      "fileName": "eurth--neusrya.png",
+      "originalUrl": "https://iiwiki.com/images/1/17/Flag_of_Neusrya.png",
+      "downloadedAt": 1791423547095,
+      "fileSize": 21635,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--noble-nykia": {
+      "fileName": "eurth--noble-nykia.png",
+      "originalUrl": "https://iiwiki.com/images/7/71/Flag_of_Noble_Nykia.png",
+      "downloadedAt": 1791423547613,
+      "fileSize": 43690,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--norrium": {
+      "fileName": "eurth--norrium.png",
+      "originalUrl": "https://iiwiki.com/images/1/15/Flag_of_Norrium.png",
+      "downloadedAt": 1791423548241,
+      "fileSize": 17480,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--wajoka": {
+      "fileName": "eurth--wajoka.png",
+      "originalUrl": "https://iiwiki.com/images/d/de/Flag_of_Wajoka.png",
+      "downloadedAt": 1791423549045,
+      "fileSize": 33007,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--yien": {
+      "fileName": "eurth--yien.png",
+      "originalUrl": "https://iiwiki.com/images/2/21/Flag_of_Yien.png",
+      "downloadedAt": 1791423549643,
+      "fileSize": 124291,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--yosai": {
+      "fileName": "eurth--yosai.png",
+      "originalUrl": "https://iiwiki.com/images/b/be/Flag_of_Yosai.png",
+      "downloadedAt": 1791423550284,
+      "fileSize": 10801,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
+      }
+    },
+    "eurth--kori-chi": {
+      "fileName": "eurth--kori-chi.png",
+      "originalUrl": "https://iiwiki.com/images/6/60/Flag_Dominion_of_Kori-Chi_%28Gallambria%29.svg",
+      "downloadedAt": 1791423619246,
+      "fileSize": 58307,
+      "source": {
+        "name": "IIWiki",
+        "baseUrl": "https://iiwiki.com",
+        "priority": 1
       }
     }
   },

@@ -1,13 +1,23 @@
 "use client";
 
-import { useRef, useCallback, useState, useEffect, useDeferredValue, type RefObject } from "react";
+import {
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+  useDeferredValue,
+  useMemo,
+  type RefObject,
+} from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
+import { wantsRealmLabelsEditor } from "~/lib/maps/realm-labels";
 import { useNotify } from "~/hooks/useNotify";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
-import { MapControls } from "./MapControls";
+import { MapControls, type RasterControls } from "./MapControls";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
@@ -23,6 +33,7 @@ import { MapWelcomeModal } from "./MapWelcomeModal";
 import { TimelineScrubber } from "./TimelineScrubber";
 import { MapRealmProvider } from "./MapRealmContext";
 import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
+import type { ClimateKey } from "~/lib/maps/realm-map-settings";
 import { mapHomeCenter } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef, MapLayerData } from "./IxWorldMap";
 
@@ -36,8 +47,14 @@ import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
 import { isIxWorldView } from "~/lib/realms/realm-ids";
-import { useRealmMapDisplay } from "./hooks/useRealmMapDisplay";
-import { RealmMapKey, useRealmDefaultView } from "./RealmMapKey";
+import {
+  useArtModeLabels,
+  useRealmDefaultView,
+  useRealmMapDisplay,
+  useRealmRasterSelection,
+} from "./hooks/useRealmMapDisplay";
+import { RealmMapScale } from "./RealmMapScale";
+import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 
 const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   ssr: false,
@@ -217,6 +234,10 @@ interface MapToolbarsProps {
   realm: string | undefined;
   /** The realm's planet radius (km), for the measure tool. */
   radiusKm: number | undefined;
+  /** The realm's vector layer types (undefined on IxWorld: every switch), climate key and raster art switches. */
+  layerTypes: readonly string[] | undefined;
+  climateKey: ClimateKey | null | undefined;
+  raster: RasterControls | undefined;
 }
 
 function MapToolbars({
@@ -239,6 +260,9 @@ function MapToolbars({
   onOpenWelcome,
   realm,
   radiusKm,
+  layerTypes,
+  climateKey,
+  raster,
 }: MapToolbarsProps) {
   const isMobile = useIsMobile();
   const editAllowed = !hideEditButtons && !state.isEditing && !state.isWorldEditing;
@@ -263,6 +287,9 @@ function MapToolbars({
           onEditMap={onEditMap}
           showWorldEditor={editAllowed && (isAdmin || canEditRealmMap)}
           onOpenWorldEditor={state.handleOpenWorldEditor}
+          layerTypes={layerTypes}
+          climateKey={climateKey}
+          raster={raster}
         />
       )}
 
@@ -397,8 +424,25 @@ export function MapContainer({
   const userCountryId = userProfile?.countryId ?? null;
   // Ocean labels, the prime meridian, the home view and the guided tour describe IxWorld only (AT-2).
   const ixWorld = isIxWorldView(realm, userProfile?.country?.realmId);
-  // The realm's planet radius, default view, base image, credit line and unclaimed nations
+  // The realm's planet radius, default view, base image, credit line, raster art and climate key
   const realmDisplay = useRealmMapDisplay(realm);
+  // Its raster art: a base map (art mode while one is shown) and overlays
+  const raster = useRealmRasterSelection(realmDisplay);
+  const { layers: rasterLayers, selection: rasterSelection, setBase, toggleOverlay } = raster;
+  const rasterRealmId = realmDisplay?.realmId;
+  const rasterControls = useMemo<RasterControls | undefined>(
+    () =>
+      rasterRealmId && rasterLayers.length > 0
+        ? {
+            realmId: rasterRealmId,
+            layers: rasterLayers,
+            selection: rasterSelection,
+            onBaseChange: setBase,
+            onToggleOverlay: toggleOverlay,
+          }
+        : undefined,
+    [rasterRealmId, rasterLayers, rasterSelection, setBase, toggleOverlay]
+  );
 
   // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
   // fetched after useMapState runs, so they are handed over through a ref-backed getter.
@@ -416,6 +460,17 @@ export function MapContainer({
     clearPin: pin.clearPin,
   });
   const { selectedCountry, setMapEngineReady, setProjectionMode, isEditing } = state;
+
+  // `?editor=labels` (the admin panel's link): open the world editor once the map is up, for its map editors.
+  const openLabelsEditor = wantsRealmLabelsEditor(useSearchParams());
+  const mayEditRealmMap = isAdmin || !!realmDisplay?.canEdit;
+  const openedEditor = useRef(false);
+  const { mapEngineReady, setIsWorldEditing } = state;
+  useEffect(() => {
+    if (openedEditor.current || !openLabelsEditor || !mayEditRealmMap || !mapEngineReady) return;
+    openedEditor.current = true;
+    setIsWorldEditing(true);
+  }, [openLabelsEditor, mayEditRealmMap, mapEngineReady, setIsWorldEditing]);
 
   const {
     mapLayers,
@@ -446,6 +501,10 @@ export function MapContainer({
   useEffect(() => {
     mapLayersRef.current = mapLayers;
   }, [mapLayers]);
+
+  const effectiveVisibleLayers = controlledVisibleLayers ?? visibleLayers;
+  const effectiveToggleLayer = onToggleLayer ?? toggleLayer;
+  useArtModeLabels(raster.artMode, effectiveVisibleLayers, effectiveToggleLayer);
 
   const deferredOverlayData = useDeferredValue(overlayData);
 
@@ -554,9 +613,10 @@ export function MapContainer({
         showOceanLabels={ixWorld}
         ixWorld={ixWorld}
         baseImageUrl={realmDisplay?.baseImage}
-        attribution={realmDisplay?.attribution}
-        unclaimedCountryIds={realmDisplay?.unclaimedCountryIds}
         tileRealmId={realmId}
+        rasterRealmId={realmDisplay?.realmId}
+        rasterLayers={raster.shown}
+        artMode={raster.artMode}
       />
 
       <MapToolbars
@@ -567,8 +627,8 @@ export function MapContainer({
         showControls={showControls}
         toolsVisible={toolsVisible}
         tourIdle={tourIdle}
-        visibleLayers={controlledVisibleLayers ?? visibleLayers}
-        onToggleLayer={onToggleLayer ?? toggleLayer}
+        visibleLayers={effectiveVisibleLayers}
+        onToggleLayer={effectiveToggleLayer}
         hasCountry={!!userCountryId}
         isAdmin={isAdmin}
         canEditRealmMap={!!realmDisplay?.canEdit}
@@ -579,21 +639,24 @@ export function MapContainer({
         onOpenWelcome={handleOpenWelcome}
         realm={realm}
         radiusKm={realmDisplay?.radiusKm}
+        layerTypes={realmDisplay?.isIxWorld ? undefined : realmDisplay?.layerTypes}
+        climateKey={realmDisplay?.climateKey}
+        raster={rasterControls}
       />
 
-      {/* Bottom-left stack: analytics legend, realm legend, scale and credit line; hidden on
+      {/* Bottom-left stack: analytics legend and the scale with the cursor's coordinates; hidden on
           mobile while the bottom sheet is up. */}
       <div
         className={`pointer-events-none absolute bottom-4 left-3 z-20 flex max-w-[calc(100%-1.5rem)] flex-col-reverse items-start gap-2 sm:bottom-6 ${
           sidePanelOpen ? "max-sm:hidden" : ""
         }`}
       >
-        <RealmMapKey
-          display={realmDisplay}
-          mapLayers={mapLayers}
-          map={state.mapEngineReady ? (mapRef.current?.getMap() ?? null) : null}
-          showScale={showControls}
-        />
+        {showControls && (
+          <RealmMapScale
+            map={state.mapEngineReady ? (mapRef.current?.getMap() ?? null) : null}
+            radiusKm={realmDisplay?.radiusKm ?? EARTH_RADIUS_KM}
+          />
+        )}
         <AnalyticsLegend overlayVisibility={state.overlayVisibility} overlayData={overlayData} />
       </div>
 
@@ -606,6 +669,7 @@ export function MapContainer({
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
         homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixWorld)}
+        attribution={realmDisplay?.attribution}
       />
 
       {/* Feature panels read the wiki of the realm this map shows */}

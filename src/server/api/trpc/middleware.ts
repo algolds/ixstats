@@ -18,8 +18,8 @@ import {
   ValidationError,
   SecurityError,
 } from "~/lib/app-error";
-import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/cache";
-import { ALL_REALMS, DEFAULT_REALM_ID, realmScopeInput } from "~/lib/realms/realm-ids";
+import { createCacheMiddlewareFactory, cacheConfigs, cacheRealmKey } from "~/lib/cache";
+import { ALL_REALMS, realmScopeInput } from "~/lib/realms/realm-ids";
 
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 
@@ -495,8 +495,11 @@ function realmAwareCacheMiddleware(config: keyof typeof cacheConfigs) {
     const rawInput = await getRawInput();
     const scope = realmScopeInput.safeParse(rawInput);
     if (scope.success && scope.data.realm === ALL_REALMS) return next();
-    const activeRealmId: string | undefined = ctx.user?.country?.realmId ?? undefined;
-    const realmKey = activeRealmId === DEFAULT_REALM_ID ? undefined : activeRealmId;
+    const realmKey = cacheRealmKey({
+      activeRealmId: ctx.user?.country?.realmId ?? undefined,
+      realmSlug: scope.success ? scope.data.realm : undefined,
+      userId: ctx.auth?.userId ?? undefined,
+    });
     const cacheFactory = createCacheMiddlewareFactory(cacheConfigs[config]);
     return cacheFactory({ ctx, path, type, input: rawInput, next, realmKey });
   });

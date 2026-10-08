@@ -3,7 +3,9 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { getZoneByColor, isLandBand } from "~/lib/maps/elevation-config";
+import { climateZoneLabel, climateZoneOf } from "~/lib/maps/climate-zones";
+import { parseRealmMapSettings, type ClimateKey } from "~/lib/maps/realm-map-settings";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { CLIMATE_COLOR_MAP } from "./shared";
 
@@ -38,12 +40,15 @@ async function withPointQueryTimeout<T>(
 
 type PointLayer = { properties: Record<string, unknown> };
 
-/** Elevation zone at the point; stored metadata wins, the fill colour fills in what is missing. */
+/**
+ * Elevation zone at the point; stored metadata wins, the fill colour fills in what is missing. A land-only band
+ * (a realm whose art has no elevations) says so instead of claiming the elevations of the band it looks like.
+ */
 function elevationInfo(altitude: PointLayer | undefined) {
   if (!altitude) return null;
   const props = altitude.properties ?? {};
   const fill = (props.fill as string) ?? null;
-  const zone = fill ? getZoneByColor(fill) : null;
+  const zone = fill && !isLandBand(props) ? getZoneByColor(fill) : null;
   return {
     zoneId: (props.zoneId as string) ?? zone?.zoneId ?? null,
     zoneName: (props.zoneName as string) ?? zone?.zoneName ?? null,
@@ -56,16 +61,25 @@ function elevationInfo(altitude: PointLayer | undefined) {
   };
 }
 
-function climateInfo(climate: PointLayer | undefined) {
+/** Climate zone at the point: through the realm's climate key when it has one, else IxWorld's Trewartha colours. */
+function climateInfo(climate: PointLayer | undefined, key: ClimateKey | null) {
   if (!climate) return null;
   const props = climate.properties ?? {};
   const fill = (props.fill as string) ?? null;
-  const derivedName = fill ? CLIMATE_COLOR_MAP[fill.toLowerCase()] : null;
+  const zone = key ? climateZoneOf(key, props) : null;
+  if (zone) return { climateId: zone.code, climateName: climateZoneLabel(zone), color: fill };
+  const derivedName = fill && !key ? CLIMATE_COLOR_MAP[fill.toLowerCase()] : null;
   return {
     climateId: (props.climateId as string) ?? null,
     climateName: (props.climateName as string) ?? derivedName ?? null,
     color: fill,
   };
+}
+
+/** The realm's climate key, read only when the point has a climate zone to name. */
+async function realmClimateKey(db: PrismaClient, realmId: string): Promise<ClimateKey | null> {
+  const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
+  return parseRealmMapSettings(realm?.settings).climateKey ?? null;
 }
 
 /** The approved subdivision containing the point, or null (also when PostGIS data is not there yet). */
@@ -130,6 +144,8 @@ export const pointQueryProcedures = {
         );
 
         const political = layerResults.find((r) => r.layerType === "political");
+        const climate = layerResults.find((r) => r.layerType === "climate");
+        const climateKey = climate ? await realmClimateKey(ctx.db, realmId) : null;
 
         let subdivision = null;
         let countryInfo = null;
@@ -144,7 +160,7 @@ export const pointQueryProcedures = {
         return {
           coordinates: { lng: input.lng, lat: input.lat },
           elevation: elevationInfo(layerResults.find((r) => r.layerType === "altitudes")),
-          climate: climateInfo(layerResults.find((r) => r.layerType === "climate")),
+          climate: climateInfo(climate, climateKey),
           country: political
             ? {
                 featureId: political.featureId,

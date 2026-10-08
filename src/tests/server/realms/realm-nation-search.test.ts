@@ -21,8 +21,12 @@ function makeDb(): Db {
   const db = createMockPrisma();
   db.realm.findMany.mockResolvedValue([IXWORLD, EURTH]);
   db.country.findMany.mockImplementation(async ({ where }: any) => {
-    // The "which pages has a country taken" lookup.
-    if (where.name?.in) return [{ realmId: "eurth", name: "Aurora" }];
+    // The "which pages has a country taken" lookup: Aurora by name (no page reference), Auberon renamed.
+    if (where.OR)
+      return [
+        { realmId: "eurth", name: "Aurora", wikiSource: "ixwiki", wikiPageTitle: null },
+        { realmId: "eurth", name: "New Auberon", wikiSource: "ixwiki", wikiPageTitle: "Auberon" },
+      ];
     return [
       {
         id: "c1",
@@ -45,6 +49,7 @@ function makeDb(): Db {
   db.realmPage.findMany.mockResolvedValue([
     { realmId: "eurth", title: "Aurora", wikiSource: "ixwiki" },
     { realmId: "eurth", title: "Auberon", wikiSource: "ixwiki" },
+    { realmId: "eurth", title: "Auvergne", wikiSource: "ixwiki" },
   ]);
   return db;
 }
@@ -79,7 +84,6 @@ describe("realms.searchNations", () => {
     const result = await caller(makeDb()).searchNations({ query: "au" });
 
     expect(result).toEqual([
-      expect.objectContaining({ kind: "page", name: "Auberon", claimable: true, realm: EURTH }),
       expect.objectContaining({
         kind: "country",
         id: "c1",
@@ -95,9 +99,12 @@ describe("realms.searchNations", () => {
         claimable: true,
         realm: IXWORLD,
       }),
+      expect.objectContaining({ kind: "page", name: "Auvergne", claimable: true, realm: EURTH }),
     ]);
-    // "Aurora" is a page a country already carries: it is not offered.
+    // "Aurora" is a page a country already carries (by name, it has no page reference) and "Auberon" is the page
+    // of a nation since renamed: neither is offered.
     expect(result.map((r) => r.name)).not.toContain("Aurora");
+    expect(result.map((r) => r.name)).not.toContain("Auberon");
     expect(JSON.stringify(result)).not.toContain("u_secret");
     for (const row of result) expect(row).not.toHaveProperty("ownerUserId");
   });
@@ -161,7 +168,10 @@ describe("realms.directory claimable nation pages", () => {
       { realmId: "eurth", title: "Auberon", wikiSource: "ixwiki" },
       { realmId: "eurth", title: "Borea", wikiSource: "ixwiki" },
     ]);
-    db.country.findMany.mockResolvedValue([{ realmId: "eurth", name: "Aurora" }]);
+    db.country.findMany.mockResolvedValue([
+      { realmId: "eurth", name: "Aurora", wikiSource: "ixwiki", wikiPageTitle: null },
+      { realmId: "eurth", name: "Free Borea", wikiSource: "ixwiki", wikiPageTitle: "Borea" },
+    ]);
 
     const rows = await caller(db).directory();
 
@@ -170,7 +180,7 @@ describe("realms.directory claimable nation pages", () => {
       kind: "nation",
     });
     expect(rows.map((r) => [r.id, r.openNationPageCount])).toEqual([
-      ["eurth", 2],
+      ["eurth", 1],
       ["default", 0],
     ]);
   });

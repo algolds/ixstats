@@ -8,6 +8,8 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
+import { realmLabelRank } from "~/lib/maps/realm-labels";
+import { storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
@@ -200,6 +202,11 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
               countryId: l.countryId,
               countryName: l.country?.name ?? null,
               realmLabel: l.countryId === null,
+              // A realm label's rank in the ocean-label style (its kind's unless one is stored)
+              rank:
+                l.countryId === null
+                  ? realmLabelRank(l.labelType, storedRealmLabelRank(l.metadata))
+                  : null,
             },
           })),
       };

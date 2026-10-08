@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { createUrl } from "~/lib/utils";
 import { ManageSection, type RealmManage } from "./ManageSection";
 
 /** Embassies: propose one to another realm, answer proposals, close embassies. */
@@ -66,7 +65,7 @@ export function EmbassiesSection({ slug, manage }: { slug: string; manage: Realm
               >
                 <div className="flex items-center gap-2">
                   <Link
-                    href={createUrl(`/r/${encodeURIComponent(embassy.partner.slug)}`)}
+                    href={`/r/${encodeURIComponent(embassy.partner.slug)}`}
                     className="text-label text-body hover:underline"
                   >
                     {embassy.partner.name}

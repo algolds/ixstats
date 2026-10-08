@@ -49,11 +49,11 @@ describe("AppSidebar", () => {
     );
   });
 
-  it("uses the section tint (Defense is crimson)", () => {
-    const { container } = renderSidebar({ pathname: "/mycountry/defense" });
+  it("uses the section tint (ThinkPages is its own colour under Home)", () => {
+    const { container } = renderSidebar({ pathname: "/thinkpages" });
     expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
       "data-app",
-      "intel"
+      "thinkpages"
     );
   });
 
@@ -110,12 +110,50 @@ describe("AppSidebar", () => {
   describe("icon rail", () => {
     it("has one control per main app, named by the app", () => {
       const { rail } = renderSidebar({ collapsed: true });
-      for (const app of mainApps) {
+      for (const app of mainApps.filter((a) => !a.inline)) {
         const control = within(rail()).getByRole(app.sections.length > 0 ? "button" : "link", {
           name: app.label,
         });
         if (app.id === "mycountry") expect(control).toHaveAttribute("aria-current", "true");
       }
+    });
+
+    it("puts Home's sections on the rail as links, not a popover", () => {
+      const { rail } = renderSidebar({
+        collapsed: true,
+        badges: { "messages-unread": { kind: "count", value: 3 } },
+      });
+      expect(within(rail()).queryByRole("button", { name: "Home" })).toBeNull();
+      expect(within(rail()).getByRole("link", { name: "Home" })).toHaveAttribute(
+        "href",
+        "/dashboard"
+      );
+      const messages = within(rail()).getByRole("link", { name: "Messages, 3 unread" });
+      expect(messages).toHaveTextContent("3");
+      expect(within(rail()).getByRole("link", { name: "ThinkTanks" })).toBeInTheDocument();
+      expect(within(rail()).queryByRole("link", { name: "ThinkPages" })).toBeNull();
+      expect(within(rail()).queryByRole("link", { name: "What's new" })).toBeNull();
+    });
+
+    it("puts What's new above Home on the rail while the build is unseen", () => {
+      const { rail } = renderSidebar({
+        collapsed: true,
+        badges: { "whats-new": { kind: "action", label: "New" } },
+      });
+      const names = within(rail())
+        .getAllByRole("link")
+        .map((l) => l.getAttribute("aria-label"));
+      expect(names.indexOf("What's new")).toBe(names.indexOf("Home") - 1);
+    });
+
+    it("draws every app in its own colour, not only the current one", () => {
+      const { rail } = renderSidebar({ collapsed: true });
+      const grey = within(rail())
+        .getAllByRole("link")
+        .concat(within(rail()).queryAllByRole("button"))
+        .filter((control) => control.querySelector("svg") && !control.matches(".text-tint"))
+        .map((control) => control.getAttribute("aria-label") ?? control.textContent);
+      expect(grey).toEqual([]);
     });
 
     it("has its own navigation landmark", () => {

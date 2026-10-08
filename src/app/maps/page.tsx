@@ -81,7 +81,7 @@ export default function WorldMapPage() {
   const realm = searchParams.get("realm") || undefined;
 
   // In embed mode: hide navigation, controls, use full viewport
-  const containerClass = isEmbed ? "h-dvh w-dvw" : isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]";
+  const containerClass = isEmbed ? "h-dvh w-dvw" : "h-dvh";
 
   return (
     <div className={`relative ${containerClass}`} data-maps-page>

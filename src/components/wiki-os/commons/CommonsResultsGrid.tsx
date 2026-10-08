@@ -176,10 +176,9 @@ export function CommonsResultsGrid({
         <div className="bg-fill-4 text-label-secondary mb-3 rounded-full p-3">
           <ImageIcon className="h-6 w-6" />
         </div>
-        <p className="text-body text-label mb-1 font-medium">Explore sovereign assets</p>
+        <p className="text-body text-label mb-1 font-medium">Explore images</p>
         <p className="text-footnote text-label-secondary max-w-sm">
-          Search Wikimedia Commons, browse worldbuilding categories in the sidebar, or switch to
-          IxWiki to find community uploads.
+          Search for images using the search bar above or filter by type and orientation.
         </p>
       </div>
     );

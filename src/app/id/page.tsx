@@ -26,7 +26,7 @@ export default function IdAccountHubPage() {
   });
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col items-center justify-center px-4 py-6 md:px-8 md:py-10">
+    <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col items-center justify-center px-4 py-6 md:px-8 md:py-10">
       <SignedIn>
         <div className="flex w-full justify-center">
           <UserProfile routing="hash" appearance={facetClerkAppearance}>

@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { fetchRepoFile, rawGithubUrl, SourceFetchError } from "~/lib/realms/sources/fetch";
+import { fetchRepoBytes, fetchRepoFile, rawGithubUrl, SourceFetchError } from "~/lib/realms/sources/fetch";
 
 const file = { repo: "a-seth-harrison/eurth-map", ref: "main", path: "eurth-map/src/data/nations.js" };
 
@@ -69,5 +69,16 @@ describe("fetchRepoFile", () => {
     const fetchImpl = jest.fn();
     await expect(fetchRepoFile({ ...file, path: "../x" }, { fetchImpl })).rejects.toThrow(SourceFetchError);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe("fetchRepoBytes", () => {
+  it("reads a binary file byte for byte, under the same checks", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff]);
+    const fetchImpl = jest.fn().mockResolvedValue(new Response(png));
+    await expect(fetchRepoBytes({ ...file, path: "Overlays/map.png" }, { fetchImpl })).resolves.toEqual(png);
+    expect(fetchImpl.mock.calls[0][1]).toMatchObject({ redirect: "manual" });
+    const big = jest.fn().mockResolvedValue(new Response(new Uint8Array(2000)));
+    await expect(fetchRepoBytes(file, { fetchImpl: big, maxBytes: 1000 })).rejects.toThrow(/larger/);
   });
 });

@@ -10,11 +10,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
-import {
-  getArticleRoute,
-  isNonArticlePath,
-  type ArticleView,
-} from "~/lib/wiki-os/article-route";
+import { getArticleRoute, isNonArticlePath, type ArticleView } from "~/lib/wiki-os/article-route";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
@@ -40,7 +36,6 @@ export function WikiOSLayout({
   title,
   hideTitleHeading = false,
   readOnly,
-  inspector = false,
   articleView = "read",
   children,
 }: {
@@ -48,11 +43,6 @@ export function WikiOSLayout({
   hideTitleHeading?: boolean;
   /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
   readOnly?: boolean;
-  /**
-   * The page puts something in the shell's Inspector gutter (an article's contents and page info).
-   * Every other wiki page gives the gutter back and runs the full content width.
-   */
-  inspector?: boolean;
   /** The view of the page its path does not say (`?action=edit|history` on /wiki/<title>). */
   articleView?: ArticleView;
   children: ReactNode;
@@ -129,7 +119,7 @@ export function WikiOSLayout({
   );
 
   return (
-    <div className="wikios-shell wikios-root" data-shell-gutter={inspector ? undefined : "none"}>
+    <div className="wikios-shell wikios-root">
       <WikiOSContentWrapper
         title={hideTitleHeading ? undefined : title}
         actions={actions}

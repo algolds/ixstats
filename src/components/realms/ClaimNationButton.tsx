@@ -5,7 +5,6 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
-import { createUrl } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -42,7 +41,7 @@ export function ClaimNationButton({
   const utils = api.useUtils();
   const [open, setOpen] = useState(false);
   const [acceptedRules, setAcceptedRules] = useState(false);
-  const { data: overview } = api.realms.region.overview.useQuery(
+  const { data: overview, isLoading: rulesLoading } = api.realms.region.overview.useQuery(
     { slug: realmSlug },
     { enabled: open }
   );
@@ -55,6 +54,7 @@ export function ClaimNationButton({
       if (result.status === "approved") {
         notify.success(`${countryName} is yours`, "Manage it from MyCountry.");
         void utils.realms.myNations.invalidate();
+        void utils.realms.region.invalidate();
         void utils.users.getProfile.invalidate();
         return;
       }
@@ -72,7 +72,13 @@ export function ClaimNationButton({
       <Button size={size} variant="outline" onClick={() => setOpen(true)}>
         {label}
       </Button>
-      <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) setAcceptedRules(false);
+        }}
+      >
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Claim {countryName}?</AlertDialogTitle>
@@ -84,7 +90,7 @@ export function ClaimNationButton({
           {rules && (
             <div className="bg-fill-4 rounded-row flex flex-col gap-2 p-3">
               <Link
-                href={createUrl(`/r/${encodeURIComponent(realmSlug)}/rules`)}
+                href={`/r/${encodeURIComponent(realmSlug)}/rules`}
                 className="text-tint text-footnote w-fit underline-offset-4 hover:underline"
               >
                 Read the realm&apos;s rules
@@ -101,7 +107,8 @@ export function ClaimNationButton({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
-              disabled={claim.isPending || (!!rules && !acceptedRules)}
+              // The rules arrive with the overview: until then a claim would be refused for want of them.
+              disabled={claim.isPending || rulesLoading || (!!rules && !acceptedRules)}
               onClick={() => claim.mutate({ countryId, ...(rules && { acceptedRules }) })}
             >
               Claim {countryName}

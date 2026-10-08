@@ -24,7 +24,8 @@
       "landArea": "landArea",
       "capital": "capital",
       "wikiLink": "iiwikiLink",
-      "color": "color"
+      "color": "color",
+      "secondaryFields": "secondaryFields"
     },
     "organizationFields": {
       "key": "id",
@@ -198,5 +199,840 @@
     "Yuropa": "Europa",
     "Zekistan": "Europa",
     "Zuydland": "Aurelia"
+  },
+  "mapPipeline": {
+    "art": {
+      "blank": {
+        "repoPath": "Eurth Blank Map Borders.png"
+      },
+      "geography": {
+        "repoPath": "Overlays/Eurth-Geography-Map-10-3-2026 No Legend.png"
+      },
+      "climate-map": {
+        "repoPath": "Overlays/Eurth-Climate-Map.png"
+      },
+      "climate-key": {
+        "repoPath": "eurth-map/src/data/climates.js"
+      },
+      "climate-overlay": {
+        "repoPath": "eurth-map/public/layers/climate.webp"
+      },
+      "tectonic": {
+        "repoPath": "eurth-map/public/layers/tectonic.webp"
+      },
+      "currents": {
+        "repoPath": "eurth-map/public/layers/currents.webp"
+      },
+      "legend-geography": {
+        "repoPath": "eurth-map/public/layers/legend-geo.webp"
+      },
+      "legend-climate": {
+        "repoPath": "eurth-map/public/layers/legend-climate.webp"
+      }
+    },
+    "rasters": [
+      {
+        "id": "geography",
+        "label": "Geography",
+        "kind": "base",
+        "art": "geography",
+        "legendArt": "legend-geography"
+      },
+      {
+        "id": "geography-grey",
+        "label": "Grey",
+        "kind": "base",
+        "art": "geography",
+        "legendArt": "legend-geography",
+        "grey": true
+      },
+      {
+        "id": "climate",
+        "label": "Climate",
+        "kind": "overlay",
+        "order": 1,
+        "art": "climate-overlay",
+        "legendArt": "legend-climate"
+      },
+      {
+        "id": "tectonic",
+        "label": "Tectonic plates",
+        "kind": "overlay",
+        "order": 2,
+        "art": "tectonic"
+      },
+      {
+        "id": "currents",
+        "label": "Ocean currents",
+        "kind": "overlay",
+        "order": 3,
+        "art": "currents"
+      }
+    ],
+    "physical": {
+      "land": "blank",
+      "climate": {
+        "art": "climate-map",
+        "key": {
+          "art": "climate-key",
+          "system": "Köppen",
+          "zonesBinding": "CLIMATE_ZONES",
+          "linkPrefixBinding": "WIKI"
+        }
+      },
+      "ice": {
+        "art": "geography"
+      },
+      "elevation": {
+        "art": "geography",
+        "bands": [
+          {
+            "color": "#a5bb8c",
+            "min": 0,
+            "max": 50
+          },
+          {
+            "color": "#b8c9a4",
+            "min": 50,
+            "max": 500
+          },
+          {
+            "color": "#c6d4b5",
+            "min": 500,
+            "max": 2000
+          },
+          {
+            "color": "#d7e2cd",
+            "min": 2000,
+            "max": 4000
+          },
+          {
+            "color": "#dacaab",
+            "min": 4000,
+            "max": 8000
+          },
+          {
+            "color": "#ffffff",
+            "min": 8000,
+            "max": null
+          }
+        ]
+      },
+      "rivers": {
+        "art": "geography",
+        "colours": [
+          "#5184c8"
+        ]
+      },
+      "engine": {
+        "landMaxSum": 720,
+        "iceMinChannel": 235,
+        "elevationTolerance": 1.5
+      }
+    },
+    "labels": {
+      "source": "Eurth-Geography-Map-10-3-2026 No Legend.png (8000x4000 equirectangular), names and positions read from the art",
+      "labels": [
+        {
+          "key": "Argic Ocean (west)",
+          "text": "Argic Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            -33.3,
+            82.8
+          ]
+        },
+        {
+          "key": "Argic Ocean (east)",
+          "text": "Argic Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            113.85,
+            81.68
+          ]
+        },
+        {
+          "text": "North Oriental Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            -125.55,
+            56.7
+          ]
+        },
+        {
+          "text": "Adlantic Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            42.66,
+            24.84
+          ]
+        },
+        {
+          "text": "Adisi Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            -16.65,
+            -40.05
+          ]
+        },
+        {
+          "text": "South Oriental Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            163.35,
+            -35.1
+          ]
+        },
+        {
+          "text": "Antargic Ocean",
+          "kind": "ocean",
+          "coordinates": [
+            124.65,
+            -69.97
+          ]
+        },
+        {
+          "text": "Argis",
+          "kind": "continent",
+          "coordinates": [
+            -21.6,
+            62.1
+          ]
+        },
+        {
+          "text": "Alharu",
+          "kind": "continent",
+          "coordinates": [
+            -68.85,
+            18
+          ]
+        },
+        {
+          "text": "Aurelia",
+          "kind": "continent",
+          "coordinates": [
+            -81,
+            -28.35
+          ]
+        },
+        {
+          "text": "Europa",
+          "kind": "continent",
+          "coordinates": [
+            113.4,
+            42.3
+          ]
+        },
+        {
+          "text": "Antargis",
+          "kind": "continent",
+          "coordinates": [
+            77.18,
+            -82.57
+          ]
+        },
+        {
+          "text": "Thalassa",
+          "kind": "region",
+          "rank": "major",
+          "coordinates": [
+            -144,
+            0
+          ]
+        },
+        {
+          "text": "Marenesia",
+          "kind": "region",
+          "rank": "major",
+          "coordinates": [
+            61.2,
+            -25.2
+          ]
+        },
+        {
+          "text": "Marenesia Major",
+          "kind": "region",
+          "coordinates": [
+            42.75,
+            -35.1
+          ]
+        },
+        {
+          "text": "Marenesia Minor",
+          "kind": "region",
+          "coordinates": [
+            117.9,
+            -33.53
+          ]
+        },
+        {
+          "text": "Mesothalassa",
+          "kind": "region",
+          "coordinates": [
+            -71.32,
+            -4.5
+          ]
+        },
+        {
+          "text": "Occident",
+          "kind": "region",
+          "coordinates": [
+            83.02,
+            43.88
+          ]
+        },
+        {
+          "text": "Orient",
+          "kind": "region",
+          "coordinates": [
+            119.93,
+            30.15
+          ]
+        },
+        {
+          "text": "Burania",
+          "kind": "region",
+          "coordinates": [
+            117.68,
+            55.35
+          ]
+        },
+        {
+          "text": "Amutia",
+          "kind": "region",
+          "coordinates": [
+            100.57,
+            23.4
+          ]
+        },
+        {
+          "text": "Azania",
+          "kind": "region",
+          "coordinates": [
+            88.2,
+            8.1
+          ]
+        },
+        {
+          "text": "Nordhavet",
+          "kind": "sea",
+          "coordinates": [
+            -60.3,
+            73.13
+          ]
+        },
+        {
+          "text": "Narvic Sea",
+          "kind": "sea",
+          "coordinates": [
+            -84.69,
+            60.12
+          ]
+        },
+        {
+          "text": "Verde Sea",
+          "kind": "sea",
+          "coordinates": [
+            -82.13,
+            51.66
+          ]
+        },
+        {
+          "text": "Sakspati Sea",
+          "kind": "sea",
+          "coordinates": [
+            -60.97,
+            54
+          ]
+        },
+        {
+          "text": "Ygros Sea",
+          "kind": "sea",
+          "coordinates": [
+            -64.8,
+            48.06
+          ]
+        },
+        {
+          "text": "Mediargic Sea",
+          "kind": "sea",
+          "coordinates": [
+            -47.93,
+            56.25
+          ]
+        },
+        {
+          "text": "Canamo Sea",
+          "kind": "sea",
+          "coordinates": [
+            -42.3,
+            66.83
+          ]
+        },
+        {
+          "text": "Kezanoi Sea",
+          "kind": "sea",
+          "coordinates": [
+            -36,
+            45.23
+          ]
+        },
+        {
+          "text": "Green Sea",
+          "kind": "sea",
+          "coordinates": [
+            -22.5,
+            45.9
+          ]
+        },
+        {
+          "text": "Geltic Sea",
+          "kind": "sea",
+          "coordinates": [
+            15.3,
+            51.03
+          ]
+        },
+        {
+          "text": "Thalassa ton Kataigidon (Sea of Storms)",
+          "kind": "sea",
+          "coordinates": [
+            79.2,
+            65.47
+          ]
+        },
+        {
+          "text": "Cetan Sea",
+          "kind": "sea",
+          "coordinates": [
+            54.81,
+            56.57
+          ]
+        },
+        {
+          "text": "Ranke Sea",
+          "kind": "sea",
+          "coordinates": [
+            89.32,
+            54.9
+          ]
+        },
+        {
+          "text": "Kosscow Sea",
+          "kind": "sea",
+          "coordinates": [
+            99.45,
+            61.43
+          ]
+        },
+        {
+          "text": "Andalla Sea",
+          "kind": "sea",
+          "coordinates": [
+            -137.25,
+            2.92
+          ]
+        },
+        {
+          "text": "Tiauhai Sea",
+          "kind": "sea",
+          "coordinates": [
+            -123.75,
+            7.42
+          ]
+        },
+        {
+          "text": "Lotus Sea",
+          "kind": "sea",
+          "coordinates": [
+            -105.52,
+            4.64
+          ]
+        },
+        {
+          "text": "Hei Sea",
+          "kind": "sea",
+          "coordinates": [
+            -90.45,
+            26.1
+          ]
+        },
+        {
+          "text": "Synthe Sea",
+          "kind": "sea",
+          "coordinates": [
+            -47.25,
+            0
+          ]
+        },
+        {
+          "text": "Qingming Sea",
+          "kind": "sea",
+          "coordinates": [
+            -30.37,
+            32.49
+          ]
+        },
+        {
+          "text": "Turtle Sea",
+          "kind": "sea",
+          "coordinates": [
+            -33.53,
+            13.05
+          ]
+        },
+        {
+          "text": "Dolch Sea",
+          "kind": "sea",
+          "coordinates": [
+            -9,
+            36.67
+          ]
+        },
+        {
+          "text": "Whanganui Sea",
+          "kind": "sea",
+          "coordinates": [
+            0.9,
+            1.8
+          ]
+        },
+        {
+          "text": "Ram Sea",
+          "kind": "sea",
+          "coordinates": [
+            69.53,
+            41.4
+          ]
+        },
+        {
+          "text": "Amnalos Sea",
+          "kind": "sea",
+          "coordinates": [
+            75.15,
+            26.78
+          ]
+        },
+        {
+          "text": "Raga Sea",
+          "kind": "sea",
+          "coordinates": [
+            89.55,
+            32.4
+          ]
+        },
+        {
+          "text": "Jasmine Sea",
+          "kind": "sea",
+          "coordinates": [
+            130.5,
+            42.3
+          ]
+        },
+        {
+          "text": "Byzantine Sea",
+          "kind": "sea",
+          "coordinates": [
+            115.43,
+            18.81
+          ]
+        },
+        {
+          "text": "Konstantinopoli Sea",
+          "kind": "sea",
+          "coordinates": [
+            107.32,
+            4.28
+          ]
+        },
+        {
+          "text": "Rosario Sea",
+          "kind": "sea",
+          "coordinates": [
+            148.5,
+            36.22
+          ]
+        },
+        {
+          "text": "Azure Sea",
+          "kind": "sea",
+          "coordinates": [
+            135.9,
+            12.15
+          ]
+        },
+        {
+          "text": "Northern Meteorolas",
+          "kind": "sea",
+          "coordinates": [
+            137.25,
+            5.17
+          ]
+        },
+        {
+          "text": "Southern Meteorolas",
+          "kind": "sea",
+          "coordinates": [
+            123.75,
+            -7.65
+          ]
+        },
+        {
+          "text": "Safijeran Sea",
+          "kind": "sea",
+          "coordinates": [
+            130.05,
+            -20.48
+          ]
+        },
+        {
+          "text": "Typhon Sea",
+          "kind": "sea",
+          "coordinates": [
+            -52.42,
+            -24.75
+          ]
+        },
+        {
+          "text": "Moana O Te Rangamarie (Sea of Peace)",
+          "kind": "sea",
+          "coordinates": [
+            -5.4,
+            -12.83
+          ]
+        },
+        {
+          "text": "Tenarua Sea",
+          "kind": "sea",
+          "coordinates": [
+            26.32,
+            -28.57
+          ]
+        },
+        {
+          "text": "Wampanoag Sea",
+          "kind": "sea",
+          "coordinates": [
+            -58.5,
+            -52.2
+          ]
+        },
+        {
+          "text": "Sunset Sea",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -150.07,
+            -6.75
+          ]
+        },
+        {
+          "text": "Intria",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -31.5,
+            51.21
+          ]
+        },
+        {
+          "text": "Auraid Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            2.7,
+            60.53
+          ]
+        },
+        {
+          "text": "Gulf of Lanjon",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            114.3,
+            75.51
+          ]
+        },
+        {
+          "text": "Monran Bight",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -116.55,
+            23.63
+          ]
+        },
+        {
+          "text": "Keelpijp",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -48.15,
+            42.08
+          ]
+        },
+        {
+          "text": "Bahia del Trébol",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -85.5,
+            3.6
+          ]
+        },
+        {
+          "text": "Morthal Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -13.95,
+            44.1
+          ]
+        },
+        {
+          "text": "Dragon-Ryders Deep",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            64.8,
+            4.28
+          ]
+        },
+        {
+          "text": "Eebay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            106.88,
+            36.77
+          ]
+        },
+        {
+          "text": "Haken",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            93.15,
+            11.47
+          ]
+        },
+        {
+          "text": "Menelassar",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            131.85,
+            27.45
+          ]
+        },
+        {
+          "text": "Paraia Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            139.5,
+            43.65
+          ]
+        },
+        {
+          "text": "Napu Passage",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            127.13,
+            3.24
+          ]
+        },
+        {
+          "text": "Pahu Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            127.35,
+            -0.9
+          ]
+        },
+        {
+          "text": "Saeida Strait",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            100.8,
+            -4.95
+          ]
+        },
+        {
+          "text": "Rivdon Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            90.9,
+            -1.12
+          ]
+        },
+        {
+          "text": "Manamana Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -82.8,
+            -7.2
+          ]
+        },
+        {
+          "text": "Baie d'Ailénor",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -71.1,
+            -15.97
+          ]
+        },
+        {
+          "text": "Gulf of Auriel",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            -79.87,
+            -35.55
+          ]
+        },
+        {
+          "text": "Salvae Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            38.7,
+            -28.35
+          ]
+        },
+        {
+          "text": "Marenai Bight",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            48.15,
+            -40.95
+          ]
+        },
+        {
+          "text": "Outlaw Bay",
+          "kind": "sea",
+          "rank": "minor",
+          "coordinates": [
+            33.75,
+            -45.9
+          ]
+        }
+      ]
+    },
+    "flags": {
+      "localize": true
+    },
+    "defaultView": "auto",
+    "coverage": {
+      "tolerance": 0.045,
+      "smooth": 2
+    }
   }
 }

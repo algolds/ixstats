@@ -10,6 +10,7 @@ import {
   parseRealmMapSettings,
   realmGeoreference,
   realmRadiusKm,
+  realmRasterLayers,
   withRealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
 import {
@@ -163,5 +164,57 @@ describe("Realm.settings.map georeference", () => {
         bounds: { west: -20, south: -10, east: 20, north: 10 },
       },
     });
+  });
+});
+
+describe("Realm.settings.map raster layers and climate key", () => {
+  const base = {
+    id: "geography",
+    label: "Geography",
+    kind: "base",
+    version: "0a1b2c3d",
+    maxZoom: 5,
+    legend: true,
+  };
+
+  it("keeps valid raster layers in their drawing order and drops a malformed list", () => {
+    const parsed = parseRealmMapSettings({
+      map: {
+        rasterLayers: [
+          { ...base, id: "currents", label: "Ocean currents", kind: "overlay", order: 2 },
+          base,
+          { ...base, id: "climate", label: "Climate", kind: "overlay", order: 1 },
+        ],
+      },
+    });
+    expect(realmRasterLayers(parsed).map((l) => l.id)).toEqual([
+      "geography",
+      "climate",
+      "currents",
+    ]);
+    expect(parseRealmMapSettings({ map: { rasterLayers: [{ ...base, id: "../x" }] } })).toEqual({});
+    expect(
+      parseRealmMapSettings({ map: { rasterLayers: [base, { ...base, label: "Twice" }] } })
+    ).toEqual({});
+  });
+
+  it("ignores a stored layer's old default-on flag: every map opens on its standard style", () => {
+    const parsed = parseRealmMapSettings({ map: { rasterLayers: [{ ...base, defaultOn: true }] } });
+    expect(parsed.rasterLayers).toEqual([base]);
+  });
+
+  it("keeps a climate key with hex colours, and refuses a zone without one", () => {
+    const climateKey = {
+      system: "Köppen",
+      zones: [{ code: "Af", name: "Tropical rainforest", color: "#0000fe" }],
+    };
+    expect(parseRealmMapSettings({ map: { climateKey } }).climateKey).toEqual(climateKey);
+    expect(
+      parseRealmMapSettings({
+        map: {
+          climateKey: { system: "Köppen", zones: [{ code: "Af", name: "x", color: "blue" }] },
+        },
+      })
+    ).toEqual({});
   });
 });

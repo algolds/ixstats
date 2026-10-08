@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { createUrl } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import {
   Select,
@@ -48,12 +47,7 @@ export function RealmCard({ realm }: { realm: DirectoryRealm }) {
   const canClaimMore = realm.myNationCount < realm.maxNationsPerUser;
   return (
     <li className="border-separator bg-surface rounded-card flex flex-col overflow-hidden border">
-      <Link
-        href={createUrl(base)}
-        tabIndex={-1}
-        aria-hidden="true"
-        className="bg-fill-3 block h-24"
-      >
+      <Link href={base} tabIndex={-1} aria-hidden="true" className="bg-fill-3 block h-24">
         {realm.bannerUrl && (
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
@@ -66,10 +60,7 @@ export function RealmCard({ realm }: { realm: DirectoryRealm }) {
         <div className="flex items-center gap-3">
           <RealmAvatar thumbnail={realm.thumbnail} />
           <div className="min-w-0">
-            <Link
-              href={createUrl(base)}
-              className="text-label text-headline block truncate hover:underline"
-            >
+            <Link href={base} className="text-label text-headline block truncate hover:underline">
               {realm.name}
             </Link>
             <p className="text-label-secondary text-footnote">
@@ -94,10 +85,7 @@ export function RealmCard({ realm }: { realm: DirectoryRealm }) {
         )}
         <p className="text-label-secondary text-footnote">{boardActivity(realm.board)}</p>
         <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
-          <Link
-            href={createUrl(realmHref(realm.slug, "board"))}
-            className="text-label hover:underline"
-          >
+          <Link href={realmHref(realm.slug, "board")} className="text-label hover:underline">
             Board
           </Link>
           {realm.myNationCount > 0 && (
@@ -106,10 +94,7 @@ export function RealmCard({ realm }: { realm: DirectoryRealm }) {
             </span>
           )}
           {canClaimMore && (
-            <Link
-              href={createUrl(realmHref(realm.slug, "nations"))}
-              className="text-label hover:underline"
-            >
+            <Link href={realmHref(realm.slug, "nations")} className="text-label hover:underline">
               {realm.myNationCount > 0 ? "Claim another nation" : "Join · claim a nation"}
             </Link>
           )}

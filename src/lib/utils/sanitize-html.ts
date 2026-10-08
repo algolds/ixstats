@@ -289,6 +289,30 @@ export function sanitizeWikiContent(html: string): string {
   return purify.sanitize(html, WIKI_CONTENT_SANITIZE_CONFIG);
 }
 
+/** Attributes that let markup restyle or reposition itself over the page around it (fixed overlays, fake UI). */
+const LAYOUT_ATTRIBUTES = new Set(["class", "id", "style"]);
+
+/**
+ * Config for sanitizeRealmContent(): the wiki tags, but no styling hooks: no `style`, `class`, `id` or `data-*`.
+ */
+const REALM_CONTENT_SANITIZE_CONFIG = {
+  ...WIKI_CONTENT_SANITIZE_CONFIG,
+  ALLOWED_ATTR: WIKI_CONTENT_SANITIZE_CONFIG.ALLOWED_ATTR.filter(
+    (attr) => !LAYOUT_ATTRIBUTES.has(attr) && !attr.startsWith("data-")
+  ),
+  ALLOW_DATA_ATTR: false,
+} satisfies Config;
+
+/**
+ * STRICT sanitization for a realm's factbook and rules, which staff write and every visitor's realm page renders
+ * inline: wiki formatting, links and images, but nothing that styles or positions an element (a fixed,
+ * full-screen "sign in again" overlay), since the realm page styles that content itself.
+ */
+export function sanitizeRealmContent(html: string): string {
+  if (!html) return "";
+  return purify.sanitize(html, REALM_CONTENT_SANITIZE_CONFIG);
+}
+
 /**
  * Tags MediaWiki's own Sanitizer lets through that the shared wiki config lacks (plan 415, COMPAT-10): the
  * legacy presentational markup that old wikitext and `{| ... |}` tables still produce, ruby, `<bdo>` and

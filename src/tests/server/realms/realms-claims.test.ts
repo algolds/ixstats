@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { createClaimsService, DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { IXSTATS_NATION_GROWTH_DEFAULTS } from "~/lib/realms/nation-growth-defaults";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
@@ -522,7 +523,27 @@ function pageSetup({ takenSlugs = [] as string[] } = {}) {
   return s;
 }
 
+/** A realm growth table (Realm.settings.nationDefaults) differing from IxStats's for the default $50,000 tier. */
+const realmGrowth = {
+  ...IXSTATS_NATION_GROWTH_DEFAULTS,
+  Strong: { populationGrowthRate: 0.009, adjustedGdpGrowth: 0.0007 },
+};
+
 describe("claimNationPage", () => {
+  it("creates the nation with the realm's growth for its tier", async () => {
+    const { db, claims } = pageSetup();
+    db.realmPage.findFirst.mockResolvedValue({
+      ...nationPage,
+      realm: { ...nationPage.realm, settings: { nationDefaults: realmGrowth } },
+    });
+    await claims.claimNationPage(actor, EURTH, "Aurelia");
+    expect(db.country.create.mock.calls[0][0].data).toMatchObject({
+      populationGrowthRate: 0.009,
+      adjustedGdpGrowth: 0.0007,
+      maxGdpGrowthRate: 0.0275,
+    });
+  });
+
   it("auto-approves the verified creator: creates the realm's country, assigns it and notifies once", async () => {
     const { db, deps, claims } = pageSetup();
     await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toEqual({
@@ -662,8 +683,17 @@ describe("claimNationPage", () => {
     await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
       code: "ALREADY_OWNED",
     });
+    // Matched by the page reference, or by name for a nation stored without one.
     expect(db.country.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { realmId: EURTH, name: "Aurelia" } })
+      expect.objectContaining({
+        where: {
+          realmId: EURTH,
+          OR: [
+            { wikiSource: expect.any(String), wikiPageTitle: "Aurelia" },
+            { wikiPageTitle: null, name: "Aurelia" },
+          ],
+        },
+      })
     );
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
@@ -772,6 +802,23 @@ describe("reviewClaim — nation page claims", () => {
   };
   const guarded = { id: "cl1", status: "pending" };
 
+  it("approving creates the nation with the realm's growth, else IxStats's defaults", async () => {
+    const { db, claims } = pageSetup();
+    db.realmClaim.findUnique.mockResolvedValue({
+      ...pendingPage,
+      realm: { ...pendingPage.realm, settings: { nationDefaults: realmGrowth } },
+    });
+    await claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(db.country.create.mock.calls[0][0].data).toMatchObject(realmGrowth.Strong);
+
+    const plain = pageSetup();
+    plain.db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    await plain.claims.reviewClaim(admin, "cl1", { approve: true });
+    expect(plain.db.country.create.mock.calls[0][0].data).toMatchObject(
+      IXSTATS_NATION_GROWTH_DEFAULTS.Strong
+    );
+  });
+
   it("approving decides first, then creates the realm's country, assigns it, links the claim and turns away rivals", async () => {
     const { db, deps, claims } = pageSetup({ takenSlugs: ["aurelia"] });
     db.realmClaim.findUnique.mockResolvedValue(pendingPage);
@@ -786,6 +833,7 @@ describe("reviewClaim — nation page claims", () => {
               ownerId: true,
               slug: true,
               status: true,
+              settings: true,
               officers: { where: { userId: "clerk_a1" }, select: { userId: true, powers: true } },
             },
           },

@@ -242,6 +242,8 @@ scripts/merge-and-cleanup.ts
 scripts/archive/geojson_dumps/
 scripts/reports/
 data/political-audit/
+# Realm raster map tiles (scripts/realms/build-realm-rasters.ts; MAP_RASTER_DIR)
+data/map-rasters/
 scripts/*.json
 scripts/*_report.md
 

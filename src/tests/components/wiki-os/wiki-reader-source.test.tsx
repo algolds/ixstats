@@ -34,16 +34,8 @@ jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: mockAuthLoaded }),
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
-  WikiOSLayout: ({
-    children,
-    readOnly,
-    inspector,
-  }: {
-    children: ReactNode;
-    readOnly?: boolean;
-    inspector?: boolean;
-  }) => {
-    mockLayout({ readOnly, inspector });
+  WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
+    mockLayout({ readOnly });
     return <div>{children}</div>;
   },
 }));
@@ -123,7 +115,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       "https://iiwiki.com/wiki/Portal%3AEurth"
     );
     expect(mockPrefetch).not.toHaveBeenCalled(); // ixwiki wikitext only warms the ixwiki editor
-    expect(mockLayout).toHaveBeenCalledWith({ readOnly: true, inspector: true }); // no page tools (ruling E-l)
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: true }); // no page tools (ruling E-l)
   });
 
   it("reads an IxWiki page with the query the route primed, and leaves its canonical link to the server", () => {
@@ -132,7 +124,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
 
     // The same key hover prefetch warms for IxWiki links and the route's server render primes
     expect(mockUseQuery).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
-    expect(mockLayout).toHaveBeenCalledWith({ readOnly: false, inspector: true });
+    expect(mockLayout).toHaveBeenCalledWith({ readOnly: false });
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ wikiSource: "ixwiki" }));
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
     expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
@@ -432,7 +424,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
-      error: new Error("not found"),
+      error: Object.assign(new Error("not found"), { data: { code: "NOT_FOUND" } }),
       refetch: jest.fn(),
     });
     render(<Reader title="Nowhere" />);
@@ -446,7 +438,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
-      error: new Error("not found"),
+      error: Object.assign(new Error("not found"), { data: { code: "NOT_FOUND" } }),
       refetch: jest.fn(),
     });
     render(<Reader title="Nowhere" />);
@@ -517,7 +509,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
-      error: new Error("not found"),
+      error: Object.assign(new Error("not found"), { data: { code: "NOT_FOUND" } }),
       refetch: jest.fn(),
     });
     render(<Reader wikiSource="iiwiki" />);
@@ -525,38 +517,18 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
 
-  describe("Inspector gutter", () => {
-    beforeEach(() => localStorage.clear());
-
-    it("an article keeps the gutter before it has loaded, so the column does not jump", () => {
-      mockUseQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
-      render(<Reader />);
-      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: true });
+  it("a wiki that fails to answer is not called a missing page: the reader offers to try again", () => {
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: Object.assign(new Error("iiwiki could not render the page"), {
+        data: { code: "BAD_GATEWAY" },
+      }),
+      refetch: jest.fn(),
     });
-
-    it("gives the gutter back when the Show wiki TOC setting is off", () => {
-      localStorage.setItem("wikios:showWikiToc", "false");
-      found();
-      render(<Reader />);
-      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
-    });
-
-    it("gives the gutter back for a missing article, the editor and the Main Page", () => {
-      mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: new Error("x") });
-      const missing = render(<Reader />);
-      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
-      missing.unmount();
-
-      mockSearch = "action=edit";
-      found();
-      const editing = render(<Reader />);
-      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: false, inspector: false });
-      editing.unmount();
-
-      mockSearch = "";
-      render(<Reader title="Main Page" />);
-      expect(mockLayout).toHaveBeenLastCalledWith({ readOnly: undefined, inspector: undefined });
-    });
+    render(<Reader wikiSource="iiwiki" />);
+    expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+    expect(screen.getByText(/not the same as the page/)).toBeInTheDocument();
   });
 
   it("the Main Page is the Main Page component (its own chunk), with no article query", async () => {

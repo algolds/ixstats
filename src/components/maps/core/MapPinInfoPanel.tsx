@@ -11,7 +11,7 @@ import {
 } from "iconoir-react";
 import type { ClientPointQueryResult } from "~/lib/maps/map-point-query";
 import type { PinPosition } from "~/hooks/useMapPinInfo";
-import { getZoneByColor } from "~/lib/maps/elevation-config";
+import { getZoneByColor, isLandBand } from "~/lib/maps/elevation-config";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
@@ -106,8 +106,8 @@ type ServerResult = PointInfoServerResult | null;
 /** Server (PostGIS) values win; the instant client-side lookup fills in until they arrive. */
 function resolveElevation(server: ServerResult, props: ClientProps) {
   const fill = (props?.fill as string) ?? null;
-  // Derive the elevation zone from the fill colour when metadata isn't available
-  const zone = fill ? getZoneByColor(fill) : null;
+  // Derive the elevation zone from the fill colour when metadata isn't available (a land-only band has none)
+  const zone = fill && !isLandBand(props) ? getZoneByColor(fill) : null;
   return {
     zoneName: firstDefined(server?.elevation?.zoneName, props?.zoneName as string, zone?.zoneName),
     label: firstDefined(

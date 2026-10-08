@@ -21,7 +21,7 @@ const player: Viewer = { id: "u_player", clerkUserId: "clerk_player", role: null
 const founder: Viewer = { id: "u_founder", clerkUserId: "clerk_founder", role: null };
 const admin: Viewer = { id: "u_admin", clerkUserId: "clerk_admin", role: { name: "admin", level: 10 } };
 
-function realmDb(settings: Record<string, unknown> = { maxNationsPerUser: 2 }) {
+function realmDb(settings: Record<string, unknown> = { maxNationsPerUser: 2 }, status = "active") {
   const state = { settings };
   const db: any = {
     state,
@@ -31,6 +31,7 @@ function realmDb(settings: Record<string, unknown> = { maxNationsPerUser: 2 }) {
         slug: "eurth",
         name: "Eurth",
         ownerId: "clerk_founder",
+        status,
         settings: state.settings,
       })),
       update: jest.fn(async ({ data }: { data: { settings: Record<string, unknown> } }) => {
@@ -111,6 +112,19 @@ describe("realms.wiki permissions: site admins and the realm's founder only", ()
       expect(view.sources.map((s) => s.id)).toContain("iiwiki");
       expect(view.presets).toEqual([expect.objectContaining({ id: "eurth-map", wiki: EURTH_WIKI })]);
     }
+  });
+});
+
+describe("archived realms", () => {
+  it("still show their wiki settings but take no wiki changes, asking the wiki nothing", async () => {
+    const db = realmDb({ wiki: EURTH_WIKI }, "archived");
+    const w = caller(db, founder);
+    expect((await w.get({ slug: "eurth" })).wiki).toEqual(EURTH_WIKI);
+    await expect(w.save({ slug: "eurth", wiki: null })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(w.chooseMap({ slug: "eurth", fileTitle: "File:X.png" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(w.recheckMap({ slug: "eurth" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realm.update).not.toHaveBeenCalled();
+    expect(wiki.calls).toEqual([]);
   });
 });
 

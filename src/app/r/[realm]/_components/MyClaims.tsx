@@ -4,7 +4,6 @@ import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
-import { createUrl } from "~/lib/utils";
 import { timeAgo } from "~/lib/format/compact";
 
 export type MyClaim = RouterOutputs["realms"]["myClaims"][number];
@@ -46,7 +45,7 @@ export function MyClaims({ realmSlug }: { realmSlug?: string }) {
             <div className="flex flex-wrap items-center gap-2">
               {claim.country ? (
                 <Link
-                  href={createUrl(`/countries/${claim.country.slug ?? claim.country.id}`)}
+                  href={`/countries/${claim.country.slug ?? claim.country.id}`}
                   className="text-label text-body font-medium hover:underline"
                 >
                   {claimName(claim)}
@@ -56,7 +55,7 @@ export function MyClaims({ realmSlug }: { realmSlug?: string }) {
               )}
               {!realmSlug && (
                 <Link
-                  href={createUrl(`/r/${encodeURIComponent(claim.realm.slug)}`)}
+                  href={`/r/${encodeURIComponent(claim.realm.slug)}`}
                   className="text-label-secondary text-footnote hover:underline"
                 >
                   {claim.realm.name}

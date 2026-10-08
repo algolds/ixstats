@@ -74,17 +74,30 @@ interface WikiRealm {
   slug: string;
   name: string;
   ownerId: string;
+  status: string;
   settings: Prisma.JsonValue;
 }
 
 async function loadWikiRealm(db: Pick<PrismaClient, "realm">, actor: RealmActor, slug: string): Promise<WikiRealm> {
   const realm = await db.realm.findUnique({
     where: { slug },
-    select: { id: true, slug: true, name: true, ownerId: true, settings: true },
+    select: { id: true, slug: true, name: true, ownerId: true, status: true, settings: true },
   });
   if (!realm) throw new RealmWikiError("NOT_FOUND", "Realm not found");
   if (!canModerateRealm(actor, realm))
     throw new RealmWikiError("FORBIDDEN", "Only site admins and the realm's founder manage its wiki");
+  return realm;
+}
+
+/** The realm, for a change to its wiki settings or chosen map: archived realms are read-only. */
+async function loadWritableWikiRealm(
+  db: Pick<PrismaClient, "realm">,
+  actor: RealmActor,
+  slug: string
+): Promise<WikiRealm> {
+  const realm = await loadWikiRealm(db, actor, slug);
+  if (realm.status === "archived")
+    throw new RealmWikiError("FORBIDDEN", "This realm is archived and can't be changed");
   return realm;
 }
 
@@ -119,7 +132,7 @@ export async function saveRealmWikiSettings(
   slug: string,
   input: RealmWikiSettingsInput | null
 ) {
-  const realm = await loadWikiRealm(db, actor, slug);
+  const realm = await loadWritableWikiRealm(db, actor, slug);
   let wiki: RealmWikiSettings | null = null;
   if (input) {
     const parsed = realmWikiSettingsSchema.safeParse(input);
@@ -185,7 +198,7 @@ export async function chooseRealmWikiMap(
   fileTitle: string,
   deps: RealmWikiDeps = {}
 ) {
-  const realm = await loadWikiRealm(db, actor, slug);
+  const realm = await loadWritableWikiRealm(db, actor, slug);
   const wiki = requireSettings(realm);
   const title = asFileTitle(fileTitle);
   try {
@@ -255,7 +268,7 @@ export async function recheckRealmWikiMap(
   slug: string,
   deps: RealmWikiDeps = {}
 ) {
-  const realm = await loadWikiRealm(db, actor, slug);
+  const realm = await loadWritableWikiRealm(db, actor, slug);
   const stored = realmWikiMap(realm.settings);
   if (!stored) throw new RealmWikiError("BAD_REQUEST", "Choose a map from the wiki first");
   let current;

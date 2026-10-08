@@ -2,8 +2,10 @@
  * Which existing nation each source entry is. In order: a staff match (overrides), the stable key stored on the
  * country (Country.externalSourceKey), then the normalised name against the realm's countries (name and wiki
  * page title) and its roster pages (RealmPage kind "nation"), so a roster page and its map entry become one
- * nation. Anything that matches more than one candidate, or a candidate another entry also matches, is reported
- * as ambiguous instead of guessed.
+ * nation. Exact names win; failing those, a name matches the same name with a trailing parenthetical qualifier
+ * on one side only ("Nanto" = "Nanto (Eurth)", a wiki's disambiguation), never two different qualifiers
+ * ("Congo (Brazzaville)" ≠ "Congo (Kinshasa)"). Anything that matches more than one candidate, or a candidate
+ * another entry also matches, is reported as ambiguous instead of guessed.
  */
 import type { NationOverride } from "./config";
 import type { SourceNation } from "./adapters/types";
@@ -25,6 +27,67 @@ export function normalizeNationName(name: string | null | undefined): string {
     .replace(/[^\p{L}\p{N} ]+/gu, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** The normalised name without a trailing parenthetical qualifier ("Nanto (Eurth)" → "nanto"). */
+export function baseNationName(name: string | null | undefined): string {
+  return normalizeNationName(name?.replace(/\s*\([^()]*\)\s*$/, ""));
+}
+
+/** The forms a set of names goes by: exact (normalised) and qualifier-free. */
+export interface NameKeys {
+  exact: Set<string>;
+  base: Set<string>;
+}
+
+export function nameKeys(names: ReadonlyArray<string | null | undefined>): NameKeys {
+  return {
+    exact: new Set(names.map(normalizeNationName).filter(Boolean)),
+    base: new Set(names.map(baseNationName).filter(Boolean)),
+  };
+}
+
+const exactNameHit = (keys: NameKeys, name: string | null | undefined) =>
+  keys.exact.has(normalizeNationName(name));
+
+/** The same name with a qualifier on one side only: "Nanto" against "Nanto (Eurth)", either way round. */
+function qualifiedNameHit(keys: NameKeys, name: string | null | undefined): boolean {
+  const exact = normalizeNationName(name);
+  const base = baseNationName(name);
+  return (exact !== "" && keys.base.has(exact)) || (base !== "" && keys.exact.has(base));
+}
+
+/** The candidates a name set matches: exact names first, else the one-sided qualifier matches. */
+function tieredHits<T>(
+  candidates: readonly T[],
+  namesOfCandidate: (candidate: T) => ReadonlyArray<string | null>,
+  keys: NameKeys
+): T[] {
+  const exact = candidates.filter((c) => namesOfCandidate(c).some((n) => exactNameHit(keys, n)));
+  if (exact.length > 0) return exact;
+  return candidates.filter((c) => namesOfCandidate(c).some((n) => qualifiedNameHit(keys, n)));
+}
+
+/** Whether a name is taken by any of a set of names, exactly or with a qualifier on one side only. */
+export const nameTaken = (keys: NameKeys, name: string) =>
+  exactNameHit(keys, name) || qualifiedNameHit(keys, name);
+
+/** A word of one name that is the same word, or a longer spelling of it ("ymutz" ~ "ymutztlaclan"), in the other. */
+function sameOrLonger(a: string, b: string): boolean {
+  if (a === b) return true;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 4 && long.startsWith(short);
+}
+
+/**
+ * Two different names that may be one nation spelled two ways: the same number of words, each the same or a
+ * shortened form of the other's ("Ymutz Mizlan" ~ "Ymutztlaclan-Mizlanuzco"). Only ever a warning, never a match.
+ */
+export function nearNationName(a: string, b: string): boolean {
+  const left = baseNationName(a).split(" ");
+  const right = baseNationName(b).split(" ");
+  if (left.join(" ") === right.join(" ") || left.length !== right.length) return false;
+  return left.every((word, i) => sameOrLonger(word, right[i]!));
 }
 
 export interface MatchableCountry {
@@ -52,11 +115,8 @@ export type NationMatch =
   | { kind: "ambiguous"; reason: string; candidates: MatchCandidate[] };
 
 /** The names a source entry may go by. */
-function namesOf(nation: SourceNation): Set<string> {
-  return new Set(
-    [nation.key, nation.displayName, nation.wikiTitle].map(normalizeNationName).filter(Boolean)
-  );
-}
+const namesOf = (nation: SourceNation): NameKeys =>
+  nameKeys([nation.key, nation.displayName, nation.wikiTitle]);
 
 export function matchSourceNations(
   nations: readonly SourceNation[],
@@ -107,18 +167,14 @@ export function matchSourceNations(
   const free = countries.filter(
     (c) => !reserved.has(c.id) && (!c.externalSourceKey || !sourceKeys.has(c.externalSourceKey))
   );
-  const takenNames = new Set(
-    countries.flatMap((c) => [normalizeNationName(c.name), normalizeNationName(c.wikiPageTitle)])
-  );
-  const freePages = pages.filter((p) => !takenNames.has(normalizeNationName(p.title)));
+  const takenNames = nameKeys(countries.flatMap((c) => [c.name, c.wikiPageTitle]));
+  const freePages = pages.filter((p) => !nameTaken(takenNames, p.title));
   const countryClaims = new Map<string, string[]>();
   const pageClaims = new Map<string, string[]>();
   for (const nation of nations) {
     if (result.has(nation.key)) continue;
     const names = namesOf(nation);
-    const countryHits = free.filter(
-      (c) => names.has(normalizeNationName(c.name)) || names.has(normalizeNationName(c.wikiPageTitle))
-    );
+    const countryHits = tieredHits(free, (c) => [c.name, c.wikiPageTitle], names);
     if (countryHits.length > 1) {
       result.set(nation.key, {
         kind: "ambiguous",
@@ -133,7 +189,7 @@ export function matchSourceNations(
       result.set(nation.key, { kind: "country", countryId: id, via: "name" });
       continue;
     }
-    const pageHits = freePages.filter((p) => names.has(normalizeNationName(p.title)));
+    const pageHits = tieredHits(freePages, (p) => [p.title], names);
     if (pageHits.length > 1) {
       result.set(nation.key, {
         kind: "ambiguous",
@@ -174,9 +230,7 @@ export function rosterOnlyPages<P extends MatchablePage>(
   countries: readonly MatchableCountry[],
   matches: ReadonlyMap<string, NationMatch>
 ): P[] {
-  const taken = new Set(
-    countries.flatMap((c) => [normalizeNationName(c.name), normalizeNationName(c.wikiPageTitle)])
-  );
+  const taken = nameKeys(countries.flatMap((c) => [c.name, c.wikiPageTitle]));
   const matched = new Set(
     [...matches.values()].flatMap((m) =>
       m.kind === "page"
@@ -188,6 +242,6 @@ export function rosterOnlyPages<P extends MatchablePage>(
   );
   return pages.filter((p) => {
     const name = normalizeNationName(p.title);
-    return !taken.has(name) && !matched.has(name);
+    return !nameTaken(taken, p.title) && !matched.has(name);
   });
 }

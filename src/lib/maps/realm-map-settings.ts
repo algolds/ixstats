@@ -12,6 +12,13 @@
  * - `projection`, `bounds`, `controlPoints`: how an imported map image's pixels become lon/lat (the map import
  *   engine, `src/lib/maps/import/georef.ts`): equirectangular or Mercator, the lon/lat box a cropped image covers,
  *   or at least three pixel ↔ lon/lat pairs. None set: a whole-globe equirectangular image.
+ * - `rasterLayers`: the realm's map art as Web Mercator raster tiles built from full-globe equirectangular images
+ *   (`scripts/realms/build-realm-rasters.ts`): `base` layers are alternatives drawn under everything (one at a
+ *   time, e.g. a geography map and its grey copy), `overlay` layers are switches drawn over the base in `order`.
+ *   `version` is the built tiles' content hash, part of every tile URL so a rebuilt image is never served stale.
+ *   None is shown when the map opens (it opens on the standard IxWorld style); a viewer switches them on.
+ * - `climateKey`: the climate classification the realm's `climate` layer uses (zone code, name, fill colour), for
+ *   its legend and the zone readout. None set: IxWorld's Trewartha key.
  *
  * Other keys stored under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`) are not read
  * here and are never dropped when the settings are saved.
@@ -71,6 +78,52 @@ export const MapControlPointSchema = z.object({
 });
 export type MapControlPoint = z.infer<typeof MapControlPointSchema>;
 
+/** A raster layer's id: its tile directory and URL segment. */
+const RASTER_LAYER_ID = /^[a-z0-9][a-z0-9-]{0,31}$/;
+
+export const MAX_RASTER_ZOOM = 8;
+
+export const RealmRasterLayerSchema = z.object({
+  id: z.string().regex(RASTER_LAYER_ID),
+  label: z.string().trim().min(1).max(40),
+  kind: z.enum(["base", "overlay"]),
+  version: z.string().regex(/^[a-f0-9]{8,64}$/),
+  maxZoom: z.number().int().min(0).max(MAX_RASTER_ZOOM),
+  /** Overlays: drawing order, lowest first. */
+  order: z.number().int().min(0).max(99).optional(),
+  /** A legend image was built with the tiles. */
+  legend: z.boolean().optional(),
+});
+export type RealmRasterLayer = z.infer<typeof RealmRasterLayerSchema>;
+
+const RasterLayersSchema = z
+  .array(RealmRasterLayerSchema)
+  .max(12)
+  .refine((layers) => new Set(layers.map((l) => l.id)).size === layers.length, {
+    message: "Raster layer ids must be unique",
+  });
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+export const ClimateZoneSchema = z.object({
+  code: z.string().trim().min(1).max(8),
+  name: z.string().trim().min(1).max(80),
+  color: z.string().regex(HEX_COLOR),
+  /** An https page explaining the zone. */
+  link: z
+    .string()
+    .regex(/^https:\/\/[^\s"'<>]+$/)
+    .max(500)
+    .optional(),
+});
+export type ClimateZone = z.infer<typeof ClimateZoneSchema>;
+
+export const ClimateKeySchema = z.object({
+  system: z.string().trim().min(1).max(40),
+  zones: z.array(ClimateZoneSchema).min(1).max(64),
+});
+export type ClimateKey = z.infer<typeof ClimateKeySchema>;
+
 export const RealmMapSettingsSchema = z.object({
   radiusKm: z.number().min(MIN_REALM_RADIUS_KM).max(MAX_REALM_RADIUS_KM).optional(),
   projection: z.enum(MAP_PROJECTIONS).optional(),
@@ -83,9 +136,17 @@ export const RealmMapSettingsSchema = z.object({
     .optional(),
   attribution: z.string().trim().max(MAX_MAP_ATTRIBUTION_LENGTH).optional(),
   defaultView: RealmMapDefaultViewSchema.optional(),
+  rasterLayers: RasterLayersSchema.optional(),
+  climateKey: ClimateKeySchema.optional(),
 });
 
 export type RealmMapSettings = z.infer<typeof RealmMapSettingsSchema>;
+
+/** The realm's raster layers in drawing order: base layers first, then overlays by `order`. */
+export function realmRasterLayers(settings: RealmMapSettings): RealmRasterLayer[] {
+  const rank = (l: RealmRasterLayer) => (l.kind === "base" ? -1 : (l.order ?? 0));
+  return [...(settings.rasterLayers ?? [])].sort((a, b) => rank(a) - rank(b));
+}
 
 /** The georeference part of the settings: what the import engine needs to place an image on the globe. */
 export const mapGeoreferenceSchema = RealmMapSettingsSchema.pick({

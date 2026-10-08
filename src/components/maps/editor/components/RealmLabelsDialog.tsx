@@ -23,9 +23,12 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  REALM_LABEL_DEFAULTS,
+  REALM_LABEL_DEFAULT_RANK,
+  REALM_LABEL_RANK_NAMES,
+  REALM_LABEL_RANKS,
   REALM_LABEL_TYPE_NAMES,
   REALM_LABEL_TYPES,
+  type RealmLabelRank,
   type RealmLabelType,
 } from "~/lib/maps/realm-labels";
 import type { EditorMapRef } from "../EditorMap";
@@ -37,8 +40,14 @@ function mapCentre(mapRef: RefObject<EditorMapRef | null>): [number, number] | n
   return [Math.round(centre.lng * 1e4) / 1e4, Math.round(centre.lat * 1e4) / 1e4];
 }
 
+const RANK_OPTIONS = REALM_LABEL_RANKS.map((rank) => ({
+  value: rank,
+  label: REALM_LABEL_RANK_NAMES[rank],
+}));
+
 /**
- * The realm's own labels: oceans, seas, regions and continents, each with its size, weight, spacing and colour.
+ * The realm's own labels: oceans, seas, regions and continents, drawn like IxWorld's ocean names. Each has a kind and
+ * a rank: major names show from the globe view, medium ones from a closer zoom, minor ones (bays, straits) closer in.
  * A new label goes at the centre of the editor's view; "Move here" re-anchors one there.
  */
 export function RealmLabelsDialog({
@@ -57,11 +66,7 @@ export function RealmLabelsDialog({
   const { data: labels = [], isLoading } = api.geoFeatures.listRealmLabels.useQuery({ realm });
   const [text, setText] = useState("");
   const [labelType, setLabelType] = useState<RealmLabelType>("ocean");
-  const [fontSize, setFontSize] = useState(String(REALM_LABEL_DEFAULTS.ocean.fontSize));
-  const [fontWeight, setFontWeight] = useState<"normal" | "bold">(
-    REALM_LABEL_DEFAULTS.ocean.fontWeight
-  );
-  const [color, setColor] = useState(REALM_LABEL_DEFAULTS.ocean.color);
+  const [rank, setRank] = useState<RealmLabelRank>(REALM_LABEL_DEFAULT_RANK.ocean);
 
   const refresh = () => {
     void utils.geoFeatures.listRealmLabels.invalidate();
@@ -80,32 +85,14 @@ export function RealmLabelsDialog({
   const remove = api.geoFeatures.deleteRealmLabel.useMutation({ onSuccess: refresh, onError });
 
   const chooseType = (type: RealmLabelType) => {
-    const defaults = REALM_LABEL_DEFAULTS[type];
     setLabelType(type);
-    setFontSize(String(defaults.fontSize));
-    setFontWeight(defaults.fontWeight);
-    setColor(defaults.color);
+    setRank(REALM_LABEL_DEFAULT_RANK[type]);
   };
 
-  const size = Number(fontSize);
-  const sizeOk = Number.isFinite(size) && size >= 8 && size <= 64;
   const add = () => {
     const coordinates = mapCentre(mapRef);
     if (!coordinates) return;
-    const defaults = REALM_LABEL_DEFAULTS[labelType];
-    create.mutate({
-      realm,
-      text: text.trim(),
-      labelType,
-      coordinates,
-      fontSize: size,
-      fontWeight,
-      fontStyle: defaults.fontStyle,
-      color,
-      letterSpacing: defaults.letterSpacing,
-      minZoom: defaults.minZoom,
-      maxZoom: defaults.maxZoom,
-    });
+    create.mutate({ realm, text: text.trim(), labelType, coordinates, rank });
   };
 
   return (
@@ -114,8 +101,9 @@ export function RealmLabelsDialog({
         <DialogHeader>
           <DialogTitle>Realm labels</DialogTitle>
           <DialogDescription>
-            Name the realm's oceans, seas, regions and continents. A new label goes at the centre of
-            the current view.
+            Name the realm's oceans, seas, regions and continents, drawn like IxWorld's ocean names.
+            Major names show from the globe view, medium ones closer in, minor ones (bays, straits)
+            closest. A new label goes at the centre of the current view.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,40 +134,16 @@ export function RealmLabelsDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="realm-label-size">Font size</Label>
-              <Input
-                id="realm-label-size"
-                type="number"
-                min={8}
-                max={64}
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
-                aria-invalid={!sizeOk}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="realm-label-color">Colour</Label>
-              <Input
-                id="realm-label-color"
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-              />
-            </div>
           </div>
           <SegmentedControl
-            aria-label="Font weight"
+            aria-label="Rank"
             size="sm"
-            value={fontWeight}
-            onValueChange={setFontWeight}
-            options={[
-              { value: "normal", label: "Regular" },
-              { value: "bold", label: "Bold" },
-            ]}
+            value={rank}
+            onValueChange={setRank}
+            options={RANK_OPTIONS}
           />
           <div>
-            <Button size="sm" disabled={!text.trim() || !sizeOk || create.isPending} onClick={add}>
+            <Button size="sm" disabled={!text.trim() || create.isPending} onClick={add}>
               Add label here
             </Button>
           </div>
@@ -194,18 +158,13 @@ export function RealmLabelsDialog({
             <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
               {labels.map((label) => (
                 <li key={label.id} className="flex items-center gap-2">
-                  <span
-                    aria-hidden
-                    className="h-3 w-3 shrink-0 rounded-sm"
-                    style={{ backgroundColor: label.color }}
-                  />
                   <span className="text-label text-footnote flex-1 truncate">
                     {label.text}
                     <span className="text-label-secondary">
                       {" "}
                       ·{" "}
                       {REALM_LABEL_TYPE_NAMES[label.labelType as RealmLabelType] ?? label.labelType}
-                      , {label.fontSize}px
+                      , {REALM_LABEL_RANK_NAMES[label.rank].toLowerCase()}
                     </span>
                   </span>
                   <Button

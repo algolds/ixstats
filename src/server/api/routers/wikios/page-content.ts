@@ -32,7 +32,10 @@ import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
 import { getMainPageData } from "~/lib/wiki-os/services/main-page-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
-import { renderSisterArticle, SisterRenderError } from "~/lib/wiki-os/services/sister-render-service";
+import {
+  renderSisterArticle,
+  SisterRenderError,
+} from "~/lib/wiki-os/services/sister-render-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import {
   assertTitleVisible,
@@ -134,7 +137,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
           getArticleAuthors(input.title, wikiSource),
         ]);
         if (!article) {
-          throw new Error(`Article "${input.title}" not found on ${wikiSource}`);
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Article "${input.title}" not found on ${wikiSource}`,
+          });
         }
 
         const rendered = await renderSisterArticle(wikiSource, article).catch((error: Error) => {

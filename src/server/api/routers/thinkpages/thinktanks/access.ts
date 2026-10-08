@@ -25,6 +25,7 @@ type AccessDb = Pick<
   | "country"
   | "realmOfficer"
   | "realmBoardBan"
+  | "realmClaim"
 >;
 type AccountDb = Pick<PrismaClient, "thinkpagesAccount">;
 

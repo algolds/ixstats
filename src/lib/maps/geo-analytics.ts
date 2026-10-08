@@ -3,6 +3,7 @@ export interface ClimateZoneEntry {
   type: string; // Full name e.g. "Tropical Wet (Ar)"
   code?: string; // Short code e.g. "Ar"
   name?: string; // Display name e.g. "Tropical Wet"
+  color?: string; // A realm climate key's zone colour
   percentArea: number; // 0–100
   areaSqKm: number;
   agricultureFactor: number; // 0.0–0.9
@@ -208,6 +209,32 @@ const CLIMATE_CODE_TO_NAME: Record<string, string> = {
   Fi: "Ice Cap (Fi)",
   H: "Highland (H)",
 };
+
+/** Köppen code patterns → the nearest Trewartha code (first match wins). */
+const KOPPEN_TO_TREWARTHA: Array<[RegExp, string]> = [
+  [/^A[fm]/, "Ar"],
+  [/^A[ws]/, "Aw"],
+  [/^BW/, "Bw"],
+  [/^BS/, "Bs"],
+  [/^Cs/, "Cs"],
+  [/^C[fw]a/, "Cf"],
+  [/^C[fw]/, "Do"],
+  [/^D[fsw][ab]/, "Dc"],
+  [/^D[fsw]/, "E"],
+  [/^ET/, "Ft"],
+  [/^EF/, "Fi"],
+];
+
+/**
+ * The Trewartha type (full name, e.g. "Temperate Oceanic (Do)") whose metadata the estimates use for a climate
+ * key's zone code: a Trewartha code itself, else the nearest type to a Köppen code (Cfb → Do); null if neither.
+ */
+export function climateMetadataType(code: string): string | null {
+  const trewartha = CLIMATE_CODE_TO_NAME[code]
+    ? code
+    : KOPPEN_TO_TREWARTHA.find(([re]) => re.test(code))?.[1];
+  return trewartha ? (CLIMATE_CODE_TO_NAME[trewartha] ?? null) : null;
+}
 
 /** Canonical Trewartha fill colors → climate code. Used to identify climate zones from SVG map data. */
 const CLIMATE_COLORS: Record<string, string> = {

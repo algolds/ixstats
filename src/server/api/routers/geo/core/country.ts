@@ -259,7 +259,8 @@ export const countryProcedures = {
         return [];
       }
 
-      // Use PostGIS to find touching/intersecting features
+      // Neighbours share an edge. ST_Intersects, not ST_Touches: shapes traced one by one (realm maps) overlap by
+      // rounding slivers along a shared border, and ST_Touches is false for any overlap.
       // Uses pre-computed centroid JSON field instead of ST_Centroid()
       try {
         const neighbors = await ctx.db.$queryRawUnsafe<
@@ -281,7 +282,7 @@ export const countryProcedures = {
              AND ml2.id != ml1.id
              AND ml1.geom_postgis IS NOT NULL
              AND ml2.geom_postgis IS NOT NULL
-             AND ST_Touches(ml1.geom_postgis, ml2.geom_postgis)
+             AND ST_Intersects(ml1.geom_postgis, ml2.geom_postgis)
            WHERE ml1.id = $1`,
           mapLayer.id
         );

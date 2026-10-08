@@ -1,6 +1,10 @@
 /** @jest-environment node */
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { IxTime } from "~/lib/ixtime";
+import {
+  IXSTATS_NATION_GROWTH_DEFAULTS,
+  type NationGrowthTable,
+} from "~/lib/realms/nation-growth-defaults";
 
 describe("buildBaselineCountryData", () => {
   beforeEach(() => jest.useFakeTimers().setSystemTime(new Date("2026-09-28T12:00:00Z")));
@@ -12,8 +16,9 @@ describe("buildBaselineCountryData", () => {
 
     expect(data).toMatchObject({
       name: "Aurelia",
-      continent: "Unknown",
-      region: "Unknown",
+      // Unknown stays empty, as on IxWorld's countries: every reader shows its own fallback.
+      continent: null,
+      region: null,
       baselinePopulation: 1_000_000,
       baselineGdpPerCapita: 50_000,
       landArea: 100_000,
@@ -53,6 +58,32 @@ describe("buildBaselineCountryData", () => {
     }
   });
 
+  it("caps GDP growth by the IxStats tier rule and takes the system growth defaults for the tier", () => {
+    const strong = buildBaselineCountryData("Aurelia"); // $50,000: Strong
+    expect(strong).toMatchObject({
+      maxGdpGrowthRate: 0.0275,
+      ...IXSTATS_NATION_GROWTH_DEFAULTS.Strong,
+    });
+    const poor = buildBaselineCountryData("Borea", { baselineGdpPerCapita: 5_000 });
+    expect(poor).toMatchObject({
+      maxGdpGrowthRate: 0.1,
+      ...IXSTATS_NATION_GROWTH_DEFAULTS.Impoverished,
+    });
+  });
+
+  it("takes a realm's own growth table", () => {
+    const table: NationGrowthTable = {
+      ...IXSTATS_NATION_GROWTH_DEFAULTS,
+      Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
+    };
+    const data = buildBaselineCountryData("Calder", { baselineGdpPerCapita: 15_000 }, table);
+    expect(data).toMatchObject({
+      populationGrowthRate: 0.02,
+      adjustedGdpGrowth: 0.004,
+      maxGdpGrowthRate: 0.075,
+    });
+  });
+
   it("takes the builder's initial values, falling back on empty or zero ones", () => {
     const data = buildBaselineCountryData("Borea", {
       continent: "Eurth",
@@ -67,7 +98,7 @@ describe("buildBaselineCountryData", () => {
     expect(data).toMatchObject({
       name: "Borea",
       continent: "Eurth",
-      region: "Unknown",
+      region: null,
       baselinePopulation: 4_000_000,
       baselineGdpPerCapita: 20_000,
       flag: "https://example.test/flag.png",

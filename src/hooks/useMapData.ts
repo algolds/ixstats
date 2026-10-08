@@ -212,7 +212,11 @@ export function useMapPrefetch() {
       }
     }
 
-    const countryNames = countries.map((c) => c.name);
+    // The panel's intro query key: the id reads a country's own wiki page.
+    const wikiCountries = countries.map((c) => ({
+      countryName: c.name,
+      countryId: c.id ?? undefined,
+    }));
     const countryIds = countries.filter((c) => c.id).map((c) => c.id!);
     const wikiOpts = { staleTime: 24 * 60 * 60_000 }; // 24hr — wiki data is static, matches individual query staleTime
 
@@ -241,16 +245,17 @@ export function useMapPrefetch() {
       // to stay well within nginx rate limit (burst=30).
       void (async () => {
         try {
-          for (let i = 0; i < countryNames.length; i += 20) {
+          for (let i = 0; i < wikiCountries.length; i += 20) {
             if (i > 0) await new Promise((r) => setTimeout(r, 500));
-            const chunk = countryNames.slice(i, i + 20);
+            const chunk = wikiCountries.slice(i, i + 20);
             const bulk = await utils.countries.getBulkWikiRichIntros.fetch(
-              { countryNames: chunk },
+              { countries: chunk },
               wikiOpts
             );
             if (bulk) {
-              for (const [name, data] of Object.entries(bulk)) {
-                utils.countries.getWikiRichIntro.setData({ countryName: name }, data);
+              for (const key of chunk) {
+                const data = bulk[key.countryName];
+                if (data !== undefined) utils.countries.getWikiRichIntro.setData(key, data);
               }
             }
           }

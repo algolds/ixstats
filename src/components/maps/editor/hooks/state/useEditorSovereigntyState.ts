@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { api } from "~/trpc/react";
 import { confirmEditorAction } from "~/components/maps/editor/components/EditorConfirmDialog";
 import type {
@@ -30,9 +31,10 @@ export function useEditorSovereigntyState({
   activeCountryId: string | null;
 }) {
   const utils = api.useUtils();
+  const realm = useMapRealm();
 
   const { data: relations, isLoading: relationsLoading } =
-    api.geoSovereignty.getSovereigntyRelations.useQuery(undefined, { enabled: isWorldMode });
+    api.geoSovereignty.getSovereigntyRelations.useQuery({ realm }, { enabled: isWorldMode });
 
   const [sovereigntySearch, setSovereigntySearch] = useState("");
   const [sovereigntyTypeFilter, setSovereigntyTypeFilter] = useState("all");

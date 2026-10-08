@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Globe, MapPin } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 
@@ -57,7 +57,14 @@ const asOfHint = (asOf: string | null | undefined) =>
     : undefined;
 
 /** The realm's banner, name, key stats and tab bar, shared by every tab. */
-export function RealmRegionHeader({ overview }: { overview: Overview }) {
+export function RealmRegionHeader({
+  overview,
+  openToClaim,
+}: {
+  overview: Overview;
+  /** Nation pages and unclaimed nations a player can still take; 0 while claims are closed. */
+  openToClaim: number;
+}) {
   const pathname = usePathname();
   const { realm, stats, founder, viewer, inWorldDate } = overview;
   const tabs = realmTabs(
@@ -66,13 +73,13 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
     !!overview.rules || viewer.powers.includes("appearance")
   );
   const isActive = (tab: (typeof tabs)[number]) => {
-    const href = createUrl(tab.href);
+    const href = tab.href;
     return "exact" in tab && tab.exact ? pathname === href : pathname?.startsWith(href);
   };
 
   return (
     <header className="border-separator bg-surface rounded-card overflow-hidden border">
-      <div className="bg-fill-3 relative h-32 w-full sm:h-44">
+      <div className="bg-tint-fill relative h-32 w-full sm:h-44">
         {realm.bannerUrl ? (
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
@@ -81,7 +88,7 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Globe className="text-label-secondary size-10" aria-hidden="true" />
+            <Globe className="text-tint size-10" aria-hidden="true" />
           </div>
         )}
       </div>
@@ -114,28 +121,32 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
           </div>
         </div>
 
-        <dl
-          className={cn("grid grid-cols-2 gap-3", inWorldDate ? "sm:grid-cols-5" : "sm:grid-cols-4")}
-        >
-          <StatItem label="Nations" value={stats.nations.toLocaleString()} />
-          <StatItem label="Population" value={formatCompact(stats.population)} />
+        <dl className="grid grid-cols-2 gap-x-8 gap-y-3 sm:flex sm:flex-wrap">
+          <StatItem
+            label="Nations"
+            value={stats.nations.toLocaleString()}
+            hint={stats.nations > 0 ? `${stats.claimedNations.toLocaleString()} played` : undefined}
+          />
+          {openToClaim > 0 && (
+            <StatItem label="Open to claim" value={openToClaim.toLocaleString()} />
+          )}
+          {stats.population > 0 && (
+            <StatItem label="Population" value={formatCompact(stats.population)} />
+          )}
           <StatItem label="Founded" value={new Date(realm.foundedAt).getFullYear()} />
           <StatItem
             label="Founder"
             value={
               founder ? (
                 founder.nation?.slug ? (
-                  <Link
-                    href={createUrl(`/countries/${founder.nation.slug}`)}
-                    className="hover:underline"
-                  >
+                  <Link href={`/countries/${founder.nation.slug}`} className="hover:underline">
                     {founder.name}
                   </Link>
                 ) : (
                   founder.name
                 )
               ) : (
-                "IxStats staff"
+                "Administered by IxStats staff"
               )
             }
           />
@@ -161,7 +172,7 @@ export function RealmRegionHeader({ overview }: { overview: Overview }) {
             {tabs.map((tab) => (
               <li key={tab.label}>
                 <Link
-                  href={createUrl(tab.href)}
+                  href={tab.href}
                   aria-current={isActive(tab) ? "page" : undefined}
                   className={cn(
                     "rounded-control text-footnote flex items-center gap-2 px-3 py-2 font-medium whitespace-nowrap",

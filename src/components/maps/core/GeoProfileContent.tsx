@@ -23,6 +23,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { ELEVATION_ZONES } from "~/lib/maps/geo-analytics";
+import { climateZoneLabel } from "~/lib/maps/climate-zones";
 import {
   CLIMATE_COLORS as CLIMATE_COLOR_BY_CODE,
   CLIMATE_NAMES,
@@ -306,7 +307,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           <Stat
             size="sm"
             label="Mean elev"
-            value={<>{profile.elevation.meanElev}m</>}
+            value={elevationZones.length > 0 ? <>{profile.elevation.meanElev}m</> : "No data"}
             icon={<Mountain className="size-3.5" />}
           />
         </Card>
@@ -340,9 +341,10 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           title="Climate"
           noun="climate"
           rows={climateZones.map((z) => ({
-            label: z.type,
+            // A realm's own climate key names its zones; IxWorld's are Trewartha types
+            label: z.code && z.name ? climateZoneLabel({ code: z.code, name: z.name }) : z.type,
             percentArea: z.percentArea,
-            color: getClimateColor(z.type),
+            color: z.color ?? getClimateColor(z.type),
           }))}
           // sorted by area desc from the endpoint
           dominantIndex={0}

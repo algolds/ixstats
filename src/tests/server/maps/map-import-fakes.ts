@@ -112,6 +112,11 @@ export function fakeDb(): any {
     })),
     mapImport: table("i", () => ({ rolledBackAt: null, rolledBackBy: null })),
     sharedVertex: table("v"),
+    adminAuditLog: table("a"),
+    realmSourceSync: table("s"),
+    mapLabel: table("l"),
+    user: table("u"),
+    thinkpagesAccount: table("t"),
     $queryRawUnsafe: jest.fn(async () => []),
     $executeRawUnsafe: jest.fn(async () => 0),
   };

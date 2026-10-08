@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 import type { MultiPolygon, Polygon } from "geojson";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { invalidateCache } from "~/lib/cache";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { buildNationGeometries, tidyGeometry, unionGeometries } from "~/lib/maps/import/build";
@@ -72,6 +72,15 @@ export interface MapImportPlan {
 
 const hashGeometry = (geometry: unknown) =>
   createHash("sha1").update(JSON.stringify(geometry)).digest("hex").slice(0, 16);
+
+/** The `importHash` an import stored in a feature's properties, if any. */
+function storedImportHash(properties: Prisma.JsonValue): string | null {
+  const hash =
+    properties && typeof properties === "object" && !Array.isArray(properties)
+      ? properties.importHash
+      : null;
+  return typeof hash === "string" ? hash : null;
+}
 
 /** Each nation's area in km² on the realm's planet: PostGIS geography when available, else the flat estimate. */
 async function measureAreas(
@@ -192,17 +201,21 @@ export async function planMapImport(
   const current = keys.length
     ? await db.mapLayer.findMany({
         where: { realmId: realm.id, layerType: LAYER, featureId: { in: keys } },
-        select: { featureId: true, geometry: true, isActive: true },
+        select: { featureId: true, geometry: true, properties: true, isActive: true },
       })
     : [];
-  const currentHash = new Map(
-    current.map((c) => [c.featureId, c.isActive ? hashGeometry(c.geometry) : null])
+  // The writer stores a repaired copy, so a border an earlier import wrote is matched by that import's hash.
+  const currentHashes = new Map(
+    current.map((c) => [
+      c.featureId,
+      c.isActive ? [hashGeometry(c.geometry), storedImportHash(c.properties)] : null,
+    ])
   );
   const areas = await measureAreas(db, planned, settings.radiusKm);
 
   const features: PlannedFeature[] = planned.map((p) => {
     const hash = hashGeometry(p.geometry);
-    const before = currentHash.get(p.key);
+    const before = currentHashes.get(p.key);
     const stated = p.country?.landArea ?? null;
     const hasStated = stated !== null && stated > 0;
     return {
@@ -212,7 +225,11 @@ export async function planMapImport(
       countryName: p.country?.name ?? null,
       sourceKeys: p.keys,
       status:
-        before === undefined || before === null ? "new" : before === hash ? "unchanged" : "changed",
+        before === undefined || before === null
+          ? "new"
+          : before.includes(hash)
+            ? "unchanged"
+            : "changed",
       areaKm2: areas.get(p.key) ?? null,
       landArea: {
         current: stated,

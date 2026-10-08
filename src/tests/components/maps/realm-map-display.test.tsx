@@ -1,24 +1,22 @@
 /**
- * A realm's map display: its credit line, the political legend with unclaimed nations hatched, the hatch and
- * base-image layers on the map, a scale bar measured on the realm's planet radius, the cursor coordinates and
- * the default view. MapLibre is replaced by small fakes that record what the code asks of it.
+ * A realm's map display: the base-image and raster art layers on the map, a scale bar measured on the realm's
+ * planet radius, the cursor coordinates and the default view. MapLibre is replaced by small fakes that record
+ * what the code asks of it.
  */
-import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
-import type { FeatureCollection } from "geojson";
+import { act, render, renderHook, screen } from "@testing-library/react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { RealmMapAttribution } from "~/components/maps/core/RealmMapAttribution";
-import { legendNations, RealmMapLegend } from "~/components/maps/core/RealmMapLegend";
+
+jest.mock("~/trpc/react", () => ({ api: {} }));
+
 import { RealmMapScale } from "~/components/maps/core/RealmMapScale";
-import { useRealmDefaultView } from "~/components/maps/core/RealmMapKey";
+import { useRealmDefaultView } from "~/components/maps/core/hooks/useRealmMapDisplay";
 import {
   BASE_IMAGE_COORDINATES,
   BASE_IMAGE_LAYER_ID,
   BASE_IMAGE_SOURCE_ID,
-  hatchPattern,
+  rasterStyleId,
   syncBaseImage,
-  syncUnclaimedHatch,
-  UNCLAIMED_LAYER_ID,
-  UNCLAIMED_PATTERN_ID,
+  syncRasterLayers,
 } from "~/components/maps/core/utils/realm-map-layers";
 import {
   formatLngLat,
@@ -27,74 +25,13 @@ import {
   scaleBarFor,
 } from "~/components/maps/core/utils/realm-scale";
 import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
+import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 
-function region(countryId: string, name: string, color: string): FeatureCollection["features"][0] {
-  return {
-    type: "Feature",
-    properties: { _countryId: countryId, _displayName: name, _fillColor: color },
-    geometry: { type: "Point", coordinates: [0, 0] },
-  };
-}
-
-const POLITICAL: FeatureCollection = {
-  type: "FeatureCollection",
-  features: [
-    region("c_gal", "Gallambria", "#aa3355"),
-    region("c_gal", "Gallambria", "#aa3355"), // a second region of the same nation
-    region("c_ost", "Ostia", "#3355aa"),
-  ],
-};
-
-describe("credit line", () => {
-  it("shows the realm's attribution, and nothing without one", () => {
-    const { rerender } = render(<RealmMapAttribution text="Map by the Eurth community" />);
-    expect(screen.getByTestId("realm-map-attribution")).toHaveTextContent(
-      "Map by the Eurth community"
-    );
-    rerender(<RealmMapAttribution text={null} />);
-    expect(screen.queryByTestId("realm-map-attribution")).toBeNull();
-  });
-});
-
-describe("political legend", () => {
-  it("lists each nation once, by name, with its colour and whether it is claimed", () => {
-    expect(legendNations(POLITICAL, ["c_ost"])).toEqual([
-      { id: "c_gal", name: "Gallambria", color: "#aa3355", unclaimed: false },
-      { id: "c_ost", name: "Ostia", color: "#3355aa", unclaimed: true },
-    ]);
-  });
-
-  it("is collapsed until opened, then shows nations by colour and the unclaimed key", () => {
-    render(<RealmMapLegend political={POLITICAL} unclaimedCountryIds={["c_ost"]} />);
-    const toggle = screen.getByRole("button", { name: /Nations \(2\)/ });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("list", { name: "Nations by colour" })).toBeNull();
-
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    const items = screen.getAllByRole("listitem");
-    expect(items.map((li) => li.textContent)).toEqual(["Gallambria", "Ostia(unclaimed)"]);
-    expect(screen.getByText("Unclaimed nation (no player yet)")).toBeInTheDocument();
-
-    const swatch = (li: HTMLElement) => li.querySelector("span[aria-hidden]") as HTMLElement;
-    expect(swatch(items[0]!).style.backgroundImage).toBe("");
-    expect(swatch(items[1]!).style.backgroundImage).toContain("repeating-linear-gradient");
-  });
-
-  it("renders nothing for a map with no nations", () => {
-    const { container } = render(
-      <RealmMapLegend political={{ type: "FeatureCollection", features: [] }} />
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-});
-
-/** A fake map: records added sources, layers, images and filters; knows the political layers exist. */
+/** A fake map: records added sources and layers; knows the political layers exist. */
 function fakeStyleMap(existing: string[] = ["fill-political", "stroke-political"]) {
   const layers = new Map<string, Record<string, unknown>>(existing.map((id) => [id, { id }]));
   const order = [...existing];
   const sources = new Map<string, Record<string, unknown>>([["source-political", {}]]);
-  const images = new Map<string, unknown>();
   const calls = {
     addLayer: jest.fn((spec: { id: string }, before?: string) => {
       layers.set(spec.id, spec);
@@ -104,8 +41,10 @@ function fakeStyleMap(existing: string[] = ["fill-political", "stroke-political"
       layers.delete(id);
       order.splice(order.indexOf(id), 1);
     }),
-    setFilter: jest.fn(),
-    setLayoutProperty: jest.fn(),
+    moveLayer: jest.fn((id: string, before?: string) => {
+      order.splice(order.indexOf(id), 1);
+      order.splice(before ? order.indexOf(before) : order.length, 0, id);
+    }),
   };
   const map = {
     ...calls,
@@ -113,72 +52,19 @@ function fakeStyleMap(existing: string[] = ["fill-political", "stroke-political"
     getSource: (id: string) => sources.get(id),
     addSource: jest.fn((id: string, spec: Record<string, unknown>) => sources.set(id, spec)),
     removeSource: jest.fn((id: string) => sources.delete(id)),
-    hasImage: (id: string) => images.has(id),
-    addImage: jest.fn((id: string, image: unknown) => images.set(id, image)),
     getStyle: () => ({ layers: order.map((id) => ({ id })) }),
   };
   return { map: map as unknown as MapLibreMap, fake: map, order, sources };
 }
 
-describe("unclaimed nations on the map", () => {
-  it("hatches the unclaimed nations' regions over their fill, under the borders", () => {
-    const { map, fake, order } = fakeStyleMap();
-    syncUnclaimedHatch(map, ["c_ost", "c_new"], true);
-
-    expect(fake.addImage).toHaveBeenCalledWith(UNCLAIMED_PATTERN_ID, hatchPattern());
-    const [spec, before] = fake.addLayer.mock.calls[0]!;
-    expect(spec).toMatchObject({
-      id: UNCLAIMED_LAYER_ID,
-      type: "fill",
-      source: "source-political",
-      paint: { "fill-pattern": UNCLAIMED_PATTERN_ID },
-      filter: ["in", ["get", "_countryId"], ["literal", ["c_ost", "c_new"]]],
-    });
-    expect(before).toBe("stroke-political");
-    expect(order).toEqual(["fill-political", UNCLAIMED_LAYER_ID, "stroke-political"]);
-    expect(fake.setLayoutProperty).toHaveBeenCalledWith(
-      UNCLAIMED_LAYER_ID,
-      "visibility",
-      "visible"
-    );
-  });
-
-  it("follows the claims and the political layer's visibility, and leaves when all are claimed", () => {
-    const { map, fake } = fakeStyleMap();
-    syncUnclaimedHatch(map, ["c_ost"], true);
-    syncUnclaimedHatch(map, ["c_new"], false);
-    expect(fake.setFilter).toHaveBeenCalledWith(UNCLAIMED_LAYER_ID, [
-      "in",
-      ["get", "_countryId"],
-      ["literal", ["c_new"]],
-    ]);
-    expect(fake.setLayoutProperty).toHaveBeenLastCalledWith(
-      UNCLAIMED_LAYER_ID,
-      "visibility",
-      "none"
-    );
-    syncUnclaimedHatch(map, [], true);
-    expect(fake.removeLayer).toHaveBeenCalledWith(UNCLAIMED_LAYER_ID);
-  });
-
-  it("the hatch is translucent diagonal stripes", () => {
-    const { width, height, data } = hatchPattern(8);
-    expect([width, height, data.length]).toEqual([8, 8, 8 * 8 * 4]);
-    const alpha = (x: number, y: number) => data[(y * 8 + x) * 4 + 3];
-    expect(alpha(0, 0)).toBeGreaterThan(0);
-    expect(alpha(4, 0)).toBe(0);
-    expect(alpha(7, 1)).toBeGreaterThan(0);
-  });
-});
-
 describe("base image", () => {
-  it("is a full-globe image source under the map's data layers, credited", () => {
+  it("is a full-globe image source under the map's data layers", () => {
     const { map, fake, order, sources } = fakeStyleMap([
       "background",
       "fill-climate",
       "fill-political",
     ]);
-    syncBaseImage(map, "https://example.org/eurth.png", "Eurth community");
+    syncBaseImage(map, "https://example.org/eurth.png");
 
     expect(sources.get(BASE_IMAGE_SOURCE_ID)).toEqual({
       type: "image",
@@ -189,7 +75,6 @@ describe("base image", () => {
         [180, -85],
         [-180, -85],
       ],
-      attribution: "Eurth community",
     });
     expect(BASE_IMAGE_COORDINATES[0]).toEqual([-180, 85]);
     expect(fake.addLayer.mock.calls[0]![0]).toMatchObject({
@@ -205,6 +90,75 @@ describe("base image", () => {
     syncBaseImage(map, null);
     expect(fake.removeLayer).toHaveBeenCalledWith(BASE_IMAGE_LAYER_ID);
     expect(sources.has(BASE_IMAGE_SOURCE_ID)).toBe(false);
+  });
+});
+
+describe("raster art layers", () => {
+  const art = (over: Partial<RealmRasterLayer>): RealmRasterLayer => ({
+    id: "geography",
+    label: "Geography",
+    kind: "base",
+    version: "aaaaaaaa",
+    maxZoom: 5,
+    ...over,
+  });
+  const GEO = art({});
+  const CLIMATE = art({ id: "climate", kind: "overlay", order: 1, maxZoom: 4 });
+  const CURRENTS = art({ id: "currents", kind: "overlay", order: 3, maxZoom: 3 });
+  const urlFor = (l: RealmRasterLayer) =>
+    `https://x/api/map-rasters/r1/${l.id}/${l.version}/{z}/{x}/{y}`;
+
+  it("draws the base under every data layer and overlays just under the political layer, in order", () => {
+    const { map, order, sources } = fakeStyleMap([
+      "background",
+      "fill-altitudes",
+      "fill-political",
+      "stroke-political",
+    ]);
+    syncRasterLayers(map, [GEO, CLIMATE, CURRENTS], urlFor);
+    expect(order).toEqual([
+      "background",
+      rasterStyleId("geography"),
+      "fill-altitudes",
+      rasterStyleId("climate"),
+      rasterStyleId("currents"),
+      "fill-political",
+      "stroke-political",
+    ]);
+    expect(sources.get(rasterStyleId("geography"))).toEqual({
+      type: "raster",
+      tiles: [urlFor(GEO)],
+      tileSize: 256,
+      maxzoom: 5,
+    });
+  });
+
+  it("removes layers switched off and re-adds a rebuilt version, keeping the rest", () => {
+    const { map, fake, order, sources } = fakeStyleMap(["fill-political"]);
+    syncRasterLayers(map, [GEO, CLIMATE], urlFor);
+    fake.addSource.mockClear();
+    const rebuilt = { ...CLIMATE, version: "bbbbbbbb" };
+    syncRasterLayers(map, [rebuilt], urlFor);
+    expect(order).toEqual([rasterStyleId("climate"), "fill-political"]);
+    expect(sources.has(rasterStyleId("geography"))).toBe(false);
+    expect(fake.addSource).toHaveBeenCalledTimes(1);
+    expect(sources.get(rasterStyleId("climate"))).toMatchObject({ tiles: [urlFor(rebuilt)] });
+  });
+
+  it("puts overlays back under the political layer once it arrives", () => {
+    const { map, fake, order } = fakeStyleMap([]);
+    syncRasterLayers(map, [CLIMATE], urlFor);
+    fake.addLayer({ id: "fill-political" });
+    syncRasterLayers(map, [CLIMATE], urlFor);
+    expect(order).toEqual([rasterStyleId("climate"), "fill-political"]);
+    expect(fake.addLayer).toHaveBeenCalledTimes(2);
+  });
+
+  it("clears a realm's art when the map moves to a realm without any", () => {
+    const { map, order } = fakeStyleMap(["fill-political"]);
+    syncRasterLayers(map, [GEO, CLIMATE], urlFor);
+    syncRasterLayers(map, [], urlFor);
+    expect(order).toEqual(["fill-political"]);
   });
 });
 

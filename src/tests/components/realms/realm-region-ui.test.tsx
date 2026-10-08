@@ -50,11 +50,7 @@ jest.mock("~/app/r/[realm]/_components/manage/RealmWikitextEditor", () => ({
 }));
 
 import { RealmRegionHeader } from "~/app/r/[realm]/_components/RealmRegionHeader";
-import {
-  CommunityPanel,
-  OfficersPanel,
-  PollPanel,
-} from "~/app/r/[realm]/_components/RealmSidebar";
+import { CommunityPanel, OfficersPanel, PollPanel } from "~/app/r/[realm]/_components/RealmSidebar";
 import { LeaveRealmButton } from "~/app/r/[realm]/_components/LeaveRealmButton";
 import { LinksSection } from "~/app/r/[realm]/_components/manage/LinksSection";
 import RealmManagePage from "~/app/r/[realm]/(region)/manage/page";
@@ -105,12 +101,13 @@ function overview(overrides: Record<string, unknown> = {}) {
 
 describe("realm header", () => {
   it("shows the stats strip and tags, and no Manage tab for players", () => {
-    render(<RealmRegionHeader overview={overview()} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
     expect(screen.getByRole("heading", { name: "Eurth" })).toBeTruthy();
     expect(screen.getByText("42")).toBeTruthy();
     expect(screen.getByText("1.20B")).toBeTruthy();
     expect(screen.getByText("2025")).toBeTruthy();
-    expect(screen.getByText("IxStats staff")).toBeTruthy();
+    expect(screen.getByText("Administered by IxStats staff")).toBeTruthy();
+    expect(screen.queryByText("Open to claim")).toBeNull();
     expect(screen.getByText("Fantasy")).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: "Realm sections" });
     expect(within(nav).getByRole("link", { name: "Overview" }).getAttribute("aria-current")).toBe(
@@ -121,9 +118,16 @@ describe("realm header", () => {
     expect(screen.queryByText("In-world date")).toBeNull();
   });
 
+  it("counts the nations still open to claim", () => {
+    render(<RealmRegionHeader openToClaim={100} overview={overview()} />);
+    expect(screen.getByText("Open to claim")).toBeTruthy();
+    expect(screen.getByText("100")).toBeTruthy();
+  });
+
   it("shows the realm's in-world date in the stats strip", () => {
     render(
       <RealmRegionHeader
+        openToClaim={0}
         overview={overview({
           inWorldDate: { label: "14 Harvest 1203 AE", asOf: "2026-10-01" },
         })}
@@ -136,13 +140,16 @@ describe("realm header", () => {
 
   it("adds the Rules tab once the realm has rules, and for those who write them", () => {
     const rules = { html: "<p>Be civil.</p>", summary: "Be civil.", updatedAt: null };
-    const { unmount } = render(<RealmRegionHeader overview={overview({ rules })} />);
+    const { unmount } = render(
+      <RealmRegionHeader openToClaim={0} overview={overview({ rules })} />
+    );
     expect(screen.getByRole("link", { name: "Rules" }).getAttribute("href")).toContain(
       "/r/eurth/rules"
     );
     unmount();
     render(
       <RealmRegionHeader
+        openToClaim={0}
         overview={overview({
           viewer: {
             signedIn: true,
@@ -161,6 +168,7 @@ describe("realm header", () => {
   it("adds the Manage tab for the founder and officers", () => {
     render(
       <RealmRegionHeader
+        openToClaim={0}
         overview={overview({
           viewer: {
             signedIn: true,

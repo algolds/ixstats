@@ -1,35 +1,34 @@
 /**
- * Worker thread for the map import engine (run-engine.ts starts it under Bun). Receives one file, posts
- * progress messages, then the result or an error, and is terminated by its parent.
+ * Worker thread for the map engines (run-engine.ts starts it under Bun): an import of one file, or the physical
+ * layer engine on a realm's art. Receives one task, posts progress messages, then the result or an error, and is
+ * terminated by its parent.
  */
 import { parentPort } from "node:worker_threads";
-import type { MapImportKind, MapImportOptions } from "./options";
-import { runImportEngineInline } from "./run-engine";
+import { runLayerEngine } from "./png/layer-engine";
+import { engineContext, type ProgressFn } from "./progress";
+import { runImportEngineInline, type EngineTask } from "./run-engine";
 
-parentPort?.on(
-  "message",
-  async (job: { kind: MapImportKind; bytes: Uint8Array; options: MapImportOptions }) => {
-    const port = parentPort!;
-    let last = -1;
-    try {
-      const result = await runImportEngineInline(
-        job.kind,
-        job.bytes,
-        job.options,
-        (percent, stage) => {
-          if (percent === last) return;
-          last = percent;
-          port.postMessage({ type: "progress", percent, stage });
-        },
-        () => false,
-        Infinity
-      );
-      port.postMessage({ type: "result", result });
-    } catch (error) {
-      port.postMessage({
-        type: "error",
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
+function run(job: EngineTask, progress: ProgressFn) {
+  if (job.task === "layers") {
+    return runLayerEngine(job.sources, job.options, engineContext(progress, { sliceMs: Infinity }));
   }
-);
+  return runImportEngineInline(job.kind, job.bytes, job.options, progress, () => false, Infinity);
+}
+
+parentPort?.on("message", async (job: EngineTask) => {
+  const port = parentPort!;
+  let last = -1;
+  try {
+    const result = await run(job, (percent, stage) => {
+      if (percent === last) return;
+      last = percent;
+      port.postMessage({ type: "progress", percent, stage });
+    });
+    port.postMessage({ type: "result", result });
+  } catch (error) {
+    port.postMessage({
+      type: "error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+});

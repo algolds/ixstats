@@ -1,39 +1,10 @@
 /* ==========================================================================
-   LAYOUT — NAVIGATION OFFSETS & SCROLLBARS
+   LAYOUT — SCROLLBARS
 
    Layered: `@layer base` for element defaults, `@layer components` for classes.
    ========================================================================== */
 
 @layer base {
-  :root {
-    --nav-height-desktop: 64px;
-    --nav-height-mobile: 56px;
-    --nav-height-compact: 48px;
-  }
-
-  /* Offset the main element's content by the height of the fixed navigation bar */
-  main {
-    padding-top: var(--nav-height-mobile);
-  }
-
-  @media (min-width: 1024px) {
-    main {
-      padding-top: var(--nav-height-desktop);
-    }
-  }
-
-  html.compact-mode main,
-  [data-density="compact"] main {
-    padding-top: var(--nav-height-compact);
-  }
-
-  /* Immersion & canvas pages have zero padding at the top */
-  body:has([data-maps-page]) main,
-  body:has([data-builder-content]) main,
-  body:has([data-immersion-page]) main {
-    padding-top: 0;
-  }
-
   /* ─── Theme-compliant scrollbars ───────────────────────────────────────── */
 
   /* Firefox */

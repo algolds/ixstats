@@ -21,9 +21,9 @@ export const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = 
 export const SPRING = { type: "spring" as const, stiffness: 400, damping: 30, mass: 0.8 };
 export const SPRING_SOFT = { type: "spring" as const, stiffness: 300, damping: 28, mass: 1 };
 
-/** Tiny inline flag that resolves async via the unified flag hook. */
-export function FlagIcon({ name }: { name: string }) {
-  const { flagUrl } = useFlag(name);
+/** Tiny inline flag that resolves async via the unified flag hook, in the realm the map shows. */
+export function FlagIcon({ name, realm }: { name: string; realm?: string }) {
+  const { flagUrl } = useFlag(name, realm);
   if (!flagUrl) return null;
   return (
     <img

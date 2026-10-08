@@ -28,7 +28,10 @@ const ALLOWED_MEDIA_HOSTS: ReadonlySet<string> = new Set([
 export function isAllowedMediaUrl(rawUrl: string): boolean {
   try {
     const url = new URL(rawUrl);
-    return (url.protocol === "https:" || url.protocol === "http:") && ALLOWED_MEDIA_HOSTS.has(url.hostname);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      ALLOWED_MEDIA_HOSTS.has(url.hostname)
+    );
   } catch {
     return false;
   }
@@ -96,7 +99,10 @@ function reject(status: number): NextResponse {
 }
 
 /** Read the body, aborting (and returning null) as soon as it grows past the cap. */
-async function readCapped(res: Response): Promise<Uint8Array<ArrayBuffer> | null> {
+export async function readCapped(
+  res: Response,
+  maxBytes: number = MAX_IMAGE_BYTES
+): Promise<Uint8Array<ArrayBuffer> | null> {
   const reader = res.body?.getReader();
   if (!reader) return new Uint8Array(0);
 
@@ -106,7 +112,7 @@ async function readCapped(res: Response): Promise<Uint8Array<ArrayBuffer> | null
     const { done, value } = await reader.read();
     if (done) break;
     total += value.byteLength;
-    if (total > MAX_IMAGE_BYTES) {
+    if (total > maxBytes) {
       await reader.cancel().catch(() => undefined);
       return null;
     }
@@ -178,7 +184,10 @@ export function imageResponseHeaders(
  * is `image/*`, 413 past {@link MAX_IMAGE_BYTES}. SVG is served sandboxed (no script, no network) and
  * renders inline only as an image; any other request gets it as a download.
  */
-export async function imageOnlyResponse(res: Response, request: ImageRequest): Promise<NextResponse> {
+export async function imageOnlyResponse(
+  res: Response,
+  request: ImageRequest
+): Promise<NextResponse> {
   const contentType = res.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase() ?? "";
   if (!contentType.startsWith("image/")) {
     await res.body?.cancel().catch(() => undefined);

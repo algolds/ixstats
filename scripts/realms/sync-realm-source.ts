@@ -1,11 +1,13 @@
 /**
  * Realm source sync from the command line (the same run the admin panel and the realm-source-sync job make).
  * Dry run by default: it prints the diff and records the run; --apply writes.
- *   bun scripts/realms/sync-realm-source.ts --realm eurth [--preset eurth-map]
+ *   bun scripts/realms/sync-realm-source.ts --realm eurth [--preset eurth-map [--force-preset]]
  *     [--configure --repo <owner/repo> --ref <ref> --format <adapter>] [--source-dir <dir>] [--skip-wiki] [--apply]
- * --preset fills the realm's config from a preset (src/lib/realms/sources/presets); --configure changes the
- * repository, ref or format of a config that already exists. --source-dir reads the source's files from a local
- * checkout instead of GitHub (for testing); --skip-wiki creates new nations without reading their wiki infobox.
+ * --preset fills the realm's config from a preset (src/lib/realms/sources/presets): a realm that already has a
+ * config takes only the values it lacks (its continent table and options stay), unless --force-preset overwrites
+ * them all. --configure changes the repository, ref or format of a config that already exists. --source-dir reads
+ * the source's files from a local checkout instead of GitHub (for testing); --skip-wiki creates new nations
+ * without reading their wiki infobox.
  * New nations are unclaimed; nothing is deleted and no claimed nation changes hands.
  */
 import { PrismaClient } from "@prisma/client";
@@ -52,12 +54,18 @@ function localFiles(dir: string): RunDeps["fetchFile"] {
 
 async function configure(realmId: string) {
   const config = await loadSourceSyncConfig(db, realmId);
-  if (!config) throw new Error("no source configured yet: load a preset first (--preset <id>) or use /admin/realms");
+  if (!config)
+    throw new Error(
+      "no source configured yet: load a preset first (--preset <id>) or use /admin/realms"
+    );
   const repo = repoSchema.parse(optionalArg("repo") ?? config.repo);
   const ref = refSchema.parse(optionalArg("ref") ?? config.ref);
   const format = optionalArg("format") ?? config.format;
   validateSettings(format, config.settings);
-  await db.realmSourceSync.update({ where: { realmId }, data: { repo, ref, format, updatedBy: "script" } });
+  await db.realmSourceSync.update({
+    where: { realmId },
+    data: { repo, ref, format, updatedBy: "script" },
+  });
   console.log(`configured: ${repo}@${ref} (${format})`);
 }
 
@@ -71,26 +79,42 @@ async function main() {
   }
   const preset = optionalArg("preset");
   if (preset) {
-    await loadSourcePreset(db, null, realm.id, preset);
-    console.log(`preset ${preset} loaded into ${realm.name}`);
+    const loaded = await loadSourcePreset(db, null, realm.id, preset, {
+      force: process.argv.includes("--force-preset"),
+    });
+    console.log(
+      `preset ${preset} loaded into ${realm.name}: filled ${loaded.filled.join(", ") || "nothing"}`
+    );
+    if (loaded.kept.length)
+      console.log(
+        `  kept the realm's own ${loaded.kept.join(", ")} (--force-preset overwrites them)`
+      );
   }
   if (process.argv.includes("--configure")) await configure(realm.id);
 
   const config = await loadSourceSyncConfig(db, realm.id);
   if (!config) {
-    console.error("this realm has no source sync: pass --preset <id>, or configure it in /admin/realms");
+    console.error(
+      "this realm has no source sync: pass --preset <id>, or configure it in /admin/realms"
+    );
     process.exitCode = 1;
     return;
   }
   console.log(apply ? "APPLY mode: writing" : "DRY RUN: pass --apply to write");
-  console.log(`realm ${realm.name} (${realm.id}) <- ${config.repo}@${config.ref} (${config.format})`);
+  console.log(
+    `realm ${realm.name} (${realm.id}) <- ${config.repo}@${config.ref} (${config.format})`
+  );
 
   const sourceDir = optionalArg("source-dir");
   const deps: RunDeps = {
     ...(process.argv.includes("--skip-wiki") ? {} : LIVE_RUN_DEPS),
     ...(sourceDir && { fetchFile: localFiles(sourceDir) }),
   };
-  const outcome = await runSourceSync(db, { realmId: realm.id, dryRun: !apply, triggeredBy: "script" }, deps);
+  const outcome = await runSourceSync(
+    db,
+    { realmId: realm.id, dryRun: !apply, triggeredBy: "script" },
+    deps
+  );
   if (outcome.summary) for (const line of summaryLines(outcome.summary)) console.log(line);
   for (const error of outcome.errors) console.error(`ERROR ${error}`);
   console.log(`run ${outcome.runId}: ${outcome.status}`);

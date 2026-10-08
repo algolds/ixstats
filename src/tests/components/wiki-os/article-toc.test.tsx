@@ -120,16 +120,30 @@ function renderArticle(headings = toc) {
 
 const tocNav = () => screen.queryByRole("navigation", { name: "Table of contents" });
 
-describe("ArticleRenderer contents in the Inspector gutter", () => {
+describe("ArticleRenderer contents aside", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockMarginOpen = false;
     mockWide = true;
     localStorage.clear();
+    // Page info starts hidden; most of these tests are about what it holds.
+    localStorage.setItem("wikios:railCollapsed", "false");
     window.scrollTo = jest.fn();
   });
 
-  it("puts the contents and a page-info block in the Inspector at desktop width", () => {
+  it("hides the page info by default and keeps the contents inline", () => {
+    localStorage.removeItem("wikios:railCollapsed");
+    renderArticle();
+    const aside = within(screen.getByRole("complementary", { name: "Contents" }));
+    expect(aside.getByRole("navigation", { name: "Table of contents" })).toBeInTheDocument();
+    expect(aside.queryByText("Last updated")).toBeNull();
+    expect(aside.getByRole("button", { name: "Page info" })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
+  });
+
+  it("puts the contents and a page-info block in the aside at desktop width", () => {
     renderArticle();
 
     const inspector = screen.getByRole("complementary", { name: "Contents" });
@@ -143,12 +157,18 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(within(inspector).getByRole("link", { name: "Realms" })).toBeInTheDocument();
   });
 
-  it("hides the header Contents button at desktop width, where the Inspector already shows it", () => {
+  it("marks the header Contents button and the aside, so layout.css hides the button beside it", () => {
     renderArticle();
-    expect(screen.getByRole("button", { name: "Table of contents" })).toHaveClass("xl:hidden");
+    expect(screen.getByRole("button", { name: "Table of contents" })).toHaveClass(
+      "wikios-toc-button"
+    );
+    expect(screen.getByRole("complementary", { name: "Contents" })).toHaveAttribute(
+      "data-slot",
+      "wiki-contents-aside"
+    );
   });
 
-  it("below desktop the Contents button opens the Inspector sheet, and picking a heading closes it", () => {
+  it("below desktop the Contents button opens the contents sheet, and picking a heading closes it", () => {
     mockWide = false;
     renderArticle();
     expect(tocNav()).toBeNull();
@@ -162,7 +182,7 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("an article without headings keeps its page info in the Inspector, no contents list", () => {
+  it("an article without headings keeps its page info in the aside, no contents list", () => {
     renderArticle([]);
     const inspector = screen.getByRole("complementary", { name: "Contents" });
     expect(within(inspector).queryByRole("navigation")).toBeNull();
@@ -180,7 +200,7 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(sheet.queryByRole("navigation", { name: "Table of contents" })).toBeNull();
   });
 
-  it("renders no Inspector and no contents when the setting is off, and follows it live in the same tab", () => {
+  it("renders no aside and no contents when the setting is off, and follows it live in the same tab", () => {
     localStorage.setItem("wikios:showWikiToc", "false");
     renderArticle();
     expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
@@ -196,11 +216,23 @@ describe("ArticleRenderer contents in the Inspector gutter", () => {
     expect(screen.getByRole("button", { name: "Table of contents" })).toBeInTheDocument();
   });
 
-  it("hides the Inspector while the margin drawer sits in the gutter", () => {
+  it("hiding the sidebar folds the page info away, keeps the contents inline, and remembers it", () => {
+    renderArticle();
+    const aside = () => screen.getByRole("complementary", { name: "Contents" });
+    fireEvent.click(within(aside()).getByRole("button", { name: "Hide" }));
+    expect(within(aside()).queryByText("Last updated")).toBeNull();
+    expect(
+      within(aside()).getByRole("navigation", { name: "Table of contents" })
+    ).toBeInTheDocument();
+    expect(localStorage.getItem("wikios:railCollapsed")).toBe("true");
+
+    fireEvent.click(within(aside()).getByRole("button", { name: "Page info" }));
+    expect(within(aside()).getByText("Last updated")).toBeInTheDocument();
+  });
+
+  it("steps the aside aside while the margin drawer is open", () => {
     mockMarginOpen = true;
     renderArticle();
-    expect(screen.getByRole("complementary", { name: "Contents", hidden: true })).toHaveClass(
-      "xl:hidden"
-    );
+    expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
   });
 });

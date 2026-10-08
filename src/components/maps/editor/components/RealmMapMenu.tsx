@@ -1,5 +1,7 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+import { wantsRealmLabelsEditor } from "~/lib/maps/realm-labels";
 import { useState, type RefObject } from "react";
 import { Map as MapIcon, Pin, Text } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -22,10 +24,12 @@ const ICON = "h-3.5 w-3.5 shrink-0";
 export function RealmMapMenu({ mapRef }: { mapRef: RefObject<EditorMapRef | null> }) {
   const notify = useNotify();
   const utils = api.useUtils();
+  const searchParams = useSearchParams();
   const realm = useMapRealm();
   const display = useRealmMapDisplay(realm);
   const [open, setOpen] = useState(false);
-  const [labelsOpen, setLabelsOpen] = useState(false);
+  // Opened straight from the admin panel's link (`/maps?realm=…&editor=labels`).
+  const [labelsOpen, setLabelsOpen] = useState(() => wantsRealmLabelsEditor(searchParams));
   const save = api.realms.map.updateSettings.useMutation({
     onSuccess: () => {
       notify.success("Default view saved", "The realm's map now opens here.");

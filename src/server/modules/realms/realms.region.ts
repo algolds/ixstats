@@ -6,14 +6,9 @@
 import type { PrismaClient } from "@prisma/client";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
-import { stripHtml } from "~/lib/utils/sanitize-html";
+import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { resolveDisplayNames } from "~/server/shared/display-names";
-import {
-  activeBoardRestrictions,
-  embassyPartners,
-  groupPostTag,
-  strongestRestriction,
-} from "~/server/shared/realm-board";
+import { embassyPartners, groupPostTag, userBoardRestriction } from "~/server/shared/realm-board";
 import {
   canModerateRealm,
   isRealmOpen,
@@ -77,6 +72,9 @@ export async function requireRealmStaff(
     throw new RealmRegionError("FORBIDDEN", "This realm is archived and can't be changed");
   return realm;
 }
+
+/** A partner realm shown to everyone: not a draft or generating realm, which only its own staff see (AT-6). */
+const PUBLISHED_PARTNER = { status: { notIn: ["draft", "generating"] } };
 
 type OverviewDb = Pick<
   PrismaClient,
@@ -270,20 +268,20 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     ...realm.officers.map((o) => o.userId),
   ]);
   const powers = realmPowers(viewer, realm, realm.officers);
-  const restrictions =
-    viewer && ownedNations.length > 0
-      ? await activeBoardRestrictions(
-          db,
-          realm.id,
-          ownedNations.map((n) => n.id)
-        )
-      : [];
+  const boardRestriction = viewer
+    ? await userBoardRestriction(
+        db,
+        realm.id,
+        viewer.id,
+        ownedNations.map((n) => n.id)
+      )
+    : null;
   const partnerIds = [...partners.keys()];
   const partnerLooks =
     partnerIds.length > 0
       ? await db.realm.findMany({
           // A partner that went back to draft is hidden from everyone but its own staff (AT-6).
-          where: { id: { in: partnerIds }, status: { notIn: ["draft", "generating"] } },
+          where: { id: { in: partnerIds }, ...PUBLISHED_PARTNER },
           orderBy: { name: "asc" },
           select: { slug: true, name: true, bannerUrl: true, thumbnail: true },
         })
@@ -308,12 +306,13 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       claimedNations: claimed,
       population: stats._sum.currentPopulation ?? 0,
     },
+    // Sanitized again on read: HTML saved before the realm sanitizer could still carry styling.
     factbook: realm.factbookHtml
-      ? { html: realm.factbookHtml, updatedAt: realm.factbookUpdatedAt }
+      ? { html: sanitizeRealmContent(realm.factbookHtml), updatedAt: realm.factbookUpdatedAt }
       : null,
     rules: realm.rulesHtml
       ? {
-          html: realm.rulesHtml,
+          html: sanitizeRealmContent(realm.rulesHtml),
           summary: rulesSummary(realm.rulesHtml),
           updatedAt: realm.rulesUpdatedAt,
         }
@@ -334,7 +333,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       isFounder: viewer !== null && canModerateRealm(viewer, realm),
       canManage: powers.length > 0,
       ownedNations,
-      boardRestriction: strongestRestriction(restrictions),
+      boardRestriction,
     },
   };
 }
@@ -408,7 +407,11 @@ export async function getRealmHappenings(
           where: {
             status: "active",
             openedAt: older ?? { not: null },
-            OR: [{ fromRealmId: realm.id }, { toRealmId: realm.id }],
+            // As in the overview's embassies panel, a partner back in draft is hidden (AT-6).
+            OR: [
+              { fromRealmId: realm.id, toRealm: PUBLISHED_PARTNER },
+              { toRealmId: realm.id, fromRealm: PUBLISHED_PARTNER },
+            ],
           },
           orderBy: { openedAt: "desc" },
           take,

@@ -47,6 +47,12 @@ describe("Tier Determination & Math Conversion", () => {
     expect(getEconomicTierFromGdpPerCapita(70000)).toBe(EconomicTier.EXTRAVAGANT);
   });
 
+  it("puts a fractional GDP per capita between two tiers' bounds in the lower tier", () => {
+    expect(getEconomicTierFromGdpPerCapita(24_999.5)).toBe(EconomicTier.DEVELOPING);
+    expect(getEconomicTierFromGdpPerCapita(64_999.99)).toBe(EconomicTier.VERY_STRONG);
+    expect(getEconomicTierFromGdpPerCapita(9_999.5)).toBe(EconomicTier.IMPOVERISHED);
+  });
+
   it("determines correct population tier from population count", () => {
     expect(getPopulationTierFromPopulation(5_000_000)).toBe(PopulationTier.TIER_1);
     expect(getPopulationTierFromPopulation(20_000_000)).toBe(PopulationTier.TIER_2);

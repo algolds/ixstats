@@ -1,18 +1,18 @@
-import type { FilterSpecification, ImageSource, Map as MapLibreMap } from "maplibre-gl";
+import type { ImageSource, Map as MapLibreMap, RasterTileSource } from "maplibre-gl";
+import { RASTER_TILE_SIZE } from "~/lib/maps/raster-tiles";
+import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 
 /**
- * A realm map's own style layers: the base raster image under the political layer, and the hatch drawn over
- * nations nobody has claimed. Each `sync…` call is idempotent: it adds, updates or removes its source and layer
- * so the persistent world map (shared between realms) shows only what the current realm asks for.
+ * A realm map's own style layers: its raster art (tiled base maps and overlays) and the base raster image under
+ * the political layer. Each `sync…` call is idempotent: it adds, updates or removes its source and layer so the
+ * persistent world map (shared between realms) shows only what the current realm asks for.
  */
 
 export const BASE_IMAGE_SOURCE_ID = "realm-base-image";
 export const BASE_IMAGE_LAYER_ID = "realm-base-image";
-export const UNCLAIMED_LAYER_ID = "realm-unclaimed-hatch";
-export const UNCLAIMED_PATTERN_ID = "realm-unclaimed-hatch";
-const POLITICAL_SOURCE_ID = "source-political";
+/** Each raster art layer is a source and a layer of this id plus the layer's id. */
+export const RASTER_LAYER_PREFIX = "realm-raster-";
 const POLITICAL_FILL_ID = "fill-political";
-const POLITICAL_STROKE_ID = "stroke-political";
 
 /**
  * Where a full-globe equirectangular image is pinned: its corners at ±180° and ±85° (the Web Mercator limit),
@@ -41,12 +41,11 @@ function firstDataLayerId(map: MapLibreMap): string | undefined {
     )?.id;
 }
 
-/** Show `url` as the realm's base image (null removes it), credited with `attribution` in the map's control. */
-export function syncBaseImage(
-  map: MapLibreMap,
-  url: string | null,
-  attribution: string | null = null
-): void {
+/**
+ * Show `url` as the realm's base image (null removes it). Its credit is the realm's credit line, shown with the
+ * map's attribution (bottom right) whether or not the art is on.
+ */
+export function syncBaseImage(map: MapLibreMap, url: string | null): void {
   const source = map.getSource(BASE_IMAGE_SOURCE_ID) as ImageSource | undefined;
   if (!url) {
     if (map.getLayer(BASE_IMAGE_LAYER_ID)) map.removeLayer(BASE_IMAGE_LAYER_ID);
@@ -60,8 +59,7 @@ export function syncBaseImage(
       type: "image",
       url,
       coordinates: BASE_IMAGE_COORDINATES,
-      ...(attribution && { attribution }),
-    } as Parameters<MapLibreMap["addSource"]>[1]);
+    });
   }
   if (!map.getLayer(BASE_IMAGE_LAYER_ID)) {
     map.addLayer(
@@ -76,62 +74,44 @@ export function syncBaseImage(
   }
 }
 
-/**
- * A diagonal hatch, `size` pixels square: dark stripes on transparency, so the nation's own colour shows
- * through. RGBA bytes for `map.addImage`.
- */
-export function hatchPattern(size = 8): { width: number; height: number; data: Uint8Array } {
-  const data = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const onStripe = (x + y) % size < 2;
-      const i = (y * size + x) * 4;
-      data[i] = 40;
-      data[i + 1] = 40;
-      data[i + 2] = 40;
-      data[i + 3] = onStripe ? 150 : 0;
-    }
-  }
-  return { width: size, height: size, data };
-}
+export const rasterStyleId = (layerId: string) => `${RASTER_LAYER_PREFIX}${layerId}`;
 
-/** The filter that picks the unclaimed nations' regions out of the political layer. */
-export function unclaimedFilter(countryIds: readonly string[]): FilterSpecification {
-  return ["in", ["get", "_countryId"], ["literal", [...countryIds]]] as FilterSpecification;
+/** Where a raster art layer goes: a base map under every data layer, an overlay just under the political layer. */
+function rasterAnchor(map: MapLibreMap, kind: RealmRasterLayer["kind"]): string | undefined {
+  if (kind === "overlay" && map.getLayer(POLITICAL_FILL_ID)) return POLITICAL_FILL_ID;
+  return firstDataLayerId(map);
 }
 
 /**
- * Hatch the regions of `countryIds` (the realm's unclaimed nations) over their political fill, under the
- * borders. Nothing to hatch, or no political layer yet: the layer is removed (or not added).
+ * Show exactly `layers` (the realm's raster art switched on, in drawing order) as raster tile layers, read from
+ * `urlFor(layer)`. Layers switched off, of another realm or of an older version are removed; the rest are kept
+ * and put back in order (the political layer and the data layers may have been added since).
  */
-export function syncUnclaimedHatch(
+export function syncRasterLayers(
   map: MapLibreMap,
-  countryIds: readonly string[],
-  visible: boolean
+  layers: readonly RealmRasterLayer[],
+  urlFor: (layer: RealmRasterLayer) => string
 ): void {
-  const hasLayer = !!map.getLayer(UNCLAIMED_LAYER_ID);
-  if (
-    countryIds.length === 0 ||
-    !map.getSource(POLITICAL_SOURCE_ID) ||
-    !map.getLayer(POLITICAL_FILL_ID)
-  ) {
-    if (hasLayer) map.removeLayer(UNCLAIMED_LAYER_ID);
-    return;
+  const wanted = new Map(layers.map((layer) => [rasterStyleId(layer.id), urlFor(layer)]));
+  for (const { id } of map.getStyle()?.layers ?? []) {
+    if (!id.startsWith(RASTER_LAYER_PREFIX)) continue;
+    const source = map.getSource(id) as RasterTileSource | undefined;
+    if (source?.tiles?.[0] === wanted.get(id)) continue;
+    map.removeLayer(id);
+    if (source) map.removeSource(id);
   }
-  if (!map.hasImage(UNCLAIMED_PATTERN_ID)) map.addImage(UNCLAIMED_PATTERN_ID, hatchPattern());
-  if (!hasLayer) {
-    map.addLayer(
-      {
-        id: UNCLAIMED_LAYER_ID,
-        type: "fill",
-        source: POLITICAL_SOURCE_ID,
-        filter: unclaimedFilter(countryIds),
-        paint: { "fill-pattern": UNCLAIMED_PATTERN_ID },
-      },
-      map.getLayer(POLITICAL_STROKE_ID) ? POLITICAL_STROKE_ID : undefined
-    );
-  } else {
-    map.setFilter(UNCLAIMED_LAYER_ID, unclaimedFilter(countryIds));
+  for (const layer of layers) {
+    const id = rasterStyleId(layer.id);
+    if (!map.getSource(id)) {
+      map.addSource(id, {
+        type: "raster",
+        tiles: [wanted.get(id)!],
+        tileSize: RASTER_TILE_SIZE,
+        maxzoom: layer.maxZoom,
+      });
+    }
+    const before = rasterAnchor(map, layer.kind);
+    if (map.getLayer(id)) map.moveLayer(id, before);
+    else map.addLayer({ id, type: "raster", source: id }, before);
   }
-  map.setLayoutProperty(UNCLAIMED_LAYER_ID, "visibility", visible ? "visible" : "none");
 }

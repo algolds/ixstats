@@ -1,12 +1,13 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { EmptyState } from "~/components/ui/empty-state";
 import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
 import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/SourceSyncPanel";
 import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
+import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
@@ -30,6 +31,11 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     error,
   } = api.realms.region.manage.useQuery({ slug }, { retry: false });
   usePageTitle({ title: manage ? `${manage.realm.name} · Manage` : "Manage realm" });
+  const loaded = !!manage;
+  useEffect(() => {
+    if (loaded && window.location.hash)
+      document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
+  }, [loaded]);
 
   if (isLoading) return <p className="text-label-secondary text-body">Loading…</p>;
   if (!manage)
@@ -52,8 +58,9 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Board moderation" },
-    can("map") && { id: "map", label: "Map" },
+    can("map") && !manage.archived && { id: "map", label: "Map" },
     can("map") && !manage.archived && { id: "map-import", label: "Map import" },
+    can("map") && !manage.archived && { id: "map-pipeline", label: "Map pipeline" },
     manage.isFounder && { id: "source-sync", label: "Source sync" },
     manage.isFounder && { id: "wiki", label: "Wiki" },
     manage.canHandOver && { id: "handover", label: "Hand over" },
@@ -106,6 +113,15 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
         {can("map") && !manage.archived && <MapSection slug={slug} />}
         {can("map") && !manage.archived && <MapImportSection realmId={manage.realm.id} />}
+        {can("map") && !manage.archived && (
+          <ManageSection
+            id="map-pipeline"
+            title="Map pipeline"
+            description="Build the realm's map from its art: raster layers, physical layers, labels, flags and the default view, from a preset or typed here. Dry run first, then apply."
+          >
+            <MapPipelinePanel slug={slug} />
+          </ManageSection>
+        )}
         {manage.isFounder && (
           <ManageSection
             id="source-sync"

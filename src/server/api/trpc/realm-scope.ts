@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { ALL_REALMS, realmScopeInput } from "~/lib/realms/realm-ids";
 import {
+  findRealmIdBySlug,
   isSiteAdmin,
   realmMapAccess,
   resolveViewerRealmId,
@@ -23,6 +24,20 @@ export function viewerRealmId(
     activeRealmId: ctx.user?.country?.realmId,
     viewer,
   });
+}
+
+/**
+ * The realm a mutation names by slug, resolved strictly: an unknown slug, or a draft the caller can't see, is
+ * NOT_FOUND rather than the viewer's fallback realm, so a typo never writes to IxWorld.
+ */
+export async function mutationRealmId(
+  ctx: { db: Pick<PrismaClient, "realm">; user?: Partial<RealmActor> | null },
+  realmSlug: string
+): Promise<string> {
+  const viewer = ctx.user?.id && ctx.user.clerkUserId ? (ctx.user as RealmActor) : null;
+  const realmId = await findRealmIdBySlug(ctx.db, realmSlug, viewer);
+  if (!realmId) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+  return realmId;
 }
 
 /**

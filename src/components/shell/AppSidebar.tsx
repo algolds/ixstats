@@ -37,7 +37,7 @@ import {
   type NavBadges,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
-import { SourceList, isPending, sourceRowClassName } from "./SourceList";
+import { SourceList, isListed, isPending, sourceRowClassName } from "./SourceList";
 import { SidebarFooterLinks } from "./SidebarFooterLinks";
 
 interface AppSidebarProps {
@@ -96,7 +96,8 @@ const railButtonClassName = (current: boolean) =>
   cn(
     focusRing,
     "rounded-control relative grid size-9 shrink-0 cursor-pointer place-items-center transition-colors duration-fast ease-out-facet pointer-coarse:size-11",
-    current ? "bg-tint-fill text-tint" : "text-label hover:bg-fill-4"
+    // Every glyph wears its app's tint; the current one also gets the tinted fill.
+    current ? "bg-tint-fill text-tint" : "text-tint hover:bg-fill-4"
   );
 
 function RailGlyph({ app, showDot }: { app: AppDefinition; showDot: boolean }) {
@@ -135,6 +136,83 @@ function RailWallet({ claimable }: { claimable: boolean }) {
   );
 }
 
+function RailLink({
+  href,
+  label,
+  tint,
+  current,
+  children,
+}: {
+  href: string;
+  label: string;
+  tint: string | undefined;
+  current: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li data-app={tint}>
+      <Tooltip content={label} side="right" sideOffset={8}>
+        <Link
+          href={href}
+          aria-label={label}
+          aria-current={current ? "page" : undefined}
+          className={railButtonClassName(current)}
+        >
+          {children}
+        </Link>
+      </Tooltip>
+    </li>
+  );
+}
+
+/** An `inline` app (Home) puts each listed section on the rail as its own link, like the full list. */
+function RailInlineSections({
+  app,
+  activeSectionId,
+  badges,
+}: {
+  app: AppDefinition;
+  /** The current section, when the current page belongs to this app. */
+  activeSectionId: string | undefined;
+  badges: NavBadges;
+}) {
+  return app.sections
+    .filter((s) => !s.action && isListed(s, badges))
+    .map((s) => {
+      const Icon = s.icon;
+      const badge = s.badge ? badges[s.badge] : undefined;
+      // A count (unread messages) rides on the icon and in its name, so it reads as it arrives.
+      const count = badge?.kind === "count" ? badge.value : 0;
+      return (
+        <RailLink
+          key={s.id}
+          href={s.href}
+          label={count > 0 ? `${s.label}, ${count} unread` : s.label}
+          tint={s.tint ?? app.tint}
+          current={s.id === activeSectionId}
+        >
+          <Icon aria-hidden className="size-5" />
+          {count > 0 ? (
+            <span
+              aria-hidden
+              className="bg-tint text-caption ring-background absolute -top-0.5 -right-0.5 min-w-4 rounded-full px-1 text-center leading-4 text-on-tint font-medium tabular-nums ring-2"
+            >
+              {count > 99 ? "99+" : count}
+            </span>
+          ) : (
+            isPending(badge) && (
+              <span
+                role="img"
+                aria-label="Has updates"
+                className="bg-tint ring-background absolute top-1 right-1 size-2 rounded-full ring-2"
+              />
+            )
+          )}
+        </RailLink>
+      );
+    });
+}
+
 function RailApp({
   app,
   isCurrent,
@@ -155,18 +233,9 @@ function RailApp({
 
   if (!hasSections) {
     return (
-      <li data-app={app.tint}>
-        <Tooltip content={app.label} side="right" sideOffset={8}>
-          <Link
-            href={app.href}
-            aria-label={app.label}
-            aria-current={isCurrent ? "page" : undefined}
-            className={railButtonClassName(isCurrent)}
-          >
-            {glyph}
-          </Link>
-        </Tooltip>
-      </li>
+      <RailLink href={app.href} label={app.label} tint={app.tint} current={isCurrent}>
+        {glyph}
+      </RailLink>
     );
   }
 
@@ -258,9 +327,18 @@ export function AppSidebar({
           className="sidebar-collapsed:flex hidden min-h-0 flex-1 flex-col items-center"
         >
           <ul className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto py-2">
-            {mainApps.map((app) => (
-              <RailApp key={app.id} app={app} isCurrent={app.id === current?.id} list={list} />
-            ))}
+            {mainApps.map((app) =>
+              app.inline ? (
+                <RailInlineSections
+                  key={app.id}
+                  app={app}
+                  activeSectionId={app.id === current?.id ? activeSectionId : undefined}
+                  badges={badges}
+                />
+              ) : (
+                <RailApp key={app.id} app={app} isCurrent={app.id === current?.id} list={list} />
+              )
+            )}
           </ul>
           {footerApps.length > 0 && (
             <ul className="border-separator flex w-full flex-col items-center gap-1 border-t py-2">

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { RouterOutputs } from "~/trpc/react";
-import { createUrl } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { PlayAsNation } from "~/app/r/[realm]/_components/PlayAsNation";
 import { RealmAvatar } from "./RealmAvatar";
@@ -37,10 +36,7 @@ function YourRealmCard({
           <RealmAvatar thumbnail={listing?.thumbnail} />
           <div className="min-w-0">
             {base ? (
-              <Link
-                href={createUrl(base)}
-                className="text-label text-headline block truncate hover:underline"
-              >
+              <Link href={base} className="text-label text-headline block truncate hover:underline">
                 {realm.name}
               </Link>
             ) : (
@@ -57,7 +53,7 @@ function YourRealmCard({
           {realm.nations.map((nation) => (
             <li key={nation.id} className="flex flex-wrap items-center gap-2">
               <Link
-                href={createUrl(`/countries/${nation.slug ?? nation.id}`)}
+                href={`/countries/${nation.slug ?? nation.id}`}
                 className="text-label text-body flex min-w-0 flex-1 items-center gap-2 hover:underline"
               >
                 {nation.flag && (
@@ -75,16 +71,10 @@ function YourRealmCard({
         </ul>
         {realm.slug && (
           <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
-            <Link
-              href={createUrl(realmHref(realm.slug, "board"))}
-              className="text-label hover:underline"
-            >
+            <Link href={realmHref(realm.slug, "board")} className="text-label hover:underline">
               Board
             </Link>
-            <Link
-              href={createUrl(realmHref(realm.slug, "nations"))}
-              className="text-label hover:underline"
-            >
+            <Link href={realmHref(realm.slug, "nations")} className="text-label hover:underline">
               Nations
             </Link>
           </div>

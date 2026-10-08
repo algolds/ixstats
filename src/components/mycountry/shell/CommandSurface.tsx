@@ -85,14 +85,13 @@ function CommandSurfaceComponent({
   // Facet hierarchy: the command bar is the shell (depth 1), each section below is a card
   // (depth 2), and rows inside a card are opaque depth-3 surfaces so blur never stacks.
   // The column runs from the sidebar to the right edge, capped at 1600px: MyCountry has no
-  // Inspector, so it gives the shell's reserved gutter back. Compact mode only tightens the rhythm.
+  // Inspector, so the shell keeps no gutter for it. Compact mode only tightens the rhythm.
   return (
     <div
       className={cn(
         "mx-auto w-full max-w-[1600px] px-4 md:px-8",
         compactMode ? "space-y-5 py-4 md:py-5" : "space-y-6 py-4 md:py-8"
       )}
-      data-shell-gutter="none"
     >
       {/* Permanent Unified Glass Command Bar */}
       <UnifiedGlassCommandBar mode={mode} onChangeMode={setMode} onDeclare={() => declare()} />

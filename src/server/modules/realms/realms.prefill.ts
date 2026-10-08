@@ -7,6 +7,7 @@
  * plain baseline.
  */
 import { withBasePath } from "~/lib/base-path";
+import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 import type { BaselineCountryInitial } from "~/lib/countries/baseline-country";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import {
@@ -130,8 +131,12 @@ export async function fetchNationPagePrefill(
   wikiSource: string,
   title: string
 ): Promise<NationPagePrefill> {
+  const source = parseWikiSource(wikiSource);
   const read = async () => {
-    const article = await getArticleWikitextShadow(title, parseWikiSource(wikiSource));
+    let article = await getArticleWikitextShadow(title, source);
+    // A nation's link often names a redirect ("Mito" -> "Mitō"): follow it once to the page with the infobox.
+    const target = parseRedirect(article?.wikitext);
+    if (target) article = await getArticleWikitextShadow(target.title, source);
     if (!article?.wikitext) return EMPTY_PREFILL;
     return prefillFromInfobox(parseInfoboxWithTemplates(article.wikitext, title), wikiSource);
   };

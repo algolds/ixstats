@@ -115,8 +115,15 @@ is dropped, not the rest). Edited in the realm's Manage tab (**Map**, holders of
 | `bounds` | `{ west, south, east, north }`: the lon/lat box a cropped image covers (west < east, south < north) |
 | `controlPoints` | At least three `{ x, y, lon, lat }` pairs (pixel from the top-left ↔ lon/lat), fitted instead of bounds |
 
-Other keys under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`) are never dropped when the
-settings are saved.
+Other keys under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`, and `pipeline`, the realm's
+map pipeline) are never dropped when the settings are saved.
+
+### Map pipeline (`Realm.settings.map.pipeline`)
+
+A realm's whole map (raster art, physical layers, labels, local flags, default view, border repair and smoothing) is
+built from one config kept with the realm, filled from a source preset or typed in the realm's admin panel (Map), and
+run as a background job (`MapImportJob` kind `map-pipeline`) or by `scripts/realms/build-realm-map.ts`. Runbook:
+[realm-maps.md](realm-maps.md).
 
 ### Planet radius
 
@@ -134,22 +141,26 @@ settings are saved.
 
 ### Viewer
 
-`MapContainer` reads `realms.map.display` (`useRealmMapDisplay`) for the realm it shows:
+`MapContainer` reads `realms.map.display` (`useRealmMapDisplay`) for the realm it shows. A realm's map is IxWorld's
+viewer with the realm's data: the same vector style, colouring, panels and chrome; nothing realm-only is added.
 
 - **Default view:** opened once per realm (`useRealmDefaultView`) unless the URL asks for a place (`?lat=&lng=`,
   `?zoom=`, a country).
 - **Base image:** a MapLibre `image` source pinned at `[-180, 85]`, `[180, 85]`, `[180, -85]`, `[-180, -85]` and a
-  raster layer under the first data layer (`src/components/maps/core/utils/realm-map-layers.ts`), credited in the
-  attribution control. **Limits:** a full-globe equirectangular image, 2:1, cropped to 85°N to 85°S (the Web Mercator
+  raster layer under the first data layer (`src/components/maps/core/utils/realm-map-layers.ts`). **Limits:** a full-globe equirectangular image, 2:1, cropped to 85°N to 85°S (the Web Mercator
   limit). MapLibre stretches it linearly between the corners in the map's projection, so features drift toward the
   mid-latitudes on Mercator; a Web Mercator image registers exactly. The whole image is one GPU texture: keep it at
   most 8192 × 4096 (many GPUs cap textures at 8192 or 16384 px). Uploads are at most 5MB; an `https://` host must
   send CORS headers or WebGL refuses the image.
-- **Credit line:** `RealmMapAttribution` at the bottom left (the realm's own, else its source sync's).
-- **Political legend** (`RealmMapLegend`, realm maps only): each nation once, by its colour, collapsed until opened.
-- **Unclaimed nations** (no owner, `display.unclaimedCountryIds`): a diagonal hatch (`fill-pattern`, layer
-  `realm-unclaimed-hatch`) over their fill, under the borders, with a legend entry; same meaning as the source sync's
-  **Unclaimed** badge. IxWorld's unowned countries keep their usual fill.
+- **Raster art** (`display.rasterLayers`): none is shown when the map opens. The layer panel offers the base maps
+  (one at a time, or **None**) and the overlays as switches; a layer's key image shows in the panel while that layer
+  is on, as the climate key does for **Climate Zones**. Art mode (political fills clear except under the pointer,
+  borders and country names off) lasts only while a base map is shown.
+- **Political colours:** the same path as IxWorld (`getColorForFeature`: the feature's `properties.fill`, else a
+  colour hashed from its id). A realm's source sync stores each nation's source colour as `fill`. Unclaimed nations
+  look like any other; the country panel says **Unclaimed**.
+- **Credit line:** the realm's own (`settings.map.attribution`), else its source sync's, shown in the bottom-right
+  credit block above "© 2026 Ixnay" (`MapKeyboardControls`), always (the art's licence asks for it).
 - **Scale bar and coordinates** (`RealmMapScale`): the scale bar measures the middle of the view with `haversineKm` at
   the realm's radius (MapLibre's own assumes Earth), and the cursor's coordinates show beside it. Both are written to
   the DOM once per animation frame, never through React state.

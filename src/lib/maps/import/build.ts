@@ -86,17 +86,22 @@ export function unionGeometries(geometries: Array<Polygon | MultiPolygon>): Poly
   };
 }
 
+/** The regions of a PNG engine topology with these keys as one geometry (merged along shared arcs), in pixels. */
+export function topologyGeometry(
+  topology: unknown,
+  keys: readonly string[]
+): Polygon | MultiPolygon | null {
+  const objects = ((topology as TopologyLike).objects.regions?.geometries ?? []).filter((g) =>
+    keys.includes(g.properties?.key ?? "")
+  );
+  if (objects.length === 0) return null;
+  if (objects.length === 1) return topoClient.feature(topology, objects[0]).geometry;
+  return topoClient.merge(topology, objects);
+}
+
 /** Source key → its geometry (in the result's own coordinate space), merged per nation. */
 function nationGeometry(result: EngineResult, keys: string[]): Polygon | MultiPolygon | null {
-  if (result.topology) {
-    const topology = result.topology as TopologyLike;
-    const objects = (topology.objects.regions?.geometries ?? []).filter((g) =>
-      keys.includes(g.properties?.key ?? "")
-    );
-    if (objects.length === 0) return null;
-    if (objects.length === 1) return topoClient.feature(topology, objects[0]).geometry;
-    return topoClient.merge(topology, objects);
-  }
+  if (result.topology) return topologyGeometry(result.topology, keys);
   const pieces = (result.features?.features ?? [])
     .filter((f) => keys.includes(f.properties.key))
     .map((f) => f.geometry);

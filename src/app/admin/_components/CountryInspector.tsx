@@ -45,6 +45,7 @@ import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { ECONOMIC_TIER_INFO } from "~/lib/tier-utils";
 import { EconomicTier, PopulationTier } from "~/types/ixstats";
+import { CountryGrowthEditor } from "./CountryGrowthEditor";
 
 interface MockEffect {
   id: string;
@@ -97,7 +98,7 @@ export function CountryInspector() {
 
   // Fetch list of countries
   const { data: countryList } = api.countries.getSelectList.useQuery(
-    { limit: 250, realm: ALL_REALMS },
+    { limit: 1000, realm: ALL_REALMS }, // every realm's nations (IxWorld alone is ~150)
     { refetchOnWindowFocus: false }
   );
 
@@ -1501,6 +1502,8 @@ export function CountryInspector() {
                 </div>
               </div>
             </div>
+
+            <CountryGrowthEditor countryId={selectedCountryId} />
 
             <div className="border-separator bg-fill-4 rounded-row space-y-5 border p-4">
               <div className="space-y-2">

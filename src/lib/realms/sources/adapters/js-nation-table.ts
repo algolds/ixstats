@@ -13,6 +13,7 @@ import { isLiteralObject, readBoundLiteral, type LiteralValue } from "../js-lite
 import type {
   SourceAdapter,
   SourceFeature,
+  SourceFigureField,
   SourceNation,
   SourceOrganization,
   SourceSnapshot,
@@ -50,6 +51,8 @@ export const jsNationTableSettingsSchema = z.object({
     capital: fieldName.optional(),
     wikiLink: fieldName.optional(),
     color: fieldName.optional(),
+    /** The entry's list of field names whose values came from a less-trusted secondary source. */
+    secondaryFields: fieldName.optional(),
   }),
   organizationFields: z
     .object({
@@ -118,6 +121,27 @@ export function wikiTitleFromLink(link: string | null, prefixes: readonly string
   return title && title.length <= 255 && !title.includes("/../") ? title : null;
 }
 
+const FIGURE_FIELDS: readonly SourceFigureField[] = [
+  "officialName",
+  "population",
+  "gdpPerCapita",
+  "landArea",
+  "capital",
+];
+
+/** The figures an entry's secondary-field list names, read back through the settings' field names ("gdppc" → gdpPerCapita). */
+function secondaryFigures(
+  list: LiteralValue | undefined,
+  fields: JsNationTableSettings["nationFields"]
+): SourceFigureField[] {
+  if (!Array.isArray(list)) return [];
+  const named = new Set(list.filter((v): v is string => typeof v === "string"));
+  return FIGURE_FIELDS.filter((figure) => {
+    const sourceField = fields[figure];
+    return sourceField !== undefined && named.has(sourceField);
+  });
+}
+
 /** "Bainbridge-Islands" → "Bainbridge Islands". */
 export const readableKey = (key: string) => key.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 
@@ -178,6 +202,7 @@ function readNations(
       landArea: number(key, "landArea", pick(f.landArea)),
       capital: text(pick(f.capital)),
       color: colour(pick(f.color)),
+      secondary: secondaryFigures(pick(f.secondaryFields), f),
     });
   }
   return nations;
@@ -198,7 +223,9 @@ function readOrganizations(
     const key = text(entry[f.key]);
     const fullName = text(entry[f.name]);
     if (!key || !fullName || !sourceKeySchema.safeParse(key).success || seen.has(key)) {
-      warnings.push(`Organisation ${JSON.stringify(key ?? fullName ?? "?")} skipped: no id or name, or a repeat`);
+      warnings.push(
+        `Organisation ${JSON.stringify(key ?? fullName ?? "?")} skipped: no id or name, or a repeat`
+      );
       continue;
     }
     seen.add(key);

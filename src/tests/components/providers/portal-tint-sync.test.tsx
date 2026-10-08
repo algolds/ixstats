@@ -23,12 +23,12 @@ describe("PortalTintSync", () => {
     const { rerender } = render(
       <div data-app="mycountry">
         <PortalTintSync />
-        <div data-app="intel">
+        <div data-app="thinkpages">
           <PortalTintSync />
         </div>
       </div>
     );
-    expect(document.body.dataset.app).toBe("intel");
+    expect(document.body.dataset.app).toBe("thinkpages");
 
     rerender(
       <div data-app="mycountry">

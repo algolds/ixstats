@@ -40,7 +40,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
   if (!board)
     return <p className="text-label-secondary text-body">The board could not be loaded.</p>;
 
-  const realmHref = createUrl(`/r/${encodeURIComponent(board.realm.slug)}`);
+  const realmHref = `/r/${encodeURIComponent(board.realm.slug)}`;
   const visibleTabs = TABS.filter((t) => !t.membersOnly || board.canPost);
   const notice = restriction ? (
     <>
@@ -61,9 +61,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
   ) : (
     <>
       <Link
-        href={createUrl(
-          `/sign-in?redirect_url=${encodeURIComponent(createUrl(`/r/${slug}/board`))}`
-        )}
+        href={`/sign-in?redirect_url=${encodeURIComponent(createUrl(`/r/${slug}/board`))}`}
         className="text-label font-medium underline"
       >
         Sign in
@@ -76,7 +74,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-label-secondary text-footnote">
-          {group ? `${group.memberCount.toLocaleString()} members · ` : ""}
+          {overview ? `${overview.stats.nations.toLocaleString()} nations · ` : ""}
           {board.canModerate
             ? "You moderate this board"
             : board.canPost && !restriction

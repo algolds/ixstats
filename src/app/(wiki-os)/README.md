@@ -50,7 +50,7 @@ The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/
 | **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment |
 | **Two-Tier Native Search** | Tier 1 typo-tolerant prefix search (<1.5ms) + Tier 2 weighted `tsvector` full-text search with headline snippets |
 | **Cloudflare Defense** | Automated edge CDN cache purging on save (editing itself needs a signed-in account and is rate-limited and rights-checked) |
-| **Reader** | Pre-rendered HTML transforms, article header (`ArticleHeader`), contents and page info in the shell's Inspector column (`articleUsesInspector`, `src/lib/wiki-os/article-gutter.ts`), Read / Edit / History / Talk tabs at MediaWiki's URL forms (`WikiArticleTabs`), link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
+| **Reader** | Pre-rendered HTML transforms, article header (`ArticleHeader`), contents and page info in a sticky aside in the article row that collapses to an edge handle, Read / Edit / History / Talk tabs at MediaWiki's URL forms (`WikiArticleTabs`), link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
 | **Editor** | Dual-mode Plate visual editor (WikiAST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
 | **Stash** | Color-coded collections, one-click stash toggle, text-selection annotations, per-item notes |
 | **Lorewards & Streaks** | Prose-quality scoring (`src/lib/lorewards/scoring.ts`), daily/weekly/monthly awards synced from the Discord Lorewards bot's state file, SVG streak heatmap calendar, and article awards (`WikiArticleAward`) |

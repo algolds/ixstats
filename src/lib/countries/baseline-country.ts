@@ -1,10 +1,16 @@
 /**
  * Baseline data for a brand-new Country row: a realm
  * nation created by an approved claim (realms ruling E-f). Callers add the slug and any realm/wiki fields.
+ * Its growth comes from the realm's per-tier table (`Realm.settings.nationDefaults`), else IxStats's defaults.
  */
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
+import {
+  IXSTATS_NATION_GROWTH_DEFAULTS,
+  nationGrowthFor,
+  type NationGrowthTable,
+} from "~/lib/realms/nation-growth-defaults";
 import type { BaseCountryData } from "~/types/ixstats";
 
 /** Values the builder may supply; missing, empty or zero values fall back to the defaults. */
@@ -31,8 +37,8 @@ function baselineFields(name: string, initial: BaselineCountryInitial) {
   const now = new Date(IxTime.getCurrentIxTime());
   return {
     name,
-    continent: initial.continent || "Unknown",
-    region: initial.region || "Unknown",
+    continent: initial.continent || null,
+    region: initial.region || null,
     baselinePopulation: initial.baselinePopulation || 1000000,
     baselineGdpPerCapita: initial.baselineGdpPerCapita || 50000,
     landArea: initial.landArea || 100000,
@@ -58,9 +64,20 @@ function indicatorFields(initial: BaselineCountryInitial, totalGdp: number) {
   };
 }
 
-/** A new country's create data: defaults, then the calculator's current stats and tiers at the present IxTime. */
-export function buildBaselineCountryData(name: string, initial: BaselineCountryInitial = {}) {
+/**
+ * A new country's create data: defaults, growth from `growth` for its tier (the cap from the IxStats tier rule),
+ * then the calculator's current stats and tiers at the present IxTime.
+ */
+export function buildBaselineCountryData(
+  name: string,
+  initial: BaselineCountryInitial = {},
+  growth: NationGrowthTable = IXSTATS_NATION_GROWTH_DEFAULTS
+) {
   const base = baselineFields(name, initial);
+  const { populationGrowthRate, adjustedGdpGrowth, maxGdpGrowthRate } = nationGrowthFor(
+    base.baselineGdpPerCapita,
+    growth
+  );
   const calculator = new IxStatsCalculator(getDefaultEconomicConfig(), base.baselineDate.getTime());
   const seed: BaseCountryData = {
     country: base.name,
@@ -69,9 +86,9 @@ export function buildBaselineCountryData(name: string, initial: BaselineCountryI
     population: base.baselinePopulation,
     gdpPerCapita: base.baselineGdpPerCapita,
     landArea: base.landArea,
-    maxGdpGrowthRate: 0.05,
-    adjustedGdpGrowth: 0.03,
-    populationGrowthRate: 0.01,
+    maxGdpGrowthRate,
+    adjustedGdpGrowth,
+    populationGrowthRate,
     actualGdpGrowth: 0.03,
     projected2040Population: base.baselinePopulation * 1.2,
     projected2040Gdp: base.baselinePopulation * base.baselineGdpPerCapita * 1.5,

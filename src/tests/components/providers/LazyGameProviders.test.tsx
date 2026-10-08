@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { useAuth } from "~/context/auth-context";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
@@ -63,5 +65,28 @@ describe("LazyGameProviders", () => {
 
     expect(screen.queryByTestId("sidecar")).toBeNull();
     expect(screen.getByTestId("probe")).toBeTruthy();
+  });
+
+  it("hydrates a signed-in page without a mismatch, adding the sidecar after hydration", () => {
+    // The server never knows the session; the browser's auth can already be loaded while hydrating.
+    mockUseAuth.mockReturnValue(authState(false, false));
+    const tree = (
+      <LazyGameProviders>
+        <Probe />
+      </LazyGameProviders>
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(tree);
+    document.body.appendChild(container);
+
+    mockUseAuth.mockReturnValue(authState(true, true));
+    const onRecoverableError = jest.fn();
+    act(() => {
+      hydrateRoot(container, tree, { onRecoverableError });
+    });
+
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-testid='sidecar']")).toBeTruthy();
+    container.remove();
   });
 });

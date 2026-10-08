@@ -512,7 +512,11 @@ export function ThinktankFeedTab({
               <EmptyState
                 icon={<RssFeed />}
                 title="No notes or updates yet"
-                message="Share an idea or update to start the feed."
+                message={
+                  readOnly
+                    ? "Nothing has been posted here yet."
+                    : "Share an idea or update to start the feed."
+                }
               />
             </Card>
           ) : (
