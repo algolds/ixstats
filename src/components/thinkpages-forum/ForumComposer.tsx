@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useId, useRef, useState, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
 import { ActionPicker } from "~/components/action-links";
 import { Button } from "~/components/ui/button";
@@ -35,6 +35,8 @@ interface ForumComposerProps {
   icAllowed: boolean;
   submitLabel?: string;
   titleField?: boolean;
+  /** Stored post HTML to start from (editing a post). */
+  initialHtml?: string;
   onSubmit: (input: ForumComposerInput) => Promise<void>;
 }
 
@@ -46,11 +48,14 @@ export function ForumComposer({
   icAllowed,
   submitLabel = "Post",
   titleField = false,
+  initialHtml = "",
   onSubmit,
 }: ForumComposerProps) {
   const editorRef = useRef<GlassPlateEditorRef>(null);
-  const [html, setHtml] = useState("");
-  const [plain, setPlain] = useState("");
+  const postAsId = useId();
+  const [html, setHtml] = useState(initialHtml);
+  // Only gates Save until the editor reports its own plain text.
+  const [plain, setPlain] = useState(() => initialHtml.replace(/<[^>]*>/g, ""));
   const [title, setTitle] = useState("");
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -140,7 +145,7 @@ export function ForumComposer({
           <ActionPicker onPick={insertToken} />
           {icAllowed ? (
             <div className="flex items-center gap-2">
-              <span id="forum-post-as" className="text-footnote text-label-secondary">
+              <span id={postAsId} className="text-footnote text-label-secondary">
                 Post as
               </span>
               <Select
@@ -148,7 +153,7 @@ export function ForumComposer({
                 onValueChange={(v) => setPersonaId(v === SELF ? null : v)}
                 disabled={pending}
               >
-                <SelectTrigger size="sm" aria-labelledby="forum-post-as">
+                <SelectTrigger size="sm" aria-labelledby={postAsId}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -7,9 +7,9 @@ import type { PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
+import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum";
 
-export const THREADS_PER_PAGE = 25;
-export const POSTS_PER_PAGE = 20;
+export { POSTS_PER_PAGE, THREADS_PER_PAGE };
 
 export type ReadsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "forumPost">;
 export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;

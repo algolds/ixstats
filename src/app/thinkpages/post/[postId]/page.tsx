@@ -13,6 +13,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import { getInitials } from "~/components/thinkpages/post/ThinkpagesPostUtils";
+import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
 
 interface PostPageProps {
   params: Promise<{
@@ -114,8 +115,25 @@ function ReplyCapsule({
   );
 }
 
+const PostLoading = () => (
+  <div className="container mx-auto max-w-2xl px-4 py-8">
+    <div className="flex min-h-[400px] items-center justify-center">
+      <Loader2 className="text-label-secondary size-8 animate-spin" aria-label="Loading" />
+    </div>
+  </div>
+);
+
+/** A forum post id redirects to its thread (ruling P5); any other id is a feed post. */
 export default function PostPage({ params }: PostPageProps) {
   const { postId } = use(params);
+  return (
+    <ForumPermalinkGate postId={postId} pending={<PostLoading />}>
+      <FeedPostPage postId={postId} />
+    </ForumPermalinkGate>
+  );
+}
+
+function FeedPostPage({ postId }: { postId: string }) {
   const { user } = useUser();
   const notify = useNotify();
   const utils = api.useUtils();
@@ -174,15 +192,7 @@ export default function PostPage({ params }: PostPageProps) {
 
   const replies = (post?.replies || []) as any[];
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-2xl px-4 py-8">
-        <div className="flex min-h-[400px] items-center justify-center">
-          <Loader2 className="text-label-secondary size-8 animate-spin" aria-label="Loading" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <PostLoading />;
 
   if (error || !post) {
     return (

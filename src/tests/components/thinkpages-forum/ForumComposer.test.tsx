@@ -130,4 +130,35 @@ describe("ForumComposer", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Nope");
     expect(editorClear).not.toHaveBeenCalled();
   });
+
+  it("gives each composer's persona label its own id (reply and edit share the thread page)", () => {
+    render(
+      <>
+        <ForumComposer icAllowed onSubmit={jest.fn()} />
+        <ForumComposer icAllowed onSubmit={jest.fn()} />
+      </>
+    );
+    const [first, second] = screen.getAllByRole("combobox");
+    const a = first?.getAttribute("aria-labelledby");
+    const b = second?.getAttribute("aria-labelledby");
+    expect(a).toBeTruthy();
+    expect(a).not.toBe(b);
+    expect(document.getElementById(a ?? "")).toHaveTextContent("Post as");
+  });
+
+  it("starts from initialHtml with Save enabled, for editing", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    render(
+      <ForumComposer
+        icAllowed={false}
+        initialHtml="<p>old</p>"
+        submitLabel="Save"
+        onSubmit={onSubmit}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({ html: "<p>old</p>", personaId: null })
+    );
+  });
 });
