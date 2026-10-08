@@ -3,18 +3,16 @@
 import React, { useState, useCallback, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSmooth } from "~/lib/design/motion";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportFrontFace } from "./document/PassportFrontFace";
 import { PassportTabRibbon, passportTabId, passportTabPanelId } from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
-import { passportRibbonCounts } from "./passport-tabs";
+import { DEFAULT_PASSPORT_TAB, passportRibbonCounts } from "./passport-tabs";
 import type { PassportPayload, PassportTabType } from "./types";
 import { Card } from "~/components/ui/card";
 import { useUserCosmetics } from "~/hooks/usePublicCosmetics";
-
-const MotionCard = motion.create(Card);
 
 interface MidRibbonPassportDocumentProps {
   displayName: string;
@@ -63,6 +61,9 @@ export function MidRibbonPassportDocument({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLorewardsModalOpen, setIsLorewardsModalOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  // The cover opens once, when the passport first appears on its default tab. A deep link to
+  // another tab skips it; the value is fixed at mount so a later tab change never replays it.
+  const [playOpenEntrance] = useState(() => activeTab === DEFAULT_PASSPORT_TAB);
 
   const highResAvatarUrl = getHighResolutionAvatar(avatarUrl, 800);
   // The holder's equipped cosmetics, the same for every visitor (VT-12).
@@ -75,26 +76,30 @@ export function MidRibbonPassportDocument({
 
   const ribbonCounts = passportRibbonCounts(data);
 
-  // Facet springs: the flip is interruptible (spring-smooth); Reduce Motion cross-fades.
-  const flipTransition = shouldReduceMotion ? REDUCED_MOTION_FADE : springSmooth;
-
   return (
-    <div className="relative w-full" style={{ perspective: 1800 }}>
-      <motion.div
-        className="relative w-full"
-        style={{ transformStyle: "preserve-3d", willChange: "transform" } as React.CSSProperties}
-        animate={{ rotateY: shouldReduceMotion ? 0 : isFlipped ? 180 : 0 }}
-        transition={flipTransition}
+    <div
+      data-testid="passport-flip-root"
+      className={cn("relative w-full", playOpenEntrance && "animate-passport-open")}
+      style={{ perspective: 1800 }}
+    >
+      {/* The flip is CSS only: a 3D turn, or an opacity crossfade under Reduce Motion. */}
+      <div
+        data-testid="passport-flip-card"
+        className={cn(
+          "relative w-full transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-3d",
+          "motion-reduce:[transform:none] motion-reduce:transition-none",
+          isFlipped && "[transform:rotateY(180deg)]"
+        )}
       >
-        {/* Front face */}
-        <MotionCard
+        {/* Front face. Inert while hidden so focus and clicks cannot reach it. */}
+        <Card
+          data-testid="passport-front-face"
+          inert={isFlipped}
           className={cn(
             "relative w-full [backface-visibility:hidden]",
-            isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
+            "motion-reduce:transition-opacity motion-reduce:duration-150",
+            isFlipped && "motion-reduce:pointer-events-none motion-reduce:opacity-0"
           )}
-          style={{ willChange: shouldReduceMotion ? undefined : "opacity" }}
-          animate={{ opacity: isFlipped ? 0 : 1 }}
-          transition={tweenFast}
         >
           <div className="relative">
             <PassportFrontFace
@@ -139,17 +144,16 @@ export function MidRibbonPassportDocument({
               </AnimatePresence>
             </div>
           </div>
-        </MotionCard>
+        </Card>
 
         {/* Back face: configuration and privacy controls */}
         <PassportBackFace
           isFlipped={isFlipped}
-          shouldReduceMotion={Boolean(shouldReduceMotion)}
           displayName={displayName}
           isOwner={isOwner}
           onDone={handleDone}
         />
-      </motion.div>
+      </div>
 
       {/* Lorewards modal */}
       <PassportLorewardsModal

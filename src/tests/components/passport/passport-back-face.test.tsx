@@ -52,9 +52,7 @@ jest.mock("~/trpc/react", () => ({
 import { PassportBackFace } from "~/components/passport/document/PassportBackFace";
 
 function renderBackFace(onDone = jest.fn()) {
-  render(
-    <PassportBackFace isFlipped shouldReduceMotion displayName="Alex Pav" isOwner onDone={onDone} />
-  );
+  render(<PassportBackFace isFlipped displayName="Alex Pav" isOwner onDone={onDone} />);
   return onDone;
 }
 
@@ -74,6 +72,22 @@ describe("PassportBackFace", () => {
     renderBackFace();
     fireEvent.click(screen.getByRole("switch", { name: "Show IxCredits" }));
     expect(mutate).toHaveBeenCalledWith({ visibility: { vaultCards: false } });
+  });
+
+  it("saves the Link previews switch with a plain-words helper", () => {
+    renderBackFace();
+    expect(screen.getByText("Show your card when your link is shared")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: /Link previews/ }));
+    expect(mutate).toHaveBeenCalledWith({ visibility: { linkPreview: false } });
+  });
+
+  it("is inert while the passport is face up", () => {
+    const { rerender } = render(
+      <PassportBackFace isFlipped={false} displayName="Alex Pav" isOwner onDone={jest.fn()} />
+    );
+    expect(screen.getByTestId("passport-back-face")).toHaveAttribute("inert");
+    rerender(<PassportBackFace isFlipped displayName="Alex Pav" isOwner onDone={jest.fn()} />);
+    expect(screen.getByTestId("passport-back-face")).not.toHaveAttribute("inert");
   });
 
   it("pins and unpins signature ribbons", () => {
