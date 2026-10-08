@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
- * The passport payload carries the canonical handle (`data.handle`), never the URL segment, and says
- * whether the segment should redirect to it (`canonicalRedirect`).
+ * The passport payload carries the passport handle (`data.handle`, `passportHandleOf`), never the URL
+ * segment: stored handle, verified wiki name, forum name, Clerk id. A computed name is used only when
+ * it resolves back to the holder.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -16,6 +17,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
+  resolveHandleUser: jest.fn(),
 }));
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
@@ -31,14 +33,14 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
   loadLoreStats: jest.fn().mockResolvedValue(null),
   loadLoreAwards: jest.fn().mockResolvedValue([]),
   loadLoreRank: jest.fn().mockResolvedValue(null),
-  loadThinkpagesAccount: jest.fn().mockResolvedValue(null),
+  loadPersonalPersona: jest.fn().mockResolvedValue(null),
   loadClerkProfile: jest.fn().mockResolvedValue(null),
 }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
 import { getPassport } from "~/server/modules/identity/identity.service";
-import { resolveIdentity } from "~/server/modules/identity/identity.resolve";
+import { resolveHandleUser, resolveIdentity } from "~/server/modules/identity/identity.resolve";
 
 const mocked = db as unknown as { wikiAccountLink: { findFirst: jest.Mock } };
 const forum = { getMember: jest.fn(), lookupUser: jest.fn() } as never;
@@ -53,7 +55,6 @@ const user = {
   forumUsername: "Kir Forum" as string | null,
   discordUserId: null,
   discordUsername: null,
-  role: null,
   createdAt: new Date(),
   countryId: null,
 };
@@ -63,7 +64,6 @@ function resolvesTo(handle: string, overrides: Partial<typeof user> | null) {
     handle,
     strippedHandle: handle.replace(/_$/, ""),
     user: overrides ? { ...user, ...overrides } : null,
-    country: null,
     wikiName: overrides ? null : handle,
     forumUserId: null,
     forumUsername: null,
@@ -74,42 +74,41 @@ function resolvesTo(handle: string, overrides: Partial<typeof user> | null) {
 const passport = (handle: string) => getPassport({ handle, viewerClerkId: null }, forum);
 
 describe("getPassport canonical handle", () => {
+  const owners = (byName: Record<string, string>) =>
+    (resolveHandleUser as jest.Mock).mockImplementation((name: string) =>
+      Promise.resolve(byName[name] ? { id: byName[name] } : null)
+    );
+
   beforeEach(() => {
     mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue(null);
+    owners({ "Kir Forum": "db_1", "Kir Wiki": "db_1" });
   });
 
-  it("returns the stored handle and no redirect when the URL is the handle", async () => {
-    resolvesTo("kir", {});
-    const data = await passport("kir");
-    expect(data?.handle).toBe("kir");
-    expect(data?.canonicalRedirect).toBe(false);
+  it("returns the stored handle whatever the URL segment", async () => {
+    for (const segment of ["kir", "Kir Forum", "me"]) {
+      resolvesTo(segment, {});
+      const data = await passport(segment);
+      expect(data?.handle).toBe("kir");
+      expect(data).not.toHaveProperty("canonicalRedirect");
+    }
   });
 
-  it("asks a forum-name URL to redirect to the stored handle", async () => {
-    resolvesTo("Kir Forum", {});
-    const data = await passport("Kir Forum");
-    expect(data?.handle).toBe("kir");
-    expect(data?.canonicalRedirect).toBe(true);
-  });
-
-  it("returns the stored handle for /@me, without a redirect", async () => {
-    resolvesTo("me", {});
-    const data = await passport("me");
-    expect(data?.handle).toBe("kir");
-    expect(data?.canonicalRedirect).toBe(false);
-  });
-
-  it("falls back to the computed handle, never me, when no handle is stored", async () => {
+  it("falls back to the forum name, never the segment, when no handle is stored", async () => {
     resolvesTo("me", { handle: null });
-    const data = await passport("me");
-    expect(data?.handle).toBe("Kir Forum");
-    expect(data?.canonicalRedirect).toBe(false);
+    expect((await passport("me"))?.handle).toBe("Kir Forum");
   });
 
   it("prefers a verified wiki name in the computed handle", async () => {
     mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
     resolvesTo("me", { handle: null });
     expect((await passport("me"))?.handle).toBe("Kir Wiki");
+  });
+
+  it("skips a name that resolves to someone else", async () => {
+    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
+    owners({ "Kir Wiki": "db_other", "Kir Forum": "db_1" });
+    resolvesTo("me", { handle: null });
+    expect((await passport("me"))?.handle).toBe("Kir Forum");
   });
 
   it("falls back to the Clerk id when the user has no other name", async () => {
@@ -119,8 +118,6 @@ describe("getPassport canonical handle", () => {
 
   it("keeps the URL segment for an external wiki or forum identity", async () => {
     resolvesTo("Some Wiki Editor", null);
-    const data = await passport("Some Wiki Editor");
-    expect(data?.handle).toBe("Some Wiki Editor");
-    expect(data?.canonicalRedirect).toBe(false);
+    expect((await passport("Some Wiki Editor"))?.handle).toBe("Some Wiki Editor");
   });
 });

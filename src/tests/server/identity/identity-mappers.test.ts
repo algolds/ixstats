@@ -207,12 +207,37 @@ describe("buildWikiActivityFeed + buildHistoryEvents", () => {
       "wikios.article_revised",
       "realm.joined",
     ]);
+    // A directive without a category says nothing about one (no invented "Governance").
     expect(events[0]).toMatchObject({
       countryName: "Caphiria",
-      description: "Category: Governance · Tier: measured · Status: active",
+      description: "Tier: measured · Status: active",
     });
     expect(events[1]?.title).toBe('Published "Imperial Senate"');
     expect(events[3]).toMatchObject({ identityId: "u1", objectUrl: "/@alex" });
+  });
+});
+
+describe("buildHistoryEvents directive description", () => {
+  it("names the category when the directive has one", () => {
+    const [event] = buildHistoryEvents({
+      identityId: "u1",
+      handle: "alex",
+      feed: [],
+      directives: [
+        {
+          id: "d1",
+          goal: "Raise tariffs",
+          tier: "bold",
+          category: "Trade",
+          status: "enacted",
+          countryId: "c1",
+          createdAt: new Date("2026-04-01"),
+        },
+      ],
+      countryNames: new Map(),
+      joinedAt: null,
+    });
+    expect(event?.description).toBe("Category: Trade · Tier: bold · Status: enacted");
   });
 });
 

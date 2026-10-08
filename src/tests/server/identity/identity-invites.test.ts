@@ -9,6 +9,7 @@ jest.mock("~/server/db", () => {
     user: { findUnique: jest.fn(), findFirst: jest.fn() },
     country: { findFirst: jest.fn() },
     thinkpagesAccount: { findFirst: jest.fn() },
+    wikiAccountLink: { findFirst: jest.fn() },
     realmClaim: { findMany: jest.fn() },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
@@ -30,6 +31,7 @@ const mocked = db as unknown as {
   user: { findUnique: jest.Mock; findFirst: jest.Mock };
   country: { findFirst: jest.Mock };
   thinkpagesAccount: { findFirst: jest.Mock };
+  wikiAccountLink: { findFirst: jest.Mock };
   realmClaim: { findMany: jest.Mock };
 };
 
@@ -63,6 +65,7 @@ beforeEach(() => {
   mocked.user.findFirst.mockReset().mockResolvedValue(null);
   mocked.country.findFirst.mockReset().mockResolvedValue(null);
   mocked.thinkpagesAccount.findFirst.mockReset().mockResolvedValue(null);
+  mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue(null);
   mocked.realmClaim.findMany.mockReset();
 });
 
@@ -131,12 +134,24 @@ describe("resolveRealmInviter", () => {
     await expect(resolveRealmInviter("eurth", "nobody")).resolves.toBeNull();
   });
 
-  it("falls back to the normalised via when the user has no stored handle", async () => {
-    mocked.user.findFirst.mockResolvedValue({ ...kir, handle: null, forumUsername: null });
+  it("names a handle-less inviter by the passport handle chain, not by the via", async () => {
+    mocked.user.findFirst.mockResolvedValue({ ...kir, handle: null });
     mocked.country.findFirst.mockResolvedValue({ id: "c1" });
     await expect(resolveRealmInviter("eurth", "@Kir_Forum")).resolves.toEqual({
-      handle: "kir_forum",
-      displayName: "kir_forum",
+      handle: "Kir Forum",
+      displayName: "Kir Forum",
+    });
+
+    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
+    await expect(resolveRealmInviter("eurth", "clerk_kir")).resolves.toMatchObject({
+      handle: "Kir Wiki",
+    });
+
+    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.user.findFirst.mockResolvedValue({ ...kir, handle: null, forumUsername: null });
+    await expect(resolveRealmInviter("eurth", "clerk_kir")).resolves.toEqual({
+      handle: "clerk_kir",
+      displayName: "clerk_kir",
     });
   });
 });

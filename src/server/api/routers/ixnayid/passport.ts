@@ -10,7 +10,6 @@ import {
   getHistory,
   getOwnPassportSettings,
   getPassport,
-  getPassportCard,
   getRealms,
   getRibbons,
   getWork,
@@ -51,16 +50,6 @@ export const ixnayidPassportRouter = createTRPCRouter({
   getPassport: publicProcedure.input(handleInput).query(({ ctx, input }) =>
     getPassport({ handle: input.handle, viewerClerkId: ctx.auth?.userId ?? null }, forumGateway)
   ),
-
-  /**
-   * The slim passport summary for the front face, page metadata and the OG image: database reads
-   * only, hidden sections null, `{ preview: false }` with link previews off, null for no user.
-   */
-  getPassportCard: publicProcedure
-    .input(handleInput)
-    .query(({ ctx, input }) =>
-      getPassportCard({ handle: input.handle, viewerClerkId: ctx.auth?.userId ?? null })
-    ),
 
   getRealms: publicProcedure
     .input(handleInput.extend({ realm: z.string().min(1).max(100).optional() }))

@@ -226,16 +226,6 @@ export async function loadDirectives(
   );
 }
 
-export async function loadThinkpagesAccount(user: IdentityUser | null) {
-  if (!user) return null;
-  return orNull(
-    db.thinkpagesAccount.findFirst({
-      where: { clerkUserId: user.clerkUserId, isActive: true },
-      select: { username: true, bio: true, postCount: true, followerCount: true },
-    })
-  );
-}
-
 /**
  * The user's personal ThinkPages persona ("you", not a nation or a character): the passport card's
  * stored name, avatar and bio, read without a Clerk call.

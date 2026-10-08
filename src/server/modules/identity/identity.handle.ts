@@ -41,7 +41,7 @@ export function validateHandle(raw: string): HandleValidation {
 }
 
 /**
- * Whether a passport URL segment should 301 to the stored handle: only when one is stored and the
+ * Whether a passport URL segment should 308 to the stored handle: only when one is stored and the
  * segment does not already normalise to it. `/@me` never redirects.
  */
 export function needsCanonicalRedirect(segment: string, storedHandle: string | null): boolean {

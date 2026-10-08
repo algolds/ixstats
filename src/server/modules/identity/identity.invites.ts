@@ -5,8 +5,8 @@
 import { db } from "~/server/db";
 import { DEFAULT_REALM_ID, isIxWorldView } from "~/lib/realms/realm-ids";
 import { countRecruits } from "~/lib/realms/recruits";
-import { normalizeHandle } from "./identity.handle";
 import { loadPersonalPersona } from "./identity.loaders";
+import { loadPassportHandle } from "./identity.passport-handle";
 import { resolveHandleUser } from "./identity.resolve";
 
 /** The inviter as the Join panel shows them: "@{handle} invited you". */
@@ -41,8 +41,7 @@ export async function resolveRealmInviter(
     select: { id: true },
   });
   if (!member) return null;
-  const persona = await loadPersonalPersona(user);
-  const handle = user.handle ?? normalizeHandle(via);
+  const [persona, handle] = await Promise.all([loadPersonalPersona(user), loadPassportHandle(user)]);
   return { handle, displayName: persona?.displayName || user.forumUsername || handle };
 }
 

@@ -116,6 +116,12 @@ const WIKI_VERB: Record<WikiActivityType, string> = {
   minor_edit: "Edited",
 };
 
+/** "Category: … · Tier: … · Status: …", without the category when the directive has none. */
+function directiveDescription(dir: DirectiveRow): string {
+  const parts = [`Tier: ${dir.tier}`, `Status: ${dir.status}`];
+  return (dir.category ? [`Category: ${dir.category}`, ...parts] : parts).join(" · ");
+}
+
 function wikiEventDescription(item: WikiActivityItem): string {
   if (item.summary) return item.summary;
   if (!item.byteDiff) return "WikiOS Contribution";
@@ -124,6 +130,7 @@ function wikiEventDescription(item: WikiActivityItem): string {
 
 interface HistorySources {
   identityId: string;
+  /** The passport handle (`passportHandleOf`), never the URL segment: the join event links to it. */
   handle: string;
   feed: WikiActivityItem[];
   directives: DirectiveRow[];
@@ -154,7 +161,7 @@ export function buildHistoryEvents(sources: HistorySources): IdentityEventPayloa
       system: "mycountry",
       type: "mycountry.directive_enacted",
       title: `Enacted Directive: ${dir.goal}`,
-      description: `Category: ${dir.category || "Governance"} · Tier: ${dir.tier} · Status: ${dir.status}`,
+      description: directiveDescription(dir),
       timestamp: new Date(dir.createdAt),
       objectId: dir.id,
       objectUrl: "/mycountry",

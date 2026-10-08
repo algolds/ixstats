@@ -1,5 +1,5 @@
 /**
- * Resolves a public passport handle to a user, their country and linked wiki/forum names.
+ * Resolves a public passport handle to a user and their linked wiki/forum names.
  * Order: the stored IxStates Passport handle, then the viewer's own linked names, then users by
  * forum name, wiki name, Clerk id or id, then external wiki/forum names. A country name, slug or id
  * does not resolve a person (country-name passport URLs are dropped).
@@ -10,11 +10,7 @@ import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { validateHandle } from "./identity.handle";
-import {
-  IDENTITY_COUNTRY_SELECT,
-  IDENTITY_USER_INCLUDE,
-  type IdentityCountry,
-} from "./identity.selects";
+import { IDENTITY_COUNTRY_SELECT, type IdentityCountry } from "./identity.selects";
 import type { IdentityForumGateway, ResolvedIdentity } from "./identity.types";
 
 const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as const });
@@ -23,14 +19,13 @@ const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as 
 async function findUserByStoredHandle(segment: string) {
   const valid = validateHandle(segment);
   if (!valid.ok) return null;
-  return db.user.findUnique({ where: { handle: valid.handle }, include: IDENTITY_USER_INCLUDE });
+  return db.user.findUnique({ where: { handle: valid.handle } });
 }
 
 async function findViewerMatch(viewerClerkId: string | null, names: string[]) {
   if (!viewerClerkId) return null;
   const viewer = await db.user.findUnique({
     where: { clerkUserId: viewerClerkId },
-    include: IDENTITY_USER_INCLUDE,
   });
   if (!viewer) return null;
   const linked = [viewer.wikiUsername, viewer.forumUsername];
@@ -71,20 +66,6 @@ function findUserByHandle(handle: string, stripped: string, viewerClerkId: strin
   return db.user.findFirst({
     where: legacyNameWhere(handle, stripped, viewerClerkId),
     orderBy: NEWEST_FIRST,
-    include: IDENTITY_USER_INCLUDE,
-  });
-}
-
-/** A user without a linked country may still own one through their active ThinkPages account. */
-async function findThinkpagesCountry(clerkUserId: string): Promise<IdentityCountry | null> {
-  const account = await db.thinkpagesAccount.findFirst({
-    where: { clerkUserId, isActive: true, countryId: { not: null } },
-    select: { countryId: true },
-  });
-  if (!account?.countryId) return null;
-  return db.country.findUnique({
-    where: { id: account.countryId },
-    select: IDENTITY_COUNTRY_SELECT,
   });
 }
 
@@ -130,21 +111,18 @@ async function findPerson(handle: string, stripped: string, viewerClerkId: strin
   );
 }
 
-async function findUserAndCountry(handle: string, stripped: string, viewerClerkId: string | null) {
-  const matched = await findPerson(handle, stripped, viewerClerkId);
-  if (!matched) return { user: null, country: null };
-  const { country, ...user } = matched;
-  return { user, country: country ?? (await findThinkpagesCountry(user.clerkUserId)) };
-}
-
-type FoundUser = Awaited<ReturnType<typeof findUserAndCountry>>;
+type FoundUser = Awaited<ReturnType<typeof findPerson>>;
 type LinkedNames = Pick<ResolvedIdentity, "wikiName" | "forumUserId" | "forumUsername">;
 
-/** The linked names of a found user (wiki name falls back to the country's page or name). */
-function linkedNamesOf({ user, country }: FoundUser): LinkedNames | null {
+/**
+ * The linked names of a found user. The wiki name is only `User.wikiUsername` (kept in sync with the
+ * verified ixwiki link): a country's page title or name is never taken for the holder's wiki account,
+ * so another wiki user's Lorewards, work and history are never attributed to them.
+ */
+function linkedNamesOf(user: FoundUser): LinkedNames | null {
   if (!user) return null;
   return {
-    wikiName: user.wikiUsername || country?.wikiPageTitle || country?.name || null,
+    wikiName: user.wikiUsername || null,
     forumUserId: user.forumUserId ?? null,
     forumUsername: user.forumUsername ?? null,
   };
@@ -152,23 +130,23 @@ function linkedNamesOf({ user, country }: FoundUser): LinkedNames | null {
 
 function toIdentity(
   handle: string,
-  found: FoundUser,
+  user: FoundUser,
   linked: LinkedNames,
   viewerClerkId: string | null
 ): ResolvedIdentity {
   return {
     handle,
     strippedHandle: handle.replace(/_$/, ""),
-    ...found,
+    user,
     ...linked,
-    isOwner: Boolean(viewerClerkId && found.user?.clerkUserId === viewerClerkId),
+    isOwner: Boolean(viewerClerkId && user?.clerkUserId === viewerClerkId),
   };
 }
 
-/** The URL segment as a handle, and the user and country it names. */
+/** The URL segment as a handle, and the user it names. */
 async function findBySegment(rawHandle: string, viewerClerkId: string | null) {
   const handle = rawHandle.replace(/^@/, "").trim();
-  return { handle, found: await findUserAndCountry(handle, handle.replace(/_$/, ""), viewerClerkId) };
+  return { handle, user: await findPerson(handle, handle.replace(/_$/, ""), viewerClerkId) };
 }
 
 /**
@@ -180,13 +158,13 @@ export async function resolveIdentity(
   viewerClerkId: string | null,
   forum?: IdentityForumGateway
 ): Promise<ResolvedIdentity | null> {
-  const { handle, found } = await findBySegment(rawHandle, viewerClerkId);
+  const { handle, user } = await findBySegment(rawHandle, viewerClerkId);
   const linked =
-    linkedNamesOf(found) ??
+    linkedNamesOf(user) ??
     (await findExternalNames([...new Set([handle, handle.replace(/_$/, "")])], forum));
 
-  if (!found.user && !linked.wikiName && !linked.forumUserId) return null;
-  return toIdentity(handle, found, linked, viewerClerkId);
+  if (!user && !linked.wikiName && !linked.forumUserId) return null;
+  return toIdentity(handle, user, linked, viewerClerkId);
 }
 
 /**
@@ -197,9 +175,9 @@ export async function resolveUserIdentity(
   rawHandle: string,
   viewerClerkId: string | null
 ): Promise<ResolvedIdentity | null> {
-  const { handle, found } = await findBySegment(rawHandle, viewerClerkId);
-  const linked = linkedNamesOf(found);
-  return linked ? toIdentity(handle, found, linked, viewerClerkId) : null;
+  const { handle, user } = await findBySegment(rawHandle, viewerClerkId);
+  const linked = linkedNamesOf(user);
+  return linked ? toIdentity(handle, user, linked, viewerClerkId) : null;
 }
 
 /**
@@ -209,12 +187,12 @@ export async function resolveUserIdentity(
 export async function resolveHandleOwnerClerkId(rawHandle: string): Promise<string | null> {
   const handle = rawHandle.replace(/^@/, "").trim();
   if (!handle || handle === "me") return null;
-  const { user } = await findUserAndCountry(handle, handle.replace(/_$/, ""), null);
+  const user = await findPerson(handle, handle.replace(/_$/, ""), null);
   return user?.clerkUserId ?? null;
 }
 
 /**
- * The stored handle of the user a passport URL segment names, for the canonical 301. Looks up the
+ * The stored handle of the user a passport URL segment names, for the canonical 308. Looks up the
  * user only (no loaders, no external calls). Null for `me`, an unknown name, or a user with no
  * stored handle yet.
  */

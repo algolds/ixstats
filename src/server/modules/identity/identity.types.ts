@@ -1,7 +1,7 @@
 /**
  * Identity module contracts (plan 188): the public passport resolved from a handle.
  */
-import type { IdentityCountry, IdentityUser } from "./identity.selects";
+import type { IdentityUser } from "./identity.selects";
 
 /** Minimal XenForo member shape the passport reads; the forum module's `XFUser` satisfies it. */
 export interface IdentityForumMember {
@@ -11,8 +11,6 @@ export interface IdentityForumMember {
   message_count: number;
   reaction_score: number;
   trophy_points: number;
-  register_date: number;
-  is_staff: boolean;
 }
 
 /** Forum access, injected by the API layer because modules may not import other modules. */
@@ -28,7 +26,6 @@ export interface ResolvedIdentity {
   /** Handle with a trailing `_` removed (wiki/forum names sometimes carry one). */
   strippedHandle: string;
   user: IdentityUser | null;
-  country: IdentityCountry | null;
   wikiName: string | null;
   forumUserId: number | null;
   forumUsername: string | null;
@@ -174,14 +171,14 @@ export interface PassportCardNation {
 }
 
 /**
- * The slim public passport summary (`getPassportCard`) for the front face, page metadata and the
- * OG image. Hidden sections are null. `{ preview: false }` when the holder turned link previews off.
+ * The slim public passport summary (`getPassportCard`) for page metadata and the OG image. Hidden
+ * sections are null. `{ preview: false }` when the holder turned link previews off.
  */
 export type PassportCard =
   | { preview: false }
   | {
       preview: true;
-      /** The canonical handle (stored, else computed), as `getPassport` returns it. */
+      /** The passport handle (`passportHandleOf`), as `getPassport` returns it. */
       handle: string;
       /** Personal ThinkPages persona name, else the forum name, else the handle (no Clerk call). */
       displayName: string;

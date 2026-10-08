@@ -1,6 +1,6 @@
 /**
- * `getPassportCard`: the slim, public passport summary for the front face, page metadata and the
- * OG image. Database reads only (no MediaWiki, XenForo or Clerk), each section already redacted
+ * `getPassportCard`: the slim, public passport summary for page metadata and the OG image.
+ * Database reads only (no MediaWiki, XenForo or Clerk), each section already redacted
  * by the owner's `PassportPreference`; with link previews off it is only `{ preview: false }`.
  */
 jest.mock("~/server/db", () => {
@@ -17,6 +17,7 @@ jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveUserIdentity: jest.fn(),
   resolveIdentityNations: jest.fn(),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.realm-roles", () => ({
@@ -30,13 +31,13 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
   loadWikiInfo: jest.fn(),
   loadClerkProfile: jest.fn(),
   loadLoreAwards: jest.fn(),
-  loadThinkpagesAccount: jest.fn(),
 }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
 import { getPassportCard } from "~/server/modules/identity/identity.service";
 import {
+  resolveHandleUser,
   resolveIdentityNations,
   resolveUserIdentity,
 } from "~/server/modules/identity/identity.resolve";
@@ -65,7 +66,6 @@ const holder = {
   wikiUsername: "Alex",
   forumUserId: 9,
   forumUsername: "AlexForum",
-  role: null,
   createdAt: JOINED,
   countryId: "c2",
 };
@@ -115,7 +115,6 @@ function resolvesTo(user: typeof holder | null, viewerClerkId: string | null = n
       handle: "Alex",
       strippedHandle: "Alex",
       user,
-      country: null,
       wikiName: "Alex",
       forumUserId: user.forumUserId,
       forumUsername: user.forumUsername,
@@ -221,8 +220,9 @@ describe("getPassportCard", () => {
     });
   });
 
-  it("uses the computed canonical handle when none is stored", async () => {
+  it("uses the passport handle chain when no handle is stored", async () => {
     resolvesTo({ ...holder, handle: null });
+    (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
     mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alex_Wiki" });
     const card = await getPassportCard({ handle: "Alex", viewerClerkId: null });
     expect(card).toMatchObject({ handle: "Alex_Wiki" });

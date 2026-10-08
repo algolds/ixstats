@@ -10,6 +10,7 @@ import {
   HandleClaimError,
   setUserHandle,
 } from "~/server/modules/identity/identity.handle-claim";
+import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
 import { syncOwnForumAccount } from "~/server/modules/identity/identity.service";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
 import { forumGateway } from "./forum-gateway";
@@ -79,27 +80,6 @@ function callerIsAdmin(ctx: { user: RealmActor; impersonatorId?: string | null }
   return !ctx.impersonatorId && isSiteAdmin(ctx.user);
 }
 
-/**
- * The passport link: the stored handle, else the first available identity. Country slugs and names
- * are skipped (they no longer resolve a passport), and so is the generic "admin" session name.
- */
-function passportHandleOf(
-  user: { id: string; clerkUserId: string | null; handle: string | null; forumUsername: string | null } | null,
-  verifiedWikiName: string | null,
-  sessionUsername: string | null | undefined
-): string | null {
-  if (user?.handle) return user.handle;
-  return (
-    [
-      verifiedWikiName,
-      user?.forumUsername,
-      sessionUsername !== "admin" ? sessionUsername : null,
-      user?.clerkUserId,
-      user?.id,
-    ].find(Boolean) || null
-  );
-}
-
 const HANDLE_ERROR_CODES = {
   FORMAT: "BAD_REQUEST",
   RESERVED: "BAD_REQUEST",
@@ -141,10 +121,10 @@ export const ixnayidCoreRouter = createTRPCRouter({
           select: { username: true, verifiedAt: true },
         })
       : null;
-    const sessionUsername = (ctx.user as { username?: string | null }).username;
 
     return {
-      passportHandle: passportHandleOf(user, verifiedWikiLink?.username ?? null, sessionUsername),
+      /** The passport handle (`passportHandleOf`): the one every share and invite link carries. */
+      passportHandle: user ? await passportHandleOf(user, verifiedWikiLink?.username ?? null) : null,
       /** The stored IxStates Passport handle, null until one is claimed. */
       handle: user?.handle ?? null,
       /** The single self-service change is still available (admins may always change it). */

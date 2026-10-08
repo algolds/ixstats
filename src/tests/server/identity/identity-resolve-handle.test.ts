@@ -37,7 +37,6 @@ const kir = {
   forumUsername: "Kir Forum",
   forumUserId: 7,
   wikiUsername: null,
-  role: null,
   country: null,
 };
 

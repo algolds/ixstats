@@ -92,7 +92,6 @@ function identityOf(overrides: Partial<ResolvedIdentity> = {}): ResolvedIdentity
       wikiUsername: "Kir Wiki",
       countryId: "c_linked",
     } as ResolvedIdentity["user"],
-    country: null,
     wikiName: null,
     forumUserId: null,
     forumUsername: null,

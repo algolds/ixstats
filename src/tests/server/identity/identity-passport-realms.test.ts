@@ -19,6 +19,7 @@ jest.mock("~/server/db", () => {
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn(),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
@@ -34,7 +35,7 @@ jest.mock("~/server/modules/identity/identity.loaders", () => ({
   loadLoreStats: jest.fn().mockResolvedValue(null),
   loadLoreAwards: jest.fn().mockResolvedValue([]),
   loadLoreRank: jest.fn().mockResolvedValue(null),
-  loadThinkpagesAccount: jest.fn().mockResolvedValue(null),
+  loadPersonalPersona: jest.fn().mockResolvedValue(null),
   loadClerkProfile: jest.fn().mockResolvedValue(null),
 }));
 
@@ -94,7 +95,6 @@ function holds(nations: IdentityCountry[], countryId: string | null = null) {
     handle: "kir",
     strippedHandle: "kir",
     user: { ...user, countryId },
-    country: null,
     wikiName: null,
     forumUserId: null,
     forumUsername: null,

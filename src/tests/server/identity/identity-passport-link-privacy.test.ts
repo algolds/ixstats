@@ -1,7 +1,7 @@
 /**
- * SL-4 on the passport: "Show Discord tag" and "Wiki attribution" hide the linked names from
- * other viewers (never from the owner), "Online status" decides the online flag, and "Search
- * engine indexing" decides the page's robots metadata. A read error hides (fails closed).
+ * SL-4 on the passport: "Wiki attribution" hides the linked wiki name from other viewers (never
+ * from the owner), "Online status" decides the online flag, and "Search engine indexing" decides the
+ * page's robots metadata. A read error hides (fails closed). The passport carries no Discord tag.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -17,6 +17,7 @@ jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
   resolveHandleOwnerClerkId: jest.fn(),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock("~/server/modules/identity/identity.vault", () => ({
@@ -29,11 +30,11 @@ jest.mock("~/server/modules/identity/identity.showcase", () => {
 });
 
 jest.mock("~/server/modules/identity/identity.loaders", () => ({
-  loadWikiInfo: jest.fn().mockResolvedValue({ exists: true, editCount: 12, groups: ["user"] }),
+  loadWikiInfo: jest.fn().mockResolvedValue({ exists: true }),
   loadLoreStats: jest.fn().mockResolvedValue(null),
   loadLoreAwards: jest.fn().mockResolvedValue([]),
   loadLoreRank: jest.fn().mockResolvedValue(null),
-  loadThinkpagesAccount: jest.fn().mockResolvedValue(null),
+  loadPersonalPersona: jest.fn().mockResolvedValue(null),
   loadClerkProfile: jest.fn().mockResolvedValue(null),
   loadWikiContribs: jest.fn().mockResolvedValue([]),
   loadNativeRevisions: jest.fn().mockResolvedValue([]),
@@ -73,7 +74,6 @@ const holder = {
   forumUsername: null,
   discordUserId: "d1",
   discordUsername: "alex#1",
-  role: null,
   createdAt: new Date("2024-01-01"),
   countryId: null,
 };
@@ -92,7 +92,6 @@ function asViewer(viewerClerkId: string | null) {
     handle: "alex",
     strippedHandle: "alex",
     user: holder,
-    country: null,
     wikiName: "Alex",
     forumUserId: null,
     forumUsername: null,
@@ -113,31 +112,29 @@ beforeEach(() => {
 });
 
 describe("linked names on the passport", () => {
-  it("shows the Discord tag and wiki name by default", async () => {
+  it("shows the wiki name by default, and never a Discord tag", async () => {
     const passport = await getPassport(asViewer(null), forum);
-    expect(passport?.discord).toEqual({ linked: true, username: "alex#1" });
-    expect(passport?.wiki.username).toBe("Alex");
+    expect(passport?.wiki).toMatchObject({ linked: true, username: "Alex" });
+    expect(passport).not.toHaveProperty("discord");
+    expect(JSON.stringify(passport)).not.toContain("alex#1");
   });
 
-  it("hides them from visitors when switched off", async () => {
-    withConfig({ showDiscordTag: false, showWikiAttribution: false });
+  it("hides it from visitors when switched off", async () => {
+    withConfig({ showWikiAttribution: false });
     const passport = await getPassport(asViewer("visitor"), forum);
-    expect(passport?.discord).toEqual({ linked: false, username: null });
-    expect(passport?.wiki).toMatchObject({ linked: false, username: null, editCount: null });
+    expect(passport?.wiki).toMatchObject({ linked: false, username: null });
   });
 
-  it("still shows them to the owner", async () => {
-    withConfig({ showDiscordTag: false, showWikiAttribution: false });
+  it("still shows it to the owner", async () => {
+    withConfig({ showWikiAttribution: false });
     const passport = await getPassport(asViewer("clerk_1"), forum);
-    expect(passport?.discord.username).toBe("alex#1");
     expect(passport?.wiki.username).toBe("Alex");
   });
 
-  it("hides them when the setting cannot be read", async () => {
+  it("hides it when the setting cannot be read", async () => {
     findConfigs.mockRejectedValue(new Error("db down"));
     const passport = await getPassport(asViewer("visitor"), forum);
-    expect(passport?.discord.username).toBeNull();
-    expect(passport?.wiki.username).toBeNull();
+    expect(passport?.wiki).toMatchObject({ linked: false, username: null });
   });
 
   it("drops wiki articles from the Work tab when attribution is off", async () => {
@@ -154,6 +151,20 @@ describe("linked names on the passport", () => {
     expect(page.items.map((item) => item.type)).toEqual(["realm.joined"]);
     expect(loadWikiContribs).not.toHaveBeenCalled();
     expect(loadNativeRevisions).not.toHaveBeenCalled();
+  });
+
+  it("links the History join event to the stored handle, not the URL segment", async () => {
+    (resolveIdentity as jest.Mock).mockResolvedValue({
+      handle: "Alex Legacy",
+      strippedHandle: "Alex Legacy",
+      user: { ...holder, handle: "alex_h" },
+      wikiName: "Alex",
+      forumUserId: null,
+      forumUsername: null,
+      isOwner: false,
+    });
+    const page = await getHistory({ handle: "Alex Legacy", viewerClerkId: null, limit: 50 });
+    expect(page.items.find((item) => item.type === "realm.joined")?.objectUrl).toBe("/@alex_h");
   });
 
   it("keeps wiki items in the History tab for the owner", async () => {

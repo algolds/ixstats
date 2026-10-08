@@ -37,11 +37,13 @@ const ownerOfCountry = {
   country: { id: "c1", name: "Kir Republic", slug: "kir-republic" },
 };
 
-function caller() {
+function caller(sessionUsername?: string) {
+  // A Clerk session may carry a username; no passport URL resolves it.
+  const user = { id: "db_1", clerkUserId: "clerk_1", role: { name: "user" }, username: sessionUsername };
   return createCaller(
     createMockRouterContext({
       auth: { userId: "clerk_1" },
-      user: { id: "db_1", clerkUserId: "clerk_1", role: { name: "user" } },
+      user,
       db,
     }) as never
   );
@@ -60,6 +62,12 @@ describe("ixnayid.getStatus wiki state", () => {
     expect(status.wiki.username).toBeNull();
     // and the passport handle never comes from an unverified wiki name, nor from the country
     // (a country name or slug no longer resolves a passport)
+    expect(status.passportHandle).toBe("clerk_1");
+  });
+
+  it("never uses the Clerk session username, which no passport URL resolves", async () => {
+    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    const status = await caller("kir_session").getStatus();
     expect(status.passportHandle).toBe("clerk_1");
   });
 

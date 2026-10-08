@@ -37,6 +37,7 @@ jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     userConnection: { findMany: async () => [] },
+    wikiAccountLink: { findFirst: async () => null },
     wikiArticle: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db.wikiArticle,
     // Prisma's relation filter, for the one shape the loader uses: `where.article.status`.
     wikiRevision: {
@@ -55,6 +56,7 @@ jest.mock("~/server/db", () => ({
 jest.mock("~/server/modules/identity/identity.resolve", () => ({
   resolveIdentity: jest.fn(),
   resolveIdentityNations: jest.fn().mockResolvedValue([]),
+  resolveHandleUser: jest.fn().mockResolvedValue(null),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
@@ -77,7 +79,6 @@ beforeEach(() => {
     handle: "amy",
     strippedHandle: "amy",
     user,
-    country: null,
     wikiName: null,
     forumUserId: null,
     forumUsername: null,

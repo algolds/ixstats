@@ -15,7 +15,6 @@ const passport: PassportPayload = {
   handle: "alex",
   account: {
     userId: "u1",
-    roleName: "Sovereign",
     isOwner: false,
     createdAt: "2024-05-01T00:00:00.000Z",
     clerkUsername: "alex",
@@ -60,16 +59,12 @@ const passport: PassportPayload = {
   wiki: {
     linked: true,
     username: "Alex",
-    editCount: 42,
-    groups: [],
     lorewards: null,
     awardHistory: [],
   },
   forum: {
     linked: false,
     username: null,
-    isStaff: false,
-    joinedDate: null,
     stats: null,
   },
   vault: {
@@ -85,8 +80,7 @@ const passport: PassportPayload = {
   showcase: {
     achievements: { unlockedCount: 0, totalCount: 76, points: 0, ribbons: [] },
   },
-  thinkpages: { linked: false, username: null, bio: null, postCount: 0, followerCount: 0 },
-  discord: { linked: true, username: "alexpav" },
+  thinkpages: { bio: null },
 };
 
 const work: WorkPayload = {
