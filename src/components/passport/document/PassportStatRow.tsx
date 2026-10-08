@@ -2,14 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-
-/** "1 realm · 1 nation", "2 realms · 3 nations"; null when no nation is held. */
-export function realmsAndNations(realmCount: number, nationCount: number): string | null {
-  if (nationCount < 1) return null;
-  const realms = `${realmCount} ${realmCount === 1 ? "realm" : "realms"}`;
-  const nations = `${nationCount} ${nationCount === 1 ? "nation" : "nations"}`;
-  return `${realms} · ${nations}`;
-}
+import { realmsAndNations } from "~/lib/passport/passport-labels";
 
 /** "Since Oct 2025"; null when the join date is unknown. */
 export function sinceLabel(joinedAt: string | null): string | null {

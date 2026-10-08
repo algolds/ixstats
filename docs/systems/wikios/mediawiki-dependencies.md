@@ -151,7 +151,8 @@ same `uploadFile` service as the browser's upload (mirror section above): it nam
 `src/lib/wiki-os/core/media-asset-service.ts` (an asset's canonical file URL), `src/lib/cards/lore-card-ixwiki.ts` (the file
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
-Cloudflare), `src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
+Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUBLIC_APP_URL` is unset),
+`src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
 `/w/api.php` answers `readonly`.
 

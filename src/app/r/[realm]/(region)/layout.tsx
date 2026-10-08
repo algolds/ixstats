@@ -1,34 +1,26 @@
-"use client";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { db } from "~/server/db";
+import { loadRealmMetadataSource, realmMetadata } from "~/server/modules/realms";
+import { RegionLayoutClient } from "./RegionLayoutClient";
 
-import { use } from "react";
-import { notFound } from "next/navigation";
-import { api } from "~/trpc/react";
-import { Skeleton } from "~/components/ui/skeleton";
-import { RealmRegionHeader } from "../_components/RealmRegionHeader";
-
-/** A realm's pages (Overview, Board, Nations, Manage) share its banner, stats strip and tab bar. */
-export default function RealmRegionLayout({
-  params,
-  children,
-}: {
+interface RealmRegionLayoutProps {
+  children: ReactNode;
   params: Promise<{ realm: string }>;
-  children: React.ReactNode;
-}) {
-  const { realm: slug } = use(params);
-  const { data: overview, isLoading } = api.realms.region.overview.useQuery({ slug });
+}
 
-  if (isLoading)
-    return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
-        <Skeleton className="rounded-card h-72 w-full" />
-      </div>
-    );
-  if (!overview) notFound();
+/**
+ * Link unfurls (Discord, Slack) and search engines read the realm's name, a short description and
+ * the canonical `/r/{slug}` from here; the card image comes from `opengraph-image.tsx`. Draft and
+ * unknown realms add nothing beyond the root defaults.
+ */
+export async function generateMetadata({
+  params,
+}: Pick<RealmRegionLayoutProps, "params">): Promise<Metadata> {
+  const { realm: slug } = await params;
+  return realmMetadata(await loadRealmMetadataSource(db, slug).catch(() => null));
+}
 
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
-      <RealmRegionHeader overview={overview} />
-      {children}
-    </div>
-  );
+export default function RealmRegionLayout({ params, children }: RealmRegionLayoutProps) {
+  return <RegionLayoutClient params={params}>{children}</RegionLayoutClient>;
 }
