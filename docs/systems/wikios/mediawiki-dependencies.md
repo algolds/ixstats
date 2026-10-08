@@ -201,6 +201,9 @@ configuration object, never from a literal:
   `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
+- **Absolute post links written into wiki text** (`mediaWikiOrigin()`, no request): `src/server/modules/action-links/wiki-sync.ts`
+  `appendChainToWiki` builds each linked post's absolute URL inside the section an approved story chain appends to its
+  wiki page. The save itself is WikiOS's own (`edit-service.ts` `commitWikitextSave`), which the mirror then exports.
 - **Detectors of a link to an IxWiki page** in stored or fed text, built from the configured host (`mediaWikiHostPattern`,
   `wikiTitleFromArticleUrl`), so they keep matching the old absolute links: `src/components/dashboard/sections/TrendingSectionWidget.tsx`,
   `src/components/dashboard/sections/feed/externalLinks.ts`,
@@ -218,7 +221,8 @@ configuration object, never from a literal:
 - **Other hosts under ixwiki.com that are not MediaWiki.** The forum (`forum.ixwiki.com`, XenForo):
   `src/app/api/forum/attachment/[id]/route.ts`, `src/app/api/forum/user-cards/route.ts`, `src/components/settings/ForumAccountVerify.tsx`,
   `src/server/api/routers/forum/normalize.ts`, `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/server/modules/forum/lib/bbcode-transformer.ts`,
-  `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors). Accounts (`accounts.ixwiki.com`, Clerk):
+  `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors), `src/lib/action-links.ts`
+  `postPermalinkPath` (no call: spells the forum host for an imported XenForo post's permalink). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
