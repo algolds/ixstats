@@ -1,20 +1,16 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { EmptyState } from "~/components/ui/empty-state";
-import { Skeleton } from "~/components/ui/skeleton";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
-import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum";
+import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api } from "~/trpc/react";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
-import { Pagination } from "./Pagination";
+import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
+import { Pagination, useLastPageRedirect } from "./Pagination";
 import { PostItem, type ForumPost } from "./PostItem";
 
 const NO_POSTS: ForumPost[] = [];
@@ -37,7 +33,13 @@ interface ThreadViewProps {
 export function ThreadView({ threadId, page }: ThreadViewProps) {
   const router = useRouter();
   const utils = api.useUtils();
-  const { data, isLoading, error } = api.thinkpagesForum.thread.useQuery({ threadId, page });
+  const { data, isLoading, error, refetch } = api.thinkpagesForum.thread.useQuery({
+    threadId,
+    page,
+  });
+  const basePath = `/thinkpages/t/${threadId}`;
+  const totalPages = pageCount(data?.total ?? 0, POSTS_PER_PAGE);
+  const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   const posts = data?.posts ?? NO_POSTS;
   const { cards, ready, errored } = useThreadActionCards(posts);
   useScrollToPostHash(posts);
@@ -55,9 +57,9 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
       // The reply is the thread's last post; ask where that is rather than guessing the page.
       const at = await utils.thinkpagesForum.resolvePost.fetch({ postId }).catch(() => null);
       const target = at?.page ?? page;
-      router.push(`/thinkpages/t/${threadId}?page=${target}#post-${postId}`);
+      router.push(`${basePath}?page=${target}#post-${postId}`);
     },
-    [replyTo, utils, threadId, page, router]
+    [replyTo, utils, threadId, basePath, page, router]
   );
 
   const edit = useCallback(
@@ -68,30 +70,16 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
     [editPost, utils, threadId]
   );
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-3xl space-y-4 px-4 py-8">
-        <Skeleton className="rounded-card h-40 w-full" />
-        <Skeleton className="rounded-card h-40 w-full" />
-      </div>
-    );
-  }
+  if (isLoading || redirecting) return <ForumPageSkeleton blocks={2} />;
 
-  if (error || !data) {
+  if (!data) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card>
-          <EmptyState
-            title="Thread not found"
-            message="It may have been removed, or the link is incorrect."
-            action={
-              <Button asChild variant="secondary">
-                <Link href="/thinkpages/forum">Back to the forum</Link>
-              </Button>
-            }
-          />
-        </Card>
-      </div>
+      <ForumLoadError
+        notFound={error?.data?.code === "NOT_FOUND"}
+        notFoundTitle="Thread not found"
+        notFoundMessage="It may have been removed, or the link is incorrect."
+        onRetry={() => void refetch()}
+      />
     );
   }
 
@@ -125,11 +113,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           />
         ))}
       </div>
-      <Pagination
-        basePath={`/thinkpages/t/${threadId}`}
-        page={page}
-        totalPages={pageCount(data.total, POSTS_PER_PAGE)}
-      />
+      <Pagination basePath={basePath} page={page} totalPages={totalPages} />
       {data.canReply ? (
         <section aria-label="Reply" className="space-y-2">
           <ForumComposer icAllowed={category.icAllowed} submitLabel="Reply" onSubmit={reply} />

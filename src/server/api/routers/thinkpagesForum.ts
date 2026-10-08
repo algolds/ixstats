@@ -31,6 +31,7 @@ import {
   type ForumActor,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
+import { MAX_PAGE } from "~/lib/thinkpages-forum/paging";
 
 function mapError(error: Error): never {
   if (error instanceof ForumError)
@@ -73,7 +74,7 @@ async function authorMaps(
 }
 
 const id = z.string().min(1).max(64);
-const page = z.number().int().min(1).max(1000).default(1);
+const page = z.number().int().min(1).max(MAX_PAGE).default(1);
 const categoryKey = z.string().regex(/^[a-z0-9-]{2,40}$/);
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();

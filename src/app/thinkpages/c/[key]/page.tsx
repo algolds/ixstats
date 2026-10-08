@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
-import { pageParam } from "~/lib/thinkpages-forum";
+import { pageParam } from "~/lib/thinkpages-forum/paging";
 
 interface ForumCategoryPageProps {
   params: Promise<{ key: string }>;
@@ -8,7 +8,7 @@ interface ForumCategoryPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages Forum | IxStates",
+  title: "ThinkPages Forum - IxStats",
 };
 
 export default async function ForumCategoryPage({ params, searchParams }: ForumCategoryPageProps) {

@@ -4,7 +4,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 interface QueryResult {
   data?: object | null;
   isLoading?: boolean;
-  error?: Error | null;
+  error?: { data?: { code: string } } | null;
+  refetch?: jest.Mock;
 }
 
 interface MockApi {
@@ -280,6 +281,64 @@ describe("thread view", () => {
       expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t1?page=3#post-p9")
     );
     expect(reply).toHaveBeenCalledWith({ threadId: "t1", html: "<p>new</p>", personaId: null });
+  });
+});
+
+describe("load failures and out-of-range pages", () => {
+  it("says Category not found only for NOT_FOUND", () => {
+    set("category", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
+    render(<ThreadList categoryKey="secret" page={1} />);
+    expect(screen.getByText("Category not found")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
+  it("offers Retry for any other category error", () => {
+    const refetch = jest.fn();
+    set("category", {
+      data: undefined,
+      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
+      refetch,
+    });
+    render(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.queryByText("Category not found")).toBeNull();
+    expect(screen.getByText("Could not load this page")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("says Thread not found only for NOT_FOUND, and Retry otherwise", () => {
+    set("thread", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
+    const { unmount } = render(<ThreadView threadId="gone" page={1} />);
+    expect(screen.getByText("Thread not found")).toBeInTheDocument();
+    unmount();
+
+    const refetch = jest.fn();
+    set("thread", { data: undefined, error: { data: { code: "TIMEOUT" } }, refetch });
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.queryByText("Thread not found")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a category page past the end to the last page", () => {
+    set("category", { data: { ...categoryData(false), total: 30 } });
+    render(<ThreadList categoryKey="general" page={5} />);
+    expect(router.replace).toHaveBeenCalledWith("/thinkpages/c/general?page=2");
+    expect(screen.queryByText("No threads yet")).toBeNull();
+  });
+
+  it("sends a thread page past the end to the last page", () => {
+    set("thread", { data: { ...threadData(), posts: [] } });
+    render(<ThreadView threadId="t1" page={4} />);
+    expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=1");
+    expect(screen.queryByTestId("composer")).toBeNull();
+  });
+
+  it("keeps an empty category on its page without redirecting", () => {
+    set("category", { data: categoryData(false) });
+    render(<ThreadList categoryKey="general" page={3} />);
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(screen.getByText("No threads yet")).toBeInTheDocument();
   });
 });
 

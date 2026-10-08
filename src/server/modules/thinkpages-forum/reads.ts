@@ -7,7 +7,7 @@ import type { PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
-import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum";
+import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 
 export { POSTS_PER_PAGE, THREADS_PER_PAGE };
 

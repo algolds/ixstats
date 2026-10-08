@@ -6,13 +6,13 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Skeleton } from "~/components/ui/skeleton";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { timeAgo } from "~/lib/format/compact";
-import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum";
+import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName, type ForumAuthors } from "./AuthorName";
-import { Pagination } from "./Pagination";
+import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
+import { Pagination, useLastPageRedirect } from "./Pagination";
 
 type Thread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
@@ -58,36 +58,25 @@ interface ThreadListProps {
 
 /** A category's threads, pinned first, with "New thread" for viewers who may start one. */
 export function ThreadList({ categoryKey, page }: ThreadListProps) {
-  const { data, isLoading, error } = api.thinkpagesForum.category.useQuery({
+  const { data, isLoading, error, refetch } = api.thinkpagesForum.category.useQuery({
     key: categoryKey,
     page,
   });
   const basePath = `/thinkpages/c/${categoryKey}`;
+  const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
+  const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   usePageTitle({ title: data?.category.name ?? "ThinkPages Forum" });
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Skeleton className="rounded-card h-64 w-full" />
-      </div>
-    );
-  }
+  if (isLoading || redirecting) return <ForumPageSkeleton />;
 
-  if (error || !data) {
+  if (!data) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card>
-          <EmptyState
-            title="Category not found"
-            message="It may be private, or the link is incorrect."
-            action={
-              <Button asChild variant="secondary">
-                <Link href="/thinkpages/forum">Back to the forum</Link>
-              </Button>
-            }
-          />
-        </Card>
-      </div>
+      <ForumLoadError
+        notFound={error?.data?.code === "NOT_FOUND"}
+        notFoundTitle="Category not found"
+        notFoundMessage="It may be private, or the link is incorrect."
+        onRetry={() => void refetch()}
+      />
     );
   }
 
@@ -120,11 +109,7 @@ export function ThreadList({ categoryKey, page }: ThreadListProps) {
           <EmptyState compact title="No threads yet" message="Be the first to post" />
         )}
       </Card>
-      <Pagination
-        basePath={basePath}
-        page={page}
-        totalPages={pageCount(data.total, THREADS_PER_PAGE)}
-      />
+      <Pagination basePath={basePath} page={page} totalPages={totalPages} />
     </div>
   );
 }

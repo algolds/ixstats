@@ -6,7 +6,7 @@ interface NewForumThreadPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "New thread | ThinkPages Forum",
+  title: "New thread - IxStats",
 };
 
 export default async function NewForumThreadPage({ params }: NewForumThreadPageProps) {

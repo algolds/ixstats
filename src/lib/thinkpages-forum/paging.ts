@@ -3,11 +3,13 @@
  */
 export const THREADS_PER_PAGE = 25;
 export const POSTS_PER_PAGE = 20;
+/** Highest page the router accepts. */
+export const MAX_PAGE = 1000;
 
-/** Reads `?page=` from a route's search params: a whole number from 1 to 1000 (the router's cap), else 1. */
+/** Reads `?page=` from a route's search params: a whole number from 1 to MAX_PAGE, else 1. */
 export function pageParam(value: string | string[] | undefined): number {
   const n = Number(Array.isArray(value) ? value[0] : value);
-  return Number.isInteger(n) && n >= 1 && n <= 1000 ? n : 1;
+  return Number.isInteger(n) && n >= 1 && n <= MAX_PAGE ? n : 1;
 }
 
 /** Number of pages for `total` rows, at least 1. */

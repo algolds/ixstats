@@ -1,6 +1,6 @@
 import { type Metadata } from "next";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
-import { pageParam } from "~/lib/thinkpages-forum";
+import { pageParam } from "~/lib/thinkpages-forum/paging";
 
 interface ForumThreadPageProps {
   params: Promise<{ threadId: string }>;
@@ -8,7 +8,7 @@ interface ForumThreadPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages Forum | IxStates",
+  title: "ThinkPages Forum - IxStats",
 };
 
 export default async function ForumThreadPage({ params, searchParams }: ForumThreadPageProps) {
