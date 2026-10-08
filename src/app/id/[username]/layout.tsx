@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { passportSegmentHandleOrRaw } from "~/lib/passport/passport-segment";
 import { passportPageMetadata } from "~/server/modules/identity/identity.metadata";
 
 interface PassportLayoutProps {
@@ -17,8 +18,7 @@ export async function generateMetadata({
   params,
 }: Pick<PassportLayoutProps, "params">): Promise<Metadata> {
   const { username } = await params;
-  const handle = decodeURIComponent(username).replace(/^@/, "");
-  return passportPageMetadata(handle);
+  return passportPageMetadata(passportSegmentHandleOrRaw(username));
 }
 
 export default function PassportLayout({ children }: PassportLayoutProps) {

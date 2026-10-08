@@ -1,18 +1,26 @@
 /**
  * The realm passport (`/r/{realm}/@{handle}`, served from `/r/[realm]/(region)/u/[username]`): one
- * holder's nations in one realm, titled with the realm's name from the region overview. The old
- * `/r/{realm}/{username}` path 301s to it, and its layout carries the passport's noindex rule.
+ * holder's nations in one realm, titled with the realm's name from the region overview, showing the
+ * payload's passport handle (never the URL segment). The old `/r/{realm}/{username}` path 308s to
+ * it, and its layout carries the passport's noindex rule.
  */
 import React, { Suspense } from "react";
 import { act, render, screen } from "@testing-library/react";
 import type { PassportPayload, RealmItem } from "~/components/passport/types";
 
 const permanentRedirect = jest.fn();
+class NotFound extends Error {}
 jest.mock("next/navigation", () => ({
   permanentRedirect: (url: string) => permanentRedirect(url),
+  notFound: () => {
+    throw new NotFound("not found");
+  },
   usePathname: () => "/r/eurth/u/alex",
 }));
-jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: () => undefined }));
+const pageTitle = jest.fn();
+jest.mock("~/hooks/usePageTitle", () => ({
+  usePageTitle: (options: { title: string }) => pageTitle(options.title),
+}));
 jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
 }));
@@ -91,6 +99,7 @@ async function renderPage(username = "alex") {
 }
 
 beforeEach(() => {
+  pageTitle.mockClear();
   queries.clear();
   queryInputs.clear();
   queries.set("ixnayid.getPassport", passport);
@@ -120,6 +129,33 @@ describe("realm passport page", () => {
     ).toBeTruthy();
   });
 
+  it("shows and links the payload's passport handle when the URL names a legacy name", async () => {
+    queries.set("ixnayid.getPassport", { ...passport, handle: "alex_h" });
+    queries.set("ixnayid.getRealms", []);
+    await renderPage("Alex%20Forum");
+    expect(queryInputs.get("ixnayid.getRealms")).toEqual({ handle: "Alex Forum", realm: "eurth" });
+    expect(screen.getByText("@alex_h · Realm passport in Eurth Concord")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Full passport/ }).getAttribute("href")).toBe(
+      "/@alex_h"
+    );
+    expect(pageTitle).toHaveBeenLastCalledWith("Alex Pav (@alex_h) · Eurth Concord");
+  });
+
+  it("leaves the realm separator out of the title until the realm's name has loaded", async () => {
+    queries.set("realms.region.overview", null);
+    queries.set("ixnayid.getRealms", []);
+    await renderPage();
+    expect(pageTitle).toHaveBeenLastCalledWith("Alex Pav (@alex)");
+    expect(screen.getByText("@alex")).toBeTruthy();
+  });
+
+  it("does not crash on a malformed segment", async () => {
+    queries.set("ixnayid.getPassport", null);
+    queries.set("ixnayid.getRealms", []);
+    await renderPage("%E0%A4%A");
+    expect(screen.getByText("Identity not found")).toBeTruthy();
+  });
+
   it("says so when the identity does not exist", async () => {
     queries.set("ixnayid.getPassport", null);
     queries.set("ixnayid.getRealms", []);
@@ -129,6 +165,12 @@ describe("realm passport page", () => {
 });
 
 describe("realm passport metadata", () => {
+  it("reads a malformed segment as it is instead of throwing", async () => {
+    passportIndexable.mockResolvedValueOnce(true);
+    await generateMetadata({ params: Promise.resolve({ realm: "eurth", username: "%E0%A4%A" }) });
+    expect(passportIndexable).toHaveBeenLastCalledWith("%E0%A4%A");
+  });
+
   it("is noindex when the holder turned search engine indexing off", async () => {
     passportIndexable.mockResolvedValueOnce(false);
     const metadata = await generateMetadata({
@@ -148,17 +190,29 @@ describe("realm passport metadata", () => {
 });
 
 describe("legacy realm passport path", () => {
-  it("301s /r/{realm}/{username} to /r/{realm}/@{username}", async () => {
-    await LegacyRealmPassportPage({
-      params: Promise.resolve({ realm: "eurth", username: "alex" }),
-    });
+  const legacy = (username: string) =>
+    LegacyRealmPassportPage({ params: Promise.resolve({ realm: "eurth", username }) });
+
+  beforeEach(() => permanentRedirect.mockClear());
+
+  it("308s /r/{realm}/{username} to /r/{realm}/@{username}", async () => {
+    await legacy("alex");
     expect(permanentRedirect).toHaveBeenLastCalledWith("/r/eurth/@alex");
   });
 
-  it("drops a leading @ and keeps names that need encoding encoded", async () => {
-    await LegacyRealmPassportPage({
-      params: Promise.resolve({ realm: "eurth", username: "%40Some%20Nation" }),
-    });
+  it("keeps names that need encoding encoded", async () => {
+    await legacy("Some%20Nation");
     expect(permanentRedirect).toHaveBeenLastCalledWith("/r/eurth/@Some%20Nation");
+  });
+
+  it("404s, never redirecting to itself, when the segment already starts with @", async () => {
+    await expect(legacy("%40alex")).rejects.toThrow("not found");
+    await expect(legacy("@alex")).rejects.toThrow("not found");
+    expect(permanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it("404s on a malformed segment", async () => {
+    await expect(legacy("%E0%A4%A")).rejects.toThrow("not found");
+    expect(permanentRedirect).not.toHaveBeenCalled();
   });
 });
