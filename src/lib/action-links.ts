@@ -16,6 +16,17 @@ export function parseActionTokens(body: string): string[] {
   return [...new Set(Array.from(body.matchAll(TOKEN), (m) => m[1]!))];
 }
 
+export type BodySegment = { kind: "html"; text: string } | { kind: "action"; id: string };
+
+/** `body` cut on its `[ixaction=<id>]` tokens, in order; empty html segments are dropped. */
+export function splitActionTokens(body: string): BodySegment[] {
+  return body
+    .split(TOKEN)
+    .flatMap((part, i): BodySegment[] =>
+      i % 2 === 1 ? [{ kind: "action", id: part }] : part ? [{ kind: "html", text: part }] : []
+    );
+}
+
 /** Where a linked post lives: native posts by the ThinkPages permalink, imported ones on the old forum. */
 export function postPermalinkPath(source: PostSource, postRef: string): string {
   return source === "native"

@@ -4,6 +4,7 @@ import {
   MAX_ACTIONS_PER_POST,
   parseActionTokens,
   postPermalinkPath,
+  splitActionTokens,
 } from "~/lib/action-links";
 
 describe("parseActionTokens", () => {
@@ -25,9 +26,10 @@ describe("parseActionTokens", () => {
   });
 
   it("caps at a known limit the caller can check", () => {
-    const body = Array.from({ length: MAX_ACTIONS_PER_POST + 1 }, (_, i) => `[ixaction=a${i}]`).join(
-      " "
-    );
+    const body = Array.from(
+      { length: MAX_ACTIONS_PER_POST + 1 },
+      (_, i) => `[ixaction=a${i}]`
+    ).join(" ");
     expect(parseActionTokens(body)).toHaveLength(MAX_ACTIONS_PER_POST + 1);
   });
 });
@@ -48,7 +50,12 @@ describe("chainWikiSection", () => {
       title: "The Northern Pact",
       approvedIxTime: Date.UTC(2041, 2, 5),
       entries: [
-        { title: "Signed treaty", type: "diplomatic", ixTime: Date.UTC(2041, 0, 2), url: "https://x/p/1" },
+        {
+          title: "Signed treaty",
+          type: "diplomatic",
+          ixTime: Date.UTC(2041, 0, 2),
+          url: "https://x/p/1",
+        },
       ],
     });
     expect(text).toContain("== Story chain: The Northern Pact ==");
@@ -76,5 +83,17 @@ describe("chainWikiSection", () => {
     expect(lines[0]).toBe("== Story chain: x == Fake == NOTOC bold #91; ==");
     expect([lines[0], lines[2]].join("\n")).not.toMatch(/__|~~~|''|&/);
     expect(lines[2]).toMatch(/^\* .*: \[https:\/\/x a \* b\] \(t == T ==\)$/);
+  });
+});
+
+describe("splitActionTokens", () => {
+  it("cuts a body on its tokens and drops empty html segments", () => {
+    expect(splitActionTokens("a[ixaction=x1][ixaction=y_2]b")).toEqual([
+      { kind: "html", text: "a" },
+      { kind: "action", id: "x1" },
+      { kind: "action", id: "y_2" },
+      { kind: "html", text: "b" },
+    ]);
+    expect(splitActionTokens("")).toEqual([]);
   });
 });
