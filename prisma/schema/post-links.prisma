@@ -1,0 +1,20 @@
+/// Action-linked posts (docs/superpowers/specs/2026-10-07-action-linked-posts-design.md): a post that embeds one of
+/// its country's ActivityFeed entries as `[ixaction=<id>]`. Rows are replaced on each post save; chain fields survive.
+model PostActionLink {
+  id          String       @id @default(cuid())
+  postSource  String // "native" | "xenforo"
+  postRef     String
+  activityId  String
+  activity    ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  countryId   String
+  storylineId String?
+  storyline   Storyline?   @relation(fields: [storylineId], references: [id], onDelete: SetNull)
+  chainOrder  Int?
+  createdAt   DateTime     @default(now())
+
+  @@unique([postSource, postRef, activityId])
+  @@index([activityId])
+  @@index([storylineId])
+  @@index([postSource, postRef])
+  @@map("post_action_links")
+}

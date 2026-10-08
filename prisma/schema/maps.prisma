@@ -207,12 +207,24 @@ model Storyline {
   description String?    @db.Text
   countryId   String
   color       String?    @db.VarChar(7) // hex color for map connection lines
+  /// "map" (pins joined by connection lines) or "chain" (action-linked posts, reviewed then written to the wiki).
+  kind          String           @default("map")
+  /// Chains only: open, submitted, approved, rejected (rejected returns to open with reviewNote).
+  status        String           @default("open")
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  reviewNote    String?
+  wikiPageTitle String?
+  /// Set when the approved chain's section is written; null on an approved chain means the cron retries it.
+  wikiSyncedAt  DateTime?
+  actionLinks   PostActionLink[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   country     Country    @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
   pins        StoryPin[] @relation("StorylinePins")
 
   @@index([countryId])
+  @@index([kind, status])
   @@map("storylines")
 }
 
