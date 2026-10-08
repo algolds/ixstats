@@ -21,7 +21,7 @@ Let an admin unlock editing in WikiOS from `/admin/wikios-settings`, without the
 
 | Question | Decision |
 | --- | --- |
-| What the toggle turns on | Editing plus mirror. Background renders on too. Inbound sync, lore cards, lorewards and search keep today's MediaWiki-first behaviour. |
+| What the toggle turns on | Editing plus mirror. Inbound sync, lore cards, lorewards, search and background renders keep today's behaviour. |
 | Who can edit when on | Everyone with wiki rights. The normal rules apply: blocks, protection, namespaces, user rights. |
 | Env var | `WIKIOS_V1_ENABLED` stays the full cutover and overrides the toggle. Env on means everything on, and the toggle is shown as forced on. |
 | Guardrails | The mirror keeps draining after the toggle goes off. The toggle refuses to switch on unless the mirror is configured. Every flip writes an audit log row and sends a Discord DM. The UI asks for confirmation. |
@@ -32,6 +32,7 @@ Let an admin unlock editing in WikiOS from `/admin/wikios-settings`, without the
 ### Setting and switch
 
 - `SystemConfig` row `wikios_editing_enabled`, value `"true"` or `"false"`. A missing row means off.
+- `isWikiosEditingEnabled()` also starts a background refresh when its cache is stale, so read paths, such as the Edit / View source decision, pick up a flip without an explicit await.
 - New `src/lib/wiki-os/editing-switch.ts`:
   - `isWikiosEditingEnabled(): boolean`, synchronous. It returns `isWikiosV1Enabled() || cachedFlag`. Before the first load, `cachedFlag` is `false`.
   - `refreshWikiosEditingFlag(): Promise<boolean>` reads the row, at most once per 15 s per process. Concurrent callers share one in-flight read. A read error keeps the last known value and logs a warning.
@@ -41,8 +42,7 @@ Let an admin unlock editing in WikiOS from `/admin/wikios-settings`, without the
   - `/w/api.php`;
   - `/api/wiki/upload`;
   - `/api/wiki/import`;
-  - the mirror cron;
-  - the render cron.
+  - the mirror cron.
   A flip therefore reaches every process within about 15 s: the app, the cron runner and standalone WikiOS.
 
 ### Which parts follow which switch
@@ -51,7 +51,7 @@ Let an admin unlock editing in WikiOS from `/admin/wikios-settings`, without the
 | --- | --- |
 | `permissions.ts` `decideAction`, `decideFilePageCreation` | editing |
 | `app/w/api.php/route.ts`, `api/wiki/upload`, `api/wiki/import` | editing |
-| `services/render-service.ts` (stale renders) | editing |
+| `services/render-service.ts` (stale renders) | full v1 only (unchanged): without the cutover there is no private render engine, so the background queue would send every stale page to public MediaWiki. Edited pages still render when a reader opens them. |
 | `services/mirror-worker.ts` | editing, or outbox not empty (drain) |
 | `services/inbound-revision-sync.ts` | full v1 only (unchanged) |
 | `cards/lore-card-generator.ts`, `lorewards/sync.ts` | full v1 only (unchanged) |
@@ -124,7 +124,6 @@ In `WikiOSSettingsPanel`, add an "Editing" section above the Mirror Outbox secti
   - runs when editing is on;
   - drains when off with pending jobs;
   - skips when off and the outbox is empty.
-- Render cron runs when editing is on.
 - Router:
   - non-admin is refused;
   - switching on with the mirror unconfigured gives PRECONDITION_FAILED;
