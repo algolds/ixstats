@@ -101,6 +101,16 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
   };
 }
 
+/** The settings the mirror needs before WikiOS may take edits; empty when it can write to MediaWiki. */
+export function mirrorMissingSettings(): string[] {
+  const missing: string[] = [];
+  // Read from the environment, not wikiosConfig (frozen at module load), so the answer follows the current process.
+  if (!process.env.WIKIOS_MEDIAWIKI_BOT_USER?.trim()) missing.push("WIKIOS_MEDIAWIKI_BOT_USER");
+  if (!process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN) missing.push("WIKIOS_MEDIAWIKI_BOT_TOKEN");
+  if (!process.env.WIKIOS_MEDIAWIKI_API) missing.push("WIKIOS_MEDIAWIKI_API");
+  return missing;
+}
+
 const noDeadJob = () => new PageOperationError("NOT_FOUND", "No dead mirror job with that id.");
 
 /** Try a dead job again from its first attempt; it blocks nothing once it succeeds. */

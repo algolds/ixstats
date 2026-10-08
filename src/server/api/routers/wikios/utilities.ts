@@ -17,6 +17,7 @@ import {
   getMirrorStatus,
   requeueMirrorJob,
 } from "~/lib/wiki-os/services/mirror-admin";
+import { getEditingStatus, setEditing } from "~/lib/wiki-os/services/editing-admin";
 import { refusals } from "~/lib/wiki-os/permissions";
 
 const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
@@ -143,6 +144,22 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
     await refusals(discardMirrorJob(input.id));
     return { success: true as const };
   }),
+
+  /** The admin WikiOS editing switch: on/off, forced by WIKIOS_V1_ENABLED, and whether the mirror can write. */
+  getEditingStatus: adminProcedure.query(() => getEditingStatus()),
+
+  /** Turn WikiOS editing on or off; queued mirror jobs keep draining after off. Audited and DMed to the admin. */
+  setEditing: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(({ ctx, input }) =>
+    setEditing(
+      ctx.db,
+      {
+        id: ctx.user.id,
+        clerkUserId: ctx.user.clerkUserId,
+        name: ctx.user.wikiUsername ?? ctx.user.discordUsername ?? ctx.user.clerkUserId,
+      },
+      input.enabled
+    )
+  ),
 
   /**
    * Diagnostic: Orphan Articles (0 incoming links)
