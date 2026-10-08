@@ -1,4 +1,4 @@
-export { canSeeCategory, canStartThread, type ForumViewer } from "./access";
+export { canPostIn, canSeeCategory, canStartThread, type ForumViewer } from "./access";
 export { ForumError, type ForumErrorCode } from "./errors";
 export {
   authorsOf,

@@ -102,7 +102,7 @@ const postBy = (authorUserId: string, extra: object = {}) => ({
   id: "p1",
   authorUserId,
   hidden: false,
-  thread: { hidden: false, category: { visibility: "public" } },
+  thread: { hidden: false, locked: false, archived: false, category: { visibility: "public" } },
   ...extra,
 });
 
@@ -153,12 +153,21 @@ describe("createThread", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
-  it("refuses a raw body over 50 000 characters", async () => {
+  it("accepts a raw body of exactly 50 000 characters and refuses 50 001", async () => {
+    const bodyOf = (length: number) => `<p>${"a".repeat(length - "<p></p>".length)}</p>`;
+    expect(bodyOf(50_000)).toHaveLength(50_000);
     const { db } = writeDb();
-    const html = `<p>${"a".repeat(50_000)}</p>`;
-    await expect(createThread(db as never, user, { ...NEW_THREAD, html })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
+    await expect(
+      createThread(db as never, user, { ...NEW_THREAD, html: bodyOf(50_000) })
+    ).resolves.toEqual({
+      threadId: "t_new",
+      postId: "p_new",
     });
+    const refused = writeDb();
+    await expect(
+      createThread(refused.db as never, user, { ...NEW_THREAD, html: bodyOf(50_001) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(refused.db.$transaction).not.toHaveBeenCalled();
   });
 
   it("strips scripts and event handlers before storing", async () => {
@@ -318,6 +327,45 @@ describe("replyToThread", () => {
     }
   });
 
+  it("refuses a non-admin reply in a staff-only category", async () => {
+    const { db } = writeDb({ thread: threadIn("announcements") });
+    await expect(
+      replyToThread(db as never, user, { threadId: "t1", html: "<p>Hi</p>" })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("lets a site admin reply in a staff-only category", async () => {
+    const { db, tx } = writeDb({ thread: threadIn("announcements") });
+    await expect(
+      replyToThread(db as never, admin, { threadId: "t1", html: "<p>Noted</p>" })
+    ).resolves.toEqual({
+      postId: "p_new",
+    });
+    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({ authorUserId: "u_a" });
+  });
+
+  it("replies as the actor's own persona in an in-character thread", async () => {
+    const { db, tx } = writeDb({ thread: threadIn("side-games"), persona: { id: "pa1" } });
+    await expect(
+      replyToThread(db as never, user, {
+        threadId: "t1",
+        html: "<p>In character</p>",
+        personaId: "pa1",
+      })
+    ).resolves.toEqual({ postId: "p_new" });
+    expect(db.thinkpagesAccount.findFirst).toHaveBeenCalledWith({
+      where: { id: "pa1", clerkUserId: "plain", isActive: true },
+      select: { id: true },
+    });
+    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
+      authorUserId: "u_p",
+      authorPersonaId: "pa1",
+    });
+  });
+
   it("forbids a persona in an out-of-character thread", async () => {
     const { db } = writeDb({ thread: threadIn("general"), persona: { id: "pa1" } });
     await expect(
@@ -383,6 +431,27 @@ describe("editPost", () => {
       });
     }
   });
+
+  it.each([{ locked: true }, { archived: true }])(
+    "refuses an edit in a %p thread",
+    async (flag) => {
+      const thread = {
+        hidden: false,
+        locked: false,
+        archived: false,
+        category: { visibility: "public" },
+        ...flag,
+      };
+      const { db } = writeDb({ post: postBy("u_p", { thread }) });
+      await expect(
+        editPost(db as never, user, { postId: "p1", html: "<p>Changed</p>" })
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "This thread is closed to edits.",
+      });
+      expect(db.forumPost.update).not.toHaveBeenCalled();
+    }
+  );
 
   it("refuses to edit a post in a submitted or approved story chain", async () => {
     const { db } = writeDb({ post: postBy("u_p"), chainedLinks: 1 });

@@ -11,7 +11,13 @@ export function canSeeCategory(viewer: ForumViewer, category: { visibility: stri
   return viewer !== null && isSiteAdmin(viewer);
 }
 
-export function canStartThread(viewer: ForumViewer, category: { visibility: string; postRole: string }): boolean {
+/** Who may post (start a thread or reply) in a category: `postRole: "staff"` categories take site admins only. */
+export function canPostIn(viewer: ForumViewer, category: { visibility: string; postRole: string }): boolean {
   if (viewer === null || !canSeeCategory(viewer, category)) return false;
   return category.postRole !== "staff" || isSiteAdmin(viewer);
+}
+
+/** Starting a thread follows the posting rule in phase 1. */
+export function canStartThread(viewer: ForumViewer, category: { visibility: string; postRole: string }): boolean {
+  return canPostIn(viewer, category);
 }

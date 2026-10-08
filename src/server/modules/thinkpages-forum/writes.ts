@@ -12,7 +12,7 @@ import {
   validatePostActionTokens,
 } from "~/server/modules/action-links";
 import type { RealmActor } from "~/server/modules/realms";
-import { canSeeCategory, canStartThread } from "./access";
+import { canPostIn, canSeeCategory, canStartThread } from "./access";
 import { ForumError } from "./errors";
 
 export const MAX_POST_HTML = 50_000;
@@ -157,6 +157,8 @@ export async function replyToThread(
   if (!thread || thread.hidden || !canSeeCategory(actor, thread.category)) {
     throw new ForumError("NOT_FOUND", "Thread not found.");
   }
+  if (!canPostIn(actor, thread.category))
+    throw new ForumError("FORBIDDEN", "Only the team can post in this category.");
   if (thread.locked || thread.archived)
     throw new ForumError("CONFLICT", "This thread is closed to replies.");
   const author = {
@@ -191,7 +193,14 @@ export async function editPost(
       id: true,
       authorUserId: true,
       hidden: true,
-      thread: { select: { hidden: true, category: { select: { visibility: true } } } },
+      thread: {
+        select: {
+          hidden: true,
+          locked: true,
+          archived: true,
+          category: { select: { visibility: true } },
+        },
+      },
     },
   });
   if (!post || post.hidden || post.thread.hidden || !canSeeCategory(actor, post.thread.category)) {
@@ -199,6 +208,8 @@ export async function editPost(
   }
   if (post.authorUserId !== actor.id)
     throw new ForumError("FORBIDDEN", "Only the author can edit this post.");
+  if (post.thread.locked || post.thread.archived)
+    throw new ForumError("CONFLICT", "This thread is closed to edits.");
   const body = prepareBody(input.html);
   const chained = await db.postActionLink.count({
     where: {
