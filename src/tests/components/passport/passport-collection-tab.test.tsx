@@ -105,6 +105,32 @@ describe("PassportCollectionTab", () => {
     expect(screen.getByTestId("passport-ribbon-shelf").children).toHaveLength(2);
   });
 
+  it("states each count once: no card count beside the deck value, none on the ribbon rack", () => {
+    renderTab({ vault: { ...vault, totalCards: 37 } });
+    expect(screen.getByText("Market value in IxCredits")).toBeInTheDocument();
+    expect(document.body.textContent?.match(/37/g) ?? []).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Ribbon rack" })).toBeInTheDocument();
+    // unlockedCount equals the ribbon count (2); it appears only in the unlocked line.
+    expect(screen.getAllByText(/\b2\b/)).toHaveLength(1);
+    expect(screen.getByText(/2 \/ 76 unlocked/)).toBeInTheDocument();
+  });
+
+  it("titles its sections as h2, matching the Realms tab", () => {
+    renderTab();
+    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
+      "Top cards",
+      "Achievements",
+    ]);
+  });
+
+  it("keeps a hidden collection under its Top cards title", () => {
+    renderTab({ vault: null });
+    const topCards = screen
+      .getByRole("heading", { level: 2, name: "Top cards" })
+      .closest("section")!;
+    expect(topCards).toHaveTextContent("@alex keeps their collection private.");
+  });
+
   it("names the shelf after pinned ribbons when the holder pinned some", () => {
     renderTab({
       achievements: { ...achievements, ribbons: [ribbon("a", "Rare", true), ribbon("b", "Rare")] },

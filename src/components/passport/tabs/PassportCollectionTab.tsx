@@ -40,12 +40,12 @@ function focusLabel(category: string): string {
 
 function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <h3 className="text-headline border-separator flex items-center gap-2 border-b pb-2">
+    <h2 className="text-headline border-separator flex items-center gap-2 border-b pb-2">
       <span aria-hidden className="text-tint inline-flex shrink-0 [&_svg]:size-4">
         {icon}
       </span>
       {children}
-    </h3>
+    </h2>
   );
 }
 
@@ -74,7 +74,7 @@ function PrivateNote({
 
 /** Collector level, deck value, IxCredits balance and Focus. */
 function CollectorStats({ vault }: { vault: PassportVault }) {
-  const { totalCards, deckValue, collectorLevel: level, collectorXp: xp, xpPerLevel } = vault;
+  const { deckValue, collectorLevel: level, collectorXp: xp, xpPerLevel } = vault;
   const nextLevelXp = level * xpPerLevel;
   const xpPct = Math.min(100, Math.round((xp / nextLevelXp) * 100));
   const focus = vault.focus;
@@ -93,7 +93,7 @@ function CollectorStats({ vault }: { vault: PassportVault }) {
         size="sm"
         label="Deck value"
         value={deckValue.toLocaleString()}
-        hint={`${totalCards.toLocaleString()} ${totalCards === 1 ? "card" : "cards"} at market value`}
+        hint="Market value in IxCredits"
       />
       <Stat
         size="sm"
@@ -170,10 +170,10 @@ function Achievements({
         </p>
 
         <div className="space-y-3">
-          <h4 className="text-footnote text-label-secondary flex items-center gap-1 font-medium">
+          <h3 className="text-footnote text-label-secondary flex items-center gap-1 font-medium">
             {shelf.pinned && <Pin aria-hidden className="size-3.5" />}
             {shelf.pinned ? "Signature ribbons" : "Top ribbons"}
-          </h4>
+          </h3>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {shelf.ribbons.map((ribbon) => (
               <li key={ribbon.key} className="flex min-w-0 items-center gap-3">
@@ -190,9 +190,7 @@ function Achievements({
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-footnote text-label-secondary font-medium">
-            Ribbon rack · <span className="tabular-nums">{achievements.ribbons.length}</span>
-          </h4>
+          <h3 className="text-footnote text-label-secondary font-medium">Ribbon rack</h3>
           <div className="flex flex-wrap gap-2" data-testid="passport-ribbon-shelf">
             {achievements.ribbons.map((ribbon) => (
               <RibbonBar key={ribbon.key} ribbon={ribbon} />
@@ -225,17 +223,16 @@ export const PassportCollectionTab = React.memo(function PassportCollectionTab({
 }: PassportCollectionTabProps) {
   return (
     <div className="space-y-8">
-      {vault ? (
-        <>
-          <CollectorStats vault={vault} />
-          <section className="space-y-4">
-            <SectionTitle icon={<ViewGrid />}>Top cards</SectionTitle>
-            <TopCards vault={vault} handle={handle} />
-          </section>
-        </>
-      ) : (
-        <PrivateNote what="collection" handle={handle} isOwner={isOwner} />
-      )}
+      {vault && <CollectorStats vault={vault} />}
+
+      <section className="space-y-4">
+        <SectionTitle icon={<ViewGrid />}>Top cards</SectionTitle>
+        {vault ? (
+          <TopCards vault={vault} handle={handle} />
+        ) : (
+          <PrivateNote what="collection" handle={handle} isOwner={isOwner} />
+        )}
+      </section>
 
       <section className="space-y-4">
         <SectionTitle icon={<Trophy />}>Achievements</SectionTitle>
