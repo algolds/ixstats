@@ -33,11 +33,7 @@ import {
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
 import { needsCanonicalRedirect } from "./identity.handle";
-import {
-  resolveIdentity,
-  resolveIdentityNations,
-  resolveUserIdentity,
-} from "./identity.resolve";
+import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
@@ -83,7 +79,10 @@ async function membershipsOf(
 ): Promise<RealmMembership[]> {
   const { user } = identity;
   if (!user) return [];
-  const roles = await loadRealmRoles(user.clerkUserId, nations.map((n) => n.realmId));
+  const roles = await loadRealmRoles(
+    user.clerkUserId,
+    nations.map((n) => n.realmId)
+  );
   const primary = primaryNationOf(nations, user.countryId);
   return toRealmMemberships(nations, primary?.id ?? null, roles);
 }
@@ -284,8 +283,13 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const identity = await resolveIdentity(query.handle, query.viewerClerkId, forum);
   if (!identity) return null;
   const { user, wikiName, forumUserId } = identity;
-  const settings = await loadPassportSettings(user?.id);
+  const [settings, { hideDiscord, hideWiki }] = await Promise.all([
+    loadPassportSettings(user?.id),
+    loadLinkPrivacy(identity),
+  ]);
   const shown = settings.visibility;
+  // Lorewards are wiki attribution: a visitor sees none when the holder turned it off (as on the card).
+  const showLore = shown.accolades && !hideWiki;
 
   const [
     wikiInfo,
@@ -301,8 +305,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   ] = await Promise.all([
     loadWikiInfo(wikiName),
     loadVerifiedWikiName(user?.id),
-    shown.accolades ? loadLoreStats(wikiName) : null,
-    shown.accolades ? loadLoreAwards(wikiName) : [],
+    showLore ? loadLoreStats(wikiName) : null,
+    showLore ? loadLoreAwards(wikiName) : [],
     forumUserId ? forum.getMember(forumUserId).catch(() => null) : null,
     loadThinkpagesAccount(user),
     loadClerkProfile(identity),
@@ -312,10 +316,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
       ? loadAchievementsShowcase(user.clerkUserId, settings.pinnedRibbonKeys)
       : null,
   ]);
-  const loreRank = loreStats ? await loadLoreRank(loreStats.totalScore) : null;
-
-  const [{ hideDiscord, hideWiki }, online] = await Promise.all([
-    loadLinkPrivacy(identity),
+  const [loreRank, online] = await Promise.all([
+    loreStats ? loadLoreRank(loreStats.totalScore) : null,
     passportOnline(identity),
   ]);
 

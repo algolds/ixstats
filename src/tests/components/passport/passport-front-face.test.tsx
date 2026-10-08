@@ -140,6 +140,14 @@ describe("PassportFrontFace", () => {
     expect(container.textContent).not.toMatch(/recent/i);
   });
 
+  it("draws stat dividers only in the single-row grid that cannot wrap", () => {
+    renderFace();
+    const row = screen.getByText("Since Oct 2025").parentElement;
+    const classes = row?.className.split(/\s+/) ?? [];
+    expect(classes.filter((c) => c.includes("divide-x"))).toEqual(["lg:divide-x"]);
+    expect(classes).toEqual(expect.arrayContaining(["lg:grid", "lg:grid-flow-col"]));
+  });
+
   it("shows the join month", () => {
     renderFace();
     expect(screen.getByText("Since Oct 2025")).toBeInTheDocument();

@@ -54,6 +54,8 @@ import {
 } from "~/server/modules/identity/identity.resolve";
 import {
   loadAuthoredArticleRows,
+  loadLoreAwards,
+  loadLoreStats,
   loadNativeRevisions,
   loadWikiContribs,
 } from "~/server/modules/identity/identity.loaders";
@@ -159,6 +161,43 @@ describe("linked names on the passport", () => {
     withConfig({ showWikiAttribution: false });
     const page = await getHistory({ ...asViewer("clerk_1"), limit: 50 });
     expect(page.items.some((item) => item.system === "wikios")).toBe(true);
+  });
+});
+
+describe("Lorewards and wiki attribution", () => {
+  const STATS = {
+    totalScore: 1200,
+    totalBytes: 0,
+    dailyWins: 1,
+    dailyRunnerUps: 0,
+    weeklyWins: 0,
+    monthlyWins: 0,
+    currentStreak: 0,
+    longestStreak: 2,
+  };
+
+  beforeEach(() => {
+    (loadLoreStats as jest.Mock).mockResolvedValue(STATS);
+  });
+
+  it("are hidden from visitors, and not loaded, when wiki attribution is off", async () => {
+    withConfig({ showWikiAttribution: false });
+    const passport = await getPassport(asViewer("visitor"), forum);
+    expect(passport?.wiki.lorewards).toBeNull();
+    expect(passport?.wiki.awardHistory).toEqual([]);
+    expect(loadLoreStats).not.toHaveBeenCalled();
+    expect(loadLoreAwards).not.toHaveBeenCalled();
+  });
+
+  it("are still shown to the owner when wiki attribution is off", async () => {
+    withConfig({ showWikiAttribution: false });
+    const passport = await getPassport(asViewer("clerk_1"), forum);
+    expect(passport?.wiki.lorewards).toMatchObject({ totalScore: 1200 });
+  });
+
+  it("are shown to visitors when wiki attribution is on", async () => {
+    const passport = await getPassport(asViewer("visitor"), forum);
+    expect(passport?.wiki.lorewards).toMatchObject({ totalScore: 1200 });
   });
 });
 

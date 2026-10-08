@@ -51,7 +51,9 @@ export const PassportStatRow = React.memo(function PassportStatRow({
   if (!lorewards && !holdings && !since) return null;
 
   return (
-    <div className="border-separator divide-separator flex flex-wrap items-center gap-x-5 border-y sm:gap-x-0 sm:divide-x">
+    // Below lg the cells wrap with plain gaps; from lg the stat column always fits all three, and a
+    // single-row grid (which cannot wrap) carries the dividers, so no line starts with a border.
+    <div className="border-separator divide-separator flex flex-wrap items-center gap-x-5 border-y lg:grid lg:auto-cols-max lg:grid-flow-col lg:justify-start lg:gap-x-0 lg:divide-x">
       {lorewards && (
         <button
           type="button"
@@ -59,7 +61,7 @@ export const PassportStatRow = React.memo(function PassportStatRow({
           aria-haspopup="dialog"
           className={cn(
             CELL,
-            "rounded-control hover:bg-fill-3 focus-visible:outline-tint -ml-2 px-2 transition-colors focus-visible:outline-2 sm:mr-3"
+            "rounded-control hover:bg-fill-3 focus-visible:outline-tint -ml-2 px-2 transition-colors focus-visible:outline-2 lg:mr-3"
           )}
         >
           {lorewards.rank !== null && (
@@ -71,9 +73,9 @@ export const PassportStatRow = React.memo(function PassportStatRow({
           </span>
         </button>
       )}
-      {holdings && <span className={cn(CELL, "text-label sm:px-5 sm:first:pl-0")}>{holdings}</span>}
+      {holdings && <span className={cn(CELL, "text-label lg:px-5 lg:first:pl-0")}>{holdings}</span>}
       {since && (
-        <span className={cn(CELL, "text-label-secondary sm:px-5 sm:first:pl-0")}>{since}</span>
+        <span className={cn(CELL, "text-label-secondary lg:px-5 lg:first:pl-0")}>{since}</span>
       )}
     </div>
   );
