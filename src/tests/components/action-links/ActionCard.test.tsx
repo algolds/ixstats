@@ -1,48 +1,37 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
-const cards = jest.fn();
 const mine = jest.fn();
 jest.mock("~/trpc/react", () => ({
   api: {
     actionLinks: {
-      activityCards: { useQuery: (...args: unknown[]) => cards(...args) },
       myActivities: { useQuery: (...args: unknown[]) => mine(...args) },
     },
   },
 }));
 
-import { ActionCard, ActionPicker } from "~/components/action-links";
+import { ActionCardView, ActionPicker } from "~/components/action-links";
 
-describe("ActionCard", () => {
+describe("ActionCardView", () => {
   it("shows the action with a verified mark", () => {
-    cards.mockReturnValue({
-      data: [
-        {
+    render(
+      <ActionCardView
+        card={{
           id: "a1",
           title: "Signed the Northern Pact",
           type: "diplomatic",
           createdAt: new Date(0),
           country: { name: "Aurelia", slug: "aurelia", flag: null },
-        },
-      ],
-      isLoading: false,
-    });
-    render(<ActionCard activityId="a1" />);
+        }}
+      />
+    );
     expect(screen.getByText("Signed the Northern Pact")).toBeInTheDocument();
     expect(screen.getByText("Aurelia")).toBeInTheDocument();
     expect(screen.getByLabelText("Verified action")).toBeInTheDocument();
   });
 
   it("says unverified when the action is missing or private", () => {
-    cards.mockReturnValue({ data: [], isLoading: false });
-    render(<ActionCard activityId="gone" />);
+    render(<ActionCardView card={null} />);
     expect(screen.getByText("Unverified action")).toBeInTheDocument();
-  });
-
-  it("renders nothing while loading", () => {
-    cards.mockReturnValue({ data: undefined, isLoading: true });
-    const { container } = render(<ActionCard activityId="a1" />);
-    expect(container).toBeEmptyDOMElement();
   });
 });
 

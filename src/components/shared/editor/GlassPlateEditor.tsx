@@ -4,7 +4,7 @@
 
 import React, { useCallback, useImperativeHandle, forwardRef } from "react";
 import { Plate, PlateContent } from "platejs/react";
-import { Editor, Transforms, Node as SlateNode } from "slate";
+import { Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { cn } from "~/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";
@@ -153,10 +153,9 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
           try {
             // Focus the DOM node synchronously: ReactEditor.focus defers while operations are
             // pending, and keystrokes in that gap would reach the previously focused field.
-            ReactEditor.toDOMNode(editor as any, editor as any).focus({ preventScroll: true });
-            if (!editor.selection) {
-              Transforms.select(editor as any, Editor.end(editor as any, []));
-            }
+            editor.api.toDOMNode(editor)?.focus({ preventScroll: true });
+            const end = editor.selection ? undefined : editor.api.end([]);
+            if (end) editor.tf.select(end);
           } catch {
             // ignore if not mounted
           }

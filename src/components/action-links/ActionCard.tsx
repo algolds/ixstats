@@ -4,11 +4,11 @@ import { memo } from "react";
 import { BadgeCheck } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { IxTime } from "~/lib/ixtime";
-import { api, type RouterOutputs } from "~/trpc/react";
+import type { RouterOutputs } from "~/trpc/react";
 
 export type ActionCardData = RouterOutputs["actionLinks"]["activityCards"][number];
 
-/** Presentational card; `null` means the action is missing or not public. */
+/** A post's embedded `[ixaction=<id>]` as a card; `null` means the action is missing or not public. */
 export const ActionCardView = memo(function ActionCardView({
   card,
 }: {
@@ -30,12 +30,4 @@ export const ActionCardView = memo(function ActionCardView({
       </div>
     </Card>
   );
-});
-
-/** A post's embedded `[ixaction=<id>]`: the linked ActivityFeed entry, verified at post time. */
-// Forum posts batch their ids through useThreadActionCards and render ActionCardView directly.
-export const ActionCard = memo(function ActionCard({ activityId }: { activityId: string }) {
-  const { data, isLoading } = api.actionLinks.activityCards.useQuery({ ids: [activityId] });
-  if (isLoading) return null;
-  return <ActionCardView card={data?.[0] ?? null} />;
 });
