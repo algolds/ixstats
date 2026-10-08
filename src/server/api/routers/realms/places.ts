@@ -4,9 +4,9 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   ensureRealmBoard,
   getRealmBoardAccess,
@@ -16,14 +16,6 @@ import {
 
 /** How far back "board activity" in the directory looks. */
 const BOARD_ACTIVITY_WINDOW_DAYS = 7;
-
-/**
- * Realms the directory lists: active public realms, plus IxWorld whatever its row says (AT-6). Unlisted realms are
- * reachable by link only and never listed; draft and generating realms are shown only to their staff, by link.
- */
-export const DIRECTORY_REALM_WHERE = {
-  OR: [{ id: DEFAULT_REALM_ID }, { visibility: "public", status: "active" }],
-};
 
 /** How many nations a nation search returns at most. */
 export const NATION_SEARCH_LIMIT = 20;

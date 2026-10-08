@@ -4,8 +4,9 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { PassportOverviewTab } from "~/components/passport/tabs/PassportOverviewTab";
+import { PassportRealmsTab } from "~/components/passport/tabs/PassportRealmsTab";
 import { PassportWorkTab } from "~/components/passport/tabs/PassportWorkTab";
-import type { PassportPayload, WorkPayload } from "~/components/passport/types";
+import type { PassportPayload, RealmItem, WorkPayload } from "~/components/passport/types";
 
 jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
@@ -32,12 +33,12 @@ const passport: PassportPayload = {
     historyStream: true,
     achievements: true,
   },
-  featuredRealm: {
+  primaryNation: {
     id: "default",
     name: "IxWorld",
     slug: "ixworld",
-    role: "Sovereign",
-    isFeatured: true,
+    role: "founder",
+    isPrimary: true,
     country: {
       id: "c1",
       name: "Caphiria",
@@ -54,6 +55,7 @@ const passport: PassportPayload = {
     },
   },
   realmCount: 1,
+  nationCount: 1,
   wiki: {
     linked: true,
     username: "Alex",
@@ -106,16 +108,42 @@ const work: WorkPayload = {
 };
 
 describe("PassportOverviewTab", () => {
-  it("shows the featured realm claim with a contextual realm passport link", () => {
+  it("shows the primary nation claim with a contextual realm passport link", () => {
     render(<PassportOverviewTab data={passport} cleanUsername="alex" />);
 
-    expect(screen.getByText("Sovereign of Caphiria")).toBeInTheDocument();
+    expect(screen.getByText("Founder of Caphiria")).toBeInTheDocument();
+    expect(screen.getByText("Primary nation")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /In IxWorld/ })).toHaveAttribute(
       "href",
       "/r/ixworld/alex"
     );
     expect(screen.getByText("@alexpav")).toBeInTheDocument();
     expect(screen.getByText("Lv 3")).toBeInTheDocument();
+  });
+});
+
+describe("PassportRealmsTab", () => {
+  it("names founders and officers, labels the primary nation, and leaves members unlabelled", () => {
+    const base = passport.primaryNation!;
+    const row = (id: string, role: RealmItem["role"], isPrimary: boolean): RealmItem => ({
+      ...base,
+      id,
+      role,
+      isPrimary,
+      country: { ...base.country, id: `c_${id}`, name: `Nation ${id}` },
+    });
+    render(
+      <PassportRealmsTab
+        realms={[row("a", "founder", true), row("b", "officer", false), row("c", "member", false)]}
+        cleanUsername="alex"
+      />
+    );
+
+    expect(screen.getByText("Founder")).toBeInTheDocument();
+    expect(screen.getByText("Officer")).toBeInTheDocument();
+    expect(screen.queryByText("Member")).not.toBeInTheDocument();
+    expect(screen.queryByText("Leader")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Primary nation")).toHaveLength(1);
   });
 });
 

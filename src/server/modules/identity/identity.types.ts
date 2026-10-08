@@ -35,12 +35,16 @@ export interface ResolvedIdentity {
   isOwner: boolean;
 }
 
+/** The holder's standing in a realm: its founder, an appointed officer, or a member. */
+export type RealmRole = "founder" | "officer" | "member";
+
 export interface RealmMembership {
   id: string;
   name: string;
   slug: string;
-  role: string;
-  isFeatured: boolean;
+  role: RealmRole;
+  /** The holder's primary nation (User.countryId when held, else the highest-GDP held nation). */
+  isPrimary: boolean;
   country: {
     id: string;
     name: string;

@@ -19,6 +19,7 @@ import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { PassportShowcase } from "../showcase/PassportShowcase";
 import type { PassportPayload } from "../types";
+import { REALM_ROLE_LABEL } from "../realm-role";
 import { Card } from "~/components/ui/card";
 
 interface PassportOverviewTabProps {
@@ -30,8 +31,8 @@ interface PassportOverviewTabProps {
 /** Section header. */
 const SECTION_LABEL = "text-subhead text-label-secondary";
 
-function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
-  const realm = data.featuredRealm;
+function PrimaryNation({ data, cleanUsername }: PassportOverviewTabProps) {
+  const realm = data.primaryNation;
   if (!realm) {
     return (
       <p className="text-label-secondary text-footnote">
@@ -40,6 +41,7 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
     );
   }
   const countryName = realm.country.name.replace(/_/g, " ");
+  const roleLabel = REALM_ROLE_LABEL[realm.role];
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
@@ -59,7 +61,7 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
         </div>
         <div className="min-w-0">
           <p className="text-label text-title-3 truncate">
-            {realm.role} of {countryName}
+            {roleLabel ? `${roleLabel} of ${countryName}` : countryName}
           </p>
           <p className="text-label-secondary text-footnote">
             {realm.name} · {data.realmCount} {data.realmCount === 1 ? "realm" : "realms"}
@@ -178,7 +180,7 @@ function civicStats(data: PassportPayload) {
 }
 
 /**
- * Identity overview: featured realm, the showcase, linked platforms and civic stature.
+ * Identity overview: primary nation, the showcase, linked platforms and civic stature.
  */
 export const PassportOverviewTab = React.memo(function PassportOverviewTab({
   data,
@@ -195,10 +197,10 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
       <section className="space-y-3">
         <h2 className={`flex items-center gap-2 ${SECTION_LABEL}`}>
           <Crown aria-hidden className="size-4" />
-          <span>Featured realm</span>
+          <span>Primary nation</span>
         </h2>
         <Card variant="well">
-          <FeaturedRealm data={data} cleanUsername={cleanUsername} />
+          <PrimaryNation data={data} cleanUsername={cleanUsername} />
         </Card>
       </section>
 

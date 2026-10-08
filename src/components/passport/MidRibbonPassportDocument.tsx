@@ -17,6 +17,7 @@ import { PassportTabRibbon, passportTabId, passportTabPanelId } from "./document
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
 import type { PassportPayload, PassportTabType } from "./types";
+import { REALM_ROLE_LABEL } from "./realm-role";
 import { Card } from "~/components/ui/card";
 import { CosmeticChatBadge } from "~/components/vault/CosmeticChatBadge";
 import { useUserCosmetics } from "~/hooks/usePublicCosmetics";
@@ -71,10 +72,11 @@ export function MidRibbonPassportDocument({
   const [isLorewardsModalOpen, setIsLorewardsModalOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
 
-  const featuredRealm = data.featuredRealm;
+  const primaryNation = data.primaryNation;
 
-  // Role from the database, admin or Clerk
-  const roleName = data.account.roleName || featuredRealm?.role || "Leader";
+  // Site role, else the primary nation's realm role (a plain member has none).
+  const roleName =
+    data.account.roleName || (primaryNation ? REALM_ROLE_LABEL[primaryNation.role] : null);
 
   const highResAvatarUrl = getHighResolutionAvatar(avatarUrl, 800);
   // The holder's equipped cosmetics, the same for every visitor (VT-12).
@@ -102,7 +104,7 @@ export function MidRibbonPassportDocument({
   const handleOpenVault = useCallback(() => onSelectTab("vault"), [onSelectTab]);
   const tabIdBase = `passport-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const realmName = featuredRealm?.name ?? "—";
+  const realmName = primaryNation?.name ?? "—";
   const passportNumber = `IX-${cleanUsername.toUpperCase().substring(0, 4)}-${data.account.userId ? data.account.userId.substring(0, 4).toUpperCase() : "882"}`;
   const entryDate = data.account.createdAt
     ? new Date(data.account.createdAt).toLocaleDateString("en-US", {

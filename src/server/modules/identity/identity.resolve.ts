@@ -7,6 +7,8 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { validateHandle } from "./identity.handle";
 import {
   IDENTITY_COUNTRY_SELECT,
@@ -202,24 +204,23 @@ export async function resolveCanonicalHandle(segment: string): Promise<{ handle:
   return user?.handle ? { handle: user.handle } : null;
 }
 
-/** Every country the identity leads or is linked to, largest economy first. */
+/**
+ * The nations the identity's user holds (`Country.ownerUserId`), in realms the directory lists,
+ * largest economy first. Leader names, the linked `User.countryId` and the resolved country confer
+ * nothing (see scripts/identity/audit-leader-ownership.ts for leader-name backfills).
+ */
 export async function resolveIdentityNations(
   identity: ResolvedIdentity
 ): Promise<IdentityCountry[]> {
-  const { user, country, handle } = identity;
-  if (!user) return country ? [country] : [];
-  const leaderNames = [user.forumUsername, user.wikiUsername, handle === "me" ? null : handle];
-  const nations = await db.country.findMany({
+  const { user } = identity;
+  if (!user) return [];
+  return db.country.findMany({
     where: {
-      OR: [
-        { ownerUserId: user.id },
-        ...(user.countryId ? [{ id: user.countryId }] : []),
-        ...(country ? [{ id: country.id }] : []),
-        ...leaderNames.flatMap((name) => (name ? [{ leader: insensitive(name) }] : [])),
-      ],
+      ownerUserId: user.id,
+      // IxWorld nations count even when IxWorld has no realm row (the relation filter needs one).
+      OR: [{ realmId: DEFAULT_REALM_ID }, { realm: DIRECTORY_REALM_WHERE }],
     },
     select: IDENTITY_COUNTRY_SELECT,
     orderBy: { currentTotalGdp: "desc" },
   });
-  return nations.length === 0 && country ? [country] : nations;
 }

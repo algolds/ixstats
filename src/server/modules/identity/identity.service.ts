@@ -25,9 +25,11 @@ import {
   buildHistoryEvents,
   filterByRealm,
   paginateEvents,
+  primaryNationOf,
   toAwardHistory,
   toRealmMemberships,
 } from "./identity.mappers";
+import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
 import { needsCanonicalRedirect } from "./identity.handle";
 import { resolveIdentity, resolveIdentityNations } from "./identity.resolve";
@@ -67,11 +69,16 @@ interface IdentityQuery {
   viewerClerkId: string | null;
 }
 
-function membershipsOf(identity: ResolvedIdentity, nations: IdentityCountry[]): RealmMembership[] {
-  const featuredIds = [identity.country?.id ?? nations[0]?.id, identity.user?.countryId].filter(
-    (id): id is string => Boolean(id)
-  );
-  return toRealmMemberships(nations, featuredIds, identity.user?.role?.displayName ?? "Leader");
+/** One row per held nation, with the realm role and the primary nation marked. */
+async function membershipsOf(
+  identity: ResolvedIdentity,
+  nations: IdentityCountry[]
+): Promise<RealmMembership[]> {
+  const { user } = identity;
+  if (!user) return [];
+  const roles = await loadRealmRoles(user.clerkUserId, nations.map((n) => n.realmId));
+  const primary = primaryNationOf(nations, user.countryId);
+  return toRealmMemberships(nations, primary?.id ?? null, roles);
 }
 
 /** The wiki activity feed; Lorewards laurels are left out when the owner hides their accolades. */
@@ -244,7 +251,7 @@ function passportThinkpages(account: Awaited<ReturnType<typeof loadThinkpagesAcc
 }
 
 /**
- * Tab 1 — identity essentials, featured realm, linked platforms, civic stature and the showcase
+ * Tab 1 — identity essentials, primary nation, linked platforms, civic stature and the showcase
  * (achievements, ribbons, collection highlight, Lorewards). Sections the owner hid in their passport
  * settings are stripped here, for every viewer, before the payload leaves the server.
  */
@@ -301,7 +308,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     shown
   );
 
-  const realms = membershipsOf(identity, nations);
+  const realms = await membershipsOf(identity, nations);
   return {
     /** The canonical handle (stored, else computed); share links use this, never the URL segment. */
     handle: canonicalHandleOf(identity, verifiedWikiName),
@@ -310,8 +317,11 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     account: passportAccount(identity, clerk, settings.signature),
     /** Which sections the owner shows; a false section is absent from this payload. */
     privacy: shown,
-    featuredRealm: realms.find((r) => r.isFeatured) ?? realms[0] ?? null,
-    realmCount: realms.length,
+    /** The primary nation's realm row (country, realm, realm role); null when no nation is held. */
+    primaryNation: realms.find((r) => r.isPrimary) ?? null,
+    /** Distinct realms the holder has a nation in. */
+    realmCount: new Set(realms.map((r) => r.id)).size,
+    nationCount: realms.length,
     /** Shown online (heartbeat in the last two minutes and `showOnlineStatus` on). */
     online,
     wiki: hideWiki
@@ -337,7 +347,7 @@ export async function getRealms(
 ): Promise<RealmMembership[]> {
   const identity = await resolveIdentity(query.handle, query.viewerClerkId);
   if (!identity) return [];
-  const memberships = membershipsOf(identity, await resolveIdentityNations(identity));
+  const memberships = await membershipsOf(identity, await resolveIdentityNations(identity));
   return query.realm ? filterByRealm(memberships, query.realm) : memberships;
 }
 

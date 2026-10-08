@@ -8,7 +8,6 @@ import {
   MapPin,
   Crown,
   Shield,
-  User,
   Group as Users,
   Dollar as DollarSign,
   Heart,
@@ -21,6 +20,7 @@ import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
 import type { RealmItem } from "../types";
+import { REALM_ROLE_LABEL } from "../realm-role";
 import { Card } from "~/components/ui/card";
 
 interface PassportRealmsTabProps {
@@ -46,43 +46,15 @@ function formatPassportAmount(num: number | null | undefined, prefix = ""): stri
   return `${prefix}${value >= 10 ? value.toFixed(1) : value.toFixed(2)} ${PASSPORT_SCALE_WORDS[suffix]}`;
 }
 
-/** Role badge: leaders and staff get a tinted chip with an icon; everyone else neutral. */
-function RealmRoleBadge({ role }: { role: string }) {
-  const normalizedRole = role.toUpperCase().replace(/\s+/g, "_");
-
-  if (
-    normalizedRole.includes("HEAD") ||
-    normalizedRole.includes("REGENT") ||
-    normalizedRole.includes("LEADER") ||
-    normalizedRole.includes("OWNER") ||
-    normalizedRole.includes("PRESIDENT") ||
-    normalizedRole.includes("PRIME_MINISTER")
-  ) {
-    return (
-      <Badge variant="warning">
-        <Crown aria-hidden />
-        <span>{role}</span>
-      </Badge>
-    );
-  }
-
-  if (
-    normalizedRole.includes("ADMIN") ||
-    normalizedRole.includes("FOUNDER") ||
-    normalizedRole.includes("MODERATOR")
-  ) {
-    return (
-      <Badge variant="secondary">
-        <Shield aria-hidden />
-        <span>{role}</span>
-      </Badge>
-    );
-  }
-
+/** Realm role badge: founders and officers are named; a plain member gets none. */
+function RealmRoleBadge({ role }: { role: RealmItem["role"] }) {
+  const label = REALM_ROLE_LABEL[role];
+  if (!label) return null;
+  const Icon = role === "founder" ? Crown : Shield;
   return (
-    <Badge variant="default">
-      <User aria-hidden />
-      <span>{role}</span>
+    <Badge variant={role === "founder" ? "warning" : "secondary"}>
+      <Icon aria-hidden />
+      <span>{label}</span>
     </Badge>
   );
 }
@@ -177,10 +149,10 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 
                       <RealmRoleBadge role={item.role} />
 
-                      {item.isFeatured && (
+                      {item.isPrimary && (
                         <Badge variant="secondary">
                           <Crown aria-hidden />
-                          Primary
+                          Primary nation
                         </Badge>
                       )}
                     </div>
