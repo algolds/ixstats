@@ -125,15 +125,13 @@ describe("resolveIdentityNations", () => {
     expect(nations.map((n) => n.id)).toEqual(["c_owned"]);
   });
 
-  it("does not treat the linked User.countryId or identity.country as held", async () => {
+  it("does not treat the linked User.countryId as held", async () => {
     countryTable([nation("c_linked", { ownerUserId: "someone_else" })]);
-    const country = { id: "c_linked" } as ResolvedIdentity["country"];
-    expect(await resolveIdentityNations(identityOf({ country }))).toEqual([]);
+    expect(await resolveIdentityNations(identityOf())).toEqual([]);
   });
 
   it("returns no nations for an identity without a user", async () => {
-    const country = { id: "c_linked" } as ResolvedIdentity["country"];
-    expect(await resolveIdentityNations(identityOf({ user: null, country }))).toEqual([]);
+    expect(await resolveIdentityNations(identityOf({ user: null }))).toEqual([]);
     expect(mocked.country.findMany).not.toHaveBeenCalled();
   });
 

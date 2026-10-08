@@ -77,8 +77,6 @@ function nation(id: string, name: string, realmId: string, gdp: number) {
     slug: name.toLowerCase(),
     flag: `/images/uploads/flags/${id}.png`,
     coatOfArms: null,
-    leader: null,
-    wikiPageTitle: null,
     continent: null,
     region: null,
     governmentType: null,

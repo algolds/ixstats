@@ -26,8 +26,6 @@ function country(overrides: Partial<IdentityCountry>): IdentityCountry {
     slug: "caphiria",
     flag: null,
     coatOfArms: null,
-    leader: null,
-    wikiPageTitle: null,
     continent: "Sarpedon",
     region: null,
     governmentType: null,

@@ -76,8 +76,6 @@ function nation(id: string, realmId: string, gdp: number): IdentityCountry {
     slug: id,
     flag: null,
     coatOfArms: null,
-    leader: null,
-    wikiPageTitle: null,
     continent: null,
     region: null,
     governmentType: null,

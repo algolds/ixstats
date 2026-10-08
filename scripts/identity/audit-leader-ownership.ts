@@ -49,7 +49,10 @@ async function loadVerifiedWikiNames(): Promise<Map<string, string>> {
   return names;
 }
 
-/** Mirrors `canonicalHandleOf` in identity.service.ts: stored handle, else verified wiki, forum, Clerk id. */
+/**
+ * The passport handle chain (`passportHandleOf`, identity.passport-handle.ts): stored handle, else
+ * verified wiki, forum, Clerk id. Unlike the module, it does not check the name resolves back.
+ */
 function computedHandle(user: UserRow, verifiedWikiName: string | undefined): string {
   return user.handle || verifiedWikiName || user.forumUsername || user.clerkUserId;
 }
