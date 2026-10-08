@@ -241,7 +241,26 @@ bun scripts/realms/backfill-foundation.ts                  # expect: owners: 0 t
 ```
 
 (One `ixwiki links … skip` line is normal when two accounts share a legacy wiki username: the first keeps it, the other
-verifies in Settings.) Then run the deploy script — its `db push` is now a no-op:
+verifies in Settings.)
+
+The backfill never makes a system owner a nation's owner, so a nation that both a system owner's sign-in account and an
+older duplicate account point at goes to the duplicate. That is the case for Caphiria: the owner signs in as
+`user_2zqm…` (`User.id cmdfcodpb00014kevb5x5b1es`, forum name `admin`), and the never-used `user_3078…`
+(`cmdayg3wf00024kl8ojchrnxq`) also points at it. Hand the nation to the sign-in account and store its passport handle,
+otherwise the passport at `/@Heku` shows `@admin` and no realms:
+
+```bash
+docker exec -i ixstats-postgres psql -v ON_ERROR_STOP=1 -U postgres -d ixstats <<'SQL'
+BEGIN;
+UPDATE "Country" SET "ownerUserId" = 'cmdfcodpb00014kevb5x5b1es'
+ WHERE id = 'cmgn9d82v00484kyx3mjv9b8q' AND "ownerUserId" IS DISTINCT FROM 'cmdfcodpb00014kevb5x5b1es';
+UPDATE "User" SET handle = 'heku' WHERE id = 'cmdfcodpb00014kevb5x5b1es' AND handle IS NULL;
+COMMIT;
+SQL
+# expect: UPDATE 1 twice (UPDATE 0 when already applied)
+```
+
+Then run the deploy script — its `db push` is now a no-op:
 
 ```bash
 ./scripts/deploy-production.sh
