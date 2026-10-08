@@ -8,6 +8,7 @@ import { chainWikiSection, postPermalinkPath, type PostSource } from "~/lib/acti
 import { IxTime } from "~/lib/ixtime";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { ArticleRepository } from "~/lib/wiki-os/core";
+import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
 
@@ -33,7 +34,8 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   });
   if (!chain?.wikiPageTitle) return false;
 
-  const section = chainWikiSection({
+  const marker = `<!-- story-chain:${chain.id} -->`;
+  const section = `${marker}\n${chainWikiSection({
     title: chain.title,
     approvedIxTime: IxTime.convertToIxTime((chain.reviewedAt ?? new Date()).getTime()),
     entries: chain.actionLinks.map((l) => ({
@@ -42,17 +44,26 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
       ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
       url: postUrl(l.postSource as PostSource, l.postRef),
     })),
-  });
+  })}`;
+  // Head first, then text: findBySlug swallows read errors as null, so a page that exists but cannot be read
+  // must abort rather than be overwritten by the section alone. The head ref also makes a concurrent edit conflict.
+  const head = await getHeadRevisionRefs(chain.wikiPageTitle);
   const existing = await ArticleRepository.findBySlug(chain.wikiPageTitle);
-  await commitWikitextSave(
-    { user: { country: { name: chain.country.name } } },
-    {
-      title: chain.wikiPageTitle,
-      wikitext: existing?.wikitext ? `${existing.wikitext}\n\n${section}` : section,
-      summary: `Story chain: ${chain.title}`,
-      minor: false,
-    }
-  );
+  if (head && !existing?.wikitext) {
+    throw new Error(`could not read the current text of ${chain.wikiPageTitle}`);
+  }
+  if (!existing?.wikitext?.includes(marker)) {
+    await commitWikitextSave(
+      { user: { country: { name: chain.country.name } } },
+      {
+        title: chain.wikiPageTitle,
+        wikitext: existing?.wikitext ? `${existing.wikitext}\n\n${section}` : section,
+        summary: `Story chain: ${chain.title}`,
+        minor: false,
+        expectedHeadRef: head?.revisionRef ?? null,
+      }
+    );
+  }
   await db.storyline.update({ where: { id: chain.id }, data: { wikiSyncedAt: new Date() } });
   return true;
 }
