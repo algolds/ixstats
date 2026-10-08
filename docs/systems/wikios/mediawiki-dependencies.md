@@ -168,7 +168,8 @@ sister wiki (`getPageImages` used to try iiwiki for any title).
 
 **One list of hosts.** The sister wikis are entries of `src/lib/wiki-os/wiki-hosts.ts` (`SISTER_WIKI_HOSTS`: id, name,
 https origin, api path, upload CDN hosts, whether WikiOS reads its pages, and the proxies' per-wiki behaviour). The api.php
-and media proxies (`_config.ts` `WIKIS`, `_media-response.ts`'s host allowlist), `WIKI_SOURCES` and `WikiSource`
+and media proxies (`_config.ts` `WIKIS`; the media host allowlist `isAllowedMediaUrl` in `src/lib/wiki-os/media-hosts.ts`, which
+`_media-response.ts`, `media-download.ts` and the link-card images share), `WIKI_SOURCES` and `WikiSource`
 (`config.ts`), account proof (`PROOF_SOURCES`) and realm wiki settings are built from it, so adding a MediaWiki host is one
 entry there and a host that is not an entry is never fetched. Callers name a wiki by its id, never by a URL. The file builds
 addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getMediaWikiApiUrl`.
