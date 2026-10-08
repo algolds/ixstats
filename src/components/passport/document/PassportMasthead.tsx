@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { Check, EditPencil, Send, ShareAndroid } from "iconoir-react";
+import { EditPencil, Send } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { getBasePath } from "~/lib/base-path";
+import { ShareSheet } from "~/components/share/ShareSheet";
 import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 
 interface PassportMastheadProps {
@@ -27,18 +27,6 @@ export const PassportMasthead = React.memo(function PassportMasthead({
   onEdit,
   editButtonRef,
 }: PassportMastheadProps) {
-  const [copiedLink, setCopiedLink] = useState(false);
-
-  const handleShareLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}${getBasePath()}/@${handle}`);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    } catch {
-      // Clipboard unavailable (permission denied or insecure context): nothing copied.
-    }
-  }, [handle]);
-
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -61,14 +49,12 @@ export const PassportMasthead = React.memo(function PassportMasthead({
             </Link>
           </Button>
         )}
-        <Button type="button" variant="secondary" size="sm" onClick={handleShareLink}>
-          {copiedLink ? (
-            <Check aria-hidden className="text-success" />
-          ) : (
-            <ShareAndroid aria-hidden />
-          )}
-          <span>{copiedLink ? "Copied" : "Share"}</span>
-        </Button>
+        <ShareSheet
+          path={`/@${handle}`}
+          title={`@${handle} on IxStates Passport`}
+          imagePath={`/id/${encodeURIComponent(handle)}/opengraph-image`}
+          downloadName={`ixstates-passport-${handle}.png`}
+        />
       </div>
     </div>
   );

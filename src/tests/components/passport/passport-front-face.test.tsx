@@ -229,6 +229,7 @@ describe("PassportFrontFace", () => {
     Object.assign(navigator, { clipboard: { writeText } });
     renderFace({ data: face({ handle: "canonical_handle" }) });
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Copy link" }));
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/@canonical_handle`)
     );
