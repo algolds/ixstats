@@ -64,6 +64,7 @@ import { geoWikiRouter } from "./routers/geo/wiki";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
 import { realmsRouter } from "./routers/realms";
+import { actionLinksRouter } from "./routers/actionLinks";
 import { wikiosRouter } from "./routers/wikios";
 import { wikiCacheRouter } from "./routers/wikiCache";
 import { lorewardsRouter } from "./routers/lorewards";
@@ -142,6 +143,7 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter,
   transport: transportRouter,
   realms: realmsRouter,
+  actionLinks: actionLinksRouter,
   wikios: wikiosRouter,
   wikiCache: wikiCacheRouter,
   lorewards: lorewardsRouter,
