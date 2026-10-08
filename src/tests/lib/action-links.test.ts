@@ -64,4 +64,17 @@ describe("chainWikiSection", () => {
     });
     expect(text).not.toMatch(/\]\]|\[\[|\{\{|\}\}/);
   });
+
+  it("keeps newline and inline-markup injection on the heading's single line", () => {
+    const text = chainWikiSection({
+      title: "x\n== Fake ==\n__NOTOC__ ~~~~ \'\'\'bold &#91; \'<\'",
+      approvedIxTime: 0,
+      entries: [{ title: "a\n* b", type: "t\n== T ==", ixTime: 0, url: "https://x" }],
+    });
+    const lines = text.split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toBe("== Story chain: x == Fake == NOTOC bold #91; ==");
+    expect([lines[0], lines[2]].join("\n")).not.toMatch(/__|~~~|''|&/);
+    expect(lines[2]).toMatch(/^\* .*: \[https:\/\/x a \* b\] \(t == T ==\)$/);
+  });
 });

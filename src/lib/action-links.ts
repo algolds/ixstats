@@ -30,9 +30,20 @@ export interface ChainWikiEntry {
   url: string;
 }
 
-/** Player text inside wikitext: no link, template or table syntax survives. */
+const WIKITEXT_MARKUP = /[[\]{}|<>&]|'{2,}|~{3,}|_{2,}/g;
+
+/**
+ * Player text inside wikitext, as a single plain line: no link, template, table, entity, bold or
+ * italic, signature or magic-word syntax survives, and no newline can start a new heading.
+ */
 function plain(text: string): string {
-  return text.replace(/[[\]{}|<>]/g, "").trim();
+  let out = text;
+  let prev: string;
+  do {
+    prev = out;
+    out = out.replace(WIKITEXT_MARKUP, "");
+  } while (out !== prev);
+  return out.replace(/\s+/g, " ").trim();
 }
 
 /** The section appended to the chain's wiki page on approval. */
