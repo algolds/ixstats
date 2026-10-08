@@ -4,7 +4,6 @@ import {
   MAX_ACTIONS_PER_POST,
   countActionTokens,
   countTextActionTokens,
-  liftActionTokens,
   parseActionTokens,
   postPermalinkPath,
   splitActionTokens,
@@ -154,7 +153,13 @@ describe("countTextActionTokens", () => {
   });
 });
 
-describe("liftActionTokens", () => {
+/** The split body re-joined, tokens in place: shows where splitActionTokens cuts paragraphs. */
+const liftActionTokens = (html: string): string =>
+  splitActionTokens(html)
+    .map((s) => (s.kind === "html" ? s.text : `[ixaction=${s.id}]`))
+    .join("");
+
+describe("splitActionTokens paragraph lifting", () => {
   it("lifts a mid-paragraph token between two paragraphs", () => {
     expect(liftActionTokens("<p>before [ixaction=a1] after</p>")).toBe(
       "<p>before </p>[ixaction=a1]<p> after</p>"

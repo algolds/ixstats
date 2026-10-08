@@ -145,13 +145,6 @@ export function splitActionTokens(body: string): BodySegment[] {
   return state.segments;
 }
 
-/** `html` with every text token lifted to the top level between balanced fragments (see splitActionTokens). */
-export function liftActionTokens(html: string): string {
-  return splitActionTokens(html)
-    .map((s) => (s.kind === "html" ? s.text : `[ixaction=${s.id}]`))
-    .join("");
-}
-
 /** Where a linked post lives: native posts by the ThinkPages permalink, imported ones on the old forum. */
 export function postPermalinkPath(source: PostSource, postRef: string): string {
   return source === "native"
