@@ -1,18 +1,10 @@
-import { fetchOgImage, loadOgSeal } from "~/lib/og/og-assets.server";
-import { passportOgModel } from "~/lib/og/og-models";
-import { ogImageResponse } from "~/lib/og/og-response.server";
-import { PassportOgCard } from "~/lib/og/PassportOgCard";
+import { passportSegmentHandle } from "~/lib/passport/passport-segment";
 import { orNullLogged, siteMetadataBase } from "~/lib/site-metadata";
 import { getPassportCard } from "~/server/modules/identity/identity.service";
-
-/** The handle in a `[username]` segment; null when its percent-encoding is malformed. */
-function handleOf(username: string): string | null {
-  try {
-    return decodeURIComponent(username).replace(/^@/, "");
-  } catch {
-    return null;
-  }
-}
+import { fetchOgImage, loadOgSeal } from "./og-assets.server";
+import { passportOgModel } from "./og-models";
+import { ogImageResponse } from "./og-response.server";
+import { PassportOgCard } from "./PassportOgCard";
 
 /**
  * The passport link card for a `[username]` segment, as an anonymous visitor would see the passport:
@@ -21,7 +13,7 @@ function handleOf(username: string): string | null {
  * Passport card.
  */
 export async function passportOgImage(username: string) {
-  const handle = handleOf(username);
+  const handle = passportSegmentHandle(username);
   const card = handle
     ? await orNullLogged(
         getPassportCard({ handle, viewerClerkId: null }),

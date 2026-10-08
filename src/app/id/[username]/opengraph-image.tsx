@@ -1,4 +1,4 @@
-import { passportOgImage } from "./passport-og-image";
+import { passportOgImage } from "~/lib/og/passport-og-image";
 
 export const alt = "IxStates Passport";
 export const size = { width: 1200, height: 630 };

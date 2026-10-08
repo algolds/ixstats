@@ -198,6 +198,8 @@ describe("realm share", () => {
     render(<RealmRegionHeader overview={overview()} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(await screen.findByRole("button", { name: "Copy link" })).toBeTruthy();
+    // The stable card route outside the (region) group (src/app/r/[realm]/opengraph-image.tsx); the
+    // group's own image is served at a hashed path.
     expect(screen.getByRole("link", { name: "Download card" }).getAttribute("href")).toBe(
       "/r/eurth/opengraph-image"
     );

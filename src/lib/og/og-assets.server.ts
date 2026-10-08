@@ -12,7 +12,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { assetUrl } from "~/lib/base-path";
-import { isAllowedMediaUrl } from "~/app/api/mediawiki/_media-response";
+import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { OG_FONT_FAMILY } from "./og-theme";
 
@@ -90,7 +90,7 @@ export function absoluteAssetUrl(raw: string | null | undefined, origin: URL): s
 /**
  * Hosts the cards fetch images from besides the app's own origin and the wikis. The wikis (IxWiki,
  * the sister wikis and Commons, with their upload CDNs such as upload.wikimedia.org) come from the
- * media proxies' allowlist (`isAllowedMediaUrl`); flags and realm banners live there. These are
+ * wiki media allowlist (`isAllowedMediaUrl`, src/lib/wiki-os/media-hosts.ts); flags and realm banners live there. These are
  * Clerk's image hosts and the avatar hosts listed in `images.remotePatterns` in next.config.js.
  */
 const IMAGE_HOSTS: ReadonlySet<string> = new Set([

@@ -6,9 +6,9 @@ export const contentType = "image/png";
 export const revalidate = 3600;
 
 /**
- * The `/r/{realm}` link card (and its board, nations and rules pages) for their metadata. Inside the
- * route group Next serves it at a hashed URL (`opengraph-image-<hash>`); the share sheet downloads the
- * same card from the stable `/r/{realm}/opengraph-image` (`../opengraph-image.tsx`).
+ * The stable download URL of the realm card, `/r/{realm}/opengraph-image`, for the share sheet's
+ * Download card. The `(region)` group's own `opengraph-image.tsx` is served at a hashed URL and stays
+ * the closer one for those pages' og:image.
  */
 export default async function Image({ params }: { params: Promise<{ realm: string }> }) {
   return realmOgImage((await params).realm);
