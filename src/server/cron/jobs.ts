@@ -251,6 +251,15 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/thinkpages/trending-cron")).runThinkPagesTrending,
   },
   {
+    name: "story-chain-wiki-sync",
+    defaultSchedule: "*/15 * * * *",
+    lockName: "story-chain-wiki-sync",
+    timeoutMs: 5 * MINUTE,
+    modulePath: "~/server/modules/action-links/wiki-sync",
+    exportName: "syncPendingChainWikis",
+    load: async () => (await import("~/server/modules/action-links/wiki-sync")).syncPendingChainWikis,
+  },
+  {
     // Evaluates achievements (account-level and active-country) for users seen recently.
     name: "achievements-evaluate",
     defaultSchedule: "41 * * * *",

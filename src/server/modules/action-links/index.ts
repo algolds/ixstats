@@ -11,3 +11,4 @@ export {
   type ChainActor,
   type ChainsDb,
 } from "./chains";
+export { appendChainToWiki, syncPendingChainWikis, type WikiSyncDb } from "./wiki-sync";
