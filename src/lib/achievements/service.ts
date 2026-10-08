@@ -496,24 +496,32 @@ class AchievementService {
     db: PrismaClient
   ): Promise<Partial<ExtendedAchievementData> & { country: CountryDataForAchievements }> {
     const countryId = country.id;
-    const [embassyCount, militaryBranchCount, governmentComponentCount, followerCount] =
-      await Promise.all([
-        db.embassy.count({
-          where: {
-            OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
-            status: "active",
-          },
-        }),
-        db.militaryBranch.count({
-          where: { countryId },
-        }),
-        db.governmentComponent.count({
-          where: { countryId },
-        }),
-        db.countryFollow.count({
-          where: { followedCountryId: countryId },
-        }),
-      ]);
+    const [
+      embassyCount,
+      militaryBranchCount,
+      governmentComponentCount,
+      followerCount,
+      storyChainCount,
+    ] = await Promise.all([
+      db.embassy.count({
+        where: {
+          OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
+          status: "active",
+        },
+      }),
+      db.militaryBranch.count({
+        where: { countryId },
+      }),
+      db.governmentComponent.count({
+        where: { countryId },
+      }),
+      db.countryFollow.count({
+        where: { followedCountryId: countryId },
+      }),
+      db.storyline
+        .count({ where: { countryId, kind: "chain", status: "approved" } })
+        .catch(() => 0),
+    ]);
 
     const militaryBranches = await db.militaryBranch.findMany({
       where: { countryId },
@@ -598,6 +606,7 @@ class AchievementService {
       atomicComponentCount: governmentComponentCount,
       governmentType: country.governmentType ?? undefined,
       followerCount,
+      storyChainCount,
     };
   }
 

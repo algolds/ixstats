@@ -73,6 +73,8 @@ export interface ExtendedAchievementData {
   // Social platform metrics
   thinkpageCount?: number;
   followerCount?: number;
+  /** Approved story chains of the country (src/server/modules/action-links). */
+  storyChainCount?: number;
   trendingPostCount?: number;
 
   // Activity metrics
@@ -612,6 +614,36 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     points: 60,
     iconUrl: "📚",
     condition: (data) => (data.thinkpageCount ?? 0) >= 50,
+  },
+  {
+    id: "story-chain-1",
+    title: "Chronicler",
+    description: "Have a story chain approved",
+    category: "Social",
+    rarity: "Common",
+    points: 10,
+    iconUrl: "📜",
+    condition: (data) => (data.storyChainCount ?? 0) >= 1,
+  },
+  {
+    id: "story-chain-5",
+    title: "Annalist",
+    description: "Have 5 story chains approved",
+    category: "Social",
+    rarity: "Rare",
+    points: 30,
+    iconUrl: "📚",
+    condition: (data) => (data.storyChainCount ?? 0) >= 5,
+  },
+  {
+    id: "story-chain-25",
+    title: "Historian of the Realm",
+    description: "Have 25 story chains approved",
+    category: "Social",
+    rarity: "Legendary",
+    points: 100,
+    iconUrl: "🏛️",
+    condition: (data) => (data.storyChainCount ?? 0) >= 25,
   },
   {
     id: "social-popular",
