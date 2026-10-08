@@ -15,6 +15,8 @@ interface PassportMastheadProps {
   viewerSignedIn: boolean;
   /** Flip the document to its configuration face (owner only). */
   onEdit: () => void;
+  /** Lets the parent return focus here when the passport flips back. */
+  editButtonRef?: React.Ref<HTMLButtonElement>;
 }
 
 /** Passport header: seal and title, then Edit (owner) or Message (signed-in visitor), and Share. */
@@ -23,6 +25,7 @@ export const PassportMasthead = React.memo(function PassportMasthead({
   isOwner,
   viewerSignedIn,
   onEdit,
+  editButtonRef,
 }: PassportMastheadProps) {
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -45,7 +48,7 @@ export const PassportMasthead = React.memo(function PassportMasthead({
 
       <div className="flex items-center gap-2">
         {isOwner && (
-          <Button type="button" variant="default" size="sm" onClick={onEdit}>
+          <Button ref={editButtonRef} type="button" variant="default" size="sm" onClick={onEdit}>
             <EditPencil aria-hidden />
             <span>Edit</span>
           </Button>

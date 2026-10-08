@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useId } from "react";
+import React, { useState, useCallback, useEffect, useId, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { REDUCED_MOTION_FADE, springSmooth } from "~/lib/design/motion";
@@ -69,6 +69,14 @@ export function MidRibbonPassportDocument({
   // The holder's equipped cosmetics, the same for every visitor (VT-12).
   const cosmetics = useUserCosmetics(data.account.userId);
 
+  // The face that goes inert drops focus; on flip-back it returns to Edit (never on first mount).
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const wasFlipped = useRef(false);
+  useEffect(() => {
+    if (wasFlipped.current && !isFlipped) editButtonRef.current?.focus({ preventScroll: true });
+    wasFlipped.current = isFlipped;
+  }, [isFlipped]);
+
   const handleEdit = useCallback(() => setIsFlipped(true), []);
   const handleDone = useCallback(() => setIsFlipped(false), []);
   const handleOpenLorewards = useCallback(() => setIsLorewardsModalOpen(true), []);
@@ -110,6 +118,7 @@ export function MidRibbonPassportDocument({
               isOwner={isOwner}
               viewerSignedIn={viewerSignedIn}
               onEdit={handleEdit}
+              editButtonRef={editButtonRef}
               onOpenLorewards={handleOpenLorewards}
             />
 

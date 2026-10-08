@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { Ref } from "react";
 import type { PassportPayload } from "~/components/passport/types";
 
 const mutate = jest.fn();
@@ -50,8 +51,14 @@ jest.mock("~/components/passport/document/PassportTabRibbon", () => ({
   passportTabPanelId: (base: string) => `${base}-panel`,
 }));
 jest.mock("~/components/passport/document/PassportFrontFace", () => ({
-  PassportFrontFace: ({ onEdit }: { onEdit: () => void }) => (
-    <button type="button" onClick={onEdit}>
+  PassportFrontFace: ({
+    onEdit,
+    editButtonRef,
+  }: {
+    onEdit: () => void;
+    editButtonRef: Ref<HTMLButtonElement>;
+  }) => (
+    <button ref={editButtonRef} type="button" onClick={onEdit}>
       Edit passport
     </button>
   ),
@@ -97,6 +104,24 @@ describe("passport flip", () => {
     expect(back).toHaveAttribute("inert");
   });
 
+  it("moves focus to Done on flip and back to Edit on flip-back, not on mount", () => {
+    renderDocument();
+    expect(document.body).toHaveFocus();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit passport" }));
+    expect(screen.getAllByRole("button", { name: /Done/ })[0]).toHaveFocus();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Done/ })[0]!);
+    expect(screen.getByRole("button", { name: "Edit passport" })).toHaveFocus();
+  });
+
+  it("returns focus to Edit from Return to passport too", () => {
+    renderDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit passport" }));
+    fireEvent.click(screen.getByRole("button", { name: /Return to passport/ }));
+    expect(screen.getByRole("button", { name: "Edit passport" })).toHaveFocus();
+  });
+
   it("plays the open entrance on the default tab", () => {
     renderDocument("realms");
     expect(screen.getByTestId("passport-flip-root")).toHaveClass("animate-passport-open");
@@ -132,7 +157,7 @@ describe("passport flip", () => {
   it("saves the Link previews switch", () => {
     mutate.mockClear();
     renderDocument();
-    fireEvent.click(screen.getByRole("switch", { name: /Link previews/ }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show link previews" }));
     expect(screen.getByText("Show your card when your link is shared")).toBeInTheDocument();
     expect(mutate).toHaveBeenCalledWith({ visibility: { linkPreview: false } });
   });

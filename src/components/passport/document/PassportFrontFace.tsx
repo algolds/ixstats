@@ -43,6 +43,7 @@ interface PassportFrontFaceProps {
   isOwner: boolean;
   viewerSignedIn: boolean;
   onEdit: () => void;
+  editButtonRef?: React.Ref<HTMLButtonElement>;
   onOpenLorewards: () => void;
 }
 
@@ -130,6 +131,7 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
   isOwner,
   viewerSignedIn,
   onEdit,
+  editButtonRef,
   onOpenLorewards,
 }: PassportFrontFaceProps) {
   const { handle, primaryNation, account } = data;
@@ -144,6 +146,7 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
           isOwner={isOwner}
           viewerSignedIn={viewerSignedIn}
           onEdit={onEdit}
+          editButtonRef={editButtonRef}
         />
 
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">

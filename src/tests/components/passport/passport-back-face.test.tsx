@@ -77,7 +77,7 @@ describe("PassportBackFace", () => {
   it("saves the Link previews switch with a plain-words helper", () => {
     renderBackFace();
     expect(screen.getByText("Show your card when your link is shared")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("switch", { name: /Link previews/ }));
+    fireEvent.click(screen.getByRole("switch", { name: "Show link previews" }));
     expect(mutate).toHaveBeenCalledWith({ visibility: { linkPreview: false } });
   });
 

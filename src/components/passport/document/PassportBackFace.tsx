@@ -14,7 +14,12 @@ import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
 import { Card } from "~/components/ui/card";
 
-const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
+const VISIBILITY_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
   {
     key: "achievements",
     title: "Achievements",
@@ -28,8 +33,18 @@ const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; 
 ];
 
 /** Sharing controls: they change how the link looks elsewhere, not which sections it shows. */
-const SHARING_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
-  { key: "linkPreview", title: "Link previews", hint: "Show your card when your link is shared" },
+const SHARING_TOGGLES: Array<{
+  key: keyof PassportVisibility;
+  title: string;
+  hint: string;
+  ariaLabel?: string;
+}> = [
+  {
+    key: "linkPreview",
+    title: "Link previews",
+    hint: "Show your card when your link is shared",
+    ariaLabel: "Show link previews",
+  },
 ];
 
 /** Signature ribbon slots on the passport's showcase shelf. */
@@ -102,14 +117,14 @@ export const PassportBackFace = React.memo(function PassportBackFace({
     onDone();
   };
 
-  const renderToggle = (toggle: (typeof VISIBILITY_TOGGLES)[number]) => (
+  const renderToggle = (toggle: (typeof SHARING_TOGGLES)[number]) => (
     <FacetRow
       key={toggle.key}
       title={toggle.title}
       subtitle={toggle.hint}
       trailing={
         <Switch
-          aria-label={`Show ${toggle.title}`}
+          aria-label={toggle.ariaLabel ?? `Show ${toggle.title}`}
           checked={visibility?.[toggle.key] ?? true}
           disabled={!visibility || busy}
           onCheckedChange={(value) => update.mutate({ visibility: { [toggle.key]: value } })}
