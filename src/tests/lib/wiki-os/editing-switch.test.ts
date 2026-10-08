@@ -1,15 +1,7 @@
 /** @jest-environment node */
-const findUnique = jest.fn();
-const upsert = jest.fn();
-// Imports are hoisted above the consts, so the factory forwards lazily instead of reading them at mock time.
 jest.mock("~/server/db", () => ({
   __esModule: true,
-  db: {
-    systemConfig: {
-      findUnique: (...args: unknown[]) => findUnique(...args),
-      upsert: (...args: unknown[]) => upsert(...args),
-    },
-  },
+  db: { systemConfig: { findUnique: jest.fn(), upsert: jest.fn() } },
 }));
 
 import {
@@ -20,6 +12,10 @@ import {
   setWikiosEditingFlag,
   WIKIOS_EDITING_KEY,
 } from "~/lib/wiki-os/editing-switch";
+import { db } from "~/server/db";
+
+const findUnique = jest.mocked(db.systemConfig.findUnique);
+const upsert = jest.mocked(db.systemConfig.upsert);
 
 let was: string | undefined;
 beforeEach(() => {
@@ -83,6 +79,14 @@ describe("editing switch", () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     await expect(refreshWikiosEditingFlag(true)).resolves.toBe(true);
     expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("keeps the last value when the read rejects with something other than an Error", async () => {
+    findUnique.mockRejectedValueOnce("db down");
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("editing switch"), "db down");
     warn.mockRestore();
   });
 

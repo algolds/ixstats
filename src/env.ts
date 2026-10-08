@@ -22,7 +22,6 @@ export const env = createEnv({
     // Optional: Discord Bot Configuration (if needed for direct bot integration)
     DISCORD_BOT_TOKEN: z.string().optional(),
     DISCORD_GUILD_ID: z.string().optional(),
-    DISCORD_ADMIN_USER_ID: z.string().optional(),
     // Clerk Authentication Configuration - Required in production
     CLERK_SECRET_KEY:
       process.env.NODE_ENV === "production"
@@ -198,7 +197,6 @@ export const env = createEnv({
     IXTIME_BOT_SECRET: process.env.IXTIME_BOT_SECRET,
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
     DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
-    DISCORD_ADMIN_USER_ID: process.env.DISCORD_ADMIN_USER_ID,
     NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
     NEXT_PUBLIC_IXTIME_BOT_URL: process.env.NEXT_PUBLIC_IXTIME_BOT_URL,
     NEXT_PUBLIC_MEDIAWIKI_URL: process.env.NEXT_PUBLIC_MEDIAWIKI_URL,

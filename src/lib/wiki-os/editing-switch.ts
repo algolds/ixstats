@@ -38,8 +38,9 @@ export function refreshWikiosEditingFlag(force = false): Promise<boolean> {
       cached = row?.value === "true";
       return cached;
     })
-    .catch((error: Error) => {
-      console.warn("[wikios] could not read the editing switch; keeping the last value:", error.message);
+    .catch((error: Error | string) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn("[wikios] could not read the editing switch; keeping the last value:", message);
       return cached;
     })
     .finally(() => {

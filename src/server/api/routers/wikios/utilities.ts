@@ -148,7 +148,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
   /** The admin WikiOS editing switch: on/off, forced by WIKIOS_V1_ENABLED, and whether the mirror can write. */
   getEditingStatus: adminProcedure.query(() => getEditingStatus()),
 
-  /** Turn WikiOS editing (and the mirror) on or off. Audited and DMed to the admin. */
+  /** Turn WikiOS editing on or off; queued mirror jobs keep draining after off. Audited and DMed to the admin. */
   setEditing: adminProcedure.input(z.object({ enabled: z.boolean() })).mutation(({ ctx, input }) =>
     setEditing(
       ctx.db,

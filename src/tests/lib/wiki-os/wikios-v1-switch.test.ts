@@ -199,7 +199,7 @@ describe("admin editing switch (WIKIOS_V1_ENABLED off)", () => {
 
   it("an async entry reads the switch itself, so a cold cache does not refuse a write", async () => {
     jest.mocked(db.systemConfig.findUnique).mockResolvedValue({ value: "true" } as never);
-    const ctx = { auth: { userId: null }, user: null } as unknown as WikiAuthContext;
+    const ctx = { auth: { userId: null }, user: null } as never;
     // requireRight awaits the read, passes the readonly gate, and only then reaches the rights check
     await expect(requireRight(ctx, "block")).rejects.toMatchObject({
       message: expect.stringContaining('You do not have the "block" right.'),
