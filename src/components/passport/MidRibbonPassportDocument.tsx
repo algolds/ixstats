@@ -169,7 +169,7 @@ export function MidRibbonPassportDocument({
         open={isLorewardsModalOpen}
         onOpenChange={setIsLorewardsModalOpen}
         wiki={data.wiki}
-        cleanUsername={data.handle}
+        handle={data.handle}
       />
     </div>
   );

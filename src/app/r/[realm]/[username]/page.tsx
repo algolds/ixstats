@@ -6,6 +6,9 @@ import { ArrowRight, Globe, WarningTriangle as AlertTriangle } from "iconoir-rea
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { PassportRealmsTab } from "~/components/passport/tabs/PassportRealmsTab";
 import { buttonVariants } from "~/components/ui/button";
 import { PageHeader } from "~/components/shell/PageHeader";
@@ -45,11 +48,13 @@ export default function RealmPassportPage({
   if (!passport.data) {
     return (
       <div className="mx-auto w-full max-w-5xl p-4 md:p-8">
-        <div className="border-separator bg-surface rounded-card space-y-3 border p-8 text-center">
-          <AlertTriangle className="text-yellow mx-auto h-10 w-10" />
-          <h1 className="text-label text-title-2">Identity not found</h1>
-          <p className="text-label-secondary text-body">No public passport exists for @{handle}.</p>
-        </div>
+        <Card>
+          <EmptyState
+            icon={<AlertTriangle />}
+            title="Identity not found"
+            message={`No public passport exists for @${handle}.`}
+          />
+        </Card>
       </div>
     );
   }
@@ -62,39 +67,41 @@ export default function RealmPassportPage({
         title={displayName}
         subtitle={`@${handle} · Realm passport in ${realmName}`}
         leading={
-          <div className="bg-fill-3 text-label rounded-card text-title-2 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border font-mono">
-            {account?.clerkImageUrl ? (
-              <img
-                src={account.clerkImageUrl}
-                alt={displayName}
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              displayName.charAt(0).toUpperCase()
-            )}
-          </div>
+          <Avatar className="rounded-card text-title-2 size-14 border">
+            <AvatarImage
+              src={account?.clerkImageUrl ?? undefined}
+              alt={displayName}
+              referrerPolicy="no-referrer"
+            />
+            <AvatarFallback className="rounded-card text-label">
+              {displayName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
         }
         actions={
           <>
             <Link href={`/r/${encodeURIComponent(realm)}`} className={LINK_CLASS}>
-              <Globe className="text-label-secondary h-4 w-4" />
+              <Globe className="text-label-secondary size-4" />
               <span>{realmName}</span>
             </Link>
             <Link href={`/@${encodeURIComponent(handle)}`} className={LINK_CLASS}>
               <span>Full passport</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="size-4" />
             </Link>
           </>
         }
       />
 
       {realms.length > 0 ? (
-        <PassportRealmsTab realms={realms} cleanUsername={handle} />
+        <PassportRealmsTab realms={realms} handle={handle} />
       ) : (
-        <p className="border-separator bg-surface text-label-secondary rounded-card text-body border p-8 text-center">
-          @{handle} holds no membership or claimed country in {realmName}.
-        </p>
+        <Card>
+          <EmptyState
+            icon={<Globe />}
+            title="No membership here"
+            message={`@${handle} holds no membership or claimed country in ${realmName}.`}
+          />
+        </Card>
       )}
     </div>
   );

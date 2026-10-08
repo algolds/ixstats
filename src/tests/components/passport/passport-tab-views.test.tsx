@@ -128,7 +128,7 @@ describe("PassportRealmsTab", () => {
     render(
       <PassportRealmsTab
         realms={[row("a", "a", "founder", true), row("b", "b", "officer"), row("c", "c", "member")]}
-        cleanUsername="alex"
+        handle="alex"
       />
     );
 
@@ -147,7 +147,7 @@ describe("PassportRealmsTab", () => {
           row("b", "two", "member"),
           row("a", "three", "founder"),
         ]}
-        cleanUsername="alex"
+        handle="alex"
       />
     );
 
@@ -178,7 +178,7 @@ describe("PassportRealmsTab", () => {
       continent: "Levantia",
       governmentType: "Empire",
     };
-    render(<PassportRealmsTab realms={[nation]} cleanUsername="alex" />);
+    render(<PassportRealmsTab realms={[nation]} handle="alex" />);
 
     expect(screen.getByText("1.25 billion")).toBeInTheDocument();
     expect(screen.getByText("$3.40 trillion")).toBeInTheDocument();
@@ -189,31 +189,23 @@ describe("PassportRealmsTab", () => {
 
   it("shows the recruited count only when someone was recruited", () => {
     const { rerender } = render(
-      <PassportRealmsTab realms={[row("a", "one", "member")]} cleanUsername="alex" />
+      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" />
     );
     expect(screen.queryByText(/Recruited/)).not.toBeInTheDocument();
 
     rerender(
-      <PassportRealmsTab
-        realms={[row("a", "one", "member")]}
-        cleanUsername="alex"
-        recruitedCount={0}
-      />
+      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" recruitedCount={0} />
     );
     expect(screen.queryByText(/Recruited/)).not.toBeInTheDocument();
 
     rerender(
-      <PassportRealmsTab
-        realms={[row("a", "one", "member")]}
-        cleanUsername="alex"
-        recruitedCount={4}
-      />
+      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" recruitedCount={4} />
     );
     expect(screen.getByText("Recruited 4")).toBeInTheDocument();
   });
 
   it("says when no nation is held", () => {
-    render(<PassportRealmsTab realms={[]} cleanUsername="alex" />);
+    render(<PassportRealmsTab realms={[]} handle="alex" />);
     expect(screen.getByText("No nations yet")).toBeInTheDocument();
   });
 });
@@ -221,15 +213,10 @@ describe("PassportRealmsTab", () => {
 describe("PassportWorkTab", () => {
   it("lists creations and narrows them with the category pills", () => {
     render(
-      <PassportWorkTab
-        work={work}
-        wiki={passport.wiki}
-        forum={passport.forum}
-        cleanUsername="alex"
-      />
+      <PassportWorkTab work={work} wiki={passport.wiki} forum={passport.forum} handle="alex" />
     );
 
-    expect(screen.getByText("All Work (2)")).toBeInTheDocument();
+    expect(screen.getByText("All work (2)")).toBeInTheDocument();
     expect(screen.getByText("Imperial Senate")).toBeInTheDocument();
     expect(screen.getByText("Latinic")).toBeInTheDocument();
 
@@ -245,7 +232,7 @@ describe("PassportWorkTab", () => {
         work={empty}
         wiki={{ ...passport.wiki, linked: false }}
         forum={passport.forum}
-        cleanUsername="alex"
+        handle="alex"
       />
     );
     expect(screen.getByText("No published work")).toBeInTheDocument();
@@ -257,7 +244,7 @@ describe("PassportWorkTab", () => {
       linked: true,
       stats: { userTitle: "Senator", messageCount: 1204, reactionScore: 310, trophyPoints: 85 },
     };
-    render(<PassportWorkTab work={work} wiki={passport.wiki} forum={forum} cleanUsername="alex" />);
+    render(<PassportWorkTab work={work} wiki={passport.wiki} forum={forum} handle="alex" />);
 
     const counters = screen.getByLabelText("Forum");
     expect(counters).toHaveTextContent("Senator");
@@ -277,7 +264,7 @@ describe("PassportWorkTab", () => {
         work={{ ...work, authoredArticles: [], conlangs: [] }}
         wiki={{ ...passport.wiki, linked: false }}
         forum={forum}
-        cleanUsername="alex"
+        handle="alex"
       />
     );
     expect(screen.getByLabelText("Forum")).toHaveTextContent("1 message");
@@ -286,12 +273,7 @@ describe("PassportWorkTab", () => {
 
   it("shows no forum counters when they are hidden or unavailable", () => {
     render(
-      <PassportWorkTab
-        work={work}
-        wiki={passport.wiki}
-        forum={passport.forum}
-        cleanUsername="alex"
-      />
+      <PassportWorkTab work={work} wiki={passport.wiki} forum={passport.forum} handle="alex" />
     );
     expect(screen.queryByLabelText("Forum")).not.toBeInTheDocument();
   });

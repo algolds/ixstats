@@ -33,7 +33,7 @@ interface PassportStatRowProps {
   onOpenLorewards: () => void;
 }
 
-const CELL = "text-subhead flex min-h-11 items-center gap-1.5 tabular-nums";
+const CELL = "text-subhead flex min-h-11 items-center gap-2 tabular-nums";
 
 /**
  * The front face's three facts: Lorewards standing, realm and nation counts, and the join month.

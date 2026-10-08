@@ -52,7 +52,7 @@ export const WorkCategoryFilter = React.memo(function WorkCategoryFilter({
         className="flex-wrap"
       >
         <ToggleGroupItem value="all" className="tabular-nums">
-          All Work ({total})
+          All work ({total})
         </ToggleGroupItem>
         {CATEGORIES.filter((category) => counts[category.id] > 0).map((category) => (
           <ToggleGroupItem key={category.id} value={category.id} className="tabular-nums">

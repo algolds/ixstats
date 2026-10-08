@@ -18,7 +18,7 @@ interface PassportWorkTabProps {
   wiki: PassportWiki;
   /** Forum counters lead the tab; `forum.stats` is null when hidden or unavailable. */
   forum: PassportForum;
-  cleanUsername: string;
+  handle: string;
 }
 
 function counted(n: number, one: string, many: string): string {
@@ -61,7 +61,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
   work,
   wiki,
   forum,
-  cleanUsername,
+  handle,
 }: PassportWorkTabProps) {
   const [selected, setSelected] = useState<WorkCategoryFilterValue>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,7 +87,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
             compact
             icon={<BookOpen />}
             title="No published work"
-            message={`@${cleanUsername} has not published any WikiOS articles, language packs or directives yet.`}
+            message={`@${handle} has not published any WikiOS articles, language packs or directives yet.`}
           />
         </Card>
       </div>
@@ -126,7 +126,7 @@ export const PassportWorkTab = React.memo(function PassportWorkTab({
       )}
 
       {shows("feed") && feed.length > 0 && (
-        <WorkActivityFeed feed={feed} contributionsUser={wiki.username || cleanUsername} />
+        <WorkActivityFeed feed={feed} contributionsUser={wiki.username || handle} />
       )}
     </div>
   );

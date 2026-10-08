@@ -29,5 +29,5 @@ export default async function PassportPage({ params, searchParams }: PassportPag
     const query = typeof tab === "string" && tab ? `?tab=${encodeURIComponent(tab)}` : "";
     permanentRedirect(`/@${canonical.handle}${query}`);
   }
-  return <PassportPageClient cleanUsername={segment} />;
+  return <PassportPageClient handle={segment} />;
 }

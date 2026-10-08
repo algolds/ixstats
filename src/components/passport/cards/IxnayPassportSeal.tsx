@@ -11,13 +11,13 @@ interface IxnayPassportSealProps {
 
 const sizeConfig = {
   sm: {
-    container: "h-9 w-9 rounded-row p-1",
+    container: "size-9 rounded-row p-1",
   },
   md: {
-    container: "h-11 w-11 rounded-card p-2",
+    container: "size-11 rounded-card p-2",
   },
   lg: {
-    container: "h-14 w-14 rounded-card p-2",
+    container: "size-14 rounded-card p-2",
   },
 };
 
@@ -28,7 +28,7 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
   size = "md",
   className,
 }: IxnayPassportSealProps) {
-  const config = sizeConfig[size] || sizeConfig.md;
+  const config = sizeConfig[size];
   const logoUrl = withBasePath("/images/ix-logo.svg");
 
   return (
@@ -40,7 +40,7 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
       )}
       aria-hidden="true"
     >
-      <img src={logoUrl} alt="" className="h-full w-full object-contain select-none" />
+      <img src={logoUrl} alt="" className="size-full object-contain select-none" />
     </div>
   );
 });

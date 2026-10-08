@@ -15,7 +15,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Card } from "~/components/ui/card";
 
 /** The passport page body; `page.tsx` (server) resolves the canonical redirect first. */
-export function PassportPageClient({ cleanUsername }: { cleanUsername: string }) {
+export function PassportPageClient({ handle }: { handle: string }) {
   const { user: currentClerkUser, isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<PassportTabType>(
@@ -29,8 +29,8 @@ export function PassportPageClient({ cleanUsername }: { cleanUsername: string })
   }, [searchParams]);
 
   const { data, isLoading, error } = api.ixnayid.getPassport.useQuery(
-    { handle: cleanUsername },
-    { enabled: Boolean(cleanUsername) }
+    { handle },
+    { enabled: Boolean(handle) }
   );
 
   const isOwner = Boolean(data?.account.isOwner);

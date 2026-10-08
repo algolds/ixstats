@@ -14,7 +14,7 @@ import { REALM_ROLE_LABEL } from "../realm-role";
 
 interface PassportRealmsTabProps {
   realms: RealmItem[];
-  cleanUsername: string;
+  handle: string;
   /** Approved claims this holder recruited; "Recruited N" shows when above zero. */
   recruitedCount?: number;
 }
@@ -126,7 +126,7 @@ function NationRow({ item }: { item: RealmItem }) {
 /** The holder's nations, grouped under the realm each is held in, with the realm role. */
 export const PassportRealmsTab = React.memo(function PassportRealmsTab({
   realms,
-  cleanUsername,
+  handle,
   recruitedCount,
 }: PassportRealmsTabProps) {
   if (realms.length === 0) {
@@ -136,7 +136,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
           compact
           icon={<Globe />}
           title="No nations yet"
-          message={`@${cleanUsername} has not claimed a nation in any realm.`}
+          message={`@${handle} has not claimed a nation in any realm.`}
         />
       </Card>
     );

@@ -58,7 +58,7 @@ function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) 
     <>
       {/* The owner's own nations across realms, to switch which one they play as. */}
       {isOwner && <NationSwitcher className="border-separator rounded-row mb-6 border py-2" />}
-      <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />
+      <PassportRealmsTab realms={data ?? []} handle={handle} />
     </>
   );
 }
@@ -82,9 +82,7 @@ function WorkPanel({
 }) {
   const { data, isLoading } = api.ixnayid.getWork.useQuery({ handle });
   if (isLoading) return <TabSkeleton />;
-  return (
-    <PassportWorkTab work={data ?? EMPTY_WORK} wiki={wiki} forum={forum} cleanUsername={handle} />
-  );
+  return <PassportWorkTab work={data ?? EMPTY_WORK} wiki={wiki} forum={forum} handle={handle} />;
 }
 
 function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean }) {
@@ -98,7 +96,7 @@ function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean })
 
   return (
     <div className="space-y-6">
-      <PassportHistoryTab history={history} cleanUsername={handle} />
+      <PassportHistoryTab history={history} handle={handle} />
       {enabled && hasNextPage && (
         <div className="flex justify-center">
           <Button
