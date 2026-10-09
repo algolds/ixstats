@@ -4,6 +4,7 @@
 
 import React from "react";
 import { createPlatePlugin } from "platejs/react";
+import { assetUrl } from "~/lib/base-path";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -113,7 +114,11 @@ export const ImagePlugin = createPlatePlugin({
   render: {
     node: ({ children, element, attributes }: any) => (
       <div {...attributes} className="my-2 overflow-hidden rounded-lg">
-        <img src={element?.src} alt={element?.alt || ""} className="max-h-64 w-auto object-cover" />
+        <img
+          src={assetUrl(element?.src) ?? undefined}
+          alt={element?.alt || ""}
+          className="max-h-64 w-auto object-cover"
+        />
         {children}
       </div>
     ),
