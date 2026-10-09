@@ -15,7 +15,9 @@ function page(pageid: number, title: string, index?: number) {
     pageid,
     title,
     ...(index === undefined ? {} : { index }),
-    imageinfo: [{ url: `https://img.test/${pageid}.png`, width: 10, height: 10, mime: "image/png" }],
+    imageinfo: [
+      { url: `https://img.test/${pageid}.png`, width: 10, height: 10, mime: "image/png" },
+    ],
   };
 }
 
@@ -81,7 +83,9 @@ describe("commons search", () => {
 
     const calls = fetchMock.mock.calls as unknown as Array<[string]>;
     const url = new URL(calls[0]![0]);
-    expect(url.searchParams.get("iiextmetadatafilter")).toBe("ImageDescription|Artist|LicenseShortName");
+    expect(url.searchParams.get("iiextmetadatafilter")).toBe(
+      "ImageDescription|Artist|LicenseShortName"
+    );
     expect(url.searchParams.get("iiextmetadatalanguage")).toBe("en");
     expect(url.searchParams.has("origin")).toBe(false);
   });

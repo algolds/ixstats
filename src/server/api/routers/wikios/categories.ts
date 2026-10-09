@@ -276,15 +276,15 @@ export const wikiosCategoriesRouter = createTRPCRouter({
           const categories = await db.wikiCategory.findMany({
             where: { hidden: false },
             take: input.limit,
-            include: {
-              _count: { select: { members: { where: { article: { status: "PUBLISHED" } } } } },
-            },
             orderBy: { members: { _count: "desc" } },
           });
-          return (categories || []).map((c) => ({
-            name: String(c.name || "").replace(/_/g, " "),
-            fileCount: Number(c._count?.members || 0),
-          }));
+          // "fileCount" is files, not every published member: count the namespace-6 members.
+          const names = (categories || []).map((c) => String(c.name || "").replace(/_/g, " "));
+          const counts = await CategoryService.getCounts(names);
+          return names
+            .map((name) => ({ name, fileCount: counts.get(name)?.files ?? 0 }))
+            .filter((cat) => cat.fileCount > 0)
+            .sort((a, b) => b.fileCount - a.fileCount);
         } catch (err) {
           console.error("[wikiosCategories] Failed to fetch ixwiki categories from DB:", err);
           return [];
@@ -295,12 +295,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         const data = await sisterJson<{
           query?: { allcategories?: Array<{ "*": string; files: number }> };
         }>(url);
-        return (
-          data.query?.allcategories?.map((cat) => ({
-            name: cat["*"],
-            fileCount: cat.files,
-          })) ?? []
-        );
+        return (data.query?.allcategories ?? [])
+          .filter((cat) => (cat.files ?? 0) > 0)
+          .map((cat) => ({ name: cat["*"], fileCount: cat.files }));
       }
     }),
 
@@ -317,7 +314,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
         const counts = await CategoryService.getCounts(input.categories);
-        return Object.fromEntries(input.categories.map((cat) => [cat, counts.get(cat)?.files ?? 0]));
+        return Object.fromEntries(
+          input.categories.map((cat) => [cat, counts.get(cat)?.files ?? 0])
+        );
       }
 
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
@@ -361,7 +360,11 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
-        const titles = await CategoryService.getMemberTitles(input.category, ["subcat"], input.limit);
+        const titles = await CategoryService.getMemberTitles(
+          input.category,
+          ["subcat"],
+          input.limit
+        );
         return titles.map((title) => title.replace(/^Category:/, ""));
       }
 
@@ -371,7 +374,9 @@ export const wikiosCategoriesRouter = createTRPCRouter({
           input.category.replace(/ /g, "_")
         )}&cmnamespace=14&cmtype=subcat&cmlimit=${input.limit}&format=json`
       );
-      return (data.query?.categorymembers ?? []).map((m) => String(m.title).replace(/^Category:/, ""));
+      return (data.query?.categorymembers ?? []).map((m) =>
+        String(m.title).replace(/^Category:/, "")
+      );
     }),
 
   /**

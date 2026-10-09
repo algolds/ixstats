@@ -229,7 +229,7 @@ export const wikiosSearchRouter = createTRPCRouter({
   searchPages: searchWikiTitles,
 
   /**
-   * Search wiki files/images by name prefix or category.
+   * Search wiki files/images by name (full text) or category.
    */
   searchFiles: sisterWikiProcedure
     .input(
@@ -250,9 +250,12 @@ export const wikiosSearchRouter = createTRPCRouter({
           title: `File:${a.title}`,
           // An upload only WikiOS holds is a path on this site (`/api/wiki/file/<name>`): it needs the base path.
           url: assetUrl(a.url) ?? a.url,
+          // The small rendition the grids show; null when none was computed (the tile falls back to `url`).
+          thumbUrl: a.thumbnailUrl ? (assetUrl(a.thumbnailUrl) ?? a.thumbnailUrl) : null,
           size: a.sizeBytes || 0,
-          width: a.width ?? 800,
-          height: a.height ?? 600,
+          // 0 when unknown: the picker lays the tile out by aspect ratio only when it has one.
+          width: a.width ?? 0,
+          height: a.height ?? 0,
           mime: a.mimeType || "image/png",
           // The placeholder pickers show while the thumbnail loads (WK-17); null when none was computed
           blurhash: a.blurhash,
@@ -262,34 +265,32 @@ export const wikiosSearchRouter = createTRPCRouter({
       // A sister wiki's files are read from that wiki.
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 
-      let url = "";
+      // Full-text and case-insensitive (not a name prefix); each page carries a 500px thumbnail.
+      const imageInfo = "prop=imageinfo&iiprop=url|size|mime&iiurlwidth=500";
+      let url: string;
       if (input.category) {
         url = `${baseUrl}?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(
           input.category.replace(/ /g, "_")
-        )}&gcmtype=file&gcmlimit=${input.limit}&prop=imageinfo&iiprop=url|size|mime&format=json`;
+        )}&gcmtype=file&gcmlimit=${input.limit}&${imageInfo}&format=json`;
+      } else if (input.query?.trim()) {
+        url = `${baseUrl}?action=query&generator=search&gsrsearch=${encodeURIComponent(
+          input.query.trim()
+        )}&gsrnamespace=6&gsrlimit=${input.limit}&${imageInfo}&format=json`;
       } else {
-        const q = input.query || "";
-        url = `${baseUrl}?action=query&list=allimages&aiprefix=${encodeURIComponent(
-          q.replace(/ /g, "_")
-        )}&ailimit=${input.limit}&aiprop=url|size|mime&format=json`;
+        // Nothing typed: browse the wiki's files (generator=search refuses an empty search).
+        url = `${baseUrl}?action=query&generator=allimages&gailimit=${input.limit}&${imageInfo}&format=json`;
       }
 
       const data = await fetchMediaWikiJson<{
         query?: {
-          allimages?: Array<{
-            name: string;
-            url: string;
-            size: number;
-            width: number;
-            height: number;
-            mime: string;
-          }>;
           pages?: Record<
             string,
             {
               title: string;
+              index?: number;
               imageinfo?: Array<{
                 url: string;
+                thumburl?: string;
                 size: number;
                 width: number;
                 height: number;
@@ -300,37 +301,23 @@ export const wikiosSearchRouter = createTRPCRouter({
         };
       }>(url, { userAgent: DEFAULT_USER_AGENT, cacheTtlMs: SISTER_CACHE_TTL_MS });
 
-      if (data.query?.allimages) {
-        return data.query.allimages.map((img) => ({
-          name: img.name,
-          title: `File:${img.name}`,
-          url: img.url,
-          size: img.size,
-          width: img.width,
-          height: img.height,
-          mime: img.mime,
-        }));
-      }
-
-      if (data.query?.pages) {
-        return Object.values(data.query.pages)
-          .filter((p) => p.imageinfo && p.imageinfo[0])
-          .map((p) => {
-            const info = p.imageinfo![0]!;
-            const name = p.title.replace(/^File:/, "");
-            return {
-              name,
-              title: p.title,
-              url: info.url,
-              size: info.size,
-              width: info.width,
-              height: info.height,
-              mime: info.mime,
-            };
-          });
-      }
-
-      return [];
+      // The pages object is keyed by page id; `index` is the generator's own order (search rank).
+      return Object.values(data.query?.pages ?? {})
+        .filter((p) => p.imageinfo && p.imageinfo[0])
+        .sort((a, b) => (a.index ?? Number.MAX_SAFE_INTEGER) - (b.index ?? Number.MAX_SAFE_INTEGER))
+        .map((p) => {
+          const info = p.imageinfo![0]!;
+          return {
+            name: p.title.replace(/^File:/, ""),
+            title: p.title,
+            url: info.url,
+            thumbUrl: info.thumburl ?? null,
+            size: info.size,
+            width: info.width ?? 0,
+            height: info.height ?? 0,
+            mime: info.mime,
+          };
+        });
     }),
 
   /**

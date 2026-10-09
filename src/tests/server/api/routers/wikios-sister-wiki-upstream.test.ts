@@ -80,9 +80,9 @@ describe("a failing sister wiki is an error, not an empty list", () => {
   it("an upstream 429 reaches the client as TOO_MANY_REQUESTS", async () => {
     failUpstream(429);
 
-    await expect(
-      search().searchFiles({ query: "fail-429", wiki: "iiwiki" })
-    ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+    await expect(search().searchFiles({ query: "fail-429", wiki: "iiwiki" })).rejects.toMatchObject(
+      { code: "TOO_MANY_REQUESTS" }
+    );
   });
 });
 
