@@ -14,7 +14,10 @@ import type {
   AttachmentCopyPlan,
   AttachmentCopyResult,
 } from "~/server/modules/thinkpages-forum/import-attachments";
-import type { RollbackTotals } from "~/server/modules/thinkpages-forum/import-rollback";
+import type {
+  RollbackPreview,
+  RollbackTotals,
+} from "~/server/modules/thinkpages-forum/import-rollback";
 import type { ApplyTotals } from "~/server/modules/thinkpages-forum/import-write";
 
 const SHOW_IDS = 20;
@@ -168,6 +171,21 @@ export function rollbackLines(totals: RollbackTotals): string[] {
     `  action links: ${totals.linksRestored} returned to their XenForo post, ${totals.linksDeleted} deleted`,
     `  archive categories ${totals.categories}, node map rows ${totals.nodeMap}, media assets ${totals.assets}, files ${totals.files}`,
   ];
+}
+
+/** I2: what `--rollback --yes` would delete. */
+export function rollbackPreviewLines(preview: RollbackPreview): string[] {
+  return [
+    `Rollback preview (nothing deleted): ${preview.threads} imported threads, ${preview.posts} posts (${preview.nativeReplies} native replies on imported threads)`,
+    `  action links on those posts: ${preview.links} (returned to their XenForo post, or deleted with a native reply)`,
+    `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, node map rows ${preview.nodeMap}, forum media assets ${preview.assets}, copied files ${preview.files}`,
+    "Pass --yes to delete these (the legacy redirect must be off).",
+  ];
+}
+
+/** I2: `--rollback --yes` refuses while the legacy switch is on. */
+export function redirectOnRefusal(production: boolean): string {
+  return `The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- ${production ? "--production " : ""}off`;
 }
 
 /** The `--report` file: the plan report, the copy plan's counts and each kept attachment's stored name. */

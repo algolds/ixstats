@@ -2,7 +2,7 @@
  * Arguments of the XenForo importer (scripts/migrations/import-xenforo-forum.ts), with the production guard, its
  * banner and its database URL. Pure.
  *   --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped | --accept-defaults] [--production] [--report FILE]
- *   --snapshot DIR --rollback --yes [--production]
+ *   --snapshot DIR --rollback [--yes] [--production]   (without --yes: a preview that deletes nothing)
  */
 import { productionDatabaseRefusal } from "../lib/database-guard";
 
@@ -15,6 +15,8 @@ export interface ImportArgs {
   acceptUnmapped: boolean;
   production: boolean;
   rollback: boolean;
+  /** With --rollback: delete. Without it the rollback is a dry run (I2). */
+  yes: boolean;
 }
 
 const VALUE_FLAGS = ["--snapshot", "--node-map", "--report"] as const;
@@ -49,11 +51,11 @@ function readFlags(argv: readonly string[]) {
 }
 
 function modeError(switches: ReadonlySet<string>): string | null {
-  if (!switches.has("--rollback")) return null;
-  if (switches.has("--apply")) return "--rollback and --apply cannot be combined";
-  if (!switches.has("--yes")) {
-    return "--rollback deletes every imported thread, native replies posted on them included: pass --yes";
+  if (switches.has("--rollback") && switches.has("--apply")) {
+    return "--rollback and --apply cannot be combined";
   }
+  if (switches.has("--yes") && !switches.has("--rollback"))
+    return "--yes only goes with --rollback";
   return null;
 }
 
@@ -85,6 +87,7 @@ export function parseImportArgs(
       acceptUnmapped: switches.has("--accept-unmapped") || switches.has("--accept-defaults"),
       production,
       rollback: switches.has("--rollback"),
+      yes: switches.has("--yes"),
     },
   };
 }
@@ -94,7 +97,7 @@ export function runBanner(argv: readonly string[]): string {
   if (argv.includes("--rollback")) {
     return argv.includes("--yes")
       ? "ROLLBACK — deleting the import"
-      : "ROLLBACK (refused: pass --yes)";
+      : "ROLLBACK PREVIEW — nothing is deleted; pass --yes to delete";
   }
   return argv.includes("--apply") ? "APPLY mode — writing" : "DRY RUN — pass --apply to write";
 }

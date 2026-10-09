@@ -1,9 +1,11 @@
 /**
  * ThinkPages forum phase 4: import a XenForo export snapshot (scripts/migrations/export-xenforo-forum.ts) into the
- * native forum. Dry run by default; --apply writes; --rollback --yes undoes it.
+ * native forum. Dry run by default; --apply writes; --rollback previews the undo and --rollback --yes does it.
  *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped]
  *     [--production] [--report FILE]
- *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback --yes [--production]
+ *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback [--yes] [--production]
+ * --rollback without --yes prints what would be deleted and exits 0; with --yes it refuses while the legacy redirect
+ * switch is on.
  * --production loads `.env.production.local` first (scripts/lib/load-runner-env.ts); the upload directory and the
  * masked database are printed first and again right before any write.
  * Refuses the production database ("ixstats") unless --production is passed, and runs one at a time (a Postgres
@@ -29,7 +31,7 @@ import {
   type ImportPlan,
 } from "~/lib/thinkpages-forum/import/plan";
 import { summarizeImport } from "~/lib/thinkpages-forum/import/report";
-import { isComplete, readSnapshot, type Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
+import { isComplete, readSnapshot } from "~/lib/thinkpages-forum/import/snapshot";
 import {
   copyAttachments,
   planAttachmentCopies,
@@ -45,7 +47,8 @@ import {
   takeImportLock,
 } from "~/server/modules/thinkpages-forum/import-db";
 import {
-  nativeRepliesOnImported,
+  legacyRedirectOn,
+  previewRollback,
   rollbackImport,
 } from "~/server/modules/thinkpages-forum/import-rollback";
 import { applyImport } from "~/server/modules/thinkpages-forum/import-write";
@@ -64,8 +67,10 @@ import {
   attachmentPlanLines,
   attachmentResultLines,
   diskRefusal,
+  redirectOnRefusal,
   reportFile,
   rollbackLines,
+  rollbackPreviewLines,
   snapshotGapLines,
   targetLines,
   unmappedForumNodes,
@@ -110,22 +115,23 @@ function planOrRefusal(make: () => ImportPlan): ImportPlan | string {
   }
 }
 
-async function rollback(db: PrismaClient, snapshot: Snapshot): Promise<number> {
-  console.log(
-    `${await nativeRepliesOnImported(db)} native replies on imported threads will be deleted with them.`
-  );
-  const totals = await rollbackImport(db, {
-    attachmentIds: new Set(snapshot.attachments.keys()),
-    uploadsDir: uploadsDir(),
-  });
-  print(rollbackLines(totals));
+/** I2, M18: a preview without --yes; with it, refused while the legacy redirect is on. Needs no snapshot. */
+async function rollback(db: PrismaClient, args: ImportArgs): Promise<number> {
+  const dir = uploadsDir();
+  if (!args.yes) {
+    print(rollbackPreviewLines(await previewRollback(db, { uploadsDir: dir })));
+    return 0;
+  }
+  if (await legacyRedirectOn(db)) return refuse([redirectOnRefusal(args.production)]);
+  print(targetLines(dir, databaseLabel(process.env.DATABASE_URL)));
+  print(rollbackLines(await rollbackImport(db, { uploadsDir: dir })));
   return 0;
 }
 
 async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   if (!(await takeImportLock(db))) return refuse(["Another import or rollback is running."]);
+  if (args.rollback) return rollback(db, args);
   const snapshot = await readSnapshot(snapshotDiskFs, args.snapshot);
-  if (args.rollback) return rollback(db, snapshot);
   const gaps = isComplete(snapshot);
   if (!gaps.complete) {
     return refuse([

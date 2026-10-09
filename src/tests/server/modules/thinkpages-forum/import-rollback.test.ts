@@ -3,7 +3,9 @@ import path from "node:path";
 import type { Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
 import { ImportLockLostError } from "~/server/modules/thinkpages-forum/import-db";
 import {
+  legacyRedirectOn,
   nativeRepliesOnImported,
+  previewRollback,
   rollbackImport,
   type RollbackFs,
 } from "~/server/modules/thinkpages-forum/import-rollback";
@@ -79,22 +81,61 @@ async function importedStore() {
 }
 
 describe("rollbackImport", () => {
-  it("removes exactly the imported rows, files and assets, and leaves native content alone", async () => {
+  const FILES = [
+    `55-${HASH}-map.png`,
+    `55-${HASH}-map.png.thumb.webp`,
+    `56-${HASH}-rules.pdf`,
+    `999-${HASH}-other.png`,
+    "notes.txt",
+    `55-map.png`,
+    `.55-${HASH}-map.png.partial`,
+  ];
+
+  it("previews exactly what it deletes, deleting nothing (I2)", async () => {
+    const store = await importedStore();
+    const before = JSON.stringify(store.tables());
+    const fs = fakeFs(FILES);
+    const preview = await previewRollback(store.db as never, { uploadsDir: UPLOADS, fs });
+    expect(preview).toEqual({
+      threads: 3,
+      posts: 7,
+      nativeReplies: 1,
+      links: 2,
+      categories: ["xf-12", "xf-13"],
+      nodeMap: 1,
+      assets: 3,
+      files: 4,
+    });
+    expect(JSON.stringify(store.tables())).toEqual(before);
+    expect(fs.removed).toEqual([]);
+    const totals = await rollbackImport(store.db as never, { uploadsDir: UPLOADS, fs });
+    expect(totals).toMatchObject({
+      threads: preview.threads,
+      posts: preview.posts,
+      nativeReplies: preview.nativeReplies,
+      categories: preview.categories.length,
+      nodeMap: preview.nodeMap,
+      assets: preview.assets,
+      files: preview.files,
+    });
+    expect(totals.linksRestored + totals.linksDeleted).toBe(preview.links);
+  });
+
+  it("reads the legacy redirect switch", async () => {
+    const store = importStore({
+      configs: [{ id: "c1", key: "forum_legacy_redirect", value: "false" }],
+    });
+    expect(await legacyRedirectOn(store.db as never)).toBe(false);
+    store.tables().configs[0]!.value = "true";
+    expect(await legacyRedirectOn(store.db as never)).toBe(true);
+    expect(await legacyRedirectOn(importStore({}).db as never)).toBe(false);
+  });
+
+  it("removes exactly the imported rows, every forum asset and copied file (M18), and leaves native content alone", async () => {
     const store = await importedStore();
     expect(await nativeRepliesOnImported(store.db as never)).toBe(1);
-    const fs = fakeFs([
-      `55-${HASH}-map.png`,
-      `55-${HASH}-map.png.thumb.webp`,
-      `56-${HASH}-rules.pdf`,
-      `999-${HASH}-other.png`,
-      "notes.txt",
-      `55-map.png`,
-    ]);
-    const totals = await rollbackImport(store.db as never, {
-      attachmentIds: new Set(snapshot.attachments.keys()),
-      uploadsDir: UPLOADS,
-      fs,
-    });
+    const fs = fakeFs(FILES);
+    const totals = await rollbackImport(store.db as never, { uploadsDir: UPLOADS, fs });
     expect(totals).toEqual({
       threads: 3,
       posts: 7,
@@ -103,8 +144,8 @@ describe("rollbackImport", () => {
       linksDeleted: 1,
       categories: 2,
       nodeMap: 1,
-      assets: 2,
-      files: 3,
+      assets: 3,
+      files: 4,
     });
     const after = store.tables();
     expect(after.threads.map((t) => t.id)).toEqual(["t-native"]);
@@ -115,11 +156,13 @@ describe("rollbackImport", () => {
     ]);
     expect(after.categories.map((c) => c.key)).toEqual(SITE_ROWS.map((c) => c.key));
     expect(after.configs.map((c) => c.id)).toEqual(["cfg-other"]);
-    expect(after.assets.map((a) => a.id)).toEqual(["a-999", "a-upload"]);
+    // An earlier snapshot's asset and file (999) go too: the scope is the source and the name, not this snapshot.
+    expect(after.assets.map((a) => a.id)).toEqual(["a-upload"]);
     expect(fs.removed).toEqual([
       `55-${HASH}-map.png`,
       `55-${HASH}-map.png.thumb.webp`,
       `56-${HASH}-rules.pdf`,
+      `999-${HASH}-other.png`,
     ]);
   });
 
@@ -127,7 +170,7 @@ describe("rollbackImport", () => {
     const store = await importedStore();
     const xf12 = store.tables().categories.find((c) => c.key === "xf-12")!;
     store.tables().threads.push({ id: "t-staff", categoryId: xf12.id, xenforoThreadId: null });
-    const opts = { attachmentIds: new Set<number>(), uploadsDir: UPLOADS, fs: fakeFs([]) };
+    const opts = { uploadsDir: UPLOADS, fs: fakeFs([]) };
     expect((await rollbackImport(store.db as never, opts)).categories).toBe(1);
     expect(store.tables().categories.some((c) => c.key === "xf-12")).toBe(true);
     const again = await rollbackImport(store.db as never, opts);
@@ -144,7 +187,6 @@ describe("rollbackImport", () => {
       countryId: "c",
     });
     const totals = await rollbackImport(store.db as never, {
-      attachmentIds: new Set<number>(),
       uploadsDir: UPLOADS,
       fs: fakeFs([]),
     });
@@ -158,7 +200,6 @@ describe("rollbackImport", () => {
     store.db.$queryRaw.mockResolvedValueOnce([{ locked: false }]);
     await expect(
       rollbackImport(store.db as never, {
-        attachmentIds: new Set<number>(),
         uploadsDir: UPLOADS,
         fs: fakeFs([]),
       })

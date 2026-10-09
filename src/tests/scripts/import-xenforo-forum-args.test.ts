@@ -17,6 +17,8 @@ import {
   attachmentResultLines,
   diskRefusal,
   omittedByReason,
+  redirectOnRefusal,
+  rollbackPreviewLines,
   snapshotGapLines,
   targetLines,
   unmappedForumNodes,
@@ -39,6 +41,7 @@ describe("parseImportArgs", () => {
         acceptUnmapped: false,
         production: false,
         rollback: false,
+        yes: false,
       },
     });
     const parsed = parseImportArgs(
@@ -86,9 +89,12 @@ describe("parseImportArgs", () => {
     expect(parseImportArgs(["--snapshot", "dir"], undefined)).toHaveProperty("error");
   });
 
-  it("needs --yes for a rollback and never combines it with --apply", () => {
-    expect(parseImportArgs(["--snapshot", "dir", "--rollback"], CLONE)).toEqual({
-      error: expect.stringMatching(/pass --yes/),
+  it("takes a rollback without --yes as a preview, never combines it with --apply (I2)", () => {
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback"], CLONE)).toMatchObject({
+      args: { rollback: true, yes: false },
+    });
+    expect(parseImportArgs(["--snapshot", "dir", "--yes"], CLONE)).toEqual({
+      error: "--yes only goes with --rollback",
     });
     expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes", "--apply"], CLONE)).toEqual(
       {
@@ -96,8 +102,9 @@ describe("parseImportArgs", () => {
       }
     );
     expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes"], CLONE)).toMatchObject({
-      args: { rollback: true, apply: false },
+      args: { rollback: true, yes: true, apply: false },
     });
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback"], PROD)).toHaveProperty("error");
     expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes"], PROD)).toHaveProperty(
       "error"
     );
@@ -108,7 +115,9 @@ describe("runBanner", () => {
   it("says what the run was asked to do, a refused rollback included", () => {
     expect(runBanner(["--snapshot", "d"])).toBe("DRY RUN — pass --apply to write");
     expect(runBanner(["--snapshot", "d", "--apply"])).toBe("APPLY mode — writing");
-    expect(runBanner(["--snapshot", "d", "--rollback"])).toBe("ROLLBACK (refused: pass --yes)");
+    expect(runBanner(["--snapshot", "d", "--rollback"])).toBe(
+      "ROLLBACK PREVIEW — nothing is deleted; pass --yes to delete"
+    );
     expect(runBanner(["--snapshot", "d", "--rollback", "--yes"])).toBe(
       "ROLLBACK — deleting the import"
     );
@@ -182,6 +191,35 @@ describe("apply refusals", () => {
     ]);
     expect(applyRefusals({ blocking: [], unmapped, acceptUnmapped: true })).toEqual([]);
     expect(applyRefusals({ blocking: ["b"], unmapped, acceptUnmapped: true })).toEqual(["b"]);
+  });
+});
+
+describe("rollback lines (I2)", () => {
+  it("prints exactly what --yes would delete", () => {
+    expect(
+      rollbackPreviewLines({
+        threads: 3,
+        posts: 7,
+        nativeReplies: 1,
+        links: 2,
+        categories: ["xf-12", "xf-13"],
+        nodeMap: 1,
+        assets: 4,
+        files: 5,
+      })
+    ).toEqual([
+      "Rollback preview (nothing deleted): 3 imported threads, 7 posts (1 native replies on imported threads)",
+      "  action links on those posts: 2 (returned to their XenForo post, or deleted with a native reply)",
+      "  archive categories 2 (xf-12, xf-13), node map rows 1, forum media assets 4, copied files 5",
+      "Pass --yes to delete these (the legacy redirect must be off).",
+    ]);
+  });
+
+  it("tells the operator to turn the redirect off first", () => {
+    expect(redirectOnRefusal(false)).toBe(
+      "The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- off"
+    );
+    expect(redirectOnRefusal(true)).toMatch(/forum:legacy-redirect -- --production off$/);
   });
 });
 

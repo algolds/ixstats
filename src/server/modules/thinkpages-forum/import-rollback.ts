@@ -1,12 +1,14 @@
 /**
  * Undoes the XenForo import (phase 4, `--rollback --yes`): every thread with a XenForo id (its posts cascade, native
- * replies posted on it included, so the runner prints their count and needs `--yes`), the action links of those
- * posts (a link the import moved from the XenForo post goes back to it; a native reply's link is deleted, T0-7), the
- * `xf-*` archive categories left without threads, the applied node map, the "Forum" media assets of the snapshot's
- * attachments and their copied files with thumbnails. Reports, warnings and mod-log rows that name deleted content
- * stay (the report queue handles gone targets; the log is append-only). Threads go in chunks, one transaction each,
- * so an interrupted rollback is finished by a rerun. The import lock is asserted before every chunk and before the
- * remaining deletes (ImportLockLostError stops it).
+ * replies posted on it included), the action links of those posts (a link the import moved from the XenForo post goes
+ * back to it; a native reply's link is deleted, T0-7), the `xf-*` archive categories left without threads, the
+ * applied node map, every "Forum" media asset and every copied file (with thumbnails) under `<uploadsDir>/forum`
+ * named like the import names them (M18: whatever snapshot copied them). Reports, warnings and mod-log rows that name
+ * deleted content stay (the report queue handles gone targets; the log is append-only). Threads go in chunks, one
+ * transaction each, so an interrupted rollback is finished by a rerun. The import lock is asserted before every chunk
+ * and before the remaining deletes (ImportLockLostError stops it).
+ * `previewRollback` (I2, `--rollback` without `--yes`) counts the same rows and files and deletes nothing; the runner
+ * refuses `--yes` while the legacy redirect switch is on (`legacyRedirectOn`).
  */
 import { promises as nodeFs } from "fs";
 import path from "path";
@@ -14,10 +16,14 @@ import { ARCHIVE_KEY_PREFIX } from "~/lib/thinkpages-forum/import/node-map";
 import { assertImportLock, type ImportDb } from "./import-db";
 import { TRANSACTION_TIMEOUT_MS } from "./import-write";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
+import { LEGACY_FORUM_REDIRECT_KEY } from "./legacy-switch";
 
 const THREAD_CHUNK = 100;
+const ID_CHUNK = 1000;
+const FORUM_SOURCE = { source: "forum" } as const;
+const IMPORTED_THREAD = { xenforoThreadId: { not: null } } as const;
 /** `<attachment id>-<12 hex>-<stem>.<ext>`, optionally `.thumb.webp`: the import's names (attachments.ts). */
-const COPIED_FILE = /^(\d+)-[0-9a-f]{12}-[A-Za-z0-9_-]+\.[a-z0-9]+(?:\.thumb\.webp)?$/;
+const COPIED_FILE = /^\d+-[0-9a-f]{12}-[A-Za-z0-9_-]+\.[a-z0-9]+(?:\.thumb\.webp)?$/;
 
 export interface RollbackFs {
   /** File names in `dir`; empty when it does not exist. */
@@ -94,7 +100,7 @@ async function rollbackThreads(db: ImportDb, ids: string[], totals: RollbackTota
         totals[outcome === "restored" ? "linksRestored" : "linksDeleted"] += 1;
       }
       const { count } = await tx.forumThread.deleteMany({
-        where: { id: { in: ids }, xenforoThreadId: { not: null } },
+        where: { id: { in: ids }, ...IMPORTED_THREAD },
       });
       totals.threads += count;
       totals.posts += posts.length;
@@ -104,43 +110,101 @@ async function rollbackThreads(db: ImportDb, ids: string[], totals: RollbackTota
 }
 
 async function rollbackCategories(db: ImportDb): Promise<number> {
-  const archives = await db.forumCategory.findMany({
-    where: { scope: "site", realmId: null, key: { startsWith: ARCHIVE_KEY_PREFIX } },
-    select: { id: true },
-  });
   let deleted = 0;
-  for (const { id } of archives) {
-    if ((await db.forumThread.count({ where: { categoryId: id } })) > 0) continue;
+  for (const { id } of await emptiedArchives(db)) {
     deleted += (await db.forumCategory.deleteMany({ where: { id } })).count;
   }
   return deleted;
 }
 
-async function removeFiles(
-  dir: string,
-  attachmentIds: ReadonlySet<number>,
-  fs: RollbackFs
-): Promise<number> {
-  let removed = 0;
-  for (const name of await fs.readdir(dir)) {
-    const match = COPIED_FILE.exec(name);
-    if (!match || !attachmentIds.has(Number(match[1]))) continue;
-    await fs.unlink(path.join(dir, name));
-    removed += 1;
+/** The import's copied files (and their thumbnails) in `<uploadsDir>/forum`, by the exact COPIED_FILE pattern. */
+async function copiedFiles(uploadsDir: string, fs: RollbackFs): Promise<string[]> {
+  const dir = path.join(uploadsDir, "forum");
+  return (await fs.readdir(dir))
+    .filter((name) => COPIED_FILE.test(name))
+    .map((name) => path.join(dir, name));
+}
+
+/** `xf-*` archive categories that hold no thread but imported ones: the rollback deletes these. */
+async function emptiedArchives(db: Pick<ImportDb, "forumCategory" | "forumThread">) {
+  const archives = await db.forumCategory.findMany({
+    where: { scope: "site", realmId: null, key: { startsWith: ARCHIVE_KEY_PREFIX } },
+    select: { id: true, key: true },
+  });
+  const out: Array<{ id: string; key: string }> = [];
+  for (const archive of archives) {
+    const kept = await db.forumThread.count({
+      where: { categoryId: archive.id, xenforoThreadId: null },
+    });
+    if (kept === 0) out.push(archive);
   }
-  return removed;
+  return out;
 }
 
 /** Native replies on imported threads: they go with their threads. */
 export function nativeRepliesOnImported(db: Pick<ImportDb, "forumPost">): Promise<number> {
-  return db.forumPost.count({
-    where: { xenforoPostId: null, thread: { xenforoThreadId: { not: null } } },
+  return db.forumPost.count({ where: { xenforoPostId: null, thread: IMPORTED_THREAD } });
+}
+
+export interface RollbackPreview {
+  threads: number;
+  posts: number;
+  nativeReplies: number;
+  /** Native action links on those posts: returned to their XenForo post, or deleted. */
+  links: number;
+  /** Keys of the `xf-*` archive categories left empty. */
+  categories: string[];
+  nodeMap: number;
+  assets: number;
+  files: number;
+}
+
+async function linksOnImported(
+  db: Pick<ImportDb, "forumPost" | "postActionLink">
+): Promise<number> {
+  const posts = await db.forumPost.findMany({
+    where: { thread: IMPORTED_THREAD },
+    select: { id: true },
   });
+  let links = 0;
+  for (let i = 0; i < posts.length; i += ID_CHUNK) {
+    const ids = posts.slice(i, i + ID_CHUNK).map((p) => p.id);
+    links += await db.postActionLink.count({
+      where: { postSource: "native", postRef: { in: ids } },
+    });
+  }
+  return links;
+}
+
+/** I2: what `rollbackImport` would delete, counted; reads only. */
+export async function previewRollback(
+  db: ImportDb,
+  opts: { uploadsDir: string; fs?: RollbackFs }
+): Promise<RollbackPreview> {
+  return {
+    threads: await db.forumThread.count({ where: IMPORTED_THREAD }),
+    posts: await db.forumPost.count({ where: { thread: IMPORTED_THREAD } }),
+    nativeReplies: await nativeRepliesOnImported(db),
+    links: await linksOnImported(db),
+    categories: (await emptiedArchives(db)).map((c) => c.key),
+    nodeMap: await db.systemConfig.count({ where: { key: FORUM_IMPORT_NODE_MAP_KEY } }),
+    assets: await db.uploadedAsset.count({ where: FORUM_SOURCE }),
+    files: (await copiedFiles(opts.uploadsDir, opts.fs ?? diskFs)).length,
+  };
+}
+
+/** I2: whether the legacy forum switch is on (`--rollback --yes` refuses then: redirects would point at nothing). */
+export async function legacyRedirectOn(db: Pick<ImportDb, "systemConfig">): Promise<boolean> {
+  const row = await db.systemConfig.findUnique({
+    where: { key: LEGACY_FORUM_REDIRECT_KEY },
+    select: { value: true },
+  });
+  return row?.value === "true";
 }
 
 export async function rollbackImport(
   db: ImportDb,
-  opts: { attachmentIds: ReadonlySet<number>; uploadsDir: string; fs?: RollbackFs }
+  opts: { uploadsDir: string; fs?: RollbackFs }
 ): Promise<RollbackTotals> {
   const totals: RollbackTotals = {
     threads: 0,
@@ -153,10 +217,7 @@ export async function rollbackImport(
     assets: 0,
     files: 0,
   };
-  const threads = await db.forumThread.findMany({
-    where: { xenforoThreadId: { not: null } },
-    select: { id: true },
-  });
+  const threads = await db.forumThread.findMany({ where: IMPORTED_THREAD, select: { id: true } });
   for (let i = 0; i < threads.length; i += THREAD_CHUNK) {
     await assertImportLock(db);
     await rollbackThreads(
@@ -170,14 +231,11 @@ export async function rollbackImport(
   totals.nodeMap = (
     await db.systemConfig.deleteMany({ where: { key: FORUM_IMPORT_NODE_MAP_KEY } })
   ).count;
-  const refs = [...opts.attachmentIds].map(String);
-  totals.assets = (
-    await db.uploadedAsset.deleteMany({ where: { source: "forum", sourceRef: { in: refs } } })
-  ).count;
-  totals.files = await removeFiles(
-    path.join(opts.uploadsDir, "forum"),
-    opts.attachmentIds,
-    opts.fs ?? diskFs
-  );
+  totals.assets = (await db.uploadedAsset.deleteMany({ where: FORUM_SOURCE })).count;
+  const fs = opts.fs ?? diskFs;
+  for (const file of await copiedFiles(opts.uploadsDir, fs)) {
+    await fs.unlink(file);
+    totals.files += 1;
+  }
   return totals;
 }
