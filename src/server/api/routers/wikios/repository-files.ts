@@ -32,8 +32,19 @@ interface RepositoryFilePage {
   nextCursor: string | null;
 }
 
-/** An IxWiki cursor is a decimal offset; this bounds how deep a client can page. */
-const MAX_OFFSET = 100_000;
+/**
+ * An IxWiki cursor is a decimal offset; this bounds how deep a client can page.
+ * ponytail: `MediaAssetService.search` walks the table from row 0 to skip `offset` rows (about two queries per 50
+ * rows), so paging deeper than 2000 costs too much on a public procedure. Upgrade path: a keyset cursor over
+ * (title, id), which the existing orderBy already supports, instead of an offset.
+ */
+const MAX_OFFSET = 2000;
+/** The IxWiki file-type filter's mime types. */
+const FILE_TYPE_MIMES = {
+  jpg: ["image/jpeg"],
+  png: ["image/png"],
+  svg: ["image/svg+xml"],
+} as const;
 /** A MediaWiki continuation carries a few short keys; anything beyond that is not one. */
 const MAX_CONTINUE_KEYS = 10;
 /** The continuation keys MediaWiki returns for the three request shapes (search, categorymembers, allimages + imageinfo). */
@@ -100,6 +111,7 @@ function fromUploadedAsset(record: UploadedAssetRecord): RepositoryFile {
 async function ixwikiPage(input: {
   query?: string;
   category?: string;
+  fileType?: keyof typeof FILE_TYPE_MIMES;
   cursor?: string | null;
   limit: number;
 }): Promise<RepositoryFilePage> {
@@ -107,6 +119,7 @@ async function ixwikiPage(input: {
   const assets = await MediaAssetService.search({
     query: input.query,
     category: input.category,
+    fileTypes: input.fileType ? FILE_TYPE_MIMES[input.fileType] : undefined,
     limit: input.limit,
     offset,
   });
@@ -122,7 +135,10 @@ async function ixwikiPage(input: {
       mime: a.mimeType || "image/png",
       blurhash: a.blurhash ?? null,
     })),
-    nextCursor: assets.length >= input.limit ? String(offset + input.limit) : null,
+    nextCursor:
+      assets.length >= input.limit && offset + input.limit < MAX_OFFSET
+        ? String(offset + input.limit)
+        : null,
   };
 }
 
@@ -204,6 +220,8 @@ export const wikiosRepositoryFilesRouter = createTRPCRouter({
         source: z.enum(["ixwiki", "iiwiki", "forum", "mine"]),
         query: z.string().max(200).optional(),
         category: z.string().max(200).optional(),
+        /** IxWiki only: keep one kind of picture. The other sources ignore it. */
+        fileType: z.enum(["jpg", "png", "svg"]).optional(),
         cursor: z.string().max(2000).nullish(),
         limit: z.number().int().min(1).max(50).default(40),
       })

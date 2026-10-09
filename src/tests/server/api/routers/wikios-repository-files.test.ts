@@ -70,6 +70,44 @@ describe("repositoryFiles: ixwiki", () => {
     expect(second.nextCursor).toBeNull();
   });
 
+  it("rejects a cursor deeper than the 2000-row ceiling and ends the page that reaches it", async () => {
+    await expect(
+      signedOut().repositoryFiles({ source: "ixwiki", cursor: "2001" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(mockSearch).not.toHaveBeenCalled();
+
+    mockSearch.mockResolvedValueOnce(Array.from({ length: 40 }, (_, i) => asset(i)));
+    const last = await signedOut().repositoryFiles({ source: "ixwiki", limit: 40, cursor: "1960" });
+    expect(mockSearch.mock.calls[0]![0]).toMatchObject({ offset: 1960 });
+    expect(last.files).toHaveLength(40);
+    expect(last.nextCursor).toBeNull();
+
+    mockSearch.mockResolvedValueOnce(Array.from({ length: 40 }, (_, i) => asset(i)));
+    const before = await signedOut().repositoryFiles({ source: "ixwiki", limit: 40, cursor: "1920" });
+    expect(before.nextCursor).toBe("1960");
+  });
+
+  it.each([
+    ["jpg", ["image/jpeg"]],
+    ["png", ["image/png"]],
+    ["svg", ["image/svg+xml"]],
+  ] as const)("maps fileType %s to mime types for the IxWiki search", async (fileType, mimes) => {
+    mockSearch.mockResolvedValueOnce([]);
+    await signedOut().repositoryFiles({ source: "ixwiki", fileType });
+    expect(mockSearch.mock.calls[0]![0]).toMatchObject({ fileTypes: mimes });
+  });
+
+  it("passes no fileTypes without a fileType, and ignores it for other sources", async () => {
+    mockSearch.mockResolvedValueOnce([]);
+    await signedOut().repositoryFiles({ source: "ixwiki" });
+    expect(mockSearch.mock.calls[0]![0].fileTypes).toBeUndefined();
+
+    mockListUploaded.mockResolvedValue({ items: [], nextCursor: null });
+    await signedOut().repositoryFiles({ source: "forum", fileType: "svg" });
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(mockListUploaded.mock.calls[0]![0]).not.toHaveProperty("fileType");
+  });
+
   it("rejects a cursor that is not an offset", async () => {
     await expect(
       signedOut().repositoryFiles({ source: "ixwiki", cursor: "abc" })
@@ -142,6 +180,7 @@ describe("repositoryFiles: forum and mine", () => {
     sizeBytes: 99,
     blurhash: "LEHV6nWB2yk8",
     source: "forum",
+    visibility: "public",
     createdAt: new Date("2026-10-09T00:00:00Z"),
   };
 
