@@ -113,6 +113,7 @@ export {
   getThreadPosts,
   listSiteCategories,
   loadCategory,
+  loadVisibleThread,
   POSTS_PER_PAGE,
   resolvePostLocation,
   THREADS_PER_PAGE,
@@ -140,6 +141,14 @@ export {
   type RealmReadsDb,
 } from "./realm-reads";
 export { seedRealmCategories, type SeedDb } from "./realm-seed";
+export {
+  isThreadStashed,
+  listStashedThreads,
+  stashThread,
+  unstashThread,
+  type StashDb,
+  type StashOwner,
+} from "./stash";
 export {
   createThread,
   editPost,

@@ -99,6 +99,19 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn(), findFirst: jest.fn() },
     auditLog: { create: jest.fn() },
+    // The native forum thread's lookup (a public General thread) and the moderator context's reads.
+    forumThread: {
+      findUnique: jest.fn(async () => ({
+        id: "t7",
+        title: "A native thread",
+        authorUserId: "u_other",
+        hidden: false,
+        category: { id: "cat_general", scope: "site", realmId: null, visibility: "public" },
+      })),
+    },
+    realm: { findMany: jest.fn(async () => []) },
+    realmOfficer: { findMany: jest.fn(async () => []) },
+    forumCategoryModerator: { findMany: jest.fn(async () => []) },
     stash: {
       findFirst: jest.fn(async () => ({
         id: "stash_1",
@@ -135,6 +148,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
 import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
 import { forumStashRouter } from "~/server/api/routers/forum/stash";
+import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
@@ -287,6 +301,68 @@ describe("forum threads are matched by content type as well as title", () => {
     await forum().unstashThread({ threadId: 7, ...extra });
 
     expect(store.map((i) => i.contentType)).toEqual(["wiki"]);
+  });
+});
+
+describe("native forum threads are matched by content type as well as title", () => {
+  const NATIVE = "thinkpages:thread:t7";
+  // The same title under another content type: a stash item the native thread must never be confused with.
+  const otherItem = (): FakeItem => ({
+    id: "item_other",
+    stashId: "stash_1",
+    pageTitle: NATIVE,
+    pageSlug: "",
+    contentType: "wiki",
+    note: null,
+    contentId: null,
+    savedAt: new Date(),
+    updatedAt: new Date(),
+    stash: { id: "stash_1", name: "My Stash" },
+  });
+  const forum = () => createCallerFactory(thinkpagesForumRouter)(ctx());
+
+  it("stashes a thread as a forum_thread item next to a same-titled item of another type", async () => {
+    store.push(otherItem());
+
+    await forum().stashThread({ threadId: "t7" });
+
+    expect(store.map((i) => i.contentType).sort()).toEqual(["forum_thread", "wiki"]);
+    expect(store.find((i) => i.contentType === "forum_thread")).toMatchObject({
+      pageTitle: NATIVE,
+      pageSlug: "/thinkpages/t/t7",
+      contentId: null,
+      note: "A native thread",
+    });
+  });
+
+  it("isThreadStashed ignores a same-titled item of another content type", async () => {
+    store.push(otherItem());
+    expect((await forum().isThreadStashed({ threadId: "t7" })).stashed).toBe(false);
+
+    await forum().stashThread({ threadId: "t7" });
+
+    expect((await forum().isThreadStashed({ threadId: "t7" })).stashed).toBe(true);
+  });
+
+  it.each([
+    ["in one stash", { stashId: "stash_1" }],
+    ["in all the user's stashes", {}],
+  ])("unstashThread removes only the thread, %s", async (_where, extra) => {
+    store.push(otherItem());
+    await forum().stashThread({ threadId: "t7" });
+
+    await forum().unstashThread({ threadId: "t7", ...extra });
+
+    expect(store.map((i) => i.contentType)).toEqual(["wiki"]);
+  });
+
+  it("the stash page's title-only calls mean a forum thread for a native title", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+    await forum().stashThread({ threadId: "t7" });
+
+    await stash.unstashPage({ pageTitle: NATIVE, stashId: "stash_1" });
+
+    expect(store).toEqual([]);
   });
 });
 

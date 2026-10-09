@@ -170,12 +170,21 @@ export async function getCategoryThreads(
   };
 }
 
-export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId: string, page: number) {
+/**
+ * The thread the viewer may read (the canSeeThread rule, and its realm visible), else NOT_FOUND: a thread they cannot
+ * see reads as one that does not exist. Shared by the thread read and by stashing.
+ */
+export async function loadVisibleThread(db: ReadsDb, viewer: ForumViewer, threadId: string) {
   const row = await db.forumThread.findUnique({ where: { id: threadId }, include: { category: true } });
   if (!row || !canSeeThread(viewer, row, row.category)) throw notFound("Thread");
   const realm = await visibleRealmOf(db, viewer, row.category);
   if (realm === undefined) throw notFound("Thread");
   const { category, ...thread } = row;
+  return { thread, category, realm };
+}
+
+export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId: string, page: number) {
+  const { thread, category, realm } = await loadVisibleThread(db, viewer, threadId);
   const where = { threadId, ...hiddenFilter(viewer, category) };
   const [posts, total] = await Promise.all([
     db.forumPost.findMany({

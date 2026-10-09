@@ -37,6 +37,7 @@ import {
   type StashedQuoteItem,
 } from "~/components/wiki-os/stashes";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
+import { isStashedArticle, isStashedForumThread } from "~/lib/wiki-os/stash-content-type";
 
 export default function StashesPage() {
   usePageTitle({ title: "Stash" });
@@ -107,11 +108,7 @@ export default function StashesPage() {
   // Group items by category
   const allArticles = useMemo(
     () =>
-      items.filter(
-        (item) =>
-          item.contentType === "wiki" ||
-          (!item.pageTitle.startsWith("commons:") && !item.pageTitle.startsWith("forum:thread:"))
-      ),
+      items.filter(isStashedArticle),
     // oxlint-disable-next-line
     [items]
   );
@@ -157,10 +154,7 @@ export default function StashesPage() {
   );
 
   const allThreads = useMemo(
-    () =>
-      items.filter(
-        (item) => item.contentType === "forum_thread" || item.pageTitle.startsWith("forum:thread:")
-      ),
+    () => items.filter(isStashedForumThread),
     // oxlint-disable-next-line
     [items]
   );
@@ -252,7 +246,7 @@ export default function StashesPage() {
       ...allImages.map((img) => `- ${img.pageTitle}`),
       ``,
       `## Discussions (${allThreads.length})`,
-      ...allThreads.map((t) => `- ${t.pageTitle}`),
+      ...allThreads.map((t) => `- ${t.note ?? t.pageTitle}`),
     ];
 
     const blob = new Blob([lines.join("\n")], { type: "text/markdown" });

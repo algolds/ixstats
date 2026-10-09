@@ -18,6 +18,7 @@ import { Pagination, useLastPageRedirect } from "./Pagination";
 import type { ModeratorTools } from "./ModeratorMenu";
 import { PostItem, type ForumPost } from "./PostItem";
 import { ReportDialog } from "./ReportDialog";
+import { StashThreadButton } from "./StashThreadButton";
 import { ThreadModeratorBar } from "./ThreadModeratorBar";
 
 const NO_POSTS: ForumPost[] = [];
@@ -151,9 +152,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           refresh={refresh}
         />
       ) : null}
-      {!data.canModerate && isSignedIn && !data.viewerIsAuthor ? (
-        <div className="flex justify-end">
-          <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+      {isSignedIn ? (
+        <div className="flex justify-end gap-2">
+          <StashThreadButton threadId={thread.id} />
+          {!data.canModerate && !data.viewerIsAuthor ? (
+            <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+          ) : null}
         </div>
       ) : null}
       {thread.hidden ? (

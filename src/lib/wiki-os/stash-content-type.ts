@@ -8,9 +8,45 @@
  */
 export type StashContentType = "wiki" | "image" | "forum_thread";
 
+/** Title prefixes of a stashed forum thread: the native ThinkPages forum, and the XenForo bridge's legacy items. */
+export const NATIVE_THREAD_PREFIX = "thinkpages:thread:";
+export const LEGACY_THREAD_PREFIX = "forum:thread:";
+
+/** The thread id inside a native stash title, else null. */
+export function nativeThreadIdOf(pageTitle: string): string | null {
+  const id = pageTitle.startsWith(NATIVE_THREAD_PREFIX)
+    ? pageTitle.slice(NATIVE_THREAD_PREFIX.length)
+    : "";
+  return id === "" ? null : id;
+}
+
+/** Whether a stash title names a forum thread, native or legacy. */
+export function isForumThreadTitle(pageTitle: string): boolean {
+  return pageTitle.startsWith(NATIVE_THREAD_PREFIX) || pageTitle.startsWith(LEGACY_THREAD_PREFIX);
+}
+
 /** The content type a bare stash title stands for. */
 export function stashContentTypeForTitle(pageTitle: string): StashContentType {
   if (pageTitle.startsWith("commons:")) return "image";
-  if (pageTitle.startsWith("forum:thread:")) return "forum_thread";
+  if (isForumThreadTitle(pageTitle)) return "forum_thread";
   return "wiki";
+}
+
+/** Whether a stash item is a forum thread, native or legacy: by its content type, else by its title. */
+export function isStashedForumThread(item: {
+  contentType?: string | null;
+  pageTitle: string;
+}): boolean {
+  return item.contentType === "forum_thread" || isForumThreadTitle(item.pageTitle);
+}
+
+/** Whether a stash item is a wiki article: an explicit "wiki" type, else anything that is not an image or a thread. */
+export function isStashedArticle(item: {
+  contentType?: string | null;
+  pageTitle: string;
+}): boolean {
+  return (
+    item.contentType === "wiki" ||
+    (!item.pageTitle.startsWith("commons:") && !isForumThreadTitle(item.pageTitle))
+  );
 }
