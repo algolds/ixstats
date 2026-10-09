@@ -23,7 +23,14 @@ const ok = <T,>(data: T): QueryResult<T> => ({
 let stashItems: QueryResult<{ items: Array<{ pageTitle: string }> }>;
 let commonsImages: QueryResult<CommonsImage[]>;
 let pageImages: (title: string) => QueryResult<unknown[]>;
-let iiwikiFiles: (search: string) => QueryResult<unknown[]>;
+let sisterFileInfo: (
+  input: { wiki: string; titles: string[] },
+  enabled: boolean
+) => QueryResult<unknown[]>;
+const sisterCalls: Array<{
+  input: { wiki: string; titles: string[] };
+  options: { enabled: boolean };
+}> = [];
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -32,22 +39,24 @@ jest.mock("~/trpc/react", () => ({
         useQuery: () => ok([{ id: "s1", name: "Harbours", color: "#336699", itemCount: 2 }]),
       },
       getStashItems: { useQuery: () => stashItems },
+      sisterFileInfo: {
+        useQuery: (input: { wiki: string; titles: string[] }, options: { enabled: boolean }) => {
+          sisterCalls.push({ input, options });
+          return sisterFileInfo(input, options.enabled);
+        },
+      },
     },
     commons: { getImageInfoByTitles: { useQuery: () => commonsImages } },
     useQueries: (
       build: (t: {
         wikios: {
           getPageImages: (input: { title: string }) => { title: string };
-          searchFiles: (input: { query: string }) => { search: string };
         };
-      }) => Array<{ title: string } | { search: string }>
+      }) => Array<{ title: string }>
     ) =>
       build({
-        wikios: {
-          getPageImages: (input) => ({ title: input.title }),
-          searchFiles: (input) => ({ search: input.query }),
-        },
-      }).map((q) => ("search" in q ? iiwikiFiles(q.search) : pageImages(q.title))),
+        wikios: { getPageImages: (input) => ({ title: input.title }) },
+      }).map((q) => pageImages(q.title)),
   },
 }));
 jest.mock("~/components/wiki-os/commons/CommonsDetailPanel", () => ({
@@ -80,7 +89,8 @@ function openStash() {
 }
 
 beforeEach(() => {
-  iiwikiFiles = () => ok([]);
+  sisterCalls.length = 0;
+  sisterFileInfo = () => ok([]);
   stashItems = ok({ items: [{ pageTitle: "commons:File:A.jpg" }, { pageTitle: "Some page" }] });
   commonsImages = ok([commonsImage]);
   pageImages = () =>
@@ -123,12 +133,12 @@ describe("MyStashTab", () => {
     expect(commonsImages.refetch).toHaveBeenCalledTimes(1);
   });
 
-  it("shows an image stashed from IIWiki, matched by its File: title among the search results", () => {
-    stashItems = ok({ items: [{ pageTitle: "iiwiki:File:Flag_of_X.svg" }] });
-    const searches: string[] = [];
-    iiwikiFiles = (search) => {
-      searches.push(search);
-      return ok([
+  it("shows an image stashed from IIWiki, matched by its exact File: title, from one lookup", () => {
+    stashItems = ok({
+      items: [{ pageTitle: "iiwiki:File:Flag_of_X.svg" }, { pageTitle: "iiwiki:File:Gone.png" }],
+    });
+    sisterFileInfo = () =>
+      ok([
         {
           name: "Flag of Xanadu.svg",
           title: "File:Flag of Xanadu.svg",
@@ -139,8 +149,8 @@ describe("MyStashTab", () => {
           mime: "image/svg+xml",
         },
         {
-          name: "Flag of X.svg",
-          title: "File:Flag of X.svg",
+          name: "Flag_of_X.svg",
+          title: "File:Flag_of_X.svg",
           url: "https://iiwiki.com/images/1/1a/Flag_of_X.svg",
           thumbUrl: "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png",
           width: 900,
@@ -148,14 +158,44 @@ describe("MyStashTab", () => {
           mime: "image/svg+xml",
         },
       ]);
-    };
     openStash();
 
-    expect(searches).toContain("Flag of X");
+    const last = sisterCalls.at(-1)!;
+    expect(last.input).toEqual({
+      wiki: "iiwiki",
+      titles: ["File:Flag_of_X.svg", "File:Gone.png"],
+    });
+    expect(last.options.enabled).toBe(true);
     expect(screen.getByRole("img", { name: "Flag of X.svg" })).toHaveAttribute(
       "src",
       "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png"
     );
     expect(screen.queryByRole("img", { name: "Flag of Xanadu.svg" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Gone.png" })).not.toBeInTheDocument();
+  });
+
+  it("asks for at most 50 IIWiki titles, and does not run the lookup without any", () => {
+    stashItems = ok({
+      items: Array.from({ length: 60 }, (_, i) => ({ pageTitle: `iiwiki:File:F${i}.png` })),
+    });
+    openStash();
+    expect(sisterCalls.at(-1)!.input.titles).toHaveLength(50);
+
+    sisterCalls.length = 0;
+    stashItems = ok({ items: [{ pageTitle: "Some page" }] });
+    openStash();
+    expect(sisterCalls.at(-1)!.input.titles).toEqual([]);
+    expect(sisterCalls.at(-1)!.options.enabled).toBe(false);
+  });
+
+  it("shows an error with a retry when the IIWiki lookup fails", () => {
+    stashItems = ok({ items: [{ pageTitle: "iiwiki:File:A.png" }] });
+    const failed = { isLoading: false, isError: true, refetch: jest.fn() };
+    sisterFileInfo = () => failed;
+    openStash();
+
+    expect(screen.getByText("Could not load this stash.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(failed.refetch).toHaveBeenCalledTimes(1);
   });
 });
