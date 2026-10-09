@@ -21,6 +21,7 @@ import {
   withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
+import { seedRealmCategories } from "~/server/modules/thinkpages-forum";
 import { notifyClaimRejected } from "~/server/modules/realms/realms.notices";
 import {
   resolveInviterUserId,
@@ -264,11 +265,13 @@ export const realmsRouter = createTRPCRouter({
         ownerId: z.string().min(1).optional(),
       })
     )
-    .mutation(({ ctx, input }) =>
-      ctx.db.realm
+    .mutation(async ({ ctx, input }) => {
+      const realm = await ctx.db.realm
         .create({ data: { ...input, ownerId: input.ownerId ?? "system", status: "active" } })
-        .catch(slugTaken)
-    ),
+        .catch(slugTaken);
+      await seedRealmCategories(ctx.db, realm.id);
+      return realm;
+    }),
 
   /** Admin: update any realm (not restricted to owner) */
   adminUpdateRealm: adminProcedure

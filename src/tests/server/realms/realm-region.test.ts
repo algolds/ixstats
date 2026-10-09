@@ -702,4 +702,15 @@ describe("deleting a realm (AT-8)", () => {
     expect(db.realmBoard.delete).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
     expect(db.realm.delete).toHaveBeenCalledWith({ where: { id: "eurth" } });
   });
+
+  it("deletes the realm's forum categories before the realm (D16)", async () => {
+    const db = deletableDb();
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.forumCategory.deleteMany).toHaveBeenCalledWith({
+      where: { scope: "realm", realmId: "eurth" },
+    });
+    expect(db.forumCategory.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      db.realm.delete.mock.invocationCallOrder[0]!
+    );
+  });
 });

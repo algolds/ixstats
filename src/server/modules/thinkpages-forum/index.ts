@@ -13,6 +13,7 @@ export {
   type ForumUserAuthor,
   type ReadsDb,
 } from "./reads";
+export { seedRealmCategories, type SeedDb } from "./realm-seed";
 export {
   createThread,
   editPost,
