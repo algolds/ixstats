@@ -12,6 +12,7 @@ interface MockApi {
   results: Record<string, QueryResult>;
   mutations: Record<string, jest.Mock>;
   invalidations: Record<string, jest.Mock>;
+  resolvePost: jest.Mock;
 }
 
 jest.mock("~/trpc/react", () => {
@@ -24,6 +25,7 @@ jest.mock("~/trpc/react", () => {
     useMutation: () => ({ mutateAsync: mutations[name], mutate: jest.fn(), isPending: false }),
   });
   const invalidations: Record<string, jest.Mock> = {};
+  const resolvePost = jest.fn(() => Promise.resolve({ threadId: "t1", page: 1 }));
   const invalidator = (name: string) => {
     invalidations[name] = jest.fn(() => Promise.resolve());
     return { invalidate: invalidations[name] };
@@ -36,11 +38,12 @@ jest.mock("~/trpc/react", () => {
       realmSection: invalidator("realmSection"),
       myStanding: invalidator("myStanding"),
       isThreadStashed: invalidator("isThreadStashed"),
-      resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
+      resolvePost: { fetch: resolvePost },
     },
     thinkpagesForumMod: { ...invalidator("mod"), context: invalidator("context") },
   };
   return {
+    resolvePost,
     results,
     mutations,
     invalidations,
@@ -185,7 +188,10 @@ import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
 
-const { results, mutations, invalidations } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations, invalidations, resolvePost } = jest.requireMock<MockApi>("~/trpc/react");
+const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
+  "next/navigation"
+);
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
 const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.Mock } }>(
   "~/hooks/useNotify"
@@ -1017,6 +1023,37 @@ describe("permalink scroll", () => {
     set("thread", { data: threadData() });
     rerender(<ThreadView threadId="t1" page={1} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    window.location.hash = "";
+  });
+
+  it("moves to the page the post is on for this viewer when it is not on the loaded page (P2)", async () => {
+    const scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.location.hash = "#post-p40";
+    resolvePost.mockResolvedValueOnce({ threadId: "t1", page: 2 });
+    set("thread", { data: threadData() });
+    render(<ThreadView threadId="t1" page={1} />);
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=2#post-p40")
+    );
+    expect(resolvePost).toHaveBeenCalledWith({ postId: "p40" });
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    window.location.hash = "";
+  });
+
+  it("stays put when the post is unknown or already on this page, asking once per page", async () => {
+    window.location.hash = "#post-gone";
+    resolvePost.mockResolvedValueOnce(null).mockResolvedValueOnce({ threadId: "t1", page: 1 });
+    set("thread", { data: threadData() });
+    const { rerender } = render(<ThreadView threadId="t1" page={1} />);
+    await waitFor(() => expect(resolvePost).toHaveBeenCalledTimes(1));
+    set("thread", { data: threadData() });
+    rerender(<ThreadView threadId="t1" page={1} />);
+    window.location.hash = "#post-p40";
+    set("thread", { data: threadData() });
+    rerender(<ThreadView threadId="t1" page={1} />);
+    await waitFor(() => expect(resolvePost).toHaveBeenCalledTimes(2));
+    expect(router.replace).not.toHaveBeenCalled();
     window.location.hash = "";
   });
 });
