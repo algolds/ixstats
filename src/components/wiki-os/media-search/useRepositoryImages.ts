@@ -6,7 +6,7 @@
  * searching are one query). Each page is its own cached query keyed by its offset; a new term starts again from the
  * first page, so nothing is reset by hand. The wiki sources (IxWiki, IIWiki, the old forum's images, the signed-in
  * user's own uploads) page the same way through `wikios.repositoryFiles`, each page keyed by its cursor, and are
- * filtered by file type here. A wiki source lists its files as soon as it is enabled (an empty query is allowed and any
+ * filtered by file type on the server for IxWiki (the type is sent with the request) and here for the others. A wiki source lists its files as soon as it is enabled (an empty query is allowed and any
  * typed term is searched, newest first for forum and own uploads); only Commons waits for 2 characters or a category.
  */
 
@@ -144,7 +144,7 @@ function useWikiPages(
   active: boolean,
   pageSize: number
 ): Slice {
-  const key = `${source}\u0000${query}\u0000${category ?? ""}`;
+  const key = `${source}\u0000${query}\u0000${category ?? ""}\u0000${fileType}`;
   const [paging, setPaging] = useState<{ key: string; cursors: (string | null)[] }>({
     key: "",
     cursors: [null],
@@ -159,6 +159,7 @@ function useWikiPages(
               source,
               query: query || undefined,
               category: takesCategory(source) ? (category ?? undefined) : undefined,
+              fileType: fileType === "all" ? undefined : fileType,
               cursor,
               limit: pageSize,
             },
@@ -168,12 +169,15 @@ function useWikiPages(
       : []
   );
 
-  const images = pages
-    .reduce<CommonsImage[]>(
-      (merged, page) => dedupeImages(merged, wikiFilesToImages(page.data?.files ?? [], source)),
-      []
-    )
-    .filter((img) => matchesImageFilters(img, fileType, "all"));
+  const merged = pages.reduce<CommonsImage[]>(
+    (all, page) => dedupeImages(all, wikiFilesToImages(page.data?.files ?? [], source)),
+    []
+  );
+  // IxWiki is filtered by the server before it pages; the other sources are filtered after.
+  const images =
+    source === "ixwiki"
+      ? merged
+      : merged.filter((img) => matchesImageFilters(img, fileType, "all"));
   const last = pages[pages.length - 1];
   const nextCursor = last?.data?.nextCursor ?? null;
   const failed = pages.find((page) => page.isError);
