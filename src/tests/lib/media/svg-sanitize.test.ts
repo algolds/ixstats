@@ -1,6 +1,14 @@
 /** @jest-environment node */
 import { describe, it, expect } from "@jest/globals";
+import { JSDOM } from "jsdom";
 import { sanitizeSvg } from "~/lib/media/svg-sanitize";
+
+/** Parses `markup` the way a browser reads a stored .svg file; the parse error text, or null when well-formed. */
+function xmlError(markup: string): string | null {
+  const { DOMParser } = new JSDOM("").window;
+  const doc = new DOMParser().parseFromString(markup, "image/svg+xml");
+  return doc.getElementsByTagName("parsererror")[0]?.textContent ?? null;
+}
 
 const wrap = (inner: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">${inner}</svg>`;
 
@@ -44,6 +52,41 @@ describe("sanitizeSvg", () => {
   it("drops a style that imports another resource", () => {
     const out = sanitizeSvg(wrap("<style>@import url(https://evil.example/a.css);</style><rect/>"));
     expect(out).not.toContain("evil.example");
+  });
+
+  it("round-trips a non-breaking space as well-formed XML", () => {
+    const out = sanitizeSvg(wrap('<text aria-label="a\u00a0b">a\u00a0b</text>'));
+    expect(out).not.toContain("&nbsp;");
+    expect(out).toContain("a\u00a0b");
+    expect(xmlError(out ?? "")).toBeNull();
+  });
+
+  it("removes a style attribute that loads an external url", () => {
+    const out = sanitizeSvg(wrap('<rect style="fill:url(https://x.example/a)"/>'));
+    expect(out).not.toContain("x.example");
+    expect(out).toContain("<rect");
+  });
+
+  it.each(["fill", "filter", "mask", "clip-path", "marker-start"])("removes an external url in %s", (attr) => {
+    const out = sanitizeSvg(wrap(`<rect ${attr}="url(https://x.example/a)"/>`));
+    expect(out).not.toContain("x.example");
+  });
+
+  it("keeps a same-document url in a presentation attribute", () => {
+    const out = sanitizeSvg(wrap('<defs><linearGradient id="g"/></defs><rect fill="url(#g)"/>'));
+    expect(out).toContain('fill="url(#g)"');
+  });
+
+  it("removes a CSS escape in a style attribute or element", () => {
+    const attr = sanitizeSvg(wrap('<rect style="fill:\\75 rl(https://x.example/a)"/>'));
+    expect(attr).not.toContain("x.example");
+    const element = sanitizeSvg(wrap("<style>.a{fill:\\75 rl(https://x.example/a)}</style><rect/>"));
+    expect(element).not.toContain("x.example");
+  });
+
+  it("keeps a style whose url is a quoted same-document reference", () => {
+    const out = sanitizeSvg(wrap('<style>.a{fill:url("#g")}</style><rect class="a"/>'));
+    expect(out).toContain('url("#g")');
   });
 
   it("returns null when no svg root remains", () => {
