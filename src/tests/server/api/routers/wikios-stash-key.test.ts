@@ -147,7 +147,6 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
 import { onomaNameBankRouter } from "~/server/api/routers/onoma/namebank";
-import { forumStashRouter } from "~/server/api/routers/forum/stash";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -255,52 +254,6 @@ describe("one stash holds the same title once per content type", () => {
     await annotations.addAnnotation({ pageTitle: "Rome", selectedText: "the eternal city" });
 
     expect(store.map((i) => i.contentType).sort()).toEqual(["name", "wiki"]);
-  });
-});
-
-describe("forum threads are matched by content type as well as title", () => {
-  // The same title under another content type: a stash item the forum thread must never be confused with.
-  const otherItem = (): FakeItem => ({
-    id: "item_other",
-    stashId: "stash_1",
-    pageTitle: "forum:thread:7",
-    pageSlug: "",
-    contentType: "wiki",
-    note: null,
-    contentId: null,
-    savedAt: new Date(),
-    updatedAt: new Date(),
-    stash: { id: "stash_1", name: "My Stash" },
-  });
-  const forum = () => createCallerFactory(forumStashRouter)(ctx());
-
-  it("stashes a thread as a forum_thread item next to a same-titled item of another type", async () => {
-    store.push(otherItem());
-
-    await forum().stashThread({ threadId: 7, title: "A thread" });
-
-    expect(store.map((i) => i.contentType).sort()).toEqual(["forum_thread", "wiki"]);
-  });
-
-  it("isThreadStashed ignores a same-titled item of another content type", async () => {
-    store.push(otherItem());
-    expect((await forum().isThreadStashed({ threadId: 7 })).stashed).toBe(false);
-
-    await forum().stashThread({ threadId: 7, title: "A thread" });
-
-    expect((await forum().isThreadStashed({ threadId: 7 })).stashed).toBe(true);
-  });
-
-  it.each([
-    ["in one stash", { stashId: "stash_1" }],
-    ["in all the user's stashes", {}],
-  ])("unstashThread removes only the thread, %s", async (_where, extra) => {
-    store.push(otherItem());
-    await forum().stashThread({ threadId: 7, title: "A thread" });
-
-    await forum().unstashThread({ threadId: 7, ...extra });
-
-    expect(store.map((i) => i.contentType)).toEqual(["wiki"]);
   });
 });
 

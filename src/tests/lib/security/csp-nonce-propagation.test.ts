@@ -27,8 +27,8 @@ function forwardedRequestHeaders(res: Response): Record<string, string> {
   );
 }
 
-async function run(headers: Record<string, string> = {}) {
-  const req = new NextRequest("http://localhost/countries", { headers });
+async function run(headers: Record<string, string> = {}, path = "/countries") {
+  const req = new NextRequest(`http://localhost${path}`, { headers });
   return middleware(req, {} as NextFetchEvent);
 }
 
@@ -58,5 +58,14 @@ describe("CSP nonce propagation", () => {
 
     expect(a).not.toBe(b);
     expect(res.headers.get("x-csp-nonce")).toBeNull();
+  });
+});
+
+describe("framing of /forum/* (phase 4b: the XenForo widget cards are gone)", () => {
+  it("no longer lets forum.ixwiki.com frame /forum/ pages", async () => {
+    const res = await run({}, "/forum/cards/alex/embed");
+    expect(res.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    expect(res.headers.get("content-security-policy")).not.toContain("forum.ixwiki.com");
+    expect(res.headers.get("x-frame-options")).toBe("DENY");
   });
 });

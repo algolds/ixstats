@@ -214,7 +214,7 @@ configuration object, never from a literal:
   `src/components/dashboard/sections/feed/externalLinks.ts`,
   `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
   `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
-  `src/lib/cards/ns-image-proxy.ts`, `src/lib/forum/forum-utils.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
+  `src/lib/cards/ns-image-proxy.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
 - **The one absolute origin a TemplateStyles `url()` may name** (`mediaWikiOrigin()`, handed to the scoper and part of the sanitizer
   fingerprint; a relative URL stays allowed, any other host is dropped): `src/lib/utils/sanitize-html.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/dashboard/accounts/AccountCreationModal.tsx`,
@@ -223,13 +223,12 @@ configuration object, never from a literal:
   `src/lib/wiki-os/transformers/resolve-highres-image.ts`.
 - **`User-Agent` strings** sent to other services: `src/lib/demo-seed/sports/sports-helpers.ts`, `src/lib/discord/ixtwitter-sync.ts`,
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
-- **Other hosts under ixwiki.com that are not MediaWiki.** The forum (`forum.ixwiki.com`, XenForo):
-  `src/app/api/forum/attachment/[id]/route.ts`, `src/app/api/forum/user-cards/route.ts`, `src/components/settings/ForumAccountVerify.tsx`,
-  `src/server/api/routers/forum/normalize.ts`, `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/lib/thinkpages-forum/import/bbcode.ts`,
-  `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors), `src/lib/action-links.ts`
-  `postPermalinkPath` (no call: spells the forum host for an imported XenForo post's permalink). Accounts (`accounts.ixwiki.com`, Clerk):
+- **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
+  forum phase 4b; links to it are parsed to preview or redirect the imported thread): `src/lib/thinkpages-forum/import/bbcode.ts`,
+  `src/components/dashboard/sections/feed/externalLinks.ts`, `src/components/thinkpages/post/PostInlineLinkPreview.tsx`,
+  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`; the export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
-  (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
+  (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
   `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.

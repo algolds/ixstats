@@ -1,5 +1,6 @@
 /**
- * Canonical shared types for ThinkShare bridge adapters (XenForo forum, MediaWiki talk pages).
+ * Shared types for ThinkShare bridge adapters (the MediaWiki talk page bridge; the XenForo forum bridge was
+ * retired in ThinkPages forum phase 4b).
  */
 
 import type { PrismaClient } from "@prisma/client";

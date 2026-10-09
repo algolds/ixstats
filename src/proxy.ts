@@ -84,15 +84,11 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   const nonce = Buffer.from(requestId).toString("base64");
 
   // Content Security Policy — select template by hostname, inject nonce
-  const isForumWidget = req.nextUrl.pathname.startsWith("/forum/");
   const isEmbeddablePath =
     isEmbeddablePathFn(req.nextUrl.pathname) || isStandaloneRequest(req.headers);
   const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
   let csp = renderCsp(cspTemplate, nonce);
-  if (isForumWidget) {
-    // Allow iframe embedding from forum.ixwiki.com for widget pages
-    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors https://forum.ixwiki.com");
-  } else if (isEmbeddablePath) {
+  if (isEmbeddablePath) {
     // Allow iframe embedding from any origin for maps, wiki articles, and country pages
     csp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
   }
@@ -105,7 +101,7 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  if (!isForumWidget && !isEmbeddablePath) {
+  if (!isEmbeddablePath) {
     response.headers.set("X-Frame-Options", "DENY");
   }
   response.headers.set("X-XSS-Protection", "1; mode=block");

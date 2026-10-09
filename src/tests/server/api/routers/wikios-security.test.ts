@@ -98,7 +98,6 @@ import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { wikiosStashRouter } from "~/server/api/routers/wikios/stash";
-import { forumStashRouter } from "~/server/api/routers/forum/stash";
 import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
@@ -588,78 +587,8 @@ describe("S7: unbounded title and query inputs are capped", () => {
   });
 });
 
-describe("S5: forum stashThread / unstashThread only touch the caller's own stashes", () => {
-  const forumCaller = () => createCallerFactory(forumStashRouter)(asCtx(userCtx()));
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockDb.stashItem.upsert.mockResolvedValue({});
-    mockDb.stashItem.deleteMany.mockResolvedValue({ count: 1 });
-  });
-
-  it("stashThread answers NOT_FOUND for another user's stashId and never upserts", async () => {
-    mockDb.stash.findFirst.mockResolvedValue(null);
-
-    await expect(
-      forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "someone_elses_stash" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-
-    expect(mockDb.stash.findFirst).toHaveBeenCalledWith({
-      where: { id: "someone_elses_stash", userId: { in: ["db1", "user_1"] } },
-      select: { id: true },
-    });
-    expect(mockDb.stashItem.upsert).not.toHaveBeenCalled();
-  });
-
-  it("stashThread upserts into an owned stashId", async () => {
-    mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
-
-    const result = await forumCaller().stashThread({
-      threadId: 7,
-      title: "A thread",
-      stashId: "mine",
-    });
-
-    expect(result).toEqual({ success: true, stashId: "mine" });
-    expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          stashId_contentType_pageTitle: {
-            stashId: "mine",
-            contentType: "forum_thread",
-            pageTitle: "forum:thread:7",
-          },
-        },
-      })
-    );
-  });
-
-  it("unstashThread answers NOT_FOUND for another user's stashId and never deletes", async () => {
-    mockDb.stash.findFirst.mockResolvedValue(null);
-
-    await expect(
-      forumCaller().unstashThread({ threadId: 7, stashId: "someone_elses_stash" })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-
-    expect(mockDb.stashItem.deleteMany).not.toHaveBeenCalled();
-  });
-
-  it("unstashThread deletes from an owned stashId", async () => {
-    mockDb.stash.findFirst.mockResolvedValue({ id: "mine" });
-
-    await forumCaller().unstashThread({ threadId: 7, stashId: "mine" });
-
-    expect(mockDb.stashItem.deleteMany).toHaveBeenCalledWith({
-      where: { stashId: "mine", pageTitle: "forum:thread:7", contentType: "forum_thread" },
-    });
-  });
-
-  it("rejects an over-long stashId", async () => {
-    await expect(
-      forumCaller().stashThread({ threadId: 7, title: "A thread", stashId: "s".repeat(65) })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-});
+// S5 (forum stash ownership) moved with the XenForo bridge's deletion (phase 4b): the native forum stash refuses
+// another user's stash in src/tests/server/modules/thinkpages-forum/stash.test.ts.
 
 describe("S8: bounded inputs on stash, placeholder, profile and discussion endpoints", () => {
   const ctx = () => asCtx(userCtx());
