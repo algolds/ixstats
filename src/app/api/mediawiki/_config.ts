@@ -139,6 +139,18 @@ export const ALLOWED_API_PARAMS = [
   "aisort",
   "aicontinue",
   "redirects",
+  "gsrsearch",
+  "gsrnamespace",
+  "gsrlimit",
+  "gsroffset",
+  "gcmtype",
+  "gcmcontinue",
+  "gailimit",
+  "gaicontinue",
+  "gaifrom",
+  "sroffset",
+  "iicontinue",
+  "continue",
 ] as const;
 
 export const MEDIA_CORS_HEADERS = {
