@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo, useDeferredValue } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -8,16 +8,9 @@ import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCate
 import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { api } from "~/trpc/react";
-import {
-  Xmark as X,
-  Globe,
-  Database,
-  HelpCircle,
-  Folder,
-  Sparks as Sparkles,
-  Upload,
-} from "iconoir-react";
+import { useDebounce } from "~/hooks/useDebounce";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
+import { Xmark as X, Globe, Database, HelpCircle, Folder, Upload } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
@@ -25,14 +18,13 @@ import { cn } from "~/lib/utils";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 import { SearchField } from "~/components/ui/search-field";
 import {
-  dedupeImages,
   matchesImageFilters,
-  wikiFilesToImages,
   type CommonsImage,
   type ImageOrientationFilter,
   type ImageTypeFilter,
   type WikiSubSource,
 } from "~/components/wiki-os/media-search/types";
+import { useRepositoryImages } from "~/components/wiki-os/media-search/useRepositoryImages";
 
 type Tab = "commons" | "wiki";
 
@@ -51,183 +43,64 @@ export default function RepositoryPage() {
   const [tab, setTab] = useState<Tab>("commons");
   const [wikiSubSource, setWikiSubSource] = useState<WikiSubSource>("ixwiki");
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [browsingCategory, setBrowsingCategory] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<CommonsImage | null>(null);
-  const [allImages, setAllImages] = useState<CommonsImage[]>([]);
-  const [searchOffset, setSearchOffset] = useState(0);
-  const [catOffset, setCatOffset] = useState(0);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const lastMergedSearchDataRef = useRef<unknown>(null);
-  const lastMergedCatDataRef = useRef<unknown>(null);
-
-  const handleTabChange = useCallback((newTab: Tab) => {
-    setTab(newTab);
-    setSearchQuery("");
-    setDebouncedQuery("");
-    setAllImages([]);
-    setSearchOffset(0);
-    setCatOffset(0);
-    setBrowsingCategory(null);
-    setSelectedImage(null);
-    setActiveCategories([]);
-    lastMergedSearchDataRef.current = null;
-    lastMergedCatDataRef.current = null;
-  }, []);
-
-  const handleWikiSubSourceChange = useCallback((sub: WikiSubSource) => {
-    setWikiSubSource(sub);
-    setAllImages([]);
-    setSearchOffset(0);
-    setCatOffset(0);
-    setBrowsingCategory(null);
-    setSelectedImage(null);
-    setActiveCategories([]);
-    lastMergedSearchDataRef.current = null;
-    lastMergedCatDataRef.current = null;
-  }, []);
-
-  // Filters state
   const [fileTypeFilter, setFileTypeFilter] = useState<ImageTypeFilter>("all");
   const [orientationFilter, setOrientationFilter] = useState<ImageOrientationFilter>("all");
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  // undefined: the guide opens itself the first time; true: the help button opened it
+  const [welcomeOpen, setWelcomeOpen] = useState<boolean | undefined>(undefined);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
 
-  const deferredFileTypeFilter = useDeferredValue(fileTypeFilter);
-  const deferredOrientationFilter = useDeferredValue(orientationFilter);
+  const currentWikiSource = tab === "commons" ? "commons" : wikiSubSource;
 
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    []
-  );
+  // An emptied field searches nothing at once; the debounce only delays typing.
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  const query = searchQuery.trim() === "" ? "" : debouncedQuery;
 
-  const handleSearch = useCallback((val: string) => {
-    setSearchQuery(val);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setDebouncedQuery(val);
-      setAllImages([]);
-      setSearchOffset(0);
-      setBrowsingCategory(null);
-      lastMergedSearchDataRef.current = null;
-      lastMergedCatDataRef.current = null;
-    }, 300);
+  const results = useRepositoryImages({
+    source: currentWikiSource,
+    query,
+    categories: activeCategories,
+    browsingCategory,
+    fileType: fileTypeFilter,
+    enabled: true,
+  });
+
+  const resetBrowsing = useCallback(() => {
+    setSearchQuery("");
+    setBrowsingCategory(null);
+    setSelectedImage(null);
+    setActiveCategories([]);
   }, []);
 
-  // Build the effective search query with category filters
-  const effectiveQuery = useMemo(() => {
-    const parts = activeCategories.map((c) => `deepcat:"${c}"`);
-    if (debouncedQuery) parts.push(debouncedQuery);
-    return parts.join(" ");
-  }, [activeCategories, debouncedQuery]);
-
-  const isSearchMode = effectiveQuery.length >= 2;
-  const isBrowseMode = !isSearchMode && !!browsingCategory;
-
-  // Search query
-  const { data: searchData, isFetching: searchFetching } = api.commons.search.useQuery(
-    { query: effectiveQuery, limit: 40, offset: searchOffset },
-    { enabled: tab === "commons" && isSearchMode, staleTime: 60_000 }
-  );
-
-  // Category browsing query (uses deepcat: for recursive results)
-  const { data: catData, isFetching: catFetching } = api.commons.getCategoryFiles.useQuery(
-    { category: browsingCategory ?? "", limit: 40, offset: catOffset },
-    { enabled: tab === "commons" && isBrowseMode, staleTime: 60_000 }
-  );
-
-  const localIsBrowseMode = tab === "wiki" && !debouncedQuery && !!browsingCategory;
-
-  // Search local or external wiki files query
-  const { data: wikiFileData, isFetching: wikiFileFetching } = api.wikios.searchFiles.useQuery(
-    {
-      query: debouncedQuery || undefined,
-      category: localIsBrowseMode ? (browsingCategory ?? undefined) : undefined,
-      limit: 50,
-      wiki: wikiSubSource,
+  const handleTabChange = useCallback(
+    (newTab: Tab) => {
+      setTab(newTab);
+      resetBrowsing();
     },
-    {
-      enabled: tab === "wiki",
-      staleTime: 60_000,
-    }
+    [resetBrowsing]
   );
 
-  // Merge incoming search data cleanly with deduplication
-  useEffect(() => {
-    if (tab === "commons" && isSearchMode && searchData?.images) {
-      if (lastMergedSearchDataRef.current === searchData) return;
-      lastMergedSearchDataRef.current = searchData;
-
-      setAllImages((prev) => {
-        if (searchOffset === 0) {
-          return searchData.images;
-        }
-        return dedupeImages(prev, searchData.images);
-      });
-    }
-  }, [searchData, searchOffset, isSearchMode, tab]);
-
-  // Merge incoming category browsing data cleanly with deduplication
-  useEffect(() => {
-    if (tab === "commons" && isBrowseMode && catData?.images) {
-      if (lastMergedCatDataRef.current === catData) return;
-      lastMergedCatDataRef.current = catData;
-
-      setAllImages((prev) => {
-        if (catOffset === 0) {
-          return catData.images;
-        }
-        return dedupeImages(prev, catData.images);
-      });
-    }
-  }, [catData, catOffset, isBrowseMode, tab]);
-
-  // Map and set ixwiki/iiwiki images
-  useEffect(() => {
-    if (tab === "wiki") {
-      if (debouncedQuery.length < 2 && !localIsBrowseMode) {
-        setAllImages([]);
-        return;
-      }
-      if (wikiFileData) setAllImages(wikiFilesToImages(wikiFileData, wikiSubSource));
-    }
-  }, [tab, debouncedQuery, localIsBrowseMode, wikiFileData, wikiSubSource]);
-
-  const handleLoadMore = useCallback(() => {
-    if (tab === "commons") {
-      if (isSearchMode && searchData?.nextOffset != null) {
-        setSearchOffset(searchData.nextOffset);
-      } else if (isBrowseMode && catData?.nextOffset != null) {
-        setCatOffset(catData.nextOffset);
-      }
-    }
-  }, [tab, isSearchMode, isBrowseMode, searchData?.nextOffset, catData?.nextOffset]);
-
-  const hasMore =
-    tab === "commons" &&
-    (isSearchMode ? searchData?.nextOffset != null : isBrowseMode && catData?.nextOffset != null);
+  const handleWikiSubSourceChange = useCallback(
+    (sub: WikiSubSource) => {
+      setWikiSubSource(sub);
+      resetBrowsing();
+    },
+    [resetBrowsing]
+  );
 
   const handleToggleCategory = useCallback((cat: string) => {
     setActiveCategories((prev) =>
       prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
-    setAllImages([]);
-    setSearchOffset(0);
-    lastMergedSearchDataRef.current = null;
   }, []);
 
   const handleBrowseCategory = useCallback((cat: string) => {
     setBrowsingCategory(cat);
-    setCatOffset(0);
-    setAllImages([]);
-    setDebouncedQuery("");
     setSearchQuery("");
     setMobileCategoriesOpen(false);
-    lastMergedCatDataRef.current = null;
   }, []);
 
   const isFilterActive = fileTypeFilter !== "all" || orientationFilter !== "all";
@@ -236,21 +109,28 @@ export default function RepositoryPage() {
     setOrientationFilter("all");
   }, []);
 
-  // Client-side dynamic filtering of results
-  const filteredImages = useMemo(() => {
-    return allImages.filter((img) =>
-      matchesImageFilters(img, deferredFileTypeFilter, deferredOrientationFilter)
-    );
-  }, [allImages, deferredFileTypeFilter, deferredOrientationFilter]);
+  // Orientation is judged here; the file type is part of the search itself
+  const filteredImages = useMemo(
+    () => results.images.filter((img) => matchesImageFilters(img, "all", orientationFilter)),
+    [results.images, orientationFilter]
+  );
 
-  const currentWikiSource = tab === "commons" ? "commons" : wikiSubSource;
+  const categoryBrowser = (
+    <CommonsCategoryBrowser
+      activeCategories={activeCategories}
+      browsingCategory={browsingCategory}
+      onToggleCategory={tab === "commons" ? handleToggleCategory : undefined}
+      onBrowseCategory={handleBrowseCategory}
+      wiki={currentWikiSource}
+    />
+  );
 
   return (
     <WikiOSLayout>
       <div className="wikios-commons-browser">
         {/* Header bar */}
         <div className="wikios-commons-header flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="wikios-commons-header-left flex items-center gap-2">
+          <div className="wikios-commons-header-left flex flex-wrap items-center gap-2">
             <Button
               variant="ghost"
               size="icon-sm"
@@ -259,7 +139,7 @@ export default function RepositoryPage() {
               title="Open welcome guide"
               className="text-label-secondary hover:text-tint rounded-full"
             >
-              <HelpCircle className="h-4 w-4" />
+              <HelpCircle className="h-4 w-4" aria-hidden="true" />
             </Button>
             <SegmentedControl
               asTabs
@@ -292,18 +172,18 @@ export default function RepositoryPage() {
               variant="outline"
               size="sm"
               onClick={() => setMobileCategoriesOpen(true)}
+              aria-expanded={mobileCategoriesOpen}
               className="text-footnote border-separator hover:bg-fill-3 flex h-8 items-center gap-2 px-3 lg:hidden"
               title="Browse categories"
             >
-              <Folder className="text-tint h-3.5 w-3.5" />
+              <Folder className="text-tint h-3.5 w-3.5" aria-hidden="true" />
               <span className="text-caption">Categories</span>
             </Button>
           </div>
 
           <SearchField
             value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            onClear={() => setAllImages([])}
+            onValueChange={setSearchQuery}
             placeholder={
               tab === "commons"
                 ? 'Search Commons... e.g. "medieval castle", "15th century portrait"'
@@ -315,7 +195,7 @@ export default function RepositoryPage() {
 
           <Button asChild size="sm" className="h-8 shrink-0 gap-1.5 px-3 text-xs">
             <Link href="/util/upload">
-              <Upload className="h-3.5 w-3.5" />
+              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
               Upload
             </Link>
           </Button>
@@ -351,9 +231,9 @@ export default function RepositoryPage() {
                 onValueChange={setOrientationFilter}
                 options={[
                   { value: "all", label: "All" },
-                  { value: "landscape", label: "Land" },
-                  { value: "portrait", label: "Port" },
-                  { value: "square", label: "Sq" },
+                  { value: "landscape", label: "Landscape" },
+                  { value: "portrait", label: "Portrait" },
+                  { value: "square", label: "Square" },
                 ]}
               />
             </div>
@@ -373,12 +253,9 @@ export default function RepositoryPage() {
         </div>
 
         {/* Starter Category Exploration Chips when cold start */}
-        {tab === "commons" && !isSearchMode && !browsingCategory && (
+        {tab === "commons" && results.mode === "idle" && (
           <div className="mb-3 flex flex-wrap items-center gap-2 px-1 py-1">
-            <span className="text-eyebrow text-label-secondary mr-1 flex items-center gap-1">
-              <Sparkles className="text-yellow h-3 w-3" />
-              Quick explore:
-            </span>
+            <span className="text-footnote text-label-secondary mr-1">Try:</span>
             {STARTER_CATEGORIES.map((cat) => (
               <Button
                 variant="outline"
@@ -406,14 +283,14 @@ export default function RepositoryPage() {
                 className="rounded-full"
               >
                 {cat}
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </Button>
             ))}
           </div>
         )}
 
         {/* Browsing category label */}
-        {browsingCategory && !isSearchMode && (
+        {browsingCategory && (
           <div className="wikios-commons-chips">
             <Badge variant="default" className="gap-1 py-0 pr-0.5">
               Browsing: {browsingCategory}
@@ -421,13 +298,10 @@ export default function RepositoryPage() {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Stop browsing category"
-                onClick={() => {
-                  setBrowsingCategory(null);
-                  setAllImages([]);
-                }}
+                onClick={() => setBrowsingCategory(null)}
                 className="size-5 rounded-full"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </Button>
             </Badge>
           </div>
@@ -437,25 +311,23 @@ export default function RepositoryPage() {
         <div
           className={cn("wikios-commons-panels", selectedImage && "wikios-commons-panels--detail")}
         >
-          {/* Desktop Category Browser Sidebar */}
-          <div className="hidden lg:block">
-            <CommonsCategoryBrowser
-              activeCategories={activeCategories}
-              browsingCategory={browsingCategory}
-              onToggleCategory={handleToggleCategory}
-              onBrowseCategory={handleBrowseCategory}
-              wiki={currentWikiSource}
-            />
-          </div>
+          {/* Desktop Category Browser Sidebar (not mounted on phones, where the sheet has it) */}
+          {isDesktop && <div>{categoryBrowser}</div>}
 
           <CommonsResultsGrid
             images={filteredImages}
             selectedImage={selectedImage}
             onSelect={setSelectedImage}
-            onLoadMore={handleLoadMore}
-            hasMore={hasMore}
-            isLoading={tab === "commons" ? searchFetching || catFetching : wikiFileFetching}
-            totalHits={tab === "commons" ? searchData?.totalHits : wikiFileData?.length}
+            onLoadMore={results.loadMore}
+            hasMore={results.hasMore}
+            isLoading={results.isLoading || results.isLoadingMore}
+            mode={results.mode}
+            query={query}
+            loadedCount={results.images.length}
+            truncated={results.truncated}
+            totalHits={results.totalHits}
+            error={results.error}
+            onRetry={results.retry}
             isFilterActive={isFilterActive}
             onClearFilters={handleClearFilters}
           />
@@ -468,26 +340,21 @@ export default function RepositoryPage() {
 
       {/* Mobile Category Sheet */}
       <Sheet open={mobileCategoriesOpen} onOpenChange={setMobileCategoriesOpen}>
-        <SheetContent side="left" className="bg-surface w-[300px] p-0 sm:w-[360px]">
+        <SheetContent side="left" className="bg-surface flex w-[300px] flex-col p-0 sm:w-[360px]">
           <SheetHeader className="border-separator border-b p-4">
             <SheetTitle className="text-headline flex items-center gap-2">
-              <Folder className="text-tint h-4 w-4" />
+              <Folder className="text-tint h-4 w-4" aria-hidden="true" />
               Browse categories
             </SheetTitle>
           </SheetHeader>
-          <div className="h-dvh overflow-y-auto">
-            <CommonsCategoryBrowser
-              activeCategories={activeCategories}
-              browsingCategory={browsingCategory}
-              onToggleCategory={handleToggleCategory}
-              onBrowseCategory={handleBrowseCategory}
-              wiki={currentWikiSource}
-            />
-          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">{!isDesktop && categoryBrowser}</div>
         </SheetContent>
       </Sheet>
 
-      <RepositoryWelcomeModal open={welcomeOpen} onOpenChangeAction={setWelcomeOpen} />
+      <RepositoryWelcomeModal
+        open={welcomeOpen}
+        onOpenChangeAction={(open) => setWelcomeOpen(open ? true : undefined)}
+      />
     </WikiOSLayout>
   );
 }
