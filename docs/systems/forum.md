@@ -29,7 +29,7 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 - `src/server/api/routers/ixnayid/linking.ts` – forum account linking (`startForumVerification`, `confirmForumVerification`, `unlinkForum`); proof logic in `src/server/modules/forum/services/forum-link-verification.ts`
 
 ### Module & Services
-- `src/server/modules/forum/lib/bbcode-transformer.ts` – BBCode to HTML parser
+- `src/lib/thinkpages-forum/import/bbcode.ts` – BBCode to HTML parser
 - `src/server/modules/forum/lib/cache.ts` – Caching with per-content TTLs
 - `src/server/modules/forum/services/xenforo-service.ts` – XenForo API client
 - `src/server/modules/forum/services/xenforo-user-sync.ts`, `linked-user.ts` – account linking and linked-user resolution

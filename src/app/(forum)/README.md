@@ -37,7 +37,7 @@ Embeddable forum user cards live in a separate route group:
 | Feature | Notes |
 | --- | --- |
 | Boards & threads | Forums, thread lists, threads with paginated posts, member profiles |
-| BBCode transformation | Server-side BBCode→HTML via `transformBBCode` (`src/server/modules/forum/lib/bbcode-transformer.ts`) |
+| BBCode transformation | Server-side BBCode→HTML via `transformBBCode` (`src/lib/thinkpages-forum/import/bbcode.ts`) |
 | Caching | Per-type TTL cache layer (`cachedFetch` / `cacheKey` in `src/server/modules/forum/lib/cache.ts`) |
 | Account linking (IxnayID) | Users prove they own a XenForo account by putting a code on their forum profile (`api.ixnayid.startForumVerification` / `confirmForumVerification`; `unlinkForum` removes it); stored on `User.forumUserId` / `forumUsername`. `api.forum.getLinkStatus` reports the link |
 | Stash bookmarks | Bookmark threads via the shared Stash system |
@@ -54,7 +54,8 @@ Embeddable forum user cards live in a separate route group:
   ReplyComposer), `shared/` (ForumContext, ForumLayout).
 - **Bridge / services**: `src/server/modules/forum/` — `services/xenforo-service.ts`
   (XenForo REST client), `services/forum-bridge.ts`, `services/linked-user.ts` (`requireForumUser`),
-  `services/xenforo-user-sync.ts` (`linkForumAccount`, `lookupForumUser`), `lib/bbcode-transformer.ts`, `lib/cache.ts`.
+  `services/xenforo-user-sync.ts` (`linkForumAccount`, `lookupForumUser`), `lib/cache.ts`; the BBCode transformer lives in
+  `src/lib/thinkpages-forum/import/bbcode.ts` (shared with the phase 4 import).
 - **API routes**: `src/app/api/forum/attachment/[id]/route.ts` (attachment proxy),
   `src/app/api/forum/user-cards/route.ts`.
 - **Request flow**: client calls `api.forum.*` → router resolves the user's linked XenForo

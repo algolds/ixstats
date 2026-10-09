@@ -1,5 +1,8 @@
-// Transforms XenForo BBCode post content into sanitized HTML for React rendering.
-// Server-side only — runs in tRPC router, never shipped to client.
+/**
+ * Transforms XenForo BBCode into HTML. Used by the XenForo bridge (`~/server/modules/forum`, its defaults) and by the
+ * phase 4 import (`post-html.ts`: forum links kept absolute, mentions as text, action tokens kept, then degraded and
+ * sanitized there). The output is NOT sanitized: every caller that stores or renders it sanitizes it.
+ */
 
 /** [tag, replacement] pairs for BBCode tags that map straight onto an HTML wrapper around `$1`. */
 type SimpleTag = readonly [tag: string, replacement: string];
@@ -49,15 +52,35 @@ interface AttachmentRef {
   inline: boolean;
 }
 
+export interface BBCodeOptions {
+  forumBaseUrl?: string;
+  /** "rewrite" (default): forum thread/forum/member URLs become bridge routes. "keep": left as written. */
+  forumLinks?: "rewrite" | "keep";
+  /** "link" (default): `[user=7]Name[/user]` links the bridge member page. "text": plain `@Name`. */
+  mentions?: "link" | "text";
+  /** "strip" (default): `[ixaction=…]` goes with the other unknown tags. "keep": left in the text. */
+  actionTokens?: "strip" | "keep";
+}
+
+/** A tag option as written, without the quotes XenForo 2.2 puts around it (`[QUOTE="Name, post: 1"]`). */
+const optionValue = (raw: string): string =>
+  raw.trim().replace(/^(?:&quot;|&#039;)([\s\S]*)(?:&quot;|&#039;)$/, "$1");
+
+/** Text taken from the escaped body, escaped once for the page (never twice). */
+const asText = (escaped: string): string => escapeHtml(unescapeHtml(escaped));
+
+// Unknown or unclosed tags are dropped, except an action token when the caller keeps them.
+const UNKNOWN_TAG = /\[\/?[a-z][a-z0-9]*(?:=[^\]]*)?]/gi;
+const isActionToken = (tag: string): boolean => /^\[ixaction=[A-Za-z0-9_-]{1,64}\]$/.test(tag);
+
 /**
- * Transform XenForo BBCode into sanitized HTML suitable for React rendering.
- * Handles nested tags, XSS sanitization, and internal link rewriting.
+ * Transform XenForo BBCode into HTML for the bridge, or for the import to degrade and sanitize.
+ * Raw text is escaped first; the tags it knows become fixed markup.
  */
-export function transformBBCode(
-  bbcode: string,
-  options: { forumBaseUrl?: string } = {}
-): TransformedPost {
+export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): TransformedPost {
   const { forumBaseUrl = "https://forum.ixwiki.com" } = options;
+  const linkOf = (url: string): string =>
+    options.forumLinks === "keep" ? url : rewriteForumUrl(url, forumBaseUrl);
 
   const quotedUsers: string[] = [];
   const mentionedUsers: string[] = [];
@@ -104,16 +127,17 @@ export function transformBBCode(
 
   // 5. URLs
   html = html.replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_m, url: string, text: string) => {
-    const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
+    const href = linkOf(unescapeHtml(optionValue(url)));
     return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
   });
-  html = html.replace(/\[url\]([\s\S]*?)\[\/url\]/gi, (_m, url: string) => {
-    const href = rewriteForumUrl(unescapeHtml(url), forumBaseUrl);
+  // XenForo 2.2 writes pasted links as [URL unfurl="true"]…[/URL]
+  html = html.replace(/\[url(?:\s[^\]]*)?\]([\s\S]*?)\[\/url\]/gi, (_m, url: string) => {
+    const href = linkOf(unescapeHtml(url));
     return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
   });
 
-  // 6. Images
-  html = html.replace(/\[img\]([\s\S]*?)\[\/img\]/gi, (_m, src: string) => {
+  // 6. Images ([IMG width="…"] in XenForo 2.2)
+  html = html.replace(/\[img(?:\s[^\]]*)?\]([\s\S]*?)\[\/img\]/gi, (_m, src: string) => {
     const safeSrc = sanitizeUrl(unescapeHtml(src));
     return safeSrc
       ? `<img src="${escapeAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
@@ -125,7 +149,7 @@ export function transformBBCode(
 
   // 8. Code blocks
   html = html.replace(
-    /\[code\]([\s\S]*?)\[\/code\]/gi,
+    /\[code(?:=[^\]]*)?\]([\s\S]*?)\[\/code\]/gi,
     (_m, code: string) => `<pre class="forum-code"><code>${code}</code></pre>`
   );
   html = html.replace(
@@ -147,7 +171,7 @@ export function transformBBCode(
     /\[spoiler(?:=([^\]]*))?\]([\s\S]*?)\[\/spoiler\]/gi,
     (_m, title: string | undefined, content: string) => {
       hasSpoiler = true;
-      const label = title ? escapeHtml(title) : "Spoiler";
+      const label = title ? asText(optionValue(title)) : "Spoiler";
       return `<details class="forum-spoiler"><summary class="forum-spoiler-toggle">${label}</summary><div class="forum-spoiler-content">${content}</div></details>`;
     }
   );
@@ -157,16 +181,22 @@ export function transformBBCode(
     /\[user=(\d+)\]([\s\S]*?)\[\/user\]/gi,
     (_m, userId: string, username: string) => {
       mentionedUsers.push(username);
+      // XenForo 2.2 stores the name with its "@"
+      if (options.mentions === "text") return `@${username.replace(/^@/, "")}`;
       return `<a href="/forum/members/${userId}" class="forum-mention">@${username}</a>`;
     }
   );
 
   // 13. Attachments
-  html = html.replace(/\[attach(?:=full)?\](\d+)\[\/attach\]/gi, (_m, attachId: string) => {
-    const id = parseInt(attachId, 10);
-    attachments.push({ id, inline: true });
-    return `<div class="forum-attachment" data-attachment-id="${id}"></div>`;
-  });
+  // [attach], [attach=full], and XenForo 2.2's [ATTACH type="full" alt="…"]
+  html = html.replace(
+    /\[attach(?:=full|\s[^\]]*)?\](\d+)\[\/attach\]/gi,
+    (_m, attachId: string) => {
+      const id = parseInt(attachId, 10);
+      attachments.push({ id, inline: true });
+      return `<div class="forum-attachment" data-attachment-id="${id}"></div>`;
+    }
+  );
 
   // 14. Horizontal rule
   html = html.replace(/\[hr\]/gi, '<hr class="forum-hr" />');
@@ -190,7 +220,9 @@ export function transformBBCode(
   html = html.replace(/\n/g, "<br />");
 
   // 19. Strip any remaining unclosed/unknown BBCode tags
-  html = html.replace(/\[\/?[a-z][a-z0-9]*(?:=[^\]]*)?]/gi, "");
+  html = html.replace(UNKNOWN_TAG, (tag) =>
+    options.actionTokens === "keep" && isActionToken(tag) ? tag : ""
+  );
 
   return {
     contentHtml: html.trim(),
@@ -215,11 +247,12 @@ function processQuotes(html: string, quotedUsers: string[]): string {
     // Match innermost [quote] blocks (no nested [quote] inside)
     result = result.replace(
       /\[quote(?:=["']?([^"\]]*?)["']?)?\]((?:(?!\[quote)[\s\S])*?)\[\/quote\]/gi,
-      (_m, author: string | undefined, content: string) => {
+      (_m, option: string | undefined, content: string) => {
         changed = true;
+        const author = option && quoteAuthor(option);
         if (author) {
           quotedUsers.push(author);
-          return `<blockquote class="forum-quote"><div class="forum-quote-author">${escapeHtml(author)} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
+          return `<blockquote class="forum-quote"><div class="forum-quote-author">${author} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
         }
         return `<blockquote class="forum-quote"><div class="forum-quote-body">${content}</div></blockquote>`;
       }
@@ -227,6 +260,11 @@ function processQuotes(html: string, quotedUsers: string[]): string {
   }
 
   return result;
+}
+
+/** The quoted member's name, without XenForo 2.2's `, post: 12, member: 7` suffix. */
+function quoteAuthor(option: string): string {
+  return asText(optionValue(option).replace(/,\s*(?:post|member):[\s\S]*$/, "")).trim();
 }
 
 function listItems(content: string): string {

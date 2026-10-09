@@ -225,7 +225,7 @@ configuration object, never from a literal:
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The forum (`forum.ixwiki.com`, XenForo):
   `src/app/api/forum/attachment/[id]/route.ts`, `src/app/api/forum/user-cards/route.ts`, `src/components/settings/ForumAccountVerify.tsx`,
-  `src/server/api/routers/forum/normalize.ts`, `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/server/modules/forum/lib/bbcode-transformer.ts`,
+  `src/server/api/routers/forum/normalize.ts`, `src/server/api/routers/forum/reading.ts`, `src/server/api/routers/forum/writing.ts`, `src/lib/thinkpages-forum/import/bbcode.ts`,
   `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors), `src/lib/action-links.ts`
   `postPermalinkPath` (no call: spells the forum host for an imported XenForo post's permalink). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
