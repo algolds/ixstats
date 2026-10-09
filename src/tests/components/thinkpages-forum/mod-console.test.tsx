@@ -222,6 +222,23 @@ describe("access", () => {
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/mod?realm=caphiria");
   });
 
+  it("applies ?realm= for a category moderator, and lists the realms of their categories", () => {
+    const categoryMod = { isSiteAdmin: false, realms: [], categories: REALM_MOD.categories };
+    set("context", { data: categoryMod });
+    renderConsole({ realm: "caphiria" });
+    expect(inputs.reports).toMatchObject({ status: "open", realm: "caphiria", page: 1 });
+    const options = within(screen.getByRole("combobox", { name: "Scope" }))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(options).toEqual(["Everything I moderate", "Caphiria"]);
+  });
+
+  it("still ignores a realm the viewer has no scope in", () => {
+    set("context", { data: REALM_MOD });
+    renderConsole({ realm: "elsewhere" });
+    expect(inputs.reports).toMatchObject({ realm: undefined });
+  });
+
   it("passes the scope filter to the open panel", () => {
     set("context", { data: REALM_MOD });
     renderConsole({ realm: "caphiria" });
@@ -630,6 +647,76 @@ describe("appeals", () => {
         response: "It stands.",
       })
     );
+  });
+
+  it("offers only Close appeal when the ban has already ended", async () => {
+    const review = jest.fn(() => Promise.resolve());
+    mutations.reviewAppeal = review;
+    set("context", { data: REALM_MOD });
+    set("appeals", {
+      data: {
+        rows: [
+          { ...appeal, canReview: true, subject: { ...subject, issuedBy: "u1", active: false } },
+        ],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole({ tab: "appeals" });
+    expect(
+      screen.getByText("This ban has already ended; reviewing will close the appeal as moot.")
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Uphold/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Overturn/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Close appeal from Rhea" }));
+    await waitFor(() =>
+      expect(review).toHaveBeenCalledWith({
+        appealId: "a1",
+        outcome: "upheld",
+        response: "This ban had already ended, so the appeal was closed without a decision.",
+      })
+    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("words the ended notice for a warning", () => {
+    set("context", { data: REALM_MOD });
+    set("appeals", {
+      data: {
+        rows: [
+          {
+            ...appeal,
+            subjectType: "warning",
+            canReview: true,
+            subject: {
+              kind: "warning",
+              reason: "Rude",
+              points: 2,
+              categoryId: "c1",
+              expiresAt: null,
+              issuedBy: "u1",
+              active: false,
+            },
+          },
+        ],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole({ tab: "appeals" });
+    expect(
+      screen.getByText("This warning has already ended; reviewing will close the appeal as moot.")
+    ).toBeInTheDocument();
+  });
+
+  it("keeps 'Another moderator must review this' ahead of the ended notice", () => {
+    set("context", { data: REALM_MOD });
+    set("appeals", {
+      data: { rows: [{ ...appeal, subject: { ...subject, active: false } }], total: 1, authors },
+    });
+    renderConsole({ tab: "appeals" });
+    expect(screen.getByText("Another moderator must review this")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Close appeal/ })).toBeNull();
   });
 
   it("shows a moot appeal as a read-only status", () => {

@@ -111,7 +111,7 @@ export function ModRow({ title, meta = [], children, actions }: ModRowProps) {
 interface ListQuery {
   isLoading: boolean;
   error: { message: string } | null;
-  refetch?: () => unknown;
+  refetch?: () => void;
 }
 
 interface ModPanelProps {
@@ -156,7 +156,7 @@ export function ModPanel({
           message={query.error.message}
           action={
             query.refetch ? (
-              <Button variant="secondary" onClick={() => void query.refetch?.()}>
+              <Button variant="secondary" onClick={() => query.refetch?.()}>
                 Retry
               </Button>
             ) : null

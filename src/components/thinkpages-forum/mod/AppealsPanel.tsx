@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { useNotify } from "~/hooks/useNotify";
 import { timeAgo } from "~/lib/format/compact";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -168,6 +169,9 @@ function AppealActions({ appeal, member, refresh }: AppealActionsProps) {
     return <p className="text-footnote text-label-secondary">Another moderator must review this</p>;
   }
   const subject = appeal.subjectType ?? "decision";
+  if (appeal.subject && !appeal.subject.active) {
+    return <CloseEndedAppeal appeal={appeal} subject={subject} member={member} refresh={refresh} />;
+  }
   return (
     <>
       {(["upheld", "overturned"] as const).map((outcome) => (
@@ -203,6 +207,44 @@ function AppealActions({ appeal, member, refresh }: AppealActionsProps) {
           }}
         />
       ) : null}
+    </>
+  );
+}
+
+interface CloseEndedAppealProps extends AppealActionsProps {
+  /** "ban" or "warning" (or "decision" when the server named neither). */
+  subject: string;
+}
+
+/**
+ * The ban or warning ended before anyone reviewed the appeal, so the server closes it as moot whatever outcome is
+ * sent; "upheld" is sent with a fixed response the member reads.
+ */
+function CloseEndedAppeal({ appeal, subject, member, refresh }: CloseEndedAppealProps) {
+  const notify = useNotify();
+  const { mutateAsync: review, isPending } = api.thinkpagesForumMod.reviewAppeal.useMutation();
+  const close = () =>
+    review({
+      appealId: appeal.id,
+      outcome: "upheld",
+      response: `This ${subject} had already ended, so the appeal was closed without a decision.`,
+    })
+      .then(refresh)
+      .catch((e: Error) => notify.error("Could not close the appeal", e.message));
+  return (
+    <>
+      <p className="text-footnote text-label-secondary">
+        {`This ${subject} has already ended; reviewing will close the appeal as moot.`}
+      </p>
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={isPending}
+        aria-label={`Close appeal from ${member}`}
+        onClick={close}
+      >
+        Close appeal
+      </Button>
     </>
   );
 }

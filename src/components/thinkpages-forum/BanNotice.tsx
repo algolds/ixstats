@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { STANDING_HREF } from "~/lib/thinkpages-forum/links";
+import { createUrl } from "~/lib/utils/url-utils";
 
 const SIGN_IN = "Sign in";
 
@@ -16,14 +20,25 @@ export function BanNotice({ notice }: { notice: string }) {
   );
 }
 
+/** The sign-in link; signing in brings the visitor back to this page (createUrl: the redirect is a plain URL). */
+function SignInLink() {
+  const pathname = usePathname();
+  return (
+    <Link
+      href={`/sign-in?redirect_url=${encodeURIComponent(createUrl(pathname))}`}
+      className="text-tint hover:underline"
+    >
+      {SIGN_IN}
+    </Link>
+  );
+}
+
 /** A posting notice as text; an anonymous visitor's leading "Sign in" is a link to sign in. */
 export function NoticeText({ notice }: { notice: string }) {
   if (!notice.startsWith(SIGN_IN)) return notice;
   return (
     <>
-      <Link href="/sign-in" className="text-tint hover:underline">
-        {SIGN_IN}
-      </Link>
+      <SignInLink />
       {notice.slice(SIGN_IN.length)}
     </>
   );

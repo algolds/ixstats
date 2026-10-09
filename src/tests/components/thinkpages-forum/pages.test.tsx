@@ -81,7 +81,12 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, redirect: jest.fn() };
+  return {
+    router,
+    useRouter: () => router,
+    usePathname: () => "/thinkpages/forum/c/general",
+    redirect: jest.fn(),
+  };
 });
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));

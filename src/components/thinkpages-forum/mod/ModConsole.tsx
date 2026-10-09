@@ -16,7 +16,7 @@ import { BansPanel } from "./BansPanel";
 import { ModeratorsPanel } from "./ModeratorsPanel";
 import { ModLogPanel } from "./ModLogPanel";
 import type { ModContext, PanelProps } from "./ModRow";
-import { ModScopeFilter } from "./ModScopeFilter";
+import { ModScopeFilter, scopeRealms } from "./ModScopeFilter";
 import { ReportQueue } from "./ReportQueue";
 import { WarningsPanel } from "./WarningsPanel";
 
@@ -36,7 +36,7 @@ const DEFAULT_TAB = "queue";
 interface ModConsoleProps {
   /** `?tab=`; an unknown or unavailable tab opens the queue. */
   tab?: string;
-  /** `?realm=`; a realm the viewer does not moderate shows everything. */
+  /** `?realm=`; a realm outside the viewer's scope shows everything. */
   realm?: string;
   page: number;
 }
@@ -83,7 +83,8 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
   const router = useRouter();
   const tabs = TABS.filter((t) => !t.adminOnly || context.isSiteAdmin);
   const active = tabs.find((t) => t.value === tab)?.value ?? DEFAULT_TAB;
-  const scope = context.realms.some((r) => r.slug === realm) ? realm : undefined;
+  const realms = scopeRealms(context);
+  const scope = realms.some((r) => r.slug === realm) ? realm : undefined;
   const hrefFor = (nextTab: string, nextRealm: string | undefined) =>
     modHref({ tab: nextTab === DEFAULT_TAB ? undefined : nextTab, realm: nextRealm });
   const basePath = hrefFor(active, scope);
@@ -93,7 +94,7 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
       <PageHeader title="Moderation" bleed back={{ href: FORUM_HOME, label: "Forum" }} />
       {active === "moderators" ? null : (
         <ModScopeFilter
-          realms={context.realms}
+          realms={realms}
           value={scope}
           onChange={(next) => router.replace(hrefFor(active, next))}
         />

@@ -74,7 +74,7 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router };
+  return { router, useRouter: () => router, usePathname: () => "/thinkpages/forum/t/t1" };
 });
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
@@ -122,6 +122,7 @@ jest.mock("~/components/thinkpages-forum/ForumComposer", () => {
 interface SelectStubProps {
   value?: string;
   onValueChange?: (value: string) => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }
 
@@ -130,15 +131,15 @@ jest.mock("~/components/ui/select", () => {
   const { createContext, useContext } = jest.requireActual<typeof React>("react");
   const Ctx = createContext<Omit<SelectStubProps, "children"> & { label?: string }>({});
   return {
-    Select: ({ value, onValueChange, children }: SelectStubProps) => (
-      <Ctx.Provider value={{ value, onValueChange }}>{children}</Ctx.Provider>
+    Select: ({ value, onValueChange, disabled, children }: SelectStubProps) => (
+      <Ctx.Provider value={{ value, onValueChange, disabled }}>{children}</Ctx.Provider>
     ),
     SelectTrigger: () => null,
     SelectValue: () => null,
     SelectContent: ({ children }: { children: React.ReactNode }) => {
-      const { value, onValueChange } = useContext(Ctx);
+      const { value, onValueChange, disabled } = useContext(Ctx);
       return (
-        <select value={value} onChange={(e) => onValueChange?.(e.target.value)}>
+        <select value={value} disabled={disabled} onChange={(e) => onValueChange?.(e.target.value)}>
           {children}
         </select>
       );
@@ -676,7 +677,10 @@ describe("ban notices", () => {
     set("thread", { data: threadData({ canReply: false, notice }) });
     render(<ThreadView threadId="t1" page={1} />);
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect_url=%2Fthinkpages%2Fforum%2Ft%2Ft1"
+    );
     expect(screen.queryByRole("link", { name: "Appeal" })).toBeNull();
   });
 
@@ -821,5 +825,32 @@ describe("permalink scroll", () => {
     rerender(<ThreadView threadId="t1" page={1} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     window.location.hash = "";
+  });
+});
+
+describe("warn dialog while the moderation context loads", () => {
+  const target = { type: "post" as const, id: "p2" };
+
+  function pointsSelect(): HTMLSelectElement {
+    const dialog = screen.getByRole("dialog", { name: "Warn this member" });
+    return within(dialog).getByRole("combobox") as HTMLSelectElement;
+  }
+
+  it("offers one point and keeps the select disabled until the context is known", () => {
+    set("context", { isLoading: true, data: null });
+    render(<WarnDialog userId="u2" target={target} open onOpenChange={jest.fn()} />);
+    expect(pointsSelect()).toBeDisabled();
+    expect(within(pointsSelect()).getAllByRole("option")).toHaveLength(1);
+  });
+
+  it("shows a site admin all five options once loaded, never the moderator's two", () => {
+    set("context", { isLoading: true, data: null });
+    const { rerender } = render(
+      <WarnDialog userId="u2" target={target} open onOpenChange={jest.fn()} />
+    );
+    set("context", { data: { ...NO_MOD, isSiteAdmin: true } });
+    rerender(<WarnDialog userId="u2" target={target} open onOpenChange={jest.fn()} />);
+    expect(pointsSelect()).not.toBeDisabled();
+    expect(within(pointsSelect()).getAllByRole("option")).toHaveLength(5);
   });
 });

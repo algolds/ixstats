@@ -55,10 +55,12 @@ export function WarnDialog({ userId, target, open, onOpenChange, onDone }: WarnD
   const [points, setPoints] = useState("1");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { data: context } = api.thinkpagesForumMod.context.useQuery();
+  const { data: context, isLoading: contextLoading } = api.thinkpagesForumMod.context.useQuery();
   const { mutateAsync: warn, isPending } = api.thinkpagesForumMod.warn.useMutation();
   const caps = MODERATION_POLICY.maxPointsPerWarning;
-  const cap = context?.isSiteAdmin ? caps.siteAdmin : caps.moderator;
+  // Until the context says whether the viewer is a site admin, only the one-point option exists, so an admin never
+  // sees the moderator's shorter list flash by.
+  const cap = contextLoading ? 1 : context?.isSiteAdmin ? caps.siteAdmin : caps.moderator;
   const length = reason.trim().length;
 
   const close = (next: boolean) => {
@@ -92,7 +94,7 @@ export function WarnDialog({ userId, target, open, onOpenChange, onDone }: WarnD
         </DialogHeader>
         <div className="space-y-2">
           <Label id={pointsId}>Points</Label>
-          <Select value={points} onValueChange={setPoints} disabled={isPending}>
+          <Select value={points} onValueChange={setPoints} disabled={isPending || contextLoading}>
             <SelectTrigger aria-labelledby={pointsId}>
               <SelectValue />
             </SelectTrigger>

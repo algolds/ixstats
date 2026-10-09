@@ -11,8 +11,22 @@ import type { ModContext } from "./ModRow";
 
 const EVERYTHING = "all";
 
+export interface ScopeRealm {
+  slug: string;
+  name: string;
+}
+
+/** The realms the console can narrow to: those the viewer moderates, plus the realms of their categories. */
+export function scopeRealms(context: ModContext): ScopeRealm[] {
+  const bySlug = new Map<string, ScopeRealm>(context.realms.map((r) => [r.slug, r]));
+  for (const { realm } of context.categories) {
+    if (realm && !bySlug.has(realm.slug)) bySlug.set(realm.slug, realm);
+  }
+  return [...bySlug.values()];
+}
+
 interface ModScopeFilterProps {
-  realms: ModContext["realms"];
+  realms: ScopeRealm[];
   /** The selected realm's slug; undefined for everything. */
   value?: string;
   onChange: (realm: string | undefined) => void;
