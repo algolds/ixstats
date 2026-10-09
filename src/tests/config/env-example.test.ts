@@ -28,4 +28,14 @@ describe(".env.example", () => {
   it("includes the secret production refuses to boot without", () => {
     expect(read(".env.example")).toMatch(/^WIKI_SYNC_WEBHOOK_SECRET=/m);
   });
+
+  it("keeps the XenForo keys only as import tooling, outside the app's env schema (phase 4b)", () => {
+    expect(envSchemaKeys()).not.toEqual(
+      expect.arrayContaining([expect.stringMatching(/^(XENFORO_|FORUM_VERIFICATION_SECRET)/)])
+    );
+    expect(read(".env.example")).not.toMatch(/FORUM_VERIFICATION_SECRET/);
+    // The export script (scripts/migrations/export-xenforo-forum.ts) reads them from process.env.
+    expect(read(".env.example")).toMatch(/^# XENFORO_API_KEY=/m);
+    expect(read(".env.example")).toMatch(/^# XENFORO_API_URL=/m);
+  });
 });
