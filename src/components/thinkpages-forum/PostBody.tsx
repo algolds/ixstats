@@ -5,6 +5,8 @@ import { ActionCardView, type ActionCardData } from "~/components/action-links";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { splitActionTokens } from "~/lib/action-links";
+import { withBasePath } from "~/lib/base-path";
+import { rebaseRootRelativeUrls } from "~/lib/thinkpages-forum/html-urls";
 import { POST_IMAGE_CLASSES } from "~/components/shared/editor/postImageClasses";
 
 interface PostBodyProps {
@@ -34,14 +36,21 @@ function ActionSlot({
   return <ActionCardView card={cards.get(id) ?? null} />;
 }
 
-/** A forum post body: sanitized HTML with each action token replaced by its verified card. */
+/**
+ * A forum post body: sanitized HTML with each action token replaced by its verified card, and root-relative image
+ * and link URLs under the base path.
+ */
 export const PostBody = memo(function PostBody({
   html,
   cards,
   cardsReady,
   cardsErrored = false,
 }: PostBodyProps) {
-  const segments = useMemo(() => splitActionTokens(html), [html]);
+  // Stored HTML is root-relative (uploads, imported attachments); the base path is added here, once.
+  const segments = useMemo(
+    () => splitActionTokens(rebaseRootRelativeUrls(html, withBasePath)),
+    [html]
+  );
   return (
     <div
       className={cn(

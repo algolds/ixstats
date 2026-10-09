@@ -9,6 +9,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
+import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
 import {
   ActionLinkError,
@@ -61,7 +62,10 @@ export function prepareBody(html: string): PreparedBody {
   }
   const contentHtml = sanitizeUserContent(html);
   const plainText = stripHtml(contentHtml);
-  if (!plainText) throw new ForumError("BAD_REQUEST", "A post needs some text.");
+  // An image is content too (an image-only post), as the Realm Board archive keeps them.
+  if (!plainText && !hasImageSrc(contentHtml)) {
+    throw new ForumError("BAD_REQUEST", "A post needs some text.");
+  }
   // A token inside a tag or attribute would never render as a card and must never be cut by the renderer.
   const rendered = countTextActionTokens(contentHtml);
   if (rendered !== countActionTokens(contentHtml) || rendered !== countActionTokens(plainText)) {
