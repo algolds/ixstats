@@ -266,3 +266,16 @@ Congratulations to **Porto Alegre Tubarões** for winning the championship!`;
     expect(parsed!.championName).toBe("Porto Alegre Tubarões");
   });
 });
+
+describe("parseSportsBulletin — stored JSON marker", () => {
+  it("ignores a marker without a league (it would crash the card)", () => {
+    expect(parseSportsBulletin('<!-- sports-bulletin:{"results":[]} -->')).toBeNull();
+  });
+
+  it("returns a marker that has its league", () => {
+    const parsed = parseSportsBulletin(
+      '<!-- sports-bulletin:{"league":{"id":"l1","name":"Premier"},"results":[]} -->'
+    );
+    expect(parsed?.league.name).toBe("Premier");
+  });
+});

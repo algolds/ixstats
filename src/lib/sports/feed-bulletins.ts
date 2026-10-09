@@ -234,7 +234,10 @@ export function parseSportsBulletin(content: string | null | undefined): SportsB
   const marker = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
   if (marker) {
     try {
-      return JSON.parse(marker[1]!) as SportsBulletinData;
+      const parsed = JSON.parse(marker[1]!) as Partial<SportsBulletinData> | null;
+      // Stored post content: a bulletin without its league would crash the card, so it is not a bulletin.
+      if (parsed?.league && typeof parsed.league.name === "string")
+        return parsed as SportsBulletinData;
     } catch {
       // fall through to the markdown parsers
     }
