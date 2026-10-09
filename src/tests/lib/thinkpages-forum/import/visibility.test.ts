@@ -7,7 +7,6 @@ describe("categoryVisibility", () => {
     expect(categoryVisibility({ skip: true }, [])).toBeNull();
     expect(categoryVisibility({ archive: true }, [])).toBe("public");
     expect(categoryVisibility({ archive: true, visibility: "staff" }, [])).toBe("staff");
-    expect(categoryVisibility({ scope: "realm", realm: "urcea", key: "hub" }, [])).toBe("public");
     expect(categoryVisibility({ scope: "site", key: "staff" }, [])).toBe("staff");
     expect(categoryVisibility({ scope: "site", key: "general" }, [])).toBe("public");
     expect(
@@ -16,6 +15,13 @@ describe("categoryVisibility", () => {
       ])
     ).toBe("staff");
     expect(categoryVisibility({ scope: "site", key: "xf-99" }, [])).toBe("restricted");
+  });
+
+  it("makes a realm category public only while its realm is published", () => {
+    const urcea = { scope: "realm", realm: "urcea", key: "hub" } as const;
+    expect(categoryVisibility(urcea, [], new Set(["urcea"]))).toBe("public");
+    expect(categoryVisibility(urcea, [], new Set(["ixworld"]))).toBe("restricted");
+    expect(categoryVisibility(urcea, [])).toBe("restricted");
   });
 });
 

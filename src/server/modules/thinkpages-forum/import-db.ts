@@ -4,6 +4,7 @@
  * writes are import-write.ts, the rollback import-rollback.ts.
  */
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { categoryVisibilityWhere, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   nodeMapSchema,
@@ -11,6 +12,7 @@ import {
   type ResolvedNode,
 } from "~/lib/thinkpages-forum/import/node-map";
 import type { ImportDbState } from "~/lib/thinkpages-forum/import/plan";
+import { isRealmPublished } from "~/server/modules/realms";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
 import { loadForumRealm } from "./realm-access";
 
@@ -34,8 +36,13 @@ export type ImportDb = Pick<
   | "$queryRaw"
 >;
 
-/** The database half of `ImportDbState`; `attachmentFor` comes from the attachment copy plan. */
-export type LoadedImportState = Omit<ImportDbState, "attachmentFor">;
+/**
+ * The database half of `ImportDbState`; `attachmentFor` comes from the attachment copy plan. `publishedRealms` are
+ * the mapped realm slugs whose realm is published, for `categoryVisibility` (a draft realm's category is not public).
+ */
+export type LoadedImportState = Omit<ImportDbState, "attachmentFor"> & {
+  publishedRealms: ReadonlySet<string>;
+};
 
 const PUBLIC_CATEGORY = categoryVisibilityWhere({ signedIn: false, siteAdmin: false });
 
@@ -47,13 +54,15 @@ export function mappedRealmSlugs(nodeMap: NodeMapFile | null): string[] {
   return [...new Set(slugs)];
 }
 
-async function realmIdsOf(db: ImportDb, slugs: readonly string[]): Promise<Map<string, string>> {
+async function realmIdsOf(db: ImportDb, slugs: readonly string[]) {
   const ids = new Map<string, string>();
+  const published = new Set<string>();
   for (const slug of slugs) {
     const realm = await loadForumRealm(db, { slug });
     if (realm) ids.set(slug, realm.id);
+    if (realm && isRealmPublished(realm.id, realm.status)) published.add(slug);
   }
-  return ids;
+  return { ids, published };
 }
 
 /**
@@ -73,7 +82,7 @@ export async function loadImportDbState(
     where: { scope: "site", realmId: null },
     select: { id: true, key: true, visibility: true },
   });
-  const realmIds = await realmIdsOf(db, realmSlugs);
+  const { ids: realmIds, published: publishedRealms } = await realmIdsOf(db, realmSlugs);
   const realmRows = await db.forumCategory.findMany({
     where: { scope: "realm", realmId: { in: [...new Set(realmIds.values())] } },
     select: { id: true, realmId: true, key: true },
@@ -94,6 +103,7 @@ export async function loadImportDbState(
     ),
     siteCategories,
     realmIds,
+    publishedRealms,
     realmCategories: realmRows.flatMap((c) =>
       c.realmId === null ? [] : [{ id: c.id, realmId: c.realmId, key: c.key }]
     ),
@@ -119,11 +129,20 @@ export function missingTargets(state: LoadedImportState, realmSlugs: readonly st
   ];
 }
 
+/** Ids of the published realms (IxWorld always, with or without its row). */
+async function publishedRealmIds(db: ImportDb): Promise<string[]> {
+  const realms = await db.realm.findMany({ select: { id: true, status: true } });
+  const published = realms.filter((r) => isRealmPublished(r.id, r.status)).map((r) => r.id);
+  return [...new Set([DEFAULT_REALM_ID, ...published])];
+}
+
 /**
- * XenForo ids of imported posts the database now holds as hidden (the post or its thread) or in a category that is
- * not public: their attachments are registered restricted whatever the snapshot says (Task 4's override).
+ * XenForo ids of imported posts the database now holds as hidden (the post or its thread), in a category that is
+ * not public, or in a realm category whose realm is not published (draft, generating, or gone): their attachments
+ * are registered restricted whatever the snapshot says (Task 4's override).
  */
 export async function restrictedImportedPosts(db: ImportDb): Promise<Set<number>> {
+  const published = await publishedRealmIds(db);
   const rows = await db.forumPost.findMany({
     where: {
       xenforoPostId: { not: null },
@@ -131,6 +150,7 @@ export async function restrictedImportedPosts(db: ImportDb): Promise<Set<number>
         { hidden: true },
         { thread: { hidden: true } },
         { thread: { category: { NOT: PUBLIC_CATEGORY } } },
+        { thread: { category: { scope: "realm", realmId: { notIn: published } } } },
       ],
     },
     select: { xenforoPostId: true },

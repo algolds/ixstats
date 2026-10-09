@@ -74,7 +74,10 @@ describe("loadImportDbState", () => {
         { id: "u-1", forumUserId: 7, createdAt: day(1) },
         { id: "u-2", forumUserId: null, createdAt: day(2) },
       ],
-      realms: [{ id: "realm-urcea", slug: "urcea", name: "Urcea", status: "active", ownerId: "o" }],
+      realms: [
+        { id: "realm-urcea", slug: "urcea", name: "Urcea", status: "active", ownerId: "o" },
+        { id: "realm-draft", slug: "drafty", name: "Drafty", status: "draft", ownerId: "o" },
+      ],
       categories: [
         ...SITE,
         { id: "rc-hub", scope: "realm", realmId: "default", key: "hub" },
@@ -90,18 +93,20 @@ describe("loadImportDbState", () => {
         { id: "p-native", threadId: "t-1", xenforoPostId: null },
       ],
     });
-    const state = await loadImportDbState(db as never, ["ixworld", "urcea", "nowhere"]);
+    const state = await loadImportDbState(db as never, ["ixworld", "urcea", "drafty", "nowhere"]);
     expect(state.users).toEqual([{ id: "u-1", forumUserId: 7, createdAt: day(1) }]);
     expect(state.siteCategories).toHaveLength(7);
     expect(state.siteCategories.find((c) => c.key === "staff")?.visibility).toBe("staff");
     expect([...state.realmIds]).toEqual([
       ["ixworld", "default"],
       ["urcea", "realm-urcea"],
+      ["drafty", "realm-draft"],
     ]);
+    expect([...state.publishedRealms]).toEqual(["ixworld", "urcea"]);
     expect(state.realmCategories.map((c) => c.id).sort()).toEqual(["rc-hub", "rc-urcea"]);
     expect([...state.existingThreads]).toEqual([[100, "t-1"]]);
     expect([...state.existingPosts]).toEqual([1000]);
-    expect(missingTargets(state, ["ixworld", "urcea", "nowhere"])).toEqual([
+    expect(missingTargets(state, ["ixworld", "urcea", "drafty", "nowhere"])).toEqual([
       'The node map names realm "nowhere", which does not exist.',
     ]);
   });
@@ -147,6 +152,44 @@ describe("restrictedImportedPosts", () => {
       ],
     });
     expect([...(await restrictedImportedPosts(db as never))].sort()).toEqual([11, 12, 13]);
+  });
+
+  it("lists imported posts in the categories of a realm that is not published", async () => {
+    const realm = (id: string, status: string) => ({
+      id,
+      slug: id,
+      name: id,
+      status,
+      ownerId: "o",
+    });
+    const { db } = importStore({
+      realms: [
+        realm("r-active", "active"),
+        realm("r-archived", "archived"),
+        realm("r-draft", "draft"),
+        realm("r-generating", "generating"),
+      ],
+      categories: [
+        ...SITE,
+        { id: "rc-ixworld", scope: "realm", realmId: "default", key: "hub" },
+        { id: "rc-active", scope: "realm", realmId: "r-active", key: "hub" },
+        { id: "rc-archived", scope: "realm", realmId: "r-archived", key: "hub" },
+        { id: "rc-draft", scope: "realm", realmId: "r-draft", key: "hub" },
+        { id: "rc-generating", scope: "realm", realmId: "r-generating", key: "hub" },
+        { id: "rc-gone", scope: "realm", realmId: "r-gone", key: "hub" },
+      ],
+      threads: ["ixworld", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
+        id: `t-${k}`,
+        categoryId: `rc-${k}`,
+        xenforoThreadId: i + 1,
+      })),
+      posts: ["ixworld", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
+        id: `p-${k}`,
+        threadId: `t-${k}`,
+        xenforoPostId: 20 + i,
+      })),
+    });
+    expect([...(await restrictedImportedPosts(db as never))].sort()).toEqual([23, 24, 25]);
   });
 });
 

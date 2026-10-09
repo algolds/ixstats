@@ -12,20 +12,25 @@ export interface SiteCategoryVisibility {
   visibility: string;
 }
 
-/** What a sitewide key no database row or seed names counts as: never public by mistake. */
+/** What a sitewide key no database row or seed names, or an unpublished realm, counts as: never public by mistake. */
 export const UNKNOWN_SITE_VISIBILITY = "restricted";
 
 /**
- * The visibility of the category a node target lands in (null: skipped). Archives take the map's visibility,
- * realm categories are public, a sitewide key is looked up in the database's categories, then the seeds.
+ * The visibility of the category a node target lands in (null: skipped). Archives take the map's visibility; a realm
+ * category is public only while its realm is published (`publishedRealms`: the node map's realm slugs whose realm
+ * `isRealmPublished`, as the loader reports them; a draft or generating realm, or one not reported, is restricted);
+ * a sitewide key is looked up in the database's categories, then the seeds.
  */
 export function categoryVisibility(
   target: NodeTarget,
-  siteCategories: readonly SiteCategoryVisibility[]
+  siteCategories: readonly SiteCategoryVisibility[],
+  publishedRealms: ReadonlySet<string> = new Set()
 ): string | null {
   if ("skip" in target) return null;
   if ("archive" in target) return target.visibility ?? "public";
-  if (target.scope === "realm") return "public";
+  if (target.scope === "realm") {
+    return publishedRealms.has(target.realm) ? "public" : UNKNOWN_SITE_VISIBILITY;
+  }
   const known = [...siteCategories, ...SITE_CATEGORIES].find((c) => c.key === target.key);
   return known?.visibility ?? UNKNOWN_SITE_VISIBILITY;
 }
