@@ -8,6 +8,10 @@ describe("productionDatabaseRefusal", () => {
     expect(productionDatabaseRefusal(url("ix%73tats"), false)).toMatch(/--production/);
   });
 
+  it("refuses the production database written with a trailing slash", () => {
+    expect(productionDatabaseRefusal(url("ixstats/"), false)).toMatch(/--production/);
+  });
+
   it("allows a clone", () => {
     expect(productionDatabaseRefusal(url("ixstats_wv1"), false)).toBeNull();
   });

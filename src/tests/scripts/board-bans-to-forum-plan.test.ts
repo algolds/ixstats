@@ -299,12 +299,12 @@ describe("planBoardBanMigration: bound players who moderate the realm (M5)", () 
     expect(result.moderatorSkips.map((s) => s.holder)).toEqual(["site admin"]);
   });
 
-  it("treats IxWorld as having no founder", () => {
+  it("skips IxWorld's founder too, as the board never restricted its manager", () => {
     const result = plan([ban({ realmId: "default" })], {
       countries: owned("user-owner", "default"),
       moderators: { realmOwners: new Map([["default", "clerk-user-owner"]]) },
     });
-    expect(holdersOf(result)).toEqual(["user-owner"]);
+    expect(holdersOf(result)).toEqual([]);
   });
 
   it("still bans the other bound players of the same row, and leaves members unaffected", () => {

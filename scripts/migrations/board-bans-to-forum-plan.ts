@@ -11,10 +11,9 @@
  * the planner does too. Each bound player gets one ban, idempotent by `sourceRef`.
  *
  * The board never restricted its moderators, while a forum ban binds them (M5). So a bound player who moderates the
- * realm today (a site admin, the realm's founder, or an officer with the `board` power; IxWorld has no founder) is
+ * realm today (a site admin, the realm's founder, or an officer with the `board` power) is
  * skipped and reported, never banned by the migration.
  */
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   isSiteAdmin,
   type RealmActor,
@@ -139,8 +138,8 @@ function moderatorRole(
   const user = facts.users.get(userId);
   if (!user) return null;
   if (isSiteAdmin({ id: userId, ...user })) return "site admin";
-  const founder =
-    realmId !== DEFAULT_REALM_ID && facts.realmOwners.get(realmId) === user.clerkUserId;
+  // As the board: its manager is a site admin or the realm's founder (IxWorld included), or a `board` officer.
+  const founder = facts.realmOwners.get(realmId) === user.clerkUserId;
   const officer = (facts.officers.get(realmId) ?? []).some(
     (o) => o.userId === user.clerkUserId && o.powers.includes("board")
   );

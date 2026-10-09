@@ -13,7 +13,7 @@ export function productionDatabaseRefusal(
 ): string | null {
   let name: string;
   try {
-    name = decodeURIComponent(new URL(databaseUrl ?? "").pathname.replace(/^\//, ""));
+    name = decodeURIComponent(new URL(databaseUrl ?? "").pathname.replace(/^\/|\/$/g, ""));
   } catch {
     return "DATABASE_URL is not set or not a URL.";
   }
