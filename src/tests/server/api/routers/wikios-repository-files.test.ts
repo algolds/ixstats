@@ -168,6 +168,90 @@ describe("repositoryFiles: iiwiki", () => {
   });
 });
 
+describe("sisterFileInfo", () => {
+  const info = (name: string) => ({
+    url: `https://iiwiki.com/images/${name}`,
+    thumburl: `https://iiwiki.com/t/${name}`,
+    size: 7,
+    width: 3,
+    height: 2,
+    mime: "image/png",
+  });
+
+  it("looks the titles up in one call and keys them by the requested title", async () => {
+    guard = installFetchGuard(() => ({
+      query: {
+        normalized: [{ from: "File:A_b.png", to: "File:A b.png" }],
+        pages: {
+          "1": { title: "File:A b.png", imageinfo: [info("A_b.png")] },
+          "2": { title: "File:C.svg", imageinfo: [{ ...info("C.svg"), mime: "image/svg+xml" }] },
+          "-1": { title: "File:Gone.png", missing: "" },
+        },
+      },
+    }));
+    const out = await signedOut().sisterFileInfo({
+      wiki: "iiwiki",
+      titles: ["File:A_b.png", "File:C.svg", "File:Gone.png"],
+    });
+    expect(guard.calls()).toHaveLength(1);
+    const sent = new URL(guard.calls()[0]!);
+    expect(sent.searchParams.get("action")).toBe("query");
+    expect(sent.searchParams.get("titles")).toBe("File:A_b.png|File:C.svg|File:Gone.png");
+    expect(sent.searchParams.get("prop")).toBe("imageinfo");
+    expect(sent.searchParams.get("iiprop")).toBe("url|size|mime");
+    expect(sent.searchParams.get("iiurlwidth")).toBe("500");
+    expect(Object.keys(out.files)).toEqual(["File:A_b.png", "File:C.svg"]);
+    expect(out.files["File:A_b.png"]).toEqual({
+      name: "A b.png",
+      title: "File:A b.png",
+      url: "https://iiwiki.com/images/A_b.png",
+      thumbUrl: "https://iiwiki.com/t/A_b.png",
+      size: 7,
+      width: 3,
+      height: 2,
+      mime: "image/png",
+      blurhash: null,
+    });
+    expect(out.files["File:C.svg"]).toMatchObject({ mime: "image/svg+xml" });
+  });
+
+  it.each([
+    ["no titles", []],
+    ["51 titles", Array.from({ length: 51 }, (_, i) => `File:${i}.png`)],
+    ["a title with a pipe", ["File:A|B.png"]],
+    ["a title over 255 characters", [`File:${"a".repeat(255)}`]],
+    ["an empty title", [""]],
+  ])("rejects %s", async (_label, titles) => {
+    guard = installFetchGuard();
+    await expect(
+      signedOut().sisterFileInfo({ wiki: "iiwiki", titles })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(guard.calls()).toHaveLength(0);
+  });
+
+  it("rejects a wiki other than iiwiki", async () => {
+    await expect(
+      signedOut().sisterFileInfo({ wiki: "ixwiki" as never, titles: ["File:A.png"] })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("is rate-limited in the sisterwiki bucket like the other reads", async () => {
+    const { rateLimiter } = await import("~/lib/cache");
+    const enabled = jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
+    const check = jest
+      .spyOn(rateLimiter, "check")
+      .mockResolvedValue({ success: true, remaining: 100, resetAt: new Date() } as never);
+    guard = installFetchGuard(() => ({ query: { pages: {} } }));
+    try {
+      await signedOut().sisterFileInfo({ wiki: "iiwiki", titles: ["File:A.png"] });
+      expect(check).toHaveBeenCalledWith(expect.anything(), "sisterwiki", { maxRequests: 120, windowMs: 60_000 });
+    } finally {
+      enabled.mockRestore();
+      check.mockRestore();
+    }
+  });
+});
+
 describe("repositoryFiles: forum and mine", () => {
   const record = {
     id: "r1",

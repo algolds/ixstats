@@ -9,23 +9,16 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter } from "~/server/api/trpc";
 import { assetUrl } from "~/lib/base-path";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
-import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
-import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
+import {
+  fetchSisterFileInfo,
+  fetchSisterFilePage,
+  type RepositoryFile,
+} from "~/lib/wiki-os/sister-wiki-files";
 import { requireWikiAuthId } from "~/lib/wiki-os/auth";
 import { listUploadedAssets, type UploadedAssetRecord } from "~/server/shared/uploaded-assets";
-import { sisterWikiProcedure, SISTER_CACHE_TTL_MS } from "./search";
+import { sisterWikiProcedure } from "./search";
 
-export interface RepositoryFile {
-  name: string;
-  title: string;
-  url: string;
-  thumbUrl: string | null;
-  size: number;
-  width: number;
-  height: number;
-  mime: string;
-  blurhash: string | null;
-}
+export type { RepositoryFile };
 
 interface RepositoryFilePage {
   files: RepositoryFile[];
@@ -142,74 +135,19 @@ async function ixwikiPage(input: {
   };
 }
 
-interface SisterPages {
-  continue?: Record<string, unknown>;
-  query?: {
-    pages?: Record<
-      string,
-      {
-        title: string;
-        index?: number;
-        imageinfo?: Array<{
-          url: string;
-          thumburl?: string;
-          size: number;
-          width: number;
-          height: number;
-          mime: string;
-        }>;
-      }
-    >;
-  };
-}
-
 async function iiwikiPage(input: {
   query?: string;
   category?: string;
   cursor?: string | null;
   limit: number;
 }): Promise<RepositoryFilePage> {
-  const baseUrl = getMediaWikiApiUrl("iiwiki");
-  const imageInfo = "prop=imageinfo&iiprop=url|size|mime&iiurlwidth=500";
-  let url: string;
-  if (input.category) {
-    url = `${baseUrl}?action=query&generator=categorymembers&gcmtitle=Category:${encodeURIComponent(
-      input.category.replace(/ /g, "_")
-    )}&gcmtype=file&gcmlimit=${input.limit}&${imageInfo}&format=json`;
-  } else if (input.query?.trim()) {
-    url = `${baseUrl}?action=query&generator=search&gsrsearch=${encodeURIComponent(
-      input.query.trim()
-    )}&gsrnamespace=6&gsrlimit=${input.limit}&${imageInfo}&format=json`;
-  } else {
-    url = `${baseUrl}?action=query&generator=allimages&gailimit=${input.limit}&${imageInfo}&format=json`;
-  }
-  for (const [key, value] of Object.entries(parseContinue(input.cursor))) {
-    url += `&${key}=${encodeURIComponent(value)}`;
-  }
-
-  const data = await fetchMediaWikiJson<SisterPages>(url, {
-    userAgent: DEFAULT_USER_AGENT,
-    cacheTtlMs: SISTER_CACHE_TTL_MS,
+  const { files, next } = await fetchSisterFilePage({
+    query: input.query,
+    category: input.category,
+    limit: input.limit,
+    continueParams: parseContinue(input.cursor),
   });
-
-  const files = Object.values(data.query?.pages ?? {})
-    .filter((p) => p.imageinfo && p.imageinfo[0])
-    .sort((a, b) => (a.index ?? Number.MAX_SAFE_INTEGER) - (b.index ?? Number.MAX_SAFE_INTEGER))
-    .map((p): RepositoryFile => {
-      const info = p.imageinfo![0]!;
-      return {
-        name: p.title.replace(/^File:/, ""),
-        title: p.title,
-        url: info.url,
-        thumbUrl: info.thumburl ?? null,
-        size: info.size,
-        width: info.width ?? 0,
-        height: info.height ?? 0,
-        mime: info.mime,
-        blurhash: null,
-      };
-    });
-  return { files, nextCursor: encodeContinue(data.continue) };
+  return { files, nextCursor: encodeContinue(next) };
 }
 
 export const wikiosRepositoryFilesRouter = createTRPCRouter({
@@ -240,4 +178,25 @@ export const wikiosRepositoryFilesRouter = createTRPCRouter({
       });
       return { files: page.items.map(fromUploadedAsset), nextCursor: page.nextCursor };
     }),
+
+  /** The named iiwiki files in one call, keyed by the requested title (absent when the wiki has no such file). */
+  sisterFileInfo: sisterWikiProcedure
+    .input(
+      z.object({
+        wiki: z.literal("iiwiki"),
+        titles: z
+          .array(
+            z
+              .string()
+              .min(1)
+              .max(255)
+              .refine((title) => !title.includes("|"), "A title cannot contain |")
+          )
+          .min(1)
+          .max(50),
+      })
+    )
+    .query(async ({ input }): Promise<{ files: Record<string, RepositoryFile> }> => ({
+      files: await fetchSisterFileInfo(input.titles),
+    })),
 });
