@@ -4,38 +4,67 @@
  * sanitized there). The output is NOT sanitized: every caller that stores or renders it sanitizes it.
  */
 import { mapHtmlRuns } from "~/lib/action-links";
+import { replacePairs, type PairSpec } from "./bbcode-pairs";
 
-/** [tag, replacement] pairs for BBCode tags that map straight onto an HTML wrapper around `$1`. */
-type SimpleTag = readonly [tag: string, replacement: string];
+/**
+ * Bodies longer than this (characters) are not transformed: they render as escaped plain text with line breaks,
+ * flagged `tooLong` (the import counts them). XenForo's own message limit is far below it.
+ */
+export const MAX_BBCODE_LENGTH = 200_000;
+
+/** [tag, open, close] for BBCode tags that map straight onto an HTML wrapper around their content. */
+type SimpleTag = readonly [tag: string, open: string, close: string];
 
 const INLINE_TAGS: SimpleTag[] = [
-  ["b", "<strong>$1</strong>"],
-  ["i", "<em>$1</em>"],
-  ["u", "<u>$1</u>"],
-  ["s", "<del>$1</del>"],
+  ["b", "<strong>", "</strong>"],
+  ["i", "<em>", "</em>"],
+  ["u", "<u>", "</u>"],
+  ["s", "<del>", "</del>"],
 ];
 const ALIGNMENT_TAGS: SimpleTag[] = [
-  ["center", '<div class="text-center">$1</div>'],
-  ["left", '<div class="text-left">$1</div>'],
-  ["right", '<div class="text-right">$1</div>'],
+  ["center", '<div class="text-center">', "</div>"],
+  ["left", '<div class="text-left">', "</div>"],
+  ["right", '<div class="text-right">', "</div>"],
 ];
 const TABLE_TAGS: SimpleTag[] = [
-  ["table", '<table class="forum-table">$1</table>'],
-  ["tr", "<tr>$1</tr>"],
-  ["td", "<td>$1</td>"],
-  ["th", "<th>$1</th>"],
+  ["table", '<table class="forum-table">', "</table>"],
+  ["tr", "<tr>", "</tr>"],
+  ["td", "<td>", "</td>"],
+  ["th", "<th>", "</th>"],
 ];
+
+/** An opener with no option: `[tag]`. */
+const BARE = /\]/y;
+
+/** `[tag…]content[/tag]` pairs, as `/\[tag…\]([\s\S]*?)\[\/tag\]/gi` would match them, in linear time. */
+const pairs =
+  (
+    tag: string,
+    rest: RegExp,
+    render: PairSpec["render"],
+    extra: Pick<PairSpec, "body" | "innermost"> = {}
+  ) =>
+  (html: string) =>
+    replacePairs(html, { tag, rest, render, ...extra });
 
 function replaceSimpleTags(html: string, tags: SimpleTag[]): string {
   return tags.reduce(
-    (result, [tag, replacement]) =>
-      result.replace(new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, "gi"), replacement),
+    (result, [tag, open, close]) =>
+      pairs(tag, BARE, (_o, content) => `${open}${content}${close}`)(result),
     html
   );
 }
 
+const sizeClass = (size: string): string => {
+  const sizeNum = parseInt(size, 10);
+  if (sizeNum <= 2) return "text-xs";
+  if (sizeNum <= 4) return "text-sm";
+  if (sizeNum <= 5) return "text-base";
+  return sizeNum <= 6 ? "text-lg" : "text-xl";
+};
+
 interface TransformedPost {
-  /** Post body as sanitized HTML */
+  /** Post body as HTML: user text escaped, tags as fixed markup. NOT sanitized: callers sanitize at render or store. */
   contentHtml: string;
   /** Attachment references found in the post */
   attachments: AttachmentRef[];
@@ -45,6 +74,8 @@ interface TransformedPost {
   mentionedUsers: string[];
   /** Whether the post contains a spoiler */
   hasSpoiler: boolean;
+  /** Over MAX_BBCODE_LENGTH: rendered as escaped plain text, no tag transformed. */
+  tooLong: boolean;
 }
 
 interface AttachmentRef {
@@ -75,10 +106,33 @@ const UNKNOWN_TAG = /\[\/?[a-z][a-z0-9]*(?:=[^\]]*)?]/gi;
 const isActionToken = (tag: string): boolean => /^\[ixaction=[A-Za-z0-9_-]{1,64}\]$/.test(tag);
 
 /**
+ * Unknown tags out of one text run. Every tag ends with `]`, so the run after its last `]` is left alone (which
+ * keeps an opener with no `]` after it from scanning to the end of the run, once per opener).
+ */
+function stripUnknownTags(text: string, keepTokens: boolean): string {
+  const end = text.lastIndexOf("]") + 1;
+  const stripped = text
+    .slice(0, end)
+    .replace(UNKNOWN_TAG, (tag) => (keepTokens && isActionToken(tag) ? tag : ""));
+  return stripped + text.slice(end);
+}
+
+/** A body over the length cap: escaped text with its line breaks, nothing else. */
+const tooLongPost = (bbcode: string): TransformedPost => ({
+  contentHtml: escapeHtml(bbcode).replace(/\n/g, "<br />").trim(),
+  attachments: [],
+  quotedUsers: [],
+  mentionedUsers: [],
+  hasSpoiler: false,
+  tooLong: true,
+});
+
+/**
  * Transform XenForo BBCode into HTML for the bridge, or for the import to degrade and sanitize.
  * Raw text is escaped first; the tags it knows become fixed markup.
  */
 export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): TransformedPost {
+  if (bbcode.length > MAX_BBCODE_LENGTH) return tooLongPost(bbcode);
   const { forumBaseUrl = "https://forum.ixwiki.com" } = options;
   const linkOf = (url: string): string =>
     options.forumLinks === "keep" ? url : rewriteForumUrl(url, forumBaseUrl);
@@ -97,107 +151,86 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   html = replaceSimpleTags(html, INLINE_TAGS);
 
   // 3. Font size — map to relative classes
-  html = html.replace(
-    /\[size=(\d+)\]([\s\S]*?)\[\/size\]/gi,
-    (_m, size: string, content: string) => {
-      const sizeNum = parseInt(size, 10);
-      const cls =
-        sizeNum <= 2
-          ? "text-xs"
-          : sizeNum <= 4
-            ? "text-sm"
-            : sizeNum <= 5
-              ? "text-base"
-              : sizeNum <= 6
-                ? "text-lg"
-                : "text-xl";
-      return `<span class="forum-size ${cls}">${content}</span>`;
-    }
-  );
+  html = pairs(
+    "size",
+    /=(\d+)\]/y,
+    ([, size], content) => `<span class="forum-size ${sizeClass(size!)}">${content}</span>`
+  )(html);
 
-  // 4. Colors — map to CSS classes, not inline styles (XSS-safe)
-  html = html.replace(
-    /\[color=([^\]]+)\]([\s\S]*?)\[\/color\]/gi,
-    (_m, color: string, content: string) => {
-      const safeColor = sanitizeColor(color);
-      return safeColor
-        ? `<span style="color:${safeColor}">${content}</span>`
-        : `<span>${content}</span>`;
-    }
-  );
+  // 4. Colors — an allowlisted value only (XSS-safe)
+  html = pairs("color", /=([^\]]+)\]/y, ([, color], content) => {
+    const safeColor = sanitizeColor(color!);
+    return safeColor
+      ? `<span style="color:${safeColor}">${content}</span>`
+      : `<span>${content}</span>`;
+  })(html);
 
   // 5. URLs
-  html = html.replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_m, url: string, text: string) => {
-    const href = linkOf(unescapeHtml(optionValue(url)));
+  html = pairs("url", /=([^\]]+)\]/y, ([, url], text) => {
+    const href = linkOf(unescapeHtml(optionValue(url!)));
     return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
-  });
+  })(html);
   // XenForo 2.2 writes pasted links as [URL unfurl="true"]…[/URL]
-  html = html.replace(/\[url(?:\s[^\]]*)?\]([\s\S]*?)\[\/url\]/gi, (_m, url: string) => {
+  html = pairs("url", /(?:\s[^\]]*)?\]/y, (_o, url) => {
     const href = linkOf(unescapeHtml(url));
     return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
-  });
+  })(html);
 
   // 6. Images ([IMG width="…"] in XenForo 2.2)
-  html = html.replace(/\[img(?:\s[^\]]*)?\]([\s\S]*?)\[\/img\]/gi, (_m, src: string) => {
+  html = pairs("img", /(?:\s[^\]]*)?\]/y, (_o, src) => {
     const safeSrc = sanitizeUrl(unescapeHtml(src));
     return safeSrc
       ? `<img src="${urlAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
       : "";
-  });
+  })(html);
 
   // 7. Quotes — extract quoted username, support nested quotes
   html = processQuotes(html, quotedUsers);
 
   // 8. Code blocks
-  html = html.replace(
-    /\[code(?:=[^\]]*)?\]([\s\S]*?)\[\/code\]/gi,
-    (_m, code: string) => `<pre class="forum-code"><code>${code}</code></pre>`
-  );
-  html = html.replace(
-    /\[icode\]([\s\S]*?)\[\/icode\]/gi,
-    (_m, code: string) => `<code class="forum-inline-code">${code}</code>`
-  );
+  html = pairs(
+    "code",
+    /(?:=[^\]]*)?\]/y,
+    (_o, code) => `<pre class="forum-code"><code>${code}</code></pre>`
+  )(html);
+  html = pairs("icode", BARE, (_o, code) => `<code class="forum-inline-code">${code}</code>`)(html);
 
   // 9. Lists
   html = processLists(html);
 
   // 10. Media embeds
-  html = html.replace(/\[media=youtube\]([\s\S]*?)\[\/media\]/gi, (_m, videoId: string) => {
+  html = pairs("media", /=youtube\]/iy, (_o, videoId) => {
     const safeId = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
     return `<div class="forum-embed forum-embed-youtube"><iframe src="https://www.youtube-nocookie.com/embed/${safeId}" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
-  });
+  })(html);
 
   // 11. Spoilers
-  html = html.replace(
-    /\[spoiler(?:=([^\]]*))?\]([\s\S]*?)\[\/spoiler\]/gi,
-    (_m, title: string | undefined, content: string) => {
-      hasSpoiler = true;
-      const label = title ? asText(optionValue(title)) : "Spoiler";
-      return `<details class="forum-spoiler"><summary class="forum-spoiler-toggle">${label}</summary><div class="forum-spoiler-content">${content}</div></details>`;
-    }
-  );
+  html = pairs("spoiler", /(?:=([^\]]*))?\]/y, ([, title], content) => {
+    hasSpoiler = true;
+    const label = title ? asText(optionValue(title)) : "Spoiler";
+    return `<details class="forum-spoiler"><summary class="forum-spoiler-toggle">${label}</summary><div class="forum-spoiler-content">${content}</div></details>`;
+  })(html);
 
   // 12. User mentions
-  html = html.replace(
-    /\[user=(\d+)\]([\s\S]*?)\[\/user\]/gi,
-    (_m, userId: string, username: string) => {
-      mentionedUsers.push(username);
-      // XenForo 2.2 stores the name with its "@"
-      if (options.mentions === "text") return `@${username.replace(/^@/, "")}`;
-      return `<a href="/forum/members/${userId}" class="forum-mention">@${username}</a>`;
-    }
-  );
+  html = pairs("user", /=(\d+)\]/y, ([, userId], username) => {
+    mentionedUsers.push(username);
+    // XenForo 2.2 stores the name with its "@"
+    if (options.mentions === "text") return `@${username.replace(/^@/, "")}`;
+    return `<a href="/forum/members/${userId}" class="forum-mention">@${username}</a>`;
+  })(html);
 
   // 13. Attachments
   // [attach], [attach=full], and XenForo 2.2's [ATTACH type="full" alt="…"]
-  html = html.replace(
-    /\[attach(?:=full|\s[^\]]*)?\](\d+)\[\/attach\]/gi,
-    (_m, attachId: string) => {
+  html = pairs(
+    "attach",
+    /(?:=full|\s[^\]]*)?\]/iy,
+    (_o, attachId) => {
       const id = parseInt(attachId, 10);
       attachments.push({ id, inline: true });
       return `<div class="forum-attachment" data-attachment-id="${id}"></div>`;
-    }
-  );
+    },
+    { body: /\d+/y }
+  )(html);
 
   // 14. Horizontal rule
   html = html.replace(/\[hr\]/gi, '<hr class="forum-hr" />');
@@ -206,13 +239,10 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   html = replaceSimpleTags(html, ALIGNMENT_TAGS);
 
   // 16. Headings (XenForo 2.x)
-  html = html.replace(
-    /\[heading=(\d)\]([\s\S]*?)\[\/heading\]/gi,
-    (_m, level: string, content: string) => {
-      const safeLevel = Math.min(Math.max(parseInt(level, 10), 1), 6);
-      return `<h${safeLevel} class="forum-heading">${content}</h${safeLevel}>`;
-    }
-  );
+  html = pairs("heading", /=(\d)\]/y, ([, level], content) => {
+    const safeLevel = Math.min(Math.max(parseInt(level!, 10), 1), 6);
+    return `<h${safeLevel} class="forum-heading">${content}</h${safeLevel}>`;
+  })(html);
 
   // 17. Tables
   html = replaceSimpleTags(html, TABLE_TAGS);
@@ -222,10 +252,7 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
 
   // 19. Strip any remaining unclosed/unknown BBCode tags, in text only (never inside a generated tag)
   html = mapHtmlRuns(html, {
-    text: (text) =>
-      text.replace(UNKNOWN_TAG, (tag) =>
-        options.actionTokens === "keep" && isActionToken(tag) ? tag : ""
-      ),
+    text: (text) => stripUnknownTags(text, options.actionTokens === "keep"),
   });
 
   return {
@@ -234,6 +261,7 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
     quotedUsers: Array.from(new Set(quotedUsers)),
     mentionedUsers: Array.from(new Set(mentionedUsers)),
     hasSpoiler,
+    tooLong: false,
   };
 }
 
@@ -243,24 +271,27 @@ function processQuotes(html: string, quotedUsers: string[]): string {
   let changed = true;
   let iterations = 0;
   const MAX_ITERATIONS = 10;
+  const quote = (option: string | undefined, content: string): string => {
+    changed = true;
+    const author = option && quoteAuthor(option);
+    if (author) {
+      quotedUsers.push(author);
+      return `<blockquote class="forum-quote"><div class="forum-quote-author">${author} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
+    }
+    return `<blockquote class="forum-quote"><div class="forum-quote-body">${content}</div></blockquote>`;
+  };
+  // Innermost [quote] blocks (no nested [quote] inside)
+  const innermost = pairs(
+    "quote",
+    /(?:=["']?([^"\]]*?)["']?)?\]/y,
+    ([, option], content) => quote(option, content),
+    { innermost: true }
+  );
 
   while (changed && iterations < MAX_ITERATIONS) {
     changed = false;
     iterations++;
-
-    // Match innermost [quote] blocks (no nested [quote] inside)
-    result = result.replace(
-      /\[quote(?:=["']?([^"\]]*?)["']?)?\]((?:(?!\[quote)[\s\S])*?)\[\/quote\]/gi,
-      (_m, option: string | undefined, content: string) => {
-        changed = true;
-        const author = option && quoteAuthor(option);
-        if (author) {
-          quotedUsers.push(author);
-          return `<blockquote class="forum-quote"><div class="forum-quote-author">${author} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
-        }
-        return `<blockquote class="forum-quote"><div class="forum-quote-body">${content}</div></blockquote>`;
-      }
-    );
+    result = innermost(result);
   }
 
   return result;
@@ -279,17 +310,19 @@ function listItems(content: string): string {
     .join("");
 }
 
+const orderedLists = pairs(
+  "list",
+  /=1\]/y,
+  (_o, content) => `<ol class="forum-list forum-list-ordered">${listItems(content)}</ol>`
+);
+const bulletLists = pairs(
+  "list",
+  BARE,
+  (_o, content) => `<ul class="forum-list">${listItems(content)}</ul>`
+);
+
 function processLists(html: string): string {
-  return html
-    .replace(
-      /\[list=1\]([\s\S]*?)\[\/list\]/gi,
-      (_m, content: string) =>
-        `<ol class="forum-list forum-list-ordered">${listItems(content)}</ol>`
-    )
-    .replace(
-      /\[list\]([\s\S]*?)\[\/list\]/gi,
-      (_m, content: string) => `<ul class="forum-list">${listItems(content)}</ul>`
-    );
+  return bulletLists(orderedLists(html));
 }
 
 function escapeHtml(str: string): string {
@@ -301,13 +334,14 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+/** escapeHtml undone: `&amp;` last, so escaped entity text (`&amp;lt;`) comes back as written (`&lt;`), never as `<`. */
 function unescapeHtml(str: string): string {
   return str
-    .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'");
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 /**

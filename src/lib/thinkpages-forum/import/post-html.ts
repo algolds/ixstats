@@ -1,7 +1,8 @@
 /**
  * One imported XenForo post body as stored forum HTML (phase 4, Q2/Q6/Q7/Q17). Pure. The order is fixed, and the
  * sanitizer runs last:
- *   transformBBCode (forum links kept absolute, mentions as text, action tokens kept)
+ *   transformBBCode (forum links kept absolute, mentions as text, action tokens kept; a body over its length cap
+ *   comes back as escaped plain text, noted `tooLong`)
  *   → degrade what sanitizeUserContent would drop or garble (spoilers, YouTube, tables, rules, strike, colours)
  *   → attachment placeholders replaced, the post's other attachments appended
  *   → template syntax broken in text runs (after all text is in place)
@@ -53,6 +54,7 @@ export const POST_FEATURES = [
   "httpImage",
   "blank",
   "fallback",
+  "tooLong",
 ] as const;
 export type PostFeature = (typeof POST_FEATURES)[number];
 export type PostFeatures = Record<PostFeature, boolean>;
@@ -125,6 +127,7 @@ const noFeatures = (): PostFeatures => ({
   httpImage: false,
   blank: false,
   fallback: false,
+  tooLong: false,
 });
 
 /** Maps the transformer's markup onto tags sanitizeUserContent keeps, noting each feature that changed the body. */
@@ -223,8 +226,9 @@ export function importedPostBody(input: PostHtmlInput): PostHtmlResult {
     forumLinks: "keep",
     mentions: "text",
     actionTokens: "keep",
-  }).contentHtml;
-  const degraded = degradeForSanitizer(transformed, features);
+  });
+  features.tooLong = transformed.tooLong;
+  const degraded = degradeForSanitizer(transformed.contentHtml, features);
   const assembled = breakTemplateSyntax(withAttachments(degraded, input, attachments), features);
   const sanitized = sanitizedLast(assembled);
   features.fallback = sanitized === null;

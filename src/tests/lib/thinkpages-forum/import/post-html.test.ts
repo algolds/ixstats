@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { JSDOM } from "jsdom";
 import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
+import { MAX_BBCODE_LENGTH } from "~/lib/thinkpages-forum/import/bbcode";
 import {
   importedPostBody,
   type AttachmentRender,
@@ -274,5 +275,12 @@ describe("importedPostBody: attachments", () => {
     });
     expect(result.contentHtml).toContain("&lt;b&gt;&lt;/b&gt;.pdf");
     expect(countActionTokens(result.contentHtml)).toBe(0);
+  });
+
+  it("notes a body over the transformer's length cap, kept as escaped text", () => {
+    const result = body(`[b]<i>x</i>[/b]${"y".repeat(MAX_BBCODE_LENGTH)}`);
+    expect(result.features.tooLong).toBe(true);
+    expect(result.contentHtml.startsWith("[b]&lt;i&gt;x&lt;/i&gt;[/b]yyy")).toBe(true);
+    expect(body("[b]x[/b]").features.tooLong).toBe(false);
   });
 });
