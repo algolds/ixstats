@@ -169,6 +169,7 @@ function report(overrides: object = {}) {
     threadTitle: "A thread",
     excerpt: "Buy cheap gold",
     targetAuthorId: "u2",
+    targetImportedAuthorName: null,
     hidden: false,
     categoryId: "c1",
     category: { key: "hub", name: "Hub", realm: { slug: "caphiria", name: "Caphiria" } },
@@ -495,6 +496,42 @@ describe("report queue", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Warn Rhea" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Ban Rhea" })).toBeNull();
+  });
+
+  it("offers Hide and handling but no Warn or Ban on imported content, named by its imported author", () => {
+    set("context", { data: REALM_MOD });
+    const imported = report({
+      targetAuthorId: null,
+      targetImportedAuthorName: "OldName",
+      sanctionable: false,
+    });
+    set("reports", { data: { rows: [imported], total: 1, authors } });
+    renderConsole();
+    expect(screen.getByRole("button", { name: "Hide OldName's post" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Resolve the report on OldName's post" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Warn / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Ban / })).toBeNull();
+  });
+
+  it("offers no Hide on a report whose content is gone, and still handles it", () => {
+    set("context", { data: REALM_MOD });
+    const gone = report({
+      threadId: null,
+      threadTitle: null,
+      excerpt: null,
+      targetAuthorId: null,
+      targetImportedAuthorName: null,
+      sanctionable: false,
+    });
+    set("reports", { data: { rows: [gone], total: 1, authors } });
+    renderConsole();
+    expect(screen.getByText("The reported content is gone")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^(Hide|Unhide) / })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Resolve the report on this post" })
+    ).toBeInTheDocument();
   });
 
   it("switches status with the segmented control", () => {

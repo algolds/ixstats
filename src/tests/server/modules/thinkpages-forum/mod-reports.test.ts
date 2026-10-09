@@ -307,7 +307,9 @@ describe("listReports", () => {
       threadTitle: null,
       excerpt: null,
       targetAuthorId: null,
+      targetImportedAuthorName: null,
     });
+    expect(rows[0]!.targetImportedAuthorName).toBeNull();
   });
 
   it("loads the targets in one thread query and one post query", async () => {
@@ -656,8 +658,12 @@ describe("reports on imported content without an IxStats author", () => {
   ];
   const importedStore = (reports = importedReports()) => {
     const store = reportsStore([], { reports });
-    store.state.threads.push(thread("t_imported", "r_eurth_hub", { authorUserId: null }));
-    store.state.posts.push(post("p_imported", "t_eurth", { authorUserId: null }));
+    store.state.threads.push(
+      thread("t_imported", "r_eurth_hub", { authorUserId: null, importedAuthorName: "OldThread" })
+    );
+    store.state.posts.push(
+      post("p_imported", "t_eurth", { authorUserId: null, importedAuthorName: "OldName" })
+    );
     return store;
   };
 
@@ -675,11 +681,12 @@ describe("reports on imported content without an IxStats author", () => {
     const store = importedStore();
     const { rows } = await listReports(store.db as never, eurthMod, { status: "open" }, 1);
     expect(
-      rows.map(({ id, moderable, sanctionable, targetAuthorId }) => ({
+      rows.map(({ id, moderable, sanctionable, targetAuthorId, targetImportedAuthorName }) => ({
         id,
         moderable,
         sanctionable,
         targetAuthorId,
+        targetImportedAuthorName,
       }))
     ).toEqual([
       {
@@ -687,9 +694,21 @@ describe("reports on imported content without an IxStats author", () => {
         moderable: true,
         sanctionable: false,
         targetAuthorId: null,
+        targetImportedAuthorName: "OldThread",
       },
-      { id: "rep_imported_post", moderable: true, sanctionable: false, targetAuthorId: null },
+      {
+        id: "rep_imported_post",
+        moderable: true,
+        sanctionable: false,
+        targetAuthorId: null,
+        targetImportedAuthorName: "OldName",
+      },
     ]);
+    for (const delegate of [store.db.forumThread, store.db.forumPost]) {
+      expect(delegate.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ select: expect.objectContaining({ importedAuthorName: true }) })
+      );
+    }
     for (const [args] of store.db.user.findMany.mock.calls as Array<[{ where: Row }]>) {
       expect(JSON.stringify(args.where)).not.toContain("null");
     }

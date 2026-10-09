@@ -30,6 +30,8 @@ interface TargetSummary {
   excerpt: string;
   /** Null on imported content without an IxStats author (phase 4): hideable, never sanctionable. */
   authorUserId: string | null;
+  /** The XenForo name kept on imported content; null otherwise. */
+  importedAuthorName: string | null;
   hidden: boolean;
 }
 
@@ -54,7 +56,13 @@ async function loadTargets(
     threadIds.length
       ? db.forumThread.findMany({
           where: { id: { in: threadIds }, ...author },
-          select: { id: true, title: true, authorUserId: true, hidden: true },
+          select: {
+            id: true,
+            title: true,
+            authorUserId: true,
+            importedAuthorName: true,
+            hidden: true,
+          },
         })
       : [],
     postIds.length
@@ -65,6 +73,7 @@ async function loadTargets(
             threadId: true,
             plainText: true,
             authorUserId: true,
+            importedAuthorName: true,
             hidden: true,
             thread: { select: { title: true } },
           },
@@ -79,6 +88,7 @@ async function loadTargets(
         threadTitle: t.title,
         excerpt: excerptOf(t.title),
         authorUserId: t.authorUserId,
+        importedAuthorName: t.importedAuthorName,
         hidden: t.hidden,
       },
     ]),
@@ -89,6 +99,7 @@ async function loadTargets(
         threadTitle: p.thread.title,
         excerpt: excerptOf(p.plainText),
         authorUserId: p.authorUserId,
+        importedAuthorName: p.importedAuthorName,
         hidden: p.hidden,
       },
     ]),
@@ -245,6 +256,8 @@ export async function listReports(
         hidden: target?.hidden ?? false,
         /** Who wrote the reported content (for "Warn author" / "Ban author"); null when it is gone. */
         targetAuthorId: target?.authorUserId ?? null,
+        /** The XenForo name of imported content without an IxStats author, to name it in the row. */
+        targetImportedAuthorName: target?.importedAuthorName ?? null,
         categoryId: row.categoryId,
         category,
         /** True on a site admin's own content: they see the report, not who filed it, and can't handle it. */
