@@ -211,13 +211,8 @@ export function rollbackPreviewLines(preview: RollbackPreview): string[] {
     `Rollback preview (nothing deleted): ${preview.threads} imported threads, ${preview.posts} posts (${preview.nativeReplies} native replies on imported threads)`,
     `  action links on those posts: ${preview.links} (returned to their XenForo post, or deleted with a native reply)`,
     `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, node map rows ${preview.nodeMap}, forum media assets ${preview.assets}, copied files ${preview.files}`,
-    "Pass --yes to delete these (the legacy redirect must be off).",
+    "Pass --yes to delete these.",
   ];
-}
-
-/** I2: `--rollback --yes` refuses while the legacy switch is on. */
-export function redirectOnRefusal(production: boolean): string {
-  return `The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- ${production ? "--production " : ""}off`;
 }
 
 /** The `--report` file: the plan report, the copy plan's counts and each kept attachment's stored name. */

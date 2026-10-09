@@ -1,15 +1,20 @@
 /** @jest-environment node */
 /**
- * Phase 4 (Task 6): every /forum/* page asks the legacy redirect first. Switched on, it 307s to the native forum
- * (`redirect`, temporary, Q8) and the bridge page never renders; switched off, the bridge page renders as before.
+ * Phase 4b: the XenForo bridge is gone and every /forum/* page is a permanent redirect (308, `permanentRedirect`)
+ * to the native forum, resolved through the import's id map. Unknown or unreadable ids land on the forum home
+ * (the module decides; here it is faked).
  */
-import { isValidElement, type ReactElement, type ReactNode } from "react";
-
 class RouteSignal extends Error {}
-const mockRedirect = jest.fn((url: string) => {
-  throw new RouteSignal(`redirect:${url}`);
+const mockPermanentRedirect = jest.fn((url: string) => {
+  throw new RouteSignal(`permanent:${url}`);
 });
-jest.mock("next/navigation", () => ({ redirect: (url: string) => mockRedirect(url) }));
+const mockRedirect = jest.fn((url: string) => {
+  throw new RouteSignal(`temporary:${url}`);
+});
+jest.mock("next/navigation", () => ({
+  permanentRedirect: (url: string) => mockPermanentRedirect(url),
+  redirect: (url: string) => mockRedirect(url),
+}));
 
 const mockConnection = jest.fn(() => Promise.resolve());
 jest.mock("next/server", () => ({ connection: () => mockConnection() }));
@@ -20,46 +25,13 @@ jest.mock("~/server/modules/thinkpages-forum", () => ({
 }));
 jest.mock("~/server/db", () => ({ __esModule: true, db: { marker: "db" } }));
 
-jest.mock("~/app/(forum)/forum/ForumHomeClient", () => ({ __esModule: true, default: () => null }));
-jest.mock("~/app/(forum)/forum/[forumId]/ForumThreadListClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-jest.mock("~/app/(forum)/forum/thread/[threadId]/ThreadPageClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-jest.mock("~/app/(forum)/forum/members/[userId]/MemberProfileClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-jest.mock("~/app/(forum)/forum/new-thread/NewThreadClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-jest.mock("~/app/(forum)/forum/search/ForumSearchClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-jest.mock("~/app/(forum)/forum/bookmarks/ForumStashesClient", () => ({
-  __esModule: true,
-  default: () => null,
-}));
-
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import ForumHomeClient from "~/app/(forum)/forum/ForumHomeClient";
 import ForumHomePage from "~/app/(forum)/forum/page";
-import ForumThreadListClient from "~/app/(forum)/forum/[forumId]/ForumThreadListClient";
 import ForumThreadListPage from "~/app/(forum)/forum/[forumId]/page";
-import ThreadPageClient from "~/app/(forum)/forum/thread/[threadId]/ThreadPageClient";
 import ThreadPage from "~/app/(forum)/forum/thread/[threadId]/page";
-import MemberProfileClient from "~/app/(forum)/forum/members/[userId]/MemberProfileClient";
 import MemberProfilePage from "~/app/(forum)/forum/members/[userId]/page";
-import NewThreadClient from "~/app/(forum)/forum/new-thread/NewThreadClient";
 import NewThreadPage from "~/app/(forum)/forum/new-thread/page";
-import ForumSearchClient from "~/app/(forum)/forum/search/ForumSearchClient";
 import ForumSearchPage from "~/app/(forum)/forum/search/page";
-import ForumStashesClient from "~/app/(forum)/forum/bookmarks/ForumStashesClient";
 import ForumStashesPage from "~/app/(forum)/forum/bookmarks/page";
 import LegacyPostPage from "~/app/(forum)/forum/post/[postId]/page";
 
@@ -67,101 +39,72 @@ const params = <T extends object>(value: T) => ({ params: Promise.resolve(value)
 
 interface PageCase {
   name: string;
-  render: () => Promise<ReactElement>;
+  render: () => Promise<void>;
   ref: object;
-  client: () => ReactNode;
 }
 
 const CASES: PageCase[] = [
-  { name: "/forum", render: () => ForumHomePage(), ref: { kind: "home" }, client: ForumHomeClient },
+  { name: "/forum", render: () => ForumHomePage(), ref: { kind: "home" } },
   {
     name: "/forum/[forumId]",
     render: () => ForumThreadListPage(params({ forumId: "12" })),
     ref: { kind: "forum", nodeId: 12 },
-    client: ForumThreadListClient,
   },
   {
     name: "/forum/thread/[threadId]",
     render: () => ThreadPage(params({ threadId: "123" })),
     ref: { kind: "thread", threadId: 123 },
-    client: ThreadPageClient,
+  },
+  {
+    name: "/forum/post/[postId]",
+    render: () => LegacyPostPage(params({ postId: "456" })),
+    ref: { kind: "post", postId: 456 },
   },
   {
     name: "/forum/members/[userId]",
     render: () => MemberProfilePage(params({ userId: "7" })),
     ref: { kind: "member", userId: 7 },
-    client: MemberProfileClient,
   },
-  {
-    name: "/forum/new-thread",
-    render: () => NewThreadPage(),
-    ref: { kind: "other" },
-    client: NewThreadClient,
-  },
-  {
-    name: "/forum/search",
-    render: () => ForumSearchPage(),
-    ref: { kind: "other" },
-    client: ForumSearchClient,
-  },
-  {
-    name: "/forum/bookmarks",
-    render: () => ForumStashesPage(),
-    ref: { kind: "other" },
-    client: ForumStashesClient,
-  },
+  { name: "/forum/new-thread", render: () => NewThreadPage(), ref: { kind: "other" } },
+  { name: "/forum/search", render: () => ForumSearchPage(), ref: { kind: "other" } },
+  { name: "/forum/bookmarks", render: () => ForumStashesPage(), ref: { kind: "other" } },
 ];
 
 beforeEach(() => {
+  mockPermanentRedirect.mockClear();
   mockRedirect.mockClear();
   mockConnection.mockClear();
-  mockRedirectFor.mockReset().mockResolvedValue(null);
+  mockRedirectFor.mockReset().mockResolvedValue("/thinkpages/t/t_native");
 });
 
-describe.each(CASES)("$name", ({ render, ref, client }) => {
-  it("renders the bridge page unchanged while the switch is off", async () => {
-    const page = await render();
-    expect(isValidElement(page)).toBe(true);
-    expect(page.type).toBe(client);
+describe.each(CASES)("$name", ({ render, ref }) => {
+  it("permanently redirects (308) to the resolved native page", async () => {
+    await expect(render()).rejects.toThrow("permanent:/thinkpages/t/t_native");
     expect(mockRedirectFor).toHaveBeenCalledWith({ marker: "db" }, ref);
+    expect(mockPermanentRedirect).toHaveBeenCalledTimes(1);
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
-  it("opts into per-request rendering before reading the switch", async () => {
-    await render();
+  it("opts into per-request rendering before resolving", async () => {
+    await expect(render()).rejects.toThrow(RouteSignal);
     expect(mockConnection).toHaveBeenCalledTimes(1);
     expect(mockConnection.mock.invocationCallOrder[0]).toBeLessThan(
       mockRedirectFor.mock.invocationCallOrder[0]!
     );
   });
 
-  it("redirects to the target, without rendering the bridge page, while the switch is on", async () => {
-    mockRedirectFor.mockResolvedValue("/thinkpages/t/t_native");
-    await expect(render()).rejects.toThrow("redirect:/thinkpages/t/t_native");
-    expect(mockRedirect).toHaveBeenCalledTimes(1);
+  it("sends an unresolved id to the forum home the module returns", async () => {
+    mockRedirectFor.mockResolvedValue("/thinkpages");
+    await expect(render()).rejects.toThrow("permanent:/thinkpages");
   });
 });
 
 describe("non-numeric ids", () => {
   it("ask for an other ref", async () => {
-    await ThreadPage(params({ threadId: "slug.12" }));
-    await ForumThreadListPage(params({ forumId: "abc" }));
-    await MemberProfilePage(params({ userId: "1e3" }));
+    await expect(ThreadPage(params({ threadId: "slug.12" }))).rejects.toThrow(RouteSignal);
+    await expect(ForumThreadListPage(params({ forumId: "abc" }))).rejects.toThrow(RouteSignal);
+    await expect(MemberProfilePage(params({ userId: "1e3" }))).rejects.toThrow(RouteSignal);
+    await expect(LegacyPostPage(params({ postId: "x" }))).rejects.toThrow(RouteSignal);
     for (const [, ref] of mockRedirectFor.mock.calls) expect(ref).toEqual({ kind: "other" });
-  });
-});
-
-describe("/forum/post/[postId]", () => {
-  it("redirects to the native post while the switch is on", async () => {
-    mockRedirectFor.mockResolvedValue("/thinkpages/post/p_native");
-    await expect(LegacyPostPage(params({ postId: "456" }))).rejects.toThrow(
-      "redirect:/thinkpages/post/p_native"
-    );
-    expect(mockRedirectFor).toHaveBeenCalledWith({ marker: "db" }, { kind: "post", postId: 456 });
-  });
-
-  it("sends the visitor to the bridge's forum home while the switch is off", async () => {
-    await expect(LegacyPostPage(params({ postId: "456" }))).rejects.toThrow("redirect:/forum");
-    expect(mockRedirect).toHaveBeenCalledWith("/forum");
   });
 });

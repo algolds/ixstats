@@ -1,6 +1,6 @@
 /**
- * Where a `/forum/*` path of the old XenForo bridge goes on the native forum (phase 4, Task 6). Null while the
- * legacy switch is off. Otherwise threads and posts resolve through `xenforoThreadId` / `xenforoPostId`, forum
+ * Where a `/forum/*` path of the retired XenForo bridge goes on the native forum (phase 4, Task 6; unconditional
+ * since phase 4b). Threads and posts resolve through `xenforoThreadId` / `xenforoPostId`, forum
  * nodes through the applied node map (the `forum_import_node_map` row, written by the importer) and then the node's
  * archive category `xf-<nodeId>`, members through `User.forumUserId` (the earliest linked account, as attribution
  * does) to their handle. Anything unresolved, or a failed lookup, lands on the forum home. Targets are built from ids
@@ -22,11 +22,6 @@ import {
   type NodeLanding,
 } from "~/lib/thinkpages-forum/legacy-forum";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
-import {
-  __resetLegacyForumSwitchForTests,
-  LEGACY_FORUM_TTL_MS,
-  refreshLegacyForumRedirect,
-} from "./legacy-switch";
 import { isRealmPublished } from "~/server/modules/realms";
 import { loadForumRealm } from "./realm-access";
 
@@ -36,6 +31,8 @@ export type LegacyDb = Pick<
 >;
 
 export const FORUM_IMPORT_NODE_MAP_KEY = "forum_import_node_map";
+/** How long a process keeps the applied node map before reading the row again (an import run may rewrite it). */
+const NODE_MAP_TTL_MS = 60_000;
 
 /** Categories an anonymous visitor may read (public visibility). */
 const PUBLIC_CATEGORY = categoryVisibilityWhere({ signedIn: false, siteAdmin: false });
@@ -46,7 +43,7 @@ const NONE: LegacyLookups = { threadId: null, postId: null, category: null, hand
 let nodeMap: { landings: ReadonlyMap<number, NodeLanding>; loadedAt: number } | null = null;
 
 async function nodeLandings(db: LegacyDb): Promise<ReadonlyMap<number, NodeLanding>> {
-  if (nodeMap && Date.now() - nodeMap.loadedAt <= LEGACY_FORUM_TTL_MS) return nodeMap.landings;
+  if (nodeMap && Date.now() - nodeMap.loadedAt <= NODE_MAP_TTL_MS) return nodeMap.landings;
   const row = await db.systemConfig.findUnique({
     where: { key: FORUM_IMPORT_NODE_MAP_KEY },
     select: { value: true },
@@ -136,12 +133,8 @@ async function lookup(db: LegacyDb, ref: LegacyForumRef): Promise<LegacyLookups>
   }
 }
 
-/** The native target for a legacy `/forum/*` ref, or null while the legacy switch is off. */
-export async function legacyForumRedirectFor(
-  db: LegacyDb,
-  ref: LegacyForumRef
-): Promise<string | null> {
-  if (!(await refreshLegacyForumRedirect())) return null;
+/** The native target for a legacy `/forum/*` ref; the forum home when nothing resolves. */
+export async function legacyForumRedirectFor(db: LegacyDb, ref: LegacyForumRef): Promise<string> {
   try {
     return legacyForumTarget(ref, await lookup(db, ref));
   } catch (error) {
@@ -152,6 +145,5 @@ export async function legacyForumRedirectFor(
 }
 
 export function __resetLegacyForumRedirectForTests(): void {
-  __resetLegacyForumSwitchForTests();
   nodeMap = null;
 }

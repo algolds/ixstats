@@ -12,7 +12,6 @@ export {
   legacyForumRedirectFor,
   type LegacyDb,
 } from "./legacy-redirect";
-export { LEGACY_FORUM_REDIRECT_KEY, setLegacyForumRedirect } from "./legacy-switch";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,

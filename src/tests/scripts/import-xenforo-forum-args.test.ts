@@ -20,7 +20,6 @@ import {
   diskRefusal,
   failedThreadLines,
   omittedByReason,
-  redirectOnRefusal,
   rollbackPreviewLines,
   snapshotGapLines,
   targetLines,
@@ -214,16 +213,10 @@ describe("rollback lines (I2)", () => {
       "Rollback preview (nothing deleted): 3 imported threads, 7 posts (1 native replies on imported threads)",
       "  action links on those posts: 2 (returned to their XenForo post, or deleted with a native reply)",
       "  archive categories 2 (xf-12, xf-13), node map rows 1, forum media assets 4, copied files 5",
-      "Pass --yes to delete these (the legacy redirect must be off).",
+      "Pass --yes to delete these.",
     ]);
   });
 
-  it("tells the operator to turn the redirect off first", () => {
-    expect(redirectOnRefusal(false)).toBe(
-      "The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- off"
-    );
-    expect(redirectOnRefusal(true)).toMatch(/forum:legacy-redirect -- --production off$/);
-  });
 });
 
 describe("applyTotalLines", () => {

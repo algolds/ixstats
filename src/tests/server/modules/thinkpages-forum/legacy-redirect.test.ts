@@ -2,7 +2,7 @@
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
-    systemConfig: { findUnique: jest.fn(), upsert: jest.fn() },
+    systemConfig: { findUnique: jest.fn() },
     forumThread: { findFirst: jest.fn() },
     forumPost: { findFirst: jest.fn() },
     forumCategory: { findFirst: jest.fn() },
@@ -11,18 +11,11 @@ jest.mock("~/server/db", () => ({
   },
 }));
 
-import {
-  FORUM_IMPORT_NODE_MAP_KEY,
-  LEGACY_FORUM_REDIRECT_KEY,
-  legacyForumRedirectFor,
-  setLegacyForumRedirect,
-} from "~/server/modules/thinkpages-forum";
+import { FORUM_IMPORT_NODE_MAP_KEY, legacyForumRedirectFor } from "~/server/modules/thinkpages-forum";
 import { __resetLegacyForumRedirectForTests } from "~/server/modules/thinkpages-forum/legacy-redirect";
-import { refreshLegacyForumRedirect } from "~/server/modules/thinkpages-forum/legacy-switch";
 import { db } from "~/server/db";
 
 const config = jest.mocked(db.systemConfig.findUnique);
-const upsert = jest.mocked(db.systemConfig.upsert);
 const thread = jest.mocked(db.forumThread.findFirst);
 const post = jest.mocked(db.forumPost.findFirst);
 const category = jest.mocked(db.forumCategory.findFirst);
@@ -30,14 +23,13 @@ const realm = jest.mocked(db.realm.findUnique);
 const user = jest.mocked(db.user.findFirst);
 
 interface Rows {
-  switchValue?: string | null;
   nodeMap?: string | null;
 }
 
-/** Answers the two SystemConfig rows the redirect reads; only `value` matters. */
-function configRows({ switchValue = "true", nodeMap = null }: Rows) {
+/** Answers the one SystemConfig row the redirect reads (the applied node map); only `value` matters. */
+function configRows({ nodeMap = null }: Rows) {
   config.mockImplementation(((args: { where: { key: string } }) => {
-    const value = args.where.key === LEGACY_FORUM_REDIRECT_KEY ? switchValue : nodeMap;
+    const value = args.where.key === FORUM_IMPORT_NODE_MAP_KEY ? nodeMap : null;
     return Promise.resolve(value === null ? null : { value });
   }) as never);
 }
@@ -158,68 +150,16 @@ beforeEach(() => {
 
 const lookups = () => [thread, post, category, realm, user].map((fn) => fn.mock.calls.length);
 
-describe("legacy forum switch", () => {
-  it("is off when no row exists", async () => {
-    configRows({ switchValue: null });
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(false);
-    expect(config).toHaveBeenCalledWith({
-      where: { key: LEGACY_FORUM_REDIRECT_KEY },
-      select: { value: true },
-    });
-  });
-
-  it("follows the row, reading it at most once per TTL unless forced", async () => {
-    configRows({ switchValue: "true" });
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(true);
-    configRows({ switchValue: "false" });
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(true);
-    expect(config).toHaveBeenCalledTimes(1);
-    await expect(refreshLegacyForumRedirect(true)).resolves.toBe(false);
-    expect(config).toHaveBeenCalledTimes(2);
-  });
-
-  it("re-reads the row once the TTL has passed", async () => {
-    const now = jest.spyOn(Date, "now").mockReturnValue(1_000_000);
-    await refreshLegacyForumRedirect();
-    configRows({ switchValue: "false" });
-    now.mockReturnValue(1_000_000 + 15_001);
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(false);
-    now.mockRestore();
-  });
-
-  it("keeps the last value when the row cannot be read", async () => {
-    await refreshLegacyForumRedirect();
-    config.mockRejectedValueOnce(new Error("db down"));
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    await expect(refreshLegacyForumRedirect(true)).resolves.toBe(true);
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
-  });
-
-  it("writes the row and takes the new value at once, without a read", async () => {
-    await setLegacyForumRedirect(true);
-    expect(upsert).toHaveBeenCalledWith({
-      where: { key: LEGACY_FORUM_REDIRECT_KEY },
-      create: { key: LEGACY_FORUM_REDIRECT_KEY, value: "true" },
-      update: { value: "true" },
-    });
-    configRows({ switchValue: "false" });
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(true);
-    await setLegacyForumRedirect(false);
-    expect(upsert).toHaveBeenLastCalledWith(
-      expect.objectContaining({ update: { value: "false" } })
-    );
-    configRows({ switchValue: "true" });
-    await expect(refreshLegacyForumRedirect()).resolves.toBe(false);
-  });
-});
-
 describe("legacyForumRedirectFor", () => {
-  it("is null without any lookup while the switch is off", async () => {
-    configRows({ switchValue: "false" });
-    await expect(legacyForumRedirectFor(db, { kind: "thread", threadId: 123 })).resolves.toBeNull();
-    await expect(legacyForumRedirectFor(db, { kind: "home" })).resolves.toBeNull();
-    expect(lookups()).toEqual([0, 0, 0, 0, 0]);
+  it("always resolves (phase 4b: no switch), reading no switch row", async () => {
+    await expect(legacyForumRedirectFor(db, { kind: "thread", threadId: 123 })).resolves.toBe(
+      "/thinkpages/t/t_native"
+    );
+    const keys = config.mock.calls.map(([args]) => args.where.key);
+    expect(keys.every((key) => key === FORUM_IMPORT_NODE_MAP_KEY)).toBe(true);
+    expect(config).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { key: "forum_legacy_redirect" } })
+    );
   });
 
   it("sends the home and the bridge's other pages to the forum home", async () => {

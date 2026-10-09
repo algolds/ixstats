@@ -3,7 +3,6 @@ import path from "node:path";
 import type { Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
 import { ImportLockLostError } from "~/server/modules/thinkpages-forum/import-db";
 import {
-  legacyRedirectOn,
   nativeRepliesOnImported,
   previewRollback,
   rollbackImport,
@@ -121,15 +120,6 @@ describe("rollbackImport", () => {
     expect(totals.linksRestored + totals.linksDeleted).toBe(preview.links);
   });
 
-  it("reads the legacy redirect switch", async () => {
-    const store = importStore({
-      configs: [{ id: "c1", key: "forum_legacy_redirect", value: "false" }],
-    });
-    expect(await legacyRedirectOn(store.db as never)).toBe(false);
-    store.tables().configs[0]!.value = "true";
-    expect(await legacyRedirectOn(store.db as never)).toBe(true);
-    expect(await legacyRedirectOn(importStore({}).db as never)).toBe(false);
-  });
 
   it("removes exactly the imported rows, every forum asset and copied file (M18), and leaves native content alone", async () => {
     const store = await importedStore();
