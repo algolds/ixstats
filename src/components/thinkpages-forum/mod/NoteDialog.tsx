@@ -26,10 +26,13 @@ interface NoteDialogProps {
   /** @default 1000 */
   max?: number;
   destructive?: boolean;
+  /** Offer the note field; false for a change the server takes no note for (it is only confirmed). @default true */
+  withNote?: boolean;
 }
 
 /**
- * Confirms a moderator action with a note: optional for the log, or required (an appeal's response). A refusal
+ * Confirms a moderator action with a note: optional for the log, or required (an appeal's response), or none for a
+ * change the server takes no note for. A refusal
  * stays in the dialog; it closes once the action succeeds. Mount it while open, so each opening starts empty.
  */
 export function NoteDialog({
@@ -42,6 +45,7 @@ export function NoteDialog({
   required = false,
   max = 1000,
   destructive = false,
+  withNote = true,
 }: NoteDialogProps) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -65,7 +69,9 @@ export function NoteDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <ReasonField label={label} value={text} onChange={setText} max={max} disabled={busy} />
+        {withNote ? (
+          <ReasonField label={label} value={text} onChange={setText} max={max} disabled={busy} />
+        ) : null}
         <FormError message={error} />
         <DialogFooter>
           <Button

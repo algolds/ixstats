@@ -7,6 +7,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { timeAgo } from "~/lib/format/compact";
 import { formatBanDate } from "~/lib/thinkpages-forum/moderation-policy";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { useNotify } from "~/hooks/useNotify";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { BanDialog, contextBanScopes } from "../BanDialog";
 import { MemberLookup } from "./MemberLookup";
@@ -110,6 +111,7 @@ interface BanRowProps {
 }
 
 function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
+  const notify = useNotify();
   const [lifting, setLifting] = useState(false);
   const { mutateAsync: lift } = api.thinkpagesForumMod.liftBan.useMutation();
   const member = memberName(members, ban.userId);
@@ -147,7 +149,12 @@ function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
           title="Lift this ban"
           description="They can post again where it applied. They are told it was lifted."
           confirmLabel="Lift ban"
-          onConfirm={(note) => lift({ banId: ban.id, ...(note ? { note } : {}) }).then(refresh)}
+          onConfirm={(note) =>
+            lift({ banId: ban.id, ...(note ? { note } : {}) }).then(() => {
+              notify.success("Ban lifted");
+              void refresh();
+            })
+          }
           onOpenChange={setLifting}
         />
       ) : null}

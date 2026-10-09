@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { useNotify } from "~/hooks/useNotify";
 import { timeAgo } from "~/lib/format/compact";
 import { formatBanDate } from "~/lib/thinkpages-forum/moderation-policy";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
@@ -127,6 +128,7 @@ interface WarningRowProps {
 }
 
 function WarningRow({ warning, members, context, canRevoke, stateLine, refresh }: WarningRowProps) {
+  const notify = useNotify();
   const [revoking, setRevoking] = useState(false);
   const { mutateAsync: revoke } = api.thinkpagesForumMod.revokeWarning.useMutation();
   const member = memberName(members, warning.userId);
@@ -165,7 +167,10 @@ function WarningRow({ warning, members, context, canRevoke, stateLine, refresh }
           description="Its points stop counting now, and an automatic ban they brought is shortened or lifted."
           confirmLabel="Revoke warning"
           onConfirm={(note) =>
-            revoke({ warningId: warning.id, ...(note ? { note } : {}) }).then(refresh)
+            revoke({ warningId: warning.id, ...(note ? { note } : {}) }).then(() => {
+              notify.success("Warning revoked");
+              void refresh();
+            })
           }
           onOpenChange={setRevoking}
         />

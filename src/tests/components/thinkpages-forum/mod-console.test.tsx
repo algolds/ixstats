@@ -129,6 +129,10 @@ const { router } = jest.requireMock<{ router: { replace: jest.Mock; push: jest.M
   "next/navigation"
 );
 
+const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.Mock } }>(
+  "~/hooks/useNotify"
+);
+
 const XSS = '<img src=x onerror="alert(1)">';
 const NO_MOD = { isSiteAdmin: false, realms: [], categories: [] };
 const CAPHIRIA = { id: "rc", slug: "caphiria", name: "Caphiria" };
@@ -318,6 +322,7 @@ describe("report queue", () => {
     await waitFor(() =>
       expect(resolve).toHaveBeenCalledWith({ reportId: "r1", outcome: "resolved" })
     );
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Report resolved"));
     await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
@@ -342,6 +347,7 @@ describe("report queue", () => {
     const dialog = screen.getByRole("dialog", { name: "Hide this post" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Hide post" }));
     await waitFor(() => expect(hide).toHaveBeenCalledWith({ postId: "p9", hidden: true }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Post hidden"));
   });
 
   it("hides a reported thread through the thread flag", async () => {
@@ -491,6 +497,7 @@ describe("bans", () => {
     expect(lift).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Lift ban" }));
     await waitFor(() => expect(lift).toHaveBeenCalledWith({ banId: "b1" }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Ban lifted"));
     await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
@@ -598,6 +605,7 @@ describe("warnings", () => {
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Misread" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Revoke warning" }));
     await waitFor(() => expect(revoke).toHaveBeenCalledWith({ warningId: "w1", note: "Misread" }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Warning revoked"));
   });
 
   it("shows a warning's appeal status", () => {
@@ -680,6 +688,7 @@ describe("appeals", () => {
         response: "Fair point.",
       })
     );
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Appeal overturned"));
     await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
@@ -900,6 +909,11 @@ describe("moderators", () => {
     });
     expect(inputs.categoryModerators).toEqual({ key: "hub", realm: "caphiria" });
     fireEvent.click(screen.getByRole("button", { name: "Remove Rhea as a moderator of Hub" }));
+    expect(setModerator).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", { name: "Remove this moderator" });
+    // The server takes no note for this change, so the dialog offers none.
+    expect(within(dialog).queryByRole("textbox")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove moderator" }));
     await waitFor(() =>
       expect(setModerator).toHaveBeenCalledWith({
         key: "hub",
@@ -908,5 +922,26 @@ describe("moderators", () => {
         grant: false,
       })
     );
+    await waitFor(() =>
+      expect(notify.success).toHaveBeenCalledWith("Rhea no longer moderates Hub")
+    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("keeps a refused removal inside the dialog", async () => {
+    mutations.setCategoryModerator = jest.fn(() => Promise.reject(new Error("Not allowed.")));
+    set("context", { data: ADMIN });
+    set("categoryModerators", {
+      data: {
+        rows: [{ userId: "u2", name: "Rhea", grantedBy: "u1", createdAt: new Date() }],
+        authors,
+      },
+    });
+    renderConsole({ tab: "moderators" });
+    fireEvent.click(screen.getByRole("button", { name: "Remove Rhea as a moderator of General" }));
+    const dialog = screen.getByRole("dialog", { name: "Remove this moderator" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove moderator" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Not allowed.");
+    expect(notify.success).not.toHaveBeenCalled();
   });
 });

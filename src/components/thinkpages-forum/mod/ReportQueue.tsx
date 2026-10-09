@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { useNotify } from "~/hooks/useNotify";
 import { timeAgo } from "~/lib/format/compact";
 import { postHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
@@ -155,6 +156,7 @@ interface ReportActionsProps {
 
 /** Open, then for an open report on someone else's content that still exists: hide, warn, ban, resolve, dismiss. */
 function ReportActions({ report, href, authorName, context, refresh }: ReportActionsProps) {
+  const notify = useNotify();
   const [open, setOpen] = useState<Open>(null);
   const { mutateAsync: resolve } = api.thinkpagesForumMod.resolveReport.useMutation();
   const { mutateAsync: hidePost } = api.thinkpagesForumMod.setPostHidden.useMutation();
@@ -176,11 +178,17 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
       kind === "post"
         ? hidePost({ postId: report.targetId, hidden: true, ...extra })
         : setThreadFlag({ threadId: report.targetId, flag: "hidden", value: true, ...extra });
-    return done.then(refresh);
+    return done.then(() => {
+      notify.success(`${kind === "post" ? "Post" : "Thread"} hidden`);
+      void refresh();
+    });
   };
 
   const settle = (outcome: Outcome) => (note: string | undefined) =>
-    resolve({ reportId: report.id, outcome, ...(note ? { note } : {}) }).then(refresh);
+    resolve({ reportId: report.id, outcome, ...(note ? { note } : {}) }).then(() => {
+      notify.success(OUTCOME_COPY[outcome].done);
+      void refresh();
+    });
 
   return (
     <>

@@ -162,6 +162,7 @@ interface AppealActionsProps {
 }
 
 function AppealActions({ appeal, member, refresh }: AppealActionsProps) {
+  const notify = useNotify();
   const [deciding, setDeciding] = useState<Outcome | null>(null);
   const { mutateAsync: review } = api.thinkpagesForumMod.reviewAppeal.useMutation();
   if (appeal.status !== "open") return null;
@@ -199,7 +200,10 @@ function AppealActions({ appeal, member, refresh }: AppealActionsProps) {
           max={RESPONSE_MAX}
           onConfirm={(response) =>
             review({ appealId: appeal.id, outcome: deciding, response: response ?? "" }).then(
-              refresh
+              () => {
+                notify.success(`Appeal ${deciding}`);
+                void refresh();
+              }
             )
           }
           onOpenChange={(next) => {
@@ -229,7 +233,10 @@ function CloseEndedAppeal({ appeal, subject, member, refresh }: CloseEndedAppeal
       outcome: "upheld",
       response: `This ${subject} had already ended, so the appeal was closed without a decision.`,
     })
-      .then(refresh)
+      .then(() => {
+        notify.success("Appeal closed");
+        void refresh();
+      })
       .catch((e: Error) => notify.error("Could not close the appeal", e.message));
   return (
     <>
