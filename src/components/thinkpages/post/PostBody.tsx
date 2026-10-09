@@ -6,7 +6,8 @@ import { OpenBook as BookOpen } from "iconoir-react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import { formatThinkpagesContentForDisplay } from "~/lib/utils";
+import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
+import { POST_IMAGE_CLASSES } from "~/components/shared/editor/postImageClasses";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 
@@ -68,11 +69,12 @@ export function PostBody({
         <SportsBulletinCard data={sportsBulletin} author={account} />
       ) : (
         <div
-          className={
+          className={cn(
             isHero
               ? "text-title-2 text-label mt-2 leading-relaxed font-normal whitespace-pre-wrap select-text"
-              : "text-body text-label leading-relaxed whitespace-pre-wrap select-text"
-          }
+              : "text-body text-label leading-relaxed whitespace-pre-wrap select-text",
+            POST_IMAGE_CLASSES
+          )}
         >
           <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanContent)} />
         </div>

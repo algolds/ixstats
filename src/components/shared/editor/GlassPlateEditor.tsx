@@ -18,6 +18,7 @@ import {
   toggleMark,
   toggleBlock,
 } from "./SlateSerializer";
+import { POST_IMAGE_CLASSES } from "./postImageClasses";
 import { MentionMenuPortal } from "./MentionMenuPortal";
 import { useGlassPlateEditor } from "./useGlassPlateEditor";
 import { WikiAndStashPopovers } from "./WikiAndStashPopovers";
@@ -27,10 +28,6 @@ const MediaSearchModal = dynamic(
     import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-
-/** Display rules shared with the post bodies so the editor previews what gets posted. */
-export const POST_IMAGE_CLASSES =
-  "[&_img]:my-2 [&_img]:h-auto [&_img]:max-h-[640px] [&_img]:max-w-full [&_img]:rounded-control [&_img]:object-contain";
 
 export interface GlassPlateEditorRef {
   insertText: (text: string) => void;

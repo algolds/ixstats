@@ -3,7 +3,9 @@
 import { memo, useMemo } from "react";
 import { ActionCardView, type ActionCardData } from "~/components/action-links";
 import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils";
 import { splitActionTokens } from "~/lib/action-links";
+import { POST_IMAGE_CLASSES } from "~/components/shared/editor/postImageClasses";
 
 interface PostBodyProps {
   /** Stored sanitized post HTML, possibly containing `[ixaction=<id>]` tokens. */
@@ -41,7 +43,12 @@ export const PostBody = memo(function PostBody({
 }: PostBodyProps) {
   const segments = useMemo(() => splitActionTokens(html), [html]);
   return (
-    <div className="text-body text-label [&_a]:text-tint leading-relaxed break-words select-text [&_a]:underline [&_p]:my-2">
+    <div
+      className={cn(
+        "text-body text-label [&_a]:text-tint leading-relaxed break-words select-text [&_a]:underline [&_p]:my-2",
+        POST_IMAGE_CLASSES
+      )}
+    >
       {segments.map((segment, i) =>
         segment.kind === "html" ? (
           // contentHtml is sanitized when the post is written, so it is safe to inject here.
