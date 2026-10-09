@@ -65,3 +65,25 @@ model PlaybackHistory {
   @@index([userId])
   @@index([trackId])
 }
+
+model UploadedAsset {
+  id             String   @id @default(cuid())
+  source         String   // "upload" | "forum"
+  sourceRef      String?
+  url            String   @unique
+  filePath       String
+  thumbUrl       String?
+  title          String
+  mimeType       String
+  sizeBytes      Int
+  width          Int      @default(0)
+  height         Int      @default(0)
+  blurhash       String?
+  uploaderClerkId String?
+  createdAt      DateTime @default(now())
+
+  @@unique([source, sourceRef])
+  @@index([source, createdAt])
+  @@index([uploaderClerkId, createdAt])
+  @@map("uploaded_assets")
+}
