@@ -9,13 +9,13 @@ import { requireWikiUserId, requireWikiUserIds, type WikiAuthContext } from "~/l
 import { MAX_PAGE } from "~/lib/thinkpages-forum/paging";
 import {
   authorsOf,
+  forumActorOf,
   ForumError,
-  moderatorContext,
+  forumMemberOf,
   type AuthorsDb,
-  type ForumActor,
   type ForumUserAuthor,
+  type ForumUserSource,
   type ForumViewer,
-  type ModeratorContext,
   type ScopeDb,
   type StashOwner,
 } from "~/server/modules/thinkpages-forum";
@@ -33,31 +33,11 @@ export function mapError(error: Error): never {
   throw error;
 }
 
-export interface ViewerSource {
-  id: string;
-  clerkUserId: string;
-  countryId?: string | null;
-  role?: { name: string; level: number } | null;
-}
-
-/** The signed-in user as a member, without what they moderate: for calls that never read it (M16). */
-export function memberOf(user: ViewerSource): ForumActor {
-  return {
-    id: user.id,
-    clerkUserId: user.clerkUserId,
-    countryId: user.countryId ?? null,
-    role: user.role ? { name: user.role.name, level: user.role.level } : null,
-  };
-}
-
+export type ViewerSource = ForumUserSource;
+/** The signed-in user as a member, without what they moderate (M16). */
+export const memberOf = forumMemberOf;
 /** The signed-in user with what they moderate; site admins cost no moderator query. */
-export async function actorOf(
-  db: ScopeDb,
-  user: ViewerSource
-): Promise<ForumActor & { mod: ModeratorContext }> {
-  const actor = memberOf(user);
-  return { ...actor, mod: await moderatorContext(db, actor) };
-}
+export const actorOf = forumActorOf;
 
 /** `actorOf` for reads open to anonymous visitors (null). `activeRealmId` stays the `realms` procedure's (T0-1). */
 export async function viewerOf(

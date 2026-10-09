@@ -218,10 +218,17 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(z.object({ threadId: id }))
     .query(({ ctx, input }) => isThreadStashed(ctx.db, stashOwnerOf(ctx), input)),
 
-  /** The caller's native stashed threads, newest first. */
+  /** The caller's native stashed threads they may still read, newest first, with current titles (I5). */
   stashedThreads: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional())
-    .query(({ ctx, input }) => listStashedThreads(ctx.db, stashOwnerOf(ctx), input?.limit ?? 50)),
+    .query(async ({ ctx, input }) =>
+      listStashedThreads(
+        ctx.db,
+        await viewerOf(ctx.db, ctx.user),
+        stashOwnerOf(ctx),
+        input?.limit ?? 50
+      )
+    ),
 
   createThread: rateLimitedMutationProcedure
     .input(

@@ -20,6 +20,7 @@ export {
   type AppealSubjectType,
 } from "./mod-appeal-subjects";
 export { fileAppeal, reviewAppeal, type AppealReview, type AppealsDb } from "./mod-appeals";
+export { forumActorOf, forumMemberOf, type ForumUserSource } from "./forum-viewer";
 export { BANS_PER_PAGE, listBans } from "./mod-ban-list";
 export { assertBoardGrantable, type PromotionDb } from "./mod-promotion";
 export { liftBan, type LiftBanDb, type LiftedBan } from "./mod-ban-lift";
@@ -142,6 +143,7 @@ export {
   listStashedThreads,
   stashThread,
   unstashThread,
+  withReadableThreads,
   type StashDb,
   type StashOwner,
 } from "./stash";
