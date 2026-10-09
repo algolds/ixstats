@@ -169,6 +169,7 @@ function report(overrides: object = {}) {
     threadTitle: "A thread",
     excerpt: "Buy cheap gold",
     targetAuthorId: "u2",
+    hidden: false,
     categoryId: "c1",
     category: { key: "hub", name: "Hub", realm: { slug: "caphiria", name: "Caphiria" } },
     ownTarget: false,
@@ -364,6 +365,43 @@ describe("report queue", () => {
     await waitFor(() =>
       expect(flag).toHaveBeenCalledWith({ threadId: "t1", flag: "hidden", value: true })
     );
+  });
+
+  it("offers Unhide instead of Hide on a hidden post, through the same confirmation", async () => {
+    const hide = jest.fn(() => Promise.resolve());
+    mutations.setPostHidden = hide;
+    set("context", { data: REALM_MOD });
+    set("reports", { data: { rows: [report({ hidden: true })], total: 1, authors } });
+    renderConsole();
+    expect(screen.queryByRole("button", { name: "Hide Rhea's post" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Unhide Rhea's post" }));
+    const dialog = screen.getByRole("dialog", { name: "Unhide this post" });
+    expect(within(dialog).getByText("Members see it again.")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Unhide post" }));
+    await waitFor(() => expect(hide).toHaveBeenCalledWith({ postId: "p9", hidden: false }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Post unhidden"));
+  });
+
+  it("unhides a hidden reported thread through the thread flag", async () => {
+    const flag = jest.fn(() => Promise.resolve());
+    mutations.setThreadFlag = flag;
+    set("context", { data: REALM_MOD });
+    set("reports", {
+      data: {
+        rows: [report({ targetType: "thread", targetId: "t1", hidden: true })],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole();
+    expect(screen.queryByRole("button", { name: "Hide Rhea's thread" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Unhide Rhea's thread" }));
+    const dialog = screen.getByRole("dialog", { name: "Unhide this thread" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Unhide thread" }));
+    await waitFor(() =>
+      expect(flag).toHaveBeenCalledWith({ threadId: "t1", flag: "hidden", value: false })
+    );
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Thread unhidden"));
   });
 
   it("warns the reported post's author about that post, then refreshes", async () => {

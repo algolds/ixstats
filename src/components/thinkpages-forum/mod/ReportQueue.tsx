@@ -154,7 +154,10 @@ interface ReportActionsProps {
   refresh: () => Promise<void>;
 }
 
-/** Open, then for an open report on someone else's content that still exists: hide, warn, ban, resolve, dismiss. */
+/**
+ * Open, then for an open report on someone else's content that still exists: hide (unhide when it already is), warn,
+ * ban, resolve, dismiss.
+ */
 function ReportActions({ report, href, authorName, context, refresh }: ReportActionsProps) {
   const notify = useNotify();
   const [open, setOpen] = useState<Open>(null);
@@ -168,18 +171,21 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
   const kind = report.targetType === "post" ? "post" : "thread";
   // Names each row's buttons apart for screen readers: "Hide Rhea's post", "Resolve the report on Rhea's post".
   const content = authorName ? `${authorName}'s ${kind}` : `this ${kind}`;
+  // A hidden target offers Unhide through the same confirmation (the server refuses hiding it twice).
+  const hiding = !report.hidden;
+  const verb = hiding ? "Hide" : "Unhide";
   const close = (next: boolean) => {
     if (!next) setOpen(null);
   };
 
-  const hide = (note: string | undefined) => {
+  const setHidden = (note: string | undefined) => {
     const extra = note ? { note } : {};
     const done =
       kind === "post"
-        ? hidePost({ postId: report.targetId, hidden: true, ...extra })
-        : setThreadFlag({ threadId: report.targetId, flag: "hidden", value: true, ...extra });
+        ? hidePost({ postId: report.targetId, hidden: hiding, ...extra })
+        : setThreadFlag({ threadId: report.targetId, flag: "hidden", value: hiding, ...extra });
     return done.then(() => {
-      notify.success(`${kind === "post" ? "Post" : "Thread"} hidden`);
+      notify.success(`${kind === "post" ? "Post" : "Thread"} ${hiding ? "hidden" : "unhidden"}`);
       void refresh();
     });
   };
@@ -204,10 +210,10 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
           <Button
             size="sm"
             variant="secondary"
-            aria-label={`Hide ${content}`}
+            aria-label={`${verb} ${content}`}
             onClick={() => setOpen("hide")}
           >
-            Hide
+            {verb}
           </Button>
           {report.sanctionable ? (
             <Button
@@ -247,11 +253,15 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
 
       {open === "hide" ? (
         <NoteDialog
-          title={`Hide this ${kind}`}
-          description="Members no longer see it. Moderators still do, marked Hidden."
-          confirmLabel={`Hide ${kind}`}
-          destructive
-          onConfirm={hide}
+          title={`${verb} this ${kind}`}
+          description={
+            hiding
+              ? "Members no longer see it. Moderators still do, marked Hidden."
+              : "Members see it again."
+          }
+          confirmLabel={`${verb} ${kind}`}
+          destructive={hiding}
+          onConfirm={setHidden}
           onOpenChange={close}
         />
       ) : null}
