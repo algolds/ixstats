@@ -1,10 +1,10 @@
 /**
  * Automatic site bans from warning points (owner decisions, M2, M3): 5 active points bring a 7-day ban, 10 a
  * 30-day one. The ban is issued by the moderator whose warning crossed the tier and stores that tier (`autoTier`,
- * the points threshold). Whenever points change, the active automatic ban is set to the highest tier still met,
- * counted from its original start: crossing up extends it (never a second ban), falling to a lower tier shortens
- * it, and falling below every tier, or to a tier whose length has already run out, lifts it. All of it runs inside
- * the warning's transaction and logs there.
+ * the points threshold). Whenever points change, the active automatic ban follows the highest tier still met:
+ * crossing up extends it to that tier's full length from the moment of crossing (never a second ban); falling to a
+ * lower tier shortens it to that tier's length from the ban's original start; falling below every tier, or to a
+ * tier whose length has already run out, lifts it. All of it runs inside the warning's transaction and logs there.
  */
 import type { PrismaClient } from "@prisma/client";
 import { autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
@@ -32,20 +32,30 @@ interface AutoBan {
   scope: string;
   scopeId: string | null;
   createdAt: Date;
+  expiresAt: Date;
   autoTier: number | null;
 }
 
-/** The user's live automatic site ban. */
-function activeAutoBan(
+/** The user's live automatic site ban; the query only finds dated ones, as automatic bans always end. */
+async function activeAutoBan(
   tx: Pick<AutoBanTx, "forumBan">,
   userId: string,
   now: Date
 ): Promise<AutoBan | null> {
-  return tx.forumBan.findFirst({
+  const ban = await tx.forumBan.findFirst({
     where: { userId, scope: "site", auto: true, liftedAt: null, expiresAt: { gt: now } },
     orderBy: { createdAt: "desc" },
-    select: { id: true, userId: true, scope: true, scopeId: true, createdAt: true, autoTier: true },
+    select: {
+      id: true,
+      userId: true,
+      scope: true,
+      scopeId: true,
+      createdAt: true,
+      expiresAt: true,
+      autoTier: true,
+    },
   });
+  return ban?.expiresAt ? { ...ban, expiresAt: ban.expiresAt } : null;
 }
 
 const tierEnd = (start: Date, tier: Tier): Date => new Date(start.getTime() + tier.days * DAY_MS);
@@ -83,7 +93,10 @@ async function issueAutoBan(
   return { kind: "issued", banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
 }
 
-/** Sets the active automatic ban to the highest tier `points` still meet, from its original start (M3). */
+/**
+ * Sets the active automatic ban to the highest tier `points` still meet (M3): up → that tier's full length from now
+ * (never earlier than it already ends); down → that tier's length from the ban's original start.
+ */
 async function reconcileAutoBan(
   tx: AutoBanTx,
   actor: Actor,
@@ -98,10 +111,13 @@ async function reconcileAutoBan(
     return { kind: "lifted", banId: ban.id };
   };
   if (!tier) return lift();
-  const expiresAt = tierEnd(ban.createdAt, tier);
-  if (expiresAt.getTime() <= now.getTime()) return lift();
   if (tier.points === ban.autoTier) return null;
   const kind = tier.points > (ban.autoTier ?? 0) ? "extended" : "shortened";
+  const expiresAt =
+    kind === "extended"
+      ? new Date(Math.max(ban.expiresAt.getTime(), tierEnd(now, tier).getTime()))
+      : tierEnd(ban.createdAt, tier);
+  if (expiresAt.getTime() <= now.getTime()) return lift();
   await tx.forumBan.update({
     where: { id: ban.id },
     data: {

@@ -303,7 +303,7 @@ describe("issueWarning", () => {
     });
   });
 
-  it("extends an active automatic ban to the higher tier from its start, instead of stacking a second one (M3)", async () => {
+  it("extends an active automatic ban to the higher tier's full length from the crossing, instead of stacking a second one (M3)", async () => {
     const { db, tx, bans, logs } = warnDb({
       warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
       bans: [autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 5 })],
@@ -312,14 +312,14 @@ describe("issueWarning", () => {
     expect(outcome).toEqual({
       warningId: "w1",
       activePoints: 10,
-      autoBan: { kind: "extended", banId: "b_auto", autoTier: 10, days: 30, expiresAt: days(28) },
+      autoBan: { kind: "extended", banId: "b_auto", autoTier: 10, days: 30, expiresAt: days(30) },
     });
     expect(tx.forumBan.create).not.toHaveBeenCalled();
     expect(bans).toEqual([
       expect.objectContaining({
         id: "b_auto",
         autoTier: 10,
-        expiresAt: days(28),
+        expiresAt: days(30),
         reason: "Automatic: 10 active warning points",
       }),
     ]);
@@ -341,11 +341,31 @@ describe("issueWarning", () => {
         points: 10,
         autoTier: 10,
         previousTier: 5,
-        expiresAt: days(28).toISOString(),
+        expiresAt: days(30).toISOString(),
         trigger: "warning",
         warningId: "w1",
       },
     });
+  });
+
+  it("gives the 30-day tier in full when 10 points are reached on day 6 of a 7-day ban", async () => {
+    const { db, bans } = warnDb({
+      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
+      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
+    expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(30) });
+    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(30), createdAt: days(-6) });
+  });
+
+  it("never brings an automatic ban's end forward when crossing up", async () => {
+    const { db, bans } = warnDb({
+      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
+      bans: [autoBan({ createdAt: days(-1), expiresAt: days(40), autoTier: 5 })],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
+    expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(40) });
+    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(40) });
   });
 
   it("leaves the automatic ban's expiry alone when a new warning stays in its tier", async () => {
@@ -596,6 +616,19 @@ describe("revokeWarning", () => {
         detail: { reason: "warning revoked", warningId: "w_b", points: 4, banId: "b_auto" },
       },
     ]);
+  });
+
+  it("measures a downgrade after an upgrade from the ban's original start", async () => {
+    const { db, bans } = warnDb({
+      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
+      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
+    });
+    await issueWarning(db as never, admin, { userId: "u_m", reason: "Rude", points: 3 });
+    expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(30) });
+    expect(await revokeWarning(db as never, admin, { warningId: "w1" })).toEqual({
+      autoBan: { kind: "shortened", banId: "b_auto", autoTier: 5, days: 7, expiresAt: days(1) },
+    });
+    expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(1), liftedAt: null });
   });
 
   it("reads the tier from autoTier, not from the ban's length", async () => {
