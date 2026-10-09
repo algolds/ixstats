@@ -15,7 +15,6 @@ import {
 import {
   authorModeration,
   canStartThread,
-  categoryPostingAccess,
   createThread,
   editPost,
   fileAppeal,
@@ -30,6 +29,7 @@ import {
   MAX_POST_HTML,
   moveDestinations,
   myStanding,
+  postingAccessFor,
   primaryRealmIdOf,
   replyToThread,
   resolvePostLocation,
@@ -58,7 +58,7 @@ const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
 const stashTarget = z.object({ threadId: id, stashId: id.optional() });
 
-type ThreadPage = Awaited<ReturnType<typeof getThreadPosts>>;
+type ThreadPage = Omit<Awaited<ReturnType<typeof getThreadPosts>>, "forumRealm">;
 
 /**
  * A moderator's extras on a thread: Move destinations, and what they may do to each author's posts (I-1, M-8), so
@@ -114,13 +114,13 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(z.object({ key: categoryKey, page, realm: realm.optional() }))
     .query(async ({ ctx, input }) => {
       const viewer = await viewerOf(ctx.db, ctx.user);
-      const result = await getCategoryThreads(
+      const { forumRealm, ...result } = await getCategoryThreads(
         ctx.db,
         viewer,
         { key: input.key, realm: input.realm },
         input.page
       ).catch(mapError);
-      const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+      const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
       return {
         ...result,
         // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4).
@@ -137,9 +137,15 @@ export const thinkpagesForumRouter = createTRPCRouter({
 
   thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
     const viewer = await viewerOf(ctx.db, ctx.user);
-    const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
-    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it.
-    const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+    const { forumRealm, ...result } = await getThreadPosts(
+      ctx.db,
+      viewer,
+      input.threadId,
+      input.page
+    ).catch(mapError);
+    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
+    // realm the read already loaded (N1).
+    const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
     // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
     const writable =
       viewer !== null && !result.thread.locked && !result.thread.archived && !result.thread.hidden;

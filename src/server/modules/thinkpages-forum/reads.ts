@@ -177,6 +177,8 @@ export async function getCategoryThreads(
     threads,
     total,
     canModerate: canModerateCategory(viewer, category),
+    /** For the caller's posting access (N1: no second realm read); never sent to a client whole. */
+    forumRealm: realm,
   };
 }
 
@@ -258,6 +260,8 @@ export async function getThreadPosts(
     posts,
     total,
     canModerate: canModerateCategory(viewer, category),
+    /** For the caller's posting access (N1: no second realm read); never sent to a client whole. */
+    forumRealm: realm,
   };
 }
 

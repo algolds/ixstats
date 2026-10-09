@@ -123,6 +123,7 @@ export {
   canSeeRealm,
   categoryPostingAccess,
   loadForumRealm,
+  postingAccessFor,
   realmPostingAccess,
   type ForumRealm,
   type RealmAccessDb,
