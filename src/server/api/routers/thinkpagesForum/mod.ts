@@ -12,6 +12,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   rateLimitedMutationProcedure,
+  readOnlyProcedure,
 } from "~/server/api/trpc";
 import {
   banPlaceName,
@@ -335,8 +336,8 @@ export const thinkpagesForumModRouter = createTRPCRouter({
     })
   ),
 
-  /** A member by Passport handle or wiki username; only an id and a public name come back. */
-  resolveMember: protectedProcedure
+  /** A member by Passport handle or wiki username; only an id and a public name come back. Rate limited (M10). */
+  resolveMember: readOnlyProcedure
     .input(z.object({ handle: z.string().trim().min(1).max(100) }))
     .query(({ ctx, input }) =>
       run(async () => resolveMember(ctx.db, await actorOf(ctx.db, ctx.user), input))

@@ -28,6 +28,8 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
   };
 });
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumModRouter } from "~/server/api/routers/thinkpagesForum/mod";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -693,5 +695,15 @@ describe("thinkpagesForumMod router", () => {
         grant: true,
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+describe("member lookup is rate limited (M10)", () => {
+  it("serves resolveMember through the rate-limited read procedure", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/server/api/routers/thinkpagesForum/mod.ts"),
+      "utf8"
+    );
+    expect(source).toMatch(/resolveMember: readOnlyProcedure/);
   });
 });
