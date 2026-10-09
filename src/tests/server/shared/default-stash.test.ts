@@ -69,6 +69,53 @@ describe("getOrCreateDefaultStash", () => {
     });
   });
 
+  it("when the fallback create also collides, returns the default that appeared, else the stash with that name", async () => {
+    const { stash, db } = makeDb();
+    // No default at first, no default after the first collision, then one (a concurrent request won).
+    stash.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "raced", name: "My Stash (default)", isDefault: true });
+    stash.create.mockRejectedValue(uniqueViolation());
+
+    const raced = await getOrCreateDefaultStash(db, ["u1"], "u1");
+    expect(raced.id).toBe("raced");
+    expect(stash.create).toHaveBeenCalledTimes(2);
+
+    // The name is held by a non-default stash: find it by name.
+    const second = makeDb();
+    second.stash.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "named", name: "My Stash (default)", isDefault: false });
+    second.stash.create.mockRejectedValue(uniqueViolation());
+
+    const named = await getOrCreateDefaultStash(second.db, ["u1"], "u1");
+    expect(named.id).toBe("named");
+    expect(second.stash.findFirst.mock.calls[3]![0]).toMatchObject({
+      where: { userId: { in: ["u1"] }, name: "My Stash (default)" },
+    });
+  });
+
+  it("rethrows the collision when nothing can be re-read, and a non-unique error from the fallback", async () => {
+    const lost = makeDb();
+    lost.stash.findFirst.mockResolvedValue(null);
+    lost.stash.create.mockRejectedValue(uniqueViolation());
+    await expect(getOrCreateDefaultStash(lost.db, ["u1"], "u1")).rejects.toMatchObject({
+      code: "P2002",
+    });
+
+    const broken = makeDb();
+    broken.stash.findFirst.mockResolvedValue(null);
+    broken.stash.create
+      .mockRejectedValueOnce(uniqueViolation())
+      .mockRejectedValueOnce(new Error("connection lost"));
+    await expect(getOrCreateDefaultStash(broken.db, ["u1"], "u1")).rejects.toThrow(
+      "connection lost"
+    );
+  });
+
   it("rethrows an error that is not a unique violation", async () => {
     const { stash, db } = makeDb();
     stash.findFirst.mockResolvedValue(null);

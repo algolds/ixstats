@@ -315,7 +315,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
             <div className="wikios-imgs-detail-info">
               <h3>{expandedImage.title.replace(/^File:/, "").replace(/_/g, " ")}</h3>
               <div className="wikios-imgs-detail-meta">
-                {expandedImage.width && expandedImage.height && (
+                {(expandedImage.width ?? 0) > 0 && (expandedImage.height ?? 0) > 0 && (
                   <span>
                     {expandedImage.width} × {expandedImage.height} px
                   </span>

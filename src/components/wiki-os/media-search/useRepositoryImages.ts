@@ -6,7 +6,8 @@
  * searching are one query). Each page is its own cached query keyed by its offset; a new term starts again from the
  * first page, so nothing is reset by hand. The wiki sources (IxWiki, IIWiki, the old forum's images, the signed-in
  * user's own uploads) page the same way through `wikios.repositoryFiles`, each page keyed by its cursor, and are
- * filtered by file type here. Forum and own uploads list newest first, so they need no query.
+ * filtered by file type here. A wiki source lists its files as soon as it is enabled (an empty query is allowed and any
+ * typed term is searched, newest first for forum and own uploads); only Commons waits for 2 characters or a category.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -22,7 +23,8 @@ import {
 } from "./types";
 
 export type RepositorySource = "commons" | WikiSubSource;
-export type RepositoryMode = "idle" | "search" | "browse";
+/** `list`: a wiki source with no term and no category, showing its files as they come. */
+export type RepositoryMode = "idle" | "search" | "browse" | "list";
 
 export interface RepositoryImagesInput {
   source: RepositorySource;
@@ -201,14 +203,15 @@ export function useRepositoryImages(input: RepositoryImagesInput): RepositoryIma
   const { source, categories, browsingCategory, fileType, enabled, signedIn, pageSize } = input;
   const size = pageSize ?? REPOSITORY_PAGE_SIZE;
   const trimmed = input.query.trim();
-  const searching = trimmed.length >= MIN_REPOSITORY_QUERY_LENGTH;
-  const query = searching ? trimmed : "";
   const isCommons = source === "commons";
-  // Forum and own uploads list newest first with no query; a category belongs only to Commons and the two wikis.
+  const searching = isCommons ? trimmed.length >= MIN_REPOSITORY_QUERY_LENGTH : trimmed.length > 0;
+  const query = searching ? trimmed : "";
+  // Forum and own uploads are plain lists: a category belongs only to Commons and the two wikis.
   const isListing = source === "forum" || source === "mine";
   const wikiCategory = isListing ? null : browsingCategory;
   const hasCategory = isListing ? false : categories.length > 0 || !!browsingCategory;
-  const mode: RepositoryMode = searching ? "search" : isListing || hasCategory ? "browse" : "idle";
+  const emptyMode: RepositoryMode = isCommons ? "idle" : "list";
+  const mode: RepositoryMode = searching ? "search" : hasCategory ? "browse" : emptyMode;
   const canList = enabled && (source !== "mine" || signedIn);
   const active = canList && mode !== "idle";
 

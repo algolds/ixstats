@@ -142,4 +142,45 @@ describe("CommonsResultsGrid", () => {
       expect(thumbnail.className).toContain("opacity-100");
     });
   });
+
+  it("shows the cold start, not the filter message, when a filter is set before any search", () => {
+    render(<CommonsResultsGrid {...base} mode="idle" query="" isFilterActive />);
+    expect(screen.getByText("Explore images")).toBeInTheDocument();
+    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
+  });
+
+  it("shows a failure and the loading skeleton ahead of the filter message", () => {
+    const { rerender, container } = render(
+      <CommonsResultsGrid {...base} isFilterActive error={{ rateLimited: false }} />
+    );
+    expect(screen.getByText("Search failed")).toBeInTheDocument();
+    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
+
+    rerender(<CommonsResultsGrid {...base} isFilterActive isLoading />);
+    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
+    expect(container.querySelector(".wikios-commons-grid")).not.toBeNull();
+  });
+
+  it("says a wiki with nothing to list has no images, not that a category is empty", () => {
+    render(<CommonsResultsGrid {...base} mode="list" query="" />);
+    expect(screen.getByText("This wiki has no images to list.")).toBeInTheDocument();
+    expect(screen.queryByText("This category has no images.")).not.toBeInTheDocument();
+  });
+
+  it("lets emptyText override the list message for the forum and own uploads", () => {
+    render(<CommonsResultsGrid {...base} mode="list" query="" emptyText="Nothing imported yet." />);
+    expect(screen.getByText("Nothing imported yet.")).toBeInTheDocument();
+    expect(screen.queryByText("This wiki has no images to list.")).not.toBeInTheDocument();
+  });
+
+  it("labels unknown dimensions Vector only for an SVG, and otherwise shows nothing", () => {
+    const svg = { ...image(1), width: 0, height: 0, mime: "image/svg+xml" };
+    const raster = { ...image(2), width: 0, height: 0, mime: "image/png" };
+    const sized = image(3);
+    render(<CommonsResultsGrid {...base} images={[svg, raster, sized]} />);
+    expect(screen.getAllByText("Vector")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Castle 1.jpg" })).toHaveTextContent("Vector");
+    expect(screen.getByRole("button", { name: "Castle 2.jpg" })).not.toHaveTextContent("Vector");
+    expect(screen.getByRole("button", { name: "Castle 3.jpg" })).toHaveTextContent("1200×800");
+  });
 });

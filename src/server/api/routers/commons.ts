@@ -5,13 +5,15 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import { Cache } from "~/lib/cache/cache";
 import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 /** Wikimedia's User-Agent policy asks for contact info; the plain allow-listed UA stays for other wikis. */
-const COMMONS_CONTACT_USER_AGENT = "IxStats-Builder/1.0 (https://ixwiki.com; image repository)";
+const COMMONS_CONTACT_USER_AGENT = `IxStats-Builder/1.0 (${mediaWikiOrigin()}; image repository)`;
 
 // ---------------------------------------------------------------------------
 // Shared fetch helper
@@ -128,8 +130,14 @@ function normalizeTitle(title: string): string {
   return title.replace(/_/g, " ").trim();
 }
 
+/** Commons search cannot page past its first 10,000 hits. */
+const MAX_SEARCH_WINDOW = 10_000;
+
 /** One page of Commons file search results (thumbnails + metadata) with the continuation offset. */
 async function searchCommonsFiles(gsrsearch: string, page: { limit: number; offset: number }) {
+  if (page.offset + page.limit > MAX_SEARCH_WINDOW) {
+    return { images: [] as CommonsImage[], nextOffset: null, totalHits: null };
+  }
   const data = await commonsApiFetch({
     action: "query",
     generator: "search",
@@ -156,9 +164,9 @@ export const commonsRouter = createTRPCRouter({
   search: commonsProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(500),
+        query: z.string().min(1).max(1000),
         limit: z.number().int().min(1).max(50).default(40),
-        offset: z.number().int().min(0).max(9_950).default(0),
+        offset: z.number().int().min(0).max(9_999).default(0),
       })
     )
     .query(async ({ input }) => {
@@ -183,8 +191,8 @@ export const commonsRouter = createTRPCRouter({
 
   /**
    * Get total recursive file count for categories using deepcat: search.
-   * Counts are cached for 6 hours and cache misses are fetched 3 at a time. A category whose count
-   * could not be fetched is left out of the result (never reported as 0) and is not cached.
+   * Counts are cached for 6 hours and cache misses are fetched one at a time; the rest are skipped once
+   * Commons rate limits us. A category whose count could not be fetched is left out of the result (never reported as 0) and is not cached.
    */
   getCategoryTotalCounts: commonsProcedure
     .input(
@@ -204,8 +212,9 @@ export const commonsRouter = createTRPCRouter({
 
       // A small worker pool: Wikimedia's search is the expensive endpoint, so never fan out all 25 at once.
       let next = 0;
+      let rateLimited = false;
       const worker = async () => {
-        while (next < missing.length) {
+        while (next < missing.length && !rateLimited) {
           const cat = missing[next++]!;
           try {
             const data = await commonsApiFetch({
@@ -220,6 +229,8 @@ export const commonsRouter = createTRPCRouter({
             categoryCountCache.set(cat, total);
             results[cat] = total;
           } catch (error) {
+            if (error instanceof TRPCError && error.code === "TOO_MANY_REQUESTS")
+              rateLimited = true;
             console.error("[Commons Router] Failed to fetch category count:", cat, error);
           }
         }

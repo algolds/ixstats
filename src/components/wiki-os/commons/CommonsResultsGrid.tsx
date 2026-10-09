@@ -19,7 +19,7 @@ interface CommonsResultsGridProps {
   hasMore: boolean;
   isLoading: boolean;
   /** What the results are: nothing asked yet, a typed search, or a browsed category. */
-  mode: "idle" | "search" | "browse";
+  mode: "idle" | "search" | "browse" | "list";
   /** The search the results are for (shown when nothing was found). */
   query?: string;
   /** How many images were loaded before the type/orientation filters hid some. */
@@ -107,13 +107,19 @@ const CommonsCard = memo(function CommonsCard({
           {cleanTitle}
         </span>
         <div className="text-footnote text-label-secondary flex items-center justify-between">
-          <span>{img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}</span>
+          <span>{dimensionsLabel(img)}</span>
           {img.license && <span className="max-w-[80px] truncate opacity-70">{img.license}</span>}
         </div>
       </div>
     </button>
   );
 });
+
+/** "W×H" when both sides are known; "Vector" only for an SVG; otherwise nothing. */
+function dimensionsLabel(img: CommonsImage): string | null {
+  if (img.width > 0 && img.height > 0) return `${img.width}×${img.height}`;
+  return img.mime.toLowerCase().includes("svg") ? "Vector" : null;
+}
 
 function ShimmerSkeletonGrid({ count = 8 }: { count?: number }) {
   return (
@@ -191,7 +197,7 @@ function LoadMore({ onLoadMore }: { onLoadMore?: () => void }) {
   );
 }
 
-/** What to show when there are no images to list: not asked yet, filtered out, or nothing found. */
+/** What to show when there are no images to list: not asked yet, then filtered out, then nothing found. */
 function EmptyState({
   mode,
   query,
@@ -204,6 +210,13 @@ function EmptyState({
   CommonsResultsGridProps,
   "mode" | "query" | "isFilterActive" | "onClearFilters" | "hasMore" | "onLoadMore" | "emptyText"
 >) {
+  if (mode === "idle") {
+    return (
+      <StateMessage title="Explore images">
+        Search for images using the search bar above, or browse a category.
+      </StateMessage>
+    );
+  }
   if (isFilterActive) {
     return (
       <>
@@ -230,17 +243,17 @@ function EmptyState({
       </>
     );
   }
-  if (mode === "idle") {
-    return (
-      <StateMessage title="Explore images">
-        Search for images using the search bar above, or browse a category.
-      </StateMessage>
-    );
-  }
   if (mode === "search" && query) {
     return (
       <StateMessage title={`No images found for \u201c${query}\u201d`}>
         Try different words, or remove a category filter.
+      </StateMessage>
+    );
+  }
+  if (mode === "list") {
+    return (
+      <StateMessage title="No images found">
+        {emptyText ?? "This wiki has no images to list."}
       </StateMessage>
     );
   }

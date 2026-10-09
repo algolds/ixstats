@@ -151,12 +151,34 @@ describe("useRepositoryImages", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it("does not search the wiki for a one-letter query", () => {
+  it("lists wiki files as soon as the source is enabled, with no query or category", () => {
+    const { result } = renderHook(() => useRepositoryImages(input({ source: "ixwiki" })));
+    expect(wikiInputs.at(-1)).toEqual({
+      source: "ixwiki",
+      query: undefined,
+      category: undefined,
+      cursor: null,
+      limit: 40,
+    });
+    // Not the Commons cold start.
+    expect(result.current.mode).toBe("list");
+  });
+
+  it("does not list wiki files while the picker tab is not enabled", () => {
+    renderHook(() => useRepositoryImages(input({ source: "iiwiki", enabled: false })));
+    expect(wikiInputs).toEqual([]);
+  });
+
+  it("searches the wiki for a one-letter query, but Commons still waits for two characters", () => {
     const { result } = renderHook(() =>
       useRepositoryImages(input({ source: "ixwiki", query: "m" }))
     );
-    expect(wikiInputs).toEqual([]);
-    expect(result.current.mode).toBe("idle");
+    expect(wikiInputs.at(-1)).toMatchObject({ source: "ixwiki", query: "m" });
+    expect(result.current.mode).toBe("search");
+
+    const commons = renderHook(() => useRepositoryImages(input({ query: "m" })));
+    expect(commonsInputs).toEqual([]);
+    expect(commons.result.current.mode).toBe("idle");
   });
 
   it("searches the wiki for a settled query, and for a browsed category", () => {
@@ -245,7 +267,7 @@ describe("useRepositoryImages", () => {
       { source: "forum", query: undefined, category: undefined, cursor: null, limit: 40 },
     ]);
     expect(result.current.images).toHaveLength(1);
-    expect(result.current.mode).toBe("browse");
+    expect(result.current.mode).toBe("list");
   });
 
   it("lists own uploads when signed in, and issues nothing when signed out", () => {

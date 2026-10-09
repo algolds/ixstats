@@ -2,7 +2,7 @@
 // Handles CORS issues, validates downloaded images, and caches them locally
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { writeFile, mkdir, access } from "fs/promises";
+import { writeFile, mkdir, access, rename, unlink } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
@@ -107,12 +107,45 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-function generateSafeFileName(originalUrl: string, contentType: string): string {
-  // Create a hash of the URL to ensure uniqueness
-  const hash = crypto.createHash("md5").update(originalUrl).digest("hex");
+/** Content-addressed name: identical bytes always map to one file, changed bytes to a new one. */
+function generateSafeFileName(content: Buffer, contentType: string): string {
+  const hash = crypto.createHash("sha256").update(content).digest("hex").slice(0, 32);
   const extension = EXTENSION_BY_TYPE[contentType] || "png";
-  // No timestamp: the same URL always maps to the same file, so a repeat download writes nothing.
   return `downloaded_${hash}.${extension}`;
+}
+
+function startsWithBytes(buffer: Buffer, bytes: number[], offset = 0): boolean {
+  return bytes.every((byte, i) => buffer[offset + i] === byte);
+}
+
+const ASCII = (text: string): number[] => [...text].map((c) => c.charCodeAt(0));
+
+/** True when the leading bytes are a PNG, JPEG, GIF or WEBP signature that matches `contentType`. */
+function matchesDeclaredSignature(buffer: Buffer, contentType: string): boolean {
+  switch (EXTENSION_BY_TYPE[contentType]) {
+    case "png":
+      return startsWithBytes(buffer, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case "jpg":
+      return startsWithBytes(buffer, [0xff, 0xd8, 0xff]);
+    case "gif":
+      return startsWithBytes(buffer, ASCII("GIF87a")) || startsWithBytes(buffer, ASCII("GIF89a"));
+    case "webp":
+      return startsWithBytes(buffer, ASCII("RIFF")) && startsWithBytes(buffer, ASCII("WEBP"), 8);
+    default:
+      return false;
+  }
+}
+
+/** Write via a temp file in the same directory and rename, so readers never see a partial file. */
+async function writeAtomically(filePath: string, buffer: Buffer): Promise<void> {
+  const tempPath = `${filePath}.${crypto.randomBytes(8).toString("hex")}.tmp`;
+  try {
+    await writeFile(tempPath, buffer);
+    await rename(tempPath, filePath);
+  } catch (error) {
+    await unlink(tempPath).catch(() => undefined);
+    throw error;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -124,8 +157,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // SECURITY: each call fetches from a remote host and writes to disk, so it shares the upload limit
-    const rateLimitResult = await rateLimiter.check(userId, "file_upload");
+    // SECURITY: each call fetches from a remote host and writes to disk, so it has its own tighter limit
+    const rateLimitResult = await rateLimiter.check(userId, "external_image_download", {
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
     if (!rateLimitResult.success) {
       console.warn(`[SECURITY] Rate limit exceeded for external image download: userId=${userId}`);
       const retryAfter = Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000);
@@ -149,6 +185,9 @@ export async function POST(request: NextRequest) {
     // Check if domain is trusted
     if (!isTrustedDomain(imageUrl)) {
       return badRequest("Untrusted image source");
+    }
+    if (new URL(imageUrl).port !== "") {
+      return badRequest("Explicit ports are not allowed");
     }
 
     console.log(`[ExternalImageDownload] Downloading: ${imageUrl}`);
@@ -180,17 +219,21 @@ export async function POST(request: NextRequest) {
       return badRequest("Image exceeds 5MB limit");
     }
 
-    // Generate safe file name
-    const fileName = generateSafeFileName(imageUrl, contentType);
+    if (!matchesDeclaredSignature(buffer, contentType)) {
+      return badRequest("File contents do not match the declared image type");
+    }
+
+    // Name the file by its content
+    const fileName = generateSafeFileName(buffer, contentType);
 
     // Ensure images directory exists
     const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
     await mkdir(imagesDir, { recursive: true });
 
-    // Save the file to disk (a repeat download of the same URL finds it already there)
+    // Save the file to disk (identical bytes find it already there)
     const filePath = path.join(imagesDir, fileName);
     if (!(await fileExists(filePath))) {
-      await writeFile(filePath, buffer);
+      await writeAtomically(filePath, buffer);
     }
 
     // Generate public URL with base path for production

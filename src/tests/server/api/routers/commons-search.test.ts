@@ -6,6 +6,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { commonsRouter } from "~/server/api/routers/commons";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const createCommonsCaller = createCallerFactory(commonsRouter);
@@ -99,7 +100,7 @@ describe("commons search", () => {
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     const headers = calls[0]![1].headers as Record<string, string>;
     expect(headers["User-Agent"]).toBe(
-      "IxStats-Builder/1.0 (https://ixwiki.com; image repository)"
+      `IxStats-Builder/1.0 (${mediaWikiOrigin()}; image repository)`
     );
     expect(headers["Api-User-Agent"]).toBe(headers["User-Agent"]);
   });
@@ -118,6 +119,32 @@ describe("commons search", () => {
   it("rejects fractional or out-of-range paging inputs", async () => {
     const caller = makeCaller();
     await expect(caller.search({ query: "x", limit: 2.5 })).rejects.toThrow();
-    await expect(caller.search({ query: "x", offset: 9_951 })).rejects.toThrow();
+    await expect(caller.search({ query: "x", offset: 10_000 })).rejects.toThrow();
+  });
+
+  it("accepts a query of up to 1000 characters and rejects a longer one", async () => {
+    const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const caller = makeCaller();
+
+    await expect(caller.search({ query: "a".repeat(1000) })).resolves.toBeDefined();
+    await expect(caller.search({ query: "a".repeat(1001) })).rejects.toThrow();
+  });
+
+  it("answers an empty last page without calling Commons when offset + limit passes 10,000", async () => {
+    const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    const caller = makeCaller();
+
+    const past = await caller.search({ query: "cats", offset: 9_999, limit: 40 });
+    const edge = await caller.search({ query: "cats", offset: 9_970, limit: 40 });
+
+    expect(past).toEqual({ images: [], nextOffset: null, totalHits: null });
+    expect(edge).toEqual({ images: [], nextOffset: null, totalHits: null });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // offset + limit == 10,000 is still the last real page.
+    await caller.search({ query: "cats", offset: 9_960, limit: 40 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

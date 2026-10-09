@@ -87,6 +87,22 @@ describe("commons category counts and image-info failures", () => {
     expect(peak).toBe(1);
   });
 
+  it("stops fetching the remaining categories once Commons rate limits, and leaves them out", async () => {
+    const fetchMock = jest.fn(async (input: unknown) => {
+      if (srsearchOf([input]).includes("RateB")) return jsonResponse({}, 429);
+      return jsonResponse({ query: { searchinfo: { totalhits: 3 } } });
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await makeCaller().getCategoryTotalCounts({
+      categories: ["RateA", "RateB", "RateC", "RateD"],
+    });
+
+    expect(result).toEqual({ RateA: 3 });
+    // RateA, then RateB (429); RateC and RateD are never requested.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("does not cache a miss when the fetch throws, so the next call fetches again", async () => {
     const image = {
       pageid: 9,
