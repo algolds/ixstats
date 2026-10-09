@@ -2,11 +2,14 @@
 // src/components/shared/editor/GlassPlateEditor.tsx
 // Unified PlateJS Glass Editor supporting full mode, compact mode, and BBCode serialization.
 
-import React, { useCallback, useImperativeHandle, forwardRef } from "react";
+import React, { useCallback, useImperativeHandle, useRef, useState, forwardRef } from "react";
+import dynamic from "next/dynamic";
+import { MediaImage } from "iconoir-react";
 import { Plate, PlateContent } from "platejs/react";
 import { Transforms, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 import { EditorToolbar } from "./EditorToolbar";
 import {
   slateNodesToHtml,
@@ -18,6 +21,16 @@ import {
 import { MentionMenuPortal } from "./MentionMenuPortal";
 import { useGlassPlateEditor } from "./useGlassPlateEditor";
 import { WikiAndStashPopovers } from "./WikiAndStashPopovers";
+
+const MediaSearchModal = dynamic(
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  { ssr: false }
+);
+
+/** Display rules shared with the post bodies so the editor previews what gets posted. */
+export const POST_IMAGE_CLASSES =
+  "[&_img]:my-2 [&_img]:h-auto [&_img]:max-h-[640px] [&_img]:max-w-full [&_img]:rounded-control [&_img]:object-contain";
 
 export interface GlassPlateEditorRef {
   insertText: (text: string) => void;
@@ -121,6 +134,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       imageItems,
       resolvedImages,
       insertStashedImage,
+      insertImageUrl,
       setIsEmojiOpen,
       handleSelectEmoji,
     } = useGlassPlateEditor({
@@ -174,6 +188,23 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
         },
       }),
       [editor]
+    );
+
+    const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+    const savedSelection = useRef(editor.selection);
+
+    const openImagePicker = useCallback(() => {
+      savedSelection.current = editor.selection;
+      setIsImagePickerOpen(true);
+    }, [editor]);
+
+    const handleImageSelect = useCallback(
+      (url: string) => {
+        setIsImagePickerOpen(false);
+        if (savedSelection.current) Transforms.select(editor as any, savedSelection.current);
+        insertImageUrl(url);
+      },
+      [editor, insertImageUrl]
     );
 
     const activeMarks = {
@@ -248,6 +279,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               onKeyDown={handleKeyDown}
               className={cn(
                 "prose dark:prose-invert text-foreground placeholder:text-muted-foreground max-w-none text-sm outline-none select-text focus:outline-none",
+                POST_IMAGE_CLASSES,
                 italicPlaceholder && "placeholder:italic",
                 contentClassName
               )}
@@ -273,6 +305,20 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               />
 
               <div className="flex items-center gap-2">
+                {!disabled && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:bg-muted h-7 w-7 rounded-xl p-0"
+                    title="Insert image"
+                    aria-label="Insert image"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={openImagePicker}
+                  >
+                    <MediaImage className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 <WikiAndStashPopovers
                   disabled={disabled}
                   isWikiOpen={isWikiOpen}
@@ -311,6 +357,14 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
             </div>
           )}
         </Plate>
+
+        {isImagePickerOpen && (
+          <MediaSearchModal
+            isOpen={isImagePickerOpen}
+            onClose={() => setIsImagePickerOpen(false)}
+            onImageSelect={handleImageSelect}
+          />
+        )}
 
         {/* Mention autocomplete floating portal */}
         {mentionCoords && (
