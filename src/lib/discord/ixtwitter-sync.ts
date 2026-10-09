@@ -665,7 +665,6 @@ function formatCodeBlockTable(results: any[]): string {
   return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
 }
 
-/** Feed posts mirrored to Discord: the feed is IxStats; ThinkPages names the forum (U2). */
 const FEED_FOOTER = {
   text: "Shared from IxStats",
   icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
