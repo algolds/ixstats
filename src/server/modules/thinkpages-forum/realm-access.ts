@@ -147,27 +147,46 @@ export async function realmPostingAccess(
   return granted;
 }
 
-interface PostableCategory {
+export interface PostableCategory {
   scope: string;
   realmId: string | null;
   visibility: string;
   postRole: string;
 }
 
+export interface PostingAccess {
+  canPost: boolean;
+  /** Why the viewer cannot post, for the UI and refusals; null for sitewide categories and when they can. */
+  notice: string | null;
+}
+
 /**
  * Whether the viewer may post in `category`, and why not: sitewide categories follow `canPostIn` (no notice);
  * realm categories also need `realmPostingAccess`. `realm` is the category's realm (null for site scope).
  */
-async function postingAccessFor(
+export async function postingAccessFor(
   db: RealmAccessDb,
   viewer: ForumViewer,
   category: PostableCategory,
   realm: ForumRealm | null
-): Promise<{ canPost: boolean; notice: string | null }> {
+): Promise<PostingAccess> {
   if (category.scope !== "realm") return { canPost: canPostIn(viewer, category), notice: null };
   if (!realm || !canSeeRealm(viewer, realm)) return { canPost: false, notice: null };
   const access = await realmPostingAccess(db, viewer, realm);
   return { canPost: access.canPost && canPostIn(viewer, category), notice: access.notice };
+}
+
+/** `postingAccessFor` when only the category is at hand: a realm category's realm is loaded by its id. */
+export async function categoryPostingAccess(
+  db: RealmAccessDb & RealmDb,
+  viewer: ForumViewer,
+  category: PostableCategory
+): Promise<PostingAccess> {
+  const realm =
+    category.scope === "realm" && category.realmId
+      ? await loadForumRealm(db, { id: category.realmId })
+      : null;
+  return postingAccessFor(db, viewer, category, realm);
 }
 
 /** The posting rule for any category: site scope → canPostIn; realm scope → realmPostingAccess(...).canPost && canPostIn. */
@@ -176,9 +195,5 @@ export async function canPostInCategory(
   viewer: ForumViewer,
   category: PostableCategory
 ): Promise<boolean> {
-  const realm =
-    category.scope === "realm" && category.realmId
-      ? await loadForumRealm(db, { id: category.realmId })
-      : null;
-  return (await postingAccessFor(db, viewer, category, realm)).canPost;
+  return (await categoryPostingAccess(db, viewer, category)).canPost;
 }

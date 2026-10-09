@@ -31,7 +31,7 @@ export interface CategoryLocator {
 const notFound = (what: string): ForumError => new ForumError("NOT_FOUND", `${what} not found.`);
 
 /** The realm of a category the viewer may see: null for site scope, undefined when its realm is hidden or gone. */
-async function visibleRealmOf(
+export async function visibleRealmOf(
   db: RealmDb,
   viewer: ForumViewer,
   category: { scope: string; realmId: string | null }

@@ -2,7 +2,8 @@
  * Realm section reads (phase 2): the realm switcher's list (D14) and a realm's section page. A realm hidden from
  * the viewer (draft, generating) reads as NOT_FOUND, like a category they cannot see.
  */
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { primaryNationOf } from "~/lib/realms/primary-nation";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
@@ -61,6 +62,22 @@ export async function listForumRealms(
   );
   const active = realms.find((r) => r.id === viewer?.activeRealmId);
   return { defaultSlug: active?.slug ?? IXWORLD_SLUG, realms };
+}
+
+/**
+ * The realm of the viewer's primary nation, as the passport picks it (`User.countryId` when they hold it, else
+ * their highest-GDP nation): the realm switcher's default. Null for anonymous and for a viewer holding no nation.
+ */
+export async function primaryRealmIdOf(
+  db: Pick<PrismaClient, "country">,
+  viewer: ForumViewer
+): Promise<string | null> {
+  if (!viewer) return null;
+  const nations = await db.country.findMany({
+    where: { ownerUserId: viewer.id },
+    select: { id: true, realmId: true, currentTotalGdp: true },
+  });
+  return primaryNationOf(nations, viewer.countryId)?.realmId ?? null;
 }
 
 /**

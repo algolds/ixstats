@@ -27,18 +27,8 @@ function countrySlug(country: { slug: string | null; name: string }): string {
   return country.slug ?? country.name.toLowerCase().replace(/ /g, "_");
 }
 
-/** The primary nation: the linked `User.countryId` when it is held, else the highest-GDP held nation. */
-export function primaryNationOf<T extends { id: string; currentTotalGdp: number }>(
-  nations: readonly T[],
-  linkedCountryId: string | null
-): T | null {
-  const linked = nations.find((n) => n.id === linkedCountryId);
-  if (linked) return linked;
-  return nations.reduce<T | null>(
-    (best, n) => (best && best.currentTotalGdp >= n.currentTotalGdp ? best : n),
-    null
-  );
-}
+/** Shared with the forum's realm switcher, which defaults to the primary nation's realm. */
+export { primaryNationOf } from "~/lib/realms/primary-nation";
 
 /** One row per held nation, with the holder's role in its realm (member unless founder or officer). */
 export function toRealmMemberships(

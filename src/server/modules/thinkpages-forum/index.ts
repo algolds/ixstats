@@ -18,6 +18,7 @@ export {
 export {
   canPostInCategory,
   canSeeRealm,
+  categoryPostingAccess,
   loadForumRealm,
   realmPostingAccess,
   type ForumRealm,
@@ -25,7 +26,12 @@ export {
   type RealmDb,
   type RealmPostingAccess,
 } from "./realm-access";
-export { getRealmSection, listForumRealms, type RealmReadsDb } from "./realm-reads";
+export {
+  getRealmSection,
+  listForumRealms,
+  primaryRealmIdOf,
+  type RealmReadsDb,
+} from "./realm-reads";
 export { seedRealmCategories, type SeedDb } from "./realm-seed";
 export {
   createThread,
