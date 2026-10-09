@@ -124,7 +124,8 @@ Every realm has a board, the NationStates regional message board, built on this 
   - **Member (post, chat, docs):** owners of a nation in the realm (`Country.ownerUserId`), and its moderators.
     A nation **banned** from the board (`RealmBoardBan`) makes its owner a non-member; a **muted** one keeps
     them a member who can't post or chat (`restriction`, checked by `createGroupPost` and, for the board's
-    chat, by `sendMessage` through `realmBoardChatRestriction`).
+    chat, by `sendMessage` through `realmBoardChatRestriction`). These rows are frozen history: since phase 3,
+    mutes and bans live in the forum, and only rows written earlier still bind here.
   - **Manager (moderate):** site admins, the realm's founder and officers with the `board` power
     (`hasRealmPower`). See [realms §4](./realms.md#4-realm-page-rrealm).
   - A leftover `ThinktankMember` row never lets someone post after they lose their last nation there.

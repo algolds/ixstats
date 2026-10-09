@@ -112,11 +112,11 @@ Each realm has one board: a ThinkTank of type `realm_board`, mapped by the `Real
 (`prisma/schema/realm-boards.prisma`). It is created the first time anyone opens it (`realms.getBoard`); there
 is no bulk migration. The full rules are in [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board). In short:
 
-| Who                                                       | Can                                                                                 |
-| :-------------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| Anyone (signed out included)                              | Read the board feed and the realm feed                                              |
-| Owners of a nation in the realm                           | Post as a persona of one of their nations there, chat, join or leave                |
-| Site admins, the founder, officers with the `board` power | Everything members can, plus remove posts (`removeGroupPost`), mute and ban nations |
+| Who                                                       | Can                                                                                                                                  |
+| :-------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| Anyone (signed out included)                              | Read the board feed and the realm feed                                                                                               |
+| Owners of a nation in the realm                           | Post as a persona of one of their nations there, chat, join or leave                                                                 |
+| Site admins, the founder, officers with the `board` power | Everything members can, plus remove posts (`removeGroupPost`). The `board` power also moderates the realm's forum section (below)    |
 
 `realms.getBoard({ slug })` returns:
 
@@ -134,16 +134,16 @@ The page has three tabs:
 - **Chat**: the board's ThinkShare conversation, for members only.
 - **Realm feed**: the realm-filtered ThinkPages feed.
 
-The board is the **Board** tab of the realm page. Board moderation (section 4):
+The board is the **Board** tab of the realm page. Moderators remove posts from it (`removeGroupPost`), but they no
+longer mute or ban nations on it. Since forum phase 3, mutes and bans live in the forum:
 
-- a **muted** nation's owner can read but not post or chat: `createGroupPost` refuses with the reason, and so
-  does `sendMessage` for the board's ThinkShare conversation (`realmBoardChatRestriction`, checked only for a
-  ThinkTank chat whose group is a realm board);
-- a **banned** nation's owner is not a board member (no posts, no chat): the ban deactivates their member row
-  and chat participant at once (`removeFromRealmBoard`), and a ban on any one of a player's nations there
-  counts;
-- restrictions run for 1, 7 or 30 days or until lifted (`RealmBoardBan.until`), and the founder's and
-  officers' nations can't be restricted. Nobody can remove a nation from the realm.
+- the `board` power means **Forum moderation**: hide, lock, warn and ban in the realm's forum section, from the
+  moderation console at `/thinkpages/mod` (the realm's Manage page links to it);
+- live board mutes and bans were migrated to realm-scope forum bans, which bind the player on the forum;
+- the `RealmBoardBan` rows are frozen history. Nothing writes to them any more. Rows that are still live keep
+  binding on the board and its chat (`getRealmBoardAccess`, `realmBoardChatRestriction`, see
+  [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board)) until they expire or the realm is deleted;
+- nobody can remove a nation from the realm.
 
 **Embassy posts:** a member can tick "Also show at our embassies". The post gets the pseudo-tag
 `embassy:<realmId>`, and `getGroupFeed` on a partner realm's board includes it (labelled "From <realm>") while
@@ -211,15 +211,15 @@ event `realmsNotification`): a moderator's rejection with its reason, an automat
 nation first, and rival pending claims turned away by an approval. It goes through `notificationAPI.create`, so the
 recipient's preferences apply (`recipientAccepts`: the system category and minimum urgency). Approvals notify
 through `onNationAssigned` ("Country Assigned"). Leaving
-(`realms.region.abandonNation`) needs the nation's name typed; the nation is released (unclaimed), its board
-restriction cleared, and the player loses an officer post if it was their last nation there.
+(`realms.region.abandonNation`) needs the nation's name typed; the nation is released (unclaimed), a frozen board
+restriction on it stays (it keeps binding the player, never the next claimant), and the player loses an officer post if it was their last nation there.
 
 ### Governance
 
 | Who                                        | Powers                                                                                                                                                                                         |
 | :----------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Founder (`Realm.ownerId`), and site admins | Everything below, plus appointing officers; the founder alone hands the realm over from Manage                                                                                                 |
-| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook, header, rules, links, in-world date), `board` (moderation), `diplomacy` (embassies and the poll), `claims` (review the realm's claims), `map` (edit the realm's map, borders and labels, and import maps; see below) |
+| Officer (`RealmOfficer`, custom title)     | The powers the founder grants: `appearance` (factbook, header, rules, links, in-world date), `board` (Forum moderation: hide, lock, warn and ban in the realm's forum section), `diplomacy` (embassies and the poll), `claims` (review the realm's claims), `map` (edit the realm's map, borders and labels, and import maps; see below) |
 
 `realmPowers` / `hasRealmPower` (`realms.access.ts`) decide; `requireRealmStaff` (`realms.region.ts`) gates every
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
@@ -251,7 +251,7 @@ previous founder loses the founder's powers unless **Keep previous owner as offi
 (`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses IxWorld, and any realm
 that still has nations or map regions: deleting never releases, moves or deletes a nation, so such a realm is
 archived instead (status Archived: read-only, closed to claims). An empty realm's claims, lore index, officers,
-embassies, board restrictions and polls go with it, and its board group is deactivated.
+embassies, frozen board restrictions, polls and forum categories go with it, and its board group is deactivated.
 
 ### Manage tab (`/r/[realm]/manage`)
 
@@ -263,7 +263,7 @@ address; description; up to five tags from `REALM_TAGS`), **Links** (community l
 officer's own claim),
 **Embassies** (propose to a directory realm; the other realm accepts or declines; either side closes; a
 proposal crossing one from the other realm opens the embassy at once), **Poll** (one open at a time, 2 to 10
-options, optional end date), **Board moderation**, **Map** (holders of `map`: planet radius, base image, credit
+options, optional end date), **Forum moderation** (holders of `board`: a link to the moderation console at `/thinkpages/mod`, narrowed to the realm), **Map** (holders of `map`: planet radius, base image, credit
 line, clearing the default view, and **Recompute areas**, whose "Also set nations' land area from the map" box only
 the founder sees; see [maps.md](maps.md#realm-maps)), **Map import** (holders of `map`, not in an archived realm:
 the realm map import wizard fixed to the realm, with its applied imports and Roll back; see
