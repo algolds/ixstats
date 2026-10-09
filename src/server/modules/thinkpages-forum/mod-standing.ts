@@ -74,7 +74,7 @@ async function memberAppeals(
 }
 
 /** Realm and category names for the bans' places, keyed `scope:id`; a gone place has none. */
-async function placeNames(
+export async function placeNames(
   db: Pick<StandingDb, "forumCategory" | "realm">,
   bans: ReadonlyArray<{ scope: string; scopeId: string | null }>
 ): Promise<Map<string, string>> {

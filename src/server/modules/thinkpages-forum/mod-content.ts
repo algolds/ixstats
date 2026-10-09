@@ -10,7 +10,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { logModAction, modNote } from "./mod-log";
-import { assertModeratesCategory, scopeOfCategory } from "./mod-scope";
+import { assertModeratesCategory, canModerateCategory, scopeOfCategory } from "./mod-scope";
 import {
   contentModerator,
   loadPost,
@@ -81,6 +81,28 @@ function assertSameAudience(from: ContentCategory, to: ContentCategory): void {
       "A thread can only move to a category with the same audience."
     );
   }
+}
+
+/**
+ * Where the viewer may move a thread out of `from` under `assertSameAudience`: the section's other categories with
+ * the same visibility that they moderate, in order. Empty for anyone who moderates none of them.
+ */
+export async function moveDestinations(
+  db: Pick<ContentDb, "forumCategory">,
+  viewer: ForumViewer,
+  from: { id: string; scope: string; realmId: string | null; visibility: string }
+): Promise<Array<{ key: string; name: string }>> {
+  const rows = await db.forumCategory.findMany({
+    where: {
+      scope: from.scope,
+      realmId: from.realmId,
+      visibility: from.visibility,
+      id: { not: from.id },
+    },
+    orderBy: { order: "asc" },
+    select: { id: true, key: true, name: true, scope: true, realmId: true },
+  });
+  return rows.filter((c) => canModerateCategory(viewer, c)).map(({ key, name }) => ({ key, name }));
 }
 
 export async function moveThread(

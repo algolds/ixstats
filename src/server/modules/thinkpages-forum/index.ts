@@ -27,8 +27,15 @@ export {
   type BansDb,
 } from "./mod-bans";
 export { type AutoBanChange } from "./mod-auto-bans";
-export { moveThread, setPostHidden, setThreadFlag, type ThreadFlag } from "./mod-content";
+export {
+  moveDestinations,
+  moveThread,
+  setPostHidden,
+  setThreadFlag,
+  type ThreadFlag,
+} from "./mod-content";
 export { type ContentDb } from "./mod-content-target";
+export { moderationContext, type ContextDb, type ModerationContext } from "./mod-context";
 export { modEditPost } from "./mod-edit";
 export { listModLog, LOG_PER_PAGE, logModAction, type ModLogDb, type ModLogEntry } from "./mod-log";
 export {
@@ -58,6 +65,13 @@ export {
   type ModScope,
   type ScopeDb,
 } from "./mod-scope";
+export {
+  banPlaceName,
+  listingRealmId,
+  locateBanScope,
+  type BanLocator,
+  type PlacesDb,
+} from "./mod-places";
 export {
   listReports,
   REPORTS_PER_PAGE,

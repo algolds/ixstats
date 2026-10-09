@@ -265,6 +265,7 @@ describe("listReports", () => {
       excerpt: "x".repeat(160),
       categoryId: "cat_general",
       category: { key: "general", name: "general", realm: null },
+      targetAuthorId: "u_m",
       reporterId: "u_r",
       reason: "Reason rep_general",
       status: "open",
@@ -276,7 +277,12 @@ describe("listReports", () => {
       category: { key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
     });
     expect(rows[2]!.category.realm).toEqual({ slug: "ixworld", name: "IxWorld" });
-    expect(rows[3]).toMatchObject({ threadId: null, threadTitle: null, excerpt: null });
+    expect(rows[3]).toMatchObject({
+      threadId: null,
+      threadTitle: null,
+      excerpt: null,
+      targetAuthorId: null,
+    });
   });
 
   it("loads the targets in one thread query and one post query", async () => {

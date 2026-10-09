@@ -304,6 +304,7 @@ describe("issueWarning", () => {
       autoTier: 5,
       days: 7,
       expiresAt: days(7),
+      reason: "Automatic: 5 active warning points",
     });
     expect(bans).toEqual([
       expect.objectContaining({
@@ -352,7 +353,14 @@ describe("issueWarning", () => {
     expect(outcome).toEqual({
       warningId: "w1",
       activePoints: 10,
-      autoBan: { kind: "extended", banId: "b_auto", autoTier: 10, days: 30, expiresAt: days(30) },
+      autoBan: {
+        kind: "extended",
+        banId: "b_auto",
+        autoTier: 10,
+        days: 30,
+        expiresAt: days(30),
+        reason: "Automatic: 10 active warning points",
+      },
     });
     expect(tx.forumBan.create).not.toHaveBeenCalled();
     expect(bans).toEqual([
@@ -604,7 +612,15 @@ describe("revokeWarning", () => {
   it("shortens a 30-day automatic ban to 7 days from its start when points fall from 10 to 7 (M3)", async () => {
     const { db, bans, logs } = warnDb({ warnings: tenPoints(), bans: [thirtyDayBan(days(-2))] });
     expect(await revokeWarning(db as never, admin, { warningId: "w_c" })).toEqual({
-      autoBan: { kind: "shortened", banId: "b_auto", autoTier: 5, days: 7, expiresAt: days(5) },
+      userId: "u_m",
+      autoBan: {
+        kind: "shortened",
+        banId: "b_auto",
+        autoTier: 5,
+        days: 7,
+        expiresAt: days(5),
+        reason: "Automatic: 7 active warning points",
+      },
     });
     expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(5), liftedAt: null });
     expect(logs.map(parsed)).toEqual([
@@ -637,6 +653,7 @@ describe("revokeWarning", () => {
   it("lifts a 30-day automatic ban when points fall to 7 and it started more than 7 days ago", async () => {
     const { db, bans, logs } = warnDb({ warnings: tenPoints(), bans: [thirtyDayBan(days(-8))] });
     expect(await revokeWarning(db as never, admin, { warningId: "w_c" })).toEqual({
+      userId: "u_m",
       autoBan: { kind: "lifted", banId: "b_auto" },
     });
     expect(bans[0]).toMatchObject({ liftedAt: NOW, liftedBy: "u_a", autoTier: 10 });
@@ -656,12 +673,14 @@ describe("revokeWarning", () => {
       bans: [autoBan({ autoTier: 5 })],
     });
     expect(await revokeWarning(db as never, admin, { warningId: "w_c" })).toEqual({
+      userId: "u_m",
       autoBan: null,
     });
     expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(5) });
     expect(
       await revokeWarning(db as never, admin, { warningId: "w_b", note: " Overturned " })
     ).toEqual({
+      userId: "u_m",
       autoBan: { kind: "lifted", banId: "b_auto" },
     });
     expect(bans[0]).toMatchObject({ liftedAt: NOW, liftedBy: "u_a" });
@@ -695,7 +714,15 @@ describe("revokeWarning", () => {
     await issueWarning(db as never, admin, { userId: "u_m", reason: "Rude", points: 3 });
     expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(30) });
     expect(await revokeWarning(db as never, admin, { warningId: "w1" })).toEqual({
-      autoBan: { kind: "shortened", banId: "b_auto", autoTier: 5, days: 7, expiresAt: days(1) },
+      userId: "u_m",
+      autoBan: {
+        kind: "shortened",
+        banId: "b_auto",
+        autoTier: 5,
+        days: 7,
+        expiresAt: days(1),
+        reason: "Automatic: 7 active warning points",
+      },
     });
     expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(1), liftedAt: null });
   });
@@ -706,6 +733,7 @@ describe("revokeWarning", () => {
       bans: [autoBan({ createdAt: days(-2), expiresAt: days(28), autoTier: 5 })],
     });
     expect(await revokeWarning(stretched.db as never, admin, { warningId: "w_b" })).toEqual({
+      userId: "u_m",
       autoBan: null,
     });
     expect(stretched.bans[0]).toMatchObject({ expiresAt: days(28), liftedAt: null });
@@ -714,6 +742,7 @@ describe("revokeWarning", () => {
       bans: [autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 10 })],
     });
     expect(await revokeWarning(short.db as never, admin, { warningId: "w_d" })).toEqual({
+      userId: "u_m",
       autoBan: null,
     });
   });
@@ -732,6 +761,7 @@ describe("revokeWarning", () => {
   it("never issues an automatic ban on a revoke", async () => {
     const { db, tx } = warnDb({ warnings: [...tenPoints(), warning({ id: "w_d", points: 1 })] });
     expect(await revokeWarning(db as never, admin, { warningId: "w_d" })).toEqual({
+      userId: "u_m",
       autoBan: null,
     });
     expect(tx.forumBan.create).not.toHaveBeenCalled();

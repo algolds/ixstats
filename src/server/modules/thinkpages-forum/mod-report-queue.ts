@@ -198,6 +198,8 @@ export async function listReports(
         threadId: target?.threadId ?? null,
         threadTitle: target?.threadTitle ?? null,
         excerpt: target?.excerpt ?? null,
+        /** Who wrote the reported content (for "Warn author" / "Ban author"); null when it is gone. */
+        targetAuthorId: target?.authorUserId ?? null,
         categoryId: row.categoryId,
         category: categories.get(row.categoryId) ?? null,
         /** True on a site admin's own content: they see the report, not who filed it, and can't handle it. */

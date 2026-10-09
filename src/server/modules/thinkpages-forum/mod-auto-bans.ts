@@ -23,6 +23,8 @@ export type AutoBanChange =
       autoTier: number;
       days: number;
       expiresAt: Date;
+      /** The ban's stored reason, for the member's notice. */
+      reason: string;
     }
   | { kind: "lifted"; banId: string };
 
@@ -61,6 +63,7 @@ async function activeAutoBan(
   return ban?.expiresAt ? { ...ban, expiresAt: ban.expiresAt } : null;
 }
 
+const autoBanReason = (points: number): string => `Automatic: ${points} active warning points`;
 const tierEnd = (start: Date, tier: Tier): Date => new Date(start.getTime() + tier.days * DAY_MS);
 const siteEntry = (actor: Actor, userId: string) =>
   ({ actorId: actor.id, targetType: "user", targetId: userId, scope: { kind: "site" } }) as const;
@@ -75,12 +78,13 @@ async function issueAutoBan(
   context: ModLogDetail
 ): Promise<AutoBanChange> {
   const expiresAt = tierEnd(now, tier);
+  const reason = autoBanReason(points);
   const ban = await tx.forumBan.create({
     data: {
       userId,
       scope: "site",
       scopeId: null,
-      reason: `Automatic: ${points} active warning points`,
+      reason,
       expiresAt,
       auto: true,
       autoTier: tier.points,
@@ -93,7 +97,14 @@ async function issueAutoBan(
     action: "ban.auto",
     detail: { banId: ban.id, days: tier.days, points, autoTier: tier.points, ...context },
   });
-  return { kind: "issued", banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
+  return {
+    kind: "issued",
+    banId: ban.id,
+    autoTier: tier.points,
+    days: tier.days,
+    expiresAt,
+    reason,
+  };
 }
 
 /**
@@ -121,13 +132,10 @@ async function reconcileAutoBan(
       ? new Date(Math.max(ban.expiresAt.getTime(), tierEnd(now, tier).getTime()))
       : tierEnd(ban.createdAt, tier);
   if (expiresAt.getTime() <= now.getTime()) return lift();
+  const reason = autoBanReason(points);
   await tx.forumBan.update({
     where: { id: ban.id },
-    data: {
-      autoTier: tier.points,
-      expiresAt,
-      reason: `Automatic: ${points} active warning points`,
-    },
+    data: { autoTier: tier.points, expiresAt, reason },
   });
   await logModAction(tx, {
     ...siteEntry(actor, ban.userId),
@@ -142,7 +150,7 @@ async function reconcileAutoBan(
       ...context,
     },
   });
-  return { kind, banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
+  return { kind, banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt, reason };
 }
 
 /**

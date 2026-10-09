@@ -184,7 +184,7 @@ export async function issueBan(
   db: BansDb,
   actor: ForumViewer,
   input: BanInput
-): Promise<{ banId: string }> {
+): Promise<{ banId: string; expiresAt: Date | null }> {
   const reason = modReason(input.reason);
   const days = banDays(input.days);
   const { issuer, realmId } = await resolveBanScope(db, actor, input.scope);
@@ -212,7 +212,7 @@ export async function issueBan(
       scope: input.scope,
       detail: { banId: ban.id, days, reason },
     });
-    return { banId: ban.id };
+    return { banId: ban.id, expiresAt: ban.expiresAt };
   });
 }
 
@@ -250,7 +250,7 @@ export async function liftBan(
   db: BansDb,
   actor: ForumViewer,
   input: { banId: string; note?: string }
-): Promise<void> {
+): Promise<{ userId: string; scope: BanScope; scopeId: string | null }> {
   const ban = await db.forumBan.findUnique({
     where: { id: input.banId },
     select: { id: true, userId: true, scope: true, scopeId: true },
@@ -259,6 +259,7 @@ export async function liftBan(
   const lifter = await assertBanScope(db, actor, ban);
   const note = modNote(input.note);
   await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }, new Date()));
+  return { userId: ban.userId, scope: banScopeOf(ban.scope), scopeId: ban.scopeId };
 }
 
 /** Bans in the viewer's scope, newest first: live ones (`active`), or lifted and expired ones. */

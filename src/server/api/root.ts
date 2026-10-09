@@ -66,6 +66,7 @@ import { transportRouter } from "./routers/transport";
 import { realmsRouter } from "./routers/realms";
 import { actionLinksRouter } from "./routers/actionLinks";
 import { thinkpagesForumRouter } from "./routers/thinkpagesForum";
+import { thinkpagesForumModRouter } from "./routers/thinkpagesForum/mod";
 import { wikiosRouter } from "./routers/wikios";
 import { wikiCacheRouter } from "./routers/wikiCache";
 import { lorewardsRouter } from "./routers/lorewards";
@@ -146,6 +147,7 @@ export const appRouter = createTRPCRouter({
   realms: realmsRouter,
   actionLinks: actionLinksRouter,
   thinkpagesForum: thinkpagesForumRouter,
+  thinkpagesForumMod: thinkpagesForumModRouter,
   wikios: wikiosRouter,
   wikiCache: wikiCacheRouter,
   lorewards: lorewardsRouter,

@@ -254,11 +254,12 @@ export async function revokeWarningTx(
   return { autoBan };
 }
 
+/** Returns the warned member, for the router's notice when their automatic ban changes. */
 export async function revokeWarning(
   db: WarningsDb,
   actor: ForumViewer,
   input: { warningId: string; note?: string }
-): Promise<{ autoBan: AutoBanChange | null }> {
+): Promise<{ userId: string; autoBan: AutoBanChange | null }> {
   const warning = await db.forumWarning.findUnique({
     where: { id: input.warningId },
     select: { id: true, userId: true, categoryId: true },
@@ -266,5 +267,8 @@ export async function revokeWarning(
   if (!warning) throw new ForumError("NOT_FOUND", "Warning not found.");
   const revoker = await assertWarningScope(db, actor, warning.categoryId);
   const note = modNote(input.note);
-  return db.$transaction((tx) => revokeWarningTx(tx, revoker, warning, { note }, new Date()));
+  const { autoBan } = await db.$transaction((tx) =>
+    revokeWarningTx(tx, revoker, warning, { note }, new Date())
+  );
+  return { userId: warning.userId, autoBan };
 }

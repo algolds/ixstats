@@ -1,0 +1,195 @@
+/**
+ * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-3).
+ * Thin: validates, maps the signed-in user to the module's viewer (with what they moderate), calls
+ * ~/server/modules/thinkpages-forum, maps ForumError 1:1 to TRPCError. Author display data goes through authorsOf,
+ * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4.
+ * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
+ */
+import { z } from "zod";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
+import {
+  canStartThread,
+  categoryPostingAccess,
+  createThread,
+  editPost,
+  fileAppeal,
+  fileReport,
+  getCategoryThreads,
+  getRealmSection,
+  getThreadPosts,
+  listForumRealms,
+  listSiteCategories,
+  MAX_POST_HTML,
+  moveDestinations,
+  myStanding,
+  primaryRealmIdOf,
+  replyToThread,
+  resolvePostLocation,
+  TITLE_MAX,
+  TITLE_MIN,
+} from "~/server/modules/thinkpages-forum";
+import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, viewerOf } from "./viewer";
+
+const html = z.string().max(MAX_POST_HTML);
+const personaId = id.nullish();
+
+export const thinkpagesForumRouter = createTRPCRouter({
+  categories: publicProcedure.query(async ({ ctx }) =>
+    listSiteCategories(ctx.db, await viewerOf(ctx.db, ctx.user))
+  ),
+
+  /** The realm switcher: realms the viewer may pick, defaulting to their primary nation's realm. */
+  realms: publicProcedure.query(async ({ ctx }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const activeRealmId = await primaryRealmIdOf(ctx.db, viewer);
+    return listForumRealms(ctx.db, viewer && { ...viewer, activeRealmId });
+  }),
+
+  /** May write: a realm without categories gets them seeded on first read. */
+  realmSection: publicProcedure.input(z.object({ realm })).query(async ({ ctx, input }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const section = await getRealmSection(ctx.db, viewer, input.realm).catch(mapError);
+    // Only the verdict leaves: never the viewer's nation ids or the raw ban (T0-18: a flag for BanNotice).
+    const { canPost, notice, ban } = section.access;
+    return {
+      realm: section.realm,
+      categories: section.categories,
+      canPost,
+      notice,
+      banned: ban !== null,
+    };
+  }),
+
+  category: publicProcedure
+    .input(z.object({ key: categoryKey, page, realm: realm.optional() }))
+    .query(async ({ ctx, input }) => {
+      const viewer = await viewerOf(ctx.db, ctx.user);
+      const result = await getCategoryThreads(
+        ctx.db,
+        viewer,
+        { key: input.key, realm: input.realm },
+        input.page
+      ).catch(mapError);
+      const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+      return {
+        ...result,
+        canStart: canStartThread(viewer, result.category) && access.canPost,
+        notice: access.notice,
+        banned: access.ban !== null,
+        authors: await authorMaps(ctx.db, result.threads),
+      };
+    }),
+
+  thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
+    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it.
+    const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+    // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
+    const writable =
+      viewer !== null && !result.thread.locked && !result.thread.archived && !result.thread.hidden;
+    const canReply = writable && access.canPost;
+    // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
+    const editable =
+      writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
+    const { canModerate } = result;
+    const moderatorTools = canModerate
+      ? {
+          categories: (await moveDestinations(ctx.db, viewer, result.category)).map((c) => ({
+            ...c,
+            realm: result.category.realm,
+          })),
+        }
+      : null;
+    return {
+      ...result,
+      // Moderators of the category get the Hidden badge; members never receive hidden posts (T0-19).
+      posts: result.posts.map(({ hidden, ...post }) => ({
+        ...post,
+        ...(canModerate ? { hidden } : {}),
+        isOwn: viewer !== null && post.authorUserId === viewer.id && editable && !hidden,
+      })),
+      canReply,
+      notice: access.notice,
+      banned: access.ban !== null,
+      ...(moderatorTools ? { moderatorTools } : {}),
+      authors: await authorMaps(ctx.db, [result.thread, ...result.posts]),
+    };
+  }),
+
+  resolvePost: publicProcedure
+    .input(z.object({ postId: id }))
+    .query(async ({ ctx, input }) =>
+      resolvePostLocation(ctx.db, await viewerOf(ctx.db, ctx.user), input.postId)
+    ),
+
+  myPersonas: protectedProcedure.query(({ ctx }) =>
+    ctx.db.thinkpagesAccount.findMany({
+      where: { clerkUserId: ctx.user.clerkUserId, isActive: true },
+      orderBy: { displayName: "asc" },
+      select: { id: true, displayName: true, username: true },
+    })
+  ),
+
+  /** The member's own warnings, bans and appeals (M20); never who issued or reviewed them. */
+  myStanding: protectedProcedure.query(async ({ ctx }) =>
+    myStanding(ctx.db, await actorOf(ctx.db, ctx.user))
+  ),
+
+  createThread: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        categoryKey,
+        realm: realm.optional(),
+        title: z.string().trim().min(TITLE_MIN).max(TITLE_MAX),
+        html,
+        personaId,
+      })
+    )
+    .mutation(async ({ ctx, input }) =>
+      createThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+
+  reply: rateLimitedMutationProcedure
+    .input(z.object({ threadId: id, html, personaId }))
+    .mutation(async ({ ctx, input }) =>
+      replyToThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+
+  editPost: rateLimitedMutationProcedure
+    .input(z.object({ postId: id, html }))
+    .mutation(async ({ ctx, input }) =>
+      editPost(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+
+  /** M11: returns only the report's id; the reporter is never shown to the reported member. */
+  report: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        targetType: z.enum(["thread", "post"]),
+        targetId: id,
+        reason: z.string().trim().min(3).max(1000),
+      })
+    )
+    .mutation(async ({ ctx, input }) =>
+      fileReport(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+
+  /** M12: one appeal per active warning or ban of the member's own. */
+  appeal: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        subjectType: z.enum(["warning", "ban"]),
+        subjectId: id,
+        body: z.string().trim().min(10).max(4000),
+      })
+    )
+    .mutation(async ({ ctx, input }) =>
+      fileAppeal(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
+    ),
+});
