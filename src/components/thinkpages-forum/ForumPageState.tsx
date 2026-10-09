@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 
 /** Loading placeholder for a forum page: `blocks` card-sized skeletons. */
 export function ForumPageSkeleton({ blocks = 1 }: { blocks?: number }) {
@@ -41,7 +42,7 @@ export function ForumLoadError({
             message={notFoundMessage}
             action={
               <Button asChild variant="secondary">
-                <Link href="/thinkpages/forum">Back to the forum</Link>
+                <Link href={FORUM_HOME}>Back to the forum</Link>
               </Button>
             }
           />

@@ -40,7 +40,7 @@ asks `legacyForumRedirectFor` (`src/server/modules/thinkpages-forum/legacy-redir
   answers a **307** (temporary) to the native page. `/forum/thread/<xfId>` goes to `/thinkpages/t/<id>`,
   `/forum/post/<xfPostId>` to `/thinkpages/post/<id>`, `/forum/<nodeId>` to its category (from the applied node
   map), `/forum/members/<xfUserId>` to the linked member's profile, and the other pages (home, search, bookmarks,
-  new thread) and any id with no public native match to `/thinkpages/forum`. Targets are built from ids and known
+  new thread) and any id with no public native match to `/thinkpages`. Targets are built from ids and known
   category keys only, so there is no open redirect.
 - **Switch off**: the gate returns and the bridge page renders as before.
 

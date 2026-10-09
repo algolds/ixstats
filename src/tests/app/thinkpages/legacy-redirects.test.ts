@@ -3,7 +3,8 @@
  * The feed's old ThinkPages pages answer with redirects (phase 5). `/thinkpages/post/<id>` stays the forum post
  * permalink (ruling P5): a forum post the viewer may see goes to its thread and anchor, anything else to the feed
  * post under /dashboard. Both hops are temporary (307), since the answer depends on the viewer and on moderation
- * (ruling R-e). The other old pages moved for good (308). Every destination is a fixed prefix plus an encoded id.
+ * (ruling R-e). The other old pages moved for good (308), the forum home's old address among them: the forum home is
+ * /thinkpages itself. Every destination is a fixed prefix plus an encoded id or realm.
  */
 jest.mock("next/navigation", () => ({
   redirect: jest.fn((url: string) => {
@@ -16,6 +17,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("~/trpc/server", () => ({
   api: { thinkpagesForum: { resolvePost: jest.fn() } },
 }));
+jest.mock("~/components/thinkpages-forum/CategoryList", () => ({ CategoryList: jest.fn() }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { permanentRedirect, redirect } from "next/navigation";
@@ -26,6 +28,9 @@ import LegacySavedPage from "~/app/thinkpages/saved/page";
 import LegacyFeedPage from "~/app/thinkpages/feed/page";
 import LegacyThinkSharePage from "~/app/thinkpages/thinkshare/page";
 import LegacyThinkTanksPage from "~/app/thinkpages/thinktanks/page";
+import LegacyForumHomePage from "~/app/thinkpages/forum/page";
+import ThinkPagesHomePage, { metadata as homeMetadata } from "~/app/thinkpages/page";
+import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 
 const resolvePost = jest.mocked(api.thinkpagesForum.resolvePost);
 const mockRedirect = jest.mocked(redirect);
@@ -86,6 +91,39 @@ describe("the feed's other old pages (308)", () => {
     ["thinktanks", LegacyThinkTanksPage, "/thinktanks"],
   ])("/thinkpages/%s goes to its new home", (_name, Page, target) => {
     expect(() => Page()).toThrow(`permanent:${target}`);
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+});
+
+type RealmParam = string | string[] | undefined;
+const realmParams = (realm: RealmParam) => ({ searchParams: Promise.resolve({ realm }) });
+
+describe("/thinkpages is the forum home", () => {
+  it.each<[RealmParam, string | undefined]>([
+    ["eurth", "eurth"],
+    [["x", "y"], "x"],
+    ["", undefined],
+    [undefined, undefined],
+  ])("opens the realm section from ?realm=%j", async (realm, expected) => {
+    const page = await ThinkPagesHomePage(realmParams(realm));
+    expect(page.type).toBe(CategoryList);
+    expect(page.props).toEqual({ realm: expected });
+  });
+
+  it("is titled ThinkPages", () => {
+    expect(homeMetadata.title).toBe("ThinkPages - IxStats");
+  });
+});
+
+describe("/thinkpages/forum moves to /thinkpages (308)", () => {
+  it.each<[RealmParam, string]>([
+    [undefined, "/thinkpages"],
+    ["", "/thinkpages"],
+    ["eurth", "/thinkpages?realm=eurth"],
+    [["x", "y"], "/thinkpages?realm=x"],
+    ["a&b=c", "/thinkpages?realm=a%26b%3Dc"],
+  ])("?realm=%j goes to %s", async (realm, target) => {
+    await expect(LegacyForumHomePage(realmParams(realm))).rejects.toThrow(`permanent:${target}`);
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 });

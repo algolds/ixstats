@@ -18,7 +18,7 @@ function userDb(row: { clerkUserId: string } | null = { clerkUserId: "clerk_memb
 const COMMON = {
   userId: "clerk_member",
   category: "social",
-  href: "/thinkpages/forum#standing",
+  href: "/thinkpages#standing",
   source: "thinkpages-forum",
   actionable: true,
 };

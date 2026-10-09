@@ -75,7 +75,7 @@ jest.mock("next/navigation", () => {
   return {
     router,
     useRouter: () => router,
-    usePathname: () => "/thinkpages/forum/c/general",
+    usePathname: () => "/thinkpages/c/general",
     redirect: jest.fn(),
   };
 });
@@ -111,7 +111,7 @@ import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
-import ForumHomePage from "~/app/thinkpages/forum/page";
+import ForumHomePage from "~/app/thinkpages/page";
 import RealmRedirectPage from "~/app/thinkpages/r/[realm]/page";
 
 const { results, inputs, mutations } = jest.requireMock<MockApi>("~/trpc/react");
@@ -227,7 +227,7 @@ describe("forum home", () => {
       ],
     });
     render(<CategoryList />);
-    expect(screen.getByRole("heading", { level: 1, name: "ThinkPages Forum" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /General/ })).toHaveAttribute(
       "href",
       "/thinkpages/c/general"
@@ -254,7 +254,7 @@ describe("forum home", () => {
 
   it("sends /thinkpages/r/<realm> to the home with that realm", async () => {
     await RealmRedirectPage({ params: Promise.resolve({ realm: "eurth" }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages/forum?realm=eurth");
+    expect(redirect).toHaveBeenCalledWith("/thinkpages?realm=eurth");
   });
 });
 
@@ -312,13 +312,16 @@ describe("category view", () => {
     expect(screen.getByText("2 replies")).toBeInTheDocument();
   });
 
-  it("breadcrumbs a sitewide category as Forum, then the category", () => {
+  it("breadcrumbs a sitewide category as ThinkPages, then the category", () => {
     set("category", { data: categoryData(false) });
     render(<ThreadList categoryKey="general" page={1} />);
     expect(crumbs()).toEqual([
-      ["Forum", "/thinkpages/forum"],
+      ["ThinkPages", "/thinkpages"],
       ["General", null],
     ]);
+    // The breadcrumb root and the header's back link both lead home.
+    const home = screen.getAllByRole("link", { name: "ThinkPages" });
+    expect(home.map((link) => link.getAttribute("href"))).toEqual(["/thinkpages", "/thinkpages"]);
   });
 
   it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
@@ -330,8 +333,8 @@ describe("category view", () => {
       "/thinkpages/r/eurth/hub/new"
     );
     expect(crumbs()).toEqual([
-      ["Forum", "/thinkpages/forum"],
-      ["Eurth", "/thinkpages/forum?realm=eurth"],
+      ["ThinkPages", "/thinkpages"],
+      ["Eurth", "/thinkpages?realm=eurth"],
       ["Hub", null],
     ]);
   });
@@ -358,7 +361,7 @@ describe("thread view", () => {
     set("thread", { data: threadData() });
     render(<ThreadView threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
-      ["Forum", "/thinkpages/forum"],
+      ["ThinkPages", "/thinkpages"],
       ["General", "/thinkpages/c/general"],
       ["<b>Plain</b> title", null],
     ]);
@@ -368,8 +371,8 @@ describe("thread view", () => {
     set("thread", { data: threadData({ realm: EURTH }) });
     render(<ThreadView threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
-      ["Forum", "/thinkpages/forum"],
-      ["Eurth", "/thinkpages/forum?realm=eurth"],
+      ["ThinkPages", "/thinkpages"],
+      ["Eurth", "/thinkpages?realm=eurth"],
       ["Hub", "/thinkpages/r/eurth/hub"],
       ["<b>Plain</b> title", null],
     ]);
@@ -419,6 +422,10 @@ describe("load failures and out-of-range pages", () => {
     set("category", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
     render(<ThreadList categoryKey="secret" page={1} />);
     expect(screen.getByText("Category not found")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
+      "href",
+      "/thinkpages"
+    );
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
   });
 
@@ -512,7 +519,7 @@ describe("new thread", () => {
     expect(screen.getByText(notice)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
       "href",
-      "/thinkpages/forum?realm=eurth"
+      "/thinkpages?realm=eurth"
     );
     unmount();
 

@@ -5,7 +5,7 @@
  */
 import { REALM_HUB_KEY } from "./categories";
 
-export const FORUM_HOME = "/thinkpages/forum";
+export const FORUM_HOME = "/thinkpages";
 
 /** Where a category sits: a realm category carries its realm's slug, a sitewide one none. */
 export interface CategoryPlace {

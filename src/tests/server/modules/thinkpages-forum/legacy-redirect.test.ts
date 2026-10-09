@@ -223,8 +223,8 @@ describe("legacyForumRedirectFor", () => {
   });
 
   it("sends the home and the bridge's other pages to the forum home", async () => {
-    await expect(legacyForumRedirectFor(db, { kind: "home" })).resolves.toBe("/thinkpages/forum");
-    await expect(legacyForumRedirectFor(db, { kind: "other" })).resolves.toBe("/thinkpages/forum");
+    await expect(legacyForumRedirectFor(db, { kind: "home" })).resolves.toBe("/thinkpages");
+    await expect(legacyForumRedirectFor(db, { kind: "other" })).resolves.toBe("/thinkpages");
     expect(lookups()).toEqual([0, 0, 0, 0, 0]);
   });
 
@@ -275,7 +275,7 @@ describe("legacyForumRedirectFor", () => {
       { kind: "post", postId: 459 }, // post in a staff category
       { kind: "post", postId: 460 }, // post in a draft realm
     ] as const) {
-      await expect(legacyForumRedirectFor(db, ref)).resolves.toBe("/thinkpages/forum");
+      await expect(legacyForumRedirectFor(db, ref)).resolves.toBe("/thinkpages");
     }
   });
 
@@ -296,7 +296,7 @@ describe("legacyForumRedirectFor", () => {
       { kind: "member", userId: 8 },
       { kind: "forum", nodeId: 999 },
     ] as const) {
-      await expect(legacyForumRedirectFor(db, ref)).resolves.toBe("/thinkpages/forum");
+      await expect(legacyForumRedirectFor(db, ref)).resolves.toBe("/thinkpages");
     }
   });
 
@@ -343,7 +343,7 @@ describe("legacyForumRedirectFor", () => {
     });
     for (const nodeId of [16, 17]) {
       await expect(legacyForumRedirectFor(db, { kind: "forum", nodeId })).resolves.toBe(
-        "/thinkpages/forum"
+        "/thinkpages"
       );
     }
   });
@@ -359,7 +359,7 @@ describe("legacyForumRedirectFor", () => {
       "/thinkpages/c/xf-14"
     );
     await expect(legacyForumRedirectFor(db, { kind: "forum", nodeId: 15 })).resolves.toBe(
-      "/thinkpages/forum"
+      "/thinkpages"
     );
   });
 
@@ -367,7 +367,7 @@ describe("legacyForumRedirectFor", () => {
     thread.mockRejectedValueOnce(new Error("db down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     await expect(legacyForumRedirectFor(db, { kind: "thread", threadId: 123 })).resolves.toBe(
-      "/thinkpages/forum"
+      "/thinkpages"
     );
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();

@@ -83,7 +83,7 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
   const basePath = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
   const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
   const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
-  usePageTitle({ title: data?.category.name ?? "ThinkPages Forum" });
+  usePageTitle({ title: data?.category.name ?? "ThinkPages" });
 
   if (isLoading || redirecting) return <ForumPageSkeleton />;
 
@@ -110,7 +110,7 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
             {category.description ? <p>{category.description}</p> : null}
           </>
         }
-        back={{ href: forumHomeHref(category.realm?.slug), label: "Forum" }}
+        back={{ href: forumHomeHref(category.realm?.slug), label: "ThinkPages" }}
         bleed
         actions={
           data.canStart ? (

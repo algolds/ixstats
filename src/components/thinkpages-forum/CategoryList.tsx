@@ -36,7 +36,7 @@ export function CategoryList({ realm }: { realm?: string }) {
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
       <PageHeader
-        title="ThinkPages Forum"
+        title="ThinkPages"
         bleed
         actions={
           moderator ? (
