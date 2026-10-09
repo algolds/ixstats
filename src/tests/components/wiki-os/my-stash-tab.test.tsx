@@ -23,6 +23,7 @@ const ok = <T,>(data: T): QueryResult<T> => ({
 let stashItems: QueryResult<{ items: Array<{ pageTitle: string }> }>;
 let commonsImages: QueryResult<CommonsImage[]>;
 let pageImages: (title: string) => QueryResult<unknown[]>;
+let iiwikiFiles: (search: string) => QueryResult<unknown[]>;
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -35,12 +36,18 @@ jest.mock("~/trpc/react", () => ({
     commons: { getImageInfoByTitles: { useQuery: () => commonsImages } },
     useQueries: (
       build: (t: {
-        wikios: { getPageImages: (input: { title: string }) => { title: string } };
-      }) => Array<{ title: string }>
+        wikios: {
+          getPageImages: (input: { title: string }) => { title: string };
+          searchFiles: (input: { query: string }) => { search: string };
+        };
+      }) => Array<{ title: string } | { search: string }>
     ) =>
-      build({ wikios: { getPageImages: (input) => ({ title: input.title }) } }).map((q) =>
-        pageImages(q.title)
-      ),
+      build({
+        wikios: {
+          getPageImages: (input) => ({ title: input.title }),
+          searchFiles: (input) => ({ search: input.query }),
+        },
+      }).map((q) => ("search" in q ? iiwikiFiles(q.search) : pageImages(q.title))),
   },
 }));
 jest.mock("~/components/wiki-os/commons/CommonsDetailPanel", () => ({
@@ -73,6 +80,7 @@ function openStash() {
 }
 
 beforeEach(() => {
+  iiwikiFiles = () => ok([]);
   stashItems = ok({ items: [{ pageTitle: "commons:File:A.jpg" }, { pageTitle: "Some page" }] });
   commonsImages = ok([commonsImage]);
   pageImages = () =>
@@ -113,5 +121,41 @@ describe("MyStashTab", () => {
     expect(screen.getByText("Could not load this stash.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(commonsImages.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an image stashed from IIWiki, matched by its File: title among the search results", () => {
+    stashItems = ok({ items: [{ pageTitle: "iiwiki:File:Flag_of_X.svg" }] });
+    const searches: string[] = [];
+    iiwikiFiles = (search) => {
+      searches.push(search);
+      return ok([
+        {
+          name: "Flag of Xanadu.svg",
+          title: "File:Flag of Xanadu.svg",
+          url: "https://iiwiki.com/images/9/9a/Flag_of_Xanadu.svg",
+          thumbUrl: null,
+          width: 0,
+          height: 0,
+          mime: "image/svg+xml",
+        },
+        {
+          name: "Flag of X.svg",
+          title: "File:Flag of X.svg",
+          url: "https://iiwiki.com/images/1/1a/Flag_of_X.svg",
+          thumbUrl: "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png",
+          width: 900,
+          height: 600,
+          mime: "image/svg+xml",
+        },
+      ]);
+    };
+    openStash();
+
+    expect(searches).toContain("Flag of X");
+    expect(screen.getByRole("img", { name: "Flag of X.svg" })).toHaveAttribute(
+      "src",
+      "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png"
+    );
+    expect(screen.queryByRole("img", { name: "Flag of Xanadu.svg" })).not.toBeInTheDocument();
   });
 });

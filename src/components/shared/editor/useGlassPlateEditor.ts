@@ -497,21 +497,28 @@ export function useGlassPlateEditor({
     wikiText,
   ]);
 
-  const insertStashedImage = useCallback(
-    (url: string, title: string) => {
+  const insertImageUrl = useCallback(
+    (url: string, alt = "") => {
       Transforms.insertNodes(
         editor as any,
         {
           type: "img",
           src: url,
-          alt: title,
+          alt,
           children: [{ text: "" }],
         } as any
       );
-      setIsStashesOpen(false);
       ReactEditor.focus(editor as any);
     },
     [editor]
+  );
+
+  const insertStashedImage = useCallback(
+    (url: string, title: string) => {
+      insertImageUrl(url, title);
+      setIsStashesOpen(false);
+    },
+    [insertImageUrl]
   );
 
   const handleSelectEmoji = useCallback(
@@ -573,6 +580,7 @@ export function useGlassPlateEditor({
     imageItems,
     resolvedImages,
     insertStashedImage,
+    insertImageUrl,
     isEmojiOpen,
     setIsEmojiOpen,
     handleSelectEmoji,
