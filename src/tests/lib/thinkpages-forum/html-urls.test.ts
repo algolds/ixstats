@@ -1,6 +1,10 @@
 /** @jest-environment node */
 import { withBasePath } from "~/lib/base-path";
-import { hasImageSrc, rebaseRootRelativeUrls } from "~/lib/thinkpages-forum/html-urls";
+import {
+  APP_PATH_PREFIXES,
+  hasImageSrc,
+  rebaseRootRelativeUrls,
+} from "~/lib/thinkpages-forum/html-urls";
 
 const prefix = (path: string) => `/p${path}`;
 
@@ -28,10 +32,42 @@ describe("rebaseRootRelativeUrls", () => {
   });
 
   it("rebases each attribute of a tag and keeps entities", () => {
-    expect(rebaseRootRelativeUrls('<a href="/a?x=1&amp;y=2" title="t">a</a>', prefix)).toBe(
-      '<a href="/p/a?x=1&amp;y=2" title="t">a</a>'
+    expect(
+      rebaseRootRelativeUrls('<a href="/thinkpages/a?x=1&amp;y=2" title="t">a</a>', prefix)
+    ).toBe('<a href="/p/thinkpages/a?x=1&amp;y=2" title="t">a</a>');
+  });
+
+  it.each([
+    "/images/uploads/a.png",
+    "/forum/members/7",
+    "/thinkpages/t/abc",
+    "/api/download/external-image?x=1",
+    "/@aria",
+    "/r/urcea",
+  ])("rebases the app path %s", (url) => {
+    expect(rebaseRootRelativeUrls(`<a href="${url}">x</a>`, prefix)).toBe(
+      `<a href="/p${url}">x</a>`
     );
   });
+
+  it("covers exactly the app's own prefixes", () => {
+    expect(APP_PATH_PREFIXES).toEqual([
+      "/images/",
+      "/forum/",
+      "/thinkpages/",
+      "/api/",
+      "/@",
+      "/r/",
+    ]);
+  });
+
+  it.each(["/wiki/Foo", "/countries/x", "/", "/imagesx/a.png", "/\\evil.com/x", "//evil.com/x"])(
+    "leaves %s alone",
+    (url) => {
+      const html = `<a href="${url}">x</a>`;
+      expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
+    }
+  );
 
   describe("with withBasePath under /projects/ixstates", () => {
     const saved = { ...process.env };

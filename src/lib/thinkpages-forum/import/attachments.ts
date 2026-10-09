@@ -5,13 +5,13 @@
  *
  * Images (png, jpeg, gif, webp) up to 20 MB render inline; PDFs up to 25 MB render as a plain link (the sanitizer
  * drops `download`); everything else, SVG included, is omitted. Uploads are served publicly without auth, so a
- * stored name carries a hash of the bytes and cannot be guessed from the sequential XenForo id.
+ * stored name carries a hash of the bytes and cannot be guessed from the sequential XenForo id. Bytes must start
+ * with their type's signature (a "PNG" that is not one is omitted), and only positive integer ids name a file.
  */
 import { createHash } from "crypto";
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
-import { resolveNodeTargets, type NodeMapFile, type NodeTarget } from "./node-map";
+import { resolveNodeTargets, type NodeMapFile } from "./node-map";
 import type { AttachmentEntry, Snapshot } from "./snapshot";
-import type { XfPost } from "./xenforo-types";
+import { categoryVisibility, importedThread, type SiteCategoryVisibility } from "./visibility";
 
 /** Served path of the copied files (UPLOADS_URL_PREFIX + "forum/"); stored HTML never carries a base path. */
 export const ATTACHMENT_URL_PREFIX = "/images/uploads/forum/";
@@ -20,26 +20,78 @@ const MB = 1024 * 1024;
 const NAME_MAX = 60;
 const HASH_HEX = 12;
 
-interface Kept {
+/** Bytes a file of the type starts with: [offset, ASCII or byte values] pairs, all of which must match. */
+type Signature = ReadonlyArray<readonly [number, readonly number[]]>;
+
+const ascii = (text: string) => Array.from(text, (c) => c.charCodeAt(0));
+
+export interface KeptAttachment {
   kind: "image" | "link";
   maxBytes: number;
   /** The stored file's extension, taken from the type and never from the uploaded name. */
   extension: string;
+  signature: Signature;
 }
 
-const KEPT: Readonly<Record<string, Kept>> = {
-  "image/png": { kind: "image", maxBytes: 20 * MB, extension: "png" },
-  "image/jpeg": { kind: "image", maxBytes: 20 * MB, extension: "jpg" },
-  "image/gif": { kind: "image", maxBytes: 20 * MB, extension: "gif" },
-  "image/webp": { kind: "image", maxBytes: 20 * MB, extension: "webp" },
-  "application/pdf": { kind: "link", maxBytes: 25 * MB, extension: "pdf" },
+const KEPT: Readonly<Record<string, KeptAttachment>> = {
+  "image/png": {
+    kind: "image",
+    maxBytes: 20 * MB,
+    extension: "png",
+    signature: [[0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]]],
+  },
+  "image/jpeg": {
+    kind: "image",
+    maxBytes: 20 * MB,
+    extension: "jpg",
+    signature: [[0, [0xff, 0xd8, 0xff]]],
+  },
+  "image/gif": {
+    kind: "image",
+    maxBytes: 20 * MB,
+    extension: "gif",
+    signature: [[0, ascii("GIF8")]],
+  },
+  "image/webp": {
+    kind: "image",
+    maxBytes: 20 * MB,
+    extension: "webp",
+    signature: [
+      [0, ascii("RIFF")],
+      [8, ascii("WEBP")],
+    ],
+  },
+  "application/pdf": {
+    kind: "link",
+    maxBytes: 25 * MB,
+    extension: "pdf",
+    signature: [[0, ascii("%PDF-")]],
+  },
 };
 
-export type AttachmentPolicy = Kept | { kind: "omit"; reason: "type" | "oversize" };
+// Non-standard names older XenForo data (and browsers) still send.
+const MIME_ALIASES: Readonly<Record<string, string>> = {
+  "image/jpg": "image/jpeg",
+  "image/pjpeg": "image/jpeg",
+  "image/x-png": "image/png",
+};
 
-/** "Image/PNG; charset=binary" → "image/png". */
-export const normalizedMime = (contentType: string) =>
-  (contentType.split(";")[0] ?? "").trim().toLowerCase();
+export type AttachmentPolicy = KeptAttachment | { kind: "omit"; reason: "type" | "oversize" };
+
+/** "Image/PNG; charset=binary" → "image/png"; aliases ("image/jpg", "image/x-png") → the standard type. */
+export function normalizedMime(contentType: string): string {
+  const mime = (contentType.split(";")[0] ?? "").trim().toLowerCase();
+  return MIME_ALIASES[mime] ?? mime;
+}
+
+/** Whether `bytes` start with the kept type's signature. */
+export const hasSignature = (policy: KeptAttachment, bytes: Uint8Array) =>
+  policy.signature.every(([offset, expected]) =>
+    expected.every((byte, i) => bytes[offset + i] === byte)
+  );
+
+/** Snapshot JSON is not validated: only a positive safe integer may name a file. */
+export const isValidAttachmentId = (id: number) => Number.isSafeInteger(id) && id > 0;
 
 export function attachmentPolicy(
   a: Pick<AttachmentEntry, "content_type" | "file_size">
@@ -80,34 +132,6 @@ export const attachmentUrl = (fileName: string) => `${ATTACHMENT_URL_PREFIX}${fi
 
 export type AttachmentVisibility = "public" | "restricted";
 
-/** A sitewide category's visibility as the database holds it (ImportDbState.siteCategories). */
-export interface SiteCategoryVisibility {
-  key: string;
-  visibility: string;
-}
-
-/**
- * The category visibility a node target lands in (null: skipped). A sitewide key is looked up in the database's
- * categories, then the seeds; a key found in neither counts as not public, so its files are never public by mistake.
- */
-function targetVisibility(
-  target: NodeTarget,
-  site: readonly SiteCategoryVisibility[]
-): string | null {
-  if ("skip" in target) return null;
-  if ("archive" in target) return target.visibility ?? "public";
-  if (target.scope === "realm") return "public";
-  const known = [...site, ...SITE_CATEGORIES].find((c) => c.key === target.key);
-  return known?.visibility ?? "unknown";
-}
-
-/** The posts the plan imports and the thread's first post; null when the thread is not imported. */
-function importedPosts(posts: readonly XfPost[], threadState: string) {
-  const first = posts.find((p) => p.is_first_post) ?? posts[0];
-  if (!first || threadState === "deleted" || first.message_state === "deleted") return null;
-  return { first, posts: posts.filter((p) => p.message_state !== "deleted") };
-}
-
 export type VisibilitySnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByThread">;
 
 /**
@@ -123,23 +147,16 @@ export function postVisibilities(
   const nodeVisibility = new Map(
     resolveNodeTargets(snapshot.nodes, nodeMap).map((r) => [
       r.node.node_id,
-      targetVisibility(r.target, siteCategories),
+      categoryVisibility(r.target, siteCategories),
     ])
   );
   const out = new Map<number, AttachmentVisibility>();
   for (const thread of snapshot.threads) {
     const category = nodeVisibility.get(thread.node_id);
     if (!category) continue;
-    const imported = importedPosts(
-      snapshot.postsByThread.get(thread.thread_id) ?? [],
-      thread.discussion_state
-    );
-    if (!imported) continue;
-    // A moderated first post hides its thread (phase 3 never hides a first post alone).
-    const threadHidden =
-      category !== "public" ||
-      thread.discussion_state === "moderated" ||
-      imported.first.message_state === "moderated";
+    const imported = importedThread(thread, snapshot.postsByThread.get(thread.thread_id) ?? []);
+    if ("skip" in imported) continue;
+    const threadHidden = category !== "public" || imported.hidden;
     for (const post of imported.posts) {
       const hidden = threadHidden || post.message_state === "moderated";
       out.set(post.post_id, hidden ? "restricted" : "public");

@@ -1,16 +1,27 @@
 /**
  * URLs inside stored post HTML (phase 4). Stored HTML is environment-free: uploads and imported attachments are
- * root-relative (`/images/uploads/…`), so the renderer puts them under the deployment's base path. Pure; the
- * caller passes `withBasePath`, which leaves a path that already carries the base path alone (the editor's
- * downloaded-image picks arrive prefixed), so rebasing is idempotent.
+ * root-relative (`/images/uploads/…`), so the renderer puts the app's own paths under the deployment's base path.
+ * Pure; the caller passes `withBasePath`. A path that already carries the base path matches no app prefix (and
+ * withBasePath refuses a double prefix anyway), so rebasing is idempotent.
  */
 import { mapHtmlRuns } from "~/lib/action-links";
 
 // One attribute of a tag, its quoted value consumed whole so a match never starts inside another value.
 const ATTRIBUTE = /(\s+)([^\s"'>/=]+)(?:(\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
 const URL_ATTRIBUTES = new Set(["src", "href"]);
-// Root-relative: one slash, not `//host` or `/\host` (both reach another host).
-const ROOT_RELATIVE = /^"\/(?![/\\])/;
+/**
+ * Root-relative paths the app itself serves under its base path: uploaded and downloaded images, forum and
+ * ThinkPages pages (mention links included), API routes, member profiles (`/@handle`) and realms (`/r/…`). Anything
+ * else stays as written: notably `/wiki/…`, which opens MediaWiki at the site root.
+ */
+export const APP_PATH_PREFIXES = [
+  "/images/",
+  "/forum/",
+  "/thinkpages/",
+  "/api/",
+  "/@",
+  "/r/",
+] as const;
 const IMAGE_WITH_SRC = /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="\s*[^"\s]/i;
 
 function rebaseAttribute(
@@ -21,11 +32,13 @@ function rebaseAttribute(
   value: string | undefined,
   base: (path: string) => string
 ): string {
-  if (!value || !URL_ATTRIBUTES.has(name.toLowerCase()) || !ROOT_RELATIVE.test(value)) return match;
-  return `${space}${name}${equals}"${base(value.slice(1, -1))}"`;
+  const url = value?.startsWith('"') ? value.slice(1, -1) : null;
+  if (url === null || !URL_ATTRIBUTES.has(name.toLowerCase())) return match;
+  if (!APP_PATH_PREFIXES.some((prefix) => url.startsWith(prefix))) return match;
+  return `${space}${name}${equals}"${base(url)}"`;
 }
 
-/** `src="/…"` and `href="/…"` in tags (never in text) rewritten through `base`; every other URL left alone. */
+/** `src` and `href` values under an app prefix, in tags (never in text), rewritten through `base`; others left alone. */
 export function rebaseRootRelativeUrls(html: string, base: (path: string) => string): string {
   return mapHtmlRuns(html, {
     markup: (tag) =>

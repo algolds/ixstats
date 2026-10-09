@@ -6,6 +6,7 @@
  * Rules: Q4 node targets (unknown targets throw), Q5 moderated → hidden and deleted → skipped (a moderated first
  * post hides its thread instead; a deleted first post skips it), Q19 timestamps, Q3 authors, Q2 bodies.
  */
+import { isStoredComplete } from "./attachments";
 import { authorOf, resolveAuthors, type LinkedForumUser } from "./authors";
 import {
   archiveCategory,
@@ -33,6 +34,7 @@ import {
   type Snapshot,
   type SnapshotProgress,
 } from "./snapshot";
+import { categoryVisibility, importedThread } from "./visibility";
 import type { XfAttachment, XfNode, XfPost, XfThread } from "./xenforo-types";
 
 export interface ImportDbState {
@@ -116,13 +118,6 @@ function describeTarget(target: NodeTarget, nodeId: number): string {
   return target.scope === "site" ? `site:${target.key}` : `realm:${target.realm}/${target.key}`;
 }
 
-function visibilityOf(target: NodeTarget, db: ImportDbState): string | null {
-  if ("skip" in target) return null;
-  if ("archive" in target) return target.visibility ?? "public";
-  if (target.scope === "realm") return "public";
-  return db.siteCategories.find((c) => c.key === target.key)?.visibility ?? "public";
-}
-
 type SeededTarget = Extract<NodeTarget, { scope: "site" | "realm" }>;
 
 /** A site or realm target must already exist: the plan never creates seeds. */
@@ -170,7 +165,7 @@ function placeNodes(resolved: ResolvedNode[], db: ImportDbState, report: ImportR
       if (place.kind === "archive") categories.push(archiveCategory(node, visibility));
       places.set(node.node_id, place);
     } else places.set(node.node_id, existingCategory(node, db, target));
-    if (STAFF_LIKE.test(node.title) && visibilityOf(target, db) === "public") {
+    if (STAFF_LIKE.test(node.title) && categoryVisibility(target, db.siteCategories) === "public") {
       report.warnings.push(
         `Node ${node.node_id} "${node.title}" looks private but lands in a public category (${describeTarget(target, node.node_id)}); map it to a staff archive or "staff" if it was private.`
       );
@@ -191,9 +186,9 @@ const threadTitle = (title: string) => title.trim().slice(0, TITLE_MAX).trim() |
 /** Only complete bytes render: anything not stored "ok" at its full size is omitted, whatever the policy says. */
 function attachmentOutcome(attachment: XfAttachment, ctx: PlanContext): AttachmentOutcome {
   const entry = ctx.attachments.get(attachment.attachment_id);
-  const complete =
-    entry?.stored === "ok" && (entry.received_size ?? entry.file_size) === entry.file_size;
-  return complete ? ctx.db.attachmentFor(attachment.attachment_id) : "omitted";
+  return entry && isStoredComplete(entry)
+    ? ctx.db.attachmentFor(attachment.attachment_id)
+    : "omitted";
 }
 
 function planPost(post: XfPost, isFirst: boolean, ctx: PlanContext): PlannedPost {
@@ -250,16 +245,12 @@ function planThread(
   const { report } = ctx;
   countState(report.threads, thread.discussion_state);
   for (const post of posts) countState(report.posts, post.message_state);
-  if (thread.discussion_state === "deleted") return null;
-  const first = posts.find((p) => p.is_first_post) ?? posts[0];
-  if (!first) {
-    report.threads.noPosts += 1;
+  const imported = importedThread(thread, posts);
+  if ("skip" in imported) {
+    if (imported.skip !== "deleted") report.threads[imported.skip] += 1;
     return null;
   }
-  if (first.message_state === "deleted") {
-    report.threads.firstPostDeleted += 1;
-    return null;
-  }
+  const { first } = imported;
   const existingId = ctx.db.existingThreads.get(thread.thread_id) ?? null;
   const { planned, skippedPosts } = planPosts(posts, first, ctx);
   if (!planned.length) {
@@ -275,7 +266,7 @@ function planThread(
     ...authorOf(ctx.byForumId, thread.user_id, thread.username),
     pinned: thread.sticky,
     locked: !thread.discussion_open,
-    hidden: thread.discussion_state === "moderated" || first.message_state === "moderated",
+    hidden: imported.hidden,
     createdAt: new Date(thread.post_date * 1000),
     lastPostAt: lastPostAt(thread, planned),
     posts: planned,

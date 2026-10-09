@@ -5,8 +5,12 @@ import {
   attachmentFileName,
   attachmentPolicy,
   attachmentUrl,
+  hasSignature,
   isStoredComplete,
+  isValidAttachmentId,
+  normalizedMime,
   postVisibilities,
+  type KeptAttachment,
 } from "~/lib/thinkpages-forum/import/attachments";
 import type { NodeMapFile } from "~/lib/thinkpages-forum/import/node-map";
 import type { AttachmentEntry } from "~/lib/thinkpages-forum/import/snapshot";
@@ -35,7 +39,7 @@ describe("attachmentPolicy", () => {
   );
 
   it("allows an image of exactly 20 MB and omits one a byte over", () => {
-    expect(attachmentPolicy({ content_type: "image/png", file_size: 20 * MB })).toEqual({
+    expect(attachmentPolicy({ content_type: "image/png", file_size: 20 * MB })).toMatchObject({
       kind: "image",
       maxBytes: 20 * MB,
       extension: "png",
@@ -47,11 +51,13 @@ describe("attachmentPolicy", () => {
   });
 
   it("links a PDF up to exactly 25 MB and omits one a byte over", () => {
-    expect(attachmentPolicy({ content_type: "application/pdf", file_size: 25 * MB })).toEqual({
-      kind: "link",
-      maxBytes: 25 * MB,
-      extension: "pdf",
-    });
+    expect(attachmentPolicy({ content_type: "application/pdf", file_size: 25 * MB })).toMatchObject(
+      {
+        kind: "link",
+        maxBytes: 25 * MB,
+        extension: "pdf",
+      }
+    );
     expect(attachmentPolicy({ content_type: "application/pdf", file_size: 25 * MB + 1 })).toEqual({
       kind: "omit",
       reason: "oversize",
@@ -67,6 +73,53 @@ describe("attachmentPolicy", () => {
       });
     }
   );
+});
+
+describe("MIME aliases, signatures and ids", () => {
+  it.each([
+    ["image/jpg", "image/jpeg", "jpg"],
+    ["image/pjpeg", "image/jpeg", "jpg"],
+    ["IMAGE/X-PNG", "image/png", "png"],
+  ])("treats %s as %s", (alias, mime, extension) => {
+    expect(normalizedMime(alias)).toBe(mime);
+    expect(attachmentPolicy({ content_type: alias, file_size: 10 })).toMatchObject({
+      kind: "image",
+      extension,
+    });
+  });
+
+  const kept = (content_type: string) =>
+    attachmentPolicy({ content_type, file_size: 10 }) as KeptAttachment;
+  const bytes = (...parts: Array<string | number[]>) =>
+    Uint8Array.from(
+      parts.flatMap((p) => (typeof p === "string" ? Array.from(p, (c) => c.charCodeAt(0)) : p))
+    );
+
+  it.each([
+    ["image/png", bytes([0x89], "PNG", [0x0d, 0x0a, 0x1a, 0x0a, 0])],
+    ["image/jpeg", bytes([0xff, 0xd8, 0xff, 0xe0])],
+    ["image/gif", bytes("GIF89a")],
+    ["image/webp", bytes("RIFF", [1, 2, 3, 4], "WEBPVP8 ")],
+    ["application/pdf", bytes("%PDF-1.7")],
+  ])("accepts a real %s signature", (mime, data) => {
+    expect(hasSignature(kept(mime), data)).toBe(true);
+  });
+
+  it.each([
+    ["image/png", bytes("<html><script>")],
+    ["image/jpeg", bytes([0xff, 0xd8])],
+    ["image/gif", bytes("GIF")],
+    ["image/webp", bytes("RIFF", [1, 2, 3, 4], "WAVE")],
+    ["application/pdf", bytes("%PD")],
+    ["image/png", new Uint8Array()],
+  ])("refuses %s bytes without its signature", (mime, data) => {
+    expect(hasSignature(kept(mime), data)).toBe(false);
+  });
+
+  it("accepts only positive safe integer ids", () => {
+    expect([1, 55, Number.MAX_SAFE_INTEGER].every(isValidAttachmentId)).toBe(true);
+    expect([0, -5, 1.5, Number.NaN, 1e21, Infinity].some(isValidAttachmentId)).toBe(false);
+  });
 });
 
 describe("isStoredComplete", () => {

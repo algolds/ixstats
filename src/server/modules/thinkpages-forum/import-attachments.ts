@@ -6,7 +6,11 @@
  *   copyAttachments (--apply): writes the files that are absent or of another size, then registers every image
  *     (idempotent by the attachment id). PDFs are copied but not registered (R2). A registration failure never
  *     fails the import: retryable ones are pending (a rerun retries), the rest are failed with their reason.
- * `fs` is injected; the default is the real disk.
+ * Visibility: the snapshot decides (hidden post or thread, non-public category), and `restrictedPosts` (posts the
+ * database holds as hidden or in a non-public category, built by the runner) overrides it: restricted always wins,
+ * so a rerun never re-registers as public an image whose post was hidden or moved after the first import.
+ * The directory is always `uploadsDir()`: registerUploadedAsset refuses files outside it, so any other directory is
+ * refused before anything is read or written. `fs` is injected; the default is the real disk.
  */
 import { promises as nodeFs } from "fs";
 import path from "path";
@@ -14,13 +18,15 @@ import {
   attachmentFileName,
   attachmentPolicy,
   attachmentUrl,
+  hasSignature,
   isStoredComplete,
+  isValidAttachmentId,
   normalizedMime,
   postVisibilities,
   type AttachmentVisibility,
-  type SiteCategoryVisibility,
   type VisibilitySnapshot,
 } from "~/lib/thinkpages-forum/import/attachments";
+import type { SiteCategoryVisibility } from "~/lib/thinkpages-forum/import/visibility";
 import type { NodeMapFile } from "~/lib/thinkpages-forum/import/node-map";
 import type { AttachmentOutcome } from "~/lib/thinkpages-forum/import/post-html";
 import type { AttachmentEntry, Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
@@ -29,6 +35,7 @@ import {
   type RegisterUploadedAssetFailure,
   type RegisterUploadedAssetResult,
 } from "~/server/shared/uploaded-assets";
+import { uploadsDir } from "~/server/shared/upload-storage";
 
 export interface AttachmentFs {
   readFile(file: string): Promise<Uint8Array>;
@@ -82,10 +89,17 @@ export interface AttachmentCopyPlan {
   skipped: number;
   /** Usable entries whose snapshot file is absent or not the recorded size; rendered as omitted. */
   missing: number[];
+  /** Files that do not start with their type's signature; rendered as omitted. */
+  signatureMismatch: number[];
+  /** Snapshot entries whose id is not a positive integer; skipped. */
+  invalidIds: number;
 }
 
 export interface AttachmentCopyOptions {
-  uploadsDir: string;
+  /** Defaults to uploadsDir(); any other directory is refused (registration only accepts files inside it). */
+  uploadsDir?: string;
+  /** XenForo post ids the database holds as hidden or in a non-public category: restricted wins. */
+  restrictedPosts?: ReadonlySet<number>;
   /** The database's sitewide categories, so a mapped key takes its current visibility (default: the seeds). */
   siteCategories?: readonly SiteCategoryVisibility[];
   fs?: AttachmentFs;
@@ -102,18 +116,31 @@ export interface AttachmentCopyResult {
   assetsFailed: Array<{ attachmentId: number; reason: RegisterUploadedAssetFailure }>;
 }
 
+/** `<uploadsDir()>/forum`; throws when `explicit` names another directory. */
+function forumDir(explicit?: string): string {
+  const root = path.resolve(uploadsDir());
+  if (explicit !== undefined && path.resolve(explicit) !== root) {
+    throw new Error(
+      `Attachments must be copied into uploadsDir() (${root}), not ${path.resolve(explicit)}: registerUploadedAsset refuses files outside it. Set UPLOAD_DIR instead.`
+    );
+  }
+  return path.join(root, "forum");
+}
+
 async function planOne(
   entry: AttachmentEntry,
   visibility: AttachmentVisibility,
   snapshot: AttachmentSnapshot,
   dir: string,
   fs: AttachmentFs
-): Promise<PlannedAttachment | "missing" | null> {
+): Promise<PlannedAttachment | "missing" | "signature" | null> {
   const policy = attachmentPolicy(entry);
   if (policy.kind === "omit" || !isStoredComplete(entry)) return null;
   const source = snapshot.attachmentPath(entry.attachment_id);
   if ((await fs.sizeOf(source)) !== entry.file_size) return "missing";
-  const fileName = attachmentFileName(entry, await fs.readFile(source), policy.extension);
+  const bytes = await fs.readFile(source);
+  if (!hasSignature(policy, bytes)) return "signature";
+  const fileName = attachmentFileName(entry, bytes, policy.extension);
   const target = path.join(dir, fileName);
   return {
     entry,
@@ -132,18 +159,25 @@ async function planOne(
 export async function planAttachmentCopies(
   snapshot: AttachmentSnapshot,
   nodeMap: NodeMapFile | null,
-  opts: AttachmentCopyOptions
+  opts: AttachmentCopyOptions = {}
 ): Promise<AttachmentCopyPlan> {
   const fs = opts.fs ?? diskFs;
-  const dir = path.join(path.resolve(opts.uploadsDir), "forum");
+  const dir = forumDir(opts.uploadsDir);
   const visibilities = postVisibilities(snapshot, nodeMap, opts.siteCategories);
+  const restricted = opts.restrictedPosts ?? new Set<number>();
   const attachments: PlannedAttachment[] = [];
-  const missing: number[] = [];
+  const refused = { missing: [] as number[], signature: [] as number[] };
+  let invalidIds = 0;
   for (const entry of snapshot.attachments.values()) {
-    const visibility = visibilities.get(entry.post_id);
-    if (!visibility) continue;
+    if (!isValidAttachmentId(entry.attachment_id)) {
+      invalidIds += 1;
+      continue;
+    }
+    const fromSnapshot = visibilities.get(entry.post_id);
+    if (!fromSnapshot) continue;
+    const visibility = restricted.has(entry.post_id) ? "restricted" : fromSnapshot;
     const planned = await planOne(entry, visibility, snapshot, dir, fs);
-    if (planned === "missing") missing.push(entry.attachment_id);
+    if (typeof planned === "string") refused[planned].push(entry.attachment_id);
     else if (planned) attachments.push(planned);
   }
   const byId = new Map(attachments.map((a) => [a.entry.attachment_id, a]));
@@ -157,7 +191,9 @@ export async function planAttachmentCopies(
     },
     bytes: toCopy.reduce((n, a) => n + a.entry.file_size, 0),
     skipped: attachments.length - toCopy.length,
-    missing,
+    missing: refused.missing,
+    signatureMismatch: refused.signature,
+    invalidIds,
   };
 }
 
@@ -211,6 +247,7 @@ export async function copyAttachments(
 ): Promise<AttachmentCopyResult> {
   const fs = opts.fs ?? diskFs;
   const log = opts.log ?? (() => {});
+  forumDir(path.dirname(plan.dir));
   const result: AttachmentCopyResult = {
     copied: 0,
     skipped: 0,
