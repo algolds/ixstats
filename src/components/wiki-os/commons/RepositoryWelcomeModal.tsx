@@ -9,7 +9,7 @@ import {
   Copy,
   ZoomIn,
   InfoCircle as Info,
-  Command,
+  KeyCommand,
   Eye,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -79,7 +79,7 @@ const ADVANCED_TIPS = [
     description: "Check the details panel for each file's author and license before reusing it.",
   },
   {
-    icon: Command,
+    icon: KeyCommand,
     color: "text-blue",
     title: "Keyboard shortcuts",
     description:
