@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
+import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 import { ReactionPopup } from "../ReactionPopup";
 import { RepostModal } from "../RepostModal";
 import { parseReactionCounts } from "./ReactionCacheUpdater";
@@ -41,11 +42,7 @@ function sharePost(postId: string, notify: ReturnType<typeof useNotify>) {
 
   if (navigator.share) {
     navigator
-      .share({
-        title: "ThinkPages post",
-        text: "Check out this post on ThinkPages",
-        url: postUrl,
-      })
+      .share({ ...feedShareCopy("post"), url: postUrl })
       .catch(copyLink);
   } else if (navigator.clipboard) {
     copyLink();

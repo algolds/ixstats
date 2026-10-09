@@ -665,8 +665,9 @@ function formatCodeBlockTable(results: any[]): string {
   return `\`\`\`\n${lines.join("\n")}\n\`\`\``;
 }
 
-const THINKPAGES_FOOTER = {
-  text: "ThinkPages · Shared via IxStates",
+/** Feed posts mirrored to Discord: the feed is IxStats; ThinkPages names the forum (U2). */
+const FEED_FOOTER = {
+  text: "Shared from IxStats",
   icon_url: `${APP_URL}${CLEAN_BASE_PATH}/thinkpages-logo.svg`,
 };
 
@@ -766,7 +767,7 @@ export function formatThinkPagesEmbed(
         color: sports.isPlayoffBulletin
           ? 0x06b6d4 // cyan
           : (SPORT_EMBED_COLORS[sports.sportEmoji] ?? 0xf59e0b), // default gold
-        footer: THINKPAGES_FOOTER,
+        footer: FEED_FOOTER,
         timestamp,
       },
       mediaUrls
@@ -776,7 +777,7 @@ export function formatThinkPagesEmbed(
   let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
   if (description.length > 4000) description = description.slice(0, 3997) + "...";
   return withMedia(
-    { url, author, description, color: 0x9835ff, footer: THINKPAGES_FOOTER, timestamp },
+    { url, author, description, color: 0x9835ff, footer: FEED_FOOTER, timestamp },
     mediaUrls
   );
 }

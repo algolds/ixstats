@@ -404,7 +404,7 @@ export function DirectiveCard({
       void utils.intent.getStatus.invalidate();
       void utils.policies.getPolicyReconContext.invalidate();
       if (vars.status === "completed") {
-        notify.success("Directive completed", "A ThinkPages summary draft is ready for you.");
+        notify.success("Directive completed", "A summary post draft is ready for you.");
       } else {
         notify.success("Directive abandoned", "Its CivCap has been released.");
       }
