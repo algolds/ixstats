@@ -98,6 +98,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS "forum_bans_sourceRef_key" ON "forum_bans"("so
 CREATE INDEX IF NOT EXISTS "forum_bans_userId_scope_scopeId_idx" ON "forum_bans"("userId", "scope", "scopeId");
 CREATE INDEX IF NOT EXISTS "forum_bans_scope_scopeId_createdAt_idx" ON "forum_bans"("scope", "scopeId", "createdAt");
 
+-- The points threshold an automatic ban is set for (MODERATION_POLICY.autoBanTiers[].points: 5 or 10); null for
+-- manual bans. A separate statement so a database that already has the table gains it on re-apply.
+ALTER TABLE "forum_bans" ADD COLUMN IF NOT EXISTS "autoTier" INTEGER;
+
 CREATE INDEX IF NOT EXISTS "forum_mod_log_createdAt_idx" ON "forum_mod_log"("createdAt");
 CREATE INDEX IF NOT EXISTS "forum_mod_log_targetType_targetId_idx" ON "forum_mod_log"("targetType", "targetId");
 CREATE INDEX IF NOT EXISTS "forum_mod_log_scope_scopeId_createdAt_idx" ON "forum_mod_log"("scope", "scopeId", "createdAt");

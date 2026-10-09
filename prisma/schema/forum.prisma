@@ -123,6 +123,7 @@ model ForumBan {
   issuedBy  String    // User.id (the triggering warning's issuer for auto bans, M2)
   expiresAt DateTime? // null = permanent
   auto      Boolean   @default(false)
+  autoTier  Int?      // points threshold an automatic ban is set for (MODERATION_POLICY.autoBanTiers: 5 or 10); null for manual bans
   liftedAt  DateTime?
   liftedBy  String?   // User.id
   sourceRef String?   @unique // migration provenance, e.g. "realm_board_ban:<id>:<userId>"

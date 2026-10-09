@@ -1,17 +1,30 @@
 /**
  * Automatic site bans from warning points (owner decisions, M2, M3): 5 active points bring a 7-day ban, 10 a
- * 30-day one. The ban is issued by the moderator whose warning crossed the tier; a later tier extends the active
- * automatic ban instead of stacking a second; when points fall below the tier the ban was set for, it is lifted.
- * Both run inside the warning's transaction and log there.
+ * 30-day one. The ban is issued by the moderator whose warning crossed the tier and stores that tier (`autoTier`,
+ * the points threshold). Whenever points change, the active automatic ban is set to the highest tier still met,
+ * counted from its original start: crossing up extends it (never a second ban), falling to a lower tier shortens
+ * it, and falling below every tier, or to a tier whose length has already run out, lifts it. All of it runs inside
+ * the warning's transaction and logs there.
  */
 import type { PrismaClient } from "@prisma/client";
-import { autoBanTier, DAY_MS, MODERATION_POLICY } from "~/lib/thinkpages-forum/moderation-policy";
+import { autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import type { ForumViewer } from "./access";
 import { liftBanTx } from "./mod-bans";
 import { logModAction, type ModLogDetail } from "./mod-log";
 
 export type AutoBanTx = Pick<PrismaClient, "forumBan" | "forumModLog">;
-export type AutoBanOutcome = { banId: string; days: number; extended: boolean } | null;
+export type AutoBanChange =
+  | {
+      kind: "issued" | "extended" | "shortened";
+      banId: string;
+      autoTier: number;
+      days: number;
+      expiresAt: Date;
+    }
+  | { kind: "lifted"; banId: string };
+
+type Actor = NonNullable<ForumViewer>;
+type Tier = { points: number; days: number };
 
 interface AutoBan {
   id: string;
@@ -19,99 +32,124 @@ interface AutoBan {
   scope: string;
   scopeId: string | null;
   createdAt: Date;
-  expiresAt: Date;
+  autoTier: number | null;
 }
 
-/** The user's live automatic site ban; automatic bans always end, so the query only finds dated ones. */
-async function activeAutoBan(
+/** The user's live automatic site ban. */
+function activeAutoBan(
   tx: Pick<AutoBanTx, "forumBan">,
   userId: string,
   now: Date
 ): Promise<AutoBan | null> {
-  const ban = await tx.forumBan.findFirst({
+  return tx.forumBan.findFirst({
     where: { userId, scope: "site", auto: true, liftedAt: null, expiresAt: { gt: now } },
-    orderBy: { expiresAt: "desc" },
-    select: {
-      id: true,
-      userId: true,
-      scope: true,
-      scopeId: true,
-      createdAt: true,
-      expiresAt: true,
-    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, userId: true, scope: true, scopeId: true, createdAt: true, autoTier: true },
   });
-  return ban?.expiresAt ? { ...ban, expiresAt: ban.expiresAt } : null;
 }
 
-/** The tier an automatic ban was set for, read from its length (an extension only lengthens it). */
-function autoBanTierDays(ban: AutoBan): number {
-  const length = Math.round((ban.expiresAt.getTime() - ban.createdAt.getTime()) / DAY_MS);
-  const tiers = MODERATION_POLICY.autoBanTiers.map((t) => t.days);
-  return tiers.find((days) => days <= length) ?? Math.min(...tiers);
-}
+const tierEnd = (start: Date, tier: Tier): Date => new Date(start.getTime() + tier.days * DAY_MS);
+const siteEntry = (actor: Actor, userId: string) =>
+  ({ actorId: actor.id, targetType: "user", targetId: userId, scope: { kind: "site" } }) as const;
 
-/** Creates the automatic site ban for the tier `points` reach, or extends the active one (M2, M3); never stacks. */
-export async function applyAutoBan(
+async function issueAutoBan(
   tx: AutoBanTx,
-  issuer: NonNullable<ForumViewer>,
+  actor: Actor,
   userId: string,
+  tier: Tier,
   points: number,
-  now: Date
-): Promise<AutoBanOutcome> {
-  const tier = autoBanTier(points);
-  if (!tier) return null;
-  const expiresAt = new Date(now.getTime() + tier.days * DAY_MS);
-  const reason = `Automatic: ${points} active warning points`;
-  const detail = { days: tier.days, points, trigger: "warning" };
-  const entry = {
-    actorId: issuer.id,
-    targetType: "user",
-    targetId: userId,
-    scope: { kind: "site" },
-  } as const;
-  const current = await activeAutoBan(tx, userId, now);
-  if (!current) {
-    const ban = await tx.forumBan.create({
-      data: {
-        userId,
-        scope: "site",
-        scopeId: null,
-        reason,
-        expiresAt,
-        auto: true,
-        issuedBy: issuer.id,
-      },
-    });
-    await logModAction(tx, { ...entry, action: "ban.auto", detail: { banId: ban.id, ...detail } });
-    return { banId: ban.id, days: tier.days, extended: false };
-  }
-  if (current.expiresAt.getTime() >= expiresAt.getTime()) return null;
-  await tx.forumBan.update({ where: { id: current.id }, data: { expiresAt, reason } });
-  await logModAction(tx, {
-    ...entry,
-    action: "ban.extend",
-    detail: {
-      banId: current.id,
-      ...detail,
-      from: current.expiresAt.toISOString(),
-      to: expiresAt.toISOString(),
+  now: Date,
+  context: ModLogDetail
+): Promise<AutoBanChange> {
+  const expiresAt = tierEnd(now, tier);
+  const ban = await tx.forumBan.create({
+    data: {
+      userId,
+      scope: "site",
+      scopeId: null,
+      reason: `Automatic: ${points} active warning points`,
+      expiresAt,
+      auto: true,
+      autoTier: tier.points,
+      issuedBy: actor.id,
+      createdAt: now,
     },
   });
-  return { banId: current.id, days: tier.days, extended: true };
+  await logModAction(tx, {
+    ...siteEntry(actor, userId),
+    action: "ban.auto",
+    detail: { banId: ban.id, days: tier.days, points, autoTier: tier.points, ...context },
+  });
+  return { kind: "issued", banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
 }
 
-/** M3: lifts the active automatic ban when `points` no longer reach the tier it was set for; returns its id. */
-export async function liftOutgrownAutoBan(
+/** Sets the active automatic ban to the highest tier `points` still meet, from its original start (M3). */
+async function reconcileAutoBan(
   tx: AutoBanTx,
-  actor: NonNullable<ForumViewer>,
+  actor: Actor,
+  ban: AutoBan,
+  points: number,
+  now: Date,
+  context: ModLogDetail
+): Promise<AutoBanChange | null> {
+  const tier = autoBanTier(points);
+  const lift = async (): Promise<AutoBanChange> => {
+    await liftBanTx(tx, actor, ban, { ...context, points });
+    return { kind: "lifted", banId: ban.id };
+  };
+  if (!tier) return lift();
+  const expiresAt = tierEnd(ban.createdAt, tier);
+  if (expiresAt.getTime() <= now.getTime()) return lift();
+  if (tier.points === ban.autoTier) return null;
+  const kind = tier.points > (ban.autoTier ?? 0) ? "extended" : "shortened";
+  await tx.forumBan.update({
+    where: { id: ban.id },
+    data: {
+      autoTier: tier.points,
+      expiresAt,
+      reason: `Automatic: ${points} active warning points`,
+    },
+  });
+  await logModAction(tx, {
+    ...siteEntry(actor, ban.userId),
+    action: kind === "extended" ? "ban.extend" : "ban.shorten",
+    detail: {
+      banId: ban.id,
+      days: tier.days,
+      points,
+      autoTier: tier.points,
+      previousTier: ban.autoTier,
+      expiresAt: expiresAt.toISOString(),
+      ...context,
+    },
+  });
+  return { kind, banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
+}
+
+/** After a warning: issue the tier's ban, or re-tier the active one (never a second ban, M3). */
+export async function autoBanAfterWarning(
+  tx: AutoBanTx,
+  actor: Actor,
   userId: string,
   points: number,
   now: Date,
-  detail: ModLogDetail
-): Promise<string | null> {
-  const ban = await activeAutoBan(tx, userId, now);
+  context: ModLogDetail
+): Promise<AutoBanChange | null> {
+  const current = await activeAutoBan(tx, userId, now);
+  if (current) return reconcileAutoBan(tx, actor, current, points, now, context);
   const tier = autoBanTier(points);
-  if (!ban || (tier !== null && tier.days >= autoBanTierDays(ban))) return null;
-  await liftBanTx(tx, actor, ban, { ...detail, points });
-  return ban.id;
+  return tier ? issueAutoBan(tx, actor, userId, tier, points, now, context) : null;
+}
+
+/** After a revoke: re-tier or lift the active automatic ban; never issues one. */
+export async function autoBanAfterRevoke(
+  tx: AutoBanTx,
+  actor: Actor,
+  userId: string,
+  points: number,
+  now: Date,
+  context: ModLogDetail
+): Promise<AutoBanChange | null> {
+  const current = await activeAutoBan(tx, userId, now);
+  return current ? reconcileAutoBan(tx, actor, current, points, now, context) : null;
 }

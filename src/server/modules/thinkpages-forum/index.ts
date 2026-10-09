@@ -19,6 +19,7 @@ export {
   type BanInput,
   type BansDb,
 } from "./mod-bans";
+export { type AutoBanChange } from "./mod-auto-bans";
 export { listModLog, LOG_PER_PAGE, logModAction, type ModLogDb, type ModLogEntry } from "./mod-log";
 export {
   assertModeratesCategory,

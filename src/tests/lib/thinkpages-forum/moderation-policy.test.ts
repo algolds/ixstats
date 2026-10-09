@@ -165,6 +165,14 @@ describe("moderation migration", () => {
     expect(sql.match(/CREATE TABLE IF NOT EXISTS/g)?.length).toBe(6);
   });
 
+  it("adds the automatic ban tier column idempotently, after its table", () => {
+    expect(sql).toContain('ALTER TABLE "forum_bans" ADD COLUMN IF NOT EXISTS "autoTier" INTEGER;');
+    expect(sql.match(/ADD COLUMN/g)?.length).toBe(sql.match(/ADD COLUMN IF NOT EXISTS/g)?.length);
+    expect(sql.indexOf('ADD COLUMN IF NOT EXISTS "autoTier"')).toBeGreaterThan(
+      sql.indexOf('CREATE TABLE IF NOT EXISTS "forum_bans"')
+    );
+  });
+
   it("creates every index idempotently with Prisma's default names", () => {
     const indexes = [
       "forum_category_moderators_categoryId_userId_key",

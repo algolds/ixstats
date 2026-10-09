@@ -1,7 +1,7 @@
 /**
  * Warnings and their points (phase 3, owner decisions): points expire after 90 days and count sitewide whoever gave
- * them (M4); enough active points bring an automatic site ban (mod-auto-bans.ts), and revoking a warning recomputes
- * them (M3). Every step logs in the same transaction. Notifications are the router's, after
+ * them (M4); enough active points bring an automatic site ban (mod-auto-bans.ts), and revoking a warning re-tiers
+ * or lifts it (M3). Every step logs in the same transaction. Notifications are the router's, after
  * commit (Task 5). No archived-realm check (T0-6).
  */
 import type { PrismaClient } from "@prisma/client";
@@ -13,7 +13,7 @@ import {
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
-import { applyAutoBan, liftOutgrownAutoBan, type AutoBanOutcome } from "./mod-auto-bans";
+import { autoBanAfterRevoke, autoBanAfterWarning, type AutoBanChange } from "./mod-auto-bans";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertModeratesCategory,
@@ -52,7 +52,8 @@ export interface WarningInput {
 export interface WarningOutcome {
   warningId: string;
   activePoints: number;
-  autoBan: AutoBanOutcome;
+  /** What the warning did to the member's automatic site ban, if anything. */
+  autoBan: AutoBanChange | null;
 }
 
 type Issuer = NonNullable<ForumViewer>;
@@ -168,7 +169,10 @@ async function recordWarning(
   return {
     warningId: row.id,
     activePoints: points,
-    autoBan: await applyAutoBan(tx, issuer, warning.userId, points, now),
+    autoBan: await autoBanAfterWarning(tx, issuer, warning.userId, points, now, {
+      trigger: "warning",
+      warningId: row.id,
+    }),
   };
 }
 
@@ -204,13 +208,16 @@ export async function assertWarningScope(
   return actor;
 }
 
-/** Task 5's reviewAppeal calls this with its own transaction client; it includes M3's recompute and lift. */
+/**
+ * Task 5's reviewAppeal calls this with its own transaction client; it includes M3's recompute (the automatic ban
+ * re-tiered or lifted).
+ */
 export async function revokeWarningTx(
   tx: WarningTx,
   actor: Issuer,
   warning: { id: string; userId: string; categoryId: string | null },
   detail: ModLogDetail
-): Promise<{ liftedAutoBanId: string | null }> {
+): Promise<{ autoBan: AutoBanChange | null }> {
   const now = new Date();
   await tx.forumWarning.update({
     where: { id: warning.id },
@@ -225,18 +232,18 @@ export async function revokeWarningTx(
     detail: { ...detail, warningId: warning.id },
   });
   const points = await activePointsOf(tx, warning.userId, now);
-  const liftedAutoBanId = await liftOutgrownAutoBan(tx, actor, warning.userId, points, now, {
+  const autoBan = await autoBanAfterRevoke(tx, actor, warning.userId, points, now, {
     reason: "warning revoked",
     warningId: warning.id,
   });
-  return { liftedAutoBanId };
+  return { autoBan };
 }
 
 export async function revokeWarning(
   db: WarningsDb,
   actor: ForumViewer,
   input: { warningId: string; note?: string }
-): Promise<{ liftedAutoBanId: string | null }> {
+): Promise<{ autoBan: AutoBanChange | null }> {
   const warning = await db.forumWarning.findUnique({
     where: { id: input.warningId },
     select: { id: true, userId: true, categoryId: true, revokedAt: true },
