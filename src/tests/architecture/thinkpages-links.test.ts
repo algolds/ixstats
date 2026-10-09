@@ -27,7 +27,7 @@ const LEGACY_PAGES = [
   "app/thinkpages/thinkshare/page.tsx",
   "app/thinkpages/thinktanks/page.tsx",
   // Recognizes the old persona profile path in existing wiki pages (hover card); it builds no link.
-  "components/wiki-os/reader/WikiLinkPreview.tsx",
+  "lib/wiki-os/mention-target.ts",
 ];
 /**
  * Where `/thinkpages/post/<id>` is built: the resolver page, the wiki action-link builder, and the forum link
