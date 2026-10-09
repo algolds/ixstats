@@ -144,7 +144,7 @@ export async function getCategoryThreads(
   const [threads, total] = await Promise.all([
     db.forumThread.findMany({
       where: threadWhere,
-      orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }],
+      orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }, { id: "desc" }],
       skip: (pageOf(page) - 1) * THREADS_PER_PAGE,
       take: THREADS_PER_PAGE,
       select: {
