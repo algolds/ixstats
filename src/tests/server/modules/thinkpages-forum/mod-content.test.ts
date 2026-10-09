@@ -14,10 +14,14 @@ import {
   expectOneLog,
   generalMod,
   member,
+  moderatorOf,
   oldMod,
+  post,
   postIn,
   realmCat,
   seed,
+  site,
+  thread,
   threadIn,
 } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
@@ -409,6 +413,47 @@ describe("setPostHidden", () => {
     await setPostHidden(store.db as never, oldMod, { postId: "p_o2", hidden: true });
     expect(threadIn(store, "t_old")).toMatchObject({ postCount: 1, lastPostAt: at(0) });
     expectOneLog(store, { action: "post.hide", scope: "realm", scopeId: "r_old" });
+  });
+});
+
+describe("content in a category the moderator can't read (M8)", () => {
+  // A non-admin an admin appointed on the staff-only category moderates it but can't read it.
+  const staffMod = moderatorOf("u_staffmod", [], ["cat_staff"]);
+  const staffStore = () => {
+    const base = seed();
+    return forumStore({
+      ...base,
+      categories: [...base.categories, site("cat_staff", "staff", { visibility: "staff" })],
+      threads: [...base.threads, thread("t_staff", "cat_staff")],
+      posts: [...base.posts, post("p_staff_first", "t_staff", 0), post("p_staff", "t_staff", 1)],
+    });
+  };
+
+  it("is out of reach: hide, lock or unhide answer NOT_FOUND and write nothing", async () => {
+    const store = staffStore();
+    const refusals = [
+      setPostHidden(store.db as never, staffMod, { postId: "p_staff", hidden: true }),
+      setThreadFlag(store.db as never, staffMod, {
+        threadId: "t_staff",
+        flag: "hidden",
+        value: true,
+      }),
+      setThreadFlag(store.db as never, staffMod, {
+        threadId: "t_staff",
+        flag: "locked",
+        value: true,
+      }),
+    ];
+    for (const refusal of refusals) {
+      await expect(refusal).rejects.toMatchObject({ code: "NOT_FOUND" });
+    }
+    expect(store.logs).toEqual([]);
+  });
+
+  it("stays a site admin's to moderate", async () => {
+    const store = staffStore();
+    await setPostHidden(store.db as never, admin, { postId: "p_staff", hidden: true });
+    expect(postIn(store, "p_staff").hidden).toBe(true);
   });
 });
 

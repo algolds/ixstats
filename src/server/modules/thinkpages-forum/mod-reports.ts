@@ -6,7 +6,7 @@
  * resolving writes its ForumModLog row in the same transaction.
  */
 import type { PrismaClient } from "@prisma/client";
-import { canSeeThread, type ForumViewer } from "./access";
+import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { assertNotBanned } from "./mod-bans";
 import { logModAction, modNote } from "./mod-log";
@@ -63,7 +63,7 @@ interface SeenTarget {
 }
 
 async function findTarget(
-  db: ReportsDb,
+  db: Pick<ReportsDb, "forumThread" | "forumPost">,
   input: { targetType: ReportTargetType; targetId: string }
 ): Promise<SeenTarget | null> {
   const threadSelect = { authorUserId: true, hidden: true, category: TARGET_CATEGORY } as const;
@@ -93,6 +93,9 @@ async function canSeeTarget(
   return (await visibleRealmOf(db, actor, category)) !== undefined;
 }
 
+const targetNotFound = (type: ReportTargetType) =>
+  new ForumError("NOT_FOUND", `${type === "post" ? "Post" : "Thread"} not found.`);
+
 /** The target as the reporter sees it; NOT_FOUND otherwise. */
 async function seenTarget(
   db: ReportsDb,
@@ -101,10 +104,7 @@ async function seenTarget(
 ): Promise<SeenTarget> {
   const target = await findTarget(db, input);
   if (target && (await canSeeTarget(db, actor, target))) return target;
-  throw new ForumError(
-    "NOT_FOUND",
-    `${input.targetType === "post" ? "Post" : "Thread"} not found.`
-  );
+  throw targetNotFound(input.targetType);
 }
 
 export async function fileReport(
@@ -126,8 +126,12 @@ export async function fileReport(
       select: { id: true },
     });
     if (open) throw new ForumError("CONFLICT", "You've already reported this.");
+    // Re-read under the lock: a move since the check above must not pin the report to the old category. A move
+    // keeps the section and the audience (moveThread), so what the reporter may see is unchanged.
+    const placed = await findTarget(tx, input);
+    if (!placed) throw targetNotFound(input.targetType);
     const report = await tx.forumReport.create({
-      data: { ...key, categoryId: target.thread.category.id, reason },
+      data: { ...key, categoryId: placed.thread.category.id, reason },
     });
     return { reportId: report.id };
   });
@@ -160,9 +164,10 @@ async function targetAuthorOf(
 }
 
 /**
- * A moderator in the report's scope resolves or dismisses it, never one whose own content it is (site admins
- * included: another admin handles it), and only a site admin when a site admin wrote it (M-3). The conditional update also pins the category the scope was checked
- * against, so a report re-pointed by a move meanwhile is a CONFLICT.
+ * A moderator in the report's scope who can read the category resolves or dismisses it, never one whose own content
+ * it is (site admins included: another admin handles it), and only a site admin when a site admin wrote it (M-3).
+ * The conditional update also pins the category the scope was checked against, so a report re-pointed by a move
+ * meanwhile is a CONFLICT.
  */
 export async function resolveReport(
   db: ReportsDb,
@@ -177,9 +182,14 @@ export async function resolveReport(
   if (!report) throw new ForumError("NOT_FOUND", "Report not found.");
   const category = await db.forumCategory.findUnique({
     where: { id: report.categoryId },
-    select: { id: true, scope: true, realmId: true },
+    select: { id: true, scope: true, realmId: true, visibility: true },
   });
   const { handler, scope } = handlingScope(actor, category);
+  // M8: a moderator of the category reads its threads (canSeeThread) only when they can see the category itself; a
+  // non-admin appointed on a staff category can't, so its reports are not theirs to handle (nor in their queue).
+  if (category && !canSeeCategory(handler, category)) {
+    throw new ForumError("NOT_FOUND", "Report not found.");
+  }
   const author = await targetAuthorOf(db, report);
   if (author === handler.id) {
     throw new ForumError("FORBIDDEN", "Another moderator handles reports about your own posts.");

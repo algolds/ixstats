@@ -19,8 +19,23 @@ const realmMod = {
 
 const createdAt = new Date("2026-10-09T12:00:00Z");
 
+/** Content written by the realm moderator u_f; anything else is someone else's. */
+const ownContent = [
+  { id: "t_own", authorUserId: "u_f" },
+  { id: "p_own", authorUserId: "u_f" },
+  { id: "p_other", authorUserId: "u_m" },
+];
+const authored = jest.fn(
+  async ({ where }: { where: { id: { in: string[] }; authorUserId: string } }) =>
+    ownContent
+      .filter((c) => where.id.in.includes(c.id) && c.authorUserId === where.authorUserId)
+      .map((c) => ({ id: c.id }))
+);
+
 function logDb(rows: object[] = []) {
   return {
+    forumThread: { findMany: authored },
+    forumPost: { findMany: authored },
     forumModLog: {
       create: jest.fn(async () => ({ id: "log1" })),
       findMany: jest.fn(async () => rows),
@@ -90,6 +105,44 @@ describe("logModAction (M16)", () => {
 });
 
 describe("listModLog", () => {
+  const reportRow = (action: string, targetType: string, targetId: string) => ({
+    ...row(JSON.stringify({ note: "Flagged by the usual suspect", targetType, targetId })),
+    id: `log_${targetId}`,
+    action,
+    targetType: "report",
+    targetId: `rep_${targetId}`,
+    scope: "category",
+    scopeId: "cat_general",
+  });
+  const reportRows = () => [
+    reportRow("report.resolve", "post", "p_own"),
+    reportRow("report.dismiss", "thread", "t_own"),
+    reportRow("report.resolve", "post", "p_other"),
+  ];
+  const notes = (result: Awaited<ReturnType<typeof listModLog>>) =>
+    result.rows.map((r) => r.detail?.note ?? null);
+
+  it("withholds the handler's note from a moderator on report rows about their own content", async () => {
+    authored.mockClear();
+    const result = await listModLog(logDb(reportRows()) as never, realmMod, {}, 1);
+    expect(notes(result)).toEqual([null, null, "Flagged by the usual suspect"]);
+    expect(result.rows[0]!.detail).toEqual({ note: null, targetType: "post", targetId: "p_own" });
+    expect(authored).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps every note for site admins, with no authorship lookups", async () => {
+    authored.mockClear();
+    const result = await listModLog(logDb(reportRows()) as never, admin, {}, 1);
+    expect(notes(result)).toEqual(Array(3).fill("Flagged by the usual suspect"));
+    expect(authored).not.toHaveBeenCalled();
+  });
+
+  it("looks up no authorship when the page has no report rows", async () => {
+    authored.mockClear();
+    await listModLog(logDb([row(null)]) as never, realmMod, {}, 1);
+    expect(authored).not.toHaveBeenCalled();
+  });
+
   it("refuses members", async () => {
     await expect(listModLog(logDb() as never, member, {}, 1)).rejects.toMatchObject({
       code: "FORBIDDEN",

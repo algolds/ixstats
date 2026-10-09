@@ -27,6 +27,8 @@ const moderatorOf = (id: string, realmIds: string[], categoryIds: string[] = [])
 const admin2 = { ...admin, id: "u_a2", clerkUserId: "admin2" };
 const eurthMod = moderatorOf("u_eurth", ["r_eurth"]);
 const generalMod = moderatorOf("u_gen", [], ["cat_general"]);
+/** A non-admin an admin appointed on the staff-only category: they moderate it but can't read it (M8). */
+const staffMod = moderatorOf("u_staffmod", [], ["cat_staff", "cat_general"]);
 
 const at = (minute: number) => new Date(Date.UTC(2026, 9, 9, 12, minute));
 
@@ -52,6 +54,7 @@ const categories: Row[] = [
   category("r_eurth_hub", "hub", "realm", "r_eurth"),
   category("r_draft_hub", "hub", "realm", "r_draft"),
   category("default_hub", "hub", "realm", "default"),
+  category("cat_staff", "staff", "site", null, "staff"),
 ];
 const realms: Row[] = [
   { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
@@ -85,6 +88,7 @@ const seed = () => ({
     thread("t_report", "cat_reports"),
     thread("t_draft", "r_draft_hub"),
     thread("t_ixworld", "default_hub"),
+    thread("t_staff", "cat_staff"),
   ],
   posts: [
     post("p_general", "t_general", { plainText: "x".repeat(300) }),
@@ -93,6 +97,7 @@ const seed = () => ({
     post("p_mine", "t_eurth", { authorUserId: "u_r" }),
     post("p_by_mod", "t_eurth", { authorUserId: "u_eurth" }),
     post("p_by_admin", "t_eurth", { authorUserId: "u_a" }),
+    post("p_staff", "t_staff"),
   ],
   // Authors as `assertCanModerateAuthor` and the queue's flags read them; u_eurth holds Eurth's board office.
   users: [
@@ -224,6 +229,18 @@ describe("fileReport", () => {
     });
   });
 
+  it("files against the target's category as it is under the reporter's lock, not as first read", async () => {
+    const store = reportsStore();
+    store.state.categories.push({ ...categories[2]!, id: "r_eurth_rp", key: "character-threads" });
+    // A moderator moves the thread while this report waits for the reporter's lock.
+    store.tx.$executeRaw.mockImplementationOnce(async () => {
+      store.state.threads.find((t) => t.id === "t_eurth")!.categoryId = "r_eurth_rp";
+      return 1;
+    });
+    await fileAs(store, reporter, "post", "p_eurth");
+    expect(store.state.reports).toEqual([expect.objectContaining({ categoryId: "r_eurth_rp" })]);
+  });
+
   it("a moderator may report what only moderators see", async () => {
     const store = reportsStore();
     await fileAs(store, admin, "post", "p_hidden");
@@ -346,6 +363,58 @@ describe("listReports", () => {
     const second = await listReports(store.db as never, admin, { status: "open" }, 2);
     expect(second.total).toBe(REPORTS_PER_PAGE + 2);
     expect(second.rows.map((r) => r.id)).toEqual(["rep_01", "rep_00"]);
+  });
+});
+
+describe("reports in a category the handler can't read (M8)", () => {
+  const staffQueue = (): Row[] => [
+    ...queue(),
+    report("rep_staff", "post", "p_staff", "cat_staff", { createdAt: at(9) }),
+  ];
+
+  it("are left out of a non-admin category moderator's queue, rows and total", async () => {
+    const store = reportsStore([], { reports: staffQueue() });
+    const { rows, total } = await listReports(store.db as never, staffMod, { status: "open" }, 1);
+    expect(rows.map((r) => r.id)).toEqual(["rep_general", "rep_gone"]);
+    expect(total).toBe(2);
+  });
+
+  it("stay in a site admin's queue", async () => {
+    const store = reportsStore([], { reports: staffQueue() });
+    const { rows } = await listReports(store.db as never, admin, { status: "open" }, 1);
+    expect(rows.map((r) => r.id)).toContain("rep_staff");
+  });
+
+  it("can't be resolved or dismissed by that moderator; a site admin can", async () => {
+    const store = reportsStore([], { reports: staffQueue() });
+    for (const outcome of ["resolved", "dismissed"] as const) {
+      await expect(
+        resolveReport(store.db as never, staffMod, { reportId: "rep_staff", outcome })
+      ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Report not found." });
+    }
+    expect(store.logs).toEqual([]);
+    await resolveReport(store.db as never, admin, { reportId: "rep_staff", outcome: "resolved" });
+    expect(store.logs).toHaveLength(1);
+  });
+});
+
+describe("listReports: hidden targets", () => {
+  it("marks each row whose thread or post is hidden, false when visible or gone", async () => {
+    const store = reportsStore([], {
+      reports: [
+        report("rep_hidden_thread", "thread", "t_hidden", "cat_general", { createdAt: at(4) }),
+        report("rep_hidden_post", "post", "p_hidden", "r_eurth_hub", { createdAt: at(3) }),
+        report("rep_shown", "post", "p_eurth", "r_eurth_hub", { createdAt: at(2) }),
+        report("rep_gone", "post", "p_deleted", "cat_general", { createdAt: at(1) }),
+      ],
+    });
+    const { rows } = await listReports(store.db as never, admin, { status: "open" }, 1);
+    expect(rows.map((r) => [r.id, r.hidden])).toEqual([
+      ["rep_hidden_thread", true],
+      ["rep_hidden_post", true],
+      ["rep_shown", false],
+      ["rep_gone", false],
+    ]);
   });
 });
 

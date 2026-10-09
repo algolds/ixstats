@@ -4,6 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
@@ -28,6 +29,7 @@ interface TargetSummary {
   threadTitle: string;
   excerpt: string;
   authorUserId: string;
+  hidden: boolean;
 }
 
 type TargetRef = { targetType: string; targetId: string };
@@ -51,7 +53,7 @@ async function loadTargets(
     threadIds.length
       ? db.forumThread.findMany({
           where: { id: { in: threadIds }, ...author },
-          select: { id: true, title: true, authorUserId: true },
+          select: { id: true, title: true, authorUserId: true, hidden: true },
         })
       : [],
     postIds.length
@@ -62,6 +64,7 @@ async function loadTargets(
             threadId: true,
             plainText: true,
             authorUserId: true,
+            hidden: true,
             thread: { select: { title: true } },
           },
         })
@@ -75,6 +78,7 @@ async function loadTargets(
         threadTitle: t.title,
         excerpt: excerptOf(t.title),
         authorUserId: t.authorUserId,
+        hidden: t.hidden,
       },
     ]),
     ...posts.map((p): [string, TargetSummary] => [
@@ -84,6 +88,7 @@ async function loadTargets(
         threadTitle: p.thread.title,
         excerpt: excerptOf(p.plainText),
         authorUserId: p.authorUserId,
+        hidden: p.hidden,
       },
     ]),
   ]);
@@ -120,6 +125,27 @@ async function withoutOwnTargets(
       ],
     },
   };
+}
+
+/**
+ * M8 for handlers: the categories among `ids` whose content the viewer can read. A moderator of a category reads all
+ * of its threads (canSeeThread) once they can see the category, so the category's visibility decides; a non-admin
+ * appointed on a staff category moderates content they can't read, and none of its reports reach them.
+ */
+async function readableCategoryIds(
+  db: ReportQueueDb,
+  viewer: ForumViewer,
+  ids: readonly string[]
+): Promise<string[]> {
+  const signedIn = viewer !== null;
+  const rows = await db.forumCategory.findMany({
+    where: {
+      id: { in: [...ids] },
+      ...categoryVisibilityWhere({ signedIn, siteAdmin: signedIn && isSiteAdmin(viewer) }),
+    },
+    select: { id: true },
+  });
+  return rows.map((c) => c.id);
 }
 
 interface ReportCategory {
@@ -164,7 +190,8 @@ async function summarizeCategories(
  * The moderator's queue, newest first: reports in categories they moderate (all for site admins), optionally one
  * realm's. Each row carries its target's thread, title and a 160-character excerpt (null when the target is gone),
  * and its category with the realm's slug and name (null when the category is gone). Reports about the viewer's own
- * content are left out for moderators and shown without the reporter to site admins (`withoutOwnTargets`).
+ * content are left out for moderators and shown without the reporter to site admins (`withoutOwnTargets`), and so
+ * are reports in categories the viewer moderates but can't read (`readableCategoryIds`).
  */
 export async function listReports(
   db: ReportQueueDb,
@@ -173,9 +200,11 @@ export async function listReports(
   page: number
 ) {
   const listing = await listingScope(db, viewer, filter.realmId);
+  const categoryIds =
+    listing === null ? null : await readableCategoryIds(db, viewer, listing.categoryIds);
   const where = await withoutOwnTargets(db, viewer, {
     status: filter.status,
-    ...(listing === null ? {} : { categoryId: { in: listing.categoryIds } }),
+    ...(categoryIds === null ? {} : { categoryId: { in: categoryIds } }),
   });
   const [rows, total] = await Promise.all([
     db.forumReport.findMany({
@@ -211,6 +240,8 @@ export async function listReports(
         threadId: target?.threadId ?? null,
         threadTitle: target?.threadTitle ?? null,
         excerpt: target?.excerpt ?? null,
+        /** Whether the reported thread or post is hidden (the queue offers Unhide instead of Hide). */
+        hidden: target?.hidden ?? false,
         /** Who wrote the reported content (for "Warn author" / "Ban author"); null when it is gone. */
         targetAuthorId: target?.authorUserId ?? null,
         categoryId: row.categoryId,

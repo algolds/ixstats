@@ -4,7 +4,7 @@
  * and officers with `board`; the category's moderators) and, for content a site admin wrote, a site admin.
  */
 import type { PrismaClient } from "@prisma/client";
-import type { ForumViewer } from "./access";
+import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { assertCanModerateAuthor, assertModeratesCategory } from "./mod-scope";
 
@@ -40,7 +40,11 @@ export interface ContentCategory {
   icAllowed: boolean;
 }
 
-/** The actor, once it moderates `category` and may act on `authorUserId`'s content (FORBIDDEN otherwise). */
+/**
+ * The actor, once it moderates `category` and may act on `authorUserId`'s content (FORBIDDEN otherwise). M8: a
+ * moderator reads the category's threads (canSeeThread) only when they can see the category; content a moderator
+ * can't read (a non-admin appointed on a staff category) is NOT_FOUND to them, as it is in reads and the report queue.
+ */
 export async function contentModerator(
   db: Pick<ContentDb, "user">,
   actor: ForumViewer,
@@ -48,6 +52,7 @@ export async function contentModerator(
   authorUserId: string
 ): Promise<Moderator> {
   assertModeratesCategory(actor, category);
+  if (!canSeeCategory(actor, category)) throw new ForumError("NOT_FOUND", "Content not found.");
   await assertCanModerateAuthor(db, actor, authorUserId);
   return actor;
 }
