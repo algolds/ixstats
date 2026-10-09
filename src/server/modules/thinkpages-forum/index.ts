@@ -7,6 +7,18 @@ export {
   type ModeratorContext,
 } from "./access";
 export { ForumError, type ForumErrorCode } from "./errors";
+export {
+  __resetLegacyForumRedirectForTests,
+  FORUM_IMPORT_NODE_MAP_KEY,
+  legacyForumRedirectFor,
+  type LegacyDb,
+} from "./legacy-redirect";
+export {
+  isLegacyForumRedirectOn,
+  LEGACY_FORUM_REDIRECT_KEY,
+  refreshLegacyForumRedirect,
+  setLegacyForumRedirect,
+} from "./legacy-switch";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,
