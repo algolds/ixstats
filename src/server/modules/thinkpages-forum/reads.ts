@@ -143,6 +143,7 @@ export async function getCategoryThreads(
         title: true,
         authorUserId: true,
         authorPersonaId: true,
+        importedAuthorName: true,
         pinned: true,
         locked: true,
         hidden: true,
@@ -186,6 +187,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
         id: true,
         authorUserId: true,
         authorPersonaId: true,
+        importedAuthorName: true,
         contentHtml: true,
         editedAt: true,
         createdAt: true,
@@ -260,14 +262,18 @@ export interface ForumPersonaAuthor {
 /**
  * Display data for a page of authors in one query per kind. A user is shown by Passport handle, else wiki name,
  * else Discord name, else "Member": never the forum name (it can be a legacy account name) and never a Clerk id.
+ * Null ids (imported content whose XenForo author has no IxStats account, phase 4) are skipped.
  */
 export async function authorsOf(
   db: AuthorsDb,
-  userIds: readonly string[],
+  userIds: ReadonlyArray<string | null | undefined>,
   personaIds: ReadonlyArray<string | null | undefined>
 ) {
-  const uniqueUsers = [...new Set(userIds)];
-  const uniquePersonas = [...new Set(personaIds.filter((id): id is string => !!id))];
+  const present = (ids: ReadonlyArray<string | null | undefined>) => [
+    ...new Set(ids.filter((id): id is string => !!id)),
+  ];
+  const uniqueUsers = present(userIds);
+  const uniquePersonas = present(personaIds);
   const [users, personas] = await Promise.all([
     uniqueUsers.length
       ? db.user.findMany({

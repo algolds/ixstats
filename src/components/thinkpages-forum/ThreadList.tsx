@@ -50,6 +50,7 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
               authors={authors}
               userId={thread.authorUserId}
               personaId={thread.authorPersonaId}
+              importedName={thread.importedAuthorName}
             />
           </p>
         </div>

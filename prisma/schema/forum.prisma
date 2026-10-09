@@ -1,6 +1,7 @@
 /// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
 /// section. Phase 2 adds realm sections (scope "realm", three categories per realm) and the archive source refs;
-/// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals).
+/// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals);
+/// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids).
 model ForumCategory {
   id          String        @id @default(cuid())
   scope       String        @default("site") // "site" | "realm"
@@ -22,24 +23,28 @@ model ForumCategory {
 }
 
 model ForumThread {
-  id              String        @id @default(cuid())
-  categoryId      String
-  category        ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  title           String        @db.VarChar(200)
-  authorUserId    String
-  authorPersonaId String?
-  pinned          Boolean       @default(false)
-  locked          Boolean       @default(false)
-  hidden          Boolean       @default(false)
-  archived        Boolean       @default(false)
-  postCount       Int           @default(0)
-  lastPostAt      DateTime      @default(now())
-  createdAt       DateTime      @default(now())
-  xenforoThreadId Int?          @unique
-  sourceRef       String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
-  posts           ForumPost[]
+  id                 String        @id @default(cuid())
+  categoryId         String
+  category           ForumCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title              String        @db.VarChar(200)
+  // null for imported rows whose XenForo author has no IxStats account (phase 4, Q3)
+  authorUserId       String?
+  authorPersonaId    String?
+  importedAuthorName String?
+  xenforoUserId      Int?
+  pinned             Boolean       @default(false)
+  locked             Boolean       @default(false)
+  hidden             Boolean       @default(false)
+  archived           Boolean       @default(false)
+  postCount          Int           @default(0)
+  lastPostAt         DateTime      @default(now())
+  createdAt          DateTime      @default(now())
+  xenforoThreadId    Int?          @unique
+  sourceRef          String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
+  posts              ForumPost[]
 
   @@index([categoryId, pinned, lastPostAt])
+  @@index([xenforoUserId])
   @@map("forum_threads")
 }
 
@@ -47,7 +52,8 @@ model ForumPost {
   id                 String      @id @default(cuid())
   threadId           String
   thread             ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  authorUserId       String
+  // null for imported rows whose XenForo author has no IxStats account (phase 4, Q3)
+  authorUserId       String?
   authorPersonaId    String?
   contentHtml        String      @db.Text
   plainText          String      @db.Text
@@ -56,10 +62,13 @@ model ForumPost {
   importedAuthorName String?
   createdAt          DateTime    @default(now())
   xenforoPostId      Int?        @unique
+  xenforoUserId      Int?
   sourceRef          String?     @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
 
   @@index([threadId, createdAt])
   @@index([authorUserId])
+  @@index([xenforoUserId])
+  @@index([createdAt])
   @@map("forum_posts")
 }
 

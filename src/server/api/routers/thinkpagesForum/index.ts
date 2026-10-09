@@ -1,5 +1,5 @@
 /**
- * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-3).
+ * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-4).
  * Thin: validates, maps the signed-in user to the module's viewer (with what they moderate), calls
  * ~/server/modules/thinkpages-forum, maps ForumError 1:1 to TRPCError. Author display data goes through authorsOf,
  * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4.
@@ -62,7 +62,7 @@ async function moderatorView(
   ]);
   return {
     tools: { categories: destinations.map((c) => ({ ...c, realm: result.category.realm })) },
-    of: (authorUserId: string) => moderation(authorUserId, result.category),
+    of: (authorUserId: string | null) => moderation(authorUserId, result.category),
   };
 }
 
@@ -135,6 +135,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
       ...result,
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
+      // An imported post without an IxStats author (null, phase 4) is never the viewer's.
       posts: result.posts.map(({ hidden, ...post }) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
         return {

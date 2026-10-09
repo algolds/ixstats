@@ -41,7 +41,8 @@ export interface ContentCategory {
 }
 
 /**
- * The actor, once it moderates `category` and may act on `authorUserId`'s content (FORBIDDEN otherwise). M8: a
+ * The actor, once it moderates `category` and may act on `authorUserId`'s content (FORBIDDEN otherwise; null is
+ * imported content without an IxStats author, which any moderator of the category may act on). M8: a
  * moderator reads the category's threads (canSeeThread) only when they can see the category; content a moderator
  * can't read (a non-admin appointed on a staff category) is NOT_FOUND to them, as it is in reads and the report queue.
  */
@@ -49,7 +50,7 @@ export async function contentModerator(
   db: Pick<ContentDb, "user">,
   actor: ForumViewer,
   category: ContentCategory,
-  authorUserId: string
+  authorUserId: string | null
 ): Promise<Moderator> {
   assertModeratesCategory(actor, category);
   if (!canSeeCategory(actor, category)) throw new ForumError("NOT_FOUND", "Content not found.");

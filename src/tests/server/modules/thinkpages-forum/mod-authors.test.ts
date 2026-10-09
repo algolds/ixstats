@@ -101,6 +101,20 @@ describe("authorModeration", () => {
     expect(of("u_gone", eurthHub)).toEqual(MODERABLE_ONLY);
   });
 
+  it("never queries a null author (imported content); any moderator of the category hides it, nobody sanctions it", async () => {
+    const store = authorsStore();
+    const of = await authorModeration(store.db as never, eurthMod, [null, "u_m", null]);
+    expect(store.db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ["u_m"] } } })
+    );
+    expect(of(null, eurthHub)).toEqual(MODERABLE_ONLY);
+    expect(of(null, general)).toEqual(NEITHER);
+    expect((await authorModeration(store.db as never, admin, [null]))(null, general)).toEqual(
+      MODERABLE_ONLY
+    );
+    expect(store.db.user.findMany).toHaveBeenCalledTimes(1);
+  });
+
   it("loads a page's distinct authors in one user query and three moderator queries", async () => {
     const store = authorsStore();
     await authorModeration(store.db as never, admin, ["u_m", "u_f", "u_m", "u_o", "u_a2"]);

@@ -54,6 +54,8 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
   const { mutateAsync: setHidden, isPending } = api.thinkpagesForumMod.setPostHidden.useMutation();
   const hidden = post.hidden === true;
   const verb = hidden ? "Unhide" : "Hide";
+  // Imported content without an IxStats author (phase 4) has nobody to warn or ban; the server says so too.
+  const sanctionTarget = post.sanctionable ? post.authorUserId : null;
 
   const dialog = (which: Exclude<Open, null>) => ({
     open: open === which,
@@ -103,7 +105,7 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
               <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
             </>
           ) : null}
-          {post.sanctionable ? (
+          {sanctionTarget ? (
             <>
               {post.moderable ? <DropdownMenuSeparator /> : null}
               <DropdownMenuItem onSelect={() => setOpen("warn")}>Warn author</DropdownMenuItem>
@@ -147,17 +149,17 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
       </AlertDialog>
 
       {/* Mounted while open only: each post's closed dialogs cost no hooks, and a reopened form starts empty. */}
-      {open === "warn" ? (
+      {open === "warn" && sanctionTarget ? (
         <WarnDialog
-          userId={post.authorUserId}
+          userId={sanctionTarget}
           target={{ type: "post", id: post.id }}
           onDone={sanctioned}
           {...dialog("warn")}
         />
       ) : null}
-      {open === "ban" ? (
+      {open === "ban" && sanctionTarget ? (
         <BanDialog
-          userId={post.authorUserId}
+          userId={sanctionTarget}
           scopes={banScopeOptions(tools.category, context)}
           onDone={sanctioned}
           {...dialog("ban")}

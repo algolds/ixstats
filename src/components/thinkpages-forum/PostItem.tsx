@@ -128,6 +128,7 @@ export const PostItem = memo(function PostItem({
             authors={authors}
             userId={post.authorUserId}
             personaId={post.authorPersonaId}
+            importedName={post.importedAuthorName}
           />
         </p>
         {post.hidden ? <Badge variant="warning">Hidden</Badge> : null}

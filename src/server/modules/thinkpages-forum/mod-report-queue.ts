@@ -28,7 +28,8 @@ interface TargetSummary {
   threadId: string;
   threadTitle: string;
   excerpt: string;
-  authorUserId: string;
+  /** Null on imported content without an IxStats author (phase 4): hideable, never sanctionable. */
+  authorUserId: string | null;
   hidden: boolean;
 }
 

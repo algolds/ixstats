@@ -52,11 +52,12 @@ function reportReason(raw: string): string {
   return reason;
 }
 
+/** `authorUserId` is null on imported content without an IxStats author (phase 4). */
 interface SeenTarget {
-  authorUserId: string;
+  authorUserId: string | null;
   postHidden: boolean;
   thread: {
-    authorUserId: string;
+    authorUserId: string | null;
     hidden: boolean;
     category: { id: string; scope: string; realmId: string | null; visibility: string };
   };
@@ -150,7 +151,7 @@ function handlingScope(
   return { handler: actor, scope: scopeOfCategory(category) };
 }
 
-/** The author of a report's target; null when it is gone, which never blocks handling. */
+/** The author of a report's target; null when it is gone or has no IxStats author, which never blocks handling. */
 async function targetAuthorOf(
   db: ReportsDb,
   report: { targetType: string; targetId: string }
@@ -194,7 +195,7 @@ export async function resolveReport(
   if (author === handler.id) {
     throw new ForumError("FORBIDDEN", "Another moderator handles reports about your own posts.");
   }
-  if (author !== null) await assertCanModerateAuthor(db, handler, author);
+  await assertCanModerateAuthor(db, handler, author);
   const handled = new ForumError("CONFLICT", "This report has already been handled.");
   if (report.status !== "open") throw handled;
   await db.$transaction(async (tx) => {

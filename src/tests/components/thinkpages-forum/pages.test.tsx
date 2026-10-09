@@ -118,6 +118,7 @@ jest.mock("~/components/thinkpages/ThinkpagesPost", () => ({
   ThinkpagesPost: () => <div>feed post</div>,
 }));
 
+import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
 import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
@@ -568,5 +569,61 @@ describe("post permalink", () => {
     await renderPermalink("feed1");
     expect(router.replace).not.toHaveBeenCalled();
     expect(screen.getByText("Post not found")).toBeInTheDocument();
+  });
+});
+
+describe("imported authors (phase 4)", () => {
+  const imported = { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" };
+
+  it("names a user, else the imported name, else Member", () => {
+    const { rerender } = render(
+      <AuthorName authors={authors} userId={null} personaId={null} importedName="OldName" />
+    );
+    expect(screen.getByText("OldName")).toBeInTheDocument();
+    rerender(<AuthorName authors={authors} userId={null} personaId={null} />);
+    expect(screen.getByText("Member")).toBeInTheDocument();
+    rerender(<AuthorName authors={authors} userId="u1" personaId={null} importedName="OldName" />);
+    expect(screen.getByText("Kir")).toBeInTheDocument();
+    expect(screen.queryByText("OldName")).toBeNull();
+  });
+
+  it("never shows the imported name or the player for a persona post, even when the persona is gone", () => {
+    const { rerender } = render(
+      <AuthorName authors={authors} userId="u2" personaId="pa" importedName="OldName" />
+    );
+    expect(screen.getByText("Aria Vance")).toBeInTheDocument();
+    expect(screen.queryByText("OldName")).toBeNull();
+    rerender(<AuthorName authors={authors} userId="u2" personaId="gone" importedName="OldName" />);
+    expect(screen.getByText("Member")).toBeInTheDocument();
+    expect(screen.queryByText("OldName")).toBeNull();
+    expect(screen.queryByText("Hidden Player")).toBeNull();
+  });
+
+  it("shows an imported thread's author in the category list", () => {
+    set("category", {
+      data: categoryData(false, [
+        {
+          id: "t9",
+          title: "From the old forum",
+          ...imported,
+          pinned: false,
+          locked: false,
+          postCount: 1,
+          lastPostAt: new Date(),
+        },
+      ]),
+    });
+    render(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.getByText("OldName")).toBeInTheDocument();
+  });
+
+  it("shows an imported post's author in the thread", () => {
+    const data = threadData();
+    set("thread", {
+      data: { ...data, posts: [{ ...data.posts[0]!, ...imported, isOwn: false }] },
+    });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    expect(container.querySelector("#post-p1")).toHaveTextContent("OldName");
+    expect(screen.queryByText("Kir")).toBeNull();
   });
 });
