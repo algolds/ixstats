@@ -227,17 +227,46 @@ function parseMatchdayBulletin(lines: ParsedBulletinLines): SportsBulletinData |
   };
 }
 
+type BulletinResult = NonNullable<SportsBulletinData["results"]>[number];
+type BulletinMover = NonNullable<SportsBulletinData["movers"]>[number];
+
+// Stored post content is not trusted: the guards check the fields the card reads, whatever the JSON holds.
+const isTeam = (team: BulletinResult["home"] | null | undefined) => typeof team?.name === "string";
+const isResult = (result: BulletinResult | null) =>
+  isTeam(result?.home) &&
+  isTeam(result?.away) &&
+  typeof result?.homeScore === "number" &&
+  typeof result?.awayScore === "number";
+const isMover = (mover: BulletinMover | null) =>
+  typeof mover?.name === "string" &&
+  typeof mover?.oldRank === "number" &&
+  typeof mover?.newRank === "number";
+
+/** An optional list: absent, or an array whose every item passes `isItem`. */
+function isListOf<T>(list: T[] | null | undefined, isItem: (item: T | null) => boolean) {
+  return list === undefined || (Array.isArray(list) && list.every(isItem));
+}
+
+/** A stored marker the card can render: its league, and well-formed results and movers when present. */
+function isStoredBulletin(
+  parsed: Partial<SportsBulletinData> | null
+): parsed is SportsBulletinData {
+  return (
+    typeof parsed?.league?.name === "string" &&
+    isListOf(parsed.results, isResult) &&
+    isListOf(parsed.movers, isMover)
+  );
+}
+
 export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
   if (!content) return null;
 
-  // Primary: the JSON comment marker
+  // Primary: the JSON comment marker; one the card could crash on falls through to the markdown.
   const marker = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
   if (marker) {
     try {
       const parsed = JSON.parse(marker[1]!) as Partial<SportsBulletinData> | null;
-      // Stored post content: a bulletin without its league would crash the card, so it is not a bulletin.
-      if (parsed?.league && typeof parsed.league.name === "string")
-        return parsed as SportsBulletinData;
+      if (isStoredBulletin(parsed)) return parsed;
     } catch {
       // fall through to the markdown parsers
     }

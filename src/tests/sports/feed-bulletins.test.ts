@@ -278,4 +278,56 @@ describe("parseSportsBulletin — stored JSON marker", () => {
     );
     expect(parsed?.league.name).toBe("Premier");
   });
+
+  const marker = (fields: string) =>
+    `<!-- sports-bulletin:{"league":{"name":"Premier"},"sportEmoji":"⚽"${fields}} -->`;
+
+  it.each([
+    ["results: null", ',"results":null'],
+    ["results: {}", ',"results":{}'],
+    ["results: [{}]", ',"results":[{}]'],
+    ["results: [null]", ',"results":[null]'],
+    [
+      "a result without its away side",
+      ',"results":[{"home":{"name":"A"},"homeScore":1,"awayScore":0}]',
+    ],
+    [
+      "a result with a text score",
+      ',"results":[{"home":{"name":"A"},"away":{"name":"B"},"homeScore":"1","awayScore":0}]',
+    ],
+    ["movers: null", ',"movers":null'],
+    ["movers: [{}]", ',"movers":[{}]'],
+    ["movers: [1]", ',"movers":[1]'],
+  ])("does not trust a marker with %s (the card reads those fields)", (_name, fields) => {
+    expect(parseSportsBulletin(marker(fields))).toBeNull();
+  });
+
+  it("falls through to the markdown under a marker it does not trust", () => {
+    const content = `${marker(',"results":[{}]')}\n${formatMatchDayBulletin({
+      leagueName: "Premier",
+      sportEmoji: "⚽",
+      matchDay: 4,
+      results: [{ homeName: "Alpha", awayName: "Beta", homeScore: 2, awayScore: 1 }],
+    })}`;
+    const parsed = parseSportsBulletin(content);
+    expect(parsed?.matchDay).toBe(4);
+    expect(parsed?.results).toHaveLength(1);
+    expect(parsed?.results?.[0]).toMatchObject({
+      home: { name: "Alpha" },
+      away: { name: "Beta" },
+      homeScore: 2,
+      awayScore: 1,
+    });
+  });
+
+  it("keeps a marker whose results and movers carry what the card reads", () => {
+    const parsed = parseSportsBulletin(
+      marker(
+        ',"results":[{"home":{"name":"A","id":"a"},"away":{"name":"B"},"homeScore":1,"awayScore":0}],' +
+          '"movers":[{"name":"A","oldRank":3,"newRank":1}]'
+      )
+    );
+    expect(parsed?.results?.[0]?.away.name).toBe("B");
+    expect(parsed?.movers?.[0]?.newRank).toBe(1);
+  });
 });
