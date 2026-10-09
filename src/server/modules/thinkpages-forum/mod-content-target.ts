@@ -75,6 +75,7 @@ export async function loadPost(db: Pick<ContentDb, "forumPost">, postId: string)
       threadId: true,
       authorUserId: true,
       plainText: true,
+      contentHtml: true,
       editedAt: true,
       thread: { select: { category: { select: CATEGORY_SELECT } } },
     },

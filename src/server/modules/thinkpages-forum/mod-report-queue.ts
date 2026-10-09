@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { postSummary } from "~/lib/thinkpages-forum/post-summary";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { authorModeration, type AuthorModeration, type AuthorModerationDb } from "./mod-authors";
@@ -72,6 +73,7 @@ async function loadTargets(
             id: true,
             threadId: true,
             plainText: true,
+            contentHtml: true,
             authorUserId: true,
             importedAuthorName: true,
             hidden: true,
@@ -97,7 +99,7 @@ async function loadTargets(
       {
         threadId: p.threadId,
         threadTitle: p.thread.title,
-        excerpt: excerptOf(p.plainText),
+        excerpt: excerptOf(postSummary(p)),
         authorUserId: p.authorUserId,
         importedAuthorName: p.importedAuthorName,
         hidden: p.hidden,
