@@ -13,8 +13,8 @@
 import "../lib/load-env";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
+import { databaseLabel, productionDatabaseRefusal } from "../lib/database-guard";
 import {
-  archiveDatabaseRefusal,
   planBoardArchive,
   postSourceRef,
   summarizeArchive,
@@ -188,18 +188,9 @@ async function main(db: PrismaClient): Promise<number> {
   return 0;
 }
 
-function databaseLabel(url: string | undefined): string {
-  try {
-    const parsed = new URL(url ?? "");
-    return `${parsed.hostname}:${parsed.port || "5432"}${parsed.pathname}`;
-  } catch {
-    return "(DATABASE_URL is not set or not a URL)";
-  }
-}
-
 console.log(apply ? "APPLY mode" : "DRY RUN — pass --apply to write");
 console.log(`Database: ${databaseLabel(process.env.DATABASE_URL)}`);
-const refusal = archiveDatabaseRefusal(process.env.DATABASE_URL, argv.includes("--production"));
+const refusal = productionDatabaseRefusal(process.env.DATABASE_URL, argv.includes("--production"));
 if (refusal) {
   console.error(refusal);
   process.exit(1);
