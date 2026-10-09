@@ -70,7 +70,7 @@ beforeEach(() => {
 });
 
 describe("MediaSearchModal", () => {
-  it("does not apply an image the user cancelled while it was downloading", async () => {
+  it("cancels an in-flight download on Escape and never applies the image", async () => {
     const pending = deferred();
     mockProcess.mockReturnValue(pending.promise);
     const onImageSelect = jest.fn();
@@ -81,13 +81,17 @@ describe("MediaSearchModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select Image" }));
     await waitFor(() => expect(mockProcess).toHaveBeenCalledTimes(1));
 
-    // The first Escape closes the detail panel, the second closes the picker and cancels the download.
+    // The first Escape cancels the download; the picker stays open until a later Escape.
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    const { signal } = mockProcess.mock.calls[0]![1] as { signal: AbortSignal };
+    await waitFor(() => expect(signal.aborted).toBe(true));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText("detail open")).toBeInTheDocument();
+    // The second Escape closes the detail panel and the third closes the picker.
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     await waitFor(() => expect(screen.queryByText("detail open")).not.toBeInTheDocument());
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    const { signal } = mockProcess.mock.calls[0]![1] as { signal: AbortSignal };
-    expect(signal.aborted).toBe(true);
 
     await act(async () => {
       pending.resolve("/images/uploads/A.jpg");

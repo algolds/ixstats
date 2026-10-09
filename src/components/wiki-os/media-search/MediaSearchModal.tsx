@@ -119,8 +119,12 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
         )}
         data-dialog-nested="true"
         onEscapeKeyDown={(e) => {
-          // Escape first closes the detail panel, then the picker.
-          if (selectedImageObj) {
+          // Escape first cancels a download in flight, then closes the detail panel, then the picker.
+          if (confirmRef.current) {
+            e.preventDefault();
+            cancelConfirm();
+            setIsDownloading(false);
+          } else if (selectedImageObj) {
             e.preventDefault();
             handleWikiSelectImage(null);
           }
