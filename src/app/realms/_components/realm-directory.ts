@@ -2,7 +2,7 @@ import type { RouterOutputs } from "~/trpc/react";
 
 export type DirectoryRealm = RouterOutputs["realms"]["directory"][number];
 
-/** The realm page, or one of its tabs (`"nations"`, `"board"`). */
+/** The realm page, or one of its tabs (`"nations"`). */
 export function realmHref(slug: string, tab?: string): string {
   const base = `/r/${encodeURIComponent(slug)}`;
   return tab ? `${base}/${tab}` : base;

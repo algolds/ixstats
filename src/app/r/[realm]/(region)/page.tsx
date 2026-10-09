@@ -7,6 +7,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { timeAgo } from "~/lib/format/compact";
+import { hubHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils";
 import { WIKI_SOURCES, parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { buttonVariants } from "~/components/ui/button";
@@ -76,7 +77,7 @@ function JoinRealm({ hub, base, signedIn }: { hub: Hub; base: string; signedIn: 
   );
 }
 
-/** The realm's front page: factbook, the way in, latest board posts, with the sidebar panels. */
+/** The realm's front page: factbook, the way in, latest forum threads, with the sidebar panels. */
 export default function RealmOverviewPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
   const { data: overview } = api.realms.region.overview.useQuery({ slug });
@@ -87,7 +88,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
   usePageTitle({ title: overview ? `${overview.realm.name} · Realm` : "Realm" });
   if (!overview) return null;
 
-  const { realm, factbook, board, viewer, stats } = overview;
+  const { realm, factbook, forum, viewer, stats } = overview;
   const base = `/r/${encodeURIComponent(realm.slug)}`;
   const canEditFactbook = viewer.powers.includes("appearance");
   const loreSource = hub?.loreSource ? parseWikiSource(hub.loreSource) : null;
@@ -160,33 +161,30 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
           ))}
 
         <Section
-          title="Latest on the board"
+          title="Latest on the forum"
           action={
-            <Link href={`${base}/board`} className="text-tint text-footnote hover:underline">
-              {viewer.ownedNations.length > 0 ? "Open the board to post" : "Open the board"}
+            <Link href={hubHref(realm.slug)} className="text-tint text-footnote hover:underline">
+              {viewer.ownedNations.length > 0 ? "Open the forum to post" : "Open the forum"}
             </Link>
           }
         >
-          {board.posts.length === 0 ? (
+          {forum.threads.length === 0 ? (
             <p className="text-label-secondary text-body">
               {viewer.ownedNations.length > 0
-                ? "No posts yet. Yours can be the first."
-                : `No posts yet. The board is where the nations of ${realm.name} talk.`}
+                ? "No threads yet. Yours can be the first."
+                : `No threads yet. The forum is where the nations of ${realm.name} talk.`}
             </p>
           ) : (
             <ul className="divide-separator flex flex-col divide-y">
-              {board.posts.map((post) => (
-                <li key={post.id} className="py-3 first:pt-0 last:pb-0">
-                  <Link href={`${base}/board`} className="group block">
-                    <p className="text-footnote">
-                      <span className="text-label font-medium">{post.author.name}</span>
-                      {post.author.country && (
-                        <span className="text-label-secondary"> · {post.author.country.name}</span>
-                      )}
-                      <span className="text-label-secondary"> · {timeAgo(post.createdAt)}</span>
+              {forum.threads.map((thread) => (
+                <li key={thread.id} className="py-3 first:pt-0 last:pb-0">
+                  <Link href={threadHref(thread.id)} className="group block">
+                    <p className="text-label text-body line-clamp-2 group-hover:underline">
+                      {thread.title}
                     </p>
-                    <p className="text-label text-body mt-1 line-clamp-3 whitespace-pre-wrap group-hover:underline">
-                      {post.content}
+                    <p className="text-label-secondary text-footnote mt-1">
+                      {thread.replies} {thread.replies === 1 ? "reply" : "replies"} ·{" "}
+                      {timeAgo(thread.lastPostAt)}
                     </p>
                   </Link>
                 </li>

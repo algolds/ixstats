@@ -54,7 +54,7 @@ import RealmOverviewPage from "~/app/r/[realm]/(region)/page";
 const overview = {
   realm: { id: "eurth", slug: "eurth", name: "Eurth" },
   factbook: null,
-  board: { groupId: null, posts: [] },
+  forum: { threads: [] },
   stats: { nations: 3, claimedNations: 1, population: 0 },
   rules: null,
   viewer: { signedIn: true, powers: [], ownedNations: [], boardRestriction: null },
@@ -125,5 +125,68 @@ describe("realm Overview join section", () => {
     expect(joinHeadings()).toHaveLength(1);
     expect(screen.getByText(/waiting for a player/)).toBeTruthy();
     expect(screen.queryByText(/invited you/)).toBeNull();
+  });
+});
+
+describe("realm Overview forum section", () => {
+  const forumHub = "/thinkpages/r/eurth/hub";
+
+  it("lists the Hub's latest threads with replies and age, each linking to the thread", async () => {
+    queries.overview = {
+      ...overview,
+      forum: {
+        threads: [
+          {
+            id: "t1",
+            title: "Welcome to Eurth",
+            replies: 1,
+            lastPostAt: new Date(Date.now() - 3 * 3_600_000),
+          },
+          {
+            id: "t2",
+            title: "Rules question",
+            replies: 4,
+            lastPostAt: new Date(Date.now() - 5 * 60_000),
+          },
+        ],
+      },
+    };
+    await renderOverview();
+    expect(screen.getByRole("heading", { name: "Latest on the forum" })).toBeTruthy();
+    expect(screen.queryByText("Latest on the board")).toBeNull();
+    const link = screen.getByRole("link", { name: /Welcome to Eurth/ });
+    expect(link.getAttribute("href")).toBe("/thinkpages/t/t1");
+    expect(link.textContent).toContain("1 reply");
+    expect(link.textContent).toContain("3h ago");
+    const second = screen.getByRole("link", { name: /Rules question/ });
+    expect(second.textContent).toContain("4 replies");
+    expect(screen.getByRole("link", { name: "Open the forum" }).getAttribute("href")).toBe(
+      forumHub
+    );
+  });
+
+  it("invites a nation owner to post, and tells a visitor what the forum is for", async () => {
+    queries.overview = {
+      ...overview,
+      viewer: {
+        ...overview.viewer,
+        ownedNations: [{ id: "c1", name: "Aurelia", slug: "aurelia" }],
+      },
+    };
+    await renderOverview();
+    expect(screen.getByText("No threads yet. Yours can be the first.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open the forum to post" }).getAttribute("href")).toBe(
+      forumHub
+    );
+  });
+
+  it("explains an empty forum to visitors", async () => {
+    await renderOverview();
+    expect(
+      screen.getByText("No threads yet. The forum is where the nations of Eurth talk.")
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open the forum" }).getAttribute("href")).toBe(
+      forumHub
+    );
   });
 });

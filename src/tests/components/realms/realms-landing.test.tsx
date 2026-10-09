@@ -70,7 +70,7 @@ function realm(overrides: Record<string, unknown> = {}) {
     openNationPageCount: 3,
     myNationCount: 0,
     maxNationsPerUser: 2,
-    board: null,
+    board: { recentPosts: 0, lastPostAt: null },
     ...overrides,
   };
 }
@@ -232,5 +232,24 @@ describe("realms landing sections", () => {
 
     expect(screen.getByRole("region", { name: "Realm feed" })).toBeTruthy();
     expect(screen.getByText("feed for all")).toBeTruthy();
+  });
+
+  it("reports each realm's forum activity and links to its Hub", () => {
+    const lastPostAt = new Date("2026-09-29T12:00:00Z");
+    queries["realms.directory"] = [
+      { ...EURTH, board: { recentPosts: 5, lastPostAt } },
+      { ...QUIET, board: { recentPosts: 0, lastPostAt: null } },
+    ];
+    render(<RealmsLandingPage />);
+    const browse = screen.getByRole("region", { name: /Browse all realms/ });
+    expect(within(browse).getByText(/^5 posts this week · last /)).toBeTruthy();
+    expect(within(browse).getByText("No posts yet")).toBeTruthy();
+    expect(within(browse).queryByText(/Board not opened/)).toBeNull();
+    const forumLinks = within(browse).getAllByRole("link", { name: "Forum" });
+    expect(forumLinks.map((l) => l.getAttribute("href"))).toEqual([
+      "/thinkpages/r/eurth/hub",
+      "/thinkpages/r/quiet/hub",
+    ]);
+    expect(within(browse).queryByRole("link", { name: "Board" })).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import {
   categoryHref,
   claimNationHref,
   forumHomeHref,
+  hubHref,
   newThreadHref,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
@@ -20,6 +21,11 @@ describe("forum links", () => {
     expect(categoryHref({ key: "general" })).toBe("/thinkpages/c/general");
     expect(categoryHref({ key: "general", realm: null })).toBe("/thinkpages/c/general");
     expect(categoryHref({ key: "hub", realm: { slug: "eurth" } })).toBe("/thinkpages/r/eurth/hub");
+  });
+
+  it("opens a realm's Hub, encoding the slug", () => {
+    expect(hubHref("eurth")).toBe("/thinkpages/r/eurth/hub");
+    expect(hubHref("a/b")).toBe("/thinkpages/r/a%2Fb/hub");
   });
 
   it("starts a thread under the category's path", () => {

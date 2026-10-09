@@ -3,6 +3,8 @@
  * `createUrl()` (it would double the production basePath). Slugs and keys are encoded, so a slug cannot add a path
  * segment or a query parameter.
  */
+import { REALM_HUB_KEY } from "./categories";
+
 export const FORUM_HOME = "/thinkpages/forum";
 
 /** Where a category sits: a realm category carries its realm's slug, a sitewide one none. */
@@ -21,6 +23,11 @@ export function forumHomeHref(realm?: string | null): string {
 export function categoryHref(category: CategoryPlace): string {
   const { key, realm } = category;
   return realm ? `/thinkpages/r/${seg(realm.slug)}/${seg(key)}` : `/thinkpages/c/${seg(key)}`;
+}
+
+/** A realm's Hub, where its forum section starts. */
+export function hubHref(realmSlug: string): string {
+  return categoryHref({ key: REALM_HUB_KEY, realm: { slug: realmSlug } });
 }
 
 export function newThreadHref(category: CategoryPlace): string {

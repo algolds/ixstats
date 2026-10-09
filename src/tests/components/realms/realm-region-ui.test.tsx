@@ -86,7 +86,7 @@ function overview(overrides: Record<string, unknown> = {}) {
     ],
     embassies: [],
     poll: null,
-    board: { groupId: null, posts: [] },
+    forum: { threads: [] },
     viewer: {
       signedIn: true,
       powers: [],
@@ -116,6 +116,21 @@ describe("realm header", () => {
     expect(within(nav).queryByRole("link", { name: "Manage" })).toBeNull();
     expect(within(nav).queryByRole("link", { name: "Rules" })).toBeNull();
     expect(screen.queryByText("In-world date")).toBeNull();
+  });
+
+  it("has a Forum tab out to the realm's Hub in place of the Board tab, each leaving tab with its own glyph", () => {
+    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
+    const nav = screen.getByRole("navigation", { name: "Realm sections" });
+    expect(within(nav).queryByRole("link", { name: "Board" })).toBeNull();
+    const forum = within(nav).getByRole("link", { name: "Forum" });
+    expect(forum.getAttribute("href")).toBe("/thinkpages/r/eurth/hub");
+    expect(forum.getAttribute("aria-current")).toBeNull();
+    const map = within(nav).getByRole("link", { name: "Map" });
+    expect(map.getAttribute("href")).toBe("/maps?realm=eurth");
+    expect(forum.querySelector("svg")).toBeTruthy();
+    expect(map.querySelector("svg")).toBeTruthy();
+    expect(forum.querySelector("svg")?.outerHTML).not.toBe(map.querySelector("svg")?.outerHTML);
+    expect(within(nav).getByRole("link", { name: "Nations" }).querySelector("svg")).toBeNull();
   });
 
   it("counts the nations still open to claim", () => {

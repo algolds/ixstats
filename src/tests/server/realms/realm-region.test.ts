@@ -519,6 +519,73 @@ describe("overview and happenings", () => {
     expect(overview?.officers).toEqual([expect.objectContaining({ handle: null })]);
   });
 
+  describe("forum preview (D4)", () => {
+    const lastPostAt = new Date("2026-10-01T10:00:00Z");
+
+    it("lists the realm's latest Hub threads, visible ones only, newest first", async () => {
+      const db = overviewDb();
+      db.forumCategory.findFirst.mockResolvedValue({ id: "hub1" });
+      db.forumThread.findMany.mockResolvedValue([
+        { id: "t1", title: "Welcome", postCount: 4, lastPostAt },
+      ]);
+      const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+
+      expect(db.forumCategory.findFirst.mock.calls[0]![0].where).toEqual({
+        scope: "realm",
+        realmId: "eurth",
+        key: "hub",
+        visibility: "public",
+      });
+      expect(db.forumThread.findMany).toHaveBeenCalledWith({
+        where: { categoryId: "hub1", hidden: false },
+        orderBy: { lastPostAt: "desc" },
+        take: 5,
+        select: { id: true, title: true, postCount: true, lastPostAt: true },
+      });
+      expect(overview?.forum).toEqual({
+        threads: [{ id: "t1", title: "Welcome", replies: 3, lastPostAt }],
+      });
+      expect(overview).not.toHaveProperty("board");
+    });
+
+    it("counts replies without the opening post and never goes below zero", async () => {
+      const db = overviewDb();
+      db.forumCategory.findFirst.mockResolvedValue({ id: "hub1" });
+      db.forumThread.findMany.mockResolvedValue([
+        { id: "t1", title: "Empty", postCount: 0, lastPostAt },
+        { id: "t2", title: "Alone", postCount: 1, lastPostAt },
+      ]);
+      const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+      expect(overview?.forum.threads.map((t) => t.replies)).toEqual([0, 0]);
+    });
+
+    it("is empty when the realm has no Hub, or the Hub is not visible to the viewer", async () => {
+      const db = overviewDb();
+      db.forumCategory.findFirst.mockResolvedValue(null);
+      const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+      expect(overview?.forum).toEqual({ threads: [] });
+      expect(db.forumThread.findMany).not.toHaveBeenCalled();
+    });
+
+    it("lets site admins see a non-public Hub, nobody else", async () => {
+      const db = overviewDb();
+      db.forumCategory.findFirst.mockResolvedValue(null);
+      await callerAs(ADMIN, db, admin).region.overview({ slug: "eurth" });
+      expect(db.forumCategory.findFirst.mock.calls[0]![0].where).toEqual({
+        scope: "realm",
+        realmId: "eurth",
+        key: "hub",
+      });
+    });
+
+    it("shows nothing of a draft realm to players (the overview itself is null)", async () => {
+      const db = overviewDb("draft", FOUNDER);
+      expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
+      expect(db.forumCategory.findFirst).not.toHaveBeenCalled();
+      expect(db.forumThread.findMany).not.toHaveBeenCalled();
+    });
+  });
+
   it("hides a draft realm's overview from players", async () => {
     const db = overviewDb("draft", FOUNDER);
     expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
