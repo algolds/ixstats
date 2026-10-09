@@ -1,35 +1,26 @@
 /**
- * Moderator content actions (phase 3): lock, pin, hide or archive a thread, move it, hide a post, edit a post. Each
- * loads its target with its category, needs a moderator of that category (site admins; the realm's founder and
- * officers with `board`; the category's moderators), and writes the change and its ForumModLog row in one
+ * Moderator content actions (phase 3): lock, pin, hide or archive a thread, move it, hide a post (editing a post is
+ * mod-edit.ts). Each loads its target with its category and author, needs a moderator of that category (and a site
+ * admin for a site admin's content, `contentModerator`), and writes the change and its ForumModLog row in one
  * transaction. Changes are conditional updates, so a repeated action is a CONFLICT that logs nothing. No
  * archived-realm check (T0-6); nothing here deletes a thread or post (T0-7). A thread's `postCount` and `lastPostAt`
  * count its visible posts only, as members see them; moderators see hidden posts badged but not counted.
  */
 import type { PrismaClient } from "@prisma/client";
-import { parseActionTokens } from "~/lib/action-links";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
-import { logModAction, modNote, modReason } from "./mod-log";
+import { logModAction, modNote } from "./mod-log";
 import { assertModeratesCategory, scopeOfCategory } from "./mod-scope";
+import {
+  contentModerator,
+  loadPost,
+  loadThread,
+  type ContentCategory,
+  type ContentDb,
+} from "./mod-content-target";
 import { loadCategory, type CategoryLocator } from "./reads";
-import { inLockedChain, prepareBody } from "./writes";
 
-export type ContentDb = Pick<
-  PrismaClient,
-  | "forumThread"
-  | "forumPost"
-  | "forumCategory"
-  | "forumReport"
-  | "postActionLink"
-  | "forumModLog"
-  | "realm"
-  | "$transaction"
-  | "$executeRaw"
->;
 export type ThreadFlag = "locked" | "pinned" | "hidden" | "archived";
-
-type Moderator = NonNullable<ForumViewer>;
 
 const FLAG_VERBS: Record<ThreadFlag, string> = {
   locked: "lock",
@@ -37,51 +28,6 @@ const FLAG_VERBS: Record<ThreadFlag, string> = {
   hidden: "hide",
   archived: "archive",
 };
-
-const CATEGORY_SELECT = {
-  id: true,
-  scope: true,
-  realmId: true,
-  visibility: true,
-  icAllowed: true,
-} as const;
-
-interface ContentCategory {
-  id: string;
-  scope: string;
-  realmId: string | null;
-  visibility: string;
-  icAllowed: boolean;
-}
-
-/** The actor, once it moderates `category` (FORBIDDEN otherwise). */
-function moderatorOf(actor: ForumViewer, category: ContentCategory): Moderator {
-  assertModeratesCategory(actor, category);
-  return actor;
-}
-
-async function loadThread(db: ContentDb, threadId: string) {
-  const thread = await db.forumThread.findUnique({
-    where: { id: threadId },
-    select: { id: true, category: { select: CATEGORY_SELECT } },
-  });
-  if (!thread) throw new ForumError("NOT_FOUND", "Thread not found.");
-  return thread;
-}
-
-async function loadPost(db: ContentDb, postId: string) {
-  const post = await db.forumPost.findUnique({
-    where: { id: postId },
-    select: {
-      id: true,
-      threadId: true,
-      plainText: true,
-      thread: { select: { category: { select: CATEGORY_SELECT } } },
-    },
-  });
-  if (!post) throw new ForumError("NOT_FOUND", "Post not found.");
-  return post;
-}
 
 /** `{ [flag]: value }`, typed for the thread's where and data. */
 function flagged(flag: ThreadFlag, value: boolean): Partial<Record<ThreadFlag, boolean>> {
@@ -97,7 +43,7 @@ export async function setThreadFlag(
 ): Promise<void> {
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
-  const moderator = moderatorOf(actor, thread.category);
+  const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
   const verb = FLAG_VERBS[input.flag];
   await db.$transaction(async (tx) => {
     const { count } = await tx.forumThread.updateMany({
@@ -144,7 +90,7 @@ export async function moveThread(
 ): Promise<void> {
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
-  const moderator = moderatorOf(actor, thread.category);
+  const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
   const { category: to } = await loadCategory(db, moderator, input.to);
   assertModeratesCategory(moderator, to);
   const from = thread.category;
@@ -232,7 +178,7 @@ export async function setPostHidden(
   const note = modNote(input.note);
   const post = await loadPost(db, input.postId);
   const { category } = post.thread;
-  const moderator = moderatorOf(actor, category);
+  const moderator = await contentModerator(db, actor, category, post.authorUserId);
   if (input.hidden && (await isFirstPost(db, post))) {
     throw new ForumError("CONFLICT", "Hide the thread instead.");
   }
@@ -256,49 +202,6 @@ export async function setPostHidden(
       targetId: post.id,
       scope: scopeOfCategory(category),
       detail: { note, threadId: post.threadId },
-    });
-  });
-}
-
-/**
- * A moderator edit: the body goes through `prepareBody` (sanitized last), a post in a submitted or approved story
- * chain is refused (P6, M17: hide it instead), and the edit may keep or remove the author's action links but never
- * add one, since links belong to the author's nation. Removed links are dropped in the edit's transaction; the
- * previous plain text goes to the log.
- */
-export async function modEditPost(
-  db: ContentDb,
-  actor: ForumViewer,
-  input: { postId: string; html: string; note: string }
-): Promise<void> {
-  const note = modReason(input.note);
-  const post = await loadPost(db, input.postId);
-  const { category } = post.thread;
-  const moderator = moderatorOf(actor, category);
-  const body = prepareBody(input.html);
-  const before = new Set(parseActionTokens(post.plainText));
-  const tokens = parseActionTokens(body.plainText);
-  if (tokens.some((id) => !before.has(id))) {
-    throw new ForumError("BAD_REQUEST", "A moderator edit can't add action links.");
-  }
-  if (await inLockedChain(db, post.id)) {
-    throw new ForumError(
-      "CONFLICT",
-      "This post is part of a submitted story chain. Hide it instead."
-    );
-  }
-  await db.$transaction(async (tx) => {
-    await tx.forumPost.update({ where: { id: post.id }, data: { ...body, editedAt: new Date() } });
-    await tx.postActionLink.deleteMany({
-      where: { postSource: "native", postRef: post.id, activityId: { notIn: tokens } },
-    });
-    await logModAction(tx, {
-      actorId: moderator.id,
-      action: "post.edit",
-      targetType: "post",
-      targetId: post.id,
-      scope: scopeOfCategory(category),
-      detail: { note, previous: post.plainText },
     });
   });
 }

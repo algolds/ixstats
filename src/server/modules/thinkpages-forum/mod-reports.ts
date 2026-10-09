@@ -144,6 +144,24 @@ function handlingScope(
   return { handler: actor, scope: scopeOfCategory(category) };
 }
 
+/** The author of a report's target; null when it is gone, which never blocks handling. */
+async function targetAuthorOf(
+  db: ReportsDb,
+  report: { targetType: string; targetId: string }
+): Promise<string | null> {
+  const args = { where: { id: report.targetId }, select: { authorUserId: true } } as const;
+  const target =
+    report.targetType === "thread"
+      ? await db.forumThread.findUnique(args)
+      : await db.forumPost.findUnique(args);
+  return target?.authorUserId ?? null;
+}
+
+/**
+ * A moderator in the report's scope resolves or dismisses it, never one whose own content it is (site admins
+ * included: another admin handles it). The conditional update also pins the category the scope was checked
+ * against, so a report re-pointed by a move meanwhile is a CONFLICT.
+ */
 export async function resolveReport(
   db: ReportsDb,
   actor: ForumViewer,
@@ -160,11 +178,14 @@ export async function resolveReport(
     select: { id: true, scope: true, realmId: true },
   });
   const { handler, scope } = handlingScope(actor, category);
+  if ((await targetAuthorOf(db, report)) === handler.id) {
+    throw new ForumError("FORBIDDEN", "Another moderator handles reports about your own posts.");
+  }
   const handled = new ForumError("CONFLICT", "This report has already been handled.");
   if (report.status !== "open") throw handled;
   await db.$transaction(async (tx) => {
     const { count } = await tx.forumReport.updateMany({
-      where: { id: report.id, status: "open" },
+      where: { id: report.id, status: "open", categoryId: report.categoryId },
       data: { status: input.outcome, handledBy: handler.id, handledAt: new Date(), note },
     });
     if (count === 0) throw handled;

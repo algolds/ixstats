@@ -164,6 +164,34 @@ export async function lockMember(tx: LockDb, userId: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`forum-member:${userId}`}))`;
 }
 
+/** A member as a RealmActor (id, Clerk id, role), enough for `isSiteAdmin`; null when the user row is gone. */
+async function memberOf(
+  db: Pick<PrismaClient, "user">,
+  userId: string
+): Promise<(RealmActor & { countryId: null }) | null> {
+  const row = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, clerkUserId: true, role: { select: { name: true, level: true } } },
+  });
+  return row && { ...row, countryId: null };
+}
+
+/**
+ * Content a site admin wrote is moderated by site admins only (hide, edit, move, lock, pin, archive). Site admin
+ * actors cost no query; an author whose user row is gone is not an admin.
+ */
+export async function assertCanModerateAuthor(
+  db: Pick<PrismaClient, "user">,
+  actor: NonNullable<ForumViewer>,
+  authorUserId: string
+): Promise<void> {
+  if (isSiteAdmin(actor)) return;
+  const author = await memberOf(db, authorUserId);
+  if (author && isSiteAdmin(author)) {
+    throw new ForumError("FORBIDDEN", "Only site admins moderate a site admin's posts.");
+  }
+}
+
 /**
  * M5: the member to warn or ban must exist, must not be a site admin, and must not moderate the place
  * (`moderates`, asked of the member with their own moderator context).
@@ -174,12 +202,8 @@ export async function assertSanctionable(
   verb: "banned" | "warned",
   moderates: (target: NonNullable<ForumViewer>) => boolean
 ): Promise<void> {
-  const row = await db.user.findUnique({
-    where: { id: userId },
-    select: { id: true, clerkUserId: true, role: { select: { name: true, level: true } } },
-  });
-  if (!row) throw new ForumError("NOT_FOUND", "Member not found.");
-  const target = { ...row, countryId: null };
+  const target = await memberOf(db, userId);
+  if (!target) throw new ForumError("NOT_FOUND", "Member not found.");
   if (isSiteAdmin(target)) throw new ForumError("BAD_REQUEST", `Site admins can't be ${verb}.`);
   const mod = await moderatorContext(db, target);
   if (moderates({ ...target, mod }))

@@ -1,153 +1,25 @@
 /** @jest-environment node */
 import {
-  modEditPost,
   moveThread,
   setPostHidden,
   setThreadFlag,
   type ThreadFlag,
 } from "~/server/modules/thinkpages-forum";
-import { detailOf, forumStore, type Row } from "~/tests/helpers/forum-store-fake";
-
-const USER_ROLE = { name: "user", level: 100 };
-const admin = {
-  id: "u_a",
-  clerkUserId: "admin",
-  countryId: null,
-  role: { name: "admin", level: 10 },
-};
-const member = { id: "u_m", clerkUserId: "member", countryId: "c1", role: USER_ROLE };
-const moderatorOf = (id: string, realmIds: string[], categoryIds: string[] = []) => ({
-  id,
-  clerkUserId: id,
-  countryId: null,
-  role: USER_ROLE,
-  mod: { siteAdmin: false, realmIds, categoryIds },
-});
-const eurthMod = moderatorOf("u_eurth", ["r_eurth"]);
-const oldMod = moderatorOf("u_old", ["r_old"]);
-const generalMod = moderatorOf("u_gen", [], ["cat_general"]);
-
-const at = (minute: number) => new Date(Date.UTC(2026, 9, 9, 12, minute));
-
-const site = (id: string, key: string, extra: Row = {}): Row => ({
-  id,
-  key,
-  name: key,
-  scope: "site",
-  realmId: null,
-  visibility: "public",
-  postRole: "any",
-  icAllowed: false,
-  ...extra,
-});
-const realmCat = (realmId: string, key: string, icAllowed = false): Row => ({
-  id: `${realmId}_${key}`,
-  key,
-  name: key,
-  scope: "realm",
-  realmId,
-  visibility: "public",
-  postRole: "any",
-  icAllowed,
-});
-const categories: Row[] = [
-  site("cat_general", "general"),
-  site("cat_find", "find-a-realm"),
-  site("cat_side", "side-games", { icAllowed: true }),
-  site("cat_reports", "reports", { visibility: "reporter_staff" }),
-  realmCat("r_eurth", "hub"),
-  realmCat("r_eurth", "character-threads", true),
-  realmCat("r_eurth", "current-events", true),
-  realmCat("r_aurora", "hub"),
-  realmCat("r_old", "hub"),
-];
-const realms: Row[] = [
-  { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
-  { id: "r_aurora", slug: "aurora", name: "Aurora", status: "active", ownerId: "aurora_founder" },
-  { id: "r_old", slug: "old", name: "Old", status: "archived", ownerId: "old_founder" },
-];
-
-const thread = (id: string, categoryId: string, extra: Row = {}): Row => ({
-  id,
-  categoryId,
-  title: `Thread ${id}`,
-  authorUserId: "u_m",
-  authorPersonaId: null,
-  pinned: false,
-  locked: false,
-  hidden: false,
-  archived: false,
-  postCount: 3,
-  lastPostAt: at(2),
-  createdAt: at(0),
-  ...extra,
-});
-const post = (id: string, threadId: string, minute: number, extra: Row = {}): Row => ({
-  id,
-  threadId,
-  authorUserId: "u_m",
-  authorPersonaId: null,
-  contentHtml: `<p>Post ${id}</p>`,
-  plainText: `Post ${id}`,
-  hidden: false,
-  editedAt: null,
-  createdAt: at(minute),
-  ...extra,
-});
-const report = (id: string, targetType: string, targetId: string, extra: Row = {}): Row => ({
-  id,
-  targetType,
-  targetId,
-  categoryId: "r_eurth_hub",
-  reporterId: "u_r",
-  reason: "Spam",
-  status: "open",
-  createdAt: at(5),
-  ...extra,
-});
-
-const seed = () => ({
+import {
+  admin,
+  at,
   categories,
-  realms,
-  threads: [
-    thread("t_general", "cat_general"),
-    thread("t_eurth", "r_eurth_hub", { postCount: 2, lastPostAt: at(1) }),
-    thread("t_persona", "r_eurth_character-threads", { authorPersonaId: "persona1", postCount: 1 }),
-    thread("t_mixed", "r_eurth_character-threads", { postCount: 2 }),
-    thread("t_old", "r_old_hub", { postCount: 2, lastPostAt: at(1) }),
-  ],
-  posts: [
-    post("p_g1", "t_general", 0),
-    post("p_g2", "t_general", 1),
-    post("p_g3", "t_general", 2),
-    post("p_e1", "t_eurth", 0),
-    post("p_e2", "t_eurth", 1),
-    post("p_pc1", "t_persona", 0, { authorPersonaId: "persona1" }),
-    post("p_m1", "t_mixed", 0),
-    post("p_m2", "t_mixed", 1, { authorPersonaId: "persona2" }),
-    post("p_o1", "t_old", 0),
-    post("p_o2", "t_old", 1),
-  ],
-  reports: [
-    report("rep_thread", "thread", "t_eurth"),
-    report("rep_post", "post", "p_e2"),
-    report("rep_done", "post", "p_e2", { status: "resolved" }),
-    report("rep_other", "thread", "t_general", { categoryId: "cat_general" }),
-  ],
-  links: [{ id: "l1", postSource: "native", postRef: "p_e1", activityId: "act1", storyline: null }],
-});
-
-type Store = ReturnType<typeof forumStore>;
-const threadIn = (store: Store, id: string) => store.state.threads.find((t) => t.id === id)!;
-const postIn = (store: Store, id: string) => store.state.posts.find((p) => p.id === id)!;
-
-/** Every action writes its log row through the transaction client, never through the outer client. */
-function expectOneLog(store: Store, row: Row): Row {
-  expect(store.logs).toHaveLength(1);
-  expect(store.logs[0]).toMatchObject(row);
-  expect(store.db.forumModLog.create).not.toHaveBeenCalled();
-  return detailOf(store.logs[0]);
-}
+  eurthMod,
+  expectOneLog,
+  generalMod,
+  member,
+  oldMod,
+  postIn,
+  realmCat,
+  seed,
+  threadIn,
+} from "~/tests/helpers/forum-mod-fixtures";
+import { forumStore } from "~/tests/helpers/forum-store-fake";
 
 describe("setThreadFlag", () => {
   it("locks a thread and logs thread.lock through the transaction", async () => {
@@ -500,6 +372,17 @@ describe("setPostHidden", () => {
     expect(postIn(store, "p_g1").hidden).toBe(false);
   });
 
+  it("finds the first post oldest first, ties by id", async () => {
+    const store = forumStore(seed());
+    await setPostHidden(store.db as never, admin, { postId: "p_g2", hidden: true });
+    expect(store.db.forumPost.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { threadId: "t_general" },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      })
+    );
+  });
+
   it("hiding a hidden post is CONFLICT and changes nothing", async () => {
     const store = forumStore(seed());
     postIn(store, "p_g3").hidden = true;
@@ -528,125 +411,77 @@ describe("setPostHidden", () => {
   });
 });
 
-describe("modEditPost", () => {
-  it("replaces the body, marks it edited and logs the previous text", async () => {
-    const store = forumStore(seed());
-    await modEditPost(store.db as never, eurthMod, {
-      postId: "p_e2",
-      html: "<p>Cleaned up <script>x</script></p>",
-      note: "removed slur",
-    });
-    const edited = postIn(store, "p_e2");
-    expect(edited).toMatchObject({ contentHtml: "<p>Cleaned up </p>", plainText: "Cleaned up" });
-    expect(edited.editedAt).toBeInstanceOf(Date);
-    const detail = expectOneLog(store, {
-      action: "post.edit",
-      targetType: "post",
-      targetId: "p_e2",
-      scope: "realm",
-      scopeId: "r_eurth",
-    });
-    expect(detail).toEqual({ note: "removed slur", previous: "Post p_e2" });
-  });
+describe("content a site admin wrote", () => {
+  const flags = ["locked", "pinned", "hidden", "archived"] as const;
 
-  it.each(["submitted", "approved"])(
-    "refuses a post in a %s story chain (P6, M17)",
-    async (status) => {
-      const store = forumStore({
-        ...seed(),
-        links: [
-          {
-            id: "l1",
-            postSource: "native",
-            postRef: "p_e1",
-            activityId: "act1",
-            storyline: { status },
-          },
-        ],
-      });
-      store.state.posts.find((p) => p.id === "p_e1")!.plainText = "See [ixaction=act1]";
+  it.each(flags)(
+    "a realm moderator setting %s on a site admin's thread is FORBIDDEN",
+    async (flag) => {
+      const store = forumStore(seed());
       await expect(
-        modEditPost(store.db as never, eurthMod, {
-          postId: "p_e1",
-          html: "<p>See [ixaction=act1]</p>",
-          note: "fix",
-        })
-      ).rejects.toMatchObject({
-        code: "CONFLICT",
-        message: expect.stringContaining("Hide it instead"),
-      });
-      expect(postIn(store, "p_e1").editedAt).toBeNull();
+        setThreadFlag(store.db as never, eurthMod, { threadId: "t_admin", flag, value: true })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(threadIn(store, "t_admin")[flag]).toBe(false);
       expect(store.logs).toHaveLength(0);
     }
   );
 
-  it("a draft chain does not block the edit", async () => {
-    const store = forumStore({
-      ...seed(),
-      links: [
-        {
-          id: "l1",
-          postSource: "native",
-          postRef: "p_e1",
-          activityId: "act1",
-          storyline: { status: "draft" },
-        },
-      ],
-    });
-    postIn(store, "p_e1").plainText = "See [ixaction=act1]";
-    await modEditPost(store.db as never, admin, {
-      postId: "p_e1",
-      html: "<p>See [ixaction=act1] again</p>",
-      note: "typo",
-    });
-    expect(store.state.links).toHaveLength(1);
-  });
-
-  it("removing a token drops its link in the same transaction; adding one is refused", async () => {
+  it("a realm moderator can't move or hide in a site admin's content", async () => {
     const store = forumStore(seed());
-    postIn(store, "p_e1").plainText = "See [ixaction=act1]";
     await expect(
-      modEditPost(store.db as never, admin, {
-        postId: "p_e1",
-        html: "<p>See [ixaction=act1] and [ixaction=act2]</p>",
-        note: "x",
+      moveThread(store.db as never, eurthMod, {
+        threadId: "t_admin",
+        to: { key: "current-events", realm: "eurth" },
       })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await modEditPost(store.db as never, admin, {
-      postId: "p_e1",
-      html: "<p>See nothing</p>",
-      note: "x",
-    });
-    expect(store.state.links).toHaveLength(0);
-    expect(store.tx.postActionLink.deleteMany).toHaveBeenCalledWith({
-      where: { postSource: "native", postRef: "p_e1", activityId: { notIn: [] } },
-    });
-  });
-
-  it("needs a note, a valid body and the moderator's scope", async () => {
-    const store = forumStore(seed());
-    await expect(
-      modEditPost(store.db as never, admin, { postId: "p_e2", html: "<p>ok</p>", note: "  " })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      modEditPost(store.db as never, admin, { postId: "p_e2", html: "<p></p>", note: "x" })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      modEditPost(store.db as never, eurthMod, { postId: "p_g2", html: "<p>ok</p>", note: "x" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
-      modEditPost(store.db as never, member, { postId: "p_e2", html: "<p>ok</p>", note: "x" })
+      setPostHidden(store.db as never, eurthMod, { postId: "p_a2", hidden: true })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(postIn(store, "p_e2").plainText).toBe("Post p_e2");
+    expect(threadIn(store, "t_admin").categoryId).toBe("r_eurth_hub");
+    expect(postIn(store, "p_a2").hidden).toBe(false);
   });
 
-  it("an archived realm's moderator edits there (T0-6)", async () => {
+  it("a member's reply in a site admin's thread stays the realm moderator's to hide", async () => {
     const store = forumStore(seed());
-    await modEditPost(store.db as never, oldMod, {
-      postId: "p_o2",
-      html: "<p>tidied</p>",
-      note: "x",
+    await setPostHidden(store.db as never, eurthMod, { postId: "p_a3", hidden: true });
+    expect(postIn(store, "p_a3").hidden).toBe(true);
+  });
+
+  it("another site admin may act on it, with no author lookup", async () => {
+    const store = forumStore(seed());
+    await setThreadFlag(store.db as never, admin, {
+      threadId: "t_admin",
+      flag: "locked",
+      value: true,
     });
-    expect(postIn(store, "p_o2").plainText).toBe("tidied");
+    await setPostHidden(store.db as never, admin, { postId: "p_a2", hidden: true });
+    await moveThread(store.db as never, admin, {
+      threadId: "t_admin",
+      to: { key: "current-events", realm: "eurth" },
+    });
+    expect(store.logs.map((l) => l.action)).toEqual(["thread.lock", "post.hide", "thread.move"]);
+    expect(store.db.user.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("looks the author up by User.id", async () => {
+    const store = forumStore(seed());
+    await setThreadFlag(store.db as never, eurthMod, {
+      threadId: "t_eurth",
+      flag: "locked",
+      value: true,
+    });
+    expect(store.db.user.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "u_m" } })
+    );
+  });
+
+  it("an author whose user row is gone does not block the moderator", async () => {
+    const store = forumStore({ ...seed(), users: [] });
+    await setThreadFlag(store.db as never, eurthMod, {
+      threadId: "t_eurth",
+      flag: "locked",
+      value: true,
+    });
+    expect(threadIn(store, "t_eurth").locked).toBe(true);
   });
 });

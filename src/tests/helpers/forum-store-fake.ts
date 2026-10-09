@@ -1,6 +1,6 @@
 /**
  * An in-memory forum store for the moderation suites (mod-content, mod-reports). Rows live in arrays; where clauses
- * are interpreted (equality, `in`, `notIn`, `not`, `gt`, `OR`, nested relation objects), relations are joined on
+ * are interpreted (equality, `in`, `notIn`, `not`, `gt`, `OR`, `AND`, `NOT`, nested relation objects), relations are joined on
  * read (thread → category, post → thread → category, link → storyline), selects are ignored. `$transaction` hands
  * the callback `tx`, the only client whose `forumModLog.create` records a row, and rolls every store change and
  * log row back when the callback throws, so "refused → nothing written" is behaviour.
@@ -16,6 +16,7 @@ export interface StoreState {
   reports: Row[];
   links: Row[];
   realms: Row[];
+  users: Row[];
 }
 
 const OPERATORS = ["in", "notIn", "not", "gt"];
@@ -48,6 +49,7 @@ function matchValue(actual: Value, cond: Value): boolean {
 export function matches(row: Row, where: Row = {}): boolean {
   return Object.entries(where).every(([key, cond]) => {
     if (key === "OR") return Array.isArray(cond) && cond.some((c) => isRow(c) && matches(row, c));
+    if (key === "NOT") return isRow(cond) && !matches(row, cond);
     if (key === "AND") return Array.isArray(cond) && cond.every((c) => isRow(c) && matches(row, c));
     return matchValue(row[key], cond);
   });
@@ -85,6 +87,7 @@ const cloneState = (state: Partial<StoreState>): StoreState => ({
   reports: cloneRows(state.reports),
   links: cloneRows(state.links),
   realms: cloneRows(state.realms),
+  users: cloneRows(state.users),
 });
 
 interface Args {
@@ -185,6 +188,7 @@ export function forumStore(seed: Partial<StoreState>) {
     },
     postActionLink: delegate(() => state.links),
     realm: delegate(() => state.realms),
+    user: delegate(() => state.users),
   };
   const tx = {
     ...client,

@@ -20,14 +20,9 @@ export {
   type BansDb,
 } from "./mod-bans";
 export { type AutoBanChange } from "./mod-auto-bans";
-export {
-  modEditPost,
-  moveThread,
-  setPostHidden,
-  setThreadFlag,
-  type ContentDb,
-  type ThreadFlag,
-} from "./mod-content";
+export { moveThread, setPostHidden, setThreadFlag, type ThreadFlag } from "./mod-content";
+export { type ContentDb } from "./mod-content-target";
+export { modEditPost } from "./mod-edit";
 export { listModLog, LOG_PER_PAGE, logModAction, type ModLogDb, type ModLogEntry } from "./mod-log";
 export {
   assertModeratesCategory,

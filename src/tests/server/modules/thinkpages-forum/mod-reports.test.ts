@@ -24,6 +24,7 @@ const moderatorOf = (id: string, realmIds: string[], categoryIds: string[] = [])
   role: USER_ROLE,
   mod: { siteAdmin: false, realmIds, categoryIds },
 });
+const admin2 = { ...admin, id: "u_a2", clerkUserId: "admin2" };
 const eurthMod = moderatorOf("u_eurth", ["r_eurth"]);
 const generalMod = moderatorOf("u_gen", [], ["cat_general"]);
 
@@ -90,6 +91,8 @@ const seed = () => ({
     post("p_eurth", "t_eurth"),
     post("p_hidden", "t_eurth", { hidden: true }),
     post("p_mine", "t_eurth", { authorUserId: "u_r" }),
+    post("p_by_mod", "t_eurth", { authorUserId: "u_eurth" }),
+    post("p_by_admin", "t_eurth", { authorUserId: "u_a" }),
   ],
 });
 
@@ -434,5 +437,99 @@ describe("resolveReport", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await resolveReport(store.db as never, admin, { reportId: "rep_orphan", outcome: "dismissed" });
     expect(store.logs[0]).toMatchObject({ scope: "site", scopeId: null });
+  });
+});
+
+describe("reports about the moderator's own content", () => {
+  const ownQueue = (): Row[] => [
+    ...queue(),
+    report("rep_on_mod", "post", "p_by_mod", "r_eurth_hub", { createdAt: at(5) }),
+    report("rep_on_mod_thread", "thread", "t_by_mod", "r_eurth_hub", { createdAt: at(6) }),
+    report("rep_on_admin", "post", "p_by_admin", "r_eurth_hub", { createdAt: at(7) }),
+  ];
+  const ownStore = () => {
+    const store = reportsStore([], { reports: ownQueue() });
+    store.state.threads.push({
+      id: "t_by_mod",
+      categoryId: "r_eurth_hub",
+      title: "Mod thread",
+      authorUserId: "u_eurth",
+      hidden: false,
+    });
+    return store;
+  };
+
+  it("are left out of a moderator's queue, rows and total, so the reporter never reaches them", async () => {
+    const store = ownStore();
+    const { rows, total } = await listReports(store.db as never, eurthMod, { status: "open" }, 1);
+    expect(rows.map((r) => r.id)).toEqual(["rep_on_admin", "rep_eurth"]);
+    expect(total).toBe(2);
+    expect(rows.every((r) => r.reporterId === "u_r" && !r.ownTarget)).toBe(true);
+  });
+
+  it("a site admin sees them all, but their own content's reports without the reporter", async () => {
+    const store = ownStore();
+    const { rows, total } = await listReports(store.db as never, admin, { status: "open" }, 1);
+    expect(total).toBe(7);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    expect(byId.get("rep_on_admin")).toMatchObject({ ownTarget: true, reporterId: null });
+    expect(byId.get("rep_on_mod")).toMatchObject({ ownTarget: false, reporterId: "u_r" });
+    expect(byId.get("rep_on_mod_thread")).toMatchObject({ ownTarget: false, reporterId: "u_r" });
+  });
+
+  it("asks for the queue newest first", async () => {
+    const store = ownStore();
+    await listReports(store.db as never, admin, { status: "open" }, 1);
+    expect(store.db.forumReport.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: [{ createdAt: "desc" }, { id: "desc" }] })
+    );
+  });
+
+  it("a moderator can't resolve or dismiss a report on their own post or thread", async () => {
+    const store = ownStore();
+    for (const reportId of ["rep_on_mod", "rep_on_mod_thread"]) {
+      await expect(
+        resolveReport(store.db as never, eurthMod, { reportId, outcome: "dismissed" })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    }
+    expect(store.logs).toHaveLength(0);
+    await resolveReport(store.db as never, admin, { reportId: "rep_on_mod", outcome: "resolved" });
+    expect(store.logs).toHaveLength(1);
+  });
+
+  it("a site admin can't handle a report on their own content; another admin can", async () => {
+    const store = ownStore();
+    await expect(
+      resolveReport(store.db as never, admin, { reportId: "rep_on_admin", outcome: "dismissed" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await resolveReport(store.db as never, admin2, {
+      reportId: "rep_on_admin",
+      outcome: "dismissed",
+    });
+    expect(store.logs).toEqual([
+      expect.objectContaining({ actorId: "u_a2", action: "report.dismiss" }),
+    ]);
+  });
+
+  it("a report whose target is gone is still handled", async () => {
+    const store = ownStore();
+    await resolveReport(store.db as never, generalMod, {
+      reportId: "rep_gone",
+      outcome: "dismissed",
+    });
+    expect(store.state.reports.find((r) => r.id === "rep_gone")!.status).toBe("dismissed");
+  });
+
+  it("a report re-pointed by a move after the scope check is CONFLICT", async () => {
+    const store = ownStore();
+    const run = store.db.$transaction.getMockImplementation()!;
+    store.db.$transaction.mockImplementationOnce(async (fn) => {
+      store.state.reports.find((r) => r.id === "rep_general")!.categoryId = "r_eurth_hub";
+      return run(fn);
+    });
+    await expect(
+      resolveReport(store.db as never, generalMod, { reportId: "rep_general", outcome: "resolved" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(store.logs).toHaveLength(0);
   });
 });

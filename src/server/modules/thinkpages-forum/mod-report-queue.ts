@@ -4,6 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { listingScope, pageWindow } from "./mod-scope";
 import { canonicalRealm, IXWORLD_REALM, REALM_SELECT } from "./realm-access";
@@ -21,32 +22,41 @@ interface TargetSummary {
   threadId: string;
   threadTitle: string;
   excerpt: string;
+  authorUserId: string;
 }
+
+type TargetRef = { targetType: string; targetId: string };
 
 const excerptOf = (text: string): string => text.slice(0, EXCERPT_MAX);
 const targetKey = (type: string, id: string): string => `${type}:${id}`;
+const idsOf = (refs: readonly TargetRef[], type: string): string[] =>
+  refs.filter((r) => r.targetType === type).map((r) => r.targetId);
 
-/** The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`. */
-async function summarizeTargets(
+/**
+ * The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`; `author` narrows them
+ * to one member's content.
+ */
+async function loadTargets(
   db: ReportQueueDb,
-  rows: ReadonlyArray<{ targetType: string; targetId: string }>
+  refs: readonly TargetRef[],
+  author: { authorUserId?: string } = {}
 ): Promise<Map<string, TargetSummary>> {
-  const idsOf = (type: string) => rows.filter((r) => r.targetType === type).map((r) => r.targetId);
-  const [threadIds, postIds] = [idsOf("thread"), idsOf("post")];
+  const [threadIds, postIds] = [idsOf(refs, "thread"), idsOf(refs, "post")];
   const [threads, posts] = await Promise.all([
     threadIds.length
       ? db.forumThread.findMany({
-          where: { id: { in: threadIds } },
-          select: { id: true, title: true },
+          where: { id: { in: threadIds }, ...author },
+          select: { id: true, title: true, authorUserId: true },
         })
       : [],
     postIds.length
       ? db.forumPost.findMany({
-          where: { id: { in: postIds } },
+          where: { id: { in: postIds }, ...author },
           select: {
             id: true,
             threadId: true,
             plainText: true,
+            authorUserId: true,
             thread: { select: { title: true } },
           },
         })
@@ -55,13 +65,56 @@ async function summarizeTargets(
   return new Map([
     ...threads.map((t): [string, TargetSummary] => [
       targetKey("thread", t.id),
-      { threadId: t.id, threadTitle: t.title, excerpt: excerptOf(t.title) },
+      {
+        threadId: t.id,
+        threadTitle: t.title,
+        excerpt: excerptOf(t.title),
+        authorUserId: t.authorUserId,
+      },
     ]),
     ...posts.map((p): [string, TargetSummary] => [
       targetKey("post", p.id),
-      { threadId: p.threadId, threadTitle: p.thread.title, excerpt: excerptOf(p.plainText) },
+      {
+        threadId: p.threadId,
+        threadTitle: p.thread.title,
+        excerpt: excerptOf(p.plainText),
+        authorUserId: p.authorUserId,
+      },
     ]),
   ]);
+}
+
+type ReportWhere = { status: ReportStatus; categoryId?: { in: string[] } };
+
+/**
+ * A moderator never sees reports about their own content, so who reported them never reaches them; site admins
+ * see every report (their own content's without the reporter, and they can't handle those, resolveReport).
+ */
+async function withoutOwnTargets(
+  db: ReportQueueDb,
+  viewer: ForumViewer,
+  where: ReportWhere
+): Promise<
+  ReportWhere & { NOT?: { OR: Array<{ targetType: string; targetId: { in: string[] } }> } }
+> {
+  if (viewer === null || isSiteAdmin(viewer)) return where;
+  const reported = await db.forumReport.findMany({
+    where,
+    select: { targetType: true, targetId: true },
+    distinct: ["targetType", "targetId"],
+  });
+  const own = await loadTargets(db, reported, { authorUserId: viewer.id });
+  const ownIds = (type: string) =>
+    idsOf(reported, type).filter((id) => own.has(targetKey(type, id)));
+  return {
+    ...where,
+    NOT: {
+      OR: [
+        { targetType: "thread", targetId: { in: ownIds("thread") } },
+        { targetType: "post", targetId: { in: ownIds("post") } },
+      ],
+    },
+  };
 }
 
 interface ReportCategory {
@@ -105,7 +158,8 @@ async function summarizeCategories(
 /**
  * The moderator's queue, newest first: reports in categories they moderate (all for site admins), optionally one
  * realm's. Each row carries its target's thread, title and a 160-character excerpt (null when the target is gone),
- * and its category with the realm's slug and name (null when the category is gone).
+ * and its category with the realm's slug and name (null when the category is gone). Reports about the viewer's own
+ * content are left out for moderators and shown without the reporter to site admins (`withoutOwnTargets`).
  */
 export async function listReports(
   db: ReportQueueDb,
@@ -114,10 +168,10 @@ export async function listReports(
   page: number
 ) {
   const listing = await listingScope(db, viewer, filter.realmId);
-  const where = {
+  const where = await withoutOwnTargets(db, viewer, {
     status: filter.status,
     ...(listing === null ? {} : { categoryId: { in: listing.categoryIds } }),
-  };
+  });
   const [rows, total] = await Promise.all([
     db.forumReport.findMany({
       where,
@@ -127,7 +181,7 @@ export async function listReports(
     db.forumReport.count({ where }),
   ]);
   const [targets, categories] = await Promise.all([
-    summarizeTargets(db, rows),
+    loadTargets(db, rows),
     summarizeCategories(
       db,
       rows.map((r) => r.categoryId)
@@ -136,6 +190,7 @@ export async function listReports(
   return {
     rows: rows.map((row) => {
       const target = targets.get(targetKey(row.targetType, row.targetId));
+      const ownTarget = target?.authorUserId === viewer?.id;
       return {
         id: row.id,
         targetType: row.targetType,
@@ -145,7 +200,9 @@ export async function listReports(
         excerpt: target?.excerpt ?? null,
         categoryId: row.categoryId,
         category: categories.get(row.categoryId) ?? null,
-        reporterId: row.reporterId,
+        /** True on a site admin's own content: they see the report, not who filed it, and can't handle it. */
+        ownTarget,
+        reporterId: ownTarget ? null : row.reporterId,
         reason: row.reason,
         status: row.status,
         handledBy: row.handledBy,
