@@ -281,7 +281,7 @@ describe("N7: ThinkPage notification href", () => {
     await notificationAPI.trigger({
       thinkpage: { id: "post_9", title: "t", action: "liked", authorId: "a", targetUserId: "u" },
     } as never);
-    expect(spy.mock.calls[0]![0].href).toMatch(/\/thinkpages\/post\/post_9$/);
+    expect(spy.mock.calls[0]![0].href).toMatch(/\/dashboard\/post\/post_9$/);
     spy.mockRestore();
   });
 });

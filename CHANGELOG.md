@@ -1428,7 +1428,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Cards System & 3D Viewer**: Aligned [CardBack.tsx](src/components/cards/display/CardBack.tsx), [CardDisplay.tsx](src/components/cards/display/CardDisplay.tsx), [CardDetailsModal.tsx](src/components/cards/display/CardDetailsModal.tsx), [CardOverviewTab.tsx](src/components/cards/display/modal/CardOverviewTab.tsx), [CardLoreTab.tsx](src/components/cards/display/modal/CardLoreTab.tsx), [PackHolographicCover.tsx](src/components/cards/pack-opening/PackHolographicCover.tsx), `CraftingWorkbench.tsx`, and `CraftingAnimation.tsx` (both removed with crafting, 2026-10-05).
 
 - **Phase 3: Thinkpages, Sports, MyLeague & Messaging (17 Components)**:
-  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/thinkpages/AccountCreationModal.tsx).
+  - **Thinkpages**: Aligned [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx) and [AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx).
   - **Sports Subsystem**: Aligned `Scoreboard1.tsx`, `PlayerMatchup1.tsx`, `PlayerStats1.tsx`, [MatchCommentary.tsx](src/components/sports/MatchCommentary.tsx), `TeamLineup1.tsx`, `MatchSchedule1.tsx`, `PlayerCard1.tsx`, `Standings1.tsx`, and `LatestResults1.tsx`.
   - **MyLeague**: Aligned `MatchDetailModal.tsx`, `TeamRosterModal.tsx`, and `MatchTickerSim.tsx`.
   - **Unified Messaging**: Aligned [MessagesChatPanel.tsx](src/components/messages/MessagesChatPanel.tsx), [MessagesConversationCard.tsx](src/components/messages/MessagesConversationCard.tsx), and [MessagesFolderNav.tsx](src/components/messages/MessagesFolderNav.tsx).
@@ -3837,7 +3837,7 @@ We applied several minor tweaks to ensure stability:
 
 #### Phase 5: ThinkPages Account Modal Styling & Layering
 
-- **[AccountCreationModal.tsx](src/components/thinkpages/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](src/components/thinkpages/AccountSettingsModal.tsx)**:
+- **[AccountCreationModal.tsx](src/components/dashboard/accounts/AccountCreationModal.tsx)** & **[AccountSettingsModal.tsx](src/components/dashboard/accounts/AccountSettingsModal.tsx)**:
   - Replaced glassmorphic transparent inputs with solid `bg-[var(--color-bg-secondary)]` and high-contrast texts to guarantee legibility.
   - Portaled dialog overlays directly to `document.body` and set `z-index` to `z-[100000]` to render correctly on top of the navigation bar.
 
