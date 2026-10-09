@@ -12,6 +12,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useDebounce } from "~/hooks/useDebounce";
+import { useUser } from "~/context/auth-context";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
@@ -36,8 +37,20 @@ interface WikiRepositoryTabProps {
 
 type WikiSourceTab = "commons" | "wiki" | "stash";
 
-/** Results per Commons page in the picker. */
+/** Results per page in the picker. */
 const PICKER_PAGE_SIZE = 30;
+
+const SUB_SOURCE_PLACEHOLDERS: Record<WikiSubSource, string> = {
+  ixwiki: "Search IxWiki files...",
+  iiwiki: "Search IIWiki files...",
+  forum: "Search images from the old forum...",
+  mine: "Search your uploads...",
+};
+
+const EMPTY_TEXTS: Partial<Record<WikiSubSource, string>> = {
+  forum: "No images have been imported from the old forum yet.",
+  mine: "You have not uploaded any images yet.",
+};
 
 export function WikiRepositoryTab({
   selectedImageObj,
@@ -46,6 +59,8 @@ export function WikiRepositoryTab({
   isCategoryExpanded,
   setIsCategoryExpanded,
 }: WikiRepositoryTabProps) {
+  const { user } = useUser();
+  const signedIn = !!user;
   const [wikiSource, setWikiSource] = useState<WikiSourceTab>("commons");
   const [wikiSubSource, setWikiSubSource] = useState<WikiSubSource>("ixwiki");
   const [wikiSearchQuery, setWikiSearchQuery] = useState("");
@@ -65,6 +80,7 @@ export function WikiRepositoryTab({
     browsingCategory,
     fileType: fileTypeFilter,
     enabled: wikiSource !== "stash",
+    signedIn,
     pageSize: PICKER_PAGE_SIZE,
   });
 
@@ -76,7 +92,7 @@ export function WikiRepositoryTab({
     onSelectImage(null);
   };
 
-  // Between IxWiki and IIWiki the search stays; the category and the selection do not carry over
+  // Between the wiki sources the search stays; the category and the selection do not carry over
   const handleSubSourceChange = (next: WikiSubSource) => {
     setWikiSubSource(next);
     setBrowsingCategory(null);
@@ -107,6 +123,14 @@ export function WikiRepositoryTab({
     [results.images, orientationFilter]
   );
 
+  // The category tree belongs to Commons and the two wikis; the forum and your uploads are plain lists
+  const browserWiki =
+    wikiSource === "wiki"
+      ? wikiSubSource === "forum" || wikiSubSource === "mine"
+        ? null
+        : wikiSubSource
+      : "commons";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header controls & tabs */}
@@ -127,7 +151,7 @@ export function WikiRepositoryTab({
               ]}
             />
 
-            {/* Scope toggle: IxWiki (Local) vs IIWiki (External) */}
+            {/* Scope toggle: IxWiki, IIWiki, the old forum, and (signed in) your own uploads */}
             {wikiSource === "wiki" && (
               <SegmentedControl
                 aria-label="Wiki source selection"
@@ -137,6 +161,8 @@ export function WikiRepositoryTab({
                 options={[
                   { value: "ixwiki", label: "IxWiki" },
                   { value: "iiwiki", label: "IIWiki" },
+                  { value: "forum", label: "Forum" },
+                  ...(signedIn ? [{ value: "mine" as const, label: "My uploads" }] : []),
                 ]}
               />
             )}
@@ -170,7 +196,7 @@ export function WikiRepositoryTab({
               placeholder={
                 wikiSource === "commons"
                   ? 'Search Commons... e.g. "medieval castle", "royal portrait"'
-                  : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files...`
+                  : SUB_SOURCE_PLACEHOLDERS[wikiSubSource]
               }
               aria-label="Search files"
               value={wikiSearchQuery}
@@ -288,7 +314,7 @@ export function WikiRepositoryTab({
         /* Split layout: Category Browser + Grid + Detail Panel */
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Category Browser sidebar (mounted only while the filters are open) */}
-          {isCategoryExpanded && (
+          {isCategoryExpanded && browserWiki && (
             <div className="border-separator bg-surface w-60 shrink-0 border-r">
               <div className="h-full overflow-y-auto">
                 <CommonsCategoryBrowser
@@ -296,7 +322,7 @@ export function WikiRepositoryTab({
                   browsingCategory={browsingCategory}
                   onToggleCategory={wikiSource === "commons" ? handleToggleCategory : undefined}
                   onBrowseCategory={handleBrowseCategory}
-                  wiki={wikiSource === "wiki" ? wikiSubSource : "commons"}
+                  wiki={browserWiki}
                 />
               </div>
             </div>
@@ -315,7 +341,7 @@ export function WikiRepositoryTab({
               mode={results.mode}
               query={query}
               loadedCount={results.images.length}
-              truncated={results.truncated}
+              emptyText={wikiSource === "wiki" ? EMPTY_TEXTS[wikiSubSource] : undefined}
               totalHits={results.totalHits}
               error={results.error}
               onRetry={results.retry}
