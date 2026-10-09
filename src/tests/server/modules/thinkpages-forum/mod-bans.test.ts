@@ -57,6 +57,23 @@ const categories = [
   { id: "cat_eurth_hub", scope: "realm", realmId: "r_eurth" },
 ];
 
+/** issueBan's duplicate check: a live manual ban on the member at one scope. */
+interface LiveBanWhere {
+  userId: string;
+  scope: string;
+  scopeId: string | null;
+  auto: false;
+  liftedAt: null;
+  OR: [{ expiresAt: null }, { expiresAt: { gt: Date } }];
+}
+const isLiveAt = (row: BanRow, where: LiveBanWhere): boolean =>
+  row.userId === where.userId &&
+  row.scope === where.scope &&
+  row.scopeId === where.scopeId &&
+  row.auto === where.auto &&
+  row.liftedAt === null &&
+  (row.expiresAt === null || row.expiresAt > where.OR[1].expiresAt.gt);
+
 interface LiftUpdate {
   where: { id: string };
   data: { liftedAt: Date; liftedBy: string };
@@ -69,6 +86,10 @@ function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
   const tx = {
     $executeRaw: jest.fn(async (..._call: LockCall) => 0),
     forumBan: {
+      findFirst: jest.fn(
+        async ({ where }: { where: LiveBanWhere }) =>
+          (opts.bans ?? []).find((row) => isLiveAt(row, where)) ?? null
+      ),
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "b_new", ...data })),
       // Lifts only a live row, as the conditional update does; the row changes, so a second lift finds nothing.
       updateMany: jest.fn(async ({ where, data }: LiftUpdate) => {
@@ -298,6 +319,49 @@ describe("issueBan", () => {
     expect(db.forumModLog.create).not.toHaveBeenCalled();
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     expectLockedFirst(tx, "u_m", tx.forumBan.create);
+  });
+
+  it("refuses a second live ban at the same scope, checked under the member's lock (M-1)", async () => {
+    const live = ban({ id: "b_live", scope: "realm", scopeId: "r_eurth", expiresAt: later });
+    const { db, tx } = banDb({ bans: [live] });
+    await expect(issueBan(db as never, realmMod, input)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Already banned here until 10 Oct 2026. Lift that ban to change it.",
+    });
+    expect(tx.forumBan.create).not.toHaveBeenCalled();
+    expect(tx.forumModLog.create).not.toHaveBeenCalled();
+    expectLockedFirst(tx, "u_m", tx.forumBan.findFirst);
+
+    const permanent = banDb({ bans: [{ ...live, expiresAt: null }] });
+    await expect(issueBan(permanent.db as never, realmMod, input)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Already banned here permanently. Lift that ban to change it.",
+    });
+  });
+
+  it("bans over an expired, lifted or automatic ban, and at another scope", async () => {
+    const here = { scope: "realm", scopeId: "r_eurth" };
+    const { db, tx } = banDb({
+      bans: [
+        ban({ id: "b_expired", ...here, expiresAt: earlier }),
+        ban({ id: "b_lifted", ...here, expiresAt: later, liftedAt: earlier }),
+        ban({ id: "b_auto", ...here, expiresAt: later, auto: true }),
+        ban({ id: "b_site", expiresAt: null }),
+        ban({ id: "b_hub", scope: "category", scopeId: "cat_eurth_hub", expiresAt: null }),
+      ],
+    });
+    await expect(issueBan(db as never, realmMod, input)).resolves.toMatchObject({ banId: "b_new" });
+    expect(tx.forumBan.findFirst).toHaveBeenCalledWith({
+      where: {
+        userId: "u_m",
+        scope: "realm",
+        scopeId: "r_eurth",
+        auto: false,
+        liftedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }],
+      },
+      select: { expiresAt: true },
+    });
   });
 
   it("works in an archived realm (T0-6)", async () => {

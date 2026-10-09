@@ -160,6 +160,8 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
       ),
     },
     forumBan: {
+      // The manual site bans an automatic one would sit under (M-2).
+      findMany: jest.fn(async ({ where }: { where: Where }) => bans.filter((b) => fits(b, where))),
       findFirst: jest.fn(
         // A copy, as Prisma returns: later updates must not change what the caller read.
         async ({ where }: { where: Where }) => {
@@ -398,6 +400,57 @@ describe("issueWarning", () => {
         warningId: "w1",
       },
     });
+  });
+
+  it("issues no automatic ban, so no notice, under a permanent manual site ban (M-2)", async () => {
+    const manual = autoBan({ id: "b_manual", auto: false, autoTier: null, expiresAt: null });
+    const { db, tx, bans, logs } = warnDb({ warnings: [warning({ points: 4 })], bans: [manual] });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
+    expect(outcome).toEqual({ warningId: "w1", activePoints: 5, autoBan: null });
+    expect(tx.forumBan.create).not.toHaveBeenCalled();
+    expect(bans).toEqual([manual]);
+    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
+    expect(tx.forumBan.findMany).toHaveBeenCalledWith({
+      where: { userId: "u_m", scope: "site", auto: false, liftedAt: null },
+      select: { expiresAt: true },
+    });
+  });
+
+  it("does not extend an automatic ban to a tier a live manual site ban already outlasts (M-2)", async () => {
+    const { db, tx, bans, logs } = warnDb({
+      warnings: [warning({ id: "w_a", points: 5 }), warning({ id: "w_b", points: 2 })],
+      bans: [
+        autoBan({ createdAt: days(-2), expiresAt: days(5), autoTier: 5 }),
+        autoBan({ id: "b_manual", auto: false, autoTier: null, expiresAt: days(30) }),
+      ],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
+    expect(outcome).toMatchObject({ activePoints: 10, autoBan: null });
+    expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(5) });
+    expect(tx.forumBan.update).not.toHaveBeenCalled();
+    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
+  });
+
+  it("still bans automatically under a shorter, lifted or expired manual site ban, or a realm ban", async () => {
+    const manual = (extra: Partial<BanRow>) =>
+      autoBan({
+        id: `b_${extra.expiresAt?.getTime() ?? "x"}`,
+        auto: false,
+        autoTier: null,
+        ...extra,
+      });
+    const { db, bans } = warnDb({
+      warnings: [warning({ points: 4 })],
+      bans: [
+        manual({ expiresAt: days(6) }),
+        manual({ id: "b_lifted", expiresAt: null, liftedAt: days(-1) }),
+        manual({ id: "b_expired", expiresAt: days(-1) }),
+        manual({ id: "b_realm", scope: "realm", scopeId: "r_eurth", expiresAt: null }),
+      ],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
+    expect(outcome.autoBan).toMatchObject({ kind: "issued", autoTier: 5, expiresAt: days(7) });
+    expect(bans).toHaveLength(5);
   });
 
   it("gives the 30-day tier in full when 10 points are reached on day 6 of a 7-day ban", async () => {

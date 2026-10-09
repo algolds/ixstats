@@ -322,6 +322,19 @@ describe("thinkpagesForumMod router", () => {
       });
     });
 
+    it("never fails a committed lift when the place lookup fails; the notice names a generic place (I-2)", async () => {
+      jest
+        .mocked(liftBan)
+        .mockResolvedValueOnce({ userId: "u2", scope: "category", scopeId: "rcat_hub" });
+      const db = modDb();
+      db.forumCategory.findMany.mockRejectedValue(new Error("connection reset"));
+      await expect(caller(founder, db).liftBan({ banId: "b1" })).resolves.toBeUndefined();
+      expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
+        userId: "u2",
+        ban: { scope: "category", scopeName: null },
+      });
+    });
+
     it("tells the member when a revoke lifts or shortens their automatic ban, and says nothing otherwise", async () => {
       jest.mocked(revokeWarning).mockResolvedValueOnce({ userId: "u2", autoBan: null });
       await caller(admin, modDb()).revokeWarning({ warningId: "w1" });

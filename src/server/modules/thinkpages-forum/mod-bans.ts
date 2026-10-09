@@ -8,27 +8,23 @@ import type { PrismaClient } from "@prisma/client";
 import {
   banExpiry,
   banNotice,
+  formatBanDate,
   strongestBan,
   type BanScope,
 } from "~/lib/thinkpages-forum/moderation-policy";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { mootOpenAppeal } from "./mod-appeal-moot";
-import { appealStatusesOf } from "./mod-appeal-status";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertSanctionable,
   assertScope,
   banScopeOf,
   canActInScope,
-  listingScope,
   lockMember,
-  pageWindow,
   scopeColumns,
-  scopedRowsWhere,
   scopeFromColumns,
   type ModScope,
 } from "./mod-scope";
@@ -71,10 +67,9 @@ export interface BanInput {
   days: number | null;
 }
 
-export const BANS_PER_PAGE = MOD_ROWS_PER_PAGE;
 const MAX_BAN_DAYS = 3650;
 
-const ACTIVE_BAN_SELECT = {
+export const ACTIVE_BAN_SELECT = {
   id: true,
   scope: true,
   scopeId: true,
@@ -83,7 +78,7 @@ const ACTIVE_BAN_SELECT = {
   auto: true,
 } as const;
 
-const liveAt = (now: Date) => ({ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] });
+export const liveAt = (now: Date) => ({ OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] });
 
 function placeScopes(place: BanPlace): Array<{ scope: BanScope; scopeId?: string }> {
   const scopes: Array<{ scope: BanScope; scopeId?: string }> = [{ scope: "site" }];
@@ -182,6 +177,26 @@ function banDays(days: number | null): number | null {
   return days;
 }
 
+/**
+ * M-1: one live manual ban per member and scope, so lifting it frees them and one appeal covers it. Runs under the
+ * member's lock. Automatic site bans do not count: they follow warning points (mod-auto-bans.ts), and a site admin
+ * may still put a manual ban over one.
+ */
+async function assertNoLiveBan(
+  tx: Pick<BansDb, "forumBan">,
+  userId: string,
+  scope: ModScope,
+  now: Date
+): Promise<void> {
+  const live = await tx.forumBan.findFirst({
+    where: { userId, ...scopeColumns(scope), auto: false, liftedAt: null, ...liveAt(now) },
+    select: { expiresAt: true },
+  });
+  if (!live) return;
+  const until = live.expiresAt ? `until ${formatBanDate(live.expiresAt)}` : "permanently";
+  throw new ForumError("CONFLICT", `Already banned here ${until}. Lift that ban to change it.`);
+}
+
 export async function issueBan(
   db: BansDb,
   actor: ForumViewer,
@@ -196,6 +211,7 @@ export async function issueBan(
   const now = new Date();
   return db.$transaction(async (tx) => {
     await lockMember(tx, input.userId);
+    await assertNoLiveBan(tx, input.userId, input.scope, now);
     const ban = await tx.forumBan.create({
       data: {
         userId: input.userId,
@@ -262,56 +278,4 @@ export async function liftBan(
   const note = modNote(input.note);
   await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }, new Date()));
   return { userId: ban.userId, scope: banScopeOf(ban.scope), scopeId: ban.scopeId };
-}
-
-/**
- * Bans in the viewer's scope, newest first: live ones (`active`), or lifted and expired ones; each with its appeal's
- * status (null when not appealed).
- */
-export async function listBans(
-  db: Pick<BansDb, "forumBan" | "forumCategory" | "forumAppeal">,
-  viewer: ForumViewer,
-  filter: { active: boolean; realmId?: string | null; userId?: string },
-  page: number
-) {
-  const now = new Date();
-  const state = filter.active
-    ? { liftedAt: null, ...liveAt(now) }
-    : { OR: [{ liftedAt: { not: null } }, { expiresAt: { lte: now } }] };
-  const where = {
-    AND: [
-      state,
-      scopedRowsWhere(await listingScope(db, viewer, filter.realmId)),
-      filter.userId ? { userId: filter.userId } : {},
-    ],
-  };
-  const [rows, total] = await Promise.all([
-    db.forumBan.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      ...pageWindow(page, BANS_PER_PAGE),
-      select: {
-        ...ACTIVE_BAN_SELECT,
-        userId: true,
-        issuedBy: true,
-        liftedAt: true,
-        liftedBy: true,
-        createdAt: true,
-      },
-    }),
-    db.forumBan.count({ where }),
-  ]);
-  const appeals = await appealStatusesOf(
-    db,
-    "ban",
-    rows.map((row) => row.id)
-  );
-  return {
-    rows: rows.map((row) => ({
-      ...row,
-      scope: banScopeOf(row.scope),
-      appealStatus: appeals.get(row.id) ?? null,
-    })),
-    total,
-  };
 }

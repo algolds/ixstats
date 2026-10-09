@@ -5,6 +5,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
+import { STANDING_HREF } from "~/lib/thinkpages-forum/links";
 import { formatBanDate, type BanScope } from "~/lib/thinkpages-forum/moderation-policy";
 import type { AppealDecision, AppealSubjectType } from "./mod-appeal-subjects";
 
@@ -23,8 +24,6 @@ interface Notice {
   message: string;
   type: "warning" | "info";
 }
-
-const STANDING_HREF = "/thinkpages/forum#standing";
 
 /** Looks up the member's Clerk id (notifications are addressed by it) and sends; never throws. */
 async function send(db: NoticesDb, userId: string, notice: Notice): Promise<void> {

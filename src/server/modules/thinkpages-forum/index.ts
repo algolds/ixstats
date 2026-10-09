@@ -14,13 +14,12 @@ export {
   type AppealSubjectType,
 } from "./mod-appeal-subjects";
 export { fileAppeal, reviewAppeal, type AppealReview, type AppealsDb } from "./mod-appeals";
+export { BANS_PER_PAGE, listBans } from "./mod-ban-list";
 export {
   activeBansFor,
   assertNotBanned,
-  BANS_PER_PAGE,
   issueBan,
   liftBan,
-  listBans,
   postingBan,
   type ActiveBan,
   type BanInput,

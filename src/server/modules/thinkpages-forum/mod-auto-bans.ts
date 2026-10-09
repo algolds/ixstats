@@ -154,8 +154,25 @@ async function reconcileAutoBan(
 }
 
 /**
- * After a warning: issue the tier's ban, or move the active one up a tier (never a second ban, M3). A warning never
- * shortens or lifts a ban, even when expired points leave fewer than the ban's tier; only a revoke does.
+ * M-2: a live manual site ban lasting at least until `end` (a permanent one always does) already keeps the member
+ * out for the tier's length, so no automatic ban is issued or extended under it (and no notice contradicts it).
+ */
+async function coveredByManualBan(
+  tx: Pick<AutoBanTx, "forumBan">,
+  userId: string,
+  end: Date
+): Promise<boolean> {
+  const manual = await tx.forumBan.findMany({
+    where: { userId, scope: "site", auto: false, liftedAt: null },
+    select: { expiresAt: true },
+  });
+  return manual.some((ban) => ban.expiresAt === null || ban.expiresAt >= end);
+}
+
+/**
+ * After a warning: issue the tier's ban, or move the active one up a tier (never a second ban, M3), unless a manual
+ * site ban already covers the tier (M-2). A warning never shortens or lifts a ban, even when expired points leave
+ * fewer than the ban's tier; only a revoke does.
  */
 export async function autoBanAfterWarning(
   tx: AutoBanTx,
@@ -168,8 +185,9 @@ export async function autoBanAfterWarning(
   const current = await activeAutoBan(tx, userId, now);
   const tier = autoBanTier(points);
   if (!tier) return null;
+  if (current && tier.points <= (current.autoTier ?? 0)) return null;
+  if (await coveredByManualBan(tx, userId, tierEnd(now, tier))) return null;
   if (!current) return issueAutoBan(tx, actor, userId, tier, points, now, context);
-  if (tier.points <= (current.autoTier ?? 0)) return null;
   return reconcileAutoBan(tx, actor, current, points, now, context);
 }
 

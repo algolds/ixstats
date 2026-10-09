@@ -249,7 +249,9 @@ export const thinkpagesForumModRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       run(async () => {
         const lifted = await liftBan(ctx.db, await actorOf(ctx.db, ctx.user), input);
-        const ban = { scope: lifted.scope, scopeName: await banPlaceName(ctx.db, lifted) };
+        // Committed: a failed name lookup only makes the notice name the place generically (M13).
+        const scopeName = await banPlaceName(ctx.db, lifted).catch(() => null);
+        const ban = { scope: lifted.scope, scopeName };
         await notify(notifyBanLifted(ctx.db, { userId: lifted.userId, ban }));
       })
     ),
