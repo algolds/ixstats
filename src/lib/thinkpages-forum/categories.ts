@@ -53,3 +53,8 @@ export const REALM_CATEGORIES: readonly RealmCategorySeed[] = [
   { key: "character-threads", name: "Character Threads", description: "In-character stories and correspondence.", order: 20, icAllowed: true },
   { key: "current-events", name: "Current Events", description: "In-character news from the realm's nations.", order: 30, icAllowed: true },
 ];
+
+/** Imported threads from a XenForo forum node with no mapped category live in an archive category `xf-<nodeId>`. */
+export function isArchiveCategory(key: string): boolean {
+  return /^xf-\d+$/.test(key);
+}

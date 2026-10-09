@@ -144,6 +144,7 @@ export async function getCategoryThreads(
         authorUserId: true,
         authorPersonaId: true,
         importedAuthorName: true,
+        xenforoThreadId: true,
         pinned: true,
         locked: true,
         hidden: true,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { EyeClosed, Lock } from "iconoir-react";
+import { Archive, EyeClosed, Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -170,6 +170,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
           <Lock aria-hidden className="size-4 shrink-0" />
           This thread is locked.
+        </p>
+      ) : null}
+      {typeof thread.xenforoThreadId === "number" ? (
+        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
+          <Archive aria-hidden className="size-4 shrink-0" />
+          Imported from the old forum.
         </p>
       ) : null}
       <div className="space-y-3">

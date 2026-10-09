@@ -8,6 +8,7 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useUser } from "~/context/auth-context";
+import { isArchiveCategory } from "~/lib/thinkpages-forum/categories";
 import { categoryHref, modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { CategoryRows } from "./CategoryRows";
@@ -25,6 +26,8 @@ export function CategoryList({ realm }: { realm?: string }) {
   const { data: moderates } = api.thinkpagesForumMod.context.useQuery(undefined, {
     enabled: signedIn,
   });
+  const regular = categories?.filter((c) => !isArchiveCategory(c.key)) ?? [];
+  const archived = categories?.filter((c) => isArchiveCategory(c.key)) ?? [];
   const moderator =
     signedIn &&
     !!moderates &&
@@ -50,13 +53,25 @@ export function CategoryList({ realm }: { realm?: string }) {
       {isLoading ? (
         <Skeleton className="rounded-card h-64 w-full" />
       ) : (
-        <Card content="navigation" className="overflow-hidden">
-          {categories && categories.length > 0 ? (
-            <CategoryRows categories={categories} hrefOf={categoryHref} />
-          ) : (
-            <EmptyState compact title="No categories yet" />
-          )}
-        </Card>
+        <>
+          {regular.length > 0 || archived.length === 0 ? (
+            <Card content="navigation" className="overflow-hidden">
+              {regular.length > 0 ? (
+                <CategoryRows categories={regular} hrefOf={categoryHref} />
+              ) : (
+                <EmptyState compact title="No categories yet" />
+              )}
+            </Card>
+          ) : null}
+          {archived.length > 0 ? (
+            <Card content="navigation" className="overflow-hidden">
+              <h2 className="text-title-3 text-label px-4 pt-4 pb-3">From the old forum</h2>
+              <div className="border-separator border-t">
+                <CategoryRows categories={archived} hrefOf={categoryHref} />
+              </div>
+            </Card>
+          ) : null}
+        </>
       )}
       <RealmSection realm={realm} switcher />
     </div>

@@ -627,3 +627,110 @@ describe("imported authors (phase 4)", () => {
     expect(screen.queryByText("Kir")).toBeNull();
   });
 });
+
+describe("imported threads and the old-forum archive (phase 4)", () => {
+  const row = {
+    authorUserId: "u1",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    pinned: false,
+    locked: false,
+    postCount: 3,
+    lastPostAt: new Date(),
+  };
+
+  it("says an imported thread came from the old forum, and says nothing otherwise", () => {
+    const data = threadData();
+    set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: 4821 } } });
+    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.getByText("Imported from the old forum.")).toBeInTheDocument();
+    unmount();
+
+    set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: null } } });
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.queryByText(/Imported from the old forum/)).toBeNull();
+  });
+
+  it("marks imported threads in the thread list, and only those", () => {
+    set("category", {
+      data: categoryData(false, [
+        { id: "t1", title: "Old thread", ...row, xenforoThreadId: 7 },
+        { id: "t2", title: "New thread", ...row, xenforoThreadId: null },
+      ]),
+    });
+    render(<ThreadList categoryKey="general" page={1} />);
+    const old = screen.getByRole("link", { name: /Old thread/ });
+    const fresh = screen.getByRole("link", { name: /New thread/ });
+    expect(within(old).getByText("Imported")).toBeInTheDocument();
+    expect(within(fresh).queryByText("Imported")).toBeNull();
+  });
+
+  const site = (key: string, name: string) => ({
+    key,
+    name,
+    description: null,
+    threadCount: 5,
+    lastPostAt: null,
+  });
+
+  it("groups archive categories under From the old forum, after the regular ones", () => {
+    set("categories", {
+      data: [site("xf-12", "Old Roleplay"), site("general", "General"), site("xf-3", "Old Chat")],
+    });
+    render(<CategoryList />);
+    const heading = screen.getByRole("heading", { level: 2, name: "From the old forum" });
+    const general = screen.getByRole("link", { name: /General/ });
+    const archived = screen.getByRole("link", { name: /Old Roleplay/ });
+    expect(archived).toHaveAttribute("href", "/thinkpages/c/xf-12");
+    expect(screen.getByRole("link", { name: /Old Chat/ })).toBeInTheDocument();
+    // document order: regular category, then the heading, then the archive rows
+    expect(
+      general.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      heading.compareDocumentPosition(archived) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    // the archive rows are not in the regular list
+    expect(general.closest("ul")).not.toContainElement(archived);
+  });
+
+  it("hides the old-forum group when there are no archive categories", () => {
+    set("categories", { data: [site("general", "General")] });
+    render(<CategoryList />);
+    expect(screen.queryByText("From the old forum")).toBeNull();
+  });
+
+  it("shows only the old-forum group when nothing else is visible", () => {
+    set("categories", { data: [site("xf-12", "Old Roleplay")] });
+    render(<CategoryList />);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "From the old forum" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No categories yet")).toBeNull();
+  });
+});
+
+describe("new thread when the viewer cannot start one (phase 4, R8)", () => {
+  it("frames the ban notice with the page header and a way back, like the form", () => {
+    const notice = "You are banned from the forum until 12 Oct 2026: spam";
+    set("category", {
+      data: { ...categoryData(false, [], HUB, notice), banned: true },
+    });
+    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
+    expect(screen.getByRole("heading", { level: 1, name: "New thread" })).toBeInTheDocument();
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Appeal" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Hub/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/hub"
+    );
+    expect(screen.getByRole("link", { name: "Back to the forum" })).toBeInTheDocument();
+  });
+
+  it("frames the plain refusal the same way", () => {
+    set("category", { data: categoryData(false) });
+    render(<NewThreadForm categoryKey="general" />);
+    expect(screen.getByRole("heading", { level: 1, name: "New thread" })).toBeInTheDocument();
+    expect(screen.getByText("You can't start a thread here")).toBeInTheDocument();
+  });
+});

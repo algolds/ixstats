@@ -15,7 +15,7 @@ Stash is your personal reading list and research folder. Save wiki articles, quo
 - **Wiki articles:** use the stash action on an article in the [wiki](/help/wiki/wikios).
 - **Quotes:** select text in an article and choose **Stash** (or **Highlight** to keep it as a highlight). Quotes link back to the section they came from.
 - **Images:** stash an image from the wiki's media [Repository](/util/repository).
-- **Forum threads:** stash a thread from the [forum](/help/social/forum); your saved threads are also listed in the forum's bookmarks.
+- **Forum threads:** use **Stash thread** at the top of a thread in the [forum](/help/social/forum); saved threads are listed with your other stashes.
 
 Everything goes into **My Stash** unless you pick another collection.
 
