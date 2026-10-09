@@ -3,7 +3,8 @@
  * The feed's old ThinkPages pages answer with redirects (phase 5). `/thinkpages/post/<id>` stays the forum post
  * permalink (ruling P5): a forum post the viewer may see goes to its thread and anchor, anything else to the feed
  * post under /dashboard. Both hops are temporary (307), since the answer depends on the viewer and on moderation
- * (ruling R-e). The other old pages moved for good (308), the forum home's old address among them: the forum home is
+ * (ruling R-e). The server asks as a guest, so a signed-in viewer it did not place gets the client gate, which asks
+ * again with their session. The other old pages moved for good (308), the forum home's old address among them: the forum home is
  * /thinkpages itself. Every destination is a fixed prefix plus an encoded id or realm.
  */
 jest.mock("next/navigation", () => ({
@@ -13,6 +14,11 @@ jest.mock("next/navigation", () => ({
   permanentRedirect: jest.fn((url: string) => {
     throw new Error(`permanent:${url}`);
   }),
+  unstable_rethrow: jest.fn(),
+}));
+jest.mock("@clerk/nextjs/server", () => ({ auth: jest.fn() }));
+jest.mock("~/components/thinkpages-forum/ForumPermalinkGate", () => ({
+  ForumPermalinkGate: jest.fn(() => null),
 }));
 jest.mock("~/trpc/server", () => ({
   api: { thinkpagesForum: { resolvePost: jest.fn() } },
@@ -20,7 +26,10 @@ jest.mock("~/trpc/server", () => ({
 jest.mock("~/components/thinkpages-forum/CategoryList", () => ({ CategoryList: jest.fn() }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
+import { isValidElement } from "react";
+import { auth } from "@clerk/nextjs/server";
 import { permanentRedirect, redirect } from "next/navigation";
+import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
 import { api } from "~/trpc/server";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
 import LegacyProfilePage from "~/app/thinkpages/profile/[username]/page";
@@ -35,11 +44,16 @@ import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 const resolvePost = jest.mocked(api.thinkpagesForum.resolvePost);
 const mockRedirect = jest.mocked(redirect);
 const mockPermanentRedirect = jest.mocked(permanentRedirect);
+const mockAuth = jest.mocked(auth);
+const signedIn = (userId: string | null) =>
+  mockAuth.mockResolvedValue({ userId } as Awaited<ReturnType<typeof auth>>);
 
 beforeEach(() => {
   resolvePost.mockReset();
   mockRedirect.mockClear();
   mockPermanentRedirect.mockClear();
+  mockAuth.mockReset();
+  signedIn(null);
 });
 
 const openPost = (postId: string) => LegacyPostPage({ params: Promise.resolve({ postId }) });
@@ -52,7 +66,7 @@ describe("/thinkpages/post/<id>", () => {
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
   });
 
-  it("sends any other id to the feed post (307, not 308)", async () => {
+  it("sends any other id to the feed post when signed out (307, not 308)", async () => {
     resolvePost.mockResolvedValue(null);
     await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
@@ -62,6 +76,27 @@ describe("/thinkpages/post/<id>", () => {
     resolvePost.mockRejectedValue(new Error("too long"));
     await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it("hands a signed-in viewer's unplaced id to the client gate instead of the feed", async () => {
+    signedIn("user_1");
+    resolvePost.mockResolvedValue(null);
+    const page = await openPost("p1");
+    expect(isValidElement<{ postId: string }>(page)).toBe(true);
+    expect(page).toMatchObject({ type: ForumPermalinkGate, props: { postId: "p1" } });
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it("still sends a signed-in viewer straight to a post the server placed", async () => {
+    signedIn("user_1");
+    resolvePost.mockResolvedValue({ threadId: "t1", page: 2 });
+    await expect(openPost("p1")).rejects.toThrow("redirect:/thinkpages/t/t1?page=2#post-p1");
+  });
+
+  it("treats a failed session read as signed out", async () => {
+    mockAuth.mockRejectedValue(new Error("no clerk"));
+    resolvePost.mockResolvedValue(null);
+    await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
   });
 
   it("encodes the ids on both paths", async () => {
