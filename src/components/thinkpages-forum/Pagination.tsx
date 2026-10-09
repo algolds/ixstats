@@ -17,15 +17,14 @@ interface PaginationProps {
   totalPages: number;
 }
 
-/** Page links for forum lists; the page lives in `?page=` so it survives reloads and shares. */
+/** Page links for forum lists (U8: real links); the page lives in `?page=` so it survives reloads and shares. */
 export function Pagination({ basePath, page, totalPages }: PaginationProps) {
-  const router = useRouter();
   if (totalPages <= 1) return null;
   return (
     <PageControl
       totalPages={totalPages}
       currentPage={Math.min(page, totalPages)}
-      onPageChangeAction={(next) => router.push(pageHref(basePath, next))}
+      hrefOf={(next) => pageHref(basePath, next)}
     />
   );
 }

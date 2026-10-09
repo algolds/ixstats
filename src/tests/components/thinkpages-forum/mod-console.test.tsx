@@ -645,8 +645,10 @@ describe("paging", () => {
     set("context", { data: REALM_MOD });
     set("bans", { data: { rows: [], total: 30, authors: { users: {} } } });
     renderConsole({ tab: "bans", realm: "caphiria" });
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(router.push).toHaveBeenCalledWith("/thinkpages/mod?tab=bans&realm=caphiria&page=2");
+    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute(
+      "href",
+      "/thinkpages/mod?tab=bans&realm=caphiria&page=2"
+    );
   });
 
   it("moves a page past the end to the last page", () => {
