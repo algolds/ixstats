@@ -50,24 +50,6 @@ export function legacyRefFor(route: LegacyRoute, segment: string): LegacyForumRe
   }
 }
 
-const ROUTE_SEGMENTS = new Map<string, LegacyRoute>([
-  ["thread", "thread"],
-  ["post", "post"],
-  ["members", "member"],
-]);
-
-/** `/forum`, `/forum/<node>`, `/forum/thread/<id>`, `/forum/post/<id>`, `/forum/members/<id>`; anything else is other. */
-export function parseLegacyForumPath(pathname: string): LegacyForumRef {
-  const path = pathname.split(/[?#]/, 1)[0]!.replace(/\/+$/, "");
-  const [root, ...rest] = path.split("/");
-  if (root !== "" || rest[0] !== "forum") return OTHER;
-  const [first, second, ...extra] = rest.slice(1);
-  if (first === undefined) return { kind: "home" };
-  if (second === undefined) return legacyRefFor("forum", first);
-  const route = ROUTE_SEGMENTS.get(first);
-  return route && extra.length === 0 ? legacyRefFor(route, second) : OTHER;
-}
-
 /** A member's profile; the handle is encoded, so it stays one path segment. */
 const memberHref = (handle: string): string => `/@${encodeURIComponent(handle)}`;
 

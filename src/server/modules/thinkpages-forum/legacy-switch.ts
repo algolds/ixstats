@@ -4,8 +4,7 @@
  * `bun run forum:legacy-redirect -- on|off|status`.
  *
  * The flag is a SystemConfig row read at most once per TTL per process (the WikiOS editing switch's pattern), so a
- * flip reaches every process within 15 s. The pages await `refreshLegacyForumRedirect()`; a synchronous read of a
- * stale cache starts a background refresh.
+ * flip reaches every process within 15 s. The pages await `refreshLegacyForumRedirect()` (through the redirect).
  */
 import { db } from "~/server/db";
 
@@ -17,11 +16,6 @@ let loadedAt = 0;
 let inFlight: Promise<boolean> | null = null;
 
 const stale = () => Date.now() - loadedAt > LEGACY_FORUM_TTL_MS;
-
-export function isLegacyForumRedirectOn(): boolean {
-  if (stale()) void refreshLegacyForumRedirect();
-  return cached;
-}
 
 export function refreshLegacyForumRedirect(force = false): Promise<boolean> {
   if (!force && !stale()) return Promise.resolve(cached);

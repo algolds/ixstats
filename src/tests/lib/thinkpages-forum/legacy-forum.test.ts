@@ -2,7 +2,6 @@
 import {
   legacyForumTarget,
   legacyRefFor,
-  parseLegacyForumPath,
   parseNodeLandings,
   type LegacyForumRef,
   type LegacyLookups,
@@ -12,87 +11,41 @@ import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 const NONE: LegacyLookups = { threadId: null, postId: null, category: null, handle: null };
 const OTHER: LegacyForumRef = { kind: "other" };
 
-describe("parseLegacyForumPath", () => {
-  it("reads the home, with or without a trailing slash, query or hash", () => {
-    for (const path of [
-      "/forum",
-      "/forum/",
-      "/forum?sort=new",
-      "/forum/?sort=trending",
-      "/forum#top",
-    ]) {
-      expect(parseLegacyForumPath(path)).toEqual({ kind: "home" });
-    }
-  });
-
-  it("reads a forum node", () => {
-    expect(parseLegacyForumPath("/forum/12")).toEqual({ kind: "forum", nodeId: 12 });
-    expect(parseLegacyForumPath("/forum/12/?page=2")).toEqual({ kind: "forum", nodeId: 12 });
-  });
-
-  it("reads threads, posts and members", () => {
-    expect(parseLegacyForumPath("/forum/thread/123")).toEqual({ kind: "thread", threadId: 123 });
-    expect(parseLegacyForumPath("/forum/thread/123/")).toEqual({ kind: "thread", threadId: 123 });
-    expect(parseLegacyForumPath("/forum/post/456?x=1")).toEqual({ kind: "post", postId: 456 });
-    expect(parseLegacyForumPath("/forum/members/7//")).toEqual({ kind: "member", userId: 7 });
-  });
-
-  it("treats the bridge's other pages as other", () => {
-    for (const path of [
-      "/forum/search?q=x",
-      "/forum/bookmarks",
-      "/forum/new-thread?forum=3",
-      "/forum/conversations",
-      "/forum/conversations/9",
-      "/forum/cards/someone",
-    ]) {
-      expect(parseLegacyForumPath(path)).toEqual(OTHER);
-    }
-  });
-
-  it("treats non-numeric, zero, signed, fractional and out-of-range ids as other", () => {
-    for (const path of [
-      "/forum/abc",
-      "/forum/thread/abc",
-      "/forum/thread/slug.123",
-      "/forum/thread/0",
-      "/forum/thread/-4",
-      "/forum/thread/1.5",
-      "/forum/thread/1e3",
-      "/forum/thread/0x10",
-      "/forum/thread/%2012",
-      "/forum/post/2147483648",
-      "/forum/members/99999999999",
-      "/forum/thread/12/extra",
-      "/forum/constructor",
-    ]) {
-      expect(parseLegacyForumPath(path)).toEqual(OTHER);
-    }
-  });
-
-  it("ignores paths outside /forum", () => {
-    for (const path of [
-      "",
-      "/",
-      "/forums/12",
-      "/thinkpages/forum",
-      "forum/12",
-      "//evil.example/forum/12",
-    ]) {
-      expect(parseLegacyForumPath(path)).toEqual(OTHER);
-    }
-  });
-});
-
 describe("legacyRefFor", () => {
-  it("builds a ref from a route segment, and other for a bad id", () => {
+  it("builds a ref from a route segment", () => {
     expect(legacyRefFor("forum", "3")).toEqual({ kind: "forum", nodeId: 3 });
+    expect(legacyRefFor("thread", "123")).toEqual({ kind: "thread", threadId: 123 });
     expect(legacyRefFor("thread", "2147483647")).toEqual({ kind: "thread", threadId: 2147483647 });
     expect(legacyRefFor("post", "9")).toEqual({ kind: "post", postId: 9 });
     expect(legacyRefFor("member", "7")).toEqual({ kind: "member", userId: 7 });
-    expect(legacyRefFor("thread", "12?x")).toEqual(OTHER);
-    expect(legacyRefFor("thread", "12/post")).toEqual(OTHER);
-    expect(legacyRefFor("member", " 7")).toEqual(OTHER);
+  });
+
+  it("treats non-numeric, zero, signed, fractional, padded and out-of-range ids as other", () => {
+    const routes = ["forum", "thread", "post", "member"] as const;
+    for (const segment of [
+      "",
+      "abc",
+      "slug.123",
+      "0",
+      "-4",
+      "+4",
+      "1.5",
+      "1e3",
+      "0x10",
+      " 7",
+      "7 ",
+      "%2012",
+      "12?x",
+      "12#x",
+      "12/post",
+      "12/extra",
+      "2147483648",
+      "99999999999",
+      "constructor",
+      "//evil.example",
+    ]) {
+      for (const route of routes) expect(legacyRefFor(route, segment)).toEqual(OTHER);
+    }
   });
 });
 

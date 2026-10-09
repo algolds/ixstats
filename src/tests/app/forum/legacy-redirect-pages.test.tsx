@@ -11,6 +11,9 @@ const mockRedirect = jest.fn((url: string) => {
 });
 jest.mock("next/navigation", () => ({ redirect: (url: string) => mockRedirect(url) }));
 
+const mockConnection = jest.fn(() => Promise.resolve());
+jest.mock("next/server", () => ({ connection: () => mockConnection() }));
+
 const mockRedirectFor = jest.fn();
 jest.mock("~/server/modules/thinkpages-forum", () => ({
   legacyForumRedirectFor: (db: object, ref: object) => mockRedirectFor(db, ref),
@@ -111,6 +114,7 @@ const CASES: PageCase[] = [
 
 beforeEach(() => {
   mockRedirect.mockClear();
+  mockConnection.mockClear();
   mockRedirectFor.mockReset().mockResolvedValue(null);
 });
 
@@ -121,6 +125,14 @@ describe.each(CASES)("$name", ({ render, ref, client }) => {
     expect(page.type).toBe(client);
     expect(mockRedirectFor).toHaveBeenCalledWith({ marker: "db" }, ref);
     expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it("opts into per-request rendering before reading the switch", async () => {
+    await render();
+    expect(mockConnection).toHaveBeenCalledTimes(1);
+    expect(mockConnection.mock.invocationCallOrder[0]).toBeLessThan(
+      mockRedirectFor.mock.invocationCallOrder[0]!
+    );
   });
 
   it("redirects to the target, without rendering the bridge page, while the switch is on", async () => {
