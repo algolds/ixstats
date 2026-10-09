@@ -176,7 +176,8 @@ function entityKinds(href: string) {
     isLeague: href.includes("/myleague/"),
     isClub: href.includes("/myclub/"),
     isCountry: href.includes("/countries/"),
-    isUser: href.includes("/dashboard/"),
+    // Persona profiles: the current path and the old ThinkPages one that existing wiki pages still link.
+    isUser: href.includes("/dashboard/profile/") || href.includes("/thinkpages/profile/"),
   };
 }
 
@@ -381,7 +382,7 @@ function PopoverCard({
 function useMentionProfile(open: boolean, href: string) {
   const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
   const entityId =
-    /\/(?:myleague|myclub|countries|dashboard\/profile|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(
+    /\/(?:myleague|myclub|countries|dashboard\/profile|thinkpages\/profile|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(
       href
     )?.[1] ?? "";
 

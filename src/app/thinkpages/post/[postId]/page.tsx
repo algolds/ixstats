@@ -1,8 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
+import type { Metadata } from "next";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
 import { permalinkTarget } from "~/lib/thinkpages-forum/permalink";
 import { api } from "~/trpc/server";
+
+export const metadata: Metadata = { title: "ThinkPages - IxStats" };
 
 interface LegacyPostPageProps {
   params: Promise<{ postId: string }>;
