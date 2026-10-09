@@ -134,8 +134,10 @@ export async function realmPostingAccess(
       where: { realmId: realm.id, userId: viewer.clerkUserId },
       select: { userId: true, powers: true },
     }),
-    // Null without a query for site admins (M5).
-    postingBan(db, viewer, { id: category?.id ?? null, scope: "realm", realmId: realm.id }),
+    // Null without a query for site admins (M5), and in an archived realm, which refuses first (M16).
+    isArchived(realm)
+      ? null
+      : postingBan(db, viewer, { id: category?.id ?? null, scope: "realm", realmId: realm.id }),
   ]);
   const ownedCountryIds = owned.map((c) => c.id);
   const admin = isSiteAdmin(viewer);

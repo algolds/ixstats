@@ -360,6 +360,14 @@ describe("realmPostingAccess", () => {
     });
   });
 
+  it("7b. spends no ban lookup in an archived realm, where nobody but site admins posts (M16)", async () => {
+    const db = accessDb({ bans: [banRow({ userId: "u_owner", scope: "site" })] });
+    await expect(
+      realmPostingAccess(db as never, owner, { ...EURTH, status: "archived" })
+    ).resolves.toMatchObject({ canPost: false, ban: null });
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
+  });
+
   it("8. gives IxWorld no founder: board officers and site admins moderate", async () => {
     await expect(
       realmPostingAccess(accessDb({ owned: {} }) as never, plain, IXWORLD)

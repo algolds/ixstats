@@ -499,6 +499,19 @@ describe("thinkpagesForum router", () => {
       );
     });
 
+    it("spends no moderator-context queries on the standing or an appeal (M16)", async () => {
+      const db = forumDb();
+      await caller(member, db).myStanding();
+      await caller(member, db).appeal({
+        subjectType: "ban",
+        subjectId: "b1",
+        body: "Please reconsider this.",
+      });
+      expect(db.forumCategoryModerator.findMany).not.toHaveBeenCalled();
+      expect(jest.mocked(myStanding).mock.calls.at(-1)![1]).not.toHaveProperty("mod");
+      expect(jest.mocked(fileAppeal).mock.calls.at(-1)![1]).not.toHaveProperty("mod");
+    });
+
     it("files an appeal as the signed-in member", async () => {
       await caller(member, forumDb()).appeal({
         subjectType: "warning",

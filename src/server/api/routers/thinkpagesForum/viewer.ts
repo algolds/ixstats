@@ -40,17 +40,22 @@ export interface ViewerSource {
   role?: { name: string; level: number } | null;
 }
 
-/** The signed-in user with what they moderate; site admins cost no moderator query. */
-export async function actorOf(
-  db: ScopeDb,
-  user: ViewerSource
-): Promise<ForumActor & { mod: ModeratorContext }> {
-  const actor: ForumActor = {
+/** The signed-in user as a member, without what they moderate: for calls that never read it (M16). */
+export function memberOf(user: ViewerSource): ForumActor {
+  return {
     id: user.id,
     clerkUserId: user.clerkUserId,
     countryId: user.countryId ?? null,
     role: user.role ? { name: user.role.name, level: user.role.level } : null,
   };
+}
+
+/** The signed-in user with what they moderate; site admins cost no moderator query. */
+export async function actorOf(
+  db: ScopeDb,
+  user: ViewerSource
+): Promise<ForumActor & { mod: ModeratorContext }> {
+  const actor = memberOf(user);
   return { ...actor, mod: await moderatorContext(db, actor) };
 }
 

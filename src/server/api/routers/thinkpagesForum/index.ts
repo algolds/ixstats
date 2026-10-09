@@ -47,6 +47,7 @@ import {
   categoryKey,
   id,
   mapError,
+  memberOf,
   page,
   realm,
   stashOwnerOf,
@@ -191,9 +192,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
   ),
 
   /** The member's own warnings, bans and appeals (M20); never who issued or reviewed them. */
-  myStanding: protectedProcedure.query(async ({ ctx }) =>
-    myStanding(ctx.db, await actorOf(ctx.db, ctx.user))
-  ),
+  myStanding: protectedProcedure.query(({ ctx }) => myStanding(ctx.db, memberOf(ctx.user))),
 
   /** Stashes a thread the caller may read (NOT_FOUND otherwise) in their default or a given stash. */
   stashThread: rateLimitedMutationProcedure
@@ -267,7 +266,5 @@ export const thinkpagesForumRouter = createTRPCRouter({
         body: z.string().trim().min(10).max(4000),
       })
     )
-    .mutation(async ({ ctx, input }) =>
-      fileAppeal(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
-    ),
+    .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
 });
