@@ -215,16 +215,16 @@ export async function issueBan(
 }
 
 /**
- * Task 5's reviewAppeal and the automatic-ban recompute call this with their own transaction client. The ban must
- * still be live when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once.
+ * reviewAppeal and the automatic-ban recompute call this with their own transaction client and their `now`. The ban
+ * must still be live at `now` when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once.
  */
 export async function liftBanTx(
   tx: Pick<BansDb, "forumBan" | "forumModLog" | "$executeRaw">,
   actor: NonNullable<ForumViewer>,
   ban: { id: string; userId: string; scope: string; scopeId: string | null },
-  detail: ModLogDetail
+  detail: ModLogDetail,
+  now: Date
 ): Promise<void> {
-  const now = new Date();
   await lockMember(tx, ban.userId);
   const { count } = await tx.forumBan.updateMany({
     where: { id: ban.id, liftedAt: null, ...liveAt(now) },
@@ -253,7 +253,7 @@ export async function liftBan(
   if (!ban) throw new ForumError("NOT_FOUND", "Ban not found.");
   const lifter = await assertBanScope(db, actor, ban);
   const note = modNote(input.note);
-  await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }));
+  await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }, new Date()));
 }
 
 /** Bans in the viewer's scope, newest first: live ones (`active`), or lifted and expired ones. */

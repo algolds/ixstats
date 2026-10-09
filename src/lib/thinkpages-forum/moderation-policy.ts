@@ -51,7 +51,8 @@ export function isBanActive(ban: { expiresAt: Date | null; liftedAt: Date | null
   return ban.liftedAt === null && (ban.expiresAt === null || ban.expiresAt.getTime() > now.getTime());
 }
 
-function formatBanDate(date: Date): string {
+/** "12 Oct 2026", in UTC (ban notices, member notices). */
+export function formatBanDate(date: Date): string {
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 

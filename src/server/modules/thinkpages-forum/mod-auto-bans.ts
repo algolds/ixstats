@@ -107,7 +107,7 @@ async function reconcileAutoBan(
 ): Promise<AutoBanChange | null> {
   const tier = autoBanTier(points);
   const lift = async (): Promise<AutoBanChange> => {
-    await liftBanTx(tx, actor, ban, { ...context, points });
+    await liftBanTx(tx, actor, ban, { ...context, points }, now);
     return { kind: "lifted", banId: ban.id };
   };
   if (!tier) return lift();

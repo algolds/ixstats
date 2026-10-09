@@ -70,7 +70,7 @@ const SITE: ModScope = { kind: "site" };
 const CATEGORY_SELECT = { id: true, scope: true, realmId: true } as const;
 
 /** A warning's log scope: the category it was given in, or the site. */
-const warningScope = (categoryId: string | null): ModScope =>
+export const warningScope = (categoryId: string | null): ModScope =>
   categoryId === null ? SITE : { kind: "category", categoryId };
 
 /** The warned content's category and author (post → thread → category). */
@@ -212,16 +212,16 @@ export async function assertWarningScope(
 }
 
 /**
- * Task 5's reviewAppeal calls this with its own transaction client; it includes M3's recompute (the automatic ban
+ * reviewAppeal calls this with its own transaction client and `now`; it includes M3's recompute (the automatic ban
  * re-tiered or lifted). The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise).
  */
 export async function revokeWarningTx(
   tx: WarningTx,
   actor: Issuer,
   warning: { id: string; userId: string; categoryId: string | null },
-  detail: ModLogDetail
+  detail: ModLogDetail,
+  now: Date
 ): Promise<{ autoBan: AutoBanChange | null }> {
-  const now = new Date();
   await lockMember(tx, warning.userId);
   const { count } = await tx.forumWarning.updateMany({
     where: { id: warning.id, revokedAt: null },
@@ -256,7 +256,7 @@ export async function revokeWarning(
   if (!warning) throw new ForumError("NOT_FOUND", "Warning not found.");
   const revoker = await assertWarningScope(db, actor, warning.categoryId);
   const note = modNote(input.note);
-  return db.$transaction((tx) => revokeWarningTx(tx, revoker, warning, { note }));
+  return db.$transaction((tx) => revokeWarningTx(tx, revoker, warning, { note }, new Date()));
 }
 
 /** Warnings in the viewer's scope (their categories; site admins everything), newest first. */

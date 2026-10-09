@@ -68,8 +68,8 @@ function isDetail(value: JsonValue): value is ModLogDetail {
   return Object.values(value).every((v) => v === null || typeof v !== "object");
 }
 
-/** A stored detail as flat values; anything else (bad JSON, nesting) reads as null. */
-function parseDetail(raw: string | null): ModLogDetail | null {
+/** A stored detail as flat values; anything else (bad JSON, nesting) reads as null. Also read by appeals (raisers). */
+export function parseDetail(raw: string | null): ModLogDetail | null {
   if (raw === null) return null;
   try {
     const value: JsonValue = JSON.parse(raw);

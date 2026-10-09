@@ -1,9 +1,10 @@
 /**
- * An in-memory forum store for the moderation suites (mod-content, mod-reports). Rows live in arrays; where clauses
- * are interpreted (equality, `in`, `notIn`, `not`, `gt`, `OR`, `AND`, `NOT`, nested relation objects), relations are joined on
- * read (thread → category, post → thread → category, link → storyline), selects are ignored. `$transaction` hands
- * the callback `tx`, the only client whose `forumModLog.create` records a row, and rolls every store change and
- * log row back when the callback throws, so "refused → nothing written" is behaviour.
+ * An in-memory forum store for the moderation suites (mod-content, mod-reports, mod-appeals, mod-standing,
+ * mod-moderators). Rows live in arrays; where clauses are interpreted (equality, `in`, `notIn`, `not`, `gt`, `has`,
+ * `OR`, `AND`, `NOT`, nested relation objects), relations are joined on read (thread → category, post → thread →
+ * category, link → storyline), selects are ignored. `$transaction` hands the callback `tx`, the only client whose
+ * `forumModLog.create` records a row (both clients read the log), and rolls every store change and log row back
+ * when the callback throws, so "refused → nothing written" is behaviour.
  */
 export type Value =
   string | number | boolean | Date | null | undefined | Value[] | { [key: string]: Value };
@@ -17,9 +18,14 @@ export interface StoreState {
   links: Row[];
   realms: Row[];
   users: Row[];
+  bans: Row[];
+  warnings: Row[];
+  appeals: Row[];
+  categoryModerators: Row[];
+  officers: Row[];
 }
 
-const OPERATORS = ["in", "notIn", "not", "gt"];
+const OPERATORS = ["in", "notIn", "not", "gt", "has"];
 
 const isRow = (value: Value): value is Row =>
   value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
@@ -35,6 +41,8 @@ function matchOperator(actual: Value, cond: Row): boolean {
   if (Array.isArray(cond.notIn) && cond.notIn.some((v) => same(actual, v))) return false;
   if ("not" in cond && same(actual, cond.not)) return false;
   if (cond.gt instanceof Date && !(actual instanceof Date && actual > cond.gt)) return false;
+  if ("has" in cond && !(Array.isArray(actual) && actual.some((v) => same(v, cond.has))))
+    return false;
   return true;
 }
 
@@ -88,10 +96,16 @@ const cloneState = (state: Partial<StoreState>): StoreState => ({
   links: cloneRows(state.links),
   realms: cloneRows(state.realms),
   users: cloneRows(state.users),
+  bans: cloneRows(state.bans),
+  warnings: cloneRows(state.warnings),
+  appeals: cloneRows(state.appeals),
+  categoryModerators: cloneRows(state.categoryModerators),
+  officers: cloneRows(state.officers),
 });
 
 interface Args {
   where?: Row;
+  select?: Row;
   data?: Row;
   skip?: number;
   take?: number;
@@ -100,9 +114,9 @@ interface Args {
 
 let created = 0;
 
-export function forumStore(seed: Partial<StoreState>) {
+export function forumStore(seed: Partial<StoreState> & { logs?: Row[] }) {
   const state = cloneState(seed);
-  const logs: Row[] = [];
+  const logs: Row[] = cloneRows(seed.logs);
   const categoryOf = (row: Row) => state.categories.find((c) => c.id === row.categoryId) ?? null;
   const thread = (row: Row): Row => ({ ...row, category: categoryOf(row) });
   const post = (row: Row): Row => {
@@ -189,7 +203,44 @@ export function forumStore(seed: Partial<StoreState>) {
     postActionLink: delegate(() => state.links),
     realm: delegate(() => state.realms),
     user: delegate(() => state.users),
+    forumBan: delegate(
+      () => state.bans,
+      (r) => r,
+      {
+        scopeId: null,
+        auto: false,
+        autoTier: null,
+        liftedAt: null,
+        liftedBy: null,
+      }
+    ),
+    forumWarning: delegate(
+      () => state.warnings,
+      (r) => r,
+      {
+        targetType: null,
+        targetId: null,
+        categoryId: null,
+        revokedAt: null,
+        revokedBy: null,
+      }
+    ),
+    forumAppeal: delegate(
+      () => state.appeals,
+      (r) => r,
+      {
+        status: "open",
+        reviewedBy: null,
+        reviewedAt: null,
+        response: null,
+      }
+    ),
+    forumCategoryModerator: delegate(() => state.categoryModerators),
+    realmOfficer: delegate(() => state.officers),
   };
+  const readLog = jest.fn(async ({ where }: Args = {}) =>
+    logs.filter((r) => matches(r, where)).map(cloneRow)
+  );
   const tx = {
     ...client,
     forumModLog: {
@@ -197,13 +248,14 @@ export function forumStore(seed: Partial<StoreState>) {
         logs.push(data);
         return data;
       }),
+      findMany: readLog,
     },
-    $executeRaw: jest.fn(async () => 1),
+    $executeRaw: jest.fn(async (_sql: TemplateStringsArray, ..._values: Value[]) => 1),
   };
   const db = {
     ...client,
-    forumModLog: { create: jest.fn() },
-    $executeRaw: jest.fn(async () => 1),
+    forumModLog: { create: jest.fn(), findMany: readLog },
+    $executeRaw: jest.fn(async (_sql: TemplateStringsArray, ..._values: Value[]) => 1),
     $transaction: jest.fn(async <T>(fn: (client: typeof tx) => Promise<T>): Promise<T> => {
       const snapshot = cloneState(state);
       const logCount = logs.length;
