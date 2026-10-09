@@ -236,7 +236,7 @@ See §1 above (password rotation, CSP).
 - **Size:** `lib/notifications/hooks.ts` (~1,300 lines); `wikios/templates.ts` holds static data.
 - **Design cleanup (plan 346 remainder):** hex colours, `dark:` variants, blurs, pulses, Sparkles icons ([HEX_COLOUR_INVENTORY](../audits/HEX_COLOUR_INVENTORY_2026-09-27.md), [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)).
 - **Product calls:** deck.gl and tsparticles usage; `DATABASE_READONLY` replacement; IxTimeSyncManager / AccuracyVerifier; root provider nesting.
-- **Stale code comments** (as of 2026-09-29): `AdminRouter.tsx:3`, `routers/forum/index.ts`, `routers/wikios/index.ts`, `cloudflare-guardian.ts`.
+- **Stale code comments** (as of 2026-09-29): `AdminRouter.tsx:3`, `routers/wikios/index.ts`, `cloudflare-guardian.ts`.
 - **Pack seed:** the `LIMITED` pack type isn't in the `PackType` constant (`prisma/seeds/data/card-packs.json`).
 
 ### PF§7 Documentation gaps

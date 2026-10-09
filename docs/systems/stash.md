@@ -141,7 +141,7 @@ model StashItem {
   pageSlug    String
   articleId   String?           // optional link to WikiArticle
   contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?              // XenForo thread_id or post_id for forum items
+  contentId   Int?              // XenForo thread_id of a legacy forum item (null for native threads)
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())
@@ -181,7 +181,7 @@ Annotations hang off a `StashItem`. When a highlight is made on a page that is n
 
 ## 5. tRPC API Reference
 
-All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use `api.forum.stashThread` / `unstashThread` / `isThreadStashed` / `getStashedThreads`.
+All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (items `thinkpages:thread:<id>`); legacy `forum:thread:<id>` items from the retired XenForo bridge stay listed and open their old `/forum/thread/<id>` path, which redirects.
 
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |

@@ -6,7 +6,7 @@ ThinkPages is IxStats' community forum: sitewide boards plus a section for every
 
 The persona feed that used to share the ThinkPages name now lives on the Dashboard: the feed, the Accounts section (personas), feed post pages, persona profiles and saved posts. See `src/app/dashboard/README.md`. The feed's components are still in `src/components/thinkpages/` (`src/components/thinkpages/README.md`) and its tRPC router is `api.thinkpages.*`. Old feed paths under `/thinkpages` redirect to the Dashboard (see Retired paths).
 
-In the sidebar, ThinkPages is a row under Home (`src/lib/navigation/app-sections.ts`, id `thinkpages`, href `FORUM_HOME`). The old XenForo bridge at `/forum` is a separate app (`src/app/(forum)/`) and stays until phase 4b retires it.
+In the sidebar, ThinkPages is a row under Home (`src/lib/navigation/app-sections.ts`, id `thinkpages`, href `FORUM_HOME`). The old XenForo bridge at `/forum` was retired in phase 4b: `src/app/(forum)/` holds only 308 redirects to the native forum (through the import's id map).
 
 ## Routes
 
@@ -41,7 +41,7 @@ No `loading.tsx` may sit above a redirecting page in this tree: a loading bounda
 
 Reads and member writes go through `api.thinkpagesForum.*`; moderation (reports, hide/lock/pin/move, warnings, bans, appeals, the moderation log) goes through `api.thinkpagesForumMod.*`, surfaced in the moderation console at `/thinkpages/mod`. Logic lives in `src/server/modules/thinkpages-forum/`; the pure moderation rules (warning points, expiry, automatic ban thresholds) are in `src/lib/thinkpages-forum/moderation-policy.ts`. Every moderator action writes an append-only `ForumModLog` row in the same transaction.
 
-Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHomeHref`, `categoryHref`, `hubHref`, `threadHref`, `postHref`, `modHref`, `STANDING_HREF`). Pages and components use these helpers instead of spelling paths, so moving the home is a one-line change. The legacy `/forum/*` redirects (`src/app/(forum)/forum/**`, switch `bun run forum:legacy-redirect`) target the same helpers.
+Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHomeHref`, `categoryHref`, `hubHref`, `threadHref`, `postHref`, `modHref`, `STANDING_HREF`). Pages and components use these helpers instead of spelling paths, so moving the home is a one-line change. The legacy `/forum/*` redirects (`src/app/(forum)/forum/**`, unconditional since phase 4b) target the same helpers.
 
 ## Architecture
 

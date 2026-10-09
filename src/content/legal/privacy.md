@@ -29,7 +29,7 @@ If you voluntarily link external platforms to your IxStates identity, we store:
 
 - **Discord:** Your Discord User ID and username (for role synchronization and bot notifications).
 - **MediaWiki (IxWiki):** Your wiki user ID and username (for article editing attribution).
-- **XenForo:** Your forum member ID (for community forum integration).
+- **Old forum (XenForo):** Your old forum member ID and name, kept to attribute your imported forum posts.
 - **NationStates:** Your verified nation name (for card deck imports and ownership checks).
 
 ### 1.3 In-Game Simulation & User-Generated Content

@@ -18,7 +18,7 @@ If your account has no nation yet, a banner links to [Setup](/setup).
 
 ## IxnayID & Passport
 
-Your username and email, a link to your public passport, and your linked accounts: the community forum, IxWiki, IIWiki and AltHistory Wiki (each verified with a code), and Discord (linked by signing in with Discord). You can unlink any of them here. Step-by-step: [IxnayID & Your Passport](/help/getting-started/ixnayid).
+Your username and email, a link to your public passport, and your linked accounts: IxWiki, IIWiki and AltHistory Wiki (each verified with a code), and Discord (linked by signing in with Discord). You can unlink any of them here. Your old forum account is shown read-only; staff manage it. Step-by-step: [IxnayID & Your Passport](/help/getting-started/ixnayid).
 
 ## MyCountry
 
@@ -73,7 +73,7 @@ Your IxCredits balance, daily login bonus (claim it here), streak, Vault level a
 
 ## Cosmetics
 
-Items you've bought in the Vault Shop. Equip and unequip cosmetics here. Equipped cosmetics show only to you for now (a badge on your own forum posts, and your profile in Halo's wiki panel). See [Vault Shop Items](/help/vault/shop-items).
+Items you've bought in the Vault Shop. Equip and unequip cosmetics here. Equipped cosmetics show only to you for now (your profile in Halo's wiki panel). See [Vault Shop Items](/help/vault/shop-items).
 
 ## NationStates cards
 

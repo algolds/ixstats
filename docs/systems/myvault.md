@@ -52,13 +52,12 @@ Organized into modular sub-files:
 
 ### Public equipped cosmetics
 
-`vault.getEquippedCosmeticsFor({ userIds?, forumUserIds? })` (rate-limited public query, at most 50 ids of each kind)
+`vault.getEquippedCosmeticsFor({ userIds? })` (rate-limited public query, at most 50 ids)
 returns, per user with something equipped, the equipped cosmetic ids and the resolved `avatarGlow`, `chatBadge` and
-`neonFrame`; never the balance, purchases or inventory. `userIds` take the internal `User.id` or the Clerk id;
-`forumUserIds` take linked XenForo ids. Resolution (`src/lib/vault/public-cosmetics.ts`) matches the owner's own
+`neonFrame`; never the balance, purchases or inventory. `userIds` take the internal `User.id` or the Clerk id (the
+lookup by XenForo id went with the forum bridge in ThinkPages forum phase 4b). Resolution (`src/lib/vault/public-cosmetics.ts`) matches the owner's own
 `useActiveCosmetics`: the catalog in `src/lib/media/cosmetics.ts` first, the item's `effects.customizations` second,
-active `cosmetics` items only. Two queries answer a whole page. Client hooks: `useUserCosmetics` (passport) and
-`useForumAuthorCosmetics` (thread lists and threads, one request per page). Equipping is the opt-in; there is no
+active `cosmetics` items only. Two queries answer a whole page. Client hook: `useUserCosmetics` (passport). Equipping is the opt-in; there is no
 separate visibility setting.
 
 ### Retired store items

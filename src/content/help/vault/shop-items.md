@@ -49,7 +49,6 @@ Equip and unequip the cosmetics you own in [Settings](/settings) → **Cosmetics
 Everyone sees the cosmetics you equip:
 
 - Your passport photo wears your equipped glow and frame, and your badge sits next to your name.
-- A badge cosmetic adds its badge next to your name on your forum posts and threads.
 - Glows, frames and badges also show on your own dashboard and on your profile in Halo's wiki panel.
 
 Unequip a cosmetic to stop showing it. Other players see only what you have equipped, never your IxCredits or what else you own.

@@ -16,7 +16,7 @@ The sidebar on the left of every page (except the full-screen maps) lists the ma
 - **MyCountry** ([/mycountry](/mycountry)): run your nation. Its sections (Overview, Directives, Economy, Diplomacy, Politics and, with Premium, Defense) are listed right in the sidebar.
 - **Maps** ([/maps](/maps)): the world map.
 - **Vault** ([/vault](/vault)): IxCredits, your daily reward, cards and the marketplace.
-- **Wiki** ([/wiki](/wiki)) and **Forum** ([/forum](/forum)).
+- **Wiki** ([/wiki](/wiki)); the forum is **ThinkPages** under Home ([/thinkpages](/thinkpages)).
 - **Realms**: **My realm** ([/countries](/countries)) to browse, filter and compare your realm's nations, and **Explore** ([/realms](/realms)) to find, search and join realms. See [Exploring Countries](/help/world/countries).
 - **Labs**: experimental tools (Onoma, Vexel, MyLeague and MyClub), when Labs is switched on for you. See [Labs](/help/labs/overview).
 - **Help** ([/help](/help)): these guides and What's new.
