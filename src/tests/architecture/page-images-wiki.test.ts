@@ -8,7 +8,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const CALL = /getPageImages\.(?:useQuery|fetch|prefetch)\(/g;
+// `getPageImages.useQuery(` / `.fetch(` / `.prefetch(`, or the router's direct form `t.wikios.getPageImages(`
+// inside `api.useQueries`. The server-side bridge function of the same name is not a client call.
+const CALL = /(?:getPageImages\.(?:useQuery|fetch|prefetch)|wikios\.getPageImages)\(/g;
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

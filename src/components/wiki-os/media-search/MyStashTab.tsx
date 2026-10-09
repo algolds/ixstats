@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { cn } from "~/lib/utils";
 import {
   Search,
@@ -12,14 +12,35 @@ import {
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import type { CommonsImage } from "./types";
 import { Button } from "~/components/ui/button";
 
 interface MyStashTabProps {
   selectedImageObj: CommonsImage | null;
-  onSelectImage: (img: CommonsImage) => void;
+  onSelectImage: (img: CommonsImage | null) => void;
   onDoubleClickConfirm: () => void;
+}
+
+const IMAGE_STALE_MS = 300_000;
+
+function guessMime(title: string): string {
+  const ext = title.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "svg") return "image/svg+xml";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  return "image/png";
+}
+
+function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="text-label-secondary text-footnote flex flex-col items-center gap-3 py-12 text-center">
+      <p role="alert">Could not load this stash.</p>
+      <Button size="sm" variant="outline" onClick={onRetry}>
+        Retry
+      </Button>
+    </div>
+  );
 }
 
 export function MyStashTab({
@@ -34,121 +55,86 @@ export function MyStashTab({
   const [stashSearchQuery, setStashSearchQuery] = useState("");
 
   // Stashes list
-  const { data: stashes = [], isLoading: isLoadingStashes } =
-    api.wikios.getStashes.useQuery(undefined);
+  const stashesQuery = api.wikios.getStashes.useQuery(undefined);
 
   // Items in active stash
-  const { data: stashItemsData, isLoading: isLoadingStashItems } =
-    api.wikios.getStashItems.useQuery(
-      { stashId: selectedStashId ?? "" },
-      { enabled: !!selectedStashId }
-    );
-  const stashItems = useMemo(() => stashItemsData?.items ?? [], [stashItemsData]);
+  const stashItemsQuery = api.wikios.getStashItems.useQuery(
+    { stashId: selectedStashId ?? "" },
+    { enabled: !!selectedStashId }
+  );
+  const stashItems = useMemo(() => stashItemsQuery.data?.items ?? [], [stashItemsQuery.data]);
 
-  const utils = api.useUtils();
-  const [allStashImages, setAllStashImages] = useState<any[]>([]);
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
-
-  // Fetch images for all pages in the stash in parallel
-  useEffect(() => {
-    if (!selectedStashId || stashItems.length === 0) {
-      // oxlint-disable-next-line
-      setAllStashImages([]);
-      return;
+  // `commons:File:X` items resolve through Commons, plain page titles through IxWiki. `File:` is
+  // capitalised and is not a wiki prefix; `iiwiki:` and forum items are skipped.
+  // ponytail: IIWiki and forum items are not resolvable here yet.
+  const { commonsTitles, ixwikiTitles } = useMemo(() => {
+    const commons: string[] = [];
+    const ixwiki: string[] = [];
+    for (const { pageTitle } of stashItems) {
+      if (pageTitle.startsWith("commons:")) commons.push(pageTitle.replace(/^commons:/, ""));
+      else if (!/^[a-z]+:/.test(pageTitle)) ixwiki.push(pageTitle);
     }
+    return { commonsTitles: commons, ixwikiTitles: ixwiki };
+  }, [stashItems]);
 
-    let isMounted = true;
-    const fetchAllImages = async () => {
-      setIsLoadingImages(true);
-      try {
-        const promises = stashItems.map(async (item, idx) => {
-          try {
-            // A stash holds IxWiki pages (a stash item records no other wiki).
-            const images = await utils.wikios.getPageImages.fetch({
-              title: item.pageTitle,
-              wiki: "ixwiki",
-            });
-            if (!isMounted) return [];
-            return (images ?? []).map(
-              (
-                img: {
-                  title?: string;
-                  thumbUrl?: string;
-                  url?: string;
-                  width?: number;
-                  height?: number;
-                },
-                imgIdx: number
-              ) => {
-                const ext = (img.title || "").split(".").pop()?.toLowerCase() ?? "";
-                const guessedMime =
-                  ext === "svg"
-                    ? "image/svg+xml"
-                    : ext === "png"
-                      ? "image/png"
-                      : ext === "jpg" || ext === "jpeg"
-                        ? "image/jpeg"
-                        : "image/png";
-                return {
-                  pageid: idx * 1000 + imgIdx + 5000000,
-                  title: img.title || "",
-                  thumbUrl: img.thumbUrl || img.url || "",
-                  url: img.url || "",
-                  descriptionUrl: img.url || "",
-                  width: img.width || 0,
-                  height: img.height || 0,
-                  mime: guessedMime,
-                  description: `From stashed page: ${item.pageTitle}`,
-                  artist: "Wiki Contributor",
-                  license: "CC BY-SA 3.0",
-                };
-              }
-            );
-          } catch (e) {
-            console.error("Failed to fetch page images for:", item.pageTitle, e);
-            return [];
-          }
-        });
+  const commonsQuery = api.commons.getImageInfoByTitles.useQuery(
+    { titles: commonsTitles },
+    { enabled: commonsTitles.length > 0, staleTime: IMAGE_STALE_MS }
+  );
+  const pageImageQueries = api.useQueries((t) =>
+    ixwikiTitles.map((title) =>
+      t.wikios.getPageImages({ title, wiki: "ixwiki" }, { staleTime: IMAGE_STALE_MS })
+    )
+  );
 
-        const results = await Promise.all(promises);
-        if (isMounted) {
-          const flat = results.flat();
-          // Deduplicate by URL
-          const seen = new Set<string>();
-          const unique = flat.filter((img: { url: string }) => {
-            if (seen.has(img.url)) return false;
-            seen.add(img.url);
-            return true;
-          });
-          setAllStashImages(unique);
-        }
-      } catch (err) {
-        console.error("Error loading stash images:", err);
-      } finally {
-        if (isMounted) {
-          setIsLoadingImages(false);
-        }
-      }
-    };
+  // Rebuilt each render (the query list is a fresh array every time); at most a stash's worth of images.
+  const allStashImages: CommonsImage[] = [];
+  const seenUrls = new Set<string>();
+  const addImage = (img: Omit<CommonsImage, "pageid">) => {
+    if (!img.url || seenUrls.has(img.url)) return;
+    seenUrls.add(img.url);
+    allStashImages.push({ ...img, pageid: allStashImages.length });
+  };
+  for (const img of commonsQuery.data ?? []) addImage(img);
+  for (const query of pageImageQueries) {
+    for (const img of query.data ?? []) {
+      addImage({
+        title: img.title,
+        thumbUrl: img.thumbUrl || img.url,
+        url: img.url,
+        descriptionUrl: publicArticleUrl(img.title, "ixwiki"),
+        width: img.width || 0,
+        height: img.height || 0,
+        mime: guessMime(img.title),
+        description: "",
+        artist: "",
+        license: "",
+      });
+    }
+  }
 
-    void fetchAllImages();
+  const isLoadingImages =
+    stashItemsQuery.isLoading ||
+    commonsQuery.isLoading ||
+    pageImageQueries.some((query) => query.isLoading);
+  const hasImagesError =
+    stashItemsQuery.isError || commonsQuery.isError || pageImageQueries.some((q) => q.isError);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedStashId, stashItems, utils]);
+  const retryImages = () => {
+    if (stashItemsQuery.isError) void stashItemsQuery.refetch();
+    if (commonsQuery.isError) void commonsQuery.refetch();
+    for (const query of pageImageQueries) if (query.isError) void query.refetch();
+  };
 
   const filteredStashes = useMemo(() => {
+    const stashes = stashesQuery.data ?? [];
     if (!stashSearchQuery.trim()) return stashes;
     return stashes.filter((s) => s.name.toLowerCase().includes(stashSearchQuery.toLowerCase()));
-  }, [stashes, stashSearchQuery]);
+  }, [stashesQuery.data, stashSearchQuery]);
 
-  const filteredPageImages = useMemo(() => {
-    if (!stashSearchQuery.trim()) return allStashImages;
-    return allStashImages.filter((i) =>
-      (i.title || "").toLowerCase().includes(stashSearchQuery.toLowerCase())
-    );
-  }, [allStashImages, stashSearchQuery]);
+  const filteredPageImages = stashSearchQuery.trim()
+    ? allStashImages.filter((i) => i.title.toLowerCase().includes(stashSearchQuery.toLowerCase()))
+    : allStashImages;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -157,6 +143,7 @@ export function MyStashTab({
         <div className="relative mb-2">
           <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
+            aria-label="Search stashes"
             placeholder={
               stashViewMode === "stashes" ? "Search collections..." : "Search stash images..."
             }
@@ -186,7 +173,7 @@ export function MyStashTab({
             onClick={() => {
               setStashViewMode("stashes");
               setSelectedStashId(null);
-              onSelectImage(null as any);
+              onSelectImage(null);
               setStashSearchQuery("");
             }}
             className="text-label-secondary hover:text-label h-auto gap-1 px-0 font-semibold"
@@ -214,15 +201,18 @@ export function MyStashTab({
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4">
           {/* 1. Stashes folder grid */}
           {stashViewMode === "stashes" &&
-            (isLoadingStashes ? (
+            (stashesQuery.isLoading ? (
               <div className="flex h-32 items-center justify-center">
                 <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
               </div>
+            ) : stashesQuery.isError ? (
+              <LoadError onRetry={() => void stashesQuery.refetch()} />
             ) : filteredStashes.length > 0 ? (
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                 {filteredStashes.map((stash) => (
-                  <div
+                  <button
                     key={stash.id}
+                    type="button"
                     onClick={() => {
                       setSelectedStashId(stash.id);
                       setSelectedStashName(stash.name);
@@ -230,18 +220,20 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
+                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
                   >
-                    <div className="flex min-w-0 items-center gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
-                      <div className="min-w-0">
-                        <p className="text-label text-caption truncate font-semibold">
+                      <span className="block min-w-0">
+                        <span className="text-label text-caption block truncate font-semibold">
                           {stash.name}
-                        </p>
-                        <p className="text-label-secondary text-caption">{stash.itemCount} items</p>
-                      </div>
-                    </div>
-                  </div>
+                        </span>
+                        <span className="text-label-secondary text-caption block">
+                          {stash.itemCount} items
+                        </span>
+                      </span>
+                    </span>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -252,19 +244,21 @@ export function MyStashTab({
 
           {/* 2. Page images grid */}
           {stashViewMode === "images" &&
-            (isLoadingStashItems || isLoadingImages ? (
+            (isLoadingImages ? (
               <div className="flex h-32 items-center justify-center">
                 <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
               </div>
+            ) : hasImagesError ? (
+              <LoadError onRetry={retryImages} />
             ) : filteredPageImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                 {filteredPageImages.map((img) => {
-                  const isSelected = selectedImageObj?.pageid === img.pageid;
-                  const cleanTitle = (img.title || "").replace(/^File:/, "").replace(/_/g, " ");
+                  const isSelected = selectedImageObj?.url === img.url;
+                  const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
 
                   return (
                     <button
-                      key={img.pageid}
+                      key={img.url}
                       type="button"
                       aria-pressed={isSelected}
                       onClick={() => onSelectImage(img)}
@@ -318,7 +312,7 @@ export function MyStashTab({
             <CommonsDetailPanel
               image={selectedImageObj}
               onClose={() => {
-                onSelectImage(null as any);
+                onSelectImage(null);
               }}
             />
           </div>

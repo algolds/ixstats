@@ -25,11 +25,12 @@ function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "oth
   return "other";
 }
 
+/** The shape of an image, or null when its size is not known (vectors and some wiki files). */
 function getImageOrientation(
   width: number,
   height: number
-): "landscape" | "portrait" | "square" {
-  if (!width || !height) return "landscape";
+): "landscape" | "portrait" | "square" | null {
+  if (!width || !height) return null;
   const ratio = width / height;
   if (ratio > 1.1) return "landscape";
   if (ratio < 0.9) return "portrait";
@@ -38,6 +39,18 @@ function getImageOrientation(
 
 export type ImageTypeFilter = "all" | "jpg" | "png" | "svg";
 export type ImageOrientationFilter = "all" | "landscape" | "portrait" | "square";
+
+const MIME_TERMS: Record<ImageTypeFilter, string> = {
+  all: "",
+  jpg: "filemime:image/jpeg",
+  png: "filemime:image/png",
+  svg: "filemime:image/svg+xml",
+};
+
+/** The Commons search term that limits results to one file type ("" for all types). */
+export function commonsMimeTerm(filter: ImageTypeFilter): string {
+  return MIME_TERMS[filter];
+}
 
 export function matchesImageFilters(
   img: CommonsImage,
@@ -50,10 +63,16 @@ export function matchesImageFilters(
   );
 }
 
-/** Appends `incoming` images not already present (by pageid). */
+/** Appends `incoming` images not already present (by url). */
 export function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): CommonsImage[] {
-  const seen = new Set(existing.map((img) => img.pageid));
-  return [...existing, ...incoming.filter((img) => !seen.has(img.pageid))];
+  const seen = new Set(existing.map((img) => img.url));
+  const fresh: CommonsImage[] = [];
+  for (const img of incoming) {
+    if (seen.has(img.url)) continue;
+    seen.add(img.url);
+    fresh.push(img);
+  }
+  return [...existing, ...fresh];
 }
 
 export type WikiSubSource = "ixwiki" | "iiwiki";
@@ -65,6 +84,8 @@ interface WikiFileRecord {
   height: number;
   mime?: string;
   url?: string;
+  /** A reduced-size preview; absent or null when the server has none. */
+  thumbUrl?: string | null;
 }
 
 /** Route direct wiki file URLs through the local MediaWiki proxy. */
@@ -83,17 +104,16 @@ function proxyWikiFileUrl(rawUrl: string): string {
   return rawUrl;
 }
 
-/** Shape IxWiki/IIWiki file-search hits like Commons images (synthetic, source-offset page ids). */
+/** Shape IxWiki/IIWiki file-search hits like Commons images (identified by their url; `pageid` is the position). */
 export function wikiFilesToImages(files: WikiFileRecord[], source: WikiSubSource): CommonsImage[] {
   const isIiwiki = source === "iiwiki";
-  const offset = isIiwiki ? 2000000 : 1000000;
   return files.map((img, index) => {
     const url = proxyWikiFileUrl(img.url || "");
     const sizeKb = (img.size / 1024).toFixed(1);
     return {
-      pageid: index + offset,
+      pageid: index,
       title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
-      thumbUrl: url,
+      thumbUrl: img.thumbUrl ? proxyWikiFileUrl(img.thumbUrl) : url,
       url,
       descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
       width: img.width || 0,
@@ -102,8 +122,8 @@ export function wikiFilesToImages(files: WikiFileRecord[], source: WikiSubSource
       description: isIiwiki
         ? `External upload on IIWiki. Size: ${sizeKb} KB`
         : `Local upload on IxWiki. Size: ${sizeKb} KB`,
-      artist: isIiwiki ? "IIWiki Contributor" : "IxWiki Contributor",
-      license: "CC BY-SA 3.0",
+      artist: "",
+      license: "",
     };
   });
 }

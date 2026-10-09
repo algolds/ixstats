@@ -187,6 +187,7 @@ addresses only (url-only); iiwiki's development proxy stays in `config.ts` `getM
 | `src/lib/realms/sources/wiki-discovery-client.ts` (the reader), `src/lib/realms/sources/iiwiki-discovery.ts`, `src/lib/realms/sources/wiki-file-info.ts`, `src/server/modules/realms/realms.wiki.ts` (callers: `routers/realms/wiki.ts`) | a realm's world on its own sister wiki (`Realm.settings.wiki`): the roster's `categorymembers`, nation pages' `revisions`, map categories' files, the portal's `images` and `pageimages`, and `imageinfo` with `url\|size\|mime\|sha1\|extmetadata`. Started by a site admin or the realm's founder (world discovery, "Use this map", Re-check, the infobox hints export). One request at a time, a pause between, a cap per step, Retry-After honoured; a 403 or a challenge page ends that discovery with what it gathered and **never** marks the host offline for the rest of the app (`markExternalHostOffline` is not used). |
 | `src/lib/realms/sources/wiki-file-original.ts` | the original bytes of one file of a realm's wiki (its `imageinfo` URL), straight from the wiki (never wsrv.nl, which may re-encode), through `_media-response.ts` `fetchFromAllowedHost` with every hop narrowed to that wiki's own hosts; image only, 40 MB, the SHA-1 imageinfo gave, 64 megapixels read from the header. Media-bytes. |
 | `src/server/api/routers/commons.ts`, `src/server/services/wikimedia-equipment-image-resolver.ts` | Commons search and file URLs. |
+| `src/lib/wiki-os/upstream-fetch.ts` (`fetchMediaWikiJson`, used by `commons.ts`, `wikios/search.ts` and `wikios/categories.ts`) | the shared fetch for Commons and sister-wiki `api.php` calls: a timeout (8 seconds by default), a thrown error in place of an empty result, user agent `IxStats-Builder`, and an optional short in-process cache by URL. It names no wiki itself; the callers pass the address. |
 
 ### Files that only build or recognise an IxWiki address (no request to MediaWiki)
 
@@ -201,7 +202,7 @@ configuration object, never from a literal:
   `src/app/admin/realms/_components/ClaimsTab.tsx` (a claimed nation page's history on its own wiki), `src/components/cards/display/CardDetailsModal.tsx`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,
-  `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
+  `src/components/wiki-os/media-search/MyStashTab.tsx` (a stash image's IxWiki file page), `src/components/wiki-os/media-search/WikiRepositoryTab.tsx`, `src/components/wiki-os/media-search/types.ts`, `src/components/wiki-os/reader/ImageLightbox.tsx`, `src/components/wiki-os/reader/ImageLightboxModal.tsx`,
   `src/hooks/useDossier.ts`, `src/lib/wiki-os/xml/export-writer.ts` (the dump's `siteinfo`), `src/lib/wiki-os/sitemap-xml.ts`,
   `src/lib/wiki-os/wiki-path.ts`, `src/server/modules/identity/identity.vault.ts`.
 - **Absolute post links written into wiki text** (`mediaWikiOrigin()`, no request): `src/server/modules/action-links/wiki-sync.ts`

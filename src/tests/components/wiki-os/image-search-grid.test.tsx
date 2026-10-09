@@ -245,3 +245,40 @@ describe("the IxWiki tab's BlurHash placeholder (WK-17)", () => {
     expect(thumbnail.style.backgroundImage).toBe("");
   });
 });
+
+describe("the expanded detail's dimensions", () => {
+  const openDetail = (width: number, height: number) => {
+    mockSearchFiles.mockReturnValue({
+      data: [
+        {
+          title: "File:Flag.png",
+          url: "/api/wiki/file/Flag.png",
+          width,
+          height,
+          mime: "image/png",
+        },
+      ],
+      isLoading: false,
+      isError: false,
+      refetch: jest.fn(),
+    });
+    const { container } = render(<ImageSearchGrid />);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search images" }), {
+      target: { value: "flag" },
+    });
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+    fireEvent.click(screen.getByRole("img", { name: "File:Flag.png" }));
+    return container.querySelector(".wikios-imgs-detail-meta") as HTMLElement;
+  };
+
+  it("shows the size when it is known", () => {
+    expect(openDetail(40, 30).textContent).toContain("40 × 30 px");
+  });
+
+  it("shows no stray 0 when the size is unknown", () => {
+    const meta = openDetail(0, 0);
+    expect(meta.textContent).toBe("image/png");
+  });
+});

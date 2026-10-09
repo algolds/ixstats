@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { SystemRestart as Loader2, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
@@ -17,17 +17,11 @@ interface MediaSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImageSelect: (imageUrl: string) => void;
-  onFileUpload?: (file: File) => Promise<void>;
 }
 
 type MainTab = "wiki-repository" | "upload";
 
-export function MediaSearchModal({
-  isOpen,
-  onClose,
-  onImageSelect,
-  onFileUpload,
-}: MediaSearchModalProps) {
+export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearchModalProps) {
   const notify = useNotify();
 
   // Active Main Tab
@@ -39,6 +33,15 @@ export function MediaSearchModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  // The in-flight "use this image" request; set while one runs, aborted when the picker closes.
+  const confirmRef = useRef<AbortController | null>(null);
+
+  const cancelConfirm = () => {
+    confirmRef.current?.abort();
+    confirmRef.current = null;
+  };
+
+  useEffect(() => cancelConfirm, []);
 
   // Reset selections when modal opens or active tab changes
   useEffect(() => {
@@ -46,13 +49,16 @@ export function MediaSearchModal({
       // oxlint-disable-next-line
       setSelectedImage(null);
       setSelectedImageObj(null);
+      setActiveTab("wiki-repository");
+    } else {
+      cancelConfirm();
     }
     if (!isOpen || activeTab !== "wiki-repository") {
       setIsCategoryExpanded(false);
     }
   }, [isOpen, activeTab]);
 
-  const handleWikiSelectImage = (img: CommonsImage) => {
+  const handleWikiSelectImage = (img: CommonsImage | null) => {
     if (!img) {
       setSelectedImage(null);
       setSelectedImageObj(null);
@@ -63,20 +69,23 @@ export function MediaSearchModal({
   };
 
   const handleSelectConfirm = async () => {
+    if (confirmRef.current) return;
     if (!selectedImage) {
       notify.error("Please select an image first.");
       return;
     }
 
+    const controller = new AbortController();
+    confirmRef.current = controller;
     try {
       if (isExternalImageUrl(selectedImage)) {
         setIsDownloading(true);
         notify.info("Downloading image...");
 
         const processedUrl = await processImageSelection(selectedImage, {
-          onProgress: (message) => console.log("[MediaSearchModal]", message),
-          onError: (error) => console.error("[MediaSearchModal]", error),
+          signal: controller.signal,
         });
+        if (controller.signal.aborted) return;
 
         notify.success("Image downloaded and ready to use");
         onImageSelect(processedUrl);
@@ -85,21 +94,41 @@ export function MediaSearchModal({
       }
       onClose();
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.error("[MediaSearchModal] Download failed:", error);
       notify.error("Failed to download image. Try a different source.");
     } finally {
+      if (confirmRef.current === controller) confirmRef.current = null;
       setIsDownloading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (open) return;
+        cancelConfirm();
+        onClose();
+      }}
+    >
       <DialogContent
         className={cn(
           "flex h-[88vh] max-h-[92vh] flex-col overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
           isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
         )}
         data-dialog-nested="true"
+        onEscapeKeyDown={(e) => {
+          // Escape first cancels a download in flight, then closes the detail panel, then the picker.
+          if (confirmRef.current) {
+            e.preventDefault();
+            cancelConfirm();
+            setIsDownloading(false);
+          } else if (selectedImageObj) {
+            e.preventDefault();
+            handleWikiSelectImage(null);
+          }
+        }}
       >
         <DialogHeader className="border-separator shrink-0 border-b px-6 pt-5 pb-3">
           <DialogTitle className="text-label text-title-3">Search repository</DialogTitle>
@@ -147,7 +176,6 @@ export function MediaSearchModal({
             <UploadTab
               onImageSelect={onImageSelect}
               onClose={onClose}
-              onFileUpload={onFileUpload}
               isUploading={isUploading}
               setIsUploading={setIsUploading}
             />
