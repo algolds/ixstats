@@ -15,6 +15,12 @@ import { Card } from "~/components/ui/card";
 import { getInitials } from "~/components/thinkpages/post/ThinkpagesPostUtils";
 import { withBasePath } from "~/lib/base-path";
 
+/** What this page reads of a reply; ThinkpagesPost renders the rest. */
+interface ReplyRow {
+  id: string;
+  account: { username: string };
+}
+
 interface PostPageProps {
   params: Promise<{
     postId: string;
@@ -186,7 +192,7 @@ function FeedPostPage({ postId }: { postId: string }) {
     }
   };
 
-  const replies = (post?.replies || []) as any[];
+  const replies: ReplyRow[] = post?.replies ?? [];
 
   if (isLoading) return <PostLoading />;
 

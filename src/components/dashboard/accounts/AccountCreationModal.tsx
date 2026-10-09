@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
-  Sparks as Sparkles,
+  NavArrowDown,
   WarningCircle as AlertCircle,
   SystemRestart as Loader2,
   HelpCircle,
@@ -302,7 +302,7 @@ export function AccountCreationModal({
                     aria-expanded={showAdvanced}
                     className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
                   >
-                    <Sparkles
+                    <NavArrowDown
                       aria-hidden="true"
                       className={cn(
                         "text-tint transition-transform duration-150",

@@ -3,15 +3,18 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
+import type { RouterOutputs } from "~/trpc/react";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
+
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 interface AccountManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  accounts: any[];
-  selectedAccount: any | null;
-  onAccountSelect: (account: any) => void;
-  onAccountSettings: (account: any) => void;
+  accounts: ThinkpagesAccountItem[];
+  selectedAccount: ThinkpagesAccountItem | null;
+  onAccountSelect: (account: ThinkpagesAccountItem) => void;
+  onAccountSettings: (account: ThinkpagesAccountItem) => void;
   onCreateAccount: () => void;
   isOwner: boolean;
   /** Opens the Dashboard's Accounts section; without it there is no Manage accounts link. */

@@ -95,9 +95,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
           </div>
           <div className="text-body text-label-secondary flex flex-wrap items-center gap-2">
             <span>@{profile.username}</span>
-            <Badge variant="outline">
-              {profile.accountType === "personal" ? "personal" : profile.accountType}
-            </Badge>
+            <Badge variant="outline">{profile.accountType}</Badge>
             {profile.country && (
               <Link
                 href={`/countries/${profile.country.slug ?? profile.country.id}`}

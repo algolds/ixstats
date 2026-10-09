@@ -7,12 +7,14 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 import { useUser } from "~/context/auth-context";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
 import { Card } from "~/components/ui/card";
+
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 interface AccountsSectionProps {
   /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
@@ -24,10 +26,10 @@ interface AccountsSectionProps {
 function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSectionProps) {
   const { user } = useUser();
 
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
 
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     enabled: !!user?.id,
@@ -130,7 +132,7 @@ function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSection
         accounts={accounts}
         selectedAccount={selectedAccount}
         onAccountSelect={setSelectedAccount}
-        onAccountSettings={(account: any) => {
+        onAccountSettings={(account: ThinkpagesAccountItem) => {
           setSettingsAccount(account);
           setShowAccountSettings(true);
         }}
