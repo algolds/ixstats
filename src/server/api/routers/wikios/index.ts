@@ -19,6 +19,7 @@
  *  - page-views:            page info, page lists, category member pages, file info (plan 412)
  *  - page-admin:            move, delete, undelete, protect, block, user groups, log
  *  - bot-passwords:         Special:BotPasswords (api.php credentials)
+ *  - repository-files:      image repository file browser (paged wiki, forum and own-upload files)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "./page-content";
@@ -35,6 +36,7 @@ import { wikiosUtilitiesRouter } from "./utilities";
 import { wikiosPageViewsRouter } from "./page-views";
 import { wikiosPageAdminRouter } from "./page-admin";
 import { wikiosBotPasswordsRouter } from "./bot-passwords";
+import { wikiosRepositoryFilesRouter } from "./repository-files";
 
 export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
@@ -50,5 +52,6 @@ export const wikiosRouter = mergeRouters(
   wikiosUtilitiesRouter,
   wikiosPageViewsRouter,
   wikiosPageAdminRouter,
-  wikiosBotPasswordsRouter
+  wikiosBotPasswordsRouter,
+  wikiosRepositoryFilesRouter
 );

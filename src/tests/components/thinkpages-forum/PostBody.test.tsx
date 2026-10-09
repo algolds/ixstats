@@ -53,6 +53,15 @@ describe("PostBody", () => {
     expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
 
+  it("caps post images to the column width and a standard height through wrapper classes", () => {
+    const { container } = render(
+      <PostBody html='<p>x</p><img src="https://x/y.png" alt="">' cards={new Map()} cardsReady />
+    );
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper).toHaveClass("[&_img]:max-w-full", "[&_img]:max-h-[640px]", "[&_img]:h-auto");
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("https://x/y.png");
+  });
+
   it("renders Unverified action for an unknown id", () => {
     render(<PostBody html="<p>hi</p>[ixaction=gone]" cards={new Map()} cardsReady />);
     expect(screen.getByText("Unverified action")).toBeInTheDocument();

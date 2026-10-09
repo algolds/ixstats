@@ -417,17 +417,8 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
 });
 
 describe("getCategories counts files, not every member", () => {
-  it("IxWiki: lists categories by file count and drops the ones with no file", async () => {
-    mocked.wikiCategory.findMany.mockResolvedValue([
-      { name: "Countries" },
-      { name: "Flag_images" },
-      { name: "Maps" },
-    ]);
-    counts = [
-      countRow("Countries", 30, 4, 0),
-      countRow("Flag images", 0, 0, 7),
-      countRow("Maps", 1, 0, 12),
-    ];
+  it("IxWiki: one SQL query lists the categories that hold files, most files first", async () => {
+    counts = [countRow("Maps", 1, 0, 12), countRow("Flag_images", 0, 0, 7)];
 
     const result = await categories().getCategories({ wiki: "ixwiki", limit: 10 });
 
@@ -435,6 +426,16 @@ describe("getCategories counts files, not every member", () => {
       { name: "Maps", fileCount: 12 },
       { name: "Flag images", fileCount: 7 },
     ]);
+    expect(mocked.wikiCategory.findMany).not.toHaveBeenCalled();
+    expect(mocked.$queryRaw).toHaveBeenCalledTimes(1);
+    const call = mocked.$queryRaw.mock.calls[0]!;
+    const sql = sqlOf(call);
+    expect(sql).toContain(`a."namespace" = 6`);
+    expect(sql).toContain(`a."source" = 'ixwiki'`);
+    expect(sql).toContain(`a."status" = 'PUBLISHED'`);
+    expect(sql).toContain("HAVING");
+    expect(sql).toContain(`ORDER BY "files" DESC`);
+    expect(call[1]).toBe(10);
     expect(guard.calls()).toEqual([]);
   });
 

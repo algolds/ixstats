@@ -302,6 +302,17 @@ const config = {
         ],
       },
       {
+        source: "/images/uploads/:path*",
+        headers: [
+          // User uploads (SVG included) are served from the app origin: sandbox them so a sanitizer miss is not XSS
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+      {
         source: "/sw.js",
         headers: [
           {

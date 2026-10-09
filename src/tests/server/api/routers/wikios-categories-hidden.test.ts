@@ -46,10 +46,11 @@ describe("category lists leave out hidden categories (plan 406)", () => {
   });
 
   it("the biggest categories", async () => {
-    findMany.mockResolvedValue([category("Countries")]);
-
     await caller().getCategories({ wiki: "ixwiki", limit: 10 });
 
-    expect(findMany.mock.calls[0]?.[0]?.where).toEqual({ hidden: false });
+    // One SQL query (plan 422): hidden categories are left out in its WHERE clause.
+    expect(findMany).not.toHaveBeenCalled();
+    const query = jest.mocked(db.$queryRaw).mock.calls[0]?.[0] as unknown as TemplateStringsArray;
+    expect(query.join("?")).toContain('c."hidden" = false');
   });
 });

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ZoomIn, MediaImage as ImageIcon, RefreshDouble } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
+import { PlaceholderImage } from "~/components/wiki-os/shared/PlaceholderImage";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 
 interface CommonsResultsGridProps {
@@ -22,8 +24,8 @@ interface CommonsResultsGridProps {
   query?: string;
   /** How many images were loaded before the type/orientation filters hid some. */
   loadedCount?: number;
-  /** The wiki result hit its cap of 50 files. */
-  truncated?: boolean;
+  /** What an empty category or list says (the forum and own uploads are not categories). */
+  emptyText?: string;
   totalHits?: number | null;
   error?: { rateLimited: boolean } | null;
   onRetry?: () => void;
@@ -45,6 +47,11 @@ const CommonsCard = memo(function CommonsCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
+  // A file with a BlurHash shows its blurred shape while loading, anything else a skeleton
+  const placeholder = useMemo(
+    () => BlurHashService.placeholderDataUri(img.blurhash, img.width, img.height),
+    [img.blurhash, img.width, img.height]
+  );
 
   return (
     <button
@@ -62,7 +69,9 @@ const CommonsCard = memo(function CommonsCard({
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
     >
       <div className="wikios-commons-card-thumb bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
-        {!imageLoaded && !imageError && <Skeleton className="absolute inset-0 rounded-none" />}
+        {!imageLoaded && !imageError && !placeholder && (
+          <Skeleton className="absolute inset-0 rounded-none" />
+        )}
 
         {imageError ? (
           <div className="text-label-secondary absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
@@ -72,7 +81,8 @@ const CommonsCard = memo(function CommonsCard({
             </span>
           </div>
         ) : (
-          <img
+          <PlaceholderImage
+            placeholder={placeholder}
             src={img.thumbUrl}
             alt={cleanTitle}
             loading="lazy"
@@ -80,7 +90,7 @@ const CommonsCard = memo(function CommonsCard({
             onError={() => setImageError(true)}
             className={cn(
               "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-              imageLoaded ? "opacity-100" : "opacity-0"
+              imageLoaded || placeholder ? "opacity-100" : "opacity-0"
             )}
           />
         )}
@@ -195,9 +205,10 @@ function EmptyState({
   onClearFilters,
   hasMore,
   onLoadMore,
+  emptyText,
 }: Pick<
   CommonsResultsGridProps,
-  "mode" | "query" | "isFilterActive" | "onClearFilters" | "hasMore" | "onLoadMore"
+  "mode" | "query" | "isFilterActive" | "onClearFilters" | "hasMore" | "onLoadMore" | "emptyText"
 >) {
   if (mode === "idle") {
     return (
@@ -240,28 +251,32 @@ function EmptyState({
     );
   }
   if (mode === "list") {
-    return <StateMessage title="No images found">This wiki has no images to list.</StateMessage>;
+    return (
+      <StateMessage title="No images found">
+        {emptyText ?? "This wiki has no images to list."}
+      </StateMessage>
+    );
   }
-  return <StateMessage title="No images found">This category has no images.</StateMessage>;
+  return (
+    <StateMessage title="No images found">
+      {emptyText ?? "This category has no images."}
+    </StateMessage>
+  );
 }
 
 function CountLine({
   shown,
   totalHits,
   loadedCount,
-  truncated,
 }: {
   shown: number;
   totalHits?: number | null;
   loadedCount?: number;
-  truncated?: boolean;
 }) {
   const hidden = loadedCount !== undefined ? Math.max(0, loadedCount - shown) : 0;
   let text: string | null = null;
   if (totalHits != null && totalHits > 0) {
     text = `Showing ${shown} of ${totalHits.toLocaleString()}`;
-  } else if (truncated) {
-    text = "Showing the first 50 files";
   }
   if (!text) return null;
   return (
@@ -283,7 +298,7 @@ export function CommonsResultsGrid({
   mode,
   query,
   loadedCount,
-  truncated,
+  emptyText,
   totalHits,
   error,
   onRetry,
@@ -313,18 +328,14 @@ export function CommonsResultsGrid({
         onClearFilters={onClearFilters}
         hasMore={hasMore}
         onLoadMore={onLoadMore}
+        emptyText={emptyText}
       />
     );
   }
 
   return (
     <div className="wikios-commons-results">
-      <CountLine
-        shown={images.length}
-        totalHits={totalHits}
-        loadedCount={loadedCount}
-        truncated={truncated}
-      />
+      <CountLine shown={images.length} totalHits={totalHits} loadedCount={loadedCount} />
 
       <div className="wikios-commons-grid">
         {images.map((img) => (

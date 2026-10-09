@@ -113,6 +113,42 @@ describe("CommonsDetailPanel", () => {
     expect(screen.queryByText("Copied")).not.toBeInTheDocument();
   });
 
+  it("copies the credit and source when the image has an artist and licence", async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(
+      <CommonsDetailPanel
+        image={image("A", { artist: "Jane Doe", license: "CC BY-SA 4.0" })}
+        onClose={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Copy attribution" })[0]!);
+
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        "A.jpg (CC BY-SA 4.0 · Jane Doe). Source: https://commons.wikimedia.org/wiki/File:A.jpg"
+      )
+    );
+    expect(await screen.findAllByText("Copied")).not.toHaveLength(0);
+  });
+
+  it("reports a failed attribution copy", async () => {
+    Object.assign(navigator, {
+      clipboard: { writeText: jest.fn().mockRejectedValue(new Error("denied")) },
+    });
+    render(<CommonsDetailPanel image={image("A", { license: "CC0" })} onClose={jest.fn()} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Copy attribution" })[0]!);
+    await waitFor(() =>
+      expect(mockNotify.error).toHaveBeenCalledWith("Could not copy", expect.any(String))
+    );
+  });
+
+  it("has no attribution button when there is no artist or licence", () => {
+    render(<CommonsDetailPanel image={image("A")} onClose={jest.fn()} />);
+    expect(screen.queryByRole("button", { name: "Copy attribution" })).not.toBeInTheDocument();
+  });
+
   it("hides the dimensions row when the size is unknown", () => {
     render(<CommonsDetailPanel image={image("A", { width: 0, height: 0 })} onClose={jest.fn()} />);
     expect(screen.queryByText("Dimensions")).not.toBeInTheDocument();
