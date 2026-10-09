@@ -75,11 +75,11 @@ const CATEGORY_SELECT = { id: true, scope: true, realmId: true } as const;
 export const warningScope = (categoryId: string | null): ModScope =>
   categoryId === null ? SITE : { kind: "category", categoryId };
 
-/** The warned content's category and author (post → thread → category). */
+/** The warned content's category and author (post → thread → category); null for imported content (phase 4). */
 async function targetPlace(
   db: Pick<WarningsDb, "forumThread" | "forumPost">,
   target: NonNullable<WarningInput["target"]>
-): Promise<{ authorUserId: string; category: WarnedCategory }> {
+): Promise<{ authorUserId: string | null; category: WarnedCategory }> {
   if (target.type === "post") {
     const post = await db.forumPost.findUnique({
       where: { id: target.id },
@@ -108,6 +108,9 @@ async function warningPlace(
   }
   const place = await targetPlace(db, input.target);
   assertModeratesCategory(actor, place.category);
+  if (place.authorUserId === null) {
+    throw new ForumError("BAD_REQUEST", `This ${input.target.type} has no IxStats author.`);
+  }
   if (place.authorUserId !== input.userId) {
     throw new ForumError("BAD_REQUEST", "You can only warn the author of this content.");
   }

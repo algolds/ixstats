@@ -2,7 +2,9 @@
  * What a moderator may do to each author's content (I-1, M-8), so the UI offers only what the server allows: hide or
  * edit it (`moderable`: mod-scope's `mayModerateAuthor`, site admins' content is site admins') and warn or ban its
  * author (`sanctionable`: mod-scope's `sanctionRefusal` with the warning rule, never the viewer themself). Author
- * facts load in one user query per page plus one batch of `moderatorContext`'s three lookups for all of them.
+ * facts load in one user query per page plus one batch of `moderatorContext`'s three lookups for all of them. A null
+ * author (imported content without an IxStats account, phase 4) is never looked up: any moderator of the category
+ * may hide or edit it, and there is nobody to warn or ban.
  */
 import type { PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
@@ -29,7 +31,7 @@ export interface AuthorModeration {
 
 /** One author's verdict for content in a category. */
 export type AuthorModerationOf = (
-  authorUserId: string,
+  authorUserId: string | null,
   category: ScopedCategory
 ) => AuthorModeration;
 
@@ -81,12 +83,12 @@ export async function moderatorContexts(
   return new Map(members.map((m) => [m.id, contextOf(m)]));
 }
 
-/** The page's authors with their moderator contexts; an author whose user row is gone is absent. */
+/** The page's authors with their moderator contexts; an author whose user row is gone, or null, is absent. */
 async function moderatedAuthors(
   db: AuthorModerationDb,
-  authorIds: readonly string[]
+  authorIds: ReadonlyArray<string | null>
 ): Promise<Map<string, Member & { mod: ModeratorContext }>> {
-  const ids = [...new Set(authorIds)];
+  const ids = [...new Set(authorIds.filter((id): id is string => id !== null))];
   if (ids.length === 0) return new Map();
   const rows = await db.user.findMany({ where: { id: { in: ids } }, select: MEMBER_SELECT });
   const members: Member[] = rows.map((row) => ({ ...row, countryId: null }));
@@ -101,11 +103,12 @@ async function moderatedAuthors(
 export async function authorModeration(
   db: AuthorModerationDb,
   viewer: ForumViewer,
-  authorIds: readonly string[]
+  authorIds: ReadonlyArray<string | null>
 ): Promise<AuthorModerationOf> {
   const authors = await moderatedAuthors(db, authorIds);
   return (authorUserId, category) => {
     if (!canModerateCategory(viewer, category)) return { moderable: false, sanctionable: false };
+    if (authorUserId === null) return { moderable: true, sanctionable: false };
     const author = authors.get(authorUserId) ?? null;
     const warnable = (target: NonNullable<ForumViewer>) => canModerateCategory(target, category);
     return {

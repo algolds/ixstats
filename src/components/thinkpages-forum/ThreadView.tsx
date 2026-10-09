@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { EyeClosed, Lock } from "iconoir-react";
+import { Archive, EyeClosed, Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -18,6 +18,7 @@ import { Pagination, useLastPageRedirect } from "./Pagination";
 import type { ModeratorTools } from "./ModeratorMenu";
 import { PostItem, type ForumPost } from "./PostItem";
 import { ReportDialog } from "./ReportDialog";
+import { StashThreadButton } from "./StashThreadButton";
 import { ThreadModeratorBar } from "./ThreadModeratorBar";
 
 const NO_POSTS: ForumPost[] = [];
@@ -151,9 +152,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           refresh={refresh}
         />
       ) : null}
-      {!data.canModerate && isSignedIn && !data.viewerIsAuthor ? (
-        <div className="flex justify-end">
-          <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+      {isSignedIn ? (
+        <div className="flex justify-end gap-2">
+          <StashThreadButton threadId={thread.id} />
+          {!data.canModerate && !data.viewerIsAuthor ? (
+            <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+          ) : null}
         </div>
       ) : null}
       {thread.hidden ? (
@@ -166,6 +170,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
           <Lock aria-hidden className="size-4 shrink-0" />
           This thread is locked.
+        </p>
+      ) : null}
+      {typeof thread.xenforoThreadId === "number" ? (
+        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
+          <Archive aria-hidden className="size-4 shrink-0" />
+          Imported from the old forum.
         </p>
       ) : null}
       <div className="space-y-3">

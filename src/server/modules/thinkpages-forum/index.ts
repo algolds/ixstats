@@ -7,6 +7,12 @@ export {
   type ModeratorContext,
 } from "./access";
 export { ForumError, type ForumErrorCode } from "./errors";
+export {
+  FORUM_IMPORT_NODE_MAP_KEY,
+  legacyForumRedirectFor,
+  type LegacyDb,
+} from "./legacy-redirect";
+export { LEGACY_FORUM_REDIRECT_KEY, setLegacyForumRedirect } from "./legacy-switch";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,
@@ -101,6 +107,7 @@ export {
   getThreadPosts,
   listSiteCategories,
   loadCategory,
+  loadVisibleThread,
   POSTS_PER_PAGE,
   resolvePostLocation,
   THREADS_PER_PAGE,
@@ -128,6 +135,14 @@ export {
   type RealmReadsDb,
 } from "./realm-reads";
 export { seedRealmCategories, type SeedDb } from "./realm-seed";
+export {
+  isThreadStashed,
+  listStashedThreads,
+  stashThread,
+  unstashThread,
+  type StashDb,
+  type StashOwner,
+} from "./stash";
 export {
   createThread,
   editPost,

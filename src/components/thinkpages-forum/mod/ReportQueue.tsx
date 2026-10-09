@@ -124,7 +124,11 @@ function ReportRow({ report, members, context, refresh }: ReportRowProps) {
         <ReportActions
           report={report}
           href={href}
-          authorName={report.targetAuthorId ? memberName(members, report.targetAuthorId) : null}
+          authorName={
+            report.targetAuthorId
+              ? memberName(members, report.targetAuthorId)
+              : report.targetImportedAuthorName
+          }
           context={context}
           refresh={refresh}
         />
@@ -145,10 +149,44 @@ function ReportRow({ report, members, context, refresh }: ReportRowProps) {
   );
 }
 
+interface SanctionButtonsProps {
+  authorName: string | null;
+  /** A ban is offered from the report's category; none when it is gone. */
+  canBan: boolean;
+  onOpen: (which: "warn" | "ban") => void;
+}
+
+/** Warn author, and Ban author when there is a category to ban from. */
+function SanctionButtons({ authorName, canBan, onOpen }: SanctionButtonsProps) {
+  const who = authorName ?? "the author";
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="secondary"
+        aria-label={`Warn ${who}`}
+        onClick={() => onOpen("warn")}
+      >
+        Warn author
+      </Button>
+      {canBan ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-label={`Ban ${who}`}
+          onClick={() => onOpen("ban")}
+        >
+          Ban author
+        </Button>
+      ) : null}
+    </>
+  );
+}
+
 interface ReportActionsProps {
   report: Report;
   href: string | null;
-  /** The reported content's author, by name; null when it is gone. */
+  /** The reported content's author, by name (the imported name on imported content); null when it is gone. */
   authorName: string | null;
   context: ModContext;
   refresh: () => Promise<void>;
@@ -205,37 +243,24 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
           </Link>
         </Button>
       ) : null}
-      {actionable && author ? (
-        <>
-          <Button
-            size="sm"
-            variant="secondary"
-            aria-label={`${verb} ${content}`}
-            onClick={() => setOpen("hide")}
-          >
-            {verb}
-          </Button>
-          {report.sanctionable ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              aria-label={`Warn ${authorName ?? "the author"}`}
-              onClick={() => setOpen("warn")}
-            >
-              Warn author
-            </Button>
-          ) : null}
-          {report.sanctionable && report.category ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              aria-label={`Ban ${authorName ?? "the author"}`}
-              onClick={() => setOpen("ban")}
-            >
-              Ban author
-            </Button>
-          ) : null}
-        </>
+      {/* Hide needs the content to exist (a gone target has no thread); imported content without an IxStats
+          author is hideable too, but has nobody to warn or ban. */}
+      {actionable && report.threadId !== null ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          aria-label={`${verb} ${content}`}
+          onClick={() => setOpen("hide")}
+        >
+          {verb}
+        </Button>
+      ) : null}
+      {actionable && author && report.sanctionable ? (
+        <SanctionButtons
+          authorName={authorName}
+          canBan={report.category !== null}
+          onOpen={setOpen}
+        />
       ) : null}
       {actionable
         ? (["resolved", "dismissed"] as const).map((outcome) => (

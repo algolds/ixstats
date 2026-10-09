@@ -9,6 +9,11 @@
  * The passport redirects need the real 308 too: `/id/[username]` (canonical handle) and the legacy
  * `/r/[realm]/[username]` have no `loading.tsx` above them. `/r`'s loading UI sits in the realm's
  * `(region)` group instead, below the legacy path.
+ *
+ * The legacy forum redirects need the real 307 too (ThinkPages forum phase 4): every `/forum/*` page awaits the
+ * legacy switch and calls `redirect()` before rendering, so the `(forum)` group has no `loading.tsx` at all. With
+ * one, a switched-on `/forum/thread/<id>` answered 200 with a streamed meta-refresh instead of the 307 (seen on
+ * the clone). A bridge page that needs a fallback puts its `<Suspense>` inside its `*Client.tsx`, below the gate.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -26,7 +31,7 @@ const NOT_LOADING_SEGMENTS = new Set([
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
 /** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
-const REDIRECT_SEGMENTS = new Set(["id", "r"]);
+const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)"]);
 /** The redirect pages, relative to src/app. */
 const REDIRECT_PAGES = ["id/[username]/page.tsx", "r/[realm]/[username]/page.tsx"];
 
@@ -90,6 +95,28 @@ describe("no loading.tsx above the passport redirects", () => {
   });
 });
 
+describe("no loading.tsx above the legacy forum redirects", () => {
+  const FORUM_GROUP = path.join(APP, "(forum)");
+
+  it("the (forum) group and every directory below it have none", () => {
+    const dirs: string[] = [];
+    const pages: string[] = [];
+    walk(FORUM_GROUP, (file) => {
+      dirs.push(path.dirname(file));
+      if (PAGE_FILE.test(path.basename(file))) pages.push(file);
+    });
+    expect(pages.length).toBeGreaterThanOrEqual(8); // the walk found the gated bridge pages
+    const offenders = [...new Set([FORUM_GROUP, ...dirs])].filter(hasLoading);
+    expect(offenders.map((dir) => path.relative(process.cwd(), dir))).toEqual([]);
+  });
+
+  it("the forum layouts add no Suspense boundary around the gated pages", () => {
+    for (const layout of ["(forum)/layout.tsx", "(forum)/forum/layout.tsx"]) {
+      expect(fs.readFileSync(path.join(APP, layout), "utf8")).not.toMatch(/Suspense/);
+    }
+  });
+});
+
 describe("the non-wiki route segments keep their loading UI", () => {
   const segments = fs
     .readdirSync(APP, { withFileTypes: true })
@@ -106,7 +133,7 @@ describe("the non-wiki route segments keep their loading UI", () => {
 
   it("finds the segments (so the test below is not vacuous)", () => {
     expect(segments).toEqual(
-      expect.arrayContaining(["dashboard", "mycountry", "vault", "(forum)", "builder"])
+      expect.arrayContaining(["dashboard", "mycountry", "vault", "builder"])
     );
   });
 

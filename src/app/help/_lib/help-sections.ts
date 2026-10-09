@@ -527,9 +527,10 @@ export const helpSections: HelpSection[] = [
       {
         id: "forum",
         title: "The Forum",
-        description: "Read and post in the community forum, and link your forum account.",
+        description:
+          "Read and post in the forum, report problems, appeal moderation, and what happens to old forum posts.",
         path: "/help/social/forum",
-        tags: ["forum", "threads", "discussion"],
+        tags: ["forum", "threads", "discussion", "moderation", "appeals", "old forum"],
       },
       {
         id: "blurbs",

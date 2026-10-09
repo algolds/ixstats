@@ -5,6 +5,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { requireWikiUserId, requireWikiUserIds, type WikiAuthContext } from "~/lib/wiki-os/auth";
 import { MAX_PAGE } from "~/lib/thinkpages-forum/paging";
 import {
   authorsOf,
@@ -16,6 +17,7 @@ import {
   type ForumViewer,
   type ModeratorContext,
   type ScopeDb,
+  type StashOwner,
 } from "~/server/modules/thinkpages-forum";
 
 /** Input bounds both routers share: ids, pages, category keys (the phase 1 regex) and realm slugs. */
@@ -60,10 +62,13 @@ export async function viewerOf(
   return user ? actorOf(db, user) : null;
 }
 
-/** Display data for the authors of posts and threads, keyed by user id and persona id. */
+/**
+ * Display data for the authors of posts and threads, keyed by user id and persona id. A null author (imported
+ * content, phase 4) gets no entry; the row's `importedAuthorName` names it.
+ */
 export async function authorMaps(
   db: AuthorsDb,
-  rows: ReadonlyArray<{ authorUserId: string; authorPersonaId: string | null }>
+  rows: ReadonlyArray<{ authorUserId: string | null; authorPersonaId: string | null }>
 ) {
   const { users, personas } = await authorsOf(
     db,
@@ -78,10 +83,11 @@ export async function memberMaps(
   db: AuthorsDb,
   ids: ReadonlyArray<string | null | undefined>
 ): Promise<{ users: Record<string, ForumUserAuthor> }> {
-  const { users } = await authorsOf(
-    db,
-    ids.filter((userId): userId is string => !!userId),
-    []
-  );
+  const { users } = await authorsOf(db, ids, []);
   return { users: Object.fromEntries(users) };
+}
+
+/** Whose stashes the caller owns: new rows go under their user id, reads match every id the stash system knows. */
+export function stashOwnerOf(ctx: WikiAuthContext): StashOwner {
+  return { primaryId: requireWikiUserId(ctx), ids: requireWikiUserIds(ctx) };
 }

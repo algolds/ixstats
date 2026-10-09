@@ -234,13 +234,7 @@ export const wikiosStashRouter = createTRPCRouter({
           pageTitle: i.pageTitle,
           pageSlug: i.pageSlug,
           note: i.note,
-          contentType:
-            i.contentType ||
-            (i.pageTitle.startsWith("commons:")
-              ? "image"
-              : i.pageTitle.startsWith("forum:thread:")
-                ? "forum_thread"
-                : "wiki"),
+          contentType: i.contentType || stashContentTypeForTitle(i.pageTitle),
           contentId: i.contentId,
           annotations: i.annotations.map((a) => ({
             id: a.id,

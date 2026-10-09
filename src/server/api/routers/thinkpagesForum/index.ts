@@ -1,8 +1,8 @@
 /**
- * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-3).
+ * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-4).
  * Thin: validates, maps the signed-in user to the module's viewer (with what they moderate), calls
  * ~/server/modules/thinkpages-forum, maps ForumError 1:1 to TRPCError. Author display data goes through authorsOf,
- * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4.
+ * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4b.
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";
@@ -23,7 +23,9 @@ import {
   getCategoryThreads,
   getRealmSection,
   getThreadPosts,
+  isThreadStashed,
   listForumRealms,
+  listStashedThreads,
   listSiteCategories,
   MAX_POST_HTML,
   moveDestinations,
@@ -31,16 +33,19 @@ import {
   primaryRealmIdOf,
   replyToThread,
   resolvePostLocation,
+  stashThread,
   TITLE_MAX,
   TITLE_MIN,
+  unstashThread,
   type AuthorModerationDb,
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
-import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, viewerOf } from "./viewer";
+import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, stashOwnerOf, viewerOf } from "./viewer";
 
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
+const stashTarget = z.object({ threadId: id, stashId: id.optional() });
 
 type ThreadPage = Awaited<ReturnType<typeof getThreadPosts>>;
 
@@ -62,7 +67,7 @@ async function moderatorView(
   ]);
   return {
     tools: { categories: destinations.map((c) => ({ ...c, realm: result.category.realm })) },
-    of: (authorUserId: string) => moderation(authorUserId, result.category),
+    of: (authorUserId: string | null) => moderation(authorUserId, result.category),
   };
 }
 
@@ -135,6 +140,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
       ...result,
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
+      // An imported post without an IxStats author (null, phase 4) is never the viewer's.
       posts: result.posts.map(({ hidden, ...post }) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
         return {
@@ -177,6 +183,27 @@ export const thinkpagesForumRouter = createTRPCRouter({
   myStanding: protectedProcedure.query(async ({ ctx }) =>
     myStanding(ctx.db, await actorOf(ctx.db, ctx.user))
   ),
+
+  /** Stashes a thread the caller may read (NOT_FOUND otherwise) in their default or a given stash. */
+  stashThread: rateLimitedMutationProcedure
+    .input(stashTarget)
+    .mutation(async ({ ctx, input }) =>
+      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(mapError)
+    ),
+
+  /** Removes the thread from one stash, or from all the caller's stashes. */
+  unstashThread: rateLimitedMutationProcedure
+    .input(stashTarget)
+    .mutation(({ ctx, input }) => unstashThread(ctx.db, stashOwnerOf(ctx), input).catch(mapError)),
+
+  isThreadStashed: protectedProcedure
+    .input(z.object({ threadId: id }))
+    .query(({ ctx, input }) => isThreadStashed(ctx.db, stashOwnerOf(ctx), input)),
+
+  /** The caller's native stashed threads, newest first. */
+  stashedThreads: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional())
+    .query(({ ctx, input }) => listStashedThreads(ctx.db, stashOwnerOf(ctx), input?.limit ?? 50)),
 
   createThread: rateLimitedMutationProcedure
     .input(

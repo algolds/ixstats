@@ -1,0 +1,227 @@
+/**
+ * ThinkPages forum phase 4: import a XenForo export snapshot (scripts/migrations/export-xenforo-forum.ts) into the
+ * native forum. Dry run by default; --apply writes; --rollback previews the undo and --rollback --yes does it.
+ *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped]
+ *     [--production] [--report FILE]
+ *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback [--yes] [--production]
+ * --rollback without --yes prints what would be deleted and exits 0; with --yes it refuses while the legacy redirect
+ * switch is on.
+ * --production loads `.env.production.local` first (scripts/lib/load-runner-env.ts); the upload directory and the
+ * masked database are printed first and again right before any write.
+ * Refuses the production database ("ixstats") unless --production is passed, and runs one at a time (a Postgres
+ * advisory lock). Preflight: a complete snapshot, a valid node map, every mapped target present (phase 1 seeds,
+ * realm slugs), a writable UPLOAD_DIR with twice the attachment bytes free (checked after the report prints).
+ * --apply also refuses on BLOCKING lines (unknown states, staff-like titles placed public by title or default), and
+ * on any Forum node without an explicit node map entry (--accept-unmapped, alias --accept-defaults, accepts those).
+ * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
+ * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`). A thread that
+ * fails is rolled back alone and listed, and the run goes on.
+ * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed); 2 done, but some
+ * media asset registrations failed non-retryably (their attachment ids are listed; pending ones are retried by a
+ * rerun and do not change the code).
+ */
+import "../lib/load-runner-env";
+import { constants } from "node:fs";
+import { access, readFile, statfs, writeFile } from "node:fs/promises";
+import { PrismaClient } from "@prisma/client";
+import {
+  nodeMapSchema,
+  resolveNodeTargets,
+  type NodeMapFile,
+} from "~/lib/thinkpages-forum/import/node-map";
+import {
+  planImport,
+  UnknownTargetError,
+  type ImportPlan,
+} from "~/lib/thinkpages-forum/import/plan";
+import { summarizeImport } from "~/lib/thinkpages-forum/import/report";
+import { isComplete, readSnapshot } from "~/lib/thinkpages-forum/import/snapshot";
+import {
+  copyAttachments,
+  planAttachmentCopies,
+} from "~/server/modules/thinkpages-forum/import-attachments";
+import {
+  appliedNodeMap,
+  assertImportLock,
+  forumAssetVisibilities,
+  ImportLockLostError,
+  loadImportDbState,
+  mappedRealmSlugs,
+  missingTargets,
+  restrictedImportedPosts,
+  takeImportLock,
+} from "~/server/modules/thinkpages-forum/import-db";
+import {
+  legacyRedirectOn,
+  previewRollback,
+  rollbackImport,
+} from "~/server/modules/thinkpages-forum/import-rollback";
+import { applyImport } from "~/server/modules/thinkpages-forum/import-write";
+import { uploadsDir } from "~/server/shared/upload-storage";
+import { databaseLabel } from "../lib/database-guard";
+import { snapshotDiskFs } from "../lib/snapshot-fs";
+import {
+  importDatabaseUrl,
+  parseImportArgs,
+  runBanner,
+  type ImportArgs,
+} from "./import-xenforo-forum-args";
+import {
+  applyExitCode,
+  applyRefusals,
+  applyTotalLines,
+  attachmentPlanLines,
+  attachmentResultLines,
+  diskRefusal,
+  redirectOnRefusal,
+  reportFile,
+  rollbackLines,
+  rollbackPreviewLines,
+  snapshotGapLines,
+  targetLines,
+  unmappedForumNodes,
+  unmappedLines,
+} from "./import-xenforo-forum-plan";
+
+const print = (lines: readonly string[]) => lines.forEach((line) => console.log(line));
+const refuse = (lines: readonly string[]) => {
+  lines.forEach((line) => console.error(line));
+  return 1;
+};
+
+async function readNodeMap(file: string | null): Promise<NodeMapFile | null> {
+  if (!file) return null;
+  const parsed = nodeMapSchema.safeParse(JSON.parse(await readFile(file, "utf8")));
+  if (!parsed.success) throw new Error(`${file} is not a valid node map: ${parsed.error.message}`);
+  return parsed.data;
+}
+
+async function uploadsRefusal(plannedBytes: number): Promise<string | null> {
+  const dir = uploadsDir();
+  const writable = await access(dir, constants.W_OK).then(
+    () => true,
+    () => false
+  );
+  const freeBytes = writable
+    ? await statfs(dir).then(
+        (s) => s.bavail * s.bsize,
+        () => null
+      )
+    : null;
+  return diskRefusal({ dir, writable, freeBytes, plannedBytes });
+}
+
+/** The plan, or the message of the node whose target does not exist. */
+function planOrRefusal(make: () => ImportPlan): ImportPlan | string {
+  try {
+    return make();
+  } catch (error) {
+    if (error instanceof UnknownTargetError) return error.message;
+    throw error;
+  }
+}
+
+/** I2, M18: a preview without --yes; with it, refused while the legacy redirect is on. Needs no snapshot. */
+async function rollback(db: PrismaClient, args: ImportArgs): Promise<number> {
+  const dir = uploadsDir();
+  if (!args.yes) {
+    print(rollbackPreviewLines(await previewRollback(db, { uploadsDir: dir })));
+    return 0;
+  }
+  if (await legacyRedirectOn(db)) return refuse([redirectOnRefusal(args.production)]);
+  print(targetLines(dir, databaseLabel(process.env.DATABASE_URL)));
+  print(rollbackLines(await rollbackImport(db, { uploadsDir: dir })));
+  return 0;
+}
+
+async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
+  if (!(await takeImportLock(db))) return refuse(["Another import or rollback is running."]);
+  if (args.rollback) return rollback(db, args);
+  const snapshot = await readSnapshot(snapshotDiskFs, args.snapshot);
+  const gaps = isComplete(snapshot);
+  if (!gaps.complete) {
+    return refuse([
+      "The snapshot is incomplete; rerun the export first. Still missing:",
+      ...snapshotGapLines(gaps),
+    ]);
+  }
+  const nodeMap = await readNodeMap(args.nodeMap);
+  const realmSlugs = mappedRealmSlugs(nodeMap);
+  const state = await loadImportDbState(db, realmSlugs);
+  const missing = missingTargets(state, realmSlugs);
+  if (missing.length) return refuse(missing);
+  const copyPlan = await planAttachmentCopies(snapshot, nodeMap, {
+    siteCategories: state.siteCategories,
+    publishedRealms: state.publishedRealms,
+    restrictedPosts: await restrictedImportedPosts(db),
+  });
+  const plan = planOrRefusal(() =>
+    planImport(snapshot, { ...state, attachmentFor: copyPlan.attachmentFor }, nodeMap)
+  );
+  if (typeof plan === "string") return refuse([plan]);
+  print(summarizeImport(plan.report));
+  if (snapshot.skippedLines) {
+    print([`WARNING: ${snapshot.skippedLines} torn or unusable snapshot lines were skipped.`]);
+  }
+  print(attachmentPlanLines(snapshot.attachments.values(), copyPlan));
+  if (args.report) {
+    await writeFile(args.report, reportFile(plan.report, copyPlan));
+    console.log(`Report written to ${args.report}`);
+  }
+  const disk = await uploadsRefusal(copyPlan.bytes);
+  if (disk) return refuse([disk]);
+  const resolved = resolveNodeTargets(snapshot.nodes, nodeMap);
+  const unmapped = unmappedForumNodes(resolved);
+  print(unmappedLines(unmapped));
+  const refusals = applyRefusals({
+    blocking: plan.report.blocking,
+    unmapped,
+    acceptUnmapped: args.acceptUnmapped,
+  });
+  if (!args.apply) {
+    print(refusals.map((r) => `--apply would refuse: ${r}`));
+    return 0;
+  }
+  if (refusals.length) return refuse(refusals);
+  print(targetLines(uploadsDir(), databaseLabel(process.env.DATABASE_URL)));
+  await assertImportLock(db);
+  const copied = await copyAttachments(copyPlan, {
+    log: console.log,
+    assets: await forumAssetVisibilities(db),
+  });
+  print(attachmentResultLines(copied));
+  const totals = await applyImport(db, plan, {
+    nodeMap: appliedNodeMap(resolved),
+    log: console.log,
+  });
+  print(applyTotalLines(totals));
+  return applyExitCode(totals, copied);
+}
+
+const argv = process.argv.slice(2);
+const parsed = parseImportArgs(argv, process.env.DATABASE_URL);
+console.log(runBanner(argv));
+print(targetLines(uploadsDir(), databaseLabel(process.env.DATABASE_URL)));
+if ("error" in parsed) {
+  console.error(parsed.error);
+  process.exit(1);
+}
+
+// A plain PrismaClient: uncapped findMany (never ~/server/db), on one never-reaped connection holding the lock.
+const db = new PrismaClient({ datasourceUrl: importDatabaseUrl(process.env.DATABASE_URL ?? "") });
+let code = 1;
+run(db, parsed.args)
+  .then((result) => {
+    code = result;
+  })
+  .catch((error: Error) => {
+    console.error(error instanceof ImportLockLostError ? error.message : error);
+  })
+  // The server modules' imports open a Redis client (the rate limiter) that keeps the event loop alive: exit.
+  .finally(async () => {
+    try {
+      await db.$disconnect();
+    } finally {
+      process.exit(code);
+    }
+  });

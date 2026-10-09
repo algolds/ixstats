@@ -189,14 +189,15 @@ export function mayModerateAuthor(actor: ForumViewer, author: Member | null): bo
 
 /**
  * Content a site admin wrote is moderated by site admins only (hide, edit, move, lock, pin, archive, resolving its
- * reports). Site admin actors cost no query.
+ * reports). Site admin actors and content without an IxStats author (imported, phase 4: not an admin's) cost no
+ * query.
  */
 export async function assertCanModerateAuthor(
   db: Pick<PrismaClient, "user">,
   actor: NonNullable<ForumViewer>,
-  authorUserId: string
+  authorUserId: string | null
 ): Promise<void> {
-  if (isSiteAdmin(actor)) return;
+  if (isSiteAdmin(actor) || authorUserId === null) return;
   if (!mayModerateAuthor(actor, await memberOf(db, authorUserId))) {
     throw new ForumError("FORBIDDEN", "Only site admins moderate a site admin's posts.");
   }

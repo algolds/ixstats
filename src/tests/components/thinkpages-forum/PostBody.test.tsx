@@ -23,6 +23,11 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 
+jest.mock("~/lib/base-path", () => ({
+  ...jest.requireActual<typeof import("~/lib/base-path")>("~/lib/base-path"),
+  withBasePath: (path: string) => (path.startsWith("/p/") ? path : `/p${path}`),
+}));
+
 import { PostBody } from "~/components/thinkpages-forum/PostBody";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import type { ActionCardData } from "~/components/action-links";
@@ -60,6 +65,27 @@ describe("PostBody", () => {
     const wrapper = container.firstElementChild as HTMLElement;
     expect(wrapper).toHaveClass("[&_img]:max-w-full", "[&_img]:max-h-[640px]", "[&_img]:h-auto");
     expect(container.querySelector("img")?.getAttribute("src")).toBe("https://x/y.png");
+  });
+
+  it("renders root-relative image and link URLs through the base path, once", () => {
+    const { container } = render(
+      <PostBody
+        html='<p><img src="/images/uploads/forum/55-abc-x.png" alt=""><a href="/images/uploads/forum/56-def-r.pdf">r</a><img src="/p/images/downloaded/y.png" alt=""><img src="https://x/z.png" alt=""></p>[ixaction=a1]<p><img src="/images/uploads/b.png" alt=""></p>'
+        cards={new Map()}
+        cardsReady
+      />
+    );
+    expect(Array.from(container.querySelectorAll("img"), (img) => img.getAttribute("src"))).toEqual(
+      [
+        "/p/images/uploads/forum/55-abc-x.png",
+        "/p/images/downloaded/y.png",
+        "https://x/z.png",
+        "/p/images/uploads/b.png",
+      ]
+    );
+    expect(container.querySelector("a")?.getAttribute("href")).toBe(
+      "/p/images/uploads/forum/56-def-r.pdf"
+    );
   });
 
   it("renders Unverified action for an unknown id", () => {

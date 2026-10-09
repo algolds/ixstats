@@ -33,11 +33,11 @@ export function canSeeCategory(viewer: ForumViewer, category: { visibility: stri
 
 /**
  * A thread the viewer may read: hidden needs a moderator of the category (M9); reporter_staff needs a moderator or
- * the author (M8).
+ * the author (M8), so one without an IxStats author (imported, phase 4) is moderators only.
  */
 export function canSeeThread(
   viewer: ForumViewer,
-  thread: { authorUserId: string; hidden: boolean },
+  thread: { authorUserId: string | null; hidden: boolean },
   category: { id: string; scope: string; realmId: string | null; visibility: string }
 ): boolean {
   if (!canSeeCategory(viewer, category)) return false;

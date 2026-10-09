@@ -6,6 +6,6 @@
  * order, and `src/lib/wiki-os/config.ts` builds the config from `process.env` the moment it loads, so a
  * `dotenv.config()` written after the imports ran too late and the script talked to the default host.
  */
-import dotenv from "dotenv";
+import { DEFAULT_ENV_FILES, loadEnvFiles } from "./env-files";
 
-for (const path of [".env.local.dev", ".env.local", ".env"]) dotenv.config({ path });
+loadEnvFiles(DEFAULT_ENV_FILES);

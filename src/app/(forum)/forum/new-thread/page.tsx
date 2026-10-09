@@ -1,19 +1,7 @@
-"use client";
-// New thread creation page.
+import { followLegacyRedirect } from "../legacy-gate";
+import NewThreadClient from "./NewThreadClient";
 
-import { useSearchParams } from "next/navigation";
-import { ForumLayout } from "~/components/forum/shared/ForumLayout";
-import { ThreadComposer } from "~/components/forum/composer/ThreadComposer";
-
-export default function NewThreadPage() {
-  const searchParams = useSearchParams();
-  const param = searchParams.get("forum");
-  const parsed = param ? Number(param) : NaN;
-  const defaultForumId = !isNaN(parsed) ? parsed : undefined;
-
-  return (
-    <ForumLayout>
-      <ThreadComposer defaultForumId={defaultForumId} />
-    </ForumLayout>
-  );
+export default async function NewThreadPage() {
+  await followLegacyRedirect({ kind: "other" });
+  return <NewThreadClient />;
 }

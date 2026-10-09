@@ -40,5 +40,5 @@ export {
 } from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
-export { transformBBCode } from "./lib/bbcode-transformer";
+export { transformBBCode } from "~/lib/thinkpages-forum/import/bbcode";
 export { cacheKey, cacheInvalidate, invalidateThread, cachedFetch } from "./lib/cache";

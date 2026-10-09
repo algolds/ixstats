@@ -8,7 +8,7 @@
  * in a text run, where it renders as a card. Attachments are appended (https or site-relative URLs only), and the
  * whole is sanitized last and stripped, as the forum's writes.ts stores a post.
  */
-import { countActionTokens } from "~/lib/action-links";
+import { countActionTokens, withoutTokensInTags } from "~/lib/action-links";
 import { escapeHtml, sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils/text-formatter";
 
@@ -68,13 +68,6 @@ const FEED_MARKERS = [
 
 const withoutFeedMarkers = (content: string) =>
   FEED_MARKERS.reduce((text, marker) => text.replace(marker, ""), content.replace(/\r\n?/g, "\n"));
-
-// A whole start or end tag (quoted attribute values may hold `>`), as action-links reads sanitized HTML.
-const TAG = /<\/?[a-zA-Z](?:"[^"]*"|'[^']*'|[^>"'])*>/g;
-const ACTION_TOKEN = /\[ixaction=[A-Za-z0-9_-]{1,64}\]/g;
-
-const withoutTokensInTags = (html: string) =>
-  html.replace(TAG, (tag) => tag.replace(ACTION_TOKEN, ""));
 
 function mediaBlock({ url, type }: { url: string; type: string }): string | null {
   if (!SAFE_MEDIA_URL.test(url) || countActionTokens(url) > 0) return null;

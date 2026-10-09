@@ -37,8 +37,13 @@ const threads = [
   { id: "t_general", authorUserId: "u_m", category: general },
   { id: "t_officer", authorUserId: "u_o", category: eurthHub },
   { id: "t_admin", authorUserId: "u_a2", category: eurthHub },
+  // Imported from XenForo without an IxStats account (phase 4).
+  { id: "t_imported", authorUserId: null, category: eurthHub },
 ];
-const posts = [{ id: "p_eurth", authorUserId: "u_m", thread: { category: eurthHub } }];
+const posts = [
+  { id: "p_eurth", authorUserId: "u_m", thread: { category: eurthHub } },
+  { id: "p_imported", authorUserId: null, thread: { category: eurthHub } },
+];
 
 type WarningRow = {
   id: string;
@@ -621,6 +626,30 @@ describe("issueWarning", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(tx.forumWarning.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a warning on content that has no IxStats author (imported), before the author check", async () => {
+    const { db, tx } = warnDb();
+    const base = { userId: "u_m", reason: "Spam", points: 1 };
+    await expect(
+      issueWarning(db as never, realmMod, { ...base, target: { type: "post", id: "p_imported" } })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This post has no IxStats author." });
+    await expect(
+      issueWarning(db as never, admin, { ...base, target: { type: "thread", id: "t_imported" } })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "This thread has no IxStats author." });
+    expect(tx.forumWarning.create).not.toHaveBeenCalled();
+  });
+
+  it("checks the scope before the author on imported content", async () => {
+    const { db } = warnDb();
+    await expect(
+      issueWarning(db as never, member, {
+        userId: "u_m",
+        reason: "Spam",
+        points: 1,
+        target: { type: "post", id: "p_imported" },
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("never warns site admins or the scope's own moderators (M5), nor unknown members", async () => {

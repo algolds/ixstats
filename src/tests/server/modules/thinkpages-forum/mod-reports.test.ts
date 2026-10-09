@@ -307,7 +307,9 @@ describe("listReports", () => {
       threadTitle: null,
       excerpt: null,
       targetAuthorId: null,
+      targetImportedAuthorName: null,
     });
+    expect(rows[0]!.targetImportedAuthorName).toBeNull();
   });
 
   it("loads the targets in one thread query and one post query", async () => {
@@ -646,5 +648,79 @@ describe("reports about the moderator's own content", () => {
       resolveReport(store.db as never, generalMod, { reportId: "rep_general", outcome: "resolved" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(store.logs).toHaveLength(0);
+  });
+});
+
+describe("reports on imported content without an IxStats author", () => {
+  const importedReports = (): Row[] => [
+    report("rep_imported_post", "post", "p_imported", "r_eurth_hub", { createdAt: at(8) }),
+    report("rep_imported_thread", "thread", "t_imported", "r_eurth_hub", { createdAt: at(9) }),
+  ];
+  const importedStore = (reports = importedReports()) => {
+    const store = reportsStore([], { reports });
+    store.state.threads.push(
+      thread("t_imported", "r_eurth_hub", { authorUserId: null, importedAuthorName: "OldThread" })
+    );
+    store.state.posts.push(
+      post("p_imported", "t_eurth", { authorUserId: null, importedAuthorName: "OldName" })
+    );
+    return store;
+  };
+
+  it("are filed like any other member's content", async () => {
+    const store = importedStore([]);
+    await fileAs(store, reporter, "post", "p_imported");
+    await fileAs(store, reporter, "thread", "t_imported");
+    expect(store.state.reports.map((r) => [r.targetId, r.categoryId])).toEqual([
+      ["p_imported", "r_eurth_hub"],
+      ["t_imported", "r_eurth_hub"],
+    ]);
+  });
+
+  it("queue as hideable, never sanctionable, with no author, and never ask for a null user", async () => {
+    const store = importedStore();
+    const { rows } = await listReports(store.db as never, eurthMod, { status: "open" }, 1);
+    expect(
+      rows.map(({ id, moderable, sanctionable, targetAuthorId, targetImportedAuthorName }) => ({
+        id,
+        moderable,
+        sanctionable,
+        targetAuthorId,
+        targetImportedAuthorName,
+      }))
+    ).toEqual([
+      {
+        id: "rep_imported_thread",
+        moderable: true,
+        sanctionable: false,
+        targetAuthorId: null,
+        targetImportedAuthorName: "OldThread",
+      },
+      {
+        id: "rep_imported_post",
+        moderable: true,
+        sanctionable: false,
+        targetAuthorId: null,
+        targetImportedAuthorName: "OldName",
+      },
+    ]);
+    for (const delegate of [store.db.forumThread, store.db.forumPost]) {
+      expect(delegate.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ select: expect.objectContaining({ importedAuthorName: true }) })
+      );
+    }
+    for (const [args] of store.db.user.findMany.mock.calls as Array<[{ where: Row }]>) {
+      expect(JSON.stringify(args.where)).not.toContain("null");
+    }
+  });
+
+  it("are resolved by a moderator of the category without looking up an author", async () => {
+    const store = importedStore();
+    await resolveReport(store.db as never, eurthMod, {
+      reportId: "rep_imported_post",
+      outcome: "resolved",
+    });
+    expect(store.state.reports.find((r) => r.id === "rep_imported_post")!.status).toBe("resolved");
+    expect(store.db.user.findUnique).not.toHaveBeenCalled();
   });
 });

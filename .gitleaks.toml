@@ -1,0 +1,9 @@
+# Gitleaks configuration: the default rules, plus an allowlist for deliberately fake test credentials.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake credentials used by tests to prove real secrets never leak"
+regexes = [
+  '''test-key-SECRET-0123456789''',
+]

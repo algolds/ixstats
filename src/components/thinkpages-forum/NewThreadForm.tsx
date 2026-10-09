@@ -68,6 +68,15 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     );
   }
 
+  const header = (
+    <PageHeader
+      title="New thread"
+      subtitle={data.category.name}
+      back={{ href: backHref, label: data.category.name }}
+      bleed
+    />
+  );
+
   if (!data.canStart) {
     const back = (
       <Button asChild variant="secondary">
@@ -75,7 +84,8 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
       </Button>
     );
     return (
-      <div className="container mx-auto max-w-3xl space-y-4 px-4 py-8">
+      <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
+        {header}
         {data.banned && data.notice ? (
           <>
             <BanNotice notice={data.notice} />
@@ -96,12 +106,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
 
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-      <PageHeader
-        title="New thread"
-        subtitle={data.category.name}
-        back={{ href: backHref, label: data.category.name }}
-        bleed
-      />
+      {header}
       <ForumComposer icAllowed={data.category.icAllowed} titleField onSubmit={submit} />
     </div>
   );

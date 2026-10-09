@@ -29,7 +29,7 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 - `src/server/api/routers/ixnayid/linking.ts` – forum account linking (`startForumVerification`, `confirmForumVerification`, `unlinkForum`); proof logic in `src/server/modules/forum/services/forum-link-verification.ts`
 
 ### Module & Services
-- `src/server/modules/forum/lib/bbcode-transformer.ts` – BBCode to HTML parser
+- `src/lib/thinkpages-forum/import/bbcode.ts` – BBCode to HTML parser
 - `src/server/modules/forum/lib/cache.ts` – Caching with per-content TTLs
 - `src/server/modules/forum/services/xenforo-service.ts` – XenForo API client
 - `src/server/modules/forum/services/xenforo-user-sync.ts`, `linked-user.ts` – account linking and linked-user resolution
@@ -40,6 +40,32 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 - `src/app/(forum)/forum/thread/[threadId]/page.tsx` – Thread detail with post feed
 - `src/app/(forum)/forum/{new-thread,search,bookmarks,members/[userId]}/page.tsx` – composer, search, stashed threads, member profile
 - `src/components/forum/` – Composers, post cards, category headers, breadcrumbs
+
+---
+
+## Native Forum (ThinkPages) and the XenForo Import
+
+The community forum is moving from the XenForo bridge described above to a native forum inside ThinkPages. The bridge sections above stay accurate until phase 4b retires them; the native forum is the target.
+
+- **Routes:** `/thinkpages/forum` (home), `/thinkpages/c/<key>` (sitewide category), `/thinkpages/r/<realm>/<key>` (realm category), `/thinkpages/t/<threadId>` (thread), `/thinkpages/mod` (moderation console).
+- **Data:** `ForumCategory`, `ForumThread`, `ForumPost` and the moderation models in `prisma/schema/`. Sitewide categories are seeded; every realm has Hub, Character Threads and Current Events (`src/lib/thinkpages-forum/categories.ts`).
+- **Code:** server in `src/server/modules/thinkpages-forum/` (reads, writes, access rules, realm access, moderation, stash), routers in `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), pure helpers in `src/lib/thinkpages-forum/`, components in `src/components/thinkpages-forum/`.
+- **Access:** categories are `public`, `reporter_staff` (Reports: members see only their own threads) or `staff`; `postRole: "staff"` categories take threads and replies from site admins only. Realm sections follow realm visibility and posting needs a nation in the realm or realm moderation. Bans apply per site, realm or category.
+- **Moderation:** warnings (points expire after 90 days; 5 active points mean a 7-day ban, 10 a 30-day ban), bans, reports, appeals (one per active warning or ban, reviewed by a different moderator) and a moderation log. Policy lives in `src/lib/thinkpages-forum/moderation-policy.ts`.
+- **Stash:** threads are stashed natively as `thinkpages:thread:<id>` items (`stash.ts`).
+
+### Importing the XenForo forum
+
+The old forum is copied in two steps, so the importer never talks to XenForo. The import can be re-run with a fresh export to pick up posts made since: only missing rows are added, so edits to already-imported XenForo posts, and title, lock or pin changes on imported threads, are not re-imported.
+
+1. **Export** a snapshot of the XenForo forum to a local directory: `bun run forum:export-xenforo`.
+2. **Import** the snapshot: `bun run db:import-xenforo-forum -- --snapshot DIR` is a dry run that prints a report; `--apply` writes. The import is idempotent by XenForo id, and a rerun attributes posts to members who have linked since.
+
+Imported rows keep their XenForo ids (`xenforoThreadId`, `xenforoPostId`), the author's XenForo name (`importedAuthorName`) and original dates. A XenForo member resolves to an IxStats user only through `User.forumUserId`; everyone else keeps the old name with no account. Threads land in a mapped category (an owner-reviewed node map, then title heuristics) or in a read-only archive category `xf-<nodeId>`, which the forum home groups under "From the old forum". Imported threads show "Imported from the old forum." on the thread page and an "Imported" tag in lists.
+
+While the legacy switch is on (`bun run forum:legacy-redirect -- on|off|status`; off by default), old `/forum/*` URLs redirect to the matching native thread, post, category or member. While it is off, the bridge pages render as before.
+
+Importer code is in `src/lib/thinkpages-forum/import/` and `scripts/migrations/`; the bridge (`src/server/modules/forum/`, `src/app/(forum)/`) is retired in phase 4b.
 
 ---
 

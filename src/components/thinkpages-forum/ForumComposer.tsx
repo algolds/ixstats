@@ -14,6 +14,8 @@ import {
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
+import { getBasePath } from "~/lib/base-path";
+import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { api } from "~/trpc/react";
 
 const GlassPlateEditor = dynamic(
@@ -81,7 +83,9 @@ export function ForumComposer({
     requestAnimationFrame(() => editorRef.current?.focusEnd());
   }, []);
 
-  const canSubmit = plain.trim().length > 0 && (!titleField || title.trim().length > 0) && !pending;
+  // An image counts as content, as it does on the server (prepareBody).
+  const hasBody = plain.trim().length > 0 || hasImageSrc(html, getBasePath());
+  const canSubmit = hasBody && (!titleField || title.trim().length > 0) && !pending;
 
   const submit = useCallback(async () => {
     if (!canSubmit) return;
@@ -128,6 +132,7 @@ export function ForumComposer({
           setPlain(nextPlain);
         }}
         placeholder="Write something"
+        allowImageInsert
         disabled={pending}
         minHeight={96}
         maxHeight={320}

@@ -35,6 +35,7 @@ jest.mock("~/trpc/react", () => {
       categories: invalidator("categories"),
       realmSection: invalidator("realmSection"),
       myStanding: invalidator("myStanding"),
+      isThreadStashed: invalidator("isThreadStashed"),
       resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
     },
     thinkpagesForumMod: { ...invalidator("mod"), context: invalidator("context") },
@@ -52,6 +53,9 @@ jest.mock("~/trpc/react", () => {
         category: query("category"),
         thread: query("thread"),
         myStanding: query("myStanding"),
+        isThreadStashed: query("isThreadStashed"),
+        stashThread: mutation("stashThread"),
+        unstashThread: mutation("unstashThread"),
         reply: mutation("reply"),
         editPost: mutation("editPost"),
         createThread: mutation("createThread"),
@@ -284,6 +288,7 @@ beforeEach(() => {
   auth.isSignedIn = false;
   set("activityCards", { data: [] });
   set("context", { data: NO_MOD });
+  set("isThreadStashed", { data: { stashed: false } });
 });
 
 describe("reporting", () => {

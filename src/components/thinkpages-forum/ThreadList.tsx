@@ -44,12 +44,16 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
             <span className="min-w-0 truncate">{thread.title}</span>
             {/* Moderators only: members never receive hidden threads. */}
             {thread.hidden ? <Badge variant="warning">Hidden</Badge> : null}
+            {typeof thread.xenforoThreadId === "number" ? (
+              <Badge variant="outline">Imported</Badge>
+            ) : null}
           </p>
           <p className="text-footnote text-label-secondary flex min-w-0 gap-1">
             <AuthorName
               authors={authors}
               userId={thread.authorUserId}
               personaId={thread.authorPersonaId}
+              importedName={thread.importedAuthorName}
             />
           </p>
         </div>

@@ -1,26 +1,9 @@
-"use client";
-// Thread view — SSR shell, then client-side pagination and interactions.
+import { legacyRefFor } from "~/lib/thinkpages-forum/legacy-forum";
+import { followLegacyRedirect } from "../../legacy-gate";
+import ThreadPageClient from "./ThreadPageClient";
 
-import { useParams } from "next/navigation";
-import { ForumLayout } from "~/components/forum/shared/ForumLayout";
-import { ThreadRenderer } from "~/components/forum/reader/ThreadRenderer";
-import { EmptyState } from "~/components/ui/empty-state";
-
-export default function ThreadPage() {
-  const params = useParams();
-  const threadId = Number(params.threadId);
-
-  if (isNaN(threadId)) {
-    return (
-      <ForumLayout>
-        <EmptyState title="Invalid thread" />
-      </ForumLayout>
-    );
-  }
-
-  return (
-    <ForumLayout>
-      <ThreadRenderer threadId={threadId} />
-    </ForumLayout>
-  );
+export default async function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {
+  const { threadId } = await params;
+  await followLegacyRedirect(legacyRefFor("thread", threadId));
+  return <ThreadPageClient />;
 }

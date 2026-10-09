@@ -8,13 +8,14 @@ const editorClear = jest.fn();
 interface MockEditorProps {
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
+  allowImageInsert?: boolean;
   ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
 jest.mock(
   "next/dynamic",
   () => () =>
-    function Editor({ ref, onChange, placeholder }: MockEditorProps) {
+    function Editor({ ref, onChange, placeholder, allowImageInsert }: MockEditorProps) {
       React.useImperativeHandle(
         ref,
         () => ({ focusEnd: editorFocusEnd, insertText: editorInsert, clear: editorClear }),
@@ -24,7 +25,14 @@ jest.mock(
         <textarea
           data-testid="editor"
           placeholder={placeholder}
-          onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value, e.target.value)}
+          data-allow-image={String(allowImageInsert)}
+          onChange={(e) => {
+            const value = e.target.value;
+            // "img:<src>" stands for an inserted image with no text around it.
+            if (value.startsWith("img:"))
+              onChange?.(`<p><img src="${value.slice(4)}" alt=""></p>`, "", "");
+            else onChange?.(`<p>${value}</p>`, value, value);
+          }}
         />
       );
     }
@@ -121,6 +129,36 @@ describe("ForumComposer", () => {
     );
     await waitFor(() => expect(editorClear).toHaveBeenCalled());
     expect(post).toBeDisabled();
+  });
+
+  it("opts the editor into image inserts", () => {
+    render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
+    expect(screen.getByTestId("editor")).toHaveAttribute("data-allow-image", "true");
+  });
+
+  it("submits an image-only post and keeps Post disabled for an image with no src", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+    render(<ForumComposer icAllowed={false} onSubmit={onSubmit} />);
+    const post = screen.getByRole("button", { name: "Post" });
+    type("img:");
+    expect(post).toBeDisabled();
+    type("img:data:image/png;base64,AAAA");
+    expect(post).toBeDisabled();
+    type("img:javascript:alert(1)");
+    expect(post).toBeDisabled();
+    type("img:x");
+    expect(post).toBeDisabled();
+    type("img:/api/mediawiki/commons/Special:Filepath/A%20b.png");
+    expect(post).toBeEnabled();
+    type("img:/images/uploads/a.png");
+    expect(post).toBeEnabled();
+    fireEvent.click(post);
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        html: '<p><img src="/images/uploads/a.png" alt=""></p>',
+        personaId: null,
+      })
+    );
   });
 
   it("requires a title when titleField is set and sends it", async () => {

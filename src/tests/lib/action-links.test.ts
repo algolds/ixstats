@@ -4,9 +4,12 @@ import {
   MAX_ACTIONS_PER_POST,
   countActionTokens,
   countTextActionTokens,
+  mapHtmlRuns,
   parseActionTokens,
   postPermalinkPath,
   splitActionTokens,
+  withoutActionTokens,
+  withoutTokensInTags,
 } from "~/lib/action-links";
 
 describe("parseActionTokens", () => {
@@ -28,9 +31,10 @@ describe("parseActionTokens", () => {
   });
 
   it("caps at a known limit the caller can check", () => {
-    const body = Array.from({ length: MAX_ACTIONS_PER_POST + 1 }, (_, i) => `[ixaction=a${i}]`).join(
-      " "
-    );
+    const body = Array.from(
+      { length: MAX_ACTIONS_PER_POST + 1 },
+      (_, i) => `[ixaction=a${i}]`
+    ).join(" ");
     expect(parseActionTokens(body)).toHaveLength(MAX_ACTIONS_PER_POST + 1);
   });
 });
@@ -51,7 +55,12 @@ describe("chainWikiSection", () => {
       title: "The Northern Pact",
       approvedIxTime: Date.UTC(2041, 2, 5),
       entries: [
-        { title: "Signed treaty", type: "diplomatic", ixTime: Date.UTC(2041, 0, 2), url: "https://x/p/1" },
+        {
+          title: "Signed treaty",
+          type: "diplomatic",
+          ixTime: Date.UTC(2041, 0, 2),
+          url: "https://x/p/1",
+        },
       ],
     });
     expect(text).toContain("== Story chain: The Northern Pact ==");
@@ -103,7 +112,8 @@ describe("splitActionTokens", () => {
 
   it("never cuts a token inside an attribute value", () => {
     const title = '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>';
-    const href = '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>';
+    const href =
+      '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>';
     expect(splitActionTokens(title)).toEqual([{ kind: "html", text: title }]);
     expect(splitActionTokens(href)).toEqual([{ kind: "html", text: href }]);
   });
@@ -181,5 +191,45 @@ describe("splitActionTokens paragraph lifting", () => {
   it("leaves tokens outside paragraphs and other paragraphs untouched", () => {
     const html = "<p></p><p>plain</p>[ixaction=a1]<div>x</div>";
     expect(liftActionTokens(html)).toBe(html);
+  });
+});
+
+describe("withoutTokensInTags", () => {
+  it("cuts tokens out of tags and attribute values and leaves the text's tokens", () => {
+    expect(
+      withoutTokensInTags('<p><a href="https://x.test/[ixaction=a1]">x [ixaction=b2]</a></p>')
+    ).toBe('<p><a href="https://x.test/">x [ixaction=b2]</a></p>');
+  });
+
+  it("never leaves a token that a cut formed inside a tag", () => {
+    const out = withoutTokensInTags('<a href="[ixaction=[ixaction=a]b]">x</a>');
+    expect(countActionTokens(out)).toBe(countTextActionTokens(out));
+    expect(out).toBe('<a href="">x</a>');
+  });
+
+  it("leaves html without tokens unchanged", () => {
+    const html = '<p class="a">one</p><img src="/a.png" alt="">';
+    expect(withoutTokensInTags(html)).toBe(html);
+  });
+});
+
+describe("withoutActionTokens", () => {
+  it("removes every token, including one formed by a removal", () => {
+    expect(withoutActionTokens("a [ixaction=x] b [ixaction=[ixaction=y]z]")).toBe("a  b ");
+  });
+});
+
+describe("mapHtmlRuns", () => {
+  it("maps tags and the text between them separately", () => {
+    const out = mapHtmlRuns('<p title="t">ab</p>cd', {
+      markup: (tag) => tag.toUpperCase(),
+      text: (text) => `[${text}]`,
+    });
+    expect(out).toBe('<P TITLE="T">[ab]</P>[cd]');
+  });
+
+  it("leaves a side alone when no mapper is given for it", () => {
+    expect(mapHtmlRuns("<b>x</b>", { text: () => "y" })).toBe("<b>y</b>");
+    expect(mapHtmlRuns("<b>x</b>", { markup: () => "" })).toBe("x");
   });
 });
