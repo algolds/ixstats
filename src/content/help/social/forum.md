@@ -81,7 +81,7 @@ The community's older forum runs on a separate site. When its threads and posts 
 Once the old forum has been copied here:
 
 - **Imported threads** say "Imported from the old forum." under the title, and are tagged **Imported** in thread lists.
-- **Where they live:** threads from boards that matched a category here sit in that category and take replies like any other thread. Threads from every other old board sit in a category under **From the old forum** on the forum home. Those categories are read-only for members, so you can read them but not reply or start threads there. The team can still post in them.
+- **Where they live:** threads from boards that matched a category here sit in that category and take replies like any other thread. Threads from every other old board sit in a category under **From the old forum** on the forum home. Those categories are read-only for members, so you can read them but not reply or start threads there. The team can still post in them. If a post there is attributed to your account, you can still edit it, as you can any of your own posts in an open thread; once a thread is locked or archived, edits are closed.
 - **Names:** a post written by someone whose old forum account was linked to an IxStats account when the posts were copied shows that member's IxStats name. Any other post keeps the name from the old forum, as plain text, with no profile behind it.
 
 ### Getting your posts attributed
