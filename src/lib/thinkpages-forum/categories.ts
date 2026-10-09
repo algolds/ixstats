@@ -1,6 +1,22 @@
 /** The sitewide ThinkPages forum section (Concept B spec, "Structure at launch"). Seeded by the phase 1 migration. */
 export type ForumVisibility = "public" | "staff" | "reporter_staff";
 
+/** M8: public to all; reporter_staff to signed-in members (thread-level rule in access.ts); staff to site admins. */
+export function visibleForumVisibilities(viewer: {
+  signedIn: boolean;
+  siteAdmin: boolean;
+}): readonly ForumVisibility[] {
+  if (viewer.siteAdmin) return ["public", "reporter_staff", "staff"];
+  return viewer.signedIn ? ["public", "reporter_staff"] : ["public"];
+}
+
+/** The Prisma where fragment for the same rule, for callers outside the forum module (realms.forum-preview.ts). */
+export function categoryVisibilityWhere(viewer: { signedIn: boolean; siteAdmin: boolean }): {
+  visibility: { in: ForumVisibility[] };
+} {
+  return { visibility: { in: [...visibleForumVisibilities(viewer)] } };
+}
+
 export interface SiteCategorySeed {
   key: string;
   name: string;

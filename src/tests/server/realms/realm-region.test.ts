@@ -534,7 +534,7 @@ describe("overview and happenings", () => {
         scope: "realm",
         realmId: "eurth",
         key: "hub",
-        visibility: "public",
+        visibility: { in: ["public", "reporter_staff"] },
       });
       expect(db.forumThread.findMany).toHaveBeenCalledWith({
         where: { categoryId: "hub1", hidden: false },
@@ -575,6 +575,7 @@ describe("overview and happenings", () => {
         scope: "realm",
         realmId: "eurth",
         key: "hub",
+        visibility: { in: ["public", "reporter_staff", "staff"] },
       });
     });
 

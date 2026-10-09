@@ -1,6 +1,12 @@
 /** @jest-environment node */
 import { readFileSync } from "node:fs";
-import { REALM_CATEGORIES, REALM_HUB_KEY, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import {
+  categoryVisibilityWhere,
+  REALM_CATEGORIES,
+  REALM_HUB_KEY,
+  SITE_CATEGORIES,
+  visibleForumVisibilities,
+} from "~/lib/thinkpages-forum/categories";
 
 const sql = readFileSync("prisma/migrations/20261008120000_thinkpages_forum/migration.sql", "utf8");
 const realmSql = readFileSync("prisma/migrations/20261009120000_thinkpages_forum_realms/migration.sql", "utf8");
@@ -60,5 +66,30 @@ describe("realm forum categories", () => {
     expect(realmSql).toMatch(/"forum_posts"[\s\S]*"sourceRef"/);
     expect(realmSql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "forum_threads_sourceRef_key"');
     expect(realmSql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "forum_posts_sourceRef_key"');
+  });
+});
+
+describe("category visibility (M8)", () => {
+  const anonymous = { signedIn: false, siteAdmin: false };
+  const member = { signedIn: true, siteAdmin: false };
+  const admin = { signedIn: true, siteAdmin: true };
+
+  it("shows public to everyone, reporter_staff to members and staff to site admins", () => {
+    expect(visibleForumVisibilities(anonymous)).toEqual(["public"]);
+    expect(visibleForumVisibilities(member)).toEqual(["public", "reporter_staff"]);
+    expect(visibleForumVisibilities(admin)).toEqual(["public", "reporter_staff", "staff"]);
+  });
+
+  it("covers every visibility a seeded category uses", () => {
+    const all = visibleForumVisibilities(admin);
+    for (const c of SITE_CATEGORIES) expect(all).toContain(c.visibility);
+  });
+
+  it("gives the same rule as a Prisma where fragment", () => {
+    for (const viewer of [anonymous, member, admin]) {
+      expect(categoryVisibilityWhere(viewer)).toEqual({
+        visibility: { in: [...visibleForumVisibilities(viewer)] },
+      });
+    }
   });
 });

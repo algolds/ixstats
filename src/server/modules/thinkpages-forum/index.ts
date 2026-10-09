@@ -1,5 +1,47 @@
-export { canPostIn, canSeeCategory, canStartThread, type ForumViewer } from "./access";
+export {
+  canPostIn,
+  canSeeCategory,
+  canSeeThread,
+  canStartThread,
+  type ForumViewer,
+  type ModeratorContext,
+} from "./access";
 export { ForumError, type ForumErrorCode } from "./errors";
+export {
+  activeBansFor,
+  assertNotBanned,
+  BANS_PER_PAGE,
+  issueBan,
+  liftBan,
+  listBans,
+  postingBan,
+  type ActiveBan,
+  type BanInput,
+  type BansDb,
+} from "./mod-bans";
+export { listModLog, LOG_PER_PAGE, logModAction, type ModLogDb, type ModLogEntry } from "./mod-log";
+export {
+  assertModeratesCategory,
+  assertScope,
+  canActInScope,
+  canModerateCategory,
+  isModerator,
+  moderatorContext,
+  scopeCategoryIds,
+  scopeOfCategory,
+  type ModScope,
+  type ScopeDb,
+} from "./mod-scope";
+export {
+  activePointsOf,
+  issueWarning,
+  listWarnings,
+  revokeWarning,
+  WARNINGS_PER_PAGE,
+  type WarningInput,
+  type WarningOutcome,
+  type WarningsDb,
+} from "./mod-warnings";
 export {
   authorsOf,
   getCategoryThreads,

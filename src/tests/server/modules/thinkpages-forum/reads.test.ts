@@ -90,11 +90,11 @@ const threadIn = (category: typeof general | typeof eurthHub, extra: object = {}
 });
 
 describe("access rules", () => {
-  it("shows public categories to everyone and staff categories to admins only", () => {
+  it("shows public categories to everyone, reports to members and staff categories to admins only (M8)", () => {
     expect(canSeeCategory(null, general)).toBe(true);
     expect(canSeeCategory(user, staff)).toBe(false);
     expect(canSeeCategory(null, { visibility: "reporter_staff" })).toBe(false);
-    expect(canSeeCategory(user, { visibility: "reporter_staff" })).toBe(false);
+    expect(canSeeCategory(user, { visibility: "reporter_staff" })).toBe(true);
     expect(canSeeCategory(admin, staff)).toBe(true);
     expect(canSeeCategory(admin, { visibility: "reporter_staff" })).toBe(true);
   });
@@ -126,13 +126,15 @@ describe("listSiteCategories", () => {
     );
   });
 
-  it("omits staff and reports categories for a plain user and for anonymous", async () => {
-    for (const viewer of [user, null]) {
-      const keys = (await listSiteCategories(readDb() as never, viewer)).map((c) => c.key);
-      expect(keys).not.toContain("staff");
-      expect(keys).not.toContain("reports");
-      expect(keys).toHaveLength(5);
-    }
+  it("omits staff for a plain user, and staff and reports for anonymous (M8)", async () => {
+    const member = (await listSiteCategories(readDb() as never, user)).map((c) => c.key);
+    expect(member).not.toContain("staff");
+    expect(member).toContain("reports");
+    expect(member).toHaveLength(6);
+    const anonymous = (await listSiteCategories(readDb() as never, null)).map((c) => c.key);
+    expect(anonymous).not.toContain("staff");
+    expect(anonymous).not.toContain("reports");
+    expect(anonymous).toHaveLength(5);
   });
 
   it("counts only visible threads for non-admins, in one grouped query", async () => {

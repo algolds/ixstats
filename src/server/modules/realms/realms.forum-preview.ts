@@ -3,7 +3,7 @@
  * forum tables itself rather than importing the forum module, which imports this module's barrel.
  */
 import type { PrismaClient } from "@prisma/client";
-import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
+import { categoryVisibilityWhere, REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 
 /** How many threads the overview lists. */
@@ -12,8 +12,9 @@ const FORUM_PREVIEW_SIZE = 5;
 export type ForumPreviewDb = Pick<PrismaClient, "forumCategory" | "forumThread">;
 
 /**
- * A realm's latest visible Hub threads. A Hub the viewer cannot see (not public, and they are no site admin)
- * and a realm without a Hub both read as empty. The caller has checked the viewer can see the realm.
+ * A realm's latest visible Hub threads. A Hub the viewer cannot see (the forum's visibility rule,
+ * `categoryVisibilityWhere`) and a realm without a Hub both read as empty. The caller has checked the viewer can
+ * see the realm.
  */
 export async function forumPreview(db: ForumPreviewDb, realmId: string, viewer: RealmActor | null) {
   const category = await db.forumCategory.findFirst({
@@ -21,7 +22,10 @@ export async function forumPreview(db: ForumPreviewDb, realmId: string, viewer: 
       scope: "realm",
       realmId,
       key: REALM_HUB_KEY,
-      ...(viewer && isSiteAdmin(viewer) ? {} : { visibility: "public" }),
+      ...categoryVisibilityWhere({
+        signedIn: viewer !== null,
+        siteAdmin: viewer !== null && isSiteAdmin(viewer),
+      }),
     },
     select: { id: true },
   });
