@@ -157,17 +157,20 @@ export class MediaAssetService {
    * Assets by name: those whose title or file name contains `query`, of the given MIME types, and (when
    * `category` is given) only the files that category lists. Alphabetical by title. An asset whose `File:`
    * page WikiOS deleted is not listed (the search reads on past it, so a full page of `limit` comes back).
+   * `offset` skips that many listed assets first (paging); the scan then reaches MAX_SEARCH_SCAN rows past them.
    */
   static async search({
     query,
     category,
     fileTypes,
     limit,
+    offset = 0,
   }: {
     query?: string;
     category?: string;
     fileTypes?: readonly string[];
     limit: number;
+    offset?: number;
   }): Promise<MediaAssetRecord[]> {
     const where: Prisma.WikiAssetWhereInput = {};
     const term = query?.trim();
@@ -195,7 +198,9 @@ export class MediaAssetService {
     // SEARCH_BATCH batches). `id` breaks ties between assets that share a title, so `skip` never repeats or
     // drops a row between one batch and the next.
     const found: MediaAssetRecord[] = [];
-    for (let skip = 0; found.length < limit && skip < MAX_SEARCH_SCAN; skip += SEARCH_BATCH) {
+    let toSkip = Math.max(0, Math.floor(offset));
+    const scanEnd = toSkip + MAX_SEARCH_SCAN;
+    for (let skip = 0; found.length < limit && skip < scanEnd; skip += SEARCH_BATCH) {
       const batch = await db.wikiAsset.findMany({
         where,
         take: SEARCH_BATCH,
@@ -203,7 +208,10 @@ export class MediaAssetService {
         orderBy: [{ title: "asc" }, { id: "asc" }],
       });
       const visible = new Set(await withoutArchivedFiles(batch.map((asset) => asset.title)));
-      found.push(...(batch.filter((asset) => visible.has(asset.title)) as MediaAssetRecord[]));
+      const listed = batch.filter((asset) => visible.has(asset.title)) as MediaAssetRecord[];
+      const dropped = Math.min(toSkip, listed.length);
+      toSkip -= dropped;
+      found.push(...listed.slice(dropped));
       if (batch.length < SEARCH_BATCH) break;
     }
     return found.slice(0, limit);

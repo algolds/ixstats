@@ -26,12 +26,12 @@ import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 import { wikiSourceSchema } from "./_shared";
 
 /** File search reads a sister wiki's API on a miss: one bucket shared with the sister-wiki category reads. */
-const sisterWikiProcedure = publicProcedure.use(
+export const sisterWikiProcedure = publicProcedure.use(
   createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
 );
 
 /** A sister wiki's answers are reused for 5 minutes. */
-const SISTER_CACHE_TTL_MS = 300_000;
+export const SISTER_CACHE_TTL_MS = 300_000;
 
 const searchWikiTitles = publicProcedure
   .input(
