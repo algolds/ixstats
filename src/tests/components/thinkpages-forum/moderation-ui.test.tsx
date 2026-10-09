@@ -549,6 +549,62 @@ describe("moderator tools", () => {
     expect(invalidations.categories).toHaveBeenCalled();
   });
 
+  it("hides the thread only after a confirmation, sending the optional note", async () => {
+    auth.isSignedIn = true;
+    const setThreadFlag = jest.fn(() => Promise.resolve());
+    mutations.setThreadFlag = setThreadFlag;
+    set("thread", { data: threadData({ canModerate: true }) });
+    render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    expect(setThreadFlag).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", { name: "Hide this thread" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Spam" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hide thread" }));
+    await waitFor(() =>
+      expect(setThreadFlag).toHaveBeenCalledWith({
+        threadId: "t1",
+        flag: "hidden",
+        value: true,
+        note: "Spam",
+      })
+    );
+    await waitFor(() => expect(invalidations.thread).toHaveBeenCalledWith({ threadId: "t1" }));
+  });
+
+  it("archives the thread through a confirmation, and Cancel changes nothing", async () => {
+    auth.isSignedIn = true;
+    const setThreadFlag = jest.fn(() => Promise.resolve());
+    mutations.setThreadFlag = setThreadFlag;
+    set("thread", { data: threadData({ canModerate: true }) });
+    render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    fireEvent.keyDown(screen.getByRole("dialog", { name: "Archive this thread" }), {
+      key: "Escape",
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(setThreadFlag).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Archive this thread" })).getByRole("button", {
+        name: "Archive thread",
+      })
+    );
+    await waitFor(() =>
+      expect(setThreadFlag).toHaveBeenCalledWith({ threadId: "t1", flag: "archived", value: true })
+    );
+  });
+
+  it("confirms Unhide too, and keeps a refusal inside the dialog", async () => {
+    auth.isSignedIn = true;
+    mutations.setThreadFlag = jest.fn(() => Promise.reject(new Error("Not allowed.")));
+    set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
+    render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Unhide" }));
+    const dialog = screen.getByRole("dialog", { name: "Unhide this thread" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Unhide thread" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Not allowed.");
+  });
+
   it("surfaces a refused moderator action as an error toast", async () => {
     auth.isSignedIn = true;
     mutations.setThreadFlag = jest.fn(() =>

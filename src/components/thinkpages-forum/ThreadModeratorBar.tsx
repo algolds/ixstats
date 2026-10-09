@@ -21,6 +21,7 @@ import {
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { NoteDialog } from "./mod/NoteDialog";
 import { FormError } from "./ReasonField";
 
 type Flag = "locked" | "pinned" | "hidden" | "archived";
@@ -35,6 +36,25 @@ const FLAGS: ReadonlyArray<{ flag: Flag; on: string; off: string }> = [
   { flag: "hidden", on: "Hide", off: "Unhide" },
   { flag: "archived", on: "Archive", off: "Unarchive" },
 ];
+
+/** A flag change awaiting its confirmation: the button's label and the value it sets. */
+interface Confirmation {
+  flag: Flag;
+  label: string;
+  value: boolean;
+}
+
+/** The flags that change what members see: setting or clearing them is confirmed, with a note for the log. */
+const CONFIRMED: Readonly<Partial<Record<Flag, { on: string; off: string }>>> = {
+  hidden: {
+    on: "Members no longer see it. Moderators still do, marked Hidden.",
+    off: "Members see it again.",
+  },
+  archived: {
+    on: "No one can reply to it. Members can still read it.",
+    off: "Members can reply to it again.",
+  },
+};
 
 interface ThreadModeratorBarProps {
   thread: { id: string } & Record<Flag, boolean>;
@@ -51,6 +71,7 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
   const [moving, setMoving] = useState(false);
   const [to, setTo] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<Confirmation | null>(null);
   const flagMutation = api.thinkpagesForumMod.setThreadFlag.useMutation();
   const moveMutation = api.thinkpagesForumMod.moveThread.useMutation();
   const pending = flagMutation.isPending || moveMutation.isPending;
@@ -64,6 +85,14 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
         (e: Error) => notify.error(`Could not ${label.toLowerCase()} the thread`, e.message)
       );
   };
+
+  // The dialog shows a refusal itself; a failed refresh is not one, so it is not awaited.
+  const confirmFlag =
+    ({ flag, value }: Confirmation) =>
+    (note: string | undefined) =>
+      flagMutation
+        .mutateAsync({ threadId: thread.id, flag, value, ...(note ? { note } : {}) })
+        .then(() => void refresh());
 
   const move = () => {
     const destination = categories.find((c) => c.key === to);
@@ -90,7 +119,11 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
             variant="secondary"
             size="sm"
             disabled={pending}
-            onClick={() => toggle(flag, label)}
+            onClick={() =>
+              CONFIRMED[flag]
+                ? setConfirming({ flag, label, value: !thread[flag] })
+                : toggle(flag, label)
+            }
           >
             {label}
           </Button>
@@ -109,6 +142,19 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
         >
           Move
         </Button>
+      ) : null}
+
+      {confirming ? (
+        <NoteDialog
+          title={`${confirming.label} this thread`}
+          description={CONFIRMED[confirming.flag]?.[confirming.value ? "on" : "off"] ?? ""}
+          confirmLabel={`${confirming.label} thread`}
+          destructive={confirming.value}
+          onConfirm={confirmFlag(confirming)}
+          onOpenChange={(next) => {
+            if (!next) setConfirming(null);
+          }}
+        />
       ) : null}
 
       <AlertDialog
