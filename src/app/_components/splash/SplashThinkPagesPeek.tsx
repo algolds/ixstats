@@ -114,7 +114,7 @@ export function SplashThinkPagesPeek() {
             >
               <div className="flex gap-3">
                 <Link
-                  href={`/thinkpages/post/${post.id}`}
+                  href={`/dashboard/post/${post.id}`}
                   className="relative flex shrink-0 flex-col items-center gap-1"
                 >
                   <div className="border-separator bg-fill-3 rounded-control-sm relative h-10 w-10 shrink-0 overflow-hidden border">
@@ -145,7 +145,7 @@ export function SplashThinkPagesPeek() {
                 </Link>
 
                 <div className="min-w-0 flex-1 space-y-2">
-                  <Link href={`/thinkpages/post/${post.id}`} className="block">
+                  <Link href={`/dashboard/post/${post.id}`} className="block">
                     <p className="text-label text-body line-clamp-2 font-medium">
                       @{post.account.username}
                       {nation ? (
@@ -172,7 +172,7 @@ export function SplashThinkPagesPeek() {
                       {media.slice(0, 4).map((m, idx) => (
                         <Link
                           key={m.id}
-                          href={`/thinkpages/post/${post.id}`}
+                          href={`/dashboard/post/${post.id}`}
                           className={cn(
                             "bg-fill-3 rounded-control-sm relative block overflow-hidden",
                             media.length === 1 ? "aspect-video max-h-32" : "aspect-square max-h-20"
@@ -193,7 +193,7 @@ export function SplashThinkPagesPeek() {
                       {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </p>
                     <Link
-                      href={`/thinkpages/post/${post.id}`}
+                      href={`/dashboard/post/${post.id}`}
                       className={cn("text-caption", splashGold.link)}
                     >
                       Open post

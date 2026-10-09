@@ -62,7 +62,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
   const posts = data?.posts ?? NO_POSTS;
   const { cards, ready, errored } = useThreadActionCards(posts);
   useScrollToPostHash(posts);
-  usePageTitle({ title: data?.thread.title ?? "ThinkPages Forum" });
+  usePageTitle({ title: data?.thread.title ?? "ThinkPages" });
 
   const { mutateAsync: replyTo } = api.thinkpagesForum.reply.useMutation();
   const { mutateAsync: editPost } = api.thinkpagesForum.editPost.useMutation();

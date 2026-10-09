@@ -116,8 +116,8 @@ export function MyCountryRouter() {
 | **Vault routes** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) (guard + page container; navigation is the sidebar's source list) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
 | **`ThinktankWorkspace`** | [`src/components/thinktanks/ThinktankWorkspace.tsx`](../../src/components/thinktanks/ThinktankWorkspace.tsx) | Feed, Roster |
 | **`MessagesRouter`** | [`src/components/messages/MessagesRouter.tsx`](../../src/components/messages/MessagesRouter.tsx) | Conversations (single folder, conversation list + thread view) |
-| **`ThinkPagesAccountHub`**| [`src/components/thinkpages/ThinkPagesAccountHub.tsx`](../../src/components/thinkpages/ThinkPagesAccountHub.tsx) | Feed, composer (`UnifiedComposerContainer`), accounts |
-| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) (mounted by `src/app/dashboard/DashboardPageClient.tsx`) | Hero + single `UnifiedDashboardSection` in a sidebar layout |
+| **`AccountsSection`** | [`src/components/dashboard/accounts/AccountsSection.tsx`](../../src/components/dashboard/accounts/AccountsSection.tsx) (the Dashboard's Accounts section at `/dashboard/accounts`) | Persona list, create and settings modals |
+| **`DashboardRouter`** | [`src/components/dashboard/DashboardRouter.tsx`](../../src/components/dashboard/DashboardRouter.tsx) (mounted by `src/app/dashboard/DashboardPageClient.tsx`) | Hero + feed (`UnifiedDashboardSection`), or the Accounts section; a two-section single-page router (`useDashboardSection`, `src/lib/dashboard-sections.ts`) |
 
 ---
 

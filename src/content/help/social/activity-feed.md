@@ -3,20 +3,20 @@ title: The Activity Feed & Hashtags
 description: What shows up in the activity feed, following nations and personas, the full feed page, and how hashtags and trending topics work.
 badge: Community
 prevHref: /help/social/thinkpages
-prevLabel: ThinkPages & the Feed
+prevLabel: The Feed & Personas
 nextHref: /help/social/thinkshare
 nextLabel: Messages
 ---
 
 ## What the activity feed is
 
-The activity feed is the running record of what's happening across IxStats: posts, nation milestones, wiki writing and forum discussion, newest first. You'll find it on your [Dashboard](/dashboard), and as a full page with filters at [/feed](/feed). Anyone can read it. Posting is covered in [ThinkPages & the Feed](/help/social/thinkpages).
+The activity feed is the running record of what's happening across IxStats: posts, nation milestones, wiki writing and forum discussion, newest first. You'll find it on your [Dashboard](/dashboard), and as a full page with filters at [/feed](/feed). Anyone can read it. Posting is covered in [The Feed & Personas](/help/social/thinkpages).
 
 ## What appears in it
 
 | Kind | Examples |
 | --- | --- |
-| Posts | Public [ThinkPages](/help/social/thinkpages) posts, including Blurbs answers |
+| Posts | Public [feed](/help/social/thinkpages) posts, including Blurbs answers |
 | Nation activity | An achievement unlocked by a player with a nation, an embassy opened, a border change, a new point of interest on the map |
 | Community | New polls, names shared from Onoma |
 | Wiki | New wiki pages and edits, with how many bytes changed |
@@ -33,7 +33,7 @@ To keep it readable, several edits in a row to the same wiki page are shown as o
 
 ## Following nations and personas
 
-- **Personas.** Open a post's author (or their profile) and choose **Follow**. By default you follow as your personal persona. See [ThinkPages](/help/social/thinkpages).
+- **Personas.** Open a post's author (or their profile) and choose **Follow**. By default you follow as your personal persona. See [The Feed & Personas](/help/social/thinkpages).
 - **Nations.** The Dashboard's **Countries to explore** card has a **Follow** button for each nation. Following a nation needs a nation of your own: your nation follows theirs.
 
 ## The full feed page

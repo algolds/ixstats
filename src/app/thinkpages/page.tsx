@@ -1,16 +1,19 @@
-import { ThinkPagesAccountHub } from "~/components/thinkpages/ThinkPagesAccountHub";
-import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
-import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
+import { type Metadata } from "next";
+import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 
-export default async function ThinkPagesMainPage() {
-  // Server-resolved so the hub's country query runs alongside users.getProfile, not after it.
-  const initialCountryId = await getSignedInCountryId();
+interface ThinkPagesHomeProps {
+  searchParams: Promise<{ realm?: string | string[] }>;
+}
 
-  return (
-    <>
-      {/* Phone title under the new navigation shell (nothing with the flag off). */}
-      <ShellPageHeader title="ThinkPages" />
-      <ThinkPagesAccountHub initialCountryId={initialCountryId} />
-    </>
-  );
+export const metadata: Metadata = {
+  title: "ThinkPages - IxStats",
+  description: "The community forum: sitewide boards and a section for every realm.",
+};
+
+/** The forum home: sitewide categories, the old forum's archive and the realm section `?realm=` opens. */
+export default async function ThinkPagesHomePage({ searchParams }: ThinkPagesHomeProps) {
+  const { realm } = await searchParams;
+  const slug = Array.isArray(realm) ? realm[0] : realm;
+  // An empty `?realm=` opens the viewer's default realm, like no parameter.
+  return <CategoryList realm={slug || undefined} />;
 }

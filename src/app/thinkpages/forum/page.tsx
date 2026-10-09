@@ -1,19 +1,15 @@
-import { type Metadata } from "next";
-import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
+import { permanentRedirect } from "next/navigation";
+import { forumHomeHref } from "~/lib/thinkpages-forum/links";
 
-interface ThinkPagesForumPageProps {
+interface OldForumHomeProps {
   searchParams: Promise<{ realm?: string | string[] }>;
 }
 
-export const metadata: Metadata = {
-  title: "ThinkPages Forum - IxStats",
-  description:
-    "Discussion on ThinkPages: sitewide categories and a forum section for every realm.",
-};
-
-export default async function ThinkPagesForumPage({ searchParams }: ThinkPagesForumPageProps) {
+/**
+ * The forum home's phase 1-4 address. It moved to /thinkpages for good (308), keeping the realm section; stored
+ * links such as moderation notices' `#standing` keep their fragment, which the browser carries over the redirect.
+ */
+export default async function OldForumHomePage({ searchParams }: OldForumHomeProps) {
   const { realm } = await searchParams;
-  const slug = Array.isArray(realm) ? realm[0] : realm;
-  // An empty `?realm=` opens the viewer's default realm, like no parameter.
-  return <CategoryList realm={slug || undefined} />;
+  permanentRedirect(forumHomeHref(Array.isArray(realm) ? realm[0] : realm));
 }

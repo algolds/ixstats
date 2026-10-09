@@ -25,7 +25,7 @@ There is no win condition. You build a nation, make decisions for it over time, 
 | Defense (Premium) | Branches, forces, operations, stability | [Defense](/mycountry/defense) | [Defense & Security](/help/mycountry/defense) |
 | Territory | Cities, provinces, landmarks, routes | [Maps](/maps) | [Editing Your Territory](/help/mycountry/map-editor) |
 | Lore | Write and edit wiki articles | [Wiki](/wiki) | [The Wiki](/help/wiki/wikios) |
-| Community | Posts, messages, groups, forum | [Dashboard](/dashboard), [Messages](/messages) | [ThinkPages](/help/social/thinkpages) |
+| Community | Posts, messages, groups, forum | [Dashboard](/dashboard), [Messages](/messages) | [The Feed & Personas](/help/social/thinkpages), [ThinkPages (the forum)](/help/social/forum) |
 | Vault | IxCredits, cards, achievements | [Vault](/vault) | [Your Vault](/help/vault/overview) |
 
 ## What actually moves your numbers

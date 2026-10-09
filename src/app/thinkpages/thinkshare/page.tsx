@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-export default function ThinkSharePage() {
-  redirect("/messages");
+/** ThinkShare became Messages. */
+export default function LegacyThinkSharePage() {
+  permanentRedirect("/messages");
 }

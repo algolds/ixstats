@@ -1,12 +1,11 @@
-import { SavedPosts } from "~/components/thinkpages/SavedPosts";
-import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
+import { permanentRedirect } from "next/navigation";
+import { withQuery, type PageQuery } from "~/lib/thinkpages-forum/links";
 
-export default function SavedPostsPage() {
-  return (
-    <>
-      {/* Phone title under the new navigation shell (nothing with the flag off). */}
-      <ShellPageHeader title="Saved posts" />
-      <SavedPosts />
-    </>
-  );
+interface LegacySavedPageProps {
+  searchParams: Promise<PageQuery>;
+}
+
+/** Saved posts moved to the dashboard with the rest of the feed (phase 5); the query string comes along. */
+export default async function LegacySavedPage({ searchParams }: LegacySavedPageProps) {
+  permanentRedirect(withQuery("/dashboard/saved", await searchParams));
 }

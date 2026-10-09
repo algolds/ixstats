@@ -15,6 +15,7 @@ import {
   MoreHoriz as MoreHorizontal,
   StatUp as TrendingUp,
   ChatBubble as MessageSquare,
+  CheckCircle,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -115,12 +116,11 @@ function AccountCard({
             <div className="flex items-center gap-1">
               <PreText className="text-headline text-label truncate">{account.displayName}</PreText>
               {account.verified && (
-                <span
-                  className="text-footnote inline-flex size-3.5 items-center justify-center leading-none"
-                  title="Verified"
-                >
-                  ✅
-                </span>
+                <CheckCircle
+                  className="text-tint size-3.5 shrink-0"
+                  role="img"
+                  aria-label="Verified"
+                />
               )}
               {account.bio?.startsWith("Former Nation") && (
                 <span className="text-footnote text-label-secondary">[Former Nation]</span>

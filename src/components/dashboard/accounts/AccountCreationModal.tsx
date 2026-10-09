@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
-  Sparks as Sparkles,
+  NavArrowDown,
   WarningCircle as AlertCircle,
   SystemRestart as Loader2,
   HelpCircle,
@@ -14,8 +14,8 @@ import {
 import { api } from "~/trpc/react";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { useNotify } from "~/hooks/useNotify";
-import { AccountTypeSelector } from "./account/AccountTypeSelector";
-import { AccountDetailsForm } from "./account/AccountDetailsForm";
+import { AccountTypeSelector } from "./form/AccountTypeSelector";
+import { AccountDetailsForm } from "./form/AccountDetailsForm";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
@@ -26,8 +26,8 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { springSmooth } from "~/lib/design/motion";
-import { PersonaTraitControls } from "./account/PersonaTraitControls";
-import { useUsernameAvailability } from "./account/useUsernameAvailability";
+import { PersonaTraitControls } from "./form/PersonaTraitControls";
+import { useUsernameAvailability } from "./form/useUsernameAvailability";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -302,7 +302,7 @@ export function AccountCreationModal({
                     aria-expanded={showAdvanced}
                     className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
                   >
-                    <Sparkles
+                    <NavArrowDown
                       aria-hidden="true"
                       className={cn(
                         "text-tint transition-transform duration-150",

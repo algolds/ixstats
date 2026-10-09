@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("onSocialActivity", () => {
-  it("links a mention to /thinkpages/post/<id> and names the actor persona", async () => {
+  it("links a mention to /dashboard/post/<id> and names the actor persona", async () => {
     await onSocialActivity({
       activityType: "mention",
       fromUserId: "clerk_a",
@@ -30,7 +30,7 @@ describe("onSocialActivity", () => {
       contentId: "post_1",
     });
     const input = mockCreate.mock.calls[0]![0];
-    expect(input.href).toMatch(/\/thinkpages\/post\/post_1$/);
+    expect(input.href).toMatch(/\/dashboard\/post\/post_1$/);
     expect(input.href).not.toContain("/content/");
     expect(input.title).toBe("The Chancellor mentioned you");
     expect(input.userId).toBe("clerk_b");

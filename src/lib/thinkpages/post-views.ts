@@ -1,7 +1,7 @@
 /**
  * ThinkPages post views (SL-8).
  *
- * A view is a signed-in user opening a post's page (`/thinkpages/post/[postId]`). Each viewer
+ * A view is a signed-in user opening a post's page (`/dashboard/post/[postId]`). Each viewer
  * counts once per post per UTC day, and the author's own views never count. Recording is cheap:
  *
  * 1. The (day, post, viewer) claim is a Redis `SET NX` with a 2-day expiry when Redis is ready,

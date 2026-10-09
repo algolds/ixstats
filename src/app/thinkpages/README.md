@@ -2,78 +2,71 @@
 
 **Last updated:** October 2026
 
-ThinkPages is IxStates' social knowledge-sharing backbone — the in-world social platform where players run multiple personas (government officials, media outlets, citizen voices) tied to their country, post to a shared feed, react, and collaborate. ThinkShare (messaging) and the Discord IxTwitter sync are sub-systems of ThinkPages.
+ThinkPages is IxStats' community forum: sitewide boards plus a section for every realm, with reports, moderation and an import of the old XenForo forum. This directory (`src/app/thinkpages`) is the App Router surface. The forum home is `/thinkpages`.
 
-This directory (`src/app/thinkpages`) is the App Router surface. The heavy social experiences have been consolidated elsewhere — the feed into `/dashboard`, ThinkTank groups into `/thinktanks`, and messaging into `/messages` — so most routes under `/thinkpages` are now thin redirects. The remaining live page is the **account-management hub**.
+The persona feed that used to share the ThinkPages name now lives on the Dashboard: the feed, the Accounts section (personas), feed post pages, persona profiles and saved posts. See `src/app/dashboard/README.md`. The feed's components are still in `src/components/thinkpages/` (`src/components/thinkpages/README.md`) and its tRPC router is `api.thinkpages.*`. Old feed paths under `/thinkpages` redirect to the Dashboard (see Retired paths).
+
+In the sidebar, ThinkPages is a row under Home (`src/lib/navigation/app-sections.ts`, id `thinkpages`, href `FORUM_HOME`). The old XenForo bridge at `/forum` is a separate app (`src/app/(forum)/`) and stays until phase 4b retires it.
 
 ## Routes
 
 | Route | File | Behaviour |
 | --- | --- | --- |
-| `/thinkpages` | `page.tsx` | Renders `ThinkPagesAccountHub` — persona/account management (create, edit, switch accounts) |
-| `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Single-post thread view with replies and inline composer |
-| `/thinkpages/feed` | `feed/page.tsx` | Redirects to `/dashboard` (unified feed) |
-| `/thinkpages/thinktanks` | `thinktanks/page.tsx` | Redirects to `/thinktanks` |
-| `/thinkpages/thinkshare` | `thinkshare/page.tsx` | Redirects to `/messages` |
-| `/thinkpages/forum` | `forum/page.tsx` | Forum home: sitewide categories and the realm directory |
+| `/thinkpages` | `page.tsx` | Forum home: sitewide categories, the old forum's archive, and a realm section with a switcher. `?realm=<slug>` opens that realm's section; no parameter opens the viewer's default realm. Moderators see a Moderation button; members with a warning, ban or appeal on record see **Your standing** (`#standing`) |
 | `/thinkpages/c/[key]` | `c/[key]/page.tsx` | A sitewide category's thread list |
 | `/thinkpages/c/[key]/new` | `c/[key]/new/page.tsx` | Start a thread in a sitewide category |
-| `/thinkpages/r/[realm]` | `r/[realm]/page.tsx` | Redirects to the realm's Hub |
-| `/thinkpages/r/[realm]/[key]` | `r/[realm]/[key]/page.tsx` | A realm section's thread list (the Hub and its categories) |
-| `/thinkpages/r/[realm]/[key]/new` | `r/[realm]/[key]/new/page.tsx` | Start a thread in a realm section |
+| `/thinkpages/r/[realm]` | `r/[realm]/page.tsx` | Redirects (307) to `/thinkpages?realm=<slug>` |
+| `/thinkpages/r/[realm]/[key]` | `r/[realm]/[key]/page.tsx` | A realm category's thread list (the Hub and its categories) |
+| `/thinkpages/r/[realm]/[key]/new` | `r/[realm]/[key]/new/page.tsx` | Start a thread in a realm category |
 | `/thinkpages/t/[threadId]` | `t/[threadId]/page.tsx` | Thread view with replies, reports and moderator tools |
 | `/thinkpages/mod` | `mod/page.tsx` | Moderation console for realm and category moderators and admins |
+| `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Post permalink resolver (wiki story chains link here). A forum post the viewer may see redirects (307) to `/thinkpages/t/<threadId>?page=<n>#post-<id>`; any other id redirects (307) to the feed post at `/dashboard/post/<id>`. The server lookup sees what a guest sees; a signed-in viewer it cannot place gets `ForumPermalinkGate`, which asks again with their session. Both hops are temporary because the answer depends on the viewer and on moderation |
 
-> Note: the `Feed / ThinkTanks / ThinkShare` single-page router pattern described in older docs has been superseded — these sections now live in the Dashboard, ThinkTanks, and Messages surfaces, and the routes above forward to them.
+### Retired paths
+
+These stay as redirects so old links, bookmarks and stored notifications keep working. They redirect permanently (308) unless noted.
+
+| Old path | File | Goes to |
+| --- | --- | --- |
+| `/thinkpages/forum` | `forum/page.tsx` | `/thinkpages`, keeping `?realm=` (a stored `#standing` link keeps its fragment) |
+| `/thinkpages/feed` | `feed/page.tsx` | `/dashboard` |
+| `/thinkpages/profile/[username]` | `profile/[username]/page.tsx` | `/dashboard/profile/<username>` |
+| `/thinkpages/saved` | `saved/page.tsx` | `/dashboard/saved` |
+| `/thinkpages/thinkshare` | `thinkshare/page.tsx` | `/messages` |
+| `/thinkpages/thinktanks` | `thinktanks/page.tsx` | `/thinktanks` |
+
+No `loading.tsx` may sit above a redirecting page in this tree: a loading boundary turns `redirect()` into a streamed 200 with a meta refresh. `src/tests/architecture/wiki-loading-boundary.test.ts` pins this; loaders exist only below `c/`, `t/`, `mod/` and `r/[realm]/[key]/`.
 
 ## Forum
 
-The public forum lives under `/thinkpages/forum`, `/thinkpages/c/*`, `/thinkpages/r/*` and `/thinkpages/t/*`, and appears in the sidebar as **Forum** under Home (ThinkTanks keeps `/thinkpages` and the rest). Reads and member writes go through `api.thinkpagesForum.*`; moderation (reports, hide/lock/pin/move, warnings, bans, appeals, the moderation log) goes through `api.thinkpagesForumMod.*`, surfaced in the moderation console at `/thinkpages/mod`. Logic lives in `src/server/modules/thinkpages-forum/`; the pure moderation rules (warning points, expiry, automatic ban thresholds) are in `src/lib/thinkpages-forum/moderation-policy.ts`. Every moderator action writes an append-only `ForumModLog` row in the same transaction.
+Reads and member writes go through `api.thinkpagesForum.*`; moderation (reports, hide/lock/pin/move, warnings, bans, appeals, the moderation log) goes through `api.thinkpagesForumMod.*`, surfaced in the moderation console at `/thinkpages/mod`. Logic lives in `src/server/modules/thinkpages-forum/`; the pure moderation rules (warning points, expiry, automatic ban thresholds) are in `src/lib/thinkpages-forum/moderation-policy.ts`. Every moderator action writes an append-only `ForumModLog` row in the same transaction.
 
-## Key features
-
-- **Personas / accounts** — each country can own multiple ThinkPages accounts (government, media, citizen). Managed in `ThinkPagesAccountHub` via `EnhancedAccountManager`, `AccountCreationModal`, and `AccountSettingsModal`.
-- **Posts** — create, edit, delete, reply (threaded), pin, bookmark, and flag posts; hashtag and mention extraction on submit.
-- **Reactions** — emoji reactions including Discord custom emoji (`discord:<name>`).
-- **Feed & trends** — trending topics, country-mood metrics, and citizen reactions served via the feed router (consumed primarily from `/dashboard`).
-- **ThinkTanks** — collaborative groups with membership, roles, a group feed, and (backend-only) shared documents, surfaced at `/thinktanks` (see `docs/systems/thinktanks.md`).
-- **ThinkShare messaging** — DM conversations, messages, and presence, surfaced at `/messages` via the separate `api.messages` router.
-- **Discord IxTwitter sync** — public posts are autoposted to Discord (`postToDiscord`, default true) and mirrored to the admin-configured `#thinkpages` feed; IxTwitter messages are imported back and reactions mirror to Discord via `~/lib/discord/ixtwitter-sync` and `~/lib/discord/thinkpages-feed`. A Discord channel topic / server emoji integration backs the reaction picker.
-- **Wiki references** — the shared PlateJS editor (`src/components/shared/editor/`) provides wiki-link/embed popovers and `@` mentions.
+Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHomeHref`, `categoryHref`, `hubHref`, `threadHref`, `postHref`, `modHref`, `STANDING_HREF`). Pages and components use these helpers instead of spelling paths, so moving the home is a one-line change. The legacy `/forum/*` redirects (`src/app/(forum)/forum/**`, switch `bun run forum:legacy-redirect`) target the same helpers.
 
 ## Architecture
 
 | Piece | Location |
 | --- | --- |
-| Main page (account hub) | `src/components/thinkpages/ThinkPagesAccountHub.tsx` |
-| Account management | `EnhancedAccountManager.tsx`, `AccountCreationModal.tsx`, `AccountSettingsModal.tsx` |
-| Post card / thread | `ThinkpagesPost.tsx` (used by `post/[postId]/page.tsx`) |
-| Feed container | `src/components/dashboard/sections/UnifiedFeedContent.tsx` (on `/dashboard`) |
-| Composer | `GlassCanvasComposer.tsx`, `src/components/shared/editor/GlassPlateEditor.tsx` |
-| Auth gating | `AuthenticationGuard` (from `~/components/mycountry/primitives`) |
+| Pages | `src/app/thinkpages/` (this directory) |
+| Components | `src/components/thinkpages-forum/` (`CategoryList`, `RealmSection`, `RealmSwitcher`, `ThreadList`, `ThreadView`, `ForumComposer`, `ForumBreadcrumbs`, `ForumPermalinkGate`, moderation dialogs under `mod/`) |
+| Server logic | `src/server/modules/thinkpages-forum/` |
+| tRPC routers | `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), registered in `root.ts` as `thinkpagesForum` and `thinkpagesForumMod` |
+| Pure helpers | `src/lib/thinkpages-forum/` (`links.ts`, `permalink.ts`, `categories.ts`, `moderation-policy.ts`) |
+| Layout and tint | `layout.tsx` sets `data-app="thinkpages"` (the emerald tint) for the subtree |
 
-The page resolves the signed-in user's country server-side (`getSignedInCountryId`) and passes it to the account hub; without a country the hub prompts for `/setup`.
-
-## Data sources (tRPC)
-
-All data flows through `api.thinkpages.*`, registered in `src/server/api/root.ts` and assembled in `src/server/api/routers/thinkpages/index.ts` via `mergeRouters` across four domains (DM conversations moved to `api.messages.*`; the legacy `messaging` adapter was removed):
-
-| Domain | File(s) | Sample procedures |
-| --- | --- | --- |
-| accounts | `accounts.ts` | `getMyAccounts`, `getAccountsByCountry`, `getAccountCountsByType`, `createAccount`, `updateAccount`, `checkUsernameAvailability` |
-| posts | `posts/` (posts, reactions, bookmarks, flags) | `getPost`, `getPostsByClerkUserId`, `createPost`, `updatePost`, `deletePost`, `pinPost`, `addReaction`, `removeReaction`, `getPostReactions`, `bookmarkPost`, `flagPost` |
-| feed | `feed.ts` | `getFeed` (recent / trending / hot), `getDiscordChannelTopic`, `getDiscordEmojis` |
-| thinktanks | `thinktanks/` (groups, membership, documents) | `getThinktanks`, `getThinktankById`, `createThinktank`, `joinThinktank`, `getGroupFeed`, `createGroupPost`, `getThinktankDocuments` |
+The old XenForo forum is copied in by the import described in `docs/operations/forum-xenforo-import-runbook.md` and `docs/systems/forum.md`.
 
 ## Connections
 
+- **Dashboard `/dashboard`** — the persona feed, Accounts section, feed post, persona profile and saved pages (`src/app/dashboard/README.md`).
 - **ThinkShare / `/messages`** — the messaging sub-system; `/thinkpages/thinkshare` redirects here.
-- **Dashboard `/dashboard`** — hosts the unified social feed; `/thinkpages/feed` redirects here and the account hub links to it.
 - **ThinkTanks `/thinktanks`** — group workspace; `/thinkpages/thinktanks` redirects here.
-- **Discord** — bidirectional post/reaction mirroring (IxTwitter) and channel-topic/emoji integration.
+- **Wiki** — story chains link to `/thinkpages/post/<id>`.
+- **Stash** — threads are stashed as `thinkpages:thread:<id>` items.
 
 ## Reference
 
-- Authoritative guide: `docs/systems/social.md`
-- Component suite README: `src/components/thinkpages/README.md`
-- Backend routers: `src/server/api/routers/thinkpages/`
+- Forum system doc: `docs/systems/forum.md`
+- Feed and personas: `docs/systems/social.md`
+- Feed component suite: `src/components/thinkpages/README.md`
+- Routers: `src/server/api/routers/thinkpagesForum/` (forum) and `src/server/api/routers/thinkpages/` (feed and personas)

@@ -34,4 +34,4 @@ Scenarios have an expiry date; expired ones disappear from the active list.
 ## Tips
 
 - Riskier responses pay a few more IxCredits and make for a more dramatic story; they don't cost you anything else today.
-- Write up what happened on [ThinkPages](/help/social/thinkpages) or in the [wiki](/help/wiki/wikios) to make it part of your nation's story.
+- Write up what happened on the [feed](/help/social/thinkpages) or in the [wiki](/help/wiki/wikios) to make it part of your nation's story.

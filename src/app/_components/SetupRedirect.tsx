@@ -34,6 +34,9 @@ export function SetupRedirect() {
     "/help", // Skip setup redirect for help center articles
     "/wiki", // Skip setup redirect for wikiOS
     "/forum", // Skip setup redirect for forums
+    "/thinkpages", // public forum, readable without a nation
+    "/dashboard/post/", // public feed posts (the Dashboard itself stays gated)
+    "/dashboard/profile/", // public persona profiles
   ];
 
   const shouldSkipSetup = skipSetupPaths.some((path) => pathname?.startsWith(path) ?? false);

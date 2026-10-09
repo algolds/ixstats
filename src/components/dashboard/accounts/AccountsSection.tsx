@@ -2,30 +2,34 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Group as Users, Plus, ArrowRight, BookmarkBook } from "iconoir-react";
+import { Group as Users, Plus, ArrowLeft, BookmarkBook } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 import { useUser } from "~/context/auth-context";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
 import { Card } from "~/components/ui/card";
 
-interface ThinkPagesAccountHubProps {
+type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
+
+interface AccountsSectionProps {
   /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
   initialCountryId?: string;
+  /** Returns to the Dashboard feed; without it there is no Feed button. */
+  onBack?: () => void;
 }
 
-function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountHubProps) {
+function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSectionProps) {
   const { user } = useUser();
 
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [selectedAccount, setSelectedAccount] = useState<ThinkpagesAccountItem | null>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [settingsAccount, setSettingsAccount] = useState<ThinkpagesAccountItem | null>(null);
 
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     enabled: !!user?.id,
@@ -63,7 +67,12 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
 
   if (!isCountryReady) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      // DashboardColumn supplies the page padding; the card keeps a readable measure.
+      <div className="mx-auto max-w-3xl space-y-6">
+        {/* The page's h1 while there is no section header (the shell header names it on phones). */}
+        <h1 {...shellPageTitleProps} className="sr-only">
+          Accounts
+        </h1>
         <Card>
           <EmptyState
             icon={<Users />}
@@ -81,58 +90,49 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <Card padding="md" className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-headline text-label">The social feed has moved to your Dashboard</p>
-          <p className="text-footnote text-label-secondary">
-            Post, browse, and interact from the unified feed.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button asChild size="sm" variant="ghost">
-            <Link href={"/thinkpages/saved"}>
-              <BookmarkBook aria-hidden="true" />
-              Saved posts
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={"/dashboard"}>
-              Go to dashboard
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </Button>
-        </div>
-      </Card>
-
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           {/* Phones under the new shell get the ShellPageHeader title instead. */}
           <h1 {...shellPageTitleProps} className="text-title-2 text-label">
-            ThinkPages accounts
+            Accounts
           </h1>
           <p className="text-body text-label-secondary">
             Manage your personas: government officials, media outlets and citizen voices.
           </p>
         </div>
-        <Button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowAccountCreation(true);
-          }}
-          type="button"
-        >
-          <Plus aria-hidden="true" />
-          New account
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          {onBack && (
+            <Button size="sm" variant="ghost" type="button" onClick={onBack}>
+              <ArrowLeft aria-hidden="true" />
+              Feed
+            </Button>
+          )}
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/dashboard/saved">
+              <BookmarkBook aria-hidden="true" />
+              Saved posts
+            </Link>
+          </Button>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowAccountCreation(true);
+            }}
+            type="button"
+          >
+            <Plus aria-hidden="true" />
+            New account
+          </Button>
+        </div>
       </div>
 
       <EnhancedAccountManager
         accounts={accounts}
         selectedAccount={selectedAccount}
         onAccountSelect={setSelectedAccount}
-        onAccountSettings={(account: any) => {
+        onAccountSettings={(account: ThinkpagesAccountItem) => {
           setSettingsAccount(account);
           setShowAccountSettings(true);
         }}
@@ -168,10 +168,10 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   );
 }
 
-export function ThinkPagesAccountHub({ initialCountryId }: ThinkPagesAccountHubProps) {
+export function AccountsSection({ initialCountryId, onBack }: AccountsSectionProps) {
   return (
-    <AuthenticationGuard redirectPath="/thinkpages">
-      <ThinkPagesAccountHubInner initialCountryId={initialCountryId} />
+    <AuthenticationGuard redirectPath="/dashboard/accounts">
+      <AccountsSectionInner initialCountryId={initialCountryId} onBack={onBack} />
     </AuthenticationGuard>
   );
 }

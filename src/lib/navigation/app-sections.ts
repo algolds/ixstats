@@ -27,6 +27,7 @@ import {
   RoundFlask as SolidRoundFlask,
 } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
+import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import {
   Activity,
   Archive,
@@ -219,6 +220,7 @@ export const APPS: readonly AppDefinition[] = [
         conditional: true,
       },
       { id: "dashboard", label: "Home", href: "/dashboard", icon: HomeSimple },
+      { id: "accounts", label: "Accounts", href: "/dashboard/accounts", icon: Group },
       {
         id: "messages",
         label: "Messages",
@@ -226,23 +228,21 @@ export const APPS: readonly AppDefinition[] = [
         icon: Mail,
         badge: "messages-unread",
       },
-      // ThinkPages is part of Home: ThinkTanks takes /thinkpages, and Forum takes the forum routes
-      // (longest prefix wins). Both keep the emerald section tint.
+      // ThinkPages (the forum) and ThinkTanks are part of Home and wear the emerald section tint.
+      // ThinkPages' href is the prefix of every forum route (c, t, r, mod, post), so it needs no match.
       {
         id: "thinktanks",
         label: "ThinkTanks",
         href: "/thinktanks",
         icon: LightBulbOn,
         tint: "thinkpages",
-        match: ["/thinkpages"],
       },
       {
-        id: "forum",
-        label: "Forum",
-        href: "/thinkpages/forum",
+        id: "thinkpages",
+        label: "ThinkPages",
+        href: FORUM_HOME,
         icon: ChatBubble,
         tint: "thinkpages",
-        match: ["/thinkpages/c", "/thinkpages/t", "/thinkpages/r", "/thinkpages/mod"],
       },
     ],
   },

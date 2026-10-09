@@ -21,6 +21,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
 
 interface ThinkPagesShareModalProps {
   isOpen: boolean;
@@ -138,9 +139,9 @@ export function ThinkPagesShareModal({
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
-              <Button size="sm" onClick={() => window.open("/thinkpages", "_blank")}>
+              <Button size="sm" onClick={() => window.open(withBasePath("/dashboard"), "_blank")}>
                 <Globe className="h-3.5 w-3.5" />
-                View ThinkPages feed
+                Open the feed
               </Button>
             </div>
           </div>

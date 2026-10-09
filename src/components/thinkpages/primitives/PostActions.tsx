@@ -33,7 +33,7 @@ function getPostStats(post: any, accountId: string) {
 }
 
 function sharePost(postId: string, notify: ReturnType<typeof useNotify>) {
-  const postUrl = `${window.location.origin}${withBasePath(`/thinkpages/post/${postId}`)}`;
+  const postUrl = `${window.location.origin}${withBasePath(`/dashboard/post/${postId}`)}`;
   const copyLink = () => {
     void navigator.clipboard.writeText(postUrl);
     notify.success("Post link copied to clipboard");

@@ -5,7 +5,7 @@ badge: Community
 prevHref: /help/social/thinkshare
 prevLabel: Messages
 nextHref: /help/social/forum
-nextLabel: The Forum
+nextLabel: ThinkPages (the forum)
 ---
 
 ## What ThinkTanks are

@@ -44,8 +44,8 @@ const AREAS = [
   "components/halo",
 ];
 
-// The ThinkPages account hub belongs to the navigation-shell pass.
-const EXCLUDED = ["ThinkPagesAccountHub.tsx"];
+// The Dashboard's Accounts section belongs to the navigation-shell pass.
+const EXCLUDED = ["AccountsSection.tsx"];
 
 function listFiles(target: string): string[] {
   const full = path.join(srcDir, target);

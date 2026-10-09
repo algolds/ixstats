@@ -47,7 +47,7 @@ IxForum delivers native community deliberation and archival debate inside IxStat
 
 The community forum is moving from the XenForo bridge described above to a native forum inside ThinkPages. The bridge sections above stay accurate until phase 4b retires them; the native forum is the target.
 
-- **Routes:** `/thinkpages/forum` (home), `/thinkpages/c/<key>` (sitewide category), `/thinkpages/r/<realm>/<key>` (realm category), `/thinkpages/t/<threadId>` (thread), `/thinkpages/mod` (moderation console).
+- **Routes:** `/thinkpages` (home; `?realm=<slug>` opens a realm's section), `/thinkpages/c/<key>` (sitewide category), `/thinkpages/r/<realm>/<key>` (realm category), `/thinkpages/t/<threadId>` (thread), `/thinkpages/mod` (moderation console), `/thinkpages/post/<postId>` (post permalink; sends a forum post to its thread and a feed post to `/dashboard/post/<id>`). The earlier home `/thinkpages/forum` redirects (308) to `/thinkpages`.
 - **Data:** `ForumCategory`, `ForumThread`, `ForumPost` and the moderation models in `prisma/schema/`. Sitewide categories are seeded; every realm has Hub, Character Threads and Current Events (`src/lib/thinkpages-forum/categories.ts`).
 - **Code:** server in `src/server/modules/thinkpages-forum/` (reads, writes, access rules, realm access, moderation, stash), routers in `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), pure helpers in `src/lib/thinkpages-forum/`, components in `src/components/thinkpages-forum/`.
 - **Access:** categories are `public`, `reporter_staff` (Reports: members see only their own threads) or `staff`; `postRole: "staff"` categories take threads and replies from site admins only. Realm sections follow realm visibility and posting needs a nation in the realm or realm moderation. Bans apply per site, realm or category.
@@ -71,7 +71,7 @@ Importer code is in `src/lib/thinkpages-forum/import/` and `scripts/migrations/`
 
 ## Related Documentation
 
-- [ThinkPages Suite](./social.md)
+- [ThinkPages feed and personas](./social.md)
 - [Halo Wayfinding & Contextual Overlay](./halo.md)
 - [Route README](<../../src/app/(forum)/README.md>)
 - [API Reference](../reference/api-complete.md)

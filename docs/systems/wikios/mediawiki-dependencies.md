@@ -217,7 +217,7 @@ configuration object, never from a literal:
   `src/lib/cards/ns-image-proxy.ts`, `src/lib/forum/forum-utils.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
 - **The one absolute origin a TemplateStyles `url()` may name** (`mediaWikiOrigin()`, handed to the scoper and part of the sanitizer
   fingerprint; a relative URL stays allowed, any other host is dropped): `src/lib/utils/sanitize-html.ts`.
-- **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/thinkpages/AccountCreationModal.tsx`,
+- **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/dashboard/accounts/AccountCreationModal.tsx`,
   `src/lib/sports/transition.ts`.
 - **URL rewriting and referrer comments**: `src/app/(wiki-os)/wiki/layout.tsx`, `src/lib/wiki-os/transformers/fix-editor-images.ts`,
   `src/lib/wiki-os/transformers/resolve-highres-image.ts`.

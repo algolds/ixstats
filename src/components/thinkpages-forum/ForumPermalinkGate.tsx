@@ -1,32 +1,33 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { SystemRestart as Loader2 } from "iconoir-react";
+import { permalinkTarget } from "~/lib/thinkpages-forum/permalink";
 import { api } from "~/trpc/react";
 
-interface ForumPermalinkGateProps {
-  postId: string;
-  /** Shown while the lookup runs and while redirecting, so the feed's "not found" never flashes. */
-  pending: ReactNode;
-  /** The feed post page, rendered when the id is not a forum post the viewer can see. */
-  children: ReactNode;
-}
-
 /**
- * `/thinkpages/post/<id>` (ruling P5): a forum post id redirects to its thread page and anchor;
- * anything else renders the feed post as before.
+ * The post permalink for a signed-in viewer the server's lookup did not place. The server asks as a guest, so a
+ * member's report thread, a private realm board or a hidden post for a moderator only resolves here, with the
+ * viewer's session. Replaces the URL with the thread anchor, or with the feed post when the viewer cannot see a
+ * forum post by that id (the same answer as for any other id, so nothing hidden is revealed).
  */
-export function ForumPermalinkGate({ postId, pending, children }: ForumPermalinkGateProps) {
+export function ForumPermalinkGate({ postId }: { postId: string }) {
   const router = useRouter();
-  const { data: location, isLoading } = api.thinkpagesForum.resolvePost.useQuery(
+  const { data: location, isPending } = api.thinkpagesForum.resolvePost.useQuery(
     { postId },
     { retry: false }
   );
 
   useEffect(() => {
-    if (!location) return;
-    router.replace(`/thinkpages/t/${location.threadId}?page=${location.page}#post-${postId}`);
-  }, [location, postId, router]);
+    if (!isPending) router.replace(permalinkTarget(postId, location));
+  }, [isPending, location, postId, router]);
 
-  return isLoading || location ? pending : children;
+  return (
+    <div className="container mx-auto max-w-2xl px-4 py-8">
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="text-label-secondary size-8 animate-spin" aria-label="Loading" />
+      </div>
+    </div>
+  );
 }

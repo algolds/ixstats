@@ -38,6 +38,9 @@ const isPublicRoute = createRouteMatcher([
   "/api(.*)",
   "/countries",
   "/countries/(.*)",
+  // Feed posts and persona profiles were public under /thinkpages/(.*) and stay public here (ThinkPages phase 5).
+  "/dashboard/post/(.*)",
+  "/dashboard/profile/(.*)",
   "/thinkpages",
   "/thinkpages/(.*)",
   "/builder",

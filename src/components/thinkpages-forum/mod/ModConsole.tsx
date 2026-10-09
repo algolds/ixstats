@@ -105,7 +105,7 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
 
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-      <PageHeader title="Moderation" bleed back={{ href: FORUM_HOME, label: "Forum" }} />
+      <PageHeader title="Moderation" bleed back={{ href: FORUM_HOME, label: "ThinkPages" }} />
       {active === "moderators" ? null : (
         <ModScopeFilter
           realms={realms}

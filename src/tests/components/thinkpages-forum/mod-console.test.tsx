@@ -228,7 +228,7 @@ describe("access", () => {
     expect(screen.getByText("You don't moderate anything")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
       "href",
-      "/thinkpages/forum"
+      "/thinkpages"
     );
     expect(screen.queryByRole("tab")).toBeNull();
   });
@@ -238,6 +238,7 @@ describe("access", () => {
     renderConsole();
     const tabs = screen.getAllByRole("tab").map((t) => t.textContent);
     expect(tabs).toEqual(["Queue", "Warnings", "Bans", "Appeals", "Log"]);
+    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
     const scope = screen.getByRole("combobox", { name: "Scope" });
     const options = within(scope)
       .getAllByRole("option")

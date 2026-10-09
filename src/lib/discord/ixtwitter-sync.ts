@@ -735,7 +735,7 @@ export function formatThinkPagesEmbed(
   },
   mediaUrls?: string[]
 ): any[] {
-  const url = `${APP_URL}${CLEAN_BASE_PATH}/thinkpages/post/${post.id}`;
+  const url = `${APP_URL}${CLEAN_BASE_PATH}/dashboard/post/${post.id}`;
   const author = {
     name: `${account.displayName} (@${account.username})${account.verified ? " \u2705" : ""}`,
     icon_url: account.profileImageUrl

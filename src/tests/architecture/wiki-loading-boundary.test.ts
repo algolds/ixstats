@@ -14,6 +14,10 @@
  * legacy switch and calls `redirect()` before rendering, so the `(forum)` group has no `loading.tsx` at all. With
  * one, a switched-on `/forum/thread/<id>` answered 200 with a streamed meta-refresh instead of the 307 (seen on
  * the clone). A bridge page that needs a fallback puts its `<Suspense>` inside its `*Client.tsx`, below the gate.
+ *
+ * The ThinkPages redirects need the real 307 and 308 too (phase 5): the forum post permalink resolver, the feed's
+ * old pages and the realm redirect. `/thinkpages` has no `loading.tsx`; the forum's category, thread and moderation
+ * pages, which never redirect, keep the loading UI in their own segments.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -31,7 +35,7 @@ const NOT_LOADING_SEGMENTS = new Set([
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
 /** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
-const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)"]);
+const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages"]);
 /** The redirect pages, relative to src/app. */
 const REDIRECT_PAGES = ["id/[username]/page.tsx", "r/[realm]/[username]/page.tsx"];
 
@@ -115,6 +119,38 @@ describe("no loading.tsx above the legacy forum redirects", () => {
       expect(fs.readFileSync(path.join(APP, layout), "utf8")).not.toMatch(/Suspense/);
     }
   });
+});
+
+describe("no loading.tsx above the ThinkPages redirects", () => {
+  const pages = [
+    "thinkpages/page.tsx",
+    "thinkpages/post/[postId]/page.tsx",
+    "thinkpages/forum/page.tsx",
+    "thinkpages/feed/page.tsx",
+    "thinkpages/profile/[username]/page.tsx",
+    "thinkpages/saved/page.tsx",
+    "thinkpages/thinkshare/page.tsx",
+    "thinkpages/thinktanks/page.tsx",
+    "thinkpages/r/[realm]/page.tsx",
+  ];
+
+  it.each(pages)("%s has none in any ancestor directory", (page) => {
+    const file = path.join(APP, page);
+    expect(fs.existsSync(file)).toBe(true);
+    const offenders: string[] = [];
+    for (let dir = path.dirname(file); dir.startsWith(APP); dir = path.dirname(dir)) {
+      if (hasLoading(dir)) offenders.push(path.relative(process.cwd(), dir));
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it.each(["c", "t", "mod", "r/[realm]/[key]"])(
+    "thinkpages/%s keeps the shared loading UI",
+    (segment) => {
+      const source = fs.readFileSync(path.join(APP, "thinkpages", segment, "loading.tsx"), "utf8");
+      expect(source).toContain('from "~/app/_components/RootLoading"');
+    }
+  );
 });
 
 describe("the non-wiki route segments keep their loading UI", () => {

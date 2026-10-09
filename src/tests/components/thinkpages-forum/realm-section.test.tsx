@@ -31,7 +31,7 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, usePathname: () => "/thinkpages/forum/r/eurth" };
+  return { router, useRouter: () => router, usePathname: () => "/thinkpages" };
 });
 
 interface SelectStubProps {
@@ -162,10 +162,7 @@ describe("RealmSection", () => {
     results.realmSection = { data: section(false, signIn) };
     const { unmount } = render(<RealmSection realm="eurth" />);
     const signInLink = screen.getByRole("link", { name: "Sign in" });
-    expect(signInLink).toHaveAttribute(
-      "href",
-      "/sign-in?redirect_url=%2Fthinkpages%2Fforum%2Fr%2Feurth"
-    );
+    expect(signInLink).toHaveAttribute("href", "/sign-in?redirect_url=%2Fthinkpages");
     expect(signInLink.parentElement).toHaveTextContent(signIn);
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
     unmount();
@@ -184,7 +181,7 @@ describe("RealmSection", () => {
     expect(screen.getByText(ban)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Appeal" })).toHaveAttribute(
       "href",
-      "/thinkpages/forum#standing"
+      "/thinkpages#standing"
     );
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
   });
@@ -201,7 +198,7 @@ describe("RealmSection", () => {
     ).toEqual(["IxWorld", "Eurth", "Other"]);
     expect(select).toHaveValue("eurth");
     fireEvent.change(select, { target: { value: "other" } });
-    expect(router.replace).toHaveBeenCalledWith("/thinkpages/forum?realm=other");
+    expect(router.replace).toHaveBeenCalledWith("/thinkpages?realm=other");
   });
 
   it("keeps an unlisted realm opened by URL selectable in the switcher", () => {

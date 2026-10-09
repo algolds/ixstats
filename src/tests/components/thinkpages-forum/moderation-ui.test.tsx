@@ -78,7 +78,7 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, usePathname: () => "/thinkpages/forum/t/t1" };
+  return { router, useRouter: () => router, usePathname: () => "/thinkpages/t/t1" };
 });
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
@@ -836,7 +836,7 @@ describe("ban notices", () => {
     expect(screen.getByText(BAN)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Appeal" })).toHaveAttribute(
       "href",
-      "/thinkpages/forum#standing"
+      "/thinkpages#standing"
     );
   });
 
@@ -847,7 +847,7 @@ describe("ban notices", () => {
     expect(screen.queryByTestId("composer")).toBeNull();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
-      "/sign-in?redirect_url=%2Fthinkpages%2Fforum%2Ft%2Ft1"
+      "/sign-in?redirect_url=%2Fthinkpages%2Ft%2Ft1"
     );
     expect(screen.queryByRole("link", { name: "Appeal" })).toBeNull();
   });
