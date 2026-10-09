@@ -20,6 +20,14 @@ export {
   type BansDb,
 } from "./mod-bans";
 export { type AutoBanChange } from "./mod-auto-bans";
+export {
+  modEditPost,
+  moveThread,
+  setPostHidden,
+  setThreadFlag,
+  type ContentDb,
+  type ThreadFlag,
+} from "./mod-content";
 export { listModLog, LOG_PER_PAGE, logModAction, type ModLogDb, type ModLogEntry } from "./mod-log";
 export {
   assertModeratesCategory,
@@ -33,6 +41,13 @@ export {
   type ModScope,
   type ScopeDb,
 } from "./mod-scope";
+export {
+  listReports,
+  REPORTS_PER_PAGE,
+  type ReportQueueDb,
+  type ReportStatus,
+} from "./mod-report-queue";
+export { fileReport, resolveReport, type ReportsDb, type ReportTargetType } from "./mod-reports";
 export {
   activePointsOf,
   issueWarning,

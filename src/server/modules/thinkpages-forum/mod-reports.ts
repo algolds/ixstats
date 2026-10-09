@@ -1,0 +1,180 @@
+/**
+ * Reports (phase 3, M11). A signed-in member reports a thread or post they can see and did not write; a site ban
+ * stops them, a realm or category ban does not. One open report per reporter per target, serialized per reporter
+ * so a double submit cannot file twice. A report carries its target's category (re-pointed when the thread moves,
+ * `moveThread`), which scopes the moderators' queue (mod-report-queue.ts) and who may resolve or dismiss it;
+ * resolving writes its ForumModLog row in the same transaction.
+ */
+import type { PrismaClient } from "@prisma/client";
+import { canSeeThread, type ForumViewer } from "./access";
+import { ForumError } from "./errors";
+import { assertNotBanned } from "./mod-bans";
+import { logModAction, modNote } from "./mod-log";
+import {
+  assertModeratesCategory,
+  assertScope,
+  canModerateCategory,
+  scopeOfCategory,
+  type ModScope,
+} from "./mod-scope";
+import { visibleRealmOf } from "./reads";
+import type { ForumActor } from "./writes";
+
+export type ReportsDb = Pick<
+  PrismaClient,
+  | "forumReport"
+  | "forumThread"
+  | "forumPost"
+  | "forumCategory"
+  | "forumBan"
+  | "forumModLog"
+  | "realm"
+  | "$transaction"
+  | "$executeRaw"
+>;
+export type ReportTargetType = "thread" | "post";
+
+const REASON_MIN = 3;
+const REASON_MAX = 1000;
+
+const SITE_PLACE = { id: null, scope: "site", realmId: null } as const;
+const TARGET_CATEGORY = {
+  select: { id: true, scope: true, realmId: true, visibility: true },
+} as const;
+
+function reportReason(raw: string): string {
+  const reason = raw.trim();
+  if (reason.length < REASON_MIN || reason.length > REASON_MAX) {
+    throw new ForumError("BAD_REQUEST", `A reason is ${REASON_MIN} to ${REASON_MAX} characters.`);
+  }
+  return reason;
+}
+
+interface SeenTarget {
+  authorUserId: string;
+  postHidden: boolean;
+  thread: {
+    authorUserId: string;
+    hidden: boolean;
+    category: { id: string; scope: string; realmId: string | null; visibility: string };
+  };
+}
+
+async function findTarget(
+  db: ReportsDb,
+  input: { targetType: ReportTargetType; targetId: string }
+): Promise<SeenTarget | null> {
+  const threadSelect = { authorUserId: true, hidden: true, category: TARGET_CATEGORY } as const;
+  if (input.targetType === "thread") {
+    const thread = await db.forumThread.findUnique({
+      where: { id: input.targetId },
+      select: threadSelect,
+    });
+    return thread && { authorUserId: thread.authorUserId, postHidden: false, thread };
+  }
+  const post = await db.forumPost.findUnique({
+    where: { id: input.targetId },
+    select: { authorUserId: true, hidden: true, thread: { select: threadSelect } },
+  });
+  return post && { authorUserId: post.authorUserId, postHidden: post.hidden, thread: post.thread };
+}
+
+/** The read rules: the thread, a hidden post (moderators only), and the realm (drafts hidden). */
+async function canSeeTarget(
+  db: ReportsDb,
+  actor: ForumActor,
+  target: SeenTarget
+): Promise<boolean> {
+  const { category } = target.thread;
+  if (!canSeeThread(actor, target.thread, category)) return false;
+  if (target.postHidden && !canModerateCategory(actor, category)) return false;
+  return (await visibleRealmOf(db, actor, category)) !== undefined;
+}
+
+/** The target as the reporter sees it; NOT_FOUND otherwise. */
+async function seenTarget(
+  db: ReportsDb,
+  actor: ForumActor,
+  input: { targetType: ReportTargetType; targetId: string }
+): Promise<SeenTarget> {
+  const target = await findTarget(db, input);
+  if (target && (await canSeeTarget(db, actor, target))) return target;
+  throw new ForumError(
+    "NOT_FOUND",
+    `${input.targetType === "post" ? "Post" : "Thread"} not found.`
+  );
+}
+
+export async function fileReport(
+  db: ReportsDb,
+  actor: ForumActor,
+  input: { targetType: ReportTargetType; targetId: string; reason: string }
+): Promise<{ reportId: string }> {
+  const reason = reportReason(input.reason);
+  const target = await seenTarget(db, actor, input);
+  if (target.authorUserId === actor.id) {
+    throw new ForumError("BAD_REQUEST", `You can't report your own ${input.targetType}.`);
+  }
+  await assertNotBanned(db, actor, SITE_PLACE);
+  const key = { reporterId: actor.id, targetType: input.targetType, targetId: input.targetId };
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`forum-report:${actor.id}`}))`;
+    const open = await tx.forumReport.findFirst({
+      where: { ...key, status: "open" },
+      select: { id: true },
+    });
+    if (open) throw new ForumError("CONFLICT", "You've already reported this.");
+    const report = await tx.forumReport.create({
+      data: { ...key, categoryId: target.thread.category.id, reason },
+    });
+    return { reportId: report.id };
+  });
+}
+
+/** Who may handle a report: moderators of its category; one whose category is gone is left to site admins. */
+function handlingScope(
+  actor: ForumViewer,
+  category: { id: string; scope: string; realmId: string | null } | null
+): { handler: NonNullable<ForumViewer>; scope: ModScope } {
+  if (!category) {
+    assertScope(actor, { kind: "site" }, null);
+    return { handler: actor, scope: { kind: "site" } };
+  }
+  assertModeratesCategory(actor, category);
+  return { handler: actor, scope: scopeOfCategory(category) };
+}
+
+export async function resolveReport(
+  db: ReportsDb,
+  actor: ForumViewer,
+  input: { reportId: string; outcome: "resolved" | "dismissed"; note?: string }
+): Promise<void> {
+  const note = modNote(input.note);
+  const report = await db.forumReport.findUnique({
+    where: { id: input.reportId },
+    select: { id: true, status: true, categoryId: true, targetType: true, targetId: true },
+  });
+  if (!report) throw new ForumError("NOT_FOUND", "Report not found.");
+  const category = await db.forumCategory.findUnique({
+    where: { id: report.categoryId },
+    select: { id: true, scope: true, realmId: true },
+  });
+  const { handler, scope } = handlingScope(actor, category);
+  const handled = new ForumError("CONFLICT", "This report has already been handled.");
+  if (report.status !== "open") throw handled;
+  await db.$transaction(async (tx) => {
+    const { count } = await tx.forumReport.updateMany({
+      where: { id: report.id, status: "open" },
+      data: { status: input.outcome, handledBy: handler.id, handledAt: new Date(), note },
+    });
+    if (count === 0) throw handled;
+    await logModAction(tx, {
+      actorId: handler.id,
+      action: input.outcome === "resolved" ? "report.resolve" : "report.dismiss",
+      targetType: "report",
+      targetId: report.id,
+      scope,
+      detail: { note, targetType: report.targetType, targetId: report.targetId },
+    });
+  });
+}

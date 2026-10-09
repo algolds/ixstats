@@ -114,6 +114,21 @@ export function syncLinks(
   );
 }
 
+/** P6 (M17): a post linked into a submitted or approved story chain no longer changes, by its author or a moderator. */
+export async function inLockedChain(
+  db: Pick<PrismaClient, "postActionLink">,
+  postId: string
+): Promise<boolean> {
+  const chained = await db.postActionLink.count({
+    where: {
+      postSource: "native",
+      postRef: postId,
+      storyline: { status: { in: LOCKED_CHAIN_STATUSES } },
+    },
+  });
+  return chained > 0;
+}
+
 /** Refuses unless the actor may post in `category`, with the realm's notice when it has one, else `refusal`. */
 async function assertCanPost(
   db: WritesDb,
@@ -269,14 +284,8 @@ export async function editPost(
   if (realm) await assertCanPost(db, actor, category, realm, TEAM_ONLY);
   else await assertNotBanned(db, actor, category);
   const body = prepareBody(input.html);
-  const chained = await db.postActionLink.count({
-    where: {
-      postSource: "native",
-      postRef: post.id,
-      storyline: { status: { in: LOCKED_CHAIN_STATUSES } },
-    },
-  });
-  if (chained > 0) throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
+  if (await inLockedChain(db, post.id))
+    throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
   await validateLinks(db, actor, body.plainText);
   await db.forumPost.update({ where: { id: post.id }, data: { ...body, editedAt: new Date() } });
   await syncLinks(db, actor, post.id, body.plainText);
