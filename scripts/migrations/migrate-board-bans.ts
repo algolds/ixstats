@@ -12,11 +12,16 @@
  * Issuer: the board ban's creator (a Clerk id) mapped to their User id, else "system" (counted). Log actor: "system";
  * the detail names the original issuer. Expired rows and rows that bind nobody are skipped and counted, and so is
  * a bound player who moderates the realm today (site admin, founder, `board` officer), whom the board never
- * restricted: one report line each. The realm_board_bans rows are left in place, frozen, for phase 4.
+ * restricted: one report line each. Several rows binding one player in one realm become one ban, the strongest
+ * (the rest are counted as collapsed). Under the locks, a planned ban whose member already has a live manual ban at
+ * that realm (issued by hand before the run, or by an earlier run) is skipped and reported, so the forum's one live
+ * manual ban per member and scope (M-1) holds; the dry run reports the same check without the locks. The
+ * realm_board_bans rows are left in place, frozen, for phase 4.
  */
 import "../lib/load-env";
 import { Prisma, PrismaClient } from "@prisma/client";
 import type { RealmOfficerGrant } from "~/server/modules/realms/realms.access";
+import { liveAt } from "~/server/modules/thinkpages-forum/mod-bans";
 import { logModAction } from "~/server/modules/thinkpages-forum/mod-log";
 import { lockMember } from "~/server/modules/thinkpages-forum/mod-scope";
 import { databaseLabel, productionDatabaseRefusal } from "../lib/database-guard";
@@ -25,10 +30,12 @@ import {
   MIGRATION_ACTOR,
   planBoardBanMigration,
   summarizeBanMigration,
+  withoutLiveBans,
   type BanMigrationPlan,
   type BoardBanRow,
   type ClaimRow,
   type CountryRow,
+  type LiveRealmBan,
   type ModeratorFacts,
   type ModeratorSkip,
   type PlannedBan,
@@ -175,20 +182,52 @@ const banData = (ban: PlannedBan): Prisma.ForumBanCreateManyInput => ({
   createdAt: ban.createdAt,
 });
 
-/** Writes one chunk in one transaction; returns how many bans it inserted. */
-async function applyChunk(db: PrismaClient, chunk: PlannedBan[]): Promise<number> {
+const coveredLine = (ban: PlannedBan) =>
+  `${banLine(ban)} skipped: the member already has a live manual ban in that realm`;
+
+/** The bans' members' live manual realm bans (any sourceRef or none) at the bans' realms. */
+function liveRealmBans(
+  db: Pick<Prisma.TransactionClient, "forumBan">,
+  bans: readonly PlannedBan[],
+  now: Date
+): Promise<LiveRealmBan[]> {
+  return db.forumBan.findMany({
+    where: {
+      userId: { in: [...new Set(bans.map((b) => b.userId))] },
+      scope: "realm",
+      scopeId: { in: [...new Set(bans.map((b) => b.scopeId))] },
+      auto: false,
+      liftedAt: null,
+      ...liveAt(now),
+    },
+    select: { userId: true, scopeId: true },
+  });
+}
+
+/**
+ * Writes one chunk in one transaction; returns how many bans it inserted and the planned bans it skipped because
+ * the member already had a live manual ban in that realm (read under their locks, after them).
+ */
+async function applyChunk(
+  db: PrismaClient,
+  chunk: PlannedBan[]
+): Promise<{ created: number; covered: PlannedBan[] }> {
   return db.$transaction(
     async (tx) => {
       // Sorted, so two runs (or a run and a multi-member action) never wait on each other in a cycle.
       for (const userId of [...new Set(chunk.map((b) => b.userId))].sort()) {
         await lockMember(tx, userId);
       }
+      const { insert, covered } = withoutLiveBans(
+        chunk,
+        await liveRealmBans(tx, chunk, new Date())
+      );
       const created = await tx.forumBan.createManyAndReturn({
-        data: chunk.map(banData),
+        data: insert.map(banData),
         skipDuplicates: true,
         select: { id: true, sourceRef: true },
       });
-      const planned = new Map(chunk.map((b) => [b.sourceRef, b]));
+      const planned = new Map(insert.map((b) => [b.sourceRef, b]));
       for (const { id, sourceRef } of created) {
         const ban = planned.get(sourceRef ?? "");
         if (!ban) throw new Error(`Inserted a ban that was not planned: ${sourceRef}`);
@@ -208,7 +247,7 @@ async function applyChunk(db: PrismaClient, chunk: PlannedBan[]): Promise<number
           },
         });
       }
-      return created.length;
+      return { created: created.length, covered };
     },
     { timeout: TRANSACTION_TIMEOUT_MS }
   );
@@ -229,14 +268,25 @@ async function main(db: PrismaClient): Promise<number> {
     for (const skip of run.plan.moderatorSkips) console.log(skipLine(skip));
   });
   console.log(`  ${summary[summary.length - 1]}`);
-  if (!apply) return 0;
-
   const bans = runs.flatMap((run) => run.plan.bans);
+  if (!apply) {
+    const { covered } = withoutLiveBans(bans, await liveRealmBans(db, bans, now));
+    for (const ban of covered) console.log(coveredLine(ban));
+    console.log(`  ${covered.length} would be skipped: a live manual ban in that realm already.`);
+    return 0;
+  }
+
   let created = 0;
-  for (let i = 0; i < bans.length; i += CHUNK)
-    created += await applyChunk(db, bans.slice(i, i + CHUNK));
+  const covered: PlannedBan[] = [];
+  for (let i = 0; i < bans.length; i += CHUNK) {
+    const chunk = await applyChunk(db, bans.slice(i, i + CHUNK));
+    created += chunk.created;
+    covered.push(...chunk.covered);
+  }
+  for (const ban of covered) console.log(coveredLine(ban));
   console.log(
-    `Applied: ${created} forum bans created (${bans.length - created} already present), ` +
+    `Applied: ${created} forum bans created (${bans.length - created - covered.length} already present, ` +
+      `${covered.length} skipped for a live manual ban in that realm), ` +
       `${created} ban.migrate log rows written. realm_board_bans left in place.`
   );
   return 0;

@@ -8,7 +8,11 @@
  * (`restrictionHolders` in src/server/shared/realm-board.ts): the holder by approved claim when it was imposed,
  * who keeps it after abandoning the nation, and the nation's current owner unless they claimed it only afterwards.
  * The board read both from the ban's own realm (claims made there, the owner of a nation that is still there), so
- * the planner does too. Each bound player gets one ban, idempotent by `sourceRef`.
+ * the planner does too. Each bound player gets one ban per realm (M-1: one live manual ban per member and scope),
+ * idempotent by `sourceRef`: when several rows bind the same player in one realm (two banned nations, or a nation
+ * banned twice), the strongest is kept with its own `sourceRef` (permanent over dated, then the latest end, then the
+ * earliest creation) and the rest are counted as collapsed. A player and realm with any row already migrated get
+ * nothing more, so a rerun never adds a second ban, nor brings back one a moderator lifted since.
  *
  * The board never restricted its moderators, while a forum ban binds them (M5). So a bound player who moderates the
  * realm today (a site admin, the realm's founder, or an officer with the `board` power) is
@@ -89,13 +93,30 @@ export interface PlannedBan {
   detail: { realmBoardBanId: string; kind: string; countryId: string };
 }
 
+interface Skipped {
+  expired: number;
+  noHolder: number;
+  alreadyMigrated: number;
+  moderator: number;
+  collapsed: number;
+}
+
+const noSkips = (): Skipped => ({
+  expired: 0,
+  noHolder: 0,
+  alreadyMigrated: 0,
+  moderator: 0,
+  collapsed: 0,
+});
+
 export interface BanMigrationPlan {
   bans: PlannedBan[];
   /**
-   * `expired` and `noHolder` count board rows; `alreadyMigrated` and `moderator` count bound players (already
-   * carried over; moderating the realm, listed in `moderatorSkips`).
+   * `expired` and `noHolder` count board rows; `alreadyMigrated`, `moderator` and `collapsed` count bound players
+   * (already carried over; moderating the realm, listed in `moderatorSkips`; bound in the same realm by a stronger
+   * or already migrated row).
    */
-  skipped: { expired: number; noHolder: number; alreadyMigrated: number; moderator: number };
+  skipped: Skipped;
   moderatorSkips: ModeratorSkip[];
   /** Planned bans issued by the system because the board ban's creator has no User row. */
   issuerUnknown: number;
@@ -146,8 +167,17 @@ function moderatorRole(
   return founder || officer ? "realm moderator" : null;
 }
 
-/** The forum bans still to create, and why the rest are left out. */
-export function planBoardBanMigration(input: {
+/** Whether `a` binds harder than `b`: permanent over dated, then the later end, then the earlier creation. */
+function outranks(a: PlannedBan, b: PlannedBan): boolean {
+  const endA = a.expiresAt?.getTime() ?? Infinity;
+  const endB = b.expiresAt?.getTime() ?? Infinity;
+  if (endA !== endB) return endA > endB;
+  return a.createdAt.getTime() < b.createdAt.getTime();
+}
+
+const memberRealm = (userId: string, realmId: string) => `${userId}\u0000${realmId}`;
+
+interface PlanInput {
   rows: readonly BoardBanRow[];
   /** Approved claims on the rows' nations. */
   claims: readonly ClaimRow[];
@@ -159,52 +189,104 @@ export function planBoardBanMigration(input: {
   migrated: ReadonlySet<string>;
   moderators: ModeratorFacts;
   now: Date;
-}): BanMigrationPlan {
-  const plan: BanMigrationPlan = {
-    bans: [],
-    skipped: { expired: 0, noHolder: 0, alreadyMigrated: 0, moderator: 0 },
-    moderatorSkips: [],
-    issuerUnknown: 0,
-    reasonClipped: 0,
-  };
-  for (const row of input.rows) {
-    if (isExpired(row, input.now)) {
-      plan.skipped.expired += 1;
+}
+
+/** The planner's running state: the strongest ban per member and realm, and the pairs already migrated. */
+interface Tally {
+  plan: BanMigrationPlan;
+  strongest: Map<string, { ban: PlannedBan; clipped: boolean }>;
+  migratedPairs: Set<string>;
+  candidates: number;
+}
+
+/** Plans one live row's bound players into the tally. */
+function tallyRow(row: BoardBanRow, input: PlanInput, tally: Tally): void {
+  const holders = holdersOf(row, input.claims, input.countries);
+  if (holders.length === 0) tally.plan.skipped.noHolder += 1;
+  const issuer = input.userIdByClerk.get(row.createdBy);
+  const { reason, clipped } = reasonOf(row);
+  for (const userId of holders) {
+    const sourceRef = banSourceRef(row.id, userId);
+    const pair = memberRealm(userId, row.realmId);
+    if (input.migrated.has(sourceRef)) {
+      tally.plan.skipped.alreadyMigrated += 1;
+      tally.migratedPairs.add(pair);
       continue;
     }
-    const holders = holdersOf(row, input.claims, input.countries);
-    if (holders.length === 0) plan.skipped.noHolder += 1;
-    const issuer = input.userIdByClerk.get(row.createdBy);
-    const { reason, clipped } = reasonOf(row);
-    for (const userId of holders) {
-      const sourceRef = banSourceRef(row.id, userId);
-      if (input.migrated.has(sourceRef)) {
-        plan.skipped.alreadyMigrated += 1;
-        continue;
-      }
-      const holder = moderatorRole(userId, row.realmId, input.moderators);
-      if (holder) {
-        plan.skipped.moderator += 1;
-        plan.moderatorSkips.push({ sourceRef, userId, realmBoardBanId: row.id, holder });
-        continue;
-      }
-      plan.issuerUnknown += issuer ? 0 : 1;
-      plan.reasonClipped += clipped ? 1 : 0;
-      plan.bans.push({
-        sourceRef,
-        userId,
-        scope: "realm",
-        scopeId: row.realmId,
-        reason,
-        issuedBy: issuer ?? MIGRATION_ACTOR,
-        expiresAt: row.until,
-        auto: false,
-        createdAt: row.createdAt,
-        detail: { realmBoardBanId: row.id, kind: row.kind, countryId: row.countryId },
-      });
+    const holder = moderatorRole(userId, row.realmId, input.moderators);
+    if (holder) {
+      tally.plan.skipped.moderator += 1;
+      tally.plan.moderatorSkips.push({ sourceRef, userId, realmBoardBanId: row.id, holder });
+      continue;
     }
+    tally.candidates += 1;
+    const ban: PlannedBan = {
+      sourceRef,
+      userId,
+      scope: "realm",
+      scopeId: row.realmId,
+      reason,
+      issuedBy: issuer ?? MIGRATION_ACTOR,
+      expiresAt: row.until,
+      auto: false,
+      createdAt: row.createdAt,
+      detail: { realmBoardBanId: row.id, kind: row.kind, countryId: row.countryId },
+    };
+    const held = tally.strongest.get(pair);
+    if (!held || outranks(ban, held.ban)) tally.strongest.set(pair, { ban, clipped });
   }
+}
+
+/** The forum bans still to create, and why the rest are left out. */
+export function planBoardBanMigration(input: PlanInput): BanMigrationPlan {
+  const tally: Tally = {
+    plan: {
+      bans: [],
+      skipped: noSkips(),
+      moderatorSkips: [],
+      issuerUnknown: 0,
+      reasonClipped: 0,
+    },
+    strongest: new Map(),
+    migratedPairs: new Set(),
+    candidates: 0,
+  };
+  for (const row of input.rows) {
+    if (isExpired(row, input.now)) tally.plan.skipped.expired += 1;
+    else tallyRow(row, input, tally);
+  }
+  const { plan } = tally;
+  for (const [pair, { ban, clipped }] of tally.strongest) {
+    if (tally.migratedPairs.has(pair)) continue;
+    plan.issuerUnknown += ban.issuedBy === MIGRATION_ACTOR ? 1 : 0;
+    plan.reasonClipped += clipped ? 1 : 0;
+    plan.bans.push(ban);
+  }
+  plan.skipped.collapsed = tally.candidates - plan.bans.length;
   return plan;
+}
+
+/** A member's live manual ban at a realm, read under their lock before inserting (M-1). */
+export interface LiveRealmBan {
+  userId: string;
+  scopeId: string | null;
+}
+
+/**
+ * Splits a chunk into the bans to insert and those `covered` by a live manual ban the member already has at that
+ * realm (issued by hand before the run, or by an earlier run), whatever its `sourceRef`.
+ */
+export function withoutLiveBans(
+  chunk: readonly PlannedBan[],
+  live: readonly LiveRealmBan[]
+): { insert: PlannedBan[]; covered: PlannedBan[] } {
+  const banned = new Set(live.map((b) => memberRealm(b.userId, b.scopeId ?? "")));
+  const insert: PlannedBan[] = [];
+  const covered: PlannedBan[] = [];
+  for (const ban of chunk) {
+    (banned.has(memberRealm(ban.userId, ban.scopeId)) ? covered : insert).push(ban);
+  }
+  return { insert, covered };
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -216,7 +298,8 @@ function countsText(bans: number, plan: Counts): string {
   return (
     `${plural(bans, "forum ban")} to create; ` +
     `skipped ${s.expired} expired, ${s.noHolder} no holder, ${s.alreadyMigrated} already migrated, ` +
-    `${s.moderator} binding a realm moderator; ` +
+    `${s.moderator} binding a realm moderator, ` +
+    `${s.collapsed} collapsed into a stronger ban for the same member and realm; ` +
     `${plan.issuerUnknown} issued by the system, ${plural(plan.reasonClipped, "reason")} clipped`
   );
 }
@@ -226,7 +309,7 @@ export function summarizeBanMigration(
   realms: ReadonlyArray<{ realm: string; rows: number; plan: BanMigrationPlan }>
 ): string[] {
   const total: Counts = {
-    skipped: { expired: 0, noHolder: 0, alreadyMigrated: 0, moderator: 0 },
+    skipped: noSkips(),
     issuerUnknown: 0,
     reasonClipped: 0,
   };
@@ -239,6 +322,7 @@ export function summarizeBanMigration(
     total.skipped.noHolder += plan.skipped.noHolder;
     total.skipped.alreadyMigrated += plan.skipped.alreadyMigrated;
     total.skipped.moderator += plan.skipped.moderator;
+    total.skipped.collapsed += plan.skipped.collapsed;
     total.issuerUnknown += plan.issuerUnknown;
     total.reasonClipped += plan.reasonClipped;
     return `${realm}: ${plural(count, "board ban")}, ${countsText(plan.bans.length, plan)}`;

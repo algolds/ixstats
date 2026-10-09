@@ -4,6 +4,7 @@ import {
   MIGRATION_ACTOR,
   planBoardBanMigration,
   summarizeBanMigration,
+  withoutLiveBans,
   type BoardBanRow,
   type ClaimRow,
   type CountryRow,
@@ -37,6 +38,12 @@ const claim = (userId: string, reviewed: number, overrides: Partial<ClaimRow> = 
 
 const owned = (ownerUserId: string | null, realmId = "realm-1"): Map<string, CountryRow> =>
   new Map([["country-1", { realmId, ownerUserId }]]);
+
+/** country-1 owned by user-owner, country-2 by user-b, both in realm-1. */
+const twoNations = new Map<string, CountryRow>([
+  ["country-1", { realmId: "realm-1", ownerUserId: "user-owner" }],
+  ["country-2", { realmId: "realm-1", ownerUserId: "user-b" }],
+]);
 
 const MEMBER = { name: "user", level: 100 };
 
@@ -87,7 +94,12 @@ describe("planBoardBanMigration: expiry", () => {
   });
 
   it("keeps a row that ends later or never, with expiresAt = until", () => {
-    const result = plan([ban({ id: "a", until: day(21) }), ban({ id: "b", until: null })]);
+    const result = plan(
+      [ban({ id: "a", until: day(21) }), ban({ id: "b", until: null, countryId: "country-2" })],
+      {
+        countries: twoNations,
+      }
+    );
     expect(result.bans.map((b) => b.expiresAt)).toEqual([day(21), null]);
     expect(result.skipped.expired).toBe(0);
   });
@@ -191,10 +203,13 @@ describe("planBoardBanMigration: the planned ban", () => {
   });
 
   it("falls back to a reason naming the kind when the row has none or a blank one", () => {
-    const result = plan([
-      ban({ id: "a", reason: null, kind: "mute" }),
-      ban({ id: "b", reason: "  " }),
-    ]);
+    const result = plan(
+      [
+        ban({ id: "a", reason: null, kind: "mute" }),
+        ban({ id: "b", reason: "  ", countryId: "country-2" }),
+      ],
+      { countries: twoNations }
+    );
     expect(result.bans.map((b) => b.reason)).toEqual([
       "Migrated from the realm board (mute)",
       "Migrated from the realm board (ban)",
@@ -203,7 +218,13 @@ describe("planBoardBanMigration: the planned ban", () => {
 
   it("trims the reason and clips it to the forum's 1000 characters, counting the clip", () => {
     const long = "é".repeat(1200);
-    const result = plan([ban({ id: "a", reason: "  Spam  " }), ban({ id: "b", reason: long })]);
+    const result = plan(
+      [
+        ban({ id: "a", reason: "  Spam  " }),
+        ban({ id: "b", reason: long, countryId: "country-2" }),
+      ],
+      { countries: twoNations }
+    );
     expect(result.bans[0]?.reason).toBe("Spam");
     expect(result.bans[1]?.reason).toBe("é".repeat(1000));
     expect(result.reasonClipped).toBe(1);
@@ -238,12 +259,23 @@ describe("planBoardBanMigration: idempotency", () => {
   });
 
   it("plans nothing on a rerun", () => {
-    const first = plan([ban(), ban({ id: "bb-2", countryId: "country-1" })]);
-    const rerun = plan([ban(), ban({ id: "bb-2", countryId: "country-1" })], {
+    const rows = [ban(), ban({ id: "bb-2", countryId: "country-2" })];
+    const first = plan(rows, { countries: twoNations });
+    const rerun = plan(rows, {
+      countries: twoNations,
       migrated: first.bans.map((b) => b.sourceRef),
     });
     expect(rerun.bans).toEqual([]);
     expect(rerun.skipped.alreadyMigrated).toBe(2);
+  });
+
+  it("plans nothing on a rerun when the bans it collapsed are still unmigrated", () => {
+    const rows = [ban({ id: "bb-1", until: day(30) }), ban({ id: "bb-2", until: null })];
+    const first = plan(rows);
+    expect(first.bans.map((b) => b.sourceRef)).toEqual(["realm_board_ban:bb-2:user-owner"]);
+    const rerun = plan(rows, { migrated: first.bans.map((b) => b.sourceRef) });
+    expect(rerun.bans).toEqual([]);
+    expect(rerun.skipped).toMatchObject({ alreadyMigrated: 1, collapsed: 1 });
   });
 });
 
@@ -326,16 +358,123 @@ describe("planBoardBanMigration: bound players who moderate the realm (M5)", () 
   });
 });
 
+describe("planBoardBanMigration: one ban per member and realm", () => {
+  const sourceRefs = (result: ReturnType<typeof plan>) => result.bans.map((b) => b.sourceRef);
+
+  it("keeps a permanent ban over a dated one, whichever came first, counting the rest as collapsed", () => {
+    const result = plan([
+      ban({ id: "dated", until: day(40), createdAt: day(1) }),
+      ban({ id: "forever", until: null, createdAt: day(15) }),
+      ban({ id: "later", until: day(60), createdAt: day(2) }),
+    ]);
+    expect(sourceRefs(result)).toEqual(["realm_board_ban:forever:user-owner"]);
+    expect(result.bans[0]).toMatchObject({ expiresAt: null, createdAt: day(15) });
+    expect(result.skipped.collapsed).toBe(2);
+  });
+
+  it("keeps the latest end among dated bans", () => {
+    const result = plan([
+      ban({ id: "late", until: day(60) }),
+      ban({ id: "early", until: day(30) }),
+    ]);
+    expect(sourceRefs(result)).toEqual(["realm_board_ban:late:user-owner"]);
+    expect(result.skipped.collapsed).toBe(1);
+  });
+
+  it("breaks a tie on the end by the earliest creation", () => {
+    const result = plan([
+      ban({ id: "newer", until: null, createdAt: day(12) }),
+      ban({ id: "older", until: null, createdAt: day(3) }),
+      ban({ id: "newest", until: null, createdAt: day(14) }),
+    ]);
+    expect(sourceRefs(result)).toEqual(["realm_board_ban:older:user-owner"]);
+  });
+
+  it("collapses a member holding two banned nations in one realm", () => {
+    const result = plan([ban({ id: "bb-1" }), ban({ id: "bb-2", countryId: "country-2" })], {
+      claims: [claim("user-owner", 5, { countryId: "country-2" })],
+      countries: twoNations,
+    });
+    expect(result.bans.map((b) => b.userId)).toEqual(["user-owner", "user-b"]);
+    expect(sourceRefs(result)).toEqual([
+      "realm_board_ban:bb-1:user-owner",
+      "realm_board_ban:bb-2:user-b",
+    ]);
+    expect(result.skipped.collapsed).toBe(1);
+  });
+
+  it("keeps one ban per realm for a member bound in two realms", () => {
+    const result = plan(
+      [ban({ id: "bb-1" }), ban({ id: "bb-2", realmId: "realm-2", countryId: "country-2" })],
+      {
+        countries: new Map<string, CountryRow>([
+          ["country-1", { realmId: "realm-1", ownerUserId: "user-owner" }],
+          ["country-2", { realmId: "realm-2", ownerUserId: "user-owner" }],
+        ]),
+      }
+    );
+    expect(result.bans.map((b) => b.scopeId)).toEqual(["realm-1", "realm-2"]);
+    expect(result.skipped.collapsed).toBe(0);
+  });
+
+  it("plans nothing more for a member and realm already migrated, even from a stronger row", () => {
+    const result = plan([ban({ id: "bb-1", until: day(30) }), ban({ id: "bb-2", until: null })], {
+      migrated: ["realm_board_ban:bb-1:user-owner"],
+    });
+    expect(result.bans).toEqual([]);
+    expect(result.skipped).toMatchObject({ alreadyMigrated: 1, collapsed: 1 });
+  });
+
+  it("counts the issuer and the clipped reason of the kept ban only", () => {
+    const result = plan([
+      ban({ id: "weak", until: day(30), createdBy: "clerk-x", reason: "é".repeat(1200) }),
+      ban({ id: "strong", until: null }),
+    ]);
+    expect(result).toMatchObject({ issuerUnknown: 0, reasonClipped: 0 });
+  });
+});
+
+describe("withoutLiveBans", () => {
+  const planned = (userId: string, scopeId: string) => ({
+    ...plan([ban()]).bans[0]!,
+    sourceRef: `realm_board_ban:bb-1:${userId}:${scopeId}`,
+    userId,
+    scopeId,
+  });
+
+  it("skips a planned ban whose member already has a live manual ban at that realm, keeping the rest", () => {
+    const a = planned("user-a", "realm-1");
+    const b = planned("user-b", "realm-1");
+    const c = planned("user-a", "realm-2");
+    expect(withoutLiveBans([a, b, c], [{ userId: "user-a", scopeId: "realm-1" }])).toEqual({
+      insert: [b, c],
+      covered: [a],
+    });
+  });
+
+  it("inserts everything when no live ban matches", () => {
+    const a = planned("user-a", "realm-1");
+    expect(withoutLiveBans([a], [{ userId: "user-b", scopeId: "realm-1" }])).toEqual({
+      insert: [a],
+      covered: [],
+    });
+  });
+});
+
 describe("summarizeBanMigration", () => {
   it("prints one line per realm, then the totals", () => {
     const eurth = {
       realm: "Eurth",
-      rows: 3,
-      plan: plan([
-        ban({ id: "a" }),
-        ban({ id: "b", until: day(1) }),
-        ban({ id: "c", createdBy: "clerk-x" }),
-      ]),
+      rows: 4,
+      plan: plan(
+        [
+          ban({ id: "a" }),
+          ban({ id: "b", until: day(1) }),
+          ban({ id: "c", createdBy: "clerk-x", countryId: "country-2" }),
+          ban({ id: "d", until: day(30) }),
+        ],
+        { countries: twoNations }
+      ),
     };
     const ixworld = {
       realm: "IxWorld",
@@ -350,17 +489,17 @@ describe("summarizeBanMigration", () => {
       }),
     };
     expect(summarizeBanMigration([eurth, ixworld, caphiria])).toEqual([
-      "Eurth: 3 board bans, 2 forum bans to create; skipped 1 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator; 1 issued by the system, 0 reasons clipped",
-      "IxWorld: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated, 0 binding a realm moderator; 0 issued by the system, 0 reasons clipped",
-      "Caphiria: 1 board ban, 0 forum bans to create; skipped 0 expired, 0 no holder, 0 already migrated, 1 binding a realm moderator; 0 issued by the system, 0 reasons clipped",
-      "Total: 5 board bans in 3 realms, 2 forum bans to create; skipped 1 expired, 1 no holder, 0 already migrated, 1 binding a realm moderator; 1 issued by the system, 0 reasons clipped",
+      "Eurth: 4 board bans, 2 forum bans to create; skipped 1 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator, 1 collapsed into a stronger ban for the same member and realm; 1 issued by the system, 0 reasons clipped",
+      "IxWorld: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated, 0 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped",
+      "Caphiria: 1 board ban, 0 forum bans to create; skipped 0 expired, 0 no holder, 0 already migrated, 1 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped",
+      "Total: 6 board bans in 3 realms, 2 forum bans to create; skipped 1 expired, 1 no holder, 0 already migrated, 1 binding a realm moderator, 1 collapsed into a stronger ban for the same member and realm; 1 issued by the system, 0 reasons clipped",
     ]);
   });
 
   it("names one realm and one forum ban in the singular", () => {
     const only = { realm: "Eurth", rows: 1, plan: plan([ban()]) };
     expect(summarizeBanMigration([only]).at(-1)).toBe(
-      "Total: 1 board ban in 1 realm, 1 forum ban to create; skipped 0 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator; 0 issued by the system, 0 reasons clipped"
+      "Total: 1 board ban in 1 realm, 1 forum ban to create; skipped 0 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped"
     );
   });
 });
