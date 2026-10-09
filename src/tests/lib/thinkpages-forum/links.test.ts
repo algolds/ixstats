@@ -5,7 +5,10 @@ import {
   claimNationHref,
   forumHomeHref,
   hubHref,
+  modHref,
   newThreadHref,
+  postHref,
+  STANDING_HREF,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
 
@@ -37,6 +40,8 @@ describe("forum links", () => {
 
   it("links threads by id and nation claims to the realm's Nations tab", () => {
     expect(threadHref("t1")).toBe("/thinkpages/t/t1");
+    expect(postHref("p9")).toBe("/thinkpages/post/p9");
+    expect(postHref("a/b")).toBe("/thinkpages/post/a%2Fb");
     expect(claimNationHref("eurth")).toBe("/r/eurth/nations");
   });
 
@@ -44,5 +49,16 @@ describe("forum links", () => {
     expect(forumHomeHref("a&b=c")).toBe("/thinkpages/forum?realm=a%26b%3Dc");
     expect(categoryHref({ key: "hub", realm: { slug: "../x" } })).toBe("/thinkpages/r/..%2Fx/hub");
     expect(claimNationHref("a/b")).toBe("/r/a%2Fb/nations");
+  });
+
+  it("opens the moderation console, encoding the tab and realm", () => {
+    expect(modHref()).toBe("/thinkpages/mod");
+    expect(modHref({ realm: "eurth" })).toBe("/thinkpages/mod?realm=eurth");
+    expect(modHref({ tab: "bans", realm: "a&b" })).toBe("/thinkpages/mod?tab=bans&realm=a%26b");
+    expect(modHref({ tab: "log=x" })).toBe("/thinkpages/mod?tab=log%3Dx");
+  });
+
+  it("links the member's standing on the forum home", () => {
+    expect(STANDING_HREF).toBe("/thinkpages/forum#standing");
   });
 });

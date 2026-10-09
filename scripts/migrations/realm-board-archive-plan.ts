@@ -16,9 +16,6 @@ export const ARCHIVE_TITLE = "Realm Board archive";
 export const threadSourceRef = (groupId: string) => `realm_board:${groupId}`;
 export const postSourceRef = (postId: string) => `thinkpages_post:${postId}`;
 
-/** The production database's name: the runner refuses it unless `--production` is passed. */
-const PRODUCTION_DATABASE = "ixstats";
-
 export interface BoardPostRow {
   id: string;
   content: string;
@@ -189,21 +186,4 @@ export function summarizeArchive(rows: Array<{ realm: string } & ArchivePlan>): 
     ...lines,
     `Total: ${toCreate} to create across ${boards}; ${skippedText(total)}; ${empties}`,
   ];
-}
-
-/** Why the runner must not touch the database in `databaseUrl`, or null when it may. */
-export function archiveDatabaseRefusal(
-  databaseUrl: string | undefined,
-  production: boolean
-): string | null {
-  let name: string;
-  try {
-    name = decodeURIComponent(new URL(databaseUrl ?? "").pathname.replace(/^\//, ""));
-  } catch {
-    return "DATABASE_URL is not set or not a URL.";
-  }
-  if (name === PRODUCTION_DATABASE && !production) {
-    return `DATABASE_URL names the production database "${PRODUCTION_DATABASE}". Run against a clone, or pass --production if that is intended.`;
-  }
-  return null;
 }

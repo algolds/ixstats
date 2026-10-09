@@ -4,7 +4,6 @@ import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import {
   ARCHIVE_TITLE,
-  archiveDatabaseRefusal,
   boardPostBody,
   planBoardArchive,
   postSourceRef,
@@ -343,27 +342,5 @@ describe("summarizeArchive with one board", () => {
     expect(summarizeArchive([only]).at(-1)).toBe(
       "Total: 1 to create across 1 board; skipped 0 removed, 0 no user, 0 already migrated, 0 blank; 0 empty boards"
     );
-  });
-});
-
-describe("archiveDatabaseRefusal", () => {
-  const url = (db: string) => `postgresql://u:p@localhost:5433/${db}?schema=public`;
-
-  it("reads a percent-encoded database name", () => {
-    expect(archiveDatabaseRefusal(url("ix%73tats"), false)).toMatch(/--production/);
-  });
-
-  it("allows a clone", () => {
-    expect(archiveDatabaseRefusal(url("ixstats_wv1"), false)).toBeNull();
-  });
-
-  it("refuses the production database without --production, and allows it with", () => {
-    expect(archiveDatabaseRefusal(url("ixstats"), false)).toMatch(/--production/);
-    expect(archiveDatabaseRefusal(url("ixstats"), true)).toBeNull();
-  });
-
-  it("refuses a missing or unusable DATABASE_URL", () => {
-    expect(archiveDatabaseRefusal(undefined, true)).toMatch(/DATABASE_URL/);
-    expect(archiveDatabaseRefusal("not a url", true)).toMatch(/DATABASE_URL/);
   });
 });

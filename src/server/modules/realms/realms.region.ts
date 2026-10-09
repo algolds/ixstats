@@ -8,7 +8,7 @@ import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/rea
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { resolveDisplayNames } from "~/server/shared/display-names";
-import { embassyPartners, userBoardRestriction } from "~/server/shared/realm-board";
+import { embassyPartners } from "~/server/shared/realm-board";
 import {
   canModerateRealm,
   isRealmOpen,
@@ -84,7 +84,6 @@ type OverviewDb = Pick<
   | "user"
   | "thinkpagesAccount"
   | "realmEmbassy"
-  | "realmBoardBan"
   | "forumCategory"
   | "forumThread"
   | "poll"
@@ -239,14 +238,6 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     ...realm.officers.map((o) => o.userId),
   ]);
   const powers = realmPowers(viewer, realm, realm.officers);
-  const boardRestriction = viewer
-    ? await userBoardRestriction(
-        db,
-        realm.id,
-        viewer.id,
-        ownedNations.map((n) => n.id)
-      )
-    : null;
   const partnerIds = [...partners.keys()];
   const partnerLooks =
     partnerIds.length > 0
@@ -304,7 +295,6 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       isFounder: viewer !== null && canModerateRealm(viewer, realm),
       canManage: powers.length > 0,
       ownedNations,
-      boardRestriction,
     },
   };
 }
@@ -507,7 +497,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     },
   });
 
-  const [officers, embassies, restrictions, polls] = await Promise.all([
+  const [officers, embassies, polls] = await Promise.all([
     db.realmOfficer.findMany({
       where: { realmId: staff.id },
       orderBy: { createdAt: "asc" },
@@ -528,19 +518,6 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
             createdAt: true,
             fromRealm: { select: { name: true, slug: true } },
             toRealm: { select: { name: true, slug: true } },
-          },
-        })
-      : Promise.resolve([]),
-    can("board")
-      ? db.realmBoardBan.findMany({
-          where: { realmId: staff.id, OR: [{ until: null }, { until: { gt: new Date() } }] },
-          orderBy: { createdAt: "desc" },
-          select: {
-            countryId: true,
-            kind: true,
-            reason: true,
-            until: true,
-            createdAt: true,
           },
         })
       : Promise.resolve([]),
@@ -565,14 +542,6 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     staff.id,
     officers.map((o) => o.userId)
   );
-  const restrictedNations =
-    restrictions.length > 0
-      ? await db.country.findMany({
-          where: { id: { in: restrictions.map((r) => r.countryId) } },
-          select: { id: true, name: true, slug: true, flag: true },
-        })
-      : [];
-
   return {
     realm: { id: staff.id, slug: staff.slug, name: staff.name, status: staff.status },
     powers,
@@ -614,10 +583,6 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
         createdAt: e.createdAt,
       };
     }),
-    boardRestrictions: restrictions.map((r) => ({
-      ...r,
-      nation: restrictedNations.find((n) => n.id === r.countryId) ?? null,
-    })),
     polls: polls.map(({ _count, ...p }) => ({ ...p, votes: _count.votes })),
   };
 }

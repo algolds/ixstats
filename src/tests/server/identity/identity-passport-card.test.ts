@@ -65,7 +65,7 @@ const holder = {
   handle: "alex" as string | null,
   wikiUsername: "Alex",
   forumUserId: 9,
-  forumUsername: "AlexForum",
+  forumUsername: "AlexForum" as string | null,
   createdAt: JOINED,
   countryId: "c2",
 };

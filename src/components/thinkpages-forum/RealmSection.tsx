@@ -9,18 +9,25 @@ import { IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { categoryHref, claimNationHref } from "~/lib/thinkpages-forum/links";
 import { noNationNotice } from "~/lib/thinkpages-forum/notices";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { BanNotice, NoticeText } from "./BanNotice";
 import { CategoryRows } from "./CategoryRows";
 import { RealmSwitcher } from "./RealmSwitcher";
 
 type Section = RouterOutputs["thinkpagesForum"]["realmSection"];
 
-/** Whether the viewer may post, else the server's reason; a missing nation comes with a way to claim one. */
+/**
+ * Whether the viewer may post, else the server's reason: a ban as the ban notice, a missing nation with a way to
+ * claim one.
+ */
 function PostingNotice({ section }: { section: Section }) {
   const { notice, realm } = section;
   if (!notice) return <p className="text-footnote text-label-secondary">You can post here</p>;
+  if (section.banned) return <BanNotice notice={notice} />;
   return (
     <p className="text-footnote text-label-secondary">
-      <span>{notice}</span>
+      <span>
+        <NoticeText notice={notice} />
+      </span>
       {notice === noNationNotice(realm.name) ? (
         <>
           {" "}

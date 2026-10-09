@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { EditPencil, Lock, Pin } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -17,6 +18,7 @@ import {
 import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName, type ForumAuthors } from "./AuthorName";
+import { ForumNotice } from "./BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
 import { Pagination, useLastPageRedirect } from "./Pagination";
@@ -40,6 +42,8 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
               <Lock aria-label="Locked" className="text-label-secondary size-3.5 shrink-0" />
             ) : null}
             <span className="min-w-0 truncate">{thread.title}</span>
+            {/* Moderators only: members never receive hidden threads. */}
+            {thread.hidden ? <Badge variant="warning">Hidden</Badge> : null}
           </p>
           <p className="text-footnote text-label-secondary flex min-w-0 gap-1">
             <AuthorName
@@ -116,7 +120,7 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
         }
       />
       {!data.canStart && data.notice ? (
-        <p className="text-footnote text-label-secondary">{data.notice}</p>
+        <ForumNotice notice={data.notice} banned={data.banned} />
       ) : null}
       <Card content="feed" className="overflow-hidden">
         {data.threads.length > 0 ? (

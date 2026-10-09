@@ -35,7 +35,7 @@ interface CountryWhere {
 /** `holdings`: user id → realm ids they hold a nation in. */
 function setup(holdings: Record<string, string[]> = { [INVITER]: [DEFAULT_REALM_ID, EURTH] }) {
   const db = {
-    $transaction: jest.fn((cb: (tx: object) => Promise<object>) => cb(db)),
+    $transaction: jest.fn((cb: (tx: object) => Promise<object>): Promise<object> => cb(db)),
     country: {
       findUnique: jest.fn().mockResolvedValue(country),
       findFirst: jest.fn(({ where }: { where: CountryWhere }) => {

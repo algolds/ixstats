@@ -126,7 +126,7 @@ describe("fetchOgImage", () => {
   });
 
   const respond = (body: Uint8Array, init: ResponseInit = {}) =>
-    fetchMock.mockResolvedValue(new Response(body, init));
+    fetchMock.mockResolvedValue(new Response(new Uint8Array(body), init));
 
   it("returns the image as a data URI, fetched with the allow-listed agent and a timeout", async () => {
     respond(PNG);

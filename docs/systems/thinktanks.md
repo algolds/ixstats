@@ -124,7 +124,8 @@ Every realm has a board, the NationStates regional message board, built on this 
   - **Member (post, chat, docs):** owners of a nation in the realm (`Country.ownerUserId`), and its moderators.
     A nation **banned** from the board (`RealmBoardBan`) makes its owner a non-member; a **muted** one keeps
     them a member who can't post or chat (`restriction`, checked by `createGroupPost` and, for the board's
-    chat, by `sendMessage` through `realmBoardChatRestriction`).
+    chat, by `sendMessage` through `realmBoardChatRestriction`). These rows are frozen history: since phase 3,
+    mutes and bans live in the forum, and only rows written earlier still bind here.
   - **Manager (moderate):** site admins, the realm's founder and officers with the `board` power
     (`hasRealmPower`). See [realms §4](./realms.md#4-realm-page-rrealm).
   - A leftover `ThinktankMember` row never lets someone post after they lose their last nation there.
@@ -140,6 +141,12 @@ Every realm has a board, the NationStates regional message board, built on this 
 - **Not group-managed.** A board cannot be deleted, invited to, or have its `type` changed, even by its
   moderators (`BAD_REQUEST`). Boards are left out of the `/thinktanks` Discover list (`getThinktanks`
   `type: "all"`); the directory at `/realms` lists them.
+- **Mutes and bans moved to the forum (phase 3).** The realm's Manage tab no longer mutes or bans nations on
+  the board (`restrictBoardNation` and `liftBoardRestriction` are gone). Live board bans were migrated to
+  realm-scope forum bans, and the `board` officer power now means **forum moderation**: hide, lock, warn and
+  ban in the realm's forum section, from the moderation console at `/thinkpages/mod`. `RealmBoardBan` is
+  frozen, not deleted: rows already in it keep binding through `getRealmBoardAccess` and
+  `realmBoardChatRestriction` as described above, but nothing writes to it, until the board itself is deleted.
 - **Moderation.** `removeGroupPost` (group owners and admins; on a board, the realm's moderators)
   removes the group tag from a post and sets `visibility: "removed"`, so it leaves the board, the realm
   feed and the main feed. It works for every ThinkTank.

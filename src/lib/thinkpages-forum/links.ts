@@ -15,6 +15,11 @@ export interface CategoryPlace {
 
 const seg = encodeURIComponent;
 
+/** A category as the moderation router locates it: its key, and its realm's slug for a realm category. */
+export function categoryLocator(category: CategoryPlace): { key: string; realm?: string } {
+  return category.realm ? { key: category.key, realm: category.realm.slug } : { key: category.key };
+}
+
 /** The forum home, opened on `realm`'s section when given. */
 export function forumHomeHref(realm?: string | null): string {
   return realm ? `${FORUM_HOME}?realm=${seg(realm)}` : FORUM_HOME;
@@ -38,7 +43,21 @@ export function threadHref(threadId: string): string {
   return `/thinkpages/t/${seg(threadId)}`;
 }
 
+/** A post by its permalink: the server finds its page in the thread, and shows a hidden post to moderators. */
+export function postHref(postId: string): string {
+  return `/thinkpages/post/${seg(postId)}`;
+}
+
 /** The realm's Nations tab, where a player claims a nation to post in its section. */
 export function claimNationHref(slug: string): string {
   return `/r/${seg(slug)}/nations`;
+}
+
+/** The member's standing (warnings, bans, appeals) on the forum home, where ban notices send an appeal. */
+export const STANDING_HREF = `${FORUM_HOME}#standing`;
+
+/** The moderation console, opened on `tab` and filtered to `realm` when given. */
+export function modHref({ tab, realm }: { tab?: string; realm?: string } = {}): string {
+  const query = [tab && `tab=${seg(tab)}`, realm && `realm=${seg(realm)}`].filter(Boolean);
+  return query.length > 0 ? `/thinkpages/mod?${query.join("&")}` : "/thinkpages/mod";
 }

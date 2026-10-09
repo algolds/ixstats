@@ -57,7 +57,7 @@ const overview = {
   forum: { threads: [] },
   stats: { nations: 3, claimedNations: 1, population: 0 },
   rules: null,
-  viewer: { signedIn: true, powers: [], ownedNations: [], boardRestriction: null },
+  viewer: { signedIn: true, powers: [], ownedNations: [] },
 };
 const hub = {
   slug: "eurth",

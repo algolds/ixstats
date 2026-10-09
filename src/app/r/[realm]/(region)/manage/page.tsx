@@ -9,9 +9,9 @@ import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/Sour
 import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
 import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
-import { BoardModerationSection } from "../../_components/manage/BoardModerationSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
+import { ForumModerationSection } from "../../_components/manage/ForumModerationSection";
 import { HandOverSection } from "../../_components/manage/HandOverSection";
 import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
 import { LinksSection } from "../../_components/manage/LinksSection";
@@ -57,7 +57,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("claims") && { id: "claims", label: "Claims" },
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
-    can("board") && { id: "board", label: "Board moderation" },
+    can("board") && { id: "board", label: "Forum moderation" },
     can("map") && !manage.archived && { id: "map", label: "Map" },
     can("map") && !manage.archived && { id: "map-import", label: "Map import" },
     can("map") && !manage.archived && { id: "map-pipeline", label: "Map pipeline" },
@@ -110,7 +110,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
         )}
         {can("diplomacy") && <EmbassiesSection slug={slug} manage={manage} />}
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}
-        {can("board") && <BoardModerationSection slug={slug} manage={manage} />}
+        {can("board") && <ForumModerationSection slug={slug} />}
         {can("map") && !manage.archived && <MapSection slug={slug} />}
         {can("map") && !manage.archived && <MapImportSection realmId={manage.realm.id} />}
         {can("map") && !manage.archived && (

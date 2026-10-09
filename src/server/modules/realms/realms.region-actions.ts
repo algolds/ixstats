@@ -1,6 +1,6 @@
 /**
  * Realm region Manage actions: appearance, factbook, rules, community links and the in-world date, officers,
- * embassies, the realm poll and board restrictions — each gated by `requireRealmStaff` — plus a player leaving a
+ * embassies and the realm poll — each gated by `requireRealmStaff` — plus a player leaving a
  * realm with one of their nations.
  */
 import type { PrismaClient } from "@prisma/client";
@@ -9,7 +9,6 @@ import {
   MAX_OFFICERS,
   MAX_REALM_TAGS,
   REALM_TAGS,
-  type BoardRestriction,
   type RealmPower,
 } from "~/lib/realms/realm-region";
 import type { InWorldDate, RealmLink } from "~/lib/realms/realm-community";
@@ -19,22 +18,10 @@ import { isRealmPublished, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { withInWorldDate } from "./realms.settings";
-import { removeFromRealmBoard } from "~/server/shared/realm-board";
 
 type ActionDb = Pick<
   PrismaClient,
-  | "realmBoard"
-  | "thinktankGroup"
-  | "thinktankMember"
-  | "conversationParticipant"
-  | "realm"
-  | "realmOfficer"
-  | "realmEmbassy"
-  | "realmBoardBan"
-  | "poll"
-  | "country"
-  | "user"
-  | "$transaction"
+  "realm" | "realmOfficer" | "realmEmbassy" | "poll" | "country" | "user" | "$transaction"
 >;
 
 export async function updateRealmAppearance(
@@ -373,60 +360,6 @@ export async function closeRealmPoll(
     data: { isActive: false },
   });
   if (count === 0) throw new RealmRegionError("NOT_FOUND", "Open poll not found");
-  return { success: true };
-}
-
-/**
- * Mute or ban a nation on the realm's board (replacing any restriction it has). The founder's and officers'
- * own nations can't be restricted.
- */
-export async function restrictBoardNation(
-  db: ActionDb,
-  actor: RealmActor,
-  input: {
-    slug: string;
-    countryId: string;
-    kind: BoardRestriction;
-    reason?: string;
-    days?: number;
-  }
-) {
-  const realm = await requireRealmStaff(db, actor, input.slug, "board");
-  const nation = await db.country.findFirst({
-    where: { id: input.countryId, realmId: realm.id },
-    select: { id: true, owner: { select: { clerkUserId: true } } },
-  });
-  if (!nation) throw new RealmRegionError("NOT_FOUND", "That nation isn't in this realm");
-  const ownerId = nation.owner?.clerkUserId;
-  if (ownerId && (ownerId === realm.ownerId || realm.officers.some((o) => o.userId === ownerId)))
-    throw new RealmRegionError(
-      "FORBIDDEN",
-      "The founder's and officers' nations can't be restricted"
-    );
-  const data = {
-    kind: input.kind,
-    reason: input.reason?.trim() || null,
-    until: input.days ? new Date(Date.now() + input.days * 24 * 60 * 60 * 1000) : null,
-    createdBy: actor.clerkUserId,
-    createdAt: new Date(),
-  };
-  await db.realmBoardBan.upsert({
-    where: { realmId_countryId: { realmId: realm.id, countryId: nation.id } },
-    create: { realmId: realm.id, countryId: nation.id, ...data },
-    update: data,
-  });
-  // A ban takes the owner off the board and its chat now, not at the next board open.
-  if (input.kind === "ban" && ownerId) await removeFromRealmBoard(db, realm.id, ownerId);
-  return { success: true };
-}
-
-export async function liftBoardRestriction(
-  db: ActionDb,
-  actor: RealmActor,
-  input: { slug: string; countryId: string }
-) {
-  const realm = await requireRealmStaff(db, actor, input.slug, "board");
-  await db.realmBoardBan.deleteMany({ where: { realmId: realm.id, countryId: input.countryId } });
   return { success: true };
 }
 

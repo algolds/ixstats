@@ -47,6 +47,28 @@ interface CategoryWhere {
   key: string;
 }
 
+/** The query args the specs read back out of `mock.calls`. */
+interface WhereArgs {
+  where: Record<string, string | boolean | object>;
+}
+interface UserFindArgs extends WhereArgs {
+  select: Record<string, boolean | { select: Record<string, boolean> }>;
+}
+interface ThreadSelectArgs {
+  select: { thread: { select: object } };
+}
+interface AuthorUserRow {
+  id: string;
+  handle: string | null;
+  wikiUsername: string | null;
+  country: { name: string } | null;
+}
+interface AuthorAccountRow {
+  id: string;
+  displayName: string;
+  username: string;
+}
+
 function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
   return {
     forumCategory: {
@@ -63,20 +85,20 @@ function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
       ),
     },
     forumThread: {
-      groupBy: jest.fn(async () => [
+      groupBy: jest.fn(async (_args: WhereArgs) => [
         { categoryId: "cat_general", _count: { _all: 4 }, _max: { lastPostAt: new Date("2026-10-01") } },
       ]),
-      findMany: jest.fn(async () => [{ id: "t1", title: "Hello" }]),
-      count: jest.fn(async () => 1),
+      findMany: jest.fn(async (_args: WhereArgs) => [{ id: "t1", title: "Hello" }]),
+      count: jest.fn(async (_args: WhereArgs) => 1),
       findUnique: jest.fn(async () => opts.thread ?? null),
     },
     forumPost: {
-      findMany: jest.fn(async () => [{ id: "p1" }]),
-      count: jest.fn(async () => 1),
-      findUnique: jest.fn(async () => opts.post ?? null),
+      findMany: jest.fn(async (_args: WhereArgs) => [{ id: "p1" }]),
+      count: jest.fn(async (_args: WhereArgs) => 1),
+      findUnique: jest.fn(async (_args: ThreadSelectArgs) => opts.post ?? null),
     },
-    user: { findMany: jest.fn(async () => []) },
-    thinkpagesAccount: { findMany: jest.fn(async () => []) },
+    user: { findMany: jest.fn(async (_args: UserFindArgs): Promise<AuthorUserRow[]> => []) },
+    thinkpagesAccount: { findMany: jest.fn(async (): Promise<AuthorAccountRow[]> => []) },
   };
 }
 
@@ -90,11 +112,11 @@ const threadIn = (category: typeof general | typeof eurthHub, extra: object = {}
 });
 
 describe("access rules", () => {
-  it("shows public categories to everyone and staff categories to admins only", () => {
+  it("shows public categories to everyone, reports to members and staff categories to admins only (M8)", () => {
     expect(canSeeCategory(null, general)).toBe(true);
     expect(canSeeCategory(user, staff)).toBe(false);
     expect(canSeeCategory(null, { visibility: "reporter_staff" })).toBe(false);
-    expect(canSeeCategory(user, { visibility: "reporter_staff" })).toBe(false);
+    expect(canSeeCategory(user, { visibility: "reporter_staff" })).toBe(true);
     expect(canSeeCategory(admin, staff)).toBe(true);
     expect(canSeeCategory(admin, { visibility: "reporter_staff" })).toBe(true);
   });
@@ -126,23 +148,41 @@ describe("listSiteCategories", () => {
     );
   });
 
-  it("omits staff and reports categories for a plain user and for anonymous", async () => {
-    for (const viewer of [user, null]) {
-      const keys = (await listSiteCategories(readDb() as never, viewer)).map((c) => c.key);
-      expect(keys).not.toContain("staff");
-      expect(keys).not.toContain("reports");
-      expect(keys).toHaveLength(5);
-    }
+  it("omits staff for a plain user, and staff and reports for anonymous (M8)", async () => {
+    const member = (await listSiteCategories(readDb() as never, user)).map((c) => c.key);
+    expect(member).not.toContain("staff");
+    expect(member).toContain("reports");
+    expect(member).toHaveLength(6);
+    const anonymous = (await listSiteCategories(readDb() as never, null)).map((c) => c.key);
+    expect(anonymous).not.toContain("staff");
+    expect(anonymous).not.toContain("reports");
+    expect(anonymous).toHaveLength(5);
+  });
+
+  it("counts only the member's own threads in Reports, and all of them for an admin (M8)", async () => {
+    const db = readDb();
+    await listSiteCategories(db as never, user);
+    const where = db.forumThread.groupBy.mock.calls[0][0].where;
+    const reportsId = categories.find((c) => c.key === "reports")!.id;
+    expect(where.OR).toEqual([
+      { categoryId: { in: categories.filter((c) => !["staff", "reports"].includes(c.key)).map((c) => c.id) } },
+      { categoryId: { in: [reportsId] }, authorUserId: "u_p" },
+    ]);
+    const adminDb = readDb();
+    await listSiteCategories(adminDb as never, admin);
+    expect(adminDb.forumThread.groupBy.mock.calls[0][0].where.OR).toEqual([
+      { categoryId: { in: categories.map((c) => c.id) } },
+    ]);
   });
 
   it("counts only visible threads for non-admins, in one grouped query", async () => {
     const db = readDb();
     await listSiteCategories(db as never, user);
     expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
-    expect(db.forumThread.groupBy.mock.calls[0]![0]).toMatchObject({ where: { hidden: false } });
+    expect(db.forumThread.groupBy.mock.calls[0][0]).toMatchObject({ where: { hidden: false } });
     const adminDb = readDb();
     await listSiteCategories(adminDb as never, admin);
-    expect(adminDb.forumThread.groupBy.mock.calls[0]![0].where).not.toHaveProperty("hidden");
+    expect(adminDb.forumThread.groupBy.mock.calls[0][0].where).not.toHaveProperty("hidden");
   });
 });
 
@@ -166,7 +206,7 @@ describe("getCategoryThreads", () => {
   it("includes hidden threads for an admin", async () => {
     const db = readDb();
     await getCategoryThreads(db as never, admin, { key: "general" }, 1);
-    expect(db.forumThread.findMany.mock.calls[0]![0].where).toEqual({ categoryId: "cat_general" });
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_general" });
   });
 
   it("asks for skip 25 on page 2", async () => {
@@ -197,7 +237,7 @@ describe("getCategoryThreads in a realm", () => {
     const out = await getCategoryThreads(db as never, user, { key: "hub", realm: "eurth" }, 1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledTimes(1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledWith({ where: { scope: "realm", realmId: "r_eurth", key: "hub" } });
-    expect(db.forumThread.findMany.mock.calls[0]![0].where).toEqual({ categoryId: "cat_eurth_hub", hidden: false });
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub", hidden: false });
     expect(out.category).toMatchObject({
       key: "hub",
       scope: "realm",
@@ -210,7 +250,7 @@ describe("getCategoryThreads in a realm", () => {
     const db = readDb();
     await getCategoryThreads(db as never, user, { key: "hub", realm: "b" }, 1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledWith({ where: { scope: "realm", realmId: "r_b", key: "hub" } });
-    expect(db.forumThread.findMany.mock.calls[0]![0].where).toEqual({ categoryId: "cat_b_hub", hidden: false });
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_b_hub", hidden: false });
   });
 
   it("gives site scope a null realm and never reads a realm row for it", async () => {
@@ -283,6 +323,7 @@ describe("getThreadPosts", () => {
     const db = readDb({ thread: threadIn(general) });
     const out = await getThreadPosts(db as never, user, "t1", 1);
     expect(out.category).toEqual({
+      id: "cat_general",
       key: "general",
       name: "General",
       icAllowed: false,
@@ -317,7 +358,7 @@ describe("getThreadPosts", () => {
     await expect(getThreadPosts(readDb({ thread: hidden }) as never, null, "t1", 1)).rejects.toMatchObject({ code: "NOT_FOUND" });
     const db = readDb({ thread: hidden });
     await getThreadPosts(db as never, admin, "t1", 1);
-    expect(db.forumPost.findMany.mock.calls[0]![0].where).toEqual({ threadId: "t1" });
+    expect(db.forumPost.findMany.mock.calls[0][0].where).toEqual({ threadId: "t1" });
   });
 
   it("gives NOT_FOUND for a thread in the staff category to a plain user", async () => {
@@ -351,17 +392,17 @@ describe("resolvePostLocation", () => {
   it("counts hidden posts too for an admin", async () => {
     const db = readDb({ post: post() });
     await resolvePostLocation(db as never, admin, "p9");
-    expect(db.forumPost.count.mock.calls[0]![0].where).not.toHaveProperty("hidden");
+    expect(db.forumPost.count.mock.calls[0][0].where).not.toHaveProperty("hidden");
   });
 
   it("returns null for a post in a draft realm's thread unless the viewer is its founder", async () => {
     const inDraft = () => readDb({ post: post({ thread: threadIn(draftHub) }) });
     const db = inDraft();
     await expect(resolvePostLocation(db as never, user, "p9")).resolves.toBeNull();
-    expect(db.forumPost.findUnique.mock.calls[0]![0].select.thread.select.category.select).toEqual({
-      visibility: true,
-      scope: true,
-      realmId: true,
+    expect(db.forumPost.findUnique.mock.calls[0][0].select.thread.select).toEqual({
+      authorUserId: true,
+      hidden: true,
+      category: { select: { id: true, visibility: true, scope: true, realmId: true } },
     });
     expect(db.forumPost.count).not.toHaveBeenCalled();
     await expect(resolvePostLocation(inDraft() as never, null, "p9")).resolves.toBeNull();
@@ -402,11 +443,11 @@ describe("authorsOf", () => {
     expect(out.users.get("u4")).toEqual({ name: "Member", handle: null });
     expect(out.personas.get("a1")).toEqual({ displayName: "The Voice", username: "voice" });
     expect(db.user.findMany).toHaveBeenCalledTimes(1);
-    expect(db.user.findMany.mock.calls[0]![0].where).toEqual({ id: { in: ["u1", "u2", "u3", "u4"] } });
-    expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("clerkUserId");
-    expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("name");
-    expect(db.user.findMany.mock.calls[0]![0].select).not.toHaveProperty("discordUsername");
-    expect(db.user.findMany.mock.calls[0]![0].select.country).toEqual({ select: { name: true } });
+    expect(db.user.findMany.mock.calls[0][0].where).toEqual({ id: { in: ["u1", "u2", "u3", "u4"] } });
+    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("clerkUserId");
+    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("name");
+    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("discordUsername");
+    expect(db.user.findMany.mock.calls[0][0].select.country).toEqual({ select: { name: true } });
   });
 
   it("skips queries for empty id lists and ignores null persona ids", async () => {
@@ -415,5 +456,111 @@ describe("authorsOf", () => {
     expect(db.user.findMany).not.toHaveBeenCalled();
     expect(db.thinkpagesAccount.findMany).not.toHaveBeenCalled();
     expect(out.users.size + out.personas.size).toBe(0);
+  });
+});
+
+describe("moderator-aware reads (M9) and Reports (M8)", () => {
+  const realmMod = {
+    id: "u_rm",
+    clerkUserId: "realm-mod",
+    countryId: null,
+    role: { name: "user", level: 100 },
+    mod: { siteAdmin: false, realmIds: ["r_eurth"], categoryIds: [] },
+  };
+  const categoryMod = {
+    ...user,
+    mod: { siteAdmin: false, realmIds: [], categoryIds: ["cat_reports"] },
+  };
+  const reports = categories.find((c) => c.key === "reports")!;
+
+  it("shows a realm moderator hidden threads in their realm's Hub, not in General, with canModerate and category.id", async () => {
+    const hubDb = readDb();
+    const hub = await getCategoryThreads(hubDb as never, realmMod, { key: "hub", realm: "eurth" }, 1);
+    expect(hubDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub" });
+    expect(hubDb.forumThread.count.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub" });
+    expect(hub).toMatchObject({ canModerate: true, category: { id: "cat_eurth_hub" } });
+    const generalDb = readDb();
+    const site = await getCategoryThreads(generalDb as never, realmMod, { key: "general" }, 1);
+    expect(generalDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_general", hidden: false });
+    expect(site).toMatchObject({ canModerate: false, category: { id: "cat_general" } });
+    const member = await getCategoryThreads(readDb() as never, user, { key: "hub", realm: "eurth" }, 1);
+    expect(member.canModerate).toBe(false);
+  });
+
+  it("lists only the member's own Reports threads, and all of them for an admin or the category's moderator", async () => {
+    const db = readDb();
+    await getCategoryThreads(db as never, user, { key: "reports" }, 1);
+    const own = { categoryId: "cat_reports", hidden: false, authorUserId: "u_p" };
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual(own);
+    expect(db.forumThread.count.mock.calls[0][0].where).toEqual(own);
+    const adminDb = readDb();
+    await getCategoryThreads(adminDb as never, admin, { key: "reports" }, 1);
+    expect(adminDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_reports" });
+    const modDb = readDb();
+    await getCategoryThreads(modDb as never, categoryMod, { key: "reports" }, 1);
+    expect(modDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_reports" });
+  });
+
+  it("gives a member NOT_FOUND for another member's Reports thread, and reads their own", async () => {
+    const theirs = readDb({ thread: threadIn(reports, { authorUserId: "u_other" }) });
+    await expect(getThreadPosts(theirs as never, user, "t1", 1)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(theirs.forumPost.findMany).not.toHaveBeenCalled();
+    await expect(
+      getThreadPosts(readDb({ thread: threadIn(reports, { authorUserId: "u_p" }) }) as never, user, "t1", 1)
+    ).resolves.toMatchObject({ canModerate: false, category: { id: "cat_reports" } });
+    await expect(
+      getThreadPosts(readDb({ thread: threadIn(reports, { authorUserId: "u_other" }) }) as never, admin, "t1", 1)
+    ).resolves.toMatchObject({ canModerate: true });
+  });
+
+  it("opens a hidden thread with its hidden posts to a realm moderator of its realm only", async () => {
+    const db = readDb({ thread: threadIn(eurthHub, { hidden: true }) });
+    const out = await getThreadPosts(db as never, realmMod, "t1", 1);
+    expect(out).toMatchObject({ canModerate: true, category: { id: "cat_eurth_hub" } });
+    expect(db.forumPost.findMany.mock.calls[0][0].where).toEqual({ threadId: "t1" });
+    await expect(
+      getThreadPosts(readDb({ thread: threadIn(general, { hidden: true }) }) as never, realmMod, "t1", 1)
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(
+      getThreadPosts(readDb({ thread: threadIn(eurthHub, { hidden: true }) }) as never, user, "t1", 1)
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const open = readDb({ thread: threadIn(general) });
+    await getThreadPosts(open as never, realmMod, "t1", 1);
+    expect(open.forumPost.findMany.mock.calls[0][0].where).toEqual({ threadId: "t1", hidden: false });
+  });
+
+  it("resolves a hidden post's permalink for its realm's moderator only, counting hidden posts", async () => {
+    const createdAt = new Date("2026-10-02");
+    const hiddenPost = (thread: object) => ({ id: "p9", threadId: "t1", createdAt, hidden: true, thread });
+    const db = readDb({ post: hiddenPost(threadIn(eurthHub)) });
+    await expect(resolvePostLocation(db as never, realmMod, "p9")).resolves.toEqual({ threadId: "t1", page: 1 });
+    expect(db.forumPost.count.mock.calls[0][0].where).not.toHaveProperty("hidden");
+    await expect(
+      resolvePostLocation(readDb({ post: hiddenPost(threadIn(eurthHub)) }) as never, user, "p9")
+    ).resolves.toBeNull();
+    await expect(
+      resolvePostLocation(readDb({ post: hiddenPost(threadIn(general)) }) as never, realmMod, "p9")
+    ).resolves.toBeNull();
+  });
+
+  it("resolves a Reports post's permalink for its thread's author and moderators only", async () => {
+    const createdAt = new Date("2026-10-02");
+    const reportPost = (authorUserId: string) => ({
+      id: "p9",
+      threadId: "t1",
+      createdAt,
+      hidden: false,
+      thread: threadIn(reports, { authorUserId }),
+    });
+    await expect(resolvePostLocation(readDb({ post: reportPost("u_other") }) as never, user, "p9")).resolves.toBeNull();
+    await expect(resolvePostLocation(readDb({ post: reportPost("u_other") }) as never, null, "p9")).resolves.toBeNull();
+    await expect(resolvePostLocation(readDb({ post: reportPost("u_p") }) as never, user, "p9")).resolves.toEqual({
+      threadId: "t1",
+      page: 1,
+    });
+    await expect(resolvePostLocation(readDb({ post: reportPost("u_other") }) as never, admin, "p9")).resolves.toEqual({
+      threadId: "t1",
+      page: 1,
+    });
   });
 });

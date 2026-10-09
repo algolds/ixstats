@@ -6,6 +6,8 @@ import {
   ForumError,
   replyToThread,
 } from "~/server/modules/thinkpages-forum";
+import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
+import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
 const admin = {
   id: "u_a",
@@ -44,14 +46,6 @@ const realmRows = [
   { id: "r_draft", slug: "draft-land", name: "Draft Land", status: "draft", ownerId: "founder" },
 ];
 
-interface RealmBan {
-  countryId: string;
-  kind: string;
-  until: Date | null;
-  reason: string | null;
-  createdAt: Date;
-}
-
 interface PostUpdate {
   contentHtml: string;
   plainText: string;
@@ -66,7 +60,7 @@ interface Opts {
   chainedLinks?: number;
   /** Nations each user id owns (any realm the fake is asked about). */
   owned?: Record<string, string[]>;
-  bans?: RealmBan[];
+  bans?: BanRow[];
 }
 
 function writeDb(opts: Opts = {}) {
@@ -108,8 +102,7 @@ function writeDb(opts: Opts = {}) {
         where.userId === "officer" ? [{ userId: "officer", powers: ["board"] }] : []
       ),
     },
-    realmBoardBan: { findMany: jest.fn(async () => opts.bans ?? []) },
-    realmClaim: { findMany: jest.fn(async () => []) },
+    forumBan: forumBanFake(opts.bans),
     forumThread: { findUnique: jest.fn(async () => opts.thread ?? null) },
     forumPost: {
       findUnique: jest.fn(async () => opts.post ?? null),
@@ -148,7 +141,19 @@ const postBy = (authorUserId: string, extra: object = {}) => ({
   id: "p1",
   authorUserId,
   hidden: false,
-  thread: { hidden: false, locked: false, archived: false, category: { visibility: "public" } },
+  thread: {
+    authorUserId: "u_p",
+    hidden: false,
+    locked: false,
+    archived: false,
+    category: {
+      id: "cat_general",
+      scope: "site",
+      realmId: null,
+      visibility: "public",
+      postRole: "any",
+    },
+  },
   ...extra,
 });
 
@@ -583,16 +588,15 @@ describe("realm sections", () => {
     role: { name: "user", level: 100 },
   };
   const OWNS = { u_owner: ["c_eurth"] };
-  const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
-  const mute = {
-    countryId: "c_eurth",
-    kind: "mute",
-    until: day("2026-10-20"),
-    reason: "Cool off",
-    createdAt: day("2026-10-01"),
-  };
-  const ban = { ...mute, kind: "ban", until: null, reason: null };
-  const BANNED = "Your nation is banned from this board until a moderator lifts it";
+  const later = new Date(Date.now() + 7 * DAY_MS);
+  const ban = banRow({
+    userId: "u_owner",
+    scope: "realm",
+    scopeId: "r_eurth",
+    reason: "Spam",
+    expiresAt: later,
+  });
+  const BANNED = banNotice({ scope: "realm", expiresAt: later, reason: "Spam" });
   const IN_HUB = { ...NEW_THREAD, categoryKey: "hub", realm: "eurth" };
 
   const realmThread = (key: string, extra: object = {}) => ({
@@ -604,10 +608,17 @@ describe("realm sections", () => {
   const realmPost = (authorUserId: string, realmId = "r_eurth") =>
     postBy(authorUserId, {
       thread: {
+        authorUserId: authorUserId,
         hidden: false,
         locked: false,
         archived: false,
-        category: { visibility: "public", postRole: "any", scope: "realm", realmId },
+        category: {
+          id: "rcat_hub",
+          visibility: "public",
+          postRole: "any",
+          scope: "realm",
+          realmId,
+        },
       },
     });
 
@@ -635,13 +646,17 @@ describe("realm sections", () => {
       expect(db.$transaction).not.toHaveBeenCalled();
     });
 
-    it("refuses a muted owner with the mute message", async () => {
-      const { db } = writeDb({ owned: OWNS, bans: [mute] });
+    it("refuses a realm-banned owner in the realm's Hub and lets them post in General", async () => {
+      const { db } = writeDb({ owned: OWNS, bans: [ban] });
       await expect(createThread(db as never, owner, IN_HUB)).rejects.toMatchObject({
         code: "FORBIDDEN",
-        message: "Your nation is muted on this board until 2026-10-20: Cool off",
+        message: BANNED,
       });
       expect(db.$transaction).not.toHaveBeenCalled();
+      await expect(createThread(db as never, owner, NEW_THREAD)).resolves.toEqual({
+        threadId: "t_new",
+        postId: "p_new",
+      });
     });
 
     it("lets an officer with the board power and a site admin start threads without a nation", async () => {
@@ -702,12 +717,20 @@ describe("realm sections", () => {
       expect(db.$transaction).not.toHaveBeenCalled();
     });
 
-    it("lets a moderator reply, whatever the bans", async () => {
-      const { db } = writeDb({ thread: realmThread("hub"), bans: [ban] });
-      await expect(replyToThread(db as never, officer, reply)).resolves.toEqual({
+    it("lets a moderator reply without a nation, and refuses one under a realm ban (M5)", async () => {
+      const free = writeDb({ thread: realmThread("hub"), bans: [ban] });
+      await expect(replyToThread(free.db as never, officer, reply)).resolves.toEqual({
         postId: "p_new",
       });
-      expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
+      const banned = writeDb({
+        thread: realmThread("hub"),
+        bans: [{ ...ban, userId: "u_officer" }],
+      });
+      await expect(replyToThread(banned.db as never, officer, reply)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: BANNED,
+      });
+      expect(banned.db.$transaction).not.toHaveBeenCalled();
     });
 
     it("reads a thread in a draft realm as not found", async () => {
@@ -734,7 +757,7 @@ describe("realm sections", () => {
       expect(db.forumPost.update).not.toHaveBeenCalled();
     });
 
-    it("lets a moderator edit their own post", async () => {
+    it("lets a moderator edit their own post when another member is banned", async () => {
       const { db } = writeDb({ post: realmPost("u_officer"), bans: [ban] });
       await editPost(db as never, officer, edit);
       expect(db.forumPost.update).toHaveBeenCalled();
@@ -747,5 +770,137 @@ describe("realm sections", () => {
         message: "Post not found.",
       });
     });
+  });
+});
+
+describe("forum bans on every write", () => {
+  const later = new Date(Date.now() + 7 * DAY_MS);
+  const siteBan = banRow({ userId: "u_p", reason: "Abuse", expiresAt: later });
+  const SITE_BANNED = banNotice({ scope: "site", expiresAt: later, reason: "Abuse" });
+  const reply = { threadId: "t1", html: "<p>Hi</p>" };
+  const edit = { postId: "p1", html: "<p>Changed</p>" };
+
+  it("refuses a site-banned member starting a thread in General, replying and editing sitewide", async () => {
+    const start = writeDb({ bans: [siteBan] });
+    await expect(createThread(start.db as never, user, NEW_THREAD)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: SITE_BANNED,
+    });
+    expect(start.db.$transaction).not.toHaveBeenCalled();
+    expect(start.db.forumBan.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "u_p", liftedAt: null }) })
+    );
+
+    const answer = writeDb({ thread: threadIn("general"), bans: [siteBan] });
+    await expect(replyToThread(answer.db as never, user, reply)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: SITE_BANNED,
+    });
+    expect(answer.db.$transaction).not.toHaveBeenCalled();
+
+    const change = writeDb({ post: postBy("u_p"), bans: [siteBan] });
+    await expect(editPost(change.db as never, user, edit)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: SITE_BANNED,
+    });
+    expect(change.db.forumPost.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses a category-banned member in that category only", async () => {
+    const ban = banRow({
+      userId: "u_p",
+      scope: "category",
+      scopeId: "cat_general",
+      expiresAt: later,
+    });
+    const { db } = writeDb({ bans: [ban] });
+    await expect(createThread(db as never, user, NEW_THREAD)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: banNotice(ban as never),
+    });
+    await expect(
+      createThread(db as never, user, { ...NEW_THREAD, categoryKey: "find-a-realm" })
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new" });
+    const change = writeDb({ post: postBy("u_p"), bans: [ban] });
+    await expect(editPost(change.db as never, user, edit)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+
+  it("lets a member post and edit when their ban has expired or was lifted", async () => {
+    const bans = [
+      { ...siteBan, id: "b_expired", expiresAt: new Date(Date.now() - DAY_MS) },
+      { ...siteBan, id: "b_lifted", liftedAt: new Date() },
+    ];
+    await expect(createThread(writeDb({ bans }).db as never, user, NEW_THREAD)).resolves.toEqual({
+      threadId: "t_new",
+      postId: "p_new",
+    });
+    await expect(
+      replyToThread(writeDb({ thread: threadIn("general"), bans }).db as never, user, reply)
+    ).resolves.toEqual({ postId: "p_new" });
+    const change = writeDb({ post: postBy("u_p"), bans });
+    await editPost(change.db as never, user, edit);
+    expect(change.db.forumPost.update).toHaveBeenCalled();
+  });
+
+  it("lets a site admin post whatever ban rows exist (M5)", async () => {
+    const bans = [{ ...siteBan, userId: "u_a" }];
+    const { db } = writeDb({ bans });
+    await expect(createThread(db as never, admin, NEW_THREAD)).resolves.toEqual({
+      threadId: "t_new",
+      postId: "p_new",
+    });
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
+    const change = writeDb({ post: postBy("u_a"), bans });
+    await editPost(change.db as never, admin, edit);
+    expect(change.db.forumPost.update).toHaveBeenCalled();
+  });
+});
+
+describe("the Reports category (M8)", () => {
+  const reports = byKey("reports");
+  const reply = { threadId: "t1", html: "<p>More detail</p>" };
+  const reportThread = (authorUserId: string) => threadIn("reports", { authorUserId });
+  const reportPost = (authorUserId: string, threadAuthor: string) =>
+    postBy(authorUserId, {
+      thread: {
+        authorUserId: threadAuthor,
+        hidden: false,
+        locked: false,
+        archived: false,
+        category: reports,
+      },
+    });
+
+  it("reads another member's report thread as not found to a member, on reply and on edit", async () => {
+    const { db } = writeDb({ thread: reportThread("u_other") });
+    await expect(replyToThread(db as never, user, reply)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Thread not found.",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+    const change = writeDb({ post: reportPost("u_p", "u_other") });
+    await expect(
+      editPost(change.db as never, user, { postId: "p1", html: "<p>x</p>" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Post not found." });
+    expect(change.db.forumPost.update).not.toHaveBeenCalled();
+  });
+
+  it("lets a member reply in and edit within their own report thread", async () => {
+    await expect(
+      replyToThread(writeDb({ thread: reportThread("u_p") }).db as never, user, reply)
+    ).resolves.toEqual({ postId: "p_new" });
+    const change = writeDb({ post: reportPost("u_p", "u_p") });
+    await editPost(change.db as never, user, { postId: "p1", html: "<p>x</p>" });
+    expect(change.db.forumPost.update).toHaveBeenCalled();
+  });
+
+  it("lets a site admin reply in any report thread", async () => {
+    for (const author of ["u_p", "u_other"]) {
+      await expect(
+        replyToThread(writeDb({ thread: reportThread(author) }).db as never, admin, reply)
+      ).resolves.toEqual({ postId: "p_new" });
+    }
   });
 });

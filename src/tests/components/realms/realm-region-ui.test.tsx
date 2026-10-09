@@ -93,7 +93,6 @@ function overview(overrides: Record<string, unknown> = {}) {
       isFounder: false,
       canManage: false,
       ownedNations: [],
-      boardRestriction: null,
     },
     ...overrides,
   } as never;
@@ -172,7 +171,6 @@ describe("realm header", () => {
             isFounder: false,
             canManage: true,
             ownedNations: [],
-            boardRestriction: null,
           },
         })}
       />
@@ -191,7 +189,6 @@ describe("realm header", () => {
             isFounder: false,
             canManage: true,
             ownedNations: [],
-            boardRestriction: null,
           },
         })}
       />
@@ -209,7 +206,6 @@ describe("realm share", () => {
     isFounder: false,
     canManage: false,
     ownedNations: [{ id: "c1", name: "Aurelia", slug: "aurelia" }],
-    boardRestriction: null,
   };
 
   afterEach(() => {
@@ -218,7 +214,7 @@ describe("realm share", () => {
 
   it("offers the canonical link and card, and no invite to a viewer without a nation here", async () => {
     queries["ixnayid.getStatus"] = { passportHandle: "alex" };
-    render(<RealmRegionHeader overview={overview()} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(await screen.findByRole("button", { name: "Copy link" })).toBeTruthy();
     // The stable card route outside the (region) group (src/app/r/[realm]/opengraph-image.tsx); the
@@ -233,7 +229,7 @@ describe("realm share", () => {
     queries["ixnayid.getStatus"] = { passportHandle: "alex" };
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<RealmRegionHeader overview={overview({ viewer: holder })} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview({ viewer: holder })} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     fireEvent.click(await screen.findByRole("button", { name: "Copy invite link" }));
     await waitFor(() =>
@@ -270,7 +266,7 @@ describe("sidebar", () => {
 
   it("links the header's founder to their passport when they have a handle", () => {
     const founder = { name: "Borovia", handle: "bora", nation: null };
-    render(<RealmRegionHeader overview={overview({ founder })} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview({ founder })} />);
     expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
   });
 
@@ -362,7 +358,6 @@ describe("Rules tab", () => {
         isFounder: true,
         canManage: true,
         ownedNations: [],
-        boardRestriction: null,
       },
     });
     await renderRules();
@@ -422,7 +417,6 @@ describe("Manage tab", () => {
     inWorldDate: powers.includes("appearance") ? { value: null } : null,
     officers,
     embassies: [],
-    boardRestrictions: [],
     polls: [],
   });
 
@@ -435,9 +429,26 @@ describe("Manage tab", () => {
       within(nav)
         .getAllByRole("link")
         .map((a) => a.textContent)
-    ).toEqual(["Officers", "Board moderation"]);
+    ).toEqual(["Officers", "Forum moderation"]);
     expect(screen.queryByText("claims list")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Appearance" })).toBeNull();
+  });
+
+  it("sends the board power to the forum moderation console for this realm", async () => {
+    queries["realms.region.manage"] = manage(["board"], false);
+    await renderManage();
+    const section = (await screen.findByRole("heading", { name: "Forum moderation" })).closest(
+      "section"
+    )!;
+    expect(
+      within(section).getByText(/hide, lock, warn and ban in this realm's forum section/i)
+    ).toBeTruthy();
+    expect(
+      within(section)
+        .getByRole("link", { name: "Open the moderation console" })
+        .getAttribute("href")
+    ).toBe("/thinkpages/mod?realm=eurth");
+    expect(screen.queryByText(/muted or banned/i)).toBeNull();
   });
 
   it("gives an officer with the claims power the Claims section", async () => {
@@ -474,7 +485,7 @@ describe("Manage tab", () => {
       "Claims",
       "Embassies",
       "Poll",
-      "Board moderation",
+      "Forum moderation",
       "Source sync",
       "Wiki",
       "Hand over",

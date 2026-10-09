@@ -1,28 +1,40 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Lock } from "iconoir-react";
+import { EyeClosed, Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api } from "~/trpc/react";
+import { ForumNotice } from "./BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
 import { Pagination, useLastPageRedirect } from "./Pagination";
+import type { ModeratorTools } from "./ModeratorMenu";
 import { PostItem, type ForumPost } from "./PostItem";
+import { ReportDialog } from "./ReportDialog";
+import { ThreadModeratorBar } from "./ThreadModeratorBar";
 
 const NO_POSTS: ForumPost[] = [];
 
-/** Scrolls to `#post-<id>` once that page's posts are on screen (permalinks, after a reply). */
+/**
+ * Scrolls to `#post-<id>` once that page's posts are on screen (permalinks, after a reply), once per hash: a refetch
+ * (saving an edit, a moderator action) leaves the reader where they are.
+ */
 function useScrollToPostHash(posts: readonly ForumPost[]) {
+  const scrolled = useRef<string | null>(null);
   useEffect(() => {
     const hash = window.location.hash;
-    if (posts.length === 0 || !hash.startsWith("#post-")) return;
-    document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
+    if (posts.length === 0 || !hash.startsWith("#post-") || scrolled.current === hash) return;
+    const target = document.getElementById(hash.slice(1));
+    if (!target) return;
+    target.scrollIntoView({ block: "start" });
+    scrolled.current = hash;
   }, [posts]);
 }
 
@@ -31,10 +43,14 @@ interface ThreadViewProps {
   page: number;
 }
 
-/** A thread's posts with edit in place for the author and a reply composer while it is open. */
+/**
+ * A thread's posts with edit in place for the author and a reply composer while it is open; members report, and the
+ * category's moderators get the thread bar and each post's menu. Without a composer, the reason why (a ban notice).
+ */
 export function ThreadView({ threadId, page }: ThreadViewProps) {
   const router = useRouter();
   const utils = api.useUtils();
+  const { isSignedIn } = useUser();
   const { data, isLoading, error, refetch } = api.thinkpagesForum.thread.useQuery({
     threadId,
     page,
@@ -49,20 +65,26 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
 
   const { mutateAsync: replyTo } = api.thinkpagesForum.reply.useMutation();
   const { mutateAsync: editPost } = api.thinkpagesForum.editPost.useMutation();
+  const { mutateAsync: modEditPost } = api.thinkpagesForumMod.editPost.useMutation();
+
+  /** The thread, then the listings whose counts and order follow it. */
+  const refresh = useCallback(async () => {
+    await utils.thinkpagesForum.thread.invalidate({ threadId });
+    void utils.thinkpagesForum.category.invalidate();
+    void utils.thinkpagesForum.categories.invalidate();
+    void utils.thinkpagesForum.realmSection.invalidate();
+  }, [utils, threadId]);
 
   const reply = useCallback(
     async ({ html, personaId }: ForumComposerInput) => {
       const { postId } = await replyTo({ threadId, html, personaId });
-      await utils.thinkpagesForum.thread.invalidate({ threadId });
-      void utils.thinkpagesForum.category.invalidate();
-      void utils.thinkpagesForum.categories.invalidate();
-      void utils.thinkpagesForum.realmSection.invalidate();
+      await refresh();
       // The reply is the thread's last post; ask where that is rather than guessing the page.
       const at = await utils.thinkpagesForum.resolvePost.fetch({ postId }).catch(() => null);
       const target = at?.page ?? page;
       router.push(`${basePath}?page=${target}#post-${postId}`);
     },
-    [replyTo, utils, threadId, basePath, page, router]
+    [replyTo, refresh, utils, threadId, basePath, page, router]
   );
 
   const edit = useCallback(
@@ -71,6 +93,22 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
       await utils.thinkpagesForum.thread.invalidate({ threadId });
     },
     [editPost, utils, threadId]
+  );
+
+  const threadCategory = data?.category;
+  const tools = useMemo<ModeratorTools | null>(
+    () =>
+      threadCategory
+        ? {
+            category: threadCategory,
+            refresh,
+            saveEdit: async (postId, html, note) => {
+              await modEditPost({ postId, html, note });
+              await utils.thinkpagesForum.thread.invalidate({ threadId });
+            },
+          }
+        : null,
+    [threadCategory, refresh, modEditPost, utils, threadId]
   );
 
   if (isLoading || redirecting) return <ForumPageSkeleton blocks={2} />;
@@ -105,6 +143,25 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         back={{ href: categoryHref(category), label: category.name }}
         bleed
       />
+      {/* A site admin's thread is site admins' to lock, pin, hide, archive or move. */}
+      {data.canModerate && data.moderable ? (
+        <ThreadModeratorBar
+          thread={thread}
+          categories={data.moderatorTools?.categories ?? []}
+          refresh={refresh}
+        />
+      ) : null}
+      {!data.canModerate && isSignedIn && !data.viewerIsAuthor ? (
+        <div className="flex justify-end">
+          <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+        </div>
+      ) : null}
+      {thread.hidden ? (
+        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
+          <EyeClosed aria-hidden className="size-4 shrink-0" />
+          This thread is hidden from members.
+        </p>
+      ) : null}
       {thread.locked ? (
         <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
           <Lock aria-hidden className="size-4 shrink-0" />
@@ -122,6 +179,9 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
             cardsErrored={errored}
             canEdit={post.isOwn && open}
             onEdit={edit}
+            canReport={!!isSignedIn && !post.byViewer && !data.canModerate}
+            canModerate={data.canModerate}
+            tools={tools}
           />
         ))}
       </div>
@@ -130,6 +190,8 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         <section aria-label="Reply" className="space-y-2">
           <ForumComposer icAllowed={category.icAllowed} submitLabel="Reply" onSubmit={reply} />
         </section>
+      ) : data.notice ? (
+        <ForumNotice notice={data.notice} banned={data.banned} />
       ) : null}
     </div>
   );

@@ -1,6 +1,8 @@
 /** @jest-environment node */
 import { REALM_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { getRealmSection, listForumRealms } from "~/server/modules/thinkpages-forum";
+import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
+import { banRow, forumBanFake } from "~/tests/helpers/forum-ban-fake";
 
 const role = (name: string, level: number) => ({ name, level });
 const admin = { id: "u_admin", clerkUserId: "admin", countryId: null, role: role("admin", 10) };
@@ -32,7 +34,7 @@ const DRAFT = row("r_draft", "draft-land", "Draft Land", "draft");
 
 describe("listForumRealms", () => {
   function listDb(rows: Array<ReturnType<typeof row>>) {
-    return { realm: { findMany: jest.fn(async () => rows) } };
+    return { realm: { findMany: jest.fn(async (_args: { where: object }) => rows) } };
   }
 
   it("asks for IxWorld and public active realms only, for anonymous", async () => {
@@ -49,7 +51,7 @@ describe("listForumRealms", () => {
   it("adds realms where the viewer holds a nation, founded or serves as an officer", async () => {
     const db = listDb([]);
     await listForumRealms(db as never, plain);
-    expect(db.realm.findMany.mock.calls[0]![0].where).toEqual({
+    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({
       OR: [
         { id: "default" },
         { status: "active", visibility: "public" },
@@ -63,7 +65,7 @@ describe("listForumRealms", () => {
   it("asks for every realm for a site admin", async () => {
     const db = listDb([]);
     await listForumRealms(db as never, admin);
-    expect(db.realm.findMany.mock.calls[0]![0].where).toEqual({});
+    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({});
   });
 
   it("puts IxWorld first, then by name, and drops realms hidden from the viewer", async () => {
@@ -143,7 +145,7 @@ describe("getRealmSection", () => {
       realm: { findUnique: jest.fn(async () => realm) },
       forumCategory: { findMany, createMany: jest.fn(async () => ({ count: 3 })) },
       forumThread: {
-        groupBy: jest.fn(async () => [
+        groupBy: jest.fn(async (_args: { where: object }) => [
           {
             categoryId: "cat_hub",
             _count: { _all: 2 },
@@ -153,8 +155,7 @@ describe("getRealmSection", () => {
       },
       country: { findMany: jest.fn(async () => [{ id: "c_eurth" }]) },
       realmOfficer: { findMany: jest.fn(async () => []) },
-      realmBoardBan: { findMany: jest.fn(async () => []) },
-      realmClaim: { findMany: jest.fn(async () => []) },
+      forumBan: forumBanFake(),
     };
   }
 
@@ -177,7 +178,8 @@ describe("getRealmSection", () => {
       lastPostAt: new Date("2026-10-05"),
     });
     expect(out.categories[1]).toMatchObject({ threadCount: 0, lastPostAt: null });
-    expect(out.access).toMatchObject({ canPost: true, notice: null });
+    expect(out.access).toMatchObject({ canPost: true, notice: null, ban: null });
+    expect(out.access).not.toHaveProperty("restriction");
     expect(db.forumCategory.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { scope: "realm", realmId: "r_eurth" },
@@ -185,8 +187,21 @@ describe("getRealmSection", () => {
       })
     );
     expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
-    expect(db.forumThread.groupBy.mock.calls[0]![0]).toMatchObject({ where: { hidden: false } });
+    expect(db.forumThread.groupBy.mock.calls[0][0]).toMatchObject({ where: { hidden: false } });
     expect(db.forumCategory.createMany).not.toHaveBeenCalled();
+  });
+
+  it("gives a realm-banned owner the ban and its notice", async () => {
+    const db = sectionDb(EURTH);
+    const ban = banRow({ userId: owner.id, scope: "realm", scopeId: "r_eurth", reason: "Spam" });
+    db.forumBan = forumBanFake([ban]);
+    await expect(getRealmSection(db as never, owner, "eurth")).resolves.toMatchObject({
+      access: {
+        canPost: false,
+        notice: banNotice(ban as never),
+        ban: { id: "b1", scope: "realm" },
+      },
+    });
   });
 
   it("gives the reason a signed-in user without a nation cannot post", async () => {
