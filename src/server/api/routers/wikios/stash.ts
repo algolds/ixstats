@@ -7,7 +7,11 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 
@@ -95,13 +99,13 @@ export const wikiosStashRouter = createTRPCRouter({
     }),
 
   /** One-click stash a page (saves to default stash if no stashId). */
-  stashPage: protectedProcedure
+  stashPage: rateLimitedMutationProcedure
     .input(
       z.object({
         pageTitle: z.string().min(1).max(500),
         stashId: z.string().max(64).optional(),
         contentType: z.string().max(32).optional(),
-        contentId: z.number().optional(),
+        contentId: z.number().int().positive().max(2_147_483_647).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {

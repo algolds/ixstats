@@ -316,3 +316,25 @@ describe("the stash key in the schema and the migration", () => {
     expect(sql).toContain('("stashId", "contentType", "pageTitle")');
   });
 });
+
+describe("stashPage validates contentId as a positive 32-bit integer", () => {
+  it.each([1.5, 0, -3, 2_147_483_648])(
+    "rejects %p before touching the database",
+    async (contentId) => {
+      const stash = createCallerFactory(wikiosStashRouter)(ctx());
+
+      await expect(stash.stashPage({ pageTitle: "Rome", contentId })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      expect(fakeStashItem.upsert).not.toHaveBeenCalled();
+    }
+  );
+
+  it("accepts the largest Int4 id", async () => {
+    const stash = createCallerFactory(wikiosStashRouter)(ctx());
+
+    await stash.stashPage({ pageTitle: "Rome", contentId: 2_147_483_647 });
+
+    expect(fakeStashItem.upsert).toHaveBeenCalledTimes(1);
+  });
+});
