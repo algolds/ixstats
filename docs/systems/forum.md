@@ -63,7 +63,7 @@ The old forum is copied in once, in two steps, so the importer never talks to Xe
 
 Imported rows keep their XenForo ids (`xenforoThreadId`, `xenforoPostId`), the author's XenForo name (`importedAuthorName`) and original dates. A XenForo member resolves to an IxStats user only through `User.forumUserId`; everyone else keeps the old name with no account. Threads land in a mapped category (an owner-reviewed node map, then title heuristics) or in a read-only archive category `xf-<nodeId>`, which the forum home groups under "From the old forum". Imported threads show "Imported from the old forum." on the thread page and an "Imported" tag in lists.
 
-Old `/forum/*` URLs redirect to the matching native thread, post, category or member through the legacy switch, flipped with `bun run forum:legacy-redirect -- on|off|status`.
+While the legacy switch is on (`bun run forum:legacy-redirect -- on|off|status`; off by default), old `/forum/*` URLs redirect to the matching native thread, post, category or member. While it is off, the bridge pages render as before.
 
 Importer code is in `src/lib/thinkpages-forum/import/` and `scripts/migrations/`; the bridge (`src/server/modules/forum/`, `src/app/(forum)/`) is retired in phase 4b.
 

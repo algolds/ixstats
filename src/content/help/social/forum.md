@@ -1,6 +1,6 @@
 ---
 title: The Forum
-description: Read and post in the ThinkPages forum, report problems, understand warnings and appeals, and find your old forum posts.
+description: Read and post in the ThinkPages forum, report problems, understand warnings and appeals, and what happens to old forum posts.
 badge: Community
 prevHref: /help/social/thinktanks
 prevLabel: ThinkTanks
@@ -11,6 +11,8 @@ nextLabel: Blurbs
 ## What the forum is
 
 The forum is the community's discussion space, built into ThinkPages at [/thinkpages/forum](/thinkpages/forum). Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
+
+Until the old forum is archived here, [/forum](/forum) still opens the older forum on a separate site; this article is about the forum at /thinkpages/forum.
 
 The forum home lists the sitewide categories first (Rules, Announcements, Reports, Find a Realm, General and Side Games), then a section for one realm with a switcher to pick another. Each realm section has its own categories: Hub for out-of-character talk, and Character Threads and Current Events for in-character writing.
 
@@ -74,13 +76,23 @@ You never see which moderator issued or reviewed anything.
 
 ## Your old forum posts
 
-The community used to run its forum on a separate site. Its threads and posts have been copied here, with their original dates.
+The community's older forum runs on a separate site. When its threads and posts are copied into this forum, they keep their original dates, and this section applies. Until then, none of it is visible here.
+
+Once the old forum has been copied here:
 
 - **Imported threads** say "Imported from the old forum." under the title, and are tagged **Imported** in thread lists.
 - **Where they live:** threads from boards that matched a category here sit in that category and take replies like any other thread. Threads from every other old board sit in a category under **From the old forum** on the forum home. Those categories are read-only for members, so you can read them but not reply or start threads there. The team can still post in them.
 - **Names:** a post written by someone whose old forum account was linked to an IxStats account when the posts were copied shows that member's IxStats name. Any other post keeps the name from the old forum, as plain text, with no profile behind it.
-- **Getting your posts attributed:** if your old posts show your old name instead of your IxStats name, start a thread in Reports with your old forum username. Staff link the old account to your IxStats account and update the imported posts, which may take a little while. Linking is no longer something you do in Settings.
-- **Old links:** links to the old forum's pages open the matching thread, post or category here when it was imported. A link that cannot be matched opens the forum home.
+
+### Getting your posts attributed
+
+If your old forum account is linked to your IxStats account when the posts are copied, they show your IxStats name. Link it before then to be attributed automatically: open [Settings](/settings) → **IxnayID & passport** → **Linked accounts** → **Manage**, then connect Community forum. Full steps: [IxnayID & Your Passport](/help/getting-started/ixnayid#link-your-forum-account).
+
+Once the old forum has been archived here and linking is retired, ask in a thread in Reports instead: give your old forum username, and staff will link the account and update your imported posts, which may take a little while.
+
+### Old links
+
+Once the old forum is archived here, links to its pages open the matching thread, post or category here when it was imported, and anything that cannot be matched opens the forum home. Until then, old links open the old forum's pages as before.
 
 ## Good to know
 
