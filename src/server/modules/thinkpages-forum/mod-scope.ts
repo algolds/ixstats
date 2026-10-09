@@ -17,7 +17,18 @@ export type CategoryScopeDb = Pick<PrismaClient, "forumCategory">;
 export type SanctionDb = ScopeDb & Pick<PrismaClient, "user">;
 export type LockDb = Pick<PrismaClient, "$executeRaw">;
 
-interface ScopedCategory {
+/** The realm officer power that makes an officer a moderator of the realm's forum (M10). */
+export const MODERATOR_POWER = "board";
+
+/** A member as `isSiteAdmin` needs them (id, Clerk id, role). */
+export type Member = RealmActor & { countryId: null };
+export const MEMBER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  role: { select: { name: true, level: true } },
+} as const;
+
+export interface ScopedCategory {
   id: string;
   scope: string;
   realmId: string | null;
@@ -33,7 +44,7 @@ export async function moderatorContext(db: ScopeDb, actor: RealmActor): Promise<
   const [founded, officers, categories] = await Promise.all([
     db.realm.findMany({ where: { ownerId: actor.clerkUserId }, select: { id: true } }),
     db.realmOfficer.findMany({
-      where: { userId: actor.clerkUserId, powers: { has: "board" } },
+      where: { userId: actor.clerkUserId, powers: { has: MODERATOR_POWER } },
       select: { realmId: true },
     }),
     db.forumCategoryModerator.findMany({
@@ -165,20 +176,20 @@ export async function lockMember(tx: LockDb, userId: string): Promise<void> {
 }
 
 /** A member as a RealmActor (id, Clerk id, role), enough for `isSiteAdmin`; null when the user row is gone. */
-async function memberOf(
-  db: Pick<PrismaClient, "user">,
-  userId: string
-): Promise<(RealmActor & { countryId: null }) | null> {
-  const row = await db.user.findUnique({
-    where: { id: userId },
-    select: { id: true, clerkUserId: true, role: { select: { name: true, level: true } } },
-  });
+async function memberOf(db: Pick<PrismaClient, "user">, userId: string): Promise<Member | null> {
+  const row = await db.user.findUnique({ where: { id: userId }, select: MEMBER_SELECT });
   return row && { ...row, countryId: null };
 }
 
+/** Content a site admin wrote is moderated by site admins only; an author whose user row is gone is not an admin. */
+export function mayModerateAuthor(actor: ForumViewer, author: Member | null): boolean {
+  if (actor === null) return false;
+  return isSiteAdmin(actor) || author === null || !isSiteAdmin(author);
+}
+
 /**
- * Content a site admin wrote is moderated by site admins only (hide, edit, move, lock, pin, archive). Site admin
- * actors cost no query; an author whose user row is gone is not an admin.
+ * Content a site admin wrote is moderated by site admins only (hide, edit, move, lock, pin, archive, resolving its
+ * reports). Site admin actors cost no query.
  */
 export async function assertCanModerateAuthor(
   db: Pick<PrismaClient, "user">,
@@ -186,28 +197,37 @@ export async function assertCanModerateAuthor(
   authorUserId: string
 ): Promise<void> {
   if (isSiteAdmin(actor)) return;
-  const author = await memberOf(db, authorUserId);
-  if (author && isSiteAdmin(author)) {
+  if (!mayModerateAuthor(actor, await memberOf(db, authorUserId))) {
     throw new ForumError("FORBIDDEN", "Only site admins moderate a site admin's posts.");
   }
 }
 
 /**
- * M5: the member to warn or ban must exist, must not be a site admin, and must not moderate the place
- * (`moderates`, asked of the member with their own moderator context).
+ * M5 as a verdict, null when the member may be sanctioned: they must exist, must not be a site admin, and must not
+ * moderate the place (`moderates`, asked of the member with their own moderator context).
  */
+export function sanctionRefusal(
+  target: (Member & { mod: ModeratorContext }) | null,
+  verb: "banned" | "warned",
+  moderates: (target: NonNullable<ForumViewer>) => boolean
+): ForumError | null {
+  if (!target) return new ForumError("NOT_FOUND", "Member not found.");
+  if (isSiteAdmin(target)) return new ForumError("BAD_REQUEST", `Site admins can't be ${verb}.`);
+  if (moderates(target)) return new ForumError("BAD_REQUEST", "Remove their moderator role first.");
+  return null;
+}
+
+/** M5 (`sanctionRefusal`) for one member, whose moderator context is looked up here (none for site admins). */
 export async function assertSanctionable(
   db: SanctionDb,
   userId: string,
   verb: "banned" | "warned",
   moderates: (target: NonNullable<ForumViewer>) => boolean
 ): Promise<void> {
-  const target = await memberOf(db, userId);
-  if (!target) throw new ForumError("NOT_FOUND", "Member not found.");
-  if (isSiteAdmin(target)) throw new ForumError("BAD_REQUEST", `Site admins can't be ${verb}.`);
-  const mod = await moderatorContext(db, target);
-  if (moderates({ ...target, mod }))
-    throw new ForumError("BAD_REQUEST", "Remove their moderator role first.");
+  const member = await memberOf(db, userId);
+  const target = member && { ...member, mod: await moderatorContext(db, member) };
+  const refusal = sanctionRefusal(target, verb, moderates);
+  if (refusal) throw refusal;
 }
 
 /** Which rows a moderator listing shows: null for no filter (site admins), else these realms and categories. */

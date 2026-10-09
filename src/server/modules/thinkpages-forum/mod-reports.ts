@@ -11,6 +11,7 @@ import { ForumError } from "./errors";
 import { assertNotBanned } from "./mod-bans";
 import { logModAction, modNote } from "./mod-log";
 import {
+  assertCanModerateAuthor,
   assertModeratesCategory,
   assertScope,
   canModerateCategory,
@@ -29,6 +30,7 @@ export type ReportsDb = Pick<
   | "forumBan"
   | "forumModLog"
   | "realm"
+  | "user"
   | "$transaction"
   | "$executeRaw"
 >;
@@ -159,7 +161,7 @@ async function targetAuthorOf(
 
 /**
  * A moderator in the report's scope resolves or dismisses it, never one whose own content it is (site admins
- * included: another admin handles it). The conditional update also pins the category the scope was checked
+ * included: another admin handles it), and only a site admin when a site admin wrote it (M-3). The conditional update also pins the category the scope was checked
  * against, so a report re-pointed by a move meanwhile is a CONFLICT.
  */
 export async function resolveReport(
@@ -178,9 +180,11 @@ export async function resolveReport(
     select: { id: true, scope: true, realmId: true },
   });
   const { handler, scope } = handlingScope(actor, category);
-  if ((await targetAuthorOf(db, report)) === handler.id) {
+  const author = await targetAuthorOf(db, report);
+  if (author === handler.id) {
     throw new ForumError("FORBIDDEN", "Another moderator handles reports about your own posts.");
   }
+  if (author !== null) await assertCanModerateAuthor(db, handler, author);
   const handled = new ForumError("CONFLICT", "This report has already been handled.");
   if (report.status !== "open") throw handled;
   await db.$transaction(async (tx) => {

@@ -13,6 +13,7 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import {
+  authorModeration,
   canStartThread,
   categoryPostingAccess,
   createThread,
@@ -32,11 +33,38 @@ import {
   resolvePostLocation,
   TITLE_MAX,
   TITLE_MIN,
+  type AuthorModerationDb,
+  type ContentDb,
+  type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
 import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, viewerOf } from "./viewer";
 
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
+
+type ThreadPage = Awaited<ReturnType<typeof getThreadPosts>>;
+
+/**
+ * A moderator's extras on a thread: Move destinations, and what they may do to each author's posts (I-1, M-8), so
+ * the UI offers only what the server allows.
+ */
+async function moderatorView(
+  db: AuthorModerationDb & Pick<ContentDb, "forumCategory">,
+  viewer: ForumViewer,
+  result: ThreadPage
+) {
+  const [destinations, moderation] = await Promise.all([
+    moveDestinations(db, viewer, result.category),
+    authorModeration(db, viewer, [
+      result.thread.authorUserId,
+      ...result.posts.map((p) => p.authorUserId),
+    ]),
+  ]);
+  return {
+    tools: { categories: destinations.map((c) => ({ ...c, realm: result.category.realm })) },
+    of: (authorUserId: string) => moderation(authorUserId, result.category),
+  };
+}
 
 export const thinkpagesForumRouter = createTRPCRouter({
   categories: publicProcedure.query(async ({ ctx }) =>
@@ -78,6 +106,11 @@ export const thinkpagesForumRouter = createTRPCRouter({
       const access = await categoryPostingAccess(ctx.db, viewer, result.category);
       return {
         ...result,
+        // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4).
+        threads: result.threads.map(({ hidden, ...thread }) => ({
+          ...thread,
+          ...(result.canModerate ? { hidden } : {}),
+        })),
         canStart: canStartThread(viewer, result.category) && access.canPost,
         notice: access.notice,
         banned: access.ban !== null,
@@ -97,24 +130,16 @@ export const thinkpagesForumRouter = createTRPCRouter({
     // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
     const editable =
       writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
-    const { canModerate } = result;
-    const moderatorTools = canModerate
-      ? {
-          categories: (await moveDestinations(ctx.db, viewer, result.category)).map((c) => ({
-            ...c,
-            realm: result.category.realm,
-          })),
-        }
-      : null;
+    const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
     return {
       ...result,
-      // Moderators of the category get the Hidden badge; members never receive hidden posts (T0-19).
-      // `byViewer` is authorship (no Report, no Warn or Ban on your own post); `isOwn` is "may edit it now".
+      // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
+      // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
       posts: result.posts.map(({ hidden, ...post }) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
         return {
           ...post,
-          ...(canModerate ? { hidden } : {}),
+          ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
           byViewer,
           isOwn: byViewer && editable && !hidden,
         };
@@ -123,7 +148,13 @@ export const thinkpagesForumRouter = createTRPCRouter({
       canReply,
       notice: access.notice,
       banned: access.ban !== null,
-      ...(moderatorTools ? { moderatorTools } : {}),
+      // The thread bar's actions (lock, pin, hide, archive, move): a site admin's thread is site admins' only.
+      ...(moderator
+        ? {
+            moderatorTools: moderator.tools,
+            moderable: moderator.of(result.thread.authorUserId).moderable,
+          }
+        : {}),
       authors: await authorMaps(ctx.db, [result.thread, ...result.posts]),
     };
   }),

@@ -145,6 +145,7 @@ export async function getCategoryThreads(
         authorPersonaId: true,
         pinned: true,
         locked: true,
+        hidden: true,
         postCount: true,
         lastPostAt: true,
       },

@@ -26,6 +26,13 @@ export {
   type BanInput,
   type BansDb,
 } from "./mod-bans";
+export {
+  authorModeration,
+  moderatorContexts,
+  type AuthorModeration,
+  type AuthorModerationDb,
+  type AuthorModerationOf,
+} from "./mod-authors";
 export { type AutoBanChange } from "./mod-auto-bans";
 export {
   moveDestinations,

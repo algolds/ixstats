@@ -717,6 +717,85 @@ describe("thinkpagesForum router", () => {
       expect(plain.posts.every((p) => !("hidden" in p))).toBe(true);
     });
 
+    it("tells a realm moderator what they may do to each post and the thread; a member nothing (I-1, M-8)", async () => {
+      const db = realmForumDb(inEurth);
+      const by = (id: string, authorUserId: string) => ({
+        id,
+        authorUserId,
+        authorPersonaId: null,
+        contentHtml: "<p>x</p>",
+        editedAt: null,
+        createdAt: when,
+        hidden: false,
+      });
+      db.forumThread.findUnique.mockResolvedValue({
+        ...(await db.forumThread.findUnique()),
+        authorUserId: "u_admin",
+      } as never);
+      db.forumPost.findMany.mockResolvedValue([
+        by("p_member", "u1"),
+        by("p_admin", "u_admin"),
+        by("p_officer", "u_o"),
+        by("p_own", "u_f"),
+      ] as never);
+      const role = (name: string, level: number) => ({ name, level });
+      db.user.findMany.mockResolvedValue([
+        { ...rawUser, role: role("user", 100) },
+        { ...rawUser, id: "u_admin", clerkUserId: "clerk_admin", role: role("admin", 10) },
+        { ...rawUser, id: "u_o", clerkUserId: "clerk_officer", role: role("user", 100) },
+        { ...rawUser, id: "u_f", clerkUserId: "founder", role: role("user", 100) },
+      ] as never);
+      db.realmOfficer.findMany.mockResolvedValue([
+        { realmId: "r_eurth", userId: "clerk_officer" },
+      ] as never);
+      const out = await caller(founder, db).thread({ threadId: "t1", page: 1 });
+      expect(out.moderable).toBe(false);
+      expect(
+        out.posts.map(({ id, moderable, sanctionable }) => ({ id, moderable, sanctionable }))
+      ).toEqual([
+        { id: "p_member", moderable: true, sanctionable: true },
+        { id: "p_admin", moderable: false, sanctionable: false },
+        { id: "p_officer", moderable: true, sanctionable: false },
+        { id: "p_own", moderable: true, sanctionable: false },
+      ]);
+      expect(JSON.stringify(out)).not.toContain("clerk_admin");
+
+      const plain = await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 });
+      expect("moderable" in plain).toBe(false);
+      expect(plain.posts.some((p) => "moderable" in p || "sanctionable" in p)).toBe(false);
+    });
+
+    it("marks hidden threads in a category for its moderators only (M-4)", async () => {
+      const listed = (db: ReturnType<typeof realmForumDb>) => {
+        db.forumThread.findMany.mockResolvedValue([
+          {
+            id: "t1",
+            title: "Hello",
+            authorUserId: "u1",
+            authorPersonaId: null,
+            pinned: false,
+            locked: false,
+            hidden: true,
+            postCount: 1,
+            lastPostAt: when,
+          },
+        ] as never);
+        return db;
+      };
+      const forMod = await caller(founder, listed(realmForumDb())).category({
+        key: "hub",
+        page: 1,
+        realm: "eurth",
+      });
+      expect(forMod.threads.map((t) => t.hidden)).toEqual([true]);
+      const db = listed(realmForumDb(inEurth));
+      const forMember = await caller(member, db).category({ key: "hub", page: 1, realm: "eurth" });
+      expect(forMember.threads.every((t) => !("hidden" in t))).toBe(true);
+      expect(db.forumThread.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ select: expect.objectContaining({ hidden: true }) })
+      );
+    });
+
     it("flags a realm-banned member on the section, the category and the thread", async () => {
       const ban = banRow({ userId: "u1", scope: "realm", scopeId: "r_eurth", reason: "Spam" });
       const db = () => ({ ...realmForumDb(inEurth), forumBan: forumBanFake([ban]) });

@@ -94,6 +94,14 @@ const seed = () => ({
     post("p_by_mod", "t_eurth", { authorUserId: "u_eurth" }),
     post("p_by_admin", "t_eurth", { authorUserId: "u_a" }),
   ],
+  // Authors as `assertCanModerateAuthor` and the queue's flags read them; u_eurth holds Eurth's board office.
+  users: [
+    { id: "u_a", clerkUserId: "admin", role: admin.role },
+    { id: "u_m", clerkUserId: "member", role: USER_ROLE },
+    { id: "u_r", clerkUserId: "reporter", role: USER_ROLE },
+    { id: "u_eurth", clerkUserId: "u_eurth", role: USER_ROLE },
+  ],
+  officers: [{ realmId: "r_eurth", userId: "u_eurth", powers: ["board"] }],
 });
 
 function reportsStore(bans: BanRow[] = [], extra: { reports?: Row[] } = {}) {
@@ -515,6 +523,38 @@ describe("reports about the moderator's own content", () => {
     expect(store.logs).toEqual([
       expect.objectContaining({ actorId: "u_a2", action: "report.dismiss" }),
     ]);
+  });
+
+  it("a realm moderator can't resolve or dismiss a report on a site admin's post (M-3)", async () => {
+    const store = ownStore();
+    await expect(
+      resolveReport(store.db as never, eurthMod, { reportId: "rep_on_admin", outcome: "dismissed" })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "Only site admins moderate a site admin's posts.",
+    });
+    expect(store.state.reports.find((r) => r.id === "rep_on_admin")!.status).toBe("open");
+    expect(store.logs).toHaveLength(0);
+  });
+
+  it("flags what the viewer may do to each target: nothing on an admin's, no sanction on a fellow moderator's", async () => {
+    const store = ownStore();
+    const flags = async (viewer: typeof admin | typeof eurthMod) => {
+      const { rows } = await listReports(store.db as never, viewer, { status: "open" }, 1);
+      return new Map(
+        rows.map((r) => [r.id, { moderable: r.moderable, sanctionable: r.sanctionable }])
+      );
+    };
+    const byMod = await flags(eurthMod);
+    expect(byMod.get("rep_on_admin")).toEqual({ moderable: false, sanctionable: false });
+    expect(byMod.get("rep_eurth")).toEqual({ moderable: true, sanctionable: true });
+    const byAdmin = await flags(admin);
+    expect(byAdmin.get("rep_on_mod")).toEqual({ moderable: true, sanctionable: false });
+    expect(byAdmin.get("rep_on_mod_thread")).toEqual({ moderable: true, sanctionable: false });
+    expect(byAdmin.get("rep_on_admin")).toEqual({ moderable: true, sanctionable: false });
+    expect(byAdmin.get("rep_general")).toEqual({ moderable: true, sanctionable: true });
+    // Nothing left to hide or sanction; the report itself is still handled.
+    expect(byAdmin.get("rep_gone")).toEqual({ moderable: true, sanctionable: false });
   });
 
   it("a report whose target is gone is still handled", async () => {

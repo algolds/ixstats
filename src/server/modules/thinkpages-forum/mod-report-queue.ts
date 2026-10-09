@@ -7,17 +7,21 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
+import { authorModeration, type AuthorModeration, type AuthorModerationDb } from "./mod-authors";
 import { listingScope, pageWindow } from "./mod-scope";
 import { canonicalRealm, IXWORLD_REALM, REALM_SELECT } from "./realm-access";
 
 export type ReportQueueDb = Pick<
   PrismaClient,
   "forumReport" | "forumThread" | "forumPost" | "forumCategory" | "realm"
->;
+> &
+  AuthorModerationDb;
 export type ReportStatus = "open" | "resolved" | "dismissed";
 
 export const REPORTS_PER_PAGE = MOD_ROWS_PER_PAGE;
 const EXCERPT_MAX = 160;
+/** A gone target leaves nothing to hide or sanction; the report itself is still handled. */
+const GONE_TARGET: AuthorModeration = { moderable: true, sanctionable: false };
 
 interface TargetSummary {
   threadId: string;
@@ -119,6 +123,9 @@ async function withoutOwnTargets(
 }
 
 interface ReportCategory {
+  id: string;
+  scope: string;
+  realmId: string | null;
   key: string;
   name: string;
   realm: { slug: string; name: string } | null;
@@ -149,10 +156,7 @@ async function summarizeCategories(
       : null;
   };
   return new Map(
-    categories.map((c) => [
-      c.id,
-      { key: c.key, name: c.name, realm: c.scope === "realm" ? realmOf(c.realmId) : null },
-    ])
+    categories.map((c) => [c.id, { ...c, realm: c.scope === "realm" ? realmOf(c.realmId) : null }])
   );
 }
 
@@ -188,11 +192,19 @@ export async function listReports(
       rows.map((r) => r.categoryId)
     ),
   ]);
+  const moderation = await authorModeration(
+    db,
+    viewer,
+    [...targets.values()].map((t) => t.authorUserId)
+  );
   return {
     rows: rows.map((row) => {
       const target = targets.get(targetKey(row.targetType, row.targetId));
+      const category = categories.get(row.categoryId) ?? null;
       const ownTarget = target?.authorUserId === viewer?.id;
       return {
+        /** What the viewer may do to the target (hide; warn or ban its author), as the server would allow. */
+        ...(target && category ? moderation(target.authorUserId, category) : GONE_TARGET),
         id: row.id,
         targetType: row.targetType,
         targetId: row.targetId,
@@ -202,7 +214,7 @@ export async function listReports(
         /** Who wrote the reported content (for "Warn author" / "Ban author"); null when it is gone. */
         targetAuthorId: target?.authorUserId ?? null,
         categoryId: row.categoryId,
-        category: categories.get(row.categoryId) ?? null,
+        category,
         /** True on a site admin's own content: they see the report, not who filed it, and can't handle it. */
         ownTarget,
         reporterId: ownTarget ? null : row.reporterId,
