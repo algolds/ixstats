@@ -273,18 +273,23 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") {
         try {
-          const categories = await db.wikiCategory.findMany({
-            where: { hidden: false },
-            take: input.limit,
-            orderBy: { members: { _count: "desc" } },
-          });
-          // "fileCount" is files, not every published member: count the namespace-6 members.
-          const names = (categories || []).map((c) => String(c.name || "").replace(/_/g, " "));
-          const counts = await CategoryService.getCounts(names);
-          return names
-            .map((name) => ({ name, fileCount: counts.get(name)?.files ?? 0 }))
-            .filter((cat) => cat.fileCount > 0)
-            .sort((a, b) => b.fileCount - a.fileCount);
+          // One query for the categories that really list a published IxWiki file, most files first: counting
+          // in SQL (not in JS after a page-heavy category took a slot) keeps file categories from being crowded out.
+          const rows = await db.$queryRaw<Array<{ name: string; files: bigint | number }>>`
+            SELECT c."name" AS "name",
+                   count(*) FILTER (WHERE a."namespace" = 6 AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED') AS "files"
+            FROM wiki_categories c
+            JOIN wiki_category_members m ON m."categoryId" = c."id"
+            JOIN wiki_articles a ON a."id" = m."articleId"
+            WHERE c."hidden" = false
+            GROUP BY c."id", c."name"
+            HAVING count(*) FILTER (WHERE a."namespace" = 6 AND a."source" = 'ixwiki' AND a."status" = 'PUBLISHED') > 0
+            ORDER BY "files" DESC, c."name" ASC
+            LIMIT ${input.limit}`;
+          return rows.map((row) => ({
+            name: String(row.name || "").replace(/_/g, " "),
+            fileCount: Number(row.files),
+          }));
         } catch (err) {
           console.error("[wikiosCategories] Failed to fetch ixwiki categories from DB:", err);
           return [];
