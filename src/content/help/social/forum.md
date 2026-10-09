@@ -10,7 +10,7 @@ nextLabel: Blurbs
 
 ## What the forum is
 
-The forum is the community's discussion space, built into ThinkPages at [/thinkpages](/thinkpages). In the sidebar it is **ThinkPages** under Home. Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
+The forum is the community's discussion space, built into ThinkPages at [/thinkpages](/thinkpages). Signed in, it is **ThinkPages** under Home in the sidebar; signed out, open it at [/thinkpages](/thinkpages) or from any link to a thread. Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
 
 Until the old forum is archived here, [/forum](/forum) still opens the older forum on a separate site; this article is about the forum at /thinkpages.
 
