@@ -58,6 +58,25 @@ describe("wikiFilesToImages", () => {
     expect(only!.thumbUrl).toBe(only!.url);
   });
 
+  it("copies the blurhash, and gives null when the record has none", () => {
+    const [withHash, without] = wikiFilesToImages(
+      [wikiFile("Map.png", { blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" }), wikiFile("Flag.png")],
+      "ixwiki"
+    );
+    expect(withHash!.blurhash).toBe("LEHV6nWB2yk8pyo0adR*.7kCMdnj");
+    expect(without!.blurhash).toBeNull();
+  });
+
+  it("uses the file's own url as the description page for forum and own uploads", () => {
+    const record = wikiFile("Pic.png", { url: "https://cdn.example/forum/pic.png" });
+    const [forum] = wikiFilesToImages([record], "forum");
+    const [mine] = wikiFilesToImages([record], "mine");
+    expect(forum!.descriptionUrl).toBe("https://cdn.example/forum/pic.png");
+    expect(forum!.descriptionUrl).toBe(forum!.url);
+    expect(mine!.descriptionUrl).toBe(mine!.url);
+    expect(forum!.description).toContain("forum");
+  });
+
   it("invents no author or licence", () => {
     const [only] = wikiFilesToImages([wikiFile("Map.png")], "ixwiki");
     expect(only!.artist).toBe("");
