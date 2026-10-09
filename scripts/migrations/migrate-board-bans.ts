@@ -10,11 +10,13 @@
  * after a partial one creates nothing twice. Each chunk takes the bound members' moderation locks (`lockMember`, in
  * a fixed order) first, as every live ban and warning does, so a moderator acting on one of them waits for it.
  * Issuer: the board ban's creator (a Clerk id) mapped to their User id, else "system" (counted). Log actor: "system";
- * the detail names the original issuer. Expired rows and rows that bind nobody are skipped and counted. The
- * realm_board_bans rows are left in place, frozen, for phase 4.
+ * the detail names the original issuer. Expired rows and rows that bind nobody are skipped and counted, and so is
+ * a bound player who moderates the realm today (site admin, founder, `board` officer), whom the board never
+ * restricted: one report line each. The realm_board_bans rows are left in place, frozen, for phase 4.
  */
 import "../lib/load-env";
 import { Prisma, PrismaClient } from "@prisma/client";
+import type { RealmOfficerGrant } from "~/server/modules/realms/realms.access";
 import { logModAction } from "~/server/modules/thinkpages-forum/mod-log";
 import { lockMember } from "~/server/modules/thinkpages-forum/mod-scope";
 import { databaseLabel, productionDatabaseRefusal } from "../lib/database-guard";
@@ -27,6 +29,8 @@ import {
   type BoardBanRow,
   type ClaimRow,
   type CountryRow,
+  type ModeratorFacts,
+  type ModeratorSkip,
   type PlannedBan,
 } from "./board-bans-to-forum-plan";
 
@@ -65,19 +69,53 @@ async function approvedClaims(db: PrismaClient, countryIds: string[]): Promise<C
   );
 }
 
-async function realmLabels(db: PrismaClient, realmIds: string[]): Promise<Map<string, string>> {
+/** Each realm's label for the report and its founder (`Realm.ownerId`, a Clerk id). */
+async function loadRealms(db: PrismaClient, realmIds: string[]) {
   const realms = await db.realm.findMany({
     where: { id: { in: realmIds } },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, ownerId: true },
   });
-  return new Map(realms.map((r) => [r.id, `${r.name} (${r.slug})`]));
+  return {
+    labels: new Map(realms.map((r) => [r.id, `${r.name} (${r.slug})`])),
+    owners: new Map(realms.map((r) => [r.id, r.ownerId])),
+  };
 }
 
-/** Plans every realm's board bans against one snapshot of claims, nations, users and migrated refs. */
+/** Whether each possible bound player moderates a realm: their role, the founders and the officers. */
+async function moderatorFacts(
+  db: PrismaClient,
+  realmIds: string[],
+  realmOwners: Map<string, string>,
+  userIds: string[]
+): Promise<ModeratorFacts> {
+  const [users, officers] = await Promise.all([
+    db.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, clerkUserId: true, role: { select: { name: true, level: true } } },
+    }),
+    db.realmOfficer.findMany({
+      where: { realmId: { in: realmIds } },
+      select: { realmId: true, userId: true, powers: true },
+    }),
+  ]);
+  const byRealm = new Map<string, RealmOfficerGrant[]>();
+  for (const { realmId, ...grant } of officers) {
+    byRealm.set(realmId, [...(byRealm.get(realmId) ?? []), grant]);
+  }
+  return {
+    users: new Map(users.map(({ id, ...user }) => [id, user])),
+    realmOwners,
+    officers: byRealm,
+  };
+}
+
+/**
+ * Plans every realm's board bans against one snapshot of claims, nations, issuers, moderators and migrated refs.
+ */
 async function planRealms(db: PrismaClient, rows: BoardBanRow[], now: Date): Promise<RealmRun[]> {
   const countryIds = [...new Set(rows.map((r) => r.countryId))];
   const realmIds = [...new Set(rows.map((r) => r.realmId))];
-  const [claims, nations, users, migrated, labels] = await Promise.all([
+  const [claims, nations, users, migrated, realms] = await Promise.all([
     approvedClaims(db, countryIds),
     db.country.findMany({
       where: { id: { in: countryIds } },
@@ -91,19 +129,25 @@ async function planRealms(db: PrismaClient, rows: BoardBanRow[], now: Date): Pro
       where: { sourceRef: { startsWith: BAN_SOURCE_REF_PREFIX } },
       select: { sourceRef: true },
     }),
-    realmLabels(db, realmIds),
+    loadRealms(db, realmIds),
   ]);
+  const boundUserIds = new Set([
+    ...claims.map((c) => c.userId),
+    ...nations.flatMap((n) => (n.ownerUserId ? [n.ownerUserId] : [])),
+  ]);
+  const moderators = await moderatorFacts(db, realmIds, realms.owners, [...boundUserIds]);
   const input = {
     claims,
     countries: new Map<string, CountryRow>(nations.map(({ id, ...nation }) => [id, nation])),
     userIdByClerk: new Map(users.map((u) => [u.clerkUserId, u.id])),
     migrated: new Set(migrated.flatMap((m) => (m.sourceRef ? [m.sourceRef] : []))),
+    moderators,
     now,
   };
   return realmIds.map((realmId) => {
     const inRealm = rows.filter((r) => r.realmId === realmId);
     return {
-      realm: labels.get(realmId) ?? realmId,
+      realm: realms.labels.get(realmId) ?? realmId,
       rows: inRealm.length,
       plan: planBoardBanMigration({ ...input, rows: inRealm }),
     };
@@ -114,6 +158,9 @@ const banLine = (ban: PlannedBan) =>
   `    board ban ${ban.detail.realmBoardBanId} (${ban.detail.kind}, nation ${ban.detail.countryId}) -> ` +
   `user ${ban.userId}, ${ban.expiresAt ? `until ${ban.expiresAt.toISOString()}` : "permanent"}, ` +
   `issued by ${ban.issuedBy}`;
+
+const skipLine = (skip: ModeratorSkip) =>
+  `    board ban ${skip.realmBoardBanId} -> user ${skip.userId} skipped: binds a realm moderator (${skip.holder})`;
 
 /** A planned ban as a forum_bans row (the detail goes to the mod log). */
 const banData = (ban: PlannedBan): Prisma.ForumBanCreateManyInput => ({
@@ -179,6 +226,7 @@ async function main(db: PrismaClient): Promise<number> {
   runs.forEach((run, i) => {
     console.log(`  ${summary[i]}`);
     for (const ban of run.plan.bans) console.log(banLine(ban));
+    for (const skip of run.plan.moderatorSkips) console.log(skipLine(skip));
   });
   console.log(`  ${summary[summary.length - 1]}`);
   if (!apply) return 0;

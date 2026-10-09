@@ -7,6 +7,7 @@ import {
   type BoardBanRow,
   type ClaimRow,
   type CountryRow,
+  type ModeratorFacts,
 } from "../../../scripts/migrations/board-bans-to-forum-plan";
 
 const day = (n: number) => new Date(Date.UTC(2026, 0, n, 12));
@@ -37,6 +38,18 @@ const claim = (userId: string, reviewed: number, overrides: Partial<ClaimRow> = 
 const owned = (ownerUserId: string | null, realmId = "realm-1"): Map<string, CountryRow> =>
   new Map([["country-1", { realmId, ownerUserId }]]);
 
+const MEMBER = { name: "user", level: 100 };
+
+/** Every bound player in these tests is a plain member unless `moderators` says otherwise. */
+const members = (...userIds: string[]) =>
+  new Map(userIds.map((id) => [id, { clerkUserId: `clerk-${id}`, role: MEMBER }]));
+
+const NO_MODERATORS: ModeratorFacts = {
+  users: members("user-owner", "user-a", "user-b", "user-c"),
+  realmOwners: new Map([["realm-1", "clerk-founder"]]),
+  officers: new Map(),
+};
+
 function plan(
   rows: BoardBanRow[],
   opts: {
@@ -44,6 +57,7 @@ function plan(
     countries?: Map<string, CountryRow>;
     migrated?: string[];
     users?: Map<string, string>;
+    moderators?: Partial<ModeratorFacts>;
   } = {}
 ) {
   return planBoardBanMigration({
@@ -52,6 +66,7 @@ function plan(
     countries: opts.countries ?? owned("user-owner"),
     userIdByClerk: opts.users ?? new Map([["clerk-mod", "user-mod"]]),
     migrated: new Set(opts.migrated ?? []),
+    moderators: { ...NO_MODERATORS, ...opts.moderators },
     now: NOW,
   });
 }
@@ -232,6 +247,85 @@ describe("planBoardBanMigration: idempotency", () => {
   });
 });
 
+describe("planBoardBanMigration: bound players who moderate the realm (M5)", () => {
+  const founderOwns = { realmOwners: new Map([["realm-1", "clerk-user-owner"]]) };
+
+  it("skips and reports a ban bound to the realm's founder", () => {
+    const result = plan([ban()], { moderators: founderOwns });
+    expect(result.bans).toEqual([]);
+    expect(result.skipped.moderator).toBe(1);
+    expect(result.moderatorSkips).toEqual([
+      {
+        sourceRef: "realm_board_ban:bb-1:user-owner",
+        userId: "user-owner",
+        realmBoardBanId: "bb-1",
+        holder: "realm moderator",
+      },
+    ]);
+  });
+
+  it("skips a ban bound to an officer with the board power", () => {
+    const officers = new Map([
+      ["realm-1", [{ userId: "clerk-user-owner", powers: ["claims", "board"] }]],
+    ]);
+    const result = plan([ban()], { moderators: { officers } });
+    expect(result.bans).toEqual([]);
+    expect(result.moderatorSkips.map((s) => s.holder)).toEqual(["realm moderator"]);
+  });
+
+  it("migrates a ban bound to an officer without the board power", () => {
+    const officers = new Map([["realm-1", [{ userId: "clerk-user-owner", powers: ["claims"] }]]]);
+    const result = plan([ban()], { moderators: { officers } });
+    expect(holdersOf(result)).toEqual(["user-owner"]);
+    expect(result.skipped.moderator).toBe(0);
+  });
+
+  it("migrates a ban bound to a board officer of another realm", () => {
+    const officers = new Map([["realm-2", [{ userId: "clerk-user-owner", powers: ["board"] }]]]);
+    expect(holdersOf(plan([ban()], { moderators: { officers } }))).toEqual(["user-owner"]);
+  });
+
+  it("migrates a ban bound to the founder of another realm", () => {
+    const realmOwners = new Map([["realm-2", "clerk-user-owner"]]);
+    expect(holdersOf(plan([ban()], { moderators: { realmOwners } }))).toEqual(["user-owner"]);
+  });
+
+  it("skips a ban bound to a site admin", () => {
+    const users = new Map([
+      ["user-owner", { clerkUserId: "clerk-user-owner", role: { name: "admin", level: 10 } }],
+    ]);
+    const result = plan([ban()], { moderators: { users } });
+    expect(result.bans).toEqual([]);
+    expect(result.moderatorSkips.map((s) => s.holder)).toEqual(["site admin"]);
+  });
+
+  it("treats IxWorld as having no founder", () => {
+    const result = plan([ban({ realmId: "default" })], {
+      countries: owned("user-owner", "default"),
+      moderators: { realmOwners: new Map([["default", "clerk-user-owner"]]) },
+    });
+    expect(holdersOf(result)).toEqual(["user-owner"]);
+  });
+
+  it("still bans the other bound players of the same row, and leaves members unaffected", () => {
+    const result = plan([ban()], {
+      claims: [claim("user-a", 5)],
+      countries: owned("user-c"),
+      moderators: { realmOwners: new Map([["realm-1", "clerk-user-c"]]) },
+    });
+    expect(holdersOf(result)).toEqual(["user-a"]);
+    expect(result.moderatorSkips.map((s) => s.userId)).toEqual(["user-c"]);
+  });
+
+  it("counts an already migrated moderator as migrated, not skipped", () => {
+    const result = plan([ban()], {
+      migrated: ["realm_board_ban:bb-1:user-owner"],
+      moderators: founderOwns,
+    });
+    expect(result.skipped).toMatchObject({ alreadyMigrated: 1, moderator: 0 });
+  });
+});
+
 describe("summarizeBanMigration", () => {
   it("prints one line per realm, then the totals", () => {
     const eurth = {
@@ -248,17 +342,25 @@ describe("summarizeBanMigration", () => {
       rows: 1,
       plan: plan([ban()], { countries: owned(null) }),
     };
-    expect(summarizeBanMigration([eurth, ixworld])).toEqual([
-      "Eurth: 3 board bans, 2 forum bans to create; skipped 1 expired, 0 no holder, 0 already migrated; 1 issued by the system, 0 reasons clipped",
-      "IxWorld: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated; 0 issued by the system, 0 reasons clipped",
-      "Total: 4 board bans in 2 realms, 2 forum bans to create; skipped 1 expired, 1 no holder, 0 already migrated; 1 issued by the system, 0 reasons clipped",
+    const caphiria = {
+      realm: "Caphiria",
+      rows: 1,
+      plan: plan([ban()], {
+        moderators: { realmOwners: new Map([["realm-1", "clerk-user-owner"]]) },
+      }),
+    };
+    expect(summarizeBanMigration([eurth, ixworld, caphiria])).toEqual([
+      "Eurth: 3 board bans, 2 forum bans to create; skipped 1 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator; 1 issued by the system, 0 reasons clipped",
+      "IxWorld: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated, 0 binding a realm moderator; 0 issued by the system, 0 reasons clipped",
+      "Caphiria: 1 board ban, 0 forum bans to create; skipped 0 expired, 0 no holder, 0 already migrated, 1 binding a realm moderator; 0 issued by the system, 0 reasons clipped",
+      "Total: 5 board bans in 3 realms, 2 forum bans to create; skipped 1 expired, 1 no holder, 0 already migrated, 1 binding a realm moderator; 1 issued by the system, 0 reasons clipped",
     ]);
   });
 
   it("names one realm and one forum ban in the singular", () => {
     const only = { realm: "Eurth", rows: 1, plan: plan([ban()]) };
     expect(summarizeBanMigration([only]).at(-1)).toBe(
-      "Total: 1 board ban in 1 realm, 1 forum ban to create; skipped 0 expired, 0 no holder, 0 already migrated; 0 issued by the system, 0 reasons clipped"
+      "Total: 1 board ban in 1 realm, 1 forum ban to create; skipped 0 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator; 0 issued by the system, 0 reasons clipped"
     );
   });
 });
