@@ -1,41 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "~/lib/utils";
 import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { withBasePath } from "~/lib/base-path";
+import { uploadImageFile, UploadImageError } from "~/lib/media/upload-image";
 
 interface UploadTabProps {
   onImageSelect: (imageUrl: string) => void;
   onClose: () => void;
-  onFileUpload?: (file: File) => Promise<void>;
   isUploading: boolean;
   setIsUploading: (val: boolean) => void;
 }
 
-export function UploadTab({
-  onImageSelect,
-  onClose,
-  onFileUpload,
-  isUploading,
-  setIsUploading,
-}: UploadTabProps) {
+export function UploadTab({ onImageSelect, onClose, isUploading, setIsUploading }: UploadTabProps) {
   const notify = useNotify();
   const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const uploadingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+    },
+    []
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Moving over a child of the drop zone also fires dragleave on the zone; that is not leaving it.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
     setIsDragging(false);
   };
 
   const processUploadFile = useCallback(
     async (file: File) => {
+      if (uploadingRef.current) return;
       if (file.size > 5 * 1024 * 1024) {
         notify.error("File size exceeds 5MB limit");
         return;
@@ -54,52 +60,45 @@ export function UploadTab({
         return;
       }
 
+      uploadingRef.current = true;
+      const controller = new AbortController();
+      abortRef.current = controller;
       setIsUploading(true);
       try {
-        if (onFileUpload) {
-          await onFileUpload(file);
-        } else {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch(withBasePath("/api/upload/image"), {
-            method: "POST",
-            body: formData,
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            onImageSelect(result.url);
-            onClose();
-            notify.success("Image uploaded");
-          } else if (response.status === 401) {
-            notify.error("Authentication required", "You need to be signed in to upload images.");
-          } else if (response.status === 429) {
-            notify.error(
-              "Upload limit reached",
-              result.retryAfter
-                ? `Please try again in ${result.retryAfter} seconds.`
-                : "Please try again later."
-            );
-          } else {
-            notify.error(result.error || "Failed to upload image");
-          }
-        }
+        const url = await uploadImageFile(file, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        onImageSelect(url);
+        onClose();
+        notify.success("Image uploaded");
       } catch (error) {
-        console.error("Upload error:", error);
-        notify.error("Upload failed", "Could not connect to the server.");
+        if (controller.signal.aborted) return;
+        if (error instanceof UploadImageError && error.status === 401) {
+          notify.error("Authentication required", "You need to be signed in to upload images.");
+        } else if (error instanceof UploadImageError && error.status === 429) {
+          notify.error(
+            "Upload limit reached",
+            error.retryAfter
+              ? `Please try again in ${error.retryAfter} seconds.`
+              : "Please try again later."
+          );
+        } else if (error instanceof UploadImageError) {
+          notify.error(error.message || "Failed to upload image");
+        } else {
+          console.error("Upload error:", error);
+          notify.error("Upload failed", "Could not connect to the server.");
+        }
       } finally {
+        uploadingRef.current = false;
         setIsUploading(false);
       }
     },
-    [notify, onFileUpload, onImageSelect, onClose, setIsUploading]
+    [notify, onImageSelect, onClose, setIsUploading]
   );
 
   // Clipboard paste handler
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      if (isUploading) return;
+      if (uploadingRef.current) return;
       const items = e.clipboardData?.items;
       if (!items) return;
 
@@ -120,7 +119,7 @@ export function UploadTab({
     return () => {
       window.removeEventListener("paste", handlePaste);
     };
-  }, [isUploading, processUploadFile]);
+  }, [processUploadFile]);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -138,9 +137,13 @@ export function UploadTab({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          onClick={() => document.getElementById("drag-upload-input")?.click()}
+          onClick={() => {
+            if (!isUploading) inputRef.current?.click();
+          }}
+          aria-disabled={isUploading}
           className={cn(
             "rounded-row bg-fill-2 flex min-h-[200px] cursor-pointer flex-col items-center justify-center border-2 border-dashed p-10 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+            isUploading && "pointer-events-none opacity-60",
             isDragging
               ? "border-tint bg-tint/5"
               : "border-separator hover:border-tint/50 hover:bg-fill-2"
@@ -158,7 +161,7 @@ export function UploadTab({
           <p className="text-label-secondary text-footnote mb-4">or click to browse local files</p>
           <input
             type="file"
-            id="drag-upload-input"
+            ref={inputRef}
             accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
             className="hidden"
             onChange={async (e) => {
@@ -172,7 +175,7 @@ export function UploadTab({
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              document.getElementById("drag-upload-input")?.click();
+              inputRef.current?.click();
             }}
             disabled={isUploading}
             size="sm"

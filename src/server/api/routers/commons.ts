@@ -5,12 +5,15 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { Cache } from "~/lib/cache/cache";
+import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
-const USER_AGENT = DEFAULT_USER_AGENT;
+/** Wikimedia's User-Agent policy asks for contact info; the plain allow-listed UA stays for other wikis. */
+const COMMONS_CONTACT_USER_AGENT = `IxStats-Builder/1.0 (${mediaWikiOrigin()}; image repository)`;
 
 // ---------------------------------------------------------------------------
 // Shared fetch helper
@@ -20,17 +23,24 @@ async function commonsApiFetch(params: Record<string, string | number>) {
   const url = new URL(COMMONS_API);
   url.searchParams.set("format", "json");
   url.searchParams.set("formatversion", "2");
-  url.searchParams.set("origin", "*");
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, String(v));
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
-  });
+  return fetchMediaWikiJson<any>(url.toString(), { userAgent: COMMONS_CONTACT_USER_AGENT });
+}
 
-  if (!res.ok) throw new Error(`Commons API error: ${res.status}`);
-  return res.json() as Promise<any>;
+/** Only the extmetadata fields `parseImagePages` reads: the full set is several KB per file. */
+const IMAGE_INFO_PARAMS = {
+  iiprop: "url|extmetadata|size|mime",
+  iiurlwidth: 300,
+  iiextmetadatafilter: "ImageDescription|Artist|LicenseShortName",
+  iiextmetadatalanguage: "en",
+} as const;
+
+/** A category name as it sits inside `deepcat:"..."`: a quote would end the phrase early. */
+function deepcatQuery(category: string): string {
+  return `deepcat:"${category.replace(/"/g, "")}"`;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +65,17 @@ function parseImagePages(data: any): CommonsImage[] {
   const pages = data?.query?.pages;
   if (!pages || !Array.isArray(pages)) return [];
 
-  return pages
+  // generator=search numbers each page with its rank (`index`); the API lists pages in id order.
+  const ranked = pages
+    .map((p: any, position: number) => ({ p, position }))
+    .sort((a: any, b: any) => {
+      const ai = typeof a.p.index === "number" ? a.p.index : Infinity;
+      const bi = typeof b.p.index === "number" ? b.p.index : Infinity;
+      return ai === bi ? a.position - b.position : ai - bi;
+    })
+    .map((entry: any) => entry.p);
+
+  return ranked
     .filter((p: any) => p.imageinfo && p.imageinfo.length > 0)
     .map((p: any) => {
       const info = p.imageinfo[0];
@@ -93,6 +113,14 @@ const imageInfoCache = new Cache<CommonsImage | null>({
   namespace: "commons-imageinfo",
 });
 
+// Recursive category file counts are expensive upstream (a deepcat search each) and change slowly
+const CATEGORY_COUNT_CONCURRENCY = 1;
+const categoryCountCache = new Cache<number>({
+  maxSize: 5000,
+  defaultTtlMs: CACHE_TTL_MS,
+  namespace: "commons-category-count",
+});
+
 // Every procedure proxies the external Commons API; dedicated bucket so it doesn't drain "public"
 const commonsProcedure = publicProcedure.use(
   createRateLimitMiddleware({ max: 100, windowMs: 60_000, namespace: "commons" })
@@ -102,8 +130,14 @@ function normalizeTitle(title: string): string {
   return title.replace(/_/g, " ").trim();
 }
 
+/** Commons search cannot page past its first 10,000 hits. */
+const MAX_SEARCH_WINDOW = 10_000;
+
 /** One page of Commons file search results (thumbnails + metadata) with the continuation offset. */
 async function searchCommonsFiles(gsrsearch: string, page: { limit: number; offset: number }) {
+  if (page.offset + page.limit > MAX_SEARCH_WINDOW) {
+    return { images: [] as CommonsImage[], nextOffset: null, totalHits: null };
+  }
   const data = await commonsApiFetch({
     action: "query",
     generator: "search",
@@ -112,8 +146,7 @@ async function searchCommonsFiles(gsrsearch: string, page: { limit: number; offs
     gsrlimit: page.limit,
     gsroffset: page.offset,
     prop: "imageinfo",
-    iiprop: "url|extmetadata|size|mime",
-    iiurlwidth: 300,
+    ...IMAGE_INFO_PARAMS,
   });
 
   const images = parseImagePages(data);
@@ -131,9 +164,9 @@ export const commonsRouter = createTRPCRouter({
   search: commonsProcedure
     .input(
       z.object({
-        query: z.string().min(1).max(500),
-        limit: z.number().min(1).max(50).default(40),
-        offset: z.number().min(0).default(0),
+        query: z.string().min(1).max(1000),
+        limit: z.number().int().min(1).max(50).default(40),
+        offset: z.number().int().min(0).max(9_999).default(0),
       })
     )
     .query(async ({ input }) => {
@@ -148,17 +181,18 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().min(1).max(300),
-        limit: z.number().min(1).max(50).default(40),
-        offset: z.number().min(0).default(0),
+        limit: z.number().int().min(1).max(50).default(40),
+        offset: z.number().int().min(0).max(9_950).default(0),
       })
     )
     .query(async ({ input }) => {
-      return searchCommonsFiles(`deepcat:"${input.category}"`, input);
+      return searchCommonsFiles(deepcatQuery(input.category), input);
     }),
 
   /**
    * Get total recursive file count for categories using deepcat: search.
-   * Batches up to 10 categories with individual queries (cached aggressively).
+   * Counts are cached for 6 hours and cache misses are fetched one at a time; the rest are skipped once
+   * Commons rate limits us. A category whose count could not be fetched is left out of the result (never reported as 0) and is not cached.
    */
   getCategoryTotalCounts: commonsProcedure
     .input(
@@ -168,23 +202,41 @@ export const commonsRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const results: Record<string, number> = {};
+      const missing: string[] = [];
 
-      // Run in parallel for speed
-      await Promise.all(
-        input.categories.map(async (cat) => {
+      for (const cat of new Set(input.categories)) {
+        const cached = categoryCountCache.get(cat);
+        if (cached !== undefined) results[cat] = cached;
+        else missing.push(cat);
+      }
+
+      // A small worker pool: Wikimedia's search is the expensive endpoint, so never fan out all 25 at once.
+      let next = 0;
+      let rateLimited = false;
+      const worker = async () => {
+        while (next < missing.length && !rateLimited) {
+          const cat = missing[next++]!;
           try {
             const data = await commonsApiFetch({
               action: "query",
               list: "search",
-              srsearch: `deepcat:"${cat}"`,
+              srsearch: deepcatQuery(cat),
               srnamespace: 6,
               srlimit: 0,
             });
-            results[cat] = data?.query?.searchinfo?.totalhits ?? 0;
-          } catch {
-            results[cat] = 0;
+            const total = data?.query?.searchinfo?.totalhits;
+            if (typeof total !== "number") continue;
+            categoryCountCache.set(cat, total);
+            results[cat] = total;
+          } catch (error) {
+            if (error instanceof TRPCError && error.code === "TOO_MANY_REQUESTS")
+              rateLimited = true;
+            console.error("[Commons Router] Failed to fetch category count:", cat, error);
           }
-        })
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(CATEGORY_COUNT_CONCURRENCY, missing.length) }, worker)
       );
 
       return results;
@@ -197,7 +249,7 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().min(1).max(300),
-        limit: z.number().min(1).max(200).default(50),
+        limit: z.number().int().min(1).max(200).default(50),
       })
     )
     .query(async ({ input }) => {
@@ -224,7 +276,7 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         prefix: z.string().min(1).max(200),
-        limit: z.number().min(1).max(30).default(15),
+        limit: z.number().int().min(1).max(30).default(15),
       })
     )
     .query(async ({ input }) => {
@@ -271,8 +323,7 @@ export const commonsRouter = createTRPCRouter({
             action: "query",
             titles: titlesToFetch.join("|"),
             prop: "imageinfo",
-            iiprop: "url|extmetadata|size|mime",
-            iiurlwidth: 300,
+            ...IMAGE_INFO_PARAMS,
           });
 
           const fetchedImages = parseImagePages(data);
@@ -291,13 +342,8 @@ export const commonsRouter = createTRPCRouter({
             }
           }
         } catch (error) {
+          // A transient failure must not look like "no such file": cache nothing so the next call retries.
           console.error("[Commons Router] Failed to fetch image info batch from Commons:", error);
-          for (const rawTitle of titlesToFetch) {
-            const normTitle = normalizeTitle(rawTitle);
-            if (!imageInfoCache.has(normTitle)) {
-              imageInfoCache.set(normTitle, null, CACHE_MISS_TTL_MS);
-            }
-          }
         }
       }
 

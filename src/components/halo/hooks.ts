@@ -547,8 +547,9 @@ export function useDynamicIslandState() {
         shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
       }
 
-      // Escape to close
-      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused) {
+      // Escape to close. Only claim the event when Halo has something to close, so that other
+      // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
+      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused && mode !== "compact") {
         e.preventDefault();
         if (mode === "search" && searchQuery) {
           setSearchQuery("");
