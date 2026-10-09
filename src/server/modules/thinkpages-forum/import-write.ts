@@ -2,7 +2,9 @@
  * The XenForo importer's writes (phase 4): archive categories, then one transaction per thread (the thread when new,
  * its posts in chunks with `skipDuplicates`, the action-link remap, the recount under the thread lock), then the
  * author relink and the applied node map. Idempotent: a rerun plans only what is missing, and a thread interrupted
- * mid-write rolled back whole, so it is written again in full. No activity feed, notification or mod-log rows.
+ * mid-write rolled back whole, so it is written again in full. A thread that fails is recorded and the run goes on
+ * (M19): its transaction rolled it back, and the bridge pass, the relink and the node map still run. No activity
+ * feed, notification or mod-log rows.
  */
 import type { Prisma } from "@prisma/client";
 import { countActionTokens } from "~/lib/action-links";
@@ -244,6 +246,12 @@ export async function remapBridgeLinks(db: LinkDb): Promise<BridgeRemap> {
   }
 }
 
+/** A thread whose write threw (its transaction rolled back); a rerun retries it. */
+export interface ThreadFailure {
+  xenforoThreadId: number;
+  error: string;
+}
+
 export interface ApplyTotals {
   categoriesCreated: number;
   threadsCreated: number;
@@ -253,11 +261,21 @@ export interface ApplyTotals {
   linksRemapped: number;
   bridgeLinks: BridgeRemap;
   relinked: { threads: number; posts: number };
+  failedThreads: ThreadFailure[];
+}
+
+function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
+  if (write.threadCreated) totals.threadsCreated += 1;
+  else totals.threadsResumed += 1;
+  totals.postsCreated += write.postsCreated;
+  totals.postsPresent += write.postsPresent;
+  totals.linksRemapped += write.linksRemapped;
 }
 
 /**
  * --apply: categories, every planned thread, the bridge link pass, the relink pass, the applied node map.
- * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run).
+ * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
+ * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
  */
 export async function applyImport(
   db: ImportDb,
@@ -275,15 +293,20 @@ export async function applyImport(
     linksRemapped: 0,
     bridgeLinks: { remapped: 0, twins: 0 },
     relinked: { threads: 0, posts: 0 },
+    failedThreads: [],
   };
   for (const [index, planned] of plan.threads.entries()) {
     if (index % PROGRESS_EVERY === 0) await assertImportLock(db);
-    const write = await writeThread(db, planned, categoryIdOf(planned.categoryRef, ids));
-    if (write.threadCreated) totals.threadsCreated += 1;
-    else totals.threadsResumed += 1;
-    totals.postsCreated += write.postsCreated;
-    totals.postsPresent += write.postsPresent;
-    totals.linksRemapped += write.linksRemapped;
+    try {
+      addWrite(totals, await writeThread(db, planned, categoryIdOf(planned.categoryRef, ids)));
+    } catch (error) {
+      const failure = {
+        xenforoThreadId: planned.xenforoThreadId,
+        error: error instanceof Error ? error.message : String(error),
+      };
+      totals.failedThreads.push(failure);
+      log(`  thread ${failure.xenforoThreadId} failed and was rolled back: ${failure.error}`);
+    }
     if ((index + 1) % PROGRESS_EVERY === 0)
       log(`  ${index + 1}/${plan.threads.length} threads written`);
   }

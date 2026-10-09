@@ -14,7 +14,9 @@
  * --apply also refuses on BLOCKING lines (unknown states, staff-like titles placed public by title or default), and
  * on any Forum node without an explicit node map entry (--accept-unmapped, alias --accept-defaults, accepts those).
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
- * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`).
+ * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`). A thread that
+ * fails is rolled back alone and listed, and the run goes on.
+ * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed).
  */
 import "../lib/load-runner-env";
 import { constants } from "node:fs";
@@ -184,7 +186,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
     log: console.log,
   });
   print(applyTotalLines(totals));
-  return 0;
+  return totals.failedThreads.length ? 1 : 0;
 }
 
 const argv = process.argv.slice(2);

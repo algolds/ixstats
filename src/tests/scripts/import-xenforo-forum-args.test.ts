@@ -16,6 +16,7 @@ import {
   attachmentPlanLines,
   attachmentResultLines,
   diskRefusal,
+  failedThreadLines,
   omittedByReason,
   redirectOnRefusal,
   rollbackPreviewLines,
@@ -220,6 +221,22 @@ describe("rollback lines (I2)", () => {
       "The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- off"
     );
     expect(redirectOnRefusal(true)).toMatch(/forum:legacy-redirect -- --production off$/);
+  });
+});
+
+describe("failedThreadLines (M19)", () => {
+  it("lists the XenForo ids of the threads that failed, with their errors", () => {
+    expect(failedThreadLines([])).toEqual([]);
+    expect(
+      failedThreadLines([
+        { xenforoThreadId: 101, error: "timeout" },
+        { xenforoThreadId: 205, error: "unique" },
+      ])
+    ).toEqual([
+      "FAILED: 2 threads were rolled back and not imported; XenForo thread ids: 101, 205",
+      "  thread 101: timeout",
+      "  thread 205: unique",
+    ]);
   });
 });
 

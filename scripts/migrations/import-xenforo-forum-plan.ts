@@ -162,6 +162,16 @@ export function applyTotalLines(totals: ApplyTotals): string[] {
     `  posts: ${totals.postsCreated} created, ${totals.postsPresent} already present`,
     `  action links remapped: ${totals.linksRemapped} with their posts, ${totals.bridgeLinks.remapped} made by the bridge since (${totals.bridgeLinks.twins} already on the native post)`,
     `  authors relinked: ${totals.relinked.threads} threads, ${totals.relinked.posts} posts`,
+    ...failedThreadLines(totals.failedThreads),
+  ];
+}
+
+/** M19: threads whose write failed (rolled back; a rerun retries them), with the first error of each. */
+export function failedThreadLines(failed: ApplyTotals["failedThreads"]): string[] {
+  if (!failed.length) return [];
+  return [
+    `FAILED: ${failed.length} threads were rolled back and not imported; XenForo thread ids: ${ids(failed.map((f) => f.xenforoThreadId))}`,
+    ...failed.slice(0, SHOW_IDS).map((f) => `  thread ${f.xenforoThreadId}: ${f.error}`),
   ];
 }
 

@@ -82,8 +82,31 @@ describe("the XenForo import applied to the small snapshot", () => {
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
       relinked: { threads: 0, posts: 0 },
+      failedThreads: [],
     });
     expect(imported(store.tables())).toEqual(before);
+  });
+
+  it("records a failing thread, rolls back only that thread and still runs the passes after it (M19)", async () => {
+    const store = importStore(seed(), {
+      failWhen: (table, method, args) => {
+        if (table !== "threads" || method !== "update") return false;
+        return store.tables().threads.find((t) => t.id === args.where?.id)?.xenforoThreadId === 101;
+      },
+    });
+    const { totals } = await runImport(store.db as never, snapshot);
+    expect(totals.failedThreads).toEqual([
+      { xenforoThreadId: 101, error: "injected failure: threads.update" },
+    ]);
+    expect(totals).toMatchObject({ threadsCreated: 2, linksRemapped: 1 });
+    expect(
+      store
+        .tables()
+        .threads.map((t) => t.xenforoThreadId)
+        .sort()
+    ).toEqual([100, 103]);
+    expect(store.tables().posts.some((p) => p.xenforoPostId === 1010)).toBe(false);
+    expect(store.tables().configs.map((c) => c.key)).toEqual(["forum_import_node_map"]);
   });
 
   it("finishes a thread interrupted mid-write on the rerun, ending as one clean run would", async () => {
@@ -101,10 +124,11 @@ describe("the XenForo import applied to the small snapshot", () => {
         return true;
       },
     });
-    await expect(runImport(store.db as never, snapshot)).rejects.toThrow(/injected/);
-    expect(store.tables().threads.map((t) => t.xenforoThreadId)).toEqual([100]);
+    const first = await runImport(store.db as never, snapshot);
+    expect(first.totals.failedThreads.map((f) => f.xenforoThreadId)).toEqual([101]);
+    expect(store.tables().threads.map((t) => t.xenforoThreadId)).toEqual([100, 103]);
     const rerun = await runImport(store.db as never, snapshot);
-    expect(rerun.totals).toMatchObject({ threadsCreated: 2, postsCreated: 4 });
+    expect(rerun.totals).toMatchObject({ threadsCreated: 1, postsCreated: 2, failedThreads: [] });
     expect(imported(store.tables())).toEqual(imported(clean.tables()));
   });
 
