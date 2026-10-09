@@ -127,7 +127,7 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("folds ThinkPages into Home under ThinkTanks, emerald-tinted", () => {
+  it("lists ThinkPages (the forum) and ThinkTanks under Home, both emerald-tinted", () => {
     expect(APPS.map((app) => app.id)).not.toContain("thinkpages");
     const home = getApp("home");
     expect(home.sections.map((s) => s.label)).toEqual([
@@ -136,29 +136,29 @@ describe("app section map routes", () => {
       "Accounts",
       "Messages",
       "ThinkTanks",
-      "Forum",
+      "ThinkPages",
     ]);
-    expect(home.sections.find((s) => s.label === "ThinkTanks")).toMatchObject({
-      href: "/thinktanks",
+    const thinktanks = home.sections.find((s) => s.label === "ThinkTanks");
+    expect(thinktanks).toMatchObject({ id: "thinktanks", href: "/thinktanks", tint: "thinkpages" });
+    expect(thinktanks?.match).toBeUndefined();
+    expect(home.sections.find((s) => s.label === "ThinkPages")).toMatchObject({
+      id: "thinkpages",
+      href: "/thinkpages",
       tint: "thinkpages",
     });
-    expect(home.sections.find((s) => s.label === "Forum")).toMatchObject({
-      href: "/thinkpages/forum",
-      tint: "thinkpages",
-    });
+    expect(home.sections.some((s) => s.id === "forum")).toBe(false);
   });
 
   it.each([
-    ["/thinkpages", "thinktanks"],
-    ["/thinkpages/post/abc", "thinktanks"],
-    ["/thinkpages/profile/someone", "thinktanks"],
+    ["/thinkpages", "thinkpages"],
+    ["/thinkpages/post/abc", "thinkpages"],
+    ["/thinkpages/forum", "thinkpages"],
+    ["/thinkpages/c/general", "thinkpages"],
+    ["/thinkpages/t/abc", "thinkpages"],
+    ["/thinkpages/r/eurth/hub", "thinkpages"],
+    ["/thinkpages/mod", "thinkpages"],
     ["/thinktanks", "thinktanks"],
     ["/thinktanks/abc", "thinktanks"],
-    ["/thinkpages/forum", "forum"],
-    ["/thinkpages/c/general", "forum"],
-    ["/thinkpages/t/abc", "forum"],
-    ["/thinkpages/r/eurth/hub", "forum"],
-    ["/thinkpages/mod", "forum"],
   ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
     const home = getAppForPath(pathname);
     expect(home?.id).toBe("home");

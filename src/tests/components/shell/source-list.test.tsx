@@ -128,7 +128,10 @@ describe("SourceList", () => {
     expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/dashboard");
     expect(within(nav).getByRole("link", { name: "Messages" })).toBeVisible();
     expect(within(nav).getByRole("link", { name: "ThinkTanks" })).toBeVisible();
-    expect(within(nav).queryByRole("link", { name: "ThinkPages" })).toBeNull();
+    expect(within(nav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+      "href",
+      "/thinkpages"
+    );
   });
 
   it("shows the messages unread count on the Messages row", () => {
@@ -345,11 +348,25 @@ describe("SourceList external sections", () => {
 describe("SourceList section tint", () => {
   afterEach(cleanup);
 
-  it("scopes a section's own tint on its row, so Home's tint does not recolour ThinkTanks", () => {
+  it.each([
+    ["/thinkpages", "ThinkPages"],
+    ["/thinkpages/t/abc", "ThinkPages"],
+    ["/thinktanks", "ThinkTanks"],
+  ])(
+    "scopes a section's own tint on its row on %s, so Home's tint does not recolour %s",
+    (pathname, label) => {
+      const { nav } = setup(pathname);
+      const row = within(nav).getByRole("link", { name: label });
+      expect(row).toHaveAttribute("aria-current", "page");
+      expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
+    }
+  );
+
+  it("no longer marks ThinkTanks current on the forum home", () => {
     const { nav } = setup("/thinkpages");
-    const row = within(nav).getByRole("link", { name: "ThinkTanks" });
-    expect(row).toHaveAttribute("aria-current", "page");
-    expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
+    expect(within(nav).getByRole("link", { name: "ThinkTanks" })).not.toHaveAttribute(
+      "aria-current"
+    );
   });
 
   it("leaves rows without a section tint to inherit the app's (MyLeague wears Labs')", () => {

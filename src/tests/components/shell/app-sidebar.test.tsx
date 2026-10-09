@@ -49,13 +49,16 @@ describe("AppSidebar", () => {
     );
   });
 
-  it("uses the section tint (ThinkPages is its own colour under Home)", () => {
-    const { container } = renderSidebar({ pathname: "/thinkpages" });
-    expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
-      "data-app",
-      "thinkpages"
-    );
-  });
+  it.each(["/thinkpages", "/thinkpages/t/abc"])(
+    "uses the section tint on %s (ThinkPages is its own colour under Home)",
+    (pathname) => {
+      const { container } = renderSidebar({ pathname });
+      expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
+        "data-app",
+        "thinkpages"
+      );
+    }
+  );
 
   it("shows the account slot and has no app switcher", () => {
     renderSidebar();
@@ -131,7 +134,10 @@ describe("AppSidebar", () => {
       const messages = within(rail()).getByRole("link", { name: "Messages, 3 unread" });
       expect(messages).toHaveTextContent("3");
       expect(within(rail()).getByRole("link", { name: "ThinkTanks" })).toBeInTheDocument();
-      expect(within(rail()).queryByRole("link", { name: "ThinkPages" })).toBeNull();
+      expect(within(rail()).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+        "href",
+        "/thinkpages"
+      );
       expect(within(rail()).queryByRole("link", { name: "What's new" })).toBeNull();
     });
 
