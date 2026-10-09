@@ -1,6 +1,6 @@
 /**
- * Realms as places: the realm directory (/realms) and each realm's board (/r/[realm]/board), the
- * NationStates regional message board built on the ThinkTank primitive (see thinktanks/realm-board.ts).
+ * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section
+ * (the realm board page is gone; /r/[realm]/board redirects to the forum).
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -11,12 +11,11 @@ import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   ensureRealmBoard,
   getRealmBoardAccess,
-  groupPostTag,
   syncRealmBoardMembers,
 } from "~/server/shared/realm-board";
 
-/** How far back "board activity" in the directory looks. */
-const BOARD_ACTIVITY_WINDOW_DAYS = 7;
+/** How far back "forum activity" in the directory looks. */
+const FORUM_ACTIVITY_WINDOW_DAYS = 7;
 
 /** How many nations a nation search returns at most. */
 export const NATION_SEARCH_LIMIT = 20;
@@ -45,7 +44,27 @@ async function unclaimedNationPages<P extends NationPage>(
   return pages.filter((page) => !taken(page));
 }
 
-/** Open realms with their nation counts, board activity and the viewer's own holdings. */
+/**
+ * Activity in a realm's forum section since `since`: posts made and the latest thread activity. Public categories
+ * only (the directory is open to everyone) and nothing hidden.
+ */
+async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
+  const inSection = {
+    hidden: false,
+    category: { scope: "realm", realmId, visibility: "public" },
+  };
+  const [recentPosts, latest] = await Promise.all([
+    db.forumPost.count({ where: { hidden: false, createdAt: { gte: since }, thread: inSection } }),
+    db.forumThread.findFirst({
+      where: inSection,
+      orderBy: { lastPostAt: "desc" },
+      select: { lastPostAt: true },
+    }),
+  ]);
+  return { recentPosts, lastPostAt: latest?.lastPostAt ?? null };
+}
+
+/** Open realms with their nation counts, forum activity and the viewer's own holdings. */
 export async function listRealmDirectory(db: PrismaClient, viewerUserId: string | null) {
   const realms = await db.realm.findMany({
     where: DIRECTORY_REALM_WHERE,
@@ -67,7 +86,7 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const realmIds = realms.map((r) => r.id);
   if (realmIds.length === 0) return [];
 
-  const [unclaimed, mine, boards, nationPages] = await Promise.all([
+  const [unclaimed, mine, nationPages] = await Promise.all([
     db.country.groupBy({
       by: ["realmId"],
       where: { realmId: { in: realmIds }, ownerUserId: null },
@@ -80,10 +99,6 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
           _count: { _all: true },
         })
       : Promise.resolve([]),
-    db.realmBoard.findMany({
-      where: { realmId: { in: realmIds } },
-      select: { realmId: true, groupId: true },
-    }),
     db.realmPage.findMany({
       where: { realmId: { in: realmIds }, kind: "nation" },
       select: { realmId: true, title: true, wikiSource: true },
@@ -93,41 +108,26 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   for (const page of await unclaimedNationPages(db, nationPages))
     claimablePages.set(page.realmId, (claimablePages.get(page.realmId) ?? 0) + 1);
 
-  const since = new Date(Date.now() - BOARD_ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const activity = new Map(
-    await Promise.all(
-      boards.map(async (board) => {
-        const onBoard = { hashtags: { contains: `"${groupPostTag(board.groupId)}"` } };
-        // Board posts carry an IxTime stamp; activity is measured on the real-time createdAt.
-        const [recentPosts, latest] = await Promise.all([
-          db.thinkpagesPost.count({ where: { ...onBoard, createdAt: { gte: since } } }),
-          db.thinkpagesPost.findFirst({
-            where: onBoard,
-            orderBy: { createdAt: "desc" },
-            select: { createdAt: true },
-          }),
-        ]);
-        return [board.realmId, { recentPosts, lastPostAt: latest?.createdAt ?? null }] as const;
-      })
-    )
-  );
+  const since = new Date(Date.now() - FORUM_ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const countBy = (rows: Array<{ realmId: string; _count: { _all: number } }>) =>
     new Map(rows.map((row) => [row.realmId, row._count._all]));
   const unclaimedBy = countBy(unclaimed);
   const mineBy = countBy(mine);
 
-  return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }) => ({
-    ...realm,
-    foundedAt: foundedAt ?? createdAt,
-    nationCount: _count.countries,
-    openNationCount: unclaimedBy.get(realm.id) ?? 0,
-    /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
-    openNationPageCount: claimablePages.get(realm.id) ?? 0,
-    myNationCount: mineBy.get(realm.id) ?? 0,
-    maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
-    /** Null until someone opens the board for the first time. */
-    board: activity.get(realm.id) ?? null,
-  }));
+  return Promise.all(
+    realms.map(async ({ settings, _count, foundedAt, createdAt, ...realm }) => ({
+      ...realm,
+      foundedAt: foundedAt ?? createdAt,
+      nationCount: _count.countries,
+      openNationCount: unclaimedBy.get(realm.id) ?? 0,
+      /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
+      openNationPageCount: claimablePages.get(realm.id) ?? 0,
+      myNationCount: mineBy.get(realm.id) ?? 0,
+      maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
+      /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
+      board: await forumActivity(db, realm.id, since),
+    }))
+  );
 }
 
 /**

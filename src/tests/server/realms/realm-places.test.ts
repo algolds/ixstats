@@ -188,7 +188,7 @@ describe("realms.getBoard", () => {
 });
 
 describe("realms.directory", () => {
-  it("lists open realms with nation counts, the viewer's holdings and board activity", async () => {
+  it("lists open realms with nation counts, the viewer's holdings and forum activity", async () => {
     const db = makeDb({ boardExists: true });
     const lastPostAt = new Date("2026-09-29T12:00:00Z");
     db.realm.findMany.mockResolvedValue([
@@ -216,15 +216,30 @@ describe("realms.directory", () => {
         ? [{ realmId: "eurth", _count: { _all: 2 } }]
         : [{ realmId: "eurth", _count: { _all: 1 } }]
     );
-    db.realmBoard.findMany.mockResolvedValue([{ realmId: "eurth", groupId: "board1" }]);
-    db.thinkpagesPost.count.mockResolvedValue(5);
-    db.thinkpagesPost.findFirst.mockResolvedValue({ createdAt: lastPostAt });
+    db.forumPost.count.mockImplementation(async ({ where }: any) =>
+      where.thread.category.realmId === "eurth" ? 5 : 0
+    );
+    db.forumThread.findFirst.mockImplementation(async ({ where }: any) =>
+      where.category.realmId === "eurth" ? { lastPostAt } : null
+    );
 
     const rows = await callerAs(OWNER, db).directory();
 
     expect(db.realm.findMany.mock.calls[0]![0].where).toEqual(DIRECTORY_REALM_WHERE);
-    expect(db.thinkpagesPost.count.mock.calls[0]![0].where.hashtags).toEqual({
-      contains: '"group:board1"',
+    const counted = db.forumPost.count.mock.calls[0]![0].where;
+    expect(counted.thread).toEqual({
+      hidden: false,
+      category: { scope: "realm", realmId: "eurth", visibility: "public" },
+    });
+    expect(counted.hidden).toBe(false);
+    expect(counted.createdAt.gte).toBeInstanceOf(Date);
+    expect(db.forumThread.findFirst).toHaveBeenCalledWith({
+      where: {
+        hidden: false,
+        category: { scope: "realm", realmId: "eurth", visibility: "public" },
+      },
+      orderBy: { lastPostAt: "desc" },
+      select: { lastPostAt: true },
     });
     expect(rows).toEqual([
       expect.objectContaining({
@@ -241,9 +256,10 @@ describe("realms.directory", () => {
         openNationCount: 0,
         myNationCount: 0,
         maxNationsPerUser: 1,
-        board: null,
+        board: { recentPosts: 0, lastPostAt: null },
       }),
     ]);
+    expect(db.realmBoard.findMany).not.toHaveBeenCalled();
     expect(rows[0]).not.toHaveProperty("settings");
   });
 });

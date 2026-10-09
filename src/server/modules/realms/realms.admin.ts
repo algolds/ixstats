@@ -10,14 +10,15 @@ import { RealmRegionError } from "./realms.region";
 
 type AdminDb = Pick<
   PrismaClient,
-  "realm" | "mapLayer" | "realmBoard" | "thinktankGroup" | "$transaction"
+  "realm" | "mapLayer" | "realmBoard" | "thinktankGroup" | "forumCategory" | "$transaction"
 >;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * Delete an empty realm, confirmed by typing its slug. Its claims, lore index, officers, embassies, board
- * restrictions and polls go with it (cascade); its board group is deactivated and unmapped.
+ * restrictions and polls go with it (cascade); its board group is deactivated and unmapped, and its forum
+ * categories are deleted (their threads and posts cascade). An empty realm can only have been posted in by staff.
  */
 export async function deleteRealm(
   db: AdminDb,
@@ -63,6 +64,17 @@ export async function deleteRealm(
       });
       await tx.realmBoard.delete({ where: { realmId: realm.id } });
     }
+    // Action links key posts by ref with no foreign key, so they are cleared before the posts cascade away.
+    const posts = await tx.forumPost.findMany({
+      where: { thread: { category: { scope: "realm", realmId: realm.id } } },
+      select: { id: true },
+    });
+    if (posts.length > 0) {
+      await tx.postActionLink.deleteMany({
+        where: { postSource: "native", postRef: { in: posts.map((p) => p.id) } },
+      });
+    }
+    await tx.forumCategory.deleteMany({ where: { scope: "realm", realmId: realm.id } });
     await tx.realm.delete({ where: { id: realm.id } });
   });
   return { success: true, slug: realm.slug };

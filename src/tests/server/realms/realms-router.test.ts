@@ -469,9 +469,11 @@ describe("realms.adminCreateRealm", () => {
   const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
   const member = { id: "db_member", clerkUserId: "member_1", role: { name: "user", level: 100 } };
 
+  const createMany = jest.fn().mockResolvedValue({ count: 3 });
+
   function adminCaller(create: jest.Mock, user = admin) {
     const ctx = createMockRouterContext({
-      db: { realm: { create }, auditLog: { create: jest.fn() } },
+      db: { realm: { create }, forumCategory: { createMany }, auditLog: { create: jest.fn() } },
       auth: { userId: user.clerkUserId },
       user,
     });
@@ -513,6 +515,18 @@ describe("realms.adminCreateRealm", () => {
         status: "active",
       },
     });
+  });
+
+  it("seeds the new realm's forum categories", async () => {
+    createMany.mockClear();
+    const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
+    await adminCaller(create).adminCreateRealm({ slug: "eurth", name: "Eurth", visibility: "public" });
+    expect(createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skipDuplicates: true,
+        data: expect.arrayContaining([expect.objectContaining({ scope: "realm", realmId: "r1", key: "hub" })]),
+      })
+    );
   });
 
   it.each(["Eurth", "e", "a".repeat(41), "eu rth", "eurth!", "eurth_2"])(

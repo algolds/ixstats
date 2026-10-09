@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   createThread,
   editPost,
@@ -28,6 +28,29 @@ const categories = SITE_CATEGORIES.map((c, i) => ({
   order: i,
 }));
 const byKey = (key: string) => categories.find((c) => c.key === key)!;
+const realmCategories = REALM_CATEGORIES.map((c) => ({
+  id: `rcat_${c.key}`,
+  scope: "realm",
+  realmId: "r_eurth",
+  visibility: "public",
+  postRole: "any",
+  ...c,
+}));
+const realmCategory = (key: string) => realmCategories.find((c) => c.key === key)!;
+const allCategories = [...categories, ...realmCategories];
+
+const realmRows = [
+  { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" },
+  { id: "r_draft", slug: "draft-land", name: "Draft Land", status: "draft", ownerId: "founder" },
+];
+
+interface RealmBan {
+  countryId: string;
+  kind: string;
+  until: Date | null;
+  reason: string | null;
+  createdAt: Date;
+}
 
 interface PostUpdate {
   contentHtml: string;
@@ -41,6 +64,9 @@ interface Opts {
   persona?: object | null;
   activities?: Array<{ id: string; countryId: string; visibility: string }>;
   chainedLinks?: number;
+  /** Nations each user id owns (any realm the fake is asked about). */
+  owned?: Record<string, string[]>;
+  bans?: RealmBan[];
 }
 
 function writeDb(opts: Opts = {}) {
@@ -60,10 +86,30 @@ function writeDb(opts: Opts = {}) {
   const db = {
     forumCategory: {
       findFirst: jest.fn(
-        async ({ where }: { where: { key: string } }) =>
-          categories.find((c) => c.key === where.key) ?? null
+        async ({ where }: { where: { scope: string; realmId: string | null; key: string } }) =>
+          allCategories.find(
+            (c) => c.scope === where.scope && c.realmId === where.realmId && c.key === where.key
+          ) ?? null
       ),
     },
+    realm: {
+      findUnique: jest.fn(
+        async ({ where }: { where: { slug?: string; id?: string } }) =>
+          realmRows.find((r) => (where.slug ? r.slug === where.slug : r.id === where.id)) ?? null
+      ),
+    },
+    country: {
+      findMany: jest.fn(async ({ where }: { where: { ownerUserId: string } }) =>
+        (opts.owned?.[where.ownerUserId] ?? []).map((id) => ({ id }))
+      ),
+    },
+    realmOfficer: {
+      findMany: jest.fn(async ({ where }: { where: { userId: string } }) =>
+        where.userId === "officer" ? [{ userId: "officer", powers: ["board"] }] : []
+      ),
+    },
+    realmBoardBan: { findMany: jest.fn(async () => opts.bans ?? []) },
+    realmClaim: { findMany: jest.fn(async () => []) },
     forumThread: { findUnique: jest.fn(async () => opts.thread ?? null) },
     forumPost: {
       findUnique: jest.fn(async () => opts.post ?? null),
@@ -519,6 +565,187 @@ describe("editPost", () => {
       editPost(db as never, user, { postId: "p1", html: "<p></p>" })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
+    });
+  });
+});
+
+describe("realm sections", () => {
+  const owner = {
+    id: "u_owner",
+    clerkUserId: "owner",
+    countryId: "c_eurth",
+    role: { name: "user", level: 100 },
+  };
+  const officer = {
+    id: "u_officer",
+    clerkUserId: "officer",
+    countryId: null,
+    role: { name: "user", level: 100 },
+  };
+  const OWNS = { u_owner: ["c_eurth"] };
+  const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
+  const mute = {
+    countryId: "c_eurth",
+    kind: "mute",
+    until: day("2026-10-20"),
+    reason: "Cool off",
+    createdAt: day("2026-10-01"),
+  };
+  const ban = { ...mute, kind: "ban", until: null, reason: null };
+  const BANNED = "Your nation is banned from this board until a moderator lifts it";
+  const IN_HUB = { ...NEW_THREAD, categoryKey: "hub", realm: "eurth" };
+
+  const realmThread = (key: string, extra: object = {}) => ({
+    ...threadIn("general"),
+    categoryId: `rcat_${key}`,
+    category: realmCategory(key),
+    ...extra,
+  });
+  const realmPost = (authorUserId: string, realmId = "r_eurth") =>
+    postBy(authorUserId, {
+      thread: {
+        hidden: false,
+        locked: false,
+        archived: false,
+        category: { visibility: "public", postRole: "any", scope: "realm", realmId },
+      },
+    });
+
+  describe("createThread", () => {
+    it("writes into the realm's category for the owner of a nation there", async () => {
+      const { db, tx } = writeDb({ owned: OWNS });
+      await expect(createThread(db as never, owner, IN_HUB)).resolves.toEqual({
+        threadId: "t_new",
+        postId: "p_new",
+      });
+      expect(db.forumCategory.findFirst).toHaveBeenCalledWith({
+        where: { scope: "realm", realmId: "r_eurth", key: "hub" },
+      });
+      expect(tx.forumThread.create.mock.calls[0]![0].data).toMatchObject({
+        categoryId: "rcat_hub",
+      });
+    });
+
+    it("refuses a user with no nation in the realm, with the realm's notice", async () => {
+      const { db } = writeDb({ owned: OWNS });
+      await expect(createThread(db as never, user, IN_HUB)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: "Only owners of a nation in Eurth can post here.",
+      });
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("refuses a muted owner with the mute message", async () => {
+      const { db } = writeDb({ owned: OWNS, bans: [mute] });
+      await expect(createThread(db as never, owner, IN_HUB)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: "Your nation is muted on this board until 2026-10-20: Cool off",
+      });
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("lets an officer with the board power and a site admin start threads without a nation", async () => {
+      for (const actor of [officer, admin]) {
+        const { db } = writeDb({ owned: OWNS });
+        await expect(createThread(db as never, actor, IN_HUB)).resolves.toEqual({
+          threadId: "t_new",
+          postId: "p_new",
+        });
+      }
+    });
+
+    it("reads a draft realm's category as not found for a plain user", async () => {
+      const { db } = writeDb({ owned: { u_p: ["c_d"] } });
+      await expect(
+        createThread(db as never, user, { ...IN_HUB, realm: "draft-land" })
+      ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Category not found." });
+      expect(db.forumCategory.findFirst).not.toHaveBeenCalled();
+    });
+
+    it("accepts the actor's persona in Character Threads (P9) and refuses it in the Hub", async () => {
+      const ic = writeDb({ owned: OWNS, persona: { id: "pa1" } });
+      await createThread(ic.db as never, owner, {
+        ...IN_HUB,
+        categoryKey: "character-threads",
+        personaId: "pa1",
+      });
+      expect(ic.tx.forumThread.create.mock.calls[0]![0].data).toMatchObject({
+        categoryId: "rcat_character-threads",
+        authorPersonaId: "pa1",
+      });
+      const hub = writeDb({ owned: OWNS, persona: { id: "pa1" } });
+      await expect(
+        createThread(hub.db as never, owner, { ...IN_HUB, personaId: "pa1" })
+      ).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: "This category does not allow in-character posts.",
+      });
+    });
+
+    it("never reads a realm for a sitewide category", async () => {
+      const { db } = writeDb();
+      await createThread(db as never, user, NEW_THREAD);
+      expect(db.realm.findUnique).not.toHaveBeenCalled();
+      expect(db.country.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("replyToThread", () => {
+    const reply = { threadId: "t1", html: "<p>Hi</p>" };
+
+    it("refuses a banned owner", async () => {
+      const { db } = writeDb({ thread: realmThread("hub"), owned: OWNS, bans: [ban] });
+      await expect(replyToThread(db as never, owner, reply)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: BANNED,
+      });
+      expect(db.$transaction).not.toHaveBeenCalled();
+    });
+
+    it("lets a moderator reply, whatever the bans", async () => {
+      const { db } = writeDb({ thread: realmThread("hub"), bans: [ban] });
+      await expect(replyToThread(db as never, officer, reply)).resolves.toEqual({
+        postId: "p_new",
+      });
+      expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
+    });
+
+    it("reads a thread in a draft realm as not found", async () => {
+      const thread = realmThread("hub", {
+        category: { ...realmCategory("hub"), realmId: "r_draft" },
+      });
+      const { db } = writeDb({ thread, owned: { u_owner: ["c_d"] } });
+      await expect(replyToThread(db as never, owner, reply)).rejects.toMatchObject({
+        code: "NOT_FOUND",
+        message: "Thread not found.",
+      });
+    });
+  });
+
+  describe("editPost", () => {
+    const edit = { postId: "p1", html: "<p>Changed</p>" };
+
+    it("refuses a banned owner editing their own post", async () => {
+      const { db } = writeDb({ post: realmPost("u_owner"), owned: OWNS, bans: [ban] });
+      await expect(editPost(db as never, owner, edit)).rejects.toMatchObject({
+        code: "FORBIDDEN",
+        message: BANNED,
+      });
+      expect(db.forumPost.update).not.toHaveBeenCalled();
+    });
+
+    it("lets a moderator edit their own post", async () => {
+      const { db } = writeDb({ post: realmPost("u_officer"), bans: [ban] });
+      await editPost(db as never, officer, edit);
+      expect(db.forumPost.update).toHaveBeenCalled();
+    });
+
+    it("reads a post in a draft realm as not found", async () => {
+      const { db } = writeDb({ post: realmPost("u_owner", "r_draft"), owned: OWNS });
+      await expect(editPost(db as never, owner, edit)).rejects.toMatchObject({
+        code: "NOT_FOUND",
+        message: "Post not found.",
+      });
     });
   });
 });

@@ -1,5 +1,6 @@
 /// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
-/// section; realm sections (scope "realm") come in phase 2, moderation models in phase 3.
+/// section. Phase 2 adds realm sections (scope "realm", three categories per realm) and the archive source refs;
+/// moderation models come in phase 3.
 model ForumCategory {
   id          String        @id @default(cuid())
   scope       String        @default("site") // "site" | "realm"
@@ -34,6 +35,7 @@ model ForumThread {
   lastPostAt      DateTime      @default(now())
   createdAt       DateTime      @default(now())
   xenforoThreadId Int?          @unique
+  sourceRef       String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
   posts           ForumPost[]
 
   @@index([categoryId, pinned, lastPostAt])
@@ -53,6 +55,7 @@ model ForumPost {
   importedAuthorName String?
   createdAt          DateTime    @default(now())
   xenforoPostId      Int?        @unique
+  sourceRef          String?     @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
 
   @@index([threadId, createdAt])
   @@index([authorUserId])

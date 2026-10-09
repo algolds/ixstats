@@ -4,7 +4,8 @@
  */
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 
-export type ForumViewer = (RealmActor & { countryId: string | null }) | null;
+/** `activeRealmId`: set only by the `realms` procedure, from the viewer's primary nation (`primaryRealmIdOf`); unset elsewhere. */
+export type ForumViewer = (RealmActor & { countryId: string | null; activeRealmId?: string | null }) | null;
 
 export function canSeeCategory(viewer: ForumViewer, category: { visibility: string }): boolean {
   if (category.visibility === "public") return true;

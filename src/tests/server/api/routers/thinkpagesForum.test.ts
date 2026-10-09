@@ -12,7 +12,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => ({
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { createThread } from "~/server/modules/thinkpages-forum";
 
 const caller = (user: object | null, db: object = {}) =>
@@ -127,6 +127,44 @@ function forumDb(thread: object = {}) {
     thinkpagesAccount: { findMany: jest.fn(async () => [rawPersona]) },
   };
 }
+
+const EURTH = { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" };
+const hub = {
+  id: "rcat_hub",
+  scope: "realm",
+  realmId: "r_eurth",
+  visibility: "public",
+  postRole: "any",
+  ...REALM_CATEGORIES[0]!,
+};
+const NO_NATION = "Only owners of a nation in Eurth can post here.";
+
+/** forumDb plus a realm (Eurth) with its Hub, and the realm posting lookups; `owned` are the caller's nations. */
+function realmForumDb(owned: Array<{ id: string; realmId: string; currentTotalGdp: number }> = []) {
+  const base = forumDb({ categoryId: hub.id, category: hub });
+  base.forumCategory.findFirst.mockImplementation((async ({
+    where,
+  }: {
+    where: { scope: string };
+  }) => (where.scope === "realm" ? hub : null)) as never);
+  base.forumCategory.findMany.mockResolvedValue([hub] as never);
+  return {
+    ...base,
+    realm: {
+      findUnique: jest.fn(async () => EURTH),
+      findMany: jest.fn(async () => [EURTH]),
+    },
+    country: {
+      findMany: jest.fn(async ({ where }: { where: { realmId?: string } }) =>
+        owned.filter((c) => !where.realmId || c.realmId === where.realmId)
+      ),
+    },
+    realmOfficer: { findMany: jest.fn(async () => []) },
+    realmBoardBan: { findMany: jest.fn(async () => []) },
+    realmClaim: { findMany: jest.fn(async () => []) },
+  };
+}
+const inEurth = [{ id: "c1", realmId: "r_eurth", currentTotalGdp: 10 }];
 
 const ALLOWED_USER_FIELDS = ["name", "handle"];
 const ALLOWED_PERSONA_FIELDS = ["displayName", "username"];
@@ -307,6 +345,110 @@ describe("thinkpagesForum router", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(c.editPost({ postId: "p1", html: "x".repeat(50_001) })).rejects.toMatchObject({
       code: "BAD_REQUEST",
+    });
+  });
+
+  describe("realm sections", () => {
+    it("lists IxWorld for an anonymous visitor, with IxWorld as the default", async () => {
+      const db = { realm: { findMany: jest.fn(async () => []) } };
+      await expect(caller(null, db).realms()).resolves.toEqual({
+        defaultSlug: "ixworld",
+        realms: [{ id: "default", slug: "ixworld", name: "IxWorld" }],
+      });
+    });
+
+    it("defaults the switcher to the realm of the caller's primary nation", async () => {
+      const db = realmForumDb([
+        { id: "c_small", realmId: "r_alba", currentTotalGdp: 1 },
+        { id: "c_big", realmId: "r_eurth", currentTotalGdp: 99 },
+      ]);
+      // c1 (User.countryId) is not one of their nations, so the highest-GDP nation's realm wins.
+      expect((await caller(member, db).realms()).defaultSlug).toBe("eurth");
+      expect(db.country.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { ownerUserId: "u1" } })
+      );
+      const linked = realmForumDb([
+        { id: "c1", realmId: "default", currentTotalGdp: 1 },
+        { id: "c_big", realmId: "r_eurth", currentTotalGdp: 99 },
+      ]);
+      expect((await caller(member, linked).realms()).defaultSlug).toBe("ixworld");
+    });
+
+    it("returns a realm section with canPost and notice, never the raw posting access", async () => {
+      const out = await caller(member, realmForumDb()).realmSection({ realm: "eurth" });
+      expect(out).toMatchObject({
+        realm: { slug: "eurth", name: "Eurth" },
+        canPost: false,
+        notice: NO_NATION,
+      });
+      expect(out.categories.map((c) => c.key)).toEqual(["hub"]);
+      expect(Object.keys(out).sort()).toEqual(["canPost", "categories", "notice", "realm"]);
+      expect(JSON.stringify(out)).not.toContain("ownedCountryIds");
+      expect(JSON.stringify(out)).not.toContain("restriction");
+      const owner = await caller(member, realmForumDb(inEurth)).realmSection({ realm: "eurth" });
+      expect(owner).toMatchObject({ canPost: true, notice: null });
+    });
+
+    it("maps an unknown realm section to NOT_FOUND", async () => {
+      const db = realmForumDb();
+      db.realm.findUnique.mockResolvedValue(null as never);
+      await expect(caller(member, db).realmSection({ realm: "nowhere" })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+    });
+
+    it("reads a realm category through its locator, with canStart and the notice", async () => {
+      const db = realmForumDb();
+      const out = await caller(member, db).category({ key: "hub", page: 1, realm: "eurth" });
+      expect(db.forumCategory.findFirst).toHaveBeenCalledWith({
+        where: { scope: "realm", realmId: "r_eurth", key: "hub" },
+      });
+      expect(out).toMatchObject({ canStart: false, notice: NO_NATION });
+      expect(out.category.realm).toEqual({ slug: "eurth", name: "Eurth" });
+      const owner = await caller(member, realmForumDb(inEurth)).category({
+        key: "hub",
+        page: 1,
+        realm: "eurth",
+      });
+      expect(owner).toMatchObject({ canStart: true, notice: null });
+    });
+
+    it("gives a sitewide category no notice", async () => {
+      const out = await caller(member, forumDb()).category({ key: "general", page: 1 });
+      expect(out).toMatchObject({ canStart: true, notice: null });
+    });
+
+    it("offers reply and Edit in a realm thread only to those who may post there", async () => {
+      const outsider = await caller(member, realmForumDb()).thread({ threadId: "t1", page: 1 });
+      expect(outsider.canReply).toBe(false);
+      expect(outsider.posts.map((p) => p.isOwn)).toEqual([false, false]);
+      const owner = await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 });
+      expect(owner.canReply).toBe(true);
+      expect(owner.posts.map((p) => p.isOwn)).toEqual([true, false]);
+    });
+
+    it("forwards the realm when starting a thread, and bounds it", async () => {
+      await caller(member).createThread({
+        categoryKey: "hub",
+        realm: "eurth",
+        title: "Hello there",
+        html: "<p>x</p>",
+      });
+      expect(createThread).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ categoryKey: "hub", realm: "eurth" })
+      );
+      const c = caller(member, realmForumDb());
+      await expect(
+        c.createThread({ categoryKey: "hub", realm: "x".repeat(101), title: "Hi there", html: "x" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(c.category({ key: "hub", page: 1, realm: "" })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      await expect(c.realmSection({ realm: "x".repeat(101) })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
     });
   });
 });

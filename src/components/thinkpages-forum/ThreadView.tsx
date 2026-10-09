@@ -6,8 +6,10 @@ import { Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
+import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api } from "~/trpc/react";
+import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
 import { Pagination, useLastPageRedirect } from "./Pagination";
@@ -37,7 +39,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
     threadId,
     page,
   });
-  const basePath = `/thinkpages/t/${threadId}`;
+  const basePath = threadHref(threadId);
   const totalPages = pageCount(data?.total ?? 0, POSTS_PER_PAGE);
   const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   const posts = data?.posts ?? NO_POSTS;
@@ -54,6 +56,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
       await utils.thinkpagesForum.thread.invalidate({ threadId });
       void utils.thinkpagesForum.category.invalidate();
       void utils.thinkpagesForum.categories.invalidate();
+      void utils.thinkpagesForum.realmSection.invalidate();
       // The reply is the thread's last post; ask where that is rather than guessing the page.
       const at = await utils.thinkpagesForum.resolvePost.fetch({ postId }).catch(() => null);
       const target = at?.page ?? page;
@@ -90,7 +93,16 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
       <PageHeader
         title={thread.title}
-        back={{ href: `/thinkpages/c/${category.key}`, label: category.name }}
+        subtitle={
+          <ForumBreadcrumbs
+            items={[
+              ...forumTrail(category.realm),
+              { label: category.name, href: categoryHref(category) },
+              { label: thread.title },
+            ]}
+          />
+        }
+        back={{ href: categoryHref(category), label: category.name }}
         bleed
       />
       {thread.locked ? (

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { assetUrl } from "~/lib/base-path";
+import { hubHref } from "~/lib/thinkpages-forum/links";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,7 @@ import { RealmAvatar } from "./RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "./realm-directory";
 
 function boardActivity(board: DirectoryRealm["board"]): string {
-  if (!board) return "Board not opened yet";
+  if (board.recentPosts === 0 && !board.lastPostAt) return "No posts yet";
   const week = `${plural(board.recentPosts, "post")} this week`;
   if (!board.lastPostAt) return week;
   return `${week} · last ${new Date(board.lastPostAt).toLocaleDateString()}`;
@@ -36,8 +37,7 @@ const SORTS: Array<{ value: SortId; label: string }> = [
 const SORTERS: Record<SortId, (a: DirectoryRealm, b: DirectoryRealm) => number> = {
   name: (a, b) => a.name.localeCompare(b.name),
   nations: (a, b) => b.nationCount - a.nationCount || a.name.localeCompare(b.name),
-  activity: (a, b) =>
-    (b.board?.recentPosts ?? 0) - (a.board?.recentPosts ?? 0) || a.name.localeCompare(b.name),
+  activity: (a, b) => b.board.recentPosts - a.board.recentPosts || a.name.localeCompare(b.name),
   newest: (a, b) => new Date(b.foundedAt).getTime() - new Date(a.foundedAt).getTime(),
 };
 
@@ -85,8 +85,8 @@ export function RealmCard({ realm }: { realm: DirectoryRealm }) {
         )}
         <p className="text-label-secondary text-footnote">{boardActivity(realm.board)}</p>
         <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
-          <Link href={realmHref(realm.slug, "board")} className="text-label hover:underline">
-            Board
+          <Link href={hubHref(realm.slug)} className="text-label hover:underline">
+            Forum
           </Link>
           {realm.myNationCount > 0 && (
             <span className="text-label-secondary">

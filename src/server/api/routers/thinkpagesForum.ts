@@ -1,5 +1,5 @@
 /**
- * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phase 1).
+ * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-2).
  * Thin: validates, maps the signed-in user to the module's viewer, calls ~/server/modules/thinkpages-forum, maps
  * ForumError 1:1 to TRPCError. Author display data goes through authorsOf, so no raw user row leaves here.
  * Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4.
@@ -14,15 +14,19 @@ import {
 } from "~/server/api/trpc";
 import {
   authorsOf,
-  canPostIn,
+  canPostInCategory,
   canStartThread,
+  categoryPostingAccess,
   createThread,
   editPost,
   ForumError,
   getCategoryThreads,
+  getRealmSection,
   getThreadPosts,
+  listForumRealms,
   listSiteCategories,
   MAX_POST_HTML,
+  primaryRealmIdOf,
   replyToThread,
   resolvePostLocation,
   TITLE_MAX,
@@ -78,20 +82,42 @@ const page = z.number().int().min(1).max(MAX_PAGE).default(1);
 const categoryKey = z.string().regex(/^[a-z0-9-]{2,40}$/);
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
+/** A realm slug, bounded as in realms/region.ts. */
+const realm = z.string().min(1).max(100);
 
 export const thinkpagesForumRouter = createTRPCRouter({
   categories: publicProcedure.query(({ ctx }) => listSiteCategories(ctx.db, viewerOf(ctx.user))),
 
+  /** The realm switcher: realms the viewer may pick, defaulting to their primary nation's realm. */
+  realms: publicProcedure.query(async ({ ctx }) => {
+    const viewer = viewerOf(ctx.user);
+    const activeRealmId = await primaryRealmIdOf(ctx.db, viewer);
+    return listForumRealms(ctx.db, viewer && { ...viewer, activeRealmId });
+  }),
+
+  /** May write: a realm without categories gets them seeded on first read. */
+  realmSection: publicProcedure.input(z.object({ realm })).query(async ({ ctx, input }) => {
+    const section = await getRealmSection(ctx.db, viewerOf(ctx.user), input.realm).catch(mapError);
+    // Only the verdict leaves: never the viewer's nation ids or the raw restriction.
+    const { canPost, notice } = section.access;
+    return { realm: section.realm, categories: section.categories, canPost, notice };
+  }),
+
   category: publicProcedure
-    .input(z.object({ key: categoryKey, page }))
+    .input(z.object({ key: categoryKey, page, realm: realm.optional() }))
     .query(async ({ ctx, input }) => {
       const viewer = viewerOf(ctx.user);
-      const result = await getCategoryThreads(ctx.db, viewer, input.key, input.page).catch(
-        mapError
-      );
+      const result = await getCategoryThreads(
+        ctx.db,
+        viewer,
+        { key: input.key, realm: input.realm },
+        input.page
+      ).catch(mapError);
+      const access = await categoryPostingAccess(ctx.db, viewer, result.category);
       return {
         ...result,
-        canStart: canStartThread(viewer, result.category),
+        canStart: canStartThread(viewer, result.category) && access.canPost,
+        notice: access.notice,
         authors: await authorMaps(ctx.db, result.threads),
       };
     }),
@@ -101,13 +127,17 @@ export const thinkpagesForumRouter = createTRPCRouter({
     const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
     // Hidden content stays readable to admins but refuses writes (writes.ts), so it offers neither reply nor Edit.
     const writable = !result.thread.locked && !result.thread.archived && !result.thread.hidden;
+    const canReply =
+      viewer !== null && writable && (await canPostInCategory(ctx.db, viewer, result.category));
+    // Sitewide the author always edits; in a realm section only while they may post there (D13).
+    const editable = writable && (result.category.scope !== "realm" || canReply);
     return {
       ...result,
       posts: result.posts.map(({ hidden, ...post }) => ({
         ...post,
-        isOwn: viewer !== null && post.authorUserId === viewer.id && writable && !hidden,
+        isOwn: viewer !== null && post.authorUserId === viewer.id && editable && !hidden,
       })),
-      canReply: viewer !== null && writable && canPostIn(viewer, result.category),
+      canReply,
       authors: await authorMaps(ctx.db, [result.thread, ...result.posts]),
     };
   }),
@@ -128,6 +158,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(
       z.object({
         categoryKey,
+        realm: realm.optional(),
         title: z.string().trim().min(TITLE_MIN).max(TITLE_MAX),
         html,
         personaId,

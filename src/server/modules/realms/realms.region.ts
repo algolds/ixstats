@@ -1,14 +1,14 @@
 /**
  * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): what /r/[realm] shows — banner, key
  * stats and in-world date, factbook, rules, community links, officers, embassies, the realm poll, the latest
- * board posts and happenings — and the staff checks every Manage action goes through.
+ * forum threads and happenings — and the staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { resolveDisplayNames } from "~/server/shared/display-names";
-import { embassyPartners, groupPostTag, userBoardRestriction } from "~/server/shared/realm-board";
+import { embassyPartners, userBoardRestriction } from "~/server/shared/realm-board";
 import {
   canModerateRealm,
   isRealmOpen,
@@ -16,6 +16,7 @@ import {
   realmPowers,
   type RealmActor,
 } from "./realms.access";
+import { forumPreview } from "./realms.forum-preview";
 import { realmInWorldDate } from "./realms.settings";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
@@ -83,9 +84,9 @@ type OverviewDb = Pick<
   | "user"
   | "thinkpagesAccount"
   | "realmEmbassy"
-  | "realmBoard"
   | "realmBoardBan"
-  | "thinkpagesPost"
+  | "forumCategory"
+  | "forumThread"
   | "poll"
   | "pollVote"
   | "realmClaim"
@@ -172,7 +173,6 @@ export async function realmPoll(
   };
 }
 
-const BOARD_PREVIEW_SIZE = 5;
 const RULES_SUMMARY_LENGTH = 280;
 
 /** The rules' opening as plain text, for the claim form beside "Read the rules". */
@@ -181,45 +181,6 @@ function rulesSummary(html: string): string {
   return text.length > RULES_SUMMARY_LENGTH
     ? `${text.slice(0, RULES_SUMMARY_LENGTH).trimEnd()}…`
     : text;
-}
-
-/** The board's latest posts for the front page (the full board is on its own tab). */
-async function boardPreview(db: OverviewDb, realmId: string) {
-  const board = await db.realmBoard.findUnique({ where: { realmId }, select: { groupId: true } });
-  if (!board) return { groupId: null, posts: [] };
-  const posts = await db.thinkpagesPost.findMany({
-    where: {
-      hashtags: { contains: `"${groupPostTag(board.groupId)}"` },
-      visibility: { not: "removed" },
-    },
-    orderBy: { createdAt: "desc" },
-    take: BOARD_PREVIEW_SIZE,
-    select: {
-      id: true,
-      content: true,
-      createdAt: true,
-      account: {
-        select: {
-          displayName: true,
-          username: true,
-          country: { select: { name: true, slug: true, flag: true } },
-        },
-      },
-    },
-  });
-  return {
-    groupId: board.groupId,
-    posts: posts.map((p) => ({
-      id: p.id,
-      content: p.content,
-      createdAt: p.createdAt,
-      author: {
-        name: p.account?.displayName ?? p.account?.username ?? "Unknown",
-        username: p.account?.username ?? null,
-        country: p.account?.country ?? null,
-      },
-    })),
-  };
 }
 
 /** Everything the realm page's front page and header need, in one call. */
@@ -269,7 +230,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
         })
       : Promise.resolve([]),
     embassyPartners(db, realm.id),
-    boardPreview(db, realm.id),
+    forumPreview(db, realm.id, viewer),
   ]);
 
   const founderIsStaff = realm.ownerId === STAFF_FOUNDER_ID;
@@ -336,7 +297,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     })),
     embassies: partnerLooks,
     poll: await realmPoll(db, realm.id, viewer, ownedNations.length > 0),
-    board: preview,
+    forum: preview,
     viewer: {
       signedIn: viewer !== null,
       powers,

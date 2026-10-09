@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 interface QueryResult {
   data?: object | null;
@@ -10,20 +10,26 @@ interface QueryResult {
 
 interface MockApi {
   results: Record<string, QueryResult>;
+  inputs: Record<string, object | undefined>;
   mutations: Record<string, jest.Mock>;
 }
 
 jest.mock("~/trpc/react", () => {
   const results: Record<string, QueryResult> = {};
+  const inputs: Record<string, object | undefined> = {};
   const mutations: Record<string, jest.Mock> = {};
   const query = (name: string) => ({
-    useQuery: () => ({ isLoading: false, error: null, ...results[name] }),
+    useQuery: (input?: object) => {
+      inputs[name] = input;
+      return { isLoading: false, error: null, ...results[name] };
+    },
   });
   const mutation = (name: string) => ({
     useMutation: () => ({ mutateAsync: mutations[name], mutate: jest.fn(), isPending: false }),
   });
   return {
     results,
+    inputs,
     mutations,
     api: {
       useUtils: () => ({
@@ -31,12 +37,15 @@ jest.mock("~/trpc/react", () => {
           thread: { invalidate: () => Promise.resolve() },
           category: { invalidate: () => Promise.resolve() },
           categories: { invalidate: () => Promise.resolve() },
+          realmSection: { invalidate: () => Promise.resolve() },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 3 }) },
         },
         thinkpages: { getPost: { invalidate: jest.fn() }, getFeed: { invalidate: jest.fn() } },
       }),
       thinkpagesForum: {
         categories: query("categories"),
+        realms: query("realms"),
+        realmSection: query("realmSection"),
         category: query("category"),
         thread: query("thread"),
         resolvePost: query("resolvePost"),
@@ -58,7 +67,7 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router };
+  return { router, useRouter: () => router, redirect: jest.fn() };
 });
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
@@ -95,18 +104,26 @@ import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import PostPage from "~/app/thinkpages/post/[postId]/page";
+import ForumHomePage from "~/app/thinkpages/forum/page";
+import RealmRedirectPage from "~/app/thinkpages/r/[realm]/page";
 
-const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
-const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
-  "next/navigation"
-);
+const { results, inputs, mutations } = jest.requireMock<MockApi>("~/trpc/react");
+const { router, redirect } = jest.requireMock<{
+  router: { push: jest.Mock; replace: jest.Mock };
+  redirect: jest.Mock;
+}>("next/navigation");
 
 const authors = {
   users: { u1: { name: "Kir", handle: "kir" }, u2: { name: "Hidden Player", handle: null } },
   personas: { pa: { displayName: "Aria Vance", username: "aria" } },
 };
 
-function threadData(overrides: { locked?: boolean; canReply?: boolean } = {}) {
+const EURTH = { slug: "eurth", name: "Eurth" };
+const HUB = { key: "hub", name: "Hub", description: "Realm talk", icAllowed: false, realm: EURTH };
+
+function threadData(
+  overrides: { locked?: boolean; canReply?: boolean; realm?: typeof EURTH } = {}
+) {
   return {
     thread: {
       id: "t1",
@@ -114,7 +131,9 @@ function threadData(overrides: { locked?: boolean; canReply?: boolean } = {}) {
       locked: overrides.locked ?? false,
       archived: false,
     },
-    category: { key: "general", name: "General", icAllowed: false },
+    category: overrides.realm
+      ? { key: "hub", name: "Hub", icAllowed: false, realm: overrides.realm }
+      : { key: "general", name: "General", icAllowed: false, realm: null },
     posts: [
       {
         id: "p1",
@@ -141,15 +160,40 @@ function threadData(overrides: { locked?: boolean; canReply?: boolean } = {}) {
   };
 }
 
-function categoryData(canStart: boolean, threads: object[] = []) {
-  return {
-    category: { key: "general", name: "General", description: "Talk", icAllowed: false },
-    threads,
-    total: threads.length,
-    canStart,
-    authors,
-  };
+function categoryData(
+  canStart: boolean,
+  threads: object[] = [],
+  category: object = { key: "general", name: "General", description: "Talk", icAllowed: false },
+  notice: string | null = null
+) {
+  return { category, threads, total: threads.length, canStart, notice, authors };
 }
+
+/** The breadcrumb trail's labels and hrefs (the current page has none). */
+function crumbs() {
+  const trail = screen.getByRole("navigation", { name: "breadcrumb" });
+  return within(trail)
+    .getAllByRole("link")
+    .map((link) => [link.textContent, link.getAttribute("href")]);
+}
+
+const realmSection = {
+  realm: { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active" },
+  categories: [
+    {
+      key: "hub",
+      name: "Hub",
+      description: "Realm talk",
+      icAllowed: false,
+      postRole: "any",
+      threadCount: 4,
+      lastPostAt: null,
+    },
+  ],
+  canPost: true,
+  notice: null,
+};
+const realmList = { defaultSlug: "ixworld", realms: [{ id: "r_eurth", ...EURTH }] };
 
 function set(name: string, result: QueryResult) {
   results[name] = result;
@@ -187,6 +231,24 @@ describe("forum home", () => {
     );
     expect(screen.getByText("1 thread")).toBeInTheDocument();
   });
+
+  it("also shows the realm section, opening the realm in ?realm=", async () => {
+    set("categories", { data: [] });
+    set("realms", { data: realmList });
+    set("realmSection", { data: realmSection });
+    render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "eurth" }) }));
+    expect(inputs.realmSection).toEqual({ realm: "eurth" });
+    expect(screen.getByRole("heading", { level: 2, name: "Eurth" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Hub/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/hub"
+    );
+  });
+
+  it("sends /thinkpages/r/<realm> to the home with that realm", async () => {
+    await RealmRedirectPage({ params: Promise.resolve({ realm: "eurth" }) });
+    expect(redirect).toHaveBeenCalledWith("/thinkpages/forum?realm=eurth");
+  });
 });
 
 describe("category view", () => {
@@ -203,6 +265,22 @@ describe("category view", () => {
       "href",
       "/thinkpages/c/general/new"
     );
+  });
+
+  it("explains why New thread is missing with the category's notice", () => {
+    const notice = "Your nation is muted on this board until Jan 1.";
+    set("category", { data: categoryData(false, [], undefined, notice) });
+    const { rerender } = render(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
+
+    set("category", { data: categoryData(true, [], undefined, notice) });
+    rerender(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.queryByText(notice)).toBeNull();
+
+    set("category", { data: categoryData(false) });
+    rerender(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.queryByText(notice)).toBeNull();
   });
 
   it("lists threads with plain text titles and the persona, not the player", () => {
@@ -226,6 +304,30 @@ describe("category view", () => {
     expect(screen.queryByText("Hidden Player")).toBeNull();
     expect(screen.getByText("2 replies")).toBeInTheDocument();
   });
+
+  it("breadcrumbs a sitewide category as Forum, then the category", () => {
+    set("category", { data: categoryData(false) });
+    render(<ThreadList categoryKey="general" page={1} />);
+    expect(crumbs()).toEqual([
+      ["Forum", "/thinkpages/forum"],
+      ["General", null],
+    ]);
+  });
+
+  it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
+    set("category", { data: categoryData(true, [], HUB) });
+    render(<ThreadList categoryKey="hub" realm="eurth" page={1} />);
+    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });
+    expect(screen.getByRole("link", { name: /New thread/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/hub/new"
+    );
+    expect(crumbs()).toEqual([
+      ["Forum", "/thinkpages/forum"],
+      ["Eurth", "/thinkpages/forum?realm=eurth"],
+      ["Hub", null],
+    ]);
+  });
 });
 
 describe("thread view", () => {
@@ -243,6 +345,27 @@ describe("thread view", () => {
     expect(screen.queryByText("Hidden Player")).toBeNull();
     expect(screen.getByRole("button", { name: "Reply" })).toBeInTheDocument();
     expect(screen.queryByText("This thread is locked.")).toBeNull();
+  });
+
+  it("breadcrumbs a sitewide thread without a realm crumb", () => {
+    set("thread", { data: threadData() });
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(crumbs()).toEqual([
+      ["Forum", "/thinkpages/forum"],
+      ["General", "/thinkpages/c/general"],
+      ["<b>Plain</b> title", null],
+    ]);
+  });
+
+  it("breadcrumbs a realm thread through its realm and category", () => {
+    set("thread", { data: threadData({ realm: EURTH }) });
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(crumbs()).toEqual([
+      ["Forum", "/thinkpages/forum"],
+      ["Eurth", "/thinkpages/forum?realm=eurth"],
+      ["Hub", "/thinkpages/r/eurth/hub"],
+      ["<b>Plain</b> title", null],
+    ]);
   });
 
   it("hides the reply composer and edit when locked", () => {
@@ -356,6 +479,39 @@ describe("new thread", () => {
       html: "<p>new</p>",
       personaId: null,
     });
+  });
+
+  it("starts a realm thread in that realm", async () => {
+    set("category", { data: categoryData(true, [], HUB) });
+    const create = jest.fn(() => Promise.resolve({ threadId: "t8", postId: "p8" }));
+    mutations.createThread = create;
+    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
+    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });
+    fireEvent.click(screen.getByRole("button", { name: "Post" }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t8"));
+    expect(create).toHaveBeenCalledWith({
+      categoryKey: "hub",
+      realm: "eurth",
+      title: "Hello",
+      html: "<p>new</p>",
+      personaId: null,
+    });
+  });
+
+  it("explains a refusal with the category's notice, else the general copy", () => {
+    const notice = "Only owners of a nation in Eurth can post here.";
+    set("category", { data: categoryData(false, [], HUB, notice) });
+    const { unmount } = render(<NewThreadForm categoryKey="hub" realm="eurth" />);
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
+      "href",
+      "/thinkpages/forum?realm=eurth"
+    );
+    unmount();
+
+    set("category", { data: categoryData(false) });
+    render(<NewThreadForm categoryKey="general" />);
+    expect(screen.getByText("Sign in, or pick a category open to members.")).toBeInTheDocument();
   });
 });
 

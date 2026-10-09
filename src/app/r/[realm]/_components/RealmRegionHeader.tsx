@@ -2,28 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, MapPin } from "iconoir-react";
+import { ChatBubble, Globe, MapPin } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
+import { hubHref } from "~/lib/thinkpages-forum/links";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
+interface RealmTab {
+  href: string;
+  label: string;
+  exact?: boolean;
+  /** The tab leaves the realm pages (the forum, the atlas), with its own glyph. */
+  icon?: typeof MapPin;
+}
+
 /**
- * The tabs of a realm page. The map opens the atlas on this realm; Rules shows once the realm has rules (and
- * always to those who can write them).
+ * The tabs of a realm page. Forum opens the realm's Hub and Map the atlas on this realm; Rules shows once the
+ * realm has rules (and always to those who can write them).
  */
-function realmTabs(slug: string, canManage: boolean, showRules: boolean) {
+function realmTabs(slug: string, canManage: boolean, showRules: boolean): RealmTab[] {
   const base = `/r/${encodeURIComponent(slug)}`;
   return [
     { href: base, label: "Overview", exact: true },
-    { href: `${base}/board`, label: "Board" },
+    { href: hubHref(slug), label: "Forum", icon: ChatBubble },
     { href: `${base}/nations`, label: "Nations" },
     ...(showRules ? [{ href: `${base}/rules`, label: "Rules" }] : []),
-    { href: `/maps?realm=${encodeURIComponent(slug)}`, label: "Map", external: true },
+    { href: `/maps?realm=${encodeURIComponent(slug)}`, label: "Map", icon: MapPin },
     ...(canManage ? [{ href: `${base}/manage`, label: "Manage" }] : []),
   ];
 }
@@ -108,10 +117,8 @@ export function RealmRegionHeader({
     viewer.canManage,
     !!overview.rules || viewer.powers.includes("appearance")
   );
-  const isActive = (tab: (typeof tabs)[number]) => {
-    const href = tab.href;
-    return "exact" in tab && tab.exact ? pathname === href : pathname?.startsWith(href);
-  };
+  const isActive = (tab: RealmTab) =>
+    tab.exact ? pathname === tab.href : pathname?.startsWith(tab.href);
 
   return (
     <header className="border-separator bg-surface rounded-card overflow-hidden border">
@@ -222,9 +229,7 @@ export function RealmRegionHeader({
                       : "text-label-secondary hover:bg-fill-4 hover:text-label"
                   )}
                 >
-                  {"external" in tab && tab.external && (
-                    <MapPin className="size-3.5" aria-hidden="true" />
-                  )}
+                  {tab.icon && <tab.icon className="size-3.5" aria-hidden="true" />}
                   {tab.label}
                 </Link>
               </li>
