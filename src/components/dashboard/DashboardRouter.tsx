@@ -1,13 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { DashboardColumn } from "./DashboardColumn";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
-import { AccountsSection } from "./accounts/AccountsSection";
 import { DashboardHero } from "./hero/DashboardHero";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
+import { Skeleton } from "~/components/ui/skeleton";
 import type { DashboardSection } from "~/lib/dashboard-sections";
+
+// Its modals and forms stay out of the feed's first load; SSR stays on for the
+// /dashboard/accounts deep link.
+const AccountsSection = dynamic(
+  () => import("./accounts/AccountsSection").then((m) => m.AccountsSection),
+  { loading: () => <Skeleton className="rounded-card h-64" /> }
+);
 
 interface DashboardRouterProps {
   /** Country id resolved on the server, used until getProfile loads so map status fetches in parallel. */

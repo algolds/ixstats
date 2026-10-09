@@ -66,10 +66,11 @@ describe("AccountsSection", () => {
     expect(screen.queryByRole("link", { name: /Go to dashboard/ })).not.toBeInTheDocument();
   });
 
-  it("asks for country setup without a country", () => {
+  it("asks for country setup without a country, under the Accounts heading", () => {
     mockProfile = { countryId: "" };
     mockCountry = null;
     render(<AccountsSection />);
+    expect(screen.getByRole("heading", { level: 1, name: "Accounts" })).toBeInTheDocument();
     expect(screen.getByText("Country setup required")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Complete setup" })).toHaveAttribute("href", "/setup");
   });

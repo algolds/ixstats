@@ -59,12 +59,13 @@ describe("DashboardRouter", () => {
     );
   });
 
-  it("shows only the Accounts section there, with a way back to Home", () => {
+  it("shows only the Accounts section there, with a way back to Home", async () => {
     const onNavigate = jest.fn();
     render(<DashboardRouter initialCountryId="c1" section="accounts" onNavigate={onNavigate} />);
+    // The section is loaded with next/dynamic, so it arrives after the first render.
+    fireEvent.click(await screen.findByRole("button", { name: "accounts c1" }));
     expect(screen.queryByText("hero")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "feed" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "accounts c1" }));
     expect(onNavigate).toHaveBeenCalledWith("home");
     expect(globalStatsQuery).toHaveBeenCalledWith(
       undefined,

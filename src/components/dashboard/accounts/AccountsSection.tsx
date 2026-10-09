@@ -65,7 +65,12 @@ function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSection
 
   if (!isCountryReady) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      // DashboardColumn supplies the page padding; the card keeps a readable measure.
+      <div className="mx-auto max-w-3xl space-y-6">
+        {/* The page's h1 while there is no section header (the shell header names it on phones). */}
+        <h1 {...shellPageTitleProps} className="sr-only">
+          Accounts
+        </h1>
         <Card>
           <EmptyState
             icon={<Users />}
@@ -83,7 +88,7 @@ function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSection
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           {/* Phones under the new shell get the ShellPageHeader title instead. */}
