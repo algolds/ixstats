@@ -266,6 +266,16 @@ const parsed = (log: LogRow | undefined) => ({
 beforeEach(() => jest.useFakeTimers({ now: NOW }));
 afterEach(() => jest.useRealTimers());
 
+/** The moment the member's lock is granted after a wait. */
+const WAITED = new Date(NOW.getTime() + 60_000);
+/** The first lock call waits a minute: the clock moves on before it returns. */
+function lockWaits(tx: { $executeRaw: jest.Mock }): void {
+  tx.$executeRaw.mockImplementationOnce(async () => {
+    jest.setSystemTime(WAITED);
+    return 0;
+  });
+}
+
 describe("issueWarning", () => {
   const sitewide = { userId: "u_m", reason: " Rude ", points: 4 };
 
@@ -657,6 +667,41 @@ describe("issueWarning", () => {
   });
 });
 
+describe("issueWarning and revokeWarning read the clock after the member's lock", () => {
+  it("dates a warning from when the lock was granted", async () => {
+    const { db, tx, warnings } = warnDb();
+    lockWaits(tx);
+    await issueWarning(db as never, admin, { userId: "u_m", reason: "Rude", points: 1 });
+    expect(warnings.at(-1)).toMatchObject({
+      createdAt: WAITED,
+      expiresAt: new Date(WAITED.getTime() + 90 * DAY_MS),
+    });
+  });
+
+  it("dates a revoke from when the lock was granted", async () => {
+    const { db, tx, warnings } = warnDb({ warnings: [warning({ id: "w_a" })] });
+    lockWaits(tx);
+    await revokeWarning(db as never, admin, { warningId: "w_a" });
+    expect(warnings[0]).toMatchObject({ revokedAt: WAITED });
+  });
+
+  it("leaves the automatic ban alone when the warning expired while the revoke waited for the lock", async () => {
+    const { db, tx, bans } = warnDb({
+      warnings: [
+        warning({ id: "w_x", points: 3, expiresAt: new Date(NOW.getTime() + 30_000) }),
+        warning({ id: "w_y", points: 2 }),
+      ],
+      bans: [autoBan({ autoTier: 5 })],
+    });
+    lockWaits(tx);
+    expect(await revokeWarning(db as never, admin, { warningId: "w_x" })).toEqual({
+      userId: "u_m",
+      autoBan: null,
+    });
+    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(5) });
+  });
+});
+
 describe("revokeWarning", () => {
   const thirtyDayBan = (createdAt: Date) =>
     autoBan({ createdAt, expiresAt: new Date(createdAt.getTime() + 30 * DAY_MS), autoTier: 10 });
@@ -813,6 +858,58 @@ describe("revokeWarning", () => {
       message: "This warning is already revoked.",
     });
     expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
+  });
+
+  it("leaves the automatic ban alone when the revoked warning had already expired", async () => {
+    // X (3 points) has expired; Y (2 points) brought the ban. Revoking X changes no active points.
+    const { db, bans, logs } = warnDb({
+      warnings: [
+        warning({ id: "w_x", points: 3, expiresAt: days(-1) }),
+        warning({ id: "w_y", points: 2 }),
+      ],
+      bans: [autoBan({ autoTier: 5 })],
+    });
+    expect(await revokeWarning(db as never, admin, { warningId: "w_x" })).toEqual({
+      userId: "u_m",
+      autoBan: null,
+    });
+    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(5), autoTier: 5 });
+    expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
+  });
+
+  it("never extends an automatic ban on a revoke, even with points above its tier", async () => {
+    // 11 points under a 5-point ban (a manual site ban covered the 10 tier, then was lifted).
+    const { db, bans, logs } = warnDb({
+      warnings: [
+        warning({ id: "w_a", points: 5 }),
+        warning({ id: "w_b", points: 5 }),
+        warning({ id: "w_c", points: 1 }),
+      ],
+      bans: [autoBan({ autoTier: 5 })],
+    });
+    expect(await revokeWarning(db as never, admin, { warningId: "w_c" })).toEqual({
+      userId: "u_m",
+      autoBan: null,
+    });
+    expect(bans[0]).toMatchObject({ autoTier: 5, expiresAt: days(5), liftedAt: null });
+    expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
+  });
+
+  it("refuses to revoke the actor's own warning, site admins included", async () => {
+    const { db, logs } = warnDb({
+      warnings: [
+        warning({ id: "w_own", userId: "u_f", categoryId: "cat_eurth_hub" }),
+        warning({ id: "w_admin", userId: "u_a" }),
+      ],
+    });
+    const own = { code: "FORBIDDEN", message: "You can't revoke your own warning." };
+    await expect(
+      revokeWarning(db as never, realmMod, { warningId: "w_own" })
+    ).rejects.toMatchObject(own);
+    await expect(revokeWarning(db as never, admin, { warningId: "w_admin" })).rejects.toMatchObject(
+      own
+    );
+    expect(logs).toEqual([]);
   });
 
   it("never issues an automatic ban on a revoke", async () => {

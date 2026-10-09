@@ -208,9 +208,10 @@ export async function issueBan(
   await assertSanctionable(db, input.userId, "banned", (target) =>
     canActInScope(target, input.scope, realmId)
   );
-  const now = new Date();
   return db.$transaction(async (tx) => {
     await lockMember(tx, input.userId);
+    // After the lock: a wait must not date the ban, or the duplicate check, from before it.
+    const now = new Date();
     await assertNoLiveBan(tx, input.userId, input.scope, now);
     const ban = await tx.forumBan.create({
       data: {
@@ -235,18 +236,20 @@ export async function issueBan(
 }
 
 /**
- * reviewAppeal and the automatic-ban recompute call this with their own transaction client and their `now`. The ban
- * must still be live at `now` when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once. An
- * open appeal on the ban is closed as moot in the same transaction.
+ * reviewAppeal and the automatic-ban recompute call this with their own transaction client and the `now` they read
+ * under the member's lock; without one, the clock is read once the lock is held. The ban must still be live at `now`
+ * when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once. An open appeal on the ban is
+ * closed as moot in the same transaction.
  */
 export async function liftBanTx(
   tx: Pick<BansDb, "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw">,
   actor: NonNullable<ForumViewer>,
   ban: { id: string; userId: string; scope: string; scopeId: string | null },
   detail: ModLogDetail,
-  now: Date
+  lockedNow?: Date
 ): Promise<void> {
   await lockMember(tx, ban.userId);
+  const now = lockedNow ?? new Date();
   const { count } = await tx.forumBan.updateMany({
     where: { id: ban.id, liftedAt: null, ...liveAt(now) },
     data: { liftedAt: now, liftedBy: actor.id },
@@ -275,7 +278,9 @@ export async function liftBan(
   });
   if (!ban) throw new ForumError("NOT_FOUND", "Ban not found.");
   const lifter = await assertBanScope(db, actor, ban);
+  // The different-reviewer rule (M12) for lifts: a member promoted since cannot free themselves.
+  if (lifter.id === ban.userId) throw new ForumError("FORBIDDEN", "You can't lift your own ban.");
   const note = modNote(input.note);
-  await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }, new Date()));
+  await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }));
   return { userId: ban.userId, scope: banScopeOf(ban.scope), scopeId: ban.scopeId };
 }

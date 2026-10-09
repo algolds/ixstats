@@ -1,7 +1,7 @@
 /**
  * Warnings and their points (phase 3, owner decisions): points expire after 90 days and count sitewide whoever gave
- * them (M4); enough active points bring an automatic site ban (mod-auto-bans.ts), and revoking a warning re-tiers
- * or lifts it (M3). Every step logs in the same transaction. Notifications are the router's, after
+ * them (M4); enough active points bring an automatic site ban (mod-auto-bans.ts), and revoking a warning that still
+ * counted shortens or lifts it (M3). Every step logs in the same transaction. Notifications are the router's, after
  * commit (Task 5). No archived-realm check (T0-6).
  */
 import type { PrismaClient } from "@prisma/client";
@@ -145,10 +145,11 @@ async function recordWarning(
     reason: string;
     categoryId: string | null;
     target?: WarningInput["target"];
-  },
-  now: Date
+  }
 ): Promise<WarningOutcome> {
   await lockMember(tx, warning.userId);
+  // After the lock: a wait must not date the warning, or count points, from before it.
+  const now = new Date();
   const target = { targetType: warning.target?.type ?? null, targetId: warning.target?.id ?? null };
   const row = await tx.forumWarning.create({
     data: {
@@ -192,9 +193,8 @@ export async function issueWarning(
   await assertSanctionable(db, input.userId, "warned", (target) =>
     category ? canModerateCategory(target, category) : canActInScope(target, SITE, null)
   );
-  const now = new Date();
   return db.$transaction((tx) =>
-    recordWarning(tx, issuer, { ...input, reason, points, categoryId: category?.id ?? null }, now)
+    recordWarning(tx, issuer, { ...input, reason, points, categoryId: category?.id ?? null })
   );
 }
 
@@ -214,18 +214,21 @@ export async function assertWarningScope(
 }
 
 /**
- * reviewAppeal calls this with its own transaction client and `now`; it includes M3's recompute (the automatic ban
- * re-tiered or lifted). The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise). An
- * open appeal on the warning is closed as moot in the same transaction.
+ * reviewAppeal calls this with its own transaction client and the `now` it read under the member's lock; without
+ * one, the clock is read once the lock is held. It includes M3's recompute (the automatic ban shortened or lifted),
+ * only when the warning still counted at `now`: revoking an expired warning changes no active points, so it leaves
+ * the ban alone. The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise). An open
+ * appeal on the warning is closed as moot in the same transaction.
  */
 export async function revokeWarningTx(
   tx: WarningTx,
   actor: Issuer,
-  warning: { id: string; userId: string; categoryId: string | null },
+  warning: { id: string; userId: string; categoryId: string | null; expiresAt: Date },
   detail: ModLogDetail,
-  now: Date
+  lockedNow?: Date
 ): Promise<{ autoBan: AutoBanChange | null }> {
   await lockMember(tx, warning.userId);
+  const now = lockedNow ?? new Date();
   const { count } = await tx.forumWarning.updateMany({
     where: { id: warning.id, revokedAt: null },
     data: { revokedAt: now, revokedBy: actor.id },
@@ -246,6 +249,7 @@ export async function revokeWarningTx(
     { type: "warning", id: warning.id, scope, cause: "warning revoked" },
     now
   );
+  if (warning.expiresAt.getTime() <= now.getTime()) return { autoBan: null };
   const points = await activePointsOf(tx, warning.userId, now);
   const autoBan = await autoBanAfterRevoke(tx, actor, warning.userId, points, now, {
     reason: "warning revoked",
@@ -262,13 +266,17 @@ export async function revokeWarning(
 ): Promise<{ userId: string; autoBan: AutoBanChange | null }> {
   const warning = await db.forumWarning.findUnique({
     where: { id: input.warningId },
-    select: { id: true, userId: true, categoryId: true },
+    select: { id: true, userId: true, categoryId: true, expiresAt: true },
   });
   if (!warning) throw new ForumError("NOT_FOUND", "Warning not found.");
   const revoker = await assertWarningScope(db, actor, warning.categoryId);
+  // The different-reviewer rule (M12) for revokes: a member promoted since cannot clear their own record.
+  if (revoker.id === warning.userId) {
+    throw new ForumError("FORBIDDEN", "You can't revoke your own warning.");
+  }
   const note = modNote(input.note);
   const { autoBan } = await db.$transaction((tx) =>
-    revokeWarningTx(tx, revoker, warning, { note }, new Date())
+    revokeWarningTx(tx, revoker, warning, { note })
   );
   return { userId: warning.userId, autoBan };
 }

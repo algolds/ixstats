@@ -2,9 +2,9 @@
  * Automatic site bans from warning points (owner decisions, M2, M3): 5 active points bring a 7-day ban, 10 a
  * 30-day one. The ban is issued by the moderator whose warning crossed the tier and stores that tier (`autoTier`,
  * the points threshold). A warning only ever moves the active automatic ban up: crossing a higher tier extends it
- * to that tier's full length from the moment of crossing (never a second ban). A revoke re-tiers it to the highest
- * tier still met, measured from the ban's original start, and lifts it when no tier is met or that length has
- * already run out. All of it runs inside the warning's transaction, under the member's lock, and logs there.
+ * to that tier's full length from the moment of crossing (never a second ban). A revoke only moves it down, to the
+ * highest tier still met, measured from the ban's original start, and lifts it when no tier is met or that length
+ * has already run out. All of it runs inside the warning's transaction, under the member's lock, and logs there.
  */
 import type { PrismaClient } from "@prisma/client";
 import { autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
@@ -191,7 +191,11 @@ export async function autoBanAfterWarning(
   return reconcileAutoBan(tx, actor, current, points, now, context);
 }
 
-/** After a revoke: re-tier or lift the active automatic ban; never issues one. */
+/**
+ * After a revoke: move the active automatic ban down a tier or lift it; never issues or extends one. Points still at
+ * or above its tier (e.g. a higher tier a manual site ban covered, M-2, and that ban lifted since) leave it alone:
+ * only a new warning raises a tier, so its issuer is the one recorded for it.
+ */
 export async function autoBanAfterRevoke(
   tx: AutoBanTx,
   actor: Actor,
@@ -201,5 +205,8 @@ export async function autoBanAfterRevoke(
   context: ModLogDetail
 ): Promise<AutoBanChange | null> {
   const current = await activeAutoBan(tx, userId, now);
-  return current ? reconcileAutoBan(tx, actor, current, points, now, context) : null;
+  if (!current) return null;
+  const tier = autoBanTier(points);
+  if (tier && tier.points >= (current.autoTier ?? 0)) return null;
+  return reconcileAutoBan(tx, actor, current, points, now, context);
 }

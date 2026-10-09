@@ -188,6 +188,16 @@ const earlier = new Date(NOW.getTime() - DAY_MS);
 beforeEach(() => jest.useFakeTimers({ now: NOW }));
 afterEach(() => jest.useRealTimers());
 
+/** The moment the member's lock is granted after a wait. */
+const WAITED = new Date(NOW.getTime() + 60_000);
+/** The first lock call waits a minute: the clock moves on before it returns. */
+function lockWaits(tx: { $executeRaw: jest.Mock }): void {
+  tx.$executeRaw.mockImplementationOnce(async () => {
+    jest.setSystemTime(WAITED);
+    return 0;
+  });
+}
+
 describe("activeBansFor", () => {
   it("asks for live bans on the site, the realm and the category in one query", async () => {
     const { db } = banDb();
@@ -319,6 +329,15 @@ describe("issueBan", () => {
     expect(db.forumModLog.create).not.toHaveBeenCalled();
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     expectLockedFirst(tx, "u_m", tx.forumBan.create);
+  });
+
+  it("dates the ban from when the member's lock was granted", async () => {
+    const { db, tx } = banDb();
+    lockWaits(tx);
+    expect(await issueBan(db as never, realmMod, input)).toEqual({
+      banId: "b_new",
+      expiresAt: new Date(WAITED.getTime() + 7 * DAY_MS),
+    });
   });
 
   it("refuses a second live ban at the same scope, checked under the member's lock (M-1)", async () => {
@@ -540,6 +559,27 @@ describe("liftBan", () => {
     const { db, tx } = banDb({ ban: gone });
     await liftBan(db as never, admin, { banId: "b1" });
     expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("dates the lift from when the member's lock was granted", async () => {
+    const { db, tx } = banDb({ ban: ban({ expiresAt: later }) });
+    lockWaits(tx);
+    await liftBan(db as never, admin, { banId: "b1" });
+    expect(tx.forumBan.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { liftedAt: WAITED, liftedBy: "u_a" } })
+    );
+  });
+
+  it("refuses to lift the actor's own ban, site admins included", async () => {
+    const own = { code: "FORBIDDEN", message: "You can't lift your own ban." };
+    const founder = banDb({ ban: ban({ userId: "u_f", scope: "realm", scopeId: "r_eurth" }) });
+    await expect(liftBan(founder.db as never, realmMod, { banId: "b1" })).rejects.toMatchObject(
+      own
+    );
+    expect(founder.tx.forumBan.updateMany).not.toHaveBeenCalled();
+    const siteAdmin = banDb({ ban: ban({ userId: "u_a" }) });
+    await expect(liftBan(siteAdmin.db as never, admin, { banId: "b1" })).rejects.toMatchObject(own);
+    expect(siteAdmin.tx.forumModLog.create).not.toHaveBeenCalled();
   });
 
   it("refuses an over-long note", async () => {

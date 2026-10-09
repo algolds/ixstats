@@ -477,6 +477,25 @@ describe("reviewAppeal", () => {
     expect(appealIn(store, "a1")).toMatchObject({ reviewedAt: NOW });
   });
 
+  it("reads its clock after the member's lock: a ban that ended while the review waited is moot", async () => {
+    const store = storeWith({
+      appeals: [appeal("a1", "ban", "b_soon")],
+      bans: [ban("b_soon", { expiresAt: new Date(NOW.getTime() + 1000) })],
+    });
+    const waited = new Date(NOW.getTime() + 2000);
+    store.tx.$executeRaw.mockImplementationOnce(async () => {
+      jest.setSystemTime(waited);
+      return 1;
+    });
+    const result = await reviewAppeal(store.db as never, eurthMod2, {
+      appealId: "a1",
+      ...overturned,
+    });
+    expect(result.outcome).toBe("moot");
+    expect(banIn(store, "b_soon")).toMatchObject({ liftedAt: null });
+    expect(appealIn(store, "a1")).toMatchObject({ reviewedAt: waited });
+  });
+
   it("revokes with the review's clock", async () => {
     const store = storeWith({ appeals: [appeal("a1", "warning", "w_eurth")] });
     clockMovesDuringReview(store, 2000);

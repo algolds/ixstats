@@ -174,9 +174,10 @@ export async function reviewAppeal(
   const reviewer = await assertSubjectScope(db, actor, subject);
   const reviewed = new ForumError("CONFLICT", "This appeal is already closed.");
   if (appeal.status !== "open") throw reviewed;
-  const now = new Date();
   return db.$transaction(async (tx) => {
     await lockMember(tx, appeal.userId);
+    // After the lock: a subject that ended while the review waited is moot, never overturned.
+    const now = new Date();
     await assertOtherReviewer(tx, reviewer, appeal.userId, subject);
     const current = await loadSubject(tx, subject.kind, subject.id);
     const outcome: AppealDecision =
