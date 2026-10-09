@@ -33,7 +33,7 @@ const pngBytes = (size: number, fill = 0): Uint8Array => {
 };
 
 const imageResponse = (body: Uint8Array, contentType = "image/png") =>
-  new Response(body, { status: 200, headers: { "content-type": contentType } });
+  new Response(new Blob([body]), { status: 200, headers: { "content-type": contentType } });
 
 const postRequest = (imageUrl: string) =>
   new NextRequest("http://localhost:3000/api/download/external-image", {
