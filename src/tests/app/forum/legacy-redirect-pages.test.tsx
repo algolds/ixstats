@@ -3,7 +3,7 @@
  * Phase 4 (Task 6): every /forum/* page asks the legacy redirect first. Switched on, it 307s to the native forum
  * (`redirect`, temporary, Q8) and the bridge page never renders; switched off, the bridge page renders as before.
  */
-import { isValidElement, type ReactElement } from "react";
+import { isValidElement, type ReactElement, type ReactNode } from "react";
 
 class RouteSignal extends Error {}
 const mockRedirect = jest.fn((url: string) => {
@@ -69,7 +69,7 @@ interface PageCase {
   name: string;
   render: () => Promise<ReactElement>;
   ref: object;
-  client: () => null;
+  client: () => ReactNode;
 }
 
 const CASES: PageCase[] = [

@@ -105,8 +105,20 @@ const cloneValue = (value: Value): Value =>
         : value;
 const cloneRow = (row: Row): Row =>
   Object.fromEntries(Object.entries(row).map(([k, v]) => [k, cloneValue(v)]));
-const cloneTables = (tables: Partial<ImportTables>): ImportTables =>
-  Object.fromEntries(TABLES.map((t) => [t, (tables[t] ?? []).map(cloneRow)])) as ImportTables;
+const cloneTables = (tables: Partial<ImportTables>): ImportTables => {
+  const out: ImportTables = {
+    users: [],
+    realms: [],
+    categories: [],
+    threads: [],
+    posts: [],
+    links: [],
+    configs: [],
+    assets: [],
+  };
+  for (const t of TABLES) out[t] = (tables[t] ?? []).map(cloneRow);
+  return out;
+};
 
 const at = (row: Row) => (row.createdAt instanceof Date ? row.createdAt.getTime() : 0);
 const column = (c: string) => c.replace(/\?$/, "");
