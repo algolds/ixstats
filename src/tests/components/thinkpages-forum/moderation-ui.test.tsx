@@ -204,6 +204,11 @@ interface ThreadOverrides {
   locked?: boolean;
   /** The viewer started the thread (default: they did, as the author of p1). */
   viewerIsAuthor?: boolean;
+  /** The thread is hidden (moderators only see it). */
+  threadHidden?: boolean;
+  /** What the moderator may do to the thread (its bar) and to Rhea's post p2 (default: everything). */
+  threadModerable?: boolean;
+  p2?: { moderable: boolean; sanctionable: boolean };
 }
 
 function threadData(o: ThreadOverrides = {}) {
@@ -214,7 +219,7 @@ function threadData(o: ThreadOverrides = {}) {
       authorUserId: "u1",
       locked: o.locked ?? false,
       pinned: false,
-      hidden: false,
+      hidden: o.threadHidden ?? false,
       archived: false,
     },
     category: { id: "c1", key: "general", name: "General", icAllowed: false, realm: null },
@@ -228,6 +233,8 @@ function threadData(o: ThreadOverrides = {}) {
         createdAt: new Date(),
         byViewer: true,
         isOwn: !o.locked,
+        // The moderator's own post: never sanctionable.
+        ...(o.canModerate ? { hidden: false, moderable: true, sanctionable: false } : {}),
       },
       {
         id: "p2",
@@ -238,7 +245,9 @@ function threadData(o: ThreadOverrides = {}) {
         createdAt: new Date(),
         byViewer: false,
         isOwn: false,
-        ...(o.canModerate ? { hidden: o.hidden ?? false } : {}),
+        ...(o.canModerate
+          ? { hidden: o.hidden ?? false, ...(o.p2 ?? { moderable: true, sanctionable: true }) }
+          : {}),
       },
     ],
     total: 2,
@@ -248,7 +257,10 @@ function threadData(o: ThreadOverrides = {}) {
     canModerate: o.canModerate ?? false,
     viewerIsAuthor: o.viewerIsAuthor ?? true,
     ...(o.canModerate
-      ? { moderatorTools: { categories: [{ key: "side", name: "Side", realm: null }] } }
+      ? {
+          moderatorTools: { categories: [{ key: "side", name: "Side", realm: null }] },
+          moderable: o.threadModerable ?? true,
+        }
       : {}),
     authors,
   };
@@ -389,6 +401,81 @@ describe("moderator tools", () => {
     const theirs = within(post(container, "p2"));
     expect(theirs.getByRole("menuitem", { name: "Warn author" })).toBeInTheDocument();
     expect(theirs.getByRole("menuitem", { name: "Ban author" })).toBeInTheDocument();
+  });
+
+  it("offers a realm moderator no Hide, Edit, Warn or Ban on a site admin's post, and no bar on their thread", () => {
+    auth.isSignedIn = true;
+    set("thread", {
+      data: threadData({
+        canModerate: true,
+        threadModerable: false,
+        p2: { moderable: false, sanctionable: false },
+      }),
+    });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    expect(
+      within(post(container, "p2")).queryByRole("button", { name: "Moderate post" })
+    ).toBeNull();
+    expect(within(post(container, "p2")).queryByRole("menuitem")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
+    expect(
+      within(post(container, "p1")).getByRole("menuitem", { name: "Hide post" })
+    ).toBeInTheDocument();
+  });
+
+  it("offers Hide and Edit but no Warn or Ban on a fellow moderator's post", () => {
+    auth.isSignedIn = true;
+    set("thread", {
+      data: threadData({ canModerate: true, p2: { moderable: true, sanctionable: false } }),
+    });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const theirs = within(post(container, "p2"));
+    expect(theirs.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
+    expect(theirs.getByRole("menuitem", { name: "Edit as moderator" })).toBeInTheDocument();
+    expect(theirs.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
+    expect(theirs.queryByRole("menuitem", { name: "Ban author" })).toBeNull();
+  });
+
+  it("says a hidden thread is hidden from members (M-4)", () => {
+    auth.isSignedIn = true;
+    set("thread", { data: threadData({ canModerate: true }) });
+    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.queryByText("This thread is hidden from members.")).toBeNull();
+    unmount();
+    set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.getByText("This thread is hidden from members.")).toBeInTheDocument();
+  });
+
+  it("badges a hidden thread in a moderator's category list (M-4)", () => {
+    const row = (id: string, hidden?: boolean) => ({
+      id,
+      title: `Thread ${id}`,
+      authorUserId: "u1",
+      authorPersonaId: null,
+      pinned: false,
+      locked: false,
+      postCount: 1,
+      lastPostAt: new Date(),
+      ...(hidden === undefined ? {} : { hidden }),
+    });
+    set("category", {
+      data: {
+        category: { id: "c1", key: "general", name: "General", description: null, realm: null },
+        threads: [row("t_hidden", true), row("t_shown", false)],
+        total: 2,
+        canStart: false,
+        canModerate: true,
+        notice: null,
+        banned: false,
+        authors,
+      },
+    });
+    render(<ThreadList categoryKey="general" page={1} />);
+    const hidden = screen.getByRole("link", { name: /Thread t_hidden/ });
+    const shown = screen.getByRole("link", { name: /Thread t_shown/ });
+    expect(within(hidden).getByText("Hidden")).toBeInTheDocument();
+    expect(within(shown).queryByText("Hidden")).toBeNull();
   });
 
   it("clears the hide note when the confirmation is cancelled", () => {

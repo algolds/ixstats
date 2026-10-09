@@ -44,7 +44,7 @@ interface ModeratorMenuProps {
   onEdit: () => void;
 }
 
-/** A moderator's actions on one post: hide or unhide, edit, warn or ban its author. */
+/** A moderator's actions on one post (those the server allows): hide or unhide, edit, warn or ban its author. */
 export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
   const [open, setOpen] = useState<Open>(null);
   const [note, setNote] = useState("");
@@ -87,19 +87,24 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
             <MoreHoriz aria-hidden />
           </Button>
         </DropdownMenuTrigger>
+        {/* Only what the server allows: Hide and Edit unless a site admin wrote it (for non-admins); Warn and Ban
+            unless the author is a site admin, a moderator here, or the viewer. */}
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setOpen("hide")}>{`${verb} post`}</DropdownMenuItem>
-          <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
-          {/* Never Warn or Ban on the moderator's own post. */}
-          {post.byViewer ? null : (
+          {post.moderable ? (
             <>
-              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setOpen("hide")}>{`${verb} post`}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
+            </>
+          ) : null}
+          {post.sanctionable ? (
+            <>
+              {post.moderable ? <DropdownMenuSeparator /> : null}
               <DropdownMenuItem onSelect={() => setOpen("warn")}>Warn author</DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onSelect={() => setOpen("ban")}>
                 Ban author
               </DropdownMenuItem>
             </>
-          )}
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 

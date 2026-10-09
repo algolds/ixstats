@@ -28,7 +28,7 @@ interface PostItemProps {
   onEdit: (postId: string, html: string) => Promise<void>;
   /** A signed-in viewer may report this post (another member's). */
   canReport: boolean;
-  /** The viewer moderates this thread's category: the post menu, with `tools`. */
+  /** The viewer moderates this thread's category: the post menu, with `tools`, when it has any action. */
   canModerate: boolean;
   tools: ModeratorTools | null;
 }
@@ -141,7 +141,7 @@ export const PostItem = memo(function PostItem({
           </Button>
         ) : null}
         {canReport ? <ReportDialog targetType="post" targetId={post.id} /> : null}
-        {canModerate && tools ? (
+        {canModerate && tools && (post.moderable || post.sanctionable) ? (
           <ModeratorMenu post={post} tools={tools} onEdit={() => setEditing("moderator")} />
         ) : null}
       </header>

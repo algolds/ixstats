@@ -168,6 +168,8 @@ function report(overrides: object = {}) {
     categoryId: "c1",
     category: { key: "hub", name: "Hub", realm: { slug: "caphiria", name: "Caphiria" } },
     ownTarget: false,
+    moderable: true,
+    sanctionable: true,
     reporterId: "u1",
     reason: "Spam link",
     status: "open",
@@ -392,6 +394,34 @@ describe("report queue", () => {
     expect(screen.queryByText(/Reported by/)).toBeNull();
     expect(screen.queryByRole("button", { name: /^Resolve/ })).toBeNull();
     expect(screen.getByText("About your own content")).toBeInTheDocument();
+  });
+
+  it("offers a realm moderator nothing but Open on a report about a site admin's post", () => {
+    set("context", { data: REALM_MOD });
+    set("reports", {
+      data: {
+        rows: [report({ moderable: false, sanctionable: false })],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole();
+    expect(screen.getByRole("link", { name: "Open Rhea's post" })).toBeInTheDocument();
+    for (const name of [/^Hide/, /^Warn/, /^Ban/, /^Resolve/, /^Dismiss/]) {
+      expect(screen.queryByRole("button", { name })).toBeNull();
+    }
+  });
+
+  it("offers Hide and handling but no Warn or Ban on a report about a fellow moderator", () => {
+    set("context", { data: REALM_MOD });
+    set("reports", { data: { rows: [report({ sanctionable: false })], total: 1, authors } });
+    renderConsole();
+    expect(screen.getByRole("button", { name: "Hide Rhea's post" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Resolve the report on Rhea's post" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Warn Rhea" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ban Rhea" })).toBeNull();
   });
 
   it("switches status with the segmented control", () => {

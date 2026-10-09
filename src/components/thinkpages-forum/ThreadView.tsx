@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Lock } from "iconoir-react";
+import { EyeClosed, Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -143,7 +143,8 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         back={{ href: categoryHref(category), label: category.name }}
         bleed
       />
-      {data.canModerate ? (
+      {/* A site admin's thread is site admins' to lock, pin, hide, archive or move. */}
+      {data.canModerate && data.moderable ? (
         <ThreadModeratorBar
           thread={thread}
           categories={data.moderatorTools?.categories ?? []}
@@ -154,6 +155,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
         <div className="flex justify-end">
           <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
         </div>
+      ) : null}
+      {thread.hidden ? (
+        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
+          <EyeClosed aria-hidden className="size-4 shrink-0" />
+          This thread is hidden from members.
+        </p>
       ) : null}
       {thread.locked ? (
         <p className="text-callout text-label-secondary flex items-center gap-2 px-1">

@@ -160,7 +160,9 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
   const { mutateAsync: resolve } = api.thinkpagesForumMod.resolveReport.useMutation();
   const { mutateAsync: hidePost } = api.thinkpagesForumMod.setPostHidden.useMutation();
   const { mutateAsync: setThreadFlag } = api.thinkpagesForumMod.setThreadFlag.useMutation();
-  const actionable = report.status === "open" && !report.ownTarget;
+  // Only what the server allows: nothing on a site admin's content for non-admins (`moderable`), and no Warn or
+  // Ban on a site admin, a moderator of the place, or the viewer (`sanctionable`).
+  const actionable = report.status === "open" && !report.ownTarget && report.moderable;
   const author = report.targetAuthorId;
   const kind = report.targetType === "post" ? "post" : "thread";
   // Names each row's buttons apart for screen readers: "Hide Rhea's post", "Resolve the report on Rhea's post".
@@ -200,15 +202,17 @@ function ReportActions({ report, href, authorName, context, refresh }: ReportAct
           >
             Hide
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            aria-label={`Warn ${authorName ?? "the author"}`}
-            onClick={() => setOpen("warn")}
-          >
-            Warn author
-          </Button>
-          {report.category ? (
+          {report.sanctionable ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              aria-label={`Warn ${authorName ?? "the author"}`}
+              onClick={() => setOpen("warn")}
+            >
+              Warn author
+            </Button>
+          ) : null}
+          {report.sanctionable && report.category ? (
             <Button
               size="sm"
               variant="secondary"

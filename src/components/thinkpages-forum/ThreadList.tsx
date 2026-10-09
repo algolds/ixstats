@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { EditPencil, Lock, Pin } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -41,6 +42,8 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
               <Lock aria-label="Locked" className="text-label-secondary size-3.5 shrink-0" />
             ) : null}
             <span className="min-w-0 truncate">{thread.title}</span>
+            {/* Moderators only: members never receive hidden threads. */}
+            {thread.hidden ? <Badge variant="warning">Hidden</Badge> : null}
           </p>
           <p className="text-footnote text-label-secondary flex min-w-0 gap-1">
             <AuthorName
