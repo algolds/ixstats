@@ -11,7 +11,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { timeAgo } from "~/lib/format/compact";
 import {
   categoryHref,
-  forumHomeHref,
   newThreadHref,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
@@ -106,11 +105,10 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
         title={category.name}
         subtitle={
           <>
-            <ForumBreadcrumbs items={[...forumTrail(category.realm), { label: category.name }]} />
+            <ForumBreadcrumbs items={forumTrail(category.realm)} />
             {category.description ? <p>{category.description}</p> : null}
           </>
         }
-        back={{ href: forumHomeHref(category.realm?.slug), label: "ThinkPages" }}
         bleed
         actions={
           data.canStart ? (

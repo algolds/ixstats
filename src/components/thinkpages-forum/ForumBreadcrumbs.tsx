@@ -23,9 +23,11 @@ export function forumTrail(realm: { slug: string; name: string } | null | undefi
   return realm ? [home, { label: realm.name, href: forumHomeHref(realm.slug) }] : [home];
 }
 
-/** Where a forum page sits (ThinkPages, realm, category, thread). Every item but the last, the current page, links. */
+/**
+ * Where a forum page sits: the pages above it (ThinkPages, realm, category), each a link. The page itself is the
+ * header's title, so the trail does not repeat it (U5); the header carries no back link beside it either.
+ */
 export function ForumBreadcrumbs({ items }: { items: readonly ForumCrumb[] }) {
-  const last = items.length - 1;
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -33,7 +35,7 @@ export function ForumBreadcrumbs({ items }: { items: readonly ForumCrumb[] }) {
           <Fragment key={i}>
             {i > 0 ? <BreadcrumbSeparator /> : null}
             <BreadcrumbItem>
-              {i < last && item.href ? (
+              {item.href ? (
                 <BreadcrumbLink asChild>
                   <Link href={item.href}>{item.label}</Link>
                 </BreadcrumbLink>

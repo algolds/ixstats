@@ -176,7 +176,10 @@ function categoryData(
   return { category, threads, total: threads.length, canStart, notice, authors };
 }
 
-/** The breadcrumb trail's labels and hrefs (the current page has none). */
+/** Text matches to skip: the header's compact title is hidden from assistive tech until the header collapses. */
+const HIDDEN = '[aria-hidden="true"]';
+
+/** The breadcrumb trail's labels and hrefs: the pages above this one, each a link. */
 function crumbs() {
   const trail = screen.getByRole("navigation", { name: "breadcrumb" });
   return within(trail)
@@ -312,16 +315,14 @@ describe("category view", () => {
     expect(screen.getByText("2 replies")).toBeInTheDocument();
   });
 
-  it("breadcrumbs a sitewide category as ThinkPages, then the category", () => {
+  it("breadcrumbs a sitewide category up to ThinkPages; the title alone names the category (U5)", () => {
     set("category", { data: categoryData(false) });
     render(<ThreadList categoryKey="general" page={1} />);
-    expect(crumbs()).toEqual([
-      ["ThinkPages", "/thinkpages"],
-      ["General", null],
-    ]);
-    // The breadcrumb root and the header's back link both lead home.
-    const home = screen.getAllByRole("link", { name: "ThinkPages" });
-    expect(home.map((link) => link.getAttribute("href"))).toEqual(["/thinkpages", "/thinkpages"]);
+    expect(crumbs()).toEqual([["ThinkPages", "/thinkpages"]]);
+    // One way home, and the category's name once, as the page title.
+    expect(screen.getAllByRole("link", { name: "ThinkPages" })).toHaveLength(1);
+    expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
   });
 
   it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
@@ -335,7 +336,6 @@ describe("category view", () => {
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages?realm=eurth"],
-      ["Hub", null],
     ]);
   });
 });
@@ -357,14 +357,15 @@ describe("thread view", () => {
     expect(screen.queryByText("This thread is locked.")).toBeNull();
   });
 
-  it("breadcrumbs a sitewide thread without a realm crumb", () => {
+  it("breadcrumbs a sitewide thread without a realm crumb, naming the thread and category once (U5)", () => {
     set("thread", { data: threadData() });
     render(<ThreadView threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["General", "/thinkpages/c/general"],
-      ["<b>Plain</b> title", null],
     ]);
+    expect(screen.getAllByText("<b>Plain</b> title", { ignore: HIDDEN })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: "General" })).toHaveLength(1);
   });
 
   it("breadcrumbs a realm thread through its realm and category", () => {
@@ -374,7 +375,6 @@ describe("thread view", () => {
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages?realm=eurth"],
       ["Hub", "/thinkpages/r/eurth/hub"],
-      ["<b>Plain</b> title", null],
     ]);
   });
 

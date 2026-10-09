@@ -124,11 +124,9 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
             items={[
               ...forumTrail(category.realm),
               { label: category.name, href: categoryHref(category) },
-              { label: thread.title },
             ]}
           />
         }
-        back={{ href: categoryHref(category), label: category.name }}
         bleed
       />
       {/* A site admin's thread is site admins' to lock, pin, hide, archive or move. */}
