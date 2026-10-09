@@ -283,10 +283,11 @@ export function CommonsCategoryBrowser({
 }: CommonsCategoryBrowserProps) {
   const isCommons = wiki === "commons";
 
-  const { data: localDynamicCats } = api.wikios.getCategories.useQuery(
-    { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
-    { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
-  );
+  const { data: localDynamicCats, isError: localCategoriesFailed } =
+    api.wikios.getCategories.useQuery(
+      { wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
+      { enabled: !isCommons, staleTime: 30 * 60 * 1000 }
+    );
 
   const groups = useMemo(() => {
     if (isCommons) {
@@ -347,6 +348,14 @@ export function CommonsCategoryBrowser({
     { prefix: debouncedQuery, limit: 15, wiki: wiki === "iiwiki" ? "iiwiki" : "ixwiki" },
     { enabled: !isCommons && isSearching, staleTime: 60_000 }
   );
+
+  const emptyMessage = isCommons
+    ? null
+    : localCategoriesFailed
+      ? "Could not load categories."
+      : localDynamicCats && localDynamicCats.length === 0
+        ? "No file categories on this wiki yet. Search by file name instead."
+        : null;
 
   const autocompleteResults = isCommons ? commonsAutocomplete : localAutocomplete;
   const safeAutocompleteResults = useMemo(
@@ -416,6 +425,8 @@ export function CommonsCategoryBrowser({
               </p>
             )}
           </>
+        ) : emptyMessage ? (
+          <p className="text-footnote text-label-secondary py-4 text-center">{emptyMessage}</p>
         ) : (
           groups.map((group) => (
             <CategoryGroupSection

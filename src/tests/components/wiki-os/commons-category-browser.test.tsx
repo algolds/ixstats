@@ -5,6 +5,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 
+let mockCategories: { data?: unknown[]; isError?: boolean } = {};
+
 jest.mock("~/trpc/react", () => {
   const idle = () => ({ data: undefined });
   return {
@@ -15,7 +17,7 @@ jest.mock("~/trpc/react", () => {
         getSubcategories: { useQuery: idle },
       },
       wikios: {
-        getCategories: { useQuery: idle },
+        getCategories: { useQuery: () => mockCategories },
         autocompleteCategories: { useQuery: idle },
         getCategoryTotalCounts: { useQuery: idle },
         getSubcategories: { useQuery: idle },
@@ -25,6 +27,10 @@ jest.mock("~/trpc/react", () => {
 });
 
 describe("CommonsCategoryBrowser", () => {
+  beforeEach(() => {
+    mockCategories = {};
+  });
+
   it("renders no filter toggle when onToggleCategory is absent, but rows still browse", () => {
     const onBrowseCategory = jest.fn();
     render(
@@ -56,5 +62,57 @@ describe("CommonsCategoryBrowser", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add Thrones filter" }));
     expect(onToggleCategory).toHaveBeenCalledWith("Thrones");
     expect(screen.getByRole("textbox", { name: "Search categories" })).toBeInTheDocument();
+  });
+
+  it("explains an empty category list on a wiki source", () => {
+    mockCategories = { data: [] };
+    render(
+      <CommonsCategoryBrowser
+        activeCategories={[]}
+        browsingCategory={null}
+        onBrowseCategory={jest.fn()}
+        wiki="ixwiki"
+      />
+    );
+    expect(
+      screen.getByText("No file categories on this wiki yet. Search by file name instead.")
+    ).toBeInTheDocument();
+  });
+
+  it("reports a failed category load on a wiki source", () => {
+    mockCategories = { isError: true };
+    render(
+      <CommonsCategoryBrowser
+        activeCategories={[]}
+        browsingCategory={null}
+        onBrowseCategory={jest.fn()}
+        wiki="ixwiki"
+      />
+    );
+    expect(screen.getByText("Could not load categories.")).toBeInTheDocument();
+  });
+
+  it("shows no empty message while loading or when categories exist", () => {
+    mockCategories = {};
+    const { rerender } = render(
+      <CommonsCategoryBrowser
+        activeCategories={[]}
+        browsingCategory={null}
+        onBrowseCategory={jest.fn()}
+        wiki="ixwiki"
+      />
+    );
+    expect(screen.queryByText(/No file categories/)).not.toBeInTheDocument();
+    mockCategories = { data: [{ name: "Flags of Ix", fileCount: 3 }] };
+    rerender(
+      <CommonsCategoryBrowser
+        activeCategories={[]}
+        browsingCategory={null}
+        onBrowseCategory={jest.fn()}
+        wiki="ixwiki"
+      />
+    );
+    expect(screen.queryByText(/No file categories/)).not.toBeInTheDocument();
+    expect(screen.getByText("Government & royalty")).toBeInTheDocument();
   });
 });
