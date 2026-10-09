@@ -4,9 +4,9 @@
  *
  * A board post is rich-editor HTML or plain text, as anywhere in the ThinkPages feed. Its body is built the way the
  * feed displays it: feed-only markers are removed, then `formatThinkpagesContentForDisplay` sanitizes HTML or
- * formats plain text. Attachments are appended (https or site-relative URLs only), and the whole is sanitized and
- * stripped as the forum's writes.ts stores a post. An `[ixaction=…]` token left inside a tag or attribute is
- * removed, so a token only ever sits in a text run, where it renders as a card.
+ * formats plain text. An `[ixaction=…]` token inside a tag or attribute is then removed, so a token only ever sits
+ * in a text run, where it renders as a card. Attachments are appended (https or site-relative URLs only), and the
+ * whole is sanitized last and stripped, as the forum's writes.ts stores a post.
  */
 import { countActionTokens } from "~/lib/action-links";
 import { escapeHtml, sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
@@ -92,9 +92,13 @@ export function boardPostBody(row: Pick<BoardPostRow, "content" | "media">): {
   contentHtml: string;
   plainText: string;
 } {
-  const text = formatThinkpagesContentForDisplay(withoutFeedMarkers(row.content));
+  const text = withoutTokensInTags(
+    formatThinkpagesContentForDisplay(withoutFeedMarkers(row.content))
+  );
   const media = row.media.map(mediaBlock).filter((block): block is string => block !== null);
-  const contentHtml = withoutTokensInTags(sanitizeUserContent([text, ...media].join("")));
+  // Sanitizing is the last transform: cutting a token out of an attribute can form a new URL
+  // (`java[ixaction=a]script:` becomes `javascript:`), which only a later pass can refuse.
+  const contentHtml = sanitizeUserContent([text, ...media].join(""));
   return { contentHtml, plainText: stripHtml(contentHtml) };
 }
 

@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { JSDOM } from "jsdom";
 import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
+import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import {
   ARCHIVE_TITLE,
   archiveDatabaseRefusal,
@@ -146,6 +147,58 @@ describe("boardPostBody", () => {
       expect(countActionTokens(contentHtml)).toBe(countTextActionTokens(contentHtml));
       expect(countActionTokens(plainText)).toBe(countTextActionTokens(contentHtml));
       expect(contentHtml).toContain("[ixaction=act2]");
+    }
+  });
+
+  const SCRIPT_URL_PAYLOADS = [
+    '<a href="java[ixaction=a]script:alert(1)">x</a>',
+    '<a href="&#106;ava[ixaction=a]script:alert(1)">x</a>',
+    '<p><img src="java[ixaction=a]script:alert(1)" alt=""></p>',
+    '<p><img src="&#106;ava[ixaction=a]script:alert(1)" alt=""></p>',
+    'https://x.test/a "java[ixaction=a]script:alert(1)"',
+  ];
+
+  it.each(SCRIPT_URL_PAYLOADS)(
+    "never stores a javascript: URL formed by cutting a token out of an attribute: %s",
+    (content) => {
+      const { contentHtml } = body(content);
+      const doc = new JSDOM(contentHtml).window.document;
+      const attributes = [...doc.body.querySelectorAll("*")].flatMap((el) =>
+        el.getAttributeNames().map((name) => [name, el.getAttribute(name) ?? ""] as const)
+      );
+      expect(attributes.filter(([name]) => name.startsWith("on"))).toEqual([]);
+      expect(attributes.filter(([, value]) => /javascript:/i.test(value))).toEqual([]);
+      expect(contentHtml).not.toMatch(/javascript:/i);
+    }
+  );
+
+  it("stores HTML the forum sanitizer leaves unchanged, for every fixture", () => {
+    const fixtures: Array<Pick<BoardPostRow, "content" | "media">> = [
+      ...SCRIPT_URL_PAYLOADS,
+      "<p>test</p>",
+      "Fish & chips < 3",
+      "one\ntwo\n\nthree",
+      '<!-- sports-bulletin:{"kind":"result"} -->\nFull time: **2-1**',
+      "Hello\n\n[DiscordMsg:123]",
+      "[blurb:the-slug|The Title]\n\nMy blurb",
+      '<p><a href="https://x.test/[ixaction=act1]">link</a> and [ixaction=act2]</p>',
+      "https://x.test/[ixaction=act1] and [ixaction=act2] #tag @someone",
+      '<p>hi</p><script>alert(1)</script><img src="https://x.test/a.png" onerror="alert(2)">',
+    ].map((content) => ({ content, media: [] }));
+    fixtures.push({
+      content: "look",
+      media: [
+        { url: "https://cdn.test/map.png", type: "image" },
+        { url: "/uploads/file.pdf", type: "document" },
+        { url: 'https://x.test/a.png" onerror="alert(3)', type: "image" },
+      ],
+    });
+    for (const fixture of fixtures) {
+      const { contentHtml } = boardPostBody(fixture);
+      expect(sanitizeUserContent(contentHtml)).toBe(contentHtml);
+    }
+    for (const post of plan([row("a", 1), row("b", 2, { content: "<p>rich</p>" })]).posts) {
+      expect(sanitizeUserContent(post.contentHtml)).toBe(post.contentHtml);
     }
   });
 
