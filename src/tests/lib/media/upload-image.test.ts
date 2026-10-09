@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { uploadImageFile } from "~/lib/media/upload-image";
+import { uploadImageFile, UploadImageError } from "~/lib/media/upload-image";
 
 function jsonResponse(body: object, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -52,5 +52,38 @@ describe("uploadImageFile", () => {
     global.fetch = jest.fn(async () => jsonResponse({ success: true }));
 
     await expect(uploadImageFile(file)).rejects.toThrow("Upload failed");
+  });
+
+  it("reports the HTTP status when the server answers with an HTML error page", async () => {
+    global.fetch = jest.fn(async () => new Response("<html>413</html>", { status: 413 }));
+
+    const error = await uploadImageFile(file).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(UploadImageError);
+    expect((error as UploadImageError).status).toBe(413);
+  });
+
+  it("carries the retry hint of a rate-limited upload", async () => {
+    global.fetch = jest.fn(async () =>
+      jsonResponse({ success: false, error: "Too many uploads", retryAfter: 30 }, 429)
+    );
+
+    const error = await uploadImageFile(file).catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(UploadImageError);
+    expect((error as UploadImageError).status).toBe(429);
+    expect((error as UploadImageError).retryAfter).toBe(30);
+  });
+
+  it("passes the abort signal to fetch", async () => {
+    const fetchMock = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(async () =>
+      jsonResponse({ success: true, url: "/images/uploads/x.png" })
+    );
+    global.fetch = fetchMock;
+    const controller = new AbortController();
+
+    await uploadImageFile(file, { signal: controller.signal });
+
+    expect(fetchMock.mock.calls[0]![1]?.signal).toBe(controller.signal);
   });
 });
