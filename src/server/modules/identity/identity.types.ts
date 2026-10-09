@@ -3,20 +3,20 @@
  */
 import type { IdentityUser } from "./identity.selects";
 
-/** Minimal XenForo member shape the passport reads; the forum module's `XFUser` satisfies it. */
-export interface IdentityForumMember {
-  user_id: number;
-  username: string;
-  user_title: string;
-  message_count: number;
-  reaction_score: number;
-  trophy_points: number;
+/** A member's own visible posts and threads on the ThinkPages forum (persona content left out). */
+export interface IdentityForumActivity {
+  posts: number;
+  threads: number;
 }
 
-/** Forum access, injected by the API layer because modules may not import other modules. */
+/**
+ * Forum access, injected by the API layer because modules may not import other modules. Native since phase 4b:
+ * `lookupUser` finds an old XenForo member by the name their imported posts carry (XenForo id and name), and
+ * `getActivity` counts a user's forum content.
+ */
 export interface IdentityForumGateway {
   lookupUser(name: string): Promise<{ userId: number; username: string } | null>;
-  getMember(userId: number): Promise<IdentityForumMember | null>;
+  getActivity(userId: string): Promise<IdentityForumActivity>;
 }
 
 /** A handle resolved to its user, country and linked wiki/forum names. */
@@ -104,12 +104,10 @@ export interface PassportLorewards {
   longestStreak: number;
 }
 
-/** Forum counters shown on the passport. */
+/** Forum counters shown on the passport: the holder's own visible posts and threads. */
 export interface PassportForumStats {
-  userTitle: string | null;
   messageCount: number;
-  reactionScore: number;
-  trophyPoints: number;
+  threadCount: number;
 }
 
 export type IdentitySystem =

@@ -77,7 +77,10 @@ const holder = {
   createdAt: new Date("2024-01-01"),
   countryId: null,
 };
-const forum = { getMember: jest.fn(), lookupUser: jest.fn() };
+const forum = {
+  getActivity: jest.fn().mockResolvedValue({ posts: 0, threads: 0 }),
+  lookupUser: jest.fn(),
+};
 const REVISION = {
   id: "rev1",
   summary: "Expanded the history section",

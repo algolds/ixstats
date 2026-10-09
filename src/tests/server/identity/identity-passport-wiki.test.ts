@@ -54,7 +54,10 @@ const mocked = db as unknown as {
   user: { update: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
 };
-const forum = { getMember: jest.fn(), lookupUser: jest.fn() } as never;
+const forum = {
+  getActivity: jest.fn().mockResolvedValue({ posts: 0, threads: 0 }),
+  lookupUser: jest.fn(),
+} as never;
 
 const countryOwner = {
   id: "db_1",

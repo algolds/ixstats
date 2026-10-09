@@ -25,14 +25,12 @@ function counted(n: number, one: string, many: string): string {
   return `${n.toLocaleString()} ${n === 1 ? one : many}`;
 }
 
-/** The holder's forum standing in one line: title, messages, reactions, trophy points. */
+/** The holder's forum activity in one line: messages and threads on the ThinkPages forum. */
 function ForumCounters({ stats }: { stats: NonNullable<PassportForum["stats"]> }) {
   const parts = [
-    stats.userTitle,
     counted(stats.messageCount, "message", "messages"),
-    counted(stats.reactionScore, "reaction", "reactions"),
-    counted(stats.trophyPoints, "trophy point", "trophy points"),
-  ].filter((part): part is string => Boolean(part));
+    counted(stats.threadCount, "thread", "threads"),
+  ];
   return (
     <div
       role="group"

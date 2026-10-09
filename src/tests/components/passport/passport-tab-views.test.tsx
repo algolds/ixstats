@@ -257,22 +257,22 @@ describe("PassportWorkTab", () => {
     const forum = {
       ...passport.forum,
       linked: true,
-      stats: { userTitle: "Senator", messageCount: 1204, reactionScore: 310, trophyPoints: 85 },
+      stats: { messageCount: 1204, threadCount: 85 },
     };
     render(<PassportWorkTab work={work} wiki={passport.wiki} forum={forum} handle="alex" />);
 
     const counters = screen.getByLabelText("Forum");
-    expect(counters).toHaveTextContent("Senator");
     expect(counters).toHaveTextContent("1,204 messages");
-    expect(counters).toHaveTextContent("310 reactions");
-    expect(counters).toHaveTextContent("85 trophy points");
+    expect(counters).toHaveTextContent("85 threads");
+    // Phase 4b: XenForo's reactions, trophies and user titles are not carried over.
+    expect(counters).not.toHaveTextContent(/reaction|troph/);
   });
 
   it("keeps the forum counters above the empty state", () => {
     const forum = {
       ...passport.forum,
       linked: true,
-      stats: { userTitle: null, messageCount: 1, reactionScore: 0, trophyPoints: 0 },
+      stats: { messageCount: 1, threadCount: 0 },
     };
     render(
       <PassportWorkTab

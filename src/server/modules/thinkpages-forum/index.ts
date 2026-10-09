@@ -12,6 +12,7 @@ export {
   legacyForumRedirectFor,
   type LegacyDb,
 } from "./legacy-redirect";
+export { forumActivityOf, importedAuthorByName, type MemberActivityDb } from "./member-activity";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,

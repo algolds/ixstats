@@ -27,7 +27,7 @@ const VISIBILITY_TOGGLES: Array<{
   },
   { key: "accolades", title: "Civic accolades", hint: "Lorewards score, rank and laurels" },
   { key: "impact", title: "Focus", hint: "Collection category breadth" },
-  { key: "forumStats", title: "Forum activity", hint: "Message and reaction counts" },
+  { key: "forumStats", title: "Forum activity", hint: "Message and thread counts" },
   { key: "vaultCards", title: "IxCredits", hint: "IxCredits balance and collection" },
   { key: "historyStream", title: "Activity history", hint: "Your activity stream" },
 ];

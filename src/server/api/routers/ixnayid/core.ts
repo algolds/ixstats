@@ -11,9 +11,7 @@ import {
   setUserHandle,
 } from "~/server/modules/identity/identity.handle-claim";
 import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
-import { syncOwnForumAccount } from "~/server/modules/identity/identity.service";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
-import { forumGateway } from "./forum-gateway";
 
 const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
 
@@ -89,7 +87,7 @@ const HANDLE_ERROR_CODES = {
 } as const;
 
 export const ixnayidCoreRouter = createTRPCRouter({
-  /** All linked accounts at once; also refreshes the caller's own linked forum name. */
+  /** All linked accounts at once (the old forum account is read-only: imported names, phase 4b). */
   getStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await db.user.findUnique({
       where: { id: ctx.user.id },
@@ -109,8 +107,6 @@ export const ixnayidCoreRouter = createTRPCRouter({
       },
     });
 
-    // The owner's own call keeps their linked forum name current (fire-and-forget, never throws).
-    if (user) void syncOwnForumAccount(user, forumGateway);
     const country = user ? await resolveUserCountry(user) : null;
 
     // Wiki is "linked" only through a VERIFIED ixwiki link (token proven on the wiki user page, or
@@ -149,13 +145,5 @@ export const ixnayidCoreRouter = createTRPCRouter({
         if (!(error instanceof HandleClaimError)) throw error;
         throw new TRPCError({ code: HANDLE_ERROR_CODES[error.code], message: error.message });
       }
-    }),
-
-  // A lookup previews an account before linking it.
-  lookupForumUser: protectedProcedure
-    .input(z.object({ username: z.string().min(1).max(100) }))
-    .query(async ({ input }) => {
-      const { lookupForumUser } = await import("~/server/modules/forum");
-      return lookupForumUser(input.username);
     }),
 });

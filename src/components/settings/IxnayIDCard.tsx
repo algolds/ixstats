@@ -2,12 +2,11 @@
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Link as Link2,
   LinkSlash as Unlink,
-  ChatBubble as MessageSquare,
   OpenBook as BookOpen,
   SystemRestart as Loader2,
   Check,
@@ -17,7 +16,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
-import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
+import { OldForumAccount } from "~/components/settings/OldForumAccount";
 
 interface ServiceRowProps {
   name: string;
@@ -117,14 +116,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   const { data: status, isLoading } = api.ixnayid.getStatus.useQuery();
   const wikiLinks = api.ixnayid.listWikiLinks.useQuery();
 
-  // Linking state
-  const [showForumInput, setShowForumInput] = useState(false);
-
   // Mutations
-  const unlinkForum = api.ixnayid.unlinkForum.useMutation({
-    onSuccess: () => utils.ixnayid.getStatus.invalidate(),
-  });
-
   const linkDiscord = api.ixnayid.linkDiscord.useMutation({
     onSuccess: () => utils.ixnayid.getStatus.invalidate(),
   });
@@ -186,29 +178,8 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
         </div>
 
         <div className="space-y-4">
-          {/* Forum */}
-          <ServiceRow
-            name="Community forum"
-            icon={<MessageSquare className="h-6 w-6 text-orange-500" />}
-            color="bg-orange-100 dark:bg-orange-900/30"
-            linked={status?.forum.linked ?? false}
-            username={status?.forum.username ?? null}
-            lastSync={status?.forum.lastSync ?? null}
-            onLink={() => setShowForumInput(true)}
-            onUnlink={() => unlinkForum.mutate()}
-            isLinking={false}
-            isUnlinking={unlinkForum.isPending}
-          />
-
-          {/* Forum verification: a code on the forum profile proves the account (WK-1) */}
-          {showForumInput && !status?.forum.linked && (
-            <div className="ml-14 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
-              <ForumAccountVerify
-                onLinked={() => setShowForumInput(false)}
-                onCancel={() => setShowForumInput(false)}
-              />
-            </div>
-          )}
+          {/* Old forum: read-only since phase 4b (staff attribute imported posts) */}
+          <OldForumAccount forum={status?.forum ?? { linked: false, username: null }} />
 
           {/* Wiki (verified by user-page token) */}
           <div className="rounded-row border-separator bg-surface-secondary flex items-start gap-4 border p-4">

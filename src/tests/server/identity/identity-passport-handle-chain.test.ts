@@ -67,7 +67,7 @@ const row = (id: string, fields: Partial<Row>): Row => ({
   ...fields,
 });
 
-const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getMember: jest.fn() };
+const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getActivity: jest.fn() };
 
 async function roundTrip(user: Row, verifiedWikiName: string | null) {
   const handle = await passportHandleOf(user, verifiedWikiName);

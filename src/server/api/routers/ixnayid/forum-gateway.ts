@@ -1,16 +1,14 @@
-import type {
-  IdentityForumGateway,
-  IdentityForumMember,
-} from "~/server/modules/identity/identity.types";
+import type { IdentityForumGateway } from "~/server/modules/identity/identity.types";
+import { db } from "~/server/db";
 
-/** Forum access for the identity module, which may not import the forum module itself. */
+/**
+ * Forum access for the identity module, which may not import the forum module itself. Native since phase 4b: old
+ * forum names resolve through imported content, activity is counted on the ThinkPages forum. Loaded on demand, as
+ * only the passport needs the forum module.
+ */
 export const forumGateway: IdentityForumGateway = {
-  lookupUser: async (name) => (await import("~/server/modules/forum")).lookupForumUser(name),
-  getMember: async (userId) => {
-    const { cachedFetch, cacheKey, xfFetch } = await import("~/server/modules/forum");
-    const response = await cachedFetch(cacheKey("member", userId), "member", () =>
-      xfFetch<{ user: IdentityForumMember }>(`/users/${userId}/`)
-    );
-    return response?.user ?? null;
-  },
+  lookupUser: async (name) =>
+    (await import("~/server/modules/thinkpages-forum")).importedAuthorByName(db, name),
+  getActivity: async (userId) =>
+    (await import("~/server/modules/thinkpages-forum")).forumActivityOf(db, userId),
 };
