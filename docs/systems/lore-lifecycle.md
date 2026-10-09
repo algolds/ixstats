@@ -3,7 +3,7 @@
 **Document Version:** 1.4.0  
 **Last Updated:** September 2026  
 **Status:** Canonical System Guide  
-**Subsystems Involved:** ThinkTanks (`/thinktanks`), Stash System (`/stashes`), Sovereign Feed (`/thinkpages`), WikiOS (`/wiki`), Margin (`/wiki/[slug]?margin=threads`), Image Repository (`/util/repository`), Lorewards (`/util/lorewards`), Vault (`/vault`)  
+**Subsystems Involved:** ThinkTanks (`/thinktanks`), Stash System (`/stashes`), Sovereign Feed (`/dashboard`), WikiOS (`/wiki`), Margin (`/wiki/[slug]?margin=threads`), Image Repository (`/util/repository`), Lorewards (`/util/lorewards`), Vault (`/vault`)  
 **Design Foundations:** Apple Design (`/apple-design`), Emil Kowalski Design Engineering (`/emil-design-eng`), Facet Design System (`/facet-design-system`)  
 
 ---
@@ -32,7 +32,7 @@ stateDiagram-v2
     
     state "1. Ideation & Research" as Phase1 {
         ThinkTankChat: ThinkTank Brainstorming & Chat
-        BlurbsPrompt: Topic Prompts & Micro-Lore (/thinkpages)
+        BlurbsPrompt: Topic Prompts & Micro-Lore (/blurbs)
         Stash: Stash Article & Quote Collection
         Repository: Media Repository Image Collection
         

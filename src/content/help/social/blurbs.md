@@ -3,7 +3,7 @@ title: Blurbs
 description: Answer the community's weekly prompts from your nation's point of view, and suggest new prompts.
 badge: Community
 prevHref: /help/social/forum
-prevLabel: The Forum
+prevLabel: ThinkPages (the forum)
 ---
 
 ## What Blurbs are
@@ -24,7 +24,7 @@ Good to know:
 - **One answer per prompt.** You can't answer the same prompt twice.
 - **Answers can't be edited** after you submit, so check before you post.
 - Only open prompts take answers. Closed and archived prompts stay readable.
-- If you have a [ThinkPages](/help/social/thinkpages) account for your nation, your answer is also posted to the feed automatically, cut to fit ThinkPages' 280-character limit and tagged `#blurb` and `#topictuesday`. If that post fails, your answer is still saved.
+- If you have a [persona](/help/social/thinkpages) for your nation, your answer is also posted to the feed automatically, cut to fit ThinkPages' 280-character limit and tagged `#blurb` and `#topictuesday`. If that post fails, your answer is still saved.
 
 ## Your answers
 

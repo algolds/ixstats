@@ -1,11 +1,14 @@
 # Dashboard
 
-**Last updated:** September 2026
+**Last updated:** October 2026
 
 The signed-in dashboard is a social home. It surfaces the user's nation at a
-glance, a platform-wide activity feed (ThinkPages), and trending content and
-community cards in an Inspector. Links into the rest of IxStats are the
-sidebar's source list. Both routes render `DashboardRouter`.
+glance, a platform-wide activity feed, the persona **Accounts** section, and
+trending content and community cards in an Inspector. Links into the rest of
+IxStats are the sidebar's source list. `/dashboard` and `/dashboard/accounts`
+render `DashboardRouter`; the feed's post, profile and saved pages are pages of
+their own (below). ThinkPages itself is the forum, at `/thinkpages`
+(`src/app/thinkpages/README.md`); this directory holds the feed and personas.
 
 ## Routes
 
@@ -13,15 +16,23 @@ sidebar's source list. Both routes render `DashboardRouter`.
 | ------------ | --------------------- | -------------------------------------- |
 | `/dashboard` | "Dashboard - IxStats" | `page.tsx` → `DashboardPageClient.tsx` |
 | `/dashboard/accounts` | "Accounts - IxStats" | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`) |
+| `/dashboard/post/[postId]` | feed post | `post/[postId]/page.tsx` (client page: a feed post with replies and the inline reply composer) |
+| `/dashboard/profile/[username]` | persona profile | `profile/[username]/page.tsx` (client page: a persona's posts, followers and following) |
+| `/dashboard/saved` | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only) |
 
+Feed posts and persona profiles are public, as they were under `/thinkpages`; Accounts and
+Saved posts need a sign-in. The old `/thinkpages/profile/<username>` and `/thinkpages/saved`
+paths redirect (308) to `/dashboard/profile/<username>` and `/dashboard/saved`.
+`/thinkpages/post/<id>` is the forum's post permalink: a forum post the viewer may see
+redirects (307) to its thread, and any other id redirects (307) to `/dashboard/post/<id>`.
 The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 `/dashboard/trends` sub-routes no longer exist.
 
-Home and Accounts are single-page sections: `useDashboardSection`
+`/dashboard` and `/dashboard/accounts` are the two sections of a single-page router: `useDashboardSection`
 (`src/hooks/useDashboardSection.ts`, paths and titles in `src/lib/dashboard-sections.ts`)
 switches them in place with `pushState`, follows back/forward through `popstate`, and
 re-syncs from `usePathname()` when a sidebar link moves between the two routes. The
-Accounts section is the ThinkPages persona hub (`src/components/dashboard/accounts/AccountsSection.tsx`);
+Accounts section is the persona hub (`src/components/dashboard/accounts/AccountsSection.tsx`);
 the feed's account manager dialog links to it ("Manage accounts"). Hero collapse and the
 feed tab are not reflected in the URL.
 
@@ -51,11 +62,13 @@ feed tab are not reflected in the URL.
 ## Architecture
 
 ```
-page.tsx (server: resolves signed-in country id) → DashboardPageClient
-  → DashboardErrorBoundary → DashboardRouter(initialCountryId)
+page.tsx / accounts/page.tsx (server: resolves signed-in country id) → DashboardPageClient
+  (useDashboardSection: "home" | "accounts")
+  → DashboardErrorBoundary → DashboardRouter(initialCountryId, section, onNavigate)
   DashboardColumn (a plain centred column; no rail)
-    ├ heroSection:  DashboardHero      (collapsible; HeroSnapshotPanels)
-    └ children:     UnifiedDashboardSection (feed + Inspector)
+    ├ heroSection:  DashboardHero      (home only; collapsible; HeroSnapshotPanels)
+    └ children:     home → UnifiedDashboardSection (feed + Inspector)
+                    accounts → AccountsSection (loaded lazily)
 ```
 
 Key files (all under `src/components/dashboard/`):
@@ -65,6 +78,9 @@ Key files (all under `src/components/dashboard/`):
 | `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
 | `hero/DashboardHero.tsx`, `hero/HeroSnapshotPanels.tsx` | Nation hero and snapshot panels                                        |
 | `DashboardColumn.tsx`                                   | Shared content layout: a plain centred column (hero, children)         |
+| `accounts/AccountsSection.tsx`                          | The Accounts section: persona list, create and settings modals         |
+| `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs |
+| `accounts/form/`                                        | Creation form parts: type selector, details form, traits, username check |
 | `sections/UnifiedDashboardSection.tsx`                  | Feed tabs, composer, Inspector with the community widgets              |
 | `sections/UnifiedFeedContent.tsx`                       | Feed/Following stream rendering                                        |
 | `sections/TrendingSectionWidget.tsx`                    | Trending content                                                       |

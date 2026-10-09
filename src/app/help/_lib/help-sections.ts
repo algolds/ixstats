@@ -497,7 +497,7 @@ export const helpSections: HelpSection[] = [
     articles: [
       {
         id: "thinkpages",
-        title: "ThinkPages & the Feed",
+        title: "The Feed & Personas",
         description: "Post to the feed as yourself or a persona, follow, react, and use hashtags.",
         path: "/help/social/thinkpages",
         tags: ["thinkpages", "feed", "posts", "personas", "blurbs"],
@@ -526,11 +526,10 @@ export const helpSections: HelpSection[] = [
       },
       {
         id: "forum",
-        title: "The Forum",
-        description:
-          "Read and post in the forum, report problems, appeal moderation, and what happens to old forum posts.",
+        title: "ThinkPages (the forum)",
+        description: "Sitewide boards and a section for every realm.",
         path: "/help/social/forum",
-        tags: ["forum", "threads", "discussion", "moderation", "appeals", "old forum"],
+        tags: ["forum", "thinkpages", "threads", "discussion", "moderation", "appeals", "old forum"],
       },
       {
         id: "blurbs",

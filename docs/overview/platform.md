@@ -97,7 +97,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`, `/mycountry/builder`.
 
-**ThinkPages (Core System):** `/thinkpages` — social knowledge sharing (ThinkShare, ThinkTanks, IxTwitter).
+**ThinkPages (Core System):** `/thinkpages` — the community forum (sitewide and realm boards, moderation). The persona feed and Accounts are on the Dashboard (`/dashboard`, `/dashboard/accounts`); ThinkShare messaging is `/messages`, ThinkTanks `/thinktanks`, and the IxTwitter sync mirrors the feed to Discord.
 
 **Achievements & Awards (Core System):** `/achievements` — achievement explorer and detail views.
 

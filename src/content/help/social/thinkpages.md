@@ -1,14 +1,16 @@
 ---
-title: ThinkPages & the Feed
+title: The Feed & Personas
 description: Post to the feed as yourself or a persona, follow and react, use hashtags, and answer Blurbs prompts.
 badge: Community
 nextHref: /help/social/activity-feed
 nextLabel: The Activity Feed & Hashtags
 ---
 
-## What ThinkPages is
+## What the feed is
 
-ThinkPages is IxStats' social feed: short posts, in character or as yourself, about what's happening in your nation and the world. The feed is on the [Dashboard](/dashboard); your personas (the accounts you post as) are managed at [/thinkpages](/thinkpages). Anyone can read public posts.
+ThinkPages is IxStats' community forum ([/thinkpages](/thinkpages)), described in [The Forum](/help/social/forum). This article is about the Dashboard **feed** and your **personas**.
+
+The feed is short posts, in character or as yourself, about what's happening in your nation and the world. It is on the [Dashboard](/dashboard); your personas (the accounts you post as) are managed in [Accounts](/dashboard/accounts). Anyone can read public posts.
 
 ## The feed
 
@@ -28,9 +30,9 @@ A realm-only feed is on each [realm board](/help/world/realms#realm-boards). Wha
 You post as a **persona**:
 
 - **Yourself:** one personal persona with no country, created the first time you choose **Post as yourself**. You don't need a nation for it.
-- **Nation personas:** up to 25 accounts tied to nations you own, such as a government, a newspaper or a citizen. Create and manage them at [/thinkpages](/thinkpages).
+- **Nation personas:** up to 25 accounts tied to nations you own, such as a government, a newspaper or a citizen. Create and manage them in [Accounts](/dashboard/accounts).
 
-Switch persona in the composer with one click. Each persona has a profile at `/thinkpages/profile/<username>` with its posts, followers and following. Only admins can mark a persona as verified.
+Switch persona in the composer with one click. Each persona has a profile at `/dashboard/profile/<username>` with its posts, followers and following. Only admins can mark a persona as verified.
 
 ## Posting
 

@@ -1,5 +1,5 @@
 ---
-title: The Forum
+title: ThinkPages (the forum)
 description: Read and post in the ThinkPages forum, report problems, understand warnings and appeals, and what happens to old forum posts.
 badge: Community
 prevHref: /help/social/thinktanks
@@ -10,9 +10,9 @@ nextLabel: Blurbs
 
 ## What the forum is
 
-The forum is the community's discussion space, built into ThinkPages at [/thinkpages/forum](/thinkpages/forum). Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
+The forum is the community's discussion space, built into ThinkPages at [/thinkpages](/thinkpages). In the sidebar it is **ThinkPages** under Home. Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
 
-Until the old forum is archived here, [/forum](/forum) still opens the older forum on a separate site; this article is about the forum at /thinkpages/forum.
+Until the old forum is archived here, [/forum](/forum) still opens the older forum on a separate site; this article is about the forum at /thinkpages.
 
 The forum home lists the sitewide categories first (Rules, Announcements, Reports, Find a Realm, General and Side Games), then a section for one realm with a switcher to pick another. Each realm section has its own categories: Hub for out-of-character talk, and Character Threads and Current Events for in-character writing.
 
@@ -64,7 +64,7 @@ You are notified when you receive a warning or a ban, when a ban is lifted, and 
 
 ### Your standing and appeals
 
-When you have a warning, a ban or an appeal on record, **Your standing** appears at the top of the [forum home](/thinkpages/forum). It lists your active points, each warning with when it expires, each ban with when it ends, and any appeals with their status and the moderator's response. Ban notices on forum pages link there too.
+When you have a warning, a ban or an appeal on record, **Your standing** appears at the top of the [forum home](/thinkpages). It lists your active points, each warning with when it expires, each ban with when it ends, and any appeals with their status and the moderator's response. Ban notices on forum pages link there too.
 
 You can appeal each active warning and each active ban once, with a message of 10 to 4000 characters. A different moderator with authority over the place reviews it: never you, and never a moderator who issued or raised the sanction. The outcome is one of three:
 
