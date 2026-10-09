@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { DashboardColumn } from "./DashboardColumn";
 import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { DashboardHero } from "./hero/DashboardHero";
@@ -22,7 +23,7 @@ interface DashboardRouterProps {
   initialCountryId?: string;
   /** The section on screen (useDashboardSection owns it). */
   section?: DashboardSection;
-  /** Switches the section in place. */
+  /** Switches the section in place; without it (on `/`) Accounts opens as its own page. */
   onNavigate?: (section: DashboardSection) => void;
 }
 
@@ -36,6 +37,9 @@ export function DashboardRouter({
     staleTime: 300_000,
   });
   const [heroCollapsed, setHeroCollapsed] = useState(false);
+  const router = useRouter();
+  const openAccounts = () =>
+    onNavigate ? onNavigate("accounts") : router.push("/dashboard/accounts");
 
   // Collapse the hero by default for a valid-but-unmapped country. Applied once
   // when the map status resolves; never fights the user's later expand/collapse.
@@ -69,10 +73,7 @@ export function DashboardRouter({
       {section === "accounts" ? (
         <AccountsSection initialCountryId={initialCountryId} onBack={() => onNavigate?.("home")} />
       ) : (
-        <UnifiedDashboardSection
-          globalStats={globalStats}
-          onOpenAccounts={() => onNavigate?.("accounts")}
-        />
+        <UnifiedDashboardSection globalStats={globalStats} onOpenAccounts={openAccounts} />
       )}
     </DashboardColumn>
   );

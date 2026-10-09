@@ -15,6 +15,10 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: null }) }));
+jest.mock("next/navigation", () => {
+  const push = jest.fn();
+  return { useRouter: () => ({ push }) };
+});
 jest.mock("~/components/dashboard/hero/DashboardHero", () => ({
   DashboardHero: () => <div>hero</div>,
 }));
@@ -39,13 +43,18 @@ jest.mock("~/components/dashboard/accounts/AccountsSection", () => ({
   ),
 }));
 
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
 
 const globalStatsQuery = jest.mocked(api.countries.getGlobalStats.useQuery);
+const routerPush = jest.mocked(useRouter().push);
 
 describe("DashboardRouter", () => {
-  beforeEach(() => globalStatsQuery.mockClear());
+  beforeEach(() => {
+    globalStatsQuery.mockClear();
+    routerPush.mockClear();
+  });
 
   it("shows the hero and the feed on Home, and opens Accounts from the feed", () => {
     const onNavigate = jest.fn();
@@ -71,5 +80,17 @@ describe("DashboardRouter", () => {
       undefined,
       expect.objectContaining({ enabled: false })
     );
+  });
+
+  it("opens the Accounts page from the feed on / (no section router)", () => {
+    render(<DashboardRouter />);
+    fireEvent.click(screen.getByRole("button", { name: "feed" }));
+    expect(routerPush).toHaveBeenCalledWith("/dashboard/accounts");
+  });
+
+  it("switches the section in place when it has a section router", () => {
+    render(<DashboardRouter onNavigate={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "feed" }));
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });
