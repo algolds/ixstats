@@ -128,9 +128,7 @@ function matchesDeclaredSignature(buffer: Buffer, contentType: string): boolean 
     case "jpg":
       return startsWithBytes(buffer, [0xff, 0xd8, 0xff]);
     case "gif":
-      return (
-        startsWithBytes(buffer, ASCII("GIF87a")) || startsWithBytes(buffer, ASCII("GIF89a"))
-      );
+      return startsWithBytes(buffer, ASCII("GIF87a")) || startsWithBytes(buffer, ASCII("GIF89a"));
     case "webp":
       return startsWithBytes(buffer, ASCII("RIFF")) && startsWithBytes(buffer, ASCII("WEBP"), 8);
     default:
