@@ -106,18 +106,46 @@ describe("rebaseRootRelativeUrls", () => {
 });
 
 describe("hasImageSrc", () => {
-  it("is true only for an img with a non-empty src", () => {
-    expect(hasImageSrc('<p><img src="/images/uploads/a.png" alt=""></p>')).toBe(true);
-    expect(hasImageSrc('<img alt="" src="https://e.com/a.png">')).toBe(true);
-    expect(hasImageSrc('<img src="" alt="">')).toBe(false);
-    expect(hasImageSrc('<img src="  " alt="">')).toBe(false);
-    expect(hasImageSrc("<img alt=x>")).toBe(false);
-    expect(hasImageSrc('<img src="data:image/png;base64,AAAA" alt="">')).toBe(false);
-    expect(hasImageSrc('<img src=" JavaScript:alert(1)" alt="">')).toBe(false);
-    expect(hasImageSrc('<img src="vbscript:x" alt="">')).toBe(false);
-    expect(hasImageSrc('<img src="data:x"><img src="/images/uploads/a.png">')).toBe(true);
-    expect(hasImageSrc('<img src="/images/data:x.png" alt="">')).toBe(true);
-    expect(hasImageSrc('<p>&lt;img src="x"&gt;</p>')).toBe(false);
-    expect(hasImageSrc("<p></p>")).toBe(false);
+  const base = "/projects/ixstates";
+  const has = (html: string) => hasImageSrc(html, base);
+
+  it("counts an image whose src is http(s) or an app image path", () => {
+    expect(has('<p><img src="/images/uploads/a.png" alt=""></p>')).toBe(true);
+    expect(has('<img alt="" src="https://e.com/a.png">')).toBe(true);
+    expect(has('<img src="HTTP://e.com/a.png">')).toBe(true);
+    expect(has('<img src="/images/downloaded/x.png">')).toBe(true);
+    expect(has('<img src="/api/mediawiki/commons/Special:Filepath/A%20b.png">')).toBe(true);
+    expect(has('<img src="/projects/ixstates/images/downloaded/x.png">')).toBe(true);
+    expect(has('<img src="/projects/ixstates/images/uploads/forum/1-abc-x.png">')).toBe(true);
+    expect(has('<img src="/projects/ixstates/api/mediawiki/ixwiki/images/a/ab/X.png">')).toBe(true);
+    expect(has('<img src="data:x"><img src="/images/uploads/a.png">')).toBe(true);
+  });
+
+  it.each([
+    ["an empty src", '<img src="" alt="">'],
+    ["a blank src", '<img src="  " alt="">'],
+    ["no src", "<img alt=x>"],
+    ["a data: URL", '<img src="data:image/png;base64,AAAA" alt="">'],
+    ["a javascript: URL", '<img src=" JavaScript:alert(1)" alt="">'],
+    ["a vbscript: URL", '<img src="vbscript:x" alt="">'],
+    ["a bare word", '<img src="x">'],
+    ["a fragment", '<img src="#">'],
+    ["a mailto: URL", '<img src="mailto:a@b.c">'],
+    ["a protocol-relative URL", '<img src="//e.com/a.png">'],
+    ["an http URL with no host", '<img src="https://">'],
+    ["another app path", '<img src="/images/data:x.png" alt="">'],
+    ["a bare upload prefix", '<img src="/images/uploads/">'],
+    ["another base path", '<img src="/elsewhere/images/uploads/a.png">'],
+    ["the base path on its own", '<img src="/projects/ixstates/a.png">'],
+    ["a data-src attribute", '<img data-src="/images/uploads/a.png">'],
+    ["escaped text", '<p>&lt;img src="/images/uploads/a.png"&gt;</p>'],
+    ["no image", "<p></p>"],
+  ])("does not count %s", (_, html) => {
+    expect(has(html)).toBe(false);
+  });
+
+  it("counts unprefixed app paths when there is no base path", () => {
+    expect(hasImageSrc('<img src="/images/uploads/a.png">', "")).toBe(true);
+    expect(hasImageSrc('<img src="/projects/ixstates/images/uploads/a.png">', "")).toBe(false);
   });
 });

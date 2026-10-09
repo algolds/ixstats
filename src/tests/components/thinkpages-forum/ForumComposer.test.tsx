@@ -146,6 +146,10 @@ describe("ForumComposer", () => {
     expect(post).toBeDisabled();
     type("img:javascript:alert(1)");
     expect(post).toBeDisabled();
+    type("img:x");
+    expect(post).toBeDisabled();
+    type("img:/api/mediawiki/commons/Special:Filepath/A%20b.png");
+    expect(post).toBeEnabled();
     type("img:/images/uploads/a.png");
     expect(post).toBeEnabled();
     fireEvent.click(post);

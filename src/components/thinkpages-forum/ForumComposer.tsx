@@ -14,6 +14,7 @@ import {
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
+import { getBasePath } from "~/lib/base-path";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { api } from "~/trpc/react";
 
@@ -83,7 +84,7 @@ export function ForumComposer({
   }, []);
 
   // An image counts as content, as it does on the server (prepareBody).
-  const hasBody = plain.trim().length > 0 || hasImageSrc(html);
+  const hasBody = plain.trim().length > 0 || hasImageSrc(html, getBasePath());
   const canSubmit = hasBody && (!titleField || title.trim().length > 0) && !pending;
 
   const submit = useCallback(async () => {
