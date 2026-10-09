@@ -111,7 +111,7 @@ export function WarnDialog({ userId, target, open, onOpenChange }: WarnDialogPro
         />
         <FormError message={error} />
         <DialogFooter>
-          <Button onClick={send} disabled={isPending || length === 0 || length > REASON_MAX}>
+          <Button onClick={send} disabled={isPending || length === 0}>
             Warn
           </Button>
         </DialogFooter>

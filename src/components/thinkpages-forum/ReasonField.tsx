@@ -11,7 +11,10 @@ interface ReasonFieldProps {
   placeholder?: string;
 }
 
-/** A labelled text field with a character counter, for the forum's report, warning, ban and appeal dialogs. */
+/**
+ * A labelled text field with a character counter, for the forum's report, warning, ban and appeal dialogs. The field
+ * caps the raw text at `max` and the counter counts that same text, so no length check is needed past it.
+ */
 export function ReasonField({
   label,
   value,
@@ -33,7 +36,7 @@ export function ReasonField({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       />
-      <p className="text-caption text-label-secondary text-right tabular-nums">{`${value.trim().length} / ${max}`}</p>
+      <p className="text-caption text-label-secondary text-right tabular-nums">{`${value.length} / ${max}`}</p>
     </div>
   );
 }

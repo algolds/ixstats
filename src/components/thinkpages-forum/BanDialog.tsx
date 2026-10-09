@@ -195,9 +195,7 @@ export function BanDialog({ userId, scopes, open, onOpenChange }: BanDialogProps
           <Button
             variant="destructive"
             onClick={send}
-            disabled={
-              isPending || !chosen || days === undefined || length === 0 || length > REASON_MAX
-            }
+            disabled={isPending || !chosen || days === undefined || length === 0}
           >
             Ban
           </Button>

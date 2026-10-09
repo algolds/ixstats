@@ -11,6 +11,7 @@ interface QueryResult {
 interface MockApi {
   results: Record<string, QueryResult>;
   mutations: Record<string, jest.Mock>;
+  invalidations: Record<string, jest.Mock>;
 }
 
 jest.mock("~/trpc/react", () => {
@@ -22,22 +23,28 @@ jest.mock("~/trpc/react", () => {
   const mutation = (name: string) => ({
     useMutation: () => ({ mutateAsync: mutations[name], mutate: jest.fn(), isPending: false }),
   });
-  const invalidate = () => Promise.resolve();
+  const invalidations: Record<string, jest.Mock> = {};
+  const invalidator = (name: string) => {
+    invalidations[name] = jest.fn(() => Promise.resolve());
+    return { invalidate: invalidations[name] };
+  };
+  const utils = {
+    thinkpagesForum: {
+      thread: invalidator("thread"),
+      category: invalidator("category"),
+      categories: invalidator("categories"),
+      realmSection: invalidator("realmSection"),
+      myStanding: invalidator("myStanding"),
+      resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
+    },
+    thinkpagesForumMod: { context: invalidator("context") },
+  };
   return {
     results,
     mutations,
+    invalidations,
     api: {
-      useUtils: () => ({
-        thinkpagesForum: {
-          thread: { invalidate },
-          category: { invalidate },
-          categories: { invalidate },
-          realmSection: { invalidate },
-          myStanding: { invalidate },
-          resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
-        },
-        thinkpagesForumMod: { context: { invalidate } },
-      }),
+      useUtils: () => utils,
       thinkpagesForum: {
         categories: query("categories"),
         realms: query("realms"),
@@ -172,7 +179,7 @@ import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
 
-const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations, invalidations } = jest.requireMock<MockApi>("~/trpc/react");
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
 const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.Mock } }>(
   "~/hooks/useNotify"
@@ -192,6 +199,9 @@ interface ThreadOverrides {
   banned?: boolean;
   notice?: string | null;
   hidden?: boolean;
+  locked?: boolean;
+  /** The viewer started the thread (default: they did, as the author of p1). */
+  viewerIsAuthor?: boolean;
 }
 
 function threadData(o: ThreadOverrides = {}) {
@@ -200,7 +210,7 @@ function threadData(o: ThreadOverrides = {}) {
       id: "t1",
       title: "A thread",
       authorUserId: "u1",
-      locked: false,
+      locked: o.locked ?? false,
       pinned: false,
       hidden: false,
       archived: false,
@@ -214,7 +224,8 @@ function threadData(o: ThreadOverrides = {}) {
         contentHtml: "<p>Mine</p>",
         editedAt: null,
         createdAt: new Date(),
-        isOwn: true,
+        byViewer: true,
+        isOwn: !o.locked,
       },
       {
         id: "p2",
@@ -223,6 +234,7 @@ function threadData(o: ThreadOverrides = {}) {
         contentHtml: "<p>Theirs</p>",
         editedAt: null,
         createdAt: new Date(),
+        byViewer: false,
         isOwn: false,
         ...(o.canModerate ? { hidden: o.hidden ?? false } : {}),
       },
@@ -232,6 +244,7 @@ function threadData(o: ThreadOverrides = {}) {
     notice: o.notice ?? null,
     banned: o.banned ?? false,
     canModerate: o.canModerate ?? false,
+    viewerIsAuthor: o.viewerIsAuthor ?? true,
     ...(o.canModerate
       ? { moderatorTools: { categories: [{ key: "side", name: "Side", realm: null }] } }
       : {}),
@@ -266,6 +279,15 @@ describe("reporting", () => {
     const { container } = render(<ThreadView threadId="t1" page={1} />);
     expect(within(post(container, "p2")).getByRole("button", { name: "Report" })).toBeTruthy();
     expect(within(post(container, "p1")).queryByRole("button", { name: "Report" })).toBeNull();
+  });
+
+  it("offers no Report on the viewer's own post where they may no longer edit it", () => {
+    auth.isSignedIn = true;
+    set("thread", { data: threadData({ locked: true, canReply: false }) });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    expect(within(post(container, "p1")).queryByRole("button", { name: "Report" })).toBeNull();
+    expect(within(post(container, "p2")).getByRole("button", { name: "Report" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Report thread" })).toBeNull();
   });
 
   it("offers no Report to anonymous visitors", () => {
@@ -304,14 +326,24 @@ describe("reporting", () => {
     );
   });
 
-  it("offers Report thread to members who do not moderate it", () => {
+  it("reports a thread the member did not start and does not moderate", async () => {
     auth.isSignedIn = true;
-    set("thread", {
-      data: { ...threadData(), thread: { ...threadData().thread, authorUserId: "u2" } },
-    });
+    const report = jest.fn(() => Promise.resolve({ id: "r2" }));
+    mutations.report = report;
+    set("thread", { data: threadData({ viewerIsAuthor: false }) });
     render(<ThreadView threadId="t1" page={1} />);
-    expect(screen.getByRole("button", { name: "Report thread" })).toBeInTheDocument();
-    expect(screen.queryByRole("toolbar", { name: "Moderate thread" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Report thread" }));
+    const dialog = screen.getByRole("dialog", { name: "Report this thread" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Off topic" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send report" }));
+    await waitFor(() =>
+      expect(report).toHaveBeenCalledWith({
+        targetType: "thread",
+        targetId: "t1",
+        reason: "Off topic",
+      })
+    );
   });
 });
 
@@ -321,13 +353,13 @@ describe("moderator tools", () => {
     set("thread", { data: threadData() });
     const { unmount } = render(<ThreadView threadId="t1" page={1} />);
     expect(screen.queryByRole("button", { name: "Moderate post" })).toBeNull();
-    expect(screen.queryByRole("toolbar", { name: "Moderate thread" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
     unmount();
 
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadView threadId="t1" page={1} />);
     expect(screen.getAllByRole("button", { name: "Moderate post" })).toHaveLength(2);
-    expect(screen.getByRole("toolbar", { name: "Moderate thread" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Moderate thread" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Report thread" })).toBeNull();
   });
 
@@ -342,6 +374,34 @@ describe("moderator tools", () => {
     const confirm = screen.getByRole("alertdialog", { name: "Hide this post?" });
     fireEvent.click(within(confirm).getByRole("button", { name: "Hide post" }));
     await waitFor(() => expect(setPostHidden).toHaveBeenCalledWith({ postId: "p2", hidden: true }));
+  });
+
+  it("offers Warn and Ban on other members' posts, never on the moderator's own", () => {
+    auth.isSignedIn = true;
+    set("thread", { data: threadData({ canModerate: true }) });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const own = within(post(container, "p1"));
+    expect(own.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
+    expect(own.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
+    expect(own.queryByRole("menuitem", { name: "Ban author" })).toBeNull();
+    const theirs = within(post(container, "p2"));
+    expect(theirs.getByRole("menuitem", { name: "Warn author" })).toBeInTheDocument();
+    expect(theirs.getByRole("menuitem", { name: "Ban author" })).toBeInTheDocument();
+  });
+
+  it("clears the hide note when the confirmation is cancelled", () => {
+    auth.isSignedIn = true;
+    set("thread", { data: threadData({ canModerate: true }) });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const hide = () =>
+      fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Hide post" }));
+    hide();
+    let confirm = screen.getByRole("alertdialog", { name: "Hide this post?" });
+    fireEvent.change(within(confirm).getByRole("textbox"), { target: { value: "Spam" } });
+    fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
+    hide();
+    confirm = screen.getByRole("alertdialog", { name: "Hide this post?" });
+    expect(within(confirm).getByRole("textbox")).toHaveValue("");
   });
 
   it("marks a hidden post with a Hidden badge and offers Unhide", () => {
@@ -388,11 +448,16 @@ describe("moderator tools", () => {
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadView threadId="t1" page={1} />);
-    const bar = screen.getByRole("toolbar", { name: "Moderate thread" });
+    const bar = screen.getByRole("group", { name: "Moderate thread" });
     fireEvent.click(within(bar).getByRole("button", { name: "Lock" }));
     await waitFor(() =>
       expect(setThreadFlag).toHaveBeenCalledWith({ threadId: "t1", flag: "locked", value: true })
     );
+    // The thread, then every listing whose counts follow it.
+    await waitFor(() => expect(invalidations.realmSection).toHaveBeenCalled());
+    expect(invalidations.thread).toHaveBeenCalledWith({ threadId: "t1" });
+    expect(invalidations.category).toHaveBeenCalled();
+    expect(invalidations.categories).toHaveBeenCalled();
   });
 
   it("surfaces a refused moderator action as an error toast", async () => {
@@ -423,6 +488,33 @@ describe("moderator tools", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Move thread" }));
     await waitFor(() =>
       expect(moveThread).toHaveBeenCalledWith({ threadId: "t1", to: { key: "side" } })
+    );
+  });
+
+  it("opens Move on the refreshed list after a move", async () => {
+    auth.isSignedIn = true;
+    mutations.moveThread = jest.fn(() => Promise.resolve());
+    set("thread", { data: threadData({ canModerate: true }) });
+    const { rerender } = render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move thread" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    // Now in Side: General (its old home) is the only destination left.
+    const moved = {
+      ...threadData({ canModerate: true }),
+      moderatorTools: { categories: [{ key: "general", name: "General", realm: null }] },
+    };
+    set("thread", { data: moved });
+    rerender(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Move" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Move this thread" });
+    expect(within(dialog).getByRole("combobox")).toHaveValue("general");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move thread" }));
+    await waitFor(() =>
+      expect(mutations.moveThread).toHaveBeenLastCalledWith({
+        threadId: "t1",
+        to: { key: "general" },
+      })
     );
   });
 });

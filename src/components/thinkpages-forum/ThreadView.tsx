@@ -126,8 +126,6 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
 
   const { thread, category } = data;
   const open = !thread.locked && !thread.archived;
-  // The thread's author, when one of the viewer's own posts on this page shows it is them.
-  const ownThread = posts.some((p) => p.isOwn && p.authorUserId === thread.authorUserId);
 
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
@@ -152,7 +150,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           refresh={refresh}
         />
       ) : null}
-      {!data.canModerate && isSignedIn && !ownThread ? (
+      {!data.canModerate && isSignedIn && !data.viewerIsAuthor ? (
         <div className="flex justify-end">
           <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
         </div>
@@ -174,7 +172,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
             cardsErrored={errored}
             canEdit={post.isOwn && open}
             onEdit={edit}
-            canReport={!!isSignedIn && !post.isOwn && !data.canModerate}
+            canReport={!!isSignedIn && !post.byViewer && !data.canModerate}
             canModerate={data.canModerate}
             tools={tools}
           />

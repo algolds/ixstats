@@ -49,7 +49,7 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
   const notify = useNotify();
   const moveLabelId = useId();
   const [moving, setMoving] = useState(false);
-  const [to, setTo] = useState(categories[0]?.key ?? "");
+  const [to, setTo] = useState("");
   const [error, setError] = useState<string | null>(null);
   const flagMutation = api.thinkpagesForumMod.setThreadFlag.useMutation();
   const moveMutation = api.thinkpagesForumMod.moveThread.useMutation();
@@ -58,8 +58,11 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
   const toggle = (flag: Flag, label: string) => {
     flagMutation
       .mutateAsync({ threadId: thread.id, flag, value: !thread[flag] })
-      .then(refresh)
-      .catch((e: Error) => notify.error(`Could not ${label.toLowerCase()} the thread`, e.message));
+      // A failed refresh is not a failed action: only the mutation's refusal is reported.
+      .then(
+        () => void refresh(),
+        (e: Error) => notify.error(`Could not ${label.toLowerCase()} the thread`, e.message)
+      );
   };
 
   const move = () => {
@@ -67,18 +70,18 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
     if (!destination) return;
     setError(null);
     const place = destination.realm ? { realm: destination.realm.slug } : {};
-    moveMutation
-      .mutateAsync({ threadId: thread.id, to: { key: destination.key, ...place } })
-      .then(() => {
+    moveMutation.mutateAsync({ threadId: thread.id, to: { key: destination.key, ...place } }).then(
+      () => {
         setMoving(false);
         notify.success("Thread moved", `It is now in ${destination.name}.`);
-        return refresh();
-      })
-      .catch((e: Error) => setError(e.message || "Could not move the thread."));
+        void refresh();
+      },
+      (e: Error) => setError(e.message || "Could not move the thread.")
+    );
   };
 
   return (
-    <div role="toolbar" aria-label="Moderate thread" className="flex flex-wrap gap-2">
+    <div role="group" aria-label="Moderate thread" className="flex flex-wrap gap-2">
       {FLAGS.map(({ flag, on, off }) => {
         const label = thread[flag] ? off : on;
         return (
@@ -94,7 +97,16 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
         );
       })}
       {categories.length > 0 ? (
-        <Button variant="secondary" size="sm" disabled={pending} onClick={() => setMoving(true)}>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={pending}
+          onClick={() => {
+            // Start from the current list: a move changes it (the old home joins, the new one leaves).
+            setTo(categories[0]?.key ?? "");
+            setMoving(true);
+          }}
+        >
           Move
         </Button>
       ) : null}

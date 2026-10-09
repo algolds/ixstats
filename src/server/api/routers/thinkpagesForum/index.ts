@@ -109,11 +109,17 @@ export const thinkpagesForumRouter = createTRPCRouter({
     return {
       ...result,
       // Moderators of the category get the Hidden badge; members never receive hidden posts (T0-19).
-      posts: result.posts.map(({ hidden, ...post }) => ({
-        ...post,
-        ...(canModerate ? { hidden } : {}),
-        isOwn: viewer !== null && post.authorUserId === viewer.id && editable && !hidden,
-      })),
+      // `byViewer` is authorship (no Report, no Warn or Ban on your own post); `isOwn` is "may edit it now".
+      posts: result.posts.map(({ hidden, ...post }) => {
+        const byViewer = viewer !== null && post.authorUserId === viewer.id;
+        return {
+          ...post,
+          ...(canModerate ? { hidden } : {}),
+          byViewer,
+          isOwn: byViewer && editable && !hidden,
+        };
+      }),
+      viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
       canReply,
       notice: access.notice,
       banned: access.ban !== null,

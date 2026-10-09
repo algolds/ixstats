@@ -359,9 +359,27 @@ describe("thinkpagesForum router", () => {
     expect(free).toMatchObject({ banned: false, notice: null, canReply: true });
   });
 
+  it("marks the viewer's posts and thread as theirs even where they may not edit them", async () => {
+    const locked = await caller(member, forumDb({ locked: true })).thread({
+      threadId: "t1",
+      page: 1,
+    });
+    expect(locked.posts.map((p) => [p.byViewer, p.isOwn])).toEqual([
+      [true, false],
+      [false, false],
+    ]);
+    expect(locked.viewerIsAuthor).toBe(true);
+    const other = await caller(member, forumDb({ authorUserId: "u2" })).thread({
+      threadId: "t1",
+      page: 1,
+    });
+    expect(other.viewerIsAuthor).toBe(false);
+  });
+
   it("gives an anonymous reader no Edit and no reply", async () => {
     const out = await caller(null, forumDb()).thread({ threadId: "t1", page: 1 });
-    expect(out.posts.every((p) => p.isOwn === false)).toBe(true);
+    expect(out.posts.every((p) => p.isOwn === false && p.byViewer === false)).toBe(true);
+    expect(out.viewerIsAuthor).toBe(false);
     expect(out.canReply).toBe(false);
   });
 

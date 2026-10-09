@@ -58,7 +58,9 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
     open: open === which,
     onOpenChange: (next: boolean) => {
       setOpen(next ? which : null);
-      if (!next) setError(null);
+      if (next) return;
+      setError(null);
+      setNote("");
     },
   });
 
@@ -66,12 +68,15 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
     const trimmed = note.trim();
     setError(null);
     setHidden({ postId: post.id, hidden: !hidden, ...(trimmed ? { note: trimmed } : {}) })
-      .then(() => {
-        setNote("");
-        setOpen(null);
-        return tools.refresh();
-      })
-      .catch((e: Error) => setError(e.message || `Could not ${verb.toLowerCase()} the post.`));
+      // A failed refresh is not a failed action: only the mutation's refusal is shown.
+      .then(
+        () => {
+          setNote("");
+          setOpen(null);
+          void tools.refresh();
+        },
+        (e: Error) => setError(e.message || `Could not ${verb.toLowerCase()} the post.`)
+      );
   };
 
   return (
@@ -85,11 +90,16 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setOpen("hide")}>{`${verb} post`}</DropdownMenuItem>
           <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => setOpen("warn")}>Warn author</DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onSelect={() => setOpen("ban")}>
-            Ban author
-          </DropdownMenuItem>
+          {/* Never Warn or Ban on the moderator's own post. */}
+          {post.byViewer ? null : (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setOpen("warn")}>Warn author</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => setOpen("ban")}>
+                Ban author
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

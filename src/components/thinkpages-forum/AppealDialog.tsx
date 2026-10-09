@@ -40,14 +40,15 @@ export function AppealDialog({ subjectType, subjectId, open, onOpenChange }: App
 
   const send = () => {
     setError(null);
-    appeal({ subjectType, subjectId, body: body.trim() })
-      .then(() => {
+    appeal({ subjectType, subjectId, body: body.trim() }).then(
+      () => {
         notify.success("Appeal sent", "A moderator who did not issue it will decide.");
         setBody("");
         close(false);
-        return utils.thinkpagesForum.myStanding.invalidate();
-      })
-      .catch((e: Error) => setError(e.message || "Could not send the appeal."));
+        void utils.thinkpagesForum.myStanding.invalidate();
+      },
+      (e: Error) => setError(e.message || "Could not send the appeal.")
+    );
   };
 
   return (
@@ -68,7 +69,7 @@ export function AppealDialog({ subjectType, subjectId, open, onOpenChange }: App
         />
         <FormError message={error} />
         <DialogFooter>
-          <Button onClick={send} disabled={isPending || length < BODY_MIN || length > BODY_MAX}>
+          <Button onClick={send} disabled={isPending || length < BODY_MIN}>
             Send appeal
           </Button>
         </DialogFooter>

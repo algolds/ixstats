@@ -74,7 +74,7 @@ export function ReportDialog({ targetType, targetId, label = "Report" }: ReportD
         />
         <FormError message={error} />
         <DialogFooter>
-          <Button onClick={send} disabled={isPending || length < REASON_MIN || length > REASON_MAX}>
+          <Button onClick={send} disabled={isPending || length < REASON_MIN}>
             Send report
           </Button>
         </DialogFooter>
