@@ -264,8 +264,9 @@ function planThread(
     categoryRef,
     title: threadTitle(thread.title),
     ...authorOf(ctx.byForumId, thread.user_id, thread.username),
-    pinned: thread.sticky,
-    locked: !thread.discussion_open,
+    pinned: thread.sticky === true,
+    // Only an explicit `false` locks: a missing or renamed field must not lock every thread (the report counts locks).
+    locked: thread.discussion_open === false,
     hidden: imported.hidden,
     createdAt: new Date(thread.post_date * 1000),
     lastPostAt: lastPostAt(thread, planned),
@@ -280,6 +281,7 @@ function countTotals(
   threads: PlannedThread[]
 ): void {
   const posts = threads.flatMap((t) => t.posts);
+  const fresh = threads.filter((t) => !t.existingId);
   report.totals = {
     categories: categories.length,
     threadsNew: threads.filter((t) => !t.existingId).length,
@@ -287,6 +289,8 @@ function countTotals(
     posts: posts.length,
     hiddenThreads: threads.filter((t) => t.hidden && !t.existingId).length,
     hiddenPosts: posts.filter((p) => p.hidden).length,
+    lockedThreads: fresh.filter((t) => t.locked).length,
+    pinnedThreads: fresh.filter((t) => t.pinned).length,
   };
 }
 

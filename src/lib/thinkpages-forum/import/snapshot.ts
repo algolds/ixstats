@@ -329,11 +329,24 @@ export async function openSnapshotWriter(
   };
 }
 
-/** Parses JSON lines, last line per id wins (first-seen order kept); unparsable lines are counted. */
+const isCount = (n: number) => Number.isFinite(n) && n >= 0;
+const isId = (n: number) => Number.isFinite(n) && n > 0;
+
+/**
+ * The numbers the importer turns into ids and dates. An Invalid Date would throw in Prisma and stop the whole
+ * apply, so a row without them is skipped and counted like a torn line (this is the one place snapshot rows enter).
+ */
+const usableThread = (t: XfThread) =>
+  isId(t.thread_id) && isId(t.node_id) && isId(t.post_date) && isCount(t.last_post_date);
+const usablePost = (p: XfPost) =>
+  isId(p.post_id) && isId(p.thread_id) && isId(p.post_date) && isCount(p.position);
+
+/** Parses JSON lines, last line per id wins (first-seen order kept); unparsable or unusable lines are counted. */
 async function readLines<T>(
   fs: SnapshotFs,
   file: string,
-  idOf: (row: T) => number
+  idOf: (row: T) => number,
+  usable: (row: T) => boolean
 ): Promise<{ rows: Map<number, T>; skipped: number }> {
   const rows = new Map<number, T>();
   let skipped = 0;
@@ -348,7 +361,8 @@ async function readLines<T>(
     if (!line.trim()) continue;
     try {
       const row: T = JSON.parse(line);
-      rows.set(idOf(row), row);
+      if (usable(row)) rows.set(idOf(row), row);
+      else skipped += 1;
     } catch {
       skipped += 1;
     }
@@ -375,8 +389,8 @@ export async function readSnapshot(fs: SnapshotFs, dir: string): Promise<Snapsho
   const meta: SnapshotMeta = JSON.parse(await fs.readFile(paths.meta));
   if (meta.version !== SNAPSHOT_VERSION)
     throw new Error(`${dir}: unsupported snapshot version ${meta.version}`);
-  const threads = await readLines<XfThread>(fs, paths.threads, (t) => t.thread_id);
-  const posts = await readLines<XfPost>(fs, paths.posts, (p) => p.post_id);
+  const threads = await readLines<XfThread>(fs, paths.threads, (t) => t.thread_id, usableThread);
+  const posts = await readLines<XfPost>(fs, paths.posts, (p) => p.post_id, usablePost);
   return {
     meta,
     state: await readProgress(fs, dir),

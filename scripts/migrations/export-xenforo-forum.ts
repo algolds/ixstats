@@ -109,7 +109,7 @@ function printSnapshot(snapshot: Snapshot): void {
       `${meta.bypassPermissions ? "on" : "off"}, client ${meta.clientVersion ?? "?"}; ` +
       `${snapshot.nodes.length} nodes, ${snapshot.threads.length} threads, ${postCount} posts, ` +
       `${snapshot.users.size} users, ${snapshot.attachments.size} attachments` +
-      (snapshot.skippedLines ? `, ${snapshot.skippedLines} torn lines skipped` : "")
+      (snapshot.skippedLines ? `, ${snapshot.skippedLines} torn or unusable lines skipped` : "")
   );
   for (const forum of exportedForums(snapshot.nodes, meta.nodeFilter)) {
     const count = state.forumCounts?.get(forum.node_id);

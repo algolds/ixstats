@@ -214,6 +214,8 @@ describe("planImport on the snapshot-small fixture", () => {
       posts: 6,
       hiddenThreads: 2,
       hiddenPosts: 1,
+      lockedThreads: 1,
+      pinnedThreads: 1,
     });
     expect(report.warnings).toEqual([expect.stringContaining('13 "Staff Room"')]);
     expect(report.nodes.map((n) => [n.nodeId, n.target, n.source, n.threads, n.posts])).toEqual([
@@ -222,6 +224,7 @@ describe("planImport on the snapshot-small fixture", () => {
       [13, "archive:xf-13 (public)", "default", 1, 2],
     ]);
     expect(summarizeImport(report).join("\n")).toContain("Staff Room");
+    expect(summarizeImport(report)[0]).toContain("1 locked threads, 1 pinned threads");
   });
 
   it("keeps every stored body sanitized, inert and token-consistent, with forum links absolute", () => {
@@ -585,5 +588,32 @@ describe("planImport rules", () => {
     );
     expect(plan.report.warnings).toHaveLength(2);
     expect(plan.report.warnings.join("\n")).toMatch(/30 "Admin lounge"[\s\S]*31 "Internal"/);
+  });
+
+  it("counts locked and pinned new threads, and reads a non-boolean discussion_open as open", () => {
+    const odd = (extra: object): XfThread => JSON.parse(JSON.stringify({ ...thread(4, 12), ...extra }));
+    const plan = planImport(
+      snap(
+        [GENERAL],
+        [
+          thread(1, 12, { discussion_open: false }),
+          thread(2, 12, { sticky: true }),
+          odd({ thread_id: 3, discussion_open: "0" }),
+          odd({ thread_id: 4, discussion_open: null }),
+          odd({ thread_id: 5, discussion_open: undefined }),
+        ],
+        [1, 2, 3, 4, 5].map((id) => post(id * 10, id, 0))
+      ),
+      dbState({ existingThreads: new Map([[2, "t2"]]) }),
+      null
+    );
+    expect(plan.threads.map((t) => [t.xenforoThreadId, t.locked, t.pinned])).toEqual([
+      [1, true, false],
+      [2, false, true],
+      [3, false, false],
+      [4, false, false],
+      [5, false, false],
+    ]);
+    expect(plan.report.totals).toMatchObject({ lockedThreads: 1, pinnedThreads: 0 });
   });
 });

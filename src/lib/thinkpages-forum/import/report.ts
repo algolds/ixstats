@@ -83,6 +83,9 @@ export interface ImportReport {
     posts: number;
     hiddenThreads: number;
     hiddenPosts: number;
+    /** New threads that import locked or pinned (resumed threads keep their flags): a systematic count means a flag misread. */
+    lockedThreads: number;
+    pinnedThreads: number;
   };
   warnings: string[];
   /** Problems the apply must refuse on (an existing archive category whose visibility differs from the map). */
@@ -128,6 +131,8 @@ export function emptyReport(duplicates: ImportReport["authors"]["duplicates"]): 
       posts: 0,
       hiddenThreads: 0,
       hiddenPosts: 0,
+      lockedThreads: 0,
+      pinnedThreads: 0,
     },
     warnings: [],
     blocking: [],
@@ -221,7 +226,7 @@ export function summarizeImport(report: ImportReport): string[] {
       .map(([name, row]) => `${name} ${row.count} (${row.bytes} bytes)`)
       .join(", ") || "none";
   return [
-    `Plan: ${totals.categories} archive categories, ${totals.threadsNew} new threads, ${totals.threadsResumed} resumed threads, ${totals.posts} posts (${totals.hiddenThreads} hidden threads, ${totals.hiddenPosts} hidden posts)`,
+    `Plan: ${totals.categories} archive categories, ${totals.threadsNew} new threads, ${totals.threadsResumed} resumed threads, ${totals.posts} posts (${totals.hiddenThreads} hidden threads, ${totals.hiddenPosts} hidden posts, ${totals.lockedThreads} locked threads, ${totals.pinnedThreads} pinned threads)`,
     "Nodes:",
     ...report.nodes.map(
       (n) =>

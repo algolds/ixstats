@@ -164,6 +164,43 @@ describe("openSnapshotWriter", () => {
     expect(snapshot.skippedLines).toBe(1);
   });
 
+  it("skips and counts thread and post rows whose ids, dates or positions are not usable numbers", async () => {
+    const writer = await openSnapshotWriter(fs, DIR);
+    await writer.writeMeta(META);
+    await writer.writeNodes([node(12)]);
+    const bad = <T extends object>(row: T, extra: object): string => JSON.stringify({ ...row, ...extra });
+    const lines = (rows: string[]) => `${rows.join("\n")}\n`;
+    fs.files.set(
+      `${DIR}/threads.jsonl`,
+      lines([
+        JSON.stringify(thread(100)),
+        bad(thread(101), { post_date: null }),
+        bad(thread(102), { post_date: "1700000000" }),
+        bad(thread(103), { post_date: 0 }),
+        bad(thread(104), { last_post_date: null }),
+        bad(thread(105), { thread_id: -5 }),
+        bad(thread(106), { node_id: null }),
+      ])
+    );
+    fs.files.set(
+      `${DIR}/posts.jsonl`,
+      lines([
+        JSON.stringify(post(1000, 100, 0)),
+        bad(post(1001, 100, 1), { post_date: null }),
+        bad(post(1002, 100, 2), { position: null }),
+        bad(post(1003, 100, 3), { position: -1 }),
+        bad(post(1004, 100, 4), { post_id: 0 }),
+        bad(post(1005, 100, 5), { thread_id: "100" }),
+        JSON.stringify(post(1006, 100, 6)),
+      ])
+    );
+
+    const snapshot = await readSnapshot(fs, DIR);
+    expect(snapshot.threads.map((t) => t.thread_id)).toEqual([100]);
+    expect(snapshot.postsByThread.get(100)?.map((p) => p.post_id)).toEqual([1000, 1006]);
+    expect(snapshot.skippedLines).toBe(6 + 5);
+  });
+
   it("writes meta.json as given", async () => {
     const writer = await openSnapshotWriter(fs, DIR);
     await writer.writeMeta(META);

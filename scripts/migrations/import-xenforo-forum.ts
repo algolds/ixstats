@@ -142,6 +142,9 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   );
   if (typeof plan === "string") return refuse([plan]);
   print(summarizeImport(plan.report));
+  if (snapshot.skippedLines) {
+    print([`WARNING: ${snapshot.skippedLines} torn or unusable snapshot lines were skipped.`]);
+  }
   print(attachmentPlanLines(snapshot.attachments.values(), copyPlan));
   if (args.report) {
     await writeFile(args.report, reportFile(plan.report, copyPlan));
