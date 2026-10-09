@@ -337,10 +337,14 @@ export function MessagesChatPanel({
           senderName={otherName}
           onDeclined={() => onBack?.()}
         />
-      ) : isSystemThread || isLoreBotThread ? (
+      ) : isSystemThread || isLoreBotThread || conversation.source === "forum" ? (
         <div className="border-separator text-footnote text-label-secondary flex shrink-0 items-center justify-center gap-2 border-t px-4 py-3">
           <Shield className="text-label-secondary size-3.5" aria-hidden="true" />
-          <span>System Messages is an official broadcast channel. Messages are read-only.</span>
+          <span>
+            {conversation.source === "forum"
+              ? "This conversation came from the old forum and is read-only."
+              : "System Messages is an official broadcast channel. Messages are read-only."}
+          </span>
         </div>
       ) : (
         <MessagesInputBar
