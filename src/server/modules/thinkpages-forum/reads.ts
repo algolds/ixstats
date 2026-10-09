@@ -1,17 +1,19 @@
 /**
  * Forum reads. They return ids only; the router adds display names through `authorsOf` (one query per kind per
  * page). Hidden threads and posts are omitted for everyone but site admins, and a category the viewer cannot see
- * reads as NOT_FOUND so its existence does not leak.
+ * reads as NOT_FOUND so its existence does not leak. A realm category is looked up by (scope, realmId, key), never
+ * by key alone, and a realm hidden from the viewer (draft, generating) hides its categories, threads and posts.
  */
-import type { PrismaClient } from "@prisma/client";
+import type { ForumCategory, PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
+import { canSeeRealm, loadForumRealm, type ForumRealm, type RealmDb } from "./realm-access";
 import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 
 export { POSTS_PER_PAGE, THREADS_PER_PAGE };
 
-export type ReadsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "forumPost">;
+export type ReadsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "forumPost" | "realm">;
 export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 const SITE_SCOPE = { scope: "site", realmId: null } as const;
@@ -20,9 +22,53 @@ const isAdmin = (viewer: ForumViewer): boolean => viewer !== null && isSiteAdmin
 const hiddenFilter = (viewer: ForumViewer): { hidden?: false } => (isAdmin(viewer) ? {} : { hidden: false });
 const pageOf = (page: number): number => (Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1);
 
-export async function listSiteCategories(db: Pick<ReadsDb, "forumCategory" | "forumThread">, viewer: ForumViewer) {
-  const all = await db.forumCategory.findMany({ where: SITE_SCOPE, orderBy: { order: "asc" } });
-  const visible = all.filter((c) => canSeeCategory(viewer, c));
+/** Where a category sits: `realm` is a realm slug; absent or null means the sitewide section. */
+export interface CategoryLocator {
+  key: string;
+  realm?: string | null;
+}
+
+const notFound = (what: string): ForumError => new ForumError("NOT_FOUND", `${what} not found.`);
+
+/** The realm of a category the viewer may see: null for site scope, undefined when its realm is hidden or gone. */
+async function visibleRealmOf(
+  db: RealmDb,
+  viewer: ForumViewer,
+  category: { scope: string; realmId: string | null }
+): Promise<ForumRealm | null | undefined> {
+  if (category.scope !== "realm") return null;
+  const realm = category.realmId ? await loadForumRealm(db, { id: category.realmId }) : null;
+  return realm && canSeeRealm(viewer, realm) ? realm : undefined;
+}
+
+/** The fields every read result carries about its category's place: scope, realm id, and the realm's slug and name. */
+const placeOf = (category: { scope: string; realmId: string | null }, realm: ForumRealm | null) => ({
+  scope: category.scope,
+  realmId: category.realmId,
+  realm: realm ? { slug: realm.slug, name: realm.name } : null,
+});
+
+/** The category (and its realm, for realm scope) the viewer may see, else NOT_FOUND. Shared by reads and writes. */
+export async function loadCategory(
+  db: Pick<ReadsDb, "forumCategory"> & RealmDb,
+  viewer: ForumViewer,
+  where: CategoryLocator
+): Promise<{ category: ForumCategory; realm: ForumRealm | null }> {
+  const realm = where.realm ? await loadForumRealm(db, { slug: where.realm }) : null;
+  if (where.realm && (!realm || !canSeeRealm(viewer, realm))) throw notFound("Category");
+  const scope = realm ? { scope: "realm", realmId: realm.id } : SITE_SCOPE;
+  const category = await db.forumCategory.findFirst({ where: { ...scope, key: where.key } });
+  if (!category || !canSeeCategory(viewer, category)) throw notFound("Category");
+  return { category, realm };
+}
+
+/** Thread counts and last activity for the categories the viewer may see, in one grouped query. */
+export async function summarizeCategories(
+  db: Pick<ReadsDb, "forumThread">,
+  viewer: ForumViewer,
+  categories: readonly ForumCategory[]
+) {
+  const visible = categories.filter((c) => canSeeCategory(viewer, c));
   const stats = await db.forumThread.groupBy({
     by: ["categoryId"],
     where: { categoryId: { in: visible.map((c) => c.id) }, ...hiddenFilter(viewer) },
@@ -41,18 +87,22 @@ export async function listSiteCategories(db: Pick<ReadsDb, "forumCategory" | "fo
   }));
 }
 
+export async function listSiteCategories(db: Pick<ReadsDb, "forumCategory" | "forumThread">, viewer: ForumViewer) {
+  const all = await db.forumCategory.findMany({ where: SITE_SCOPE, orderBy: { order: "asc" } });
+  return summarizeCategories(db, viewer, all);
+}
+
 export async function getCategoryThreads(
-  db: Pick<ReadsDb, "forumCategory" | "forumThread">,
+  db: Pick<ReadsDb, "forumCategory" | "forumThread" | "realm">,
   viewer: ForumViewer,
-  key: string,
+  where: CategoryLocator,
   page: number
 ) {
-  const category = await db.forumCategory.findFirst({ where: { ...SITE_SCOPE, key } });
-  if (!category || !canSeeCategory(viewer, category)) throw new ForumError("NOT_FOUND", "Category not found.");
-  const where = { categoryId: category.id, ...hiddenFilter(viewer) };
+  const { category, realm } = await loadCategory(db, viewer, where);
+  const threadWhere = { categoryId: category.id, ...hiddenFilter(viewer) };
   const [threads, total] = await Promise.all([
     db.forumThread.findMany({
-      where,
+      where: threadWhere,
       orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }],
       skip: (pageOf(page) - 1) * THREADS_PER_PAGE,
       take: THREADS_PER_PAGE,
@@ -67,7 +117,7 @@ export async function getCategoryThreads(
         lastPostAt: true,
       },
     }),
-    db.forumThread.count({ where }),
+    db.forumThread.count({ where: threadWhere }),
   ]);
   return {
     category: {
@@ -77,6 +127,7 @@ export async function getCategoryThreads(
       icAllowed: category.icAllowed,
       postRole: category.postRole,
       visibility: category.visibility,
+      ...placeOf(category, realm),
     },
     threads,
     total,
@@ -85,9 +136,9 @@ export async function getCategoryThreads(
 
 export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId: string, page: number) {
   const row = await db.forumThread.findUnique({ where: { id: threadId }, include: { category: true } });
-  if (!row || (row.hidden && !isAdmin(viewer)) || !canSeeCategory(viewer, row.category)) {
-    throw new ForumError("NOT_FOUND", "Thread not found.");
-  }
+  if (!row || (row.hidden && !isAdmin(viewer)) || !canSeeCategory(viewer, row.category)) throw notFound("Thread");
+  const realm = await visibleRealmOf(db, viewer, row.category);
+  if (realm === undefined) throw notFound("Thread");
   const { category, ...thread } = row;
   const where = { threadId, ...hiddenFilter(viewer) };
   const [posts, total] = await Promise.all([
@@ -116,6 +167,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
       icAllowed: category.icAllowed,
       visibility: category.visibility,
       postRole: category.postRole,
+      ...placeOf(category, realm),
     },
     posts,
     total,
@@ -124,7 +176,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
 
 /** Where a post sits for the `/thinkpages/post/<id>` permalink (ruling P5); null when the viewer cannot see it. */
 export async function resolvePostLocation(
-  db: Pick<ReadsDb, "forumPost">,
+  db: Pick<ReadsDb, "forumPost" | "realm">,
   viewer: ForumViewer,
   postId: string
 ): Promise<{ threadId: string; page: number } | null> {
@@ -135,13 +187,16 @@ export async function resolvePostLocation(
       threadId: true,
       createdAt: true,
       hidden: true,
-      thread: { select: { hidden: true, category: { select: { visibility: true } } } },
+      thread: {
+        select: { hidden: true, category: { select: { visibility: true, scope: true, realmId: true } } },
+      },
     },
   });
   if (!post) return null;
   const admin = isAdmin(viewer);
   if ((post.hidden || post.thread.hidden) && !admin) return null;
   if (!canSeeCategory(viewer, post.thread.category)) return null;
+  if ((await visibleRealmOf(db, viewer, post.thread.category)) === undefined) return null;
   const before = await db.forumPost.count({
     where: {
       threadId: post.threadId,

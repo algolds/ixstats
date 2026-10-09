@@ -86,7 +86,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(z.object({ key: categoryKey, page }))
     .query(async ({ ctx, input }) => {
       const viewer = viewerOf(ctx.user);
-      const result = await getCategoryThreads(ctx.db, viewer, input.key, input.page).catch(
+      const result = await getCategoryThreads(ctx.db, viewer, { key: input.key }, input.page).catch(
         mapError
       );
       return {
