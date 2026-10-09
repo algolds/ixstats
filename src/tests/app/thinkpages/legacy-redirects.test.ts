@@ -4,8 +4,10 @@
  * permalink (ruling P5): a forum post the viewer may see goes to its thread and anchor, anything else to the feed
  * post under /dashboard. Both hops are temporary (307), since the answer depends on the viewer and on moderation
  * (ruling R-e). The server asks as a guest, so a signed-in viewer it did not place gets the client gate, which asks
- * again with their session. The other old pages moved for good (308), the forum home's old address among them: the forum home is
- * /thinkpages itself. Every destination is a fixed prefix plus an encoded id or realm.
+ * again with their session. Only an id the input schema rejects counts as "not a forum post"; other lookup failures
+ * surface. The other old pages moved for good (308), the forum home's old address among them: the forum home is
+ * /thinkpages itself. The feed's moved pages keep the query string they came with, re-encoded. Every destination is
+ * a fixed prefix plus an encoded id or realm.
  */
 jest.mock("next/navigation", () => ({
   redirect: jest.fn((url: string) => {
@@ -28,7 +30,8 @@ jest.mock("~/components/thinkpages-forum/CategoryList", () => ({ CategoryList: j
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { isValidElement } from "react";
 import { auth } from "@clerk/nextjs/server";
-import { permanentRedirect, redirect } from "next/navigation";
+import { TRPCError } from "@trpc/server";
+import { permanentRedirect, redirect, unstable_rethrow } from "next/navigation";
 import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
 import { api } from "~/trpc/server";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
@@ -44,6 +47,7 @@ import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 const resolvePost = jest.mocked(api.thinkpagesForum.resolvePost);
 const mockRedirect = jest.mocked(redirect);
 const mockPermanentRedirect = jest.mocked(permanentRedirect);
+const mockUnstableRethrow = jest.mocked(unstable_rethrow);
 const mockAuth = jest.mocked(auth);
 const signedIn = (userId: string | null) =>
   mockAuth.mockResolvedValue({ userId } as Awaited<ReturnType<typeof auth>>);
@@ -52,6 +56,7 @@ beforeEach(() => {
   resolvePost.mockReset();
   mockRedirect.mockClear();
   mockPermanentRedirect.mockClear();
+  mockUnstableRethrow.mockClear();
   mockAuth.mockReset();
   signedIn(null);
 });
@@ -72,10 +77,20 @@ describe("/thinkpages/post/<id>", () => {
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
   });
 
-  it("falls back to the feed post when the lookup fails", async () => {
-    resolvePost.mockRejectedValue(new Error("too long"));
+  it("falls back to the feed post for an id the input schema rejects (BAD_REQUEST)", async () => {
+    resolvePost.mockRejectedValue(new TRPCError({ code: "BAD_REQUEST", message: "too long" }));
     await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
     expect(mockPermanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a server error", new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "db down" })],
+    ["a plain error", new Error("db down")],
+  ])("lets %s through instead of guessing the post is a feed post", async (_name, error) => {
+    resolvePost.mockRejectedValue(error);
+    await expect(openPost("p1")).rejects.toBe(error);
+    expect(mockUnstableRethrow).toHaveBeenCalledWith(error);
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it("hands a signed-in viewer's unplaced id to the client gate instead of the feed", async () => {
@@ -111,17 +126,38 @@ describe("/thinkpages/post/<id>", () => {
   });
 });
 
+type Query = Record<string, string | string[] | undefined>;
+const query = (q: Query) => ({ searchParams: Promise.resolve(q) });
+const openProfile = (username: string, q: Query = {}) =>
+  LegacyProfilePage({ params: Promise.resolve({ username }), ...query(q) });
+
 describe("the feed's other old pages (308)", () => {
   it("a persona profile moves under /dashboard, encoded", async () => {
-    await expect(
-      LegacyProfilePage({ params: Promise.resolve({ username: "jane doe" }) })
-    ).rejects.toThrow("permanent:/dashboard/profile/jane%20doe");
+    await expect(openProfile("jane doe")).rejects.toThrow(
+      "permanent:/dashboard/profile/jane%20doe"
+    );
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
+  it.each<[string, (q: Query) => Promise<never>, string]>([
+    ["profile/jane", (q) => openProfile("jane", q), "/dashboard/profile/jane"],
+    ["saved", (q) => LegacySavedPage(query(q)), "/dashboard/saved"],
+    ["feed", (q) => LegacyFeedPage(query(q)), "/dashboard"],
+  ])("/thinkpages/%s keeps the query string it came with", async (_name, open, target) => {
+    await expect(open({})).rejects.toThrow(new Error(`permanent:${target}`));
+    await expect(open({ tab: "trending" })).rejects.toThrow(
+      new Error(`permanent:${target}?tab=trending`)
+    );
+    await expect(open({ tag: ["a", "b"], empty: undefined })).rejects.toThrow(
+      new Error(`permanent:${target}?tag=a&tag=b`)
+    );
+    // A value cannot add a parameter or a fragment of its own.
+    await expect(open({ q: "x&admin=1#y" })).rejects.toThrow(
+      new Error(`permanent:${target}?q=x%26admin%3D1%23y`)
+    );
+  });
+
   it.each([
-    ["saved", LegacySavedPage, "/dashboard/saved"],
-    ["feed", LegacyFeedPage, "/dashboard"],
     ["thinkshare", LegacyThinkSharePage, "/messages"],
     ["thinktanks", LegacyThinkTanksPage, "/thinktanks"],
   ])("/thinkpages/%s goes to its new home", (_name, Page, target) => {

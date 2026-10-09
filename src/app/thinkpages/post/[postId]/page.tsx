@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { TRPCError } from "@trpc/server";
 import type { Metadata } from "next";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
@@ -9,6 +10,17 @@ export const metadata: Metadata = { title: "ThinkPages - IxStats" };
 
 interface LegacyPostPageProps {
   params: Promise<{ postId: string }>;
+}
+
+/** The post's place, or null for an id the input schema rejects (over 64 characters). Other failures surface. */
+async function locate(postId: string) {
+  try {
+    return await api.thinkpagesForum.resolvePost({ postId });
+  } catch (error) {
+    unstable_rethrow(error);
+    if (error instanceof TRPCError && error.code === "BAD_REQUEST") return null;
+    throw error;
+  }
 }
 
 async function isSignedIn(): Promise<boolean> {
@@ -24,7 +36,6 @@ async function isSignedIn(): Promise<boolean> {
  * The forum post permalink (ruling P5: wiki story chains link here) and the feed's old post URL. A forum post the
  * viewer may see goes to its thread and anchor; anything else is a feed post, at /dashboard/post. Both hops are
  * temporary (ruling R-e): the answer depends on the viewer and on moderation, so it must not be cached as a move.
- * The `.catch` covers an id the input schema rejects (over 64 characters) and a failed lookup.
  *
  * The server's tRPC caller has no session, so this lookup sees what a guest sees. A signed-in viewer it did not
  * place gets the client gate, which asks again with their session (a report thread, a private board, a hidden
@@ -32,7 +43,7 @@ async function isSignedIn(): Promise<boolean> {
  */
 export default async function LegacyPostPage({ params }: LegacyPostPageProps) {
   const { postId } = await params;
-  const location = await api.thinkpagesForum.resolvePost({ postId }).catch(() => null);
+  const location = await locate(postId);
   if (location) redirect(permalinkTarget(postId, location));
   if (await isSignedIn()) return <ForumPermalinkGate postId={postId} />;
   redirect(permalinkTarget(postId, null));
