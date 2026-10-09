@@ -46,6 +46,7 @@ interface WikiInput {
   source: string;
   query?: string;
   category?: string;
+  fileType?: string;
   cursor: string | null;
   limit: number;
 }
@@ -200,7 +201,7 @@ describe("useRepositoryImages", () => {
     });
   });
 
-  it("filters wiki files by type, client-side", () => {
+  it("filters IIWiki files by type client-side, and still sends the type", () => {
     wikiAnswer = () =>
       okWiki({
         files: Array.from({ length: 5 }, (_, i) =>
@@ -213,7 +214,37 @@ describe("useRepositoryImages", () => {
     );
     expect(result.current.images).toHaveLength(1);
     expect(result.current.hasMore).toBe(false);
-    expect(wikiInputs[0]).not.toHaveProperty("fileType");
+    expect(wikiInputs[0]).toMatchObject({ fileType: "png" });
+  });
+
+  it("leaves IxWiki's type filter to the server: sends it and keeps every returned file", () => {
+    wikiAnswer = () =>
+      okWiki({ files: [wikiFile(1), wikiFile(2, { mime: "image/png" })], nextCursor: null });
+    const { result } = renderHook(() =>
+      useRepositoryImages(input({ source: "ixwiki", fileType: "svg" }))
+    );
+    expect(wikiInputs[0]).toMatchObject({ source: "ixwiki", fileType: "svg" });
+    expect(result.current.images).toHaveLength(2);
+  });
+
+  it("sends no type when it is all, and starts again from the first cursor when the type changes", () => {
+    wikiAnswer = ({ cursor }) =>
+      okWiki({
+        files: [wikiFile(cursor === null ? 1 : 2)],
+        nextCursor: cursor === null ? "c2" : null,
+      });
+    const { result, rerender } = renderHook(
+      (props: RepositoryImagesInput) => useRepositoryImages(props),
+      { initialProps: input({ source: "ixwiki" }) }
+    );
+    expect(wikiInputs[0]!.fileType).toBeUndefined();
+    act(() => result.current.loadMore());
+    expect(result.current.images).toHaveLength(2);
+
+    wikiInputs = [];
+    rerender(input({ source: "ixwiki", fileType: "png" }));
+    expect(wikiInputs.map((i) => [i.cursor, i.fileType])).toEqual([[null, "png"]]);
+    expect(result.current.images).toHaveLength(1);
   });
 
   it("appends the next cursor on loadMore for a wiki source, and drops repeated files", () => {

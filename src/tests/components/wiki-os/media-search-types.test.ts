@@ -5,6 +5,7 @@
 import {
   commonsMimeTerm,
   dedupeImages,
+  imageFromUrl,
   matchesImageFilters,
   wikiFilesToImages,
   type CommonsImage,
@@ -127,5 +128,28 @@ describe("commonsMimeTerm", () => {
     expect(commonsMimeTerm("jpg")).toBe("filemime:image/jpeg");
     expect(commonsMimeTerm("png")).toBe("filemime:image/png");
     expect(commonsMimeTerm("svg")).toBe("filemime:image/svg+xml");
+  });
+});
+
+describe("imageFromUrl", () => {
+  it("builds a minimal image: title from the decoded file name, the url for every link, empty rest", () => {
+    const url = "https://x/images/a/ab/Old_Flag%20%C3%A9.png?v=2";
+    expect(imageFromUrl(url)).toEqual({
+      pageid: 0,
+      title: "Old Flag é.png",
+      thumbUrl: url,
+      url,
+      descriptionUrl: url,
+      width: 0,
+      height: 0,
+      mime: "",
+      description: "",
+      artist: "",
+      license: "",
+    });
+  });
+
+  it("keeps a file name with a malformed escape", () => {
+    expect(imageFromUrl("/a/100%.png").title).toBe("100%.png");
   });
 });

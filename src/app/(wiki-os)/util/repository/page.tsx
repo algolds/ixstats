@@ -20,6 +20,7 @@ import { cn } from "~/lib/utils";
 import { RepositoryWelcomeModal } from "~/components/wiki-os/commons/RepositoryWelcomeModal";
 import { SearchField } from "~/components/ui/search-field";
 import {
+  imageFromUrl,
   matchesImageFilters,
   type CommonsImage,
   type ImageOrientationFilter,
@@ -184,16 +185,16 @@ function RepositoryPageBody() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // The wanted file opens once it has loaded
+  // The wanted file opens once it has loaded. When the first page is in and the file is not on it (it sits on a
+  // later page, or the sort order changed), the panel opens on a minimal image built from the url instead.
   useEffect(() => {
     const wanted = wantedFileRef.current;
-    const match = wanted ? results.images.find((img) => img.url === wanted) : undefined;
-    if (match) {
-      wantedFileRef.current = null;
-      // oxlint-disable-next-line
-      setSelectedImage(match);
-    }
-  }, [results.images]);
+    if (!wanted) return;
+    const match = results.images.find((img) => img.url === wanted);
+    if (!match && (results.isLoading || results.error)) return;
+    wantedFileRef.current = null;
+    setSelectedImage(match ?? imageFromUrl(wanted));
+  }, [results.images, results.isLoading, results.error]);
 
   const handleSelectImage = useCallback((img: CommonsImage) => {
     wantedFileRef.current = null;

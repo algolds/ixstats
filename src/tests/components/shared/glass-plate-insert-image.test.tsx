@@ -63,7 +63,7 @@ describe("GlassPlateEditor insert image button", () => {
   });
 
   it("opens the image repository only on click and inserts the chosen url at the saved cursor", () => {
-    render(<GlassPlateEditor />);
+    render(<GlassPlateEditor allowImageInsert />);
     expect(screen.queryByTestId("media-modal")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Insert image" }));
@@ -72,12 +72,12 @@ describe("GlassPlateEditor insert image button", () => {
     act(() => lastModalProps?.onImageSelect("https://x/y.png"));
 
     expect(mockSelect).toHaveBeenCalledWith(fakeEditor, fakeEditor.selection);
-    expect(insertImageUrl).toHaveBeenCalledWith("https://x/y.png");
+    expect(insertImageUrl).toHaveBeenCalledWith("https://x/y.png", "y");
     expect(screen.queryByTestId("media-modal")).toBeNull();
   });
 
   it("closing the modal inserts nothing", () => {
-    render(<GlassPlateEditor />);
+    render(<GlassPlateEditor allowImageInsert />);
     fireEvent.click(screen.getByRole("button", { name: "Insert image" }));
     act(() => lastModalProps?.onClose());
     expect(screen.queryByTestId("media-modal")).toBeNull();
@@ -85,7 +85,13 @@ describe("GlassPlateEditor insert image button", () => {
   });
 
   it("has no Insert image button when the editor is disabled", () => {
-    render(<GlassPlateEditor disabled />);
+    render(<GlassPlateEditor allowImageInsert disabled />);
     expect(screen.queryByRole("button", { name: "Insert image" })).toBeNull();
+  });
+
+  it("has no Insert image button and mounts no modal by default", () => {
+    render(<GlassPlateEditor />);
+    expect(screen.queryByRole("button", { name: "Insert image" })).toBeNull();
+    expect(screen.queryByTestId("media-modal")).toBeNull();
   });
 });

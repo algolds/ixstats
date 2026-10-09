@@ -12,6 +12,7 @@ let pushState: jest.SpyInstance;
 let back: jest.SpyInstance;
 let mockUser: { id: string } | null = { id: "u1" };
 let mockHookCalls: RepositoryImagesInput[] = [];
+let mockLoading = false;
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(window.location.search),
@@ -44,7 +45,7 @@ jest.mock("~/components/wiki-os/media-search/useRepositoryImages", () => ({
     return {
       images: mockImages,
       mode: "search",
-      isLoading: false,
+      isLoading: mockLoading,
       isLoadingMore: false,
       hasMore: false,
       loadMore: jest.fn(),
@@ -88,6 +89,7 @@ beforeEach(() => {
   pushState = jest.spyOn(window.history, "pushState");
   back = jest.spyOn(window.history, "back").mockImplementation(() => undefined);
   mockHookCalls = [];
+  mockLoading = false;
   mockUser = { id: "u1" };
   mockImages = [image(1), image(2)];
   openAt("");
@@ -155,6 +157,25 @@ describe("repository page URL state", () => {
     const next = writtenParams(replaceState);
     expect(next.has("file")).toBe(false);
     expect(next.get("src")).toBe("iiwiki");
+  });
+
+  it("opens a shared file that is not on the loaded page from a minimal image built from its url", () => {
+    const url = "https://iiwiki.com/images/a/ab/Old_Flag_9.png";
+    openAt(`src=iiwiki&file=${encodeURIComponent(url)}`);
+    render(<RepositoryPage />);
+    expect(screen.getByLabelText("Detail")).toHaveTextContent("Old Flag 9.png");
+  });
+
+  it("waits for the first page before falling back to the url", () => {
+    const url = "https://iiwiki.com/images/a/ab/Old_Flag_9.png";
+    mockLoading = true;
+    openAt(`src=iiwiki&file=${encodeURIComponent(url)}`);
+    const { rerender } = render(<RepositoryPage />);
+    expect(screen.queryByLabelText("Detail")).not.toBeInTheDocument();
+
+    mockLoading = false;
+    rerender(<RepositoryPage />);
+    expect(screen.getByLabelText("Detail")).toHaveTextContent("Old Flag 9.png");
   });
 
   it("changing the type replaces the URL and keeps the open file", () => {
