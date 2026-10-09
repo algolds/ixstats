@@ -25,6 +25,7 @@ import {
   type CopyFormat,
 } from "~/components/wiki-os/media-search/CopyFormatSelector";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
+import { attributionLine } from "~/components/wiki-os/editor/ImageSearchGrid";
 
 interface CommonsDetailPanelProps {
   image: CommonsImage;
@@ -65,6 +66,7 @@ export function CommonsDetailPanel(props: CommonsDetailPanelProps) {
 function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
   const notify = useNotify();
   const [copied, setCopied] = useState(false);
+  const [attributionCopied, setAttributionCopied] = useState(false);
   const [copyImageState, setCopyImageState] = useState<CopyImageState>("idle");
   const [format, setFormat] = useState<CopyFormat>("thumb");
   const [isZoomed, setIsZoomed] = useState(false);
@@ -128,6 +130,20 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
     setCopied(true);
     flash(() => setCopied(false));
   }, [flash, format, image, notify]);
+
+  const credit = attributionLine(image);
+  const handleCopyAttribution = useCallback(async () => {
+    if (!credit) return;
+    const source = image.descriptionUrl ? ` Source: ${image.descriptionUrl}` : "";
+    try {
+      await navigator.clipboard.writeText(`${cleanTitle} (${credit}).${source}`);
+    } catch {
+      notify.error("Could not copy", "Your browser blocked clipboard access.");
+      return;
+    }
+    setAttributionCopied(true);
+    flash(() => setAttributionCopied(false));
+  }, [cleanTitle, credit, flash, image.descriptionUrl, notify]);
 
   const handleCopyImage = useCallback(async () => {
     try {
@@ -241,7 +257,7 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
       {/* Actions and format selector */}
       <div className="border-separator space-y-3 border-b p-3">
         <span role="status" className="sr-only">
-          {copied ? "Copied" : copyImageState === "idle" ? "" : copyImageLabel}
+          {copied || attributionCopied ? "Copied" : copyImageState === "idle" ? "" : copyImageLabel}
         </span>
         <CopyFormatSelector value={format} onValueChange={setFormat} />
 
@@ -324,6 +340,16 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
             </div>
           )}
         </dl>
+        {credit && (
+          <Button size="sm" variant="outline" onClick={() => void handleCopyAttribution()}>
+            {attributionCopied ? (
+              <Check className="text-green" aria-hidden="true" />
+            ) : (
+              <Copy aria-hidden="true" />
+            )}
+            {attributionCopied ? "Copied" : "Copy attribution"}
+          </Button>
+        )}
         {image.description && (
           <div className="space-y-1">
             <Eyebrow>Description</Eyebrow>

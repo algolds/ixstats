@@ -25,12 +25,18 @@ describe("useGlassPlateEditor insertImageUrl", () => {
   it("inserts an img node with the url and an empty alt into the document", () => {
     const editor = createEditor();
     editor.children = [{ type: "p", children: [{ text: "" }] }] as never;
-    Object.assign(editor, { tf: { setValue: jest.fn() }, isInline: () => false, isVoid: () => false });
+    Object.assign(editor, {
+      tf: { setValue: jest.fn() },
+      isInline: () => false,
+      isVoid: () => false,
+    });
     mockCreateEditor.mockReturnValue(editor);
 
     const { result } = renderHook(() => useGlassPlateEditor({}));
     act(() => result.current.insertImageUrl("https://x/y.png"));
 
-    expect(JSON.stringify(editor.children)).toContain('"type":"img","src":"https://x/y.png","alt":""');
+    expect(JSON.stringify(editor.children)).toContain(
+      '"type":"img","src":"https://x/y.png","alt":""'
+    );
   });
 });

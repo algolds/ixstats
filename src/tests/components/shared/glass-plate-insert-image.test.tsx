@@ -9,13 +9,18 @@ interface ModalProps {
 let lastModalProps: ModalProps | null = null;
 const insertImageUrl = jest.fn();
 const mockSelect = jest.fn();
-const fakeEditor = { selection: { anchor: { path: [0, 0], offset: 1 }, focus: { path: [0, 0], offset: 1 } }, children: [] };
+const fakeEditor = {
+  selection: { anchor: { path: [0, 0], offset: 1 }, focus: { path: [0, 0], offset: 1 } },
+  children: [],
+};
 
-jest.mock("next/dynamic", () => () =>
-  function MockModal(props: ModalProps) {
-    lastModalProps = props;
-    return <div data-testid="media-modal" />;
-  }
+jest.mock(
+  "next/dynamic",
+  () => () =>
+    function MockModal(props: ModalProps) {
+      lastModalProps = props;
+      return <div data-testid="media-modal" />;
+    }
 );
 jest.mock("platejs/react", () => ({
   Plate: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -34,8 +39,12 @@ jest.mock("~/components/shared/editor/SlateSerializer", () => ({
   toggleBlock: jest.fn(),
 }));
 jest.mock("~/components/shared/editor/EditorToolbar", () => ({ EditorToolbar: () => null }));
-jest.mock("~/components/shared/editor/MentionMenuPortal", () => ({ MentionMenuPortal: () => null }));
-jest.mock("~/components/shared/editor/WikiAndStashPopovers", () => ({ WikiAndStashPopovers: () => null }));
+jest.mock("~/components/shared/editor/MentionMenuPortal", () => ({
+  MentionMenuPortal: () => null,
+}));
+jest.mock("~/components/shared/editor/WikiAndStashPopovers", () => ({
+  WikiAndStashPopovers: () => null,
+}));
 jest.mock("~/components/shared/editor/useGlassPlateEditor", () => ({
   useGlassPlateEditor: () => ({
     editor: fakeEditor,
