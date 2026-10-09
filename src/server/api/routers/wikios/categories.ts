@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import {
   getCategoryMembers,
   getParentCategories,
@@ -22,7 +22,20 @@ import {
   normalizeWikiImageUrl,
   resolveStoredImageUrl,
 } from "~/lib/wiki-os/transformers/image-url";
+import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 import { wikiSourceSchema } from "./_shared";
+
+/** Category lists and counts are read-mostly and, for a sister wiki, cost an outbound call: one shared bucket. */
+const sisterWikiProcedure = publicProcedure.use(
+  createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
+);
+
+/** A sister wiki's answers are reused for 5 minutes. */
+const SISTER_CACHE_TTL_MS = 300_000;
+
+const sisterJson = <T>(url: string) =>
+  fetchMediaWikiJson<T>(url, { userAgent: DEFAULT_USER_AGENT, cacheTtlMs: SISTER_CACHE_TTL_MS });
 
 type CategoryMember = {
   pageid: number;
@@ -179,7 +192,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
   /**
    * Search wiki categories by prefix or letter.
    */
-  searchCategories: publicProcedure
+  searchCategories: sisterWikiProcedure
     .input(
       z.object({
         query: z.string().max(200).optional().default(""),
@@ -208,7 +221,6 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       }
 
       // A sister wiki's categories are read from that wiki.
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
       const params = new URLSearchParams({
         action: "query",
@@ -224,11 +236,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         params.set("acfrom", input.from.trim().replace(/ /g, "_"));
       }
 
-      const res = await fetch(`${baseUrl}?${params.toString()}`, {
-        headers: { "User-Agent": DEFAULT_USER_AGENT },
-      });
-      if (!res.ok) return [];
-      const data = (await res.json()) as {
+      const data = await sisterJson<{
         query?: {
           allcategories?: Array<{
             "*": string;
@@ -238,7 +246,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
             subcats?: number;
           }>;
         };
-      };
+      }>(`${baseUrl}?${params.toString()}`);
 
       return (
         data.query?.allcategories?.map((cat) => ({
@@ -255,7 +263,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
   /**
    * Get dynamic list of categories containing files.
    */
-  getCategories: publicProcedure
+  getCategories: sisterWikiProcedure
     .input(
       z.object({
         wiki: wikiSourceSchema,
@@ -282,31 +290,24 @@ export const wikiosCategoriesRouter = createTRPCRouter({
           return [];
         }
       } else {
-        const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
         const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
         const url = `${baseUrl}?action=query&list=allcategories&acmin=1&aclimit=${input.limit}&acprop=size&format=json`;
-        try {
-          const res = await fetch(url, { headers: { "User-Agent": DEFAULT_USER_AGENT } });
-          if (!res.ok) return [];
-          const data = (await res.json()) as {
-            query?: { allcategories?: Array<{ "*": string; files: number }> };
-          };
-          return (
-            data.query?.allcategories?.map((cat) => ({
-              name: cat["*"],
-              fileCount: cat.files,
-            })) ?? []
-          );
-        } catch {
-          return [];
-        }
+        const data = await sisterJson<{
+          query?: { allcategories?: Array<{ "*": string; files: number }> };
+        }>(url);
+        return (
+          data.query?.allcategories?.map((cat) => ({
+            name: cat["*"],
+            fileCount: cat.files,
+          })) ?? []
+        );
       }
     }),
 
   /**
    * Get total file counts for a list of categories.
    */
-  getCategoryTotalCounts: publicProcedure
+  getCategoryTotalCounts: sisterWikiProcedure
     .input(
       z.object({
         categories: z.array(z.string().min(1).max(300)).min(1).max(25),
@@ -319,46 +320,38 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         return Object.fromEntries(input.categories.map((cat) => [cat, counts.get(cat)?.files ?? 0]));
       }
 
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
-
-      const results: Record<string, number> = {};
       const titles = input.categories.map((c) => `Category:${c.replace(/ /g, "_")}`).join("|");
-      const url = `${baseUrl}?action=query&prop=categoryinfo&titles=${encodeURIComponent(
-        titles
-      )}&format=json`;
-
-      try {
-        const res = await fetch(url, {
-          headers: { "User-Agent": DEFAULT_USER_AGENT },
-        });
-        if (!res.ok) return {};
-        const data = (await res.json()) as {
-          query?: { pages?: Record<string, { title: string; categoryinfo?: { files?: number } }> };
+      const data = await sisterJson<{
+        query?: {
+          normalized?: Array<{ from: string; to: string }>;
+          pages?: Record<string, { title: string; categoryinfo?: { files?: number } }>;
         };
-        const pages = data.query?.pages ?? {};
+      }>(
+        `${baseUrl}?action=query&prop=categoryinfo&titles=${encodeURIComponent(titles)}&format=json`
+      );
 
-        for (const page of Object.values(pages)) {
-          const catName = page.title?.replace(/^Category:/, "") ?? "";
-          results[catName] = page.categoryinfo?.files ?? 0;
-        }
-      } catch (e) {
-        console.error("[wikios] getCategoryTotalCounts error:", e);
+      // The wiki answers under its normalized titles ("Category:Flag images"): map each back to the name asked.
+      const normalizedTo = new Map((data.query?.normalized ?? []).map((n) => [n.from, n.to]));
+      const filesByTitle = new Map<string, number>();
+      for (const page of Object.values(data.query?.pages ?? {})) {
+        filesByTitle.set(spaced(page.title ?? ""), page.categoryinfo?.files ?? 0);
       }
 
+      // A category the wiki did not answer for is left out: the client reads a missing key as "no count".
+      const results: Record<string, number> = {};
       for (const cat of input.categories) {
-        if (results[cat] === undefined) {
-          results[cat] = 0;
-        }
+        const asked = `Category:${cat.replace(/ /g, "_")}`;
+        const count = filesByTitle.get(spaced(normalizedTo.get(asked) ?? asked));
+        if (count !== undefined) results[cat] = count;
       }
-
       return results;
     }),
 
   /**
    * Get subcategories of a category.
    */
-  getSubcategories: publicProcedure
+  getSubcategories: sisterWikiProcedure
     .input(
       z.object({
         category: z.string().min(1).max(300),
@@ -372,31 +365,19 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         return titles.map((title) => title.replace(/^Category:/, ""));
       }
 
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
-      const url = `${baseUrl}?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(
-        input.category.replace(/ /g, "_")
-      )}&cmnamespace=14&cmtype=subcat&cmlimit=${input.limit}&format=json`;
-      try {
-        const res = await fetch(url, {
-          headers: { "User-Agent": DEFAULT_USER_AGENT },
-        });
-        if (!res.ok) return [];
-        const data = (await res.json()) as {
-          query?: { categorymembers?: Array<{ title: string }> };
-        };
-        return (data.query?.categorymembers ?? []).map((m) =>
-          String(m.title).replace(/^Category:/, "")
-        );
-      } catch {
-        return [];
-      }
+      const data = await sisterJson<{ query?: { categorymembers?: Array<{ title: string }> } }>(
+        `${baseUrl}?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(
+          input.category.replace(/ /g, "_")
+        )}&cmnamespace=14&cmtype=subcat&cmlimit=${input.limit}&format=json`
+      );
+      return (data.query?.categorymembers ?? []).map((m) => String(m.title).replace(/^Category:/, ""));
     }),
 
   /**
    * Autocomplete categories by prefix.
    */
-  autocompleteCategories: publicProcedure
+  autocompleteCategories: sisterWikiProcedure
     .input(
       z.object({
         prefix: z.string().min(1).max(200),
@@ -407,20 +388,12 @@ export const wikiosCategoriesRouter = createTRPCRouter({
     .query(async ({ input }) => {
       if (input.wiki === "ixwiki") return CategoryService.autocomplete(input.prefix, input.limit);
 
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
-      const url = `${baseUrl}?action=query&list=allcategories&acprefix=${encodeURIComponent(
-        input.prefix
-      )}&aclimit=${input.limit}&format=json`;
-      try {
-        const res = await fetch(url, { headers: { "User-Agent": DEFAULT_USER_AGENT } });
-        if (!res.ok) return [];
-        const data = (await res.json()) as {
-          query?: { allcategories?: Array<{ "*": string }> };
-        };
-        return (data.query?.allcategories ?? []).map((c) => c["*"]);
-      } catch {
-        return [];
-      }
+      const data = await sisterJson<{ query?: { allcategories?: Array<{ "*": string }> } }>(
+        `${baseUrl}?action=query&list=allcategories&acprefix=${encodeURIComponent(
+          input.prefix
+        )}&aclimit=${input.limit}&format=json`
+      );
+      return (data.query?.allcategories ?? []).map((c) => c["*"]);
     }),
 });

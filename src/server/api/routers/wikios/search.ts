@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import {
   searchPages,
   getRecentChanges,
@@ -21,7 +21,17 @@ import {
 } from "~/lib/wiki-os/core/native-search-service";
 import { assetUrl } from "~/lib/base-path";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
+import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 import { wikiSourceSchema } from "./_shared";
+
+/** File search reads a sister wiki's API on a miss: one bucket shared with the sister-wiki category reads. */
+const sisterWikiProcedure = publicProcedure.use(
+  createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
+);
+
+/** A sister wiki's answers are reused for 5 minutes. */
+const SISTER_CACHE_TTL_MS = 300_000;
 
 const searchWikiTitles = publicProcedure
   .input(
@@ -221,7 +231,7 @@ export const wikiosSearchRouter = createTRPCRouter({
   /**
    * Search wiki files/images by name prefix or category.
    */
-  searchFiles: publicProcedure
+  searchFiles: sisterWikiProcedure
     .input(
       z.object({
         query: z.string().max(200).optional(),
@@ -250,7 +260,6 @@ export const wikiosSearchRouter = createTRPCRouter({
       }
 
       // A sister wiki's files are read from that wiki.
-      const { getMediaWikiApiUrl, DEFAULT_USER_AGENT } = await import("~/lib/wiki-os/config");
       const baseUrl = getMediaWikiApiUrl(input.wiki as WikiSource);
 
       let url = "";
@@ -265,11 +274,7 @@ export const wikiosSearchRouter = createTRPCRouter({
         )}&ailimit=${input.limit}&aiprop=url|size|mime&format=json`;
       }
 
-      const res = await fetch(url, {
-        headers: { "User-Agent": DEFAULT_USER_AGENT },
-      });
-      if (!res.ok) return [];
-      const data = (await res.json()) as {
+      const data = await fetchMediaWikiJson<{
         query?: {
           allimages?: Array<{
             name: string;
@@ -293,7 +298,7 @@ export const wikiosSearchRouter = createTRPCRouter({
             }
           >;
         };
-      };
+      }>(url, { userAgent: DEFAULT_USER_AGENT, cacheTtlMs: SISTER_CACHE_TTL_MS });
 
       if (data.query?.allimages) {
         return data.query.allimages.map((img) => ({
