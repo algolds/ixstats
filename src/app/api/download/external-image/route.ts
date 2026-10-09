@@ -2,10 +2,11 @@
 // Handles CORS issues, validates downloaded images, and caches them locally
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, access } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { rateLimiter } from "~/lib/cache";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_REDIRECTS = 3;
@@ -97,12 +98,21 @@ function badRequest(error: string): NextResponse {
   return NextResponse.json({ success: false, error }, { status: 400 });
 }
 
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function generateSafeFileName(originalUrl: string, contentType: string): string {
   // Create a hash of the URL to ensure uniqueness
   const hash = crypto.createHash("md5").update(originalUrl).digest("hex");
   const extension = EXTENSION_BY_TYPE[contentType] || "png";
-  const timestamp = Date.now();
-  return `downloaded_${timestamp}_${hash}.${extension}`;
+  // No timestamp: the same URL always maps to the same file, so a repeat download writes nothing.
+  return `downloaded_${hash}.${extension}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -112,6 +122,17 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // SECURITY: each call fetches from a remote host and writes to disk, so it shares the upload limit
+    const rateLimitResult = await rateLimiter.check(userId, "file_upload");
+    if (!rateLimitResult.success) {
+      console.warn(`[SECURITY] Rate limit exceeded for external image download: userId=${userId}`);
+      const retryAfter = Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000);
+      return NextResponse.json(
+        { success: false, error: "Rate limit exceeded. Please try again later.", retryAfter },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     const body = (await request.json()) as { imageUrl?: string | null };
@@ -166,9 +187,11 @@ export async function POST(request: NextRequest) {
     const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
     await mkdir(imagesDir, { recursive: true });
 
-    // Save the file to disk
+    // Save the file to disk (a repeat download of the same URL finds it already there)
     const filePath = path.join(imagesDir, fileName);
-    await writeFile(filePath, buffer);
+    if (!(await fileExists(filePath))) {
+      await writeFile(filePath, buffer);
+    }
 
     // Generate public URL with base path for production
     const publicUrl = BASE_PATH

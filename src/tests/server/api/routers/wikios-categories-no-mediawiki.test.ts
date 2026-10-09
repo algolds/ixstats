@@ -173,11 +173,32 @@ describe("searchFiles for IxWiki", () => {
         width: 300,
         height: 200,
         mime: "image/png",
+        // no thumbnail was computed for this asset: the tile falls back to `url`
+        thumbUrl: null,
         // the pickers' placeholder (WK-17)
         blurhash: asset.blurhash,
       },
     ]);
     expect(guard.calls()).toEqual([]);
+  });
+
+  it("reports 0 (not an invented 800x600) for unknown dimensions, and the thumbnail when there is one", async () => {
+    mocked.wikiAsset.findMany.mockResolvedValue([
+      {
+        ...asset,
+        width: null,
+        height: null,
+        thumbnailUrl: "/api/wiki/file/thumb/Flag_of_Caphiria.png",
+      },
+    ]);
+
+    const [file] = await search().searchFiles({ query: "flag", wiki: "ixwiki" });
+
+    expect(file).toMatchObject({
+      width: 0,
+      height: 0,
+      thumbUrl: "/api/wiki/file/thumb/Flag_of_Caphiria.png",
+    });
   });
 
   it("gives an upload that only WikiOS holds the base path it is served under, and leaves MediaWiki's URLs as they are", async () => {
@@ -318,31 +339,59 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
     expect(mocked.wikiCategory.findMany).not.toHaveBeenCalled();
   });
 
-  it("searchFiles", async () => {
+  it("searchFiles searches the full text (generator=search), ranks by index and returns the thumbnail", async () => {
     guard.restore();
+    let requested: URL | undefined;
     guard = installFetchGuard((url) => {
       host(url);
+      requested = url;
+      const page = (title: string, index: number, thumburl?: string) => ({
+        title,
+        index,
+        imageinfo: [
+          {
+            url: `https://iiwiki.com/${title}`,
+            ...(thumburl ? { thumburl } : {}),
+            size: 5,
+            width: 4,
+            height: 3,
+            mime: "image/png",
+          },
+        ],
+      });
       return {
         query: {
-          allimages: [
-            {
-              name: "Elm.png",
-              url: "https://iiwiki.com/Elm.png",
-              size: 5,
-              width: 4,
-              height: 3,
-              mime: "image/png",
-            },
-          ],
+          pages: {
+            "30": page("File:Second.png", 2),
+            "10": page("File:First.png", 1, "https://iiwiki.com/thumb/First.png"),
+          },
         },
       };
     });
 
-    expect(await search().searchFiles({ query: "Elm", wiki: "iiwiki" })).toEqual([
+    const result = await search().searchFiles({ query: "Elm tree", wiki: "iiwiki" });
+
+    expect(requested?.searchParams.get("generator")).toBe("search");
+    expect(requested?.searchParams.get("gsrsearch")).toBe("Elm tree");
+    expect(requested?.searchParams.get("gsrnamespace")).toBe("6");
+    expect(requested?.searchParams.get("iiurlwidth")).toBe("500");
+    expect(requested?.searchParams.has("aiprefix")).toBe(false);
+    expect(result).toEqual([
       {
-        name: "Elm.png",
-        title: "File:Elm.png",
-        url: "https://iiwiki.com/Elm.png",
+        name: "First.png",
+        title: "File:First.png",
+        url: "https://iiwiki.com/File:First.png",
+        thumbUrl: "https://iiwiki.com/thumb/First.png",
+        size: 5,
+        width: 4,
+        height: 3,
+        mime: "image/png",
+      },
+      {
+        name: "Second.png",
+        title: "File:Second.png",
+        url: "https://iiwiki.com/File:Second.png",
+        thumbUrl: null,
         size: 5,
         width: 4,
         height: 3,
@@ -350,5 +399,58 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
       },
     ]);
     expect(mocked.wikiAsset.findMany).not.toHaveBeenCalled();
+  });
+
+  it("searchFiles in a category asks for thumbnails too", async () => {
+    guard.restore();
+    let requested: URL | undefined;
+    guard = installFetchGuard((url) => {
+      requested = url;
+      return { query: { pages: {} } };
+    });
+
+    expect(await search().searchFiles({ category: "Elmerian", wiki: "iiwiki" })).toEqual([]);
+
+    expect(requested?.searchParams.get("generator")).toBe("categorymembers");
+    expect(requested?.searchParams.get("iiurlwidth")).toBe("500");
+  });
+});
+
+describe("getCategories counts files, not every member", () => {
+  it("IxWiki: lists categories by file count and drops the ones with no file", async () => {
+    mocked.wikiCategory.findMany.mockResolvedValue([
+      { name: "Countries" },
+      { name: "Flag_images" },
+      { name: "Maps" },
+    ]);
+    counts = [
+      countRow("Countries", 30, 4, 0),
+      countRow("Flag images", 0, 0, 7),
+      countRow("Maps", 1, 0, 12),
+    ];
+
+    const result = await categories().getCategories({ wiki: "ixwiki", limit: 10 });
+
+    expect(result).toEqual([
+      { name: "Maps", fileCount: 12 },
+      { name: "Flag images", fileCount: 7 },
+    ]);
+    expect(guard.calls()).toEqual([]);
+  });
+
+  it("a sister wiki: drops categories whose file count is 0", async () => {
+    guard.restore();
+    guard = installFetchGuard(() => ({
+      query: {
+        allcategories: [
+          { "*": "Elmerian", files: 4 },
+          { "*": "Pages only", files: 0 },
+        ],
+      },
+    }));
+
+    expect(await categories().getCategories({ wiki: "althistory", limit: 5 })).toEqual([
+      { name: "Elmerian", fileCount: 4 },
+    ]);
   });
 });

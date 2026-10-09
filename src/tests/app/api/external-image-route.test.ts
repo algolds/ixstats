@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
-import { writeFile } from "fs/promises";
+import { writeFile, access } from "fs/promises";
 
 jest.mock("@clerk/nextjs/server", () => ({
   auth: jest.fn().mockResolvedValue({ userId: "user_1" }),
@@ -8,11 +8,17 @@ jest.mock("@clerk/nextjs/server", () => ({
 jest.mock("fs/promises", () => ({
   writeFile: jest.fn().mockResolvedValue(undefined),
   mkdir: jest.fn().mockResolvedValue(undefined),
+  // Default: the file is not there yet.
+  access: jest.fn().mockRejectedValue(Object.assign(new Error("ENOENT"), { code: "ENOENT" })),
+}));
+jest.mock("~/lib/cache", () => ({
+  rateLimiter: { check: jest.fn() },
 }));
 jest.mock("fs", () => ({
   existsSync: jest.fn().mockReturnValue(true),
 }));
 
+import { rateLimiter } from "~/lib/cache";
 import { POST } from "~/app/api/download/external-image/route";
 
 const TRUSTED_URL = "https://ixwiki.com/images/a/ab/Flag.png";
@@ -29,6 +35,10 @@ describe("POST /api/download/external-image", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest
+      .mocked(rateLimiter.check)
+      .mockResolvedValue({ success: true, resetAt: new Date(Date.now() + 60_000) } as never);
+    jest.mocked(access).mockRejectedValue(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
     fetchMock = jest.spyOn(global, "fetch");
   });
 
@@ -102,8 +112,43 @@ describe("POST /api/download/external-image", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.url).toMatch(/\/images\/downloaded\/downloaded_\d+_[0-9a-f]+\.png$/);
+    expect(json.url).toMatch(/\/images\/downloaded\/downloaded_[0-9a-f]{32}\.png$/);
     expect(json.fileSize).toBe(1024);
+    expect(writeFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers 429 with Retry-After when the rate limiter refuses, before fetching anything", async () => {
+    jest
+      .mocked(rateLimiter.check)
+      .mockResolvedValue({ success: false, resetAt: new Date(Date.now() + 30_000) } as never);
+
+    const res = await POST(postRequest(TRUSTED_URL));
+
+    expect(res.status).toBe(429);
+    expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(rateLimiter.check).toHaveBeenCalledWith("user_1", "file_upload");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it("downloads the same URL twice to the same file name and writes it once", async () => {
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(new Uint8Array(512), {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        })
+    );
+    // After the first write the file exists.
+    jest.mocked(writeFile).mockImplementationOnce(async () => {
+      jest.mocked(access).mockResolvedValue(undefined);
+    });
+
+    const first = await (await POST(postRequest(TRUSTED_URL))).json();
+    const second = await (await POST(postRequest(TRUSTED_URL))).json();
+
+    expect(second.fileName).toBe(first.fileName);
+    expect(second.url).toBe(first.url);
     expect(writeFile).toHaveBeenCalledTimes(1);
   });
 });
