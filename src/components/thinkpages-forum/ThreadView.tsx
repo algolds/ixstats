@@ -90,10 +90,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
 
   const edit = useCallback(
     async (postId: string, html: string) => {
-      await editPost({ postId, html });
+      // M1: the server refuses the edit if the post changed (a moderator edit) since this page loaded it.
+      const editedAt = posts.find((p) => p.id === postId)?.editedAt ?? null;
+      await editPost({ postId, html, editedAt });
       await utils.thinkpagesForum.thread.invalidate({ threadId });
     },
-    [editPost, utils, threadId]
+    [editPost, utils, threadId, posts]
   );
 
   const threadCategory = data?.category;

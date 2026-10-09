@@ -388,8 +388,12 @@ describe("thread view", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 
-  it("edits only the viewer's own post, prefilled, and saves through editPost", async () => {
-    set("thread", { data: threadData() });
+  it("edits only the viewer's own post, prefilled, and saves through editPost with the loaded editedAt", async () => {
+    const data = threadData();
+    const loaded = new Date("2026-10-01T10:00:00Z");
+    set("thread", {
+      data: { ...data, posts: [{ ...data.posts[0]!, editedAt: loaded }, data.posts[1]!] },
+    });
     const editPost = jest.fn(() => Promise.resolve({}));
     mutations.editPost = editPost;
     render(<ThreadView threadId="t1" page={1} />);
@@ -400,7 +404,7 @@ describe("thread view", () => {
     expect(editor).toHaveAttribute("data-initial", "<p>First post</p>");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
-      expect(editPost).toHaveBeenCalledWith({ postId: "p1", html: "<p>new</p>" })
+      expect(editPost).toHaveBeenCalledWith({ postId: "p1", html: "<p>new</p>", editedAt: loaded })
     );
   });
 
