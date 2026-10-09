@@ -10,7 +10,7 @@ This directory (`src/app/thinkpages`) is the App Router surface. The heavy socia
 
 | Route | File | Behaviour |
 | --- | --- | --- |
-| `/thinkpages` | `page.tsx` | Renders `ThinkPagesAccountHub` — persona/account management (create, edit, switch accounts) |
+| `/thinkpages` | `page.tsx` | Renders `AccountsSection` (the Dashboard's Accounts section, also at `/dashboard/accounts`) — persona/account management (create, edit, switch accounts) |
 | `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Single-post thread view with replies and inline composer |
 | `/thinkpages/feed` | `feed/page.tsx` | Redirects to `/dashboard` (unified feed) |
 | `/thinkpages/thinktanks` | `thinktanks/page.tsx` | Redirects to `/thinktanks` |
@@ -32,7 +32,7 @@ The public forum lives under `/thinkpages/forum`, `/thinkpages/c/*`, `/thinkpage
 
 ## Key features
 
-- **Personas / accounts** — each country can own multiple ThinkPages accounts (government, media, citizen). Managed in `ThinkPagesAccountHub` via `EnhancedAccountManager`, `AccountCreationModal`, and `AccountSettingsModal`.
+- **Personas / accounts** — each country can own multiple ThinkPages accounts (government, media, citizen). Managed in `AccountsSection` (`src/components/dashboard/accounts/`) via `EnhancedAccountManager`, `AccountCreationModal`, and `AccountSettingsModal`.
 - **Posts** — create, edit, delete, reply (threaded), pin, bookmark, and flag posts; hashtag and mention extraction on submit.
 - **Reactions** — emoji reactions including Discord custom emoji (`discord:<name>`).
 - **Feed & trends** — trending topics, country-mood metrics, and citizen reactions served via the feed router (consumed primarily from `/dashboard`).
@@ -45,8 +45,8 @@ The public forum lives under `/thinkpages/forum`, `/thinkpages/c/*`, `/thinkpage
 
 | Piece | Location |
 | --- | --- |
-| Main page (account hub) | `src/components/thinkpages/ThinkPagesAccountHub.tsx` |
-| Account management | `EnhancedAccountManager.tsx`, `AccountCreationModal.tsx`, `AccountSettingsModal.tsx` |
+| Main page (account hub) | `src/components/dashboard/accounts/AccountsSection.tsx` |
+| Account management | `src/components/dashboard/accounts/`: `EnhancedAccountManager.tsx`, `AccountCreationModal.tsx`, `AccountSettingsModal.tsx` |
 | Post card / thread | `ThinkpagesPost.tsx` (used by `post/[postId]/page.tsx`) |
 | Feed container | `src/components/dashboard/sections/UnifiedFeedContent.tsx` (on `/dashboard`) |
 | Composer | `GlassCanvasComposer.tsx`, `src/components/shared/editor/GlassPlateEditor.tsx` |

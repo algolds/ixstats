@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 
 interface AccountManagerModalProps {
@@ -13,6 +14,8 @@ interface AccountManagerModalProps {
   onAccountSettings: (account: any) => void;
   onCreateAccount: () => void;
   isOwner: boolean;
+  /** Opens the Dashboard's Accounts section; without it there is no Manage accounts link. */
+  onManageAccounts?: () => void;
 }
 
 export function AccountManagerModal({
@@ -24,6 +27,7 @@ export function AccountManagerModal({
   onAccountSettings,
   onCreateAccount,
   isOwner,
+  onManageAccounts,
 }: AccountManagerModalProps) {
   return (
     <Dialog
@@ -59,6 +63,21 @@ export function AccountManagerModal({
             isOwner={isOwner}
           />
         </div>
+        {onManageAccounts && (
+          <div className="border-separator shrink-0 border-t px-6 py-3">
+            <Button
+              variant="link"
+              size="sm"
+              type="button"
+              onClick={() => {
+                onClose();
+                onManageAccounts();
+              }}
+            >
+              Manage accounts
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

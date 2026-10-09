@@ -35,17 +35,26 @@ const GlassCanvasComposer = dynamic(
 );
 
 const AccountCreationModal = dynamic(
-  () => import("~/components/thinkpages/AccountCreationModal").then((m) => m.AccountCreationModal),
+  () =>
+    import("~/components/dashboard/accounts/AccountCreationModal").then(
+      (m) => m.AccountCreationModal
+    ),
   { ssr: false }
 );
 
 const AccountSettingsModal = dynamic(
-  () => import("~/components/thinkpages/AccountSettingsModal").then((m) => m.AccountSettingsModal),
+  () =>
+    import("~/components/dashboard/accounts/AccountSettingsModal").then(
+      (m) => m.AccountSettingsModal
+    ),
   { ssr: false }
 );
 
 const AccountManagerModal = dynamic(
-  () => import("~/components/thinkpages/AccountManagerModal").then((m) => m.AccountManagerModal),
+  () =>
+    import("~/components/dashboard/accounts/AccountManagerModal").then(
+      (m) => m.AccountManagerModal
+    ),
   { ssr: false }
 );
 
@@ -84,6 +93,8 @@ interface UnifiedDashboardSectionProps {
     averageGdpPerCapita?: number;
     economicTierDistribution?: Record<string, number>;
   };
+  /** Opens the Dashboard's Accounts section from the account manager. */
+  onOpenAccounts?: () => void;
 }
 
 function PostingAs({
@@ -170,6 +181,7 @@ function useViewerAccounts(userId: string | undefined) {
 
 export function UnifiedDashboardSection({
   globalStats: propGlobalStats,
+  onOpenAccounts,
 }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const notify = useNotify();
@@ -357,6 +369,7 @@ export function UnifiedDashboardSection({
         <AccountManagerModal
           isOpen={isAccountModalOpen}
           onClose={() => setIsAccountModalOpen(false)}
+          onManageAccounts={onOpenAccounts}
           {...accountProps}
         />
 

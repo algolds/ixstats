@@ -14,8 +14,8 @@ import {
 import { api } from "~/trpc/react";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { useNotify } from "~/hooks/useNotify";
-import { AccountTypeSelector } from "./account/AccountTypeSelector";
-import { AccountDetailsForm } from "./account/AccountDetailsForm";
+import { AccountTypeSelector } from "./form/AccountTypeSelector";
+import { AccountDetailsForm } from "./form/AccountDetailsForm";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
@@ -26,8 +26,8 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { springSmooth } from "~/lib/design/motion";
-import { PersonaTraitControls } from "./account/PersonaTraitControls";
-import { useUsernameAvailability } from "./account/useUsernameAvailability";
+import { PersonaTraitControls } from "./form/PersonaTraitControls";
+import { useUsernameAvailability } from "./form/useUsernameAvailability";
 
 const MediaSearchModal = dynamic(
   () =>

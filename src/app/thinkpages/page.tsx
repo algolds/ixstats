@@ -1,4 +1,4 @@
-import { ThinkPagesAccountHub } from "~/components/thinkpages/ThinkPagesAccountHub";
+import { AccountsSection } from "~/components/dashboard/accounts/AccountsSection";
 import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 
@@ -10,7 +10,7 @@ export default async function ThinkPagesMainPage() {
     <>
       {/* Phone title under the new navigation shell (nothing with the flag off). */}
       <ShellPageHeader title="ThinkPages" />
-      <ThinkPagesAccountHub initialCountryId={initialCountryId} />
+      <AccountsSection initialCountryId={initialCountryId} />
     </>
   );
 }

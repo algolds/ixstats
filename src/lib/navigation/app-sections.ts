@@ -219,6 +219,7 @@ export const APPS: readonly AppDefinition[] = [
         conditional: true,
       },
       { id: "dashboard", label: "Home", href: "/dashboard", icon: HomeSimple },
+      { id: "accounts", label: "Accounts", href: "/dashboard/accounts", icon: Group },
       {
         id: "messages",
         label: "Messages",

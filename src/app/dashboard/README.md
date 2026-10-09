@@ -5,20 +5,25 @@
 The signed-in dashboard is a social home. It surfaces the user's nation at a
 glance, a platform-wide activity feed (ThinkPages), and trending content and
 community cards in an Inspector. Links into the rest of IxStats are the
-sidebar's source list. There is a single route that renders `DashboardRouter`.
+sidebar's source list. Both routes render `DashboardRouter`.
 
 ## Routes
 
 | Route        | Page title            | File                                   |
 | ------------ | --------------------- | -------------------------------------- |
 | `/dashboard` | "Dashboard - IxStats" | `page.tsx` → `DashboardPageClient.tsx` |
+| `/dashboard/accounts` | "Accounts - IxStats" | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`) |
 
 The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 `/dashboard/trends` sub-routes no longer exist.
 
-> Note: unlike MyCountry/Vault/ThinkPages, `DashboardRouter` does **not** use a
-> `useState` + `pushState` single-page section router. The only stateful
-> state is hero collapse and the feed tab — neither is reflected in the URL.
+Home and Accounts are single-page sections: `useDashboardSection`
+(`src/hooks/useDashboardSection.ts`, paths and titles in `src/lib/dashboard-sections.ts`)
+switches them in place with `pushState`, follows back/forward through `popstate`, and
+re-syncs from `usePathname()` when a sidebar link moves between the two routes. The
+Accounts section is the ThinkPages persona hub (`src/components/dashboard/accounts/AccountsSection.tsx`);
+the feed's account manager dialog links to it ("Manage accounts"). Hero collapse and the
+feed tab are not reflected in the URL.
 
 ## Key features
 

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
-import { EnhancedAccountManager } from "./EnhancedAccountManager";
+import { EnhancedAccountManager } from "~/components/dashboard/accounts/EnhancedAccountManager";
 import { Card } from "~/components/ui/card";
 
 interface UnifiedComposerContainerProps {

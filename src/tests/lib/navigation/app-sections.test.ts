@@ -133,6 +133,7 @@ describe("app section map routes", () => {
     expect(home.sections.map((s) => s.label)).toEqual([
       "What's new",
       "Home",
+      "Accounts",
       "Messages",
       "ThinkTanks",
       "Forum",
@@ -172,6 +173,17 @@ describe("app section map routes", () => {
     const active = getActiveSectionId(mycountry, "/mycountry/intelligence", null);
     expect(active).toBe("defense");
     expect(getTintForPath(mycountry, active)).toBe("mycountry");
+  });
+
+  it("highlights Home's Accounts row on the Dashboard's Accounts section", () => {
+    const home = getAppForPath("/dashboard/accounts")!;
+    expect(home.id).toBe("home");
+    expect(getActiveSectionId(home, "/dashboard/accounts", null)).toBe("accounts");
+    expect(getActiveSectionId(home, "/dashboard", null)).toBe("dashboard");
+    expect(home.sections.find((s) => s.id === "accounts")).toMatchObject({
+      label: "Accounts",
+      href: "/dashboard/accounts",
+    });
   });
 
   it("keeps Home untinted on its own pages", () => {

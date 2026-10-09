@@ -13,7 +13,7 @@ import {
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { PersonaTraitControls, type PersonaTraitKey } from "./account/PersonaTraitControls";
+import { PersonaTraitControls, type PersonaTraitKey } from "./form/PersonaTraitControls";
 
 interface AccountSettingsModalProps {
   isOpen: boolean;

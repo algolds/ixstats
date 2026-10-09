@@ -68,10 +68,11 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists a conditional What's new above Dashboard, Messages, ThinkTanks and Forum", () => {
+  it("Home lists a conditional What's new above Dashboard, Accounts, Messages, ThinkTanks and Forum", () => {
     expect(app("home").sections.map((s) => s.id)).toEqual([
       "whats-new",
       "dashboard",
+      "accounts",
       "messages",
       "thinktanks",
       "forum",

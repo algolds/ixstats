@@ -139,7 +139,7 @@ describe("ShellPageHeader page-title hook", () => {
 
   it("is adopted by the countries index and the ThinkPages hub (no ad-hoc facet-nav hiding)", () => {
     const countries = read("src/app/countries/_components/CountriesPageHeader.tsx");
-    const hub = read("src/components/thinkpages/ThinkPagesAccountHub.tsx");
+    const hub = read("src/components/dashboard/accounts/AccountsSection.tsx");
     expect(countries).toContain("<PageHeader");
     expect(countries).not.toContain("shellPageTitleProps");
     expect(countries).not.toContain("facet-nav:max-lg:hidden");
