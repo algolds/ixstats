@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { APP_IDS, APP_TINTS, APP_TINT_LIGHTNESS, BRAND_TINTS } from "~/lib/design/tokens";
 
 /** The default tint is an ink (a near-neutral), so it has no hue to clash and sits off the palette's lightness. */
@@ -62,5 +64,12 @@ describe("Facet app palette", () => {
     expect(APP_IDS).not.toContain("intel");
     expect(APP_IDS).not.toContain("sports");
     expect(APP_IDS).toContain("labs");
+  });
+
+  it("has no Forum tint: the XenForo bridge app is retired (phase 4b), ThinkPages wears its own", () => {
+    expect(APP_IDS).not.toContain("forum");
+    expect(Object.keys(APP_TINTS)).not.toContain("forum");
+    const css = readFileSync(join(process.cwd(), "src/styles/facet/tokens.css"), "utf8");
+    expect(css).not.toContain('[data-app="forum"]');
   });
 });

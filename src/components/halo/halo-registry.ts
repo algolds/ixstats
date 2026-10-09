@@ -29,6 +29,7 @@ import {
   DiceFive,
   TriangleFlag,
 } from "iconoir-react";
+import { FORUM_HOME, newThreadHref } from "~/lib/thinkpages-forum/links";
 
 type CommandCategory =
   "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
@@ -311,7 +312,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Forum",
-    path: "/forum",
+    path: FORUM_HOME,
     icon: MessageText,
     category: "Community",
     description: "Discussion boards, proposals, roleplay and debates",
@@ -319,7 +320,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Start forum thread",
-    path: "/forum/new-thread",
+    path: newThreadHref({ key: "general" }),
     icon: EditPencil,
     category: "Community",
     description: "Create a new topic in the forum",

@@ -10,6 +10,7 @@ import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
 import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
 import { Compass as SolidCompass, MultiBubble as SolidMultiBubble } from "iconoir-react/solid";
 import { stripBasePath } from "~/lib/base-path";
+import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import { PreText } from "~/components/ui/pretext";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
@@ -31,7 +32,7 @@ const PRIMARY_NAV: NavTrayItem[] = [
   { name: "Realms", href: "/realms", icon: RealmsLogomark, app: "realms" },
   { name: "Wiki", href: "/w", icon: WikiOSLogomark, app: "wiki" },
   { name: "Maps", href: "/maps", icon: SolidCompass, app: "maps" },
-  { name: "Forum", href: "/forum", icon: SolidMultiBubble, app: "forum" },
+  { name: "Forum", href: FORUM_HOME, icon: SolidMultiBubble, app: "thinkpages" },
 ];
 
 const SECONDARY_NAV: { name: string; href: string }[] = [

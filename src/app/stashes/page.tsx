@@ -4,6 +4,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
+import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
@@ -571,7 +572,7 @@ export default function StashesPage() {
                                 <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
-                                    href={withBasePath("/forum")}
+                                    href={FORUM_HOME}
                                     className="text-orange font-semibold hover:underline"
                                   >
                                     Forum

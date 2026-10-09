@@ -127,7 +127,6 @@ export const APP_IDS = [
   "maps",
   "thinkpages",
   "vault",
-  "forum",
   "wiki",
   "realms",
   "labs",
@@ -154,7 +153,8 @@ export const APP_TINT_LIGHTNESS = { light: 0.5, dark: 0.78 } as const;
  * App tints: one colour per app, never shared. Two are brand colours: MyCountry's gold (OKLCH hue 49 light,
  * 84 dark) and the IxWiki navy from the original logo (hue 255). The rest sit evenly in the two gaps those
  * leave, at one lightness per mode (`APP_TINT_LIGHTNESS`): labs 127, thinkpages 170, maps 212 between gold
- * and navy; realms 302, vault 338, forum 13 between navy and gold. Any two are at least 30 degrees apart
+ * and navy; realms 302, vault 338 between navy and gold (forum's 13 was retired with the XenForo bridge in
+ * ThinkPages forum phase 4b). Any two are at least 30 degrees apart
  * (app-palette.test.ts). `strong` is 0.06 darker (light) / 0.07 lighter (dark). The default (Home, Help,
  * Settings, Admin) is not a colour but a warm ink, OKLCH 0.42 / 0.78 at hue 60 and chroma under 0.04, so
  * the apps carry the colour.
@@ -191,10 +191,6 @@ export const APP_TINTS = {
   vault: {
     light: { tint: "#993582", strong: "#862270", onTint: "#ffffff" },
     dark: { tint: "#ed96d4", strong: "#f9b5e5", onTint: "#0b0c0f" },
-  },
-  forum: {
-    light: { tint: "#aa2e49", strong: "#961739", onTint: "#ffffff" },
-    dark: { tint: "#ff93a0", strong: "#ffb8be", onTint: "#0b0c0f" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */

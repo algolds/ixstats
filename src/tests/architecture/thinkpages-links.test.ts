@@ -9,8 +9,9 @@
  * non-word character before `/thinkpages`, so import specifiers such as `~/components/thinkpages/post/...`
  * and `~/lib/thinkpages/post-views` are not link literals and do not trip them.
  *
- * Not guarded here (phase 4b): links to the XenForo bridge's `/forum`. Live bridge files (app-sections, NavTray,
- * halo-registry, the import's bbcode) still spell it; add a `/forum` guard when the bridge is retired.
+ * Phase 4b retired the XenForo bridge: `/forum/*` only redirects (permanently, through the import's id map), so
+ * nothing links to it either. Only the files that recognize old links or build a XenForo post's legacy permalink
+ * may spell it (`BRIDGE_FILES`).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -38,6 +39,17 @@ const PERMALINK_FILES = [
   "lib/action-links.ts",
   "lib/thinkpages-forum/links.ts",
 ];
+/** Files that may spell `/forum`: they recognize stored old links, or point an old XenForo post at its redirect. */
+const BRIDGE_FILES = [
+  "lib/action-links.ts", // postPermalinkPath("xenforo", …) → /forum/post/<id>, which 308s to the import
+  "lib/thinkpages-forum/html-urls.ts", // rebases stored root-relative links, old /forum/ ones included
+  "app/_components/SetupRedirect.tsx", // lets the legacy redirects through without a nation
+  "components/wiki-os/stashes/StashThreadsList.tsx", // legacy forum:thread: stash items open their old path (Q15)
+  "lib/thinkpages-forum/import/bbcode.ts", // the importer's link rewriting for old in-forum links
+  "server/modules/thinkpages-forum/import-db.ts", // the importer's lookups
+];
+/** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
+const BRIDGE_PATH = /(?<![\w./(-])\/forum(?=[/"'`?#]|$)/;
 const LEGACY_PATH =
   /(?<!\w)\/thinkpages\/(?:feed|forum|profile|saved|thinkshare|thinktanks)(?![\w-])/;
 const POST_PATH = /(?<!\w)\/thinkpages\/post(?![\w-])/;
@@ -107,6 +119,23 @@ describe("the patterns catch the old links (and only links)", () => {
     expect(LEGACY_PATH.test(line) || POST_PATH.test(line)).toBe(false);
   });
 
+  it.each(['href="/forum"', 'router.push("/forum/thread/12")', "`/forum?sort=new`", "path: '/forum/new-thread',"])(
+    "BRIDGE_PATH matches %s",
+    (line) => {
+      expect(BRIDGE_PATH.test(line)).toBe(true);
+    }
+  );
+
+  it.each([
+    'href="/thinkpages/forum"',
+    'import { x } from "~/components/forum/reader/PostCard";',
+    'const dir = "src/app/(forum)";',
+    '"https://forum.ixwiki.com/threads/12/"',
+    'href="/forums-of-old"',
+  ])("BRIDGE_PATH lets %s through", (line) => {
+    expect(BRIDGE_PATH.test(line)).toBe(false);
+  });
+
   it("POST_PATH matches the permalink and nothing longer-named", () => {
     expect(POST_PATH.test("`/thinkpages/post/${id}`")).toBe(true);
     expect(POST_PATH.test('"/thinkpages/post-views"')).toBe(false);
@@ -116,6 +145,12 @@ describe("the patterns catch the old links (and only links)", () => {
   it("HUB_REDIRECT_PATH matches a guarded page redirecting into /thinkpages", () => {
     expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/thinkpages/saved">')).toBe(true);
     expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/dashboard/saved">')).toBe(false);
+  });
+});
+
+describe("nothing links to the retired XenForo bridge (phase 4b)", () => {
+  it("spells /forum only where old links are recognized or redirected", () => {
+    expect(offenders(BRIDGE_PATH, BRIDGE_FILES)).toEqual([]);
   });
 });
 

@@ -23,7 +23,6 @@ import { RealmsLogomark } from "./icons/RealmsLogomark";
 import { VaultLogomark } from "./icons/VaultLogomark";
 import {
   Compass as SolidCompass,
-  MultiBubble as SolidMultiBubble,
   RoundFlask as SolidRoundFlask,
 } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
@@ -47,7 +46,6 @@ import {
   Crown,
   Database,
   Download,
-  FireFlame,
   Folder,
   Gamepad,
   Gift,
@@ -68,7 +66,6 @@ import {
   Package,
   Page,
   Palette,
-  Plus,
   Search,
   Server,
   Settings,
@@ -93,8 +90,7 @@ export type NavBadge = { kind: "count"; value: number } | { kind: "action"; labe
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
-type AppTint =
-  "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "realms" | "labs";
+type AppTint = "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs";
 
 type AppId =
   | "home"
@@ -102,7 +98,6 @@ type AppId =
   | "maps"
   | "vault"
   | "wiki"
-  | "forum"
   | "countries"
   | "labs"
   | "help"
@@ -115,7 +110,6 @@ export interface NavigationVisibilitySettings {
   showCardsTab?: boolean;
   showLabsTab?: boolean;
   showMapsTab?: boolean;
-  showForumTab?: boolean;
   showHelpTab?: boolean;
 }
 
@@ -400,24 +394,6 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    id: "forum",
-    label: "Forum",
-    href: "/forum",
-    icon: SolidMultiBubble,
-    tint: "forum",
-    match: ["/forum"],
-    navSetting: "showForumTab",
-    // The forum's rail entry "Messages" is ThinkPages → Messages.
-    sections: [
-      { id: "forums", label: "All forums", href: "/forum", icon: ChatBubble },
-      { id: "trending", label: "Trending", href: "/forum?sort=trending", icon: FireFlame },
-      { id: "new-posts", label: "New posts", href: "/forum?sort=new", icon: Clock },
-      { id: "search", label: "Search", href: "/forum/search", icon: Search },
-      { id: "bookmarks", label: "Bookmarks", href: "/forum/bookmarks", icon: Bookmark },
-      { id: "new-thread", label: "New thread", href: "/forum/new-thread", icon: Plus },
-    ],
-  },
-  {
     id: "countries",
     label: "Realms",
     // /realms is the landing page for exploring, searching and joining realms.
@@ -633,7 +609,6 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "maps",
   "countries",
   "wiki",
-  "forum",
   "vault",
   "labs",
   "help",
