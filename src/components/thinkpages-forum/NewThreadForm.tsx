@@ -8,30 +8,43 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { categoryHref, forumHomeHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
 
+interface NewThreadFormProps {
+  categoryKey: string;
+  /** The realm's slug for a realm category; absent for the sitewide section. */
+  realm?: string;
+}
+
 /** Start a thread in a category; on success the new thread opens. */
-export function NewThreadForm({ categoryKey }: { categoryKey: string }) {
+export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   const router = useRouter();
   const utils = api.useUtils();
-  const { data, isLoading } = api.thinkpagesForum.category.useQuery({ key: categoryKey, page: 1 });
+  const { data, isLoading } = api.thinkpagesForum.category.useQuery({
+    key: categoryKey,
+    page: 1,
+    realm,
+  });
   const { mutateAsync: createThread } = api.thinkpagesForum.createThread.useMutation();
-  const backHref = `/thinkpages/c/${categoryKey}`;
+  const backHref = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
 
   const submit = useCallback(
     async ({ html, personaId, title }: ForumComposerInput) => {
       const { threadId } = await createThread({
         categoryKey,
+        realm,
         title: title ?? "",
         html,
         personaId,
       });
       void utils.thinkpagesForum.category.invalidate({ key: categoryKey });
       void utils.thinkpagesForum.categories.invalidate();
-      router.push(`/thinkpages/t/${threadId}`);
+      void utils.thinkpagesForum.realmSection.invalidate();
+      router.push(threadHref(threadId));
     },
-    [createThread, categoryKey, utils, router]
+    [createThread, categoryKey, realm, utils, router]
   );
 
   if (isLoading) {
@@ -48,10 +61,10 @@ export function NewThreadForm({ categoryKey }: { categoryKey: string }) {
         <Card>
           <EmptyState
             title="You can't start a thread here"
-            message="Sign in, or pick a category open to members."
+            message={data?.notice ?? "Sign in, or pick a category open to members."}
             action={
               <Button asChild variant="secondary">
-                <Link href="/thinkpages/forum">Back to the forum</Link>
+                <Link href={forumHomeHref(realm)}>Back to the forum</Link>
               </Button>
             }
           />

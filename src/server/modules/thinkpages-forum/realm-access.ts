@@ -7,6 +7,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID } from "~/lib/realms/realm-region";
+import { noNationNotice } from "~/lib/thinkpages-forum/notices";
 import {
   hasRealmPower,
   isRealmHiddenFrom,
@@ -142,7 +143,7 @@ export async function realmPostingAccess(
   const restrictedBy = boardRestrictionMessage(restriction);
   if (restrictedBy) return refused(base, restrictedBy, restriction);
   if (ownedCountryIds.length === 0) {
-    return refused(base, `Only owners of a nation in ${realm.name} can post here.`);
+    return refused(base, noNationNotice(realm.name));
   }
   return granted;
 }

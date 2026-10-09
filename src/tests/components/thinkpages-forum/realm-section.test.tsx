@@ -1,0 +1,216 @@
+import React from "react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+
+interface QueryResult {
+  data?: object | null;
+  isLoading?: boolean;
+  error?: { data?: { code: string } } | null;
+  refetch?: jest.Mock;
+}
+
+interface MockApi {
+  results: Record<string, QueryResult>;
+  inputs: Record<string, object | undefined>;
+}
+
+jest.mock("~/trpc/react", () => {
+  const results: Record<string, QueryResult> = {};
+  const inputs: Record<string, object | undefined> = {};
+  const query = (name: string) => ({
+    useQuery: (input?: object) => {
+      inputs[name] = input;
+      return { isLoading: false, error: null, ...results[name] };
+    },
+  });
+  return {
+    results,
+    inputs,
+    api: { thinkpagesForum: { realms: query("realms"), realmSection: query("realmSection") } },
+  };
+});
+
+jest.mock("next/navigation", () => {
+  const router = { push: jest.fn(), replace: jest.fn() };
+  return { router, useRouter: () => router };
+});
+
+interface SelectStubProps {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  children: React.ReactNode;
+}
+
+// Radix Select does not render its options in jsdom; swap in a native <select>.
+jest.mock("~/components/ui/select", () => {
+  const { createContext, useContext } = jest.requireActual<typeof React>("react");
+  const Ctx = createContext<Omit<SelectStubProps, "children">>({});
+  return {
+    Select: ({ value, onValueChange, children }: SelectStubProps) => (
+      <Ctx.Provider value={{ value, onValueChange }}>{children}</Ctx.Provider>
+    ),
+    SelectTrigger: ({ "aria-label": label }: { "aria-label"?: string }) => (
+      <span data-testid="trigger" aria-label={label} />
+    ),
+    SelectValue: () => null,
+    SelectContent: ({ children }: { children: React.ReactNode }) => {
+      const { value, onValueChange } = useContext(Ctx);
+      return (
+        <select value={value} onChange={(e) => onValueChange?.(e.target.value)}>
+          {children}
+        </select>
+      );
+    },
+    SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
+      <option value={value}>{children}</option>
+    ),
+  };
+});
+
+import { RealmSection } from "~/components/thinkpages-forum/RealmSection";
+
+const { results, inputs } = jest.requireMock<MockApi>("~/trpc/react");
+const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
+  "next/navigation"
+);
+
+const NO_NATION = "Only owners of a nation in Eurth can post here.";
+
+const realms = {
+  defaultSlug: "eurth",
+  realms: [
+    { id: "default", slug: "ixworld", name: "IxWorld" },
+    { id: "r_eurth", slug: "eurth", name: "Eurth" },
+    { id: "r_other", slug: "other", name: "Other" },
+  ],
+};
+
+function section(canPost: boolean, notice: string | null) {
+  const row = (key: string, name: string, threadCount: number) => ({
+    key,
+    name,
+    description: `${name} talk`,
+    icAllowed: key !== "hub",
+    postRole: "any",
+    threadCount,
+    lastPostAt: null,
+  });
+  return {
+    realm: { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active" },
+    categories: [
+      row("hub", "Hub", 2),
+      row("character-threads", "Character Threads", 1),
+      row("current-events", "Current Events", 0),
+    ],
+    canPost,
+    notice,
+  };
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  for (const key of Object.keys(results)) delete results[key];
+  results.realms = { data: realms };
+});
+
+describe("RealmSection", () => {
+  it("renders the realm's name and its three categories linking under /thinkpages/r", () => {
+    results.realmSection = { data: section(true, null) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.getByRole("heading", { level: 2, name: "Eurth" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Hub/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/hub"
+    );
+    expect(screen.getByRole("link", { name: /Character Threads/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/character-threads"
+    );
+    expect(screen.getByRole("link", { name: /Current Events/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/current-events"
+    );
+    expect(screen.getByText("2 threads")).toBeInTheDocument();
+    expect(inputs.realmSection).toEqual({ realm: "eurth" });
+  });
+
+  it("opens the viewer's default realm when none is given", () => {
+    results.realmSection = { data: section(true, null) };
+    render(<RealmSection />);
+    expect(inputs.realmSection).toEqual({ realm: "eurth" });
+  });
+
+  it("says the viewer can post when they can", () => {
+    results.realmSection = { data: section(true, null) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.getByText("You can post here")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+  });
+
+  it("shows the no-nation notice with a link to claim a nation in the realm", () => {
+    results.realmSection = { data: section(false, NO_NATION) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.getByText(NO_NATION)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Claim a nation" })).toHaveAttribute(
+      "href",
+      "/r/eurth/nations"
+    );
+    expect(screen.queryByText("You can post here")).toBeNull();
+  });
+
+  it("shows any other notice without the claim link", () => {
+    const signIn = "Sign in and claim a nation in Eurth to post here.";
+    results.realmSection = { data: section(false, signIn) };
+    const { unmount } = render(<RealmSection realm="eurth" />);
+    expect(screen.getByText(signIn)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+    unmount();
+
+    const muted = "You are muted on this realm's board.";
+    results.realmSection = { data: section(false, muted) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.getByText(muted)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+  });
+
+  it("offers a switcher of the given realms that replaces the URL on change", () => {
+    results.realmSection = { data: section(true, null) };
+    render(<RealmSection realm="eurth" switcher />);
+    expect(screen.getByLabelText("Realm")).toBeInTheDocument();
+    const select = screen.getByRole("combobox");
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent)
+    ).toEqual(["IxWorld", "Eurth", "Other"]);
+    expect(select).toHaveValue("eurth");
+    fireEvent.change(select, { target: { value: "other" } });
+    expect(router.replace).toHaveBeenCalledWith("/thinkpages/forum?realm=other");
+  });
+
+  it("has no switcher unless asked for", () => {
+    results.realmSection = { data: section(true, null) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("says the realm is not available on NOT_FOUND, inside the section", () => {
+    results.realmSection = { data: undefined, error: { data: { code: "NOT_FOUND" } } };
+    render(<RealmSection realm="hidden" switcher />);
+    expect(screen.getByText("This realm is not available.")).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("offers Retry for any other error", () => {
+    const refetch = jest.fn();
+    results.realmSection = {
+      data: undefined,
+      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
+      refetch,
+    };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.queryByText("This realm is not available.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+});

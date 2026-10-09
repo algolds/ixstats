@@ -8,9 +8,16 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { timeAgo } from "~/lib/format/compact";
+import {
+  categoryHref,
+  forumHomeHref,
+  newThreadHref,
+  threadHref,
+} from "~/lib/thinkpages-forum/links";
 import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName, type ForumAuthors } from "./AuthorName";
+import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
 import { Pagination, useLastPageRedirect } from "./Pagination";
 
@@ -21,7 +28,7 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
   return (
     <li>
       <Link
-        href={`/thinkpages/t/${thread.id}`}
+        href={threadHref(thread.id)}
         className="hover:bg-fill-4 focus-visible:outline-tint flex items-center gap-3 px-4 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2"
       >
         <div className="min-w-0 flex-1">
@@ -54,15 +61,18 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
 interface ThreadListProps {
   categoryKey: string;
   page: number;
+  /** The realm's slug for a realm category; absent for the sitewide section. */
+  realm?: string;
 }
 
 /** A category's threads, pinned first, with "New thread" for viewers who may start one. */
-export function ThreadList({ categoryKey, page }: ThreadListProps) {
+export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
   const { data, isLoading, error, refetch } = api.thinkpagesForum.category.useQuery({
     key: categoryKey,
     page,
+    realm,
   });
-  const basePath = `/thinkpages/c/${categoryKey}`;
+  const basePath = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
   const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
   const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   usePageTitle({ title: data?.category.name ?? "ThinkPages Forum" });
@@ -80,17 +90,24 @@ export function ThreadList({ categoryKey, page }: ThreadListProps) {
     );
   }
 
+  const { category } = data;
+
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
       <PageHeader
-        title={data.category.name}
-        subtitle={data.category.description ?? undefined}
-        back={{ href: "/thinkpages/forum", label: "Forum" }}
+        title={category.name}
+        subtitle={
+          <>
+            <ForumBreadcrumbs items={[...forumTrail(category.realm), { label: category.name }]} />
+            {category.description ? <p>{category.description}</p> : null}
+          </>
+        }
+        back={{ href: forumHomeHref(category.realm?.slug), label: "Forum" }}
         bleed
         actions={
           data.canStart ? (
             <Button asChild size="sm">
-              <Link href={`${basePath}/new`}>
+              <Link href={newThreadHref(category)}>
                 <EditPencil aria-hidden />
                 New thread
               </Link>
