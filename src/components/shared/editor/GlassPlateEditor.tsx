@@ -22,6 +22,7 @@ import { POST_IMAGE_CLASSES } from "./postImageClasses";
 import { MentionMenuPortal } from "./MentionMenuPortal";
 import { useGlassPlateEditor } from "./useGlassPlateEditor";
 import { WikiAndStashPopovers } from "./WikiAndStashPopovers";
+import { altFromImageUrl } from "./imageAlt";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -57,6 +58,8 @@ interface GlassPlateEditorProps {
   hideToolbar?: boolean;
   variant?: "default" | "seamless";
   actionRight?: React.ReactNode;
+  /** Show the "Insert image" picker button. Off by default; only composers that store HTML images opt in. */
+  allowImageInsert?: boolean;
 }
 
 export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditorProps>(
@@ -78,6 +81,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       hideToolbar = false,
       variant = "default",
       actionRight,
+      allowImageInsert = false,
     },
     ref
   ) => {
@@ -199,7 +203,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       (url: string) => {
         setIsImagePickerOpen(false);
         if (savedSelection.current) Transforms.select(editor as any, savedSelection.current);
-        insertImageUrl(url);
+        insertImageUrl(url, altFromImageUrl(url));
       },
       [editor, insertImageUrl]
     );
@@ -302,7 +306,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
               />
 
               <div className="flex items-center gap-2">
-                {!disabled && (
+                {allowImageInsert && !disabled && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -355,7 +359,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
           )}
         </Plate>
 
-        {isImagePickerOpen && (
+        {allowImageInsert && isImagePickerOpen && (
           <MediaSearchModal
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
