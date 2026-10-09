@@ -1,6 +1,6 @@
 /**
- * Where the `/thinkpages/post/<id>` permalink (ruling P5) sends a viewer. Pure, so the server page and the
- * signed-in client gate agree on the destination.
+ * Where the `/thinkpages/post/<id>` permalink (ruling P5) sends a viewer. Pure, so the server page's destination
+ * is tested on its own.
  */
 import { threadHref } from "./links";
 
