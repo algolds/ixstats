@@ -591,7 +591,8 @@ describe("planImport rules", () => {
   });
 
   it("counts locked and pinned new threads, and reads a non-boolean discussion_open as open", () => {
-    const odd = (extra: object): XfThread => JSON.parse(JSON.stringify({ ...thread(4, 12), ...extra }));
+    const odd = (extra: object): XfThread =>
+      JSON.parse(JSON.stringify({ ...thread(4, 12), ...extra }));
     const plan = planImport(
       snap(
         [GENERAL],

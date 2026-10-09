@@ -56,7 +56,7 @@ The community forum is moving from the XenForo bridge described above to a nativ
 
 ### Importing the XenForo forum
 
-The old forum is copied in once, in two steps, so the importer never talks to XenForo.
+The old forum is copied in two steps, so the importer never talks to XenForo. The import can be re-run with a fresh export to pick up posts made since: only missing rows are added, so edits to already-imported XenForo posts, and title, lock or pin changes on imported threads, are not re-imported.
 
 1. **Export** a snapshot of the XenForo forum to a local directory: `bun run forum:export-xenforo`.
 2. **Import** the snapshot: `bun run db:import-xenforo-forum -- --snapshot DIR` is a dry run that prints a report; `--apply` writes. The import is idempotent by XenForo id, and a rerun attributes posts to members who have linked since.

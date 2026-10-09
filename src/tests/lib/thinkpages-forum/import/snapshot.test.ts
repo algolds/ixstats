@@ -168,7 +168,8 @@ describe("openSnapshotWriter", () => {
     const writer = await openSnapshotWriter(fs, DIR);
     await writer.writeMeta(META);
     await writer.writeNodes([node(12)]);
-    const bad = <T extends object>(row: T, extra: object): string => JSON.stringify({ ...row, ...extra });
+    const bad = <T extends object>(row: T, extra: object): string =>
+      JSON.stringify({ ...row, ...extra });
     const lines = (rows: string[]) => `${rows.join("\n")}\n`;
     fs.files.set(
       `${DIR}/threads.jsonl`,
