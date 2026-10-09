@@ -18,7 +18,6 @@
  */
 import "../lib/load-env";
 import { existsSync } from "node:fs";
-import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { runExport, type ExportTotals } from "~/lib/thinkpages-forum/import/export-run";
 import {
   exportedForums,
@@ -26,13 +25,13 @@ import {
   openSnapshotWriter,
   readSnapshot,
   type Snapshot,
-  type SnapshotFs,
   type SnapshotGaps,
 } from "~/lib/thinkpages-forum/import/snapshot";
 import {
   XENFORO_EXPORT_CLIENT_VERSION,
   createXenForoClient,
 } from "~/lib/thinkpages-forum/import/xenforo-client";
+import { snapshotDiskFs as nodeFs } from "../lib/snapshot-fs";
 
 const DEFAULT_API_URL = "https://forum.ixwiki.com/api";
 const USER_AGENT = `IxStats-ForumExport/${XENFORO_EXPORT_CLIENT_VERSION} (+https://ixwiki.com)`;
@@ -84,18 +83,6 @@ function parseArgs(argv: string[]): Args {
     bypass: bypassArg(argv),
   };
 }
-
-const nodeFs: SnapshotFs = {
-  readFile: (file) => readFile(file, "utf8"),
-  writeFile: (file, data) => writeFile(file, data),
-  appendFile: (file, data) => appendFile(file, data, "utf8"),
-  rename: (from, to) => rename(from, to),
-  mkdir: async (dir) => {
-    await mkdir(dir, { recursive: true });
-  },
-  exists: async (file) => existsSync(file),
-  stat: async (file) => ({ size: (await stat(file)).size }),
-};
 
 function printTotals(totals: ExportTotals): void {
   const a = totals.attachments;

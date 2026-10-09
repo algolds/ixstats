@@ -74,7 +74,10 @@ export function resolveNodeTargets(
   });
 }
 
-export const archiveKey = (nodeId: number) => `xf-${nodeId}`;
+/** Every archive category key starts with this (`xf-<nodeId>`); the rollback finds them by it. */
+export const ARCHIVE_KEY_PREFIX = "xf-";
+
+export const archiveKey = (nodeId: number) => `${ARCHIVE_KEY_PREFIX}${nodeId}`;
 
 export interface ArchiveCategory {
   key: string;

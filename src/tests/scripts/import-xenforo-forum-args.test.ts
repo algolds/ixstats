@@ -1,0 +1,261 @@
+/** @jest-environment node */
+import type { AttachmentEntry } from "~/lib/thinkpages-forum/import/snapshot";
+import type { ResolvedNode } from "~/lib/thinkpages-forum/import/node-map";
+import type { XfNode } from "~/lib/thinkpages-forum/import/xenforo-types";
+import type {
+  AttachmentCopyPlan,
+  PlannedAttachment,
+} from "~/server/modules/thinkpages-forum/import-attachments";
+import { parseImportArgs } from "../../../scripts/migrations/import-xenforo-forum-args";
+import {
+  applyRefusals,
+  attachmentPlanLines,
+  attachmentResultLines,
+  defaultTargetNodes,
+  diskRefusal,
+  omittedByReason,
+  snapshotGapLines,
+} from "../../../scripts/migrations/import-xenforo-forum-plan";
+
+const url = (db: string) => `postgresql://u:p@localhost:5433/${db}?schema=public`;
+const CLONE = url("ixstats_wv1");
+const PROD = url("ixstats");
+
+describe("parseImportArgs", () => {
+  it("parses a dry run, an apply and their options", () => {
+    expect(parseImportArgs(["--snapshot", "dir"], CLONE)).toEqual({
+      args: {
+        snapshot: "dir",
+        nodeMap: null,
+        report: null,
+        apply: false,
+        acceptDefaults: false,
+        production: false,
+        rollback: false,
+      },
+    });
+    const parsed = parseImportArgs(
+      [
+        "--snapshot",
+        "dir",
+        "--node-map",
+        "map.json",
+        "--report",
+        "r.json",
+        "--apply",
+        "--accept-defaults",
+      ],
+      CLONE
+    );
+    expect(parsed).toMatchObject({
+      args: { nodeMap: "map.json", report: "r.json", apply: true, acceptDefaults: true },
+    });
+  });
+
+  it("requires --snapshot, a value for each value flag, and known flags only", () => {
+    expect(parseImportArgs(["--apply"], CLONE)).toEqual({
+      error: expect.stringMatching(/--snapshot/),
+    });
+    expect(parseImportArgs(["--snapshot"], CLONE)).toEqual({ error: "--snapshot needs a value" });
+    expect(parseImportArgs(["--snapshot", "--apply"], CLONE)).toEqual({
+      error: "--snapshot needs a value",
+    });
+    expect(parseImportArgs(["--snapshot", "dir", "--aply"], CLONE)).toEqual({
+      error: "Unknown argument: --aply",
+    });
+  });
+
+  it("refuses the production database without --production, apply or not", () => {
+    expect(parseImportArgs(["--snapshot", "dir", "--apply"], PROD)).toEqual({
+      error: expect.stringMatching(/production database "ixstats"/),
+    });
+    expect(parseImportArgs(["--snapshot", "dir"], PROD)).toHaveProperty("error");
+    expect(parseImportArgs(["--snapshot", "dir", "--apply", "--production"], PROD)).toMatchObject({
+      args: { apply: true, production: true },
+    });
+    expect(parseImportArgs(["--snapshot", "dir"], undefined)).toHaveProperty("error");
+  });
+
+  it("needs --yes for a rollback and never combines it with --apply", () => {
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback"], CLONE)).toEqual({
+      error: expect.stringMatching(/pass --yes/),
+    });
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes", "--apply"], CLONE)).toEqual(
+      {
+        error: "--rollback and --apply cannot be combined",
+      }
+    );
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes"], CLONE)).toMatchObject({
+      args: { rollback: true, apply: false },
+    });
+    expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes"], PROD)).toHaveProperty(
+      "error"
+    );
+  });
+});
+
+const node = (node_id: number, title: string, node_type_id = "Forum"): XfNode => ({
+  node_id,
+  title,
+  description: "",
+  node_type_id,
+  parent_node_id: 0,
+  display_order: 1,
+});
+
+describe("apply refusals", () => {
+  const resolved: ResolvedNode[] = [
+    { node: node(1, "Community", "Category"), target: { skip: true }, source: "default" },
+    { node: node(12, "Lore"), target: { archive: true }, source: "default" },
+    { node: node(13, "General"), target: { scope: "site", key: "general" }, source: "heuristic" },
+    { node: node(14, "Staff"), target: { archive: true, visibility: "staff" }, source: "map" },
+  ];
+
+  it("lists Forum nodes that fall back to a default archive (M6)", () => {
+    expect(defaultTargetNodes(resolved).map((r) => r.node.node_id)).toEqual([12]);
+  });
+
+  it("refuses on blocking lines and on defaults unless accepted", () => {
+    const defaults = defaultTargetNodes(resolved);
+    expect(
+      applyRefusals({ blocking: ["visibility differs"], defaults, acceptDefaults: false })
+    ).toEqual([
+      "visibility differs",
+      expect.stringMatching(/^Node 12 "Lore" has no node map entry.*--accept-defaults/),
+    ]);
+    expect(applyRefusals({ blocking: [], defaults, acceptDefaults: true })).toEqual([]);
+    expect(applyRefusals({ blocking: ["b"], defaults, acceptDefaults: true })).toEqual(["b"]);
+  });
+});
+
+describe("diskRefusal", () => {
+  const dir = "/srv/uploads";
+
+  it("needs a writable directory with twice the planned bytes free", () => {
+    expect(diskRefusal({ dir, writable: false, freeBytes: 1e9, plannedBytes: 0 })).toMatch(
+      /not writable/
+    );
+    expect(diskRefusal({ dir, writable: true, freeBytes: 199, plannedBytes: 100 })).toMatch(
+      /needs 200/
+    );
+    expect(diskRefusal({ dir, writable: true, freeBytes: null, plannedBytes: 100 })).toMatch(
+      /unknown/
+    );
+    expect(diskRefusal({ dir, writable: true, freeBytes: 200, plannedBytes: 100 })).toBeNull();
+    expect(diskRefusal({ dir, writable: true, freeBytes: null, plannedBytes: 0 })).toBeNull();
+  });
+});
+
+describe("snapshotGapLines", () => {
+  it("names what the export still has to fetch", () => {
+    expect(
+      snapshotGapLines({
+        complete: false,
+        nodesPending: true,
+        forumsWithoutThreads: [12],
+        threadsWithoutPosts: [100, 101],
+        usersMissing: [7],
+        attachmentsMissing: [55],
+        threadsRedirect: [],
+        threadsGone: [],
+        threadsEmpty: [],
+        attachmentsUnavailable: [],
+        attachmentsSizeMismatch: [],
+      })
+    ).toEqual([
+      "the node list",
+      "forums without threads: 12",
+      "threads without posts: 100, 101",
+      "attachments: 55",
+    ]);
+  });
+});
+
+describe("attachment lines", () => {
+  const entry = (attachment_id: number, extra: Partial<AttachmentEntry> = {}): AttachmentEntry => ({
+    attachment_id,
+    post_id: 1000,
+    filename: "a.png",
+    content_type: "image/png",
+    file_size: 10,
+    stored: "ok",
+    ...extra,
+  });
+  const entries = [
+    entry(1),
+    entry(2, { content_type: "image/svg+xml" }),
+    entry(3, { file_size: 30 * 1024 * 1024 }),
+    entry(4, { stored: "forbidden" }),
+    entry(5),
+    entry(6),
+    entry(7),
+    entry(-1),
+  ];
+  const kept = (
+    id: number,
+    visibility: "public" | "restricted",
+    copy: boolean
+  ): PlannedAttachment => ({
+    entry: entry(id),
+    kind: "image",
+    mimeType: "image/png",
+    fileName: `${id}.png`,
+    url: `/images/uploads/forum/${id}.png`,
+    source: `${id}.bin`,
+    target: `/srv/uploads/forum/${id}.png`,
+    visibility,
+    copy,
+  });
+  const plan: AttachmentCopyPlan = {
+    dir: "/srv/uploads/forum",
+    attachments: [kept(1, "public", true), kept(7, "restricted", false)],
+    attachmentFor: () => "omitted",
+    bytes: 10,
+    skipped: 1,
+    missing: [5],
+    signatureMismatch: [6],
+    invalidIds: 1,
+  };
+
+  it("counts omissions by reason", () => {
+    expect(Object.fromEntries(omittedByReason(entries, plan))).toEqual({
+      "type not kept": 1,
+      "over the size limit": 1,
+      "snapshot forbidden": 1,
+      "snapshot file missing or short": 1,
+      "bytes do not match the type": 1,
+      "invalid id": 1,
+    });
+    expect(Object.fromEntries(omittedByReason([entry(8)], plan))).toEqual({
+      "post not imported": 1,
+    });
+  });
+
+  it("prints the copy plan with signature mismatches, invalid ids and disk bytes", () => {
+    expect(attachmentPlanLines(entries, plan)).toEqual([
+      "Attachment copy: 2 kept (2 images, 0 links; 1 restricted), 1 to copy (10 bytes on disk), 1 already on disk",
+      "  missing or short snapshot files 1, signature mismatches 1, invalid ids 1",
+      "  omitted by reason: type not kept 1, over the size limit 1, snapshot forbidden 1, snapshot file missing or short 1, bytes do not match the type 1, invalid id 1",
+    ]);
+  });
+
+  it("prints the copy result with assets registered, pending and failed by reason", () => {
+    expect(
+      attachmentResultLines({
+        copied: 2,
+        skipped: 1,
+        bytes: 20,
+        missing: [5],
+        registered: 1,
+        assetsPending: [9],
+        assetsFailed: [
+          { attachmentId: 3, reason: "invalid-input" },
+          { attachmentId: 4, reason: "invalid-input" },
+        ],
+      })
+    ).toEqual([
+      "Attachments: 2 copied (20 bytes), 1 already on disk, 1 missing",
+      "  media assets: 1 registered, 1 pending (a rerun retries), failed: invalid-input 2",
+    ]);
+  });
+});
