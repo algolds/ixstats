@@ -31,7 +31,14 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, usePathname: () => "/thinkpages" };
+  const nav = { query: "" };
+  return {
+    router,
+    nav,
+    useRouter: () => router,
+    usePathname: () => "/thinkpages",
+    useSearchParams: () => new URLSearchParams(nav.query),
+  };
 });
 
 interface SelectStubProps {
@@ -69,9 +76,10 @@ jest.mock("~/components/ui/select", () => {
 import { RealmSection } from "~/components/thinkpages-forum/RealmSection";
 
 const { results, inputs } = jest.requireMock<MockApi>("~/trpc/react");
-const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
-  "next/navigation"
-);
+const { router, nav } = jest.requireMock<{
+  router: { push: jest.Mock; replace: jest.Mock };
+  nav: { query: string };
+}>("next/navigation");
 
 const NO_NATION = "Only owners of a nation in Eurth can post here.";
 
@@ -166,6 +174,16 @@ describe("RealmSection", () => {
     expect(signInLink.parentElement).toHaveTextContent(signIn);
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
     unmount();
+
+    // P3: signing in comes back to the same realm and page.
+    nav.query = "realm=eurth&page=2";
+    const again = render(<RealmSection realm="eurth" />);
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect_url=%2Fthinkpages%3Frealm%3Deurth%26page%3D2"
+    );
+    again.unmount();
+    nav.query = "";
 
     const muted = "You are muted on this realm's board.";
     results.realmSection = { data: section(false, muted) };

@@ -70,7 +70,12 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, usePathname: () => "/thinkpages/mod" };
+  return {
+    router,
+    useRouter: () => router,
+    usePathname: () => "/thinkpages/mod",
+    useSearchParams: () => new URLSearchParams(),
+  };
 });
 
 jest.mock("~/hooks/useNotify", () => {
