@@ -6,7 +6,7 @@
  * by (scope, realmId, key), never by key alone, and a realm hidden from the viewer (draft, generating) hides its
  * categories, threads and posts.
  */
-import type { ForumCategory, PrismaClient } from "@prisma/client";
+import type { ForumCategory, Prisma, PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
@@ -37,9 +37,12 @@ const onlyOwnThreads = (viewer: ForumViewer, category: PlacedCategory): boolean 
   category.visibility === "reporter_staff" && !canModerateCategory(viewer, category);
 // Anonymous never sees a Reports category (canSeeCategory); an empty author id would match no thread regardless.
 const ownAuthor = (viewer: ForumViewer) => ({ authorUserId: viewer?.id ?? "" });
-const ownThreadsWhere = (viewer: ForumViewer, category: PlacedCategory): { authorUserId?: string } =>
-  onlyOwnThreads(viewer, category) ? ownAuthor(viewer) : {};
-const pageOf = (page: number): number => (Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1);
+const ownThreadsWhere = (
+  viewer: ForumViewer,
+  category: PlacedCategory
+): { authorUserId?: string } => (onlyOwnThreads(viewer, category) ? ownAuthor(viewer) : {});
+const pageOf = (page: number): number =>
+  Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
 
 /** Where a category sits: `realm` is a realm slug; absent or null means the sitewide section. */
 export interface CategoryLocator {
@@ -61,7 +64,10 @@ export async function visibleRealmOf(
 }
 
 /** The fields every read result carries about its category's place: scope, realm id, and the realm's slug and name. */
-const placeOf = (category: { scope: string; realmId: string | null }, realm: ForumRealm | null) => ({
+const placeOf = (
+  category: { scope: string; realmId: string | null },
+  realm: ForumRealm | null
+) => ({
   scope: category.scope,
   realmId: category.realmId,
   realm: realm ? { slug: realm.slug, name: realm.name } : null,
@@ -115,7 +121,10 @@ export async function summarizeCategories(
   }));
 }
 
-export async function listSiteCategories(db: Pick<ReadsDb, "forumCategory" | "forumThread">, viewer: ForumViewer) {
+export async function listSiteCategories(
+  db: Pick<ReadsDb, "forumCategory" | "forumThread">,
+  viewer: ForumViewer
+) {
   const all = await db.forumCategory.findMany({ where: SITE_SCOPE, orderBy: { order: "asc" } });
   return summarizeCategories(db, viewer, all);
 }
@@ -172,11 +181,35 @@ export async function getCategoryThreads(
 }
 
 /**
+ * The thread fields a thread read returns: an explicit list, so the XenForo author id (`xenforoUserId`) and the
+ * archive provenance (`sourceRef`) never reach a client.
+ */
+const THREAD_FIELDS = {
+  id: true,
+  categoryId: true,
+  title: true,
+  authorUserId: true,
+  authorPersonaId: true,
+  importedAuthorName: true,
+  xenforoThreadId: true,
+  pinned: true,
+  locked: true,
+  hidden: true,
+  archived: true,
+  postCount: true,
+  lastPostAt: true,
+  createdAt: true,
+} as const satisfies Prisma.ForumThreadSelect;
+
+/**
  * The thread the viewer may read (the canSeeThread rule, and its realm visible), else NOT_FOUND: a thread they cannot
  * see reads as one that does not exist. Shared by the thread read and by stashing.
  */
 export async function loadVisibleThread(db: ReadsDb, viewer: ForumViewer, threadId: string) {
-  const row = await db.forumThread.findUnique({ where: { id: threadId }, include: { category: true } });
+  const row = await db.forumThread.findUnique({
+    where: { id: threadId },
+    select: { ...THREAD_FIELDS, category: true },
+  });
   if (!row || !canSeeThread(viewer, row, row.category)) throw notFound("Thread");
   const realm = await visibleRealmOf(db, viewer, row.category);
   if (realm === undefined) throw notFound("Thread");
@@ -184,7 +217,12 @@ export async function loadVisibleThread(db: ReadsDb, viewer: ForumViewer, thread
   return { thread, category, realm };
 }
 
-export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId: string, page: number) {
+export async function getThreadPosts(
+  db: ReadsDb,
+  viewer: ForumViewer,
+  threadId: string,
+  page: number
+) {
   const { thread, category, realm } = await loadVisibleThread(db, viewer, threadId);
   const where = { threadId, ...hiddenFilter(viewer, category) };
   const [posts, total] = await Promise.all([
@@ -254,7 +292,10 @@ export async function resolvePostLocation(
     where: {
       threadId: post.threadId,
       ...hiddenFilter(viewer, category),
-      OR: [{ createdAt: { lt: post.createdAt } }, { createdAt: post.createdAt, id: { lt: post.id } }],
+      OR: [
+        { createdAt: { lt: post.createdAt } },
+        { createdAt: post.createdAt, id: { lt: post.id } },
+      ],
     },
   });
   return { threadId: post.threadId, page: Math.floor(before / POSTS_PER_PAGE) + 1 };
@@ -288,7 +329,12 @@ export async function authorsOf(
     uniqueUsers.length
       ? db.user.findMany({
           where: { id: { in: uniqueUsers } },
-          select: { id: true, handle: true, wikiUsername: true, country: { select: { name: true } } },
+          select: {
+            id: true,
+            handle: true,
+            wikiUsername: true,
+            country: { select: { name: true } },
+          },
         })
       : [],
     uniquePersonas.length
@@ -301,7 +347,10 @@ export async function authorsOf(
   return {
     users: new Map<string, ForumUserAuthor>(
       // Public names only: never the Discord name, which a linked account would otherwise publish.
-      users.map((u) => [u.id, { name: u.handle ?? u.wikiUsername ?? u.country?.name ?? "Member", handle: u.handle }])
+      users.map((u) => [
+        u.id,
+        { name: u.handle ?? u.wikiUsername ?? u.country?.name ?? "Member", handle: u.handle },
+      ])
     ),
     personas: new Map<string, ForumPersonaAuthor>(
       personas.map((p) => [p.id, { displayName: p.displayName, username: p.username }])

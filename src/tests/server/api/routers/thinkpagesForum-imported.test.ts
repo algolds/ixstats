@@ -54,6 +54,25 @@ interface UserQuery {
   where: { id: { in: Array<string | null> } };
 }
 
+/** The imported thread's full row, XenForo user id and provenance included. */
+const threadRow = {
+  id: "t_imported",
+  title: "From the old forum",
+  categoryId: general.id,
+  ...IMPORTED,
+  xenforoUserId: 77,
+  xenforoThreadId: 1234,
+  sourceRef: "xenforo_thread:1234",
+  pinned: false,
+  hidden: false,
+  locked: false,
+  archived: false,
+  postCount: 2,
+  lastPostAt: when,
+  createdAt: when,
+  category: general,
+};
+
 /** An imported thread in General: its first post imported, a reply by u1 (the member). */
 function importedDb() {
   return {
@@ -80,16 +99,10 @@ function importedDb() {
         },
       ]),
       count: jest.fn(async () => 1),
-      findUnique: jest.fn(async () => ({
-        id: "t_imported",
-        title: "From the old forum",
-        categoryId: general.id,
-        ...IMPORTED,
-        hidden: false,
-        locked: false,
-        archived: false,
-        category: general,
-      })),
+      // Answers with the selected fields only, as Prisma does.
+      findUnique: jest.fn(async ({ select }: { select: Record<string, boolean> }) =>
+        Object.fromEntries(Object.entries(threadRow).filter(([field]) => select[field]))
+      ),
     },
     forumPost: {
       findMany: jest.fn(async () => [
@@ -139,6 +152,26 @@ describe("thinkpagesForum router with imported authors", () => {
     expect(out.thread).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
     expect(Object.keys(out.authors.users)).toEqual(["u1"]);
     expect(askedUserIds(db)).toEqual(["u1"]);
+  });
+
+  it("returns the thread's own fields and never its XenForo user id or provenance", async () => {
+    const out = await caller(null, importedDb()).thread({ threadId: "t_imported", page: 1 });
+    expect(out.thread).toEqual({
+      id: "t_imported",
+      title: "From the old forum",
+      categoryId: general.id,
+      ...IMPORTED,
+      xenforoThreadId: 1234,
+      pinned: false,
+      hidden: false,
+      locked: false,
+      archived: false,
+      postCount: 2,
+      lastPostAt: when,
+      createdAt: when,
+    });
+    expect(out.thread).not.toHaveProperty("xenforoUserId");
+    expect(out.thread).not.toHaveProperty("sourceRef");
   });
 
   it("gives an anonymous reader the imported names without asking for any user", async () => {
