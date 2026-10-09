@@ -14,6 +14,9 @@ import { RealmSwitcher } from "./RealmSwitcher";
 
 type Section = RouterOutputs["thinkpagesForum"]["realmSection"];
 
+/** Errors that mean "no such realm for you": hidden or unknown, or a slug the input rejects (over 100 characters). */
+const UNAVAILABLE = new Set(["NOT_FOUND", "BAD_REQUEST"]);
+
 /**
  * Whether the viewer may post, else the server's reason: a ban as the ban notice, a missing nation (the server's
  * `needsNation` flag, U6) with a way to claim one.
@@ -110,7 +113,7 @@ export function RealmSection({ realm, switcher = false }: RealmSectionProps) {
       <div aria-busy={switching} className={switching ? "opacity-60" : undefined}>
         <SectionBody
           section={section.data}
-          notFound={section.error?.data?.code === "NOT_FOUND"}
+          notFound={UNAVAILABLE.has(section.error?.data?.code ?? "")}
           onRetry={() => void section.refetch()}
         />
       </div>

@@ -161,6 +161,13 @@ describe("canSeeRealm", () => {
       expect(canSeeRealm(plain, { ...EURTH, status })).toBe(true);
     }
   });
+
+  it("always shows IxWorld, whatever its row's status, as the switcher always lists it (U7)", () => {
+    for (const status of ["draft", "generating", "archived", null]) {
+      expect(canSeeRealm(null, { ...IXWORLD, status })).toBe(true);
+      expect(canSeeRealm(plain, { ...IXWORLD, status })).toBe(true);
+    }
+  });
 });
 
 describe("realmPostingAccess", () => {

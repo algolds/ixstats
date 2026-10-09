@@ -280,6 +280,13 @@ describe("RealmSection", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
+  it("says a realm slug the server rejects (BAD_REQUEST, e.g. over 100 characters) is not available (U7)", () => {
+    results.realmSection = { data: undefined, error: { data: { code: "BAD_REQUEST" } } };
+    render(<RealmSection realm={"x".repeat(101)} />);
+    expect(screen.getByText("This realm is not available.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
   it("offers Retry for any other error", () => {
     const refetch = jest.fn();
     results.realmSection = {

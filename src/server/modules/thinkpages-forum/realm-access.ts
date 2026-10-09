@@ -76,8 +76,9 @@ export async function loadForumRealm(
   return ixworld ? canonicalRealm(ixworld) : IXWORLD_REALM;
 }
 
+/** Unpublished realms are their moderators' only; IxWorld, always listed in the switcher, is never hidden (U7). */
 export function canSeeRealm(viewer: ForumViewer, realm: ForumRealm): boolean {
-  return !isRealmHiddenFrom(viewer, realm);
+  return realm.id === DEFAULT_REALM_ID || !isRealmHiddenFrom(viewer, realm);
 }
 
 export interface RealmPostingAccess {
