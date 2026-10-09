@@ -11,7 +11,7 @@ import {
   HelpCircle,
 } from "iconoir-react";
 
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { useNotify } from "~/hooks/useNotify";
 import { AccountTypeSelector } from "./form/AccountTypeSelector";
@@ -28,6 +28,7 @@ import {
 import { springSmooth } from "~/lib/design/motion";
 import { PersonaTraitControls } from "./form/PersonaTraitControls";
 import { useUsernameAvailability } from "./form/useUsernameAvailability";
+import { trpcErrorCode, type ThinkpagesAccountInput } from "./account-types";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -38,23 +39,11 @@ const MediaSearchModal = dynamic(
 interface AccountCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAccountCreated: (account: any) => void;
+  onAccountCreated: (account: RouterOutputs["thinkpages"]["createAccount"]) => void;
   countryId: string;
   countryName: string;
   existingAccountCount: number;
   maxAccounts?: number;
-}
-
-interface ThinkpagesAccountInput {
-  accountType: "government" | "media" | "citizen";
-  firstName: string;
-  lastName: string;
-  username: string;
-  bio: string;
-  postingFrequency: "active" | "moderate" | "low";
-  politicalLean: "left" | "center" | "right";
-  personality: "serious" | "casual" | "satirical";
-  profileImageUrl?: string;
 }
 
 const INITIAL_FORM: ThinkpagesAccountInput = {
@@ -69,11 +58,12 @@ const INITIAL_FORM: ThinkpagesAccountInput = {
   profileImageUrl: "",
 };
 
-/** A readable message for a failed createAccount call. */
-function createAccountErrorMessage(error: any): string {
-  if (error?.data?.code === "CONFLICT") return "An account with this username already exists";
-  if (error?.data?.code === "BAD_REQUEST") {
-    return error.data.message || "Invalid account information. Please check your entries.";
+/** A readable message for a failed createAccount call (null: something other than an Error was thrown). */
+function createAccountErrorMessage(error: Error | null): string {
+  const code = error ? trpcErrorCode(error) : undefined;
+  if (code === "CONFLICT") return "An account with this username already exists";
+  if (code === "BAD_REQUEST") {
+    return error?.message || "Invalid account information. Please check your entries.";
   }
   return error?.message || "Failed to create account";
 }
@@ -223,11 +213,12 @@ export function AccountCreationModal({
       notify.success("Account created");
       onAccountCreated(newAccount);
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error("[Account Creation] Error:", error);
-      notify.error(createAccountErrorMessage(error));
-
-      if (error?.data?.code === "CONFLICT" && error?.data?.field === "username") {
+      const failure = error instanceof Error ? error : null;
+      notify.error(createAccountErrorMessage(failure));
+      // A conflict on create is the username (the only unique field a member chooses).
+      if (failure && trpcErrorCode(failure) === "CONFLICT") {
         setErrors((prev) => ({ ...prev, username: "This username is already taken" }));
       }
     }

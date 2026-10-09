@@ -7,14 +7,13 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 import { useUser } from "~/context/auth-context";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
+import type { ThinkpagesAccountItem } from "./account-types";
 import { Card } from "~/components/ui/card";
-
-type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 interface AccountsSectionProps {
   /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
