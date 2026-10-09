@@ -85,6 +85,8 @@ export interface ImportReport {
     hiddenPosts: number;
   };
   warnings: string[];
+  /** Problems the apply must refuse on (an existing archive category whose visibility differs from the map). */
+  blocking: string[];
 }
 
 const TOP_UNMATCHED = 20;
@@ -128,6 +130,7 @@ export function emptyReport(duplicates: ImportReport["authors"]["duplicates"]): 
       hiddenPosts: 0,
     },
     warnings: [],
+    blocking: [],
   };
 }
 
@@ -241,5 +244,6 @@ export function summarizeImport(report: ImportReport): string[] {
     `Attachments by snapshot state: ${tallies(report.attachmentsStored)}`,
     `Not carried over: ${nonZero(report.notCarried)}`,
     ...report.warnings.map((w) => `WARNING: ${w}`),
+    ...report.blocking.map((b) => `BLOCKING: ${b}`),
   ];
 }

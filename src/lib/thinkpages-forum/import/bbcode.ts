@@ -3,6 +3,7 @@
  * phase 4 import (`post-html.ts`: forum links kept absolute, mentions as text, action tokens kept, then degraded and
  * sanitized there). The output is NOT sanitized: every caller that stores or renders it sanitizes it.
  */
+import { mapHtmlRuns } from "~/lib/action-links";
 
 /** [tag, replacement] pairs for BBCode tags that map straight onto an HTML wrapper around `$1`. */
 type SimpleTag = readonly [tag: string, replacement: string];
@@ -128,19 +129,19 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   // 5. URLs
   html = html.replace(/\[url=([^\]]+)\]([\s\S]*?)\[\/url\]/gi, (_m, url: string, text: string) => {
     const href = linkOf(unescapeHtml(optionValue(url)));
-    return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
+    return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
   });
   // XenForo 2.2 writes pasted links as [URL unfurl="true"]…[/URL]
   html = html.replace(/\[url(?:\s[^\]]*)?\]([\s\S]*?)\[\/url\]/gi, (_m, url: string) => {
     const href = linkOf(unescapeHtml(url));
-    return `<a href="${escapeAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
+    return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
   });
 
   // 6. Images ([IMG width="…"] in XenForo 2.2)
   html = html.replace(/\[img(?:\s[^\]]*)?\]([\s\S]*?)\[\/img\]/gi, (_m, src: string) => {
     const safeSrc = sanitizeUrl(unescapeHtml(src));
     return safeSrc
-      ? `<img src="${escapeAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
+      ? `<img src="${urlAttr(safeSrc)}" class="forum-img" loading="lazy" alt="" />`
       : "";
   });
 
@@ -219,10 +220,13 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   // 18. Line breaks — convert newlines to <br> (XenForo stores plain newlines)
   html = html.replace(/\n/g, "<br />");
 
-  // 19. Strip any remaining unclosed/unknown BBCode tags
-  html = html.replace(UNKNOWN_TAG, (tag) =>
-    options.actionTokens === "keep" && isActionToken(tag) ? tag : ""
-  );
+  // 19. Strip any remaining unclosed/unknown BBCode tags, in text only (never inside a generated tag)
+  html = mapHtmlRuns(html, {
+    text: (text) =>
+      text.replace(UNKNOWN_TAG, (tag) =>
+        options.actionTokens === "keep" && isActionToken(tag) ? tag : ""
+      ),
+  });
 
   return {
     contentHtml: html.trim(),
@@ -306,8 +310,17 @@ function unescapeHtml(str: string): string {
     .replace(/&#039;/g, "'");
 }
 
-function escapeAttr(str: string): string {
-  return str.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+/**
+ * A URL as a generated href/src value: fully escaped, with `[`, `]` and line breaks percent-encoded, so no later
+ * BBCode step (quotes, lists, line breaks, unknown-tag strip) can match inside the attribute and break its quoting.
+ */
+function urlAttr(url: string): string {
+  return escapeHtml(
+    url.replace(
+      /[[\]\r\n]/g,
+      (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`
+    )
+  );
 }
 
 /** Only allow safe color values (hex, named colors, rgb/hsl) */

@@ -74,6 +74,30 @@ describe("transformBBCode (moved to the import lib)", () => {
     );
   });
 
+  it("fully escapes generated URLs and percent-encodes brackets, so no later step reaches inside an attribute", () => {
+    expect(html("[url=https://a.test/?x=1&y=<2>]t[/url]")).toBe(
+      '<a href="https://a.test/?x=1&amp;y=&lt;2&gt;" class="forum-link" rel="noopener">t</a>'
+    );
+    const tail = html("[url=https://a.test/[z=1]]A[/url] tail");
+    expect(tail).toBe(
+      '<a href="https://a.test/%5Bz=1" class="forum-link" rel="noopener">]A</a> tail'
+    );
+    const quoted = html("[url]https://a/[quote]q[/quote][/url]");
+    expect(quoted.match(/<a /g)).toHaveLength(1);
+    expect(quoted).toContain('href="https://a/%5Bquote%5Dq%5B/quote%5D"');
+    // [b] runs before [img]: its markup lands in the URL fully escaped
+    expect(html("[img]https://a.test/[b]x[/b].png[/img]")).toContain(
+      'src="https://a.test/&lt;strong&gt;x&lt;/strong&gt;.png"'
+    );
+    expect(html("[img]https://a.test/[x].png[/img]")).toContain('src="https://a.test/%5Bx%5D.png"');
+  });
+
+  it("strips unknown tags in text only", () => {
+    expect(html("[url]https://a.test/[x][/url] [x]y")).toBe(
+      '<a href="https://a.test/%5Bx%5D" class="forum-link" rel="noopener">https://a.test/</a> y'
+    );
+  });
+
   it("escapes raw HTML in text", () => {
     expect(html("<script>alert(1)</script>")).toBe("&lt;script&gt;alert(1)&lt;/script&gt;");
   });

@@ -98,6 +98,31 @@ describe("importedPostBody: stored XSS (Review Focus 1)", () => {
   });
 });
 
+describe("importedPostBody: generated attributes never break their quoting", () => {
+  it("keeps the text around a link whose URL holds a token or a bracketed option", () => {
+    const result = body("before [url=https://x.test/[ixaction=a]]y[/url] after [b]kept[/b]");
+    expect(result.plainText).toBe("before ]y after kept");
+    expect(result.contentHtml).toContain(
+      '<a href="https://x.test/%5Bixaction=a" class="forum-link">]y</a>'
+    );
+    expect(body("[url=https://a.test/[z=1]]A[/url] tail").plainText).toBe("]A tail");
+  });
+
+  it("stores no class but the transformer's own for the overlay payload", () => {
+    const { contentHtml } = body(
+      "[url=https://a.test/[z=1]]A[/url] [url=x><a href=https://evil.test class=fixed&#32;inset-0&#32;z-50>overlay</a>]B[/url]" +
+        " [url=https://a.test/[z=1]]C[/url] [url=x><a class=x&#32;y data-wikiembed=1 data-imageurl=https://evil.test/i.png>o</a>]D[/url]"
+    );
+    expectInert(contentHtml);
+    const attributes = attributesOf(contentHtml);
+    expect(
+      attributes.filter(([name, value]) => name === "class" && !/^forum-[a-z-]+$/.test(value))
+    ).toEqual([]);
+    expect(attributes.filter(([name]) => name.startsWith("data-"))).toEqual([]);
+    expect(new JSDOM(contentHtml).window.document.querySelectorAll("a")).toHaveLength(4);
+  });
+});
+
 describe("importedPostBody: action tokens (Review Focus 6)", () => {
   it("keeps tokens in text and cuts them out of markup, counting both", () => {
     const result = body(
@@ -156,10 +181,32 @@ describe("importedPostBody: degrading what the sanitizer would drop", () => {
 
   it("breaks template openers and closers in text so the sanitizer keeps the text", () => {
     const result = body("[code]{{Infobox country}}[/code] and ${x} and <%= y %>");
-    expect(result.plainText.replace(/​/g, "")).toBe("{{Infobox country}} and ${x} and <%= y %>");
+    expect(result.plainText.replace(/\u200B/g, "")).toBe(
+      "{{Infobox country}} and ${x} and <%= y %>"
+    );
     expect(result.contentHtml).toContain("Infobox country");
     expect(result.features.templateSyntax).toBe(true);
     expect(body("plain").features.templateSyntax).toBe(false);
+  });
+
+  it("breaks template syntax in attachment notes and file names too", () => {
+    const result = body(
+      "",
+      [file(57, "{{x}}.exe", "application/x-msdownload"), file(56, "${y}.pdf")],
+      {
+        57: "omitted",
+        56: { kind: "link", url: "/images/uploads/forum/56.pdf", filename: "${y}.pdf" },
+      }
+    );
+    expect(result.plainText.replace(/\u200B/g, "")).toBe(
+      "Attachments [attachment omitted: {{x}}.exe] ${y}.pdf"
+    );
+    expect(result.features.templateSyntax).toBe(true);
+  });
+
+  it("counts template syntax in a URL, which the sanitizer blanks", () => {
+    expect(body("[url=https://x.test/{{a}}]t[/url]").features.templateUrl).toBe(true);
+    expect(body("[url=https://x.test/a]{{t}}[/url]").features.templateUrl).toBe(false);
   });
 
   it("counts http: images without rewriting them", () => {

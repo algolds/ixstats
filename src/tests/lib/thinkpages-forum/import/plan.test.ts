@@ -12,6 +12,7 @@ import {
 import { summarizeImport } from "~/lib/thinkpages-forum/import/report";
 import {
   readSnapshot,
+  type AttachmentEntry,
   type Snapshot,
   type SnapshotFs,
 } from "~/lib/thinkpages-forum/import/snapshot";
@@ -35,7 +36,11 @@ const diskFs: SnapshotFs = {
   stat: (file) => fs.stat(file).then((s) => ({ size: s.size })),
 };
 
-const SITE = SITE_CATEGORIES.map((c) => ({ id: `c-${c.key}`, key: c.key }));
+const SITE = SITE_CATEGORIES.map((c) => ({
+  id: `c-${c.key}`,
+  key: c.key,
+  visibility: c.visibility,
+}));
 
 const dbState = (overrides: Partial<ImportDbState> = {}): ImportDbState => ({
   users: [
@@ -109,13 +114,22 @@ const post = (
   ...extra,
 });
 
-type MiniSnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByThread">;
+type MiniSnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByThread" | "attachments">;
 
 function snap(nodes: XfNode[], threads: XfThread[], posts: XfPost[]): MiniSnapshot {
   const postsByThread = new Map<number, XfPost[]>();
   for (const p of posts)
     postsByThread.set(p.thread_id, [...(postsByThread.get(p.thread_id) ?? []), p]);
-  return { nodes, threads, postsByThread };
+  // Every attachment complete, unless a test says otherwise.
+  const attachments = new Map<number, AttachmentEntry>(
+    posts.flatMap((p) =>
+      (p.Attachments ?? []).map((a): [number, AttachmentEntry] => [
+        a.attachment_id,
+        { ...a, post_id: p.post_id, stored: "ok" },
+      ])
+    )
+  );
+  return { nodes, threads, postsByThread, attachments };
 }
 
 const GENERAL = node(12, "General Discussion");
@@ -225,7 +239,7 @@ describe("planImport on the snapshot-small fixture", () => {
       '<img src="/images/uploads/forum/55-abc-map.png"'
     );
     expect(byId.get(1031)!.contentHtml).toContain("<p>Attachments</p>");
-    expect(byId.get(1030)!.plainText.replace(/​/g, "")).toBe("{{Infobox country}}");
+    expect(byId.get(1030)!.plainText.replace(/\u200B/g, "")).toBe("{{Infobox country}}");
   });
 
   it("orders same-second posts by position (Q19) and dates edits", () => {
@@ -256,7 +270,7 @@ describe("planImport on the snapshot-small fixture", () => {
       dbState({
         existingThreads: new Map([[100, "t100"]]),
         existingPosts: new Set([1000, 1001]),
-        siteCategories: [...SITE, { id: "c-xf-13", key: "xf-13" }],
+        siteCategories: [...SITE, { id: "c-xf-13", key: "xf-13", visibility: "public" }],
       }),
       null
     );
@@ -303,43 +317,80 @@ describe("planImport rules", () => {
     expect(plan.report.threads).toMatchObject({ redirect: 1, gone: 1, visible: 1 });
   });
 
-  it("counts attachments by snapshot state, absent when the export holds no entry", () => {
-    const attachment = {
-      attachment_id: 70,
-      filename: "a.png",
+  it("omits every attachment without complete bytes, whatever the policy says, and counts it by state", () => {
+    const file = (attachment_id: number) => ({
+      attachment_id,
+      filename: `a${attachment_id}.png`,
       file_size: 5,
       content_type: "image/png",
-    };
+    });
+    const entry = (attachment_id: number, extra: Partial<AttachmentEntry>): AttachmentEntry => ({
+      ...file(attachment_id),
+      post_id: 10,
+      stored: "ok",
+      ...extra,
+    });
+    const files = [70, 71, 72, 73, 74, 75].map(file);
     const plan = planImport(
       {
-        ...snap(
-          [GENERAL],
-          [thread(1, 12)],
-          [post(10, 1, 0, { Attachments: [attachment, { ...attachment, attachment_id: 71 }] })]
-        ),
+        ...snap([GENERAL], [thread(1, 12)], [post(10, 1, 0, { Attachments: files })]),
         attachments: new Map([
-          [
-            70,
-            {
-              attachment_id: 70,
-              post_id: 10,
-              filename: "a.png",
-              content_type: "image/png",
-              file_size: 5,
-              stored: "forbidden" as const,
-            },
-          ],
+          [70, entry(70, { stored: "forbidden" })],
+          [71, entry(71, { stored: "size_mismatch", received_size: 3 })],
+          [72, entry(72, { stored: "missing" })],
+          [73, entry(73, { stored: "ok", received_size: 4 })],
+          [75, entry(75, {})],
         ]),
       },
-      dbState({ attachmentFor: () => "omitted" }),
+      dbState({
+        attachmentFor: (id) => ({
+          kind: "image",
+          url: `/images/uploads/forum/${id}.png`,
+          filename: `a${id}.png`,
+        }),
+      }),
       null
     );
     expect(plan.report.attachmentsStored).toEqual({
       forbidden: { count: 1, bytes: 5 },
+      size_mismatch: { count: 1, bytes: 5 },
+      missing: { count: 1, bytes: 5 },
+      ok: { count: 2, bytes: 10 },
       absent: { count: 1, bytes: 5 },
     });
-    expect(plan.report.attachments.omitted).toEqual({ count: 2, bytes: 10 });
-    expect(plan.threads[0]!.posts[0]!.contentHtml).toContain("[attachment omitted: a.png]");
+    expect(plan.report.attachments.omitted).toEqual({ count: 5, bytes: 25 });
+    expect(plan.report.attachments.image).toEqual({ count: 1, bytes: 5 });
+    const { contentHtml } = plan.threads[0]!.posts[0]!;
+    for (const id of [70, 71, 72, 73, 74]) {
+      expect(contentHtml).toContain(`[attachment omitted: a${id}.png]`);
+      expect(contentHtml).not.toContain(`/forum/${id}.png`);
+    }
+    expect(contentHtml).toContain('src="/images/uploads/forum/75.png"');
+  });
+
+  it("blocks when an existing archive category's visibility differs from the node map", () => {
+    const db = dbState({
+      siteCategories: [...SITE, { id: "c-xf-12", key: "xf-12", visibility: "public" }],
+    });
+    const plan = planImport(snap([node(12, "Old board")], [], []), db, {
+      nodes: { "12": { archive: true, visibility: "staff" } },
+    });
+    expect(plan.categories).toEqual([]);
+    expect(plan.report.blocking).toEqual([
+      expect.stringContaining('xf-12 is "public" but the node map says "staff"'),
+    ]);
+    expect(summarizeImport(plan.report).join("\n")).toContain("BLOCKING:");
+    expect(planImport(snap([node(12, "Old board")], [], []), db, null).report.blocking).toEqual([]);
+  });
+
+  it("reads a mapped site category's visibility from the database for the staff-like warning", () => {
+    const db = dbState({
+      siteCategories: [...SITE, { id: "c-xf-9", key: "xf-9", visibility: "staff" }],
+    });
+    const plan = planImport(snap([node(9, "Staff stuff")], [], []), db, {
+      nodes: { "9": { scope: "site", key: "xf-9" } },
+    });
+    expect(plan.report.warnings).toEqual([]);
   });
 
   it("counts a thread whose node is not in the snapshot as skipped", () => {

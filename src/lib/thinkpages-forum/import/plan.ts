@@ -6,7 +6,6 @@
  * Rules: Q4 node targets (unknown targets throw), Q5 moderated → hidden and deleted → skipped (a moderated first
  * post hides its thread instead; a deleted first post skips it), Q19 timestamps, Q3 authors, Q2 bodies.
  */
-import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { authorOf, resolveAuthors, type LinkedForumUser } from "./authors";
 import {
   archiveCategory,
@@ -17,7 +16,7 @@ import {
   type NodeTarget,
   type ResolvedNode,
 } from "./node-map";
-import { importedPostBody, type PostHtmlInput } from "./post-html";
+import { importedPostBody, type AttachmentOutcome, type PostHtmlInput } from "./post-html";
 import {
   countNotCarried,
   countPlannedPost,
@@ -25,16 +24,21 @@ import {
   emptyReport,
   finishAuthors,
   type ImportReport,
-  type StoredKey,
   type NodeReportRow,
   type UnmatchedAuthor,
 } from "./report";
-import { isRedirectThread, type Snapshot, type SnapshotProgress } from "./snapshot";
-import type { XfNode, XfPost, XfThread } from "./xenforo-types";
+import {
+  isRedirectThread,
+  type AttachmentEntry,
+  type Snapshot,
+  type SnapshotProgress,
+} from "./snapshot";
+import type { XfAttachment, XfNode, XfPost, XfThread } from "./xenforo-types";
 
 export interface ImportDbState {
   users: LinkedForumUser[];
-  siteCategories: Array<{ id: string; key: string }>;
+  /** Sitewide categories (seeds and earlier archive categories) with their current visibility. */
+  siteCategories: Array<{ id: string; key: string; visibility: string }>;
   /** Realm slug as the node map names it → realm id, resolved by the module's loadForumRealm (IxWorld: "ixworld" or "default" → "default"). */
   realmIds: ReadonlyMap<string, string>;
   realmCategories: Array<{ id: string; realmId: string; key: string }>;
@@ -93,12 +97,13 @@ const TITLE_MAX = 200;
 const STAFF_LIKE = /staff|admin|mod|private|internal/i;
 
 /** What the plan reads of a snapshot (a whole `Snapshot` fits). */
-export type PlanSnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByThread"> &
-  Partial<Pick<Snapshot, "attachments">> & { state?: Pick<SnapshotProgress, "threadsGone"> };
+export type PlanSnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByThread" | "attachments"> & {
+  state?: Pick<SnapshotProgress, "threadsGone">;
+};
 
 interface PlanContext {
   db: ImportDbState;
-  storedOf: (attachmentId: number) => StoredKey;
+  attachments: ReadonlyMap<number, AttachmentEntry>;
   byForumId: ReadonlyMap<number, string>;
   report: ImportReport;
   unmatched: Map<number, UnmatchedAuthor>;
@@ -111,11 +116,11 @@ function describeTarget(target: NodeTarget, nodeId: number): string {
   return target.scope === "site" ? `site:${target.key}` : `realm:${target.realm}/${target.key}`;
 }
 
-function visibilityOf(target: NodeTarget): string | null {
+function visibilityOf(target: NodeTarget, db: ImportDbState): string | null {
   if ("skip" in target) return null;
   if ("archive" in target) return target.visibility ?? "public";
   if (target.scope === "realm") return "public";
-  return SITE_CATEGORIES.find((c) => c.key === target.key)?.visibility ?? "public";
+  return db.siteCategories.find((c) => c.key === target.key)?.visibility ?? "public";
 }
 
 type SeededTarget = Extract<NodeTarget, { scope: "site" | "realm" }>;
@@ -132,10 +137,25 @@ function existingCategory(node: XfNode, db: ImportDbState, target: SeededTarget)
   return { kind: "existing", id: found.id };
 }
 
-function archivePlace(node: XfNode, db: ImportDbState): CategoryRef {
+/**
+ * The node's archive category: created when absent, else the existing one, whose visibility must match the map's
+ * (a rerun after changing a node to "staff" must not leave it public): a mismatch blocks the apply.
+ */
+function archivePlace(
+  node: XfNode,
+  visibility: "public" | "staff",
+  db: ImportDbState,
+  report: ImportReport
+): CategoryRef {
   const key = archiveKey(node.node_id);
   const existing = db.siteCategories.find((c) => c.key === key);
-  return existing ? { kind: "existing", id: existing.id } : { kind: "archive", key };
+  if (!existing) return { kind: "archive", key };
+  if (existing.visibility !== visibility) {
+    report.blocking.push(
+      `Node ${node.node_id} "${node.title}": the existing category ${key} is "${existing.visibility}" but the node map says "${visibility}"; change the category's visibility (or the map) before applying.`
+    );
+  }
+  return { kind: "existing", id: existing.id };
 }
 
 /** Each node's category (null: skipped), creating one archive category per archived node not already present. */
@@ -145,12 +165,12 @@ function placeNodes(resolved: ResolvedNode[], db: ImportDbState, report: ImportR
   for (const { node, target } of resolved) {
     if ("skip" in target) places.set(node.node_id, null);
     else if ("archive" in target) {
-      const place = archivePlace(node, db);
-      if (place.kind === "archive")
-        categories.push(archiveCategory(node, target.visibility ?? "public"));
+      const visibility = target.visibility ?? "public";
+      const place = archivePlace(node, visibility, db, report);
+      if (place.kind === "archive") categories.push(archiveCategory(node, visibility));
       places.set(node.node_id, place);
     } else places.set(node.node_id, existingCategory(node, db, target));
-    if (STAFF_LIKE.test(node.title) && visibilityOf(target) === "public") {
+    if (STAFF_LIKE.test(node.title) && visibilityOf(target, db) === "public") {
       report.warnings.push(
         `Node ${node.node_id} "${node.title}" looks private but lands in a public category (${describeTarget(target, node.node_id)}); map it to a staff archive or "staff" if it was private.`
       );
@@ -168,21 +188,27 @@ const editedAt = (post: XfPost) =>
 
 const threadTitle = (title: string) => title.trim().slice(0, TITLE_MAX).trim() || "(untitled)";
 
+/** Only complete bytes render: anything not stored "ok" at its full size is omitted, whatever the policy says. */
+function attachmentOutcome(attachment: XfAttachment, ctx: PlanContext): AttachmentOutcome {
+  const entry = ctx.attachments.get(attachment.attachment_id);
+  const complete =
+    entry?.stored === "ok" && (entry.received_size ?? entry.file_size) === entry.file_size;
+  return complete ? ctx.db.attachmentFor(attachment.attachment_id) : "omitted";
+}
+
 function planPost(post: XfPost, isFirst: boolean, ctx: PlanContext): PlannedPost {
   const attachments = post.Attachments ?? [];
-  const body = importedPostBody({
-    message: post.message,
-    attachments,
-    attachmentFor: ctx.db.attachmentFor,
-  });
+  const outcomes = new Map(attachments.map((a) => [a.attachment_id, attachmentOutcome(a, ctx)]));
+  const outcomeOf = (id: number): AttachmentOutcome => outcomes.get(id) ?? null;
+  const body = importedPostBody({ message: post.message, attachments, attachmentFor: outcomeOf });
   const author = authorOf(ctx.byForumId, post.user_id, post.username);
   countPlannedPost(ctx.report, ctx.unmatched, {
     author,
     body,
     attachments: attachments.map((attachment) => ({
       attachment,
-      outcome: ctx.db.attachmentFor(attachment.attachment_id),
-      stored: ctx.storedOf(attachment.attachment_id),
+      outcome: outcomeOf(attachment.attachment_id),
+      stored: ctx.attachments.get(attachment.attachment_id)?.stored ?? "absent",
     })),
   });
   return {
@@ -308,7 +334,7 @@ export function planImport(
   const report = emptyReport(authors.duplicates);
   const ctx: PlanContext = {
     db,
-    storedOf: (id) => snapshot.attachments?.get(id)?.stored ?? "absent",
+    attachments: snapshot.attachments,
     byForumId: authors.byForumId,
     report,
     unmatched: new Map(),
