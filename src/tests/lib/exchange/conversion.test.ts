@@ -3,9 +3,6 @@
  * rate and fee, the daily cap, the convert-out allowance, kill switches, idempotency.
  * Runs the real vault and Exchange ledgers against the in-memory database.
  */
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 
 import { convert, quoteConversion } from "~/lib/exchange/conversion";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";

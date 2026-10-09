@@ -37,6 +37,28 @@ describe("/api/lorewards/sync", () => {
   });
 });
 
+describe("/api/lorewards/sync without CRON_SECRET (phase 4b)", () => {
+  it("no longer accepts the retired XenForo API key", async () => {
+    const saved = { cron: process.env.CRON_SECRET, xf: process.env.XENFORO_API_KEY };
+    delete process.env.CRON_SECRET;
+    process.env.XENFORO_API_KEY = "xf-key";
+    let POST: ((req: NextRequest) => Promise<Response>) | undefined;
+    jest.isolateModules(() => {
+      ({ POST } = require("~/app/api/lorewards/sync/route"));
+    });
+    const res = await POST!(
+      new NextRequest("http://localhost/api/lorewards/sync", {
+        method: "POST",
+        headers: { "x-api-key": "xf-key" },
+      })
+    );
+    expect(res.status).toBe(401);
+    process.env.CRON_SECRET = saved.cron;
+    if (saved.xf === undefined) delete process.env.XENFORO_API_KEY;
+    else process.env.XENFORO_API_KEY = saved.xf;
+  });
+});
+
 describe("/api/bot/lorewards/sync", () => {
   let POST: (req: Request) => Promise<Response>;
   beforeAll(async () => {

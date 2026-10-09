@@ -24,6 +24,8 @@ import {
 } from "~/server/shared/privacy-permissions";
 
 const DM_REFUSED_MESSAGE = "This user is not accepting direct messages from you";
+/** Q14 (phase 4b): conversations imported from the retired XenForo forum keep their history but take no replies. */
+const FORUM_READ_ONLY_MESSAGE = "This conversation came from the old forum and is read-only";
 const EXEMPT_ROLES = new Set(["admin", "system-owner", "owner", "staff"]);
 const EXEMPT_MEMBERSHIP_TIERS = new Set(["premium", "pro", "vip"]);
 
@@ -31,14 +33,12 @@ export class MessagingMessageOperations {
   private db: any;
   private notifications?: any;
   private websocket?: any;
-  private forumBridge?: any;
   private wikiBridge?: any;
 
   constructor(dependencies: MessagingDependencies) {
     this.db = dependencies.db;
     this.notifications = dependencies.notifications;
     this.websocket = dependencies.websocket;
-    this.forumBridge = dependencies.forumBridge;
     this.wikiBridge = dependencies.wikiBridge;
   }
 
@@ -60,6 +60,8 @@ export class MessagingMessageOperations {
     const targetConvId = conv?.id || input.conversationId;
     const participant = await this.findSendingParticipant(actorId, targetConvId, conv);
     if (!participant) throw new MessagingForbiddenError();
+    const source = conv?.source || participant.conversation?.source;
+    if (source === "forum") throw new MessagingBlockedError(FORUM_READ_ONLY_MESSAGE);
 
     // A board mute or ban covers the realm board's chat as well as its posts.
     const restricted = await realmBoardChatRestriction(
@@ -125,17 +127,8 @@ export class MessagingMessageOperations {
     this.notifyRecipients(otherParticipants, targetConvId, input.content);
     this.broadcastNewMessage(otherParticipants, targetConvId, message, actorId, input.content);
 
-    const source = conv?.source || participant.conversation?.source;
     const sourceId = conv?.sourceId || participant.conversation?.sourceId;
-    if (source === "forum") {
-      this.forumBridge
-        ?.postOutbound?.({
-          conversationId: targetConvId,
-          senderId: actorId,
-          content: input.content,
-        })
-        .catch(() => {});
-    } else if (source === "wiki") {
+    if (source === "wiki") {
       this.wikiBridge
         ?.sendOutbound?.(sourceId || targetConvId, input.content, actorId, this.db)
         .catch(() => {});

@@ -2,16 +2,14 @@ import { TRPCError } from "@trpc/server";
 import { createMessagingService } from "~/server/modules/messaging";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { forumBridge } from "~/server/modules/forum";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
 
-/** The messaging service wired to the request's database and the platform bridges. */
+/** The messaging service wired to the request's database and the wiki talk bridge. */
 export function messagingFor(ctx: { db: Parameters<typeof createMessagingService>[0]["db"] }) {
   return createMessagingService({
     db: ctx.db,
     notifications: notificationAPI,
     websocket: getThinkPagesBroadcaster(),
-    forumBridge,
     wikiBridge: wikiTalkBridge,
   });
 }

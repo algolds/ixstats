@@ -3,9 +3,6 @@
  * Every transition is a conditional updateMany checked through `count`.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 // vault-ledger <-> vault-passive-income import each other; without this mock the
 // re-entrant require would spread a half-initialised ledger (TDZ on LedgerError).
 jest.mock("~/lib/vault/vault-passive-income", () => ({

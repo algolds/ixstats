@@ -13,9 +13,6 @@ import { distributePassiveIncome } from "~/lib/economy/passive-income-distributi
 import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
 import { earnCreditsOnce } from "~/lib/vault/vault-service";
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("~/lib/economy/budget-vault-calculator", () => ({
   budgetVaultCalculator: { calculateBudgetMultiplier: jest.fn().mockResolvedValue(1) },
 }));

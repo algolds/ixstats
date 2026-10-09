@@ -10,7 +10,6 @@ import {
 } from "~/server/api/trpc";
 import { purchasePack, openPack, getUserPacks, PackError } from "~/lib/cards/pack-service";
 import { LedgerError } from "~/lib/vault/vault-ledger";
-import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
@@ -83,11 +82,6 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
 
-        // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => {
-          console.error("[CardPacks] Background op failed:", (err as Error).message);
-        });
-
         // Notification: pack purchased (fire-and-forget)
         try {
           await notificationAPI.create({
@@ -156,11 +150,6 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
         queueAchievementCheck(ctx.user.id);
-
-        // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch((err: unknown) => {
-          console.error("[CardPacks] Background op failed:", (err as Error).message);
-        });
 
         // Format cards with rarity reveal data
         const revealData = results.map(({ card, ownershipId }) => ({

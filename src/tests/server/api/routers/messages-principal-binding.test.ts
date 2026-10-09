@@ -5,7 +5,6 @@ import { messagesParticipantsRouter } from "~/server/api/routers/messages/partic
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
-import { forumBridge } from "~/server/modules/forum";
 
 jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
   wikiTalkBridge: {
@@ -13,17 +12,6 @@ jest.mock("~/server/bridges/wiki-talk-bridge", () => ({
       conversationsCreated: 1,
       conversationsUpdated: 0,
       messagesCreated: 2,
-    }),
-    sendOutbound: jest.fn().mockResolvedValue({ success: true }),
-  },
-}));
-
-jest.mock("~/server/modules/forum", () => ({
-  forumBridge: {
-    syncInbound: jest.fn().mockResolvedValue({
-      conversationsCreated: 0,
-      conversationsUpdated: 1,
-      messagesCreated: 1,
     }),
     sendOutbound: jest.fn().mockResolvedValue({ success: true }),
   },

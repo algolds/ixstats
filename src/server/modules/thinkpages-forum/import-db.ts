@@ -4,7 +4,6 @@
  * writes are import-write.ts, the rollback import-rollback.ts.
  */
 import type { PrismaClient } from "@prisma/client";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { categoryVisibilityWhere, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   nodeMapSchema,
@@ -14,6 +13,7 @@ import {
 import type { ImportDbState } from "~/lib/thinkpages-forum/import/plan";
 import { isRealmPublished } from "~/server/modules/realms";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
+import { publishedRealmIds } from "./public-threads";
 import { loadForumRealm } from "./realm-access";
 
 /**
@@ -125,13 +125,6 @@ export function missingTargets(state: LoadedImportState, realmSlugs: readonly st
       .filter((slug) => !state.realmIds.has(slug))
       .map((slug) => `The node map names realm "${slug}", which does not exist.`),
   ];
-}
-
-/** Ids of the published realms (IxWorld always, with or without its row). */
-async function publishedRealmIds(db: ImportDb): Promise<string[]> {
-  const realms = await db.realm.findMany({ select: { id: true, status: true } });
-  const published = realms.filter((r) => isRealmPublished(r.id, r.status)).map((r) => r.id);
-  return [...new Set([DEFAULT_REALM_ID, ...published])];
 }
 
 /**

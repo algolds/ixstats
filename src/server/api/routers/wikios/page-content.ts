@@ -425,73 +425,29 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Get forum thread preview by threadId.
+   * Preview of an old forum thread by its XenForo id (`forum.ixwiki.com/threads/<slug>.<id>` links in wiki pages,
+   * posts and the feed), read from the imported native thread (phase 4b).
    *
-   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require
-   * sign-in. Three things keep it from becoming a window onto the private forum (plan 416 item 6):
-   * it is rate-limited like the other public reads; a thread whose `discussion_state` is not exactly
-   * "visible" (moderated, deleted, or missing from the answer) yields nothing; and XenForo itself
-   * decides which forums this key may see. OPERATOR CHECK: the XenForo API key must be a
-   * non-super-user key scoped to a guest-like user, or a super-user key used without `XF-Api-User`
-   * (as here), so XenForo enforces forum visibility. The response carries no per-forum "public" flag
-   * to check from this side.
+   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require sign-in. It is
+   * rate-limited like the other public reads, and only a thread anyone may read resolves (not hidden, public
+   * category, site section or published realm: `publicThreadByXenforoId`); anything else yields nothing.
    */
   getForumThreadPreview: rateLimitedPublicProcedure
     .input(z.object({ threadId: z.number().int().positive() }))
-    .query(async ({ input }) => {
-      const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
-      const apiKey = getXfApiKey();
-      if (!apiKey) return null;
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${getXfApiUrl()}/threads/${input.threadId}/`, {
-          headers: { "XF-Api-Key": apiKey },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) return null;
-        const data = (await res.json()) as {
-          thread?: {
-            thread_id: number;
-            title: string;
-            username: string;
-            post_date: number;
-            reply_count: number;
-            view_count: number;
-            discussion_state?: string;
-            Forum?: { title: string };
-            first_post?: { message: string };
-          };
-        };
-
-        const t = data.thread;
-        if (t?.discussion_state !== "visible") return null;
-
-        const rawMsg = t.first_post?.message ?? "";
-        const excerpt = rawMsg
-          .replace(/\[ATTACH[^\]]*\]\d+\[\/ATTACH\]/gi, "")
-          .replace(/\[\/?(?:b|i|u|url|quote|code|img|media)[^\]]*\]/gi, "")
-          .replace(/\n+/g, " ")
-          .trim()
-          .slice(0, 200);
-
-        return {
-          threadId: t.thread_id,
-          title: t.title,
-          author: t.username,
-          postDate: t.post_date,
-          replyCount: t.reply_count,
-          viewCount: t.view_count,
-          forumTitle: t.Forum?.title ?? null,
-          forumName: t.Forum?.title ?? null,
-          excerpt: excerpt || null,
-        };
-      } catch {
-        return null;
-      }
+    .query(async ({ ctx, input }) => {
+      // Loaded on demand: the forum module is a large graph the other WikiOS reads never need.
+      const { publicThreadByXenforoId } = await import("~/server/modules/thinkpages-forum");
+      const thread = await publicThreadByXenforoId(ctx.db, input.threadId).catch(() => null);
+      if (!thread) return null;
+      return {
+        threadId: input.threadId,
+        title: thread.title,
+        author: thread.author,
+        replyCount: thread.replyCount,
+        forumName: thread.categoryName,
+        excerpt: thread.excerpt,
+        href: thread.href,
+      };
     }),
 
   /**

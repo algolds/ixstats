@@ -5,9 +5,6 @@
  * in-memory vault to prove each route now goes through it.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn().mockResolvedValue(undefined) },
 }));

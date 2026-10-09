@@ -14,6 +14,7 @@
  * added anywhere in the app will automatically get tooltip coverage.
  */
 
+import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Badge } from "~/components/ui/badge";
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
@@ -23,7 +24,6 @@ import {
   OpenBook as BookOpen,
   OpenNewWindow as ExternalLink,
   ChatBubble as MessageSquare,
-  Eye,
   Group as Users,
 } from "iconoir-react";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
@@ -211,8 +211,6 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     { staleTime: 10 * 60_000 }
   );
 
-  const forumUrl = `https://forum.ixwiki.com/threads/${threadId}/`;
-
   if (!thread) {
     return (
       <div className="space-y-2">
@@ -247,19 +245,13 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
           <MessageSquare className="size-3" />
           {thread.replyCount} replies
         </span>
-        <span className="flex items-center gap-0.5">
-          <Eye className="size-3" />
-          {thread.viewCount}
-        </span>
       </div>
-      <a
-        href={forumUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+      <Link
+        href={thread.href}
         className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
         Open thread <ExternalLink className="size-3" />
-      </a>
+      </Link>
     </div>
   );
 }

@@ -55,9 +55,7 @@ describe("resolvePublicCosmetics", () => {
   });
 });
 
-function makeDb(
-  users: Array<{ id: string; clerkUserId: string; forumUserId: number | null; equipped: string }>
-) {
+function makeDb(users: Array<{ id: string; clerkUserId: string; equipped: string }>) {
   return {
     user: {
       findMany: jest.fn().mockResolvedValue(
@@ -78,40 +76,37 @@ function makeDb(
 describe("loadPublicCosmetics", () => {
   const db = () =>
     makeDb([
-      { id: "u1", clerkUserId: "clerk_1", forumUserId: 11, equipped: "cosmetic_chat_badge" },
-      { id: "u2", clerkUserId: "clerk_2", forumUserId: 12, equipped: "" },
-      { id: "u3", clerkUserId: "clerk_3", forumUserId: null, equipped: "cosmetic_gold_glow" },
+      { id: "u1", clerkUserId: "clerk_1", equipped: "cosmetic_chat_badge" },
+      { id: "u2", clerkUserId: "clerk_2", equipped: "" },
+      { id: "u3", clerkUserId: "clerk_3", equipped: "cosmetic_gold_glow" },
     ]);
 
   it("answers a whole page in two queries, keyed as requested", async () => {
     const mock = db();
     const result = await loadPublicCosmetics(mock as never, {
-      userIds: ["clerk_3"],
-      forumUserIds: [11, 12, 11],
+      userIds: ["clerk_3", "u1", "u2", "u1"],
     });
 
     expect(mock.user.findMany).toHaveBeenCalledTimes(1);
     expect(mock.vaultStoreItem.findMany).toHaveBeenCalledTimes(1);
     expect(mock.user.findMany.mock.calls[0][0].where).toEqual({
       isActive: true,
-      OR: [
-        { id: { in: ["clerk_3"] } },
-        { clerkUserId: { in: ["clerk_3"] } },
-        { forumUserId: { in: [11, 12] } },
-      ],
+      OR: [{ id: { in: ["clerk_3", "u1", "u2"] } }, { clerkUserId: { in: ["clerk_3", "u1", "u2"] } }],
     });
     expect(mock.vaultStoreItem.findMany.mock.calls[0][0].where).toMatchObject({
       category: "cosmetics",
       isActive: true,
     });
-    expect(Object.keys(result.forumUsers)).toEqual(["11"]); // u2 has nothing equipped
-    expect(result.forumUsers["11"]?.chatBadge.enabled).toBe(true);
+    expect(Object.keys(result.users).sort()).toEqual(["clerk_3", "u1"]); // u2 has nothing equipped
+    expect(result.users.u1?.chatBadge.enabled).toBe(true);
     expect(result.users.clerk_3?.avatarGlow.enabled).toBe(true);
+    // Phase 4b: the XenForo forum is gone, so there is no lookup by forum user id.
+    expect(result).not.toHaveProperty("forumUsers");
   });
 
   it("returns render data only, never wallet or inventory fields", async () => {
-    const result = await loadPublicCosmetics(db() as never, { forumUserIds: [11] });
-    expect(Object.keys(result.forumUsers["11"]!).sort()).toEqual([
+    const result = await loadPublicCosmetics(db() as never, { userIds: ["u1"] });
+    expect(Object.keys(result.users.u1!).sort()).toEqual([
       "avatarGlow",
       "chatBadge",
       "equipped",
@@ -122,16 +117,13 @@ describe("loadPublicCosmetics", () => {
 
   it("skips the database for an empty lookup and caps a long one", async () => {
     const mock = db();
-    await expect(loadPublicCosmetics(mock as never, {})).resolves.toEqual({
-      users: {},
-      forumUsers: {},
-    });
+    await expect(loadPublicCosmetics(mock as never, {})).resolves.toEqual({ users: {} });
     expect(mock.user.findMany).not.toHaveBeenCalled();
 
-    const many = Array.from({ length: MAX_PUBLIC_COSMETICS_LOOKUP + 10 }, (_, i) => i + 1);
-    await loadPublicCosmetics(mock as never, { forumUserIds: many });
+    const many = Array.from({ length: MAX_PUBLIC_COSMETICS_LOOKUP + 10 }, (_, i) => `u${i}`);
+    await loadPublicCosmetics(mock as never, { userIds: many });
     const or = mock.user.findMany.mock.calls[0][0].where.OR;
-    expect(or[0].forumUserId.in).toHaveLength(MAX_PUBLIC_COSMETICS_LOOKUP);
+    expect(or[0].id.in).toHaveLength(MAX_PUBLIC_COSMETICS_LOOKUP);
   });
 });
 
@@ -144,7 +136,6 @@ describe("vault.getEquippedCosmeticsFor", () => {
     );
     await expect(caller.getEquippedCosmeticsFor({ userIds: ["u1"] })).resolves.toEqual({
       users: {},
-      forumUsers: {},
     });
   });
 

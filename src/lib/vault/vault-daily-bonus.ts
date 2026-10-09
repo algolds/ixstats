@@ -3,7 +3,6 @@ import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
-import { syncUserToForum } from "~/server/modules/forum";
 import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
@@ -116,7 +115,6 @@ async function claimSlotAndEarn(
       return { status: "paid", streak: slot.streak, amount: earned.amount };
     });
 
-    if (payout.status === "paid") syncUserToForum(userId).catch(() => {});
     return payout;
   } catch (error) {
     if (error instanceof LedgerError) {

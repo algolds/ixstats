@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { syncFromStateFile, grantLorewardBonuses } from "~/lib/lorewards";
 import { safeEqual } from "~/lib/security/safe-equal";
 
-const CRON_SECRET = process.env.CRON_SECRET ?? process.env.XENFORO_API_KEY;
+const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function POST(req: NextRequest) {
   // Auth: accept either Bearer token matching CRON_SECRET or x-api-key header

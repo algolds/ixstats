@@ -44,8 +44,8 @@ describe("postPermalinkPath", () => {
     expect(postPermalinkPath("native", "p1")).toBe("/thinkpages/post/p1");
   });
 
-  it("points imported XenForo posts at the forum", () => {
-    expect(postPermalinkPath("xenforo", "42")).toBe("https://forum.ixwiki.com/posts/42/");
+  it("points a XenForo post at its legacy path, which redirects through the import id map (phase 4b)", () => {
+    expect(postPermalinkPath("xenforo", "42")).toBe("/forum/post/42");
   });
 });
 

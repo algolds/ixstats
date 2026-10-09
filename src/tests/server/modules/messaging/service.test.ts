@@ -11,7 +11,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
   let mockDb: any;
   let mockNotifications: any;
   let mockWebsocket: any;
-  let mockForumBridge: any;
   let mockWikiBridge: any;
   let mockTelemetryLogger: any;
   let service: MessagingService;
@@ -83,11 +82,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       broadcastToUsers: jest.fn(),
     };
 
-    mockForumBridge = {
-      syncInbound: jest.fn().mockResolvedValue({ conversationsCreated: 0 }),
-      postOutbound: jest.fn().mockResolvedValue({ success: true }),
-    };
-
     mockWikiBridge = {
       syncInbound: jest.fn().mockResolvedValue({ conversationsCreated: 0 }),
     };
@@ -100,7 +94,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       db: mockDb,
       notifications: mockNotifications,
       websocket: mockWebsocket,
-      forumBridge: mockForumBridge,
       wikiBridge: mockWikiBridge,
       telemetry: mockTelemetryLogger,
     });
@@ -133,9 +126,8 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
   });
 
   describe("Read Operations & Inbound Sync", () => {
-    test("4. getConversationsByFolder triggers inbound bridge syncs", async () => {
+    test("4. getConversationsByFolder triggers the wiki bridge's inbound sync", async () => {
       await service.getConversationsByFolder("user_1", { folder: "inbox" });
-      expect(mockForumBridge.syncInbound).toHaveBeenCalledWith("user_1", mockDb);
       expect(mockWikiBridge.syncInbound).toHaveBeenCalledWith("user_1", mockDb);
     });
 
@@ -407,7 +399,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       );
     });
 
-    test("15. sendMessage routes outbound to forum bridge when source is forum", async () => {
+    test("15. sendMessage refuses a conversation that came from the old forum (phase 4b, Q14)", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue({
         id: "p_1",
         conversation: { id: "c_1", source: "forum" },
@@ -415,16 +407,13 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       mockDb.thinkshareMessage.create.mockResolvedValue({ id: "m_f" });
       mockDb.conversationParticipant.findMany.mockResolvedValue([]);
 
-      await service.sendMessage("user_1", {
-        conversationId: "c_1",
-        content: "Forum message",
+      await expect(
+        service.sendMessage("user_1", { conversationId: "c_1", content: "Forum message" })
+      ).rejects.toMatchObject({
+        name: "MessagingBlockedError",
+        message: "This conversation came from the old forum and is read-only",
       });
-
-      expect(mockForumBridge.postOutbound).toHaveBeenCalledWith({
-        conversationId: "c_1",
-        senderId: "user_1",
-        content: "Forum message",
-      });
+      expect(mockDb.thinkshareMessage.create).not.toHaveBeenCalled();
     });
 
     test("16. editMessage verifies ownership and updates content", async () => {

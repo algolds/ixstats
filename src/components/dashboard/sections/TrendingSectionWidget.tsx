@@ -285,11 +285,6 @@ function ForumPreviewContent({ threadId }: { threadId: number }) {
           <MessageSquare aria-hidden className="size-3.5" />
           {thread.replyCount} replies
         </span>
-        <span className="flex items-center gap-1">
-          <Eye aria-hidden className="size-3.5" />
-          <span className="sr-only">Views: </span>
-          {thread.viewCount}
-        </span>
       </div>
     </div>
   );

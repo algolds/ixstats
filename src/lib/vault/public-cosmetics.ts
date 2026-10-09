@@ -122,14 +122,12 @@ interface PublicCosmeticsDb {
       select: {
         id: true;
         clerkUserId: true;
-        forumUserId: true;
         vault: { select: { equippedCosmetics: true } };
       };
     }): Promise<
       Array<{
         id: string;
         clerkUserId: string;
-        forumUserId: number | null;
         vault: { equippedCosmetics: string | null } | null;
       }>
     >;
@@ -145,45 +143,30 @@ interface PublicCosmeticsDb {
 export interface PublicCosmeticsLookup {
   /** Internal `User.id` or Clerk id, as the call site has it. */
   userIds?: readonly string[];
-  /** Linked XenForo user ids (forum post and thread authors). */
-  forumUserIds?: readonly number[];
 }
 
 export interface PublicCosmeticsResult {
   /** Keyed by the id exactly as requested; users with nothing equipped are left out. */
   users: Record<string, PublicCosmetics>;
-  /** Keyed by the forum user id (as a string); users with nothing equipped are left out. */
-  forumUsers: Record<string, PublicCosmetics>;
 }
 
 /**
- * Load the public cosmetics of up to `MAX_PUBLIC_COSMETICS_LOOKUP` users of each key kind in two
- * queries (users with their vault, then the store items they have equipped).
+ * Load the public cosmetics of up to `MAX_PUBLIC_COSMETICS_LOOKUP` users in two queries (users with
+ * their vault, then the store items they have equipped).
  */
 export async function loadPublicCosmetics(
   db: PublicCosmeticsDb,
   lookup: PublicCosmeticsLookup
 ): Promise<PublicCosmeticsResult> {
   const userIds = [...new Set(lookup.userIds ?? [])].slice(0, MAX_PUBLIC_COSMETICS_LOOKUP);
-  const forumUserIds = [...new Set(lookup.forumUserIds ?? [])].slice(
-    0,
-    MAX_PUBLIC_COSMETICS_LOOKUP
-  );
-  const result: PublicCosmeticsResult = { users: {}, forumUsers: {} };
-  if (userIds.length === 0 && forumUserIds.length === 0) return result;
-
-  const or: object[] = [];
-  if (userIds.length > 0) {
-    or.push({ id: { in: userIds } }, { clerkUserId: { in: userIds } });
-  }
-  if (forumUserIds.length > 0) or.push({ forumUserId: { in: forumUserIds } });
+  const result: PublicCosmeticsResult = { users: {} };
+  if (userIds.length === 0) return result;
 
   const users = await db.user.findMany({
-    where: { isActive: true, OR: or },
+    where: { isActive: true, OR: [{ id: { in: userIds } }, { clerkUserId: { in: userIds } }] },
     select: {
       id: true,
       clerkUserId: true,
-      forumUserId: true,
       vault: { select: { equippedCosmetics: true } },
     },
   });
@@ -201,15 +184,11 @@ export async function loadPublicCosmetics(
   const activeCosmetics = new Map(items.map((item) => [item.id, item.effects]));
 
   const wantedUserIds = new Set(userIds);
-  const wantedForumIds = new Set(forumUserIds);
   for (const user of users) {
     const cosmetics = resolvePublicCosmetics(equippedByUser.get(user.id) ?? [], activeCosmetics);
     if (cosmetics.equipped.length === 0) continue;
     for (const key of [user.id, user.clerkUserId]) {
       if (wantedUserIds.has(key)) result.users[key] = cosmetics;
-    }
-    if (user.forumUserId !== null && wantedForumIds.has(user.forumUserId)) {
-      result.forumUsers[String(user.forumUserId)] = cosmetics;
     }
   }
   return result;

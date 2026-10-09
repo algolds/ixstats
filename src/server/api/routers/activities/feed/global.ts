@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { getForumActivity } from "~/server/modules/forum";
+import { latestPublicThreads } from "~/server/modules/thinkpages-forum";
 import { globalCache } from "~/lib/cache";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
 import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
@@ -257,41 +257,37 @@ async function wikiChangeItems() {
   });
 }
 
-async function forumActivityItems() {
-  const items = await getForumActivity(20);
-  return items.map((item) => ({
-    id: item.id,
+/** The newest native forum threads anyone may read (phase 4b; replaces the XenForo feed). */
+async function forumActivityItems(db: PrismaClient) {
+  const threads = await latestPublicThreads(db, 20);
+  return threads.map((thread) => ({
+    id: `forum-thread-${thread.id}`,
     type: "social",
     category: "social",
     source: "forum",
-    user: { id: `forum-user-${item.author}`, name: item.author, countryFlag: null },
+    user: { id: `forum-author-${thread.author}`, name: thread.author, countryFlag: null },
     content: {
       title:
-        item.type === "thread"
-          ? `New forum thread: ${item.title}`
-          : `Forum reply in: ${item.title}`,
-      description: item.excerpt || `${item.author} posted in the IxWiki community forum`,
+        thread.replyCount === 0
+          ? `New forum thread: ${thread.title}`
+          : `Forum reply in: ${thread.title}`,
+      description: `${thread.author} posted in ${thread.categoryName}`,
       metadata: {
-        source: "xenforo",
-        forumName: item.forumName,
-        replyCount: item.replyCount,
-        viewCount: item.viewCount,
-        forumUrl: item.url,
+        source: "forum",
+        forumName: thread.categoryName,
+        replyCount: thread.replyCount,
+        forumUrl: thread.href,
       },
     },
-    engagement: {
-      ...NO_ENGAGEMENT,
-      comments: item.replyCount ?? 0,
-      views: item.viewCount ?? 0,
-    },
-    timestamp: item.timestamp,
+    engagement: { ...NO_ENGAGEMENT, comments: thread.replyCount },
+    timestamp: thread.lastPostAt,
     priority: "low",
     visibility: "public",
     relatedCountries: [],
   }));
 }
 
-/** External sources (wiki, forum) must never fail the whole feed. */
+/** Secondary sources (wiki, forum) must never fail the whole feed. */
 async function optionalItems<T>(label: string, load: () => Promise<T[]>): Promise<T[]> {
   try {
     return await load();
@@ -313,7 +309,7 @@ async function buildCombinedActivities(db: PrismaClient, input: FeedInput) {
     // ThinkPages only for filters that don't exclude social content
     ...(filter === "all" || filter === "social" ? await thinkpagesRowItems(db, mergeCap) : []),
     ...(withWiki ? await optionalItems("Wiki recent changes", wikiChangeItems) : []),
-    ...(withForum ? await optionalItems("Forum activity", forumActivityItems) : []),
+    ...(withForum ? await optionalItems("Forum activity", () => forumActivityItems(db)) : []),
   ];
   return combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }

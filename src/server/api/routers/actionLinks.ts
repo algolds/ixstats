@@ -37,7 +37,8 @@ function requireCountry(user: { countryId?: string | null } | null | undefined):
 const id = z.string().min(1).max(64);
 const postInput = z.object({
   storylineId: id,
-  postSource: z.enum(["native", "xenforo"]),
+  // Native only: the XenForo forum is retired (phase 4b), so no new link can name one of its posts.
+  postSource: z.enum(["native"]),
   postRef: z.string().min(1).max(64),
 });
 

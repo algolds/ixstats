@@ -7,7 +7,6 @@ import { resolveDividendCountryId } from "~/lib/vault/dividend-nation";
 import { distributePassiveIncome } from "~/lib/economy/passive-income-distribution-cron";
 import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
 
-jest.mock("~/server/modules/forum", () => ({ syncUserToForum: jest.fn().mockResolvedValue(true) }));
 jest.mock("~/lib/economy/budget-vault-calculator", () => ({
   budgetVaultCalculator: { calculateBudgetMultiplier: jest.fn().mockResolvedValue(1) },
 }));
