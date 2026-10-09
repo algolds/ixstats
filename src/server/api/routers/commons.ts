@@ -6,12 +6,12 @@
 
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { Cache } from "~/lib/cache/cache";
 import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
-const USER_AGENT = DEFAULT_USER_AGENT;
+/** Wikimedia's User-Agent policy asks for contact info; the plain allow-listed UA stays for other wikis. */
+const COMMONS_CONTACT_USER_AGENT = "IxStats-Builder/1.0 (https://ixwiki.com; image repository)";
 
 // ---------------------------------------------------------------------------
 // Shared fetch helper
@@ -25,7 +25,7 @@ async function commonsApiFetch(params: Record<string, string | number>) {
     url.searchParams.set(k, String(v));
   }
 
-  return fetchMediaWikiJson<any>(url.toString(), { userAgent: USER_AGENT });
+  return fetchMediaWikiJson<any>(url.toString(), { userAgent: COMMONS_CONTACT_USER_AGENT });
 }
 
 /** Only the extmetadata fields `parseImagePages` reads: the full set is several KB per file. */
@@ -112,7 +112,7 @@ const imageInfoCache = new Cache<CommonsImage | null>({
 });
 
 // Recursive category file counts are expensive upstream (a deepcat search each) and change slowly
-const CATEGORY_COUNT_CONCURRENCY = 3;
+const CATEGORY_COUNT_CONCURRENCY = 1;
 const categoryCountCache = new Cache<number>({
   maxSize: 5000,
   defaultTtlMs: CACHE_TTL_MS,

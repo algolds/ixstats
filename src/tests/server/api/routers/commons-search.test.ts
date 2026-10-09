@@ -90,6 +90,20 @@ describe("commons search", () => {
     expect(url.searchParams.has("origin")).toBe(false);
   });
 
+  it("identifies itself to Commons with a contact User-Agent", async () => {
+    const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    await makeCaller().search({ query: "dogs" });
+
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    const headers = calls[0]![1].headers as Record<string, string>;
+    expect(headers["User-Agent"]).toBe(
+      "IxStats-Builder/1.0 (https://ixwiki.com; image repository)"
+    );
+    expect(headers["Api-User-Agent"]).toBe(headers["User-Agent"]);
+  });
+
   it("strips quotes from a category name placed in deepcat", async () => {
     const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;

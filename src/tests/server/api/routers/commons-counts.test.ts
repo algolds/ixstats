@@ -69,7 +69,7 @@ describe("commons category counts and image-info failures", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
-  it("never has more than 3 count queries in flight", async () => {
+  it("never has more than 1 count query in flight", async () => {
     let inFlight = 0;
     let peak = 0;
     globalThis.fetch = jest.fn(async () => {
@@ -84,7 +84,7 @@ describe("commons category counts and image-info failures", () => {
     const result = await makeCaller().getCategoryTotalCounts({ categories });
 
     expect(Object.keys(result)).toHaveLength(10);
-    expect(peak).toBe(3);
+    expect(peak).toBe(1);
   });
 
   it("does not cache a miss when the fetch throws, so the next call fetches again", async () => {
