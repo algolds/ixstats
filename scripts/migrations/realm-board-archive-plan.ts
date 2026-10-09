@@ -2,12 +2,15 @@
  * Pure planner for scripts/migrations/archive-realm-boards.ts: one Realm Board's feed posts become one archived,
  * locked "Realm Board archive" thread in the realm's Hub (phase 2, D7/D11/D12). No database access here.
  *
- * Board posts are plain text with media attachments. A body is escaped, laid out as paragraphs, then sanitized and
- * stripped exactly as the forum's writes.ts stores a post. Attachment URLs must be https or site-relative and hold
- * no `[ixaction=…]` token, so an action token can only ever sit in a text run, where it renders as a card.
+ * A board post is rich-editor HTML or plain text, as anywhere in the ThinkPages feed. Its body is built the way the
+ * feed displays it: feed-only markers are removed, then `formatThinkpagesContentForDisplay` sanitizes HTML or
+ * formats plain text. Attachments are appended (https or site-relative URLs only), and the whole is sanitized and
+ * stripped as the forum's writes.ts stores a post. An `[ixaction=…]` token left inside a tag or attribute is
+ * removed, so a token only ever sits in a text run, where it renders as a card.
  */
 import { countActionTokens } from "~/lib/action-links";
 import { escapeHtml, sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
+import { formatThinkpagesContentForDisplay } from "~/lib/utils/text-formatter";
 
 export const ARCHIVE_TITLE = "Realm Board archive";
 export const threadSourceRef = (groupId: string) => `realm_board:${groupId}`;
@@ -58,14 +61,23 @@ type PlannedPost = ArchivePlan["posts"][number];
 // https, or a site-relative path; never `//host` or `/\host`, which browsers read as another origin.
 const SAFE_MEDIA_URL = /^(?:https:\/\/|\/(?![/\\]))/;
 
-function paragraphs(content: string): string[] {
-  return content
-    .replace(/\r\n?/g, "\n")
-    .split(/\n\s*\n/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br>")}</p>`);
-}
+// Feed-only markers the feed never displays: HTML comments (the sports-bulletin data block among them), the
+// IxTwitter sync's `[DiscordMsg:<id>]` and a blurb's `[blurb:<slug>|<title>]` header (useThinkpagesPost.ts).
+const FEED_MARKERS = [
+  /<!--[\s\S]*?-->\n*/g,
+  /\s*\[DiscordMsg:\d+\]/gi,
+  /^\[blurb:[^\]|]+\|[^\]]+\]\n\n/,
+];
+
+const withoutFeedMarkers = (content: string) =>
+  FEED_MARKERS.reduce((text, marker) => text.replace(marker, ""), content.replace(/\r\n?/g, "\n"));
+
+// A whole start or end tag (quoted attribute values may hold `>`), as action-links reads sanitized HTML.
+const TAG = /<\/?[a-zA-Z](?:"[^"]*"|'[^']*'|[^>"'])*>/g;
+const ACTION_TOKEN = /\[ixaction=[A-Za-z0-9_-]{1,64}\]/g;
+
+const withoutTokensInTags = (html: string) =>
+  html.replace(TAG, (tag) => tag.replace(ACTION_TOKEN, ""));
 
 function mediaBlock({ url, type }: { url: string; type: string }): string | null {
   if (!SAFE_MEDIA_URL.test(url) || countActionTokens(url) > 0) return null;
@@ -75,15 +87,20 @@ function mediaBlock({ url, type }: { url: string; type: string }): string | null
     : `<p><a href="${href}">Attachment</a></p>`;
 }
 
-/** Plain board text and its attachments as stored forum HTML plus its plain text. */
+/** A board post and its attachments as stored forum HTML plus its plain text, as the feed displays it. */
 export function boardPostBody(row: Pick<BoardPostRow, "content" | "media">): {
   contentHtml: string;
   plainText: string;
 } {
+  const text = formatThinkpagesContentForDisplay(withoutFeedMarkers(row.content));
   const media = row.media.map(mediaBlock).filter((block): block is string => block !== null);
-  const contentHtml = sanitizeUserContent([...paragraphs(row.content), ...media].join(""));
+  const contentHtml = withoutTokensInTags(sanitizeUserContent([text, ...media].join("")));
   return { contentHtml, plainText: stripHtml(contentHtml) };
 }
+
+/** Nothing worth a post: no text and no image. */
+const isBlank = (body: { contentHtml: string; plainText: string }) =>
+  !body.plainText && !/<img\b/i.test(body.contentHtml);
 
 const oldestFirst = (a: BoardPostRow, b: BoardPostRow) =>
   a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id);
@@ -105,7 +122,7 @@ function planPost(
   const authorUserId = userIdByClerk.get(row.account.clerkUserId);
   if (!authorUserId) return "noUser";
   const body = boardPostBody(row);
-  if (!body.contentHtml) return "blank";
+  if (isBlank(body)) return "blank";
   return {
     sourceRef,
     authorUserId,

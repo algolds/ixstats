@@ -54,55 +54,69 @@ describe("source refs", () => {
 });
 
 describe("boardPostBody", () => {
-  it("escapes & and < in plain text", () => {
-    const body = boardPostBody({ content: "Fish & chips <b>bold</b>", media: [] });
-    expect(body.contentHtml).toBe("<p>Fish &amp; chips &lt;b&gt;bold&lt;/b&gt;</p>");
-    expect(body.plainText).toBe("Fish & chips <b>bold</b>");
+  const body = (content: string) => boardPostBody({ content, media: [] });
+
+  it("keeps a rich-editor HTML post as that HTML, not escaped text", () => {
+    expect(body("<p>test</p>")).toEqual({ contentHtml: "<p>test</p>", plainText: "test" });
   });
 
-  it("makes two paragraphs from a blank line and a <br> from a single newline", () => {
-    const body = boardPostBody({ content: "one\ntwo\n\nthree", media: [] });
-    expect(body.contentHtml).toBe("<p>one<br>two</p><p>three</p>");
-    expect(body.plainText).toBe("one two three");
-  });
-
-  it("reads Windows line endings the same way", () => {
-    expect(boardPostBody({ content: "one\r\ntwo\r\n\r\nthree", media: [] }).contentHtml).toBe(
-      "<p>one<br>two</p><p>three</p>"
-    );
-  });
-
-  it("never lets <script> or onerror= through as markup", () => {
-    const body = boardPostBody({
-      content: '<script>alert(1)</script><img src=x onerror="alert(2)">',
-      media: [{ url: 'https://x.test/a.png" onerror="alert(3)', type: "image" }],
+  it("escapes & and < in a plain-text post", () => {
+    expect(body("Fish & chips < 3")).toEqual({
+      contentHtml: "Fish &amp; chips &lt; 3",
+      plainText: "Fish & chips < 3",
     });
-    const doc = new JSDOM(body.contentHtml).window.document;
+  });
+
+  it("turns newlines in a plain-text post into line breaks, as the feed does", () => {
+    expect(body("one\ntwo\n\nthree").contentHtml).toBe("one<br>two<br><br>three");
+    expect(body("one\r\ntwo\r\n\r\nthree").contentHtml).toBe("one<br>two<br><br>three");
+  });
+
+  it("removes the sports-bulletin data comment and any other HTML comment", () => {
+    const bulletin = '<!-- sports-bulletin:{"kind":"result","score":"2-1"} -->\nFull time: **2-1**';
+    expect(body(bulletin).contentHtml).toBe("Full time: <strong>2-1</strong>");
+    expect(body("<p>a<!-- note --></p>").contentHtml).toBe("<p>a</p>");
+  });
+
+  it("removes the IxTwitter [DiscordMsg:<id>] marker wherever it sits", () => {
+    expect(body("Hello\n\n[DiscordMsg:123]").plainText).toBe("Hello");
+    expect(body("<p>Hi [DiscordMsg:456]</p>").contentHtml).toBe("<p>Hi</p>");
+  });
+
+  it("removes a blurb's header", () => {
+    expect(body("[blurb:the-slug|The Title]\n\nMy blurb").plainText).toBe("My blurb");
+  });
+
+  it("never lets <script> or an event handler through", () => {
+    const html = boardPostBody({
+      content:
+        '<p>hi</p><script>alert(1)</script><img src="https://x.test/a.png" onerror="alert(2)">',
+      media: [{ url: 'https://x.test/a.png" onerror="alert(3)', type: "image" }],
+    }).contentHtml;
+    const doc = new JSDOM(html).window.document;
     expect(doc.querySelector("script")).toBeNull();
     const handlers = [...doc.body.querySelectorAll("*")].flatMap((el) =>
       el.getAttributeNames().filter((name) => name.startsWith("on"))
     );
     expect(handlers).toEqual([]);
-    expect(body.contentHtml).not.toMatch(/<script/i);
-    // The text survives only escaped, as text.
-    expect(body.plainText).toContain("<script>alert(1)</script>");
+    expect(html).not.toMatch(/<script|alert\(1\)/i);
   });
 
   it("appends an image attachment as an <img> and another attachment as a link", () => {
-    const body = boardPostBody({
+    const html = boardPostBody({
       content: "look",
       media: [
         { url: "https://cdn.test/map.png", type: "image" },
         { url: "/uploads/file.pdf", type: "document" },
       ],
-    });
-    expect(body.contentHtml).toBe(
-      '<p>look</p><p><img src="https://cdn.test/map.png" alt=""></p><p><a href="/uploads/file.pdf">Attachment</a></p>'
+    }).contentHtml;
+    expect(html).toBe(
+      'look<p><img src="https://cdn.test/map.png" alt=""></p><p><a href="/uploads/file.pdf">Attachment</a></p>'
     );
   });
 
   it("drops javascript:, http:, protocol-relative and token-bearing attachment URLs", () => {
-    const body = boardPostBody({
+    const html = boardPostBody({
       content: "text",
       media: [
         { url: "javascript:alert(1)", type: "image" },
@@ -112,24 +126,33 @@ describe("boardPostBody", () => {
         { url: "/\\evil.test/a.png", type: "image" },
         { url: "https://cdn.test/[ixaction=act1].png", type: "image" },
       ],
-    });
-    expect(body.contentHtml).toBe("<p>text</p>");
+    }).contentHtml;
+    expect(html).toBe("text");
   });
 
-  it("keeps an action token only in text, where it renders, never inside a tag", () => {
-    const body = boardPostBody({ content: "see [ixaction=act1]", media: [] });
-    expect(countTextActionTokens(body.contentHtml)).toBe(1);
-    expect(countActionTokens(body.contentHtml)).toBe(1);
-    expect(countActionTokens(body.plainText)).toBe(1);
+  it("keeps an action token in text, where it renders", () => {
+    const { contentHtml, plainText } = body("see [ixaction=act1]");
+    expect(countTextActionTokens(contentHtml)).toBe(1);
+    expect(countActionTokens(contentHtml)).toBe(1);
+    expect(countActionTokens(plainText)).toBe(1);
+  });
+
+  it("removes an action token from inside a tag or attribute, keeping the one in text", () => {
+    for (const content of [
+      '<p><a href="https://x.test/[ixaction=act1]">link</a> and [ixaction=act2]</p>',
+      "https://x.test/[ixaction=act1] and [ixaction=act2]",
+    ]) {
+      const { contentHtml, plainText } = body(content);
+      expect(countActionTokens(contentHtml)).toBe(countTextActionTokens(contentHtml));
+      expect(countActionTokens(plainText)).toBe(countTextActionTokens(contentHtml));
+      expect(contentHtml).toContain("[ixaction=act2]");
+    }
   });
 
   it("is empty for blank text with no usable attachment", () => {
     expect(
       boardPostBody({ content: "  \n\n ", media: [{ url: "javascript:x", type: "image" }] })
-    ).toEqual({
-      contentHtml: "",
-      plainText: "",
-    });
+    ).toEqual({ contentHtml: "", plainText: "" });
   });
 });
 
@@ -142,7 +165,7 @@ describe("planBoardArchive", () => {
       "thinkpages_post:c",
     ]);
     expect(result.posts.map((p) => p.createdAt)).toEqual([at(1), at(1), at(3)]);
-    expect(result.posts[0]).toMatchObject({ contentHtml: "<p>post a</p>", plainText: "post a" });
+    expect(result.posts[0]).toMatchObject({ contentHtml: "post a", plainText: "post a" });
   });
 
   it("builds the thread from the first and last planned posts", () => {
@@ -214,6 +237,13 @@ describe("planBoardArchive", () => {
     const result = plan([row("blank", 1, { content: " ", media: [] }), row("kept", 2)]);
     expect(result.posts).toHaveLength(1);
     expect(result.skipped.blank).toBe(1);
+  });
+
+  it("keeps an image-only post", () => {
+    const image = { url: "https://cdn.test/map.png", type: "image" };
+    const result = plan([row("pic", 1, { content: "", media: [image] })]);
+    expect(result.posts).toHaveLength(1);
+    expect(result.skipped.blank).toBe(0);
   });
 
   it("plans no thread and marks the board empty when nothing is left and nothing was migrated", () => {
