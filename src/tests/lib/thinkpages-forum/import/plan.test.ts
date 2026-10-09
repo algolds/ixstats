@@ -59,6 +59,8 @@ const dbState = (overrides: Partial<ImportDbState> = {}): ImportDbState => ({
   ],
   existingThreads: new Map(),
   existingPosts: new Set(),
+  hiddenThreads: new Set(),
+  hiddenPosts: new Set(),
   attachmentFor: (id) =>
     id === 55
       ? { kind: "image", url: "/images/uploads/forum/55-abc-map.png", filename: "map.png" }

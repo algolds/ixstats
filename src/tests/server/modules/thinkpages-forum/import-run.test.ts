@@ -18,6 +18,17 @@ const seed = (): Partial<ImportTables> => ({
   configs: [],
 });
 
+/** The snapshot with some posts' message_state changed (a later export). */
+function withStates(base: Snapshot, states: Record<number, string>): Snapshot {
+  const postsByThread = new Map(
+    [...base.postsByThread].map(([id, posts]) => [
+      id,
+      posts.map((p) => ({ ...p, message_state: states[p.post_id] ?? p.message_state })),
+    ])
+  );
+  return { ...base, postsByThread };
+}
+
 /** The imported rows by XenForo id, without generated ids, for comparing two runs. */
 function imported(tables: ImportTables) {
   const keyOf = new Map(tables.categories.map((c) => [c.id, c.key]));
@@ -82,8 +93,10 @@ describe("the XenForo import applied to the small snapshot", () => {
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
       relinked: { threads: 0, posts: 0 },
+      rehidden: { threads: 0, posts: 0, assets: 0 },
       failedThreads: [],
     });
+    expect(second.plan.rehide).toEqual({ threads: [], attachmentIds: [] });
     expect(imported(store.tables())).toEqual(before);
   });
 
@@ -142,6 +155,39 @@ describe("the XenForo import applied to the small snapshot", () => {
     const rerun = await runImport(store.db as never, snapshot);
     expect(rerun.totals).toMatchObject({ threadsCreated: 0, threadsResumed: 1, postsCreated: 1 });
     expect(store.tables().threads.find((t) => t.xenforoThreadId === 103)?.postCount).toBe(2);
+  });
+
+  it("re-hides imported content XenForo has since moderated or deleted, and restricts its assets (I7)", async () => {
+    const store = importStore({
+      ...seed(),
+      assets: [
+        { id: "a-55", source: "forum", sourceRef: "55", visibility: "public" },
+        { id: "a-56", source: "forum", sourceRef: "56", visibility: "restricted" },
+      ],
+    });
+    await runImport(store.db as never, snapshot);
+    // The delta export: thread 100's first post deleted, thread 101's visible reply now moderated.
+    const delta = withStates(snapshot, { 1000: "deleted", 1011: "moderated" });
+    const rerun = await runImport(store.db as never, delta);
+    expect(rerun.plan.report.rehidden).toEqual({ threads: 1, posts: 1, attachments: 1 });
+    expect(rerun.totals.rehidden).toEqual({ threads: 1, posts: 1, assets: 1 });
+    expect(imported(store.tables()).threads).toEqual([
+      "100@xf-12 hidden=true count=1",
+      "101@xf-12 hidden=true count=1",
+      "103@xf-13 hidden=true count=2",
+    ]);
+    const tables = store.tables();
+    expect(tables.posts.find((p) => p.xenforoPostId === 1000)).toMatchObject({ hidden: false });
+    expect(tables.posts.find((p) => p.xenforoPostId === 1011)).toMatchObject({ hidden: true });
+    expect(tables.assets.map((a) => `${a.id}:${a.visibility}`)).toEqual([
+      "a-55:restricted",
+      "a-56:restricted",
+    ]);
+    // Never un-hides: the original states back in the snapshot change nothing, and nothing is planned again.
+    const again = await runImport(store.db as never, snapshot);
+    expect(again.plan.rehide.threads).toEqual([]);
+    expect(store.tables().threads.find((t) => t.xenforoThreadId === 100)?.hidden).toBe(true);
+    expect(store.tables().posts.find((p) => p.xenforoPostId === 1011)?.hidden).toBe(true);
   });
 
   it("relinks authors linked after the first run", async () => {

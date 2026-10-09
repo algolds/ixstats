@@ -65,10 +65,13 @@ async function realmIdsOf(db: ImportDb, slugs: readonly string[]) {
   return { ids, published };
 }
 
+const xenforoIds = (ids: ReadonlyArray<number | null>) =>
+  new Set(ids.flatMap((id) => (id === null ? [] : [id])));
+
 /**
  * Linked users, sitewide categories with their visibility, the realm categories of the mapped realms (resolved by
  * the module's loadForumRealm, so IxWorld's "ixworld" and "default" both find realm "default"), and what an earlier
- * run already imported.
+ * run already imported (and which of it is hidden, for the I7 re-hide).
  */
 export async function loadImportDbState(
   db: ImportDb,
@@ -89,11 +92,11 @@ export async function loadImportDbState(
   });
   const threads = await db.forumThread.findMany({
     where: { xenforoThreadId: { not: null } },
-    select: { id: true, xenforoThreadId: true },
+    select: { id: true, xenforoThreadId: true, hidden: true },
   });
   const posts = await db.forumPost.findMany({
     where: { xenforoPostId: { not: null } },
-    select: { xenforoPostId: true },
+    select: { xenforoPostId: true, hidden: true },
   });
   return {
     users: users.flatMap((u) =>
@@ -110,9 +113,9 @@ export async function loadImportDbState(
     existingThreads: new Map(
       threads.flatMap((t) => (t.xenforoThreadId === null ? [] : [[t.xenforoThreadId, t.id]]))
     ),
-    existingPosts: new Set(
-      posts.flatMap((p) => (p.xenforoPostId === null ? [] : [p.xenforoPostId]))
-    ),
+    existingPosts: xenforoIds(posts.map((p) => p.xenforoPostId)),
+    hiddenThreads: xenforoIds(threads.filter((t) => t.hidden).map((t) => t.xenforoThreadId)),
+    hiddenPosts: xenforoIds(posts.filter((p) => p.hidden).map((p) => p.xenforoPostId)),
   };
 }
 

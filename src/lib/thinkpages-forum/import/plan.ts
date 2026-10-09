@@ -4,7 +4,8 @@
  * runner writes the plan. `postCount` is not planned: the writer recounts from visible posts after each thread.
  *
  * Rules: Q4 node targets (unknown targets throw), Q5 moderated → hidden and deleted → skipped (a moderated first
- * post hides its thread instead; a deleted first post skips it), Q19 timestamps, Q3 authors, Q2 bodies.
+ * post hides its thread instead; a deleted first post skips it), Q19 timestamps, Q3 authors, Q2 bodies, I7 already
+ * imported content XenForo now has moderated or deleted → re-hidden (rehide.ts).
  */
 import { isStoredComplete } from "./attachments";
 import { authorOf, resolveAuthors, type LinkedForumUser } from "./authors";
@@ -18,6 +19,7 @@ import {
   type ResolvedNode,
 } from "./node-map";
 import { importedPostBody, type AttachmentOutcome, type PostHtmlInput } from "./post-html";
+import { attachmentsByPost, emptyRehide, planRehide, type RehidePlan } from "./rehide";
 import {
   countNotCarried,
   countPlannedPost,
@@ -49,6 +51,10 @@ export interface ImportDbState {
   existingThreads: ReadonlyMap<number, string>;
   /** xenforoPostId */
   existingPosts: ReadonlySet<number>;
+  /** xenforoThreadId of imported threads the database holds as hidden (I7 never re-hides those). */
+  hiddenThreads: ReadonlySet<number>;
+  /** xenforoPostId of imported posts the database holds as hidden. */
+  hiddenPosts: ReadonlySet<number>;
   attachmentFor: PostHtmlInput["attachmentFor"];
 }
 
@@ -86,6 +92,8 @@ export interface PlannedThread {
 export interface ImportPlan {
   categories: ArchiveCategory[];
   threads: PlannedThread[];
+  /** I7: imported rows XenForo has since moderated or deleted. */
+  rehide: RehidePlan;
   report: ImportReport;
 }
 
@@ -110,6 +118,8 @@ interface PlanContext {
   byForumId: ReadonlyMap<number, string>;
   report: ImportReport;
   unmatched: Map<number, UnmatchedAuthor>;
+  rehide: RehidePlan;
+  attachmentsByPost: ReadonlyMap<number, readonly number[]>;
 }
 
 /** "site:general", "realm:ixworld/hub", "archive:xf-13 (staff)" or "skip". */
@@ -276,13 +286,20 @@ function planThread(
       report.unknownStates.posts.push({ id: post.post_id, state: String(post.message_state) });
     }
   }
+  const existingId = ctx.db.existingThreads.get(thread.thread_id) ?? null;
+  planRehide(ctx.rehide, {
+    thread,
+    posts,
+    existingId,
+    db: ctx.db,
+    attachments: ctx.attachmentsByPost,
+  });
   const imported = importedThread(thread, posts);
   if ("skip" in imported) {
     if (imported.skip !== "deleted") report.threads[imported.skip] += 1;
     return null;
   }
   const { first } = imported;
-  const existingId = ctx.db.existingThreads.get(thread.thread_id) ?? null;
   const { planned, skippedPosts } = planPosts(posts, first, ctx);
   if (!planned.length) {
     if (existingId) report.alreadyPresent.threads += 1;
@@ -364,6 +381,11 @@ export function planImport(
     byForumId: authors.byForumId,
     report,
     unmatched: new Map(),
+    rehide: emptyRehide(),
+    attachmentsByPost: attachmentsByPost(
+      [...snapshot.postsByThread.values()].flat(),
+      snapshot.attachments.values()
+    ),
   };
   const resolved = resolveNodeTargets(snapshot.nodes, nodeMap);
   const { places, categories } = placeNodes(resolved, db, report);
@@ -393,5 +415,10 @@ export function planImport(
   finishAuthors(report, ctx.unmatched);
   countTotals(report, categories, threads);
   report.nodes = nodeRows(resolved, threads, snapshot);
-  return { categories, threads, report };
+  report.rehidden = {
+    threads: ctx.rehide.threads.filter((t) => t.thread).length,
+    posts: ctx.rehide.threads.reduce((n, t) => n + t.posts.length, 0),
+    attachments: ctx.rehide.attachmentIds.length,
+  };
+  return { categories, threads, rehide: ctx.rehide, report };
 }

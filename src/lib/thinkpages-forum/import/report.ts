@@ -74,6 +74,11 @@ export interface ImportReport {
   posts: { visible: number; moderated: number; deleted: number; unknown: number };
   /** M22: threads and posts whose state is not visible, moderated or deleted (never imported as visible). */
   unknownStates: { threads: StateRow[]; posts: StateRow[] };
+  /**
+   * I7: imported threads and replies XenForo has since moderated or deleted, which the apply hides (rows already
+   * hidden are not counted), and the attachments whose media assets turn restricted.
+   */
+  rehidden: { threads: number; posts: number; attachments: number };
   /** Threads whose every post is already imported, and posts already imported. */
   alreadyPresent: { threads: number; posts: number };
   /** Planned posts per feature. */
@@ -138,6 +143,7 @@ export function emptyReport(duplicates: ImportReport["authors"]["duplicates"]): 
     posts: { visible: 0, moderated: 0, deleted: 0, unknown: 0 },
     unknownStates: { threads: [], posts: [] },
     alreadyPresent: { threads: 0, posts: 0 },
+    rehidden: { threads: 0, posts: 0, attachments: 0 },
     features: Object.fromEntries(POST_FEATURES.map((f) => [f, 0])) as Record<PostFeature, number>,
     tokens: { kept: 0, stripped: 0, overLimit: 0, posts: 0 },
     attachments: { image: tally(), link: tally(), omitted: tally(), none: tally() },
@@ -283,6 +289,7 @@ export function summarizeImport(report: ImportReport): string[] {
     `Threads in imported nodes: ${nonZero(report.threads)}`,
     `Posts in those threads: ${nonZero(report.posts)}`,
     `Already imported: ${report.alreadyPresent.threads} complete threads, ${report.alreadyPresent.posts} posts`,
+    `Re-hidden (moderated or deleted on XenForo since imported): ${report.rehidden.threads} threads, ${report.rehidden.posts} posts; their ${report.rehidden.attachments} attachments turn restricted`,
     `Authors: ${authors.matchedPosts} posts matched, ${authors.unmatchedPosts} posts by ${authors.unmatchedUsers} unmatched users, ${authors.guestPosts} guest posts`,
     ...authors.topUnmatched.map(
       (a) => `  unmatched: ${a.name} (#${a.xenforoUserId}) ${a.posts} posts`

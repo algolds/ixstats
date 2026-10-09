@@ -13,6 +13,7 @@ import {
 } from "../../../scripts/migrations/import-xenforo-forum-args";
 import {
   applyRefusals,
+  applyTotalLines,
   attachmentPlanLines,
   attachmentResultLines,
   diskRefusal,
@@ -221,6 +222,30 @@ describe("rollback lines (I2)", () => {
       "The legacy redirect is on. Turn the legacy redirect off first: bun run forum:legacy-redirect -- off"
     );
     expect(redirectOnRefusal(true)).toMatch(/forum:legacy-redirect -- --production off$/);
+  });
+});
+
+describe("applyTotalLines", () => {
+  it("prints the re-hidden rows (I7) and the failed threads (M19)", () => {
+    const lines = applyTotalLines({
+      categoriesCreated: 0,
+      threadsCreated: 1,
+      threadsResumed: 0,
+      postsCreated: 2,
+      postsPresent: 0,
+      linksRemapped: 0,
+      bridgeLinks: { remapped: 0, twins: 0 },
+      relinked: { threads: 0, posts: 0 },
+      rehidden: { threads: 1, posts: 2, assets: 3 },
+      failedThreads: [{ xenforoThreadId: 9, error: "boom" }],
+    });
+    expect(lines).toContain(
+      "  re-hidden (moderated or deleted on XenForo since imported): 1 threads, 2 posts, 3 media assets made restricted"
+    );
+    expect(lines.slice(-2)).toEqual([
+      "FAILED: 1 threads were rolled back and not imported; XenForo thread ids: 9",
+      "  thread 9: boom",
+    ]);
   });
 });
 

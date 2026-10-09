@@ -3,8 +3,8 @@
  * its posts in chunks with `skipDuplicates`, the action-link remap, the recount under the thread lock), then the
  * author relink and the applied node map. Idempotent: a rerun plans only what is missing, and a thread interrupted
  * mid-write rolled back whole, so it is written again in full. A thread that fails is recorded and the run goes on
- * (M19): its transaction rolled it back, and the bridge pass, the relink and the node map still run. No activity
- * feed, notification or mod-log rows.
+ * (M19): its transaction rolled it back, and the bridge pass, the relink and the node map still run. Then the I7
+ * re-hide (import-rehide.ts). No activity feed, notification or mod-log rows.
  */
 import type { Prisma } from "@prisma/client";
 import { countActionTokens } from "~/lib/action-links";
@@ -18,6 +18,7 @@ import type {
 } from "~/lib/thinkpages-forum/import/plan";
 import { isUniqueViolation } from "./errors";
 import { assertImportLock, storeNodeMap, type ImportDb } from "./import-db";
+import { rehideImported, type RehideTotals } from "./import-rehide";
 import { lockThread, recountThread } from "./thread-counts";
 
 /** Posts per `createMany`; lower it (one constant) if 500-row inserts are slow on the VPS. */
@@ -261,6 +262,8 @@ export interface ApplyTotals {
   linksRemapped: number;
   bridgeLinks: BridgeRemap;
   relinked: { threads: number; posts: number };
+  /** I7: imported rows hidden because XenForo has since moderated or deleted them. */
+  rehidden: RehideTotals;
   failedThreads: ThreadFailure[];
 }
 
@@ -273,13 +276,13 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
 }
 
 /**
- * --apply: categories, every planned thread, the bridge link pass, the relink pass, the applied node map.
+ * --apply: categories, every planned thread, the re-hide, the bridge link pass, the relink pass, the applied node map.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
  */
 export async function applyImport(
   db: ImportDb,
-  plan: Pick<ImportPlan, "categories" | "threads">,
+  plan: Pick<ImportPlan, "categories" | "threads" | "rehide">,
   opts: { nodeMap: NodeMapFile; log?: (line: string) => void }
 ): Promise<ApplyTotals> {
   const log = opts.log ?? (() => {});
@@ -293,6 +296,7 @@ export async function applyImport(
     linksRemapped: 0,
     bridgeLinks: { remapped: 0, twins: 0 },
     relinked: { threads: 0, posts: 0 },
+    rehidden: { threads: 0, posts: 0, assets: 0 },
     failedThreads: [],
   };
   for (const [index, planned] of plan.threads.entries()) {
@@ -310,6 +314,8 @@ export async function applyImport(
     if ((index + 1) % PROGRESS_EVERY === 0)
       log(`  ${index + 1}/${plan.threads.length} threads written`);
   }
+  await assertImportLock(db);
+  totals.rehidden = await rehideImported(db, plan.rehide, { failures: totals.failedThreads, log });
   totals.bridgeLinks = await remapBridgeLinks(db);
   totals.relinked = await relinkImportedAuthors(db);
   await storeNodeMap(db, opts.nodeMap);
