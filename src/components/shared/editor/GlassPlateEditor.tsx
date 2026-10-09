@@ -23,6 +23,8 @@ export interface GlassPlateEditorRef {
   insertText: (text: string) => void;
   clear: () => void;
   focus: () => void;
+  /** Focus, first putting the caret at the end of the document when nothing is selected. */
+  focusEnd: () => void;
   getContent: () => string;
   getPlainText: () => string;
   getBbcode: () => string;
@@ -143,6 +145,17 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
         focus: () => {
           try {
             ReactEditor.focus(editor as any);
+          } catch {
+            // ignore if not mounted
+          }
+        },
+        focusEnd: () => {
+          try {
+            // Focus the DOM node synchronously: ReactEditor.focus defers while operations are
+            // pending, and keystrokes in that gap would reach the previously focused field.
+            editor.api.toDOMNode(editor)?.focus({ preventScroll: true });
+            const end = editor.selection ? undefined : editor.api.end([]);
+            if (end) editor.tf.select(end);
           } catch {
             // ignore if not mounted
           }

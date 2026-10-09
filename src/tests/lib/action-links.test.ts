@@ -2,8 +2,11 @@
 import {
   chainWikiSection,
   MAX_ACTIONS_PER_POST,
+  countActionTokens,
+  countTextActionTokens,
   parseActionTokens,
   postPermalinkPath,
+  splitActionTokens,
 } from "~/lib/action-links";
 
 describe("parseActionTokens", () => {
@@ -76,5 +79,107 @@ describe("chainWikiSection", () => {
     expect(lines[0]).toBe("== Story chain: x == Fake == NOTOC bold #91; ==");
     expect([lines[0], lines[2]].join("\n")).not.toMatch(/__|~~~|''|&/);
     expect(lines[2]).toMatch(/^\* .*: \[https:\/\/x a \* b\] \(t == T ==\)$/);
+  });
+});
+
+describe("splitActionTokens", () => {
+  it("cuts a body on its tokens and drops empty html segments", () => {
+    expect(splitActionTokens("a[ixaction=x1][ixaction=y_2]b")).toEqual([
+      { kind: "html", text: "a" },
+      { kind: "action", id: "x1" },
+      { kind: "action", id: "y_2" },
+      { kind: "html", text: "b" },
+    ]);
+    expect(splitActionTokens("")).toEqual([]);
+  });
+
+  it("keeps both halves of a paragraph as balanced html around the token", () => {
+    expect(splitActionTokens("<p>before [ixaction=a1] after</p>")).toEqual([
+      { kind: "html", text: "<p>before </p>" },
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<p> after</p>" },
+    ]);
+  });
+
+  it("never cuts a token inside an attribute value", () => {
+    const title = '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>';
+    const href = '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>';
+    expect(splitActionTokens(title)).toEqual([{ kind: "html", text: title }]);
+    expect(splitActionTokens(href)).toEqual([{ kind: "html", text: href }]);
+  });
+
+  it("cuts a text token beside an attribute token without touching the tag", () => {
+    const html = '<p><span title="[ixaction=bad]">a</span> [ixaction=a1] b</p>';
+    expect(splitActionTokens(html)).toEqual([
+      { kind: "html", text: '<p><span title="[ixaction=bad]">a</span> </p>' },
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<p> b</p>" },
+    ]);
+  });
+
+  it("balances list items, quotes, headings and inline tags around a token", () => {
+    expect(splitActionTokens("<ul><li>a [ixaction=a1] b</li></ul>")).toEqual([
+      { kind: "html", text: "<ul><li>a </li></ul>" },
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<ul><li> b</li></ul>" },
+    ]);
+    expect(splitActionTokens("<blockquote><p>[ixaction=a1]</p></blockquote><h2>x</h2>")).toEqual([
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<blockquote><p></p></blockquote><h2>x</h2>" },
+    ]);
+    expect(splitActionTokens("<p>a <strong>b [ixaction=a1] c</strong><br> d</p>")).toEqual([
+      { kind: "html", text: "<p>a <strong>b </strong></p>" },
+      { kind: "action", id: "a1" },
+      { kind: "html", text: "<p><strong> c</strong><br> d</p>" },
+    ]);
+  });
+
+  it("keeps an image-only fragment and leaves a text run with a stray < uncut", () => {
+    expect(splitActionTokens('<p><img src="https://e.com/a.png">[ixaction=a1]</p>')).toEqual([
+      { kind: "html", text: '<p><img src="https://e.com/a.png"></p>' },
+      { kind: "action", id: "a1" },
+    ]);
+    expect(splitActionTokens("a < b [ixaction=a1]")).toEqual([
+      { kind: "html", text: "a < b [ixaction=a1]" },
+    ]);
+  });
+});
+
+describe("countTextActionTokens", () => {
+  it("counts only the tokens outside tags and attributes", () => {
+    const html = '<p title="[ixaction=x]">[ixaction=a1] and [ixaction=a1]</p><!-- [ixaction=c] -->';
+    expect(countTextActionTokens(html)).toBe(2);
+    expect(countActionTokens(html)).toBe(4);
+  });
+});
+
+/** The split body re-joined, tokens in place: shows where splitActionTokens cuts paragraphs. */
+const liftActionTokens = (html: string): string =>
+  splitActionTokens(html)
+    .map((s) => (s.kind === "html" ? s.text : `[ixaction=${s.id}]`))
+    .join("");
+
+describe("splitActionTokens paragraph lifting", () => {
+  it("lifts a mid-paragraph token between two paragraphs", () => {
+    expect(liftActionTokens("<p>before [ixaction=a1] after</p>")).toBe(
+      "<p>before </p>[ixaction=a1]<p> after</p>"
+    );
+  });
+
+  it("leaves no empty paragraph for a token at the start or end", () => {
+    expect(liftActionTokens("<p>[ixaction=a1] after</p>")).toBe("[ixaction=a1]<p> after</p>");
+    expect(liftActionTokens("<p>before [ixaction=a1]</p>")).toBe("<p>before </p>[ixaction=a1]");
+    expect(liftActionTokens("<p>[ixaction=a1]</p>")).toBe("[ixaction=a1]");
+  });
+
+  it("lifts two tokens in one paragraph and keeps the opening tag attributes", () => {
+    expect(liftActionTokens('<p class="x">a [ixaction=a1] b [ixaction=b2] c</p>')).toBe(
+      '<p class="x">a </p>[ixaction=a1]<p class="x"> b </p>[ixaction=b2]<p class="x"> c</p>'
+    );
+  });
+
+  it("leaves tokens outside paragraphs and other paragraphs untouched", () => {
+    const html = "<p></p><p>plain</p>[ixaction=a1]<div>x</div>";
+    expect(liftActionTokens(html)).toBe(html);
   });
 });
