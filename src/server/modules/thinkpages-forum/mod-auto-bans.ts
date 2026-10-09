@@ -12,7 +12,10 @@ import type { ForumViewer } from "./access";
 import { liftBanTx } from "./mod-bans";
 import { logModAction, type ModLogDetail } from "./mod-log";
 
-export type AutoBanTx = Pick<PrismaClient, "forumBan" | "forumModLog" | "$executeRaw">;
+export type AutoBanTx = Pick<
+  PrismaClient,
+  "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw"
+>;
 export type AutoBanChange =
   | {
       kind: "issued" | "extended" | "shortened";

@@ -15,6 +15,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
+import { mootOpenAppeal } from "./mod-appeal-moot";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertSanctionable,
@@ -33,6 +34,7 @@ import {
 export type BansDb = Pick<
   PrismaClient,
   | "forumBan"
+  | "forumAppeal"
   | "forumCategory"
   | "user"
   | "realm"
@@ -216,10 +218,11 @@ export async function issueBan(
 
 /**
  * reviewAppeal and the automatic-ban recompute call this with their own transaction client and their `now`. The ban
- * must still be live at `now` when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once.
+ * must still be live at `now` when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once. An
+ * open appeal on the ban is closed as moot in the same transaction.
  */
 export async function liftBanTx(
-  tx: Pick<BansDb, "forumBan" | "forumModLog" | "$executeRaw">,
+  tx: Pick<BansDb, "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw">,
   actor: NonNullable<ForumViewer>,
   ban: { id: string; userId: string; scope: string; scopeId: string | null },
   detail: ModLogDetail,
@@ -231,14 +234,16 @@ export async function liftBanTx(
     data: { liftedAt: now, liftedBy: actor.id },
   });
   if (count === 0) throw new ForumError("CONFLICT", "This ban is no longer active.");
+  const scope = scopeFromColumns(ban.scope, ban.scopeId);
   await logModAction(tx, {
     actorId: actor.id,
     action: "ban.lift",
     targetType: "user",
     targetId: ban.userId,
-    scope: scopeFromColumns(ban.scope, ban.scopeId),
+    scope,
     detail: { ...detail, banId: ban.id },
   });
+  await mootOpenAppeal(tx, actor.id, { type: "ban", id: ban.id, scope, cause: "ban lifted" }, now);
 }
 
 export async function liftBan(

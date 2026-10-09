@@ -81,6 +81,8 @@ function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
       }),
     },
     forumModLog: { create: jest.fn(async () => ({ id: "log1" })) },
+    // No open appeals here; mooting them is covered in mod-appeals.test.ts.
+    forumAppeal: { findFirst: jest.fn(async () => null), updateMany: jest.fn() },
   };
   const db = {
     forumBan: {

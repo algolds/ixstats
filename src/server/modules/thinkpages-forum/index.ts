@@ -65,13 +65,12 @@ export {
   type ReportStatus,
 } from "./mod-report-queue";
 export { fileReport, resolveReport, type ReportsDb, type ReportTargetType } from "./mod-reports";
+export { listWarnings, WARNINGS_PER_PAGE } from "./mod-warning-list";
 export { myStanding, type StandingAppeal, type StandingDb } from "./mod-standing";
 export {
   activePointsOf,
   issueWarning,
-  listWarnings,
   revokeWarning,
-  WARNINGS_PER_PAGE,
   type WarningInput,
   type WarningOutcome,
   type WarningsDb,

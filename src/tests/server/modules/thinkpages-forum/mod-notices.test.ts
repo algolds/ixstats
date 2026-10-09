@@ -170,6 +170,18 @@ describe("notifyAppealDecision", () => {
       "Your ban was overturned. Response: Fair point.",
     ],
     ["upheld", "warning", "Your appeal was declined", "Your warning stands. Response: Fair point."],
+    [
+      "moot",
+      "ban",
+      "Your appeal was closed",
+      "Your ban had already ended, so there was nothing left to decide. Response: Fair point.",
+    ],
+    [
+      "moot",
+      "warning",
+      "Your appeal was closed",
+      "Your warning had already ended, so there was nothing left to decide. Response: Fair point.",
+    ],
   ] as const)(
     "tells the member the appeal was %s",
     async (outcome, subjectType, title, message) => {

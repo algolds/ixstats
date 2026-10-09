@@ -14,6 +14,7 @@ import {
   loadSubject,
   subjectIssuers,
   subjectScope,
+  type AppealDecision,
   type AppealOutcome,
   type AppealSubject,
   type AppealSubjectType,
@@ -39,7 +40,8 @@ export type AppealsDb = Pick<
 export interface AppealReview {
   userId: string;
   subjectType: AppealSubjectType;
-  outcome: AppealOutcome;
+  /** The reviewer's outcome, or `moot` when the subject had already ended. */
+  outcome: AppealDecision;
   /** An overturned warning's effect on the member's automatic ban (M3). */
   autoBan: AutoBanChange | null;
 }
@@ -78,11 +80,11 @@ export async function fileAppeal(
   input: { subjectType: AppealSubjectType; subjectId: string; body: string }
 ): Promise<{ appealId: string }> {
   const body = appealBody(input.body);
-  const now = new Date();
   const { subjectType, subjectId } = input;
   try {
     return await db.$transaction(async (tx) => {
       await lockMember(tx, actor.id);
+      const now = new Date();
       const subject = await loadSubject(tx, subjectType, subjectId);
       if (!subject || subject.userId !== actor.id) {
         throw new ForumError("BAD_REQUEST", "You can only appeal your own warnings and bans.");
@@ -151,9 +153,10 @@ async function overturn(
 
 /**
  * A moderator with scope over the subject decides an open appeal. Scope is checked first (an out-of-scope moderator
- * learns nothing), then the status, then, under the member's lock, the different-reviewer rule. The decision, its
- * `appeal.review` row and an overturn's lift or revoke (with their own rows) commit together; a lost race or a
- * subject that ended meanwhile rolls all of it back (CONFLICT).
+ * learns nothing about its status, only that it exists), then the status, then, under the member's lock, the
+ * different-reviewer rule. A subject that already ended (lifted, revoked or expired, bans and warnings alike) closes
+ * the appeal as `moot` (`appeal.moot`) whatever the outcome asked. Otherwise the decision, its `appeal.review` row and
+ * an overturn's lift or revoke (with their own rows) commit together; a lost race rolls all of it back (CONFLICT).
  */
 export async function reviewAppeal(
   db: AppealsDb,
@@ -169,27 +172,30 @@ export async function reviewAppeal(
   const subject = appeal && type ? await loadSubject(db, type, appeal.subjectId) : null;
   if (!appeal || !subject) throw new ForumError("NOT_FOUND", "Appeal not found.");
   const reviewer = await assertSubjectScope(db, actor, subject);
-  const reviewed = new ForumError("CONFLICT", "This appeal has already been reviewed.");
+  const reviewed = new ForumError("CONFLICT", "This appeal is already closed.");
   if (appeal.status !== "open") throw reviewed;
   const now = new Date();
   return db.$transaction(async (tx) => {
     await lockMember(tx, appeal.userId);
     await assertOtherReviewer(tx, reviewer, appeal.userId, subject);
+    const current = await loadSubject(tx, subject.kind, subject.id);
+    const outcome: AppealDecision =
+      current && isSubjectActive(current, now) ? input.outcome : "moot";
     const { count } = await tx.forumAppeal.updateMany({
       where: { id: appeal.id, status: "open" },
-      data: { status: input.outcome, reviewedBy: reviewer.id, reviewedAt: now, response },
+      data: { status: outcome, reviewedBy: reviewer.id, reviewedAt: now, response },
     });
     if (count === 0) throw reviewed;
     await logModAction(tx, {
       actorId: reviewer.id,
-      action: "appeal.review",
+      action: outcome === "moot" ? "appeal.moot" : "appeal.review",
       targetType: "appeal",
       targetId: appeal.id,
       scope: subjectScope(subject),
-      detail: { outcome: input.outcome, subjectType: subject.kind, subjectId: subject.id },
+      detail: { outcome, subjectType: subject.kind, subjectId: subject.id },
     });
     const autoBan =
-      input.outcome === "overturned" ? await overturn(tx, reviewer, subject, appeal.id, now) : null;
-    return { userId: appeal.userId, subjectType: subject.kind, outcome: input.outcome, autoBan };
+      outcome === "overturned" ? await overturn(tx, reviewer, subject, appeal.id, now) : null;
+    return { userId: appeal.userId, subjectType: subject.kind, outcome, autoBan };
   });
 }

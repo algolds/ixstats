@@ -11,8 +11,12 @@ import { warningScope } from "./mod-warnings";
 
 export type SubjectsDb = Pick<PrismaClient, "forumBan" | "forumWarning" | "forumModLog">;
 export type AppealSubjectType = "warning" | "ban";
-export type AppealStatus = "open" | "upheld" | "overturned";
-export type AppealOutcome = Exclude<AppealStatus, "open">;
+/** `moot`: the subject ended (lifted, revoked, expired) before a decision; the appeal is closed, not decided. */
+export type AppealStatus = "open" | "upheld" | "overturned" | "moot";
+/** What a reviewer may decide. */
+export type AppealOutcome = "upheld" | "overturned";
+/** How an appeal was closed. */
+export type AppealDecision = Exclude<AppealStatus, "open">;
 
 interface BanSubject {
   kind: "ban";
@@ -40,7 +44,7 @@ interface WarningSubject {
 export type AppealSubject = BanSubject | WarningSubject;
 
 const SUBJECT_TYPES: readonly AppealSubjectType[] = ["warning", "ban"];
-const STATUSES: readonly AppealStatus[] = ["open", "upheld", "overturned"];
+const STATUSES: readonly AppealStatus[] = ["open", "upheld", "overturned", "moot"];
 
 export const BAN_SUBJECT_SELECT = {
   id: true,

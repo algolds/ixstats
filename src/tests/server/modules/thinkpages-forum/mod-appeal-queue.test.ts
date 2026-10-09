@@ -119,6 +119,24 @@ describe("listAppeals", () => {
     });
   });
 
+  it("lists moot appeals as closed: their own status, never reviewable", async () => {
+    const store = storeWith({
+      appeals: [
+        ...appeals,
+        appeal("a_moot", "ban", "b_expired", { status: "moot", reviewedAt: days(-0.5) }),
+      ],
+    });
+    const result = await listAppeals(store.db as never, admin, { status: "moot" }, 1);
+    expect(result.rows).toEqual([
+      expect.objectContaining({
+        id: "a_moot",
+        status: "moot",
+        canReview: false,
+        subject: expect.objectContaining({ active: false }),
+      }),
+    ]);
+  });
+
   it("gives a realm moderator the appeals on their realm's bans and its categories' warnings only", async () => {
     const store = storeWith();
     const result = await listAppeals(store.db as never, eurthMod2, { status: "open" }, 1);

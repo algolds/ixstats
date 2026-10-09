@@ -6,7 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { formatBanDate, type BanScope } from "~/lib/thinkpages-forum/moderation-policy";
-import type { AppealOutcome, AppealSubjectType } from "./mod-appeal-subjects";
+import type { AppealDecision, AppealSubjectType } from "./mod-appeal-subjects";
 
 export type NoticesDb = Pick<PrismaClient, "user">;
 
@@ -84,19 +84,35 @@ export function notifyBanLifted(
   });
 }
 
+const DECISION_COPY: Record<
+  AppealDecision,
+  { title: string; result: (subject: string) => string }
+> = {
+  overturned: {
+    title: "Your appeal was accepted",
+    result: (subject) => `Your ${subject} was overturned.`,
+  },
+  upheld: { title: "Your appeal was declined", result: (subject) => `Your ${subject} stands.` },
+  moot: {
+    title: "Your appeal was closed",
+    result: (subject) => `Your ${subject} had already ended, so there was nothing left to decide.`,
+  },
+};
+
+/** The review's decision; `moot` says the warning or ban had already ended (never that it stands). */
 export function notifyAppealDecision(
   db: NoticesDb,
   input: {
     userId: string;
     subjectType: AppealSubjectType;
-    outcome: AppealOutcome;
+    outcome: AppealDecision;
     response: string;
   }
 ): Promise<void> {
-  const overturned = input.outcome === "overturned";
+  const copy = DECISION_COPY[input.outcome];
   return send(db, input.userId, {
-    title: overturned ? "Your appeal was accepted" : "Your appeal was declined",
-    message: `Your ${input.subjectType} ${overturned ? "was overturned" : "stands"}. Response: ${input.response}`,
+    title: copy.title,
+    message: `${copy.result(input.subjectType)} Response: ${input.response}`,
     type: "info",
   });
 }

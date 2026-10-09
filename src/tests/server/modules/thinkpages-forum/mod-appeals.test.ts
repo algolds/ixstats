@@ -1,6 +1,12 @@
 /** @jest-environment node */
 import { Prisma } from "@prisma/client";
-import { fileAppeal, issueWarning, reviewAppeal } from "~/server/modules/thinkpages-forum";
+import {
+  fileAppeal,
+  issueWarning,
+  liftBan,
+  reviewAppeal,
+  revokeWarning,
+} from "~/server/modules/thinkpages-forum";
 import { appeal, ban, bans, days, NOW, warnings } from "~/tests/helpers/forum-appeal-fixtures";
 import {
   admin,
@@ -417,13 +423,24 @@ describe("reviewAppeal", () => {
     expect(store.logs.map((l) => l.action)).toEqual(["appeal.review", "warning.revoke"]);
   });
 
-  it("refuses an appeal already reviewed (CONFLICT) before opening a transaction", async () => {
+  it.each([["upheld"], ["overturned"], ["moot"]])(
+    "refuses an appeal already closed as %s (CONFLICT) before opening a transaction",
+    async (status) => {
+      const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm", { status })] });
+      await expect(
+        reviewAppeal(store.db as never, eurthMod2, { appealId: "a1", ...overturned })
+      ).rejects.toMatchObject({ code: "CONFLICT", message: "This appeal is already closed." });
+      expect(store.db.$transaction).not.toHaveBeenCalled();
+    }
+  );
+
+  it("refuses an appeal already reviewed (CONFLICT) and leaves the ban alone", async () => {
     const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm", { status: "upheld" })] });
     await expect(
       reviewAppeal(store.db as never, eurthMod2, { appealId: "a1", ...overturned })
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "This appeal has already been reviewed.",
+      message: "This appeal is already closed.",
     });
     expect(store.db.$transaction).not.toHaveBeenCalled();
     expect(banIn(store, "b_realm")).toMatchObject({ liftedAt: null });
@@ -443,19 +460,9 @@ describe("reviewAppeal", () => {
       reviewAppeal(store.db as never, eurthMod2, { appealId: "a1", ...overturned })
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "This appeal has already been reviewed.",
+      message: "This appeal is already closed.",
     });
     expect(banIn(store, "b_realm")).toMatchObject({ liftedAt: null });
-    expect(store.logs).toEqual([]);
-  });
-
-  it("rolls the decision back when the ban was lifted meanwhile (overturn is CONFLICT)", async () => {
-    const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm")] });
-    banIn(store, "b_realm").liftedAt = days(-0.5);
-    await expect(
-      reviewAppeal(store.db as never, eurthMod2, { appealId: "a1", ...overturned })
-    ).rejects.toMatchObject({ code: "CONFLICT", message: "This ban is no longer active." });
-    expect(appealIn(store, "a1")).toMatchObject({ status: "open", reviewedBy: null });
     expect(store.logs).toEqual([]);
   });
 
@@ -514,5 +521,147 @@ describe("reviewAppeal", () => {
       ...overturned,
     });
     expect(banIn(store, "b_old")).toMatchObject({ liftedAt: NOW });
+  });
+});
+
+describe("moot appeals (the subject ended before a decision)", () => {
+  const overturned = { outcome: "overturned" as const, response: "Looked into it." };
+  const mootLog = (extra: Row = {}) =>
+    expect.objectContaining({ action: "appeal.moot", targetType: "appeal", ...extra });
+
+  it("a manual lift closes the ban's open appeal as moot in the lift's transaction, with a log row", async () => {
+    const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm")] });
+    await liftBan(store.db as never, eurthMod2, { banId: "b_realm" });
+    expect(appealIn(store, "a1")).toMatchObject({
+      status: "moot",
+      reviewedBy: null,
+      reviewedAt: NOW,
+      response: null,
+    });
+    expect(store.logs.map((l) => l.action)).toEqual(["ban.lift", "appeal.moot"]);
+    expect(store.logs[1]).toEqual(
+      mootLog({ actorId: "u_eurth2", targetId: "a1", scope: "realm", scopeId: "r_eurth" })
+    );
+    expect(detailOf(store.logs[1])).toEqual({
+      outcome: "moot",
+      subjectType: "ban",
+      subjectId: "b_realm",
+      cause: "ban lifted",
+    });
+    expect(store.db.$transaction).toHaveBeenCalledTimes(1);
+    expect(store.db.forumModLog.create).not.toHaveBeenCalled();
+  });
+
+  it("a lift leaves an appeal that was already decided alone and logs no moot", async () => {
+    const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm", { status: "upheld" })] });
+    await liftBan(store.db as never, eurthMod2, { banId: "b_realm" });
+    expect(appealIn(store, "a1")).toMatchObject({ status: "upheld" });
+    expect(store.logs.map((l) => l.action)).toEqual(["ban.lift"]);
+  });
+
+  it("a manual revoke closes the warning's open appeal as moot", async () => {
+    const store = storeWith({ appeals: [appeal("a1", "warning", "w_eurth")] });
+    await revokeWarning(store.db as never, eurthMod2, { warningId: "w_eurth" });
+    expect(appealIn(store, "a1")).toMatchObject({ status: "moot", reviewedBy: null });
+    expect(store.logs.map((l) => l.action)).toEqual(["warning.revoke", "appeal.moot"]);
+    expect(detailOf(store.logs[1])).toMatchObject({
+      cause: "warning revoked",
+      subjectId: "w_eurth",
+    });
+  });
+
+  it("revoking the triggering warning lifts the automatic ban and moots the ban's appeal", async () => {
+    const store = storeWith({
+      appeals: [appeal("a_ban", "ban", "b_auto"), appeal("a_warn", "warning", "w_site")],
+    });
+    await revokeWarning(store.db as never, admin2, { warningId: "w_site" });
+    expect(banIn(store, "b_auto")).toMatchObject({ liftedAt: NOW });
+    expect(appealIn(store, "a_ban")).toMatchObject({ status: "moot", reviewedBy: null });
+    expect(appealIn(store, "a_warn")).toMatchObject({ status: "moot" });
+    expect(store.logs.map((l) => [l.action, l.targetId])).toEqual([
+      ["warning.revoke", "u_m"],
+      ["appeal.moot", "a_warn"],
+      ["ban.lift", "u_m"],
+      ["appeal.moot", "a_ban"],
+    ]);
+  });
+
+  it("overturning the triggering warning's appeal moots the lifted automatic ban's appeal", async () => {
+    const store = storeWith({
+      appeals: [appeal("a_ban", "ban", "b_auto"), appeal("a_warn", "warning", "w_site")],
+    });
+    await reviewAppeal(store.db as never, admin2, { appealId: "a_warn", ...overturned });
+    expect(appealIn(store, "a_warn")).toMatchObject({ status: "overturned", reviewedBy: "u_a2" });
+    expect(appealIn(store, "a_ban")).toMatchObject({ status: "moot", reviewedBy: null });
+    expect(store.logs.map((l) => l.action)).toEqual([
+      "appeal.review",
+      "warning.revoke",
+      "ban.lift",
+      "appeal.moot",
+    ]);
+    // The ban's appeal is closed, so nobody can be left to "uphold" a lifted ban.
+    await expect(
+      reviewAppeal(store.db as never, admin3, {
+        appealId: "a_ban",
+        outcome: "upheld",
+        response: "x",
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT", message: "This appeal is already closed." });
+  });
+
+  it.each([
+    ["an expired ban", "ban", "b_expired", "upheld"],
+    ["an expired ban", "ban", "b_expired", "overturned"],
+    ["a ban lifted outside the lift path", "ban", "b_lifted", "overturned"],
+    ["an expired warning", "warning", "w_expired", "overturned"],
+    ["an expired warning", "warning", "w_expired", "upheld"],
+    ["a revoked warning", "warning", "w_revoked", "overturned"],
+  ] as const)(
+    "a review of %s's appeal closes it as moot whatever was asked (%s), changing nothing else",
+    async (_case, subjectType, subjectId, outcome) => {
+      const store = storeWith({ appeals: [appeal("a1", subjectType, subjectId)] });
+      const before = JSON.stringify([store.state.bans, store.state.warnings]);
+      const result = await reviewAppeal(store.db as never, eurthMod2, {
+        appealId: "a1",
+        outcome,
+        response: "  It had already ended.  ",
+      });
+      expect(result).toEqual({ userId: "u_m", subjectType, outcome: "moot", autoBan: null });
+      expect(appealIn(store, "a1")).toMatchObject({
+        status: "moot",
+        reviewedBy: "u_eurth2",
+        reviewedAt: NOW,
+        response: "It had already ended.",
+      });
+      expect(JSON.stringify([store.state.bans, store.state.warnings])).toBe(before);
+      expect(store.logs).toEqual([mootLog({ actorId: "u_eurth2", targetId: "a1" })]);
+      expect(detailOf(store.logs[0])).toEqual({ outcome: "moot", subjectType, subjectId });
+    }
+  );
+
+  it("decides from the subject as it is under the lock, not as it was read before", async () => {
+    const store = storeWith({ appeals: [appeal("a1", "ban", "b_realm")] });
+    // The ban is lifted by someone else while this review waits for the member's lock.
+    store.tx.$executeRaw.mockImplementationOnce(async () => {
+      banIn(store, "b_realm").liftedAt = days(-0.1);
+      return 1;
+    });
+    const result = await reviewAppeal(store.db as never, eurthMod2, {
+      appealId: "a1",
+      ...overturned,
+    });
+    expect(result.outcome).toBe("moot");
+    expect(store.logs.map((l) => l.action)).toEqual(["appeal.moot"]);
+  });
+
+  it("still needs another moderator in scope to close an ended subject's appeal", async () => {
+    const store = storeWith({ appeals: [appeal("a1", "ban", "b_expired")] });
+    await expect(
+      reviewAppeal(store.db as never, eurthMod, { appealId: "a1", ...overturned })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      reviewAppeal(store.db as never, auroraMod, { appealId: "a1", ...overturned })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(appealIn(store, "a1")).toMatchObject({ status: "open" });
   });
 });

@@ -142,6 +142,18 @@ describe("myStanding", () => {
     ]);
   });
 
+  it("shows a moot appeal as closed: on its item, which can't be appealed again, and in the list", async () => {
+    const store = storeWith({
+      appeals: [appeal("a_moot", "warning", "w_revoked", { status: "moot", reviewedAt: days(-1) })],
+    });
+    const standing = await myStanding(store.db as never, member);
+    expect(standing.warnings.find((w) => w.id === "w_revoked")).toMatchObject({
+      canAppeal: false,
+      appeal: { id: "a_moot", status: "moot", reviewedAt: days(-1) },
+    });
+    expect(standing.appeals).toEqual([expect.objectContaining({ id: "a_moot", status: "moot" })]);
+  });
+
   it("never returns who issued, lifted, revoked or reviewed anything", async () => {
     const store = storeWith({
       appeals: [appeal("a_ban", "ban", "b_realm", { status: "upheld", reviewedBy: "u_eurth2" })],

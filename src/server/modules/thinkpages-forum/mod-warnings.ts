@@ -13,6 +13,7 @@ import {
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
+import { mootOpenAppeal } from "./mod-appeal-moot";
 import { autoBanAfterRevoke, autoBanAfterWarning, type AutoBanChange } from "./mod-auto-bans";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
@@ -21,9 +22,7 @@ import {
   assertScope,
   canActInScope,
   canModerateCategory,
-  listingScope,
   lockMember,
-  pageWindow,
   type ModScope,
 } from "./mod-scope";
 
@@ -31,6 +30,7 @@ export type WarningsDb = Pick<
   PrismaClient,
   | "forumWarning"
   | "forumBan"
+  | "forumAppeal"
   | "forumCategory"
   | "forumThread"
   | "forumPost"
@@ -42,7 +42,10 @@ export type WarningsDb = Pick<
   | "$transaction"
   | "$executeRaw"
 >;
-type WarningTx = Pick<WarningsDb, "forumWarning" | "forumBan" | "forumModLog" | "$executeRaw">;
+type WarningTx = Pick<
+  WarningsDb,
+  "forumWarning" | "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw"
+>;
 
 export interface WarningInput {
   userId: string;
@@ -65,7 +68,6 @@ interface WarnedCategory {
   realmId: string | null;
 }
 
-export const WARNINGS_PER_PAGE = 25;
 const SITE: ModScope = { kind: "site" };
 const CATEGORY_SELECT = { id: true, scope: true, realmId: true } as const;
 
@@ -213,7 +215,8 @@ export async function assertWarningScope(
 
 /**
  * reviewAppeal calls this with its own transaction client and `now`; it includes M3's recompute (the automatic ban
- * re-tiered or lifted). The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise).
+ * re-tiered or lifted). The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise). An
+ * open appeal on the warning is closed as moot in the same transaction.
  */
 export async function revokeWarningTx(
   tx: WarningTx,
@@ -228,14 +231,21 @@ export async function revokeWarningTx(
     data: { revokedAt: now, revokedBy: actor.id },
   });
   if (count === 0) throw new ForumError("CONFLICT", "This warning is already revoked.");
+  const scope = warningScope(warning.categoryId);
   await logModAction(tx, {
     actorId: actor.id,
     action: "warning.revoke",
     targetType: "user",
     targetId: warning.userId,
-    scope: warningScope(warning.categoryId),
+    scope,
     detail: { ...detail, warningId: warning.id },
   });
+  await mootOpenAppeal(
+    tx,
+    actor.id,
+    { type: "warning", id: warning.id, scope, cause: "warning revoked" },
+    now
+  );
   const points = await activePointsOf(tx, warning.userId, now);
   const autoBan = await autoBanAfterRevoke(tx, actor, warning.userId, points, now, {
     reason: "warning revoked",
@@ -257,44 +267,4 @@ export async function revokeWarning(
   const revoker = await assertWarningScope(db, actor, warning.categoryId);
   const note = modNote(input.note);
   return db.$transaction((tx) => revokeWarningTx(tx, revoker, warning, { note }, new Date()));
-}
-
-/** Warnings in the viewer's scope (their categories; site admins everything), newest first. */
-export async function listWarnings(
-  db: Pick<WarningsDb, "forumWarning" | "forumCategory">,
-  viewer: ForumViewer,
-  filter: { userId?: string; realmId?: string | null; activeOnly?: boolean },
-  page: number
-) {
-  const listing = await listingScope(db, viewer, filter.realmId);
-  const where = {
-    AND: [
-      filter.activeOnly ? { revokedAt: null, expiresAt: { gt: new Date() } } : {},
-      listing === null ? {} : { categoryId: { in: listing.categoryIds } },
-      filter.userId ? { userId: filter.userId } : {},
-    ],
-  };
-  const [rows, total] = await Promise.all([
-    db.forumWarning.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      ...pageWindow(page, WARNINGS_PER_PAGE),
-      select: {
-        id: true,
-        userId: true,
-        issuedBy: true,
-        reason: true,
-        points: true,
-        targetType: true,
-        targetId: true,
-        categoryId: true,
-        expiresAt: true,
-        revokedAt: true,
-        revokedBy: true,
-        createdAt: true,
-      },
-    }),
-    db.forumWarning.count({ where }),
-  ]);
-  return { rows, total };
 }

@@ -198,6 +198,8 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
         return { id: `log${logs.length}` };
       }),
     },
+    // No open appeals here; mooting them is covered in mod-appeals.test.ts.
+    forumAppeal: { findFirst: jest.fn(async () => null), updateMany: jest.fn() },
   };
   const db = {
     forumWarning: {

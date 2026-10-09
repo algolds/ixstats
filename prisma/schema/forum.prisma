@@ -160,8 +160,8 @@ model ForumAppeal {
   subjectId   String
   userId      String    // User.id, the subject's user
   body        String    @db.VarChar(4000)
-  status      String    @default("open") // "open" | "upheld" | "overturned"
-  reviewedBy  String?   // User.id, never the subject's issuer
+  status      String    @default("open") // "open" | "upheld" | "overturned" | "moot" (the subject ended before a decision)
+  reviewedBy  String?   // User.id, never the subject's issuer; null when a lift or revoke mooted it
   reviewedAt  DateTime?
   response    String?   @db.VarChar(2000)
   createdAt   DateTime  @default(now())
