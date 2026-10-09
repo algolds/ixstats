@@ -5,7 +5,8 @@
  * Commons results are pages of `commons.search` (a category is a `deepcat:` filter on the same search, so browsing and
  * searching are one query). Each page is its own cached query keyed by its offset; a new term starts again from the
  * first page, so nothing is reset by hand. IxWiki and IIWiki files come from one `wikios.searchFiles` call (capped at
- * 50, no paging yet) and are filtered by file type here.
+ * 50, no paging yet) and are filtered by file type here. A wiki source lists its files as soon as it is enabled (an empty
+ * query is allowed and any typed term is searched); only Commons waits for 2 characters or a category.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -21,7 +22,8 @@ import {
 } from "./types";
 
 export type RepositorySource = "commons" | WikiSubSource;
-export type RepositoryMode = "idle" | "search" | "browse";
+/** `list`: a wiki source with no term and no category, showing its files as they come. */
+export type RepositoryMode = "idle" | "search" | "browse" | "list";
 
 export interface RepositoryImagesInput {
   source: RepositorySource;
@@ -172,12 +174,13 @@ function useWikiFiles(
 export function useRepositoryImages(input: RepositoryImagesInput): RepositoryImages {
   const { source, categories, browsingCategory, fileType, enabled, pageSize } = input;
   const trimmed = input.query.trim();
-  const searching = trimmed.length >= MIN_REPOSITORY_QUERY_LENGTH;
+  const isCommons = source === "commons";
+  const searching = isCommons ? trimmed.length >= MIN_REPOSITORY_QUERY_LENGTH : trimmed.length > 0;
   const query = searching ? trimmed : "";
   const hasCategory = categories.length > 0 || !!browsingCategory;
-  const mode: RepositoryMode = searching ? "search" : hasCategory ? "browse" : "idle";
+  const emptyMode: RepositoryMode = isCommons ? "idle" : "list";
+  const mode: RepositoryMode = searching ? "search" : hasCategory ? "browse" : emptyMode;
   const active = enabled && mode !== "idle";
-  const isCommons = source === "commons";
 
   const commons = useCommonsPages(
     buildCommonsTerm(categories, browsingCategory, fileType, query),

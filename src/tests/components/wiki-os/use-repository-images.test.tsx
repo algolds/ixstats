@@ -99,10 +99,34 @@ describe("useRepositoryImages", () => {
     expect(result.current.isLoading).toBe(false);
   });
 
-  it("does not search the wiki for a one-letter query", () => {
-    renderHook(() => useRepositoryImages(input({ source: "ixwiki", query: "m" })));
-    const options = mockSearchFiles.mock.calls.at(-1)![1] as { enabled: boolean };
-    expect(options.enabled).toBe(false);
+  it("lists wiki files as soon as the source is enabled, with no query or category", () => {
+    const { result } = renderHook(() => useRepositoryImages(input({ source: "ixwiki" })));
+    expect(mockSearchFiles.mock.calls.at(-1)![0]).toEqual({
+      query: undefined,
+      category: undefined,
+      limit: 50,
+      wiki: "ixwiki",
+    });
+    expect((mockSearchFiles.mock.calls.at(-1)![1] as { enabled: boolean }).enabled).toBe(true);
+    // Not the Commons cold start.
+    expect(result.current.mode).toBe("list");
+  });
+
+  it("does not list wiki files while the picker tab is not enabled", () => {
+    renderHook(() => useRepositoryImages(input({ source: "iiwiki", enabled: false })));
+    expect((mockSearchFiles.mock.calls.at(-1)![1] as { enabled: boolean }).enabled).toBe(false);
+  });
+
+  it("searches the wiki for a one-letter query, but Commons still waits for two characters", () => {
+    const { result } = renderHook(() =>
+      useRepositoryImages(input({ source: "ixwiki", query: "m" }))
+    );
+    expect(mockSearchFiles.mock.calls.at(-1)![0]).toMatchObject({ query: "m" });
+    expect(result.current.mode).toBe("search");
+
+    const commons = renderHook(() => useRepositoryImages(input({ query: "m" })));
+    expect(commonsInputs).toEqual([]);
+    expect(commons.result.current.mode).toBe("idle");
   });
 
   it("searches the wiki for a settled query, and for a browsed category", () => {
