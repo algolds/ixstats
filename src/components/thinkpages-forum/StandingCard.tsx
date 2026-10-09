@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -79,13 +79,25 @@ function StandingRow({ title, reason, detail, appeal, onAppeal }: RowProps) {
 export function StandingCard() {
   const { data } = api.thinkpagesForum.myStanding.useQuery();
   const [appealing, setAppealing] = useState<Subject | null>(null);
-  if (!data || data.warnings.length + data.bans.length + data.appeals.length === 0) return null;
+  const card = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
+  const hasStanding = !!data && data.warnings.length + data.bans.length + data.appeals.length > 0;
+
+  // The `#standing` link (a ban notice's Appeal) points at a card that only exists once the data loads: scroll to
+  // it then, once, so a refetch leaves the reader where they are.
+  useEffect(() => {
+    if (!hasStanding || scrolled.current || window.location.hash !== "#standing") return;
+    card.current?.scrollIntoView({ block: "start" });
+    scrolled.current = true;
+  }, [hasStanding]);
+
+  if (!data || !hasStanding) return null;
 
   const shown = new Set([...data.warnings.map((w) => w.id), ...data.bans.map((b) => b.id)]);
   const others = data.appeals.filter((a) => !shown.has(a.subjectId));
 
   return (
-    <Card content="data" id="standing" className="scroll-mt-24 overflow-hidden">
+    <Card ref={card} content="data" id="standing" className="scroll-mt-24 overflow-hidden">
       <div className="space-y-1 px-4 pt-4 pb-3">
         <h2 className="text-title-3 text-label">Your standing</h2>
         <p className="text-footnote text-label-secondary tabular-nums">

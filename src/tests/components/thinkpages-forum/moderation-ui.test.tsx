@@ -37,7 +37,7 @@ jest.mock("~/trpc/react", () => {
       myStanding: invalidator("myStanding"),
       resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
     },
-    thinkpagesForumMod: { context: invalidator("context") },
+    thinkpagesForumMod: { ...invalidator("mod"), context: invalidator("context") },
   };
   return {
     results,
@@ -388,6 +388,26 @@ describe("moderator tools", () => {
     const confirm = screen.getByRole("alertdialog", { name: "Hide this post?" });
     fireEvent.click(within(confirm).getByRole("button", { name: "Hide post" }));
     await waitFor(() => expect(setPostHidden).toHaveBeenCalledWith({ postId: "p2", hidden: true }));
+  });
+
+  it("refreshes the console's lists after warning or banning from a thread", async () => {
+    auth.isSignedIn = true;
+    mutations.warn = jest.fn(() => Promise.resolve({ activePoints: 1, autoBan: null }));
+    mutations.ban = jest.fn(() => Promise.resolve());
+    set("thread", { data: threadData({ canModerate: true }) });
+    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Warn author" }));
+    const warn = screen.getByRole("dialog", { name: "Warn this member" });
+    fireEvent.change(within(warn).getByRole("textbox"), { target: { value: "Flaming" } });
+    fireEvent.click(within(warn).getByRole("button", { name: "Warn" }));
+    await waitFor(() => expect(invalidations.mod).toHaveBeenCalledTimes(1));
+    expect(invalidations.thread).toHaveBeenCalledWith({ threadId: "t1" });
+
+    fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Ban author" }));
+    const ban = screen.getByRole("dialog", { name: "Ban this member" });
+    fireEvent.change(within(ban).getByRole("textbox"), { target: { value: "Spam" } });
+    fireEvent.click(within(ban).getByRole("button", { name: "Ban" }));
+    await waitFor(() => expect(invalidations.mod).toHaveBeenCalledTimes(2));
   });
 
   it("offers Warn and Ban on other members' posts, never on the moderator's own", () => {
@@ -923,6 +943,31 @@ describe("standing", () => {
     await waitFor(() =>
       expect(appeal).toHaveBeenCalledWith({ subjectType: "warning", subjectId: "w1", body })
     );
+  });
+
+  it("scrolls the card into view once when the link was #standing, after its data loads", () => {
+    const scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.location.hash = "#standing";
+    set("myStanding", { data: undefined });
+    const { rerender } = render(<StandingCard />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    set("myStanding", { data: standing });
+    rerender(<StandingCard />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    set("myStanding", { data: { ...standing } });
+    rerender(<StandingCard />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    window.location.hash = "";
+  });
+
+  it("does not scroll when the link was not #standing", () => {
+    const scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    window.location.hash = "";
+    set("myStanding", { data: standing });
+    render(<StandingCard />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it("renders nothing for a member in good standing", () => {

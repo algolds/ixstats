@@ -49,6 +49,7 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
   const [open, setOpen] = useState<Open>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const utils = api.useUtils();
   const { data: context } = api.thinkpagesForumMod.context.useQuery();
   const { mutateAsync: setHidden, isPending } = api.thinkpagesForumMod.setPostHidden.useMutation();
   const hidden = post.hidden === true;
@@ -63,6 +64,12 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
       setNote("");
     },
   });
+
+  // A sanction changes the thread's view and the console's Warnings, Bans and Log lists.
+  const sanctioned = () => {
+    void tools.refresh();
+    void utils.thinkpagesForumMod.invalidate();
+  };
 
   const toggleHidden = () => {
     const trimmed = note.trim();
@@ -144,6 +151,7 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
         <WarnDialog
           userId={post.authorUserId}
           target={{ type: "post", id: post.id }}
+          onDone={sanctioned}
           {...dialog("warn")}
         />
       ) : null}
@@ -151,6 +159,7 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
         <BanDialog
           userId={post.authorUserId}
           scopes={banScopeOptions(tools.category, context)}
+          onDone={sanctioned}
           {...dialog("ban")}
         />
       ) : null}
