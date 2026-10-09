@@ -5,8 +5,8 @@ import os from "os";
 import path from "path";
 import sharp from "sharp";
 
-const mockUpsert = jest.fn<(args: unknown) => Promise<unknown>>();
-const mockFindMany = jest.fn<(args: unknown) => Promise<unknown[]>>();
+const mockUpsert = jest.fn<Promise<unknown>, [unknown]>();
+const mockFindMany = jest.fn<Promise<unknown[]>, [unknown]>();
 
 jest.mock("~/server/db", () => ({
   db: {

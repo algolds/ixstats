@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { describe, it, expect, beforeEach } from "@jest/globals";
 
-const mockRegister = jest.fn<(input: unknown) => Promise<unknown>>();
+const mockRegister = jest.fn<Promise<unknown>, [unknown]>();
 
 jest.mock("@clerk/nextjs/server", () => ({ auth: async () => ({ userId: "user_1" }) }));
 jest.mock("~/lib/cache", () => ({
