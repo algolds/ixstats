@@ -26,7 +26,7 @@ let pageImages: (title: string) => QueryResult<unknown[]>;
 let sisterFileInfo: (
   input: { wiki: string; titles: string[] },
   enabled: boolean
-) => QueryResult<unknown[]>;
+) => QueryResult<{ files: Record<string, unknown> }>;
 const sisterCalls: Array<{
   input: { wiki: string; titles: string[] };
   options: { enabled: boolean };
@@ -90,7 +90,7 @@ function openStash() {
 
 beforeEach(() => {
   sisterCalls.length = 0;
-  sisterFileInfo = () => ok([]);
+  sisterFileInfo = () => ok({ files: {} });
   stashItems = ok({ items: [{ pageTitle: "commons:File:A.jpg" }, { pageTitle: "Some page" }] });
   commonsImages = ok([commonsImage]);
   pageImages = () =>
@@ -138,26 +138,28 @@ describe("MyStashTab", () => {
       items: [{ pageTitle: "iiwiki:File:Flag_of_X.svg" }, { pageTitle: "iiwiki:File:Gone.png" }],
     });
     sisterFileInfo = () =>
-      ok([
-        {
-          name: "Flag of Xanadu.svg",
-          title: "File:Flag of Xanadu.svg",
-          url: "https://iiwiki.com/images/9/9a/Flag_of_Xanadu.svg",
-          thumbUrl: null,
-          width: 0,
-          height: 0,
-          mime: "image/svg+xml",
+      ok({
+        files: {
+          "File:Flag of Xanadu.svg": {
+            name: "Flag of Xanadu.svg",
+            title: "File:Flag of Xanadu.svg",
+            url: "https://iiwiki.com/images/9/9a/Flag_of_Xanadu.svg",
+            thumbUrl: null,
+            width: 0,
+            height: 0,
+            mime: "image/svg+xml",
+          },
+          "File:Flag_of_X.svg": {
+            name: "Flag of X.svg",
+            title: "File:Flag of X.svg",
+            url: "https://iiwiki.com/images/1/1a/Flag_of_X.svg",
+            thumbUrl: "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png",
+            width: 900,
+            height: 600,
+            mime: "image/svg+xml",
+          },
         },
-        {
-          name: "Flag_of_X.svg",
-          title: "File:Flag_of_X.svg",
-          url: "https://iiwiki.com/images/1/1a/Flag_of_X.svg",
-          thumbUrl: "https://iiwiki.com/images/thumb/1/1a/Flag_of_X.svg/500px-Flag_of_X.svg.png",
-          width: 900,
-          height: 600,
-          mime: "image/svg+xml",
-        },
-      ]);
+      });
     openStash();
 
     const last = sisterCalls.at(-1)!;

@@ -126,9 +126,9 @@ export function MyStashTab({
     }
   }
 
-  const iiwikiFiles = iiwikiQuery.data ?? [];
+  const iiwikiFiles = iiwikiQuery.data?.files;
   for (const title of iiwikiFileTitles) {
-    const match = iiwikiFiles.find((file) => file.title === title);
+    const match = iiwikiFiles?.[title];
     if (!match) continue;
     addImage({
       title: match.title,

@@ -11,6 +11,7 @@ import DOMPurify from "dompurify";
 
 type Purifier = typeof DOMPurify;
 
+const ELEMENT_NODE = 1;
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const LINK_ATTRIBUTES = new Set(["href", "xlink:href", "src"]);
 /** A value that loads another resource: an `@import`, an `image-set()`, or a `url()` that is not a (quoted) `#fragment`. */
@@ -53,6 +54,10 @@ function getPurifier(): Purifier {
   return created;
 }
 
+function isElement(node: Node): node is Element {
+  return node.nodeType === ELEMENT_NODE;
+}
+
 function serialize(element: Element): string {
   const Serializer = typeof window === "undefined" ? serverWindow!.XMLSerializer : window.XMLSerializer;
   return new Serializer().serializeToString(element).trim();
@@ -67,7 +72,7 @@ export function sanitizeSvg(svg: string): string | null {
     FORBID_ATTR: ["onload", "onerror", "onclick", "onmouseover", "onfocus", "onbegin", "onend"],
     RETURN_DOM: true,
   });
-  const root = body.firstElementChild;
+  const root = Array.from(body.childNodes).find(isElement);
   if (!root || root.localName !== "svg") return null;
   if (!root.hasAttribute("xmlns")) root.setAttribute("xmlns", SVG_NAMESPACE);
   return serialize(root);

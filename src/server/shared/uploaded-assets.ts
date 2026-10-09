@@ -10,7 +10,7 @@
  */
 import { promises as fs } from "fs";
 import path from "path";
-import sharp from "sharp";
+import sharp, { type SharpOptions } from "sharp";
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
@@ -121,7 +121,7 @@ function svgDimensions(svg: string): Dimensions {
 }
 
 /** Sharp's input options for upload bytes: the same pixel ceiling the blurhash decode has. */
-function boundedInput(): sharp.SharpOptions {
+function boundedInput(): SharpOptions {
   return { limitInputPixels: getMaxImageArea(), failOn: "error" };
 }
 
