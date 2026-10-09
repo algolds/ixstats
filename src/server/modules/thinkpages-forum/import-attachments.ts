@@ -111,6 +111,8 @@ export interface AttachmentCopyOptions {
   restrictedPosts?: ReadonlySet<number>;
   /** The database's sitewide categories, so a mapped key takes its current visibility (default: the seeds). */
   siteCategories?: readonly SiteCategoryVisibility[];
+  /** Mapped realm slugs whose realm is published (loadImportDbState); any other realm's images are restricted. */
+  publishedRealms?: ReadonlySet<string>;
   fs?: AttachmentFs;
   log?: (line: string) => void;
 }
@@ -174,7 +176,12 @@ export async function planAttachmentCopies(
 ): Promise<AttachmentCopyPlan> {
   const fs = opts.fs ?? diskFs;
   const dir = forumDir(opts.uploadsDir);
-  const visibilities = postVisibilities(snapshot, nodeMap, opts.siteCategories);
+  const visibilities = postVisibilities(
+    snapshot,
+    nodeMap,
+    opts.siteCategories,
+    opts.publishedRealms
+  );
   const restricted = opts.restrictedPosts ?? new Set<number>();
   const attachments: PlannedAttachment[] = [];
   const refused = { missing: [] as number[], signature: [] as number[] };

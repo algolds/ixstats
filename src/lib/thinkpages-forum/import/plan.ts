@@ -47,6 +47,8 @@ export interface ImportDbState {
   /** Realm slug as the node map names it → realm id, resolved by the module's loadForumRealm (IxWorld: "ixworld" or "default" → "default"). */
   realmIds: ReadonlyMap<string, string>;
   realmCategories: Array<{ id: string; realmId: string; key: string }>;
+  /** Mapped realm slugs whose realm is published: only their categories count as public (I6). */
+  publishedRealms: ReadonlySet<string>;
   /** xenforoThreadId → thread id */
   existingThreads: ReadonlyMap<number, string>;
   /** xenforoPostId */
@@ -173,7 +175,7 @@ function archivePlace(
 function checkStaffLike(resolved: ResolvedNode, db: ImportDbState, report: ImportReport): void {
   const { node, target, source } = resolved;
   if (!STAFF_LIKE.test(node.title)) return;
-  if (categoryVisibility(target, db.siteCategories) !== "public") return;
+  if (categoryVisibility(target, db.siteCategories, db.publishedRealms) !== "public") return;
   const where = describeTarget(target, node.node_id);
   if (source === "map") {
     report.warnings.push(

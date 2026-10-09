@@ -57,6 +57,7 @@ const dbState = (overrides: Partial<ImportDbState> = {}): ImportDbState => ({
     { id: "rc-default-hub", realmId: "default", key: "hub" },
     { id: "rc-urcea-current", realmId: "realm-urcea", key: "current-events" },
   ],
+  publishedRealms: new Set(["ixworld", "default", "urcea"]),
   existingThreads: new Map(),
   existingPosts: new Set(),
   hiddenThreads: new Set(),
@@ -588,6 +589,23 @@ describe("planImport rules", () => {
     const plan = planImport(snap([GENERAL], [thread(1, 12)], posts), dbState(), null);
     expect(plan.report.authors.topUnmatched).toHaveLength(20);
     expect(plan.report.authors.unmatchedUsers).toBe(25);
+  });
+
+  it("warns for a staff-like title mapped into a published realm, and not for an unpublished one (I6)", () => {
+    const run = (publishedRealms: ReadonlySet<string>) =>
+      planImport(snap([node(35, "Staff room")], [], []), dbState({ publishedRealms }), {
+        nodes: { "35": { scope: "realm", realm: "urcea", key: "current-events" } },
+      }).report;
+    const published = run(new Set(["urcea"]));
+    expect(published.warnings).toEqual([
+      expect.stringMatching(
+        /^Node 35 "Staff room" looks private but the node map puts it in a public category/
+      ),
+    ]);
+    expect(published.blocking).toEqual([]);
+    const draft = run(new Set());
+    expect(draft.warnings).toEqual([]);
+    expect(draft.blocking).toEqual([]);
   });
 
   it("blocks staff-like titles placed public by title or default, and only warns for map entries (I1)", () => {

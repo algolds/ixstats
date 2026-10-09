@@ -5,6 +5,7 @@ import path from "path";
 jest.mock("~/server/shared/uploaded-assets", () => ({ registerUploadedAsset: jest.fn() }));
 
 import { ATTACHMENT_URL_PREFIX } from "~/lib/thinkpages-forum/import/attachments";
+import type { NodeMapFile } from "~/lib/thinkpages-forum/import/node-map";
 import type { AttachmentEntry } from "~/lib/thinkpages-forum/import/snapshot";
 import type { XfNode, XfPost, XfThread } from "~/lib/thinkpages-forum/import/xenforo-types";
 import {
@@ -196,6 +197,22 @@ describe("planAttachmentCopies (dry run)", () => {
       { fs }
     );
     expect(staff.attachments.every((a) => a.visibility === "restricted")).toBe(true);
+  });
+
+  it("registers a published realm's images public and an unpublished realm's restricted", async () => {
+    const { fs } = memFs();
+    const inRealm: NodeMapFile = { nodes: { "1": { scope: "realm", realm: "urcea", key: "hub" } } };
+    const published = await planAttachmentCopies(snapshot(), inRealm, {
+      fs,
+      publishedRealms: new Set(["urcea"]),
+    });
+    expect(published.attachments.map((a) => [a.entry.attachment_id, a.visibility])).toEqual([
+      [55, "public"],
+      [56, "public"],
+      [57, "restricted"],
+    ]);
+    const draft = await planAttachmentCopies(snapshot(), inRealm, { fs });
+    expect(draft.attachments.every((a) => a.visibility === "restricted")).toBe(true);
   });
 
   it("counts a same-size file on disk as skipped and leaves its bytes out of the total", async () => {

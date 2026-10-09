@@ -36,13 +36,8 @@ export type ImportDb = Pick<
   | "$queryRaw"
 >;
 
-/**
- * The database half of `ImportDbState`; `attachmentFor` comes from the attachment copy plan. `publishedRealms` are
- * the mapped realm slugs whose realm is published, for `categoryVisibility` (a draft realm's category is not public).
- */
-export type LoadedImportState = Omit<ImportDbState, "attachmentFor"> & {
-  publishedRealms: ReadonlySet<string>;
-};
+/** The database half of `ImportDbState`; `attachmentFor` comes from the attachment copy plan. */
+export type LoadedImportState = Omit<ImportDbState, "attachmentFor">;
 
 const PUBLIC_CATEGORY = categoryVisibilityWhere({ signedIn: false, siteAdmin: false });
 

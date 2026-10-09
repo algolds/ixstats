@@ -152,6 +152,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   if (missing.length) return refuse(missing);
   const copyPlan = await planAttachmentCopies(snapshot, nodeMap, {
     siteCategories: state.siteCategories,
+    publishedRealms: state.publishedRealms,
     restrictedPosts: await restrictedImportedPosts(db),
   });
   const plan = planOrRefusal(() =>

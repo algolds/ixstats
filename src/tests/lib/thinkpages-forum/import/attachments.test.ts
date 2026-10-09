@@ -281,6 +281,24 @@ describe("postVisibilities", () => {
     expect(map.get(200)).toBe("restricted");
   });
 
+  it("is public in a published realm's category and restricted in an unpublished realm's (I6)", () => {
+    const nodeMap: NodeMapFile = {
+      nodes: {
+        "1": { scope: "realm", realm: "urcea", key: "hub" },
+        "2": { scope: "realm", realm: "drafty", key: "hub" },
+      },
+    };
+    const snapshot = snap(
+      nodes,
+      [thread(10, 1), thread(20, 2)],
+      [post(100, 10, 0), post(200, 20, 0)]
+    );
+    const map = postVisibilities(snapshot, nodeMap, [], new Set(["urcea"]));
+    expect([map.get(100), map.get(200)]).toEqual(["public", "restricted"]);
+    const unknown = postVisibilities(snapshot, nodeMap);
+    expect([unknown.get(100), unknown.get(200)]).toEqual(["restricted", "restricted"]);
+  });
+
   it("takes a mapped sitewide key's visibility from the database, and treats an unknown key as not public", () => {
     const nodeMap: NodeMapFile = {
       nodes: { "1": { scope: "site", key: "general" }, "2": { scope: "site", key: "xf-99" } },

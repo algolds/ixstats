@@ -142,12 +142,13 @@ export type VisibilitySnapshot = Pick<Snapshot, "nodes" | "threads" | "postsByTh
 export function postVisibilities(
   snapshot: VisibilitySnapshot,
   nodeMap: NodeMapFile | null,
-  siteCategories: readonly SiteCategoryVisibility[] = []
+  siteCategories: readonly SiteCategoryVisibility[] = [],
+  publishedRealms: ReadonlySet<string> = new Set()
 ): Map<number, AttachmentVisibility> {
   const nodeVisibility = new Map(
     resolveNodeTargets(snapshot.nodes, nodeMap).map((r) => [
       r.node.node_id,
-      categoryVisibility(r.target, siteCategories),
+      categoryVisibility(r.target, siteCategories, publishedRealms),
     ])
   );
   const out = new Map<number, AttachmentVisibility>();
