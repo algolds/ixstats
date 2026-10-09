@@ -101,7 +101,10 @@ async function downloadAndConvertImage(
           errorMessage = `Unexpected response from download service: ${errorText.substring(0, 100)}`;
         }
       } catch (parseError) {
-        debugError("[ImageDownloadService] Failed to parse error response:", parseError);
+        debugError(
+          "[ImageDownloadService] Failed to parse error response:",
+          parseError instanceof Error ? parseError.message : String(parseError)
+        );
       }
 
       const error = new ImageDownloadError(errorMessage, errorCode, imageUrl);
