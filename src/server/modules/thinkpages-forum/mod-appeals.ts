@@ -155,9 +155,10 @@ async function overturn(
 }
 
 /**
- * A moderator with scope over the subject decides an open appeal. Scope is checked first (an out-of-scope moderator
- * learns nothing about its status, only that it exists), then the status, then, under the member's lock, the
- * different-reviewer rule. A subject that already ended (lifted, revoked or expired, bans and warnings alike) closes
+ * A moderator with scope over the subject decides an open appeal. Scope is checked first, so an out-of-scope
+ * moderator learns nothing about its status; they do learn that it exists (FORBIDDEN, where an unknown id is
+ * NOT_FOUND), which is accepted since appeal ids are unguessable cuids (M15). Then the status, then, under the
+ * member's lock, the different-reviewer rule. A subject that already ended (lifted, revoked or expired, bans and warnings alike) closes
  * the appeal as `moot` (`appeal.moot`) whatever the outcome asked. Otherwise the decision, its `appeal.review` row and
  * an overturn's lift or revoke (with their own rows) commit together; a lost race rolls all of it back (CONFLICT).
  */
