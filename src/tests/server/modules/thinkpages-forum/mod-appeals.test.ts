@@ -85,6 +85,21 @@ describe("fileAppeal", () => {
     expect(store.logs).toEqual([]);
   });
 
+  it.each([
+    ["ban", "b_realm", "realm", "r_eurth"],
+    ["ban", "b_site", "site", null],
+    ["ban", "b_cat", "category", "cat_general"],
+    ["warning", "w_eurth", "category", "r_eurth_hub"],
+    ["warning", "w_site", "site", null],
+  ] as const)(
+    "stores the %s %s's scope on the appeal (M7)",
+    async (subjectType, subjectId, scope, scopeId) => {
+      const store = storeWith();
+      await fileAppeal(store.db as never, member, { subjectType, subjectId, body });
+      expect(store.state.appeals).toEqual([expect.objectContaining({ subjectId, scope, scopeId })]);
+    }
+  );
+
   it.each([["b_realm"], ["b_site"], ["b_auto"], ["b_cat"]])(
     "files an appeal on the member's own active ban %s, permanent ones included",
     async (subjectId) => {

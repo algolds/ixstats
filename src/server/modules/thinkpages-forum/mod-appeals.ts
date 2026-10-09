@@ -22,7 +22,7 @@ import {
 import { autoBanAfterLift, type AutoBanChange } from "./mod-auto-bans";
 import { assertBanScope, liftBanTx } from "./mod-bans";
 import { logModAction } from "./mod-log";
-import { lockMember } from "./mod-scope";
+import { lockMember, scopeColumns } from "./mod-scope";
 import { assertWarningScope, revokeWarningTx } from "./mod-warnings";
 import type { ForumActor } from "./writes";
 
@@ -97,8 +97,15 @@ export async function fileAppeal(
         select: { id: true },
       });
       if (existing) throw alreadyAppealed(subjectType);
+      // M7: the subject's scope rides on the appeal, so the scoped queue filters appeals directly.
       const appeal = await tx.forumAppeal.create({
-        data: { subjectType, subjectId, userId: actor.id, body },
+        data: {
+          subjectType,
+          subjectId,
+          userId: actor.id,
+          body,
+          ...scopeColumns(subjectScope(subject)),
+        },
       });
       return { appealId: appeal.id };
     });
