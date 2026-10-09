@@ -4,6 +4,8 @@
  *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-defaults]
  *     [--production] [--report FILE]
  *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback --yes [--production]
+ * --production loads `.env.production.local` first (scripts/lib/load-runner-env.ts); the upload directory and the
+ * masked database are printed first and again right before any write.
  * Refuses the production database ("ixstats") unless --production is passed, and runs one at a time (a Postgres
  * advisory lock). Preflight: a complete snapshot, a valid node map, every mapped target present (phase 1 seeds,
  * realm slugs), a writable UPLOAD_DIR with twice the attachment bytes free (checked after the report prints).
@@ -11,7 +13,7 @@
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
  * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`).
  */
-import "../lib/load-env";
+import "../lib/load-runner-env";
 import { constants } from "node:fs";
 import { access, readFile, statfs, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
@@ -65,6 +67,7 @@ import {
   reportFile,
   rollbackLines,
   snapshotGapLines,
+  targetLines,
 } from "./import-xenforo-forum-plan";
 
 const print = (lines: readonly string[]) => lines.forEach((line) => console.log(line));
@@ -163,6 +166,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
     return 0;
   }
   if (refusals.length) return refuse(refusals);
+  print(targetLines(uploadsDir(), databaseLabel(process.env.DATABASE_URL)));
   await assertImportLock(db);
   print(attachmentResultLines(await copyAttachments(copyPlan, { log: console.log })));
   const totals = await applyImport(db, plan, {
@@ -176,7 +180,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
 const argv = process.argv.slice(2);
 const parsed = parseImportArgs(argv, process.env.DATABASE_URL);
 console.log(runBanner(argv));
-console.log(`Database: ${databaseLabel(process.env.DATABASE_URL)}`);
+print(targetLines(uploadsDir(), databaseLabel(process.env.DATABASE_URL)));
 if ("error" in parsed) {
   console.error(parsed.error);
   process.exit(1);

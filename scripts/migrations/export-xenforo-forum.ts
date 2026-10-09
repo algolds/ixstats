@@ -2,8 +2,9 @@
  * ThinkPages forum phase 4: read-only export of forum.ixwiki.com (XenForo REST API) into an on-disk snapshot that
  * the importer reads (format: src/lib/thinkpages-forum/import/snapshot.ts). Writes nothing to any database.
  *   bun run forum:export-xenforo -- --out .forum-import/<name> [--rps 0.9] [--nodes 12,13] [--reset-filter]
- *     [--no-attachments] [--max-attachment-mb 25] [--bypass-permissions | --no-bypass-permissions]
- * Reads XENFORO_API_URL and XENFORO_API_KEY from the environment (the key is never printed or written). Prints the
+ *     [--no-attachments] [--max-attachment-mb 25] [--bypass-permissions | --no-bypass-permissions] [--production]
+ * Reads XENFORO_API_URL and XENFORO_API_KEY from the environment (the key is never printed or written); --production
+ * loads `.env.production.local` first (scripts/lib/load-runner-env.ts), nothing else (no database). Prints the
  * key's type and scopes, then exports nodes → threads per Forum node → posts per thread → users per distinct
  * author → attachments per post, skipping work already marked in state.json, so a rerun with the same --out
  * resumes (with the same --nodes; --reset-filter changes it).
@@ -16,7 +17,7 @@
  * requests a minute per IP (see scripts/README.md before raising --rps).
  * Ctrl-C stops after the current item. Exits 1 with the ids still missing when the snapshot is incomplete.
  */
-import "../lib/load-env";
+import "../lib/load-runner-env";
 import { existsSync } from "node:fs";
 import { runExport, type ExportTotals } from "~/lib/thinkpages-forum/import/export-run";
 import {
@@ -32,57 +33,12 @@ import {
   createXenForoClient,
 } from "~/lib/thinkpages-forum/import/xenforo-client";
 import { snapshotDiskFs as nodeFs } from "../lib/snapshot-fs";
+import { parseExportArgs } from "./export-xenforo-forum-args";
 
 const DEFAULT_API_URL = "https://forum.ixwiki.com/api";
 const USER_AGENT = `IxStats-ForumExport/${XENFORO_EXPORT_CLIENT_VERSION} (+https://ixwiki.com)`;
-const DEFAULT_RPS = 0.9;
 const CHECKPOINT_EVERY = 20;
 const SHOW_IDS = 50;
-
-interface Args {
-  out: string;
-  rps: number;
-  nodes: number[] | null;
-  resetFilter: boolean;
-  attachments: boolean;
-  maxAttachmentMb: number;
-  bypass: boolean | "auto";
-}
-
-function valueOf(argv: string[], flag: string): string | undefined {
-  const index = argv.indexOf(flag);
-  return index >= 0 ? argv[index + 1] : undefined;
-}
-
-function positive(raw: string | undefined, flag: string, fallback: number): number {
-  if (raw === undefined) return fallback;
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) throw new Error(`${flag} must be a positive number`);
-  return value;
-}
-
-function bypassArg(argv: string[]): boolean | "auto" {
-  if (argv.includes("--no-bypass-permissions")) return false;
-  return argv.includes("--bypass-permissions") ? true : "auto";
-}
-
-function parseArgs(argv: string[]): Args {
-  const out = valueOf(argv, "--out");
-  if (!out) throw new Error("--out <dir> is required (e.g. --out .forum-import/2026-10-09)");
-  const nodesRaw = valueOf(argv, "--nodes");
-  const nodes = nodesRaw
-    ? nodesRaw.split(",").map((id) => positive(id.trim(), "--nodes", 0))
-    : null;
-  return {
-    out,
-    rps: positive(valueOf(argv, "--rps"), "--rps", DEFAULT_RPS),
-    nodes,
-    resetFilter: argv.includes("--reset-filter"),
-    attachments: !argv.includes("--no-attachments"),
-    maxAttachmentMb: positive(valueOf(argv, "--max-attachment-mb"), "--max-attachment-mb", 25),
-    bypass: bypassArg(argv),
-  };
-}
 
 function printTotals(totals: ExportTotals): void {
   const a = totals.attachments;
@@ -142,7 +98,7 @@ function printGaps(gaps: SnapshotGaps): void {
 }
 
 async function main(): Promise<number> {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseExportArgs(process.argv.slice(2));
   const apiKey = process.env.XENFORO_API_KEY;
   if (!apiKey) throw new Error("XENFORO_API_KEY is not set");
   const apiUrl = process.env.XENFORO_API_URL || DEFAULT_API_URL;
@@ -164,7 +120,10 @@ async function main(): Promise<number> {
     log: console.log,
   });
   const writer = await openSnapshotWriter(nodeFs, args.out, { checkpointEvery: CHECKPOINT_EVERY });
-  console.log(`exporting ${apiUrl} into ${args.out} at ${args.rps} requests/s`);
+  console.log(
+    `exporting ${apiUrl} into ${args.out} at ${args.rps} requests/s` +
+      (args.production ? " (environment: .env.production.local first)" : "")
+  );
   let totals: ExportTotals | null = null;
   try {
     totals = await runExport({

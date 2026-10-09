@@ -60,6 +60,11 @@ export function applyRefusals(input: {
   return [...input.blocking, ...defaults];
 }
 
+/** Where the run reads and writes: the effective upload directory and the database without credentials. */
+export function targetLines(uploadDir: string, database: string): string[] {
+  return [`Upload directory: ${uploadDir}`, `Database: ${database}`];
+}
+
 /** Preflight on the uploads directory: writable, and at least DISK_FACTOR times the bytes to copy free. */
 export function diskRefusal(input: {
   dir: string;

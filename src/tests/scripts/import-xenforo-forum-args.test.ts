@@ -19,7 +19,9 @@ import {
   diskRefusal,
   omittedByReason,
   snapshotGapLines,
+  targetLines,
 } from "../../../scripts/migrations/import-xenforo-forum-plan";
+import { databaseLabel } from "../../../scripts/lib/database-guard";
 
 const url = (db: string) => `postgresql://u:p@localhost:5433/${db}?schema=public`;
 const CLONE = url("ixstats_wv1");
@@ -168,6 +170,14 @@ describe("apply refusals", () => {
     ]);
     expect(applyRefusals({ blocking: [], defaults, acceptDefaults: true })).toEqual([]);
     expect(applyRefusals({ blocking: ["b"], defaults, acceptDefaults: true })).toEqual(["b"]);
+  });
+});
+
+describe("targetLines", () => {
+  it("prints the upload directory and the database without its credentials", () => {
+    const lines = targetLines("/srv/uploads", databaseLabel(PROD));
+    expect(lines).toEqual(["Upload directory: /srv/uploads", "Database: localhost:5433/ixstats"]);
+    expect(lines.join("\n")).not.toMatch(/u:p|schema/);
   });
 });
 

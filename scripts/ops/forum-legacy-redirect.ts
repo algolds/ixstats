@@ -3,26 +3,21 @@
  * `/forum/*` page of the old XenForo bridge redirects (307) to the native forum through the import's id map; while
  * off, the bridge renders as before. Running processes pick a flip up within 15 s.
  *   bun run forum:legacy-redirect -- status
- *   bun run forum:legacy-redirect -- on|off [--production]
- * `status` only reads. `on` / `off` refuse the production database ("ixstats") unless --production is passed.
- * Prints the row's value; exits 1 on a bad argument.
+ *   bun run forum:legacy-redirect -- [--production] on|off
+ * `status` only reads. `on` / `off` refuse the production database ("ixstats") unless --production is passed, which
+ * also loads `.env.production.local` first (scripts/lib/load-runner-env.ts). Prints the row's value; exits 1 on a bad
+ * argument.
  */
-import "../lib/load-env";
+import "../lib/load-runner-env";
 import { db } from "~/server/db";
 import {
   LEGACY_FORUM_REDIRECT_KEY,
   setLegacyForumRedirect,
 } from "~/server/modules/thinkpages-forum";
 import { databaseLabel, productionDatabaseRefusal } from "../lib/database-guard";
+import { parseLegacyRedirectArgs, type LegacyRedirectCommand } from "./forum-legacy-redirect-args";
 
-const COMMANDS = ["on", "off", "status"] as const;
-type Command = (typeof COMMANDS)[number];
-
-const argv = process.argv.slice(2);
-const words = argv.filter((arg) => !arg.startsWith("--"));
-const flags = argv.filter((arg) => arg.startsWith("--") && arg !== "--");
-const wellFormed = words.length === 1 && flags.every((flag) => flag === "--production");
-const command = wellFormed ? COMMANDS.find((name) => name === words[0]) : undefined;
+const parsed = parseLegacyRedirectArgs(process.argv.slice(2));
 
 async function printRow(): Promise<void> {
   const row = await db.systemConfig.findUnique({
@@ -33,13 +28,10 @@ async function printRow(): Promise<void> {
   console.log(`${LEGACY_FORUM_REDIRECT_KEY} = ${value}: ${row?.value === "true" ? "on" : "off"}`);
 }
 
-async function main(name: Command): Promise<number> {
+async function main(name: LegacyRedirectCommand, production: boolean): Promise<number> {
   console.log(`Database: ${databaseLabel(process.env.DATABASE_URL)}`);
   if (name !== "status") {
-    const refusal = productionDatabaseRefusal(
-      process.env.DATABASE_URL,
-      argv.includes("--production")
-    );
+    const refusal = productionDatabaseRefusal(process.env.DATABASE_URL, production);
     if (refusal) {
       console.error(refusal);
       return 1;
@@ -50,12 +42,12 @@ async function main(name: Command): Promise<number> {
   return 0;
 }
 
-if (!command) {
-  console.error("Usage: bun run forum:legacy-redirect -- on|off|status [--production]");
+if ("error" in parsed) {
+  console.error(parsed.error);
   process.exit(1);
 }
 
-main(command)
+main(parsed.command, parsed.production)
   .then((code) => {
     process.exitCode = code;
   })
