@@ -111,6 +111,14 @@ const imageInfoCache = new Cache<CommonsImage | null>({
   namespace: "commons-imageinfo",
 });
 
+// Recursive category file counts are expensive upstream (a deepcat search each) and change slowly
+const CATEGORY_COUNT_CONCURRENCY = 3;
+const categoryCountCache = new Cache<number>({
+  maxSize: 5000,
+  defaultTtlMs: CACHE_TTL_MS,
+  namespace: "commons-category-count",
+});
+
 // Every procedure proxies the external Commons API; dedicated bucket so it doesn't drain "public"
 const commonsProcedure = publicProcedure.use(
   createRateLimitMiddleware({ max: 100, windowMs: 60_000, namespace: "commons" })
@@ -175,7 +183,8 @@ export const commonsRouter = createTRPCRouter({
 
   /**
    * Get total recursive file count for categories using deepcat: search.
-   * Batches up to 10 categories with individual queries (cached aggressively).
+   * Counts are cached for 6 hours and cache misses are fetched 3 at a time. A category whose count
+   * could not be fetched is left out of the result (never reported as 0) and is not cached.
    */
   getCategoryTotalCounts: commonsProcedure
     .input(
@@ -185,10 +194,19 @@ export const commonsRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const results: Record<string, number> = {};
+      const missing: string[] = [];
 
-      // Run in parallel for speed
-      await Promise.all(
-        input.categories.map(async (cat) => {
+      for (const cat of new Set(input.categories)) {
+        const cached = categoryCountCache.get(cat);
+        if (cached !== undefined) results[cat] = cached;
+        else missing.push(cat);
+      }
+
+      // A small worker pool: Wikimedia's search is the expensive endpoint, so never fan out all 25 at once.
+      let next = 0;
+      const worker = async () => {
+        while (next < missing.length) {
+          const cat = missing[next++]!;
           try {
             const data = await commonsApiFetch({
               action: "query",
@@ -197,11 +215,17 @@ export const commonsRouter = createTRPCRouter({
               srnamespace: 6,
               srlimit: 0,
             });
-            results[cat] = data?.query?.searchinfo?.totalhits ?? 0;
-          } catch {
-            results[cat] = 0;
+            const total = data?.query?.searchinfo?.totalhits;
+            if (typeof total !== "number") continue;
+            categoryCountCache.set(cat, total);
+            results[cat] = total;
+          } catch (error) {
+            console.error("[Commons Router] Failed to fetch category count:", cat, error);
           }
-        })
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(CATEGORY_COUNT_CONCURRENCY, missing.length) }, worker)
       );
 
       return results;
@@ -307,13 +331,8 @@ export const commonsRouter = createTRPCRouter({
             }
           }
         } catch (error) {
+          // A transient failure must not look like "no such file": cache nothing so the next call retries.
           console.error("[Commons Router] Failed to fetch image info batch from Commons:", error);
-          for (const rawTitle of titlesToFetch) {
-            const normTitle = normalizeTitle(rawTitle);
-            if (!imageInfoCache.has(normTitle)) {
-              imageInfoCache.set(normTitle, null, CACHE_MISS_TTL_MS);
-            }
-          }
         }
       }
 
