@@ -17,6 +17,7 @@ import {
 import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName, type ForumAuthors } from "./AuthorName";
+import { ForumNotice } from "./BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
 import { Pagination, useLastPageRedirect } from "./Pagination";
@@ -116,7 +117,7 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
         }
       />
       {!data.canStart && data.notice ? (
-        <p className="text-footnote text-label-secondary">{data.notice}</p>
+        <ForumNotice notice={data.notice} banned={data.banned} />
       ) : null}
       <Card content="feed" className="overflow-hidden">
         {data.threads.length > 0 ? (

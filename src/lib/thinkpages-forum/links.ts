@@ -42,3 +42,12 @@ export function threadHref(threadId: string): string {
 export function claimNationHref(slug: string): string {
   return `/r/${seg(slug)}/nations`;
 }
+
+/** The member's standing (warnings, bans, appeals) on the forum home, where ban notices send an appeal. */
+export const STANDING_HREF = `${FORUM_HOME}#standing`;
+
+/** The moderation console, opened on `tab` and filtered to `realm` when given. */
+export function modHref({ tab, realm }: { tab?: string; realm?: string } = {}): string {
+  const query = [tab && `tab=${seg(tab)}`, realm && `realm=${seg(realm)}`].filter(Boolean);
+  return query.length > 0 ? `/thinkpages/mod?${query.join("&")}` : "/thinkpages/mod";
+}

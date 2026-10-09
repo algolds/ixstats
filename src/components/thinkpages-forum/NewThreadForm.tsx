@@ -10,7 +10,9 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { categoryHref, forumHomeHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
+import { BanNotice } from "./BanNotice";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
+import { ForumLoadError } from "./ForumPageState";
 
 interface NewThreadFormProps {
   categoryKey: string;
@@ -22,7 +24,7 @@ interface NewThreadFormProps {
 export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   const router = useRouter();
   const utils = api.useUtils();
-  const { data, isLoading } = api.thinkpagesForum.category.useQuery({
+  const { data, isLoading, error, refetch } = api.thinkpagesForum.category.useQuery({
     key: categoryKey,
     page: 1,
     realm,
@@ -55,20 +57,39 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     );
   }
 
-  if (!data?.canStart) {
+  if (!data) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card>
-          <EmptyState
-            title="You can't start a thread here"
-            message={data?.notice ?? "Sign in, or pick a category open to members."}
-            action={
-              <Button asChild variant="secondary">
-                <Link href={forumHomeHref(realm)}>Back to the forum</Link>
-              </Button>
-            }
-          />
-        </Card>
+      <ForumLoadError
+        notFound={error?.data?.code === "NOT_FOUND"}
+        notFoundTitle="Category not found"
+        notFoundMessage="It may be private, or the link is incorrect."
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  if (!data.canStart) {
+    const back = (
+      <Button asChild variant="secondary">
+        <Link href={forumHomeHref(realm)}>Back to the forum</Link>
+      </Button>
+    );
+    return (
+      <div className="container mx-auto max-w-3xl space-y-4 px-4 py-8">
+        {data.banned && data.notice ? (
+          <>
+            <BanNotice notice={data.notice} />
+            {back}
+          </>
+        ) : (
+          <Card>
+            <EmptyState
+              title="You can't start a thread here"
+              message={data.notice ?? "Sign in, or pick a category open to members."}
+              action={back}
+            />
+          </Card>
+        )}
       </div>
     );
   }

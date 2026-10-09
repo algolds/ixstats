@@ -161,7 +161,9 @@ describe("RealmSection", () => {
     const signIn = "Sign in and claim a nation in Eurth to post here.";
     results.realmSection = { data: section(false, signIn) };
     const { unmount } = render(<RealmSection realm="eurth" />);
-    expect(screen.getByText(signIn)).toBeInTheDocument();
+    const signInLink = screen.getByRole("link", { name: "Sign in" });
+    expect(signInLink).toHaveAttribute("href", "/sign-in");
+    expect(signInLink.parentElement).toHaveTextContent(signIn);
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
     unmount();
 
@@ -169,6 +171,18 @@ describe("RealmSection", () => {
     results.realmSection = { data: section(false, muted) };
     render(<RealmSection realm="eurth" />);
     expect(screen.getByText(muted)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+  });
+
+  it("shows a ban as the ban notice with its Appeal link, not as a plain line", () => {
+    const ban = "You are banned from this realm's forum until 12 Oct 2026: spam";
+    results.realmSection = { data: { ...section(false, ban), banned: true } };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.getByText(ban)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Appeal" })).toHaveAttribute(
+      "href",
+      "/thinkpages/forum#standing"
+    );
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
   });
 
