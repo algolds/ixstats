@@ -16,7 +16,9 @@
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
  * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`). A thread that
  * fails is rolled back alone and listed, and the run goes on.
- * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed).
+ * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed); 2 done, but some
+ * media asset registrations failed non-retryably (their attachment ids are listed; pending ones are retried by a
+ * rerun and do not change the code).
  */
 import "../lib/load-runner-env";
 import { constants } from "node:fs";
@@ -41,6 +43,7 @@ import {
 import {
   appliedNodeMap,
   assertImportLock,
+  forumAssetVisibilities,
   ImportLockLostError,
   loadImportDbState,
   mappedRealmSlugs,
@@ -64,6 +67,7 @@ import {
   type ImportArgs,
 } from "./import-xenforo-forum-args";
 import {
+  applyExitCode,
   applyRefusals,
   applyTotalLines,
   attachmentPlanLines,
@@ -180,13 +184,17 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   if (refusals.length) return refuse(refusals);
   print(targetLines(uploadsDir(), databaseLabel(process.env.DATABASE_URL)));
   await assertImportLock(db);
-  print(attachmentResultLines(await copyAttachments(copyPlan, { log: console.log })));
+  const copied = await copyAttachments(copyPlan, {
+    log: console.log,
+    assets: await forumAssetVisibilities(db),
+  });
+  print(attachmentResultLines(copied));
   const totals = await applyImport(db, plan, {
     nodeMap: appliedNodeMap(resolved),
     log: console.log,
   });
   print(applyTotalLines(totals));
-  return totals.failedThreads.length ? 1 : 0;
+  return applyExitCode(totals, copied);
 }
 
 const argv = process.argv.slice(2);

@@ -3,9 +3,12 @@
  * (phase 4, Q7, R2, R3). Two steps, so the dry run can report the disk use and the planner can render bodies:
  *   planAttachmentCopies: hashes each usable snapshot file into its stored name and says which copies are needed
  *     (no writes); its `attachmentFor` feeds `ImportDbState.attachmentFor`.
- *   copyAttachments (--apply): writes the files that are absent or of another size, then registers every image
- *     (idempotent by the attachment id). PDFs are copied but not registered (R2). A registration failure never
- *     fails the import: retryable ones are pending (a rerun retries), the rest are failed with their reason.
+ *   copyAttachments (--apply): writes the files that are absent or of another size (M9: the source read once, its
+ *     bytes checked against the planned hash, type and size, written to a temp file in the same directory and
+ *     renamed), then registers an image only when it was copied now, has no asset row yet, or its stored visibility
+ *     differs (M10; registration re-makes the thumbnail and blurhash). PDFs are copied but not registered (R2). A
+ *     registration failure never fails the import: retryable ones are pending (a rerun retries), the rest are failed
+ *     with their reason, and the runner exits 2 on those (M14).
  * Visibility: the snapshot decides (hidden post or thread, non-public category), and `restrictedPosts` (posts the
  * database holds as hidden or in a non-public category, built by the runner) overrides it: restricted always wins,
  * so a rerun never re-registers as public an image whose post was hidden or moved after the first import.
@@ -44,6 +47,10 @@ export interface AttachmentFs {
   /** Creates the directory and its parents; no error when it exists. */
   mkdir(dir: string): Promise<void>;
   writeFile(file: string, bytes: Uint8Array): Promise<void>;
+  /** Replaces `to` atomically (same directory). */
+  rename(from: string, to: string): Promise<void>;
+  /** Removes the file; no error when it does not exist. */
+  remove(file: string): Promise<void>;
 }
 
 const diskFs: AttachmentFs = {
@@ -57,6 +64,8 @@ const diskFs: AttachmentFs = {
     await nodeFs.mkdir(dir, { recursive: true });
   },
   writeFile: (file, bytes) => nodeFs.writeFile(file, bytes),
+  rename: (from, to) => nodeFs.rename(from, to),
+  remove: (file) => nodeFs.rm(file, { force: true }),
 };
 
 export type AttachmentSnapshot = VisibilitySnapshot &
@@ -112,6 +121,8 @@ export interface AttachmentCopyResult {
   bytes: number;
   missing: number[];
   registered: number;
+  /** Images already registered with the same visibility: not registered again (M10). */
+  alreadyRegistered: number;
   assetsPending: number[];
   assetsFailed: Array<{ attachmentId: number; reason: RegisterUploadedAssetFailure }>;
 }
@@ -211,15 +222,50 @@ export function registerImportedImage(a: PlannedAttachment): Promise<RegisterUpl
   });
 }
 
-/** Writes the file when the target is absent or of another size; "missing" when the snapshot file is gone. */
+/** The snapshot file's bytes when they are still the ones the plan hashed (size, type signature, name hash). */
+async function plannedBytes(a: PlannedAttachment, fs: AttachmentFs): Promise<Uint8Array | null> {
+  if ((await fs.sizeOf(a.source)) !== a.entry.file_size) return null;
+  const bytes = await fs.readFile(a.source);
+  const policy = attachmentPolicy(a.entry);
+  if (policy.kind === "omit" || bytes.length !== a.entry.file_size) return null;
+  if (!hasSignature(policy, bytes)) return null;
+  return attachmentFileName(a.entry, bytes, policy.extension) === a.fileName ? bytes : null;
+}
+
+/** `.<name>.partial` beside the target: never matches the import's file names (the rollback leaves it alone). */
+const tempPath = (target: string) =>
+  path.join(path.dirname(target), `.${path.basename(target)}.partial`);
+
+/**
+ * Writes the file when the target is absent or of another size (checked now, not only at planning): the bytes read
+ * once and checked against the plan, then a temp file renamed over the target. "missing" when the snapshot file is
+ * gone or no longer the planned bytes.
+ */
 async function copyOne(
   a: PlannedAttachment,
   fs: AttachmentFs
 ): Promise<"copied" | "skipped" | "missing"> {
   if ((await fs.sizeOf(a.target)) === a.entry.file_size) return "skipped";
-  if ((await fs.sizeOf(a.source)) !== a.entry.file_size) return "missing";
-  await fs.writeFile(a.target, await fs.readFile(a.source));
+  const bytes = await plannedBytes(a, fs);
+  if (!bytes) return "missing";
+  const temp = tempPath(a.target);
+  try {
+    await fs.writeFile(temp, bytes);
+    await fs.rename(temp, a.target);
+  } catch (error) {
+    await fs.remove(temp);
+    throw error;
+  }
   return "copied";
+}
+
+/** M10: register when copied now, when no asset row exists, or when the stored visibility differs. */
+export function needsRegistration(
+  a: Pick<PlannedAttachment, "entry" | "visibility">,
+  copied: boolean,
+  stored: ReadonlyMap<string, string>
+): boolean {
+  return copied || stored.get(String(a.entry.attachment_id)) !== a.visibility;
 }
 
 async function register(
@@ -240,13 +286,17 @@ async function register(
   );
 }
 
-/** --apply: copies the planned attachments and registers the images. Never fails on a registration. */
+/**
+ * --apply: copies the planned attachments and registers the images that need it. `assets` is the "forum" asset rows
+ * already stored, sourceRef → visibility (import-db's `forumAssetVisibilities`). Never fails on a registration.
+ */
 export async function copyAttachments(
   plan: AttachmentCopyPlan,
-  opts: Pick<AttachmentCopyOptions, "fs" | "log"> = {}
+  opts: Pick<AttachmentCopyOptions, "fs" | "log"> & { assets?: ReadonlyMap<string, string> } = {}
 ): Promise<AttachmentCopyResult> {
   const fs = opts.fs ?? diskFs;
   const log = opts.log ?? (() => {});
+  const stored = opts.assets ?? new Map<string, string>();
   forumDir(path.dirname(plan.dir));
   const result: AttachmentCopyResult = {
     copied: 0,
@@ -254,6 +304,7 @@ export async function copyAttachments(
     bytes: 0,
     missing: [...plan.missing],
     registered: 0,
+    alreadyRegistered: 0,
     assetsPending: [],
     assetsFailed: [],
   };
@@ -262,12 +313,16 @@ export async function copyAttachments(
     const copy = await copyOne(a, fs);
     if (copy === "missing") {
       result.missing.push(a.entry.attachment_id);
-      log(`Attachment ${a.entry.attachment_id}: snapshot file gone, not copied`);
+      log(
+        `Attachment ${a.entry.attachment_id}: snapshot file gone or changed since the plan, not copied`
+      );
       continue;
     }
     result[copy] += 1;
     if (copy === "copied") result.bytes += a.entry.file_size;
-    if (a.kind === "image") await register(a, result, log);
+    if (a.kind !== "image") continue;
+    if (needsRegistration(a, copy === "copied", stored)) await register(a, result, log);
+    else result.alreadyRegistered += 1;
   }
   return result;
 }

@@ -9,6 +9,7 @@ import type { AttachmentEntry } from "~/lib/thinkpages-forum/import/snapshot";
 import type { XfNode, XfPost, XfThread } from "~/lib/thinkpages-forum/import/xenforo-types";
 import {
   copyAttachments,
+  needsRegistration,
   planAttachmentCopies,
   type AttachmentFs,
   type AttachmentSnapshot,
@@ -126,6 +127,15 @@ function memFs(files: Record<string, Uint8Array> = FILES) {
     mkdir: jest.fn(async () => {}),
     writeFile: jest.fn(async (file: string, bytes: Uint8Array) => {
       store.set(file, bytes);
+    }),
+    rename: jest.fn(async (from: string, to: string) => {
+      const bytes = store.get(from);
+      if (!bytes) throw new Error(`ENOENT ${from}`);
+      store.set(to, bytes);
+      store.delete(from);
+    }),
+    remove: jest.fn(async (file: string) => {
+      store.delete(file);
     }),
   } satisfies AttachmentFs;
   return { fs, store };
@@ -269,9 +279,82 @@ describe("copyAttachments", () => {
       bytes: 29,
       missing: [60],
       registered: 2,
+      alreadyRegistered: 0,
       assetsPending: [],
       assetsFailed: [],
     });
+    expect([...store.keys()].some((k) => k.endsWith(".partial"))).toBe(false);
+  });
+
+  it("writes through a temp file in the same directory, then renames it over the target (M9)", async () => {
+    const { fs } = memFs();
+    const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    await copyAttachments(plan, { fs });
+    const target = path.join(FORUM_DIR, name55);
+    const temp = path.join(FORUM_DIR, `.${name55}.partial`);
+    expect(fs.writeFile).toHaveBeenCalledWith(temp, FILES[BIN(55)]);
+    expect(fs.rename).toHaveBeenCalledWith(temp, target);
+    expect(fs.writeFile).not.toHaveBeenCalledWith(target, expect.anything());
+  });
+
+  it("removes the temp file and stops when a write fails", async () => {
+    const { fs, store } = memFs();
+    const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    fs.rename.mockRejectedValueOnce(new Error("EXDEV"));
+    await expect(copyAttachments(plan, { fs })).rejects.toThrow("EXDEV");
+    expect(fs.remove).toHaveBeenCalledWith(path.join(FORUM_DIR, `.${name55}.partial`));
+    expect([...store.keys()].some((k) => k.startsWith(FORUM_DIR))).toBe(false);
+  });
+
+  it("copies only the bytes the plan hashed: a snapshot file changed since the plan is not copied (M9)", async () => {
+    const { fs, store } = memFs();
+    const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    store.set(BIN(55), png(10, 6)); // same size and type, other bytes
+    store.set(BIN(57), bytesOf(11, 0x3c)); // same size, no PNG signature
+    const result = await copyAttachments(plan, { fs });
+    expect(result.missing).toEqual([60, 55, 57]);
+    expect(store.has(path.join(FORUM_DIR, name55))).toBe(false);
+    expect(store.has(path.join(FORUM_DIR, name57))).toBe(false);
+    expect(store.get(path.join(FORUM_DIR, name56))).toEqual(FILES[BIN(56)]);
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it("re-checks the target's size at copy time: a file cut short after the plan is copied again", async () => {
+    const { fs, store } = memFs({ ...FILES, [path.join(FORUM_DIR, name55)]: FILES[BIN(55)]! });
+    const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    expect(plan.attachments.find((a) => a.entry.attachment_id === 55)?.copy).toBe(false);
+    store.set(path.join(FORUM_DIR, name55), bytesOf(3));
+    const result = await copyAttachments(plan, { fs });
+    expect(result).toMatchObject({ copied: 3, skipped: 0 });
+    expect(store.get(path.join(FORUM_DIR, name55))).toEqual(FILES[BIN(55)]);
+  });
+
+  it("registers an image only when copied now, unregistered, or stored with another visibility (M10)", async () => {
+    const { fs } = memFs();
+    const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    await copyAttachments(plan, { fs });
+    register.mockClear();
+    const assets = new Map([
+      ["55", "public"],
+      ["57", "restricted"],
+    ]);
+    const rerun = await copyAttachments(plan, { fs, assets });
+    expect(rerun).toMatchObject({ copied: 0, skipped: 3, registered: 0, alreadyRegistered: 2 });
+    expect(register).not.toHaveBeenCalled();
+    const changed = await copyAttachments(plan, { fs, assets: new Map([["55", "restricted"]]) });
+    expect(register.mock.calls.map(([input]) => [input.sourceRef, input.visibility])).toEqual([
+      ["55", "public"],
+      ["57", "restricted"],
+    ]);
+    expect(changed).toMatchObject({ registered: 2, alreadyRegistered: 0 });
+  });
+
+  it("needsRegistration decides by the copy, the stored row and its visibility", () => {
+    const a = { entry: ENTRIES[0]!, visibility: "public" as const };
+    expect(needsRegistration(a, true, new Map([["55", "public"]]))).toBe(true);
+    expect(needsRegistration(a, false, new Map([["55", "public"]]))).toBe(false);
+    expect(needsRegistration(a, false, new Map([["55", "restricted"]]))).toBe(true);
+    expect(needsRegistration(a, false, new Map())).toBe(true);
   });
 
   it("skips a same-size target, overwrites a different-size one and ignores thumbnails", async () => {
@@ -297,6 +380,7 @@ describe("copyAttachments", () => {
     const result = await copyAttachments(plan, { fs });
     expect(result.missing).toEqual([60, 56]);
     expect(result.copied).toBe(2);
+    expect(fs.writeFile).toHaveBeenCalledTimes(2);
   });
 
   it("registers images (not PDFs) as forum assets with their visibility", async () => {

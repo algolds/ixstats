@@ -12,6 +12,7 @@ import {
   runBanner,
 } from "../../../scripts/migrations/import-xenforo-forum-args";
 import {
+  applyExitCode,
   applyRefusals,
   applyTotalLines,
   attachmentPlanLines,
@@ -384,23 +385,38 @@ describe("attachment lines", () => {
     ]);
   });
 
-  it("prints the copy result with assets registered, pending and failed by reason", () => {
-    expect(
-      attachmentResultLines({
-        copied: 2,
-        skipped: 1,
-        bytes: 20,
-        missing: [5],
-        registered: 1,
-        assetsPending: [9],
-        assetsFailed: [
-          { attachmentId: 3, reason: "invalid-input" },
-          { attachmentId: 4, reason: "invalid-input" },
-        ],
-      })
-    ).toEqual([
+  const result = {
+    copied: 2,
+    skipped: 1,
+    bytes: 20,
+    missing: [5],
+    registered: 1,
+    alreadyRegistered: 4,
+    assetsPending: [9],
+    assetsFailed: [
+      { attachmentId: 3, reason: "invalid-input" as const },
+      { attachmentId: 4, reason: "invalid-input" as const },
+    ],
+  };
+
+  it("prints the copy result with assets registered, pending and failed, and their ids (M14)", () => {
+    expect(attachmentResultLines(result)).toEqual([
       "Attachments: 2 copied (20 bytes), 1 already on disk, 1 missing",
-      "  media assets: 1 registered, 1 pending (a rerun retries), failed: invalid-input 2",
+      "  media assets: 1 registered, 4 already registered, 1 pending (a rerun retries), failed: invalid-input 2",
+      "  missing attachment ids: 5",
+      "  pending attachment ids: 9",
+      "  FAILED attachment ids (not retried; exit code 2): 3, 4",
     ]);
+    expect(
+      attachmentResultLines({ ...result, missing: [], assetsPending: [], assetsFailed: [] })
+    ).toHaveLength(2);
+  });
+
+  it("exits 1 on failed threads, else 2 on non-retryable registration failures, else 0 (M14)", () => {
+    const thread = [{ xenforoThreadId: 1, error: "x" }];
+    expect(applyExitCode({ failedThreads: [] }, { assetsFailed: [] })).toBe(0);
+    expect(applyExitCode({ failedThreads: [] }, { assetsFailed: result.assetsFailed })).toBe(2);
+    expect(applyExitCode({ failedThreads: thread }, { assetsFailed: result.assetsFailed })).toBe(1);
+    expect(applyExitCode({ failedThreads: thread }, { assetsFailed: [] })).toBe(1);
   });
 });

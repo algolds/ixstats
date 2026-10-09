@@ -161,6 +161,17 @@ export async function restrictedImportedPosts(db: ImportDb): Promise<Set<number>
   return new Set(rows.flatMap((r) => (r.xenforoPostId === null ? [] : [r.xenforoPostId])));
 }
 
+/** M10: the stored "forum" media assets, sourceRef (the XenForo attachment id) → visibility. */
+export async function forumAssetVisibilities(
+  db: Pick<ImportDb, "uploadedAsset">
+): Promise<Map<string, string>> {
+  const rows = await db.uploadedAsset.findMany({
+    where: { source: "forum" },
+    select: { sourceRef: true, visibility: true },
+  });
+  return new Map(rows.flatMap((r) => (r.sourceRef === null ? [] : [[r.sourceRef, r.visibility]])));
+}
+
 const IMPORT_LOCK = "forum-import";
 
 /**

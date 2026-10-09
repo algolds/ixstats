@@ -151,8 +151,29 @@ export function attachmentResultLines(result: AttachmentCopyResult): string[] {
   for (const f of result.assetsFailed) failed.set(f.reason, (failed.get(f.reason) ?? 0) + 1);
   return [
     `Attachments: ${result.copied} copied (${result.bytes} bytes), ${result.skipped} already on disk, ${result.missing.length} missing`,
-    `  media assets: ${result.registered} registered, ${result.assetsPending.length} pending (a rerun retries), failed: ${listed(failed)}`,
+    `  media assets: ${result.registered} registered, ${result.alreadyRegistered} already registered, ${result.assetsPending.length} pending (a rerun retries), failed: ${listed(failed)}`,
+    ...(result.missing.length ? [`  missing attachment ids: ${ids(result.missing)}`] : []),
+    ...(result.assetsPending.length
+      ? [`  pending attachment ids: ${ids(result.assetsPending)}`]
+      : []),
+    ...(result.assetsFailed.length
+      ? [
+          `  FAILED attachment ids (not retried; exit code 2): ${ids(result.assetsFailed.map((f) => f.attachmentId))}`,
+        ]
+      : []),
   ];
+}
+
+/**
+ * The runner's exit code after --apply (M14, M19): 1 when any thread failed (listed), else 2 when any media asset
+ * registration failed non-retryably (listed), else 0. Pending (retryable) registrations do not change it.
+ */
+export function applyExitCode(
+  totals: Pick<ApplyTotals, "failedThreads">,
+  copy: Pick<AttachmentCopyResult, "assetsFailed">
+): 0 | 1 | 2 {
+  if (totals.failedThreads.length) return 1;
+  return copy.assetsFailed.length ? 2 : 0;
 }
 
 export function applyTotalLines(totals: ApplyTotals): string[] {
