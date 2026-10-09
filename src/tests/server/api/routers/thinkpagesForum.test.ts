@@ -443,7 +443,9 @@ describe("thinkpagesForum router", () => {
     await expect(
       c.createThread({ categoryKey: "general", title: "Fine title", html: "x".repeat(50_001) })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(c.editPost({ postId: "p1", html: "x".repeat(50_001) })).rejects.toMatchObject({
+    await expect(
+      c.editPost({ postId: "p1", editedAt: null, html: "x".repeat(50_001) })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });

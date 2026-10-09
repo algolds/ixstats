@@ -61,6 +61,8 @@ interface Opts {
   /** Nations each user id owns (any realm the fake is asked about). */
   owned?: Record<string, string[]>;
   bans?: BanRow[];
+  /** The post's editedAt no longer matches the one the author loaded. */
+  editedMeanwhile?: boolean;
 }
 
 function writeDb(opts: Opts = {}) {
@@ -106,7 +108,11 @@ function writeDb(opts: Opts = {}) {
     forumThread: { findUnique: jest.fn(async () => opts.thread ?? null) },
     forumPost: {
       findUnique: jest.fn(async () => opts.post ?? null),
-      update: jest.fn(async (_args: { where: { id: string }; data: PostUpdate }) => ({ id: "p1" })),
+      updateMany: jest.fn(
+        async (_args: { where: { id: string; editedAt: Date | null }; data: PostUpdate }) => ({
+          count: opts.editedMeanwhile ? 0 : 1,
+        })
+      ),
     },
     thinkpagesAccount: { findFirst: jest.fn(async () => opts.persona ?? null) },
     activityFeed: {
@@ -459,10 +465,12 @@ describe("attribute tokens on reply and edit", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(reply.db.$transaction).not.toHaveBeenCalled();
     const edit = writeDb({ post: postBy("u_p") });
-    await expect(editPost(edit.db as never, user, { postId: "p1", html })).rejects.toMatchObject({
+    await expect(
+      editPost(edit.db as never, user, { postId: "p1", editedAt: null, html })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(edit.db.forumPost.update).not.toHaveBeenCalled();
+    expect(edit.db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 });
 
@@ -474,10 +482,11 @@ describe("editPost", () => {
     });
     await editPost(db as never, user, {
       postId: "p1",
+      editedAt: null,
       html: '<p onclick="x()">Now [ixaction=a1]</p><script>1</script>',
     });
-    const update = db.forumPost.update.mock.calls[0]![0];
-    expect(update.where).toEqual({ id: "p1" });
+    const update = db.forumPost.updateMany.mock.calls[0]![0];
+    expect(update.where).toEqual({ id: "p1", editedAt: null });
     expect(update.data.contentHtml).toBe("<p>Now [ixaction=a1]</p>");
     expect(update.data.plainText).toBe("Now [ixaction=a1]");
     expect(update.data.editedAt).toBeInstanceOf(Date);
@@ -487,14 +496,37 @@ describe("editPost", () => {
     });
   });
 
+  it("writes only if the post is unchanged since the author loaded it (M1)", async () => {
+    const { db } = writeDb({ post: postBy("u_p") });
+    const loaded = new Date("2026-10-01T10:00:00Z");
+    await editPost(db as never, user, { postId: "p1", editedAt: loaded, html: "<p>Again</p>" });
+    expect(db.forumPost.updateMany.mock.calls[0]![0].where).toEqual({ id: "p1", editedAt: loaded });
+  });
+
+  it("refuses with CONFLICT when a moderator edited the post meanwhile, and syncs no links (M1)", async () => {
+    const { db, tx } = writeDb({
+      post: postBy("u_p"),
+      editedMeanwhile: true,
+      activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
+    });
+    await expect(
+      editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>[ixaction=a1]</p>" })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "A moderator edited this post since you opened it; reload to see their changes.",
+    });
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
+    expect(tx.postActionLink.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("forbids anyone but the author", async () => {
     const { db } = writeDb({ post: postBy("u_other") });
     await expect(
-      editPost(db as never, user, { postId: "p1", html: "<p>Mine now</p>" })
+      editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>Mine now</p>" })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    expect(db.forumPost.update).not.toHaveBeenCalled();
+    expect(db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 
   it("reads a missing, hidden or invisible post as not found", async () => {
@@ -508,7 +540,7 @@ describe("editPost", () => {
     ]) {
       const { db } = writeDb({ post });
       await expect(
-        editPost(db as never, user, { postId: "p1", html: "<p>Hi</p>" })
+        editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>Hi</p>" })
       ).rejects.toMatchObject({
         code: "NOT_FOUND",
       });
@@ -527,19 +559,19 @@ describe("editPost", () => {
       };
       const { db } = writeDb({ post: postBy("u_p", { thread }) });
       await expect(
-        editPost(db as never, user, { postId: "p1", html: "<p>Changed</p>" })
+        editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>Changed</p>" })
       ).rejects.toMatchObject({
         code: "CONFLICT",
         message: "This thread is closed to edits.",
       });
-      expect(db.forumPost.update).not.toHaveBeenCalled();
+      expect(db.forumPost.updateMany).not.toHaveBeenCalled();
     }
   );
 
   it("refuses to edit a post in a submitted or approved story chain", async () => {
     const { db } = writeDb({ post: postBy("u_p"), chainedLinks: 1 });
     await expect(
-      editPost(db as never, user, { postId: "p1", html: "<p>Changed</p>" })
+      editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>Changed</p>" })
     ).rejects.toMatchObject({
       code: "CONFLICT",
       message: "This post is part of a submitted story chain",
@@ -551,23 +583,23 @@ describe("editPost", () => {
         storyline: { status: { in: ["submitted", "approved"] } },
       },
     });
-    expect(db.forumPost.update).not.toHaveBeenCalled();
+    expect(db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 
   it("writes no edit when an action token is invalid", async () => {
     const { db } = writeDb({ post: postBy("u_p") });
     await expect(
-      editPost(db as never, user, { postId: "p1", html: "<p>[ixaction=zz]</p>" })
+      editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>[ixaction=zz]</p>" })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(db.forumPost.update).not.toHaveBeenCalled();
+    expect(db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses an empty edit", async () => {
     const { db } = writeDb({ post: postBy("u_p") });
     await expect(
-      editPost(db as never, user, { postId: "p1", html: "<p></p>" })
+      editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p></p>" })
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
@@ -746,7 +778,7 @@ describe("realm sections", () => {
   });
 
   describe("editPost", () => {
-    const edit = { postId: "p1", html: "<p>Changed</p>" };
+    const edit = { postId: "p1", editedAt: null, html: "<p>Changed</p>" };
 
     it("refuses a banned owner editing their own post", async () => {
       const { db } = writeDb({ post: realmPost("u_owner"), owned: OWNS, bans: [ban] });
@@ -754,13 +786,13 @@ describe("realm sections", () => {
         code: "FORBIDDEN",
         message: BANNED,
       });
-      expect(db.forumPost.update).not.toHaveBeenCalled();
+      expect(db.forumPost.updateMany).not.toHaveBeenCalled();
     });
 
     it("lets a moderator edit their own post when another member is banned", async () => {
       const { db } = writeDb({ post: realmPost("u_officer"), bans: [ban] });
       await editPost(db as never, officer, edit);
-      expect(db.forumPost.update).toHaveBeenCalled();
+      expect(db.forumPost.updateMany).toHaveBeenCalled();
     });
 
     it("reads a post in a draft realm as not found", async () => {
@@ -778,7 +810,7 @@ describe("forum bans on every write", () => {
   const siteBan = banRow({ userId: "u_p", reason: "Abuse", expiresAt: later });
   const SITE_BANNED = banNotice({ scope: "site", expiresAt: later, reason: "Abuse" });
   const reply = { threadId: "t1", html: "<p>Hi</p>" };
-  const edit = { postId: "p1", html: "<p>Changed</p>" };
+  const edit = { postId: "p1", editedAt: null, html: "<p>Changed</p>" };
 
   it("refuses a site-banned member starting a thread in General, replying and editing sitewide", async () => {
     const start = writeDb({ bans: [siteBan] });
@@ -803,7 +835,7 @@ describe("forum bans on every write", () => {
       code: "FORBIDDEN",
       message: SITE_BANNED,
     });
-    expect(change.db.forumPost.update).not.toHaveBeenCalled();
+    expect(change.db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses a category-banned member in that category only", async () => {
@@ -841,7 +873,7 @@ describe("forum bans on every write", () => {
     ).resolves.toEqual({ postId: "p_new" });
     const change = writeDb({ post: postBy("u_p"), bans });
     await editPost(change.db as never, user, edit);
-    expect(change.db.forumPost.update).toHaveBeenCalled();
+    expect(change.db.forumPost.updateMany).toHaveBeenCalled();
   });
 
   it("lets a site admin post whatever ban rows exist (M5)", async () => {
@@ -854,7 +886,7 @@ describe("forum bans on every write", () => {
     expect(db.forumBan.findMany).not.toHaveBeenCalled();
     const change = writeDb({ post: postBy("u_a"), bans });
     await editPost(change.db as never, admin, edit);
-    expect(change.db.forumPost.update).toHaveBeenCalled();
+    expect(change.db.forumPost.updateMany).toHaveBeenCalled();
   });
 });
 
@@ -882,9 +914,9 @@ describe("the Reports category (M8)", () => {
     expect(db.$transaction).not.toHaveBeenCalled();
     const change = writeDb({ post: reportPost("u_p", "u_other") });
     await expect(
-      editPost(change.db as never, user, { postId: "p1", html: "<p>x</p>" })
+      editPost(change.db as never, user, { postId: "p1", editedAt: null, html: "<p>x</p>" })
     ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Post not found." });
-    expect(change.db.forumPost.update).not.toHaveBeenCalled();
+    expect(change.db.forumPost.updateMany).not.toHaveBeenCalled();
   });
 
   it("lets a member reply in and edit within their own report thread", async () => {
@@ -892,8 +924,8 @@ describe("the Reports category (M8)", () => {
       replyToThread(writeDb({ thread: reportThread("u_p") }).db as never, user, reply)
     ).resolves.toEqual({ postId: "p_new" });
     const change = writeDb({ post: reportPost("u_p", "u_p") });
-    await editPost(change.db as never, user, { postId: "p1", html: "<p>x</p>" });
-    expect(change.db.forumPost.update).toHaveBeenCalled();
+    await editPost(change.db as never, user, { postId: "p1", editedAt: null, html: "<p>x</p>" });
+    expect(change.db.forumPost.updateMany).toHaveBeenCalled();
   });
 
   it("lets a site admin reply in any report thread", async () => {

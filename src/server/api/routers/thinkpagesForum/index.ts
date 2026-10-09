@@ -41,7 +41,17 @@ import {
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
-import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, stashOwnerOf, viewerOf } from "./viewer";
+import {
+  actorOf,
+  authorMaps,
+  categoryKey,
+  id,
+  mapError,
+  page,
+  realm,
+  stashOwnerOf,
+  viewerOf,
+} from "./viewer";
 
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
@@ -188,7 +198,9 @@ export const thinkpagesForumRouter = createTRPCRouter({
   stashThread: rateLimitedMutationProcedure
     .input(stashTarget)
     .mutation(async ({ ctx, input }) =>
-      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(mapError)
+      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(
+        mapError
+      )
     ),
 
   /** Removes the thread from one stash, or from all the caller's stashes. */
@@ -225,8 +237,9 @@ export const thinkpagesForumRouter = createTRPCRouter({
       replyToThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
 
+  /** `editedAt` is the post's value when the author loaded it (M1: CONFLICT if a moderator edited since). */
   editPost: rateLimitedMutationProcedure
-    .input(z.object({ postId: id, html }))
+    .input(z.object({ postId: id, html, editedAt: z.date().nullable() }))
     .mutation(async ({ ctx, input }) =>
       editPost(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
