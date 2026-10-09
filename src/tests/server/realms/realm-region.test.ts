@@ -537,7 +537,7 @@ describe("overview and happenings", () => {
   describe("forum preview (D4)", () => {
     const lastPostAt = new Date("2026-10-01T10:00:00Z");
 
-    it("lists the realm's latest Hub threads, visible ones only, newest first", async () => {
+    it("lists the realm's latest Hub threads, visible and unarchived ones only (U12), newest first", async () => {
       const db = overviewDb();
       db.forumCategory.findFirst.mockResolvedValue({ id: "hub1" });
       db.forumThread.findMany.mockResolvedValue([
@@ -552,7 +552,7 @@ describe("overview and happenings", () => {
         visibility: { in: ["public", "reporter_staff"] },
       });
       expect(db.forumThread.findMany).toHaveBeenCalledWith({
-        where: { categoryId: "hub1", hidden: false },
+        where: { categoryId: "hub1", hidden: false, archived: false },
         orderBy: { lastPostAt: "desc" },
         take: 5,
         select: { id: true, title: true, postCount: true, lastPostAt: true },

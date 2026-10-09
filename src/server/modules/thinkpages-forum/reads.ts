@@ -87,7 +87,10 @@ export async function loadCategory(
   return { category, realm };
 }
 
-/** Thread counts and last activity for the categories the viewer may see, in one grouped query. */
+/**
+ * Thread counts and last activity for the categories the viewer may see, in one grouped query. Archived threads
+ * (the Realm Board archive) count as threads but are not the latest activity (U12).
+ */
 export async function summarizeCategories(
   db: Pick<ReadsDb, "forumThread">,
   viewer: ForumViewer,
@@ -98,7 +101,7 @@ export async function summarizeCategories(
   const own = visible.filter((c) => onlyOwnThreads(viewer, c));
   const all = visible.filter((c) => !onlyOwnThreads(viewer, c));
   const stats = await db.forumThread.groupBy({
-    by: ["categoryId"],
+    by: ["categoryId", "archived"],
     where: {
       ...(isAdmin(viewer) ? {} : { hidden: false }),
       OR: [
@@ -109,15 +112,22 @@ export async function summarizeCategories(
     _count: { _all: true },
     _max: { lastPostAt: true },
   });
-  const byCategory = new Map(stats.map((s) => [s.categoryId, s]));
+  const byCategory = new Map<string, { threadCount: number; lastPostAt: Date | null }>();
+  for (const row of stats) {
+    const sum = byCategory.get(row.categoryId) ?? { threadCount: 0, lastPostAt: null };
+    byCategory.set(row.categoryId, {
+      threadCount: sum.threadCount + row._count._all,
+      lastPostAt: row.archived ? sum.lastPostAt : (row._max.lastPostAt ?? null),
+    });
+  }
   return visible.map((c) => ({
     key: c.key,
     name: c.name,
     description: c.description,
     icAllowed: c.icAllowed,
     postRole: c.postRole,
-    threadCount: byCategory.get(c.id)?._count._all ?? 0,
-    lastPostAt: byCategory.get(c.id)?._max.lastPostAt ?? null,
+    threadCount: byCategory.get(c.id)?.threadCount ?? 0,
+    lastPostAt: byCategory.get(c.id)?.lastPostAt ?? null,
   }));
 }
 

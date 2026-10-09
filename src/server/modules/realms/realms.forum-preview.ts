@@ -12,7 +12,7 @@ const FORUM_PREVIEW_SIZE = 5;
 export type ForumPreviewDb = Pick<PrismaClient, "forumCategory" | "forumThread">;
 
 /**
- * A realm's latest visible Hub threads. A Hub the viewer cannot see (the forum's visibility rule,
+ * A realm's latest visible, unarchived Hub threads. A Hub the viewer cannot see (the forum's visibility rule,
  * `categoryVisibilityWhere`) and a realm without a Hub both read as empty. The caller has checked the viewer can
  * see the realm.
  */
@@ -31,7 +31,8 @@ export async function forumPreview(db: ForumPreviewDb, realmId: string, viewer: 
   });
   if (!category) return { threads: [] };
   const threads = await db.forumThread.findMany({
-    where: { categoryId: category.id, hidden: false },
+    // Archived threads (the Realm Board archive) are history, not the latest (U12).
+    where: { categoryId: category.id, hidden: false, archived: false },
     orderBy: { lastPostAt: "desc" },
     take: FORUM_PREVIEW_SIZE,
     select: { id: true, title: true, postCount: true, lastPostAt: true },
