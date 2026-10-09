@@ -13,7 +13,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import { getInitials } from "~/components/thinkpages/post/ThinkpagesPostUtils";
-import { ForumPermalinkGate } from "~/components/thinkpages-forum/ForumPermalinkGate";
+import { withBasePath } from "~/lib/base-path";
 
 interface PostPageProps {
   params: Promise<{
@@ -23,7 +23,7 @@ interface PostPageProps {
 
 const BackToFeed = ({ variant = "default" }: { variant?: "default" | "ghost" }) => (
   <Button asChild variant={variant} size={variant === "ghost" ? "sm" : undefined}>
-    <Link href="/thinkpages">
+    <Link href="/dashboard">
       <ArrowLeft aria-hidden="true" />
       Back to feed
     </Link>
@@ -35,11 +35,11 @@ function sharePostLink(
   kind: "post" | "reply",
   notify: ReturnType<typeof useNotify>
 ) {
-  const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
+  const postUrl = `${window.location.origin}${withBasePath(`/dashboard/post/${postId}`)}`;
   if (navigator.share) {
     void navigator.share({
-      title: `ThinkPages ${kind}`,
-      text: `Check out this ${kind} on ThinkPages`,
+      title: `IxStats ${kind}`,
+      text: `Check out this ${kind} on IxStats`,
       url: postUrl,
     });
   } else {
@@ -49,7 +49,7 @@ function sharePostLink(
 }
 
 interface ReplyCapsuleProps {
-  account: any;
+  account: { displayName: string; profileImageUrl: string | null } | undefined;
   placeholderTarget: string;
   value: string;
   onChange: (value: string) => void;
@@ -123,14 +123,10 @@ const PostLoading = () => (
   </div>
 );
 
-/** A forum post id redirects to its thread (ruling P5); any other id is a feed post. */
+/** A feed post with its replies. Forum post permalinks stay at /thinkpages/post/<id> (ruling P5). */
 export default function PostPage({ params }: PostPageProps) {
   const { postId } = use(params);
-  return (
-    <ForumPermalinkGate postId={postId} pending={<PostLoading />}>
-      <FeedPostPage postId={postId} />
-    </ForumPermalinkGate>
-  );
+  return <FeedPostPage postId={postId} />;
 }
 
 function FeedPostPage({ postId }: { postId: string }) {

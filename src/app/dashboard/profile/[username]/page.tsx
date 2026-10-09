@@ -2,14 +2,13 @@
 
 import React, { use } from "react";
 import Link from "next/link";
-import { ArrowLeft, SystemRestart as Loader2 } from "iconoir-react";
+import { ArrowLeft, CheckCircle, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { PersonaFollowButton } from "~/components/thinkpages/PersonaFollowButton";
 import { RelativeTimestamp } from "~/components/thinkpages/post/ThinkpagesPostUtils";
-import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 
@@ -45,9 +44,9 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
             message="This account may have been deactivated or the link is incorrect."
             action={
               <Button asChild>
-                <Link href={withBasePath("/thinkpages")}>
+                <Link href="/dashboard">
                   <ArrowLeft aria-hidden="true" />
-                  Back to ThinkPages
+                  Back to the feed
                 </Link>
               </Button>
             }
@@ -67,9 +66,9 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
   return (
     <div className="container mx-auto max-w-2xl space-y-6 px-4 py-8 pb-32">
       <Button asChild variant="ghost" size="sm">
-        <Link href={withBasePath("/thinkpages")}>
+        <Link href="/dashboard">
           <ArrowLeft aria-hidden="true" />
-          Back to ThinkPages
+          Back to the feed
         </Link>
       </Button>
 
@@ -91,9 +90,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
           <div className="flex items-center gap-2">
             <h1 className="text-title-2 text-label">{profile.displayName}</h1>
             {profile.verified && (
-              <span className="text-body" title="Verified">
-                ✅
-              </span>
+              <CheckCircle className="text-tint size-5" role="img" aria-label="Verified" />
             )}
           </div>
           <div className="text-body text-label-secondary flex flex-wrap items-center gap-2">
@@ -103,7 +100,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
             </Badge>
             {profile.country && (
               <Link
-                href={withBasePath(`/countries/${profile.country.slug ?? profile.country.id}`)}
+                href={`/countries/${profile.country.slug ?? profile.country.id}`}
                 className="text-tint hover:underline"
               >
                 {profile.country.name}
@@ -140,7 +137,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
           profile.posts.map((post) => (
             <Link
               key={post.id}
-              href={withBasePath(`/thinkpages/post/${post.id}`)}
+              href={`/dashboard/post/${post.id}`}
               className="rounded-card focus-visible:outline-tint block focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <Card padding="md" className="space-y-2">

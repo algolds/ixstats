@@ -48,9 +48,9 @@ function SavedPostsInner() {
           <p className="text-body text-label-secondary">Posts you bookmarked, newest first.</p>
         </div>
         <Button asChild variant="ghost" size="sm">
-          <Link href="/thinkpages">
+          <Link href="/dashboard">
             <ArrowLeft aria-hidden="true" />
-            ThinkPages
+            Feed
           </Link>
         </Button>
       </div>
@@ -114,7 +114,7 @@ function SavedPostsInner() {
 
 export function SavedPosts() {
   return (
-    <AuthenticationGuard redirectPath="/thinkpages/saved">
+    <AuthenticationGuard redirectPath="/dashboard/saved">
       <SavedPostsInner />
     </AuthenticationGuard>
   );

@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-export default function ThinkPagesFeedRedirect() {
-  redirect("/dashboard");
+/** The feed lives on the dashboard. */
+export default function LegacyFeedPage() {
+  permanentRedirect("/dashboard");
 }

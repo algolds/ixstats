@@ -143,7 +143,7 @@ describe("followPersona", () => {
       expect.objectContaining({
         userId: THEM,
         category: "social",
-        href: "/thinkpages/profile/Rowan",
+        href: "/dashboard/profile/Rowan",
         message: "Rowan (@Rowan) followed @herald",
       })
     );

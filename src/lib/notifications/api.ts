@@ -258,7 +258,7 @@ class NotificationAPIService {
         category: "social",
         type: action === "created" ? "success" : "info",
         priority: action === "commented" ? "medium" : "low",
-        href: withBasePath(`/thinkpages/post/${id}`),
+        href: withBasePath(`/dashboard/post/${id}`),
         source: "thinkpages",
         actionable: true,
         metadata: { thinkpageId: id, authorId, action },

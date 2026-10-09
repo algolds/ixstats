@@ -1,12 +1,6 @@
-import { SavedPosts } from "~/components/thinkpages/SavedPosts";
-import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
+import { permanentRedirect } from "next/navigation";
 
-export default function SavedPostsPage() {
-  return (
-    <>
-      {/* Phone title under the new navigation shell (nothing with the flag off). */}
-      <ShellPageHeader title="Saved posts" />
-      <SavedPosts />
-    </>
-  );
+/** Saved posts moved to the dashboard with the rest of the feed (phase 5). */
+export default function LegacySavedPage() {
+  permanentRedirect("/dashboard/saved");
 }

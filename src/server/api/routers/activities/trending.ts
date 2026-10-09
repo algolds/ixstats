@@ -88,7 +88,7 @@ type TrendingPost = {
 function describePost(post: TrendingPost) {
   const cleanContent = post.content.replace(/<!--\s*sports-bulletin:[\s\S]*?-->/gi, "").trim();
   const previewText = cleanContent || "Sports News Bulletin";
-  const url = `/thinkpages/post/${post.id}`;
+  const url = `/dashboard/post/${post.id}`;
   const excerpt = previewText.length > 100 ? previewText.slice(0, 97) + "..." : previewText;
   const username = post.account?.username;
   const bulletin = post.content.match(SPORTS_BULLETIN)?.[1];

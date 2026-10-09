@@ -176,7 +176,7 @@ function entityKinds(href: string) {
     isLeague: href.includes("/myleague/"),
     isClub: href.includes("/myclub/"),
     isCountry: href.includes("/countries/"),
-    isUser: href.includes("/thinkpages/") || href.includes("/dashboard/"),
+    isUser: href.includes("/dashboard/"),
   };
 }
 
@@ -381,7 +381,9 @@ function PopoverCard({
 function useMentionProfile(open: boolean, href: string) {
   const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
   const entityId =
-    /\/(?:myleague|myclub|countries|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(href)?.[1] ?? "";
+    /\/(?:myleague|myclub|countries|dashboard\/profile|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(
+      href
+    )?.[1] ?? "";
 
   const league = api.sports.getLeague.useQuery({ id: entityId }, { enabled: open && isLeague });
   const team = api.sports.getTeam.useQuery({ id: entityId }, { enabled: open && isClub });

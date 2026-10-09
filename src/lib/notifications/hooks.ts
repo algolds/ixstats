@@ -161,7 +161,7 @@ export async function onSocialActivity(params: {
     userId: params.toUserId,
     category: "social",
     priority: "low",
-    href: params.contentId ? withBasePath(`/thinkpages/post/${params.contentId}`) : null,
+    href: params.contentId ? withBasePath(`/dashboard/post/${params.contentId}`) : null,
     actionable: !!params.contentId,
     metadata: {
       fromUserId: params.fromUserId,

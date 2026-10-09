@@ -1,5 +1,5 @@
-import React, { Suspense } from "react";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import React from "react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 interface QueryResult {
   data?: object | null;
@@ -42,7 +42,6 @@ jest.mock("~/trpc/react", () => {
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 3 }) },
         },
         thinkpagesForumMod: { context: { invalidate: () => Promise.resolve() } },
-        thinkpages: { getPost: { invalidate: jest.fn() }, getFeed: { invalidate: jest.fn() } },
       }),
       thinkpagesForum: {
         categories: query("categories"),
@@ -50,7 +49,6 @@ jest.mock("~/trpc/react", () => {
         realmSection: query("realmSection"),
         category: query("category"),
         thread: query("thread"),
-        resolvePost: query("resolvePost"),
         reply: mutation("reply"),
         editPost: mutation("editPost"),
         createThread: mutation("createThread"),
@@ -68,13 +66,6 @@ jest.mock("~/trpc/react", () => {
         ban: mutation("ban"),
       },
       actionLinks: { activityCards: query("activityCards") },
-      users: { getProfile: query("getProfile") },
-      thinkpages: {
-        getAccountsByCountry: query("getAccountsByCountry"),
-        getPost: query("getPost"),
-        recordPostView: mutation("recordPostView"),
-        createPost: mutation("createPost"),
-      },
     },
   };
 });
@@ -114,16 +105,12 @@ jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: null }) }))
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn(), info: jest.fn() }),
 }));
-jest.mock("~/components/thinkpages/ThinkpagesPost", () => ({
-  ThinkpagesPost: () => <div>feed post</div>,
-}));
 
 import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
 import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
 import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
-import PostPage from "~/app/thinkpages/post/[postId]/page";
 import ForumHomePage from "~/app/thinkpages/forum/page";
 import RealmRedirectPage from "~/app/thinkpages/r/[realm]/page";
 
@@ -532,43 +519,6 @@ describe("new thread", () => {
     set("category", { data: categoryData(false) });
     render(<NewThreadForm categoryKey="general" />);
     expect(screen.getByText("Sign in, or pick a category open to members.")).toBeInTheDocument();
-  });
-});
-
-describe("post permalink", () => {
-  async function renderPermalink(postId: string) {
-    await act(async () => {
-      render(
-        <Suspense fallback={null}>
-          <PostPage params={Promise.resolve({ postId })} />
-        </Suspense>
-      );
-    });
-  }
-
-  it("redirects a forum post to its thread page and anchor", async () => {
-    set("resolvePost", {
-      data: { threadId: "t1", page: 2 },
-    });
-    await renderPermalink("p5");
-    expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=2#post-p5");
-    expect(screen.queryByText("Post not found")).toBeNull();
-  });
-
-  it("does not flash the feed not-found state while resolving", async () => {
-    set("resolvePost", { isLoading: true });
-    await renderPermalink("p5");
-    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
-    expect(screen.queryByText("Post not found")).toBeNull();
-    expect(router.replace).not.toHaveBeenCalled();
-  });
-
-  it("renders the feed post as before when the id is not a forum post", async () => {
-    set("resolvePost", { data: null });
-    set("getPost", { data: null });
-    await renderPermalink("feed1");
-    expect(router.replace).not.toHaveBeenCalled();
-    expect(screen.getByText("Post not found")).toBeInTheDocument();
   });
 });
 

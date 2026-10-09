@@ -1,0 +1,91 @@
+/** @jest-environment node */
+/**
+ * The feed's old ThinkPages pages answer with redirects (phase 5). `/thinkpages/post/<id>` stays the forum post
+ * permalink (ruling P5): a forum post the viewer may see goes to its thread and anchor, anything else to the feed
+ * post under /dashboard. Both hops are temporary (307), since the answer depends on the viewer and on moderation
+ * (ruling R-e). The other old pages moved for good (308). Every destination is a fixed prefix plus an encoded id.
+ */
+jest.mock("next/navigation", () => ({
+  redirect: jest.fn((url: string) => {
+    throw new Error(`redirect:${url}`);
+  }),
+  permanentRedirect: jest.fn((url: string) => {
+    throw new Error(`permanent:${url}`);
+  }),
+}));
+jest.mock("~/trpc/server", () => ({
+  api: { thinkpagesForum: { resolvePost: jest.fn() } },
+}));
+
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { permanentRedirect, redirect } from "next/navigation";
+import { api } from "~/trpc/server";
+import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
+import LegacyProfilePage from "~/app/thinkpages/profile/[username]/page";
+import LegacySavedPage from "~/app/thinkpages/saved/page";
+import LegacyFeedPage from "~/app/thinkpages/feed/page";
+import LegacyThinkSharePage from "~/app/thinkpages/thinkshare/page";
+import LegacyThinkTanksPage from "~/app/thinkpages/thinktanks/page";
+
+const resolvePost = jest.mocked(api.thinkpagesForum.resolvePost);
+const mockRedirect = jest.mocked(redirect);
+const mockPermanentRedirect = jest.mocked(permanentRedirect);
+
+beforeEach(() => {
+  resolvePost.mockReset();
+  mockRedirect.mockClear();
+  mockPermanentRedirect.mockClear();
+});
+
+const openPost = (postId: string) => LegacyPostPage({ params: Promise.resolve({ postId }) });
+
+describe("/thinkpages/post/<id>", () => {
+  it("sends a forum post the viewer may see to its thread page and anchor (307)", async () => {
+    resolvePost.mockResolvedValue({ threadId: "t1", page: 3 });
+    await expect(openPost("p1")).rejects.toThrow("redirect:/thinkpages/t/t1?page=3#post-p1");
+    expect(resolvePost).toHaveBeenCalledWith({ postId: "p1" });
+    expect(mockPermanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it("sends any other id to the feed post (307, not 308)", async () => {
+    resolvePost.mockResolvedValue(null);
+    await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
+    expect(mockPermanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the feed post when the lookup fails", async () => {
+    resolvePost.mockRejectedValue(new Error("too long"));
+    await expect(openPost("p1")).rejects.toThrow("redirect:/dashboard/post/p1");
+    expect(mockPermanentRedirect).not.toHaveBeenCalled();
+  });
+
+  it("encodes the ids on both paths", async () => {
+    resolvePost.mockResolvedValue({ threadId: "t 1/x", page: 1 });
+    await expect(openPost("a b/c")).rejects.toThrow(
+      "redirect:/thinkpages/t/t%201%2Fx?page=1#post-a%20b%2Fc"
+    );
+    expect(resolvePost).toHaveBeenCalledWith({ postId: "a b/c" });
+
+    resolvePost.mockResolvedValue(null);
+    await expect(openPost("a b/c")).rejects.toThrow("redirect:/dashboard/post/a%20b%2Fc");
+  });
+});
+
+describe("the feed's other old pages (308)", () => {
+  it("a persona profile moves under /dashboard, encoded", async () => {
+    await expect(
+      LegacyProfilePage({ params: Promise.resolve({ username: "jane doe" }) })
+    ).rejects.toThrow("permanent:/dashboard/profile/jane%20doe");
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["saved", LegacySavedPage, "/dashboard/saved"],
+    ["feed", LegacyFeedPage, "/dashboard"],
+    ["thinkshare", LegacyThinkSharePage, "/messages"],
+    ["thinktanks", LegacyThinkTanksPage, "/thinktanks"],
+  ])("/thinkpages/%s goes to its new home", (_name, Page, target) => {
+    expect(() => Page()).toThrow(`permanent:${target}`);
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+});

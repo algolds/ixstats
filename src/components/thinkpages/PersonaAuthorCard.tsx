@@ -10,7 +10,6 @@ import {
 } from "~/components/ui/hover-card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { PersonaFollowButton } from "./PersonaFollowButton";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -103,7 +102,7 @@ export function PersonaAuthorCard({ username, children }: PersonaAuthorCardProps
               </span>
             </div>
             <Link
-              href={withBasePath(`/thinkpages/profile/${profile.username}`)}
+              href={`/dashboard/profile/${profile.username}`}
               className="text-caption text-blue hover:underline"
             >
               View profile →

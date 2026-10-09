@@ -154,7 +154,7 @@ export const activitiesFollowsRouter = createTRPCRouter({
             category: "social",
             priority: "low",
             type: "info",
-            href: `/thinkpages/profile/${follower.username}`,
+            href: `/dashboard/profile/${follower.username}`,
             source: "thinkpages",
             actionable: false,
             metadata: { followerAccountId: follower.id, followedAccountId: target.id },

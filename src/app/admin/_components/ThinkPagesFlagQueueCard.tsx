@@ -98,7 +98,7 @@ export function ThinkPagesFlagQueueCard() {
               <div className="flex flex-wrap justify-end gap-2">
                 {item.post && (
                   <Button asChild size="sm" variant="ghost">
-                    <Link href={`/thinkpages/post/${item.postId}`} target="_blank">
+                    <Link href={`/dashboard/post/${item.postId}`} target="_blank">
                       <ExternalLink aria-hidden="true" />
                       Open
                     </Link>

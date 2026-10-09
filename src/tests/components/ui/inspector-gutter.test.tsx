@@ -58,7 +58,7 @@ describe("Inspector users do not lay out a column for it", () => {
     for (const file of [
       "src/app/builder/components/EditorSaveBar.tsx",
       "src/app/builder/components/enhanced/steps/foundation/ArchetypeConfirmationPanel.tsx",
-      "src/app/thinkpages/post/[postId]/page.tsx",
+      "src/app/dashboard/post/[postId]/page.tsx",
     ]) {
       expect(read(file)).toContain("--shell-inspector-width");
     }

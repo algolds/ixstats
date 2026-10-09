@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
-export default function ThinkTanksRedirect() {
-  redirect("/thinktanks");
+/** ThinkTanks has its own app. */
+export default function LegacyThinkTanksPage() {
+  permanentRedirect("/thinktanks");
 }
