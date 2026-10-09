@@ -17,6 +17,30 @@ export interface CommonsImage {
   blurhash?: string | null;
 }
 
+/** A minimal image for a url that is not on a loaded page (a shared `file=` link): only the url is known. */
+export function imageFromUrl(url: string): CommonsImage {
+  const lastSegment = (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean).pop() ?? "";
+  let name = lastSegment;
+  try {
+    name = decodeURIComponent(lastSegment);
+  } catch {
+    // keep the raw segment when it holds a malformed escape
+  }
+  return {
+    pageid: 0,
+    title: name.replace(/_/g, " "),
+    thumbUrl: url,
+    url,
+    descriptionUrl: url,
+    width: 0,
+    height: 0,
+    mime: "",
+    description: "",
+    artist: "",
+    license: "",
+  };
+}
+
 function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
   const m = (mime || "").toLowerCase();
   const t = (title || "").toLowerCase();
