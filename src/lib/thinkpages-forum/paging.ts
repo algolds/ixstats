@@ -16,3 +16,8 @@ export function pageParam(value: string | string[] | undefined): number {
 export function pageCount(total: number, perPage: number): number {
   return Math.max(1, Math.ceil(total / perPage));
 }
+
+/** Rows per page in the moderation console's lists (reports, warnings, bans, appeals), as the server pages them. */
+export const MOD_ROWS_PER_PAGE = 25;
+/** Rows per page of the moderation log. */
+export const MOD_LOG_PER_PAGE = 50;

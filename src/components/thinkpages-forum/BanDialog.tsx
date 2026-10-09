@@ -97,10 +97,12 @@ interface BanDialogProps {
   scopes: readonly BanScopeOption[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called once the ban is issued, e.g. to refresh a list that shows it. */
+  onDone?: () => void;
 }
 
 /** Ban a member from a place the viewer moderates, for a while or until lifted. */
-export function BanDialog({ userId, scopes, open, onOpenChange }: BanDialogProps) {
+export function BanDialog({ userId, scopes, open, onOpenChange, onDone }: BanDialogProps) {
   const notify = useNotify();
   const scopeId = useId();
   const durationId = useId();
@@ -127,6 +129,7 @@ export function BanDialog({ userId, scopes, open, onOpenChange }: BanDialogProps
         notify.success("Member banned");
         setReason("");
         close(false);
+        onDone?.();
       })
       .catch((e: Error) => setError(e.message || "Could not ban this member."));
   };

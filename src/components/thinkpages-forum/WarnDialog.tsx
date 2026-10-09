@@ -44,10 +44,12 @@ interface WarnDialogProps {
   target: { type: "thread" | "post"; id: string } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called once the warning is issued, e.g. to refresh a list that shows it. */
+  onDone?: () => void;
 }
 
 /** Warn a member: points up to the viewer's cap (site admins more), a reason, and the automatic-ban policy. */
-export function WarnDialog({ userId, target, open, onOpenChange }: WarnDialogProps) {
+export function WarnDialog({ userId, target, open, onOpenChange, onDone }: WarnDialogProps) {
   const notify = useNotify();
   const pointsId = useId();
   const [points, setPoints] = useState("1");
@@ -76,6 +78,7 @@ export function WarnDialog({ userId, target, open, onOpenChange }: WarnDialogPro
         setReason("");
         setPoints("1");
         close(false);
+        onDone?.();
       })
       .catch((e: Error) => setError(e.message || "Could not issue the warning."));
   };

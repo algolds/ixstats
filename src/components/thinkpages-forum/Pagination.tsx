@@ -6,7 +6,7 @@ import { Pagination as PageControl } from "~/components/ui/pagination";
 import { MAX_PAGE } from "~/lib/thinkpages-forum/paging";
 
 interface PaginationProps {
-  /** The page's path without a query, e.g. `/thinkpages/c/general`. */
+  /** The page's path, e.g. `/thinkpages/c/general`; a query it carries is kept (`/thinkpages/mod?tab=bans`). */
   basePath: string;
   page: number;
   totalPages: number;
@@ -20,7 +20,9 @@ export function Pagination({ basePath, page, totalPages }: PaginationProps) {
     <PageControl
       totalPages={totalPages}
       currentPage={Math.min(page, totalPages)}
-      onPageChangeAction={(next) => router.push(`${basePath}?page=${next}`)}
+      onPageChangeAction={(next) =>
+        router.push(`${basePath}${basePath.includes("?") ? "&" : "?"}page=${next}`)
+      }
     />
   );
 }
