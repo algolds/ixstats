@@ -173,6 +173,7 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
 import { BanDialog, banScopeOptions } from "~/components/thinkpages-forum/BanDialog";
 import { BanNotice } from "~/components/thinkpages-forum/BanNotice";
 import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
+import type { ModContext } from "~/components/thinkpages-forum/mod/ModRow";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import { StandingCard } from "~/components/thinkpages-forum/StandingCard";
 import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
@@ -191,7 +192,7 @@ const authors = {
   users: { u1: { name: "Kir", handle: "kir" }, u2: { name: "Rhea", handle: "rhea" } },
   personas: {},
 };
-const NO_MOD = { isSiteAdmin: false, realms: [], categories: [] };
+const NO_MOD: ModContext = { isSiteAdmin: false, realms: [], categories: [] };
 
 interface ThreadOverrides {
   canModerate?: boolean;

@@ -20,7 +20,7 @@ describe("ActionCardView", () => {
           title: "Signed the Northern Pact",
           type: "diplomatic",
           createdAt: new Date(0),
-          country: { name: "Aurelia", slug: "aurelia", flag: null },
+          country: { id: "c1", name: "Aurelia", slug: "aurelia", flag: null },
         }}
       />
     );

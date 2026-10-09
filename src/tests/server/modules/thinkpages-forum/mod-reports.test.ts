@@ -276,7 +276,7 @@ describe("listReports", () => {
       excerpt: "Thread t_eurth",
       category: { key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
     });
-    expect(rows[2]!.category.realm).toEqual({ slug: "ixworld", name: "IxWorld" });
+    expect(rows[2]!.category?.realm).toEqual({ slug: "ixworld", name: "IxWorld" });
     expect(rows[3]).toMatchObject({
       threadId: null,
       threadTitle: null,

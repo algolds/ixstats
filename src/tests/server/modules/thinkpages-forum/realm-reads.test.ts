@@ -34,7 +34,7 @@ const DRAFT = row("r_draft", "draft-land", "Draft Land", "draft");
 
 describe("listForumRealms", () => {
   function listDb(rows: Array<ReturnType<typeof row>>) {
-    return { realm: { findMany: jest.fn(async () => rows) } };
+    return { realm: { findMany: jest.fn(async (_args: { where: object }) => rows) } };
   }
 
   it("asks for IxWorld and public active realms only, for anonymous", async () => {
@@ -51,7 +51,7 @@ describe("listForumRealms", () => {
   it("adds realms where the viewer holds a nation, founded or serves as an officer", async () => {
     const db = listDb([]);
     await listForumRealms(db as never, plain);
-    expect(db.realm.findMany.mock.calls[0]![0].where).toEqual({
+    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({
       OR: [
         { id: "default" },
         { status: "active", visibility: "public" },
@@ -65,7 +65,7 @@ describe("listForumRealms", () => {
   it("asks for every realm for a site admin", async () => {
     const db = listDb([]);
     await listForumRealms(db as never, admin);
-    expect(db.realm.findMany.mock.calls[0]![0].where).toEqual({});
+    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({});
   });
 
   it("puts IxWorld first, then by name, and drops realms hidden from the viewer", async () => {
@@ -145,7 +145,7 @@ describe("getRealmSection", () => {
       realm: { findUnique: jest.fn(async () => realm) },
       forumCategory: { findMany, createMany: jest.fn(async () => ({ count: 3 })) },
       forumThread: {
-        groupBy: jest.fn(async () => [
+        groupBy: jest.fn(async (_args: { where: object }) => [
           {
             categoryId: "cat_hub",
             _count: { _all: 2 },
@@ -187,7 +187,7 @@ describe("getRealmSection", () => {
       })
     );
     expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
-    expect(db.forumThread.groupBy.mock.calls[0]![0]).toMatchObject({ where: { hidden: false } });
+    expect(db.forumThread.groupBy.mock.calls[0][0]).toMatchObject({ where: { hidden: false } });
     expect(db.forumCategory.createMany).not.toHaveBeenCalled();
   });
 

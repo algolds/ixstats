@@ -4,6 +4,7 @@ jest.mock("~/server/db", () => ({
   db: { systemConfig: { findUnique: jest.fn(), upsert: jest.fn() } },
 }));
 
+import type { SystemConfig } from "@prisma/client";
 import {
   __resetWikiosEditingCacheForTests,
   isWikiosEditingEnabled,
@@ -17,6 +18,16 @@ import { db } from "~/server/db";
 const findUnique = jest.mocked(db.systemConfig.findUnique);
 const upsert = jest.mocked(db.systemConfig.upsert);
 
+/** The row the switch reads; only `value` matters to it. */
+const configRow = (value: string): SystemConfig => ({
+  id: "cfg_wikios_editing",
+  key: WIKIOS_EDITING_KEY,
+  value,
+  description: null,
+  createdAt: new Date(0),
+  updatedAt: new Date(0),
+});
+
 let was: string | undefined;
 beforeEach(() => {
   was = process.env.WIKIOS_V1_ENABLED;
@@ -24,7 +35,7 @@ beforeEach(() => {
   __resetWikiosEditingCacheForTests();
   jest.clearAllMocks();
   findUnique.mockReset().mockResolvedValue(null);
-  upsert.mockReset().mockResolvedValue(undefined);
+  upsert.mockReset().mockResolvedValue(configRow("false"));
   jest.useRealTimers();
 });
 afterEach(() => {
@@ -37,11 +48,14 @@ describe("editing switch", () => {
     expect(isWikiosEditingEnabled()).toBe(false);
     findUnique.mockResolvedValue(null);
     await expect(refreshWikiosEditingFlag()).resolves.toBe(false);
-    expect(findUnique).toHaveBeenCalledWith({ where: { key: WIKIOS_EDITING_KEY }, select: { value: true } });
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { key: WIKIOS_EDITING_KEY },
+      select: { value: true },
+    });
   });
 
   it("follows the row", async () => {
-    findUnique.mockResolvedValue({ value: "true" });
+    findUnique.mockResolvedValue(configRow("true"));
     await refreshWikiosEditingFlag();
     expect(isWikiosEditingEnabled()).toBe(true);
   });
@@ -54,9 +68,9 @@ describe("editing switch", () => {
 
   it("serves the cached value for 15 s, then reads again", async () => {
     jest.useFakeTimers({ now: 1_000_000 });
-    findUnique.mockResolvedValue({ value: "true" });
+    findUnique.mockResolvedValue(configRow("true"));
     await refreshWikiosEditingFlag();
-    findUnique.mockResolvedValue({ value: "false" });
+    findUnique.mockResolvedValue(configRow("false"));
     await refreshWikiosEditingFlag();
     expect(isWikiosEditingEnabled()).toBe(true);
     expect(findUnique).toHaveBeenCalledTimes(1);
@@ -67,13 +81,17 @@ describe("editing switch", () => {
   });
 
   it("shares one query between concurrent refreshes", async () => {
-    findUnique.mockResolvedValue({ value: "true" });
-    await Promise.all([refreshWikiosEditingFlag(), refreshWikiosEditingFlag(), refreshWikiosEditingFlag()]);
+    findUnique.mockResolvedValue(configRow("true"));
+    await Promise.all([
+      refreshWikiosEditingFlag(),
+      refreshWikiosEditingFlag(),
+      refreshWikiosEditingFlag(),
+    ]);
     expect(findUnique).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the last value when the read fails", async () => {
-    findUnique.mockResolvedValueOnce({ value: "true" });
+    findUnique.mockResolvedValueOnce(configRow("true"));
     await refreshWikiosEditingFlag();
     findUnique.mockRejectedValueOnce(new Error("db down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
@@ -101,7 +119,7 @@ describe("editing switch", () => {
   });
 
   it("a stale synchronous read starts a background refresh", async () => {
-    findUnique.mockResolvedValue({ value: "true" });
+    findUnique.mockResolvedValue(configRow("true"));
     expect(isWikiosEditingEnabled()).toBe(false);
     await new Promise((r) => setImmediate(r));
     expect(findUnique).toHaveBeenCalledTimes(1);

@@ -66,12 +66,39 @@ jest.mock("~/components/passport/document/PassportFrontFace", () => ({
 
 import { MidRibbonPassportDocument } from "~/components/passport/MidRibbonPassportDocument";
 
-const data = {
+const data: PassportPayload = {
   handle: "alex",
-  account: { userId: "u1", isOwner: true },
-  wiki: null,
+  account: {
+    userId: "u1",
+    isOwner: true,
+    createdAt: "2024-05-01T00:00:00.000Z",
+    clerkUsername: "alex",
+    clerkDisplayName: "Alex Pav",
+    clerkImageUrl: null,
+    signature: null,
+  },
+  online: false,
+  privacy: {
+    accolades: true,
+    impact: true,
+    forumStats: true,
+    vaultCards: true,
+    historyStream: true,
+    achievements: true,
+    linkPreview: true,
+  },
+  primaryNation: null,
+  realmCount: 0,
+  nationCount: 0,
+  recruitedCount: 0,
+  wiki: { linked: false, username: null, lorewards: null, awardHistory: [] },
+  forum: { linked: false, username: null, stats: null },
   vault: null,
-} as PassportPayload;
+  showcase: {
+    achievements: { unlockedCount: 0, totalCount: 76, points: 0, ribbons: [] },
+  },
+  thinkpages: { bio: null },
+};
 
 function renderDocument(activeTab: "realms" | "work" = "realms") {
   return render(

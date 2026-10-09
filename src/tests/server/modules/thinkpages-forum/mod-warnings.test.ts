@@ -137,7 +137,7 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
   const tx = {
     $executeRaw: jest.fn(async (..._call: LockCall) => 0),
     forumWarning: {
-      create: jest.fn(async ({ data }: { data: Omit<WarningRow, "id"> }) => {
+      create: jest.fn(async ({ data }: { data: Omit<WarningRow, "id" | "revokedAt"> }) => {
         const row = { id: `w${++n}`, revokedAt: null, ...data };
         warnings.push(row);
         return row;
@@ -167,7 +167,7 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
           return row ? { ...row } : null;
         }
       ),
-      create: jest.fn(async ({ data }: { data: Omit<BanRow, "id" | "createdAt"> }) => {
+      create: jest.fn(async ({ data }: { data: Omit<BanRow, "id" | "createdAt" | "liftedAt"> }) => {
         const row = { id: `b${++n}`, createdAt: NOW, liftedAt: null, ...data };
         bans.push(row);
         return row;

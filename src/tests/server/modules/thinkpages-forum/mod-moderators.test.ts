@@ -61,8 +61,8 @@ describe("resolveMember", () => {
       ...store.db.user.findMany.mock.calls,
     ]) {
       expect(call[0]).toMatchObject({ select: { id: true } });
-      expect(call[0].select).not.toHaveProperty("clerkUserId");
-      expect(call[0].select).not.toHaveProperty("email");
+      expect(call[0]!.select).not.toHaveProperty("clerkUserId");
+      expect(call[0]!.select).not.toHaveProperty("email");
     }
   });
 

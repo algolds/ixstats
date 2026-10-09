@@ -214,7 +214,7 @@ describe("realm share", () => {
 
   it("offers the canonical link and card, and no invite to a viewer without a nation here", async () => {
     queries["ixnayid.getStatus"] = { passportHandle: "alex" };
-    render(<RealmRegionHeader overview={overview()} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(await screen.findByRole("button", { name: "Copy link" })).toBeTruthy();
     // The stable card route outside the (region) group (src/app/r/[realm]/opengraph-image.tsx); the
@@ -229,7 +229,7 @@ describe("realm share", () => {
     queries["ixnayid.getStatus"] = { passportHandle: "alex" };
     const writeText = jest.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    render(<RealmRegionHeader overview={overview({ viewer: holder })} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview({ viewer: holder })} />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     fireEvent.click(await screen.findByRole("button", { name: "Copy invite link" }));
     await waitFor(() =>
@@ -266,7 +266,7 @@ describe("sidebar", () => {
 
   it("links the header's founder to their passport when they have a handle", () => {
     const founder = { name: "Borovia", handle: "bora", nation: null };
-    render(<RealmRegionHeader overview={overview({ founder })} />);
+    render(<RealmRegionHeader openToClaim={0} overview={overview({ founder })} />);
     expect(screen.getByRole("link", { name: "Borovia" }).getAttribute("href")).toMatch(/\/@bora$/);
   });
 
