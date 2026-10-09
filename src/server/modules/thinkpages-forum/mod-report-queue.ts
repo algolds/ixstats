@@ -43,20 +43,16 @@ const targetKey = (type: string, id: string): string => `${type}:${id}`;
 const idsOf = (refs: readonly TargetRef[], type: string): string[] =>
   refs.filter((r) => r.targetType === type).map((r) => r.targetId);
 
-/**
- * The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`; `author` narrows them
- * to one member's content.
- */
+/** The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`. */
 async function loadTargets(
   db: ReportQueueDb,
-  refs: readonly TargetRef[],
-  author: { authorUserId?: string } = {}
+  refs: readonly TargetRef[]
 ): Promise<Map<string, TargetSummary>> {
   const [threadIds, postIds] = [idsOf(refs, "thread"), idsOf(refs, "post")];
   const [threads, posts] = await Promise.all([
     threadIds.length
       ? db.forumThread.findMany({
-          where: { id: { in: threadIds }, ...author },
+          where: { id: { in: threadIds } },
           select: {
             id: true,
             title: true,
@@ -68,7 +64,7 @@ async function loadTargets(
       : [],
     postIds.length
       ? db.forumPost.findMany({
-          where: { id: { in: postIds }, ...author },
+          where: { id: { in: postIds } },
           select: {
             id: true,
             threadId: true,
@@ -112,33 +108,16 @@ type ReportWhere = { status: ReportStatus; categoryId?: { in: string[] } };
 
 /**
  * A moderator never sees reports about their own content, so who reported them never reaches them; site admins
- * see every report (their own content's without the reporter, and they can't handle those, resolveReport).
+ * see every report (their own content's without the reporter, and they can't handle those, resolveReport). The
+ * report's stored target author decides (M8); null (imported content without an IxStats author, or a gone target)
+ * is nobody's.
  */
-async function withoutOwnTargets(
-  db: ReportQueueDb,
+function withoutOwnTargets(
   viewer: ForumViewer,
   where: ReportWhere
-): Promise<
-  ReportWhere & { NOT?: { OR: Array<{ targetType: string; targetId: { in: string[] } }> } }
-> {
+): ReportWhere & { OR?: Array<{ targetAuthorId: null | { not: string } }> } {
   if (viewer === null || isSiteAdmin(viewer)) return where;
-  const reported = await db.forumReport.findMany({
-    where,
-    select: { targetType: true, targetId: true },
-    distinct: ["targetType", "targetId"],
-  });
-  const own = await loadTargets(db, reported, { authorUserId: viewer.id });
-  const ownIds = (type: string) =>
-    idsOf(reported, type).filter((id) => own.has(targetKey(type, id)));
-  return {
-    ...where,
-    NOT: {
-      OR: [
-        { targetType: "thread", targetId: { in: ownIds("thread") } },
-        { targetType: "post", targetId: { in: ownIds("post") } },
-      ],
-    },
-  };
+  return { ...where, OR: [{ targetAuthorId: null }, { targetAuthorId: { not: viewer.id } }] };
 }
 
 /**
@@ -216,7 +195,7 @@ export async function listReports(
   const listing = await listingScope(db, viewer, filter.realmId);
   const categoryIds =
     listing === null ? null : await readableCategoryIds(db, viewer, listing.categoryIds);
-  const where = await withoutOwnTargets(db, viewer, {
+  const where = withoutOwnTargets(viewer, {
     status: filter.status,
     ...(categoryIds === null ? {} : { categoryId: { in: categoryIds } }),
   });

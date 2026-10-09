@@ -528,9 +528,19 @@ describe("resolveReport", () => {
 describe("reports about the moderator's own content", () => {
   const ownQueue = (): Row[] => [
     ...queue(),
-    report("rep_on_mod", "post", "p_by_mod", "r_eurth_hub", { createdAt: at(5) }),
-    report("rep_on_mod_thread", "thread", "t_by_mod", "r_eurth_hub", { createdAt: at(6) }),
-    report("rep_on_admin", "post", "p_by_admin", "r_eurth_hub", { createdAt: at(7) }),
+    // The target's author as fileReport stores it (M8).
+    report("rep_on_mod", "post", "p_by_mod", "r_eurth_hub", {
+      createdAt: at(5),
+      targetAuthorId: "u_eurth",
+    }),
+    report("rep_on_mod_thread", "thread", "t_by_mod", "r_eurth_hub", {
+      createdAt: at(6),
+      targetAuthorId: "u_eurth",
+    }),
+    report("rep_on_admin", "post", "p_by_admin", "r_eurth_hub", {
+      createdAt: at(7),
+      targetAuthorId: "u_a",
+    }),
   ];
   const ownStore = () => {
     const store = reportsStore([], { reports: ownQueue() });

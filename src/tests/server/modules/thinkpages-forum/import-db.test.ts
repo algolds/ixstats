@@ -429,4 +429,29 @@ describe("relinkImportedAuthors", () => {
     expect(author(tables().posts, "p-4")).toBe("u-other");
     expect(await relinkImportedAuthors(db as never)).toEqual({ threads: 0, posts: 0 });
   });
+
+  it("attributes the reports on relinked rows to their new author, and spends nothing when none moved (M8)", async () => {
+    const { db } = importStore({
+      users: [{ id: "u-early", forumUserId: 8, createdAt: day(1) }],
+      threads: [{ id: "t-1", categoryId: "c", xenforoUserId: 8, authorUserId: null }],
+      posts: [],
+    });
+    const sqlOf = () =>
+      db.$executeRaw.mock.calls.map(([strings]: [TemplateStringsArray]) => strings.join("?"));
+    await relinkImportedAuthors(db as never);
+    const updates = sqlOf().filter((sql) => sql.includes('UPDATE "forum_reports"'));
+    expect(updates).toHaveLength(2);
+    for (const [table, type] of [
+      ["forum_threads", "thread"],
+      ["forum_posts", "post"],
+    ]) {
+      expect(
+        updates.some((sql) => sql.includes(`FROM "${table}"`) && sql.includes(`'${type}'`))
+      ).toBe(true);
+    }
+    for (const sql of updates) expect(sql).toContain('r."targetAuthorId" IS NULL');
+    db.$executeRaw.mockClear();
+    await relinkImportedAuthors(db as never);
+    expect(sqlOf()).toEqual([]);
+  });
 });
