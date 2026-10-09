@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -47,14 +47,34 @@ function oneOf<T extends string>(allowed: readonly T[], value: string | null, fa
   return allowed.find((option) => option === value) ?? fallback;
 }
 
-/** The URL's params with `patch` applied: a null or default value is removed, so shared links stay short. */
-function withParams(current: string, patch: Record<string, string | null>): string {
-  const next = new URLSearchParams(current);
+/** What a shared link holds, read from a query string (unknown values fall back to the defaults). */
+function readUrl(search: string) {
+  const params = new URLSearchParams(search);
+  return {
+    source: oneOf(URL_SOURCES, params.get("src"), "commons"),
+    query: params.get("q") ?? "",
+    category: params.get("cat"),
+    fileType: oneOf(URL_TYPES, params.get("type"), "all"),
+    orientation: oneOf(URL_ORIENTATIONS, params.get("orient"), "all"),
+    file: params.get("file"),
+  };
+}
+
+/**
+ * Puts `patch` into the address bar with the history API, which Next keeps in step with `useSearchParams` without a
+ * server round trip. A null or default value is left out, so shared links stay short.
+ */
+function writeUrl(patch: Record<string, string | null>, how: "replace" | "push" = "replace") {
+  const params = new URLSearchParams(window.location.search);
   for (const [key, value] of Object.entries(patch)) {
-    if (value === null || value === "" || value === URL_DEFAULTS[key]) next.delete(key);
-    else next.set(key, value);
+    if (value === null || value === "" || value === URL_DEFAULTS[key]) params.delete(key);
+    else params.set(key, value);
   }
-  return next.toString();
+  const qs = params.toString();
+  const url = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+  if (url === `${window.location.pathname}${window.location.search}`) return;
+  if (how === "push") window.history.pushState(null, "", url);
+  else window.history.replaceState(null, "", url);
 }
 
 /** Forum and own uploads are lists, not category trees. */
@@ -95,76 +115,43 @@ export default function RepositoryPage() {
 function RepositoryPageBody() {
   usePageTitle({ title: "Image repository" });
 
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const signedIn = !!user;
 
-  // The URL holds what a shared link needs: source, search, browsed category, filters, open file.
-  const paramsString = searchParams.toString();
-  // The params a write builds on: the URL's, or what this page has just written and the URL has not shown yet
-  const paramsRef = useRef(paramsString);
-  const seenParamsRef = useRef(paramsString);
-  if (seenParamsRef.current !== paramsString) {
-    seenParamsRef.current = paramsString;
-    paramsRef.current = paramsString;
-  }
-  const urlSource = oneOf(URL_SOURCES, searchParams.get("src"), "commons");
-  const currentWikiSource: UrlSource = urlSource === "mine" && !signedIn ? "ixwiki" : urlSource;
-  const tab: Tab = currentWikiSource === "commons" ? "commons" : "wiki";
-  const wikiSubSource: WikiSubSource =
-    currentWikiSource === "commons" ? "ixwiki" : currentWikiSource;
-  const browsingCategory = searchParams.get("cat");
-  const fileTypeFilter = oneOf(URL_TYPES, searchParams.get("type"), "all");
-  const orientationFilter = oneOf(URL_ORIENTATIONS, searchParams.get("orient"), "all");
-  const fileParam = searchParams.get("file");
-  const urlQuery = searchParams.get("q") ?? "";
-
-  const [searchQuery, setSearchQuery] = useState(urlQuery);
+  // The page's state starts from the URL (a shared link) and is written back to it as it changes
+  const [initial] = useState(() => readUrl(searchParams.toString()));
+  const [urlSource, setSource] = useState<UrlSource>(initial.source);
+  const [searchQuery, setSearchQuery] = useState(initial.query);
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
+  const [browsingCategory, setBrowsingCategory] = useState<string | null>(initial.category);
+  const [fileTypeFilter, setFileTypeFilter] = useState<ImageTypeFilter>(initial.fileType);
+  const [orientationFilter, setOrientationFilter] = useState<ImageOrientationFilter>(
+    initial.orientation
+  );
   const [selectedImage, setSelectedImage] = useState<CommonsImage | null>(null);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   // undefined: the guide opens itself the first time; true: the help button opened it
   const [welcomeOpen, setWelcomeOpen] = useState<boolean | undefined>(undefined);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   // True while the open panel is a history entry this page pushed, so Back (not a new entry) closes it
-  const openedHereRef = useRef(false);
+  const pushedRef = useRef(false);
+  // The file the URL names that is not on screen yet: a shared link, or Back to a file not loaded now
+  const wantedFileRef = useRef(initial.file);
+
+  const currentWikiSource: UrlSource = urlSource === "mine" && !signedIn ? "ixwiki" : urlSource;
+  const tab: Tab = currentWikiSource === "commons" ? "commons" : "wiki";
+  const wikiSubSource: WikiSubSource =
+    currentWikiSource === "commons" ? "ixwiki" : currentWikiSource;
 
   // An emptied field searches nothing at once; the debounce only delays typing.
   const debouncedQuery = useDebounce(searchQuery, 300);
   const query = searchQuery.trim() === "" ? "" : debouncedQuery;
 
-  const updateUrl = useCallback(
-    (patch: Record<string, string | null>, how: "replace" | "push" = "replace") => {
-      const next = withParams(paramsRef.current, patch);
-      paramsRef.current = next;
-      const href = next ? `?${next}` : "?";
-      if (how === "push") router.push(href, { scroll: false });
-      else router.replace(href, { scroll: false });
-    },
-    [router]
-  );
-
-  // The settled search goes to the URL. The URL echoes it back later, perhaps after the next keystroke, so searches
-  // written but not yet echoed are remembered; any other change of `q` (Back, a link) comes back into the field.
-  const writtenQueriesRef = useRef(new Set<string>());
+  // The settled search goes to the address bar
   useEffect(() => {
-    const settled = query.trim();
-    if (settled !== (new URLSearchParams(paramsRef.current).get("q") ?? "")) {
-      writtenQueriesRef.current.add(settled);
-      updateUrl({ q: settled });
-    }
-  }, [query, updateUrl]);
-  const settledQueryRef = useRef(query.trim());
-  settledQueryRef.current = query.trim();
-  useEffect(() => {
-    if (urlQuery === settledQueryRef.current) {
-      writtenQueriesRef.current.clear();
-    } else if (!writtenQueriesRef.current.has(urlQuery)) {
-      // oxlint-disable-next-line
-      setSearchQuery(urlQuery);
-    }
-  }, [urlQuery]);
+    writeUrl({ q: query.trim() });
+  }, [query]);
 
   const results = useRepositoryImages({
     source: currentWikiSource,
@@ -176,21 +163,28 @@ function RepositoryPageBody() {
     signedIn,
   });
 
-  // The file the URL names that is not on screen yet: a shared link, or Back to a file not loaded now
-  const wantedFileRef = useRef(fileParam);
   const imagesRef = useRef(results.images);
   imagesRef.current = results.images;
-  // Back and forward move `file`: close the panel when it goes, show the file when it changes
+
+  // Back and forward: take the state of the entry that is now showing
   useEffect(() => {
-    const loaded = fileParam ? imagesRef.current.find((img) => img.url === fileParam) : undefined;
-    wantedFileRef.current = fileParam && !loaded ? fileParam : null;
-    // oxlint-disable-next-line
-    setSelectedImage((current) => {
-      if (!fileParam) return null;
-      return current?.url === fileParam ? current : (loaded ?? null);
-    });
-  }, [fileParam]);
-  // ...and the wanted file opens once it has loaded
+    const onPopState = () => {
+      const url = readUrl(window.location.search);
+      setSource(url.source);
+      setSearchQuery(url.query);
+      setBrowsingCategory(url.category);
+      setFileTypeFilter(url.fileType);
+      setOrientationFilter(url.orientation);
+      const loaded = imagesRef.current.find((img) => img.url === url.file);
+      wantedFileRef.current = url.file && !loaded ? url.file : null;
+      if (!url.file) pushedRef.current = false;
+      setSelectedImage(loaded ?? null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // The wanted file opens once it has loaded
   useEffect(() => {
     const wanted = wantedFileRef.current;
     const match = wanted ? results.images.find((img) => img.url === wanted) : undefined;
@@ -201,43 +195,38 @@ function RepositoryPageBody() {
     }
   }, [results.images]);
 
-  const handleSelectImage = useCallback(
-    (img: CommonsImage) => {
-      wantedFileRef.current = null;
-      setSelectedImage(img);
-      if (new URLSearchParams(paramsRef.current).has("file")) {
-        updateUrl({ file: img.url });
-      } else {
-        openedHereRef.current = true;
-        updateUrl({ file: img.url }, "push");
-      }
-    },
-    [updateUrl]
-  );
+  const handleSelectImage = useCallback((img: CommonsImage) => {
+    wantedFileRef.current = null;
+    setSelectedImage(img);
+    if (new URLSearchParams(window.location.search).has("file")) {
+      writeUrl({ file: img.url });
+    } else {
+      pushedRef.current = true;
+      writeUrl({ file: img.url }, "push");
+    }
+  }, []);
 
   const handleCloseImage = useCallback(() => {
     wantedFileRef.current = null;
     setSelectedImage(null);
-    if (openedHereRef.current) {
-      openedHereRef.current = false;
-      paramsRef.current = withParams(paramsRef.current, { file: null });
-      router.back();
+    if (pushedRef.current) {
+      pushedRef.current = false;
+      window.history.back();
     } else {
-      updateUrl({ file: null });
+      writeUrl({ file: null });
     }
-  }, [router, updateUrl]);
+  }, []);
 
-  const changeSource = useCallback(
-    (src: UrlSource) => {
-      setSearchQuery("");
-      setActiveCategories([]);
-      setSelectedImage(null);
-      wantedFileRef.current = null;
-      openedHereRef.current = false;
-      updateUrl({ src, q: null, cat: null, file: null });
-    },
-    [updateUrl]
-  );
+  const changeSource = useCallback((src: UrlSource) => {
+    setSource(src);
+    setSearchQuery("");
+    setActiveCategories([]);
+    setBrowsingCategory(null);
+    setSelectedImage(null);
+    wantedFileRef.current = null;
+    pushedRef.current = false;
+    writeUrl({ src, q: null, cat: null, file: null });
+  }, []);
 
   const handleTabChange = useCallback(
     (newTab: Tab) => changeSource(newTab === "commons" ? "commons" : "ixwiki"),
@@ -250,30 +239,32 @@ function RepositoryPageBody() {
     );
   }, []);
 
-  const handleBrowseCategory = useCallback(
-    (cat: string) => {
-      setSearchQuery("");
-      setMobileCategoriesOpen(false);
-      updateUrl({ cat, q: null });
-    },
-    [updateUrl]
-  );
+  const handleBrowseCategory = useCallback((cat: string) => {
+    setBrowsingCategory(cat);
+    setSearchQuery("");
+    setMobileCategoriesOpen(false);
+    writeUrl({ cat, q: null });
+  }, []);
 
-  const handleStopBrowsing = useCallback(() => updateUrl({ cat: null }), [updateUrl]);
-  const handleFileTypeChange = useCallback(
-    (type: ImageTypeFilter) => updateUrl({ type }),
-    [updateUrl]
-  );
-  const handleOrientationChange = useCallback(
-    (orient: ImageOrientationFilter) => updateUrl({ orient }),
-    [updateUrl]
-  );
+  const handleStopBrowsing = useCallback(() => {
+    setBrowsingCategory(null);
+    writeUrl({ cat: null });
+  }, []);
+  const handleFileTypeChange = useCallback((type: ImageTypeFilter) => {
+    setFileTypeFilter(type);
+    writeUrl({ type });
+  }, []);
+  const handleOrientationChange = useCallback((orient: ImageOrientationFilter) => {
+    setOrientationFilter(orient);
+    writeUrl({ orient });
+  }, []);
 
   const isFilterActive = fileTypeFilter !== "all" || orientationFilter !== "all";
-  const handleClearFilters = useCallback(
-    () => updateUrl({ type: null, orient: null }),
-    [updateUrl]
-  );
+  const handleClearFilters = useCallback(() => {
+    setFileTypeFilter("all");
+    setOrientationFilter("all");
+    writeUrl({ type: null, orient: null });
+  }, []);
 
   // Orientation is judged here; the file type is part of the search itself
   const filteredImages = useMemo(
