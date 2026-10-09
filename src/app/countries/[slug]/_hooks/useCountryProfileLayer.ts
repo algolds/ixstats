@@ -73,8 +73,6 @@ export interface ProfileState {
     judiciary: string | null;
     departments: string[];
   } | null;
-  directives: PublicDirective[];
-  issueOutcomes: PublicIssueOutcome[];
   election: {
     lastName: string | null;
     lastIxTime: number | null;
@@ -543,8 +541,6 @@ export function useCountryProfileLayer({
     const { decisions, diplomacy } = splitCanonFeed(canon.data, (ms) => IxTime.convertToIxTime(ms));
     const state: ProfileState = {
       government: buildGovernment(government.data),
-      directives,
-      issueOutcomes,
       election: buildElection(election.data),
       isLoading: record.isLoading || government.isLoading,
     };

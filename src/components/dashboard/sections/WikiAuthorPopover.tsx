@@ -11,7 +11,6 @@ import {
 import { OpenBook as BookOpen, Clock, Globe, Map as MapIcon, Group as Users } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { createUrl } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
@@ -24,16 +23,16 @@ export function WikiAuthorPopover({ username }: { username: string }) {
     { enabled: open, staleTime: 60_000 }
   );
 
-  const wikiUserUrl = createUrl(getWikiProfilePath(username));
-  const wikiContribsUrl = createUrl(`/util/contributions/${username}`);
+  const wikiUserUrl = getWikiProfilePath(username);
+  const wikiContribsUrl = `/util/contributions/${username}`;
   const country = author?.country;
   const links = [
     { href: wikiUserUrl, icon: BookOpen, label: "Wiki user page" },
     { href: wikiContribsUrl, icon: Clock, label: "Contributions" },
     ...(country?.slug
       ? [
-          { href: createUrl(`/countries/${country.slug}`), icon: Globe, label: "Country page" },
-          { href: createUrl(`/maps?country=${country.id}`), icon: MapIcon, label: "View on map" },
+          { href: `/countries/${country.slug}`, icon: Globe, label: "Country page" },
+          { href: `/maps?country=${country.id}`, icon: MapIcon, label: "View on map" },
         ]
       : []),
   ];

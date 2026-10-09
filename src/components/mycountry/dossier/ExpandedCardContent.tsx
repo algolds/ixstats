@@ -4,7 +4,7 @@ import React, { useCallback, useState } from "react";
 import { FadeIn } from "~/components/ui/text-reveal";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import {
   UserPlus,
   UserXmark as UserMinus,
@@ -60,7 +60,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const handleSendMessage = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl(`/messages?country=${targetCountryId}`));
+        router.push(`/messages?country=${targetCountryId}`);
       },
       [router, targetCountryId]
     );
@@ -84,7 +84,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const handleGoToMyCountry = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        router.push(createUrl("/mycountry"));
+        router.push("/mycountry");
       },
       [router]
     );

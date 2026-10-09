@@ -17,7 +17,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { cn, createUrl, formatCurrency, formatPopulation } from "~/lib/utils";
+import { cn, formatCurrency, formatPopulation } from "~/lib/utils";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
 interface CountryData {
@@ -141,7 +141,7 @@ export function CountryListCard({ country, flagUrl, flagLoading }: CountryListCa
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
-                router.push(createUrl(wikiUrl));
+                router.push(wikiUrl);
               }}
               aria-label={`View ${country.name} on IxWiki`}
               className="relative z-10 h-7 w-7"

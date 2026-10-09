@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { OpenBook } from "iconoir-react";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 
 /**
@@ -42,7 +41,7 @@ export function LoreProse({ paragraphs, dropCap = true, source, className }: Lor
       </div>
       {source && (
         <Link
-          href={createUrl(source.href)}
+          href={source.href}
           className="text-footnote text-label-secondary hover:text-tint focus-visible:outline-tint rounded-control-sm mt-3 inline-flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <OpenBook aria-hidden className="size-3.5" />

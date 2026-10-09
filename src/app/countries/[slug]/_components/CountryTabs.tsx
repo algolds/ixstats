@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { Activity, OpenBook, Page } from "iconoir-react";
 import { springSnappy } from "~/lib/design/motion";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import type { ProfileTabType } from "../_types";
 
@@ -60,7 +59,7 @@ export function CountryTabs({
           return (
             <li key={tab.id} className="min-w-fit flex-1">
               <Link
-                href={createUrl(`/countries/${countrySlug}${tab.path}`)}
+                href={`/countries/${countrySlug}${tab.path}`}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "text-body rounded-control-sm focus-visible:outline-tint duration-fast ease-out-facet relative flex h-(--control-height) items-center justify-center gap-2 px-3 font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2",

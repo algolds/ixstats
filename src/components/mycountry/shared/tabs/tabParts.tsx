@@ -9,7 +9,7 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { MetricCardGrid, useCountryData } from "~/components/mycountry/shared/primitives";
 import type {
   CountryWithEconomicData,
@@ -110,7 +110,7 @@ export function TabShell({
             <p className="text-label-secondary text-footnote">{subtitle}</p>
           </div>
           {!isPublicReadOnly && (
-            <Link href={createUrl("/mycountry/editor")}>
+            <Link href={"/mycountry/editor"}>
               <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <EditorIcon className="h-3.5 w-3.5" />
                 <span>Open editor</span>

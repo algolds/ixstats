@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Calculator, Map as MapIcon, OpenBook, StatsReport } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 
 const CountryComparisonModal = dynamic(
@@ -60,14 +59,14 @@ export function QuickActions({
           Compare
         </Button>
         <Button asChild variant="secondary" size="sm" className={item}>
-          <Link href={createUrl(`/countries/${slug}/modeling`)}>
+          <Link href={`/countries/${slug}/modeling`}>
             <Calculator aria-hidden />
             Economic modeling
           </Link>
         </Button>
         {hasGeometry && (
           <Button asChild variant="secondary" size="sm" className={item}>
-            <Link href={createUrl(`/maps?country=${encodeURIComponent(countryId)}`)}>
+            <Link href={`/maps?country=${encodeURIComponent(countryId)}`}>
               <MapIcon aria-hidden />
               Open on map
             </Link>
@@ -75,7 +74,7 @@ export function QuickActions({
         )}
         {wikiHref && (
           <Button asChild variant="secondary" size="sm" className={item}>
-            <Link href={createUrl(wikiHref)}>
+            <Link href={wikiHref}>
               <OpenBook aria-hidden />
               Wiki article
             </Link>

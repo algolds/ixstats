@@ -21,12 +21,12 @@ Public, read-only nation profiles plus the browse/explore experience. Anyone (si
 
 ## Country profile
 
-`/countries/[slug]` is the **Factbook tab**, which opens on its overview: the Command view (`_components/CommandProfileView.tsx`). The old Profile tab was merged into the Factbook in October 2026: the Factbook now leads with the hero, key facts and the domain stream the Profile showed, and its other sections (Economy, Labor, Government, Geography) follow as section pills. The Factbook's former overview card (toggle metrics, wiki intro, identity pills) was dropped from the country page because the hero, pulse, Lore and People tiles already show it. There is no layout switcher any more (the `?concept=` parameter, `Alt` shortcuts and `ixstates_profile_concept_*` keys are gone; stale values are simply ignored).
+`/countries/[slug]` is the **Factbook tab**, which opens on its overview: the Command view (`_components/CommandProfileView.tsx`). The old Profile tab was merged into the Factbook in October 2026: the Factbook now leads with the hero, key facts and the domain stream the Profile showed, and its other sections (Economy, Labor, Government, Geography) are reached from the matching tiles (Economy, People, State, Territory). The Factbook's former overview card (toggle metrics, wiki intro, identity pills) was dropped from the country page because the hero, pulse, Lore and People tiles already show it. There is no layout switcher any more (the `?concept=` parameter, `Alt` shortcuts and `ixstates_profile_concept_*` keys are gone; stale values are simply ignored).
 
 The profile shell (`(profile)/layout.tsx`) loads the country (`CountryDataProvider`), shows the breadcrumb and the Country Actions button on every route, and shares the country, flag, ownership and cover banner with the routes below through `ProfileShellProvider` (`_components/ProfileShellContext.tsx`). It reads the active child segment (`useSelectedLayoutSegment`):
 
-- **Factbook overview** (`/countries/[slug]`, segment `null`): the page renders `CommandProfileView`, which brings its own hero, tabs and Factbook section pills (`FactbookSectionNav`).
-- **Deep-dives** (`/factbook/<section>`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook sections keep the section pills and `FactbookSidebar` (`factbook/layout.tsx`). `/factbook` itself redirects to `/countries/[slug]`.
+- **Factbook overview** (`/countries/[slug]`, segment `null`): the page renders `CommandProfileView`, which brings its own hero and tabs. It has no section pills: the dock navigates the page and the tiles link to the sections.
+- **Deep-dives** (`/factbook/<section>`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook sections keep the section pills (`factbook/layout.tsx`) and run full width. `/factbook` itself redirects to `/countries/[slug]`.
 
 Every state of the shell (loading, error, loaded) sits in the app's standard page column, `mx-auto w-full max-w-6xl p-4 md:p-8` (`PAGE_CONTAINER` in `(profile)/layout.tsx`), so the page's left edge lines up with the rest of the app at every breakpoint and sidebar state.
 
@@ -44,7 +44,7 @@ Opaque cards on real data; glass only for the bottom dock on phones:
 - **National pulse** (`PulseBanner`): a status (rapid expansion, stable and prosperous, consolidating, economic headwinds) from real GDP growth, population growth and stability, with the readings. Hidden without a GDP growth reading.
 - **Dock**: domains with a scroll-spy (opaque side rail ≥1024px, sticky bottom bar below) and the tools (Compare, Economic modeling, Open on map, Wiki article).
 - **Country DNA** (`CountryDNA` + `DnaLegend`): a radar of the nation's World Census percentile per category, with the ranks as rows; **National condition** (`ConditionMatrix`): meters for the 0–100 readings the nation has (employment, approval, stability, literacy, urbanisation), each tile named by icon and label.
-- **Tiles**: territory (map, attributes, principal cities and regions), lore (prologue; "Read the story" opens every chapter), economy (figures + GDP trend), people, state (`StateStructure`: executive, legislative and judicial branches, system, ministries; election; directives and decisions), foreign affairs (`DiplomaticMatrix`: partners vs tensions, relation/treaty/embassy counts; embassies) and the chronicle.
+- **Tiles**: territory (map, attributes, principal cities and regions), lore (prologue; "Read the dossier" opens the Dossier tab), economy (figures + GDP trend; GDP and population stay in the hero), people, state (`StateStructure`: executive, legislative and judicial branches, system, ministries; election; directives and decisions live in the chronicle), foreign affairs (`DiplomaticMatrix`: partners vs tensions, relation/treaty/embassy counts; embassies) and the chronicle.
 
 Pure derivations for these pieces live in `src/components/country-profile/derive.ts` (`pulseStatus`, `toDnaAxes`, `conditionPillars`, `stateBranches`, `diplomaticMatrix`) and are tested in `src/tests/app/countries/command-derive.test.ts`.
 
@@ -98,7 +98,7 @@ countries/
     │   ├── layout.tsx                # Country shell (CountryDataProvider, breadcrumb, actions; CountryHeader + CountryTabs on deep-dives)
     │   ├── page.tsx                  # The Factbook overview: CommandProfileView (+ legacy hash redirects)
     │   ├── factbook/
-    │   │   ├── layout.tsx            # Factbook section shell (section pills, FactbookMetricsProvider + FactbookSidebar)
+    │   │   ├── layout.tsx            # Factbook section shell (section pills, FactbookMetricsProvider)
     │   │   ├── page.tsx              # Redirects to /countries/[slug]
     │   │   ├── economy/page.tsx      # Economy section
     │   │   ├── labor/page.tsx        # Labor section
@@ -107,7 +107,7 @@ countries/
     │   ├── dossier/page.tsx          # Dossier tab
     │   └── activity/page.tsx         # Activity feed tab
     ├── modeling/page.tsx             # Economic scenario engine
-    ├── _components/                  # CommandProfileView, CountryHeader, CountryTabs, FactbookSectionNav, ProfileShellContext, FactbookSidebar, FactbookSectionContent, CountryActivityPanel
+    ├── _components/                  # CommandProfileView, CountryHeader, CountryTabs, FactbookSectionNav, ProfileShellContext, FactbookSectionContent, CountryActivityPanel
     ├── _hooks/useCountryPageState.ts # Country Actions + cover banner state
     ├── _hooks/useCountryProfileLayer.ts # The profile's data layer
     ├── _types/                       # Domain types for profile pages
@@ -122,10 +122,10 @@ countries/
 | `api.countries.getByIdWithEconomicData` | Profile shell (`CountryDataProvider`), modeling |
 | `api.countries.getPublicRecord` | Profile: enacted directives and resolved issue outcomes (public, server-filtered) |
 | `api.countries.getActivityRingsData` | Telemetry vitality rings (via `CountryDataProvider`) |
-| `api.activities.getCountryActivity` | Factbook sidebar & activity tab |
+| `api.activities.getCountryActivity` | Activity tab |
 | `api.government.getByCountryId` | Overview government structure (via `useMyCountryMetrics`) |
 | `api.wikiCache.getCountryProfile` | Overview wiki content (via `useMyCountryMetrics`) |
-| `api.countryGeo.getCountryGeoBundle`, `api.geoCore.getWorldMap` | Factbook sidebar map embed (via `useCountryMapEmbed`) |
+| `api.countryGeo.getCountryGeoBundle`, `api.geoCore.getWorldMap` | Map embeds (via `useCountryMapEmbed`) |
 | `api.system.getCurrentIxTime` | Time context |
 | `api.users.getProfile`, `api.countries.getByIdAtTime` | Viewer identity (`useUserCountry`) |
 

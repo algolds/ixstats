@@ -7,7 +7,6 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { Lock, LockSlash as UnlockIcon } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { createUrl } from "~/lib/utils";
 import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderFilterProvider, useBuilderFilter } from "./builder-filter-context";
@@ -165,7 +164,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   const handleConfirmReset = useCallback(() => {
     clearDraft();
     if (mode === "edit") {
-      router.push(createUrl("/mycountry"));
+      router.push("/mycountry");
     } else {
       filter.clearSelection();
       setActiveSection("foundation");
@@ -483,7 +482,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               <h1 className="text-label text-title-1">Authentication required</h1>
               <p className="text-label-secondary">Sign in to use the MyCountry builder.</p>
             </div>
-            <Button onClick={() => router.push(createUrl("/sign-in"))} size="lg" className="w-full">
+            <Button onClick={() => router.push("/sign-in")} size="lg" className="w-full">
               <UnlockIcon aria-hidden="true" className="h-4 w-4" />
               Sign in
             </Button>
@@ -507,7 +506,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
             <p className="text-label-secondary text-body">{countryLoadError}</p>
           </div>
           <div className="flex flex-col-reverse justify-center gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => router.push(createUrl("/mycountry"))}>
+            <Button variant="outline" onClick={() => router.push("/mycountry")}>
               <NavArrowLeft aria-hidden="true" className="h-4 w-4" />
               Back to MyCountry
             </Button>

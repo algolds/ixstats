@@ -5,7 +5,6 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
-import { createUrl } from "~/lib/utils";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import {
   SplashHero,
@@ -35,7 +34,7 @@ export function IxStatsSplashPage() {
 
   useEffect(() => {
     if (user) {
-      router.push(createUrl("/dashboard"));
+      router.push("/dashboard");
     }
   }, [user, router]);
 

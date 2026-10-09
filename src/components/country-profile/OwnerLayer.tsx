@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { EyeClosed, NavArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
-import { createUrl } from "~/lib/utils";
 import type { ProfileOwnerLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 
 /**
@@ -50,7 +49,7 @@ export function OwnerLayer({
         ))}
       </ul>
       <Link
-        href={createUrl("/mycountry")}
+        href={"/mycountry"}
         className="text-callout text-tint focus-visible:outline-tint rounded-control-sm ml-auto inline-flex items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         Open MyCountry

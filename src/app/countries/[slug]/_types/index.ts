@@ -38,14 +38,6 @@ export interface BaseCountryData {
   populationGrowthRate?: number | null;
 }
 
-/** Vitality telemetry scores as computed by the server; null when there is no record (shown as "—"). */
-export interface VitalityData {
-  economicVitality: number;
-  populationWellbeing: number;
-  diplomaticStanding: number | null;
-  governmentalEfficiency: number | null;
-}
-
 /** Activity Feed Item shape */
 export interface CountryActivityItem {
   id: string;

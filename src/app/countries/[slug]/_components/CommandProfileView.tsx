@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Bank,
   Clock,
@@ -37,7 +38,6 @@ import { OwnerLayer } from "~/components/country-profile/OwnerLayer";
 import { PulseBanner } from "~/components/country-profile/PulseBanner";
 import { QuickActions } from "~/components/country-profile/QuickActions";
 import { StateStructure } from "~/components/country-profile/StateStructure";
-import { DirectiveRows, IssueOutcomeRows } from "~/components/country-profile/StateRecord";
 import { TerritoryMap } from "~/components/country-profile/TerritoryMap";
 import { EmbassyRows } from "~/components/country-profile/WorldStanding";
 import {
@@ -59,8 +59,8 @@ import { useScrollSpy } from "~/components/country-profile/useScrollSpy";
 import { censusRealmName, scrollBehavior } from "~/components/country-profile/labels";
 import { useCountryProfileLayer, type CountryProfileLayer } from "../_hooks/useCountryProfileLayer";
 import type { LoreChapter } from "../_utils/profileLayer";
+import { factbookSectionHref, type FactbookSection } from "~/lib/country/factbook-routes";
 import { CountryTabs } from "./CountryTabs";
-import { FactbookSectionNav } from "./FactbookSectionNav";
 import { Card } from "~/components/ui/card";
 
 /** The dock: one entry per domain. */
@@ -103,11 +103,11 @@ export interface CommandProfileViewProps {
 
 /**
  * CommandProfileView: the Factbook tab's overview, at the country's own URL (`/countries/[slug]`):
- * the hero (cover, flag, identity, key facts), the country tabs and the Factbook section pills,
- * the national pulse, then a sticky dock (side rail ≥1024px, bottom bar below) over a stream of
- * domain tiles: country DNA and condition, territory, lore, economy, people, state structure,
- * foreign affairs and the chronicle. The other Factbook sections (`/factbook/economy`, ...) are
- * the deep sections. Visitors see the public record only (server-enforced); the owner also sees
+ * the hero (cover, flag, identity, key facts), the country tabs, the national pulse, then a sticky
+ * dock (side rail ≥1024px, bottom bar below) over a stream of domain tiles: country DNA and
+ * condition, territory, lore, economy, people, state structure, foreign affairs and the chronicle.
+ * The territory, economy, people and state tiles link to their Factbook sections
+ * (`/factbook/geography`, ...), and the lore tile to the Dossier. Visitors see the public record only (server-enforced); the owner also sees
  * a private strip.
  */
 export function CommandProfileView({
@@ -137,6 +137,23 @@ function ProfileLoading() {
 
 type Pillars = ReturnType<typeof conditionPillars>;
 type TileProps = { layer: CountryProfileLayer };
+
+/** A tile's way into its Factbook section (`/factbook/<section>`). */
+function SectionLink({
+  slug,
+  section,
+  label,
+}: {
+  slug: string;
+  section: FactbookSection;
+  label: string;
+}) {
+  return (
+    <Button asChild variant="secondary" size="sm">
+      <Link href={factbookSectionHref(section, slug)}>{label}</Link>
+    </Button>
+  );
+}
 
 function Dock({
   orientation,
@@ -220,7 +237,13 @@ function DnaTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
 function LandTile({ layer }: TileProps) {
   const { land } = layer;
   return (
-    <Tile id="land" icon={MapIcon} title="Territory" className="md:col-span-6 xl:col-span-7">
+    <Tile
+      id="land"
+      icon={MapIcon}
+      title="Territory"
+      className="md:col-span-6 xl:col-span-7"
+      action={<SectionLink slug={layer.slug} section="geography" label="Full geography" />}
+    >
       <TerritoryMap
         countryId={layer.countryId}
         hasGeometry={land.hasGeometry}
@@ -235,11 +258,7 @@ function LandTile({ layer }: TileProps) {
   );
 }
 
-function LoreTile({
-  layer,
-  chapters,
-  onOpen,
-}: TileProps & { chapters: LoreChapter[]; onOpen: () => void }) {
+function LoreTile({ layer, chapters }: TileProps & { chapters: LoreChapter[] }) {
   const { lore, identity } = layer;
   return (
     <Tile
@@ -250,9 +269,11 @@ function LoreTile({
       className="md:col-span-6 xl:col-span-5"
       action={
         lore.prologue.length > 0 || chapters.length > 0 ? (
-          <Button variant="secondary" size="sm" onClick={onOpen}>
-            <OpenBook aria-hidden />
-            Read the story
+          <Button asChild variant="secondary" size="sm">
+            <Link href={`/countries/${layer.slug}/dossier`}>
+              <OpenBook aria-hidden />
+              Read the dossier
+            </Link>
           </Button>
         ) : undefined
       }
@@ -288,13 +309,10 @@ function LoreTile({
 function EconomyTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
   const { vitals } = layer;
   const inMatrix = new Set<string>(pillars.map((p) => p.key));
-  // Readings the condition matrix already shows are not repeated in the domain tiles.
-  const stats = [
-    ...headlineVitals(vitals).filter((s) => s.key === "gdp" || s.key === "gdppc"),
-    ...economyVitals(vitals).filter(
-      (s) => !(s.key === "unemployment" && inMatrix.has("employment"))
-    ),
-  ];
+  // Readings the hero or the condition matrix already shows are not repeated in the domain tiles.
+  const stats = economyVitals(vitals).filter(
+    (s) => !(s.key === "unemployment" && inMatrix.has("employment"))
+  );
   return (
     <Tile
       id="economy"
@@ -302,6 +320,7 @@ function EconomyTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
       title="Economy"
       subtitle={vitals.economicTier ? `${vitals.economicTier} economy` : undefined}
       className="md:col-span-6 xl:col-span-7"
+      action={<SectionLink slug={layer.slug} section="economy" label="Full economy" />}
     >
       <StatGrid stats={stats} columns="grid-cols-2 sm:grid-cols-4" />
       <EconomyTrend points={vitals.history} />
@@ -315,10 +334,7 @@ function EconomyTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
 function PeopleTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
   const { vitals, identity } = layer;
   const inMatrix = new Set<string>(pillars.map((p) => p.key));
-  const stats = [
-    ...headlineVitals(vitals).filter((s) => s.key === "population"),
-    ...peopleVitals(vitals).filter((s) => !inMatrix.has(s.key)),
-  ];
+  const stats = peopleVitals(vitals).filter((s) => !inMatrix.has(s.key));
   return (
     <Tile
       id="people"
@@ -326,6 +342,7 @@ function PeopleTile({ layer, pillars }: TileProps & { pillars: Pillars }) {
       title="People"
       subtitle={identity.demonym ?? undefined}
       className="md:col-span-6 xl:col-span-5"
+      action={<SectionLink slug={layer.slug} section="labor" label="Labor" />}
     >
       <StatGrid stats={stats} columns="grid-cols-2" />
       <FacetList variant="plain">
@@ -359,6 +376,7 @@ function StateTile({ layer, wikiAnchor }: TileProps & { wikiAnchor: (heading: st
       title="State"
       subtitle={state.government?.name ?? identity.governmentType ?? undefined}
       className="md:col-span-6 xl:col-span-12"
+      action={<SectionLink slug={layer.slug} section="government" label="Full government" />}
     >
       <StateStructure
         branches={branches}
@@ -369,18 +387,9 @@ function StateTile({ layer, wikiAnchor }: TileProps & { wikiAnchor: (heading: st
         }
       />
       <ElectionSummary state={state} />
-      <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
-        <FacetList variant="plain">
-          <DirectiveRows directives={state.directives} limit={4} header="Directives" />
-        </FacetList>
-        <FacetList variant="plain">
-          <IssueOutcomeRows outcomes={state.issueOutcomes} limit={4} header="Decisions" />
-        </FacetList>
-      </div>
-      {branches.length === 0 &&
-        state.directives.length === 0 &&
-        state.issueOutcomes.length === 0 &&
-        !state.election && <EmptyState compact icon={<Bank />} title="No public record yet" />}
+      {branches.length === 0 && !state.election && (
+        <EmptyState compact icon={<Bank />} title="No public record yet" />
+      )}
     </Tile>
   );
 }
@@ -428,61 +437,6 @@ function ChronicleTile({ layer: { chronicle, land }, onOpen }: TileProps & { onO
   );
 }
 
-function ReadingSheet({
-  open,
-  onOpenChange,
-  title,
-  description,
-  className,
-  children,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: React.ReactNode;
-  description: React.ReactNode;
-  className: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className={cn("w-full overflow-y-auto", className)}>
-        <SheetHeader className="mb-6">
-          <SheetTitle>{title}</SheetTitle>
-          <SheetDescription>{description}</SheetDescription>
-        </SheetHeader>
-        {children}
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-/** The whole story in the Reading style. */
-function StoryBody({
-  layer: { lore },
-  chapters,
-  wikiAnchor,
-}: TileProps & { chapters: LoreChapter[]; wikiAnchor: (heading: string) => string }) {
-  return (
-    <div className="space-y-10 pb-6">
-      {lore.prologue.length > 0 && <LoreProse paragraphs={lore.prologue} />}
-      {chapters.map((key) => {
-        const section = lore.chapters[key]!;
-        return (
-          <section key={key} aria-labelledby={`story-${key}`} className="space-y-3">
-            <h3 id={`story-${key}`} className="text-title-1 text-label">
-              {LORE_TITLES[key]}
-            </h3>
-            <LoreProse
-              paragraphs={section.paragraphs}
-              source={{ heading: section.heading, href: wikiAnchor(section.heading) }}
-            />
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
 function CommandBody({
   layer,
   slug,
@@ -493,7 +447,6 @@ function CommandBody({
   cover: HeroCover | null;
 }) {
   const { identity, lore, vitals, land, chronicle } = layer;
-  const [storyOpen, setStoryOpen] = useState(false);
   const [chronicleOpen, setChronicleOpen] = useState(false);
   const active = useScrollSpy(
     DOCK_ITEMS.map((d) => tileId(d.id)),
@@ -540,7 +493,6 @@ function CommandBody({
       />
 
       <CountryTabs countrySlug={slug} />
-      <FactbookSectionNav countrySlug={slug} />
       <OwnerLayer owner={layer.owner} />
       <PulseBanner name={identity.name} vitals={vitals} />
 
@@ -564,7 +516,7 @@ function CommandBody({
           <DnaTile layer={layer} pillars={pillars} />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-6 xl:grid-cols-12">
             <LandTile layer={layer} />
-            <LoreTile layer={layer} chapters={loreChapters} onOpen={() => setStoryOpen(true)} />
+            <LoreTile layer={layer} chapters={loreChapters} />
             <EconomyTile layer={layer} pillars={pillars} />
             <PeopleTile layer={layer} pillars={pillars} />
             <StateTile layer={layer} wikiAnchor={wikiAnchor} />
@@ -587,24 +539,17 @@ function CommandBody({
         </div>
       </div>
 
-      <ReadingSheet
-        open={storyOpen}
-        onOpenChange={setStoryOpen}
-        title={`The story of ${identity.name}`}
-        description={`From the wiki article “${lore.articleTitle}”.`}
-        className="sm:max-w-2xl"
-      >
-        <StoryBody layer={layer} chapters={loreChapters} wikiAnchor={wikiAnchor} />
-      </ReadingSheet>
-      <ReadingSheet
-        open={chronicleOpen}
-        onOpenChange={setChronicleOpen}
-        title={`Chronicle of ${identity.name}`}
-        description="Founding dates, map stories and the IxTime record, newest first."
-        className="sm:max-w-xl"
-      >
-        <ChronicleTimeline entries={chronicle} order="desc" />
-      </ReadingSheet>
+      <Sheet open={chronicleOpen} onOpenChange={setChronicleOpen}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Chronicle of {identity.name}</SheetTitle>
+            <SheetDescription>
+              Founding dates, map stories and the IxTime record, newest first.
+            </SheetDescription>
+          </SheetHeader>
+          <ChronicleTimeline entries={chronicle} order="desc" />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

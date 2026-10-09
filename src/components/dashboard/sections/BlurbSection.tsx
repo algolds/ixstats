@@ -19,7 +19,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
 import { Card } from "~/components/ui/card";
 
@@ -363,14 +363,14 @@ function BlurbResponseModal({
 
         <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
-            href={createUrl(`/blurbs/${prompt.slug ?? prompt.id}`)}
+            href={`/blurbs/${prompt.slug ?? prompt.id}`}
             className="text-tint text-footnote inline-flex items-center gap-2 underline-offset-2 hover:underline"
           >
             <ExternalLink aria-hidden className="size-3.5" />
             <span>Open full topic</span>
           </Link>
           <Link
-            href={createUrl("/blurbs")}
+            href={"/blurbs"}
             className="text-label-secondary hover:text-label text-footnote inline-flex items-center gap-1 transition-colors"
           >
             <span>All topics</span>

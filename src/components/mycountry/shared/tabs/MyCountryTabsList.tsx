@@ -11,7 +11,6 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { createUrl } from "~/lib/utils";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
 /**
@@ -108,7 +107,7 @@ export function MyCountryTabsList({
     if (baseHref) {
       // `overview` is the factbook index itself (`indexHref` or `<baseHref>`, not `/overview`).
       const href = value === "overview" ? (indexHref ?? baseHref) : `${baseHref}/${value}`;
-      router.push(createUrl(href));
+      router.push(href);
       onChangeAction(value);
       return;
     }

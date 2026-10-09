@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { createUrl } from "~/lib/utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
 import { EditorSkeleton } from "~/app/builder/components/editor/EditorSkeleton";
@@ -27,7 +26,7 @@ export default function MyCountryEditor() {
         : null;
 
   useEffect(() => {
-    if (redirectTo) router.replace(createUrl(redirectTo));
+    if (redirectTo) router.replace(redirectTo);
   }, [redirectTo, router]);
 
   // The editor loads the country itself (with its own skeleton and error state).

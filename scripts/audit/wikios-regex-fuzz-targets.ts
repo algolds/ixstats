@@ -1025,14 +1025,6 @@ export const TARGETS: readonly Target[] = [
       why: "its own 500,000-character guard",
     }
   ),
-  wikitext("adapters/ixstates/integration#cleanWikiSectionContent", async () => {
-    const m = await import("~/lib/wiki-os/adapters/ixstates/integration");
-    return (s) => m.cleanWikiSectionContent(s);
-  }),
-  wikitext("adapters/ixstates/integration#classifyWikiSection", async () => {
-    const m = await import("~/lib/wiki-os/adapters/ixstates/integration");
-    return (s) => m.classifyWikiSection(s);
-  }),
   wikitext("adapters/mediawiki/bridge/dispatchers#extractIntroFromWikitext", async () => {
     const m = await import("~/lib/wiki-os/adapters/mediawiki/bridge/dispatchers");
     return (s) => m.extractIntroFromWikitext(s);

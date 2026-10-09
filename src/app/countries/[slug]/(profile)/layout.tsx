@@ -20,7 +20,6 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { CountryActionsMenu } from "~/components/mycountry/dossier/CountryActionsMenu";
 import { CountryDataProvider, useCountryData } from "~/components/mycountry/primitives";
-import { createUrl } from "~/lib/utils";
 import { CountryHeader } from "../_components/CountryHeader";
 import { CountryTabs } from "../_components/CountryTabs";
 import { ProfileShellProvider, type ProfileShellValue } from "../_components/ProfileShellContext";
@@ -98,14 +97,14 @@ function ProfileBreadcrumb({
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href={createUrl("/countries")}>Countries</Link>
+            <Link href={"/countries"}>Countries</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           {sectionLabel ? (
             <BreadcrumbLink asChild>
-              <Link href={createUrl(`/countries/${slug}`)}>{name}</Link>
+              <Link href={`/countries/${slug}`}>{name}</Link>
             </BreadcrumbLink>
           ) : (
             <BreadcrumbPage>{name}</BreadcrumbPage>
@@ -188,7 +187,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
             message={error ?? "No country matches this address."}
             action={
               <Button asChild variant="secondary" size="sm">
-                <Link href={createUrl("/countries")}>All countries</Link>
+                <Link href={"/countries"}>All countries</Link>
               </Button>
             }
           />

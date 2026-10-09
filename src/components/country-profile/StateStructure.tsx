@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Building, Crown, NavArrowRight, Shield } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import type { BranchKey, StateBranch } from "./derive";
 
@@ -82,7 +81,7 @@ export function StateStructure({
       )}
       {wikiSource && (
         <Link
-          href={createUrl(wikiSource.href)}
+          href={wikiSource.href}
           className="text-callout text-tint focus-visible:outline-tint rounded-control-sm inline-flex w-fit items-center gap-1 font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           Read “{wikiSource.heading}” on the wiki

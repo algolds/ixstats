@@ -2,7 +2,6 @@
 
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/utils";
 import { legacyHashRoute } from "~/lib/country/factbook-routes";
 import { CommandProfileView } from "../_components/CommandProfileView";
 import { useProfileShell } from "../_components/ProfileShellContext";
@@ -24,7 +23,7 @@ export default function CountryProfilePage({ params }: { params: Promise<{ slug:
 
   useEffect(() => {
     const route = legacyHashRoute(window.location.hash);
-    if (route) router.replace(createUrl(`/countries/${slug}${route}`));
+    if (route) router.replace(`/countries/${slug}${route}`);
   }, [router, slug]);
 
   return (

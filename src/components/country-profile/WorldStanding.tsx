@@ -1,7 +1,6 @@
 import { Building, Globe } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { createUrl } from "~/lib/utils";
 import type { ProfileWorld } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { relationshipBadge } from "./labels";
 
@@ -56,7 +55,7 @@ export function RelationRows({
                 : `Strength ${Math.round(r.strength)}`
             }
             trailing={<Badge variant={badge.variant}>{badge.label}</Badge>}
-            href={createUrl(`/countries/${encodeURIComponent(r.countryId)}`)}
+            href={`/countries/${encodeURIComponent(r.countryId)}`}
           />
         );
       })}
@@ -94,9 +93,7 @@ export function EmbassyRows({
               {e.level != null ? `Level ${e.level}` : e.status}
             </span>
           }
-          href={
-            e.countrySlug ? createUrl(`/countries/${encodeURIComponent(e.countrySlug)}`) : undefined
-          }
+          href={e.countrySlug ? `/countries/${encodeURIComponent(e.countrySlug)}` : undefined}
         />
       ))}
     </FacetListSection>

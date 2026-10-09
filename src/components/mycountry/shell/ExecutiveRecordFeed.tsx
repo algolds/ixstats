@@ -9,7 +9,7 @@ import {
   ArrowDown,
   ArrowUpRight,
 } from "iconoir-react";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { timeAgo } from "~/lib/format/compact";
@@ -168,11 +168,11 @@ function RecordRow({
             )}
             <Button asChild variant="ghost" size="sm" className="text-label-secondary h-11 sm:h-8">
               <Link
-                href={createUrl(
+                href={
                   countrySlug
                     ? `/mycountry/changelog?country=${countrySlug}`
                     : "/mycountry/changelog"
-                )}
+                }
               >
                 Full ledger
                 <ArrowUpRight aria-hidden="true" className="size-3.5" />

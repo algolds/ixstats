@@ -139,19 +139,26 @@ describe("CommandProfileView", () => {
     expect(screen.queryByText(/Readiness/)).toBeNull();
   });
 
-  it("is the Factbook tab's overview, with the Factbook sections and economic modeling", () => {
+  it("is the Factbook tab's overview, with tiles linking to the Factbook sections", () => {
     render(<CommandProfileView {...base} />);
     const tabs = screen.getByRole("navigation", { name: "Country sections" });
     const factbook = within(tabs).getByRole("link", { name: /Factbook/ });
     expect(factbook.getAttribute("href")).toMatch(/\/countries\/testland$/);
     expect(factbook.getAttribute("aria-current")).toBe("page");
     expect(within(tabs).queryByRole("link", { name: /Profile/ })).toBeNull();
-    // The Factbook section pills follow the tabs, with the overview current.
-    const current = screen
-      .getAllByRole("button")
-      .filter((b) => b.getAttribute("aria-current") === "page");
-    expect(current.map((b) => b.textContent)).toEqual(["Overview"]);
-    expect(screen.getByRole("button", { name: /Labor/ })).toBeTruthy();
+    // No section pills on the overview: the dock navigates the page, the tiles lead to the sections.
+    expect(screen.queryByRole("button", { name: /Labor/ })).toBeNull();
+    const sectionLinks: [string, string][] = [
+      ["Full geography", "geography"],
+      ["Full economy", "economy"],
+      ["Labor", "labor"],
+      ["Full government", "government"],
+    ];
+    for (const [name, section] of sectionLinks) {
+      expect(screen.getByRole("link", { name }).getAttribute("href")).toBe(
+        `/countries/testland/factbook/${section}`
+      );
+    }
     expect(
       screen.getAllByRole("link", { name: /Economic modeling/ })[0]!.getAttribute("href")
     ).toMatch(/\/countries\/testland\/modeling$/);

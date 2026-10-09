@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Crown, Globe, UserCircle } from "iconoir-react";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import { ClaimNationButton } from "~/components/realms/ClaimNationButton";
 
@@ -40,14 +39,14 @@ export function CountryIdentityStrip({
       aria-label="Realm and sovereign"
       className={cn("flex flex-wrap items-center gap-2", className)}
     >
-      <Link href={createUrl(`/r/${realmSlug}`)} className={LINK_PILL}>
+      <Link href={`/r/${realmSlug}`} className={LINK_PILL}>
         <Globe aria-hidden className="text-label-secondary size-3.5" />
         <span>{realmName}</span>
         <span className="text-label-secondary">{isPrimary ? "Primary realm" : "Realm"}</span>
       </Link>
       {handle ? (
         <Link
-          href={createUrl(`/@${handle}`)}
+          href={`/@${handle}`}
           className={LINK_PILL}
           aria-label={`IxnayID passport of @${handle}${sovereign?.roleName ? `, ${sovereign.roleName}` : ""}`}
         >

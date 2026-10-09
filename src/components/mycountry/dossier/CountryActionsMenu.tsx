@@ -207,7 +207,7 @@ export function CountryActionsMenu({
   );
 
   const go = (path: string) => {
-    router.push(createUrl(path));
+    router.push(path);
     onClose();
   };
 

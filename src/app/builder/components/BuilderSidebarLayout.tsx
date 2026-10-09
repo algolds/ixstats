@@ -8,7 +8,6 @@ import { Button } from "~/components/ui/button";
 import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { useBuilderFilter } from "./builder-filter-context";
 import { useRouter } from "next/navigation";
-import { createUrl } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 
 interface BuilderSidebarLayoutProps {
@@ -66,7 +65,7 @@ export function BuilderSidebarLayout({
     soundEffects.press();
     clearDraft();
     if (mode === "edit") {
-      router.push(createUrl("/mycountry"));
+      router.push("/mycountry");
     } else {
       filter.clearSelection();
       _onNavigate("foundation");

@@ -8,7 +8,6 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { Skeleton } from "~/components/ui/skeleton";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
-import { createUrl } from "~/lib/utils";
 import type { EconomicYearData, StorytellerEffect } from "~/types/economics";
 
 interface ModelingPageProps {
@@ -56,7 +55,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
         <div className="container mx-auto space-y-6 px-4 py-8">
           <PageHeader
             title={`Economic modeling for ${country.name}`}
-            back={{ href: createUrl(`/countries/${country.slug}`), label: country.name }}
+            back={{ href: `/countries/${country.slug}`, label: country.name }}
             bleed
           />
           <Card padding="md">

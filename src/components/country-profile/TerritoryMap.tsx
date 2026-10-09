@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Map as MapIcon, NavArrowRight } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createUrl } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 
 const CountryMapEmbed = dynamic(
@@ -57,7 +56,7 @@ export function TerritoryMap({
         boundsPadding={40}
       />
       <Link
-        href={createUrl(`/maps?country=${encodeURIComponent(countryId)}`)}
+        href={`/maps?country=${encodeURIComponent(countryId)}`}
         className="facet-chrome text-caption text-label focus-visible:outline-tint z-raised absolute right-3 bottom-3 inline-flex items-center gap-1 rounded-full px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         Open on map

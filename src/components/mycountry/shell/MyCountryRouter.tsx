@@ -18,7 +18,6 @@ import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/M
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
-import { createUrl } from "~/lib/utils";
 import { CommandSurface } from "./CommandSurface";
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
@@ -97,7 +96,7 @@ function MyCountryRouterInner() {
       window.localStorage.removeItem(complianceStorageKey);
     }
     setShowComplianceModal(false);
-    router.push(createUrl("/mycountry/editor"));
+    router.push("/mycountry/editor");
   };
 
   // Navigate to a section (instant client-side switch)
@@ -107,7 +106,7 @@ function MyCountryRouterInner() {
 
       // The map editor is a full-screen route, not a surface of the command shell.
       if (section === "map-editor") {
-        router.push(createUrl("/mycountry/map-editor"));
+        router.push("/mycountry/map-editor");
         return;
       }
 

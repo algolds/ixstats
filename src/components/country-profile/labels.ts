@@ -1,8 +1,6 @@
 import type { BadgeVariant } from "~/components/ui/badge";
 import type { ChronicleKind } from "~/app/countries/[slug]/_utils/profileLayer";
 
-export { categoryLabel, tierMeta } from "~/components/mycountry/directives/directive-model";
-
 export const CHRONICLE_KIND_LABEL: Record<ChronicleKind, string> = {
   founding: "Founding",
   story: "Map story",

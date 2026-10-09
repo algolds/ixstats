@@ -8,7 +8,6 @@ import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { createUrl } from "~/lib/utils";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
@@ -60,7 +59,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                 />
                 <div className="min-w-0 flex-1">
                   <Link
-                    href={createUrl(`/countries/${c.slug}`)}
+                    href={`/countries/${c.slug}`}
                     className="text-label text-headline focus-visible:outline-tint rounded-control-sm block truncate hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
                     {c.name}

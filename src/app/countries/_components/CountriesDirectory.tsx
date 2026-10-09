@@ -5,17 +5,11 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { CountriesPageHeader } from "./CountriesPageHeader";
 import { CountriesGrid } from "./CountriesGrid";
-import type {
-  SortField,
-  SortDirection,
-  TierFilter,
-  PopulationRange,
-} from "./filters";
+import type { SortField, SortDirection, TierFilter, PopulationRange } from "./filters";
 import CountriesFilterSidebar from "./CountriesFilterSidebar";
 import CountriesSortBar from "./CountriesSortBar";
 import { CountryComparisonModal } from "./CountryComparisonModal";
 import { useCountryComparison } from "~/hooks/useCountryComparison";
-import { createUrl } from "~/lib/utils";
 import { matchesTierFilter } from "~/lib/economic-tier-filter";
 import { Filter } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -260,7 +254,7 @@ export function CountriesDirectory({ realm, title }: { realm?: string; title: st
     // Find country by ID to get slug, then navigate
     const country = processed.find((c) => c.id === countryId);
     if (country?.slug) {
-      router.push(createUrl(`/countries/${country.slug}`));
+      router.push(`/countries/${country.slug}`);
     }
   };
 

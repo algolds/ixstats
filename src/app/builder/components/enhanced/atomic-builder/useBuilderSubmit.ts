@@ -6,7 +6,6 @@ import { useUser } from "~/context/auth-context";
 import { api, type RouterInputs } from "~/trpc/react";
 import { asJsonPayload } from "../../../lib/json-payload";
 import { useNotify } from "~/hooks/useNotify";
-import { createUrl } from "~/lib/utils";
 import { sanitizeEconomicInputs } from "../../../hooks/useBuilderState";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { useInvalidateCountryData } from "../../../hooks/useInvalidateCountryData";
@@ -55,7 +54,7 @@ export function useBuilderSubmit({
       notify.success("Nation created", `${country.name} is ready. Opening MyCountry...`);
 
       setTimeout(() => {
-        router.push(createUrl(`/mycountry`));
+        router.push(`/mycountry`);
       }, 1000);
     },
     onError: (err: { message?: string }) => {
@@ -98,7 +97,7 @@ export function useBuilderSubmit({
       notify.success("Country updated", `${country.name} was saved. Opening MyCountry...`);
 
       setTimeout(() => {
-        router.push(createUrl(`/mycountry`));
+        router.push(`/mycountry`);
       }, 1000);
     },
     onError: (err: { message?: string }) => {

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Clock, Globe, Group as Users } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
-import { createUrl } from "~/lib/utils";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 
 /**
@@ -56,14 +55,14 @@ export function UserProfileCard({
       </div>
       <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
         <Link
-          href={createUrl(getWikiProfilePath(username))}
+          href={getWikiProfilePath(username)}
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <Globe className="h-3 w-3" />
           IxnayID profile
         </Link>
         <Link
-          href={createUrl(`/util/contributions/${encodeURIComponent(username)}`)}
+          href={`/util/contributions/${encodeURIComponent(username)}`}
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <Clock className="h-3 w-3" />

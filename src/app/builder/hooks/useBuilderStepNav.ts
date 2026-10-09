@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { createUrl } from "~/lib/utils";
 import {
   type BuilderSection,
   isScratchOrImportOrigin,
@@ -40,7 +39,7 @@ export function useBuilderStepNav({ activeSection, mode, onNavigate, onReset }: 
     soundEffects.press();
     clearDraft();
     if (mode === "edit") {
-      router.push(createUrl("/mycountry"));
+      router.push("/mycountry");
     } else {
       filter.clearSelection();
       onNavigate("foundation");
