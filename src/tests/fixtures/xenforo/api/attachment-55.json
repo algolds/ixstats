@@ -1,0 +1,12 @@
+{
+  "attachment": {
+    "attachment_id": 55,
+    "filename": "map.png",
+    "file_size": 4,
+    "content_type": "image/png",
+    "width": 1,
+    "height": 1,
+    "thumbnail_url": "https://forum.example.test/data/attachments/0/55.jpg",
+    "direct_url": "https://forum.example.test/attachments/map-png.55/"
+  }
+}

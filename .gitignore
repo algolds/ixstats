@@ -86,6 +86,7 @@ CLAUDE.md
 arch.md
 /maps.md
 plans/
+.forum-import/
 c15t-backend.config.ts
 typecheck-*.log
 

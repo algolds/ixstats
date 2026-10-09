@@ -1,0 +1,18 @@
+{
+  "thread": { "thread_id": 100, "node_id": 12, "title": "Welcome" },
+  "posts": [
+    {
+      "post_id": 1002,
+      "thread_id": 100,
+      "user_id": 7,
+      "username": "Admin",
+      "post_date": 1700003000,
+      "message": "[quote=\"Member, post: 1001, member: 8\"]Thanks![/quote]You're welcome.",
+      "message_state": "moderated",
+      "position": 2,
+      "attach_count": 0,
+      "is_first_post": false
+    }
+  ],
+  "pagination": { "current_page": 2, "last_page": 2, "per_page": 2, "shown": 1, "total": 3 }
+}
