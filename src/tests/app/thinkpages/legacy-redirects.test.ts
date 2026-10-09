@@ -139,7 +139,7 @@ describe("the feed's other old pages (308)", () => {
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
-  it.each<[string, (q: Query) => Promise<never>, string]>([
+  it.each<[string, (q: Query) => Promise<void>, string]>([
     ["profile/jane", (q) => openProfile("jane", q), "/dashboard/profile/jane"],
     ["saved", (q) => LegacySavedPage(query(q)), "/dashboard/saved"],
     ["feed", (q) => LegacyFeedPage(query(q)), "/dashboard"],
