@@ -1,11 +1,19 @@
 /**
  * ThinkPages forum phase 4: read-only export of forum.ixwiki.com (XenForo REST API) into an on-disk snapshot that
  * the importer reads (format: src/lib/thinkpages-forum/import/snapshot.ts). Writes nothing to any database.
- *   bun run forum:export-xenforo -- --out .forum-import/<name> [--rps 4] [--nodes 12,13] [--no-attachments]
- *                                   [--max-attachment-mb 25]
+ *   bun run forum:export-xenforo -- --out .forum-import/<name> [--rps 0.9] [--nodes 12,13] [--reset-filter]
+ *     [--no-attachments] [--max-attachment-mb 25] [--bypass-permissions | --no-bypass-permissions]
  * Reads XENFORO_API_URL and XENFORO_API_KEY from the environment (the key is never printed or written). Prints the
- * key's scopes, then exports nodes → threads per Forum node → posts per thread → users per distinct author →
- * attachments per post, skipping work already marked in state.json, so a rerun with the same --out resumes.
+ * key's type and scopes, then exports nodes → threads per Forum node → posts per thread → users per distinct
+ * author → attachments per post, skipping work already marked in state.json, so a rerun with the same --out
+ * resumes (with the same --nodes; --reset-filter changes it).
+ * Permissions: with a super-user key every read adds `api_bypass_permissions=1` (default; read-only, never
+ * `XF-Api-User` impersonation), so private forums, moderated content and every attachment are exported instead of
+ * a guest's view. --no-bypass-permissions turns it off; --bypass-permissions forces it on for a key whose type
+ * /index does not report. meta.json records the key type, the bypass setting and the client version, and the
+ * summary prints each forum's listed thread count next to XenForo's own count.
+ * Rate: 0.9 requests/s by default with a descriptive User-Agent; the server's bot defense blocks above 60
+ * requests a minute per IP (see scripts/README.md before raising --rps).
  * Ctrl-C stops after the current item. Exits 1 with the ids still missing when the snapshot is incomplete.
  */
 import "../lib/load-env";
@@ -13,15 +21,22 @@ import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
 import { runExport, type ExportTotals } from "~/lib/thinkpages-forum/import/export-run";
 import {
+  exportedForums,
   isComplete,
   openSnapshotWriter,
   readSnapshot,
+  type Snapshot,
   type SnapshotFs,
   type SnapshotGaps,
 } from "~/lib/thinkpages-forum/import/snapshot";
-import { createXenForoClient } from "~/lib/thinkpages-forum/import/xenforo-client";
+import {
+  XENFORO_EXPORT_CLIENT_VERSION,
+  createXenForoClient,
+} from "~/lib/thinkpages-forum/import/xenforo-client";
 
 const DEFAULT_API_URL = "https://forum.ixwiki.com/api";
+const USER_AGENT = `IxStats-ForumExport/${XENFORO_EXPORT_CLIENT_VERSION} (+https://ixwiki.com)`;
+const DEFAULT_RPS = 0.9;
 const CHECKPOINT_EVERY = 20;
 const SHOW_IDS = 50;
 
@@ -29,8 +44,10 @@ interface Args {
   out: string;
   rps: number;
   nodes: number[] | null;
+  resetFilter: boolean;
   attachments: boolean;
   maxAttachmentMb: number;
+  bypass: boolean | "auto";
 }
 
 function valueOf(argv: string[], flag: string): string | undefined {
@@ -45,6 +62,11 @@ function positive(raw: string | undefined, flag: string, fallback: number): numb
   return value;
 }
 
+function bypassArg(argv: string[]): boolean | "auto" {
+  if (argv.includes("--no-bypass-permissions")) return false;
+  return argv.includes("--bypass-permissions") ? true : "auto";
+}
+
 function parseArgs(argv: string[]): Args {
   const out = valueOf(argv, "--out");
   if (!out) throw new Error("--out <dir> is required (e.g. --out .forum-import/2026-10-09)");
@@ -54,10 +76,12 @@ function parseArgs(argv: string[]): Args {
     : null;
   return {
     out,
-    rps: positive(valueOf(argv, "--rps"), "--rps", 4),
+    rps: positive(valueOf(argv, "--rps"), "--rps", DEFAULT_RPS),
     nodes,
+    resetFilter: argv.includes("--reset-filter"),
     attachments: !argv.includes("--no-attachments"),
     maxAttachmentMb: positive(valueOf(argv, "--max-attachment-mb"), "--max-attachment-mb", 25),
+    bypass: bypassArg(argv),
   };
 }
 
@@ -76,26 +100,58 @@ const nodeFs: SnapshotFs = {
 function printTotals(totals: ExportTotals): void {
   const a = totals.attachments;
   console.log(
-    `this run: ${totals.threads} threads listed, ${totals.posts} posts, ${totals.users} users, attachments ` +
-      `${a.ok} ok / ${a.missing} missing / ${a.oversize} oversize / ${a.skipped} skipped`
+    `this run: ${totals.threads} threads listed, ${totals.posts} posts ` +
+      `(${totals.threadsGone} threads gone, ${totals.threadsRedirect} redirects not fetched), ` +
+      `${totals.users} users (${totals.usersUnavailable} unavailable: 404 or no user:read), attachments ` +
+      `${a.ok} ok / ${a.missing} missing / ${a.forbidden} forbidden / ${a.oversize} oversize / ` +
+      `${a.skipped} skipped / ${a.size_mismatch} size mismatch`
   );
-  if (totals.usersForbidden)
-    console.log("users were skipped: the key may not read /users/ (user:read scope)");
+}
+
+function printIds(label: string, ids: number[]): void {
+  if (!ids.length) return;
+  const more = ids.length > SHOW_IDS ? ` (+${ids.length - SHOW_IDS} more)` : "";
+  console.log(`${label} (${ids.length}): ${ids.slice(0, SHOW_IDS).join(", ")}${more}`);
+}
+
+function printSnapshot(snapshot: Snapshot): void {
+  const { meta, state } = snapshot;
+  const postCount = [...snapshot.postsByThread.values()].reduce((sum, p) => sum + p.length, 0);
+  console.log(
+    `snapshot: key ${meta.keyType ?? "type unknown"}, api_bypass_permissions ` +
+      `${meta.bypassPermissions ? "on" : "off"}, client ${meta.clientVersion ?? "?"}; ` +
+      `${snapshot.nodes.length} nodes, ${snapshot.threads.length} threads, ${postCount} posts, ` +
+      `${snapshot.users.size} users, ${snapshot.attachments.size} attachments` +
+      (snapshot.skippedLines ? `, ${snapshot.skippedLines} torn lines skipped` : "")
+  );
+  for (const forum of exportedForums(snapshot.nodes, meta.nodeFilter)) {
+    const count = state.forumCounts?.get(forum.node_id);
+    if (!count) continue;
+    const flag =
+      count.discussionCount !== null && count.listed < count.discussionCount
+        ? "  (fewer listed)"
+        : "";
+    console.log(
+      `  forum ${forum.node_id} "${forum.title}": ${count.listed} listed / ` +
+        `${count.discussionCount ?? "?"} reported${flag}`
+    );
+  }
 }
 
 function printGaps(gaps: SnapshotGaps): void {
-  const lists: Array<[string, number[]]> = [
-    ["forums without threads", gaps.forumsWithoutThreads],
-    ["threads without posts", gaps.threadsWithoutPosts],
-    ["users missing", gaps.usersMissing],
-    ["attachments missing", gaps.attachmentsMissing],
-  ];
+  printIds("reported: redirect threads (not fetched)", gaps.threadsRedirect);
+  printIds("reported: threads gone (posts 403/404)", gaps.threadsGone);
+  printIds("reported: threads with no posts", gaps.threadsEmpty);
+  printIds("reported: users not fetched", gaps.usersMissing);
+  printIds("reported: attachments missing or forbidden", gaps.attachmentsUnavailable);
+  printIds(
+    "reported: attachments with a size mismatch (rerun refetches)",
+    gaps.attachmentsSizeMismatch
+  );
   if (gaps.nodesPending) console.log("remaining: the node list");
-  for (const [label, ids] of lists) {
-    if (!ids.length) continue;
-    const more = ids.length > SHOW_IDS ? ` (+${ids.length - SHOW_IDS} more)` : "";
-    console.log(`remaining ${label} (${ids.length}): ${ids.slice(0, SHOW_IDS).join(", ")}${more}`);
-  }
+  printIds("remaining forums without threads", gaps.forumsWithoutThreads);
+  printIds("remaining threads without posts", gaps.threadsWithoutPosts);
+  printIds("remaining attachments", gaps.attachmentsMissing);
 }
 
 async function main(): Promise<number> {
@@ -114,11 +170,14 @@ async function main(): Promise<number> {
   const client = createXenForoClient({
     apiUrl,
     apiKey,
+    fetch: globalThis.fetch,
     requestsPerSecond: args.rps,
+    userAgent: USER_AGENT,
+    bypassPermissions: args.bypass,
     log: console.log,
   });
   const writer = await openSnapshotWriter(nodeFs, args.out, { checkpointEvery: CHECKPOINT_EVERY });
-  console.log(`exporting ${apiUrl} into ${args.out}`);
+  console.log(`exporting ${apiUrl} into ${args.out} at ${args.rps} requests/s`);
   let totals: ExportTotals | null = null;
   try {
     totals = await runExport({
@@ -127,6 +186,7 @@ async function main(): Promise<number> {
       readBack: () => readSnapshot(nodeFs, args.out),
       apiUrl,
       nodeFilter: args.nodes,
+      resetFilter: args.resetFilter,
       attachments: args.attachments,
       maxAttachmentBytes: args.maxAttachmentMb * 1024 * 1024,
       log: console.log,
@@ -143,20 +203,12 @@ async function main(): Promise<number> {
   if (!existsSync(`${args.out}/meta.json`)) return 1;
   const snapshot = await readSnapshot(nodeFs, args.out);
   const gaps = isComplete(snapshot);
-  const postCount = [...snapshot.postsByThread.values()].reduce(
-    (sum, posts) => sum + posts.length,
-    0
-  );
-  console.log(
-    `snapshot: ${snapshot.nodes.length} nodes, ${snapshot.threads.length} threads, ${postCount} posts, ` +
-      `${snapshot.users.size} users, ${snapshot.attachments.size} attachments` +
-      (snapshot.skippedLines ? `, ${snapshot.skippedLines} torn lines skipped` : "")
-  );
-  if (gaps.complete) {
+  printSnapshot(snapshot);
+  printGaps(gaps);
+  if (gaps.complete && totals) {
     console.log("snapshot complete");
     return 0;
   }
-  printGaps(gaps);
   console.log("incomplete: rerun the same command to resume");
   return 1;
 }

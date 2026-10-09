@@ -1,9 +1,12 @@
 /**
- * Read-only XenForo 2.2 REST client for the phase 4 export (the XenForo forum → native forum). `fetch`, `sleep`
- * and the clock are injected, so tests make no network calls. Every request carries `XF-Api-Key` and
- * `Accept: application/json`, never `XF-Api-User` (no impersonation). The key never appears in logs or errors.
- * Requests are paced (`requestsPerSecond`), and 429, 5xx and network errors are retried with a 1 s · 2^n backoff;
- * 401/403 and other 4xx fail at once. All endpoint strings live in this file.
+ * Read-only XenForo 2.2 REST client for the phase 4 export (the XenForo forum → native forum). `fetch` is
+ * injected (required), as are, optionally, `sleep` and the clock, so tests make no network calls. Every request
+ * carries `XF-Api-Key`, `Accept: application/json` and a `User-Agent`, never `XF-Api-User` (no impersonation).
+ * With a super-user key, reads add `api_bypass_permissions=1` (read-only: the key sees private forums, moderated
+ * and deleted content and every attachment instead of running as a guest). The key never appears in logs or
+ * errors. Requests are paced (`requestsPerSecond`); 429 (honouring `Retry-After`, capped), 5xx and network errors
+ * are retried up to `maxRetries` times after the first attempt with a 1 s · 2^n backoff; 401/403 and other 4xx
+ * fail at once. All endpoint strings live in this file.
  */
 import type {
   XfAttachment,
@@ -19,18 +22,30 @@ import type {
   XfUserResponse,
 } from "./xenforo-types";
 
+/** Recorded in the snapshot's meta.json and sent in the User-Agent. */
+export const XENFORO_EXPORT_CLIENT_VERSION = "1.0";
+
 export interface XenForoClientOptions {
   apiUrl: string;
   apiKey: string;
-  fetch?: typeof fetch;
+  fetch: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
   /** Default 4. */
   requestsPerSecond?: number;
-  /** Retries after the first attempt. Default 5, backoff 1 s · 2^n, on 429, 5xx and network errors. */
+  /** Retries after the first attempt (default 5: at most 6 attempts), backoff 1 s · 2^n, on 429, 5xx and network errors. */
   maxRetries?: number;
-  /** Default 30 000. */
+  /** Per request, body included. Default 30 000. */
   timeoutMs?: number;
+  /** For attachment downloads. Default 120 000. */
+  attachmentTimeoutMs?: number;
+  /** Default `IxStats-ForumExport/<version>`. */
+  userAgent?: string;
+  /**
+   * Send `api_bypass_permissions=1` on reads. "auto" (default): on unless `index()` reports a key type other than
+   * "super" (on when the type is unknown).
+   */
+  bypassPermissions?: boolean | "auto";
   log?: (line: string) => void;
 }
 
@@ -51,14 +66,23 @@ export interface XenForoClientStats {
   waitedMs: number;
 }
 
+export interface XenForoRequestContext {
+  /** The key type `index()` reported ("super", "user", "guest"), or null when unknown. */
+  keyType: string | null;
+  bypassPermissions: boolean;
+}
+
 export interface XenForoClient {
-  index(): Promise<{ scopes: string[]; superUser: boolean }>;
+  index(): Promise<{ scopes: string[]; superUser: boolean; keyType: string | null }>;
   nodes(): Promise<XfNode[]>;
   threadsOf(nodeId: number): AsyncGenerator<XfThread>;
   postsOf(threadId: number): AsyncGenerator<XfPost>;
+  /** null on 404 and on 403 (a key without user:read). */
   user(userId: number): Promise<XfUserLite | null>;
+  /** null on 404; a 403 throws (`status: 403`). `contentType` is the raw Content-Type header ("" when absent). */
   attachmentData(attachmentId: number): Promise<{ bytes: Uint8Array; contentType: string } | null>;
   stats(): XenForoClientStats;
+  context(): XenForoRequestContext;
 }
 
 const ENDPOINTS = {
@@ -73,6 +97,16 @@ const ENDPOINTS = {
 };
 
 const BACKOFF_BASE_MS = 1000;
+const MAX_RETRY_AFTER_MS = 120_000;
+const BYPASS_PARAM = "api_bypass_permissions=1";
+
+/** `Retry-After` in ms (seconds or an HTTP date), capped; 0 when absent or unparsable. */
+function retryAfterMs(header: string | null, nowMs: number): number {
+  if (!header) return 0;
+  const seconds = Number(header);
+  const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - nowMs;
+  return Number.isFinite(ms) ? Math.min(Math.max(ms, 0), MAX_RETRY_AFTER_MS) : 0;
+}
 
 const realSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -160,12 +194,18 @@ interface Page<T> {
 }
 
 export function createXenForoClient(options: XenForoClientOptions): XenForoClient {
-  const doFetch = options.fetch ?? fetch;
+  const doFetch = options.fetch;
   const sleep = options.sleep ?? realSleep;
   const now = options.now ?? Date.now;
   const intervalMs = 1000 / (options.requestsPerSecond ?? 4);
   const maxRetries = options.maxRetries ?? 5;
   const timeoutMs = options.timeoutMs ?? 30_000;
+  const attachmentTimeoutMs = options.attachmentTimeoutMs ?? 120_000;
+  const userAgent = options.userAgent ?? `IxStats-ForumExport/${XENFORO_EXPORT_CLIENT_VERSION}`;
+  const bypassOption = options.bypassPermissions ?? "auto";
+  let keyType: string | null = null;
+  const bypass = () =>
+    bypassOption === "auto" ? keyType === null || keyType === "super" : bypassOption;
   const log = options.log ?? (() => undefined);
   const baseUrl = options.apiUrl.replace(/\/+$/, "");
   const apiKey = options.apiKey;
@@ -184,28 +224,36 @@ export function createXenForoClient(options: XenForoClientOptions): XenForoClien
     nextSlot = Math.max(at, nextSlot) + intervalMs;
   }
 
-  async function attempt(endpoint: string): Promise<Response> {
+  async function attempt(endpoint: string, timeout: number): Promise<Response> {
     await pace();
     stats.requests += 1;
     return doFetch(`${baseUrl}${endpoint}`, {
-      headers: { "XF-Api-Key": apiKey, Accept: "application/json" },
-      signal: AbortSignal.timeout(timeoutMs),
+      headers: { "XF-Api-Key": apiKey, Accept: "application/json", "User-Agent": userAgent },
+      signal: AbortSignal.timeout(timeout),
     });
   }
 
-  async function backoff(endpoint: string, retry: number, reason: string): Promise<void> {
-    const wait = BACKOFF_BASE_MS * 2 ** retry;
+  async function backoff(
+    endpoint: string,
+    retry: number,
+    reason: string,
+    retryAfter = 0
+  ): Promise<void> {
+    const wait = Math.max(BACKOFF_BASE_MS * 2 ** retry, retryAfter);
     stats.retries += 1;
     stats.waitedMs += wait;
     log(`[xenforo] ${endpoint}: ${reason}; retry ${retry + 1}/${maxRetries} in ${wait} ms`);
     await sleep(wait);
   }
 
-  async function request(endpoint: string): Promise<Response> {
+  /** GET `endpoint` (with the bypass parameter when `read` and bypass is on). */
+  async function request(path: string, read = true, timeout = timeoutMs): Promise<Response> {
+    const endpoint =
+      read && bypass() ? `${path}${path.includes("?") ? "&" : "?"}${BYPASS_PARAM}` : path;
     for (let retry = 0; ; retry += 1) {
       let response: Response;
       try {
-        response = await attempt(endpoint);
+        response = await attempt(endpoint, timeout);
       } catch (error) {
         const reason = redact(error instanceof Error ? error.message : String(error));
         if (retry >= maxRetries) {
@@ -226,22 +274,28 @@ export function createXenForoClient(options: XenForoClientOptions): XenForoClien
           endpoint
         );
       }
-      await backoff(endpoint, retry, `HTTP ${response.status}`);
+      const retryAfter =
+        response.status === 429 ? retryAfterMs(response.headers.get("retry-after"), now()) : 0;
+      await backoff(endpoint, retry, `HTTP ${response.status}`, retryAfter);
     }
   }
 
-  /** The response, or null when the server answers 404. */
-  async function requestOrMissing(endpoint: string): Promise<Response | null> {
+  /** The response, or null when the server answers one of `missing` (default 404). */
+  async function requestOrMissing(
+    path: string,
+    missing: number[] = [404],
+    timeout = timeoutMs
+  ): Promise<Response | null> {
     try {
-      return await request(endpoint);
+      return await request(path, true, timeout);
     } catch (error) {
-      if (error instanceof XenForoExportError && error.status === 404) return null;
+      if (error instanceof XenForoExportError && missing.includes(error.status ?? 0)) return null;
       throw error;
     }
   }
 
-  async function getJson<T>(endpoint: string): Promise<T> {
-    const body: T = await (await request(endpoint)).json();
+  async function getJson<T>(endpoint: string, read = true): Promise<T> {
+    const body: T = await (await request(endpoint, read)).json();
     return body;
   }
 
@@ -277,11 +331,13 @@ export function createXenForoClient(options: XenForoClientOptions): XenForoClien
 
   return {
     async index() {
-      const body = await getJson<XfIndexResponse>(ENDPOINTS.index());
+      const body = await getJson<XfIndexResponse>(ENDPOINTS.index(), false);
       const key = body.key ?? {};
+      keyType = key.type ?? null;
       return {
         scopes: key.allow_all_scopes ? ["*"] : (key.scopes ?? []),
         superUser: key.type === "super",
+        keyType,
       };
     },
 
@@ -314,22 +370,27 @@ export function createXenForoClient(options: XenForoClientOptions): XenForoClien
     },
 
     async user(userId) {
-      const response = await requestOrMissing(ENDPOINTS.user(userId));
-      if (!response) return null;
+      const response = await requestOrMissing(ENDPOINTS.user(userId), [403, 404]);
+      if (!response) {
+        log(`[xenforo] user ${userId}: not readable (404 or 403), recorded as unavailable`);
+        return null;
+      }
       const body: XfUserResponse = await response.json();
       return pickUser(body.user);
     },
 
     async attachmentData(attachmentId) {
-      const response = await requestOrMissing(ENDPOINTS.attachmentData(attachmentId));
+      const response = await requestOrMissing(
+        ENDPOINTS.attachmentData(attachmentId),
+        [404],
+        attachmentTimeoutMs
+      );
       if (!response) return null;
       const bytes = new Uint8Array(await response.arrayBuffer());
-      return {
-        bytes,
-        contentType: response.headers.get("content-type") ?? "application/octet-stream",
-      };
+      return { bytes, contentType: response.headers.get("content-type") ?? "" };
     },
 
     stats: () => ({ ...stats }),
+    context: () => ({ keyType, bypassPermissions: bypass() }),
   };
 }

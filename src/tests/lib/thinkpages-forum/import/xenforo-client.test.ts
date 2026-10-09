@@ -35,6 +35,7 @@ function client(overrides: Partial<XenForoClientOptions> = {}) {
     sleep: clock.sleep,
     now: clock.now,
     log: (line) => logged.push(line),
+    bypassPermissions: false,
     ...overrides,
   });
 }
@@ -69,18 +70,62 @@ describe("createXenForoClient", () => {
     expect(result).toEqual({
       scopes: ["node:read", "thread:read", "user:read", "attachment:read"],
       superUser: true,
+      keyType: "super",
     });
     const headers = api.calls[0]?.headers;
     expect(headers?.get("XF-Api-Key")).toBe(FAKE_API_KEY);
     expect(headers?.get("Accept")).toBe("application/json");
+    expect(headers?.get("User-Agent")).toBe("IxStats-ForumExport/1.0");
     expect(headers?.has("XF-Api-User")).toBe(false);
+  });
+
+  it("sends the User-Agent it is given", async () => {
+    api.on("/index", fixture("index"));
+    await client({ userAgent: "Custom/2" }).index();
+    expect(api.calls[0]?.headers.get("User-Agent")).toBe("Custom/2");
+  });
+
+  it("with a super key adds api_bypass_permissions=1 to every read after /index, never XF-Api-User", async () => {
+    api.on("/index", fixture("index"));
+    api.on("/nodes/?api_bypass_permissions=1", fixture("nodes"));
+    api.on(`${THREADS_P1}&api_bypass_permissions=1`, fixture("forum-12-threads-p1"));
+    api.on(`${THREADS_P2}&api_bypass_permissions=1`, fixture("forum-12-threads-p2"));
+    const c = client({ bypassPermissions: "auto" });
+
+    await c.index();
+    expect(c.context()).toEqual({ keyType: "super", bypassPermissions: true });
+    expect(await c.nodes()).toHaveLength(4);
+    expect(await collect(c.threadsOf(12))).toHaveLength(3);
+    expect(api.calls.map((call) => call.route)).toEqual([
+      "/index",
+      "/nodes/?api_bypass_permissions=1",
+      `${THREADS_P1}&api_bypass_permissions=1`,
+      `${THREADS_P2}&api_bypass_permissions=1`,
+    ]);
+    expect(api.calls.every((call) => !call.headers.has("XF-Api-User"))).toBe(true);
+  });
+
+  it("leaves bypass off for a key /index reports as a user key, and when told to", async () => {
+    api.on("/index", () =>
+      json(JSON.stringify({ key: { type: "user", scopes: ["thread:read"] } }))
+    );
+    api.on("/nodes/", fixture("nodes"));
+    const auto = client({ bypassPermissions: "auto" });
+    await auto.index();
+    expect(auto.context()).toEqual({ keyType: "user", bypassPermissions: false });
+    await auto.nodes();
+    expect(api.calls.at(-1)?.route).toBe("/nodes/");
+
+    const off = client({ bypassPermissions: false });
+    await off.nodes();
+    expect(api.calls.at(-1)?.route).toBe("/nodes/");
   });
 
   it("reports every scope for a key that allows all of them", async () => {
     api.on("/index", () =>
       json(JSON.stringify({ key: { type: "user", allow_all_scopes: true, scopes: [] } }))
     );
-    expect(await client().index()).toEqual({ scopes: ["*"], superUser: false });
+    expect(await client().index()).toEqual({ scopes: ["*"], superUser: false, keyType: "user" });
   });
 
   it("lists nodes with only the fields the snapshot keeps", async () => {
@@ -185,6 +230,15 @@ describe("createXenForoClient", () => {
     expect(clock.sleeps.filter((ms) => ms >= 1000)).toEqual([1000, 2000]);
   });
 
+  it("honours Retry-After on a 429, capped at two minutes", async () => {
+    const tooMany = (seconds: string) => () =>
+      new Response("{}", { status: 429, headers: { "retry-after": seconds } });
+    api.on("/index", tooMany("7"), tooMany("3600"), fixture("index"));
+
+    await client().index();
+    expect(clock.sleeps.filter((ms) => ms >= 1000)).toEqual([7000, 120_000]);
+  });
+
   it("gives up after maxRetries retries: five 503s throw with status 503", async () => {
     api.on("/index", status(503));
     const error = await thrown(client({ maxRetries: 4 }).index());
@@ -216,6 +270,19 @@ describe("createXenForoClient", () => {
     expect(error.message).not.toContain(FAKE_API_KEY);
     expect(error.message).toContain("[redacted]");
     expect(logged.join("\n")).not.toContain(FAKE_API_KEY);
+  });
+
+  it("returns null for a user the key may not read (403), without retrying", async () => {
+    api.on("/users/7/", status(403));
+    expect(await client().user(7)).toBeNull();
+    expect(api.calls).toHaveLength(1);
+  });
+
+  it("throws a 403 on attachment data so the export can record it as forbidden", async () => {
+    api.on("/attachments/55/data", status(403));
+    const error = await thrown(client().attachmentData(55));
+    expect(error.status).toBe(403);
+    expect(api.calls).toHaveLength(1);
   });
 
   it("returns a lite user and null for a missing one", async () => {

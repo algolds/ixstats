@@ -10,6 +10,7 @@ import {
   type XenForoClient,
 } from "~/lib/thinkpages-forum/import/xenforo-client";
 import type {
+  XfAttachment,
   XfNode,
   XfPost,
   XfThread,
@@ -19,16 +20,22 @@ import { createMemorySnapshotFs, type MemorySnapshotFs } from "../../../helpers/
 
 const DIR = "/snap/run";
 
-const node = (node_id: number, node_type_id = "Forum"): XfNode => ({
+const node = (node_id: number, node_type_id = "Forum", discussion_count?: number): XfNode => ({
   node_id,
   title: `Node ${node_id}`,
   description: "",
   node_type_id,
   parent_node_id: 0,
   display_order: node_id,
+  ...(discussion_count !== undefined && { type_data: { discussion_count } }),
 });
 
-const thread = (thread_id: number, node_id: number, user_id: number): XfThread => ({
+const thread = (
+  thread_id: number,
+  node_id: number,
+  user_id: number,
+  discussion_type?: string
+): XfThread => ({
   thread_id,
   node_id,
   title: `T${thread_id}`,
@@ -42,10 +49,19 @@ const thread = (thread_id: number, node_id: number, user_id: number): XfThread =
   discussion_open: true,
   sticky: false,
   discussion_state: "visible",
+  ...(discussion_type && { discussion_type }),
   prefix_id: 0,
 });
 
-const post = (thread_id: number, user_id: number, attachmentIds: number[] = []): XfPost => ({
+/** 57 is over the size limit by its metadata; the others are 3 bytes; content_type is XenForo's "post". */
+const attachment = (attachment_id: number, filename = `${attachment_id}.png`): XfAttachment => ({
+  attachment_id,
+  filename,
+  file_size: attachment_id === 57 ? 99_000_000 : 3,
+  content_type: "post",
+});
+
+const post = (thread_id: number, user_id: number, attachments: XfAttachment[] = []): XfPost => ({
   post_id: thread_id * 10,
   thread_id,
   user_id,
@@ -54,41 +70,52 @@ const post = (thread_id: number, user_id: number, attachmentIds: number[] = []):
   message: "hello",
   message_state: "visible",
   position: 0,
-  attach_count: attachmentIds.length,
+  attach_count: attachments.length,
   is_first_post: true,
-  ...(attachmentIds.length && {
-    Attachments: attachmentIds.map((attachment_id) => ({
-      attachment_id,
-      filename: `${attachment_id}.png`,
-      file_size: attachment_id === 57 ? 99_000_000 : 3,
-      content_type: "image/png",
-    })),
-  }),
+  ...(attachments.length && { Attachments: attachments }),
 });
 
-const NODES = [node(1, "Category"), node(12), node(13)];
+const NODES = [node(1, "Category"), node(12, "Forum", 4), node(13)];
 const THREADS: Record<number, XfThread[]> = {
-  12: [thread(100, 12, 7), thread(101, 12, 0)],
-  13: [thread(102, 13, 8)],
+  12: [thread(100, 12, 7), thread(101, 12, 0), thread(104, 12, 7, "redirect")],
+  13: [thread(102, 13, 8), thread(103, 13, 8)],
 };
+const POST_100_ATTACHMENTS = [55, 56, 57, 58, 59].map((id) => attachment(id));
 const POSTS: Record<number, XfPost[]> = {
-  100: [post(100, 7, [55, 56, 57])],
+  100: [post(100, 7, [...POST_100_ATTACHMENTS, attachment(60, "60.GIF")])],
   101: [post(101, 0)],
   102: [post(102, 9)],
+};
+
+type AttachmentAnswer = { bytes: Uint8Array; contentType: string } | null | "forbidden";
+
+const ATTACHMENTS: Record<number, AttachmentAnswer> = {
+  55: { bytes: new Uint8Array([1, 2, 3]), contentType: "Image/PNG; charset=binary" },
+  56: null,
+  58: "forbidden",
+  59: { bytes: new Uint8Array([1, 2]), contentType: "image/png" },
+  60: { bytes: new Uint8Array([1, 2, 3]), contentType: "" },
 };
 
 interface FakeClient extends XenForoClient {
   calls: string[];
 }
 
-function fakeClient(usersForbidden = false): FakeClient {
+async function* list<T>(items: T[]): AsyncGenerator<T> {
+  for (const item of items) yield item;
+}
+
+async function* gone(threadId: number): AsyncGenerator<XfPost> {
+  yield* list<XfPost>([]);
+  throw new XenForoExportError("HTTP 404", 404, `/threads/${threadId}/posts`);
+}
+
+function fakeClient(answers: Record<number, AttachmentAnswer> = ATTACHMENTS): FakeClient {
   const calls: string[] = [];
-  async function* list<T>(items: T[]): AsyncGenerator<T> {
-    for (const item of items) yield item;
-  }
   return {
     calls,
-    index: async () => ({ scopes: ["thread:read"], superUser: false }),
+    index: async () => ({ scopes: ["thread:read"], superUser: true, keyType: "super" }),
+    context: () => ({ keyType: "super", bypassPermissions: true }),
     nodes: async () => {
       calls.push("nodes");
       return NODES;
@@ -99,11 +126,10 @@ function fakeClient(usersForbidden = false): FakeClient {
     },
     postsOf: (threadId) => {
       calls.push(`posts ${threadId}`);
-      return list(POSTS[threadId] ?? []);
+      return threadId === 103 ? gone(threadId) : list(POSTS[threadId] ?? []);
     },
     user: async (userId): Promise<XfUserLite | null> => {
       calls.push(`user ${userId}`);
-      if (usersForbidden) throw new XenForoExportError("HTTP 403", 403, `/users/${userId}/`);
       if (userId === 9) return null;
       return {
         user_id: userId,
@@ -115,7 +141,11 @@ function fakeClient(usersForbidden = false): FakeClient {
     },
     attachmentData: async (id) => {
       calls.push(`attachment ${id}`);
-      return id === 56 ? null : { bytes: new Uint8Array([1, 2, 3]), contentType: "image/png" };
+      const answer = answers[id] ?? null;
+      if (answer === "forbidden") {
+        throw new XenForoExportError("HTTP 403", 403, `/attachments/${id}/data`);
+      }
+      return answer;
     },
     stats: () => ({ requests: 0, retries: 0, waitedMs: 0 }),
   };
@@ -140,35 +170,77 @@ async function run(client: XenForoClient, overrides: Partial<ExportRunOptions> =
   });
 }
 
+const callsOf = (client: FakeClient, kind: string) =>
+  client.calls.filter((c) => c.startsWith(kind));
+
 beforeEach(() => {
   fs = createMemorySnapshotFs();
 });
 
 describe("runExport", () => {
-  it("exports every phase into a complete snapshot", async () => {
+  it("exports every phase into a complete snapshot, recording the request context", async () => {
     const client = fakeClient();
     const totals = await run(client);
 
     expect(totals).toEqual({
       stopped: false,
-      threads: 3,
+      threads: 5,
       posts: 3,
       users: 3,
-      usersForbidden: false,
-      attachments: { ok: 1, missing: 1, oversize: 1, skipped: 0 },
+      usersUnavailable: 1,
+      threadsGone: 1,
+      threadsRedirect: 1,
+      attachments: { ok: 2, missing: 1, forbidden: 1, oversize: 1, skipped: 0, size_mismatch: 1 },
     });
     expect(client.calls).not.toContain("user 0");
+    expect(client.calls).not.toContain("posts 104");
     expect(client.calls).not.toContain("attachment 57");
     const snapshot = await readSnapshot(fs, DIR);
-    expect(isComplete(snapshot).complete).toBe(true);
+    expect(isComplete(snapshot)).toMatchObject({
+      complete: true,
+      threadsRedirect: [104],
+      threadsGone: [103],
+      usersMissing: [],
+      attachmentsUnavailable: [56, 58],
+      attachmentsSizeMismatch: [59],
+    });
     expect(snapshot.meta).toMatchObject({
       scopes: ["thread:read"],
-      superUser: false,
+      superUser: true,
+      keyType: "super",
+      bypassPermissions: true,
+      clientVersion: "1.0",
       nodeFilter: null,
     });
-    expect(JSON.stringify(snapshot.meta)).not.toMatch(/key/i);
     expect([...snapshot.users.keys()].sort()).toEqual([7, 8]);
     expect(fs.files.get(snapshot.attachmentPath(55))).toEqual(new Uint8Array([1, 2, 3]));
+    expect(snapshot.state.forumCounts?.get(12)).toEqual({ listed: 3, discussionCount: 4 });
+    expect(snapshot.state.forumCounts?.get(13)).toEqual({ listed: 2, discussionCount: null });
+  });
+
+  it('stores MIME types: the download\'s without parameters, else the file extension, never "post"', async () => {
+    await run(fakeClient());
+    const { attachments } = await readSnapshot(fs, DIR);
+
+    expect(attachments.get(55)?.content_type).toBe("image/png");
+    expect(attachments.get(60)?.content_type).toBe("image/gif");
+    expect(attachments.get(56)?.content_type).toBe("image/png");
+    expect(attachments.get(57)).toMatchObject({ stored: "oversize", content_type: "image/png" });
+    expect(attachments.get(59)).toMatchObject({
+      stored: "size_mismatch",
+      file_size: 3,
+      received_size: 2,
+    });
+  });
+
+  it("fetches a size-mismatched attachment again on the next run", async () => {
+    await run(fakeClient());
+    const fixed = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/png" };
+    const second = fakeClient({ ...ATTACHMENTS, 59: fixed });
+    await run(second);
+
+    expect(callsOf(second, "attachment")).toEqual(["attachment 59"]);
+    expect((await readSnapshot(fs, DIR)).attachments.get(59)?.stored).toBe("ok");
   });
 
   it("resumes after a stop without fetching finished work again", async () => {
@@ -187,45 +259,74 @@ describe("runExport", () => {
     expect(totals.stopped).toBe(true);
     expect(isComplete(await readSnapshot(fs, DIR))).toMatchObject({
       complete: false,
-      threadsWithoutPosts: [101, 102],
+      threadsWithoutPosts: [101, 102, 103],
     });
 
     const second = fakeClient();
     await run(second);
     expect(second.calls).not.toContain("nodes");
-    expect(second.calls.filter((c) => c.startsWith("threads"))).toEqual([]);
-    expect(second.calls.filter((c) => c.startsWith("posts"))).toEqual(["posts 101", "posts 102"]);
+    expect(callsOf(second, "threads")).toEqual([]);
+    expect(callsOf(second, "posts")).toEqual(["posts 101", "posts 102", "posts 103"]);
     expect(isComplete(await readSnapshot(fs, DIR)).complete).toBe(true);
+  });
+
+  it("does not fetch a gone thread again", async () => {
+    await run(fakeClient());
+    const second = fakeClient();
+    await run(second);
+    expect(callsOf(second, "posts")).toEqual([]);
   });
 
   it("limits threads to the node filter", async () => {
     const client = fakeClient();
     await run(client, { nodeFilter: [13] });
-    expect(client.calls.filter((c) => c.startsWith("threads"))).toEqual(["threads 13"]);
+    expect(callsOf(client, "threads")).toEqual(["threads 13"]);
     expect(isComplete(await readSnapshot(fs, DIR)).complete).toBe(true);
+  });
+
+  it("refuses a rerun with a different node filter unless told to reset it", async () => {
+    await run(fakeClient(), { nodeFilter: [13] });
+
+    const refused = fakeClient();
+    await expect(run(refused, { nodeFilter: [12] })).rejects.toThrow(/--reset-filter/);
+    await expect(run(fakeClient(), { nodeFilter: null })).rejects.toThrow(
+      /started with --nodes 13/
+    );
+    expect(refused.calls).toEqual([]);
+    expect((await readSnapshot(fs, DIR)).meta.nodeFilter).toEqual([13]);
+
+    await run(fakeClient(), { nodeFilter: [13] });
+    const reset = fakeClient();
+    await run(reset, { nodeFilter: [12, 13], resetFilter: true });
+    expect(callsOf(reset, "threads")).toEqual(["threads 12"]);
+    expect((await readSnapshot(fs, DIR)).meta.nodeFilter).toEqual([12, 13]);
   });
 
   it("records attachments as skipped without downloading, and a later run fetches them", async () => {
     const first = fakeClient();
     const totals = await run(first, { attachments: false });
-    expect(totals.attachments).toEqual({ ok: 0, missing: 0, oversize: 0, skipped: 3 });
-    expect(first.calls.some((c) => c.startsWith("attachment"))).toBe(false);
+    expect(totals.attachments.skipped).toBe(6);
+    expect(callsOf(first, "attachment")).toEqual([]);
 
     const second = fakeClient();
     await run(second);
-    expect(second.calls.filter((c) => c.startsWith("attachment"))).toEqual([
+    expect(callsOf(second, "attachment")).toEqual([
       "attachment 55",
       "attachment 56",
+      "attachment 58",
+      "attachment 59",
+      "attachment 60",
     ]);
     expect((await readSnapshot(fs, DIR)).attachments.get(55)?.stored).toBe("ok");
   });
 
-  it("skips the users phase when the key may not read users, and the snapshot says users are missing", async () => {
-    const totals = await run(fakeClient(true));
-    expect(totals.usersForbidden).toBe(true);
-    expect(isComplete(await readSnapshot(fs, DIR))).toMatchObject({
-      complete: false,
-      usersMissing: [7, 8, 9],
-    });
+  it("counts unreadable users without blocking the snapshot", async () => {
+    const unreadable: FakeClient = { ...fakeClient(), user: async () => null };
+    const totals = await run(unreadable);
+
+    expect(totals).toMatchObject({ users: 3, usersUnavailable: 3 });
+    const snapshot = await readSnapshot(fs, DIR);
+    expect(snapshot.users.size).toBe(0);
+    expect(isComplete(snapshot).complete).toBe(true);
   });
 });

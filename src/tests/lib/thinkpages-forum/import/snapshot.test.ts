@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import {
   isComplete,
+  MAX_JSONL_BYTES,
   openSnapshotWriter,
   readSnapshot,
   type AttachmentEntry,
@@ -103,6 +104,8 @@ describe("openSnapshotWriter", () => {
       postsDone: [100],
       usersDone: [],
       attachmentsDone: [],
+      threadsGone: [],
+      forumCounts: {},
     });
   });
 
@@ -126,6 +129,7 @@ describe("openSnapshotWriter", () => {
     await first.checkpoint();
 
     const second = await openSnapshotWriter(fs, DIR);
+    expect(second.meta).toEqual(META);
     expect(second.state.nodesDone).toBe(true);
     expect([...second.state.threadsDone]).toEqual([12]);
     expect([...second.state.postsDone]).toEqual([100]);
@@ -190,6 +194,14 @@ describe("readSnapshot", () => {
     expect(snapshot.attachmentPath(55)).toBe(`${DIR}/attachments/55.bin`);
   });
 
+  it("refuses a JSON-lines file above the whole-file read limit with a clear error", async () => {
+    const writer = await openSnapshotWriter(fs, DIR);
+    await writer.writeMeta(META);
+    await writer.appendPosts([post(1000, 100, 0)]);
+    const big: MemorySnapshotFs = { ...fs, stat: async () => ({ size: MAX_JSONL_BYTES + 1 }) };
+    await expect(readSnapshot(big, DIR)).rejects.toThrow(/needs a line reader/);
+  });
+
   it("refuses a directory that is not a snapshot", async () => {
     await expect(readSnapshot(fs, "/elsewhere")).rejects.toThrow(/meta\.json/);
   });
@@ -216,16 +228,93 @@ describe("isComplete", () => {
       threadsWithoutPosts: [101],
       usersMissing: [7, 8],
       attachmentsMissing: [55],
+      threadsRedirect: [],
+      threadsGone: [],
+      threadsEmpty: [],
+      attachmentsUnavailable: [],
+      attachmentsSizeMismatch: [],
     });
 
     await writer.markThreadsDone(13);
     await writer.appendPosts([post(1010, 101, 0)]);
     await writer.markPostsDone(101);
-    await writer.addUser(7, null);
-    await writer.addUser(8, null);
     await writer.addAttachment(entry(55, 1000, "missing"));
     await writer.checkpoint();
-    expect(isComplete(await readSnapshot(fs, DIR)).complete).toBe(true);
+    const done = isComplete(await readSnapshot(fs, DIR));
+    expect(done.complete).toBe(true);
+    expect(done.usersMissing).toEqual([7, 8]);
+    expect(done.attachmentsUnavailable).toEqual([55]);
+  });
+
+  it("does not wait on redirect threads, gone threads or threads that came back empty", async () => {
+    const writer = await openSnapshotWriter(fs, DIR);
+    await writer.writeMeta(META);
+    await writer.writeNodes([node(12)]);
+    await writer.appendThreads([
+      thread(100),
+      { ...thread(101), discussion_type: "redirect" },
+      thread(102),
+      thread(103),
+    ]);
+    await writer.markThreadsDone(12, { listed: 4, discussionCount: 5 });
+    await writer.appendPosts([post(1000, 100, 0)]);
+    await writer.markPostsDone(100);
+    await writer.markThreadGone(102);
+    await writer.markPostsDone(103);
+
+    const snapshot = await readSnapshot(fs, DIR);
+    expect(isComplete(snapshot)).toMatchObject({
+      complete: true,
+      threadsWithoutPosts: [],
+      threadsRedirect: [101],
+      threadsGone: [102],
+      threadsEmpty: [103],
+    });
+    expect(snapshot.state.forumCounts?.get(12)).toEqual({ listed: 4, discussionCount: 5 });
+  });
+
+  it("reports forbidden, missing and size-mismatched attachments without blocking", async () => {
+    const writer = await openSnapshotWriter(fs, DIR);
+    await writer.writeMeta(META);
+    await writer.writeNodes([node(12)]);
+    await writer.appendThreads([thread(100)]);
+    await writer.markThreadsDone(12);
+    const attachments = [55, 56, 57].map(entryAsAttachment);
+    await writer.appendPosts([
+      { ...post(1000, 100, 0), attach_count: 3, Attachments: attachments },
+    ]);
+    await writer.markPostsDone(100);
+    await writer.addAttachment(entry(55, 1000, "forbidden"));
+    await writer.addAttachment(entry(56, 1000, "missing"));
+    await writer.addAttachment(
+      { ...entry(57, 1000, "size_mismatch"), received_size: 3 },
+      new Uint8Array(3)
+    );
+
+    expect(isComplete(await readSnapshot(fs, DIR))).toMatchObject({
+      complete: true,
+      attachmentsMissing: [],
+      attachmentsUnavailable: [55, 56],
+      attachmentsSizeMismatch: [57],
+    });
+  });
+
+  it("reads a state.json written before threadsGone and forumCounts existed", async () => {
+    const writer = await openSnapshotWriter(fs, DIR);
+    await writer.writeMeta(META);
+    fs.files.set(
+      `${DIR}/state.json`,
+      JSON.stringify({
+        nodesDone: true,
+        threadsDone: [],
+        postsDone: [],
+        usersDone: [],
+        attachmentsDone: [],
+      })
+    );
+    const snapshot = await readSnapshot(fs, DIR);
+    expect(snapshot.state.threadsGone?.size).toBe(0);
+    expect(isComplete(snapshot).threadsGone).toEqual([]);
   });
 
   it("only expects the forums named in the node filter", async () => {

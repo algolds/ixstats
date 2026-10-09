@@ -1,14 +1,16 @@
 /**
  * The on-disk XenForo export snapshot (phase 4). Pure over an injected `fs`: the export writes it, the importer
  * reads only it. Layout of `<dir>`:
- *   meta.json         { exportedAt, apiUrl, scopes, superUser, nodeFilter, version: 1 } (never the API key)
+ *   meta.json         { exportedAt, apiUrl, scopes, superUser, keyType, bypassPermissions, clientVersion,
+ *                       nodeFilter, version: 1 } (never the API key)
  *   nodes.json        XfNode[]
  *   threads.jsonl     one XfThread per line
  *   posts.jsonl       one XfPost per line (Attachments inline)
  *   users.json        Record<string, XfUserLite>
  *   attachments.json  AttachmentEntry[]
  *   attachments/<attachment_id>.bin
- *   state.json        { nodesDone, threadsDone (node ids), postsDone (thread ids), usersDone, attachmentsDone }
+ *   state.json        { nodesDone, threadsDone (node ids), postsDone (thread ids), usersDone, attachmentsDone,
+ *                       threadsGone (thread ids whose posts answered 403/404), forumCounts }
  * Data always lands before the state that claims it, and JSON documents (state, users, attachments) are written
  * to a temp file and renamed into place, so an interrupted export resumes from `state.json`. Lines appended for
  * work that was not yet marked done are fetched again on resume; readers dedupe them, last line wins.
@@ -33,20 +35,40 @@ export interface SnapshotMeta {
   apiUrl: string;
   scopes: string[];
   superUser: boolean;
-  /** The forum node ids the export was limited to (`--nodes`), or null for every forum. */
+  /** The key type `/index` reported ("super", "user", "guest"), or null when it did not say. */
+  keyType?: string | null;
+  /** Whether reads carried `api_bypass_permissions=1` (false: the export saw what a guest or the key user sees). */
+  bypassPermissions?: boolean;
+  clientVersion?: string;
+  /** The forum node ids the export was limited to (`--nodes`), or null for every forum. Fixed by the first run. */
   nodeFilter: number[] | null;
   version: typeof SNAPSHOT_VERSION;
 }
 
-export type AttachmentStored = "ok" | "missing" | "oversize" | "skipped";
+/**
+ * ok: bytes in attachments/<id>.bin. missing: 404. forbidden: 403. oversize: over the size limit, not downloaded.
+ * skipped: --no-attachments. size_mismatch: downloaded bytes (`received_size`, also stored in the .bin) differ from
+ * the metadata `file_size`; fetched again by a rerun.
+ */
+export type AttachmentStored =
+  "ok" | "missing" | "forbidden" | "oversize" | "skipped" | "size_mismatch";
 
 export interface AttachmentEntry {
   attachment_id: number;
   post_id: number;
   filename: string;
+  /** A MIME type: the download's Content-Type, else the metadata's, else derived from the file extension. */
   content_type: string;
   file_size: number;
   stored: AttachmentStored;
+  /** Bytes actually downloaded, when they differ from `file_size`. */
+  received_size?: number;
+}
+
+/** A forum's listed thread count next to the count XenForo reports for it (a guest context lists fewer). */
+export interface ForumCount {
+  listed: number;
+  discussionCount: number | null;
 }
 
 export interface SnapshotStateFile {
@@ -55,6 +77,8 @@ export interface SnapshotStateFile {
   postsDone: number[];
   usersDone: number[];
   attachmentsDone: number[];
+  threadsGone?: number[];
+  forumCounts?: Record<string, ForumCount>;
 }
 
 export interface SnapshotProgress {
@@ -65,6 +89,14 @@ export interface SnapshotProgress {
   postsDone: Set<number>;
   usersDone: Set<number>;
   attachmentsDone: Set<number>;
+  /** Thread ids whose posts answered 403/404 (deleted or hidden while the export ran); not imported. */
+  threadsGone?: Set<number>;
+  forumCounts?: Map<number, ForumCount>;
+}
+
+export interface WriterProgress extends SnapshotProgress {
+  threadsGone: Set<number>;
+  forumCounts: Map<number, ForumCount>;
 }
 
 export interface Snapshot {
@@ -82,13 +114,17 @@ export interface Snapshot {
 
 export interface SnapshotWriter {
   readonly dir: string;
-  readonly state: SnapshotProgress;
+  readonly state: WriterProgress;
+  /** meta.json as it was when the writer opened (null for a new snapshot). */
+  readonly meta: SnapshotMeta | null;
   writeMeta(meta: SnapshotMeta): Promise<void>;
   writeNodes(nodes: XfNode[]): Promise<void>;
   appendThreads(threads: XfThread[]): Promise<void>;
-  markThreadsDone(nodeId: number): Promise<void>;
+  markThreadsDone(nodeId: number, count?: ForumCount): Promise<void>;
   appendPosts(posts: XfPost[]): Promise<void>;
   markPostsDone(threadId: number): Promise<void>;
+  /** The thread's posts answered 403/404: it is done, and not imported. */
+  markThreadGone(threadId: number): Promise<void>;
   /** Buffers the user (null: not found) until the next checkpoint. */
   addUser(userId: number, user: XfUserLite | null): Promise<void>;
   /** Writes the bytes now, buffers the entry until the next checkpoint. */
@@ -102,16 +138,40 @@ export interface SnapshotWriterOptions {
   checkpointEvery?: number;
 }
 
+/**
+ * `complete` needs the node list, every exported forum's threads, posts for every thread that is neither a
+ * redirect nor gone, and an entry for every attachment. The other lists are reported, not blocking.
+ */
 export interface SnapshotGaps {
   complete: boolean;
   nodesPending: boolean;
   forumsWithoutThreads: number[];
   threadsWithoutPosts: number[];
+  /** Users not fetched yet; the importer attributes by forum user id and post username, so this does not block. */
   usersMissing: number[];
   attachmentsMissing: number[];
+  /** Redirect threads (left by moves): no posts to fetch. */
+  threadsRedirect: number[];
+  threadsGone: number[];
+  /** Fetched, but XenForo returned no posts. */
+  threadsEmpty: number[];
+  /** Entries stored `missing` or `forbidden`. */
+  attachmentsUnavailable: number[];
+  attachmentsSizeMismatch: number[];
 }
 
 const FORUM_NODE_TYPE = "Forum";
+const REDIRECT_THREAD_TYPE = "redirect";
+
+/**
+ * threads.jsonl and posts.jsonl are read whole (one string each), and the importer holds the whole snapshot in
+ * memory anyway. Above this size reading refuses with a clear error instead of hitting the engine's string limit;
+ * a larger forum needs a line reader in `readLines`.
+ */
+export const MAX_JSONL_BYTES = 512 * 1024 * 1024;
+
+export const isRedirectThread = (thread: XfThread) =>
+  thread.discussion_type === REDIRECT_THREAD_TYPE;
 
 const files = (dir: string) => ({
   meta: `${dir}/meta.json`,
@@ -148,7 +208,7 @@ const EMPTY_STATE: SnapshotStateFile = {
   attachmentsDone: [],
 };
 
-async function readProgress(fs: SnapshotFs, dir: string): Promise<SnapshotProgress> {
+async function readProgress(fs: SnapshotFs, dir: string): Promise<WriterProgress> {
   const raw = await readJson<SnapshotStateFile>(fs, files(dir).state, EMPTY_STATE);
   return {
     nodesDone: raw.nodesDone,
@@ -156,15 +216,21 @@ async function readProgress(fs: SnapshotFs, dir: string): Promise<SnapshotProgre
     postsDone: new Set(raw.postsDone),
     usersDone: new Set(raw.usersDone),
     attachmentsDone: new Set(raw.attachmentsDone),
+    threadsGone: new Set(raw.threadsGone ?? []),
+    forumCounts: new Map(
+      Object.entries(raw.forumCounts ?? {}).map(([id, count]) => [Number(id), count])
+    ),
   };
 }
 
-const progressFile = (state: SnapshotProgress): SnapshotStateFile => ({
+const progressFile = (state: WriterProgress): SnapshotStateFile => ({
   nodesDone: state.nodesDone,
   threadsDone: [...state.threadsDone],
   postsDone: [...state.postsDone],
   usersDone: [...state.usersDone],
   attachmentsDone: [...state.attachmentsDone],
+  threadsGone: [...state.threadsGone],
+  forumCounts: Object.fromEntries(state.forumCounts),
 });
 
 async function readUsers(fs: SnapshotFs, dir: string): Promise<Map<number, XfUserLite>> {
@@ -193,6 +259,7 @@ export async function openSnapshotWriter(
   await guardTornLine(fs, paths.threads);
   await guardTornLine(fs, paths.posts);
   const state = await readProgress(fs, dir);
+  const meta = await readJson<SnapshotMeta | null>(fs, paths.meta, null);
   const users = await readUsers(fs, dir);
   const attachments = await readAttachments(fs, dir);
   let pending = 0;
@@ -216,7 +283,8 @@ export async function openSnapshotWriter(
   return {
     dir,
     state,
-    writeMeta: (meta) => writeAtomic(fs, paths.meta, meta),
+    meta,
+    writeMeta: (next) => writeAtomic(fs, paths.meta, next),
     async writeNodes(nodes) {
       await writeAtomic(fs, paths.nodes, nodes);
       state.nodesDone = true;
@@ -225,14 +293,20 @@ export async function openSnapshotWriter(
     async appendThreads(threads) {
       if (threads.length) await fs.appendFile(paths.threads, toLines(threads));
     },
-    async markThreadsDone(nodeId) {
+    async markThreadsDone(nodeId, count) {
       state.threadsDone.add(nodeId);
+      if (count) state.forumCounts.set(nodeId, count);
       await checkpoint();
     },
     async appendPosts(posts) {
       if (posts.length) await fs.appendFile(paths.posts, toLines(posts));
     },
     async markPostsDone(threadId) {
+      state.postsDone.add(threadId);
+      await counted();
+    },
+    async markThreadGone(threadId) {
+      state.threadsGone.add(threadId);
       state.postsDone.add(threadId);
       await counted();
     },
@@ -264,6 +338,12 @@ async function readLines<T>(
   const rows = new Map<number, T>();
   let skipped = 0;
   if (!(await fs.exists(file))) return { rows, skipped };
+  const { size } = await fs.stat(file);
+  if (size > MAX_JSONL_BYTES) {
+    throw new Error(
+      `${file} is ${size} bytes, over the ${MAX_JSONL_BYTES}-byte whole-file read limit: needs a line reader`
+    );
+  }
   for (const line of (await fs.readFile(file)).split("\n")) {
     if (!line.trim()) continue;
     try {
@@ -348,7 +428,27 @@ export function postAttachments(
   return out;
 }
 
-/** What the export still has to fetch; `complete` when nothing. */
+const idsWhere = (entries: Map<number, AttachmentEntry>, stored: AttachmentStored[]) =>
+  [...entries.values()].filter((e) => stored.includes(e.stored)).map((e) => e.attachment_id);
+
+function threadGaps(snapshot: Snapshot) {
+  const { state } = snapshot;
+  const gone = state.threadsGone ?? new Set<number>();
+  const redirects = snapshot.threads.filter(isRedirectThread).map((t) => t.thread_id);
+  const fetchable = snapshot.threads
+    .map((t) => t.thread_id)
+    .filter((id) => !gone.has(id) && !redirects.includes(id));
+  return {
+    threadsWithoutPosts: fetchable.filter((id) => !state.postsDone.has(id)),
+    threadsRedirect: redirects,
+    threadsGone: [...gone],
+    threadsEmpty: fetchable.filter(
+      (id) => state.postsDone.has(id) && !snapshot.postsByThread.has(id)
+    ),
+  };
+}
+
+/** What the export still has to fetch (`complete` when nothing blocks the import), and what it reports. */
 export function isComplete(snapshot: Snapshot): SnapshotGaps {
   const { state } = snapshot;
   const gaps = {
@@ -356,21 +456,18 @@ export function isComplete(snapshot: Snapshot): SnapshotGaps {
     forumsWithoutThreads: exportedForums(snapshot.nodes, snapshot.meta.nodeFilter)
       .map((node) => node.node_id)
       .filter((id) => !state.threadsDone.has(id)),
-    threadsWithoutPosts: snapshot.threads
-      .map((t) => t.thread_id)
-      .filter((id) => !state.postsDone.has(id) || !snapshot.postsByThread.has(id)),
+    ...threadGaps(snapshot),
     usersMissing: authorIds(snapshot).filter((id) => !state.usersDone.has(id)),
     attachmentsMissing: [...new Set(postAttachments(snapshot).map((a) => a.attachment_id))].filter(
       (id) => !snapshot.attachments.has(id)
     ),
+    attachmentsUnavailable: idsWhere(snapshot.attachments, ["missing", "forbidden"]),
+    attachmentsSizeMismatch: idsWhere(snapshot.attachments, ["size_mismatch"]),
   };
   const complete =
     !gaps.nodesPending &&
-    [
-      gaps.forumsWithoutThreads,
-      gaps.threadsWithoutPosts,
-      gaps.usersMissing,
-      gaps.attachmentsMissing,
-    ].every((list) => list.length === 0);
+    [gaps.forumsWithoutThreads, gaps.threadsWithoutPosts, gaps.attachmentsMissing].every(
+      (list) => list.length === 0
+    );
   return { complete, ...gaps };
 }
