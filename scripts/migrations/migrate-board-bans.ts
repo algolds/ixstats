@@ -259,4 +259,8 @@ main(db)
     console.error(e);
     process.exitCode = 1;
   })
-  .finally(() => void db.$disconnect());
+  // The server modules' imports open a Redis client (the rate limiter) that keeps the event loop alive: exit.
+  .finally(async () => {
+    await db.$disconnect();
+    process.exit();
+  });
