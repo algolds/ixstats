@@ -135,9 +135,14 @@ describe("app section map routes", () => {
       "Home",
       "Messages",
       "ThinkTanks",
+      "Forum",
     ]);
     expect(home.sections.find((s) => s.label === "ThinkTanks")).toMatchObject({
       href: "/thinktanks",
+      tint: "thinkpages",
+    });
+    expect(home.sections.find((s) => s.label === "Forum")).toMatchObject({
+      href: "/thinkpages/forum",
       tint: "thinkpages",
     });
   });
@@ -148,6 +153,11 @@ describe("app section map routes", () => {
     ["/thinkpages/profile/someone", "thinktanks"],
     ["/thinktanks", "thinktanks"],
     ["/thinktanks/abc", "thinktanks"],
+    ["/thinkpages/forum", "forum"],
+    ["/thinkpages/c/general", "forum"],
+    ["/thinkpages/t/abc", "forum"],
+    ["/thinkpages/r/eurth/hub", "forum"],
+    ["/thinkpages/mod", "forum"],
   ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
     const home = getAppForPath(pathname);
     expect(home?.id).toBe("home");

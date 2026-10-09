@@ -1,6 +1,6 @@
 # ThinkPages
 
-**Last updated:** September 2026
+**Last updated:** October 2026
 
 ThinkPages is IxStates' social knowledge-sharing backbone — the in-world social platform where players run multiple personas (government officials, media outlets, citizen voices) tied to their country, post to a shared feed, react, and collaborate. ThinkShare (messaging) and the Discord IxTwitter sync are sub-systems of ThinkPages.
 
@@ -15,8 +15,20 @@ This directory (`src/app/thinkpages`) is the App Router surface. The heavy socia
 | `/thinkpages/feed` | `feed/page.tsx` | Redirects to `/dashboard` (unified feed) |
 | `/thinkpages/thinktanks` | `thinktanks/page.tsx` | Redirects to `/thinktanks` |
 | `/thinkpages/thinkshare` | `thinkshare/page.tsx` | Redirects to `/messages` |
+| `/thinkpages/forum` | `forum/page.tsx` | Forum home: sitewide categories and the realm directory |
+| `/thinkpages/c/[key]` | `c/[key]/page.tsx` | A sitewide category's thread list |
+| `/thinkpages/c/[key]/new` | `c/[key]/new/page.tsx` | Start a thread in a sitewide category |
+| `/thinkpages/r/[realm]` | `r/[realm]/page.tsx` | Redirects to the realm's Hub |
+| `/thinkpages/r/[realm]/[key]` | `r/[realm]/[key]/page.tsx` | A realm section's thread list (the Hub and its categories) |
+| `/thinkpages/r/[realm]/[key]/new` | `r/[realm]/[key]/new/page.tsx` | Start a thread in a realm section |
+| `/thinkpages/t/[threadId]` | `t/[threadId]/page.tsx` | Thread view with replies, reports and moderator tools |
+| `/thinkpages/mod` | `mod/page.tsx` | Moderation console for realm and category moderators and admins |
 
 > Note: the `Feed / ThinkTanks / ThinkShare` single-page router pattern described in older docs has been superseded — these sections now live in the Dashboard, ThinkTanks, and Messages surfaces, and the routes above forward to them.
+
+## Forum
+
+The public forum lives under `/thinkpages/forum`, `/thinkpages/c/*`, `/thinkpages/r/*` and `/thinkpages/t/*`, and appears in the sidebar as **Forum** under Home (ThinkTanks keeps `/thinkpages` and the rest). Reads and member writes go through `api.thinkpagesForum.*`; moderation (reports, hide/lock/pin/move, warnings, bans, appeals, the moderation log) goes through `api.thinkpagesForumMod.*`, surfaced in the moderation console at `/thinkpages/mod`. Logic lives in `src/server/modules/thinkpages-forum/`; the pure moderation rules (warning points, expiry, automatic ban thresholds) are in `src/lib/thinkpages-forum/moderation-policy.ts`. Every moderator action writes an append-only `ForumModLog` row in the same transaction.
 
 ## Key features
 

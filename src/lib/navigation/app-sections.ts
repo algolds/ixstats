@@ -226,7 +226,8 @@ export const APPS: readonly AppDefinition[] = [
         icon: Mail,
         badge: "messages-unread",
       },
-      // ThinkPages is part of Home under ThinkTanks; its pages keep their emerald section tint.
+      // ThinkPages is part of Home: ThinkTanks takes /thinkpages, and Forum takes the forum routes
+      // (longest prefix wins). Both keep the emerald section tint.
       {
         id: "thinktanks",
         label: "ThinkTanks",
@@ -234,6 +235,14 @@ export const APPS: readonly AppDefinition[] = [
         icon: LightBulbOn,
         tint: "thinkpages",
         match: ["/thinkpages"],
+      },
+      {
+        id: "forum",
+        label: "Forum",
+        href: "/thinkpages/forum",
+        icon: ChatBubble,
+        tint: "thinkpages",
+        match: ["/thinkpages/c", "/thinkpages/t", "/thinkpages/r", "/thinkpages/mod"],
       },
     ],
   },

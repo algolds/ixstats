@@ -68,12 +68,13 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists a conditional What's new above Dashboard, Messages and ThinkTanks", () => {
+  it("Home lists a conditional What's new above Dashboard, Messages, ThinkTanks and Forum", () => {
     expect(app("home").sections.map((s) => s.id)).toEqual([
       "whats-new",
       "dashboard",
       "messages",
       "thinktanks",
+      "forum",
     ]);
     expect(app("home").sections.find((s) => s.id === "messages")).toMatchObject({
       href: "/messages",
