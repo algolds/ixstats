@@ -19,7 +19,7 @@ import {
   type AppealSubject,
   type AppealSubjectType,
 } from "./mod-appeal-subjects";
-import type { AutoBanChange } from "./mod-auto-bans";
+import { autoBanAfterLift, type AutoBanChange } from "./mod-auto-bans";
 import { assertBanScope, liftBanTx } from "./mod-bans";
 import { logModAction } from "./mod-log";
 import { lockMember } from "./mod-scope";
@@ -42,7 +42,7 @@ export interface AppealReview {
   subjectType: AppealSubjectType;
   /** The reviewer's outcome, or `moot` when the subject had already ended. */
   outcome: AppealDecision;
-  /** An overturned warning's effect on the member's automatic ban (M3). */
+  /** An overturn's effect on the member's automatic ban: a warning's (M3), or a manual site ban's re-tier (M2). */
   autoBan: AutoBanChange | null;
 }
 
@@ -135,7 +135,10 @@ async function assertOtherReviewer(
   }
 }
 
-/** Lifts the ban, or revokes the warning with M3's re-tier, through the review's transaction and clock. */
+/**
+ * Lifts the ban (a manual site ban with M2's re-tier), or revokes the warning with M3's re-tier, through the review's
+ * transaction and clock.
+ */
 async function overturn(
   tx: Prisma.TransactionClient,
   reviewer: NonNullable<ForumViewer>,
@@ -146,7 +149,7 @@ async function overturn(
   const detail = { reason: "appeal overturned", appealId };
   if (subject.kind === "ban") {
     await liftBanTx(tx, reviewer, subject, detail, now);
-    return null;
+    return autoBanAfterLift(tx, subject, now);
   }
   return (await revokeWarningTx(tx, reviewer, subject, detail, now)).autoBan;
 }

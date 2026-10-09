@@ -102,6 +102,8 @@ function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
       }),
     },
     forumModLog: { create: jest.fn(async () => ({ id: "log1" })) },
+    // No warning points, so a site ban's lift re-tiers nothing (M2 is covered in mod-auto-ban-retier.test.ts).
+    forumWarning: { findMany: jest.fn(async () => []) },
     // No open appeals here; mooting them is covered in mod-appeals.test.ts.
     forumAppeal: { findFirst: jest.fn(async () => null), updateMany: jest.fn() },
   };
@@ -513,7 +515,7 @@ describe("liftBan", () => {
     });
     await expect(
       liftBan(db as never, realmMod, { banId: "b1", note: " Served " })
-    ).resolves.toEqual({ userId: "u_m", scope: "realm", scopeId: "r_eurth" });
+    ).resolves.toEqual({ userId: "u_m", scope: "realm", scopeId: "r_eurth", autoBan: null });
     expect(tx.forumBan.updateMany).toHaveBeenCalledWith({
       where: {
         id: "b1",

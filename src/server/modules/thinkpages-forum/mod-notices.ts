@@ -1,5 +1,6 @@
 /**
- * Member notices (M13): a notification to the member on a warning, a ban, a lifted ban and an appeal decision,
+ * Member notices (M13): a notification to the member on a warning, a ban, a shortened automatic ban, a lifted ban
+ * and an appeal decision,
  * linking to their standing on the forum home. The router sends them after the moderation transaction commits.
  * Best effort: a failed lookup or notification is logged and swallowed, so a notice never fails the action.
  */
@@ -69,6 +70,18 @@ export function notifyBan(db: NoticesDb, input: { userId: string; ban: NoticeBan
     title: "You are banned from posting",
     message: `You can't post in ${placeOf(ban)} until ${until}. Reason: ${ban.reason}`,
     type: "warning",
+  });
+}
+
+/** M5 (owner wording): a revoke that shortens the automatic ban says so, never as a new ban. */
+export function notifyAutoBanShortened(
+  db: NoticesDb,
+  input: { userId: string; expiresAt: Date }
+): Promise<void> {
+  return send(db, input.userId, {
+    title: "Your forum ban was shortened",
+    message: `Your automatic forum ban was shortened; it now ends on ${formatBanDate(input.expiresAt)}.`,
+    type: "info",
   });
 }
 

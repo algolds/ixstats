@@ -31,6 +31,7 @@ import {
   modEditPost,
   moveThread,
   notifyAppealDecision,
+  notifyAutoBanShortened,
   notifyBan,
   notifyBanLifted,
   notifyWarning,
@@ -74,7 +75,10 @@ async function notify(...notices: Array<Promise<void>>): Promise<void> {
   await Promise.allSettled(notices);
 }
 
-/** What a warning, revoke or appeal decision did to the member's automatic site ban, as a notice. */
+/**
+ * What a warning, revoke, lift (M2's re-tier) or appeal decision did to the member's automatic site ban, as a
+ * notice; a shortened ban is told as such, not as a new ban (M5).
+ */
 function autoBanNotices(
   db: NoticesDb,
   userId: string,
@@ -82,6 +86,9 @@ function autoBanNotices(
 ): Array<Promise<void>> {
   if (change === null) return [];
   if (change.kind === "lifted") return [notifyBanLifted(db, { userId, ban: { scope: "site" } })];
+  if (change.kind === "shortened") {
+    return [notifyAutoBanShortened(db, { userId, expiresAt: change.expiresAt })];
+  }
   const ban = { scope: "site" as const, expiresAt: change.expiresAt, reason: change.reason };
   return [notifyBan(db, { userId, ban })];
 }
@@ -252,7 +259,10 @@ export const thinkpagesForumModRouter = createTRPCRouter({
         // Committed: a failed name lookup only makes the notice name the place generically (M13).
         const scopeName = await banPlaceName(ctx.db, lifted).catch(() => null);
         const ban = { scope: lifted.scope, scopeName };
-        await notify(notifyBanLifted(ctx.db, { userId: lifted.userId, ban }));
+        await notify(
+          notifyBanLifted(ctx.db, { userId: lifted.userId, ban }),
+          ...autoBanNotices(ctx.db, lifted.userId, lifted.autoBan)
+        );
       })
     ),
 
