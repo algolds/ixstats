@@ -80,6 +80,7 @@ model UploadedAsset {
   height         Int      @default(0)
   blurhash       String?
   uploaderClerkId String?
+  visibility     String   @default("public") // "public" | "restricted" (restricted is never listed under Forum)
   createdAt      DateTime @default(now())
 
   @@unique([source, sourceRef])

@@ -15,9 +15,13 @@ CREATE TABLE IF NOT EXISTS "uploaded_assets" (
     "height" INTEGER NOT NULL DEFAULT 0,
     "blurhash" TEXT,
     "uploaderClerkId" TEXT,
+    "visibility" TEXT NOT NULL DEFAULT 'public',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "uploaded_assets_pkey" PRIMARY KEY ("id")
 );
+
+-- A database that already has the table from the first version of this migration.
+ALTER TABLE "uploaded_assets" ADD COLUMN IF NOT EXISTS "visibility" TEXT NOT NULL DEFAULT 'public';
 
 CREATE UNIQUE INDEX IF NOT EXISTS "uploaded_assets_url_key" ON "uploaded_assets"("url");
 CREATE UNIQUE INDEX IF NOT EXISTS "uploaded_assets_source_sourceRef_key" ON "uploaded_assets"("source", "sourceRef");

@@ -27,7 +27,7 @@ function requestWith(file: File): NextRequest {
 describe("POST /api/upload/image", () => {
   beforeEach(() => {
     mockRegister.mockReset();
-    mockRegister.mockResolvedValue(null);
+    mockRegister.mockResolvedValue({ ok: false, reason: "error", retryable: true }); // the route ignores the result
   });
 
   it("records the upload with source upload and the Clerk user", async () => {
