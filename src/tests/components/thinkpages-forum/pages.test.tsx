@@ -267,6 +267,22 @@ describe("category view", () => {
     );
   });
 
+  it("explains why New thread is missing with the category's notice", () => {
+    const notice = "Your nation is muted on this board until Jan 1.";
+    set("category", { data: categoryData(false, [], undefined, notice) });
+    const { rerender } = render(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.getByText(notice)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
+
+    set("category", { data: categoryData(true, [], undefined, notice) });
+    rerender(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.queryByText(notice)).toBeNull();
+
+    set("category", { data: categoryData(false) });
+    rerender(<ThreadList categoryKey="general" page={1} />);
+    expect(screen.queryByText(notice)).toBeNull();
+  });
+
   it("lists threads with plain text titles and the persona, not the player", () => {
     set("category", {
       data: categoryData(false, [

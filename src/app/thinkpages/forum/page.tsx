@@ -8,7 +8,7 @@ interface ThinkPagesForumPageProps {
 export const metadata: Metadata = {
   title: "ThinkPages Forum - IxStats",
   description:
-    "Sitewide discussion on ThinkPages: announcements, general talk, side games and more.",
+    "Discussion on ThinkPages: sitewide categories and a forum section for every realm.",
 };
 
 export default async function ThinkPagesForumPage({ searchParams }: ThinkPagesForumPageProps) {

@@ -770,6 +770,29 @@ describe("deleting a realm (AT-8)", () => {
     expect(db.realm.delete).toHaveBeenCalledWith({ where: { id: "eurth" } });
   });
 
+  it("deletes the action links of the realm's native posts before its categories", async () => {
+    const db = deletableDb();
+    db.forumPost.findMany.mockResolvedValue([{ id: "p1" }, { id: "p2" }]);
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.forumPost.findMany).toHaveBeenCalledWith({
+      where: { thread: { category: { scope: "realm", realmId: "eurth" } } },
+      select: { id: true },
+    });
+    expect(db.postActionLink.deleteMany).toHaveBeenCalledWith({
+      where: { postSource: "native", postRef: { in: ["p1", "p2"] } },
+    });
+    expect(db.postActionLink.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      db.forumCategory.deleteMany.mock.invocationCallOrder[0]!
+    );
+  });
+
+  it("skips the link cleanup when the realm has no posts", async () => {
+    const db = deletableDb();
+    db.forumPost.findMany.mockResolvedValue([]);
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.postActionLink.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("deletes the realm's forum categories before the realm (D16)", async () => {
     const db = deletableDb();
     await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });

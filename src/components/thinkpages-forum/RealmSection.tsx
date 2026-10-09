@@ -83,6 +83,11 @@ export function RealmSection({ realm, switcher = false }: RealmSectionProps) {
 
   const listed = realms.data?.realms.find((r) => r.slug === slug);
   const name = section.data?.realm.name ?? listed?.name ?? "Realm";
+  // A realm opened by URL may be unlisted (D14); keep it selectable so the trigger shows its name.
+  const options =
+    realms.data && !listed && section.data
+      ? [{ slug, name }, ...realms.data.realms]
+      : realms.data?.realms;
 
   return (
     <Card content="navigation" className="overflow-hidden">
@@ -91,9 +96,7 @@ export function RealmSection({ realm, switcher = false }: RealmSectionProps) {
           <h2 className="text-title-3 text-label">{name}</h2>
           {section.data ? <PostingNotice section={section.data} /> : null}
         </div>
-        {switcher && realms.data ? (
-          <RealmSwitcher realms={realms.data.realms} value={slug} />
-        ) : null}
+        {switcher && options ? <RealmSwitcher realms={options} value={slug} /> : null}
       </div>
       <SectionBody
         section={section.data}

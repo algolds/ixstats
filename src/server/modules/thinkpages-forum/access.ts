@@ -4,7 +4,7 @@
  */
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 
-/** `activeRealmId`: the realm of the nation the viewer acts as (the router fills it from `user.country.realmId`). */
+/** `activeRealmId`: set only by the `realms` procedure, from the viewer's primary nation (`primaryRealmIdOf`); unset elsewhere. */
 export type ForumViewer = (RealmActor & { countryId: string | null; activeRealmId?: string | null }) | null;
 
 export function canSeeCategory(viewer: ForumViewer, category: { visibility: string }): boolean {

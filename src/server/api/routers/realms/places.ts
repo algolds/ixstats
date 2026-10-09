@@ -1,7 +1,6 @@
 /**
- * Realms as places: the realm directory (/realms) and each realm's board (/r/[realm]/board), the
- * NationStates regional message board built on the ThinkTank primitive (see thinktanks/realm-board.ts).
- * The directory's activity now counts the realm's forum section; the board itself is frozen until bridge deletion.
+ * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section
+ * (the realm board page is gone; /r/[realm]/board redirects to the forum).
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";

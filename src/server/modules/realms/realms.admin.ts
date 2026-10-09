@@ -64,6 +64,16 @@ export async function deleteRealm(
       });
       await tx.realmBoard.delete({ where: { realmId: realm.id } });
     }
+    // Action links key posts by ref with no foreign key, so they are cleared before the posts cascade away.
+    const posts = await tx.forumPost.findMany({
+      where: { thread: { category: { scope: "realm", realmId: realm.id } } },
+      select: { id: true },
+    });
+    if (posts.length > 0) {
+      await tx.postActionLink.deleteMany({
+        where: { postSource: "native", postRef: { in: posts.map((p) => p.id) } },
+      });
+    }
     await tx.forumCategory.deleteMany({ where: { scope: "realm", realmId: realm.id } });
     await tx.realm.delete({ where: { id: realm.id } });
   });

@@ -14,7 +14,7 @@ import {
   validatePostActionTokens,
 } from "~/server/modules/action-links";
 import type { RealmActor } from "~/server/modules/realms";
-import { canSeeCategory, canStartThread } from "./access";
+import { canSeeCategory } from "./access";
 import { ForumError } from "./errors";
 import { loadCategory, visibleRealmOf } from "./reads";
 import { postingAccessFor, type ForumRealm, type PostableCategory } from "./realm-access";
@@ -161,9 +161,7 @@ export async function createThread(
     key: input.categoryKey,
     realm: input.realm,
   });
-  const cannotStart = "You cannot start threads here.";
-  await assertCanPost(db, actor, category, realm, cannotStart);
-  if (!canStartThread(actor, category)) throw new ForumError("FORBIDDEN", cannotStart);
+  await assertCanPost(db, actor, category, realm, "You cannot start threads here.");
   const author = {
     authorUserId: actor.id,
     authorPersonaId: await resolvePersona(db, actor, category, input.personaId),

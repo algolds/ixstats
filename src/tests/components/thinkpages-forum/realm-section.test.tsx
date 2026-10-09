@@ -187,6 +187,23 @@ describe("RealmSection", () => {
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/forum?realm=other");
   });
 
+  it("keeps an unlisted realm opened by URL selectable in the switcher", () => {
+    results.realmSection = {
+      data: {
+        ...section(true, null),
+        realm: { id: "r_draft", slug: "hidden", name: "Hidden Realm", status: "active" },
+      },
+    };
+    render(<RealmSection realm="hidden" switcher />);
+    const select = screen.getByRole("combobox");
+    expect(
+      within(select)
+        .getAllByRole("option")
+        .map((o) => o.textContent)
+    ).toEqual(["Hidden Realm", "IxWorld", "Eurth", "Other"]);
+    expect(select).toHaveValue("hidden");
+  });
+
   it("has no switcher unless asked for", () => {
     results.realmSection = { data: section(true, null) };
     render(<RealmSection realm="eurth" />);

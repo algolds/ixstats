@@ -115,6 +115,9 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
           ) : null
         }
       />
+      {!data.canStart && data.notice ? (
+        <p className="text-footnote text-label-secondary">{data.notice}</p>
+      ) : null}
       <Card content="feed" className="overflow-hidden">
         {data.threads.length > 0 ? (
           <ul className="divide-separator divide-y">
