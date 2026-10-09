@@ -51,6 +51,9 @@ interface CategoryWhere {
 interface WhereArgs {
   where: Record<string, string | boolean | object>;
 }
+interface UserFindArgs extends WhereArgs {
+  select: Record<string, boolean | { select: Record<string, boolean> }>;
+}
 interface ThreadSelectArgs {
   select: { thread: { select: object } };
 }
@@ -94,7 +97,7 @@ function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
       count: jest.fn(async (_args: WhereArgs) => 1),
       findUnique: jest.fn(async (_args: ThreadSelectArgs) => opts.post ?? null),
     },
-    user: { findMany: jest.fn(async (_args: WhereArgs): Promise<AuthorUserRow[]> => []) },
+    user: { findMany: jest.fn(async (_args: UserFindArgs): Promise<AuthorUserRow[]> => []) },
     thinkpagesAccount: { findMany: jest.fn(async (): Promise<AuthorAccountRow[]> => []) },
   };
 }
