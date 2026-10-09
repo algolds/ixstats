@@ -21,7 +21,7 @@ function debugError(...args: (string | number | object)[]): void {
 }
 
 /** A failed image download, tagged with a machine-readable code. */
-export class ImageDownloadError extends Error {
+class ImageDownloadError extends Error {
   code: string;
   statusCode?: number;
   originalUrl: string;
