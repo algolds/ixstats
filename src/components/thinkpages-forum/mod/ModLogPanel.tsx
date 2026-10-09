@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { timeAgo } from "~/lib/format/compact";
-import { threadHref } from "~/lib/thinkpages-forum/links";
+import { postHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { MOD_LOG_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { memberName, ModPanel, ModRow, placeName, type Members, type PanelProps } from "./ModRow";
@@ -48,13 +48,17 @@ function targetLink(entry: Entry): { href: string; label: string } | null {
   if (entry.targetType === "thread") {
     return { href: threadHref(entry.targetId), label: "Open thread" };
   }
-  const threadId = text(detail.threadId);
-  if (entry.targetType === "post" && threadId) {
-    return { href: `${threadHref(threadId)}#post-${entry.targetId}`, label: "Open post" };
+  if (entry.targetType === "post") {
+    return { href: postHref(entry.targetId), label: "Open post" };
   }
-  if (entry.targetType === "report" && detail.targetType === "thread") {
+  if (entry.targetType === "report") {
     const reported = text(detail.targetId);
-    return reported ? { href: threadHref(reported), label: "Open thread" } : null;
+    if (reported && detail.targetType === "thread") {
+      return { href: threadHref(reported), label: "Open thread" };
+    }
+    if (reported && detail.targetType === "post") {
+      return { href: postHref(reported), label: "Open post" };
+    }
   }
   return null;
 }

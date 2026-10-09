@@ -21,7 +21,7 @@ export function BanNotice({ notice }: { notice: string }) {
 }
 
 /** The sign-in link; signing in brings the visitor back to this page (createUrl: the redirect is a plain URL). */
-function SignInLink() {
+export function SignInLink() {
   const pathname = usePathname();
   return (
     <Link

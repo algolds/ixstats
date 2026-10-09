@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 interface QueryResult {
   data?: object | null;
   isLoading?: boolean;
-  error?: { message?: string } | null;
+  error?: { message?: string; data?: { code?: string } } | null;
   refetch?: jest.Mock;
 }
 
@@ -70,7 +70,7 @@ jest.mock("~/trpc/react", () => {
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router };
+  return { router, useRouter: () => router, usePathname: () => "/thinkpages/mod" };
 });
 
 jest.mock("~/hooks/useNotify", () => {
@@ -199,6 +199,23 @@ beforeEach(() => {
 });
 
 describe("access", () => {
+  it("asks a signed-out visitor to sign in, with a way back to the console", () => {
+    set("context", { data: null, error: { data: { code: "UNAUTHORIZED" } } });
+    renderConsole();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect_url=%2Fthinkpages%2Fmod"
+    );
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
+  it("still offers Retry for any other load failure", () => {
+    set("context", { data: null, error: { message: "boom" } });
+    renderConsole();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
+  });
+
   it("tells a member who moderates nothing so, with a way back", () => {
     set("context", { data: NO_MOD });
     renderConsole();
@@ -270,11 +287,23 @@ describe("report queue", () => {
     renderConsole();
     expect(screen.getByRole("link", { name: "Buy cheap gold" })).toHaveAttribute(
       "href",
-      "/thinkpages/t/t1#post-p9"
+      "/thinkpages/post/p9"
     );
     expect(screen.getByText("Caphiria / Hub")).toBeInTheDocument();
     expect(screen.getByText("Reported by Kir")).toBeInTheDocument();
     expect(screen.getByText("Spam link")).toBeInTheDocument();
+  });
+
+  it("links a reported thread to the thread", () => {
+    set("context", { data: REALM_MOD });
+    set("reports", {
+      data: { rows: [report({ targetType: "thread", targetId: "t1" })], total: 1, authors },
+    });
+    renderConsole();
+    expect(screen.getByRole("link", { name: "Buy cheap gold" })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/t1"
+    );
   });
 
   it("resolves a report with Resolve, then refreshes the queue and the context", async () => {
@@ -791,6 +820,48 @@ describe("log", () => {
     );
     expect(screen.getByText(XSS)).toBeInTheDocument();
     expect(container.querySelector("img")).toBeNull();
+  });
+});
+
+describe("log post links", () => {
+  const entry = (overrides: object) => ({
+    id: "l2",
+    actorId: "u1",
+    action: "post.hide",
+    targetType: "post",
+    targetId: "p9",
+    scope: "realm",
+    scopeId: "rc",
+    detail: {},
+    createdAt: new Date(),
+    ...overrides,
+  });
+
+  it("links a post entry to the post's permalink, not its thread page", () => {
+    set("context", { data: REALM_MOD });
+    set("log", { data: { rows: [entry({ detail: { threadId: "t1" } })], total: 1, authors } });
+    renderConsole({ tab: "log" });
+    expect(screen.getByRole("link", { name: "Open post" })).toHaveAttribute(
+      "href",
+      "/thinkpages/post/p9"
+    );
+  });
+
+  it("links a report on a post to the post's permalink", () => {
+    set("context", { data: REALM_MOD });
+    const detail = { targetType: "post", targetId: "p7" };
+    set("log", {
+      data: {
+        rows: [entry({ action: "report.resolve", targetType: "report", targetId: "r1", detail })],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole({ tab: "log" });
+    expect(screen.getByRole("link", { name: "Open post" })).toHaveAttribute(
+      "href",
+      "/thinkpages/post/p7"
+    );
   });
 });
 

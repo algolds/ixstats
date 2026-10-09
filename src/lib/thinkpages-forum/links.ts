@@ -43,6 +43,11 @@ export function threadHref(threadId: string): string {
   return `/thinkpages/t/${seg(threadId)}`;
 }
 
+/** A post by its permalink: the server finds its page in the thread, and shows a hidden post to moderators. */
+export function postHref(postId: string): string {
+  return `/thinkpages/post/${seg(postId)}`;
+}
+
 /** The realm's Nations tab, where a player claims a nation to post in its section. */
 export function claimNationHref(slug: string): string {
   return `/r/${seg(slug)}/nations`;

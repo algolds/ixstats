@@ -7,6 +7,7 @@ import {
   hubHref,
   modHref,
   newThreadHref,
+  postHref,
   STANDING_HREF,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
@@ -39,6 +40,8 @@ describe("forum links", () => {
 
   it("links threads by id and nation claims to the realm's Nations tab", () => {
     expect(threadHref("t1")).toBe("/thinkpages/t/t1");
+    expect(postHref("p9")).toBe("/thinkpages/post/p9");
+    expect(postHref("a/b")).toBe("/thinkpages/post/a%2Fb");
     expect(claimNationHref("eurth")).toBe("/r/eurth/nations");
   });
 

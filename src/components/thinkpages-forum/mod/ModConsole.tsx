@@ -10,6 +10,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { FORUM_HOME, modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
+import { SignInLink } from "../BanNotice";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import { AppealsPanel } from "./AppealsPanel";
 import { BansPanel } from "./BansPanel";
@@ -49,6 +50,19 @@ function moderatesAnything(context: ModContext): boolean {
 export function ModConsole({ tab, realm, page }: ModConsoleProps) {
   const { data: context, isLoading, error, refetch } = api.thinkpagesForumMod.context.useQuery();
   if (isLoading) return <ForumPageSkeleton blocks={2} />;
+  if (error?.data?.code === "UNAUTHORIZED") {
+    return (
+      <div className="container mx-auto max-w-3xl px-4 py-8">
+        <Card>
+          <EmptyState
+            title="Sign in to moderate"
+            message="The moderation console is for signed-in moderators."
+            action={<SignInLink />}
+          />
+        </Card>
+      </div>
+    );
+  }
   if (error || !context) {
     return (
       <ForumLoadError

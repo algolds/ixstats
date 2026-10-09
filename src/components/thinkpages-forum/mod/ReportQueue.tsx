@@ -6,7 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { timeAgo } from "~/lib/format/compact";
-import { threadHref } from "~/lib/thinkpages-forum/links";
+import { postHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { BanDialog, banScopeOptions, categoryLabel } from "../BanDialog";
@@ -51,8 +51,7 @@ const OUTCOME_COPY: Record<Outcome, { verb: string; done: string; description: s
 /** The reported post's place in its thread, or the thread itself. */
 function targetHref(report: Report): string | null {
   if (!report.threadId) return null;
-  const thread = threadHref(report.threadId);
-  return report.targetType === "post" ? `${thread}#post-${report.targetId}` : thread;
+  return report.targetType === "post" ? postHref(report.targetId) : threadHref(report.threadId);
 }
 
 /** Reports in the categories the viewer moderates: open by default, newest first. */
