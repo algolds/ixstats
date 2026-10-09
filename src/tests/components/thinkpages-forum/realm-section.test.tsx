@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 interface QueryResult {
   data?: object | null;
   isLoading?: boolean;
+  isPlaceholderData?: boolean;
   error?: { data?: { code: string } } | null;
   refetch?: jest.Mock;
 }
@@ -11,20 +12,24 @@ interface QueryResult {
 interface MockApi {
   results: Record<string, QueryResult>;
   inputs: Record<string, object | undefined>;
+  options: Record<string, { placeholderData?: object } | undefined>;
 }
 
 jest.mock("~/trpc/react", () => {
   const results: Record<string, QueryResult> = {};
   const inputs: Record<string, object | undefined> = {};
+  const options: Record<string, object | undefined> = {};
   const query = (name: string) => ({
-    useQuery: (input?: object) => {
+    useQuery: (input?: object, opts?: object) => {
       inputs[name] = input;
+      options[name] = opts;
       return { isLoading: false, error: null, ...results[name] };
     },
   });
   return {
     results,
     inputs,
+    options,
     api: { thinkpagesForum: { realms: query("realms"), realmSection: query("realmSection") } },
   };
 });
@@ -75,7 +80,7 @@ jest.mock("~/components/ui/select", () => {
 
 import { RealmSection } from "~/components/thinkpages-forum/RealmSection";
 
-const { results, inputs } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, inputs, options } = jest.requireMock<MockApi>("~/trpc/react");
 const { router, nav } = jest.requireMock<{
   router: { push: jest.Mock; replace: jest.Mock };
   nav: { query: string };
@@ -92,7 +97,7 @@ const realms = {
   ],
 };
 
-function section(canPost: boolean, notice: string | null) {
+function section(canPost: boolean, notice: string | null, needsNation = notice === NO_NATION) {
   const row = (key: string, name: string, threadCount: number) => ({
     key,
     name,
@@ -111,6 +116,7 @@ function section(canPost: boolean, notice: string | null) {
     ],
     canPost,
     notice,
+    needsNation,
   };
 }
 
@@ -163,6 +169,30 @@ describe("RealmSection", () => {
       "/r/eurth/nations"
     );
     expect(screen.queryByText("You can post here")).toBeNull();
+  });
+
+  it("offers the claim link on the server's flag, not by matching the notice text (U6)", () => {
+    results.realmSection = { data: section(false, "Reworded: claim a nation first.", true) };
+    const { unmount } = render(<RealmSection realm="eurth" />);
+    expect(screen.getByRole("link", { name: "Claim a nation" })).toBeInTheDocument();
+    unmount();
+    results.realmSection = { data: section(false, NO_NATION, false) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+  });
+
+  it("keeps the card and its switcher while another realm loads (U6)", () => {
+    results.realmSection = { data: section(false, NO_NATION), isPlaceholderData: true };
+    render(<RealmSection realm="other" switcher />);
+    expect(options.realmSection?.placeholderData).toBeDefined();
+    // The new realm's name, the old realm's rows dimmed and busy, no verdict that belongs to the old realm.
+    expect(screen.getByRole("heading", { level: 2, name: "Other" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveValue("other");
+    expect(screen.getByRole("link", { name: /Hub/ }).closest("[aria-busy]")).toHaveAttribute(
+      "aria-busy",
+      "true"
+    );
+    expect(screen.queryByText(NO_NATION)).toBeNull();
   });
 
   it("shows any other notice without the claim link", () => {

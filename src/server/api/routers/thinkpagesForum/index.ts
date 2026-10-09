@@ -98,13 +98,14 @@ export const thinkpagesForumRouter = createTRPCRouter({
     const viewer = await viewerOf(ctx.db, ctx.user);
     const section = await getRealmSection(ctx.db, viewer, input.realm).catch(mapError);
     // Only the verdict leaves: never the viewer's nation ids or the raw ban (T0-18: a flag for BanNotice).
-    const { canPost, notice, ban } = section.access;
+    const { canPost, notice, ban, needsNation } = section.access;
     return {
       realm: section.realm,
       categories: section.categories,
       canPost,
       notice,
       banned: ban !== null,
+      needsNation,
     };
   }),
 

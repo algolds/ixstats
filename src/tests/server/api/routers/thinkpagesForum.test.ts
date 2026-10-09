@@ -572,13 +572,18 @@ describe("thinkpagesForum router", () => {
         "banned",
         "canPost",
         "categories",
+        "needsNation",
         "notice",
         "realm",
       ]);
+      // U6: the claim-a-nation offer is the server's flag, not a match on the notice text.
+      expect(out.needsNation).toBe(true);
       expect(JSON.stringify(out)).not.toContain("ownedCountryIds");
       expect(JSON.stringify(out)).not.toContain("restriction");
       const owner = await caller(member, realmForumDb(inEurth)).realmSection({ realm: "eurth" });
-      expect(owner).toMatchObject({ canPost: true, notice: null });
+      expect(owner).toMatchObject({ canPost: true, notice: null, needsNation: false });
+      const guest = await caller(null, realmForumDb()).realmSection({ realm: "eurth" });
+      expect(guest).toMatchObject({ canPost: false, needsNation: false });
     });
 
     it("maps an unknown realm section to NOT_FOUND", async () => {
