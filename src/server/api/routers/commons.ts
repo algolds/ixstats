@@ -8,6 +8,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { Cache } from "~/lib/cache/cache";
+import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 
 const COMMONS_API = "https://commons.wikimedia.org/w/api.php";
 const USER_AGENT = DEFAULT_USER_AGENT;
@@ -20,17 +21,24 @@ async function commonsApiFetch(params: Record<string, string | number>) {
   const url = new URL(COMMONS_API);
   url.searchParams.set("format", "json");
   url.searchParams.set("formatversion", "2");
-  url.searchParams.set("origin", "*");
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, String(v));
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
-  });
+  return fetchMediaWikiJson<any>(url.toString(), { userAgent: USER_AGENT });
+}
 
-  if (!res.ok) throw new Error(`Commons API error: ${res.status}`);
-  return res.json() as Promise<any>;
+/** Only the extmetadata fields `parseImagePages` reads: the full set is several KB per file. */
+const IMAGE_INFO_PARAMS = {
+  iiprop: "url|extmetadata|size|mime",
+  iiurlwidth: 300,
+  iiextmetadatafilter: "ImageDescription|Artist|LicenseShortName",
+  iiextmetadatalanguage: "en",
+} as const;
+
+/** A category name as it sits inside `deepcat:"..."`: a quote would end the phrase early. */
+function deepcatQuery(category: string): string {
+  return `deepcat:"${category.replace(/"/g, "")}"`;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +63,17 @@ function parseImagePages(data: any): CommonsImage[] {
   const pages = data?.query?.pages;
   if (!pages || !Array.isArray(pages)) return [];
 
-  return pages
+  // generator=search numbers each page with its rank (`index`); the API lists pages in id order.
+  const ranked = pages
+    .map((p: any, position: number) => ({ p, position }))
+    .sort((a: any, b: any) => {
+      const ai = typeof a.p.index === "number" ? a.p.index : Infinity;
+      const bi = typeof b.p.index === "number" ? b.p.index : Infinity;
+      return ai === bi ? a.position - b.position : ai - bi;
+    })
+    .map((entry: any) => entry.p);
+
+  return ranked
     .filter((p: any) => p.imageinfo && p.imageinfo.length > 0)
     .map((p: any) => {
       const info = p.imageinfo[0];
@@ -112,8 +130,7 @@ async function searchCommonsFiles(gsrsearch: string, page: { limit: number; offs
     gsrlimit: page.limit,
     gsroffset: page.offset,
     prop: "imageinfo",
-    iiprop: "url|extmetadata|size|mime",
-    iiurlwidth: 300,
+    ...IMAGE_INFO_PARAMS,
   });
 
   const images = parseImagePages(data);
@@ -132,8 +149,8 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         query: z.string().min(1).max(500),
-        limit: z.number().min(1).max(50).default(40),
-        offset: z.number().min(0).default(0),
+        limit: z.number().int().min(1).max(50).default(40),
+        offset: z.number().int().min(0).max(9_950).default(0),
       })
     )
     .query(async ({ input }) => {
@@ -148,12 +165,12 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().min(1).max(300),
-        limit: z.number().min(1).max(50).default(40),
-        offset: z.number().min(0).default(0),
+        limit: z.number().int().min(1).max(50).default(40),
+        offset: z.number().int().min(0).max(9_950).default(0),
       })
     )
     .query(async ({ input }) => {
-      return searchCommonsFiles(`deepcat:"${input.category}"`, input);
+      return searchCommonsFiles(deepcatQuery(input.category), input);
     }),
 
   /**
@@ -176,7 +193,7 @@ export const commonsRouter = createTRPCRouter({
             const data = await commonsApiFetch({
               action: "query",
               list: "search",
-              srsearch: `deepcat:"${cat}"`,
+              srsearch: deepcatQuery(cat),
               srnamespace: 6,
               srlimit: 0,
             });
@@ -197,7 +214,7 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         category: z.string().min(1).max(300),
-        limit: z.number().min(1).max(200).default(50),
+        limit: z.number().int().min(1).max(200).default(50),
       })
     )
     .query(async ({ input }) => {
@@ -224,7 +241,7 @@ export const commonsRouter = createTRPCRouter({
     .input(
       z.object({
         prefix: z.string().min(1).max(200),
-        limit: z.number().min(1).max(30).default(15),
+        limit: z.number().int().min(1).max(30).default(15),
       })
     )
     .query(async ({ input }) => {
@@ -271,8 +288,7 @@ export const commonsRouter = createTRPCRouter({
             action: "query",
             titles: titlesToFetch.join("|"),
             prop: "imageinfo",
-            iiprop: "url|extmetadata|size|mime",
-            iiurlwidth: 300,
+            ...IMAGE_INFO_PARAMS,
           });
 
           const fetchedImages = parseImagePages(data);
