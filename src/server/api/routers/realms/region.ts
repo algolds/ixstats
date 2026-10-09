@@ -42,7 +42,13 @@ import {
   updateRealmLinks,
   updateRealmOfficer,
   updateRealmRules,
+  type BoardGrantGuard,
 } from "~/server/modules/realms/realms.region-actions";
+import {
+  assertBoardGrantable,
+  ForumError,
+  type PromotionDb,
+} from "~/server/modules/thinkpages-forum";
 import { deleteRealm } from "~/server/modules/realms/realms.admin";
 import {
   adminTransferRealmOwner,
@@ -50,8 +56,14 @@ import {
   listHandOverCandidates,
 } from "~/server/modules/realms/realms.transfer";
 
+/** M9: the forum's refusal of the board power to a player banned in the realm or sitewide, for the realms module. */
+const boardGuard =
+  (db: PromotionDb): BoardGrantGuard =>
+  (realmId, clerkUserId) =>
+    assertBoardGrantable(db, realmId, clerkUserId);
+
 function regionError(error: Error): never {
-  if (error instanceof RealmRegionError)
+  if (error instanceof RealmRegionError || error instanceof ForumError)
     throw new TRPCError({ code: error.code, message: error.message });
   throw error;
 }
@@ -144,11 +156,15 @@ export const realmRegionRouter = createTRPCRouter({
 
   appointOfficer: rateLimitedMutationProcedure
     .input(officerInput)
-    .mutation(({ ctx, input }) => appointRealmOfficer(ctx.db, ctx.user, input).catch(regionError)),
+    .mutation(({ ctx, input }) =>
+      appointRealmOfficer(ctx.db, ctx.user, input, boardGuard(ctx.db)).catch(regionError)
+    ),
 
   updateOfficer: rateLimitedMutationProcedure
     .input(officerInput)
-    .mutation(({ ctx, input }) => updateRealmOfficer(ctx.db, ctx.user, input).catch(regionError)),
+    .mutation(({ ctx, input }) =>
+      updateRealmOfficer(ctx.db, ctx.user, input, boardGuard(ctx.db)).catch(regionError)
+    ),
 
   /** Founder dismisses an officer; an officer may resign (their own userId). */
   removeOfficer: rateLimitedMutationProcedure
@@ -215,7 +231,7 @@ export const realmRegionRouter = createTRPCRouter({
       })
     )
     .mutation(({ ctx, input }) =>
-      adminTransferRealmOwner(ctx.db, ctx.user, input).catch(regionError)
+      adminTransferRealmOwner(ctx.db, ctx.user, input, boardGuard(ctx.db)).catch(regionError)
     ),
 
   /** Founder: nation owners of the realm who could take it over. */
@@ -236,5 +252,7 @@ export const realmRegionRouter = createTRPCRouter({
         keepPreviousAsOfficer: z.boolean().default(false),
       })
     )
-    .mutation(({ ctx, input }) => handOverRealm(ctx.db, ctx.user, input).catch(regionError)),
+    .mutation(({ ctx, input }) =>
+      handOverRealm(ctx.db, ctx.user, input, boardGuard(ctx.db)).catch(regionError)
+    ),
 });

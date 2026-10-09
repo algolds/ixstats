@@ -224,6 +224,55 @@ describe("site admins transfer a realm", () => {
   });
 });
 
+describe("the new founder and forum bans (M9)", () => {
+  const BANNED = {
+    code: "BAD_REQUEST",
+    message:
+      "They have an active forum ban here or sitewide. Lift it before giving them moderator powers.",
+  };
+  /** Every account here has an IxStats id; the player has a live forum ban in the realm or sitewide. */
+  function bannedDb(): Db {
+    const db = makeDb();
+    db.user.findUnique.mockResolvedValue({ id: "u_player", isActive: true });
+    db.forumBan.findFirst.mockResolvedValue({ id: "b1" });
+    db.country.findFirst.mockResolvedValue({ id: "c1" });
+    return db;
+  }
+
+  it("refuses handing the realm to a banned player, by a site admin or the founder", async () => {
+    const db = bannedDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.adminTransferOwner({
+        realmId: "eurth",
+        newOwnerId: PLAYER,
+        confirmSlug: "eurth",
+        keepPreviousAsOfficer: false,
+      })
+    ).rejects.toMatchObject(BANNED);
+    await expect(
+      callerAs(FOUNDER, db).region.handOver({
+        slug: "eurth",
+        newOwnerId: PLAYER,
+        confirmSlug: "eurth",
+        keepPreviousAsOfficer: false,
+      })
+    ).rejects.toMatchObject(BANNED);
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
+  it("hands it back to staff without a ban check", async () => {
+    const db = bannedDb();
+    await callerAs(ADMIN, db, admin).region.adminTransferOwner({
+      realmId: "eurth",
+      newOwnerId: null,
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: false,
+    });
+    expect(db.forumBan.findFirst).not.toHaveBeenCalled();
+    expect(db.realm.update).toHaveBeenCalled();
+  });
+});
+
 describe("a founder hands their realm over", () => {
   const handOver = (overrides: Record<string, unknown> = {}) => ({
     slug: "eurth",

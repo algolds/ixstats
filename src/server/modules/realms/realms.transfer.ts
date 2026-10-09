@@ -15,6 +15,7 @@ import {
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 import { notifyRealmFounderChanged } from "./realms.notices";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import type { BoardGrantGuard } from "./realms.region-actions";
 
 type TransferDb = Pick<
   PrismaClient,
@@ -137,7 +138,8 @@ async function applyTransfer(
 export async function adminTransferRealmOwner(
   db: TransferDb,
   actor: RealmActor,
-  input: TransferChoice & { realmId: string }
+  input: TransferChoice & { realmId: string },
+  guardBoard: BoardGrantGuard
 ) {
   if (!isSiteAdmin(actor))
     throw new RealmRegionError("FORBIDDEN", "Only site admins transfer realms");
@@ -157,6 +159,8 @@ export async function adminTransferRealmOwner(
     if (realm.id === DEFAULT_REALM_ID)
       throw new RealmRegionError("BAD_REQUEST", "IxWorld is administered by IxStats staff");
     await requireActiveUser(db, input.newOwnerId);
+    // A founder holds the board power (M9).
+    await guardBoard(realm.id, input.newOwnerId);
   }
   return applyTransfer(db, actor, realm, input, "admin");
 }
@@ -176,7 +180,8 @@ async function requireFounder(db: TransferDb, actor: RealmActor, slug: string) {
 export async function handOverRealm(
   db: TransferDb,
   actor: RealmActor,
-  input: { slug: string; newOwnerId: string; confirmSlug: string; keepPreviousAsOfficer: boolean }
+  input: { slug: string; newOwnerId: string; confirmSlug: string; keepPreviousAsOfficer: boolean },
+  guardBoard: BoardGrantGuard
 ) {
   const realm = await requireFounder(db, actor, input.slug);
   requireTypedSlug(realm, input.confirmSlug);
@@ -194,6 +199,7 @@ export async function handOverRealm(
         "The new founder must own a nation in the realm or be one of its officers"
       );
   }
+  await guardBoard(realm.id, input.newOwnerId);
   return applyTransfer(db, actor, realm, input, "founder");
 }
 

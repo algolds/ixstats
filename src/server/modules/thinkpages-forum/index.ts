@@ -21,6 +21,7 @@ export {
 } from "./mod-appeal-subjects";
 export { fileAppeal, reviewAppeal, type AppealReview, type AppealsDb } from "./mod-appeals";
 export { BANS_PER_PAGE, listBans } from "./mod-ban-list";
+export { assertBoardGrantable, type PromotionDb } from "./mod-promotion";
 export { liftBan, type LiftBanDb, type LiftedBan } from "./mod-ban-lift";
 export {
   activeBansFor,

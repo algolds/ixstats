@@ -164,10 +164,17 @@ async function requireRealmNationOwner(db: ActionDb, realmId: string, clerkUserI
   if (!nation) throw new RealmRegionError("BAD_REQUEST", "Officers must own a nation in the realm");
 }
 
+/**
+ * Refuses giving a player (Clerk id) a realm's `board` power, i.e. forum moderation there. The router supplies the
+ * forum's check (M9: no active forum ban in the realm or sitewide), which this module cannot import.
+ */
+export type BoardGrantGuard = (realmId: string, clerkUserId: string) => Promise<void>;
+
 export async function appointRealmOfficer(
   db: ActionDb,
   actor: RealmActor,
-  input: { slug: string; userId: string; title: string; powers: RealmPower[] }
+  input: { slug: string; userId: string; title: string; powers: RealmPower[] },
+  guardBoard: BoardGrantGuard
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "founder");
   if (realm.officers.some((o) => o.userId === input.userId))
@@ -177,6 +184,7 @@ export async function appointRealmOfficer(
   if (input.userId === realm.ownerId)
     throw new RealmRegionError("BAD_REQUEST", "The founder already holds every power");
   await requireRealmNationOwner(db, realm.id, input.userId);
+  if (input.powers.includes("board")) await guardBoard(realm.id, input.userId);
   await db.realmOfficer.create({
     data: {
       realmId: realm.id,
@@ -189,12 +197,17 @@ export async function appointRealmOfficer(
   return { success: true };
 }
 
+/** Changes an officer's title and powers; adding `board` goes through the router's guard (M9). */
 export async function updateRealmOfficer(
   db: ActionDb,
   actor: RealmActor,
-  input: { slug: string; userId: string; title: string; powers: RealmPower[] }
+  input: { slug: string; userId: string; title: string; powers: RealmPower[] },
+  guardBoard: BoardGrantGuard
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "founder");
+  const current = realm.officers.find((o) => o.userId === input.userId);
+  if (current && !current.powers.includes("board") && input.powers.includes("board"))
+    await guardBoard(realm.id, input.userId);
   const { count } = await db.realmOfficer.updateMany({
     where: { realmId: realm.id, userId: input.userId },
     data: { title: input.title.trim(), powers: [...new Set(input.powers)] },

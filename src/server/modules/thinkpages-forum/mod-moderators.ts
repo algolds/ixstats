@@ -8,13 +8,14 @@ import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError, isUniqueViolation } from "./errors";
 import { logModAction } from "./mod-log";
+import { assertCategoryRoleGrantable } from "./mod-promotion";
 import { assertModerator, assertModeratesCategory, scopeOfCategory } from "./mod-scope";
 import { authorsOf, loadCategory, type AuthorsDb, type CategoryLocator } from "./reads";
 import type { RealmDb } from "./realm-access";
 
 export type ModeratorsDb = Pick<
   PrismaClient,
-  "user" | "forumCategory" | "forumCategoryModerator" | "forumModLog" | "$transaction"
+  "user" | "forumBan" | "forumCategory" | "forumCategoryModerator" | "forumModLog" | "$transaction"
 > &
   RealmDb &
   AuthorsDb;
@@ -79,7 +80,8 @@ export async function listCategoryModerators(
 
 /**
  * Site admins only (M19): grant (create the row) or revoke (delete it), with `moderator.grant`/`moderator.revoke`
- * logged in the same transaction at the category's scope. Granting twice or revoking a non-moderator is CONFLICT.
+ * logged in the same transaction at the category's scope. Granting twice or revoking a non-moderator is CONFLICT;
+ * granting to a member banned there or sitewide is BAD_REQUEST (M9).
  */
 export async function setCategoryModerator(
   db: ModeratorsDb,
@@ -92,6 +94,7 @@ export async function setCategoryModerator(
   const { category } = await loadCategory(db, actor, input.locator);
   const member = await db.user.findUnique({ where: { id: input.userId }, select: { id: true } });
   if (!member) throw new ForumError("NOT_FOUND", "Member not found.");
+  if (input.grant) await assertCategoryRoleGrantable(db, member.id, category);
   const row = { categoryId: category.id, userId: member.id };
   const already = new ForumError("CONFLICT", "They already moderate this category.");
   try {

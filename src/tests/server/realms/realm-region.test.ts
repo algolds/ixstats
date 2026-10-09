@@ -129,6 +129,64 @@ describe("Manage permissions", () => {
     });
   });
 
+  describe("the board power and forum bans (M9)", () => {
+    const BANNED = {
+      code: "BAD_REQUEST",
+      message:
+        "They have an active forum ban here or sitewide. Lift it before giving them moderator powers.",
+    };
+    /** The player has an IxStats account and a live forum ban in the realm or sitewide. */
+    function bannedDb(realm = realmRow()): Db {
+      const db = makeDb(realm);
+      db.country.findFirst.mockResolvedValue({ id: "c1" });
+      db.user.findUnique.mockResolvedValue({ id: "u_player" });
+      db.forumBan.findFirst.mockResolvedValue({ id: "b1" });
+      return db;
+    }
+    const appoint = (powers: Array<"board" | "diplomacy">) => ({
+      slug: "eurth",
+      userId: PLAYER,
+      title: "Envoy",
+      powers,
+    });
+
+    it("refuses appointing a banned player with the board power, but not without it", async () => {
+      const db = bannedDb();
+      await expect(
+        callerAs(FOUNDER, db).region.appointOfficer(appoint(["board"]))
+      ).rejects.toMatchObject(BANNED);
+      expect(db.realmOfficer.create).not.toHaveBeenCalled();
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { clerkUserId: PLAYER },
+        select: { id: true },
+      });
+      await callerAs(FOUNDER, db).region.appointOfficer(appoint(["diplomacy"]));
+      expect(db.realmOfficer.create).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses adding the board power to a banned officer, but leaves one who already holds it", async () => {
+      const db = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["diplomacy"] }] }));
+      await expect(
+        callerAs(FOUNDER, db).region.updateOfficer(appoint(["board"]))
+      ).rejects.toMatchObject(BANNED);
+      expect(db.realmOfficer.updateMany).not.toHaveBeenCalled();
+
+      const holder = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["board"] }] }));
+      holder.realmOfficer.updateMany.mockResolvedValue({ count: 1 });
+      await callerAs(FOUNDER, holder).region.updateOfficer(appoint(["board"]));
+      expect(holder.forumBan.findFirst).not.toHaveBeenCalled();
+      expect(holder.realmOfficer.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("checks the founder's permission before the player's bans", async () => {
+      const db = bannedDb();
+      await expect(
+        callerAs(OFFICER, db).region.appointOfficer(appoint(["board"]))
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(db.forumBan.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
   it("only appoints players who own a nation in the realm", async () => {
     const db = makeDb();
     db.country.findFirst.mockResolvedValue(null);
