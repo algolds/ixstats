@@ -5,11 +5,20 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { categoryVisibilityWhere, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
-import type { NodeMapFile, ResolvedNode } from "~/lib/thinkpages-forum/import/node-map";
+import {
+  nodeMapSchema,
+  type NodeMapFile,
+  type ResolvedNode,
+} from "~/lib/thinkpages-forum/import/node-map";
 import type { ImportDbState } from "~/lib/thinkpages-forum/import/plan";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
 import { loadForumRealm } from "./realm-access";
 
+/**
+ * The importer's client. It must be an uncapped `PrismaClient` (the runner's own, on one never-reaped connection),
+ * never `~/server/db`: that client caps an unbounded `findMany` at 1000 rows, which would silently truncate the
+ * already-imported ids, the restricted posts and the rollback's thread list.
+ */
 export type ImportDb = Pick<
   PrismaClient,
   | "user"
@@ -133,12 +142,27 @@ const IMPORT_LOCK = "forum-import";
 
 /**
  * One import or rollback at a time: a session advisory lock, held until the runner disconnects (the runner always
- * ends with `$disconnect`). False when another run holds it.
+ * ends with `$disconnect`). False when another run holds it. Re-entrant: the holding session gets true again.
  */
 export async function takeImportLock(db: Pick<PrismaClient, "$queryRaw">): Promise<boolean> {
   const rows = await db.$queryRaw<Array<{ locked: boolean }>>`
     SELECT pg_try_advisory_lock(hashtext(${IMPORT_LOCK})) AS "locked"`;
   return rows[0]?.locked === true;
+}
+
+export class ImportLockLostError extends Error {
+  constructor() {
+    super("The import lock was lost; stopping.");
+    this.name = "ImportLockLostError";
+  }
+}
+
+/**
+ * Fails closed before each phase: the runner's single connection re-takes the lock it already holds (true), or a
+ * lock that lapsed and nobody claimed; false means another run holds it now, so this one stops.
+ */
+export async function assertImportLock(db: Pick<PrismaClient, "$queryRaw">): Promise<void> {
+  if (!(await takeImportLock(db))) throw new ImportLockLostError();
 }
 
 /**
@@ -149,11 +173,27 @@ export function appliedNodeMap(resolved: readonly ResolvedNode[]): NodeMapFile {
   return { nodes: Object.fromEntries(resolved.map((r) => [String(r.node.node_id), r.target])) };
 }
 
+/** The stored node map's entries; an absent or unreadable row has none (and is replaced). */
+function storedNodes(value: string | null): NodeMapFile["nodes"] {
+  if (!value) return {};
+  try {
+    const parsed = nodeMapSchema.safeParse(JSON.parse(value));
+    return parsed.success ? parsed.data.nodes : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Merges this run's node targets into the stored map (this run's entries win), so earlier nodes keep landing. */
 export async function storeNodeMap(
   db: Pick<PrismaClient, "systemConfig">,
   map: NodeMapFile
 ): Promise<void> {
-  const value = JSON.stringify(map);
+  const row = await db.systemConfig.findUnique({
+    where: { key: FORUM_IMPORT_NODE_MAP_KEY },
+    select: { value: true },
+  });
+  const value = JSON.stringify({ nodes: { ...storedNodes(row?.value ?? null), ...map.nodes } });
   await db.systemConfig.upsert({
     where: { key: FORUM_IMPORT_NODE_MAP_KEY },
     create: {

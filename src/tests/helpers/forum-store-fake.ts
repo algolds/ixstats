@@ -41,6 +41,8 @@ function matchOperator(actual: Value, cond: Row): boolean {
   if (Array.isArray(cond.notIn) && cond.notIn.some((v) => same(actual, v))) return false;
   if ("not" in cond && same(actual, cond.not)) return false;
   if (cond.gt instanceof Date && !(actual instanceof Date && actual > cond.gt)) return false;
+  if (typeof cond.gt === "string" && !(typeof actual === "string" && actual > cond.gt))
+    return false;
   if ("has" in cond && !(Array.isArray(actual) && actual.some((v) => same(v, cond.has))))
     return false;
   if (typeof cond.startsWith === "string" && !String(actual ?? "").startsWith(cond.startsWith))

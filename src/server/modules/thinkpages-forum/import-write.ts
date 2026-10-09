@@ -15,7 +15,7 @@ import type {
   PlannedThread,
 } from "~/lib/thinkpages-forum/import/plan";
 import { isUniqueViolation } from "./errors";
-import { storeNodeMap, type ImportDb } from "./import-db";
+import { assertImportLock, storeNodeMap, type ImportDb } from "./import-db";
 import { lockThread, recountThread } from "./thread-counts";
 
 /** Posts per `createMany`; lower it (one constant) if 500-row inserts are slow on the VPS. */
@@ -187,6 +187,63 @@ export async function relinkImportedAuthors(
   return relinked;
 }
 
+const LINK_CHUNK = 500;
+
+type LinkDb = Pick<ImportDb, "postActionLink" | "forumPost">;
+type BridgeLink = { id: string; postRef: string; activityId: string };
+
+/** One chunk of the bridge pass: each link whose XenForo post is imported moves to the native post. */
+async function remapLinkChunk(db: LinkDb, links: readonly BridgeLink[], out: BridgeRemap) {
+  const refs = links.flatMap((l) => (/^\d+$/.test(l.postRef) ? [Number(l.postRef)] : []));
+  const posts = await db.forumPost.findMany({
+    where: { xenforoPostId: { in: refs } },
+    select: { id: true, xenforoPostId: true },
+  });
+  const nativeOf = new Map(posts.map((p) => [String(p.xenforoPostId), p.id]));
+  for (const link of links) {
+    const postRef = nativeOf.get(link.postRef);
+    if (!postRef) continue;
+    const twin = await db.postActionLink.findFirst({
+      where: { postSource: "native", postRef, activityId: link.activityId },
+      select: { id: true },
+    });
+    if (twin) out.twins += 1;
+    else {
+      const { count } = await db.postActionLink.updateMany({
+        where: { id: link.id, postSource: "xenforo" },
+        data: { postSource: "native", postRef },
+      });
+      out.remapped += count;
+    }
+  }
+}
+
+export interface BridgeRemap {
+  remapped: number;
+  /** Links already present on the native post (left on the XenForo post). */
+  twins: number;
+}
+
+/**
+ * Every `("xenforo", xfPostId)` action link whose post is imported, from any run: the live bridge keeps linking
+ * XenForo posts after an earlier import, and a rerun plans nothing for those posts. Keyset-paged, idempotent.
+ */
+export async function remapBridgeLinks(db: LinkDb): Promise<BridgeRemap> {
+  const out: BridgeRemap = { remapped: 0, twins: 0 };
+  let after = "";
+  for (;;) {
+    const links = await db.postActionLink.findMany({
+      where: { postSource: "xenforo", id: { gt: after } },
+      orderBy: { id: "asc" },
+      take: LINK_CHUNK,
+      select: { id: true, postRef: true, activityId: true },
+    });
+    if (!links.length) return out;
+    after = links[links.length - 1]!.id;
+    await remapLinkChunk(db, links, out);
+  }
+}
+
 export interface ApplyTotals {
   categoriesCreated: number;
   threadsCreated: number;
@@ -194,10 +251,14 @@ export interface ApplyTotals {
   postsCreated: number;
   postsPresent: number;
   linksRemapped: number;
+  bridgeLinks: BridgeRemap;
   relinked: { threads: number; posts: number };
 }
 
-/** --apply: categories, every planned thread, the relink pass, the applied node map. */
+/**
+ * --apply: categories, every planned thread, the bridge link pass, the relink pass, the applied node map.
+ * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run).
+ */
 export async function applyImport(
   db: ImportDb,
   plan: Pick<ImportPlan, "categories" | "threads">,
@@ -212,9 +273,11 @@ export async function applyImport(
     postsCreated: 0,
     postsPresent: 0,
     linksRemapped: 0,
+    bridgeLinks: { remapped: 0, twins: 0 },
     relinked: { threads: 0, posts: 0 },
   };
   for (const [index, planned] of plan.threads.entries()) {
+    if (index % PROGRESS_EVERY === 0) await assertImportLock(db);
     const write = await writeThread(db, planned, categoryIdOf(planned.categoryRef, ids));
     if (write.threadCreated) totals.threadsCreated += 1;
     else totals.threadsResumed += 1;
@@ -224,6 +287,7 @@ export async function applyImport(
     if ((index + 1) % PROGRESS_EVERY === 0)
       log(`  ${index + 1}/${plan.threads.length} threads written`);
   }
+  totals.bridgeLinks = await remapBridgeLinks(db);
   totals.relinked = await relinkImportedAuthors(db);
   await storeNodeMap(db, opts.nodeMap);
   return totals;

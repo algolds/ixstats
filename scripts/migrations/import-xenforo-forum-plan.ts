@@ -7,6 +7,7 @@ import {
   isValidAttachmentId,
 } from "~/lib/thinkpages-forum/import/attachments";
 import type { ResolvedNode } from "~/lib/thinkpages-forum/import/node-map";
+import type { ImportReport } from "~/lib/thinkpages-forum/import/report";
 import type { AttachmentEntry, SnapshotGaps } from "~/lib/thinkpages-forum/import/snapshot";
 import type {
   AttachmentCopyPlan,
@@ -135,7 +136,7 @@ export function applyTotalLines(totals: ApplyTotals): string[] {
     `Applied: ${totals.categoriesCreated} archive categories created`,
     `  threads: ${totals.threadsCreated} created, ${totals.threadsResumed} resumed`,
     `  posts: ${totals.postsCreated} created, ${totals.postsPresent} already present`,
-    `  action links remapped: ${totals.linksRemapped}`,
+    `  action links remapped: ${totals.linksRemapped} with their posts, ${totals.bridgeLinks.remapped} made by the bridge since (${totals.bridgeLinks.twins} already on the native post)`,
     `  authors relinked: ${totals.relinked.threads} threads, ${totals.relinked.posts} posts`,
   ];
 }
@@ -146,4 +147,16 @@ export function rollbackLines(totals: RollbackTotals): string[] {
     `  action links: ${totals.linksRestored} returned to their XenForo post, ${totals.linksDeleted} deleted`,
     `  archive categories ${totals.categories}, node map rows ${totals.nodeMap}, media assets ${totals.assets}, files ${totals.files}`,
   ];
+}
+
+/** The `--report` file: the plan report, the copy plan's counts and each kept attachment's stored name. */
+export function reportFile(report: ImportReport, plan: AttachmentCopyPlan): string {
+  const { dir, bytes, skipped, missing, signatureMismatch, invalidIds } = plan;
+  const kept = plan.attachments.map((a) => ({
+    id: a.entry.attachment_id,
+    file: a.fileName,
+    visibility: a.visibility,
+  }));
+  const copy = { dir, bytes, skipped, missing, signatureMismatch, invalidIds };
+  return JSON.stringify({ report, copy, kept }, null, 2);
 }

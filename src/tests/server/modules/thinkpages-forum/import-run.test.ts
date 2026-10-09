@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import type { Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
+import { ImportLockLostError } from "~/server/modules/thinkpages-forum/import-db";
 import { importStore, type ImportTables } from "~/tests/helpers/forum-import-fake";
 import { readSmallSnapshot, runImport, SITE_ROWS } from "~/tests/helpers/forum-import-run";
 
@@ -79,6 +80,7 @@ describe("the XenForo import applied to the small snapshot", () => {
       postsCreated: 0,
       postsPresent: 0,
       linksRemapped: 0,
+      bridgeLinks: { remapped: 0, twins: 0 },
       relinked: { threads: 0, posts: 0 },
     });
     expect(imported(store.tables())).toEqual(before);
@@ -128,5 +130,49 @@ describe("the XenForo import applied to the small snapshot", () => {
     expect(rerun.totals.relinked).toEqual({ threads: 0, posts: 2 });
     const byMember = store.tables().posts.filter((p) => p.xenforoUserId === 8);
     expect(byMember.map((p) => p.authorUserId)).toEqual(["u-member", "u-member"]);
+  });
+
+  it("remaps links the bridge made on imported posts after an earlier run, in pages, and only those", async () => {
+    const store = importStore(seed());
+    await runImport(store.db as never, snapshot);
+    const native1031 = store.tables().posts.find((p) => p.xenforoPostId === 1031)!.id;
+    const native1000 = store.tables().posts.find((p) => p.xenforoPostId === 1000)!.id;
+    const link = (id: string, postRef: string, activityId: string) => ({
+      id,
+      postSource: "xenforo",
+      postRef,
+      activityId,
+      countryId: "c",
+      storylineId: null,
+      chainOrder: null,
+      createdAt: new Date(0),
+    });
+    // 501 links on a post that was never imported, so the pass needs two pages.
+    for (let i = 0; i < 501; i += 1)
+      store.tables().links.push(link(`l-a${String(i).padStart(3, "0")}`, "4242", `x${i}`));
+    store
+      .tables()
+      .links.push(
+        link("l-z1", "1031", "act5"),
+        link("l-z2", "1000", "act1"),
+        link("l-z3", "not-a-number", "act6")
+      );
+    const rerun = await runImport(store.db as never, snapshot);
+    expect(rerun.totals.bridgeLinks).toEqual({ remapped: 1, twins: 1 });
+    const byId = (id: string) => store.tables().links.find((l) => l.id === id);
+    expect(byId("l-z1")).toMatchObject({ postSource: "native", postRef: native1031 });
+    expect(byId("l-1")).toMatchObject({ postSource: "native", postRef: native1000 });
+    expect(byId("l-z2")).toMatchObject({ postSource: "xenforo", postRef: "1000" });
+    expect(byId("l-z3")).toMatchObject({ postSource: "xenforo" });
+    expect(store.tables().links.filter((l) => l.postRef === "4242")).toHaveLength(501);
+    const again = await runImport(store.db as never, snapshot);
+    expect(again.totals.bridgeLinks).toEqual({ remapped: 0, twins: 1 });
+  });
+
+  it("stops before writing a thread when the import lock is lost", async () => {
+    const store = importStore(seed());
+    store.db.$queryRaw.mockResolvedValueOnce([{ locked: false }]);
+    await expect(runImport(store.db as never, snapshot)).rejects.toThrow(ImportLockLostError);
+    expect(store.tables().threads).toHaveLength(0);
   });
 });

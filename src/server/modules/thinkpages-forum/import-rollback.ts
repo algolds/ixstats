@@ -5,12 +5,13 @@
  * `xf-*` archive categories left without threads, the applied node map, the "Forum" media assets of the snapshot's
  * attachments and their copied files with thumbnails. Reports, warnings and mod-log rows that name deleted content
  * stay (the report queue handles gone targets; the log is append-only). Threads go in chunks, one transaction each,
- * so an interrupted rollback is finished by a rerun.
+ * so an interrupted rollback is finished by a rerun. The import lock is asserted before every chunk and before the
+ * remaining deletes (ImportLockLostError stops it).
  */
 import { promises as nodeFs } from "fs";
 import path from "path";
 import { ARCHIVE_KEY_PREFIX } from "~/lib/thinkpages-forum/import/node-map";
-import type { ImportDb } from "./import-db";
+import { assertImportLock, type ImportDb } from "./import-db";
 import { TRANSACTION_TIMEOUT_MS } from "./import-write";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
 
@@ -157,12 +158,14 @@ export async function rollbackImport(
     select: { id: true },
   });
   for (let i = 0; i < threads.length; i += THREAD_CHUNK) {
+    await assertImportLock(db);
     await rollbackThreads(
       db,
       threads.slice(i, i + THREAD_CHUNK).map((t) => t.id),
       totals
     );
   }
+  await assertImportLock(db);
   totals.categories = await rollbackCategories(db);
   totals.nodeMap = (
     await db.systemConfig.deleteMany({ where: { key: FORUM_IMPORT_NODE_MAP_KEY } })

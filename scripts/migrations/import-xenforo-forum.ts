@@ -33,6 +33,8 @@ import {
 } from "~/server/modules/thinkpages-forum/import-attachments";
 import {
   appliedNodeMap,
+  assertImportLock,
+  ImportLockLostError,
   loadImportDbState,
   mappedRealmSlugs,
   missingTargets,
@@ -47,7 +49,12 @@ import { applyImport } from "~/server/modules/thinkpages-forum/import-write";
 import { uploadsDir } from "~/server/shared/upload-storage";
 import { databaseLabel } from "../lib/database-guard";
 import { snapshotDiskFs } from "../lib/snapshot-fs";
-import { parseImportArgs, type ImportArgs } from "./import-xenforo-forum-args";
+import {
+  importDatabaseUrl,
+  parseImportArgs,
+  runBanner,
+  type ImportArgs,
+} from "./import-xenforo-forum-args";
 import {
   applyRefusals,
   applyTotalLines,
@@ -55,6 +62,7 @@ import {
   attachmentResultLines,
   defaultTargetNodes,
   diskRefusal,
+  reportFile,
   rollbackLines,
   snapshotGapLines,
 } from "./import-xenforo-forum-plan";
@@ -136,14 +144,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   print(summarizeImport(plan.report));
   print(attachmentPlanLines(snapshot.attachments.values(), copyPlan));
   if (args.report) {
-    const { dir, bytes, skipped, missing: absent, signatureMismatch, invalidIds } = copyPlan;
-    const copy = { dir, bytes, skipped, missing: absent, signatureMismatch, invalidIds };
-    const kept = copyPlan.attachments.map((a) => ({
-      id: a.entry.attachment_id,
-      file: a.fileName,
-      visibility: a.visibility,
-    }));
-    await writeFile(args.report, JSON.stringify({ report: plan.report, copy, kept }, null, 2));
+    await writeFile(args.report, reportFile(plan.report, copyPlan));
     console.log(`Report written to ${args.report}`);
   }
   const disk = await uploadsRefusal(copyPlan.bytes);
@@ -159,6 +160,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
     return 0;
   }
   if (refusals.length) return refuse(refusals);
+  await assertImportLock(db);
   print(attachmentResultLines(await copyAttachments(copyPlan, { log: console.log })));
   const totals = await applyImport(db, plan, {
     nodeMap: appliedNodeMap(resolved),
@@ -168,32 +170,30 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   return 0;
 }
 
-const parsed = parseImportArgs(process.argv.slice(2), process.env.DATABASE_URL);
-const mode = "args" in parsed ? parsed.args : null;
-console.log(
-  mode?.rollback
-    ? "ROLLBACK — deleting the import"
-    : mode?.apply
-      ? "APPLY mode — writing"
-      : "DRY RUN — pass --apply to write"
-);
+const argv = process.argv.slice(2);
+const parsed = parseImportArgs(argv, process.env.DATABASE_URL);
+console.log(runBanner(argv));
 console.log(`Database: ${databaseLabel(process.env.DATABASE_URL)}`);
 if ("error" in parsed) {
   console.error(parsed.error);
   process.exit(1);
 }
 
-const db = new PrismaClient();
+// A plain PrismaClient: uncapped findMany (never ~/server/db), on one never-reaped connection holding the lock.
+const db = new PrismaClient({ datasourceUrl: importDatabaseUrl(process.env.DATABASE_URL ?? "") });
 let code = 1;
 run(db, parsed.args)
   .then((result) => {
     code = result;
   })
   .catch((error: Error) => {
-    console.error(error);
+    console.error(error instanceof ImportLockLostError ? error.message : error);
   })
   // The server modules' imports open a Redis client (the rate limiter) that keeps the event loop alive: exit.
   .finally(async () => {
-    await db.$disconnect();
-    process.exit(code);
+    try {
+      await db.$disconnect();
+    } finally {
+      process.exit(code);
+    }
   });

@@ -6,7 +6,11 @@ import type {
   AttachmentCopyPlan,
   PlannedAttachment,
 } from "~/server/modules/thinkpages-forum/import-attachments";
-import { parseImportArgs } from "../../../scripts/migrations/import-xenforo-forum-args";
+import {
+  importDatabaseUrl,
+  parseImportArgs,
+  runBanner,
+} from "../../../scripts/migrations/import-xenforo-forum-args";
 import {
   applyRefusals,
   attachmentPlanLines,
@@ -91,6 +95,45 @@ describe("parseImportArgs", () => {
     expect(parseImportArgs(["--snapshot", "dir", "--rollback", "--yes"], PROD)).toHaveProperty(
       "error"
     );
+  });
+});
+
+describe("runBanner", () => {
+  it("says what the run was asked to do, a refused rollback included", () => {
+    expect(runBanner(["--snapshot", "d"])).toBe("DRY RUN — pass --apply to write");
+    expect(runBanner(["--snapshot", "d", "--apply"])).toBe("APPLY mode — writing");
+    expect(runBanner(["--snapshot", "d", "--rollback"])).toBe("ROLLBACK (refused: pass --yes)");
+    expect(runBanner(["--snapshot", "d", "--rollback", "--yes"])).toBe(
+      "ROLLBACK — deleting the import"
+    );
+  });
+});
+
+describe("importDatabaseUrl", () => {
+  it("pins one never-reaped connection and keeps the other parameters and credentials", () => {
+    const out = new URL(
+      importDatabaseUrl(
+        "postgresql://user:p%40ss@db:5433/ixstats_wv1?schema=public&sslmode=require"
+      )
+    );
+    expect(out.username).toBe("user");
+    expect(out.password).toBe("p%40ss");
+    expect(`${out.host}${out.pathname}`).toBe("db:5433/ixstats_wv1");
+    expect(Object.fromEntries(out.searchParams)).toEqual({
+      schema: "public",
+      sslmode: "require",
+      connection_limit: "1",
+      max_idle_connection_lifetime: "0",
+    });
+  });
+
+  it("overrides a pool size already in the URL", () => {
+    const out = new URL(
+      importDatabaseUrl(`${CLONE}&connection_limit=20&max_idle_connection_lifetime=300`)
+    );
+    expect(out.searchParams.get("connection_limit")).toBe("1");
+    expect(out.searchParams.get("max_idle_connection_lifetime")).toBe("0");
+    expect(out.searchParams.getAll("connection_limit")).toHaveLength(1);
   });
 });
 

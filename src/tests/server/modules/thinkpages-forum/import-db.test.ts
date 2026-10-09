@@ -6,6 +6,7 @@ import type { XfNode } from "~/lib/thinkpages-forum/import/xenforo-types";
 import { parseNodeLandings } from "~/lib/thinkpages-forum/legacy-forum";
 import {
   appliedNodeMap,
+  assertImportLock,
   loadImportDbState,
   mappedRealmSlugs,
   missingTargets,
@@ -154,6 +155,15 @@ describe("takeImportLock", () => {
     expect(await takeImportLock(importStore({}).db as never)).toBe(true);
     expect(await takeImportLock(importStore({}, { lockHeld: true }).db as never)).toBe(false);
   });
+
+  it("assertImportLock passes while the run holds the lock and stops it once another run does", async () => {
+    const { db } = importStore({});
+    await expect(assertImportLock(db as never)).resolves.toBeUndefined();
+    db.$queryRaw.mockResolvedValueOnce([{ locked: false }]);
+    await expect(assertImportLock(db as never)).rejects.toThrow(
+      "The import lock was lost; stopping."
+    );
+  });
 });
 
 describe("the applied node map", () => {
@@ -180,6 +190,38 @@ describe("the applied node map", () => {
     expect(landings.get(12)).toEqual({ scope: "site", key: "general" });
     expect(landings.get(13)).toBeUndefined();
     expect(landings.get(14)).toEqual({ scope: "realm", realm: "urcea", key: "current-events" });
+  });
+
+  it("merges into the stored map: this run's nodes win, earlier nodes stay", async () => {
+    const earlier = {
+      nodes: {
+        "5": { scope: "site", key: "announcements" },
+        "12": { scope: "site", key: "side-games" },
+      },
+    };
+    const { db, tables } = importStore({
+      configs: [{ id: "cfg", key: FORUM_IMPORT_NODE_MAP_KEY, value: JSON.stringify(earlier) }],
+    });
+    await storeNodeMap(db as never, {
+      nodes: { "12": { scope: "site", key: "general" }, "13": { archive: true } },
+    });
+    expect(JSON.parse(String(tables().configs[0]!.value))).toEqual({
+      nodes: {
+        "5": { scope: "site", key: "announcements" },
+        "12": { scope: "site", key: "general" },
+        "13": { archive: true },
+      },
+    });
+  });
+
+  it("replaces a stored row it cannot read", async () => {
+    const { db, tables } = importStore({
+      configs: [{ id: "cfg", key: FORUM_IMPORT_NODE_MAP_KEY, value: "{not json" }],
+    });
+    await storeNodeMap(db as never, { nodes: { "13": { archive: true } } });
+    expect(JSON.parse(String(tables().configs[0]!.value))).toEqual({
+      nodes: { "13": { archive: true } },
+    });
   });
 });
 

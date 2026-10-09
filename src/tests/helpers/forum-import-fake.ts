@@ -3,7 +3,7 @@
  * touches, where clauses interpreted by forum-store-fake's `matches` (post → thread → category joined on read),
  * unique keys enforced (`create` throws P2002, `createMany({ skipDuplicates })` skips), thread deletes cascading to
  * posts, and `$transaction` rolling every table back when its callback throws. `failWhen` makes a call throw, to
- * interrupt a run part way. Seeded rows take the column defaults. Selects and orderBy are ignored (findFirst returns the earliest createdAt).
+ * interrupt a run part way. Seeded rows take the column defaults. Selects are ignored; findMany honours `take` and an id order, findFirst returns the earliest createdAt.
  */
 import { Prisma } from "@prisma/client";
 import { matches, type Row, type Value } from "./forum-store-fake";
@@ -27,6 +27,9 @@ interface Args {
   create?: Row;
   update?: Row;
   skipDuplicates?: boolean;
+  /** Only `{ id: "asc" }` is honoured. */
+  orderBy?: Row;
+  take?: number;
 }
 
 const TABLES: readonly TableName[] = [
@@ -178,7 +181,11 @@ export function importStore(
       Object.assign(row, data);
     };
     return {
-      findMany: jest.fn(async (args: Args = {}) => hits(args.where).map(joined).map(cloneRow)),
+      findMany: jest.fn(async (args: Args = {}) => {
+        const found = hits(args.where);
+        if (args.orderBy) found.sort((a, b) => (String(a.id) < String(b.id) ? -1 : 1));
+        return found.slice(0, args.take).map(joined).map(cloneRow);
+      }),
       findFirst: jest.fn(async (args: Args = {}) => {
         const row = [...hits(args.where)].sort((a, b) => at(a) - at(b))[0];
         return row ? cloneRow(joined(row)) : null;

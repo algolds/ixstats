@@ -1,5 +1,6 @@
 /**
- * Arguments of the XenForo importer (scripts/migrations/import-xenforo-forum.ts), with the production guard. Pure.
+ * Arguments of the XenForo importer (scripts/migrations/import-xenforo-forum.ts), with the production guard, its
+ * banner and its database URL. Pure.
  *   --snapshot DIR [--node-map FILE] [--apply] [--accept-defaults] [--production] [--report FILE]
  *   --snapshot DIR --rollback --yes [--production]
  */
@@ -78,4 +79,27 @@ export function parseImportArgs(
       rollback: switches.has("--rollback"),
     },
   };
+}
+
+/** The first line the runner prints, from the raw arguments (so a refused run still says what it was asked to do). */
+export function runBanner(argv: readonly string[]): string {
+  if (argv.includes("--rollback")) {
+    return argv.includes("--yes")
+      ? "ROLLBACK — deleting the import"
+      : "ROLLBACK (refused: pass --yes)";
+  }
+  return argv.includes("--apply") ? "APPLY mode — writing" : "DRY RUN — pass --apply to write";
+}
+
+/**
+ * The runner's own connection: exactly one (`connection_limit=1`), never reaped when idle
+ * (`max_idle_connection_lifetime=0`), so the session advisory lock it takes holds for the whole run, however long
+ * the snapshot read, hashing and copy keep it idle. Other query parameters are kept. Needs a direct Postgres
+ * connection: under pgbouncer transaction pooling a session lock means nothing.
+ */
+export function importDatabaseUrl(databaseUrl: string): string {
+  const url = new URL(databaseUrl);
+  url.searchParams.set("connection_limit", "1");
+  url.searchParams.set("max_idle_connection_lifetime", "0");
+  return url.toString();
 }

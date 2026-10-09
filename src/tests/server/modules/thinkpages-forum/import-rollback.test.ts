@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import path from "node:path";
 import type { Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
+import { ImportLockLostError } from "~/server/modules/thinkpages-forum/import-db";
 import {
   nativeRepliesOnImported,
   rollbackImport,
@@ -149,5 +150,19 @@ describe("rollbackImport", () => {
     });
     expect(totals).toMatchObject({ linksRestored: 0, linksDeleted: 2 });
     expect(store.tables().links.map((l) => l.id)).toEqual(["l-native", "l-twin"]);
+  });
+
+  it("deletes nothing when the import lock is lost", async () => {
+    const store = await importedStore();
+    const before = JSON.stringify(store.tables());
+    store.db.$queryRaw.mockResolvedValueOnce([{ locked: false }]);
+    await expect(
+      rollbackImport(store.db as never, {
+        attachmentIds: new Set<number>(),
+        uploadsDir: UPLOADS,
+        fs: fakeFs([]),
+      })
+    ).rejects.toThrow(ImportLockLostError);
+    expect(JSON.stringify(store.tables())).toEqual(before);
   });
 });
