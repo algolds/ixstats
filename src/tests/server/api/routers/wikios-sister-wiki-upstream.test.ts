@@ -34,7 +34,9 @@ afterEach(() => {
   guard = null;
   globalThis.fetch = realFetch;
 });
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 function failUpstream(status: number) {
   globalThis.fetch = jest.fn(

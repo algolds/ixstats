@@ -250,6 +250,25 @@ describe("search", () => {
     expect(found.map((asset) => asset.id)).toEqual(byId.slice(0, 55));
   });
 
+  it("skips `offset` listed assets (not hidden ones) and pages without repeats", async () => {
+    for (let i = 0; i < 130; i++) {
+      const title = `Page ${String(i).padStart(3, "0")}.png`;
+      seedAsset(title);
+      if (i % 10 === 0) archiveFilePage(title);
+    }
+
+    const first = await MediaAssetService.search({ limit: 40 });
+    const second = await MediaAssetService.search({ limit: 40, offset: 40 });
+    const third = await MediaAssetService.search({ limit: 40, offset: 80 });
+
+    const all = [...first, ...second, ...third].map((asset) => asset.title);
+    // 130 files, 13 hidden: 117 listed, so the third page is short
+    expect(third).toHaveLength(37);
+    expect(new Set(all).size).toBe(117);
+    expect(all).toEqual([...all].sort());
+    expect(all.some((title) => /Page (000|010|120)\.png/.test(title))).toBe(false);
+  });
+
   it("stops after 500 assets however many of them are hidden, instead of reading on", async () => {
     for (let i = 0; i < 700; i++) {
       const title = `Hidden ${String(i).padStart(3, "0")}.png`;

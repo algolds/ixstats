@@ -24,6 +24,8 @@ interface MyStashTabProps {
 }
 
 const IMAGE_STALE_MS = 300_000;
+/** The most titles one `sisterFileInfo` request takes. */
+const MAX_SISTER_TITLES = 50;
 
 function guessMime(title: string): string {
   const ext = title.split(".").pop()?.toLowerCase() ?? "";
@@ -64,17 +66,23 @@ export function MyStashTab({
   );
   const stashItems = useMemo(() => stashItemsQuery.data?.items ?? [], [stashItemsQuery.data]);
 
-  // `commons:File:X` items resolve through Commons, plain page titles through IxWiki. `File:` is
-  // capitalised and is not a wiki prefix; `iiwiki:` and forum items are skipped.
-  // ponytail: IIWiki and forum items are not resolvable here yet.
-  const { commonsTitles, ixwikiTitles } = useMemo(() => {
+  // `commons:File:X` items resolve through Commons, `iiwiki:File:X` through one IIWiki file info lookup, plain page
+  // titles through IxWiki. `File:` is capitalised and is not a wiki prefix; forum items are skipped.
+  // ponytail: forum items are not resolvable here yet.
+  const { commonsTitles, ixwikiTitles, iiwikiFileTitles } = useMemo(() => {
     const commons: string[] = [];
     const ixwiki: string[] = [];
+    const iiwiki: string[] = [];
     for (const { pageTitle } of stashItems) {
       if (pageTitle.startsWith("commons:")) commons.push(pageTitle.replace(/^commons:/, ""));
+      else if (pageTitle.startsWith("iiwiki:File:")) iiwiki.push(pageTitle.replace(/^iiwiki:/, ""));
       else if (!/^[a-z]+:/.test(pageTitle)) ixwiki.push(pageTitle);
     }
-    return { commonsTitles: commons, ixwikiTitles: ixwiki };
+    return {
+      commonsTitles: commons,
+      ixwikiTitles: ixwiki,
+      iiwikiFileTitles: [...new Set(iiwiki)].slice(0, MAX_SISTER_TITLES),
+    };
   }, [stashItems]);
 
   const commonsQuery = api.commons.getImageInfoByTitles.useQuery(
@@ -85,6 +93,11 @@ export function MyStashTab({
     ixwikiTitles.map((title) =>
       t.wikios.getPageImages({ title, wiki: "ixwiki" }, { staleTime: IMAGE_STALE_MS })
     )
+  );
+
+  const iiwikiQuery = api.wikios.sisterFileInfo.useQuery(
+    { wiki: "iiwiki", titles: iiwikiFileTitles },
+    { enabled: iiwikiFileTitles.length > 0, staleTime: IMAGE_STALE_MS }
   );
 
   // Rebuilt each render (the query list is a fresh array every time); at most a stash's worth of images.
@@ -113,17 +126,41 @@ export function MyStashTab({
     }
   }
 
+  const iiwikiFiles = iiwikiQuery.data?.files;
+  for (const title of iiwikiFileTitles) {
+    const match = iiwikiFiles?.[title];
+    if (!match) continue;
+    addImage({
+      title: match.title,
+      thumbUrl: match.thumbUrl || match.url,
+      url: match.url,
+      descriptionUrl: publicArticleUrl(match.title, "iiwiki"),
+      width: match.width || 0,
+      height: match.height || 0,
+      mime: match.mime || guessMime(match.title),
+      description: "",
+      artist: "",
+      license: "",
+    });
+  }
+
   const isLoadingImages =
     stashItemsQuery.isLoading ||
     commonsQuery.isLoading ||
-    pageImageQueries.some((query) => query.isLoading);
+    pageImageQueries.some((query) => query.isLoading) ||
+    iiwikiQuery.isLoading;
   const hasImagesError =
-    stashItemsQuery.isError || commonsQuery.isError || pageImageQueries.some((q) => q.isError);
+    stashItemsQuery.isError ||
+    commonsQuery.isError ||
+    pageImageQueries.some((q) => q.isError) ||
+    iiwikiQuery.isError;
 
   const retryImages = () => {
     if (stashItemsQuery.isError) void stashItemsQuery.refetch();
     if (commonsQuery.isError) void commonsQuery.refetch();
-    for (const query of pageImageQueries) if (query.isError) void query.refetch();
+    for (const query of [...pageImageQueries, iiwikiQuery]) {
+      if (query.isError) void query.refetch();
+    }
   };
 
   const filteredStashes = useMemo(() => {

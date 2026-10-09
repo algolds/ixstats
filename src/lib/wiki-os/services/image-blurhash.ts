@@ -22,7 +22,8 @@ export const BLURHASH_MIME_TYPES: readonly string[] = [
 
 /** The longer side of the thumbnail the hash is computed from: more pixels change nothing a placeholder shows. */
 const THUMBNAIL_SIDE = 32;
-const DECODE_TIMEOUT_SECONDS = 5;
+/** How long sharp may take to decode one picture (blurhash, upload thumbnails). */
+export const DECODE_TIMEOUT_SECONDS = 5;
 
 /** Whether `mimeType` is a type whose pixels `computeBlurhash` reads. */
 export function canComputeBlurhash(mimeType: string | null | undefined): boolean {

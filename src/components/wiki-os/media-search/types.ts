@@ -13,6 +13,32 @@ export interface CommonsImage {
   description: string;
   artist: string;
   license: string;
+  /** The file's BlurHash, shown while its thumbnail loads (wiki sources only). */
+  blurhash?: string | null;
+}
+
+/** A minimal image for a url that is not on a loaded page (a shared `file=` link): only the url is known. */
+export function imageFromUrl(url: string): CommonsImage {
+  const lastSegment = (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean).pop() ?? "";
+  let name = lastSegment;
+  try {
+    name = decodeURIComponent(lastSegment);
+  } catch {
+    // keep the raw segment when it holds a malformed escape
+  }
+  return {
+    pageid: 0,
+    title: name.replace(/_/g, " "),
+    thumbUrl: url,
+    url,
+    descriptionUrl: url,
+    width: 0,
+    height: 0,
+    mime: "",
+    description: "",
+    artist: "",
+    license: "",
+  };
 }
 
 function getImageType(mime: string, title: string): "jpg" | "png" | "svg" | "other" {
@@ -75,7 +101,8 @@ export function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[])
   return [...existing, ...fresh];
 }
 
-export type WikiSubSource = "ixwiki" | "iiwiki";
+/** The sources of the Wiki tab: two wikis, the images imported from the old forum, and the signed-in user's own uploads. */
+export type WikiSubSource = "ixwiki" | "iiwiki" | "forum" | "mine";
 
 interface WikiFileRecord {
   name: string;
@@ -86,6 +113,8 @@ interface WikiFileRecord {
   url?: string;
   /** A reduced-size preview; absent or null when the server has none. */
   thumbUrl?: string | null;
+  /** The file's BlurHash; absent or null when none was made. */
+  blurhash?: string | null;
 }
 
 /** Route direct wiki file URLs through the local MediaWiki proxy. */
@@ -104,9 +133,21 @@ function proxyWikiFileUrl(rawUrl: string): string {
   return rawUrl;
 }
 
-/** Shape IxWiki/IIWiki file-search hits like Commons images (identified by their url; `pageid` is the position). */
+const SOURCE_DESCRIPTIONS: Record<WikiSubSource, string> = {
+  ixwiki: "Local upload on IxWiki",
+  iiwiki: "External upload on IIWiki",
+  forum: "Imported from the old forum",
+  mine: "Your upload",
+};
+
+/** The page that describes a file: its wiki page for the two wikis, the file itself for forum and own uploads. */
+function descriptionUrlFor(name: string, source: WikiSubSource, url: string): string {
+  if (source === "forum" || source === "mine") return url;
+  return publicArticleUrl(`File:${name}`, source);
+}
+
+/** Shape repository file hits like Commons images (identified by their url; `pageid` is the position). */
 export function wikiFilesToImages(files: WikiFileRecord[], source: WikiSubSource): CommonsImage[] {
-  const isIiwiki = source === "iiwiki";
   return files.map((img, index) => {
     const url = proxyWikiFileUrl(img.url || "");
     const sizeKb = (img.size / 1024).toFixed(1);
@@ -115,15 +156,14 @@ export function wikiFilesToImages(files: WikiFileRecord[], source: WikiSubSource
       title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
       thumbUrl: img.thumbUrl ? proxyWikiFileUrl(img.thumbUrl) : url,
       url,
-      descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
+      descriptionUrl: descriptionUrlFor(img.name, source, url),
       width: img.width || 0,
       height: img.height || 0,
       mime: img.mime || "image/png",
-      description: isIiwiki
-        ? `External upload on IIWiki. Size: ${sizeKb} KB`
-        : `Local upload on IxWiki. Size: ${sizeKb} KB`,
+      description: `${SOURCE_DESCRIPTIONS[source]}. Size: ${sizeKb} KB`,
       artist: "",
       license: "",
+      blurhash: img.blurhash ?? null,
     };
   });
 }

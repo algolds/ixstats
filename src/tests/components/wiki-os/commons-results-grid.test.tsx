@@ -104,9 +104,43 @@ describe("CommonsResultsGrid", () => {
     expect(screen.getByText("Showing 1 of 120 (3 hidden by filters)")).toBeInTheDocument();
   });
 
-  it("says when a wiki result hit its cap", () => {
-    render(<CommonsResultsGrid {...base} images={[image(1)]} truncated />);
-    expect(screen.getByText("Showing the first 50 files")).toBeInTheDocument();
+  it("says what an empty list is when the source is not a category", () => {
+    render(
+      <CommonsResultsGrid {...base} mode="browse" query="" emptyText="Nothing imported yet." />
+    );
+    expect(screen.getByText("Nothing imported yet.")).toBeInTheDocument();
+  });
+
+  describe("BlurHash placeholders", () => {
+    const hashed = (over: Partial<CommonsImage> = {}) => ({
+      ...image(1),
+      width: 40,
+      height: 30,
+      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
+      ...over,
+    });
+
+    it("draws the blurhash behind a loading tile instead of a skeleton, and drops it on load", () => {
+      const { container } = render(<CommonsResultsGrid {...base} images={[hashed()]} />);
+      const thumbnail = screen.getByRole("img", { name: "Castle 1.jpg" });
+      expect(thumbnail).toHaveAttribute("data-placeholder");
+      expect(thumbnail.style.backgroundImage).toContain("data:image/svg+xml");
+      expect(container.querySelector("[data-slot='skeleton']")).toBeNull();
+
+      fireEvent.load(thumbnail);
+      expect(thumbnail).not.toHaveAttribute("data-placeholder");
+      expect(thumbnail.style.backgroundImage).toBe("");
+    });
+
+    it("keeps the skeleton for a tile with no blurhash", () => {
+      const { container } = render(<CommonsResultsGrid {...base} images={[image(1)]} />);
+      expect(container.querySelector("[data-slot='skeleton']")).not.toBeNull();
+      const thumbnail = screen.getByRole("img", { name: "Castle 1.jpg" });
+      expect(thumbnail).not.toHaveAttribute("data-placeholder");
+      expect(thumbnail.className).toContain("opacity-0");
+      fireEvent.load(thumbnail);
+      expect(thumbnail.className).toContain("opacity-100");
+    });
   });
 
   it("shows the cold start, not the filter message, when a filter is set before any search", () => {
@@ -131,6 +165,12 @@ describe("CommonsResultsGrid", () => {
     render(<CommonsResultsGrid {...base} mode="list" query="" />);
     expect(screen.getByText("This wiki has no images to list.")).toBeInTheDocument();
     expect(screen.queryByText("This category has no images.")).not.toBeInTheDocument();
+  });
+
+  it("lets emptyText override the list message for the forum and own uploads", () => {
+    render(<CommonsResultsGrid {...base} mode="list" query="" emptyText="Nothing imported yet." />);
+    expect(screen.getByText("Nothing imported yet.")).toBeInTheDocument();
+    expect(screen.queryByText("This wiki has no images to list.")).not.toBeInTheDocument();
   });
 
   it("labels unknown dimensions Vector only for an SVG, and otherwise shows nothing", () => {

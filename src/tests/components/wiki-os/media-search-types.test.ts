@@ -5,6 +5,7 @@
 import {
   commonsMimeTerm,
   dedupeImages,
+  imageFromUrl,
   matchesImageFilters,
   wikiFilesToImages,
   type CommonsImage,
@@ -58,6 +59,25 @@ describe("wikiFilesToImages", () => {
     expect(only!.thumbUrl).toBe(only!.url);
   });
 
+  it("copies the blurhash, and gives null when the record has none", () => {
+    const [withHash, without] = wikiFilesToImages(
+      [wikiFile("Map.png", { blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" }), wikiFile("Flag.png")],
+      "ixwiki"
+    );
+    expect(withHash!.blurhash).toBe("LEHV6nWB2yk8pyo0adR*.7kCMdnj");
+    expect(without!.blurhash).toBeNull();
+  });
+
+  it("uses the file's own url as the description page for forum and own uploads", () => {
+    const record = wikiFile("Pic.png", { url: "https://cdn.example/forum/pic.png" });
+    const [forum] = wikiFilesToImages([record], "forum");
+    const [mine] = wikiFilesToImages([record], "mine");
+    expect(forum!.descriptionUrl).toBe("https://cdn.example/forum/pic.png");
+    expect(forum!.descriptionUrl).toBe(forum!.url);
+    expect(mine!.descriptionUrl).toBe(mine!.url);
+    expect(forum!.description).toContain("forum");
+  });
+
   it("invents no author or licence", () => {
     const [only] = wikiFilesToImages([wikiFile("Map.png")], "ixwiki");
     expect(only!.artist).toBe("");
@@ -108,5 +128,28 @@ describe("commonsMimeTerm", () => {
     expect(commonsMimeTerm("jpg")).toBe("filemime:image/jpeg");
     expect(commonsMimeTerm("png")).toBe("filemime:image/png");
     expect(commonsMimeTerm("svg")).toBe("filemime:image/svg+xml");
+  });
+});
+
+describe("imageFromUrl", () => {
+  it("builds a minimal image: title from the decoded file name, the url for every link, empty rest", () => {
+    const url = "https://x/images/a/ab/Old_Flag%20%C3%A9.png?v=2";
+    expect(imageFromUrl(url)).toEqual({
+      pageid: 0,
+      title: "Old Flag é.png",
+      thumbUrl: url,
+      url,
+      descriptionUrl: url,
+      width: 0,
+      height: 0,
+      mime: "",
+      description: "",
+      artist: "",
+      license: "",
+    });
+  });
+
+  it("keeps a file name with a malformed escape", () => {
+    expect(imageFromUrl("/a/100%.png").title).toBe("100%.png");
   });
 });

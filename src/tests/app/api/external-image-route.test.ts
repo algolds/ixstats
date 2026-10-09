@@ -26,14 +26,14 @@ import { POST } from "~/app/api/download/external-image/route";
 const TRUSTED_URL = "https://ixwiki.com/images/a/ab/Flag.png";
 
 /** A body with a valid PNG signature followed by `fill`-valued padding. */
-const pngBytes = (size: number, fill = 0): Uint8Array => {
-  const bytes = new Uint8Array(size).fill(fill);
+const pngBytes = (size: number, fill = 0): Uint8Array<ArrayBuffer> => {
+  const bytes = new Uint8Array(new ArrayBuffer(size)).fill(fill);
   bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   return bytes;
 };
 
-const imageResponse = (body: Uint8Array, contentType = "image/png") =>
-  new Response(body, { status: 200, headers: { "content-type": contentType } });
+const imageResponse = (body: Uint8Array<ArrayBuffer>, contentType = "image/png") =>
+  new Response(new Blob([body]), { status: 200, headers: { "content-type": contentType } });
 
 const postRequest = (imageUrl: string) =>
   new NextRequest("http://localhost:3000/api/download/external-image", {
