@@ -1,14 +1,13 @@
 /**
  * Forum bans (phase 3). A ban stops posting, never reading, in its scope: the whole forum (site, admin-only), a
  * realm's section, or one category. Manual bans run any number of days or are permanent; automatic ones come from
- * warning points (mod-warnings.ts). Site admins are never banned (M5). Each issue and lift writes its mod log row in
- * the same transaction. No archived-realm check (T0-6).
+ * warning points (mod-auto-bans.ts). Site admins are never banned (M5). Each issue and lift takes the member's
+ * lock (`lockMember`) and writes its mod log row in the same transaction. No archived-realm check (T0-6).
  */
 import type { PrismaClient } from "@prisma/client";
 import {
   banExpiry,
   banNotice,
-  isBanActive,
   strongestBan,
   type BanScope,
 } from "~/lib/thinkpages-forum/moderation-policy";
@@ -23,6 +22,7 @@ import {
   banScopeOf,
   canActInScope,
   listingScope,
+  lockMember,
   pageWindow,
   scopeColumns,
   scopedRowsWhere,
@@ -40,6 +40,7 @@ export type BansDb = Pick<
   | "forumCategoryModerator"
   | "forumModLog"
   | "$transaction"
+  | "$executeRaw"
 >;
 
 export interface ActiveBan {
@@ -190,6 +191,7 @@ export async function issueBan(
   );
   const now = new Date();
   return db.$transaction(async (tx) => {
+    await lockMember(tx, input.userId);
     const ban = await tx.forumBan.create({
       data: {
         userId: input.userId,
@@ -212,17 +214,23 @@ export async function issueBan(
   });
 }
 
-/** Task 5's reviewAppeal and revokeWarningTx call this with their own transaction client. */
+/**
+ * Task 5's reviewAppeal and the automatic-ban recompute call this with their own transaction client. The ban must
+ * still be live when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once.
+ */
 export async function liftBanTx(
-  tx: Pick<BansDb, "forumBan" | "forumModLog">,
+  tx: Pick<BansDb, "forumBan" | "forumModLog" | "$executeRaw">,
   actor: NonNullable<ForumViewer>,
   ban: { id: string; userId: string; scope: string; scopeId: string | null },
   detail: ModLogDetail
 ): Promise<void> {
-  await tx.forumBan.update({
-    where: { id: ban.id },
-    data: { liftedAt: new Date(), liftedBy: actor.id },
+  const now = new Date();
+  await lockMember(tx, ban.userId);
+  const { count } = await tx.forumBan.updateMany({
+    where: { id: ban.id, liftedAt: null, ...liveAt(now) },
+    data: { liftedAt: now, liftedBy: actor.id },
   });
+  if (count === 0) throw new ForumError("CONFLICT", "This ban is no longer active.");
   await logModAction(tx, {
     actorId: actor.id,
     action: "ban.lift",
@@ -240,12 +248,10 @@ export async function liftBan(
 ): Promise<void> {
   const ban = await db.forumBan.findUnique({
     where: { id: input.banId },
-    select: { id: true, userId: true, scope: true, scopeId: true, expiresAt: true, liftedAt: true },
+    select: { id: true, userId: true, scope: true, scopeId: true },
   });
   if (!ban) throw new ForumError("NOT_FOUND", "Ban not found.");
   const lifter = await assertBanScope(db, actor, ban);
-  if (!isBanActive(ban, new Date()))
-    throw new ForumError("CONFLICT", "This ban is no longer active.");
   const note = modNote(input.note);
   await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }));
 }

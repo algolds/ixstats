@@ -1,10 +1,10 @@
 /**
  * Automatic site bans from warning points (owner decisions, M2, M3): 5 active points bring a 7-day ban, 10 a
  * 30-day one. The ban is issued by the moderator whose warning crossed the tier and stores that tier (`autoTier`,
- * the points threshold). Whenever points change, the active automatic ban follows the highest tier still met:
- * crossing up extends it to that tier's full length from the moment of crossing (never a second ban); falling to a
- * lower tier shortens it to that tier's length from the ban's original start; falling below every tier, or to a
- * tier whose length has already run out, lifts it. All of it runs inside the warning's transaction and logs there.
+ * the points threshold). A warning only ever moves the active automatic ban up: crossing a higher tier extends it
+ * to that tier's full length from the moment of crossing (never a second ban). A revoke re-tiers it to the highest
+ * tier still met, measured from the ban's original start, and lifts it when no tier is met or that length has
+ * already run out. All of it runs inside the warning's transaction, under the member's lock, and logs there.
  */
 import type { PrismaClient } from "@prisma/client";
 import { autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
@@ -12,7 +12,7 @@ import type { ForumViewer } from "./access";
 import { liftBanTx } from "./mod-bans";
 import { logModAction, type ModLogDetail } from "./mod-log";
 
-export type AutoBanTx = Pick<PrismaClient, "forumBan" | "forumModLog">;
+export type AutoBanTx = Pick<PrismaClient, "forumBan" | "forumModLog" | "$executeRaw">;
 export type AutoBanChange =
   | {
       kind: "issued" | "extended" | "shortened";
@@ -142,7 +142,10 @@ async function reconcileAutoBan(
   return { kind, banId: ban.id, autoTier: tier.points, days: tier.days, expiresAt };
 }
 
-/** After a warning: issue the tier's ban, or re-tier the active one (never a second ban, M3). */
+/**
+ * After a warning: issue the tier's ban, or move the active one up a tier (never a second ban, M3). A warning never
+ * shortens or lifts a ban, even when expired points leave fewer than the ban's tier; only a revoke does.
+ */
 export async function autoBanAfterWarning(
   tx: AutoBanTx,
   actor: Actor,
@@ -152,9 +155,11 @@ export async function autoBanAfterWarning(
   context: ModLogDetail
 ): Promise<AutoBanChange | null> {
   const current = await activeAutoBan(tx, userId, now);
-  if (current) return reconcileAutoBan(tx, actor, current, points, now, context);
   const tier = autoBanTier(points);
-  return tier ? issueAutoBan(tx, actor, userId, tier, points, now, context) : null;
+  if (!tier) return null;
+  if (!current) return issueAutoBan(tx, actor, userId, tier, points, now, context);
+  if (tier.points <= (current.autoTier ?? 0)) return null;
+  return reconcileAutoBan(tx, actor, current, points, now, context);
 }
 
 /** After a revoke: re-tier or lift the active automatic ban; never issues one. */

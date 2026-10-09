@@ -15,6 +15,7 @@ export type ModScope =
 export type ScopeDb = Pick<PrismaClient, "realm" | "realmOfficer" | "forumCategoryModerator">;
 export type CategoryScopeDb = Pick<PrismaClient, "forumCategory">;
 export type SanctionDb = ScopeDb & Pick<PrismaClient, "user">;
+export type LockDb = Pick<PrismaClient, "$executeRaw">;
 
 interface ScopedCategory {
   id: string;
@@ -71,12 +72,13 @@ export function canModerateCategory(viewer: ForumViewer, category: ScopedCategor
 
 /**
  * Site → site admins only (site bans are admin-only); realm → site admins or the realm's moderators; category →
- * site admins, the moderators of `categoryRealmId` (the category's realm, resolved by the caller) or of the category.
+ * site admins, the moderators of `categoryRealmId` (the category's realm, resolved by the caller; pass null for a
+ * sitewide category and for site and realm scopes) or of the category.
  */
 export function canActInScope(
   viewer: ForumViewer,
   scope: ModScope,
-  categoryRealmId: string | null = null
+  categoryRealmId: string | null
 ): boolean {
   if (viewer === null) return false;
   if (isSiteAdmin(viewer)) return true;
@@ -100,7 +102,7 @@ export function assertModeratesCategory(
 export function assertScope(
   viewer: ForumViewer,
   scope: ModScope,
-  categoryRealmId: string | null = null
+  categoryRealmId: string | null
 ): asserts viewer is NonNullable<ForumViewer> {
   if (!canActInScope(viewer, scope, categoryRealmId))
     throw new ForumError("FORBIDDEN", "You can't act at this scope.");
@@ -151,6 +153,15 @@ export function scopeFromColumns(scope: string, scopeId: string | null): ModScop
 
 export function banScopeOf(scope: string): BanScope {
   return BAN_SCOPES.find((s) => s === scope) ?? "site";
+}
+
+/**
+ * Serializes moderation of one member for the rest of the transaction (Postgres advisory transaction lock; re-taking
+ * it in the same transaction is free). Every warning, revoke, ban and lift takes it first, so points recounts and
+ * automatic bans see each other's committed rows (READ COMMITTED), and status checks cannot pass twice.
+ */
+export async function lockMember(tx: LockDb, userId: string): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`forum-member:${userId}`}))`;
 }
 
 /**

@@ -98,11 +98,28 @@ function matches(row: BanRow, where: ActiveBanWhere): boolean {
   return row.userId === where.userId && row.liftedAt === null && live && here;
 }
 
-function banDb(opts: { bans?: BanRow[]; ban?: object | null } = {}) {
+interface LiftUpdate {
+  where: { id: string };
+  data: { liftedAt: Date; liftedBy: string };
+}
+
+/** The member lock is a tagged template call: (strings, key). */
+type LockCall = [TemplateStringsArray, string];
+
+function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
   const tx = {
+    $executeRaw: jest.fn(async (..._call: LockCall) => 0),
     forumBan: {
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "b_new", ...data })),
-      update: jest.fn(async () => ({ id: "b1" })),
+      // Lifts only a live row, as the conditional update does; the row changes, so a second lift finds nothing.
+      updateMany: jest.fn(async ({ where, data }: LiftUpdate) => {
+        const row = opts.ban;
+        const live =
+          row && row.liftedAt === null && (row.expiresAt === null || row.expiresAt > NOW);
+        if (!row || !live || row.id !== where.id) return { count: 0 };
+        Object.assign(row, data);
+        return { count: 1 };
+      }),
     },
     forumModLog: { create: jest.fn(async () => ({ id: "log1" })) },
   };
@@ -166,6 +183,20 @@ function banDb(opts: { bans?: BanRow[]; ban?: object | null } = {}) {
 const eurthHub = { id: "cat_eurth_hub", scope: "realm", realmId: "r_eurth" };
 const general = { id: "cat_general", scope: "site", realmId: null };
 const later = new Date(NOW.getTime() + DAY_MS);
+
+/** The member's lock is the transaction's first statement, keyed by the member. */
+function expectLockedFirst(
+  tx: { $executeRaw: jest.Mock },
+  userId: string,
+  firstWrite: jest.Mock
+): void {
+  const [strings, key] = tx.$executeRaw.mock.calls[0] as LockCall;
+  expect(strings.join("?")).toBe("SELECT pg_advisory_xact_lock(hashtext(?))");
+  expect(key).toBe(`forum-member:${userId}`);
+  expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    firstWrite.mock.invocationCallOrder[0]!
+  );
+}
 const earlier = new Date(NOW.getTime() - DAY_MS);
 
 beforeEach(() => jest.useFakeTimers({ now: NOW }));
@@ -298,6 +329,7 @@ describe("issueBan", () => {
     });
     expect(db.forumModLog.create).not.toHaveBeenCalled();
     expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expectLockedFirst(tx, "u_m", tx.forumBan.create);
   });
 
   it("works in an archived realm (T0-6)", async () => {
@@ -426,10 +458,15 @@ describe("liftBan", () => {
       ban: ban({ scope: "realm", scopeId: "r_eurth", expiresAt: later }),
     });
     await liftBan(db as never, realmMod, { banId: "b1", note: " Served " });
-    expect(tx.forumBan.update).toHaveBeenCalledWith({
-      where: { id: "b1" },
+    expect(tx.forumBan.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "b1",
+        liftedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }],
+      },
       data: { liftedAt: NOW, liftedBy: "u_f" },
     });
+    expectLockedFirst(tx, "u_m", tx.forumBan.updateMany);
     expect(tx.forumModLog.create).toHaveBeenCalledWith({
       data: {
         actorId: "u_f",
@@ -465,7 +502,7 @@ describe("liftBan", () => {
     });
     const { db, tx } = banDb({ ban: gone });
     await liftBan(db as never, admin, { banId: "b1" });
-    expect(tx.forumBan.update).toHaveBeenCalledTimes(1);
+    expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
   });
 
   it("refuses an over-long note", async () => {
@@ -475,7 +512,17 @@ describe("liftBan", () => {
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(tx.forumBan.update).not.toHaveBeenCalled();
+    expect(tx.forumBan.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("logs a lift once when two requests race (the check runs under the lock)", async () => {
+    const { db, tx } = banDb({ ban: ban({}) });
+    await liftBan(db as never, admin, { banId: "b1" });
+    await expect(liftBan(db as never, admin, { banId: "b1" })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This ban is no longer active.",
+    });
+    expect(tx.forumModLog.create).toHaveBeenCalledTimes(1);
   });
 
   it("refuses unknown, out-of-scope and finished bans", async () => {
@@ -492,7 +539,7 @@ describe("liftBan", () => {
       await expect(liftBan(db as never, admin, { banId: "b1" })).rejects.toMatchObject({
         code: "CONFLICT",
       });
-      expect(tx.forumBan.update).not.toHaveBeenCalled();
+      expect(tx.forumModLog.create).not.toHaveBeenCalled();
     }
   });
 });

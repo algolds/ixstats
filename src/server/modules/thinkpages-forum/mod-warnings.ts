@@ -22,6 +22,7 @@ import {
   canActInScope,
   canModerateCategory,
   listingScope,
+  lockMember,
   pageWindow,
   type ModScope,
 } from "./mod-scope";
@@ -39,8 +40,9 @@ export type WarningsDb = Pick<
   | "forumCategoryModerator"
   | "forumModLog"
   | "$transaction"
+  | "$executeRaw"
 >;
-type WarningTx = Pick<WarningsDb, "forumWarning" | "forumBan" | "forumModLog">;
+type WarningTx = Pick<WarningsDb, "forumWarning" | "forumBan" | "forumModLog" | "$executeRaw">;
 
 export interface WarningInput {
   userId: string;
@@ -99,7 +101,7 @@ async function warningPlace(
   input: WarningInput
 ): Promise<{ issuer: Issuer; category: WarnedCategory | null }> {
   if (!input.target) {
-    assertScope(actor, SITE);
+    assertScope(actor, SITE, null);
     return { issuer: actor, category: null };
   }
   const place = await targetPlace(db, input.target);
@@ -144,6 +146,7 @@ async function recordWarning(
   },
   now: Date
 ): Promise<WarningOutcome> {
+  await lockMember(tx, warning.userId);
   const target = { targetType: warning.target?.type ?? null, targetId: warning.target?.id ?? null };
   const row = await tx.forumWarning.create({
     data: {
@@ -185,7 +188,7 @@ export async function issueWarning(
   const { issuer, category } = await warningPlace(db, actor, input);
   const points = warningPoints(issuer, input.points);
   await assertSanctionable(db, input.userId, "warned", (target) =>
-    category ? canModerateCategory(target, category) : canActInScope(target, SITE)
+    category ? canModerateCategory(target, category) : canActInScope(target, SITE, null)
   );
   const now = new Date();
   return db.$transaction((tx) =>
@@ -204,13 +207,13 @@ export async function assertWarningScope(
       ? null
       : await db.forumCategory.findUnique({ where: { id: categoryId }, select: CATEGORY_SELECT });
   if (category) assertModeratesCategory(actor, category);
-  else assertScope(actor, SITE);
+  else assertScope(actor, SITE, null);
   return actor;
 }
 
 /**
  * Task 5's reviewAppeal calls this with its own transaction client; it includes M3's recompute (the automatic ban
- * re-tiered or lifted).
+ * re-tiered or lifted). The warning must still be unrevoked once the member's lock is held (CONFLICT otherwise).
  */
 export async function revokeWarningTx(
   tx: WarningTx,
@@ -219,10 +222,12 @@ export async function revokeWarningTx(
   detail: ModLogDetail
 ): Promise<{ autoBan: AutoBanChange | null }> {
   const now = new Date();
-  await tx.forumWarning.update({
-    where: { id: warning.id },
+  await lockMember(tx, warning.userId);
+  const { count } = await tx.forumWarning.updateMany({
+    where: { id: warning.id, revokedAt: null },
     data: { revokedAt: now, revokedBy: actor.id },
   });
+  if (count === 0) throw new ForumError("CONFLICT", "This warning is already revoked.");
   await logModAction(tx, {
     actorId: actor.id,
     action: "warning.revoke",
@@ -246,11 +251,10 @@ export async function revokeWarning(
 ): Promise<{ autoBan: AutoBanChange | null }> {
   const warning = await db.forumWarning.findUnique({
     where: { id: input.warningId },
-    select: { id: true, userId: true, categoryId: true, revokedAt: true },
+    select: { id: true, userId: true, categoryId: true },
   });
   if (!warning) throw new ForumError("NOT_FOUND", "Warning not found.");
   const revoker = await assertWarningScope(db, actor, warning.categoryId);
-  if (warning.revokedAt) throw new ForumError("CONFLICT", "This warning is already revoked.");
   const note = modNote(input.note);
   return db.$transaction((tx) => revokeWarningTx(tx, revoker, warning, { note }));
 }

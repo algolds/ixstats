@@ -61,6 +61,23 @@ type BanRow = {
   autoTier: number | null;
   reason?: string;
 };
+/** The member lock is a tagged template call: (strings, key). */
+type LockCall = [TemplateStringsArray, string];
+
+/** The member's lock is the transaction's first statement, keyed by the member. */
+function expectLockedFirst(
+  tx: { $executeRaw: jest.Mock },
+  userId: string,
+  firstWrite: jest.Mock
+): void {
+  const [strings, key] = tx.$executeRaw.mock.calls[0] as LockCall;
+  expect(strings.join("?")).toBe("SELECT pg_advisory_xact_lock(hashtext(?))");
+  expect(key).toBe(`forum-member:${userId}`);
+  expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    firstWrite.mock.invocationCallOrder[0]!
+  );
+}
+
 interface LogRow {
   actorId: string;
   action: string;
@@ -118,6 +135,7 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
   const logs: LogRow[] = [];
   let n = 0;
   const tx = {
+    $executeRaw: jest.fn(async (..._call: LockCall) => 0),
     forumWarning: {
       create: jest.fn(async ({ data }: { data: Omit<WarningRow, "id"> }) => {
         const row = { id: `w${++n}`, revokedAt: null, ...data };
@@ -127,12 +145,18 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
       findMany: jest.fn(async ({ where }: { where: Where }) =>
         warnings.filter((w) => fits(w, where))
       ),
-      update: jest.fn(
-        async ({ where, data }: { where: { id: string }; data: Partial<WarningRow> }) =>
-          Object.assign(
-            warnings.find((w) => w.id === where.id)!,
-            data
-          )
+      updateMany: jest.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { id: string; revokedAt: null };
+          data: Partial<WarningRow>;
+        }) => {
+          const row = warnings.find((w) => w.id === where.id && w.revokedAt === null);
+          if (row) Object.assign(row, data);
+          return { count: row ? 1 : 0 };
+        }
       ),
     },
     forumBan: {
@@ -153,6 +177,19 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
           bans.find((b) => b.id === where.id)!,
           data
         )
+      ),
+      // liftBanTx's conditional update: only a live, unlifted ban.
+      updateMany: jest.fn(
+        async ({ where, data }: { where: { id: string }; data: Partial<BanRow> }) => {
+          const row = bans.find(
+            (b) =>
+              b.id === where.id &&
+              b.liftedAt === null &&
+              (b.expiresAt === null || b.expiresAt > NOW)
+          );
+          if (row) Object.assign(row, data);
+          return { count: row ? 1 : 0 };
+        }
       ),
     },
     forumModLog: {
@@ -225,8 +262,9 @@ describe("issueWarning", () => {
   const sitewide = { userId: "u_m", reason: " Rude ", points: 4 };
 
   it("records a warning for 90 days and logs it in the same transaction, without a ban under 5 points", async () => {
-    const { db, warnings, bans, logs } = warnDb();
+    const { db, tx, warnings, bans, logs } = warnDb();
     const outcome = await issueWarning(db as never, admin, sitewide);
+    expectLockedFirst(tx, "u_m", tx.forumWarning.create);
     expect(outcome).toEqual({ warningId: "w1", activePoints: 4, autoBan: null });
     expect(warnings[0]).toMatchObject({
       userId: "u_m",
@@ -366,6 +404,35 @@ describe("issueWarning", () => {
     const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 3 });
     expect(outcome.autoBan).toMatchObject({ kind: "extended", autoTier: 10, expiresAt: days(40) });
     expect(bans[0]).toMatchObject({ autoTier: 10, expiresAt: days(40) });
+  });
+
+  it("never lifts an active automatic ban when expired points leave a new warning's count under every tier", async () => {
+    // Day 91: 3 points (day 0) have expired, 2 points (day 85) remain; the 7-day ban from day 85 still runs.
+    const { db, tx, bans, logs } = warnDb({
+      warnings: [
+        warning({ points: 3, expiresAt: days(-1) }),
+        warning({ points: 2, expiresAt: days(84) }),
+      ],
+      bans: [autoBan({ createdAt: days(-6), expiresAt: days(1), autoTier: 5 })],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
+    expect(outcome).toEqual({ warningId: "w1", activePoints: 3, autoBan: null });
+    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(1), autoTier: 5 });
+    expect(tx.forumBan.update).not.toHaveBeenCalled();
+    expect(tx.forumBan.updateMany).not.toHaveBeenCalled();
+    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
+  });
+
+  it("never shortens an active automatic ban to a lower tier on a new warning", async () => {
+    const { db, tx, bans, logs } = warnDb({
+      warnings: [warning({ points: 5, expiresAt: days(-1) }), warning({ points: 5 })],
+      bans: [autoBan({ createdAt: days(-2), expiresAt: days(28), autoTier: 10 })],
+    });
+    const outcome = await issueWarning(db as never, admin, { ...sitewide, points: 1 });
+    expect(outcome).toMatchObject({ activePoints: 6, autoBan: null });
+    expect(bans[0]).toMatchObject({ liftedAt: null, expiresAt: days(28), autoTier: 10 });
+    expect(tx.forumBan.update).not.toHaveBeenCalled();
+    expect(logs.map((l) => l.action)).toEqual(["warning.issue"]);
   });
 
   it("leaves the automatic ban's expiry alone when a new warning stays in its tier", async () => {
@@ -649,6 +716,17 @@ describe("revokeWarning", () => {
     });
   });
 
+  it("takes the member's lock before revoking, and logs a revoke once when two requests race", async () => {
+    const { db, tx, logs } = warnDb({ warnings: [warning({ id: "w_a", points: 1 })] });
+    await revokeWarning(db as never, admin, { warningId: "w_a" });
+    expectLockedFirst(tx, "u_m", tx.forumWarning.updateMany);
+    await expect(revokeWarning(db as never, admin, { warningId: "w_a" })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This warning is already revoked.",
+    });
+    expect(logs.map((l) => l.action)).toEqual(["warning.revoke"]);
+  });
+
   it("never issues an automatic ban on a revoke", async () => {
     const { db, tx } = warnDb({ warnings: [...tenPoints(), warning({ id: "w_d", points: 1 })] });
     expect(await revokeWarning(db as never, admin, { warningId: "w_d" })).toEqual({
@@ -666,7 +744,7 @@ describe("revokeWarning", () => {
   });
 
   it("keeps moderators to their scope and refuses unknown or revoked warnings", async () => {
-    const { db, tx } = warnDb({
+    const { db, logs } = warnDb({
       warnings: [
         warning({ id: "w_site" }),
         warning({ id: "w_general", categoryId: "cat_general" }),
@@ -687,7 +765,7 @@ describe("revokeWarning", () => {
     await expect(
       revokeWarning(db as never, realmMod, { warningId: "w_done" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(tx.forumWarning.update).not.toHaveBeenCalled();
+    expect(logs).toEqual([]);
   });
 });
 

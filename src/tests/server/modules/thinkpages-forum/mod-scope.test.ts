@@ -142,32 +142,36 @@ describe("scope checks", () => {
   });
 
   it("keeps the site scope to site admins (site bans are admin-only)", () => {
-    expect(canActInScope(admin, { kind: "site" })).toBe(true);
-    expect(canActInScope(realmMod, { kind: "site" })).toBe(false);
-    expect(canActInScope(categoryMod, { kind: "site" })).toBe(false);
-    expect(canActInScope(null, { kind: "site" })).toBe(false);
+    expect(canActInScope(admin, { kind: "site" }, null)).toBe(true);
+    expect(canActInScope(realmMod, { kind: "site" }, null)).toBe(false);
+    expect(canActInScope(categoryMod, { kind: "site" }, null)).toBe(false);
+    expect(canActInScope(null, { kind: "site" }, null)).toBe(false);
   });
 
   it("allows a realm scope to its moderators and a category scope to its own or its realm's", () => {
-    expect(canActInScope(realmMod, { kind: "realm", realmId: "r_eurth" })).toBe(true);
-    expect(canActInScope(realmMod, { kind: "realm", realmId: "r_bee" })).toBe(false);
-    expect(canActInScope(categoryMod, { kind: "realm", realmId: "r_eurth" })).toBe(false);
+    expect(canActInScope(realmMod, { kind: "realm", realmId: "r_eurth" }, null)).toBe(true);
+    expect(canActInScope(realmMod, { kind: "realm", realmId: "r_bee" }, null)).toBe(false);
+    expect(canActInScope(categoryMod, { kind: "realm", realmId: "r_eurth" }, null)).toBe(false);
     const hubScope = { kind: "category", categoryId: "cat_eurth_hub" } as const;
     expect(canActInScope(realmMod, hubScope, "r_eurth")).toBe(true);
-    expect(canActInScope(realmMod, hubScope)).toBe(false);
-    expect(canActInScope(categoryMod, { kind: "category", categoryId: "cat_general" })).toBe(true);
-    expect(canActInScope(categoryMod, { kind: "category", categoryId: "cat_reports" })).toBe(false);
-    expect(canActInScope(admin, { kind: "category", categoryId: "cat_staff" })).toBe(true);
+    expect(canActInScope(realmMod, hubScope, null)).toBe(false);
+    expect(canActInScope(categoryMod, { kind: "category", categoryId: "cat_general" }, null)).toBe(
+      true
+    );
+    expect(canActInScope(categoryMod, { kind: "category", categoryId: "cat_reports" }, null)).toBe(
+      false
+    );
+    expect(canActInScope(admin, { kind: "category", categoryId: "cat_staff" }, null)).toBe(true);
   });
 
   it("refuses out-of-scope actions with FORBIDDEN", () => {
-    expect(() => assertScope(realmMod, { kind: "site" })).toThrow(
+    expect(() => assertScope(realmMod, { kind: "site" }, null)).toThrow(
       expect.objectContaining({ code: "FORBIDDEN", message: "You can't act at this scope." })
     );
-    expect(() => assertScope(null, { kind: "realm", realmId: "r_eurth" })).toThrow(
+    expect(() => assertScope(null, { kind: "realm", realmId: "r_eurth" }, null)).toThrow(
       expect.objectContaining({ code: "FORBIDDEN" })
     );
-    expect(() => assertScope(realmMod, { kind: "realm", realmId: "r_eurth" })).not.toThrow();
+    expect(() => assertScope(realmMod, { kind: "realm", realmId: "r_eurth" }, null)).not.toThrow();
     expect(() => assertModeratesCategory(realmMod, general)).toThrow(
       expect.objectContaining({ code: "FORBIDDEN", message: "You don't moderate this category." })
     );
