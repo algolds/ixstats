@@ -8,10 +8,10 @@ import { timeAgo } from "~/lib/format/compact";
 import { formatBanDate } from "~/lib/thinkpages-forum/moderation-policy";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { BanDialog, type BanScopeOption } from "../BanDialog";
+import { BanDialog, contextBanScopes } from "../BanDialog";
 import { MemberLookup } from "./MemberLookup";
 import {
-  categoryLabel,
+  AppealBadge,
   memberName,
   ModPanel,
   ModRow,
@@ -32,25 +32,6 @@ const SHOWN = [
   { value: "ended", label: "Lifted and expired" },
 ] as const;
 
-/** Every place the viewer may ban a member from: the whole forum (site admins), their realms, their categories. */
-export function contextBanScopes(context: ModContext): BanScopeOption[] {
-  return [
-    ...(context.isSiteAdmin
-      ? [{ value: "site", label: "The whole forum", scope: { kind: "site" as const } }]
-      : []),
-    ...context.realms.map((r) => ({
-      value: `realm:${r.slug}`,
-      label: `${r.name} forum`,
-      scope: { kind: "realm" as const, realm: r.slug },
-    })),
-    ...context.categories.map((c) => ({
-      value: `category:${c.id}`,
-      label: categoryLabel(c),
-      scope: { kind: "category" as const, key: c.key, ...(c.realm ? { realm: c.realm.slug } : {}) },
-    })),
-  ];
-}
-
 function isLive(ban: Ban, now: number): boolean {
   return ban.liftedAt === null && (ban.expiresAt === null || ban.expiresAt.getTime() > now);
 }
@@ -67,7 +48,7 @@ export function BansPanel({ context, realm, page, basePath }: PanelProps) {
   const [shown, setShown] = useState<Shown>("active");
   const [banning, setBanning] = useState<string | null>(null);
   const query = api.thinkpagesForumMod.bans.useQuery({ active: shown === "active", realm, page });
-  const refresh = useModRefresh("bans");
+  const refresh = useModRefresh();
   const filter = useFilterChange(basePath, page);
   const rows = query.data?.rows ?? [];
   const now = Date.now();
@@ -131,12 +112,14 @@ interface BanRowProps {
 function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
   const [lifting, setLifting] = useState(false);
   const { mutateAsync: lift } = api.thinkpagesForumMod.liftBan.useMutation();
+  const member = memberName(members, ban.userId);
   return (
     <ModRow
       title={
         <>
-          {memberName(members, ban.userId)}
+          {member}
           {ban.auto ? <Badge>Automatic</Badge> : null}
+          <AppealBadge status={ban.appealStatus} />
         </>
       }
       meta={[
@@ -147,7 +130,12 @@ function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
       ]}
       actions={
         canLift ? (
-          <Button size="sm" variant="secondary" onClick={() => setLifting(true)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`Lift the ban on ${member}`}
+            onClick={() => setLifting(true)}
+          >
             Lift
           </Button>
         ) : null

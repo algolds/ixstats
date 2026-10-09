@@ -210,6 +210,10 @@ function warnDb(seed: { warnings?: WarningRow[]; bans?: BanRow[] } = {}) {
       findMany: jest.fn(async () => warnings),
       count: jest.fn(async () => warnings.length),
     },
+    // Appeal statuses for listWarnings; none unless a test says so.
+    forumAppeal: {
+      findMany: jest.fn(async (): Promise<Array<{ subjectId: string; status: string }>> => []),
+    },
     forumThread: {
       findUnique: jest.fn(
         async ({ where }: { where: { id: string } }) =>
@@ -828,6 +832,27 @@ describe("activePointsOf and listWarnings", () => {
     );
     expect(result.total).toBe(1);
     expect(result.rows).toHaveLength(1);
+  });
+
+  it("adds each warning's appeal status in one query, null when not appealed", async () => {
+    const { db } = warnDb({ warnings: [warning({ id: "w1" }), warning({ id: "w2" })] });
+    db.forumAppeal.findMany.mockResolvedValueOnce([{ subjectId: "w2", status: "moot" }]);
+    const result = await listWarnings(db as never, admin, {}, 1);
+    expect(db.forumAppeal.findMany).toHaveBeenCalledTimes(1);
+    expect(db.forumAppeal.findMany).toHaveBeenCalledWith({
+      where: { subjectType: "warning", subjectId: { in: ["w1", "w2"] } },
+      select: { subjectId: true, status: true },
+    });
+    expect(result.rows.map((r) => [r.id, r.appealStatus])).toEqual([
+      ["w1", null],
+      ["w2", "moot"],
+    ]);
+  });
+
+  it("asks for no appeals on an empty page", async () => {
+    const { db } = warnDb();
+    await listWarnings(db as never, admin, {}, 1);
+    expect(db.forumAppeal.findMany).not.toHaveBeenCalled();
   });
 
   it("keeps other moderators to warnings issued in their categories", async () => {

@@ -12,25 +12,11 @@ import {
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
 import { timeAgo } from "~/lib/format/compact";
+import { categoryLocator } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { MemberLookup } from "./MemberLookup";
-import {
-  categoryLabel,
-  memberName,
-  ModPanel,
-  ModRow,
-  useModRefresh,
-  type ModContext,
-  type PanelProps,
-} from "./ModRow";
-
-type Category = ModContext["categories"][number];
-
-/** A category as the router locates it: its key, and its realm's slug for a realm category. */
-const locatorOf = (category: Category) => ({
-  key: category.key,
-  ...(category.realm ? { realm: category.realm.slug } : {}),
-});
+import { categoryLabel } from "../BanDialog";
+import { memberName, ModPanel, ModRow, useModRefresh, type PanelProps } from "./ModRow";
 
 /** Site admins (M19): pick a category, see its moderators, appoint or remove them. */
 export function ModeratorsPanel({ context }: PanelProps) {
@@ -38,11 +24,11 @@ export function ModeratorsPanel({ context }: PanelProps) {
   const [categoryId, setCategoryId] = useState(context.categories[0]?.id ?? "");
   const category = context.categories.find((c) => c.id === categoryId);
   const query = api.thinkpagesForumMod.categoryModerators.useQuery(
-    category ? locatorOf(category) : skipToken
+    category ? categoryLocator(category) : skipToken
   );
   const { mutateAsync: setModerator, isPending } =
     api.thinkpagesForumMod.setCategoryModerator.useMutation();
-  const refresh = useModRefresh("categoryModerators");
+  const refresh = useModRefresh();
   const rows = query.data?.rows ?? [];
 
   if (!category) {
@@ -50,7 +36,7 @@ export function ModeratorsPanel({ context }: PanelProps) {
   }
 
   const change = (userId: string, grant: boolean) =>
-    setModerator({ ...locatorOf(category), userId, grant }).then(refresh);
+    setModerator({ ...categoryLocator(category), userId, grant }).then(refresh);
 
   const remove = (userId: string, name: string) => {
     change(userId, false)
@@ -102,6 +88,7 @@ export function ModeratorsPanel({ context }: PanelProps) {
             <Button
               size="sm"
               variant="secondary"
+              aria-label={`Remove ${row.name} as a moderator of ${category.name}`}
               disabled={isPending}
               onClick={() => remove(row.userId, row.name)}
             >

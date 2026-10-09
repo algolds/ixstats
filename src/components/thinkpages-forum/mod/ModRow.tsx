@@ -2,13 +2,15 @@
 
 import { useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { pageCount } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { Pagination } from "../Pagination";
+import { categoryLabel } from "../BanDialog";
+import { Pagination, useLastPageRedirect } from "../Pagination";
 
 export type ModContext = RouterOutputs["thinkpagesForumMod"]["context"];
 /** Display names by user id, as every console list returns them. */
@@ -30,11 +32,6 @@ export function memberName(members: Members | undefined, userId: string): string
   return members?.users[userId]?.name ?? "Member";
 }
 
-/** "Caphiria / Hub" for a realm category, "General" for a sitewide one. */
-export function categoryLabel(category: { name: string; realm: { name: string } | null }): string {
-  return category.realm ? `${category.realm.name} / ${category.name}` : category.name;
-}
-
 /** A ban's or log row's place, named from what the viewer moderates. */
 export function placeName(context: ModContext, scope: string, scopeId: string | null): string {
   if (scope === "site") return "The whole forum";
@@ -46,17 +43,31 @@ export function placeName(context: ModContext, scope: string, scopeId: string | 
   return category ? categoryLabel(category) : "A category";
 }
 
-type ModList = "reports" | "warnings" | "bans" | "appeals" | "log" | "categoryModerators";
-
-/** Refreshes a panel's list and the console context after a change. */
-export function useModRefresh(list: ModList): () => Promise<void> {
+/**
+ * Refreshes every console list and the context after a change: one action often changes another tab's list
+ * (overturning an appeal lifts the ban, lifting a ban moots its appeal, a warning can raise an automatic ban).
+ */
+export function useModRefresh(): () => Promise<void> {
   const utils = api.useUtils();
-  return useCallback(async () => {
-    await Promise.all([
-      utils.thinkpagesForumMod[list].invalidate(),
-      utils.thinkpagesForumMod.context.invalidate(),
-    ]);
-  }, [utils, list]);
+  return useCallback(() => utils.thinkpagesForumMod.invalidate(), [utils]);
+}
+
+type AppealStatus = NonNullable<
+  RouterOutputs["thinkpagesForumMod"]["bans"]["rows"][number]["appealStatus"]
+>;
+
+const APPEAL_COPY: Record<AppealStatus, string> = {
+  open: "Appeal open",
+  upheld: "Appeal upheld",
+  overturned: "Appeal overturned",
+  moot: "Appeal closed, it had already ended",
+};
+
+/** A warning's or ban's appeal, as a badge; nothing when it was not appealed. */
+export function AppealBadge({ status }: { status: AppealStatus | null }) {
+  return status ? (
+    <Badge variant={status === "open" ? "info" : "default"}>{APPEAL_COPY[status]}</Badge>
+  ) : null;
 }
 
 /** Runs a filter change and drops `?page=`, so a new filter starts on its first page. */
@@ -127,8 +138,16 @@ export function ModPanel({
   paging,
   children,
 }: ModPanelProps) {
+  const totalPages = paging ? pageCount(paging.total ?? 0, paging.perPage) : 1;
+  // A page past the end (its last row just went, or a typed ?page=) moves to the last page.
+  const redirecting = useLastPageRedirect(
+    paging?.basePath ?? "",
+    paging?.page ?? 1,
+    paging?.total,
+    totalPages
+  );
   const body = (() => {
-    if (query.isLoading) return <Skeleton className="h-40 w-full" />;
+    if (query.isLoading || redirecting) return <Skeleton className="h-40 w-full" />;
     if (query.error) {
       return (
         <EmptyState
@@ -159,11 +178,7 @@ export function ModPanel({
         {body}
       </Card>
       {paging && paging.total !== undefined ? (
-        <Pagination
-          basePath={paging.basePath}
-          page={paging.page}
-          totalPages={pageCount(paging.total, paging.perPage)}
-        />
+        <Pagination basePath={paging.basePath} page={paging.page} totalPages={totalPages} />
       ) : null}
     </div>
   );

@@ -47,7 +47,8 @@ jest.mock("~/trpc/react", () => {
     api: {
       useUtils: () => ({
         thinkpagesForumMod: {
-          ...Object.fromEntries(lists.map((name) => [name, invalidator(name)])),
+          // The console refreshes every mod list at once after a change.
+          ...invalidator("all"),
           resolveMember: { fetch: resolveMember },
         },
       }),
@@ -263,15 +264,13 @@ describe("report queue", () => {
     set("context", { data: REALM_MOD });
     set("reports", { data: { rows: [report()], total: 1, authors } });
     renderConsole();
-    fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    fireEvent.click(screen.getByRole("button", { name: "Resolve the report on Rhea's post" }));
     const dialog = screen.getByRole("dialog", { name: "Resolve this report" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Resolve" }));
     await waitFor(() =>
       expect(resolve).toHaveBeenCalledWith({ reportId: "r1", outcome: "resolved" })
     );
-    await waitFor(() =>
-      expect(invalidated).toEqual(expect.arrayContaining(["reports", "context"]))
-    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
   it("shows a refused action inside its dialog", async () => {
@@ -279,7 +278,7 @@ describe("report queue", () => {
     set("context", { data: REALM_MOD });
     set("reports", { data: { rows: [report()], total: 1, authors } });
     renderConsole();
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss the report on Rhea's post" }));
     const dialog = screen.getByRole("dialog", { name: "Dismiss this report" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Dismiss" }));
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Already handled.");
@@ -291,10 +290,72 @@ describe("report queue", () => {
     set("context", { data: REALM_MOD });
     set("reports", { data: { rows: [report()], total: 1, authors } });
     renderConsole();
-    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide Rhea's post" }));
     const dialog = screen.getByRole("dialog", { name: "Hide this post" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Hide post" }));
     await waitFor(() => expect(hide).toHaveBeenCalledWith({ postId: "p9", hidden: true }));
+  });
+
+  it("hides a reported thread through the thread flag", async () => {
+    const flag = jest.fn(() => Promise.resolve());
+    mutations.setThreadFlag = flag;
+    set("context", { data: REALM_MOD });
+    set("reports", {
+      data: { rows: [report({ targetType: "thread", targetId: "t1" })], total: 1, authors },
+    });
+    renderConsole();
+    fireEvent.click(screen.getByRole("button", { name: "Hide Rhea's thread" }));
+    const dialog = screen.getByRole("dialog", { name: "Hide this thread" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hide thread" }));
+    await waitFor(() =>
+      expect(flag).toHaveBeenCalledWith({ threadId: "t1", flag: "hidden", value: true })
+    );
+  });
+
+  it("warns the reported post's author about that post, then refreshes", async () => {
+    const warn = jest.fn(() => Promise.resolve({ activePoints: 1, autoBan: null }));
+    mutations.warn = warn;
+    set("context", { data: REALM_MOD });
+    set("reports", { data: { rows: [report()], total: 1, authors } });
+    renderConsole();
+    fireEvent.click(screen.getByRole("button", { name: "Warn Rhea" }));
+    const dialog = screen.getByRole("dialog", { name: "Warn this member" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Spam" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Warn" }));
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith({
+        userId: "u2",
+        points: 1,
+        reason: "Spam",
+        target: { type: "post", id: "p9" },
+      })
+    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("bans the reported post's author from the report's category by default", async () => {
+    const ban = jest.fn(() => Promise.resolve({ banId: "b1", expiresAt: null }));
+    mutations.ban = ban;
+    set("context", { data: REALM_MOD });
+    set("reports", { data: { rows: [report()], total: 1, authors } });
+    renderConsole();
+    fireEvent.click(screen.getByRole("button", { name: "Ban Rhea" }));
+    const dialog = screen.getByRole("dialog", { name: "Ban this member" });
+    const scopes = within(within(dialog).getAllByRole("combobox")[0]!)
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(scopes).toEqual(["Hub", "Caphiria forum"]);
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Spam" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Ban" }));
+    await waitFor(() =>
+      expect(ban).toHaveBeenCalledWith({
+        userId: "u2",
+        scope: { kind: "category", key: "hub", realm: "caphiria" },
+        reason: "Spam",
+        days: 7,
+      })
+    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
   it("renders a stored HTML reason as text", () => {
@@ -312,7 +373,7 @@ describe("report queue", () => {
     });
     renderConsole();
     expect(screen.queryByText(/Reported by/)).toBeNull();
-    expect(screen.queryByRole("button", { name: "Resolve" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Resolve/ })).toBeNull();
     expect(screen.getByText("About your own content")).toBeInTheDocument();
   });
 
@@ -349,12 +410,29 @@ describe("bans", () => {
     expect(screen.getByText("Permanent")).toBeInTheDocument();
     expect(screen.getByText("Automatic")).toBeInTheDocument();
     expect(screen.getByText("Issued by Kir")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lift" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lift the ban on Rhea" }));
     const dialog = screen.getByRole("dialog", { name: "Lift this ban" });
     expect(lift).not.toHaveBeenCalled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Lift ban" }));
     await waitFor(() => expect(lift).toHaveBeenCalledWith({ banId: "b1" }));
-    await waitFor(() => expect(invalidated).toEqual(expect.arrayContaining(["bans", "context"])));
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("shows a ban's appeal status, and nothing when it was not appealed", () => {
+    set("context", { data: REALM_MOD });
+    set("bans", {
+      data: {
+        rows: [
+          { ...ban, appealStatus: "open" },
+          { ...ban, id: "b2", userId: "u1", appealStatus: null },
+        ],
+        total: 2,
+        authors,
+      },
+    });
+    renderConsole({ tab: "bans" });
+    expect(screen.getByText("Appeal open")).toBeInTheDocument();
+    expect(screen.getAllByText(/^Appeal /)).toHaveLength(1);
   });
 
   it("finds a member by handle before opening the ban form", async () => {
@@ -390,6 +468,23 @@ describe("paging", () => {
     expect(router.push).toHaveBeenCalledWith("/thinkpages/mod?tab=bans&realm=caphiria&page=2");
   });
 
+  it("moves a page past the end to the last page", () => {
+    set("context", { data: REALM_MOD });
+    set("bans", { data: { rows: [], total: 30, authors: { users: {} } } });
+    renderConsole({ tab: "bans", page: 5 });
+    expect(router.replace).toHaveBeenCalledWith("/thinkpages/mod?tab=bans&page=2");
+  });
+
+  it("offers Retry when a list fails to load", () => {
+    const refetch = jest.fn();
+    set("context", { data: REALM_MOD });
+    set("reports", { error: { message: "Server unavailable" }, refetch });
+    renderConsole();
+    expect(screen.getByText("Server unavailable")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
   it("drops ?page= when a filter changes", () => {
     set("context", { data: REALM_MOD });
     renderConsole({ page: 3 });
@@ -422,11 +517,20 @@ describe("warnings", () => {
     renderConsole({ tab: "warnings" });
     expect(inputs.warnings).toMatchObject({ activeOnly: true });
     expect(screen.getByText("2 points")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Revoke" }));
+    fireEvent.click(screen.getByRole("button", { name: "Revoke the warning for Rhea" }));
     const dialog = screen.getByRole("dialog", { name: "Revoke this warning" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Misread" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Revoke warning" }));
     await waitFor(() => expect(revoke).toHaveBeenCalledWith({ warningId: "w1", note: "Misread" }));
+  });
+
+  it("shows a warning's appeal status", () => {
+    set("context", { data: REALM_MOD });
+    set("warnings", {
+      data: { rows: [{ ...warning, appealStatus: "moot" }], total: 1, authors },
+    });
+    renderConsole({ tab: "warnings" });
+    expect(screen.getByText("Appeal closed, it had already ended")).toBeInTheDocument();
   });
 
   it("offers the targetless warning form to site admins only", () => {
@@ -466,13 +570,13 @@ describe("appeals", () => {
     canReview: false,
   };
 
-  it("withholds the decision from the moderator who issued the ban", () => {
+  it("offers no decision when the server says the viewer may not review (they issued the ban)", () => {
     set("context", { data: REALM_MOD });
     set("appeals", { data: { rows: [appeal], total: 1, authors } });
     renderConsole({ tab: "appeals" });
     expect(screen.getByText("Another moderator must review this")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Uphold" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Overturn" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Uphold/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Overturn/ })).toBeNull();
   });
 
   it("sends the response with Overturn", async () => {
@@ -487,7 +591,7 @@ describe("appeals", () => {
       },
     });
     renderConsole({ tab: "appeals" });
-    fireEvent.click(screen.getByRole("button", { name: "Overturn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Overturn the ban on Rhea" }));
     const dialog = screen.getByRole("dialog", { name: "Overturn the ban" });
     const send = within(dialog).getByRole("button", { name: "Overturn" });
     expect(send).toBeDisabled();
@@ -500,8 +604,31 @@ describe("appeals", () => {
         response: "Fair point.",
       })
     );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("sends the response with Uphold", async () => {
+    const review = jest.fn(() => Promise.resolve());
+    mutations.reviewAppeal = review;
+    set("context", { data: REALM_MOD });
+    set("appeals", {
+      data: {
+        rows: [{ ...appeal, canReview: true, subject: { ...subject, issuedBy: "u1" } }],
+        total: 1,
+        authors,
+      },
+    });
+    renderConsole({ tab: "appeals" });
+    fireEvent.click(screen.getByRole("button", { name: "Uphold the ban on Rhea" }));
+    const dialog = screen.getByRole("dialog", { name: "Uphold the ban" });
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "It stands." } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Uphold" }));
     await waitFor(() =>
-      expect(invalidated).toEqual(expect.arrayContaining(["appeals", "context"]))
+      expect(review).toHaveBeenCalledWith({
+        appealId: "a1",
+        outcome: "upheld",
+        response: "It stands.",
+      })
     );
   });
 
@@ -512,7 +639,7 @@ describe("appeals", () => {
     });
     renderConsole({ tab: "appeals" });
     expect(screen.getByText("Closed, it had already ended")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Uphold" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Uphold/ })).toBeNull();
   });
 });
 
@@ -566,9 +693,7 @@ describe("moderators", () => {
     await waitFor(() =>
       expect(setModerator).toHaveBeenCalledWith({ key: "general", userId: "u1", grant: true })
     );
-    await waitFor(() =>
-      expect(invalidated).toEqual(expect.arrayContaining(["categoryModerators", "context"]))
-    );
+    await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
 
   it("removes a moderator of a realm category", async () => {
@@ -586,7 +711,7 @@ describe("moderators", () => {
       target: { value: "c1" },
     });
     expect(inputs.categoryModerators).toEqual({ key: "hub", realm: "caphiria" });
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Rhea as a moderator of Hub" }));
     await waitFor(() =>
       expect(setModerator).toHaveBeenCalledWith({
         key: "hub",

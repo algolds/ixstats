@@ -10,8 +10,9 @@ import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { WarnDialog } from "../WarnDialog";
 import { MemberLookup } from "./MemberLookup";
+import { categoryLabel } from "../BanDialog";
 import {
-  categoryLabel,
+  AppealBadge,
   memberName,
   ModPanel,
   ModRow,
@@ -59,7 +60,7 @@ export function WarningsPanel({ context, realm, page, basePath }: PanelProps) {
     realm,
     page,
   });
-  const refresh = useModRefresh("warnings");
+  const refresh = useModRefresh();
   const filter = useFilterChange(basePath, page);
   const rows = query.data?.rows ?? [];
   const now = Date.now();
@@ -128,9 +129,15 @@ interface WarningRowProps {
 function WarningRow({ warning, members, context, canRevoke, stateLine, refresh }: WarningRowProps) {
   const [revoking, setRevoking] = useState(false);
   const { mutateAsync: revoke } = api.thinkpagesForumMod.revokeWarning.useMutation();
+  const member = memberName(members, warning.userId);
   return (
     <ModRow
-      title={memberName(members, warning.userId)}
+      title={
+        <>
+          {member}
+          <AppealBadge status={warning.appealStatus} />
+        </>
+      }
       meta={[
         points(warning.points),
         placeOf(warning, context),
@@ -140,7 +147,12 @@ function WarningRow({ warning, members, context, canRevoke, stateLine, refresh }
       ]}
       actions={
         canRevoke ? (
-          <Button size="sm" variant="secondary" onClick={() => setRevoking(true)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`Revoke the warning for ${member}`}
+            onClick={() => setRevoking(true)}
+          >
             Revoke
           </Button>
         ) : null

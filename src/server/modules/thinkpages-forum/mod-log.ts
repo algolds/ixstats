@@ -4,6 +4,7 @@
  * (src/tests/architecture/forum-mod-log-append-only.test.ts; Postgres rules in the phase 3 migration).
  */
 import type { PrismaClient } from "@prisma/client";
+import { MOD_LOG_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import {
@@ -27,7 +28,7 @@ export interface ModLogEntry {
   detail?: ModLogDetail;
 }
 
-export const LOG_PER_PAGE = 50;
+export const LOG_PER_PAGE = MOD_LOG_PER_PAGE;
 const TEXT_MAX = 1000;
 
 /** Writes one row through the transaction client the caller is already in. Never update or delete (M16). */

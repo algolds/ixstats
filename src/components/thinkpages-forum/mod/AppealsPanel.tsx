@@ -57,7 +57,7 @@ function subjectLine(appeal: Appeal, context: ModContext): string {
 export function AppealsPanel({ context, realm, page, basePath }: PanelProps) {
   const [status, setStatus] = useState<Status>("open");
   const query = api.thinkpagesForumMod.appeals.useQuery({ status, realm, page });
-  const refresh = useModRefresh("appeals");
+  const refresh = useModRefresh();
   const filter = useFilterChange(basePath, page);
   const rows = query.data?.rows ?? [];
   return (
@@ -114,7 +114,13 @@ function AppealRow({ appeal, members, context, refresh }: AppealRowProps) {
         appeal.subject ? `Issued by ${memberName(members, appeal.subject.issuedBy)}` : null,
         timeAgo(appeal.createdAt),
       ]}
-      actions={<AppealActions appeal={appeal} refresh={refresh} />}
+      actions={
+        <AppealActions
+          appeal={appeal}
+          member={memberName(members, appeal.userId)}
+          refresh={refresh}
+        />
+      }
     >
       <p
         className={`text-callout text-label break-words whitespace-pre-line ${long && !expanded ? "line-clamp-3" : ""}`}
@@ -147,7 +153,14 @@ function AppealRow({ appeal, members, context, refresh }: AppealRowProps) {
  * Uphold or overturn, each with a required response the member reads. The server says who may decide
  * (`canReview`): never the moderator who issued or raised the subject, nor the member themselves.
  */
-function AppealActions({ appeal, refresh }: { appeal: Appeal; refresh: () => Promise<void> }) {
+interface AppealActionsProps {
+  appeal: Appeal;
+  /** The appellant's name, for the buttons' accessible names. */
+  member: string;
+  refresh: () => Promise<void>;
+}
+
+function AppealActions({ appeal, member, refresh }: AppealActionsProps) {
   const [deciding, setDeciding] = useState<Outcome | null>(null);
   const { mutateAsync: review } = api.thinkpagesForumMod.reviewAppeal.useMutation();
   if (appeal.status !== "open") return null;
@@ -162,6 +175,7 @@ function AppealActions({ appeal, refresh }: { appeal: Appeal; refresh: () => Pro
           key={outcome}
           size="sm"
           variant={outcome === "overturned" ? "default" : "secondary"}
+          aria-label={`${VERB[outcome]} the ${subject} on ${member}`}
           onClick={() => setDeciding(outcome)}
         >
           {VERB[outcome]}

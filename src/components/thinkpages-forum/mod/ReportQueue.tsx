@@ -9,10 +9,9 @@ import { timeAgo } from "~/lib/format/compact";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { BanDialog, banScopeOptions } from "../BanDialog";
+import { BanDialog, banScopeOptions, categoryLabel } from "../BanDialog";
 import { WarnDialog } from "../WarnDialog";
 import {
-  categoryLabel,
   memberName,
   ModPanel,
   ModRow,
@@ -60,7 +59,7 @@ function targetHref(report: Report): string | null {
 export function ReportQueue({ context, realm, page, basePath }: PanelProps) {
   const [status, setStatus] = useState<Status>("open");
   const query = api.thinkpagesForumMod.reports.useQuery({ status, realm, page });
-  const refresh = useModRefresh("reports");
+  const refresh = useModRefresh();
   const filter = useFilterChange(basePath, page);
   const rows = query.data?.rows ?? [];
   return (
@@ -121,7 +120,15 @@ function ReportRow({ report, members, context, refresh }: ReportRowProps) {
         report.reporterId ? `Reported by ${memberName(members, report.reporterId)}` : null,
         timeAgo(report.createdAt),
       ]}
-      actions={<ReportActions report={report} href={href} context={context} refresh={refresh} />}
+      actions={
+        <ReportActions
+          report={report}
+          href={href}
+          authorName={report.targetAuthorId ? memberName(members, report.targetAuthorId) : null}
+          context={context}
+          refresh={refresh}
+        />
+      }
     >
       <p className="text-callout text-label break-words">{report.reason}</p>
       {report.ownTarget ? (
@@ -141,12 +148,14 @@ function ReportRow({ report, members, context, refresh }: ReportRowProps) {
 interface ReportActionsProps {
   report: Report;
   href: string | null;
+  /** The reported content's author, by name; null when it is gone. */
+  authorName: string | null;
   context: ModContext;
   refresh: () => Promise<void>;
 }
 
 /** Open, then for an open report on someone else's content that still exists: hide, warn, ban, resolve, dismiss. */
-function ReportActions({ report, href, context, refresh }: ReportActionsProps) {
+function ReportActions({ report, href, authorName, context, refresh }: ReportActionsProps) {
   const [open, setOpen] = useState<Open>(null);
   const { mutateAsync: resolve } = api.thinkpagesForumMod.resolveReport.useMutation();
   const { mutateAsync: hidePost } = api.thinkpagesForumMod.setPostHidden.useMutation();
@@ -154,6 +163,8 @@ function ReportActions({ report, href, context, refresh }: ReportActionsProps) {
   const actionable = report.status === "open" && !report.ownTarget;
   const author = report.targetAuthorId;
   const kind = report.targetType === "post" ? "post" : "thread";
+  // Names each row's buttons apart for screen readers: "Hide Rhea's post", "Resolve the report on Rhea's post".
+  const content = authorName ? `${authorName}'s ${kind}` : `this ${kind}`;
   const close = (next: boolean) => {
     if (!next) setOpen(null);
   };
@@ -174,19 +185,36 @@ function ReportActions({ report, href, context, refresh }: ReportActionsProps) {
     <>
       {href ? (
         <Button asChild size="sm" variant="secondary">
-          <Link href={href}>Open</Link>
+          <Link href={href} aria-label={`Open ${content}`}>
+            Open
+          </Link>
         </Button>
       ) : null}
       {actionable && author ? (
         <>
-          <Button size="sm" variant="secondary" onClick={() => setOpen("hide")}>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`Hide ${content}`}
+            onClick={() => setOpen("hide")}
+          >
             Hide
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => setOpen("warn")}>
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-label={`Warn ${authorName ?? "the author"}`}
+            onClick={() => setOpen("warn")}
+          >
             Warn author
           </Button>
           {report.category ? (
-            <Button size="sm" variant="secondary" onClick={() => setOpen("ban")}>
+            <Button
+              size="sm"
+              variant="secondary"
+              aria-label={`Ban ${authorName ?? "the author"}`}
+              onClick={() => setOpen("ban")}
+            >
               Ban author
             </Button>
           ) : null}
@@ -198,6 +226,7 @@ function ReportActions({ report, href, context, refresh }: ReportActionsProps) {
               key={outcome}
               size="sm"
               variant={outcome === "resolved" ? "default" : "ghost"}
+              aria-label={`${OUTCOME_COPY[outcome].verb} the report on ${content}`}
               onClick={() => setOpen(outcome)}
             >
               {OUTCOME_COPY[outcome].verb}

@@ -4,6 +4,7 @@
  * their own appeal, not a subject they issued or, for an automatic ban, raised).
  */
 import type { PrismaClient } from "@prisma/client";
+import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import type { ForumViewer } from "./access";
 import {
   appealStatusOf,
@@ -28,7 +29,7 @@ export type AppealQueueDb = Pick<
   "forumAppeal" | "forumBan" | "forumWarning" | "forumCategory" | "forumModLog"
 >;
 
-export const APPEALS_PER_PAGE = 25;
+export const APPEALS_PER_PAGE = MOD_ROWS_PER_PAGE;
 
 interface SubjectIds {
   ban: string[];

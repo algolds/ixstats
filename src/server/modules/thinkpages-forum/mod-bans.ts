@@ -12,10 +12,12 @@ import {
   type BanScope,
 } from "~/lib/thinkpages-forum/moderation-policy";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { mootOpenAppeal } from "./mod-appeal-moot";
+import { appealStatusesOf } from "./mod-appeal-status";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertSanctionable,
@@ -69,7 +71,7 @@ export interface BanInput {
   days: number | null;
 }
 
-export const BANS_PER_PAGE = 25;
+export const BANS_PER_PAGE = MOD_ROWS_PER_PAGE;
 const MAX_BAN_DAYS = 3650;
 
 const ACTIVE_BAN_SELECT = {
@@ -262,9 +264,12 @@ export async function liftBan(
   return { userId: ban.userId, scope: banScopeOf(ban.scope), scopeId: ban.scopeId };
 }
 
-/** Bans in the viewer's scope, newest first: live ones (`active`), or lifted and expired ones. */
+/**
+ * Bans in the viewer's scope, newest first: live ones (`active`), or lifted and expired ones; each with its appeal's
+ * status (null when not appealed).
+ */
 export async function listBans(
-  db: Pick<BansDb, "forumBan" | "forumCategory">,
+  db: Pick<BansDb, "forumBan" | "forumCategory" | "forumAppeal">,
   viewer: ForumViewer,
   filter: { active: boolean; realmId?: string | null; userId?: string },
   page: number
@@ -296,5 +301,17 @@ export async function listBans(
     }),
     db.forumBan.count({ where }),
   ]);
-  return { rows: rows.map((row) => ({ ...row, scope: banScopeOf(row.scope) })), total };
+  const appeals = await appealStatusesOf(
+    db,
+    "ban",
+    rows.map((row) => row.id)
+  );
+  return {
+    rows: rows.map((row) => ({
+      ...row,
+      scope: banScopeOf(row.scope),
+      appealStatus: appeals.get(row.id) ?? null,
+    })),
+    total,
+  };
 }

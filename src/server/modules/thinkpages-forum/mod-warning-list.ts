@@ -1,13 +1,18 @@
 /** The moderator's warnings list (M14): warnings in the viewer's scope, newest first, paged. */
+import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import type { ForumViewer } from "./access";
+import { appealStatusesOf } from "./mod-appeal-status";
 import { listingScope, pageWindow } from "./mod-scope";
 import type { WarningsDb } from "./mod-warnings";
 
-export const WARNINGS_PER_PAGE = 25;
+export const WARNINGS_PER_PAGE = MOD_ROWS_PER_PAGE;
 
-/** Warnings in the viewer's scope (their categories; site admins everything), newest first. */
+/**
+ * Warnings in the viewer's scope (their categories; site admins everything), newest first, each with its appeal's
+ * status (null when not appealed).
+ */
 export async function listWarnings(
-  db: Pick<WarningsDb, "forumWarning" | "forumCategory">,
+  db: Pick<WarningsDb, "forumWarning" | "forumCategory" | "forumAppeal">,
   viewer: ForumViewer,
   filter: { userId?: string; realmId?: string | null; activeOnly?: boolean },
   page: number
@@ -42,5 +47,10 @@ export async function listWarnings(
     }),
     db.forumWarning.count({ where }),
   ]);
-  return { rows, total };
+  const appeals = await appealStatusesOf(
+    db,
+    "warning",
+    rows.map((r) => r.id)
+  );
+  return { rows: rows.map((r) => ({ ...r, appealStatus: appeals.get(r.id) ?? null })), total };
 }

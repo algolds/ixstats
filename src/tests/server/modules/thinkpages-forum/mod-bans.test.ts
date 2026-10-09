@@ -92,6 +92,10 @@ function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
       findUnique: jest.fn(async () => opts.ban ?? null),
       count: jest.fn(async () => (opts.bans ?? []).length),
     },
+    // Appeal statuses for listBans; none unless a test says so.
+    forumAppeal: {
+      findMany: jest.fn(async (): Promise<Array<{ subjectId: string; status: string }>> => []),
+    },
     forumCategory: {
       findUnique: jest.fn(
         async ({ where }: { where: { id: string } }) =>
@@ -539,7 +543,18 @@ describe("listBans", () => {
         take: BANS_PER_PAGE,
       })
     );
-    expect(result).toEqual({ rows: [{ ...listed }], total: 1 });
+    expect(result).toEqual({ rows: [{ ...listed, appealStatus: null }], total: 1 });
+  });
+
+  it("adds each ban's appeal status in one query", async () => {
+    const { db } = banDb({ bans: [listed] });
+    db.forumAppeal.findMany.mockResolvedValueOnce([{ subjectId: listed.id, status: "open" }]);
+    const result = await listBans(db as never, admin, { active: true }, 1);
+    expect(db.forumAppeal.findMany).toHaveBeenCalledWith({
+      where: { subjectType: "ban", subjectId: { in: [listed.id] } },
+      select: { subjectId: true, status: true },
+    });
+    expect(result.rows[0]?.appealStatus).toBe("open");
   });
 
   it("lists finished bans and keeps other moderators to their scope", async () => {

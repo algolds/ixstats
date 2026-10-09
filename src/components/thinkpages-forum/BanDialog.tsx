@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
+import { categoryLocator } from "~/lib/thinkpages-forum/links";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 import { FormError, ReasonField } from "./ReasonField";
 
@@ -56,7 +57,7 @@ export function banScopeOptions(
     {
       value: "category",
       label: category.name,
-      scope: { kind: "category", key: category.key, ...(realm ? { realm: realm.slug } : {}) },
+      scope: { kind: "category", ...categoryLocator(category) },
     },
     ...(realmScope
       ? [
@@ -70,6 +71,33 @@ export function banScopeOptions(
     ...(admin
       ? [{ value: "site", label: "The whole forum", scope: { kind: "site" as const } }]
       : []),
+  ];
+}
+
+/** "Caphiria / Hub" for a realm category, "General" for a sitewide one. */
+export function categoryLabel(category: { name: string; realm: { name: string } | null }): string {
+  return category.realm ? `${category.realm.name} / ${category.name}` : category.name;
+}
+
+/**
+ * Every place the viewer may ban a member from when no post or thread is in view (the moderation console): the whole
+ * forum for site admins, each realm and each category they moderate.
+ */
+export function contextBanScopes(context: ModContext): BanScopeOption[] {
+  return [
+    ...(context.isSiteAdmin
+      ? [{ value: "site", label: "The whole forum", scope: { kind: "site" as const } }]
+      : []),
+    ...context.realms.map((r) => ({
+      value: `realm:${r.slug}`,
+      label: `${r.name} forum`,
+      scope: { kind: "realm" as const, realm: r.slug },
+    })),
+    ...context.categories.map((c) => ({
+      value: `category:${c.id}`,
+      label: categoryLabel(c),
+      scope: { kind: "category" as const, ...categoryLocator(c) },
+    })),
   ];
 }
 

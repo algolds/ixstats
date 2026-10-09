@@ -4,6 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { listingScope, pageWindow } from "./mod-scope";
@@ -15,7 +16,7 @@ export type ReportQueueDb = Pick<
 >;
 export type ReportStatus = "open" | "resolved" | "dismissed";
 
-export const REPORTS_PER_PAGE = 25;
+export const REPORTS_PER_PAGE = MOD_ROWS_PER_PAGE;
 const EXCERPT_MAX = 160;
 
 interface TargetSummary {

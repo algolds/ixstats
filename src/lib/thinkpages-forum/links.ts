@@ -15,6 +15,11 @@ export interface CategoryPlace {
 
 const seg = encodeURIComponent;
 
+/** A category as the moderation router locates it: its key, and its realm's slug for a realm category. */
+export function categoryLocator(category: CategoryPlace): { key: string; realm?: string } {
+  return category.realm ? { key: category.key, realm: category.realm.slug } : { key: category.key };
+}
+
 /** The forum home, opened on `realm`'s section when given. */
 export function forumHomeHref(realm?: string | null): string {
   return realm ? `${FORUM_HOME}?realm=${seg(realm)}` : FORUM_HOME;

@@ -5,14 +5,14 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { isBanActive } from "~/lib/thinkpages-forum/moderation-policy";
+import type { AppealStatus } from "./mod-appeal-status";
 import { parseDetail } from "./mod-log";
 import { scopeFromColumns, type ModScope } from "./mod-scope";
 import { warningScope } from "./mod-warnings";
 
 export type SubjectsDb = Pick<PrismaClient, "forumBan" | "forumWarning" | "forumModLog">;
 export type AppealSubjectType = "warning" | "ban";
-/** `moot`: the subject ended (lifted, revoked, expired) before a decision; the appeal is closed, not decided. */
-export type AppealStatus = "open" | "upheld" | "overturned" | "moot";
+export { appealStatusOf, type AppealStatus } from "./mod-appeal-status";
 /** What a reviewer may decide. */
 export type AppealOutcome = "upheld" | "overturned";
 /** How an appeal was closed. */
@@ -44,7 +44,6 @@ interface WarningSubject {
 export type AppealSubject = BanSubject | WarningSubject;
 
 const SUBJECT_TYPES: readonly AppealSubjectType[] = ["warning", "ban"];
-const STATUSES: readonly AppealStatus[] = ["open", "upheld", "overturned", "moot"];
 
 export const BAN_SUBJECT_SELECT = {
   id: true,
@@ -70,9 +69,6 @@ export const WARNING_SUBJECT_SELECT = {
 
 export const appealSubjectTypeOf = (type: string): AppealSubjectType | null =>
   SUBJECT_TYPES.find((t) => t === type) ?? null;
-/** A stored status; anything malformed reads as open. */
-export const appealStatusOf = (status: string): AppealStatus =>
-  STATUSES.find((s) => s === status) ?? "open";
 
 export const isWarningActive = (
   warning: { expiresAt: Date; revokedAt: Date | null },
