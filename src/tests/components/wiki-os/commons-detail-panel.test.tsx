@@ -64,6 +64,14 @@ describe("previewSrc", () => {
     );
   });
 
+  it("rewrites a thumb.wikimedia.org thumb and drops its utm query", () => {
+    const thumb =
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/Schloss_Neuschwanstein_2013.jpg/330px-Schloss_Neuschwanstein_2013.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail";
+    expect(previewSrc(image("Schloss", { thumbUrl: thumb }))).toBe(
+      "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/Schloss_Neuschwanstein_2013.jpg/960px-Schloss_Neuschwanstein_2013.jpg"
+    );
+  });
+
   it("uses a non-Commons thumb as given", () => {
     const local = image("Local", { thumbUrl: "/api/mediawiki/ixwiki/images/a/ab/Local.jpg" });
     expect(previewSrc(local)).toBe("/api/mediawiki/ixwiki/images/a/ab/Local.jpg");

@@ -39,13 +39,15 @@ const subscribeToRegularWidth = (onChange: () => void) => {
 };
 const getIsRegularWidth = () => window.matchMedia(REGULAR_WIDTH_QUERY).matches;
 
-const COMMONS_THUMB_URL = /^https:\/\/upload\.wikimedia\.org\/.+\/thumb\/.+\/\d+px-[^/]+$/;
+const COMMONS_THUMB_URL =
+  /^https:\/\/(?:upload|thumb)\.wikimedia\.org\/.+\/thumb\/.+\/\d+px-[^/?]+(?:\?.*)?$/;
 
 /** A sized image for the preview: Commons thumbs are re-requested at 960px, anything else is used as given. */
 export function previewSrc(image: Pick<CommonsImage, "thumbUrl" | "url">): string {
   const thumb = image.thumbUrl;
   if (thumb && COMMONS_THUMB_URL.test(thumb)) {
-    return thumb.replace(/\/\d+px-([^/]+)$/, "/960px-$1");
+    // Only the width segment changes; the utm_* tracking query Commons appends is dropped.
+    return thumb.replace(/\?.*$/, "").replace(/\/\d+px-([^/]+)$/, "/960px-$1");
   }
   return thumb || image.url;
 }
