@@ -112,6 +112,11 @@ describe("hasImageSrc", () => {
     expect(hasImageSrc('<img src="" alt="">')).toBe(false);
     expect(hasImageSrc('<img src="  " alt="">')).toBe(false);
     expect(hasImageSrc("<img alt=x>")).toBe(false);
+    expect(hasImageSrc('<img src="data:image/png;base64,AAAA" alt="">')).toBe(false);
+    expect(hasImageSrc('<img src=" JavaScript:alert(1)" alt="">')).toBe(false);
+    expect(hasImageSrc('<img src="vbscript:x" alt="">')).toBe(false);
+    expect(hasImageSrc('<img src="data:x"><img src="/images/uploads/a.png">')).toBe(true);
+    expect(hasImageSrc('<img src="/images/data:x.png" alt="">')).toBe(true);
     expect(hasImageSrc('<p>&lt;img src="x"&gt;</p>')).toBe(false);
     expect(hasImageSrc("<p></p>")).toBe(false);
   });

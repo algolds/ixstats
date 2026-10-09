@@ -22,7 +22,8 @@ export const APP_PATH_PREFIXES = [
   "/@",
   "/r/",
 ] as const;
-const IMAGE_WITH_SRC = /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="\s*[^"\s]/i;
+const IMAGE_WITH_SRC =
+  /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="\s*(?!(?:data|javascript|vbscript):)[^"\s]/i;
 
 function rebaseAttribute(
   match: string,
@@ -50,5 +51,5 @@ export function rebaseRootRelativeUrls(html: string, base: (path: string) => str
   });
 }
 
-/** Whether the HTML holds an `<img>` with a non-empty `src` (an image counts as post content). */
+/** Whether the HTML holds an `<img>` with a non-empty `src` that is not a `data:`, `javascript:` or `vbscript:` URL (the sanitizer blanks those; an image counts as post content). */
 export const hasImageSrc = (html: string) => IMAGE_WITH_SRC.test(html);

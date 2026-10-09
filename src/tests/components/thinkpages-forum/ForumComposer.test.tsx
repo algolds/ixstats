@@ -142,6 +142,10 @@ describe("ForumComposer", () => {
     const post = screen.getByRole("button", { name: "Post" });
     type("img:");
     expect(post).toBeDisabled();
+    type("img:data:image/png;base64,AAAA");
+    expect(post).toBeDisabled();
+    type("img:javascript:alert(1)");
+    expect(post).toBeDisabled();
     type("img:/images/uploads/a.png");
     expect(post).toBeEnabled();
     fireEvent.click(post);
