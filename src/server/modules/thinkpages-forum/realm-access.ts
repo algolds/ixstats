@@ -1,12 +1,14 @@
 /**
  * Realm sections (phase 2). Reading follows realm visibility: a draft or generating realm is hidden from everyone
  * but its founder and site admins (AT-6). Posting (D5, D13) takes a nation in the realm, or realm moderation (the
- * founder, officers with the `board` power, site admins); a board mute or ban, which binds the player who held the
- * nation, blocks it for everyone but moderators; an archived realm is read-only except to site admins.
+ * founder, officers with the `board` power, site admins); an archived realm is read-only except to site admins.
+ * Forum bans (phase 3, M5, M7) block posting everywhere they apply, for moderators too; only site admins are never
+ * banned. Every write and every posting flag goes through `postingAccessFor`, so a ban binds them all (T0-9).
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID } from "~/lib/realms/realm-region";
+import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { noNationNotice } from "~/lib/thinkpages-forum/notices";
 import {
   hasRealmPower,
@@ -14,8 +16,8 @@ import {
   isRealmOpen,
   isSiteAdmin,
 } from "~/server/modules/realms";
-import { boardRestrictionMessage, userBoardRestriction } from "~/server/shared/realm-board";
 import { canPostIn, type ForumViewer } from "./access";
+import { postingBan, type ActiveBan } from "./mod-bans";
 
 export interface ForumRealm {
   id: string;
@@ -26,10 +28,7 @@ export interface ForumRealm {
 }
 
 export type RealmDb = Pick<PrismaClient, "realm">;
-export type RealmAccessDb = Pick<
-  PrismaClient,
-  "country" | "realmOfficer" | "realmBoardBan" | "realmClaim"
->;
+export type RealmAccessDb = Pick<PrismaClient, "country" | "realmOfficer" | "forumBan">;
 
 /** IxWorld when it has no realm row (D8): always active, and its founder is staff, so nobody is its founder. */
 export const IXWORLD_REALM: ForumRealm = {
@@ -85,8 +84,8 @@ export interface RealmPostingAccess {
   ownedCountryIds: string[];
   /** Site admins, the founder, and officers granted `board`. */
   isModerator: boolean;
-  /** The mute or ban binding the viewer; never looked up (null) for moderators. */
-  restriction: { kind: "mute" | "ban"; until: Date | null; reason: string | null } | null;
+  /** The strongest forum ban binding the viewer here; never looked up (null) for anonymous and site admins. */
+  ban: ActiveBan | null;
   canPost: boolean;
   /** Why the viewer cannot post, for the UI; null when they can. */
   notice: string | null;
@@ -101,16 +100,21 @@ const isArchived = (realm: ForumRealm): boolean =>
 function refused(
   base: Pick<RealmPostingAccess, "ownedCountryIds" | "isModerator">,
   notice: string,
-  restriction: RealmPostingAccess["restriction"] = null
+  ban: ActiveBan | null = null
 ): RealmPostingAccess {
-  return { ...base, restriction, canPost: false, notice };
+  return { ...base, ban, canPost: false, notice };
 }
 
-/** Who may post in a realm's section (D5, D13). The caller has checked the viewer can see the realm. */
+/**
+ * Who may post in a realm's section (D5, D13), in the order admin → archived → ban → moderator → nation (T0-3).
+ * The ban covers the site, the realm and, when `category` is given, that category. The caller has checked the
+ * viewer can see the realm.
+ */
 export async function realmPostingAccess(
   db: RealmAccessDb,
   viewer: ForumViewer,
-  realm: ForumRealm
+  realm: ForumRealm,
+  category?: { id: string }
 ): Promise<RealmPostingAccess> {
   if (!viewer) {
     return refused(
@@ -118,7 +122,7 @@ export async function realmPostingAccess(
       `Sign in and claim a nation in ${realm.name} to post here.`
     );
   }
-  const [owned, officers] = await Promise.all([
+  const [owned, officers, ban] = await Promise.all([
     db.country.findMany({
       where: { realmId: realm.id, ownerUserId: viewer.id },
       select: { id: true },
@@ -127,6 +131,8 @@ export async function realmPostingAccess(
       where: { realmId: realm.id, userId: viewer.clerkUserId },
       select: { userId: true, powers: true },
     }),
+    // Null without a query for site admins (M5).
+    postingBan(db, viewer, { id: category?.id ?? null, scope: "realm", realmId: realm.id }),
   ]);
   const ownedCountryIds = owned.map((c) => c.id);
   const admin = isSiteAdmin(viewer);
@@ -134,21 +140,18 @@ export async function realmPostingAccess(
     ownedCountryIds,
     isModerator: admin || hasRealmPower(viewer, realm, officers, "board"),
   };
-  const granted: RealmPostingAccess = { ...base, restriction: null, canPost: true, notice: null };
+  const granted: RealmPostingAccess = { ...base, ban: null, canPost: true, notice: null };
   if (admin) return granted;
   if (isArchived(realm)) return refused(base, ARCHIVED_NOTICE);
+  // Moderators of the realm are bound by bans too (M5): a stale row must still hold.
+  if (ban) return refused(base, banNotice(ban), ban);
   if (base.isModerator) return granted;
-
-  const restriction = await userBoardRestriction(db, realm.id, viewer.id, ownedCountryIds);
-  const restrictedBy = boardRestrictionMessage(restriction);
-  if (restrictedBy) return refused(base, restrictedBy, restriction);
-  if (ownedCountryIds.length === 0) {
-    return refused(base, noNationNotice(realm.name));
-  }
+  if (ownedCountryIds.length === 0) return refused(base, noNationNotice(realm.name));
   return granted;
 }
 
 export interface PostableCategory {
+  id: string;
   scope: string;
   realmId: string | null;
   visibility: string;
@@ -157,13 +160,19 @@ export interface PostableCategory {
 
 export interface PostingAccess {
   canPost: boolean;
-  /** Why the viewer cannot post, for the UI and refusals; null for sitewide categories and when they can. */
+  /** Why the viewer cannot post, for the UI and refusals; null when they can, and sitewide unless banned. */
   notice: string | null;
+  /** The strongest ban binding the viewer in this category (site, realm or the category itself). */
+  ban: ActiveBan | null;
 }
 
+const NO_ACCESS: PostingAccess = { canPost: false, notice: null, ban: null };
+
 /**
- * Whether the viewer may post in `category`, and why not: sitewide categories follow `canPostIn` (no notice);
- * realm categories also need `realmPostingAccess`. `realm` is the category's realm (null for site scope).
+ * Whether the viewer may post in `category`, and why not: sitewide categories follow `canPostIn` and the viewer's
+ * bans (site and the category; looked up even where `canPostIn` refuses, so a banned author's own posts are not
+ * offered for editing); realm categories follow `realmPostingAccess` for the category, then `canPostIn`. `realm`
+ * is the category's realm (null for site scope).
  */
 export async function postingAccessFor(
   db: RealmAccessDb,
@@ -171,10 +180,18 @@ export async function postingAccessFor(
   category: PostableCategory,
   realm: ForumRealm | null
 ): Promise<PostingAccess> {
-  if (category.scope !== "realm") return { canPost: canPostIn(viewer, category), notice: null };
-  if (!realm || !canSeeRealm(viewer, realm)) return { canPost: false, notice: null };
-  const access = await realmPostingAccess(db, viewer, realm);
-  return { canPost: access.canPost && canPostIn(viewer, category), notice: access.notice };
+  if (category.scope !== "realm") {
+    const ban = await postingBan(db, viewer, category);
+    if (ban) return { canPost: false, notice: banNotice(ban), ban };
+    return { ...NO_ACCESS, canPost: canPostIn(viewer, category) };
+  }
+  if (!realm || !canSeeRealm(viewer, realm)) return NO_ACCESS;
+  const access = await realmPostingAccess(db, viewer, realm, category);
+  return {
+    canPost: access.canPost && canPostIn(viewer, category),
+    notice: access.notice,
+    ban: access.ban,
+  };
 }
 
 /** `postingAccessFor` when only the category is at hand: a realm category's realm is loaded by its id. */
@@ -190,7 +207,7 @@ export async function categoryPostingAccess(
   return postingAccessFor(db, viewer, category, realm);
 }
 
-/** The posting rule for any category: site scope → canPostIn; realm scope → realmPostingAccess(...).canPost && canPostIn. */
+/** The posting rule for any category, bans included: `categoryPostingAccess(...).canPost`. */
 export async function canPostInCategory(
   db: RealmAccessDb & RealmDb,
   viewer: ForumViewer,

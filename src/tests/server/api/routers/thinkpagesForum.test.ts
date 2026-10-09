@@ -14,6 +14,8 @@ import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { createThread } from "~/server/modules/thinkpages-forum";
+import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
+import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(thinkpagesForumRouter)(
@@ -60,8 +62,9 @@ const rawPersona = {
   isActive: true,
 };
 
-function forumDb(thread: object = {}) {
+function forumDb(thread: object = {}, bans: BanRow[] = []) {
   return {
+    forumBan: forumBanFake(bans),
     forumCategory: {
       findMany: jest.fn(async () => categories),
       findFirst: jest.fn(
@@ -160,8 +163,6 @@ function realmForumDb(owned: Array<{ id: string; realmId: string; currentTotalGd
       ),
     },
     realmOfficer: { findMany: jest.fn(async () => []) },
-    realmBoardBan: { findMany: jest.fn(async () => []) },
-    realmClaim: { findMany: jest.fn(async () => []) },
   };
 }
 const inEurth = [{ id: "c1", realmId: "r_eurth", currentTotalGdp: 10 }];
@@ -275,6 +276,21 @@ describe("thinkpagesForum router", () => {
     expect(visible.canReply).toBe(true);
     expect(visible.posts.map((p) => p.isOwn)).toEqual([true, false]);
     expect(visible.posts.every((p) => !("hidden" in p))).toBe(true);
+  });
+
+  it("offers a site-banned member no thread start, no reply and no Edit on their own sitewide post", async () => {
+    const ban = banRow({ userId: "u1", reason: "Abuse" });
+    const category = await caller(member, forumDb({}, [ban])).category({ key: "general", page: 1 });
+    expect(category).toMatchObject({
+      canStart: false,
+      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
+    });
+    const thread = await caller(member, forumDb({}, [ban])).thread({ threadId: "t1", page: 1 });
+    expect(thread.canReply).toBe(false);
+    expect(thread.posts.map((p) => p.isOwn)).toEqual([false, false]);
+    const lifted = banRow({ userId: "u1", liftedAt: new Date() });
+    const free = await caller(member, forumDb({}, [lifted])).thread({ threadId: "t1", page: 1 });
+    expect(free.posts.map((p) => p.isOwn)).toEqual([true, false]);
   });
 
   it("gives an anonymous reader no Edit and no reply", async () => {

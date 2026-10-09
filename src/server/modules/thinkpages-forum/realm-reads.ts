@@ -82,7 +82,8 @@ export async function primaryRealmIdOf(
 
 /**
  * A realm's section: NOT_FOUND when hidden from the viewer. Seeds the categories when the realm has none (self-heal
- * for realms created outside adminCreateRealm).
+ * for realms created outside adminCreateRealm). `access` is the section-level verdict: site and realm bans bind it,
+ * a category ban only that category's composer.
  */
 export async function getRealmSection(db: RealmReadsDb, viewer: ForumViewer, slug: string) {
   const realm = await loadForumRealm(db, { slug });

@@ -3,7 +3,9 @@
  * tokens are validated before anything is written, so a refused link never leaves a post behind; the links are
  * synced once the post exists. A persona post needs an in-character category and the actor's own active persona
  * (P9), and a post inside a submitted or approved story chain can no longer change (P6). In a realm section,
- * starting, replying and editing all take realm posting access (D5, D13): a muted or banned player cannot change it.
+ * starting, replying and editing all take realm posting access (D5, D13). A forum ban (site, realm or category)
+ * refuses every write in its scope, sitewide edits included (T0-17). Writes follow the read rules: a hidden thread or
+ * post, and another member's Reports thread (M8), read as not found.
  */
 import type { PrismaClient } from "@prisma/client";
 import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
@@ -14,8 +16,9 @@ import {
   validatePostActionTokens,
 } from "~/server/modules/action-links";
 import type { RealmActor } from "~/server/modules/realms";
-import { canSeeCategory } from "./access";
+import { canSeeThread } from "./access";
 import { ForumError } from "./errors";
+import { assertNotBanned } from "./mod-bans";
 import { loadCategory, visibleRealmOf } from "./reads";
 import { postingAccessFor, type ForumRealm, type PostableCategory } from "./realm-access";
 
@@ -35,8 +38,7 @@ export type WritesDb = Pick<
   | "realm"
   | "country"
   | "realmOfficer"
-  | "realmBoardBan"
-  | "realmClaim"
+  | "forumBan"
   | "$transaction"
 >;
 
@@ -45,7 +47,7 @@ export interface PostInput {
   personaId?: string | null;
 }
 
-interface PreparedBody {
+export interface PreparedBody {
   contentHtml: string;
   plainText: string;
 }
@@ -53,7 +55,7 @@ interface PreparedBody {
 const LOCKED_CHAIN_STATUSES = ["submitted", "approved"];
 const TEAM_ONLY = "Only the team can post in this category.";
 
-function prepareBody(html: string): PreparedBody {
+export function prepareBody(html: string): PreparedBody {
   if (html.length > MAX_POST_HTML) {
     throw new ForumError("BAD_REQUEST", `A post can be at most ${MAX_POST_HTML} characters.`);
   }
@@ -86,13 +88,17 @@ async function asForumRefusal<T>(call: () => Promise<T>): Promise<T> {
   }
 }
 
-function validateLinks(db: WritesDb, actor: ForumActor, plainText: string): Promise<string[]> {
+export function validateLinks(
+  db: WritesDb,
+  actor: ForumActor,
+  plainText: string
+): Promise<string[]> {
   return asForumRefusal(() =>
     validatePostActionTokens(db, { countryId: actor.countryId, body: plainText })
   );
 }
 
-function syncLinks(
+export function syncLinks(
   db: WritesDb,
   actor: ForumActor,
   postId: string,
@@ -191,7 +197,7 @@ export async function replyToThread(
     where: { id: input.threadId },
     include: { category: true },
   });
-  if (!thread || thread.hidden || !canSeeCategory(actor, thread.category)) {
+  if (!thread || thread.hidden || !canSeeThread(actor, thread, thread.category)) {
     throw new ForumError("NOT_FOUND", "Thread not found.");
   }
   const realm = await realmOfThread(db, actor, thread.category, "Thread");
@@ -219,8 +225,8 @@ export async function replyToThread(
 }
 
 /**
- * Only the author edits in phase 1 (site admins gain it with moderation in phase 3). In a realm section the author
- * must still be able to post there (D13).
+ * The author edits (moderator edits are `modEditPost`). In a realm section the author must still be able to post
+ * there (D13); sitewide only a ban stops them (T0-17), not the category's posting role.
  */
 export async function editPost(
   db: WritesDb,
@@ -235,15 +241,23 @@ export async function editPost(
       hidden: true,
       thread: {
         select: {
+          authorUserId: true,
           hidden: true,
           locked: true,
           archived: true,
-          category: { select: { visibility: true, postRole: true, scope: true, realmId: true } },
+          category: {
+            select: { id: true, visibility: true, postRole: true, scope: true, realmId: true },
+          },
         },
       },
     },
   });
-  if (!post || post.hidden || post.thread.hidden || !canSeeCategory(actor, post.thread.category)) {
+  if (
+    !post ||
+    post.hidden ||
+    post.thread.hidden ||
+    !canSeeThread(actor, post.thread, post.thread.category)
+  ) {
     throw new ForumError("NOT_FOUND", "Post not found.");
   }
   const { category } = post.thread;
@@ -253,6 +267,7 @@ export async function editPost(
   if (post.thread.locked || post.thread.archived)
     throw new ForumError("CONFLICT", "This thread is closed to edits.");
   if (realm) await assertCanPost(db, actor, category, realm, TEAM_ONLY);
+  else await assertNotBanned(db, actor, category);
   const body = prepareBody(input.html);
   const chained = await db.postActionLink.count({
     where: {

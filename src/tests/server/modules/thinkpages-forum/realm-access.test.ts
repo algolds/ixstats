@@ -1,11 +1,14 @@
 /** @jest-environment node */
+import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   canPostInCategory,
   canSeeRealm,
+  categoryPostingAccess,
   loadForumRealm,
   realmPostingAccess,
   type ForumRealm,
 } from "~/server/modules/thinkpages-forum";
+import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
 const role = (name: string, level: number) => ({ name, level });
 const admin = { id: "u_admin", clerkUserId: "admin", countryId: null, role: role("admin", 10) };
@@ -50,28 +53,13 @@ const IXWORLD: ForumRealm = {
   status: "active",
   ownerId: "system",
 };
-const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
-
-interface Ban {
-  countryId: string;
-  kind: string;
-  until: Date | null;
-  reason: string | null;
-  createdAt: Date;
-}
-interface Claim {
-  userId: string;
-  countryId: string;
-  reviewedAt: Date;
-}
 interface Where {
   realmId?: string;
   ownerUserId?: string;
   userId?: string;
-  countryId?: { in?: string[] };
 }
 
-function accessDb(opts: { owned?: Record<string, string[]>; bans?: Ban[]; claims?: Claim[] } = {}) {
+function accessDb(opts: { owned?: Record<string, string[]>; bans?: BanRow[] } = {}) {
   const owned = opts.owned ?? { u_owner: ["c_eurth"] };
   const officers = [
     { userId: "officer", powers: ["board"] },
@@ -88,22 +76,7 @@ function accessDb(opts: { owned?: Record<string, string[]>; bans?: Ban[]; claims
         officers.filter((o) => o.userId === where.userId)
       ),
     },
-    realmBoardBan: {
-      findMany: jest.fn(async ({ where }: { where: Where }) =>
-        (opts.bans ?? []).filter(
-          (b) => !where.countryId?.in || where.countryId.in.includes(b.countryId)
-        )
-      ),
-    },
-    realmClaim: {
-      findMany: jest.fn(async ({ where }: { where: Where }) =>
-        (opts.claims ?? []).filter(
-          (c) =>
-            (!where.userId || c.userId === where.userId) &&
-            (!where.countryId?.in || where.countryId.in.includes(c.countryId))
-        )
-      ),
-    },
+    forumBan: forumBanFake(opts.bans),
     realm: { findUnique: jest.fn(async () => null) },
   };
 }
@@ -191,50 +164,69 @@ describe("canSeeRealm", () => {
 });
 
 describe("realmPostingAccess", () => {
+  const later = new Date(Date.now() + 7 * DAY_MS);
+  const realmBan = (userId: string, extra: Partial<BanRow> = {}) =>
+    banRow({
+      userId,
+      scope: "realm",
+      scopeId: "r_eurth",
+      reason: "Spam",
+      expiresAt: later,
+      ...extra,
+    });
+
   it("1. refuses anonymous with a sign-in notice", async () => {
     const db = accessDb();
     await expect(realmPostingAccess(db as never, null, EURTH)).resolves.toEqual({
       ownedCountryIds: [],
       isModerator: false,
-      restriction: null,
+      ban: null,
       canPost: false,
       notice: "Sign in and claim a nation in Eurth to post here.",
     });
     expect(db.country.findMany).not.toHaveBeenCalled();
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
   });
 
-  it("2. lets a site admin post without nations, without a restriction lookup, even in an archived realm", async () => {
+  it("2. lets a site admin post without nations, without a ban lookup, even in an archived realm or with a ban row", async () => {
     for (const realm of [EURTH, { ...EURTH, status: "archived" }]) {
-      const db = accessDb({ owned: {} });
+      const db = accessDb({
+        owned: {},
+        bans: [realmBan("u_admin"), banRow({ userId: "u_admin" })],
+      });
       const access = await realmPostingAccess(db as never, admin, realm);
       expect(access).toMatchObject({
         isModerator: true,
         canPost: true,
-        restriction: null,
+        ban: null,
         notice: null,
       });
-      expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
-      expect(db.realmClaim.findMany).not.toHaveBeenCalled();
+      expect(db.forumBan.findMany).not.toHaveBeenCalled();
     }
   });
 
-  it("3. makes the founder and a board officer moderators, never looking up restrictions", async () => {
+  it("3. makes the founder and a board officer moderators, who are still refused by a realm ban (M5)", async () => {
     for (const viewer of [founder, officer]) {
-      const db = accessDb({
-        owned: { u_founder: ["c_f"], u_officer: ["c_o"] },
-        bans: [
-          { countryId: "c_f", kind: "ban", until: null, reason: "x", createdAt: day("2026-01-01") },
-          { countryId: "c_o", kind: "ban", until: null, reason: "x", createdAt: day("2026-01-01") },
-        ],
-      });
-      const access = await realmPostingAccess(db as never, viewer, EURTH);
-      expect(access).toMatchObject({
+      const free = accessDb({ owned: {} });
+      await expect(realmPostingAccess(free as never, viewer, EURTH)).resolves.toMatchObject({
         isModerator: true,
         canPost: true,
-        restriction: null,
+        ban: null,
         notice: null,
       });
-      expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
+      const ban = realmBan(viewer.id);
+      const db = accessDb({ owned: {}, bans: [ban] });
+      await expect(realmPostingAccess(db as never, viewer, EURTH)).resolves.toMatchObject({
+        isModerator: true,
+        canPost: false,
+        ban: { id: "b1", scope: "realm", scopeId: "r_eurth" },
+        notice: banNotice({ scope: "realm", expiresAt: later, reason: "Spam" }),
+      });
+      expect(db.forumBan.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: viewer.id, liftedAt: null }),
+        })
+      );
     }
   });
 
@@ -244,7 +236,7 @@ describe("realmPostingAccess", () => {
     expect(access).toEqual({
       ownedCountryIds: ["c_eurth"],
       isModerator: false,
-      restriction: null,
+      ban: null,
       canPost: true,
       notice: null,
     });
@@ -264,58 +256,74 @@ describe("realmPostingAccess", () => {
     }
   });
 
-  it("6. refuses a muted or banned owner with the board's restriction message", async () => {
-    const mute = {
-      countryId: "c_eurth",
-      kind: "mute",
-      until: day("2026-10-20"),
-      reason: "Cool off",
-      createdAt: day("2026-10-01"),
-    };
-    const access = await realmPostingAccess(accessDb({ bans: [mute] }) as never, owner, EURTH);
+  it("6. refuses an owner under a realm ban with its notice, before the nation rule", async () => {
+    const ban = realmBan("u_owner");
+    const access = await realmPostingAccess(accessDb({ bans: [ban] }) as never, owner, EURTH);
     expect(access).toMatchObject({
+      ownedCountryIds: ["c_eurth"],
       canPost: false,
-      restriction: { kind: "mute", until: day("2026-10-20"), reason: "Cool off" },
-      notice: "Your nation is muted on this board until 2026-10-20: Cool off",
+      ban: { id: "b1", scope: "realm", scopeId: "r_eurth", reason: "Spam", expiresAt: later },
+      notice: banNotice(ban as never),
     });
-    const ban = { ...mute, kind: "ban", until: null, reason: null };
+    const outsider = await realmPostingAccess(
+      accessDb({ bans: [realmBan("u_plain")] }) as never,
+      plain,
+      EURTH
+    );
+    expect(outsider).toMatchObject({ canPost: false, notice: banNotice(ban as never) });
+  });
+
+  it("6. refuses an owner under a site ban in the realm", async () => {
+    const ban = banRow({ userId: "u_owner", reason: "Abuse" });
     await expect(
       realmPostingAccess(accessDb({ bans: [ban] }) as never, owner, EURTH)
     ).resolves.toMatchObject({
       canPost: false,
-      restriction: { kind: "ban", until: null, reason: null },
-      notice: "Your nation is banned from this board until a moderator lifts it",
+      ban: { scope: "site" },
+      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
     });
   });
 
-  it("6. keeps a ban on the player who held the nation, never on its next claimant", async () => {
-    const opts = {
-      owned: { u_owner: ["c_other"], u_next: ["c_eurth"] },
-      claims: [
-        { userId: "u_owner", countryId: "c_eurth", reviewedAt: day("2026-04-01") },
-        { userId: "u_owner", countryId: "c_other", reviewedAt: day("2026-04-02") },
-        { userId: "u_next", countryId: "c_eurth", reviewedAt: day("2026-06-01") },
-      ],
-      bans: [
-        {
-          countryId: "c_eurth",
-          kind: "ban",
-          until: null,
-          reason: "Spam",
-          createdAt: day("2026-05-01"),
-        },
-      ],
-    };
-    await expect(realmPostingAccess(accessDb(opts) as never, owner, EURTH)).resolves.toMatchObject({
-      ownedCountryIds: ["c_other"],
-      canPost: false,
-      restriction: { kind: "ban", reason: "Spam" },
+  it("6. ignores expired and lifted bans, another realm's ban and another member's ban", async () => {
+    const bans = [
+      realmBan("u_owner", { id: "b_expired", expiresAt: new Date(Date.now() - DAY_MS) }),
+      realmBan("u_owner", { id: "b_lifted", liftedAt: new Date() }),
+      realmBan("u_owner", { id: "b_other", scopeId: "r_bee" }),
+      realmBan("u_next", { id: "b_next" }),
+    ];
+    await expect(
+      realmPostingAccess(accessDb({ bans }) as never, owner, EURTH)
+    ).resolves.toMatchObject({ canPost: true, ban: null, notice: null });
+  });
+
+  it("6. leaves the section open under a category ban, but refuses posting in that category", async () => {
+    const ban = banRow({
+      userId: "u_owner",
+      scope: "category",
+      scopeId: "rcat_hub",
+      expiresAt: later,
     });
-    await expect(realmPostingAccess(accessDb(opts) as never, next, EURTH)).resolves.toMatchObject({
-      ownedCountryIds: ["c_eurth"],
+    const db = accessDb({ bans: [ban] });
+    await expect(realmPostingAccess(db as never, owner, EURTH)).resolves.toMatchObject({
       canPost: true,
-      restriction: null,
+      ban: null,
     });
+    db.realm.findUnique.mockResolvedValue(EURTH as never);
+    const hub = {
+      id: "rcat_hub",
+      scope: "realm",
+      realmId: "r_eurth",
+      visibility: "public",
+      postRole: "any",
+    };
+    await expect(categoryPostingAccess(db as never, owner, hub)).resolves.toEqual({
+      canPost: false,
+      notice: banNotice(ban as never),
+      ban: expect.objectContaining({ id: "b1", scope: "category", scopeId: "rcat_hub" }),
+    });
+    await expect(
+      categoryPostingAccess(db as never, owner, { ...hub, id: "rcat_character-threads" })
+    ).resolves.toMatchObject({ canPost: true, notice: null, ban: null });
   });
 
   it("7. makes an archived realm read-only for owners and moderators alike, but never IxWorld", async () => {
@@ -360,8 +368,20 @@ describe("realmPostingAccess", () => {
 });
 
 describe("canPostInCategory", () => {
-  const site = { scope: "site", realmId: null, visibility: "public", postRole: "any" };
-  const hub = { scope: "realm", realmId: "r_eurth", visibility: "public", postRole: "any" };
+  const site = {
+    id: "cat_general",
+    scope: "site",
+    realmId: null,
+    visibility: "public",
+    postRole: "any",
+  };
+  const hub = {
+    id: "rcat_hub",
+    scope: "realm",
+    realmId: "r_eurth",
+    visibility: "public",
+    postRole: "any",
+  };
   function categoryDb(realm: ForumRealm | null = EURTH) {
     const db = accessDb();
     db.realm.findUnique.mockResolvedValue(realm as never);
@@ -376,6 +396,45 @@ describe("canPostInCategory", () => {
     ).resolves.toBe(false);
     await expect(canPostInCategory(db as never, null, site)).resolves.toBe(false);
     expect(db.realm.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("refuses a sitewide category under a site or that category's ban, never under a realm ban", async () => {
+    const site_ = banRow({ userId: "u_plain", reason: "Abuse" });
+    const db = accessDb({ bans: [site_] });
+    await expect(categoryPostingAccess(db as never, plain, site)).resolves.toEqual({
+      canPost: false,
+      notice: banNotice({ scope: "site", expiresAt: null, reason: "Abuse" }),
+      ban: expect.objectContaining({ scope: "site" }),
+    });
+    expect(db.forumBan.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "u_plain", liftedAt: null }),
+      })
+    );
+    const inCategory = banRow({ userId: "u_plain", scope: "category", scopeId: "cat_general" });
+    await expect(
+      canPostInCategory(accessDb({ bans: [inCategory] }) as never, plain, site)
+    ).resolves.toBe(false);
+    await expect(
+      canPostInCategory(accessDb({ bans: [inCategory] }) as never, plain, {
+        ...site,
+        id: "cat_side",
+      })
+    ).resolves.toBe(true);
+    const realmOnly = banRow({ userId: "u_plain", scope: "realm", scopeId: "r_eurth" });
+    await expect(
+      canPostInCategory(accessDb({ bans: [realmOnly] }) as never, plain, site)
+    ).resolves.toBe(true);
+  });
+
+  it("lets a site admin post sitewide whatever ban rows exist, without a lookup", async () => {
+    const db = accessDb({ bans: [banRow({ userId: "u_admin" })] });
+    await expect(categoryPostingAccess(db as never, admin, site)).resolves.toEqual({
+      canPost: true,
+      notice: null,
+      ban: null,
+    });
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
   });
 
   it("follows the realm posting rule in realm categories", async () => {

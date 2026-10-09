@@ -1,13 +1,16 @@
 /**
  * Forum reads. They return ids only; the router adds display names through `authorsOf` (one query per kind per
- * page). Hidden threads and posts are omitted for everyone but site admins, and a category the viewer cannot see
- * reads as NOT_FOUND so its existence does not leak. A realm category is looked up by (scope, realmId, key), never
- * by key alone, and a realm hidden from the viewer (draft, generating) hides its categories, threads and posts.
+ * page). Hidden threads and posts are shown only to moderators of their category (M9; category counts stay
+ * admin-only), a Reports (`reporter_staff`) thread only to its author and the category's moderators (M8), and a
+ * category the viewer cannot see reads as NOT_FOUND so its existence does not leak. A realm category is looked up
+ * by (scope, realmId, key), never by key alone, and a realm hidden from the viewer (draft, generating) hides its
+ * categories, threads and posts.
  */
 import type { ForumCategory, PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
-import { canSeeCategory, type ForumViewer } from "./access";
+import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
+import { canModerateCategory } from "./mod-scope";
 import { canSeeRealm, loadForumRealm, type ForumRealm, type RealmDb } from "./realm-access";
 import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 
@@ -18,8 +21,24 @@ export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 const SITE_SCOPE = { scope: "site", realmId: null } as const;
 
+interface PlacedCategory {
+  id: string;
+  scope: string;
+  realmId: string | null;
+  visibility: string;
+}
+
 const isAdmin = (viewer: ForumViewer): boolean => viewer !== null && isSiteAdmin(viewer);
-const hiddenFilter = (viewer: ForumViewer): { hidden?: false } => (isAdmin(viewer) ? {} : { hidden: false });
+/** Hidden threads and posts stay in for the category's moderators (M9). */
+const hiddenFilter = (viewer: ForumViewer, category: PlacedCategory): { hidden?: false } =>
+  canModerateCategory(viewer, category) ? {} : { hidden: false };
+/** M8: in a Reports category a member who does not moderate it sees only their own threads. */
+const onlyOwnThreads = (viewer: ForumViewer, category: PlacedCategory): boolean =>
+  category.visibility === "reporter_staff" && !canModerateCategory(viewer, category);
+// Anonymous never sees a Reports category (canSeeCategory); an empty author id would match no thread regardless.
+const ownAuthor = (viewer: ForumViewer) => ({ authorUserId: viewer?.id ?? "" });
+const ownThreadsWhere = (viewer: ForumViewer, category: PlacedCategory): { authorUserId?: string } =>
+  onlyOwnThreads(viewer, category) ? ownAuthor(viewer) : {};
 const pageOf = (page: number): number => (Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1);
 
 /** Where a category sits: `realm` is a realm slug; absent or null means the sitewide section. */
@@ -69,9 +88,18 @@ export async function summarizeCategories(
   categories: readonly ForumCategory[]
 ) {
   const visible = categories.filter((c) => canSeeCategory(viewer, c));
+  const ids = (list: readonly ForumCategory[]) => list.map((c) => c.id);
+  const own = visible.filter((c) => onlyOwnThreads(viewer, c));
+  const all = visible.filter((c) => !onlyOwnThreads(viewer, c));
   const stats = await db.forumThread.groupBy({
     by: ["categoryId"],
-    where: { categoryId: { in: visible.map((c) => c.id) }, ...hiddenFilter(viewer) },
+    where: {
+      ...(isAdmin(viewer) ? {} : { hidden: false }),
+      OR: [
+        { categoryId: { in: ids(all) } },
+        ...(own.length > 0 ? [{ categoryId: { in: ids(own) }, ...ownAuthor(viewer) }] : []),
+      ],
+    },
     _count: { _all: true },
     _max: { lastPostAt: true },
   });
@@ -99,7 +127,11 @@ export async function getCategoryThreads(
   page: number
 ) {
   const { category, realm } = await loadCategory(db, viewer, where);
-  const threadWhere = { categoryId: category.id, ...hiddenFilter(viewer) };
+  const threadWhere = {
+    categoryId: category.id,
+    ...hiddenFilter(viewer, category),
+    ...ownThreadsWhere(viewer, category),
+  };
   const [threads, total] = await Promise.all([
     db.forumThread.findMany({
       where: threadWhere,
@@ -121,6 +153,7 @@ export async function getCategoryThreads(
   ]);
   return {
     category: {
+      id: category.id,
       key: category.key,
       name: category.name,
       description: category.description,
@@ -131,16 +164,17 @@ export async function getCategoryThreads(
     },
     threads,
     total,
+    canModerate: canModerateCategory(viewer, category),
   };
 }
 
 export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId: string, page: number) {
   const row = await db.forumThread.findUnique({ where: { id: threadId }, include: { category: true } });
-  if (!row || (row.hidden && !isAdmin(viewer)) || !canSeeCategory(viewer, row.category)) throw notFound("Thread");
+  if (!row || !canSeeThread(viewer, row, row.category)) throw notFound("Thread");
   const realm = await visibleRealmOf(db, viewer, row.category);
   if (realm === undefined) throw notFound("Thread");
   const { category, ...thread } = row;
-  const where = { threadId, ...hiddenFilter(viewer) };
+  const where = { threadId, ...hiddenFilter(viewer, category) };
   const [posts, total] = await Promise.all([
     db.forumPost.findMany({
       where,
@@ -162,6 +196,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
   return {
     thread,
     category: {
+      id: category.id,
       key: category.key,
       name: category.name,
       icAllowed: category.icAllowed,
@@ -171,6 +206,7 @@ export async function getThreadPosts(db: ReadsDb, viewer: ForumViewer, threadId:
     },
     posts,
     total,
+    canModerate: canModerateCategory(viewer, category),
   };
 }
 
@@ -188,19 +224,23 @@ export async function resolvePostLocation(
       createdAt: true,
       hidden: true,
       thread: {
-        select: { hidden: true, category: { select: { visibility: true, scope: true, realmId: true } } },
+        select: {
+          authorUserId: true,
+          hidden: true,
+          category: { select: { id: true, visibility: true, scope: true, realmId: true } },
+        },
       },
     },
   });
   if (!post) return null;
-  const admin = isAdmin(viewer);
-  if ((post.hidden || post.thread.hidden) && !admin) return null;
-  if (!canSeeCategory(viewer, post.thread.category)) return null;
-  if ((await visibleRealmOf(db, viewer, post.thread.category)) === undefined) return null;
+  const { category } = post.thread;
+  if (!canSeeThread(viewer, post.thread, category)) return null;
+  if (post.hidden && !canModerateCategory(viewer, category)) return null;
+  if ((await visibleRealmOf(db, viewer, category)) === undefined) return null;
   const before = await db.forumPost.count({
     where: {
       threadId: post.threadId,
-      ...hiddenFilter(viewer),
+      ...hiddenFilter(viewer, category),
       OR: [{ createdAt: { lt: post.createdAt } }, { createdAt: post.createdAt, id: { lt: post.id } }],
     },
   });

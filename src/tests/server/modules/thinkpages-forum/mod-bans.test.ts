@@ -9,6 +9,12 @@ import {
   listBans,
   postingBan,
 } from "~/server/modules/thinkpages-forum";
+import {
+  banRow as ban,
+  matchesActiveBan as matches,
+  type ActiveBanWhere,
+  type BanRow,
+} from "~/tests/helpers/forum-ban-fake";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
 const USER_ROLE = { name: "user", level: 100 };
@@ -50,53 +56,6 @@ const categories = [
   { id: "cat_general", scope: "site", realmId: null },
   { id: "cat_eurth_hub", scope: "realm", realmId: "r_eurth" },
 ];
-
-interface BanRow {
-  id: string;
-  userId: string;
-  scope: string;
-  scopeId: string | null;
-  reason: string;
-  expiresAt: Date | null;
-  auto: boolean;
-  liftedAt: Date | null;
-}
-
-const ban = (extra: Partial<BanRow>): BanRow => ({
-  id: "b1",
-  userId: "u_m",
-  scope: "site",
-  scopeId: null,
-  reason: "Spam",
-  expiresAt: null,
-  auto: false,
-  liftedAt: null,
-  ...extra,
-});
-
-interface PlaceWhere {
-  scope: string;
-  scopeId?: string;
-}
-interface ActiveBanWhere {
-  userId: string;
-  liftedAt: null;
-  AND: [{ OR: Array<{ expiresAt: null } | { expiresAt: { gt: Date } }> }, { OR: PlaceWhere[] }];
-}
-
-/** Interprets activeBansFor's where clause, so expiry, lifting and place are tested as behaviour. */
-function matches(row: BanRow, where: ActiveBanWhere): boolean {
-  const [time, place] = where.AND;
-  const live = time.OR.some((t) =>
-    t.expiresAt === null
-      ? row.expiresAt === null
-      : row.expiresAt !== null && row.expiresAt > t.expiresAt.gt
-  );
-  const here = place.OR.some(
-    (p) => p.scope === row.scope && (p.scopeId === undefined || p.scopeId === row.scopeId)
-  );
-  return row.userId === where.userId && row.liftedAt === null && live && here;
-}
 
 interface LiftUpdate {
   where: { id: string };

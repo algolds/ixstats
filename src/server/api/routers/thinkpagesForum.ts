@@ -14,7 +14,6 @@ import {
 } from "~/server/api/trpc";
 import {
   authorsOf,
-  canPostInCategory,
   canStartThread,
   categoryPostingAccess,
   createThread,
@@ -98,7 +97,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
   /** May write: a realm without categories gets them seeded on first read. */
   realmSection: publicProcedure.input(z.object({ realm })).query(async ({ ctx, input }) => {
     const section = await getRealmSection(ctx.db, viewerOf(ctx.user), input.realm).catch(mapError);
-    // Only the verdict leaves: never the viewer's nation ids or the raw restriction.
+    // Only the verdict leaves: never the viewer's nation ids or the raw ban.
     const { canPost, notice } = section.access;
     return { realm: section.realm, categories: section.categories, canPost, notice };
   }),
@@ -125,12 +124,16 @@ export const thinkpagesForumRouter = createTRPCRouter({
   thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
     const viewer = viewerOf(ctx.user);
     const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
-    // Hidden content stays readable to admins but refuses writes (writes.ts), so it offers neither reply nor Edit.
+    // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
     const writable = !result.thread.locked && !result.thread.archived && !result.thread.hidden;
-    const canReply =
-      viewer !== null && writable && (await canPostInCategory(ctx.db, viewer, result.category));
-    // Sitewide the author always edits; in a realm section only while they may post there (D13).
-    const editable = writable && (result.category.scope !== "realm" || canReply);
+    const access =
+      viewer !== null && writable
+        ? await categoryPostingAccess(ctx.db, viewer, result.category)
+        : null;
+    const canReply = access?.canPost ?? false;
+    // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
+    const editable =
+      access !== null && (result.category.scope !== "realm" ? access.ban === null : canReply);
     return {
       ...result,
       posts: result.posts.map(({ hidden, ...post }) => ({
