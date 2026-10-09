@@ -2,12 +2,14 @@
  * ThinkPages forum phase 4: read-only export of forum.ixwiki.com (XenForo REST API) into an on-disk snapshot that
  * the importer reads (format: src/lib/thinkpages-forum/import/snapshot.ts). Writes nothing to any database.
  *   bun run forum:export-xenforo -- --out .forum-import/<name> [--rps 0.9] [--nodes 12,13] [--reset-filter]
- *     [--no-attachments] [--max-attachment-mb 25] [--bypass-permissions | --no-bypass-permissions] [--production]
+ *     [--no-attachments] [--max-attachment-mb 25] [--retry-mismatch] [--bypass-permissions | --no-bypass-permissions]
+ *     [--production]
  * Reads XENFORO_API_URL and XENFORO_API_KEY from the environment (the key is never printed or written); --production
  * loads `.env.production.local` first (scripts/lib/load-runner-env.ts), nothing else (no database). Prints the
  * key's type and scopes, then exports nodes → threads per Forum node → posts per thread → users per distinct
  * author → attachments per post, skipping work already marked in state.json, so a rerun with the same --out
- * resumes (with the same --nodes; --reset-filter changes it).
+ * resumes (with the same --nodes; --reset-filter changes it). Attachments that arrived short (size_mismatch) are
+ * fetched again only with --retry-mismatch.
  * Permissions: with a super-user key every read adds `api_bypass_permissions=1` (default; read-only, never
  * `XF-Api-User` impersonation), so private forums, moderated content and every attachment are exported instead of
  * a guest's view. --no-bypass-permissions turns it off; --bypass-permissions forces it on for a key whose type
@@ -88,7 +90,7 @@ function printGaps(gaps: SnapshotGaps): void {
   printIds("reported: users not fetched", gaps.usersMissing);
   printIds("reported: attachments missing or forbidden", gaps.attachmentsUnavailable);
   printIds(
-    "reported: attachments with a size mismatch (rerun refetches)",
+    "reported: attachments with a size mismatch (--retry-mismatch fetches them again)",
     gaps.attachmentsSizeMismatch
   );
   if (gaps.nodesPending) console.log("remaining: the node list");
@@ -134,6 +136,7 @@ async function main(): Promise<number> {
       nodeFilter: args.nodes,
       resetFilter: args.resetFilter,
       attachments: args.attachments,
+      retryMismatch: args.retryMismatch,
       maxAttachmentBytes: args.maxAttachmentMb * 1024 * 1024,
       log: console.log,
       shouldStop: () => stopping,

@@ -233,13 +233,17 @@ describe("runExport", () => {
     });
   });
 
-  it("fetches a size-mismatched attachment again on the next run", async () => {
+  it("fetches a size-mismatched attachment again only when asked to (--retry-mismatch, I2)", async () => {
     await run(fakeClient());
     const fixed = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/png" };
-    const second = fakeClient({ ...ATTACHMENTS, 59: fixed });
-    await run(second);
+    const plain = fakeClient({ ...ATTACHMENTS, 59: fixed });
+    await run(plain);
+    expect(callsOf(plain, "attachment")).toEqual([]);
+    expect((await readSnapshot(fs, DIR)).attachments.get(59)?.stored).toBe("size_mismatch");
 
-    expect(callsOf(second, "attachment")).toEqual(["attachment 59"]);
+    const retry = fakeClient({ ...ATTACHMENTS, 59: fixed });
+    await run(retry, { retryMismatch: true });
+    expect(callsOf(retry, "attachment")).toEqual(["attachment 59"]);
     expect((await readSnapshot(fs, DIR)).attachments.get(59)?.stored).toBe("ok");
   });
 

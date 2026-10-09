@@ -120,6 +120,7 @@ describe("parseExportArgs", () => {
       attachments: true,
       maxAttachmentMb: 25,
       bypass: "auto",
+      retryMismatch: false,
       production: true,
     });
     expect(
@@ -128,6 +129,9 @@ describe("parseExportArgs", () => {
       nodes: [12, 13],
       bypass: false,
       production: false,
+    });
+    expect(parseExportArgs(["--out", "snap", "--retry-mismatch"])).toMatchObject({
+      retryMismatch: true,
     });
   });
 

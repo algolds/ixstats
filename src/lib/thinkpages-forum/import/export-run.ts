@@ -5,6 +5,8 @@
  * `state.json` is skipped, so a rerun resumes. `shouldStop` is polled between items (SIGINT).
  * Live-forum events never stall the export: redirect threads are not fetched, a thread whose posts answer 403/404
  * is marked gone, an attachment answering 403 is recorded `forbidden`, and unreadable users are recorded as such.
+ * A rerun fetches `skipped` attachments again when it wants attachments, and `size_mismatch` ones only with
+ * `retryMismatch` (I2: a file that keeps arriving short is not downloaded on every rerun).
  */
 import { attachmentMime } from "./attachment-mime";
 import {
@@ -35,6 +37,8 @@ export interface ExportRunOptions {
   /** Accept a `nodeFilter` that differs from the one the snapshot was started with. */
   resetFilter?: boolean;
   attachments: boolean;
+  /** I2: fetch `size_mismatch` attachments again (--retry-mismatch); otherwise a rerun leaves them as recorded. */
+  retryMismatch?: boolean;
   maxAttachmentBytes: number;
   log: (line: string) => void;
   shouldStop: () => boolean;
@@ -54,8 +58,6 @@ export interface ExportTotals {
 
 const THREAD_APPEND_BATCH = 50;
 const PROGRESS_EVERY = 50;
-/** Statuses a later run fetches again (`skipped` too, when that run wants attachments). */
-const REFETCH: AttachmentStored[] = ["size_mismatch"];
 
 const sortedKey = (filter: number[] | null) =>
   JSON.stringify(filter ? [...filter].sort((x, y) => x - y) : null);
@@ -234,7 +236,8 @@ function wanted(o: ExportRunOptions, snapshot: Snapshot, id: number): boolean {
   if (!o.writer.state.attachmentsDone.has(id)) return true;
   const stored = snapshot.attachments.get(id)?.stored;
   if (!stored) return false;
-  return REFETCH.includes(stored) || (o.attachments && stored === "skipped");
+  if (stored === "size_mismatch") return o.retryMismatch === true;
+  return o.attachments && stored === "skipped";
 }
 
 async function exportAttachments(

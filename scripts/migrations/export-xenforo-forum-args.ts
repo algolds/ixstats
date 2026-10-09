@@ -1,7 +1,7 @@
 /**
  * Arguments of the XenForo export (scripts/migrations/export-xenforo-forum.ts). Pure.
  *   --out DIR [--rps 0.9] [--nodes 12,13] [--reset-filter] [--no-attachments] [--max-attachment-mb 25]
- *   [--bypass-permissions | --no-bypass-permissions] [--production]
+ *   [--retry-mismatch] [--bypass-permissions | --no-bypass-permissions] [--production]
  * `--production` only selects the environment (`.env.production.local` first, scripts/lib/load-runner-env.ts): the
  * export reads XenForo and writes the snapshot directory, never a database, so there is no database guard.
  */
@@ -16,6 +16,8 @@ export interface ExportArgs {
   attachments: boolean;
   maxAttachmentMb: number;
   bypass: boolean | "auto";
+  /** Fetch attachments recorded `size_mismatch` again (I2); a plain rerun leaves them. */
+  retryMismatch: boolean;
   production: boolean;
 }
 
@@ -58,6 +60,7 @@ export function parseExportArgs(argv: readonly string[]): ExportArgs {
       DEFAULT_MAX_ATTACHMENT_MB
     ),
     bypass: bypassArg(argv),
+    retryMismatch: argv.includes("--retry-mismatch"),
     production: argv.includes("--production"),
   };
 }
