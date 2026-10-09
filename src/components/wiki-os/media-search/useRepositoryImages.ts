@@ -4,8 +4,9 @@
  *
  * Commons results are pages of `commons.search` (a category is a `deepcat:` filter on the same search, so browsing and
  * searching are one query). Each page is its own cached query keyed by its offset; a new term starts again from the
- * first page, so nothing is reset by hand. IxWiki and IIWiki files come from one `wikios.searchFiles` call (capped at
- * 50, no paging yet) and are filtered by file type here.
+ * first page, so nothing is reset by hand. The wiki sources (IxWiki, IIWiki, the old forum's images, the signed-in
+ * user's own uploads) page the same way through `wikios.repositoryFiles`, each page keyed by its cursor, and are
+ * filtered by file type here. Forum and own uploads list newest first, so they need no query.
  */
 
 import { useCallback, useMemo, useState } from "react";
@@ -33,7 +34,9 @@ export interface RepositoryImagesInput {
   /** Commons: part of the search term. Wiki: filtered here. */
   fileType: ImageTypeFilter;
   enabled: boolean;
-  /** Commons results per page. */
+  /** Whether a user is signed in: "My uploads" is only listed for one. */
+  signedIn: boolean;
+  /** Results per page. */
   pageSize?: number;
 }
 
@@ -45,8 +48,6 @@ export interface RepositoryImages {
   hasMore: boolean;
   loadMore: () => void;
   totalHits: number | null;
-  /** The wiki result reached its cap, so more files may exist. */
-  truncated: boolean;
   error: { rateLimited: boolean } | null;
   retry: () => void;
 }
@@ -54,8 +55,6 @@ export interface RepositoryImages {
 export const REPOSITORY_PAGE_SIZE = 40;
 /** The shortest query that is searched. */
 export const MIN_REPOSITORY_QUERY_LENGTH = 2;
-/** What `wikios.searchFiles` is asked for (its maximum). */
-export const WIKI_FILE_LIMIT = 50;
 const STALE_TIME_MS = 60_000;
 
 type Slice = Omit<RepositoryImages, "mode">;
@@ -67,7 +66,6 @@ const EMPTY: Slice = {
   hasMore: false,
   loadMore: () => undefined,
   totalHits: null,
-  truncated: false,
   error: null,
   retry: () => undefined,
 };
@@ -126,70 +124,106 @@ function useCommonsPages(term: string, active: boolean, pageSize: number): Slice
     hasMore: active && nextOffset !== null && !last?.isFetching,
     loadMore,
     totalHits: pages[0]?.data?.totalHits ?? null,
-    truncated: false,
     error: failed ? { rateLimited: failed.error?.data?.code === "TOO_MANY_REQUESTS" } : null,
     retry,
   };
 }
 
-function useWikiFiles(
+/** Wiki sources send a category; the forum and a user's own uploads have none. */
+function takesCategory(source: WikiSubSource): boolean {
+  return source === "ixwiki" || source === "iiwiki";
+}
+
+function useWikiPages(
   source: WikiSubSource,
   query: string,
   category: string | null,
   fileType: ImageTypeFilter,
-  active: boolean
+  active: boolean,
+  pageSize: number
 ): Slice {
-  const result = api.wikios.searchFiles.useQuery(
-    {
-      query: query || undefined,
-      category: category ?? undefined,
-      limit: WIKI_FILE_LIMIT,
-      wiki: source,
-    },
-    { enabled: active, staleTime: STALE_TIME_MS, retry: false }
+  const key = `${source}\u0000${query}\u0000${category ?? ""}`;
+  const [paging, setPaging] = useState<{ key: string; cursors: (string | null)[] }>({
+    key: "",
+    cursors: [null],
+  });
+  const cursors = useMemo(() => (paging.key === key ? paging.cursors : [null]), [paging, key]);
+
+  const pages = api.useQueries((t) =>
+    active
+      ? cursors.map((cursor) =>
+          t.wikios.repositoryFiles(
+            {
+              source,
+              query: query || undefined,
+              category: takesCategory(source) ? (category ?? undefined) : undefined,
+              cursor,
+              limit: pageSize,
+            },
+            { staleTime: STALE_TIME_MS, retry: false }
+          )
+        )
+      : []
   );
-  const data = result.data;
-  const images = useMemo(
-    () =>
-      data
-        ? wikiFilesToImages(data, source).filter((img) => matchesImageFilters(img, fileType, "all"))
-        : [],
-    [data, source, fileType]
-  );
+
+  const images = pages
+    .reduce<CommonsImage[]>(
+      (merged, page) => dedupeImages(merged, wikiFilesToImages(page.data?.files ?? [], source)),
+      []
+    )
+    .filter((img) => matchesImageFilters(img, fileType, "all"));
+  const last = pages[pages.length - 1];
+  const nextCursor = last?.data?.nextCursor ?? null;
+  const failed = pages.find((page) => page.isError);
+
+  const loadMore = useCallback(() => {
+    if (nextCursor === null || cursors.includes(nextCursor)) return;
+    setPaging({ key, cursors: [...cursors, nextCursor] });
+  }, [nextCursor, cursors, key]);
+
+  const retry = () => {
+    for (const page of pages) if (page.isError) void page.refetch();
+  };
 
   return {
     ...EMPTY,
     images,
-    isLoading: active && result.isPending,
-    truncated: data?.length === WIKI_FILE_LIMIT,
-    error: result.isError
-      ? { rateLimited: result.error?.data?.code === "TOO_MANY_REQUESTS" }
-      : null,
-    retry: () => void result.refetch(),
+    isLoading: active && !!pages[0]?.isPending,
+    isLoadingMore: active && pages.length > 1 && !!last?.isFetching,
+    hasMore: active && nextCursor !== null && !last?.isFetching,
+    loadMore,
+    error: failed ? { rateLimited: failed.error?.data?.code === "TOO_MANY_REQUESTS" } : null,
+    retry,
   };
 }
 
 export function useRepositoryImages(input: RepositoryImagesInput): RepositoryImages {
-  const { source, categories, browsingCategory, fileType, enabled, pageSize } = input;
+  const { source, categories, browsingCategory, fileType, enabled, signedIn, pageSize } = input;
+  const size = pageSize ?? REPOSITORY_PAGE_SIZE;
   const trimmed = input.query.trim();
   const searching = trimmed.length >= MIN_REPOSITORY_QUERY_LENGTH;
   const query = searching ? trimmed : "";
-  const hasCategory = categories.length > 0 || !!browsingCategory;
-  const mode: RepositoryMode = searching ? "search" : hasCategory ? "browse" : "idle";
-  const active = enabled && mode !== "idle";
   const isCommons = source === "commons";
+  // Forum and own uploads list newest first with no query; a category belongs only to Commons and the two wikis.
+  const isListing = source === "forum" || source === "mine";
+  const wikiCategory = isListing ? null : browsingCategory;
+  const hasCategory = isListing ? false : categories.length > 0 || !!browsingCategory;
+  const mode: RepositoryMode = searching ? "search" : isListing || hasCategory ? "browse" : "idle";
+  const canList = enabled && (source !== "mine" || signedIn);
+  const active = canList && mode !== "idle";
 
   const commons = useCommonsPages(
     buildCommonsTerm(categories, browsingCategory, fileType, query),
     active && isCommons,
-    pageSize ?? REPOSITORY_PAGE_SIZE
+    size
   );
-  const wiki = useWikiFiles(
+  const wiki = useWikiPages(
     isCommons ? "ixwiki" : source,
     query,
-    browsingCategory,
+    wikiCategory,
     fileType,
-    active && !isCommons
+    active && !isCommons,
+    size
   );
 
   return { ...(isCommons ? commons : wiki), mode };
