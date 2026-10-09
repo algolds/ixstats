@@ -36,7 +36,14 @@ interface RepositoryFilePage {
 const MAX_OFFSET = 100_000;
 /** A MediaWiki continuation carries a few short keys; anything beyond that is not one. */
 const MAX_CONTINUE_KEYS = 10;
-const CONTINUE_KEY = /^(continue|g[a-z]{2,31}|ii[a-z]{2,30})$/;
+/** The continuation keys MediaWiki returns for the three request shapes (search, categorymembers, allimages + imageinfo). */
+const CONTINUE_KEYS: ReadonlySet<string> = new Set([
+  "continue",
+  "gsroffset",
+  "gcmcontinue",
+  "gaicontinue",
+  "iicontinue",
+]);
 
 function badCursor(): TRPCError {
   return new TRPCError({ code: "BAD_REQUEST", message: "Invalid cursor" });
@@ -63,7 +70,7 @@ function parseContinue(cursor: string | null | undefined): Record<string, string
   if (entries.length > MAX_CONTINUE_KEYS) throw badCursor();
   const params: Record<string, string> = {};
   for (const [key, value] of entries) {
-    if (!CONTINUE_KEY.test(key) || (typeof value !== "string" && typeof value !== "number")) {
+    if (!CONTINUE_KEYS.has(key) || (typeof value !== "string" && typeof value !== "number")) {
       throw badCursor();
     }
     params[key] = String(value);

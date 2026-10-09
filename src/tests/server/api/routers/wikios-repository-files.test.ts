@@ -118,8 +118,12 @@ describe("repositoryFiles: iiwiki", () => {
     expect(second.nextCursor).toBeNull();
   });
 
-  it("rejects a cursor that carries anything but continuation keys", async () => {
-    const cursor = Buffer.from(JSON.stringify({ action: "delete" }), "utf-8").toString("base64url");
+  it.each([
+    ["action", "delete"],
+    ["generator", "allpages"],
+    ["gsrsearch", "x"],
+  ])("rejects a cursor that carries %s (not a continuation key)", async (key, value) => {
+    const cursor = Buffer.from(JSON.stringify({ [key]: value }), "utf-8").toString("base64url");
     await expect(
       signedOut().repositoryFiles({ source: "iiwiki", cursor })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
