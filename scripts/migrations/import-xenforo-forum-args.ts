@@ -1,7 +1,7 @@
 /**
  * Arguments of the XenForo importer (scripts/migrations/import-xenforo-forum.ts), with the production guard, its
  * banner and its database URL. Pure.
- *   --snapshot DIR [--node-map FILE] [--apply] [--accept-defaults] [--production] [--report FILE]
+ *   --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped | --accept-defaults] [--production] [--report FILE]
  *   --snapshot DIR --rollback --yes [--production]
  */
 import { productionDatabaseRefusal } from "../lib/database-guard";
@@ -11,13 +11,21 @@ export interface ImportArgs {
   nodeMap: string | null;
   report: string | null;
   apply: boolean;
-  acceptDefaults: boolean;
+  /** --accept-unmapped (alias --accept-defaults): apply with Forum nodes placed by title or default (I1). */
+  acceptUnmapped: boolean;
   production: boolean;
   rollback: boolean;
 }
 
 const VALUE_FLAGS = ["--snapshot", "--node-map", "--report"] as const;
-const SWITCHES = ["--apply", "--accept-defaults", "--production", "--rollback", "--yes"] as const;
+const SWITCHES = [
+  "--apply",
+  "--accept-unmapped",
+  "--accept-defaults",
+  "--production",
+  "--rollback",
+  "--yes",
+] as const;
 
 type ValueFlag = (typeof VALUE_FLAGS)[number];
 
@@ -74,7 +82,7 @@ export function parseImportArgs(
       nodeMap: values.get("--node-map") ?? null,
       report: values.get("--report") ?? null,
       apply: switches.has("--apply"),
-      acceptDefaults: switches.has("--accept-defaults"),
+      acceptUnmapped: switches.has("--accept-unmapped") || switches.has("--accept-defaults"),
       production,
       rollback: switches.has("--rollback"),
     },

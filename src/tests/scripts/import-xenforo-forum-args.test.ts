@@ -15,11 +15,12 @@ import {
   applyRefusals,
   attachmentPlanLines,
   attachmentResultLines,
-  defaultTargetNodes,
   diskRefusal,
   omittedByReason,
   snapshotGapLines,
   targetLines,
+  unmappedForumNodes,
+  unmappedLines,
 } from "../../../scripts/migrations/import-xenforo-forum-plan";
 import { databaseLabel } from "../../../scripts/lib/database-guard";
 
@@ -35,7 +36,7 @@ describe("parseImportArgs", () => {
         nodeMap: null,
         report: null,
         apply: false,
-        acceptDefaults: false,
+        acceptUnmapped: false,
         production: false,
         rollback: false,
       },
@@ -54,7 +55,10 @@ describe("parseImportArgs", () => {
       CLONE
     );
     expect(parsed).toMatchObject({
-      args: { nodeMap: "map.json", report: "r.json", apply: true, acceptDefaults: true },
+      args: { nodeMap: "map.json", report: "r.json", apply: true, acceptUnmapped: true },
+    });
+    expect(parseImportArgs(["--snapshot", "dir", "--accept-unmapped"], CLONE)).toMatchObject({
+      args: { acceptUnmapped: true },
     });
   });
 
@@ -156,20 +160,28 @@ describe("apply refusals", () => {
     { node: node(14, "Staff"), target: { archive: true, visibility: "staff" }, source: "map" },
   ];
 
-  it("lists Forum nodes that fall back to a default archive (M6)", () => {
-    expect(defaultTargetNodes(resolved).map((r) => r.node.node_id)).toEqual([12]);
+  it("lists every Forum node placed by a heuristic or the default, with its proposed target (I1)", () => {
+    const unmapped = unmappedForumNodes(resolved);
+    expect(unmapped.map((r) => r.node.node_id)).toEqual([12, 13]);
+    expect(unmappedLines(unmapped)).toEqual([
+      "Forum nodes without a node map entry (2), with their proposed targets:",
+      '  12 "Lore" -> archive:xf-12 (public) [default]',
+      '  13 "General" -> site:general [heuristic]',
+    ]);
+    expect(unmappedLines([])).toEqual(["Every Forum node has a node map entry."]);
   });
 
-  it("refuses on blocking lines and on defaults unless accepted", () => {
-    const defaults = defaultTargetNodes(resolved);
+  it("refuses on blocking lines and on unmapped nodes unless accepted; blocking is never accepted", () => {
+    const unmapped = unmappedForumNodes(resolved);
     expect(
-      applyRefusals({ blocking: ["visibility differs"], defaults, acceptDefaults: false })
+      applyRefusals({ blocking: ["visibility differs"], unmapped, acceptUnmapped: false })
     ).toEqual([
       "visibility differs",
-      expect.stringMatching(/^Node 12 "Lore" has no node map entry.*--accept-defaults/),
+      'Node 12 "Lore" has no node map entry (proposed: archive:xf-12 (public), default): map it, or pass --accept-unmapped.',
+      'Node 13 "General" has no node map entry (proposed: site:general, heuristic): map it, or pass --accept-unmapped.',
     ]);
-    expect(applyRefusals({ blocking: [], defaults, acceptDefaults: true })).toEqual([]);
-    expect(applyRefusals({ blocking: ["b"], defaults, acceptDefaults: true })).toEqual(["b"]);
+    expect(applyRefusals({ blocking: [], unmapped, acceptUnmapped: true })).toEqual([]);
+    expect(applyRefusals({ blocking: ["b"], unmapped, acceptUnmapped: true })).toEqual(["b"]);
   });
 });
 

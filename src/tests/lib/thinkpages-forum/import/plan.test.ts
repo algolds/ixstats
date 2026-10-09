@@ -181,19 +181,21 @@ describe("planImport on the snapshot-small fixture", () => {
     expect(plan.threads[0]!.skippedPosts).toEqual({ deleted: 1, alreadyImported: 0 });
   });
 
-  it("reports the skipped thread, states, authors, attachments, tokens and the staff-like warning", () => {
+  it("reports the skipped thread, states, authors, attachments, tokens and the staff-like block", () => {
     const { report } = planImport(snapshot, dbState(), null);
     expect(report.threads).toEqual({
       visible: 3,
       moderated: 1,
       deleted: 0,
+      unknown: 0,
       skippedByNode: 0,
       firstPostDeleted: 1,
       noPosts: 0,
       redirect: 0,
       gone: 0,
     });
-    expect(report.posts).toEqual({ visible: 5, moderated: 2, deleted: 2 });
+    expect(report.posts).toEqual({ visible: 5, moderated: 2, deleted: 2, unknown: 0 });
+    expect(report.unknownStates).toEqual({ threads: [], posts: [] });
     expect(report.authors).toMatchObject({
       matchedPosts: 4,
       unmatchedPosts: 1,
@@ -206,7 +208,7 @@ describe("planImport on the snapshot-small fixture", () => {
     expect(report.attachmentsStored).toEqual({ ok: { count: 2, bytes: 12 } });
     expect(report.tokens).toEqual({ kept: 1, stripped: 0, overLimit: 0, posts: 1 });
     expect(report.features).toMatchObject({ spoiler: 1, templateSyntax: 1 });
-    expect(report.notCarried).toEqual({ prefixes: 1, polls: 1, views: 63 });
+    expect(report.notCarried).toEqual({ prefixes: 1, polls: 1, views: 63, editedPosts: 1 });
     expect(report.totals).toEqual({
       categories: 1,
       threadsNew: 3,
@@ -217,7 +219,13 @@ describe("planImport on the snapshot-small fixture", () => {
       lockedThreads: 1,
       pinnedThreads: 1,
     });
-    expect(report.warnings).toEqual([expect.stringContaining('13 "Staff Room"')]);
+    // Placed by the default (no map), a staff-like title in a public archive blocks the apply (I1).
+    expect(report.warnings).toEqual([]);
+    expect(report.blocking).toEqual([
+      expect.stringMatching(
+        /^Node 13 "Staff Room" looks private but its proposed target is public \(archive:xf-13 \(public\), default\)/
+      ),
+    ]);
     expect(report.nodes.map((n) => [n.nodeId, n.target, n.source, n.threads, n.posts])).toEqual([
       [1, "skip", "default", 0, 0],
       [12, "site:general", "heuristic", 2, 4],
@@ -580,14 +588,75 @@ describe("planImport rules", () => {
     expect(plan.report.authors.unmatchedUsers).toBe(25);
   });
 
-  it("warns about staff-like titles left public, including heuristic and map targets", () => {
+  it("blocks staff-like titles placed public by title or default, and only warns for map entries (I1)", () => {
     const plan = planImport(
-      snap([node(30, "Admin lounge"), node(31, "Internal"), node(32, "Mod chat")], [], []),
+      snap(
+        [
+          node(30, "Admin lounge"),
+          node(31, "Internal"),
+          node(32, "Mod chat"),
+          node(33, "Staff Announcements"),
+          node(34, "Private board"),
+        ],
+        [],
+        []
+      ),
       dbState(),
-      { nodes: { "31": { scope: "site", key: "general" }, "32": { scope: "site", key: "staff" } } }
+      {
+        nodes: {
+          "31": { scope: "site", key: "general" },
+          "32": { scope: "site", key: "staff" },
+          "34": { archive: true, visibility: "staff" },
+        },
+      }
     );
-    expect(plan.report.warnings).toHaveLength(2);
-    expect(plan.report.warnings.join("\n")).toMatch(/30 "Admin lounge"[\s\S]*31 "Internal"/);
+    expect(plan.report.warnings).toEqual([
+      expect.stringMatching(
+        /^Node 31 "Internal" looks private but the node map puts it in a public category/
+      ),
+    ]);
+    expect(plan.report.blocking).toEqual([
+      expect.stringMatching(/^Node 30 "Admin lounge" .*\(archive:xf-30 \(public\), default\)/),
+      expect.stringMatching(/^Node 33 "Staff Announcements" .*\(site:announcements, heuristic\)/),
+    ]);
+  });
+
+  it("blocks the apply on unknown thread and post states, listing them, and counts edited posts (M22)", () => {
+    const stateless = (p: XfPost): XfPost =>
+      JSON.parse(JSON.stringify({ ...p, message_state: undefined }));
+    const plan = planImport(
+      snap(
+        [GENERAL],
+        [thread(1, 12, { discussion_state: "spam" }), thread(2, 12)],
+        [
+          post(10, 1, 0),
+          post(20, 2, 0, { last_edit_date: 1700000100 }),
+          post(21, 2, 1, { message_state: "quarantined" }),
+          stateless(post(22, 2, 2)),
+        ]
+      ),
+      dbState(),
+      null
+    );
+    expect(plan.report.threads).toMatchObject({ visible: 1, unknown: 1 });
+    expect(plan.report.posts).toMatchObject({ visible: 2, unknown: 2 });
+    expect(plan.report.unknownStates).toEqual({
+      threads: [{ id: 1, state: "spam" }],
+      posts: [
+        { id: 21, state: "quarantined" },
+        { id: 22, state: "undefined" },
+      ],
+    });
+    expect(plan.report.blocking).toEqual([
+      '1 threads have an unknown discussion_state: 1 ("spam"). Map the state in the importer before applying.',
+      '2 posts have an unknown message_state: 21 ("quarantined"), 22 ("undefined"). Map the state in the importer before applying.',
+    ]);
+    expect(plan.report.notCarried.editedPosts).toBe(1);
+    const summary = summarizeImport(plan.report);
+    expect(summary).toContain(
+      "Not carried over: editedPosts 1; never exported: reactions and likes, edit history (only the last edit date is kept), thread and forum watches"
+    );
+    expect(summary.filter((l) => l.startsWith("BLOCKING: "))).toHaveLength(2);
   });
 
   it("counts locked and pinned new threads, and reads a non-boolean discussion_open as open", () => {

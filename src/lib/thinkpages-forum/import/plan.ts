@@ -24,6 +24,7 @@ import {
   countState,
   emptyReport,
   finishAuthors,
+  unknownStateLines,
   type ImportReport,
   type NodeReportRow,
   type UnmatchedAuthor,
@@ -111,7 +112,8 @@ interface PlanContext {
   unmatched: Map<number, UnmatchedAuthor>;
 }
 
-function describeTarget(target: NodeTarget, nodeId: number): string {
+/** "site:general", "realm:ixworld/hub", "archive:xf-13 (staff)" or "skip". */
+export function describeTarget(target: NodeTarget, nodeId: number): string {
   if ("skip" in target) return "skip";
   if ("archive" in target)
     return `archive:${archiveKey(nodeId)} (${target.visibility ?? "public"})`;
@@ -153,11 +155,33 @@ function archivePlace(
   return { kind: "existing", id: existing.id };
 }
 
+/**
+ * I1: a staff-like title (`STAFF_LIKE`) landing in a public category. Placed by its title or the default, it blocks
+ * the apply (the export bypasses permissions, so a private board would turn public); placed by an explicit node map
+ * entry, it is the owner's decision and only warns.
+ */
+function checkStaffLike(resolved: ResolvedNode, db: ImportDbState, report: ImportReport): void {
+  const { node, target, source } = resolved;
+  if (!STAFF_LIKE.test(node.title)) return;
+  if (categoryVisibility(target, db.siteCategories) !== "public") return;
+  const where = describeTarget(target, node.node_id);
+  if (source === "map") {
+    report.warnings.push(
+      `Node ${node.node_id} "${node.title}" looks private but the node map puts it in a public category (${where}); map it to a staff archive if it was private.`
+    );
+  } else {
+    report.blocking.push(
+      `Node ${node.node_id} "${node.title}" looks private but its proposed target is public (${where}, ${source}): give it a node map entry (a staff archive if it was private).`
+    );
+  }
+}
+
 /** Each node's category (null: skipped), creating one archive category per archived node not already present. */
 function placeNodes(resolved: ResolvedNode[], db: ImportDbState, report: ImportReport) {
   const places = new Map<number, CategoryRef | null>();
   const categories: ArchiveCategory[] = [];
-  for (const { node, target } of resolved) {
+  for (const entry of resolved) {
+    const { node, target } = entry;
     if ("skip" in target) places.set(node.node_id, null);
     else if ("archive" in target) {
       const visibility = target.visibility ?? "public";
@@ -165,11 +189,7 @@ function placeNodes(resolved: ResolvedNode[], db: ImportDbState, report: ImportR
       if (place.kind === "archive") categories.push(archiveCategory(node, visibility));
       places.set(node.node_id, place);
     } else places.set(node.node_id, existingCategory(node, db, target));
-    if (STAFF_LIKE.test(node.title) && categoryVisibility(target, db.siteCategories) === "public") {
-      report.warnings.push(
-        `Node ${node.node_id} "${node.title}" looks private but lands in a public category (${describeTarget(target, node.node_id)}); map it to a staff archive or "staff" if it was private.`
-      );
-    }
+    checkStaffLike(entry, db, report);
   }
   return { places, categories };
 }
@@ -206,6 +226,8 @@ function planPost(post: XfPost, isFirst: boolean, ctx: PlanContext): PlannedPost
       stored: ctx.attachments.get(attachment.attachment_id)?.stored ?? "absent",
     })),
   });
+  const edited = editedAt(post);
+  if (edited) ctx.report.notCarried.editedPosts += 1;
   return {
     xenforoPostId: post.post_id,
     ...author,
@@ -214,7 +236,7 @@ function planPost(post: XfPost, isFirst: boolean, ctx: PlanContext): PlannedPost
     // Phase 3: a first post is never hidden alone; its thread is hidden instead.
     hidden: post.message_state === "moderated" && !isFirst,
     createdAt: postCreatedAt(post),
-    editedAt: editedAt(post),
+    editedAt: edited,
   };
 }
 
@@ -243,8 +265,17 @@ function planThread(
   ctx: PlanContext
 ): PlannedThread | null {
   const { report } = ctx;
-  countState(report.threads, thread.discussion_state);
-  for (const post of posts) countState(report.posts, post.message_state);
+  if (!countState(report.threads, thread.discussion_state)) {
+    report.unknownStates.threads.push({
+      id: thread.thread_id,
+      state: String(thread.discussion_state),
+    });
+  }
+  for (const post of posts) {
+    if (!countState(report.posts, post.message_state)) {
+      report.unknownStates.posts.push({ id: post.post_id, state: String(post.message_state) });
+    }
+  }
   const imported = importedThread(thread, posts);
   if ("skip" in imported) {
     if (imported.skip !== "deleted") report.threads[imported.skip] += 1;
@@ -358,6 +389,7 @@ export function planImport(
     if (planned) threads.push(planned);
   }
   countNotCarried(report, snapshot.threads);
+  report.blocking.push(...unknownStateLines(report.unknownStates));
   finishAuthors(report, ctx.unmatched);
   countTotals(report, categories, threads);
   report.nodes = nodeRows(resolved, threads, snapshot);

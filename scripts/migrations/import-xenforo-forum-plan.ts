@@ -7,6 +7,7 @@ import {
   isValidAttachmentId,
 } from "~/lib/thinkpages-forum/import/attachments";
 import type { ResolvedNode } from "~/lib/thinkpages-forum/import/node-map";
+import { describeTarget } from "~/lib/thinkpages-forum/import/plan";
 import type { ImportReport } from "~/lib/thinkpages-forum/import/report";
 import type { AttachmentEntry, SnapshotGaps } from "~/lib/thinkpages-forum/import/snapshot";
 import type {
@@ -38,26 +39,41 @@ export function snapshotGapLines(gaps: SnapshotGaps): string[] {
   ];
 }
 
-/** M6: Forum nodes with neither a map entry nor a heuristic, which fall back to a public archive. */
-export const defaultTargetNodes = (resolved: readonly ResolvedNode[]) =>
-  resolved.filter((r) => r.node.node_type_id === "Forum" && r.source === "default");
+/**
+ * I1: Forum nodes placed without an explicit node map entry, by a title heuristic or the default public archive.
+ * The export bypasses permissions, so every imported forum needs the owner's decision before --apply.
+ */
+export const unmappedForumNodes = (resolved: readonly ResolvedNode[]) =>
+  resolved.filter((r) => r.node.node_type_id === "Forum" && r.source !== "map");
+
+/** The dry run's list of unmapped Forum nodes with their proposed targets (printed whether or not accepted). */
+export function unmappedLines(unmapped: readonly ResolvedNode[]): string[] {
+  if (!unmapped.length) return ["Every Forum node has a node map entry."];
+  return [
+    `Forum nodes without a node map entry (${unmapped.length}), with their proposed targets:`,
+    ...unmapped.map(
+      ({ node, target, source }) =>
+        `  ${node.node_id} "${node.title}" -> ${describeTarget(target, node.node_id)} [${source}]`
+    ),
+  ];
+}
 
 /**
- * Why --apply must refuse: the plan's blocking problems, and default-placed Forum nodes unless accepted (the
- * export bypasses permissions, so a private board with an ordinary title would land in a public archive).
+ * Why --apply must refuse: the plan's blocking problems, and Forum nodes without a node map entry unless accepted
+ * (`--accept-unmapped`, alias `--accept-defaults`). Blocking problems are never accepted.
  */
 export function applyRefusals(input: {
   blocking: readonly string[];
-  defaults: readonly ResolvedNode[];
-  acceptDefaults: boolean;
+  unmapped: readonly ResolvedNode[];
+  acceptUnmapped: boolean;
 }): string[] {
-  const defaults = input.acceptDefaults
+  const unmapped = input.acceptUnmapped
     ? []
-    : input.defaults.map(
-        ({ node }) =>
-          `Node ${node.node_id} "${node.title}" has no node map entry and falls back to a public archive: map it, or pass --accept-defaults.`
+    : input.unmapped.map(
+        ({ node, target, source }) =>
+          `Node ${node.node_id} "${node.title}" has no node map entry (proposed: ${describeTarget(target, node.node_id)}, ${source}): map it, or pass --accept-unmapped.`
       );
-  return [...input.blocking, ...defaults];
+  return [...input.blocking, ...unmapped];
 }
 
 /** Where the run reads and writes: the effective upload directory and the database without credentials. */

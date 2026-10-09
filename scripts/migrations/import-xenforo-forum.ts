@@ -1,7 +1,7 @@
 /**
  * ThinkPages forum phase 4: import a XenForo export snapshot (scripts/migrations/export-xenforo-forum.ts) into the
  * native forum. Dry run by default; --apply writes; --rollback --yes undoes it.
- *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-defaults]
+ *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped]
  *     [--production] [--report FILE]
  *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback --yes [--production]
  * --production loads `.env.production.local` first (scripts/lib/load-runner-env.ts); the upload directory and the
@@ -9,7 +9,8 @@
  * Refuses the production database ("ixstats") unless --production is passed, and runs one at a time (a Postgres
  * advisory lock). Preflight: a complete snapshot, a valid node map, every mapped target present (phase 1 seeds,
  * realm slugs), a writable UPLOAD_DIR with twice the attachment bytes free (checked after the report prints).
- * --apply also refuses on BLOCKING lines, and on a Forum node left on a default public archive (--accept-defaults).
+ * --apply also refuses on BLOCKING lines (unknown states, staff-like titles placed public by title or default), and
+ * on any Forum node without an explicit node map entry (--accept-unmapped, alias --accept-defaults, accepts those).
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
  * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`).
  */
@@ -62,12 +63,13 @@ import {
   applyTotalLines,
   attachmentPlanLines,
   attachmentResultLines,
-  defaultTargetNodes,
   diskRefusal,
   reportFile,
   rollbackLines,
   snapshotGapLines,
   targetLines,
+  unmappedForumNodes,
+  unmappedLines,
 } from "./import-xenforo-forum-plan";
 
 const print = (lines: readonly string[]) => lines.forEach((line) => console.log(line));
@@ -156,10 +158,12 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   const disk = await uploadsRefusal(copyPlan.bytes);
   if (disk) return refuse([disk]);
   const resolved = resolveNodeTargets(snapshot.nodes, nodeMap);
+  const unmapped = unmappedForumNodes(resolved);
+  print(unmappedLines(unmapped));
   const refusals = applyRefusals({
     blocking: plan.report.blocking,
-    defaults: defaultTargetNodes(resolved),
-    acceptDefaults: args.acceptDefaults,
+    unmapped,
+    acceptUnmapped: args.acceptUnmapped,
   });
   if (!args.apply) {
     print(refusals.map((r) => `--apply would refuse: ${r}`));

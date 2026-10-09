@@ -24,6 +24,11 @@ export interface NodeReportRow {
   posts: number;
 }
 
+export interface StateRow {
+  id: number;
+  state: string;
+}
+
 export interface UnmatchedAuthor {
   xenforoUserId: number;
   name: string;
@@ -55,6 +60,8 @@ export interface ImportReport {
     visible: number;
     moderated: number;
     deleted: number;
+    /** A `discussion_state` none of the three: listed in `unknownStates`, and the apply refuses. */
+    unknown: number;
     skippedByNode: number;
     firstPostDeleted: number;
     noPosts: number;
@@ -64,7 +71,9 @@ export interface ImportReport {
     gone: number;
   };
   /** XenForo states of the posts of those threads. */
-  posts: { visible: number; moderated: number; deleted: number };
+  posts: { visible: number; moderated: number; deleted: number; unknown: number };
+  /** M22: threads and posts whose state is not visible, moderated or deleted (never imported as visible). */
+  unknownStates: { threads: StateRow[]; posts: StateRow[] };
   /** Threads whose every post is already imported, and posts already imported. */
   alreadyPresent: { threads: number; posts: number };
   /** Planned posts per feature. */
@@ -74,8 +83,8 @@ export interface ImportReport {
   attachments: Record<AttachmentOutcomeKey, { count: number; bytes: number }>;
   /** The same attachments by their snapshot state (`absent`: no attachments.json entry). */
   attachmentsStored: Partial<Record<StoredKey, { count: number; bytes: number }>>;
-  /** Q16: XenForo data with no native home. */
-  notCarried: { prefixes: number; polls: number; views: number };
+  /** Q16: XenForo data with no native home (`editedPosts`: planned posts whose edit history is lost). */
+  notCarried: { prefixes: number; polls: number; views: number; editedPosts: number };
   totals: {
     categories: number;
     threadsNew: number;
@@ -93,6 +102,14 @@ export interface ImportReport {
 }
 
 const TOP_UNMATCHED = 20;
+const SHOW_IDS = 20;
+
+/** XenForo data the export never fetches, so nothing of it is carried over (printed with the counts). */
+export const NOT_EXPORTED = [
+  "reactions and likes",
+  "edit history (only the last edit date is kept)",
+  "thread and forum watches",
+] as const;
 
 const tally = () => ({ count: 0, bytes: 0 });
 
@@ -111,19 +128,21 @@ export function emptyReport(duplicates: ImportReport["authors"]["duplicates"]): 
       visible: 0,
       moderated: 0,
       deleted: 0,
+      unknown: 0,
       skippedByNode: 0,
       firstPostDeleted: 0,
       noPosts: 0,
       redirect: 0,
       gone: 0,
     },
-    posts: { visible: 0, moderated: 0, deleted: 0 },
+    posts: { visible: 0, moderated: 0, deleted: 0, unknown: 0 },
+    unknownStates: { threads: [], posts: [] },
     alreadyPresent: { threads: 0, posts: 0 },
     features: Object.fromEntries(POST_FEATURES.map((f) => [f, 0])) as Record<PostFeature, number>,
     tokens: { kept: 0, stripped: 0, overLimit: 0, posts: 0 },
     attachments: { image: tally(), link: tally(), omitted: tally(), none: tally() },
     attachmentsStored: {},
-    notCarried: { prefixes: 0, polls: 0, views: 0 },
+    notCarried: { prefixes: 0, polls: 0, views: 0, editedPosts: 0 },
     totals: {
       categories: 0,
       threadsNew: 0,
@@ -139,12 +158,41 @@ export function emptyReport(duplicates: ImportReport["authors"]["duplicates"]): 
   };
 }
 
-type StateCounts = { visible: number; moderated: number; deleted: number };
+type StateCounts = { visible: number; moderated: number; deleted: number; unknown: number };
 
-/** XenForo's `discussion_state` / `message_state`: anything not moderated or deleted reads as visible. */
-export function countState(counts: StateCounts, state: string): void {
-  if (state === "moderated" || state === "deleted") counts[state] += 1;
-  else counts.visible += 1;
+/**
+ * XenForo's `discussion_state` / `message_state`, counted; false for a state that is none of visible, moderated or
+ * deleted (M22: the caller lists it and the apply refuses, instead of importing it as visible).
+ */
+export function countState(counts: StateCounts, state: string): boolean {
+  if (state === "visible" || state === "moderated" || state === "deleted") {
+    counts[state] += 1;
+    return true;
+  }
+  counts.unknown += 1;
+  return false;
+}
+
+const idList = (rows: readonly StateRow[]) =>
+  rows
+    .slice(0, SHOW_IDS)
+    .map((r) => `${r.id} ("${r.state}")`)
+    .join(", ") + (rows.length > SHOW_IDS ? ` (+${rows.length - SHOW_IDS} more)` : "");
+
+/** M22: the blocking lines for unknown states, one per kind. */
+export function unknownStateLines(unknown: ImportReport["unknownStates"]): string[] {
+  return [
+    ...(unknown.threads.length
+      ? [
+          `${unknown.threads.length} threads have an unknown discussion_state: ${idList(unknown.threads)}. Map the state in the importer before applying.`,
+        ]
+      : []),
+    ...(unknown.posts.length
+      ? [
+          `${unknown.posts.length} posts have an unknown message_state: ${idList(unknown.posts)}. Map the state in the importer before applying.`,
+        ]
+      : []),
+  ];
 }
 
 export function countNotCarried(report: ImportReport, threads: readonly XfThread[]): void {
@@ -247,7 +295,7 @@ export function summarizeImport(report: ImportReport): string[] {
     `Action tokens: ${tokens.kept} kept in ${tokens.posts} posts, ${tokens.stripped} stripped, ${tokens.overLimit} over the limit`,
     `Attachments: ${tallies(report.attachments)}`,
     `Attachments by snapshot state: ${tallies(report.attachmentsStored)}`,
-    `Not carried over: ${nonZero(report.notCarried)}`,
+    `Not carried over: ${nonZero(report.notCarried)}; never exported: ${NOT_EXPORTED.join(", ")}`,
     ...report.warnings.map((w) => `WARNING: ${w}`),
     ...report.blocking.map((b) => `BLOCKING: ${b}`),
   ];
