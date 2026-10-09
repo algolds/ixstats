@@ -572,7 +572,7 @@ describe("bans", () => {
     expect(screen.getByText("Caphiria forum")).toBeInTheDocument();
     expect(screen.getByText("Permanent")).toBeInTheDocument();
     expect(screen.getByText("Automatic")).toBeInTheDocument();
-    expect(screen.getByText("Issued by Kir")).toBeInTheDocument();
+    expect(screen.getByText("Triggered by Kir")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Lift the ban on Rhea" }));
     const dialog = screen.getByRole("dialog", { name: "Lift this ban" });
     expect(lift).not.toHaveBeenCalled();
@@ -580,6 +580,23 @@ describe("bans", () => {
     await waitFor(() => expect(lift).toHaveBeenCalledWith({ banId: "b1" }));
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Ban lifted"));
     await waitFor(() => expect(invalidated).toEqual(["all"]));
+  });
+
+  it("names a manual ban's issuer, and a re-tier as the system's (M2, M5)", () => {
+    set("context", { data: REALM_MOD });
+    set("bans", {
+      data: {
+        rows: [
+          { ...ban, auto: false },
+          { ...ban, id: "b2", issuedBy: "system" },
+        ],
+        total: 2,
+        authors,
+      },
+    });
+    renderConsole({ tab: "bans" });
+    expect(screen.getByText("Issued by Kir")).toBeInTheDocument();
+    expect(screen.getByText("Re-tiered when a site ban ended")).toBeInTheDocument();
   });
 
   it("shows a ban's appeal status, and nothing when it was not appealed", () => {
