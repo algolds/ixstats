@@ -7,9 +7,9 @@ import {
   ControlSlider as SlidersHorizontal,
   Bookmark,
   Copy,
-  Sparks as Sparkles,
+  ZoomIn,
   InfoCircle as Info,
-  Emoji as Smile,
+  Command,
   Eye,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -37,8 +37,7 @@ const MAIN_STEPS = [
     color: "text-indigo",
     bg: "bg-indigo/10",
     title: "2. IxWiki Database",
-    description:
-      "Switch to the IxWiki tab to search and browse local images uploaded by players directly on our wiki platform.",
+    description: "Switch to the Wiki tab to search and browse files uploaded to IxWiki or IIWiki.",
   },
   {
     icon: SlidersHorizontal,
@@ -67,7 +66,7 @@ const ADVANCED_TIPS = [
       "Use the Wikitext copy format segmented bar to instantly grab Thumbnail codes, static pixel embeds, raw file links, or absolute image URLs.",
   },
   {
-    icon: Sparkles,
+    icon: ZoomIn,
     color: "text-yellow",
     title: "Interactive lightbox",
     description:
@@ -76,12 +75,11 @@ const ADVANCED_TIPS = [
   {
     icon: Info,
     color: "text-teal",
-    title: "Artist & license tags",
-    description:
-      "Hover or check the metadata section to copy accurate creator attribution and license requirements to remain copyright compliant.",
+    title: "Artist and license tags",
+    description: "Check the details panel for each file's author and license before reusing it.",
   },
   {
-    icon: Smile,
+    icon: Command,
     color: "text-blue",
     title: "Keyboard shortcuts",
     description:

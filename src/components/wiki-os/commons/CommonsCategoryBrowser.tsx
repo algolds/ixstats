@@ -5,7 +5,9 @@ import { useState, useEffect, useMemo } from "react";
 import {
   NavArrowRight as ChevronRight,
   NavArrowDown as ChevronDown,
+  Check,
   Folder,
+  Plus,
   Search,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -266,7 +268,8 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  /** Absent when categories cannot be used as filters (the wiki sources): rows then only browse. */
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
 }
@@ -373,12 +376,13 @@ export function CommonsCategoryBrowser({
     <div className="flex h-full flex-col overflow-y-auto py-2">
       {/* Search */}
       <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-2 border px-3 py-2 transition-colors">
-        <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" />
+        <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search categories..."
+          aria-label="Search categories"
           className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
         />
       </div>
@@ -395,7 +399,7 @@ export function CommonsCategoryBrowser({
                 isActive={activeCategories.includes(cat)}
                 isExpanded={!!expanded[cat]}
                 browsingCategory={browsingCategory}
-                onToggle={() => onToggleCategory(cat)}
+                onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
                 onBrowse={(catToBrowse) => {
                   onBrowseCategory(catToBrowse);
                   if (!expanded[cat]) {
@@ -443,7 +447,7 @@ interface CategoryGroupSectionProps {
   activeCategories: string[];
   expanded: Record<string, boolean>;
   browsingCategory: string | null;
-  onToggleCategory: (category: string) => void;
+  onToggleCategory?: (category: string) => void;
   onBrowseCategory: (category: string) => void;
   setExpanded: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -491,7 +495,7 @@ function CategoryGroupSection({
             isActive={activeCategories.includes(cat)}
             isExpanded={!!expanded[cat]}
             browsingCategory={browsingCategory}
-            onToggle={() => onToggleCategory(cat)}
+            onToggle={onToggleCategory ? () => onToggleCategory(cat) : undefined}
             onBrowse={(catToBrowse) => {
               onBrowseCategory(catToBrowse);
               if (!expanded[cat]) {
@@ -522,7 +526,7 @@ function CategoryRow({
   isActive: boolean;
   isExpanded: boolean;
   browsingCategory: string | null;
-  onToggle: () => void;
+  onToggle?: () => void;
   onBrowse: (categoryName: string) => void;
   onExpand: () => void;
   wiki?: "commons" | "ixwiki" | "iiwiki";
@@ -577,20 +581,26 @@ function CategoryRow({
             {totalCount.toLocaleString()}
           </span>
         )}
-        <Button
-          variant="outline"
-          size="icon-sm"
-          aria-pressed={isActive}
-          onClick={onToggle}
-          className={cn(
-            "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
-            isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
-          )}
-          title={isActive ? "Remove filter" : "Add as filter"}
-          aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
-        >
-          {isActive ? "✓" : "+"}
-        </Button>
+        {onToggle && (
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-pressed={isActive}
+            onClick={onToggle}
+            className={cn(
+              "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
+              isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
+            )}
+            title={isActive ? "Remove filter" : "Add as filter"}
+            aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
+          >
+            {isActive ? (
+              <Check className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <Plus className="h-3 w-3" aria-hidden="true" />
+            )}
+          </Button>
+        )}
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
