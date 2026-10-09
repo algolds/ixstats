@@ -106,7 +106,7 @@ The registry provides comprehensive coverage across eight platform domains:
 - **Vault**: Trading Cards (`/vault/cards`), Pack Openings (`/vault/packs`), Marketplace (`/vault/marketplace`), Lore Gallery (`/vault/lore-gallery`), and NS Decks (`/vault/ns-deck`).
 - **Geography**: Interactive Map (`/maps`), Country Directory (`/countries`), Leaderboards (`/leaderboards`), and Nation Builder (`/builder`).
 - **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
-- **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), ThinkPages feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum, the XenForo bridge (`/forum`), New Thread (`/forum/new-thread`), and Achievements (`/achievements`).
+- **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum, the XenForo bridge (`/forum`), New Thread (`/forum/new-thread`), and Achievements (`/achievements`).
 - **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
 - **Labs**: Onoma Linguistics (`/labs/onoma`), Vexel Heraldry (`/labs/vexel`), and Map Pipeline (`/labs/map-pipeline`).
 - **System**: Theme toggles, audio controls, compact mode, mark-all-read, notifications, settings, changelog, and admin.

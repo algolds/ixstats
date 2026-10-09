@@ -14,8 +14,9 @@ describe("Halo registry: ThinkPages destinations", () => {
     });
   });
 
-  it("finds the feed on the dashboard", () => {
-    expect(command("ThinkPages feed")).toMatchObject({ path: "/dashboard", category: "Community" });
+  it("finds the feed on the dashboard under the sidebar's name for it", () => {
+    expect(command("Home")).toMatchObject({ path: "/dashboard", category: "Community" });
+    expect(command("ThinkPages feed")).toBeUndefined();
   });
 
   it("lists Accounts and Saved posts at their dashboard homes", () => {

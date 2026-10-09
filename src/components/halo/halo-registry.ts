@@ -278,7 +278,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["forum", "boards", "threads", "discussions", "thinkpages"],
   },
   {
-    name: "ThinkPages feed",
+    name: "Home",
     path: "/dashboard",
     icon: RssFeed,
     category: "Community",
