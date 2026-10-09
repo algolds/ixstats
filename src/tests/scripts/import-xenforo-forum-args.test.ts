@@ -397,6 +397,7 @@ describe("attachment lines", () => {
       { attachmentId: 3, reason: "invalid-input" as const },
       { attachmentId: 4, reason: "invalid-input" as const },
     ],
+    copyFailed: [{ attachmentId: 7, error: "ENOSPC" }],
   };
 
   it("prints the copy result with assets registered, pending and failed, and their ids (M14)", () => {
@@ -406,17 +407,38 @@ describe("attachment lines", () => {
       "  missing attachment ids: 5",
       "  pending attachment ids: 9",
       "  FAILED attachment ids (not retried; exit code 2): 3, 4",
+      "  FAILED copies (exit code 2; a rerun retries): 7 (ENOSPC)",
     ]);
     expect(
-      attachmentResultLines({ ...result, missing: [], assetsPending: [], assetsFailed: [] })
+      attachmentResultLines({
+        ...result,
+        missing: [],
+        assetsPending: [],
+        assetsFailed: [],
+        copyFailed: [],
+      })
     ).toHaveLength(2);
   });
 
   it("exits 1 on failed threads, else 2 on non-retryable registration failures, else 0 (M14)", () => {
     const thread = [{ xenforoThreadId: 1, error: "x" }];
-    expect(applyExitCode({ failedThreads: [] }, { assetsFailed: [] })).toBe(0);
-    expect(applyExitCode({ failedThreads: [] }, { assetsFailed: result.assetsFailed })).toBe(2);
-    expect(applyExitCode({ failedThreads: thread }, { assetsFailed: result.assetsFailed })).toBe(1);
-    expect(applyExitCode({ failedThreads: thread }, { assetsFailed: [] })).toBe(1);
+    expect(applyExitCode({ failedThreads: [] }, { assetsFailed: [], copyFailed: [] })).toBe(0);
+    expect(
+      applyExitCode({ failedThreads: [] }, { assetsFailed: result.assetsFailed, copyFailed: [] })
+    ).toBe(2);
+    expect(
+      applyExitCode(
+        { failedThreads: thread },
+        { assetsFailed: result.assetsFailed, copyFailed: [] }
+      )
+    ).toBe(1);
+    expect(applyExitCode({ failedThreads: thread }, { assetsFailed: [], copyFailed: [] })).toBe(1);
+  });
+
+  it("exits 2 when an attachment copy failed (I1), and 1 still wins", () => {
+    const thread = [{ xenforoThreadId: 1, error: "x" }];
+    const copy = { assetsFailed: [], copyFailed: result.copyFailed };
+    expect(applyExitCode({ failedThreads: [] }, copy)).toBe(2);
+    expect(applyExitCode({ failedThreads: thread }, copy)).toBe(1);
   });
 });
