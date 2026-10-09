@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): officer powers, the Manage actions'
- * permission checks, embassies, the realm poll, board restrictions and leaving a realm (handing a realm over:
+ * permission checks, embassies, the realm poll, the retired board restrictions and leaving a realm (handing a realm over:
  * realm-ownership-transfer.test.ts).
  */
 jest.mock("~/server/db", () => ({ db: {} }));
@@ -336,70 +336,20 @@ describe("realm poll", () => {
   });
 });
 
-describe("board restrictions", () => {
-  it("mutes a nation of the realm for a number of days", async () => {
-    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
-    db.country.findFirst.mockResolvedValue({ id: "c9", owner: { clerkUserId: PLAYER } });
-    await callerAs(OFFICER, db).region.restrictBoardNation({
-      slug: "eurth",
-      countryId: "c9",
-      kind: "mute",
-      days: 7,
-    });
-    const call = db.realmBoardBan.upsert.mock.calls[0][0];
-    expect(call.where).toEqual({ realmId_countryId: { realmId: "eurth", countryId: "c9" } });
-    expect(call.create.kind).toBe("mute");
-    expect(call.create.until.getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600 * 1000);
+describe("realm board mutes and bans are retired (phase 3)", () => {
+  it("has no procedure to restrict or lift a board nation any more", () => {
+    const names = Object.keys(realmsRouter._def.procedures);
+    expect(names).toContain("region.abandonNation");
+    expect(names).not.toContain("region.restrictBoardNation");
+    expect(names).not.toContain("region.liftBoardRestriction");
   });
 
-  it("takes a banned nation's owner off the board and its chat at once", async () => {
+  it("leaves boardRestrictions out of Manage and never reads the board bans", async () => {
     const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
-    db.country.findFirst.mockResolvedValue({ id: "c9", owner: { clerkUserId: PLAYER } });
-    db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
-    db.thinktankGroup.findUnique.mockResolvedValue({ conversationId: "conv1" });
-    db.thinktankMember.updateMany.mockResolvedValue({ count: 1 });
-    await callerAs(OFFICER, db).region.restrictBoardNation({
-      slug: "eurth",
-      countryId: "c9",
-      kind: "ban",
-    });
-    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
-      where: { groupId: "board1", userId: PLAYER, isActive: true },
-      data: { isActive: false },
-    });
-    expect(db.conversationParticipant.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { conversationId: "conv1", userId: PLAYER, isActive: true },
-      })
-    );
-    expect(db.thinktankGroup.update).toHaveBeenCalledWith({
-      where: { id: "board1" },
-      data: { memberCount: { decrement: 1 } },
-    });
-  });
-
-  it("can't restrict the founder's or an officer's nation", async () => {
-    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
-    db.country.findFirst.mockResolvedValue({ id: "c1", owner: { clerkUserId: FOUNDER } });
-    await expect(
-      callerAs(OFFICER, db).region.restrictBoardNation({
-        slug: "eurth",
-        countryId: "c1",
-        kind: "ban",
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    expect(db.realmBoardBan.upsert).not.toHaveBeenCalled();
-  });
-
-  it("needs the board power", async () => {
-    const db = makeDb();
-    await expect(
-      callerAs(OFFICER, db).region.restrictBoardNation({
-        slug: "eurth",
-        countryId: "c9",
-        kind: "mute",
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const manage = await callerAs(OFFICER, db).region.manage({ slug: "eurth" });
+    expect(manage.powers).toEqual(["board"]);
+    expect(manage).not.toHaveProperty("boardRestrictions");
+    expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -482,6 +432,13 @@ describe("overview and happenings", () => {
       poll: null,
     });
     expect(overview?.realm.foundedAt).toEqual(new Date("2026-01-01"));
+  });
+
+  it("gives the viewer no board restriction and never reads the board bans", async () => {
+    const db = overviewDb();
+    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(overview?.viewer).not.toHaveProperty("boardRestriction");
+    expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
   });
 
   it("re-sanitizes factbook and rules HTML stored before the stricter sanitizer", async () => {

@@ -12,7 +12,6 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import {
-  BOARD_RESTRICTIONS,
   HAPPENING_KINDS,
   isRealmImageUrl,
   MAX_REALM_TAGS,
@@ -33,12 +32,10 @@ import {
   closeRealmEmbassy,
   closeRealmPoll,
   createRealmPoll,
-  liftBoardRestriction,
   listOfficerCandidates,
   proposeRealmEmbassy,
   removeRealmOfficer,
   respondRealmEmbassy,
-  restrictBoardNation,
   updateRealmAppearance,
   updateRealmFactbook,
   updateRealmInWorldDate,
@@ -186,23 +183,6 @@ export const realmRegionRouter = createTRPCRouter({
   closePoll: rateLimitedMutationProcedure
     .input(z.object({ slug, pollId: z.string().min(1) }))
     .mutation(({ ctx, input }) => closeRealmPoll(ctx.db, ctx.user, input).catch(regionError)),
-
-  /** Mute (no board posts) or ban (off the board) a nation, for `days` or until lifted. */
-  restrictBoardNation: rateLimitedMutationProcedure
-    .input(
-      z.object({
-        slug,
-        countryId: z.string().min(1),
-        kind: z.enum(BOARD_RESTRICTIONS),
-        reason: z.string().trim().max(300).optional(),
-        days: z.number().int().min(1).max(365).optional(),
-      })
-    )
-    .mutation(({ ctx, input }) => restrictBoardNation(ctx.db, ctx.user, input).catch(regionError)),
-
-  liftBoardRestriction: rateLimitedMutationProcedure
-    .input(z.object({ slug, countryId: z.string().min(1) }))
-    .mutation(({ ctx, input }) => liftBoardRestriction(ctx.db, ctx.user, input).catch(regionError)),
 
   /** Leave a realm with one of your nations: it is released and becomes unclaimed. */
   abandonNation: rateLimitedMutationProcedure

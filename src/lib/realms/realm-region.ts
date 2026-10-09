@@ -1,6 +1,6 @@
 /**
- * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): directory tags, officer powers and board
- * restrictions. Client-safe.
+ * Realm region pages (docs/specs/2026-10-05-realm-regions-design.md): directory tags and officer powers.
+ * Client-safe.
  */
 
 /** The fixed tag list founders choose from; the directory filters by them. */
@@ -33,7 +33,7 @@ export type RealmPower = (typeof REALM_POWERS)[number];
 
 export const REALM_POWER_LABELS: Record<RealmPower, string> = {
   appearance: "Factbook, header, rules and links",
-  board: "Board moderation",
+  board: "Forum moderation",
   diplomacy: "Embassies and polls",
   claims: "Claims",
   map: "Map",
@@ -42,7 +42,7 @@ export const REALM_POWER_LABELS: Record<RealmPower, string> = {
 /** What each power lets an officer do, shown beside its checkbox in the Officers section. */
 export const REALM_POWER_DESCRIPTIONS: Record<RealmPower, string> = {
   appearance: "Edit the factbook, banner, description and tags",
-  board: "Mute or ban nations on the realm's board",
+  board: "Moderate the realm's forum section: hide, lock, warn and ban",
   diplomacy: "Propose and answer embassies, and run the realm poll",
   claims: "Review players' claims on the realm's nations",
   map: "Edit the realm's map, borders and labels, and import maps",
@@ -50,11 +50,6 @@ export const REALM_POWER_DESCRIPTIONS: Record<RealmPower, string> = {
 
 /** The officer title a previous founder keeps when the realm is handed over and they stay on as an officer. */
 export const FORMER_FOUNDER_TITLE = "Former founder";
-
-/** Board restrictions: a mute stops board posts; a ban takes the nation off the board (posts and chat). */
-export const BOARD_RESTRICTIONS = ["mute", "ban"] as const;
-
-export type BoardRestriction = (typeof BOARD_RESTRICTIONS)[number];
 
 /** A board post flagged for embassies carries this pseudo-hashtag, naming the realm it was posted in. */
 export const embassyPostTag = (realmId: string) => `embassy:${realmId}`;

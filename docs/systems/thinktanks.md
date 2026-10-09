@@ -140,6 +140,12 @@ Every realm has a board, the NationStates regional message board, built on this 
 - **Not group-managed.** A board cannot be deleted, invited to, or have its `type` changed, even by its
   moderators (`BAD_REQUEST`). Boards are left out of the `/thinktanks` Discover list (`getThinktanks`
   `type: "all"`); the directory at `/realms` lists them.
+- **Mutes and bans moved to the forum (phase 3).** The realm's Manage tab no longer mutes or bans nations on
+  the board (`restrictBoardNation` and `liftBoardRestriction` are gone). Live board bans were migrated to
+  realm-scope forum bans, and the `board` officer power now means **forum moderation**: hide, lock, warn and
+  ban in the realm's forum section, from the moderation console at `/thinkpages/mod`. `RealmBoardBan` is
+  frozen, not deleted: rows already in it keep binding through `getRealmBoardAccess` and
+  `realmBoardChatRestriction` as described above, but nothing writes to it, until the board itself is deleted.
 - **Moderation.** `removeGroupPost` (group owners and admins; on a board, the realm's moderators)
   removes the group tag from a post and sets `visibility: "removed"`, so it leaves the board, the realm
   feed and the main feed. It works for every ThinkTank.
