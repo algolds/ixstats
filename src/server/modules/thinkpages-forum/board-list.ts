@@ -29,6 +29,18 @@ function nameOf(
   return latest.importedAuthorName ? { name: latest.importedAuthorName, handle: null } : null;
 }
 
+/** A persona post never carries the player's user id on this public read; the resolved `author` is the persona. */
+function publicLatest(
+  latest: LatestPost,
+  authors: Awaited<ReturnType<typeof authorsOf>>
+): BoardLatest {
+  return {
+    ...latest,
+    authorUserId: latest.authorPersonaId ? null : latest.authorUserId,
+    author: nameOf(latest, authors),
+  };
+}
+
 export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
   const all = await db.forumCategory.findMany({
     where: { scope: "site", realmId: null },
@@ -54,7 +66,7 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       id: category.id,
       style: category.style,
       postCount: postCounts.get(category.id) ?? 0,
-      latest: last ? { ...last, author: nameOf(last, authors) } : null,
+      latest: last ? publicLatest(last, authors) : null,
     };
   });
 }

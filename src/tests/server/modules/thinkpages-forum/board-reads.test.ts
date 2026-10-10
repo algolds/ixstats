@@ -240,7 +240,12 @@ describe("trendingThreads", () => {
   });
   function trendingDb(threads: object[]) {
     return {
-      realm: { findMany: jest.fn(async () => [{ id: "r1", status: "active" }]) },
+      realm: {
+        findMany: jest.fn(async () => [
+          { id: "r1", status: "active" },
+          { id: "r_draft", status: "draft" },
+        ]),
+      },
       forumPost: {
         groupBy: jest.fn(async (_args: object) => [
           { threadId: "t_staff", _count: { threadId: 9 } },
@@ -278,6 +283,17 @@ describe("trendingThreads", () => {
     expect(out.map((t) => t.threadId)).toEqual(["t_staff", "t_gen"]);
   });
 
+  it("leaves out threads of categories in unpublished realms", async () => {
+    const db = trendingDb(threads);
+    await trendingThreads(db as never, member, 5, NOW);
+    const category = (argsOf(db.forumPost.groupBy).where.thread as { category: object }).category;
+    expect(category).toEqual({
+      OR: [{ scope: "site" }, { scope: "realm", realmId: { in: expect.arrayContaining(["r1"]) } }],
+    });
+    const realmIds = (category as { OR: Array<{ realmId?: { in: string[] } }> }).OR[1]!.realmId!.in;
+    expect(realmIds).not.toContain("r_draft");
+  });
+
   it("excludes archived and hidden threads in the grouped query", async () => {
     const db = trendingDb(threads);
     await trendingThreads(db as never, member, 5, NOW);
@@ -312,6 +328,15 @@ describe("boardTopPosters", () => {
       createdAt: { gte: new Date("2026-10-01T00:00:00Z") },
       hidden: false,
       thread: { categoryId: general.id, hidden: false },
+    });
+  });
+
+  it("does not count persona posts for the player behind the persona", async () => {
+    const db = postsDb();
+    await boardTopPosters(db as never, null, general, 5, NOW);
+    expect(argsOf(db.forumPost.groupBy).where).toMatchObject({
+      authorUserId: { not: null },
+      authorPersonaId: null,
     });
   });
 
@@ -401,5 +426,45 @@ describe("listBoards", () => {
     });
     expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
     expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
+  });
+
+  it("hides the player's user id behind a persona's latest post and names the persona", async () => {
+    const db = {
+      forumCategory: { findMany: jest.fn(async (_args: object) => [general]) },
+      forumThread: {
+        groupBy: jest.fn(async () => []),
+        findMany: jest.fn(async (_args: object) => [
+          { id: "t_g", title: "General chat", categoryId: general.id, lastPostAt: T2 },
+        ]),
+      },
+      forumPost: {
+        findMany: jest.fn(async (_args: object) => [
+          {
+            threadId: "t_g",
+            authorUserId: "u_x",
+            authorPersonaId: "pa_1",
+            importedAuthorName: null,
+            createdAt: T2,
+          },
+        ]),
+      },
+      user: {
+        findMany: jest.fn(async (_args: object) => [
+          { id: "u_x", handle: "heku", wikiUsername: null, country: null },
+        ]),
+      },
+      thinkpagesAccount: {
+        findMany: jest.fn(async (_args: object) => [
+          { id: "pa_1", displayName: "Caphiria News", username: "caphnews" },
+        ]),
+      },
+    };
+    const [row] = await listBoards(db as never, null);
+    expect(row!.latest).toMatchObject({
+      authorUserId: null,
+      authorPersonaId: "pa_1",
+      author: { name: "Caphiria News", handle: "caphnews" },
+    });
+    expect(JSON.stringify(row)).not.toContain("u_x");
   });
 });

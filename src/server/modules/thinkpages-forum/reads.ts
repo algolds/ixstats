@@ -132,14 +132,6 @@ export async function summarizeCategories(
   }));
 }
 
-export async function listSiteCategories(
-  db: Pick<ReadsDb, "forumCategory" | "forumThread">,
-  viewer: ForumViewer
-) {
-  const all = await db.forumCategory.findMany({ where: SITE_SCOPE, orderBy: { order: "asc" } });
-  return summarizeCategories(db, viewer, all);
-}
-
 export async function getCategoryThreads(
   db: Pick<ReadsDb, "forumCategory" | "forumThread" | "realm">,
   viewer: ForumViewer,

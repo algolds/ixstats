@@ -7,12 +7,12 @@ import {
   ForumError,
   getCategoryThreads,
   getThreadPosts,
-  listSiteCategories,
   loadCategory,
   POSTS_PER_PAGE,
   resolvePostLocation,
   THREADS_PER_PAGE,
 } from "~/server/modules/thinkpages-forum";
+import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
 
 const admin = { id: "u_a", clerkUserId: "admin", countryId: null, role: { name: "admin", level: 10 } };
 const user = { id: "u_p", clerkUserId: "plain", countryId: "c1", role: { name: "user", level: 100 } };
@@ -135,25 +135,22 @@ describe("access rules", () => {
   });
 });
 
-describe("listSiteCategories", () => {
+describe("summarizeCategories (the sitewide boards)", () => {
   it("lists all 7 for an admin, in order, with thread counts and last activity", async () => {
     const db = readDb();
-    const list = await listSiteCategories(db as never, admin);
+    const list = await summarizeCategories(db as never, admin, categories as never);
     expect(list.map((c) => c.key)).toEqual(categories.map((c) => c.key));
     expect(list).toHaveLength(7);
     expect(list.find((c) => c.key === "general")).toMatchObject({ threadCount: 4, lastPostAt: new Date("2026-10-01") });
     expect(list.find((c) => c.key === "rules")).toMatchObject({ threadCount: 0, lastPostAt: null });
-    expect(db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { scope: "site", realmId: null }, orderBy: { order: "asc" } })
-    );
   });
 
   it("omits staff for a plain user, and staff and reports for anonymous (M8)", async () => {
-    const member = (await listSiteCategories(readDb() as never, user)).map((c) => c.key);
+    const member = (await summarizeCategories(readDb() as never, user, categories as never)).map((c) => c.key);
     expect(member).not.toContain("staff");
     expect(member).toContain("reports");
     expect(member).toHaveLength(6);
-    const anonymous = (await listSiteCategories(readDb() as never, null)).map((c) => c.key);
+    const anonymous = (await summarizeCategories(readDb() as never, null, categories as never)).map((c) => c.key);
     expect(anonymous).not.toContain("staff");
     expect(anonymous).not.toContain("reports");
     expect(anonymous).toHaveLength(5);
@@ -161,7 +158,7 @@ describe("listSiteCategories", () => {
 
   it("counts only the member's own threads in Reports, and all of them for an admin (M8)", async () => {
     const db = readDb();
-    await listSiteCategories(db as never, user);
+    await summarizeCategories(db as never, user, categories as never);
     const where = db.forumThread.groupBy.mock.calls[0][0].where;
     const reportsId = categories.find((c) => c.key === "reports")!.id;
     expect(where.OR).toEqual([
@@ -169,7 +166,7 @@ describe("listSiteCategories", () => {
       { categoryId: { in: [reportsId] }, authorUserId: "u_p" },
     ]);
     const adminDb = readDb();
-    await listSiteCategories(adminDb as never, admin);
+    await summarizeCategories(adminDb as never, admin, categories as never);
     expect(adminDb.forumThread.groupBy.mock.calls[0][0].where.OR).toEqual([
       { categoryId: { in: categories.map((c) => c.id) } },
     ]);
@@ -177,11 +174,11 @@ describe("listSiteCategories", () => {
 
   it("counts only visible threads for non-admins, in one grouped query", async () => {
     const db = readDb();
-    await listSiteCategories(db as never, user);
+    await summarizeCategories(db as never, user, categories as never);
     expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
     expect(db.forumThread.groupBy.mock.calls[0][0]).toMatchObject({ where: { hidden: false } });
     const adminDb = readDb();
-    await listSiteCategories(adminDb as never, admin);
+    await summarizeCategories(adminDb as never, admin, categories as never);
     expect(adminDb.forumThread.groupBy.mock.calls[0][0].where).not.toHaveProperty("hidden");
   });
 });

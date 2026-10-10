@@ -216,7 +216,10 @@ export async function trendingThreads(
   return trending.slice(0, limit);
 }
 
-/** The authors with the most posts in this board since the start of the (UTC) calendar month. */
+/**
+ * The members with the most posts in this board since the start of the (UTC) calendar month. Persona posts are not
+ * counted: a persona never names the player behind it, and this list is public.
+ */
 export async function boardTopPosters(
   db: Pick<PrismaClient, "forumPost">,
   viewer: ForumViewer,
@@ -229,6 +232,7 @@ export async function boardTopPosters(
     by: ["authorUserId"],
     where: {
       authorUserId: { not: null },
+      authorPersonaId: null,
       createdAt: { gte: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)) },
       ...hiddenFilter(viewer, category),
       thread: {

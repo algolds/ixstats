@@ -133,7 +133,6 @@ export {
   authorsOf,
   getCategoryThreads,
   getThreadPosts,
-  listSiteCategories,
   loadCategory,
   loadVisibleThread,
   POSTS_PER_PAGE,
