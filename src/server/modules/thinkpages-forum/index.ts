@@ -50,6 +50,13 @@ export {
   type TrendingThread,
 } from "./board-reads";
 export { ForumError, type ForumErrorCode } from "./errors";
+export {
+  resolveMentionNames,
+  withMentionLinks,
+  type MentionDb,
+  type MentionTarget,
+} from "./mention-links";
+export { mentionSuggestions, type MentionSuggestion } from "./mention-suggest";
 export { firstUnreadPost } from "./first-unread";
 export {
   markAllRead,

@@ -5,6 +5,7 @@
  * ~/server/modules/thinkpages-forum.
  */
 import { z } from "zod";
+import { MENTION_NAME_MAX, MENTION_SUGGEST_MIN } from "~/lib/thinkpages-forum/mentions";
 import {
   createTRPCRouter,
   rateLimitedMutationProcedure,
@@ -18,6 +19,7 @@ import {
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
+  mentionSuggestions,
   unwatchThread,
   watchThread,
   type AuthorsDb,
@@ -87,4 +89,17 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
   navCounts: readOnlyProcedure.query(async ({ ctx }) =>
     forumNavCounts(ctx.db, await actorOf(ctx.db, ctx.user))
   ),
+
+  /** @mention autocomplete: up to 6 handles and personas by prefix (public data; 2 to 24 characters, plus an optional @). */
+  mentionSuggestions: readOnlyProcedure
+    .input(
+      z.object({
+        q: z
+          .string()
+          .trim()
+          .min(MENTION_SUGGEST_MIN)
+          .max(MENTION_NAME_MAX + 1),
+      })
+    )
+    .query(({ ctx, input }) => mentionSuggestions(ctx.db, input.q)),
 });

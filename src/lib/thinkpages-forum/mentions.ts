@@ -8,7 +8,8 @@ export const MENTION_CLASS = "forum-mention";
 export const MENTION_MAX_PER_POST = 50;
 export const MENTION_NAME_MAX = 24;
 export const MENTION_SUGGEST_MIN = 2;
-export const MENTION_SUGGEST_MAX = 8;
+/** The editor menu's item cap; the suggestions procedure returns at most this many. */
+export const MENTION_SUGGEST_MAX = 6;
 
 export const MENTION_PATTERN = /(?<![A-Za-z0-9_@])@([A-Za-z0-9_]{3,24})(?![A-Za-z0-9_])/g;
 

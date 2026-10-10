@@ -255,3 +255,34 @@ describe("thinkpagesForum watch, lists and counts", () => {
     });
   });
 });
+
+describe("thinkpagesForum mentionSuggestions", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "info").mockImplementation(() => {});
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("refuses a signed-out caller and a query under two characters or over 25", async () => {
+    await expect(caller(null).mentionSuggestions({ q: "ki" })).rejects.toMatchObject({
+      cause: { code: "UNAUTHORIZED" },
+    });
+    await expect(caller(member, {}).mentionSuggestions({ q: "k" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    await expect(
+      caller(member, {}).mentionSuggestions({ q: "x".repeat(26) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("returns the module's suggestions", async () => {
+    const db = {
+      user: { findMany: jest.fn(async () => [{ handle: "kirsten", clerkUserId: "clerk_k" }]) },
+      thinkpagesAccount: { findMany: jest.fn(async () => []) },
+    };
+    await expect(caller(member, db).mentionSuggestions({ q: "ki" })).resolves.toEqual([
+      { kind: "user", name: "kirsten", label: "kirsten", avatarUrl: null },
+    ]);
+  });
+});

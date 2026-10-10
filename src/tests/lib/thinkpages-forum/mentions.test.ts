@@ -30,6 +30,6 @@ describe("mentionNamesIn", () => {
   it("keeps the constants the spec names", () => {
     expect(MENTION_MAX_PER_POST).toBe(50);
     expect(MENTION_SUGGEST_MIN).toBe(2);
-    expect(MENTION_SUGGEST_MAX).toBe(8);
+    expect(MENTION_SUGGEST_MAX).toBe(6);
   });
 });
