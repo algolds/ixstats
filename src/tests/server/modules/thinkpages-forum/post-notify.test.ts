@@ -230,10 +230,11 @@ describe("mentions", () => {
     refusing.mockResolvedValue(["clerk_bob"]);
     await run({ html: `<p>${link("kir")} ${link("bob")} ${link("owner")}</p>` });
     expect(notices().map((n) => n.clerkUserId)).toEqual(["clerk_owner"]);
+    // The privacy check must be asked about every mentioned reader, not an empty list.
     expect(refusing).toHaveBeenCalledWith(
       expect.anything(),
       "clerk_actor",
-      expect.any(Array),
+      expect.arrayContaining(["clerk_kir", "clerk_bob", "clerk_owner"]),
       "mentions"
     );
   });

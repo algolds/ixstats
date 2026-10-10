@@ -184,7 +184,7 @@ async function deliver(
   const readable = await readableUsers(db, context.place, users);
   if (readable.length === 0) return told;
   const mentioned = readable
-    .filter((u) => intents.get(u.id) === "mention")
+    .filter((u) => intents.get(u.id)?.has("mention"))
     .map((u) => u.clerkUserId);
   const [blocking, refusing] = await Promise.all([
     recipientsBlockingSender(
