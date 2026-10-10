@@ -201,6 +201,17 @@ describe("postBoardMessage", () => {
       }
     });
 
+    it("looks back only one interval, so a user who never posted does not scan the thread", async () => {
+      const store = slow(30);
+      const findMany = jest.spyOn(store.db.forumPost, "findMany");
+      const before = Date.now();
+      await post(store, member, {});
+      const where = findMany.mock.calls.map(([args]) => args?.where).find((w) => w?.authorUserId);
+      const since = (where?.createdAt as { gte: Date }).gte.getTime();
+      expect(since).toBeGreaterThanOrEqual(before - 30_000);
+      expect(since).toBeLessThanOrEqual(Date.now() - 30_000);
+    });
+
     it("never refuses when slow mode is off", async () => {
       const store = slow(0, [boardPost("mine", 1, { createdAt: new Date() })]);
       await expect(post(store, member, {})).resolves.toBeDefined();

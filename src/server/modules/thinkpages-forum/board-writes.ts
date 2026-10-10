@@ -89,14 +89,20 @@ async function enforceSlowMode(
   access: BoardAccess
 ): Promise<void> {
   if (access.isModerator || settings.slowModeSeconds <= 0) return;
+  const windowMs = settings.slowModeSeconds * 1000;
+  // Only a message inside the interval can still refuse a post: no scan of the whole thread for a user who never posted.
   const [latest] = await db.forumPost.findMany({
-    where: { threadId, authorUserId: actor.id },
+    where: {
+      threadId,
+      authorUserId: actor.id,
+      createdAt: { gte: new Date(Date.now() - windowMs) },
+    },
     orderBy: { createdAt: "desc" },
     take: 1,
     select: { createdAt: true },
   });
   if (!latest) return;
-  const remainingMs = settings.slowModeSeconds * 1000 - (Date.now() - latest.createdAt.getTime());
+  const remainingMs = windowMs - (Date.now() - latest.createdAt.getTime());
   if (remainingMs <= 0) return;
   const wait = Math.ceil(remainingMs / 1000);
   throw new ForumError("TOO_MANY_REQUESTS", slowModeNotice(wait), wait);
