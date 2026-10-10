@@ -8,9 +8,9 @@ import {
   postBoardMessage,
   updateBoardSettings,
 } from "~/server/modules/thinkpages-forum/board-writes";
-import { banRow } from "~/tests/helpers/forum-ban-fake";
 import {
   admin,
+  ban,
   banned,
   BOARD_THREAD,
   boardPost,
@@ -99,7 +99,7 @@ describe("postBoardMessage", () => {
     it("refuses a banned member with the ban notice", async () => {
       const store = boardStore();
       store.state.bans.push(
-        banRow({ userId: "u_banned", scope: "realm", scopeId: "r_eurth", reason: "Spam" })
+        ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth", reason: "Spam" })
       );
       await expect(post(store, banned, {})).rejects.toEqual(refusal("FORBIDDEN", /ban/i));
       expect(posts(store)).toBe(0);
@@ -352,7 +352,7 @@ describe("editBoardMessage", () => {
     const store = boardStore(
       seed({ posts: [boardPost("b1", 1, { authorUserId: "u_banned", createdAt: recent(1) })] })
     );
-    store.state.bans.push(banRow({ userId: "u_banned", scope: "site" }));
+    store.state.bans.push(ban({ userId: "u_banned", scope: "site" }));
     await expect(edit(store, banned, "b1")).rejects.toMatchObject({ code: "FORBIDDEN" });
     const store2 = withMine();
     await expect(edit(store2, member, "fresh", `<p>${"a".repeat(1001)}</p>`)).rejects.toMatchObject(

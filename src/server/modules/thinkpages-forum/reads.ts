@@ -24,8 +24,6 @@ export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 const SITE_SCOPE = { scope: "site", realmId: null } as const;
 
-const PLACED = { id: true, visibility: true, scope: true, realmId: true } as const;
-
 interface PlacedCategory {
   id: string;
   scope: string;
@@ -280,47 +278,6 @@ export async function getThreadPosts(
     /** For the caller's posting access (N1: no second realm read); never sent to a client whole. */
     forumRealm: realm,
   };
-}
-
-/** Where a post sits for the `/thinkpages/post/<id>` permalink (ruling P5); null when the viewer cannot see it. */
-export async function resolvePostLocation(
-  db: Pick<ReadsDb, "forumPost" | "realm">,
-  viewer: ForumViewer,
-  postId: string
-): Promise<{ threadId: string; page: number } | null> {
-  const post = await db.forumPost.findUnique({
-    where: { id: postId },
-    select: {
-      id: true,
-      threadId: true,
-      createdAt: true,
-      hidden: true,
-      thread: {
-        select: {
-          authorUserId: true,
-          hidden: true,
-          category: { select: { ...PLACED, key: true, style: true } },
-        },
-      },
-    },
-  });
-  if (!post) return null;
-  const { category } = post.thread;
-  // A board message has no thread page: its permalink resolves through `boardPostRealm`.
-  if (isBoardCategory(category) || !canSeeThread(viewer, post.thread, category)) return null;
-  if (post.hidden && !canModerateCategory(viewer, category)) return null;
-  if ((await visibleRealmOf(db, viewer, category)) === undefined) return null;
-  const before = await db.forumPost.count({
-    where: {
-      threadId: post.threadId,
-      ...hiddenFilter(viewer, category),
-      OR: [
-        { createdAt: { lt: post.createdAt } },
-        { createdAt: post.createdAt, id: { lt: post.id } },
-      ],
-    },
-  });
-  return { threadId: post.threadId, page: Math.floor(before / POSTS_PER_PAGE) + 1 };
 }
 
 export interface ForumUserAuthor {

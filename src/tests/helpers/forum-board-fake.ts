@@ -4,6 +4,7 @@
  * a visitor, a persona and nations. Built on `forumStore`, adding nations (`country`), personas
  * (`thinkpagesAccount`), `orderBy` for post lists and a `groupBy` over nations.
  */
+import { banRow, type BanRow } from "~/tests/helpers/forum-ban-fake";
 import { forumStore, matches, type Row, type StoreState } from "~/tests/helpers/forum-store-fake";
 
 export const USER_ROLE = { name: "user", level: 100 };
@@ -305,3 +306,6 @@ export const postIn = (store: BoardStore, id: string) =>
   store.state.posts.find((p) => p.id === id)!;
 export const threadIn = (store: BoardStore, id: string) =>
   store.state.threads.find((t) => t.id === id)!;
+
+/** A forum ban row (see `banRow`) as a store row. */
+export const ban = (extra: Partial<BanRow>): Row => ({ ...banRow(extra) });

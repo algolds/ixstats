@@ -1,8 +1,8 @@
 /** @jest-environment node */
 import { continueInThread } from "~/server/modules/thinkpages-forum/board-continue";
-import { banRow } from "~/tests/helpers/forum-ban-fake";
 import {
   admin,
+  ban,
   at,
   BOARD_THREAD,
   boardPost,
@@ -133,7 +133,7 @@ describe("continueInThread", () => {
 
   it("refuses a banned author", async () => {
     const s = store([boardPost("b1", 7, { authorUserId: "u_banned" })]);
-    s.state.bans.push(banRow({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
+    s.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
     await expect(
       cont(s, { ...member, id: "u_banned", clerkUserId: "clerk_u_banned" }, "b1")
     ).rejects.toMatchObject({

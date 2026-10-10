@@ -17,8 +17,8 @@ export {
 export { continueInThread, type BoardContinueDb } from "./board-continue";
 export { boardPostRealm, getBoard, loadBoard, type BoardReadsDb, type BoardResult } from "./board";
 export {
-  type BoardAuthor,
   type BoardMessage,
+  type BoardMessageAuthor,
   type BoardMessageDb,
   type BoardPlace,
 } from "./board-messages";
@@ -159,7 +159,6 @@ export {
   loadCategory,
   loadVisibleThread,
   POSTS_PER_PAGE,
-  resolvePostLocation,
   THREADS_PER_PAGE,
   type AuthorsDb,
   type CategoryLocator,
@@ -198,6 +197,7 @@ export {
   type StashDb,
   type StashOwner,
 } from "./stash";
+export { resolvePostLocation } from "./post-location";
 export { renderPostWikitext, type RenderedPost } from "./render";
 export {
   createThread,

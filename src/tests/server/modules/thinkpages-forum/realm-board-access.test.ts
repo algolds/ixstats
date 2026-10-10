@@ -1,9 +1,9 @@
 /** @jest-environment node */
 import { boardAccessFor } from "~/server/modules/thinkpages-forum/board-access";
 import { loadForumRealm, type ForumRealm } from "~/server/modules/thinkpages-forum";
-import { banRow } from "~/tests/helpers/forum-ban-fake";
 import {
   admin,
+  ban,
   banned,
   boardStore,
   claimsOfficer,
@@ -85,7 +85,7 @@ describe("boardAccessFor", () => {
 
   it("refuses a banned member (realm ban), who can still read", async () => {
     const store = boardStore();
-    store.state.bans.push(banRow({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
+    store.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
     expect(await accessFor(banned, "eurth", store)).toMatchObject({
       canRead: true,
       canPost: false,
@@ -95,7 +95,7 @@ describe("boardAccessFor", () => {
 
   it("refuses a site-banned visitor too", async () => {
     const store = boardStore();
-    store.state.bans.push(banRow({ userId: "u_visitor", scope: "site" }));
+    store.state.bans.push(ban({ userId: "u_visitor", scope: "site" }));
     expect(await accessFor(visitor, "eurth", store)).toMatchObject({
       canPost: false,
       reason: "banned",

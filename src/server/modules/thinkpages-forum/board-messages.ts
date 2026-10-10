@@ -16,7 +16,7 @@ export type BoardMessageDb = AuthorsDb &
   Pick<PrismaClient, "forumPost" | "forumThread" | "country" | "realm" | "realmOfficer">;
 
 /** What the board shows of an author: the persona, else the player, else the imported name. */
-export interface BoardAuthor {
+export interface BoardMessageAuthor {
   name: string;
   handle: string | null;
   avatarUrl: string | null;
@@ -30,7 +30,7 @@ export interface BoardMessage {
   authorUserId: string | null;
   authorPersonaId: string | null;
   importedAuthorName: string | null;
-  author: BoardAuthor;
+  author: BoardMessageAuthor;
   role: PostRole | null;
   isVisitor: boolean;
   /** The visitor's own realm; null for members, and for a visitor with no nation. */
@@ -79,7 +79,7 @@ interface AuthorRow {
 
 type AuthorMaps = Awaited<ReturnType<typeof authorsOf>>;
 
-function authorOf(row: AuthorRow, maps: AuthorMaps): BoardAuthor {
+function authorOf(row: AuthorRow, maps: AuthorMaps): BoardMessageAuthor {
   if (row.authorPersonaId) {
     const persona = maps.personas.get(row.authorPersonaId);
     return {
