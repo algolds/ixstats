@@ -193,6 +193,7 @@ describe("getRealmSection", () => {
       "current-events",
     ]);
     expect(out.categories[0]).toEqual({
+      id: "cat_hub",
       key: "hub",
       name: "Hub",
       description: "Out-of-character talk for the realm.",

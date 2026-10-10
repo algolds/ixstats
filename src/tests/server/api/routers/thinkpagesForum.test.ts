@@ -39,6 +39,7 @@ import {
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
+import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(thinkpagesForumRouter)(
@@ -88,6 +89,7 @@ const rawPersona = {
 
 function forumDb(thread: object = {}, bans: BanRow[] = []) {
   return {
+    ...engagementTables(),
     forumBan: forumBanFake(bans),
     forumCategory: {
       findMany: jest.fn(async () => categories),
@@ -98,18 +100,23 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
     },
     forumThread: {
       groupBy: jest.fn(async () => []),
-      findMany: jest.fn(async () => [
-        {
-          id: "t1",
-          title: "Hello",
-          authorUserId: "u1",
-          authorPersonaId: "pa1",
-          pinned: false,
-          locked: false,
-          postCount: 2,
-          lastPostAt: when,
-        },
-      ]),
+      // The unread counts ask for each thread's read mark (select.reads); the list does not. None unread by default.
+      findMany: jest.fn(async (args?: { select?: { reads?: object } }): Promise<object[]> =>
+        args?.select?.reads
+          ? []
+          : [
+              {
+                id: "t1",
+                title: "Hello",
+                authorUserId: "u1",
+                authorPersonaId: "pa1",
+                pinned: false,
+                locked: false,
+                postCount: 2,
+                lastPostAt: when,
+              },
+            ]
+      ),
       count: jest.fn(async () => 1),
       findUnique: jest.fn(async () => ({
         id: "t1",
@@ -247,6 +254,53 @@ describe("thinkpagesForum router", () => {
         author: { name: "heku", handle: "heku" },
       });
       expect(out.find((c) => c.key === "rules")!.latest).toBeNull();
+    });
+
+    it("flags a signed-in reader's unread threads and counts unread threads per board", async () => {
+      const db = forumDb();
+      const fresh = new Date();
+      db.forumThread.findMany.mockResolvedValue([
+        {
+          id: "t1",
+          title: "Hello",
+          authorUserId: "u1",
+          authorPersonaId: null,
+          pinned: false,
+          locked: false,
+          postCount: 2,
+          lastPostAt: fresh,
+        },
+      ] as never);
+      const signedIn = await caller(member, db).category({ key: "general", page: 1 });
+      expect(signedIn.threads[0]).toMatchObject({ id: "t1", unread: true });
+      const anonymous = await caller(null, db).category({ key: "general", page: 1 });
+      expect(anonymous.threads[0]).toMatchObject({ id: "t1", unread: false });
+    });
+
+    it("counts each home board's unread threads for a member, and zero for a visitor", async () => {
+      const db = forumDb();
+      const fresh = new Date();
+      const row = (categoryId: string, reads: Array<{ readAt: Date }>) => ({
+        categoryId,
+        lastPostAt: fresh,
+        reads,
+      });
+      db.forumThread.findMany.mockResolvedValue([
+        row(general.id, []),
+        row(general.id, []),
+        row(general.id, [{ readAt: fresh }]),
+        row("cat_rules", []),
+      ] as never);
+      const unread = (out: Array<{ key: string; unreadThreads: number }>) =>
+        Object.fromEntries(out.map((c) => [c.key, c.unreadThreads]));
+      const counts = unread(await caller(member, db).categories());
+      expect(counts).toMatchObject({ general: 2, rules: 1 });
+      const others = Object.entries(counts).filter(([key]) => key !== "general" && key !== "rules");
+      expect(others.length).toBeGreaterThan(0);
+      expect(others.every(([, n]) => n === 0)).toBe(true);
+      expect(Object.values(unread(await caller(null, db).categories())).every((n) => n === 0)).toBe(
+        true
+      );
     });
 
     it("sorts a board by the requested order and returns its style", async () => {
@@ -1087,6 +1141,18 @@ describe("thinkpagesForum router", () => {
       expect(owner).toMatchObject({ canPost: true, notice: null, needsNation: false });
       const guest = await caller(null, realmForumDb()).realmSection({ realm: "eurth" });
       expect(guest).toMatchObject({ canPost: false, needsNation: false });
+    });
+
+    it("counts a realm section's unread threads per category and gives each category its id", async () => {
+      const db = realmForumDb(inEurth);
+      db.forumThread.findMany.mockResolvedValue([
+        { categoryId: hub.id, lastPostAt: new Date(), reads: [] },
+        { categoryId: hub.id, lastPostAt: new Date(), reads: [] },
+      ] as never);
+      const out = await caller(member, db).realmSection({ realm: "eurth" });
+      expect(out.categories[0]).toMatchObject({ id: hub.id, key: "hub", unreadThreads: 2 });
+      const guest = await caller(null, db).realmSection({ realm: "eurth" });
+      expect(guest.categories[0]).toMatchObject({ id: hub.id, unreadThreads: 0 });
     });
 
     it("maps an unknown realm section to NOT_FOUND", async () => {

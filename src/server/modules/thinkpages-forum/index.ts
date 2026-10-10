@@ -50,6 +50,16 @@ export {
   type TrendingThread,
 } from "./board-reads";
 export { ForumError, type ForumErrorCode } from "./errors";
+export { firstUnreadPost } from "./first-unread";
+export {
+  markAllRead,
+  markCategoryRead,
+  markRealmBoardRead,
+  markThreadRead,
+  type ReadMarksDb,
+} from "./read-marks";
+export { readerFloor, readTimes, unreadIdsOf, type UnreadDb } from "./unread";
+export { markUnreadThreads, withUnreadCounts, type UnreadAttachDb } from "./unread-attach";
 export {
   FORUM_IMPORT_NODE_MAP_KEY,
   legacyForumRedirectFor,

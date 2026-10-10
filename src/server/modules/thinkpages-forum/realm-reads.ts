@@ -170,6 +170,7 @@ export async function getRealmSection(db: RealmReadsDb, viewer: ForumViewer, slu
     // The thread and when, never its author: a persona thread's player must not leave this read.
     return {
       ...summary,
+      id: idOf.get(summary.key) ?? "",
       latest: last ? { threadId: last.threadId, threadTitle: last.threadTitle, at: last.at } : null,
     };
   });

@@ -11,6 +11,7 @@ import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { forumBanFake } from "~/tests/helpers/forum-ban-fake";
+import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const caller = (user: object | null, db: object) =>
   createCallerFactory(thinkpagesForumRouter)(
@@ -76,6 +77,7 @@ const threadRow = {
 /** An imported thread in General: its first post imported, a reply by u1 (the member). */
 function importedDb() {
   return {
+    ...engagementTables(),
     forumBan: forumBanFake([]),
     forumCategory: {
       findMany: jest.fn(async () => categories),
@@ -188,7 +190,11 @@ describe("thinkpagesForum router with imported authors", () => {
   it("lists an imported thread with its imported name and no user lookup for it", async () => {
     const db = importedDb();
     const out = await caller(member, db).category({ key: "general", page: 1 });
-    expect(out.threads[0]).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
+    expect(out.threads[0]).toMatchObject({
+      authorUserId: null,
+      importedAuthorName: "OldName",
+      unread: expect.any(Boolean),
+    });
     expect(out.authors.users).toEqual({});
     expect(askedUserIds(db)).toEqual([]);
   });

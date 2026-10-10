@@ -35,6 +35,7 @@ import {
   listForumRealms,
   listStashedThreads,
   loadCategory,
+  markUnreadThreads,
   MAX_POST_HTML,
   moveDestinations,
   myStanding,
@@ -52,11 +53,13 @@ import {
   TITLE_MIN,
   trendingThreads,
   unstashThread,
+  withUnreadCounts,
   type AuthorModerationDb,
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
 import { thinkpagesForumBoardRouter } from "./board";
+import { thinkpagesForumEngagementRouter } from "./engagement";
 import {
   actorOf,
   authorMaps,
@@ -106,9 +109,10 @@ async function moderatorView(
 
 const forumRouter = createTRPCRouter({
   /** The Forums home: visible sitewide boards with counts, style and latest post. */
-  categories: publicProcedure.query(async ({ ctx }) =>
-    listBoards(ctx.db, await viewerOf(ctx.db, ctx.user))
-  ),
+  categories: publicProcedure.query(async ({ ctx }) => {
+    const viewer = await viewerOf(ctx.db, ctx.user);
+    return withUnreadCounts(ctx.db, viewer, await listBoards(ctx.db, viewer));
+  }),
 
   /** Rail: threads, posts and member authors over public content (cached five minutes). */
   forumStats: publicProcedure.query(({ ctx }) => forumStatistics(ctx.db)),
@@ -156,7 +160,7 @@ const forumRouter = createTRPCRouter({
     const { canPost, notice, ban, needsNation } = section.access;
     return {
       realm: section.realm,
-      categories: section.categories,
+      categories: await withUnreadCounts(ctx.db, viewer, section.categories),
       canPost,
       notice,
       banned: ban !== null,
@@ -189,11 +193,12 @@ const forumRouter = createTRPCRouter({
         result.category,
         result.threads.map((t) => t.id)
       );
+      const listed = await markUnreadThreads(ctx.db, viewer, result.threads);
       return {
         ...result,
         // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4). Each thread
         // carries its last visible post's author (a persona never with the player's id).
-        threads: result.threads.map(({ hidden, ...thread }) =>
+        threads: listed.map(({ hidden, ...thread }) =>
           maskPersona(
             {
               ...thread,
@@ -396,5 +401,9 @@ const forumRouter = createTRPCRouter({
     .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
 });
 
-/** The forum procedures plus the realm board's (./board.ts). */
-export const thinkpagesForumRouter = mergeRouters(forumRouter, thinkpagesForumBoardRouter);
+/** The forum procedures plus the realm board's (./board.ts) and the engagement procedures (./engagement.ts). */
+export const thinkpagesForumRouter = mergeRouters(
+  forumRouter,
+  thinkpagesForumBoardRouter,
+  thinkpagesForumEngagementRouter
+);
