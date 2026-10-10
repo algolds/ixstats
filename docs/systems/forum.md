@@ -17,7 +17,7 @@ The community forum is native to IxStates: sitewide boards plus a section for ev
 - **Moderation:** warnings (points expire after 90 days; 5 active points mean a 7-day ban, 10 a 30-day ban), bans, reports, appeals (one per active warning or ban, reviewed by a different moderator) and a moderation log. Policy lives in `src/lib/thinkpages-forum/moderation-policy.ts`.
 - **Stash:** threads are stashed natively as `thinkpages:thread:<id>` items (`stash.ts`). Older `forum:thread:<id>` items from the bridge stay and open their old `/forum/thread/<id>` path, which redirects.
 - **Elsewhere in the app:** the global activity feed and Trending list the newest public threads (`public-threads.ts`: not hidden, public category, site section or a published realm); old `forum.ixwiki.com/threads/…` links in wiki pages and posts preview the imported thread (`wikios.getForumThreadPreview`); the passport counts a member's own visible posts and threads (`member-activity.ts`, persona content left out).
-- **Messaging:** ThinkShare conversations that came from XenForo (`source: "forum"`) keep their history and are read-only.
+- **Messaging:** ThinkShare conversations that came from XenForo (`source: "forum"`) keep their history and are read-only: the server refuses sends, edits, deletes and reactions in them.
 
 ---
 

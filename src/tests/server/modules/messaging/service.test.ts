@@ -468,6 +468,35 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       );
     });
 
+    test("18b. old forum conversations refuse edits, deletes and reactions too (phase 4b, Q14)", async () => {
+      mockDb.thinkshareMessage.findUnique.mockResolvedValue({
+        id: "m_1",
+        userId: "user_1",
+        deletedAt: null,
+        conversation: { source: "forum", participants: [{ userId: "user_1", isActive: true }] },
+      });
+      const readOnly = {
+        name: "MessagingBlockedError",
+        message: "This conversation came from the old forum and is read-only",
+      };
+
+      await expect(
+        service.editMessage("user_1", { messageId: "m_1", content: "Changed" })
+      ).rejects.toMatchObject(readOnly);
+      await expect(service.deleteMessage("user_1", { messageId: "m_1" })).rejects.toMatchObject(
+        readOnly
+      );
+      await expect(
+        service.addReaction("user_1", { messageId: "m_1", emoji: "👍" })
+      ).rejects.toMatchObject(readOnly);
+      await expect(
+        service.removeReaction("user_1", { messageId: "m_1", emoji: "👍" })
+      ).rejects.toMatchObject(readOnly);
+      expect(mockDb.thinkshareMessage.update).not.toHaveBeenCalled();
+      expect(mockDb.messageReaction.upsert).not.toHaveBeenCalled();
+      expect(mockDb.messageReaction.deleteMany).not.toHaveBeenCalled();
+    });
+
     test("19. markMessagesAsRead updates lastReadAt timestamp", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue({ id: "p_1" });
 
