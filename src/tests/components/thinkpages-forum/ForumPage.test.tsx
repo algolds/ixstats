@@ -36,6 +36,20 @@ describe("ForumPage", () => {
     expect(screen.getByText("Body")).toBeInTheDocument();
   });
 
+  it("pads the page column wherever the bleeding header would reach the viewport edge", () => {
+    installViewport(true);
+    const { container } = render(
+      <ForumPage title="General">
+        <p>Body</p>
+      </ForumPage>
+    );
+    const header = container.querySelector('[data-slot="page-header"]')!;
+    // PageHeader's bleed (-mx-2) needs padding on its parent below xl; from xl the shell gutters take over.
+    expect(header).toHaveClass("-mx-2");
+    expect(header.parentElement).toHaveClass("px-4", "xl:px-0");
+    expect(screen.getByText("Body").parentElement?.parentElement).toBe(header.parentElement);
+  });
+
   it("has no inspector and no Info button without a rail", () => {
     installViewport(true);
     const { container } = render(

@@ -9,6 +9,13 @@ import { Inspector } from "~/components/ui/inspector";
 /** The width from which the Inspector shows its panels on the page, as `Inspector` decides it. */
 const RAIL_QUERY = "(min-width: 1280px)";
 
+/**
+ * The page column's horizontal padding, which the header's `bleed` (`-mx-2`) pulls out of. Needed wherever the
+ * header would otherwise reach the viewport edge (everything below xl); from xl the shell's own sidebar and
+ * inspector gutters sit beside the column, so the approved flush layout stays.
+ */
+const PAGE_COLUMN = "flex min-w-0 flex-col px-4 xl:px-0";
+
 interface ForumPageProps {
   title: string;
   /** The trail above the page (rendered under the title). */
@@ -52,33 +59,35 @@ export function ForumPage({
   }, [watchHash, openRailOnHash]);
   return (
     <>
-      <PageHeader
-        title={title}
-        subtitle={breadcrumbs}
-        back={back}
-        bleed
-        actions={
-          actions != null || hasRail ? (
-            <>
-              {actions}
-              {hasRail && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="xl:hidden"
-                  aria-haspopup="dialog"
-                  aria-expanded={railOpen}
-                  onClick={() => setRailOpen(true)}
-                >
-                  <InfoCircle aria-hidden />
-                  Info
-                </Button>
-              )}
-            </>
-          ) : undefined
-        }
-      />
-      <div className="flex min-w-0 flex-col gap-4">{children}</div>
+      <div className={PAGE_COLUMN}>
+        <PageHeader
+          title={title}
+          subtitle={breadcrumbs}
+          back={back}
+          bleed
+          actions={
+            actions != null || hasRail ? (
+              <>
+                {actions}
+                {hasRail && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="xl:hidden"
+                    aria-haspopup="dialog"
+                    aria-expanded={railOpen}
+                    onClick={() => setRailOpen(true)}
+                  >
+                    <InfoCircle aria-hidden />
+                    Info
+                  </Button>
+                )}
+              </>
+            ) : undefined
+          }
+        />
+        <div className="flex min-w-0 flex-col gap-4">{children}</div>
+      </div>
       {hasRail && (
         <Inspector title={label} open={railOpen} onOpenChange={setRailOpen} className="space-y-4">
           {rail}
