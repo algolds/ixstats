@@ -8,6 +8,8 @@ import {
   modHref,
   newThreadHref,
   postHref,
+  realmBoardHref,
+  realmHref,
   STANDING_HREF,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
@@ -31,6 +33,13 @@ describe("forum links", () => {
   it("opens a realm's Hub, encoding the slug", () => {
     expect(hubHref("eurth")).toBe("/thinkpages/r/eurth/hub");
     expect(hubHref("a/b")).toBe("/thinkpages/r/a%2Fb/hub");
+  });
+
+  it("opens a realm's landing page, encoding the slug, and anchors a message on it", () => {
+    expect(realmHref("eurth")).toBe("/thinkpages/r/eurth");
+    expect(realmHref("a/b")).toBe("/thinkpages/r/a%2Fb");
+    expect(realmBoardHref("eurth")).toBe("/thinkpages/r/eurth");
+    expect(realmBoardHref("eurth", "p 1")).toBe("/thinkpages/r/eurth#post-p%201");
   });
 
   it("starts a thread under the category's path", () => {

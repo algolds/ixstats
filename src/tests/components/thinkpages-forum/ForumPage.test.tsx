@@ -40,6 +40,16 @@ describe("ForumPage", () => {
     expect(screen.getByText("Body")).toBeInTheDocument();
   });
 
+  it("shows an emblem before the title", () => {
+    installViewport(true);
+    render(
+      <ForumPage title="IxWorld" leading={<span data-testid="emblem" />}>
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.getByTestId("emblem")).toBeInTheDocument();
+  });
+
   it("pads the page column wherever the bleeding header would reach the viewport edge", () => {
     installViewport(true);
     const { container } = render(

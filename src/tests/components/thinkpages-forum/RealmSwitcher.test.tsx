@@ -68,4 +68,13 @@ describe("RealmSwitcher", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "other" } });
     expect(router.push).toHaveBeenCalledWith("/thinkpages/r/other/hub");
   });
+
+  it("opens the page the caller names", () => {
+    router.push.mockClear();
+    render(
+      <RealmSwitcher realms={realms} value="eurth" hrefFor={(slug) => `/thinkpages/r/${slug}`} />
+    );
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "other" } });
+    expect(router.push).toHaveBeenCalledWith("/thinkpages/r/other");
+  });
 });

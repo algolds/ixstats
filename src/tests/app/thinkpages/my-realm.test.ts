@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * `/thinkpages/r/mine`, the sidebar's "Your realm": a server resolver that sends a member to the Hub of the realm of
- * their primary nation (307, the answer depends on who asks), and everyone else to the forum home. It resolves as the
- * session's viewer, and has no loading.tsx (a redirect page needs the real redirect).
+ * `/thinkpages/r/mine`, the sidebar's "Your realm": a server resolver that sends a member to the landing page (the
+ * live board) of the realm of their primary nation (307, the answer depends on who asks), and everyone else to the
+ * forum home. It resolves as the session's viewer, and has no loading.tsx (a redirect page needs the real redirect).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -69,12 +69,12 @@ beforeEach(() => {
 });
 
 describe("/thinkpages/r/mine", () => {
-  it("sends a member of a realm to its Hub board", async () => {
+  it("sends a member of a realm to its landing page", async () => {
     signedIn("member");
     fakeDb.country.findMany.mockResolvedValue([
       { id: "c1", realmId: "r_eurth", currentTotalGdp: 5 },
     ]);
-    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages/r/eurth/hub");
+    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages/r/eurth");
     expect(fakeDb.country.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { ownerUserId: "u1" } })
     );
@@ -105,13 +105,13 @@ describe("/thinkpages/r/mine", () => {
     await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages");
   });
 
-  it("encodes the realm slug in the Hub path", async () => {
+  it("encodes the realm slug in the landing path", async () => {
     signedIn("member");
     realmRows([{ ...EURTH, slug: "a b/c" }]);
     fakeDb.country.findMany.mockResolvedValue([
       { id: "c1", realmId: "r_eurth", currentTotalGdp: 5 },
     ]);
-    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages/r/a%20b%2Fc/hub");
+    await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages/r/a%20b%2Fc");
   });
 
   it("is a redirect page with no loading.tsx beside it", () => {

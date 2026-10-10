@@ -22,6 +22,8 @@ interface ForumPageProps {
   title: string;
   /** The trail above the page (rendered under the title). */
   breadcrumbs?: React.ReactNode;
+  /** An emblem or avatar before the large title (an entity page such as a realm's landing). */
+  leading?: React.ReactNode;
   /** Page actions in the header toolbar. */
   actions?: React.ReactNode;
   /** Rail panels: the Inspector at 1280px and wider, a sheet behind the header's Info button below that. */
@@ -42,6 +44,7 @@ interface ForumPageProps {
 export function ForumPage({
   title,
   breadcrumbs,
+  leading,
   actions,
   rail,
   railTitle,
@@ -65,6 +68,7 @@ export function ForumPage({
         <PageHeader
           title={title}
           subtitle={breadcrumbs}
+          leading={leading}
           back={back}
           bleed
           actions={

@@ -1,12 +1,16 @@
-import { redirect } from "next/navigation";
-import { hubHref } from "~/lib/thinkpages-forum/links";
+import { type Metadata } from "next";
+import { RealmLanding } from "~/components/thinkpages-forum/realm";
 
-interface RealmForumPageProps {
+interface RealmPageProps {
   params: Promise<{ realm: string }>;
 }
 
-/** A realm's section is its Hub board. */
-export default async function RealmForumPage({ params }: RealmForumPageProps) {
+export const metadata: Metadata = {
+  title: "ThinkPages - IxStats",
+};
+
+/** A realm's landing page: its live board, the realm's boards beside it. */
+export default async function RealmPage({ params }: RealmPageProps) {
   const { realm } = await params;
-  redirect(hubHref(realm));
+  return <RealmLanding realm={realm} />;
 }

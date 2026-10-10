@@ -1,0 +1,186 @@
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { Globe } from "iconoir-react";
+import { useUser } from "~/context/auth-context";
+import { usePageTitle } from "~/hooks/usePageTitle";
+import { useRealmBoardLive } from "~/hooks/useRealmBoardLive";
+import { assetUrl } from "~/lib/base-path";
+import { upsertBoardMessage } from "~/lib/thinkpages-forum/board-live";
+import { FORUM_HOME, realmHref } from "~/lib/thinkpages-forum/links";
+import { api } from "~/trpc/react";
+import { ForumBreadcrumbs } from "../ForumBreadcrumbs";
+import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
+import type { ModeratorTools } from "../ModeratorMenu";
+import { RealmSwitcher } from "../RealmSwitcher";
+import { ForumPage } from "../shell";
+import { BoardComposer, type BoardPostInput } from "./BoardComposer";
+import { BoardFeed } from "./BoardFeed";
+import { boardQuoteText } from "./board-quote";
+import type { BoardData, BoardMessageData, BoardQuote, ReplyTarget } from "./types";
+import { useScrollToMessageHash } from "./useScrollToMessageHash";
+
+function Emblem({ url }: { url: string | null }) {
+  const src = assetUrl(url);
+  return (
+    <div className="bg-fill-3 rounded-card flex size-16 shrink-0 items-center justify-center overflow-hidden">
+      {src ? (
+        <img src={src} alt="" className="size-full object-cover" />
+      ) : (
+        <Globe aria-hidden className="text-label-secondary size-7" />
+      )}
+    </div>
+  );
+}
+
+/** "31 members · 6 online · You're a member": the online count only while the socket is up. */
+function factsOf(data: BoardData, online: number | null): string {
+  const { memberCount } = data.realm;
+  const standing = data.access.isMember
+    ? "You're a member"
+    : data.access.isVisitor
+      ? "Visitor"
+      : null;
+  return [
+    memberCount === 1 ? "1 member" : `${memberCount} members`,
+    online === null ? null : `${online} online`,
+    standing,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
+}
+
+function OtherRealms({ current }: { current: string }) {
+  const { data } = api.thinkpagesForum.realms.useQuery();
+  if (!data) return null;
+  // A realm opened by URL may be unlisted; keep it selectable so the trigger shows its name.
+  return <RealmSwitcher realms={data.realms} value={current} hrefFor={realmHref} />;
+}
+
+interface LandingBodyProps {
+  slug: string;
+  /** The board as the first load returned it; the query's own copy takes over from the cache. */
+  loaded: BoardData;
+}
+
+/** The board kept live: polled while the socket is down, merged by the live hook while it is up. */
+function LandingBody({ slug, loaded }: LandingBodyProps) {
+  const utils = api.useUtils();
+  const { isSignedIn } = useUser();
+  const live = useRealmBoardLive(loaded.realm.id);
+  const { data = loaded } = api.thinkpagesForum.getBoard.useQuery(
+    { realm: slug },
+    { refetchInterval: live.refetchInterval }
+  );
+  const { realm, access } = data;
+  usePageTitle({ title: realm.name });
+  useScrollToMessageHash(data.messages.length);
+
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
+  const [quote, setQuote] = useState<BoardQuote | null>(null);
+  const [showLatest, setShowLatest] = useState(0);
+  const { mutateAsync: postMessage } = api.thinkpagesForum.postBoardMessage.useMutation();
+  const { mutateAsync: modEditPost } = api.thinkpagesForumMod.editPost.useMutation();
+
+  const refresh = useCallback(async () => {
+    await utils.thinkpagesForum.getBoard.invalidate();
+  }, [utils]);
+
+  const tools = useMemo<ModeratorTools>(
+    () => ({
+      category: { key: "board", name: "Board", realm: { slug: realm.slug, name: realm.name } },
+      refresh,
+      saveEdit: async (postId, html, note) => {
+        await modEditPost({ postId, html, note });
+        await refresh();
+      },
+    }),
+    [realm.slug, realm.name, refresh, modEditPost]
+  );
+
+  const post = useCallback(
+    async (input: BoardPostInput) => {
+      const message = await postMessage({ realm: slug, ...input });
+      // The live event for the same message merges by id, so it shows once whichever arrives first.
+      utils.thinkpagesForum.getBoard.setData(
+        { realm: slug },
+        (old) =>
+          old && {
+            ...old,
+            messages: upsertBoardMessage(old.messages, message, { complete: !old.hasMore }),
+          }
+      );
+      setShowLatest((n) => n + 1);
+    },
+    [postMessage, utils, slug]
+  );
+
+  const startReply = useCallback(
+    (message: BoardMessageData) =>
+      setReplyTo({ postId: message.id, authorName: message.author.name }),
+    []
+  );
+  const startQuote = useCallback((message: BoardMessageData) => {
+    const text = boardQuoteText(message.author.name, message.contentHtml);
+    if (text) setQuote((current) => ({ key: (current?.key ?? 0) + 1, text }));
+  }, []);
+  const clearReply = useCallback(() => setReplyTo(null), []);
+  const clearQuote = useCallback(() => setQuote(null), []);
+  const changed = useCallback(() => void refresh(), [refresh]);
+
+  return (
+    <ForumPage
+      title={realm.name}
+      leading={<Emblem url={realm.emblemUrl} />}
+      breadcrumbs={
+        <>
+          <ForumBreadcrumbs items={[{ label: "ThinkPages", href: FORUM_HOME }]} />
+          <p className="tabular-nums">{factsOf(data, live.online)}</p>
+        </>
+      }
+      back={{ href: FORUM_HOME, label: "ThinkPages" }}
+      actions={<OtherRealms current={realm.slug} />}
+    >
+      <BoardComposer
+        realmName={realm.name}
+        access={access}
+        slowModeSeconds={realm.settings.slowModeSeconds}
+        replyTo={replyTo}
+        onClearReply={clearReply}
+        quote={quote}
+        onQuoteInserted={clearQuote}
+        onTyping={live.sendTyping}
+        onSubmit={post}
+      />
+      <BoardFeed
+        realm={realm}
+        data={data}
+        typing={live.typing}
+        live={live.live}
+        signedIn={!!isSignedIn}
+        tools={tools}
+        showLatest={showLatest}
+        onReply={startReply}
+        onQuote={startQuote}
+        onChanged={changed}
+      />
+    </ForumPage>
+  );
+}
+
+/** A realm's landing page: its live board (composer and feed) under the realm's emblem, name and facts. */
+export function RealmLanding({ realm }: { realm: string }) {
+  const { data, isLoading, error, refetch } = api.thinkpagesForum.getBoard.useQuery({ realm });
+  if (isLoading) return <ForumPageSkeleton blocks={2} />;
+  if (!data) {
+    return (
+      <ForumLoadError
+        notFound={error?.data?.code === "NOT_FOUND"}
+        notFoundTitle="Realm not found"
+        notFoundMessage="It may be private, or the link is incorrect."
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+  return <LandingBody slug={realm} loaded={data} />;
+}

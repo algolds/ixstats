@@ -28,11 +28,20 @@ export interface ModeratorTools {
   refresh: () => Promise<void>;
 }
 
+/**
+ * What the moderator menu and dialogs need of a post: a thread post, or a board message the caller describes in these
+ * terms (the board reads carry no per-author verdicts, so the caller derives them and the server still decides).
+ */
+export type ModeratablePost = Pick<
+  ForumPost,
+  "id" | "hidden" | "moderable" | "sanctionable" | "authorUserId"
+>;
+
 /** The moderator dialogs a post's menu opens. */
 export type ModeratorDialogName = "hide" | "warn" | "ban";
 
 interface ModeratorMenuItemsProps {
-  post: ForumPost;
+  post: ModeratablePost;
   /** Opens one of the dialogs (rendered by `ModeratorDialogs`). */
   onOpen: (dialog: ModeratorDialogName) => void;
   /** Opens the post's edit composer in moderator mode. */
@@ -40,7 +49,7 @@ interface ModeratorMenuItemsProps {
 }
 
 /** Whether the server allows the viewer any moderator action on this post. */
-export function hasModeratorActions(post: ForumPost): boolean {
+export function hasModeratorActions(post: ModeratablePost): boolean {
   return Boolean(post.moderable || post.sanctionable);
 }
 
@@ -75,7 +84,7 @@ export function ModeratorMenuItems({ post, onOpen, onEdit }: ModeratorMenuItemsP
 }
 
 interface ModeratorDialogsProps {
-  post: ForumPost;
+  post: ModeratablePost;
   tools: ModeratorTools;
   /** The dialog that is open, if any. */
   open: ModeratorDialogName | null;

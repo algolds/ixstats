@@ -149,7 +149,6 @@ import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import ForumHomePage from "~/app/thinkpages/page";
-import RealmRedirectPage from "~/app/thinkpages/r/[realm]/page";
 
 const { results, inputs, mutations } = jest.requireMock<MockApi>("~/trpc/react");
 const { router, redirect } = jest.requireMock<{
@@ -297,11 +296,6 @@ describe("forum home", () => {
     set("categories", { data: [] });
     render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "" }) }));
     expect(redirect).not.toHaveBeenCalled();
-  });
-
-  it("sends /thinkpages/r/<realm> straight to that realm's Hub", async () => {
-    await RealmRedirectPage({ params: Promise.resolve({ realm: "eurth" }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/eurth/hub");
   });
 });
 
