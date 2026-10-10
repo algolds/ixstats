@@ -9,10 +9,7 @@ import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
 import { WikiLogomark } from "~/lib/navigation/icons/WikiLogomark";
 import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
 import { VaultLogomark } from "~/lib/navigation/icons/VaultLogomark";
-import {
-  Compass as SolidCompass,
-  RoundFlask as SolidRoundFlask,
-} from "iconoir-react/solid";
+import { Compass as SolidCompass, RoundFlask as SolidRoundFlask } from "iconoir-react/solid";
 import { Search } from "iconoir-react";
 
 const apps = getVisibleApps({
@@ -66,14 +63,13 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists a conditional What's new above Dashboard, Accounts, Messages, ThinkTanks and ThinkPages", () => {
+  it("Home lists a conditional What's new above Dashboard, Accounts, Messages and ThinkTanks", () => {
     expect(app("home").sections.map((s) => s.id)).toEqual([
       "whats-new",
       "dashboard",
       "accounts",
       "messages",
       "thinktanks",
-      "thinkpages",
     ]);
     expect(app("home").sections.find((s) => s.id === "messages")).toMatchObject({
       href: "/messages",
@@ -87,11 +83,10 @@ describe("Home, Messages, Sports and Help in the map", () => {
     });
   });
 
-  it("owns /messages in Home, and ThinkPages is no longer an app", () => {
+  it("owns /messages in Home", () => {
     expect(getAppForPath("/messages")?.id).toBe("home");
     expect(getAppForPath("/messages/abc")?.id).toBe("home");
     expect(getActiveSectionId(app("home"), "/messages/abc", null)).toBe("messages");
-    expect(apps.find((a) => (a.id as string) === "thinkpages")).toBeUndefined();
   });
 
   it("no longer lists Activity or Achievements, though Home still owns their routes", () => {

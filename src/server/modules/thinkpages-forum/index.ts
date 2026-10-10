@@ -157,8 +157,10 @@ export {
   type RealmPostingAccess,
 } from "./realm-access";
 export {
+  forumNavFlags,
   getRealmSection,
   listForumRealms,
+  myRealmSlugOf,
   primaryRealmIdOf,
   type RealmReadsDb,
 } from "./realm-reads";

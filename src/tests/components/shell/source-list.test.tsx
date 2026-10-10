@@ -128,10 +128,23 @@ describe("SourceList", () => {
     expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/dashboard");
     expect(within(nav).getByRole("link", { name: "Messages" })).toBeVisible();
     expect(within(nav).getByRole("link", { name: "ThinkTanks" })).toBeVisible();
+    // ThinkPages is an app of its own (expandable), no longer one of Home's rows.
+    expect(within(nav).getByRole("button", { name: "Expand ThinkPages" })).toBeInTheDocument();
+  });
+
+  it("lists ThinkPages as an app whose Forums section is current on the forum home", () => {
+    const { nav } = setup("/thinkpages", { expanded: ["thinkpages"] });
     expect(within(nav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
       "href",
       "/thinkpages"
     );
+    expect(within(nav).getByRole("link", { name: "Forums" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    // Your realm and Moderation need the viewer's realm and moderator flags, which this context lacks.
+    expect(within(nav).queryByRole("link", { name: "Your realm" })).toBeNull();
+    expect(within(nav).queryByRole("link", { name: "Moderation" })).toBeNull();
   });
 
   it("shows the messages unread count on the Messages row", () => {
@@ -348,19 +361,12 @@ describe("SourceList external sections", () => {
 describe("SourceList section tint", () => {
   afterEach(cleanup);
 
-  it.each([
-    ["/thinkpages", "ThinkPages"],
-    ["/thinkpages/t/abc", "ThinkPages"],
-    ["/thinktanks", "ThinkTanks"],
-  ])(
-    "scopes a section's own tint on its row on %s, so Home's tint does not recolour %s",
-    (pathname, label) => {
-      const { nav } = setup(pathname);
-      const row = within(nav).getByRole("link", { name: label });
-      expect(row).toHaveAttribute("aria-current", "page");
-      expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
-    }
-  );
+  it("scopes a section's own tint on its row on /thinktanks, so Home's tint does not recolour ThinkTanks", () => {
+    const { nav } = setup("/thinktanks");
+    const row = within(nav).getByRole("link", { name: "ThinkTanks" });
+    expect(row).toHaveAttribute("aria-current", "page");
+    expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
+  });
 
   it("no longer marks ThinkTanks current on the forum home", () => {
     const { nav } = setup("/thinkpages");

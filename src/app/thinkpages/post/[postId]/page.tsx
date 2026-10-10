@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
-import { redirect, unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
+import { sessionUserId } from "~/app/thinkpages/_lib/session-user-id";
 import { permalinkTarget } from "~/lib/thinkpages-forum/permalink";
 import { locatePostFor } from "~/server/api/routers/thinkpagesForum/permalink";
 import { db } from "~/server/db";
@@ -9,16 +9,6 @@ export const metadata: Metadata = { title: "ThinkPages - IxStats" };
 
 interface LegacyPostPageProps {
   params: Promise<{ postId: string }>;
-}
-
-/** The signed-in Clerk user id, or null when signed out or the session cannot be read. */
-async function sessionUserId(): Promise<string | null> {
-  try {
-    return (await auth()).userId ?? null;
-  } catch (error) {
-    unstable_rethrow(error);
-    return null;
-  }
 }
 
 /**

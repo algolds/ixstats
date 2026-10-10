@@ -24,6 +24,7 @@ import {
   editPost,
   fileAppeal,
   fileReport,
+  forumNavFlags,
   forumStatistics,
   getCategoryThreads,
   getRealmSection,
@@ -131,6 +132,11 @@ export const thinkpagesForumRouter = createTRPCRouter({
         ),
       };
     }),
+
+  /** The sidebar's gated sections: "Your realm" for a realm member, "Moderation" for site staff and moderators. */
+  navFlags: publicProcedure.query(async ({ ctx }) =>
+    forumNavFlags(ctx.db, await viewerOf(ctx.db, ctx.user))
+  ),
 
   /** The realm switcher: realms the viewer may pick, defaulting to their primary nation's realm. */
   realms: publicProcedure.query(async ({ ctx }) => {

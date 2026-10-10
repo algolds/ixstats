@@ -21,10 +21,7 @@ import { DiscordLogomark } from "./icons/DiscordLogomark";
 import { MyCountryLogomark } from "./icons/MyCountryLogomark";
 import { RealmsLogomark } from "./icons/RealmsLogomark";
 import { VaultLogomark } from "./icons/VaultLogomark";
-import {
-  Compass as SolidCompass,
-  RoundFlask as SolidRoundFlask,
-} from "iconoir-react/solid";
+import { Compass as SolidCompass, RoundFlask as SolidRoundFlask } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import {
@@ -148,8 +145,11 @@ interface AppSection {
   requires?: SectionRequirement;
 }
 
-/** `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. */
-type SectionRequirement = "mycountry-premium";
+/**
+ * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `realm-member`: the viewer's
+ * primary nation sits in a realm. `forum-moderator`: site staff or any forum category or realm moderator.
+ */
+type SectionRequirement = "mycountry-premium" | "realm-member" | "forum-moderator";
 
 export interface AppDefinition {
   id: AppId;
@@ -163,8 +163,6 @@ export interface AppDefinition {
   match: string[];
   sections: AppSection[];
   requiresAuth?: boolean;
-  /** Listed only to signed-out visitors (the forum, which Home carries for signed-in users). */
-  signedOutOnly?: true;
   adminOnly?: boolean;
   /** Admin navigation setting that hides the app when false. */
   navSetting?: keyof NavigationVisibilitySettings;
@@ -194,16 +192,7 @@ export const APPS: readonly AppDefinition[] = [
     href: "/dashboard",
     icon: HomeSimple,
     // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
-    match: [
-      "/",
-      "/dashboard",
-      "/feed",
-      "/achievements",
-      "/hashtags",
-      "/messages",
-      "/thinkpages",
-      "/thinktanks",
-    ],
+    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages", "/thinktanks"],
     requiresAuth: true,
     inline: true,
     sections: [
@@ -225,20 +214,12 @@ export const APPS: readonly AppDefinition[] = [
         icon: Mail,
         badge: "messages-unread",
       },
-      // ThinkPages (the forum) and ThinkTanks are part of Home and wear the emerald section tint.
-      // ThinkPages' href is the prefix of every forum route (c, t, r, mod, post), so it needs no match.
+      // ThinkTanks is part of Home and wears the emerald section tint.
       {
         id: "thinktanks",
         label: "ThinkTanks",
         href: "/thinktanks",
         icon: LightBulbOn,
-        tint: "thinkpages",
-      },
-      {
-        id: "thinkpages",
-        label: "ThinkPages",
-        href: FORUM_HOME,
-        icon: ChatBubble,
         tint: "thinkpages",
       },
     ],
@@ -397,15 +378,31 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    // Signed out, Home (which lists ThinkPages) is hidden, so the public forum gets an app of its own.
+    // The forum, for everyone. FORUM_HOME is the prefix of every forum route (c, t, r, mod, post), so it is the
+    // whole match; signed-out visitors keep Forums only (the other sections need a realm or a moderator role).
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
     icon: ChatBubble,
     tint: "thinkpages",
     match: [FORUM_HOME],
-    signedOutOnly: true,
-    sections: [],
+    sections: [
+      { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },
+      {
+        id: "your-realm",
+        label: "Your realm",
+        href: "/thinkpages/r/mine",
+        icon: RealmsLogomark,
+        requires: "realm-member",
+      },
+      {
+        id: "moderation",
+        label: "Moderation",
+        href: "/thinkpages/mod",
+        icon: ShieldCheck,
+        requires: "forum-moderator",
+      },
+    ],
   },
   {
     id: "countries",
@@ -673,7 +670,7 @@ export function getApp(id: AppId): AppDefinition {
 
 /**
  * The app a path belongs to: the longest matching prefix, the first app winning a tie. Pass the visible apps to
- * resolve among them only (signed out, `/thinkpages` is the ThinkPages app's, since Home is not listed).
+ * resolve among them only.
  */
 export function getAppForPath(
   pathname: string,
@@ -691,8 +688,8 @@ export function getAppForPath(
 }
 
 /**
- * The app the navigation marks current: the owner among the visible apps when there is one (signed out,
- * `/thinkpages` belongs to the ThinkPages app rather than the hidden Home), else the owner among all apps.
+ * The app the navigation marks current: the owner among the visible apps when there is one, else the owner among
+ * all apps (a route of an app the viewer cannot see, e.g. Maps switched off, still resolves).
  */
 export function getVisibleAppForPath(
   pathname: string,
@@ -774,6 +771,10 @@ interface AppVisibilityContext {
   hasLabsAccess?: boolean;
   /** MyCountry Premium (the premium ability) or a beta tester: sees `requires: "mycountry-premium"` sections. */
   hasMycountryPremium?: boolean;
+  /** The viewer has a realm (`realm-member` sections). */
+  realmMember?: boolean;
+  /** Site staff or a forum moderator (`forum-moderator` sections). */
+  forumModerator?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
 }
 
@@ -783,14 +784,17 @@ export function getVisibleApps({
   isAdmin,
   hasLabsAccess = false,
   hasMycountryPremium = false,
+  realmMember = false,
+  forumModerator = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
   const granted: Record<SectionRequirement, boolean> = {
     "mycountry-premium": hasMycountryPremium,
+    "realm-member": realmMember,
+    "forum-moderator": forumModerator,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
-    if (app.signedOutOnly && signedIn) return false;
     if (app.adminOnly && !isAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
       const bypass = app.navSettingBypass;

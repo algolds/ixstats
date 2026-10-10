@@ -22,6 +22,7 @@ jest.mock("~/trpc/react", () => ({
     admin: {
       getNavigationSettings: { useQuery: () => ({ data: undefined }) },
     },
+    thinkpagesForum: { navFlags: { useQuery: () => ({ data: undefined }) } },
     vault: {
       getBalance: {
         useQuery: () => ({ data: { canClaimDailyBonus: true, loginStreak: 2 }, isLoading: false }),

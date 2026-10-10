@@ -50,7 +50,7 @@ describe("AppSidebar", () => {
   });
 
   it.each(["/thinkpages", "/thinkpages/t/abc"])(
-    "uses the section tint on %s (ThinkPages is its own colour under Home)",
+    "tints the panel emerald on %s (the ThinkPages app)",
     (pathname) => {
       const { container } = renderSidebar({ pathname });
       expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
@@ -134,10 +134,9 @@ describe("AppSidebar", () => {
       const messages = within(rail()).getByRole("link", { name: "Messages, 3 unread" });
       expect(messages).toHaveTextContent("3");
       expect(within(rail()).getByRole("link", { name: "ThinkTanks" })).toBeInTheDocument();
-      expect(within(rail()).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
-        "href",
-        "/thinkpages"
-      );
+      // ThinkPages is an app of its own now, not one of Home's rail links.
+      expect(within(rail()).queryByRole("link", { name: "ThinkPages" })).toBeNull();
+      expect(within(rail()).getByRole("button", { name: "ThinkPages" })).toBeInTheDocument();
       expect(within(rail()).queryByRole("link", { name: "What's new" })).toBeNull();
     });
 

@@ -19,6 +19,7 @@ import {
   type RealmDb,
 } from "./realm-access";
 import { summarizeCategories, type ReadsDb } from "./reads";
+import { isModerator } from "./mod-scope";
 import { seedRealmCategories } from "./realm-seed";
 
 export type RealmReadsDb = ReadsDb & RealmDb & RealmAccessDb;
@@ -78,6 +79,31 @@ export async function primaryRealmIdOf(
     select: { id: true, realmId: true, currentTotalGdp: true },
   });
   return primaryNationOf(nations, viewer.countryId)?.realmId ?? null;
+}
+
+/**
+ * The slug of the realm of the viewer's primary nation: where "Your realm" goes. Null for anonymous, for a viewer
+ * holding no nation, and for a realm hidden from them.
+ */
+export async function myRealmSlugOf(
+  db: Pick<PrismaClient, "country"> & RealmDb,
+  viewer: ForumViewer
+): Promise<string | null> {
+  const realmId = await primaryRealmIdOf(db, viewer);
+  if (!realmId) return null;
+  const realm = await loadForumRealm(db, { id: realmId });
+  return realm && canSeeRealm(viewer, realm) ? realm.slug : null;
+}
+
+/** What the sidebar lists beyond Forums: "Your realm" for a realm member, "Moderation" for site staff or a moderator. */
+export async function forumNavFlags(
+  db: Pick<PrismaClient, "country"> & RealmDb,
+  viewer: ForumViewer
+): Promise<{ realmMember: boolean; forumModerator: boolean }> {
+  return {
+    realmMember: (await myRealmSlugOf(db, viewer)) !== null,
+    forumModerator: isModerator(viewer),
+  };
 }
 
 /**

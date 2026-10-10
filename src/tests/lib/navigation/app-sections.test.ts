@@ -68,6 +68,9 @@ function isRedirectStub(file: string): boolean {
   return forwards && !/return\s*\(?\s*</.test(source);
 }
 
+/** Rows that open a server resolver on purpose: it redirects each viewer to a page of their own ("Your realm"). */
+const RESOLVER_HREFS = new Set(["/thinkpages/r/mine"]);
+
 const allLinks = APPS.flatMap((app) => [
   { owner: app.id, href: app.href },
   // External links (the Discord invite) leave the app, so there is no page of ours to resolve.
@@ -83,6 +86,7 @@ describe("app section map routes", () => {
 
   it("links to no redirect-only pages", () => {
     const stubs = allLinks
+      .filter(({ href }) => !RESOLVER_HREFS.has(href))
       .map(({ owner, href }) => ({ owner, href, file: resolvePage(href) }))
       .filter(({ file }) => file !== undefined && isRedirectStub(file))
       .map(({ owner, href }) => `${owner}: ${href}`);
@@ -127,11 +131,7 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("lists ThinkPages (the forum) and ThinkTanks under Home, both emerald-tinted", () => {
-    // Signed in, ThinkPages is a Home row, not an app (the app of that id is for signed-out visitors only).
-    expect(
-      getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)
-    ).not.toContain("thinkpages");
+  it("lists ThinkTanks under Home (emerald-tinted) and no longer lists ThinkPages", () => {
     const home = getApp("home");
     expect(home.sections.map((s) => s.label)).toEqual([
       "What's new",
@@ -139,27 +139,49 @@ describe("app section map routes", () => {
       "Accounts",
       "Messages",
       "ThinkTanks",
-      "ThinkPages",
     ]);
     const thinktanks = home.sections.find((s) => s.label === "ThinkTanks");
     expect(thinktanks).toMatchObject({ id: "thinktanks", href: "/thinktanks", tint: "thinkpages" });
     expect(thinktanks?.match).toBeUndefined();
-    expect(home.sections.find((s) => s.label === "ThinkPages")).toMatchObject({
-      id: "thinkpages",
-      href: "/thinkpages",
-      tint: "thinkpages",
-    });
-    expect(home.sections.some((s) => s.id === "forum")).toBe(false);
+    expect(home.match).not.toContain("/thinkpages");
+  });
+
+  it("makes ThinkPages its own app with Forums, Your realm and Moderation sections", () => {
+    const forum = getApp("thinkpages");
+    expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
+    expect(forum.match).toEqual(["/thinkpages"]);
+    expect(forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires])).toEqual([
+      ["forums", "Forums", "/thinkpages", true, undefined],
+      ["your-realm", "Your realm", "/thinkpages/r/mine", undefined, "realm-member"],
+      ["moderation", "Moderation", "/thinkpages/mod", undefined, "forum-moderator"],
+    ]);
   });
 
   it.each([
-    ["/thinkpages", "thinkpages"],
-    ["/thinkpages/post/abc", "thinkpages"],
-    ["/thinkpages/forum", "thinkpages"],
-    ["/thinkpages/c/general", "thinkpages"],
-    ["/thinkpages/t/abc", "thinkpages"],
-    ["/thinkpages/r/eurth/hub", "thinkpages"],
-    ["/thinkpages/mod", "thinkpages"],
+    ["/thinkpages", "forums"],
+    ["/thinkpages/r/mine", "your-realm"],
+    ["/thinkpages/mod", "moderation"],
+    ["/thinkpages/mod/reports", "moderation"],
+  ])("resolves %s to the ThinkPages app's %s section in the app tint", (pathname, sectionId) => {
+    const forum = getAppForPath(pathname);
+    expect(forum?.id).toBe("thinkpages");
+    const active = getActiveSectionId(forum!, pathname, null);
+    expect(active).toBe(sectionId);
+    expect(getTintForPath(forum, active)).toBe("thinkpages");
+  });
+
+  it.each([
+    "/thinkpages/post/abc",
+    "/thinkpages/c/general",
+    "/thinkpages/t/abc",
+    "/thinkpages/r/eurth/hub",
+  ])("keeps %s in the ThinkPages app, with no section current", (pathname) => {
+    const forum = getAppForPath(pathname);
+    expect(forum?.id).toBe("thinkpages");
+    expect(getActiveSectionId(forum!, pathname, null)).toBeUndefined();
+  });
+
+  it.each([
     ["/thinktanks", "thinktanks"],
     ["/thinktanks/abc", "thinktanks"],
   ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
@@ -385,8 +407,7 @@ describe("app visibility and the tab bar", () => {
       expect.arrayContaining(["wiki", "vault", "labs", "admin"])
     );
     const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
-    // Phase 4b: the XenForo bridge app is gone. Signed in, the forum is Home's ThinkPages row; signed out,
-    // Home is hidden, so a ThinkPages app takes the tab instead.
+    // Signed out, Home is hidden, so the ThinkPages app takes a tab slot.
     expect(signedOut.primary.map((app) => app.id)).toEqual([
       "maps",
       "countries",
@@ -395,15 +416,33 @@ describe("app visibility and the tab bar", () => {
     ]);
   });
 
-  it("lists ThinkPages as its own app only for signed-out visitors (Home carries it when signed in)", () => {
-    const signedOut = getVisibleApps({ signedIn: false, isAdmin: false });
-    const forum = signedOut.find((app) => app.id === "thinkpages");
-    expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
-    expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
-      "thinkpages"
-    );
-    // The forum's pages belong to Home when it is listed, and to the signed-out app when it is not.
-    expect(getAppForPath("/thinkpages/t/1")?.id).toBe("home");
-    expect(getAppForPath("/thinkpages/t/1", signedOut)?.id).toBe("thinkpages");
+  it("lists ThinkPages for everyone, with the gated sections only for those who pass the check", () => {
+    const sections = (context: Parameters<typeof getVisibleApps>[0]) =>
+      getVisibleApps(context)
+        .find((app) => app.id === "thinkpages")
+        ?.sections.map((s) => s.id);
+    expect(sections({ signedIn: false, isAdmin: false })).toEqual(["forums"]);
+    expect(sections({ signedIn: true, isAdmin: false })).toEqual(["forums"]);
+    expect(sections({ signedIn: true, isAdmin: false, realmMember: true })).toEqual([
+      "forums",
+      "your-realm",
+    ]);
+    expect(sections({ signedIn: true, isAdmin: false, forumModerator: true })).toEqual([
+      "forums",
+      "moderation",
+    ]);
+    expect(
+      sections({ signedIn: true, isAdmin: true, realmMember: true, forumModerator: true })
+    ).toEqual(["forums", "your-realm", "moderation"]);
+  });
+
+  it("keeps the shared ThinkPages object when every section is granted", () => {
+    const granted = getVisibleApps({
+      signedIn: true,
+      isAdmin: false,
+      realmMember: true,
+      forumModerator: true,
+    }).find((app) => app.id === "thinkpages");
+    expect(granted).toBe(getApp("thinkpages"));
   });
 });

@@ -31,6 +31,7 @@ import { AppSidebar } from "./AppSidebar";
 import { SidebarVaultCard } from "./SidebarVaultCard";
 import { TabBar } from "./TabBar";
 import { ShellHalo } from "./ShellHalo";
+import { useForumNavFlags } from "./use-forum-nav-flags";
 import { useNavBadges } from "./use-nav-badges";
 
 function WithSearchParams({ render }: { render: (params: SearchParamsLike | null) => ReactNode }) {
@@ -73,6 +74,7 @@ export function FacetShell() {
   const signedIn = Boolean(user);
   // Once here so the sidebar and the More sheet never run the queries twice.
   const badges = useNavBadges(signedIn);
+  const { realmMember, forumModerator } = useForumNavFlags(signedIn);
   const apps = useMemo(
     () =>
       getVisibleApps({
@@ -80,9 +82,19 @@ export function FacetShell() {
         isAdmin,
         hasLabsAccess,
         hasMycountryPremium,
+        realmMember,
+        forumModerator,
         navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
       }),
-    [signedIn, isAdmin, hasLabsAccess, hasMycountryPremium, navigationSettings]
+    [
+      signedIn,
+      isAdmin,
+      hasLabsAccess,
+      hasMycountryPremium,
+      realmMember,
+      forumModerator,
+      navigationSettings,
+    ]
   );
   // The Vault card and rail wallet follow the Vault app's visibility (prod hides it with
   // showCardsTab), not just the session, so they never advertise a surface the nav hides.

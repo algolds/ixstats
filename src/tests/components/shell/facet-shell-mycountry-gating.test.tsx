@@ -1,9 +1,10 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 let premium = false;
 let betaTester = false;
 let navSettings: { showCardsTab?: boolean } | undefined;
+let navFlags: { realmMember: boolean; forumModerator: boolean } | undefined;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/mycountry",
@@ -30,6 +31,7 @@ jest.mock("~/trpc/react", () => ({
       cards: { getMyCards: { invalidate: jest.fn() } },
     }),
     admin: { getNavigationSettings: { useQuery: () => ({ data: navSettings }) } },
+    thinkpagesForum: { navFlags: { useQuery: () => ({ data: navFlags }) } },
     vault: {
       getBalance: {
         useQuery: () => ({
@@ -68,6 +70,7 @@ beforeEach(() => {
   premium = false;
   betaTester = false;
   navSettings = undefined;
+  navFlags = undefined;
   window.localStorage.setItem(
     "ixstats:dailyReward:autoOpened:shell-user",
     new Date().toISOString().slice(0, 10)
@@ -118,5 +121,35 @@ describe("FacetShell Vault visibility", () => {
     expect(container.querySelector('[data-slot="sidebar-vault-card"]')).toBeNull();
     expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+  });
+});
+
+describe("FacetShell ThinkPages sections", () => {
+  const expandForum = () => {
+    const nav = sidebarLinks();
+    // The disclosure state is remembered in localStorage, so an earlier test may have left it open.
+    const toggle = nav.queryByRole("button", { name: "Expand ThinkPages" });
+    if (toggle) fireEvent.click(toggle);
+    return nav;
+  };
+
+  it("lists Forums only until the viewer's flags arrive", () => {
+    const nav = expandForum();
+    expect(nav.getByRole("link", { name: "Forums" })).toHaveAttribute("href", "/thinkpages");
+    expect(nav.queryByRole("link", { name: "Your realm" })).toBeNull();
+    expect(nav.queryByRole("link", { name: "Moderation" })).toBeNull();
+  });
+
+  it("adds Your realm for a realm member and Moderation for a forum moderator", () => {
+    navFlags = { realmMember: true, forumModerator: true };
+    const nav = expandForum();
+    expect(nav.getByRole("link", { name: "Your realm" })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/mine"
+    );
+    expect(nav.getByRole("link", { name: "Moderation" })).toHaveAttribute(
+      "href",
+      "/thinkpages/mod"
+    );
   });
 });

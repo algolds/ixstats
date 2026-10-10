@@ -475,15 +475,41 @@ describe("thinkpagesForum router", () => {
         post("p3", "u1", null),
       ] as never);
       db.forumPost.groupBy.mockResolvedValue([
-        { authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 4 } },
-        { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, _count: { _all: 2 } },
+        {
+          authorUserId: "u1",
+          authorPersonaId: "pa1",
+          importedAuthorName: null,
+          _count: { _all: 4 },
+        },
+        {
+          authorUserId: "u2",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          _count: { _all: 2 },
+        },
       ] as never);
       db.user.findMany.mockImplementation((async ({ where }: { where: { id: { in: string[] } } }) =>
         [
-          { ...rawUser, clerkUserId: "clerk_1", country: { name: "Caphiria", flag: "/f/caph.png" }, role: null },
-          { ...rawUser, id: "u2", clerkUserId: "clerk_2", handle: "boss", country: null, role: { name: "admin", level: 10 } },
+          {
+            ...rawUser,
+            clerkUserId: "clerk_1",
+            country: { name: "Caphiria", flag: "/f/caph.png" },
+            role: null,
+          },
+          {
+            ...rawUser,
+            id: "u2",
+            clerkUserId: "clerk_2",
+            handle: "boss",
+            country: null,
+            role: { name: "admin", level: 10 },
+          },
         ].filter((u) => where.id.in.includes(u.id))) as never);
-      db.thinkpagesAccount.findMany.mockImplementation((async ({ where }: { where: { id?: unknown } }) =>
+      db.thinkpagesAccount.findMany.mockImplementation((async ({
+        where,
+      }: {
+        where: { id?: unknown };
+      }) =>
         where.id
           ? [{ ...rawPersona, profileImageUrl: "/p/news.png" }]
           : [{ clerkUserId: "clerk_1", profileImageUrl: "/p/heku.png" }]) as never);
@@ -507,14 +533,22 @@ describe("thinkpagesForum router", () => {
       expect(out.authors.personas.pa1).not.toHaveProperty("flagUrl");
       expect(out.authors.users.u2).toMatchObject({ name: "boss", flagUrl: null });
       // u1 appears as a player on p3 only, so their data is present once, for that post.
-      expect(out.authors.users.u1).toMatchObject({ flagUrl: "/f/caph.png", avatarUrl: "/p/heku.png" });
+      expect(out.authors.users.u1).toMatchObject({
+        flagUrl: "/f/caph.png",
+        avatarUrl: "/p/heku.png",
+      });
     });
 
     it("keeps a player whose only posts are persona posts out of the author maps", async () => {
       const db = pageDb({ authorUserId: "u9", authorPersonaId: "pa1" });
       db.forumPost.findMany.mockResolvedValue([post("p1", "u1", "pa1")] as never);
       db.forumPost.groupBy.mockResolvedValue([
-        { authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 1 } },
+        {
+          authorUserId: "u1",
+          authorPersonaId: "pa1",
+          importedAuthorName: null,
+          _count: { _all: 1 },
+        },
       ] as never);
       const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
       expect(out.authors.users).toEqual({});
@@ -850,6 +884,43 @@ describe("thinkpagesForum router", () => {
         { id: "c_big", realmId: "r_eurth", currentTotalGdp: 99 },
       ]);
       expect((await caller(member, linked).realms()).defaultSlug).toBe("ixworld");
+    });
+
+    it("reports no sidebar flags to an anonymous visitor, without a query", async () => {
+      const db = realmForumDb(inEurth);
+      await expect(caller(null, db).navFlags()).resolves.toEqual({
+        realmMember: false,
+        forumModerator: false,
+      });
+      expect(db.country.findMany).not.toHaveBeenCalled();
+    });
+
+    it("flags a member of a realm, and a member with no nation or no moderator role as neither", async () => {
+      await expect(caller(member, realmForumDb(inEurth)).navFlags()).resolves.toEqual({
+        realmMember: true,
+        forumModerator: false,
+      });
+      await expect(caller(member, realmForumDb()).navFlags()).resolves.toEqual({
+        realmMember: false,
+        forumModerator: false,
+      });
+    });
+
+    it("flags site staff and any realm or category moderator as forum moderators", async () => {
+      await expect(caller(admin, realmForumDb()).navFlags()).resolves.toMatchObject({
+        forumModerator: true,
+      });
+      // The realm's founder moderates it (the fake's EURTH is owned by "founder").
+      await expect(caller(founder, realmForumDb()).navFlags()).resolves.toMatchObject({
+        forumModerator: true,
+      });
+      const categoryMod = realmForumDb();
+      categoryMod.forumCategoryModerator.findMany.mockResolvedValue([
+        { categoryId: "cat_general" },
+      ]);
+      await expect(caller(member, categoryMod).navFlags()).resolves.toMatchObject({
+        forumModerator: true,
+      });
     });
 
     it("returns a realm section with canPost and notice, never the raw posting access", async () => {
