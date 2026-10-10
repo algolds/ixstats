@@ -6,6 +6,7 @@
  * shows a member only their own threads. Archived threads count in totals but are not "latest" or trending.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { canModerateCategory } from "./mod-scope";
 import { publicThreadWhere, publishedRealmIds } from "./public-threads";
@@ -183,7 +184,10 @@ export async function trendingThreads(
       thread: {
         hidden: false,
         archived: false,
-        category: { OR: [{ scope: "site" }, { scope: "realm", realmId: { in: realmIds } }] },
+        category: {
+          ...notBoardCategory(),
+          OR: [{ scope: "site" }, { scope: "realm", realmId: { in: realmIds } }],
+        },
       },
     },
     _count: { threadId: true },

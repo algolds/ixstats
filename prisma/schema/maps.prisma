@@ -551,6 +551,10 @@ model Realm {
   rulesHtml         String?   // rendered and sanitized on save; claimants must accept it
   rulesUpdatedAt    DateTime?
   rulesUpdatedBy    String?   // Clerk userId
+  /// Realm board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md): emblem, then the board's settings.
+  emblemUrl            String?
+  boardVisitorsAllowed Boolean @default(true) // visitors (members of other realms) may post on the board
+  boardSlowModeSeconds Int     @default(0)    // members post at most once per this many seconds; 0 = off
   officers          RealmOfficer[]
   embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
   embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")

@@ -5,7 +5,7 @@
  * section or a published realm.
  */
 import type { PrismaClient } from "@prisma/client";
-import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
+import { categoryVisibilityWhere, notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { isRealmPublished } from "~/server/modules/realms";
@@ -60,13 +60,15 @@ export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promis
 
 /**
  * The `ForumThread` where clause for what anyone may read: not hidden, a public category, in the site section or
- * a published realm. Shared with the passport's forum footprint (member-activity.ts).
+ * a published realm, and never a realm board. Shared with the passport's forum footprint (member-activity.ts).
  */
 export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
   return {
     hidden: false,
     category: {
       ...categoryVisibilityWhere({ signedIn: false, siteAdmin: false }),
+      // The realm board's messages are not threads or posts anywhere outside the board.
+      ...notBoardCategory(),
       OR: [{ scope: "site" }, { scope: "realm", realmId: { in: await publishedRealmIds(db) } }],
     },
   };

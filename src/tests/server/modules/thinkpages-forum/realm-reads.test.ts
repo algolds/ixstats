@@ -143,8 +143,13 @@ describe("getRealmSection", () => {
     for (const batch of categories) findMany.mockResolvedValueOnce(batch);
     return {
       realm: { findUnique: jest.fn(async () => realm) },
-      forumCategory: { findMany, createMany: jest.fn(async () => ({ count: 3 })) },
+      forumCategory: {
+        findMany,
+        createMany: jest.fn(async () => ({ count: 4 })),
+        findFirst: jest.fn(async () => ({ id: "cat_board" })),
+      },
       forumThread: {
+        createMany: jest.fn(async () => ({ count: 1 })),
         groupBy: jest.fn(async (_args: { where: object }) => [
           {
             categoryId: "cat_hub",
@@ -229,10 +234,20 @@ describe("getRealmSection", () => {
     ).resolves.toBeDefined();
   });
 
+  it("leaves the realm's board out of its categories and counts", async () => {
+    const board = { ...seeded[0]!, id: "cat_board", key: "board", name: "Board", order: 0, icAllowed: true, style: "board" };
+    const db = sectionDb(EURTH, [[board, ...seeded]]);
+    const out = await getRealmSection(db as never, owner, "eurth");
+    expect(out.categories.map((c) => c.key)).toEqual(["hub", "character-threads", "current-events"]);
+    const groupBy = db.forumThread.groupBy.mock.calls[0]![0];
+    expect(JSON.stringify(groupBy)).not.toContain("cat_board");
+  });
+
   it("seeds a realm with no categories, then reads them again", async () => {
     const db = sectionDb(EURTH, [[], seeded]);
     const out = await getRealmSection(db as never, owner, "eurth");
     expect(db.forumCategory.createMany).toHaveBeenCalledTimes(1);
+    expect(db.forumThread.createMany).toHaveBeenCalledTimes(1);
     expect(db.forumCategory.createMany).toHaveBeenCalledWith(
       expect.objectContaining({ skipDuplicates: true })
     );

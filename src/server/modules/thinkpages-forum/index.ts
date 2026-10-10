@@ -6,6 +6,7 @@ export {
   type ForumViewer,
   type ModeratorContext,
 } from "./access";
+export { boardThreadOf, type BoardThreadDb } from "./board-thread";
 export { listBoards, type BoardAuthor, type BoardLatest, type BoardsDb } from "./board-list";
 export {
   boardTopPosters,

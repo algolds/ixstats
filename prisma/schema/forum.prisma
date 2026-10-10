@@ -4,6 +4,9 @@
 /// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids); the follow-ups
 /// add the appeal's subject scope and the report's target author (migration 20261012120000).
 /// The foundation (migration 20261013120000) adds category style, post wikitext and render metadata, and forum_post_templates.
+/// The realm board (migration 20261014120000) adds the post reply and continued-thread links, and seeds each realm's hidden
+/// board category (style "board", key "board") with its one thread; every forum list, count and feed leaves it out
+/// (src/lib/thinkpages-forum/categories.ts, isBoardCategory).
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
@@ -23,7 +26,7 @@ model ForumCategory {
   visibility  String        @default("public") // "public" | "staff" | "reporter_staff"
   postRole    String        @default("any") // "any" | "staff" (who may start threads)
   icAllowed   Boolean       @default(false)
-  style       String        @default("ooc") // "ooc" | "ic": how posts render (spec §1)
+  style       String        @default("ooc") // "ooc" | "ic": how posts render (spec §1); "board": the hidden realm board
   createdAt   DateTime      @default(now())
   threads     ForumThread[]
   moderators  ForumCategoryModerator[]
@@ -52,8 +55,10 @@ model ForumThread {
   lastPostAt         DateTime      @default(now())
   createdAt          DateTime      @default(now())
   xenforoThreadId    Int?          @unique
-  sourceRef          String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
+  sourceRef          String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>" / "realm_board_thread:<realmId>"
   posts              ForumPost[]
+  /// Board messages that were turned into this thread (the placeholder posts that link to it).
+  continuedFrom      ForumPost[]   @relation("PostContinuedThread")
 
   @@index([categoryId, pinned, lastPostAt])
   @@index([xenforoUserId])
@@ -83,8 +88,16 @@ model ForumPost {
   xenforoPostId      Int?        @unique
   xenforoUserId      Int?
   sourceRef          String?     @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>"
+  /// Board messages: the message this one replies to (same thread); cleared when that post goes.
+  replyToPostId      String?
+  replyToPost        ForumPost?  @relation("PostReplyTo", fields: [replyToPostId], references: [id], onDelete: SetNull)
+  replies            ForumPost[] @relation("PostReplyTo")
+  /// Board messages: the thread a message was continued in (this post is its placeholder link line); cleared when it goes.
+  continuedThreadId  String?
+  continuedThread    ForumThread? @relation("PostContinuedThread", fields: [continuedThreadId], references: [id], onDelete: SetNull)
 
   @@index([threadId, createdAt])
+  @@index([replyToPostId])
   @@index([authorUserId])
   @@index([xenforoUserId])
   @@index([createdAt])

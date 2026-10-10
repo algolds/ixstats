@@ -60,6 +60,7 @@ const PUBLIC_WHERE = {
   hidden: false,
   category: {
     visibility: { in: ["public"] },
+    style: { not: "board" },
     OR: [{ scope: "site" }, { scope: "realm", realmId: { in: ["default", "r_active", "r_old"] } }],
   },
 };

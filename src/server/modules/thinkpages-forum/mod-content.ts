@@ -6,6 +6,7 @@
  * archived-realm check (T0-6); nothing here deletes a thread or post (T0-7). A thread's `postCount` and `lastPostAt`
  * count its visible posts only, as members see them; moderators see hidden posts badged but not counted.
  */
+import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { logModAction, modNote } from "./mod-log";
@@ -98,6 +99,7 @@ export async function moveDestinations(
       realmId: from.realmId,
       visibility: from.visibility,
       id: { not: from.id },
+      ...notBoardCategory(),
     },
     orderBy: { order: "asc" },
     select: { id: true, key: true, name: true, scope: true, realmId: true },

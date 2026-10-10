@@ -1150,6 +1150,7 @@ describe("thinkpagesForum router", () => {
             realmId: "r_eurth",
             visibility: "public",
             id: { not: "rcat_hub" },
+            style: { not: "board" },
           },
         })
       );

@@ -4,6 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
 import { nationPageTaken } from "~/server/modules/realms/realms.handover";
@@ -51,7 +52,7 @@ async function unclaimedNationPages<P extends NationPage>(
 async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
   const inSection = {
     hidden: false,
-    category: { scope: "realm", realmId, visibility: "public" },
+    category: { scope: "realm", realmId, visibility: "public", ...notBoardCategory() },
   };
   const [recentPosts, latest] = await Promise.all([
     db.forumPost.count({ where: { hidden: false, createdAt: { gte: since }, thread: inSection } }),

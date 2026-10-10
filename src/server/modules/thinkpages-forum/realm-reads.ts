@@ -121,7 +121,7 @@ export async function getRealmSection(db: RealmReadsDb, viewer: ForumViewer, slu
     });
   let rows = await readCategories();
   if (rows.length === 0) {
-    await seedRealmCategories(db, realm.id);
+    await seedRealmCategories(db, realm);
     rows = await readCategories();
   }
   const [categories, access] = await Promise.all([

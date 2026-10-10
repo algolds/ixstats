@@ -2,6 +2,9 @@
 import { readFileSync } from "node:fs";
 import {
   categoryVisibilityWhere,
+  isBoardCategory,
+  notBoardCategory,
+  REALM_BOARD_KEY,
   REALM_CATEGORIES,
   REALM_HUB_KEY,
   SITE_CATEGORIES,
@@ -91,5 +94,56 @@ describe("category visibility (M8)", () => {
         visibility: { in: [...visibleForumVisibilities(viewer)] },
       });
     }
+  });
+});
+
+describe("the realm board category", () => {
+  it("is keyed board and is not one of the realm's listed boards", () => {
+    expect(REALM_BOARD_KEY).toBe("board");
+    expect(REALM_CATEGORIES.map((c) => c.key)).not.toContain(REALM_BOARD_KEY);
+  });
+
+  it("is recognised by style board, or by the realm key board", () => {
+    expect(isBoardCategory({ key: "board", style: "board" })).toBe(true);
+    expect(isBoardCategory({ key: "anything", style: "board" })).toBe(true);
+    expect(isBoardCategory({ key: "board", style: "ooc" })).toBe(true);
+    expect(isBoardCategory({ key: "board" })).toBe(true);
+    expect(isBoardCategory({ key: "board", style: null })).toBe(true);
+  });
+
+  it("does not take ordinary categories for it", () => {
+    expect(isBoardCategory({ key: "hub", style: "ooc" })).toBe(false);
+    expect(isBoardCategory({ key: "character-threads", style: "ic" })).toBe(false);
+    expect(isBoardCategory({ key: "boards" })).toBe(false);
+    expect(isBoardCategory({ key: "hub", style: null })).toBe(false);
+  });
+
+  it("gives the same rule as a Prisma where fragment over the style column", () => {
+    expect(notBoardCategory()).toEqual({ style: { not: "board" } });
+  });
+});
+
+describe("the realm board migration", () => {
+  const boardSql = readFileSync(
+    "prisma/migrations/20261014120000_thinkpages_realm_board/migration.sql",
+    "utf8"
+  );
+
+  it("adds the post, realm and index columns idempotently", () => {
+    for (const column of ["replyToPostId", "continuedThreadId", "emblemUrl", "boardVisitorsAllowed", "boardSlowModeSeconds"]) {
+      expect(boardSql).toContain(`ADD COLUMN IF NOT EXISTS "${column}"`);
+    }
+    expect(boardSql).toContain('"forum_posts_replyToPostId_idx"');
+    expect(boardSql.match(/ON DELETE SET NULL/g)).toHaveLength(2);
+    expect(boardSql).toContain("IF NOT EXISTS");
+  });
+
+  it("backfills one board category and thread per realm, IxWorld included, guarded by NOT EXISTS", () => {
+    expect(boardSql).toContain("UNION SELECT 'default'");
+    expect(boardSql).toContain("'board'");
+    expect(boardSql).toContain("0, 'public', 'any', true, 'board'");
+    expect(boardSql).toContain("realm_board_thread:");
+    expect(boardSql).toContain('WHERE NOT EXISTS (\n  SELECT 1 FROM "forum_categories"');
+    expect(boardSql).toContain('AND NOT EXISTS (SELECT 1 FROM "forum_threads"');
   });
 });

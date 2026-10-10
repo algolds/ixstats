@@ -288,6 +288,7 @@ describe("trendingThreads", () => {
     await trendingThreads(db as never, member, 5, NOW);
     const category = (argsOf(db.forumPost.groupBy).where.thread as { category: object }).category;
     expect(category).toEqual({
+      style: { not: "board" },
       OR: [{ scope: "site" }, { scope: "realm", realmId: { in: expect.arrayContaining(["r1"]) } }],
     });
     const realmIds = (category as { OR: Array<{ realmId?: { in: string[] } }> }).OR[1]!.realmId!.in;

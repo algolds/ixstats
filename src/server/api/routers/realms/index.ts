@@ -272,7 +272,7 @@ export const realmsRouter = createTRPCRouter({
           const realm = await tx.realm.create({
             data: { ...input, ownerId: input.ownerId ?? "system", status: "active" },
           });
-          await seedRealmCategories(tx, realm.id);
+          await seedRealmCategories(tx, realm);
           return realm;
         })
         .catch(slugTaken)

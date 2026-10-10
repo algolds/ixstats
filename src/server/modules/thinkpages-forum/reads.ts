@@ -7,6 +7,7 @@
  * categories, threads and posts.
  */
 import type { ForumCategory, Prisma, PrismaClient } from "@prisma/client";
+import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
@@ -85,7 +86,10 @@ export async function loadCategory(
   if (where.realm && (!realm || !canSeeRealm(viewer, realm))) throw notFound("Category");
   const scope = realm ? { scope: "realm", realmId: realm.id } : SITE_SCOPE;
   const category = await db.forumCategory.findFirst({ where: { ...scope, key: where.key } });
-  if (!category || !canSeeCategory(viewer, category)) throw notFound("Category");
+  // The realm board is no category page: its one thread is reached through the board reads and writes only.
+  if (!category || isBoardCategory(category) || !canSeeCategory(viewer, category)) {
+    throw notFound("Category");
+  }
   return { category, realm };
 }
 
@@ -98,7 +102,7 @@ export async function summarizeCategories(
   viewer: ForumViewer,
   categories: readonly ForumCategory[]
 ) {
-  const visible = categories.filter((c) => canSeeCategory(viewer, c));
+  const visible = categories.filter((c) => canSeeCategory(viewer, c) && !isBoardCategory(c));
   const ids = (list: readonly ForumCategory[]) => list.map((c) => c.id);
   const own = visible.filter((c) => onlyOwnThreads(viewer, c));
   const all = visible.filter((c) => !onlyOwnThreads(viewer, c));

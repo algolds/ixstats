@@ -5,6 +5,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { isModerator } from "./mod-scope";
@@ -51,14 +52,17 @@ export async function moderationContext(
   const realmIds = viewer.mod?.realmIds ?? [];
   const categoryIds = viewer.mod?.categoryIds ?? [];
   const categories = await db.forumCategory.findMany({
-    where: admin
-      ? {}
-      : {
-          OR: [
-            { scope: "realm", realmId: { in: [...realmIds] } },
-            { id: { in: [...categoryIds] } },
-          ],
-        },
+    where: {
+      ...notBoardCategory(),
+      ...(admin
+        ? {}
+        : {
+            OR: [
+              { scope: "realm", realmId: { in: [...realmIds] } },
+              { id: { in: [...categoryIds] } },
+            ],
+          }),
+    },
     orderBy: { order: "asc" },
     select: { id: true, key: true, name: true, scope: true, realmId: true },
   });

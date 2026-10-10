@@ -476,11 +476,16 @@ describe("realms.adminCreateRealm", () => {
   const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
   const member = { id: "db_member", clerkUserId: "member_1", role: { name: "user", level: 100 } };
 
-  const createMany = jest.fn().mockResolvedValue({ count: 3 });
+  const createMany = jest.fn().mockResolvedValue({ count: 4 });
+  const threadCreateMany = jest.fn().mockResolvedValue({ count: 1 });
 
   // N3: the realm and its categories are written through one transaction client, never the outer one.
   const transaction = jest.fn(async (fn: (tx: object) => Promise<object>) =>
-    fn({ realm: { create: transactionCreate }, forumCategory: { createMany } })
+    fn({
+      realm: { create: transactionCreate },
+      forumCategory: { createMany, findFirst: jest.fn().mockResolvedValue({ id: "cat_board" }) },
+      forumThread: { createMany: threadCreateMany },
+    })
   );
   let transactionCreate: jest.Mock = jest.fn();
 
@@ -545,6 +550,21 @@ describe("realms.adminCreateRealm", () => {
         data: expect.arrayContaining([
           expect.objectContaining({ scope: "realm", realmId: "r1", key: "hub" }),
         ]),
+      })
+    );
+  });
+
+  it("gives the new realm its board thread in the same transaction", async () => {
+    threadCreateMany.mockClear();
+    const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
+    await adminCaller(create).adminCreateRealm({
+      slug: "eurth",
+      name: "Eurth",
+      visibility: "public",
+    });
+    expect(threadCreateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [expect.objectContaining({ categoryId: "cat_board", title: "Eurth board" })],
       })
     );
   });

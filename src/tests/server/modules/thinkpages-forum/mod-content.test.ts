@@ -550,6 +550,7 @@ describe("moveDestinations", () => {
           realmId: "r_eurth",
           visibility: "public",
           id: { not: "r_eurth_hub" },
+          style: { not: "board" },
         },
         orderBy: { order: "asc" },
       })
