@@ -1,2 +1,2 @@
 export { BoardPage } from "./BoardPage";
-export { ThreadTable } from "./ThreadTable";
+export { ThreadTable, type ThreadRowData } from "./ThreadTable";
