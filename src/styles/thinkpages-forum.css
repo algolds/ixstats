@@ -11,6 +11,11 @@
     /* Contains the floated infobox, so the post's actions never sit beside it. */
     display: flow-root;
     min-width: 0;
+    /* A member writes this markup: layout + paint containment make the post the containing block of any fixed or
+       absolute descendant and clip it to the post (the server also strips such styles and classes), and isolation
+       keeps any z-index inside the post's own stacking context. Floats and embeds lay out inside it as before. */
+    contain: layout paint;
+    isolation: isolate;
   }
 
   /* ---- In character: a WikiOS article ---------------------------------------------------------------------- */

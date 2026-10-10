@@ -12,10 +12,11 @@ import {
 } from "~/lib/wiki-os/services/view-bundle";
 import { cleanWikiMarkup, parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { guardWikitext, WikitextRefusal } from "~/lib/thinkpages-forum/wikitext-guards";
 import { ForumError } from "./errors";
 
-export const FORUM_RENDERER_VERSION = `forum-1:${RENDERER_VERSION}`;
+export const FORUM_RENDERER_VERSION = `forum-2:${RENDERER_VERSION}`;
 const PER_USER_PER_MINUTE = 10;
 
 export interface RenderedPost {
@@ -72,11 +73,15 @@ export function composePostHtml(bundle: ViewBundle): string {
   const infobox = bundle.infoboxHtml
     ? `<div class="forum-infobox">${bundle.infoboxHtml}</div>`
     : "";
-  return `<div class="mw-parser-output">${notices}${infobox}${bundle.bodyHtml}</div>`;
+  return stripPositioning(
+    `<div class="mw-parser-output">${notices}${infobox}${bundle.bodyHtml}</div>`
+  );
 }
 
 function fallback(wikitext: string): RenderedPost {
-  const contentHtml = `<div class="mw-parser-output">${sanitizeWikiArticleHtml(parseWikitextToHtml(wikitext))}</div>`;
+  const contentHtml = stripPositioning(
+    `<div class="mw-parser-output">${sanitizeWikiArticleHtml(parseWikitextToHtml(wikitext))}</div>`
+  );
   return {
     contentHtml,
     plainText: cleanWikiMarkup(wikitext),

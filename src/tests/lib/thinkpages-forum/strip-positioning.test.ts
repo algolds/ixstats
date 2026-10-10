@@ -1,0 +1,125 @@
+/** @jest-environment node */
+import {
+  stripClassTokens,
+  stripPositioning,
+  stripStyleDeclarations,
+} from "~/lib/thinkpages-forum/strip-positioning";
+
+describe("stripStyleDeclarations", () => {
+  it.each([
+    ["position:fixed;inset:0;z-index:99999;color:red", "color:red"],
+    ["POSITION : Absolute ; top:0; left:0; right:0; bottom:0; width:10px", "width:10px"],
+    ["transform:translate(-50%,-50%);translate:10px;scale:3;rotate:4deg;color:blue", "color:blue"],
+    ["-webkit-transform:scale(9);-ms-transform:none;margin:0", "margin:0"],
+    ["inset-block:0;inset-inline-start:0;inset-block-end:0;padding:1px", "padding:1px"],
+    ["z-index:2;color:red", "color:red"],
+    ["position:sticky", ""],
+    ["background-attachment:fixed;color:red", "color:red"],
+    ["color:red;/* position:fixed */font-weight:bold", "color:red;font-weight:bold"],
+  ])("removes overlay properties from %s", (input, expected) => {
+    expect(stripStyleDeclarations(input)).toBe(expected);
+  });
+
+  it("returns a style with nothing to remove exactly as written", () => {
+    const style = "width: 22em; float: right ;text-align:left";
+    expect(stripStyleDeclarations(style)).toBe(style);
+  });
+
+  it("drops a declaration whose property name uses a CSS escape", () => {
+    expect(stripStyleDeclarations("p\\6fsition:fixed;color:red")).toBe("color:red");
+    expect(stripStyleDeclarations("\\70osition: fixed")).toBe("");
+  });
+
+  it("drops a declaration without a property or a colon", () => {
+    expect(stripStyleDeclarations("junk;;color:red;:oops")).toBe("color:red");
+  });
+
+  it("keeps semicolons inside strings and url() values", () => {
+    expect(stripStyleDeclarations('font-family:"A;B";position:fixed')).toBe('font-family:"A;B"');
+    expect(stripStyleDeclarations("background:url(a;b.png);top:0")).toBe("background:url(a;b.png)");
+  });
+
+  it("treats an unterminated comment as swallowing the rest", () => {
+    expect(stripStyleDeclarations("color:red;/* position:fixed")).toBe("color:red");
+  });
+
+  it("keeps harmless declarations and custom properties", () => {
+    const style = "text-align:center;--x:1;width:50%";
+    expect(stripStyleDeclarations(style)).toBe(style);
+  });
+});
+
+describe("stripClassTokens", () => {
+  it.each([
+    ["fixed inset-0 z-50", ""],
+    ["absolute sticky relative", ""],
+    ["top-0 left-0 right-0 bottom-0 start-0 end-0", ""],
+    ["inset-x-0 inset-y-4 inset-1/2 top-1/2 -top-4", ""],
+    ["-translate-x-1/2 translate-y-2 transform", ""],
+    ["md:fixed hover:absolute !fixed sm:-z-10 max-md:inset-0", ""],
+    ["[position:fixed] z-[9999] top-[10px] inset-(--x)", ""],
+    [
+      "wikitable infobox mw-parser-output infobox-header navbox floatright",
+      "wikitable infobox mw-parser-output infobox-header navbox floatright",
+    ],
+    ["fixed-width left-hand wikitable", "fixed-width left-hand wikitable"],
+    ["a fixed b", "a b"],
+    ["", ""],
+  ])("filters %s", (input, expected) => {
+    expect(stripClassTokens(input)).toBe(expected);
+  });
+});
+
+describe("stripPositioning", () => {
+  it("cleans style and class on any tag, nested", () => {
+    const html =
+      '<div class="fixed inset-0 z-50 keep" style="position:fixed;inset:0;z-index:99999"><p style="color:red;position:absolute">Please sign in again</p></div>';
+    expect(stripPositioning(html)).toBe(
+      '<div class="keep"><p style="color:red">Please sign in again</p></div>'
+    );
+  });
+
+  it("removes an emptied style or class attribute", () => {
+    expect(stripPositioning('<div style="position:fixed" class="fixed">x</div>')).toBe(
+      "<div>x</div>"
+    );
+  });
+
+  it("handles single-quoted and unquoted attributes and self-closing tags", () => {
+    expect(stripPositioning("<span style='position:fixed' class=fixed>x</span><br/>")).toBe(
+      "<span>x</span><br/>"
+    );
+  });
+
+  it("is not fooled by > inside another attribute's value", () => {
+    expect(
+      stripPositioning(
+        '<a title="a > b" style="position:fixed;color:red" href="/x?a=1&amp;b=2">t</a>'
+      )
+    ).toBe('<a title="a > b" style="color:red" href="/x?a=1&amp;b=2">t</a>');
+  });
+
+  it("round-trips the entities a style value carries", () => {
+    expect(stripPositioning('<p style="font-family:&quot;A;B&quot;;position:fixed">x</p>')).toBe(
+      '<p style="font-family:&quot;A;B&quot;">x</p>'
+    );
+  });
+
+  it("drops a style or class token that hides characters in other entities", () => {
+    expect(stripPositioning('<p style="position&colon;fixed">x</p>')).toBe("<p>x</p>");
+    expect(stripPositioning('<p style="color:red" class="a&#102;ixed b">x</p>')).toBe(
+      '<p style="color:red" class="b">x</p>'
+    );
+  });
+
+  it("leaves text and escaped markup alone", () => {
+    const html = '<p>&lt;div style="position:fixed"&gt; is escaped</p>';
+    expect(stripPositioning(html)).toBe(html);
+  });
+
+  it("leaves a real-looking infobox and table intact", () => {
+    const html =
+      '<div class="mw-parser-output"><div class="forum-infobox"><table class="infobox infobox-country" style="width:22em;float:right;text-align:left"><tbody><tr><th colspan="2" class="infobox-above" style="background:#cde;text-align:center">Urcea</th></tr><tr><td colspan="2" class="infobox-image"><span class="mw-default-size" typeof="mw:File"><a href="/wiki/File:Flag.png" class="mw-file-description"><img src="/img/Flag.png" width="200" height="100" class="mw-file-element"></a></span></td></tr><tr><th scope="row" class="infobox-label">Capital</th><td class="infobox-data">Valmora</td></tr></tbody></table></div><table class="wikitable sortable" style="width:100%; background: #f8f9fa; border: 1px solid #a2a9b1"><tr><th>A</th></tr></table></div>';
+    expect(stripPositioning(html)).toBe(html);
+  });
+});

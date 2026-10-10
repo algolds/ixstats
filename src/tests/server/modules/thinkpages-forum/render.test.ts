@@ -91,3 +91,40 @@ it("composes notices, a floated infobox and the body inside mw-parser-output", (
   expect(html.indexOf("n</div>")).toBeLessThan(html.indexOf("<table>"));
   expect(html.indexOf("<table>")).toBeLessThan(html.indexOf("<p>b</p>"));
 });
+
+describe("members cannot position their post over the app", () => {
+  const OVERLAY =
+    '<div class="fixed inset-0 z-50 wikitable" style="position:fixed;inset:0;z-index:99999;color:red">Please sign in again</div>';
+
+  function expectClean(html: string): void {
+    expect(html).toContain("Please sign in again");
+    expect(html).toContain('class="wikitable"');
+    expect(html).toContain('style="color:red"');
+    expect(html).not.toMatch(/position|inset|z-index|fixed|z-50/);
+  }
+
+  it("strips overlay styles and classes from the MediaWiki render", async () => {
+    render.mockResolvedValue({
+      html: `<div class="mw-parser-output">${OVERLAY}</div>`,
+      metadata: meta,
+    });
+    expectClean((await renderPostWikitext("x", "t1", "u1")).contentHtml);
+  });
+
+  it("strips them from the in-process fallback too", async () => {
+    render.mockResolvedValue(null);
+    expectClean(
+      (
+        await renderPostWikitext(
+          `<div style="position:fixed;inset:0;z-index:99999;color:red" class="fixed inset-0 z-50 wikitable">Please sign in again</div>`,
+          "t1",
+          "u1"
+        )
+      ).contentHtml
+    );
+  });
+
+  it("stamps the renderer version that re-renders stored posts", () => {
+    expect(FORUM_RENDERER_VERSION).toMatch(/^forum-2:/);
+  });
+});
