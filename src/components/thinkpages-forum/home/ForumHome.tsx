@@ -64,7 +64,7 @@ export function ForumHome() {
       title={TITLE}
       actions={
         moderator ? (
-          <Button asChild size="sm" variant="secondary">
+          <Button asChild size="sm" variant="ghost" className="text-label-secondary">
             <Link href={modHref()}>
               <ShieldCheck aria-hidden />
               Moderation

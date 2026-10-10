@@ -10,13 +10,11 @@ import { Inspector } from "~/components/ui/inspector";
 const RAIL_QUERY = "(min-width: 1280px)";
 
 /**
- * The page column's horizontal padding, which the header's `bleed` (`-mx-2`) pulls out of. Needed wherever the
- * header would otherwise reach the viewport edge: everything below xl, and at xl and wider too when there is no
- * rail (no Inspector gutter beside the column to absorb the bleed, which would overflow by 8px). From xl, with a
- * rail, the shell's sidebar and inspector gutters sit beside the column, so the approved flush layout stays.
+ * The page column: the dashboard's 16px inset on the sides, which the header's `bleed` (`-mx-2`) pulls out of so its
+ * title and actions line up with the cards, and MyCountry's top padding (`py-4 md:py-8`), which lowers the toolbar
+ * row, and so the page's actions, below the floating top chrome instead of under it.
  */
-const PAGE_COLUMN = "flex min-w-0 flex-col px-4";
-const PAGE_COLUMN_WITH_RAIL = `${PAGE_COLUMN} xl:px-0`;
+const PAGE_COLUMN = "flex min-w-0 flex-col px-4 pt-4 pb-8 md:pt-8";
 
 interface ForumPageProps {
   title: string;
@@ -64,7 +62,7 @@ export function ForumPage({
   }, [watchHash, openRailOnHash]);
   return (
     <>
-      <div className={hasRail ? PAGE_COLUMN_WITH_RAIL : PAGE_COLUMN}>
+      <div className={PAGE_COLUMN}>
         <PageHeader
           title={title}
           subtitle={breadcrumbs}
@@ -77,9 +75,9 @@ export function ForumPage({
                 {actions}
                 {hasRail && (
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
-                    className="xl:hidden"
+                    className="text-label-secondary xl:hidden"
                     aria-haspopup="dialog"
                     aria-expanded={railOpen}
                     onClick={() => setRailOpen(true)}

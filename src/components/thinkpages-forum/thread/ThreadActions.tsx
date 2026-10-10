@@ -35,8 +35,12 @@ import { ReportDialog } from "../ReportDialog";
 import { StashThreadButton } from "../StashThreadButton";
 import type { ThreadData } from "./types";
 
-/** The widths below which the header cannot hold the whole bar: actions collapse into one menu and icon buttons. */
-export const COMPACT_QUERY = "(max-width: 1023px)";
+/**
+ * The widths below which the header cannot hold the whole bar beside the floating top chrome (the toolbar keeps its
+ * middle clear, which leaves a column's right half about 250px at 1440px): actions collapse into one menu and icon
+ * buttons.
+ */
+export const COMPACT_QUERY = "(max-width: 1535px)";
 
 type Flag = "locked" | "pinned" | "hidden" | "archived";
 type Destination = NonNullable<
@@ -140,8 +144,9 @@ function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProp
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="secondary"
+              variant="ghost"
               size="icon-sm"
+              className="text-label-secondary"
               aria-label="Thread actions"
               disabled={pending}
             >
@@ -169,8 +174,9 @@ function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProp
             return (
               <Button
                 key={flag}
-                variant="secondary"
+                variant="ghost"
                 size="sm"
+                className="text-label-secondary"
                 disabled={pending}
                 onClick={() => choose(flag, label)}
               >
@@ -179,7 +185,13 @@ function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProp
             );
           })}
           {categories.length > 0 ? (
-            <Button variant="secondary" size="sm" disabled={pending} onClick={startMove}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-label-secondary"
+              disabled={pending}
+              onClick={startMove}
+            >
               Move
             </Button>
           ) : null}

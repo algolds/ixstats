@@ -272,7 +272,7 @@ describe("the thread page", () => {
 
   it("on a narrow screen puts In character beside the trail and keeps the header to icons and one menu", () => {
     window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 1023px)" || query === "(max-width: 767px)",
+      matches: query === "(max-width: 1535px)" || query === "(max-width: 767px)",
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,

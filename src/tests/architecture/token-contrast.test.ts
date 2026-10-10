@@ -429,6 +429,17 @@ describe("identity tokens: CSS matches src/lib/design/tokens.ts", () => {
     expect(css).not.toContain("--primary-fill-image");
   });
 
+  it("the ThinkPages primary is the app tint itself", () => {
+    const tinted = blocks.find(
+      (x) => x.stack[1] === '[data-app="thinkpages"]' && x.decls.has("--primary-fill")
+    )!;
+    expect([...tinted.decls.entries()]).toEqual([
+      ["--primary-fill", "var(--tint)"],
+      ["--primary-fill-hover", "var(--tint-hover)"],
+      ["--on-primary", "var(--on-tint)"],
+    ]);
+  });
+
   it("Reduce Transparency and Increase Contrast make every layer opaque and drop the washes", () => {
     for (const variant of ["@variant transparency-reduced", "@variant contrast-more"]) {
       const b = block("@layer base", ":root[data-theme]", variant);

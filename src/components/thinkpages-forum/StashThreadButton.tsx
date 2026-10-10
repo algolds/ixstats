@@ -42,6 +42,7 @@ export function StashThreadButton({
     <Button
       variant="ghost"
       size={iconOnly ? "icon-sm" : "sm"}
+      className="text-label-secondary"
       aria-label={iconOnly ? "Stash thread" : undefined}
       aria-pressed={stashed}
       disabled={busy || isLoading}

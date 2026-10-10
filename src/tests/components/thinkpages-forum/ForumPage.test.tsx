@@ -50,7 +50,7 @@ describe("ForumPage", () => {
     expect(screen.getByTestId("emblem")).toBeInTheDocument();
   });
 
-  it("pads the page column wherever the bleeding header would reach the viewport edge", () => {
+  it("insets the page column like the dashboard and lowers the header below the top chrome", () => {
     installViewport(true);
     const { container } = render(
       <ForumPage title="General" rail={<p>Rail content</p>}>
@@ -58,22 +58,12 @@ describe("ForumPage", () => {
       </ForumPage>
     );
     const header = container.querySelector('[data-slot="page-header"]')!;
-    // PageHeader's bleed (-mx-2) needs padding on its parent below xl; from xl the shell gutters take over.
+    // PageHeader's bleed (-mx-2) pulls the title and actions out to the cards' edge.
     expect(header).toHaveClass("-mx-2");
-    expect(header.parentElement).toHaveClass("px-4", "xl:px-0");
-    expect(screen.getByText("Body").parentElement?.parentElement).toBe(header.parentElement);
-  });
-
-  it("keeps the padding at xl and wider when there is no rail, or the bleed overflows by 8px", () => {
-    installViewport(true);
-    const { container } = render(
-      <ForumPage title="Moderation">
-        <p>Body</p>
-      </ForumPage>
-    );
-    const column = container.querySelector('[data-slot="page-header"]')!.parentElement!;
-    expect(column).toHaveClass("px-4");
+    const column = header.parentElement!;
+    expect(column).toHaveClass("px-4", "pt-4", "md:pt-8");
     expect(column).not.toHaveClass("xl:px-0");
+    expect(screen.getByText("Body").parentElement?.parentElement).toBe(column);
   });
 
   it("has no inspector and no Info button without a rail", () => {

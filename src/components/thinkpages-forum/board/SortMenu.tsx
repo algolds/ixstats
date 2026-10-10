@@ -24,7 +24,7 @@ export function SortMenu({ basePath, sort }: { basePath: string; sort: ThreadSor
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" className="md:hidden">
+        <Button variant="ghost" size="sm" className="text-label-secondary md:hidden">
           <Sort aria-hidden />
           Sort
         </Button>

@@ -72,11 +72,17 @@ export function ReportDialog({
       {control ? null : (
         <DialogTrigger asChild>
           {iconOnly ? (
-            <Button variant="ghost" size="icon-sm" aria-label={label}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-label-secondary"
+              aria-label={label}
+            >
               <WarningTriangle aria-hidden />
             </Button>
           ) : (
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="text-label-secondary">
+              <WarningTriangle aria-hidden />
               {label}
             </Button>
           )}

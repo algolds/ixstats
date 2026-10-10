@@ -707,7 +707,7 @@
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Primary action: monochrome, flat gold inside MyCountry and the Builder */
+    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the emerald tint inside ThinkPages */
     --primary-mono: #18181b;
     --primary-mono-hover: #3f3f46;
     --on-primary-mono: #fafafa;
@@ -748,6 +748,12 @@
     --primary-fill: var(--gold);
     --primary-fill-hover: var(--gold-hover);
     --on-primary: var(--on-gold);
+  }
+  /* ThinkPages: the primary action is the emerald app tint itself. */
+  [data-app="thinkpages"] {
+    --primary-fill: var(--tint);
+    --primary-fill-hover: var(--tint-hover);
+    --on-primary: var(--on-tint);
   }
 
   @media (max-width: 768px) {
