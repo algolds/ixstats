@@ -77,9 +77,19 @@ describe("ThinkPage activity title", () => {
       },
     });
     expect(mockCreate.mock.calls[0]![0]).toMatchObject({
-      title: "Ann liked your ThinkPage",
+      title: "Ann liked your post",
       message: '"nice post"',
       userId: "u",
+    });
+  });
+
+  it("calls the feed post a post, not a ThinkPage, without an actor too (U2)", async () => {
+    await notificationAPI.trigger({
+      thinkpage: { id: "p9", title: "nice post", action: "commented", authorId: "a", targetUserId: "u" },
+    });
+    expect(mockCreate.mock.calls[0]![0]).toMatchObject({
+      title: "Post commented",
+      message: 'commented on your post: "nice post"',
     });
   });
 });

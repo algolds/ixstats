@@ -16,7 +16,6 @@ import {
 import {
   authorModeration,
   canStartThread,
-  categoryPostingAccess,
   createThread,
   editPost,
   fileAppeal,
@@ -31,6 +30,7 @@ import {
   MAX_POST_HTML,
   moveDestinations,
   myStanding,
+  postingAccessFor,
   primaryRealmIdOf,
   replyToThread,
   resolvePostLocation,
@@ -42,13 +42,24 @@ import {
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
-import { actorOf, authorMaps, categoryKey, id, mapError, page, realm, stashOwnerOf, viewerOf } from "./viewer";
+import {
+  actorOf,
+  authorMaps,
+  categoryKey,
+  id,
+  mapError,
+  memberOf,
+  page,
+  realm,
+  stashOwnerOf,
+  viewerOf,
+} from "./viewer";
 
 const html = z.string().max(MAX_POST_HTML);
 const personaId = id.nullish();
 const stashTarget = z.object({ threadId: id, stashId: id.optional() });
 
-type ThreadPage = Awaited<ReturnType<typeof getThreadPosts>>;
+type ThreadPage = Omit<Awaited<ReturnType<typeof getThreadPosts>>, "forumRealm">;
 
 /**
  * A moderator's extras on a thread: Move destinations, and what they may do to each author's posts (I-1, M-8), so
@@ -89,13 +100,14 @@ export const thinkpagesForumRouter = createTRPCRouter({
     const viewer = await viewerOf(ctx.db, ctx.user);
     const section = await getRealmSection(ctx.db, viewer, input.realm).catch(mapError);
     // Only the verdict leaves: never the viewer's nation ids or the raw ban (T0-18: a flag for BanNotice).
-    const { canPost, notice, ban } = section.access;
+    const { canPost, notice, ban, needsNation } = section.access;
     return {
       realm: section.realm,
       categories: section.categories,
       canPost,
       notice,
       banned: ban !== null,
+      needsNation,
     };
   }),
 
@@ -103,13 +115,13 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(z.object({ key: categoryKey, page, realm: realm.optional() }))
     .query(async ({ ctx, input }) => {
       const viewer = await viewerOf(ctx.db, ctx.user);
-      const result = await getCategoryThreads(
+      const { forumRealm, ...result } = await getCategoryThreads(
         ctx.db,
         viewer,
         { key: input.key, realm: input.realm },
         input.page
       ).catch(mapError);
-      const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+      const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
       return {
         ...result,
         // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4).
@@ -126,9 +138,15 @@ export const thinkpagesForumRouter = createTRPCRouter({
 
   thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
     const viewer = await viewerOf(ctx.db, ctx.user);
-    const result = await getThreadPosts(ctx.db, viewer, input.threadId, input.page).catch(mapError);
-    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it.
-    const access = await categoryPostingAccess(ctx.db, viewer, result.category);
+    const { forumRealm, ...result } = await getThreadPosts(
+      ctx.db,
+      viewer,
+      input.threadId,
+      input.page
+    ).catch(mapError);
+    // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
+    // realm the read already loaded (N1).
+    const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
     // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
     const writable =
       viewer !== null && !result.thread.locked && !result.thread.archived && !result.thread.hidden;
@@ -181,15 +199,15 @@ export const thinkpagesForumRouter = createTRPCRouter({
   ),
 
   /** The member's own warnings, bans and appeals (M20); never who issued or reviewed them. */
-  myStanding: protectedProcedure.query(async ({ ctx }) =>
-    myStanding(ctx.db, await actorOf(ctx.db, ctx.user))
-  ),
+  myStanding: protectedProcedure.query(({ ctx }) => myStanding(ctx.db, memberOf(ctx.user))),
 
   /** Stashes a thread the caller may read (NOT_FOUND otherwise) in their default or a given stash. */
   stashThread: rateLimitedMutationProcedure
     .input(stashTarget)
     .mutation(async ({ ctx, input }) =>
-      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(mapError)
+      stashThread(ctx.db, await viewerOf(ctx.db, ctx.user), stashOwnerOf(ctx), input).catch(
+        mapError
+      )
     ),
 
   /** Removes the thread from one stash, or from all the caller's stashes. */
@@ -201,10 +219,17 @@ export const thinkpagesForumRouter = createTRPCRouter({
     .input(z.object({ threadId: id }))
     .query(({ ctx, input }) => isThreadStashed(ctx.db, stashOwnerOf(ctx), input)),
 
-  /** The caller's native stashed threads, newest first. */
+  /** The caller's native stashed threads they may still read, newest first, with current titles (I5). */
   stashedThreads: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(50) }).optional())
-    .query(({ ctx, input }) => listStashedThreads(ctx.db, stashOwnerOf(ctx), input?.limit ?? 50)),
+    .query(async ({ ctx, input }) =>
+      listStashedThreads(
+        ctx.db,
+        await viewerOf(ctx.db, ctx.user),
+        stashOwnerOf(ctx),
+        input?.limit ?? 50
+      )
+    ),
 
   createThread: rateLimitedMutationProcedure
     .input(
@@ -226,8 +251,9 @@ export const thinkpagesForumRouter = createTRPCRouter({
       replyToThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
 
+  /** `editedAt` is the post's value when the author loaded it (M1: CONFLICT if a moderator edited since). */
   editPost: rateLimitedMutationProcedure
-    .input(z.object({ postId: id, html }))
+    .input(z.object({ postId: id, html, editedAt: z.date().nullable() }))
     .mutation(async ({ ctx, input }) =>
       editPost(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
@@ -254,7 +280,5 @@ export const thinkpagesForumRouter = createTRPCRouter({
         body: z.string().trim().min(10).max(4000),
       })
     )
-    .mutation(async ({ ctx, input }) =>
-      fileAppeal(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
-    ),
+    .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
 });

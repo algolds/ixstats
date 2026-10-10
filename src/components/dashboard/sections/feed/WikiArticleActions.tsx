@@ -446,7 +446,7 @@ export function WikiArticleActions({ title, trailing }: WikiArticleActionsProps)
           <ActionPill
             icon={<Repeat2 />}
             onClick={() => setIsRepostOpen(true)}
-            title="Repost to ThinkPages feed"
+            title="Repost to your feed"
           >
             Repost
           </ActionPill>

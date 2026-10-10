@@ -11,31 +11,17 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { api, type RouterInputs } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PersonaTraitControls, type PersonaTraitKey } from "./form/PersonaTraitControls";
+import { accountSettingsOf, type ThinkpagesAccountItem } from "./account-types";
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  account: any;
-  onAccountUpdate: (updatedAccount: any) => void;
+  account: ThinkpagesAccountItem;
+  onAccountUpdate: (updatedAccount: RouterOutputs["thinkpages"]["updateAccount"]) => void;
 }
-
-type AccountSettings = Required<
-  Pick<
-    RouterInputs["thinkpages"]["updateAccount"],
-    "postingFrequency" | "politicalLean" | "personality" | "accountType"
-  >
->;
-
-/** The editable settings of an account row. */
-const pickSettings = (account: AccountSettings): AccountSettings => ({
-  postingFrequency: account.postingFrequency,
-  politicalLean: account.politicalLean,
-  personality: account.personality,
-  accountType: account.accountType,
-});
 
 export function AccountSettingsModal({
   isOpen,
@@ -44,7 +30,7 @@ export function AccountSettingsModal({
   onAccountUpdate,
 }: AccountSettingsModalProps) {
   const notify = useNotify();
-  const [settings, setSettings] = useState(() => pickSettings(account));
+  const [settings, setSettings] = useState(() => accountSettingsOf(account));
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -57,7 +43,7 @@ export function AccountSettingsModal({
   useEffect(() => {
     if (account) {
       // oxlint-disable-next-line
-      setSettings(pickSettings(account));
+      setSettings(accountSettingsOf(account));
     }
   }, [account]);
 
@@ -70,8 +56,8 @@ export function AccountSettingsModal({
       notify.success("Account updated");
       onAccountUpdate(updatedAccount);
       onClose();
-    } catch (error: any) {
-      notify.error(error.message || "Failed to update account");
+    } catch (error) {
+      notify.error((error instanceof Error && error.message) || "Failed to update account");
     }
   };
 

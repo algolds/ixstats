@@ -17,7 +17,7 @@ import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { mootOpenAppeal } from "./mod-appeal-moot";
-import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
+import { logModAction, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertSanctionable,
   assertScope,
@@ -205,11 +205,12 @@ export async function issueBan(
   const reason = modReason(input.reason);
   const days = banDays(input.days);
   const { issuer, realmId } = await resolveBanScope(db, actor, input.scope);
-  await assertSanctionable(db, input.userId, "banned", (target) =>
-    canActInScope(target, input.scope, realmId)
-  );
   return db.$transaction(async (tx) => {
     await lockMember(tx, input.userId);
+    // Under the lock (M9): a moderator role granted meanwhile is seen here, as a grant sees a ban issued meanwhile.
+    await assertSanctionable(tx, input.userId, "banned", (target) =>
+      canActInScope(target, input.scope, realmId)
+    );
     // After the lock: a wait must not date the ban, or the duplicate check, from before it.
     const now = new Date();
     await assertNoLiveBan(tx, input.userId, input.scope, now);
@@ -239,15 +240,15 @@ export async function issueBan(
  * reviewAppeal and the automatic-ban recompute call this with their own transaction client and the `now` they read
  * under the member's lock; without one, the clock is read once the lock is held. The ban must still be live at `now`
  * when the member's lock is held (CONFLICT otherwise), so concurrent lifts log once. An open appeal on the ban is
- * closed as moot in the same transaction.
+ * closed as moot in the same transaction. Returns the `now` it lifted at.
  */
 export async function liftBanTx(
   tx: Pick<BansDb, "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw">,
-  actor: NonNullable<ForumViewer>,
+  actor: Pick<NonNullable<ForumViewer>, "id">,
   ban: { id: string; userId: string; scope: string; scopeId: string | null },
   detail: ModLogDetail,
   lockedNow?: Date
-): Promise<void> {
+): Promise<Date> {
   await lockMember(tx, ban.userId);
   const now = lockedNow ?? new Date();
   const { count } = await tx.forumBan.updateMany({
@@ -265,22 +266,5 @@ export async function liftBanTx(
     detail: { ...detail, banId: ban.id },
   });
   await mootOpenAppeal(tx, actor.id, { type: "ban", id: ban.id, scope, cause: "ban lifted" }, now);
-}
-
-export async function liftBan(
-  db: BansDb,
-  actor: ForumViewer,
-  input: { banId: string; note?: string }
-): Promise<{ userId: string; scope: BanScope; scopeId: string | null }> {
-  const ban = await db.forumBan.findUnique({
-    where: { id: input.banId },
-    select: { id: true, userId: true, scope: true, scopeId: true },
-  });
-  if (!ban) throw new ForumError("NOT_FOUND", "Ban not found.");
-  const lifter = await assertBanScope(db, actor, ban);
-  // The different-reviewer rule (M12) for lifts: a member promoted since cannot free themselves.
-  if (lifter.id === ban.userId) throw new ForumError("FORBIDDEN", "You can't lift your own ban.");
-  const note = modNote(input.note);
-  await db.$transaction((tx) => liftBanTx(tx, lifter, ban, { note }));
-  return { userId: ban.userId, scope: banScopeOf(ban.scope), scopeId: ban.scopeId };
+  return now;
 }

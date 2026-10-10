@@ -377,9 +377,16 @@ describe("realms.claimNationPage", () => {
     const db = rulesDb();
     await expect(
       claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
-    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringMatching(/rules/) });
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringMatching(/rules/),
+    });
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia", acceptedRules: false })
+      claimCaller(db).claimNationPage({
+        realmSlug: "eurth",
+        title: "Aurelia",
+        acceptedRules: false,
+      })
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(db.realmClaim.create).not.toHaveBeenCalled();
     expect(db.wikiAccountLink.findFirst).not.toHaveBeenCalled();
@@ -471,9 +478,16 @@ describe("realms.adminCreateRealm", () => {
 
   const createMany = jest.fn().mockResolvedValue({ count: 3 });
 
+  // N3: the realm and its categories are written through one transaction client, never the outer one.
+  const transaction = jest.fn(async (fn: (tx: object) => Promise<object>) =>
+    fn({ realm: { create: transactionCreate }, forumCategory: { createMany } })
+  );
+  let transactionCreate: jest.Mock = jest.fn();
+
   function adminCaller(create: jest.Mock, user = admin) {
+    transactionCreate = create;
     const ctx = createMockRouterContext({
-      db: { realm: { create }, forumCategory: { createMany }, auditLog: { create: jest.fn() } },
+      db: { $transaction: transaction, auditLog: { create: jest.fn() } },
       auth: { userId: user.clerkUserId },
       user,
     });
@@ -520,13 +534,30 @@ describe("realms.adminCreateRealm", () => {
   it("seeds the new realm's forum categories", async () => {
     createMany.mockClear();
     const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
-    await adminCaller(create).adminCreateRealm({ slug: "eurth", name: "Eurth", visibility: "public" });
+    await adminCaller(create).adminCreateRealm({
+      slug: "eurth",
+      name: "Eurth",
+      visibility: "public",
+    });
     expect(createMany).toHaveBeenCalledWith(
       expect.objectContaining({
         skipDuplicates: true,
-        data: expect.arrayContaining([expect.objectContaining({ scope: "realm", realmId: "r1", key: "hub" })]),
+        data: expect.arrayContaining([
+          expect.objectContaining({ scope: "realm", realmId: "r1", key: "hub" }),
+        ]),
       })
     );
+  });
+
+  it("rolls the realm back when seeding its categories fails (N3)", async () => {
+    transaction.mockClear();
+    createMany.mockRejectedValueOnce(new Error("connection reset"));
+    const create = jest.fn().mockResolvedValue({ id: "r1", slug: "eurth", name: "Eurth" });
+    await expect(
+      adminCaller(create).adminCreateRealm({ slug: "eurth", name: "Eurth", visibility: "public" })
+    ).rejects.toThrow("connection reset");
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it.each(["Eurth", "e", "a".repeat(41), "eu rth", "eurth!", "eurth_2"])(

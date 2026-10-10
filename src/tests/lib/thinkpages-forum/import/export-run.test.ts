@@ -191,6 +191,7 @@ describe("runExport", () => {
       threadsGone: 1,
       threadsRedirect: 1,
       attachments: { ok: 2, missing: 1, forbidden: 1, oversize: 1, skipped: 0, size_mismatch: 1 },
+      failed: [],
     });
     expect(client.calls).not.toContain("user 0");
     expect(client.calls).not.toContain("posts 104");
@@ -233,13 +234,17 @@ describe("runExport", () => {
     });
   });
 
-  it("fetches a size-mismatched attachment again on the next run", async () => {
+  it("fetches a size-mismatched attachment again only when asked to (--retry-mismatch, I2)", async () => {
     await run(fakeClient());
     const fixed = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/png" };
-    const second = fakeClient({ ...ATTACHMENTS, 59: fixed });
-    await run(second);
+    const plain = fakeClient({ ...ATTACHMENTS, 59: fixed });
+    await run(plain);
+    expect(callsOf(plain, "attachment")).toEqual([]);
+    expect((await readSnapshot(fs, DIR)).attachments.get(59)?.stored).toBe("size_mismatch");
 
-    expect(callsOf(second, "attachment")).toEqual(["attachment 59"]);
+    const retry = fakeClient({ ...ATTACHMENTS, 59: fixed });
+    await run(retry, { retryMismatch: true });
+    expect(callsOf(retry, "attachment")).toEqual(["attachment 59"]);
     expect((await readSnapshot(fs, DIR)).attachments.get(59)?.stored).toBe("ok");
   });
 
@@ -328,5 +333,118 @@ describe("runExport", () => {
     const snapshot = await readSnapshot(fs, DIR);
     expect(snapshot.users.size).toBe(0);
     expect(isComplete(snapshot).complete).toBe(true);
+  });
+
+  describe("an item that keeps failing (I3)", () => {
+    const serverError = (endpoint: string) => new XenForoExportError("HTTP 503", 503, endpoint);
+    async function* failing(endpoint: string): AsyncGenerator<never> {
+      yield* list<never>([]);
+      throw serverError(endpoint);
+    }
+    /** Thread 101's posts answer 503 after the client's retries. */
+    const brokenThread = (): FakeClient => {
+      const client = fakeClient();
+      return {
+        ...client,
+        postsOf: (threadId) =>
+          threadId === 101 ? failing(`/threads/${threadId}/posts`) : client.postsOf(threadId),
+      };
+    };
+
+    it("never stops the export: it is listed and left for a rerun, which fetches it", async () => {
+      const log = jest.fn();
+      const totals = await run(brokenThread(), { log });
+      expect(totals.failed).toEqual(["thread 101 posts"]);
+      expect(totals.posts).toBe(2);
+      expect(log).toHaveBeenCalledWith("thread 101 posts: HTTP 503; left for a rerun");
+      expect(isComplete(await readSnapshot(fs, DIR))).toMatchObject({
+        complete: false,
+        threadsWithoutPosts: [101],
+      });
+
+      const healthy = fakeClient();
+      await run(healthy);
+      expect(callsOf(healthy, "posts")).toEqual(["posts 101"]);
+      expect(isComplete(await readSnapshot(fs, DIR)).complete).toBe(true);
+    });
+
+    it("with skipFailing (--skip-failing) is recorded as unavailable, so the snapshot completes", async () => {
+      const totals = await run(brokenThread(), { skipFailing: true });
+      expect(totals.failed).toEqual(["thread 101 posts"]);
+      const snapshot = await readSnapshot(fs, DIR);
+      expect(isComplete(snapshot)).toMatchObject({ complete: true, threadsGone: [101, 103] });
+    });
+
+    it("a forum whose thread list fails, 403 and 404 included, does not stop the later forums", async () => {
+      const client = fakeClient();
+      const forbidden: FakeClient = {
+        ...client,
+        threadsOf: (nodeId) =>
+          nodeId === 12
+            ? (async function* () {
+                yield* list<XfThread>([]);
+                throw new XenForoExportError("HTTP 403", 403, "/forums/12/threads");
+              })()
+            : client.threadsOf(nodeId),
+      };
+      const totals = await run(forbidden);
+      expect(totals.failed).toEqual(["forum 12 threads"]);
+      expect(callsOf(client, "threads")).toEqual(["threads 13"]);
+      expect(isComplete(await readSnapshot(fs, DIR))).toMatchObject({
+        complete: false,
+        forumsWithoutThreads: [12],
+      });
+
+      await run(forbidden, { skipFailing: true });
+      expect(isComplete(await readSnapshot(fs, DIR)).forumsWithoutThreads).toEqual([]);
+    });
+
+    it("users and attachments are skipped the same way", async () => {
+      const client = fakeClient();
+      const broken: FakeClient = {
+        ...client,
+        user: async (userId) => {
+          if (userId === 8) throw serverError(`/users/${userId}`);
+          return client.user(userId);
+        },
+        attachmentData: async (id) => {
+          if (id === 55) throw serverError(`/attachments/${id}/data`);
+          return client.attachmentData(id);
+        },
+      };
+      const totals = await run(broken, { skipFailing: true });
+      expect(totals.failed).toEqual(["user 8", "attachment 55"]);
+      const snapshot = await readSnapshot(fs, DIR);
+      expect(snapshot.attachments.get(55)?.stored).toBe("missing");
+      expect(isComplete(snapshot).complete).toBe(true);
+    });
+
+    it("still stops on what is not one item's failure: a refused key", async () => {
+      const client = fakeClient();
+      const refused: FakeClient = {
+        ...client,
+        user: async () => {
+          throw new XenForoExportError("HTTP 401", 401, "/users/7");
+        },
+      };
+      await expect(run(refused)).rejects.toThrow("HTTP 401");
+    });
+
+    it("stops after five failures in a row: the forum is likely down", async () => {
+      const client = fakeClient();
+      // Users 7, 8 and 9, then attachments 55 and 56: the fifth failure in a row stops the export.
+      const down: FakeClient = {
+        ...client,
+        user: async (userId) => {
+          throw serverError(`/users/${userId}`);
+        },
+        attachmentData: async (id) => {
+          client.calls.push(`attachment ${id}`);
+          throw serverError(`/attachments/${id}/data`);
+        },
+      };
+      await expect(run(down)).rejects.toThrow("HTTP 503");
+      expect(callsOf(client, "attachment")).toEqual(["attachment 55", "attachment 56"]);
+    });
   });
 });

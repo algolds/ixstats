@@ -299,6 +299,7 @@ describe("copyAttachments", () => {
       alreadyRegistered: 0,
       assetsPending: [],
       assetsFailed: [],
+      copyFailed: [],
     });
     expect([...store.keys()].some((k) => k.endsWith(".partial"))).toBe(false);
   });
@@ -314,13 +315,19 @@ describe("copyAttachments", () => {
     expect(fs.writeFile).not.toHaveBeenCalledWith(target, expect.anything());
   });
 
-  it("removes the temp file and stops when a write fails", async () => {
+  it("removes the temp file of a failed write, records the failure and copies the rest (I1)", async () => {
     const { fs, store } = memFs();
     const plan = await planAttachmentCopies(snapshot(), null, { fs });
+    const log = jest.fn();
     fs.rename.mockRejectedValueOnce(new Error("EXDEV"));
-    await expect(copyAttachments(plan, { fs })).rejects.toThrow("EXDEV");
+    const result = await copyAttachments(plan, { fs, log });
     expect(fs.remove).toHaveBeenCalledWith(path.join(FORUM_DIR, `.${name55}.partial`));
-    expect([...store.keys()].some((k) => k.startsWith(FORUM_DIR))).toBe(false);
+    expect(store.has(path.join(FORUM_DIR, name55))).toBe(false);
+    expect(store.get(path.join(FORUM_DIR, name56))).toEqual(FILES[BIN(56)]);
+    expect([...store.keys()].some((k) => k.endsWith(".partial"))).toBe(false);
+    expect(result.copyFailed).toEqual([{ attachmentId: 55, error: "EXDEV" }]);
+    expect(result.copied).toBe(2);
+    expect(log).toHaveBeenCalledWith("Attachment 55: copy failed (EXDEV), a rerun retries");
   });
 
   it("copies only the bytes the plan hashed: a snapshot file changed since the plan is not copied (M9)", async () => {

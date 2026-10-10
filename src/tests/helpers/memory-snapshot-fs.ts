@@ -51,5 +51,8 @@ export function createMemorySnapshotFs(): MemorySnapshotFs {
     },
     exists: async (file) => files.has(file) || dirs.has(file),
     stat: async (file) => ({ size: sizeOf(read(file)) }),
+    readLines: async function* (file) {
+      yield* text(file).split("\n");
+    },
   };
 }

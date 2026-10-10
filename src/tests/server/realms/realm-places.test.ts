@@ -233,9 +233,11 @@ describe("realms.directory", () => {
     });
     expect(counted.hidden).toBe(false);
     expect(counted.createdAt.gte).toBeInstanceOf(Date);
+    // U12: an archived thread (the Realm Board archive) is never the realm's latest activity; posts still count.
     expect(db.forumThread.findFirst).toHaveBeenCalledWith({
       where: {
         hidden: false,
+        archived: false,
         category: { scope: "realm", realmId: "eurth", visibility: "public" },
       },
       orderBy: { lastPostAt: "desc" },

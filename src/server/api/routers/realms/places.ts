@@ -46,7 +46,7 @@ async function unclaimedNationPages<P extends NationPage>(
 
 /**
  * Activity in a realm's forum section since `since`: posts made and the latest thread activity. Public categories
- * only (the directory is open to everyone) and nothing hidden.
+ * only (the directory is open to everyone) and nothing hidden; an archived thread is never the latest (U12).
  */
 async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
   const inSection = {
@@ -56,7 +56,7 @@ async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
   const [recentPosts, latest] = await Promise.all([
     db.forumPost.count({ where: { hidden: false, createdAt: { gte: since }, thread: inSection } }),
     db.forumThread.findFirst({
-      where: inSection,
+      where: { ...inSection, archived: false },
       orderBy: { lastPostAt: "desc" },
       select: { lastPostAt: true },
     }),

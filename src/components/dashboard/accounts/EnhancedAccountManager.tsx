@@ -34,12 +34,13 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PreText } from "~/components/ui/pretext";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import type { ThinkpagesAccountItem } from "./account-types";
 
 interface EnhancedAccountManagerProps {
-  accounts: any[];
-  selectedAccount: any | null;
-  onAccountSelect: (account: any) => void;
-  onAccountSettings: (account: any) => void;
+  accounts: ThinkpagesAccountItem[];
+  selectedAccount: ThinkpagesAccountItem | null;
+  onAccountSelect: (account: ThinkpagesAccountItem) => void;
+  onAccountSettings: (account: ThinkpagesAccountItem) => void;
   onCreateAccount: () => void;
   isOwner: boolean;
   inModal?: boolean;
@@ -67,7 +68,7 @@ const typeStyle = (type: string) =>
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 interface AccountCardProps {
-  account: any;
+  account: ThinkpagesAccountItem;
   index: number;
   isSelected: boolean;
   isFavorite: boolean;
@@ -107,7 +108,7 @@ function AccountCard({
       <div className="mb-2 flex items-center justify-between">
         <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-2" onClick={onSelect}>
           <Avatar className="size-8">
-            <AvatarImage src={account.profileImageUrl} />
+            <AvatarImage src={account.profileImageUrl ?? undefined} />
             <AvatarFallback className={color}>
               {account.displayName?.charAt(0) || account.username?.charAt(0) || "?"}
             </AvatarFallback>

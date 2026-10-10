@@ -241,7 +241,7 @@ function IntentHeader({
             className={detailButton}
           >
             <BookOpen aria-hidden="true" />
-            Share to ThinkPages…
+            Share to the feed…
           </Button>
         </div>
       </div>

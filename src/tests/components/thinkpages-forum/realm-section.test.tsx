@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 interface QueryResult {
   data?: object | null;
   isLoading?: boolean;
+  isPlaceholderData?: boolean;
   error?: { data?: { code: string } } | null;
   refetch?: jest.Mock;
 }
@@ -11,27 +12,38 @@ interface QueryResult {
 interface MockApi {
   results: Record<string, QueryResult>;
   inputs: Record<string, object | undefined>;
+  options: Record<string, { placeholderData?: object } | undefined>;
 }
 
 jest.mock("~/trpc/react", () => {
   const results: Record<string, QueryResult> = {};
   const inputs: Record<string, object | undefined> = {};
+  const options: Record<string, object | undefined> = {};
   const query = (name: string) => ({
-    useQuery: (input?: object) => {
+    useQuery: (input?: object, opts?: object) => {
       inputs[name] = input;
+      options[name] = opts;
       return { isLoading: false, error: null, ...results[name] };
     },
   });
   return {
     results,
     inputs,
+    options,
     api: { thinkpagesForum: { realms: query("realms"), realmSection: query("realmSection") } },
   };
 });
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
-  return { router, useRouter: () => router, usePathname: () => "/thinkpages" };
+  const nav = { query: "" };
+  return {
+    router,
+    nav,
+    useRouter: () => router,
+    usePathname: () => "/thinkpages",
+    useSearchParams: () => new URLSearchParams(nav.query),
+  };
 });
 
 interface SelectStubProps {
@@ -68,10 +80,11 @@ jest.mock("~/components/ui/select", () => {
 
 import { RealmSection } from "~/components/thinkpages-forum/RealmSection";
 
-const { results, inputs } = jest.requireMock<MockApi>("~/trpc/react");
-const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
-  "next/navigation"
-);
+const { results, inputs, options } = jest.requireMock<MockApi>("~/trpc/react");
+const { router, nav } = jest.requireMock<{
+  router: { push: jest.Mock; replace: jest.Mock };
+  nav: { query: string };
+}>("next/navigation");
 
 const NO_NATION = "Only owners of a nation in Eurth can post here.";
 
@@ -84,7 +97,7 @@ const realms = {
   ],
 };
 
-function section(canPost: boolean, notice: string | null) {
+function section(canPost: boolean, notice: string | null, needsNation = notice === NO_NATION) {
   const row = (key: string, name: string, threadCount: number) => ({
     key,
     name,
@@ -103,6 +116,7 @@ function section(canPost: boolean, notice: string | null) {
     ],
     canPost,
     notice,
+    needsNation,
   };
 }
 
@@ -157,6 +171,38 @@ describe("RealmSection", () => {
     expect(screen.queryByText("You can post here")).toBeNull();
   });
 
+  it("offers the claim link on the server's flag, not by matching the notice text (U6)", () => {
+    results.realmSection = { data: section(false, "Reworded: claim a nation first.", true) };
+    const { unmount } = render(<RealmSection realm="eurth" />);
+    expect(screen.getByRole("link", { name: "Claim a nation" })).toBeInTheDocument();
+    unmount();
+    results.realmSection = { data: section(false, NO_NATION, false) };
+    render(<RealmSection realm="eurth" />);
+    expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
+  });
+
+  it("keeps the card and its switcher while another realm loads (U6)", () => {
+    results.realmSection = { data: section(false, NO_NATION), isPlaceholderData: true };
+    render(<RealmSection realm="other" switcher />);
+    expect(options.realmSection?.placeholderData).toBeDefined();
+    // The new realm's name, the old realm's rows dimmed and busy, no verdict that belongs to the old realm.
+    expect(screen.getByRole("heading", { level: 2, name: "Other" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toHaveValue("other");
+    const busy = screen.getByRole("link", { name: /Hub/ }).closest("[aria-busy]");
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    // The old realm's rows take no clicks while the new one loads (review #9).
+    expect(busy).toHaveClass("pointer-events-none");
+    expect(screen.queryByText(NO_NATION)).toBeNull();
+  });
+
+  it("lets the rows take clicks again once the realm has loaded", () => {
+    results.realmSection = { data: section(false, NO_NATION) };
+    render(<RealmSection realm="eurth" />);
+    const hub = screen.getByRole("link", { name: /Hub/ });
+    expect(hub.closest('[aria-busy="true"]')).toBeNull();
+    expect(hub.closest(".pointer-events-none")).toBeNull();
+  });
+
   it("shows any other notice without the claim link", () => {
     const signIn = "Sign in and claim a nation in Eurth to post here.";
     results.realmSection = { data: section(false, signIn) };
@@ -166,6 +212,16 @@ describe("RealmSection", () => {
     expect(signInLink.parentElement).toHaveTextContent(signIn);
     expect(screen.queryByRole("link", { name: "Claim a nation" })).toBeNull();
     unmount();
+
+    // P3: signing in comes back to the same realm and page.
+    nav.query = "realm=eurth&page=2";
+    const again = render(<RealmSection realm="eurth" />);
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/sign-in?redirect_url=%2Fthinkpages%3Frealm%3Deurth%26page%3D2"
+    );
+    again.unmount();
+    nav.query = "";
 
     const muted = "You are muted on this realm's board.";
     results.realmSection = { data: section(false, muted) };
@@ -230,6 +286,13 @@ describe("RealmSection", () => {
     expect(screen.getByText("This realm is not available.")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  it("says a realm slug the server rejects (BAD_REQUEST, e.g. over 100 characters) is not available (U7)", () => {
+    results.realmSection = { data: undefined, error: { data: { code: "BAD_REQUEST" } } };
+    render(<RealmSection realm={"x".repeat(101)} />);
+    expect(screen.getByText("This realm is not available.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
   });
 
   it("offers Retry for any other error", () => {

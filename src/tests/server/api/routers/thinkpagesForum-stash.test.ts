@@ -40,16 +40,19 @@ interface ItemRow {
 /** Just enough Prisma for the thread lookup, the moderator context and the stash tables. */
 function stashDb(categoryKey = "general", threadOver: object = {}) {
   const items: ItemRow[] = [];
+  const row = () => ({
+    id: "t1",
+    title: "Hello there",
+    authorUserId: "u2",
+    hidden: false,
+    category: category(categoryKey),
+    ...threadOver,
+  });
   const db = {
     forumThread: {
-      findUnique: jest.fn(async () => ({
-        id: "t1",
-        title: "Hello there",
-        authorUserId: "u2",
-        hidden: false,
-        category: category(categoryKey),
-        ...threadOver,
-      })),
+      findUnique: jest.fn(async () => row()),
+      // The stash list re-reads its threads to show only readable ones, by their current title (I5).
+      findMany: jest.fn(async () => [row()]),
     },
     realm: { findMany: jest.fn(async () => []), findUnique: jest.fn(async () => null) },
     realmOfficer: { findMany: jest.fn(async () => []) },

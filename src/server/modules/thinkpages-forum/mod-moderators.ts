@@ -8,13 +8,20 @@ import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError, isUniqueViolation } from "./errors";
 import { logModAction } from "./mod-log";
+import { assertCategoryRoleGrantable } from "./mod-promotion";
 import { assertModerator, assertModeratesCategory, scopeOfCategory } from "./mod-scope";
 import { authorsOf, loadCategory, type AuthorsDb, type CategoryLocator } from "./reads";
 import type { RealmDb } from "./realm-access";
 
 export type ModeratorsDb = Pick<
   PrismaClient,
-  "user" | "forumCategory" | "forumCategoryModerator" | "forumModLog" | "$transaction"
+  | "user"
+  | "forumBan"
+  | "forumCategory"
+  | "forumCategoryModerator"
+  | "forumModLog"
+  | "$transaction"
+  | "$executeRaw"
 > &
   RealmDb &
   AuthorsDb;
@@ -79,7 +86,8 @@ export async function listCategoryModerators(
 
 /**
  * Site admins only (M19): grant (create the row) or revoke (delete it), with `moderator.grant`/`moderator.revoke`
- * logged in the same transaction at the category's scope. Granting twice or revoking a non-moderator is CONFLICT.
+ * logged in the same transaction at the category's scope. Granting twice or revoking a non-moderator is CONFLICT;
+ * granting to a member banned there or sitewide is BAD_REQUEST (M9).
  */
 export async function setCategoryModerator(
   db: ModeratorsDb,
@@ -97,6 +105,8 @@ export async function setCategoryModerator(
   try {
     await db.$transaction(async (tx) => {
       if (input.grant) {
+        // Under the member's lock (M9), as issueBan checks the member is no moderator under it.
+        await assertCategoryRoleGrantable(tx, member.id, category);
         if (await tx.forumCategoryModerator.findFirst({ where: row, select: { id: true } })) {
           throw already;
         }

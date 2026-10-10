@@ -44,6 +44,13 @@ function lengthOf(ban: Ban, members: Members | undefined): string {
   return ban.expiresAt ? `Until ${formatBanDate(ban.expiresAt)}` : "Permanent";
 }
 
+/** Who a ban is from: its issuer, or for an automatic ban whose warning triggered it (M5), or a re-tier (M2). */
+function issuerOf(ban: Ban, members: Members | undefined): string {
+  if (!ban.auto) return `Issued by ${memberName(members, ban.issuedBy)}`;
+  if (ban.issuedBy === "system") return "Re-tiered when a site ban ended";
+  return `Triggered by ${memberName(members, ban.issuedBy)}`;
+}
+
 /** Bans in the viewer's scope, live ones by default, and a way to ban a member found by handle. */
 export function BansPanel({ context, realm, page, basePath }: PanelProps) {
   const [shown, setShown] = useState<Shown>("active");
@@ -127,7 +134,7 @@ function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
       meta={[
         placeName(context, ban.scope, ban.scopeId),
         lengthOf(ban, members),
-        `Issued by ${memberName(members, ban.issuedBy)}`,
+        issuerOf(ban, members),
         timeAgo(ban.createdAt),
       ]}
       actions={

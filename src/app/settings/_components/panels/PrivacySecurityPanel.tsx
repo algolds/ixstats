@@ -258,7 +258,7 @@ function BlockingFilters(props: {
             <EmptyListNotice
               icon={UserXmark}
               title="No blocked accounts"
-              text="Blocked accounts cannot message you or invite you to ThinkTanks, and their posts leave your ThinkPages feed."
+              text="Blocked accounts cannot message you or invite you to ThinkTanks, and their posts leave your Dashboard feed."
             />
           ) : (
             <AccountList
@@ -288,7 +288,7 @@ function BlockingFilters(props: {
             <EmptyListNotice
               icon={EyeOff}
               title="No muted accounts"
-              text="Posts by muted accounts are hidden from your ThinkPages feed, and they are not told."
+              text="Posts by muted accounts are hidden from your Dashboard feed, and they are not told."
             />
           ) : (
             <AccountList
@@ -317,7 +317,7 @@ function BlockingFilters(props: {
             <EmptyListNotice
               icon={TextIcon}
               title="No muted words"
-              text="Posts containing a muted word are hidden from your ThinkPages, activity and Following feeds."
+              text="Posts containing a muted word are hidden from your Dashboard, activity and Following feeds."
             />
           ) : (
             <AccountList

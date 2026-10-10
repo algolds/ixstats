@@ -4,6 +4,7 @@
  * lifted, revoked or reviewed anything: the moderator's reason and response are shown, the moderator is not.
  */
 import type { PrismaClient } from "@prisma/client";
+import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
 import { activePoints, DAY_MS, MODERATION_POLICY } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   appealStatusOf,
@@ -73,7 +74,13 @@ async function memberAppeals(
   }));
 }
 
-/** Realm and category names for the bans' places, keyed `scope:id`; a gone place has none. */
+/**
+ * What a banned member can see: they are never a site admin (M5), so never a `staff` category, whose name stays out
+ * of their standing and notices (M14).
+ */
+const MEMBER_VISIBLE = categoryVisibilityWhere({ signedIn: true, siteAdmin: false });
+
+/** Realm and category names for the bans' places, keyed `scope:id`; a gone place, or one hidden from members, has none. */
 export async function placeNames(
   db: Pick<StandingDb, "forumCategory" | "realm">,
   bans: ReadonlyArray<{ scope: string; scopeId: string | null }>
@@ -83,7 +90,7 @@ export async function placeNames(
   ];
   const [categories, realms] = await Promise.all([
     db.forumCategory.findMany({
-      where: { id: { in: idsOf("category") } },
+      where: { id: { in: idsOf("category") }, ...MEMBER_VISIBLE },
       select: { id: true, name: true },
     }),
     Promise.all(idsOf("realm").map((id) => loadForumRealm(db, { id }))),

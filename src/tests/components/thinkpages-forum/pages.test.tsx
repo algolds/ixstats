@@ -65,7 +65,9 @@ jest.mock("~/trpc/react", () => {
         warn: mutation("warn"),
         ban: mutation("ban"),
       },
-      actionLinks: { activityCards: query("activityCards") },
+      // useThreadActionCards batches through useQueries; no post here holds a token.
+      useQueries: (_queries: unknown, opts: { combine: (results: never[]) => unknown }) =>
+        opts.combine([]),
     },
   };
 });
@@ -176,7 +178,18 @@ function categoryData(
   return { category, threads, total: threads.length, canStart, notice, authors };
 }
 
-/** The breadcrumb trail's labels and hrefs (the current page has none). */
+/** Text matches to skip: the header's compact title is hidden from assistive tech until the header collapses. */
+const HIDDEN = '[aria-hidden="true"]';
+
+/** The breadcrumb trail's labels and hrefs: the pages above this one, each a link. */
+/** The header's back link: the one link named `name` outside the breadcrumb trail. */
+function backLink(name: string) {
+  const trail = screen.getByRole("navigation", { name: "breadcrumb" });
+  const outside = screen.getAllByRole("link", { name }).filter((link) => !trail.contains(link));
+  expect(outside).toHaveLength(1);
+  return outside[0]!;
+}
+
 function crumbs() {
   const trail = screen.getByRole("navigation", { name: "breadcrumb" });
   return within(trail)
@@ -209,7 +222,6 @@ function set(name: string, result: QueryResult) {
 beforeEach(() => {
   jest.clearAllMocks();
   for (const key of Object.keys(results)) delete results[key];
-  set("activityCards", { data: [] });
 });
 
 describe("forum home", () => {
@@ -312,16 +324,14 @@ describe("category view", () => {
     expect(screen.getByText("2 replies")).toBeInTheDocument();
   });
 
-  it("breadcrumbs a sitewide category as ThinkPages, then the category", () => {
+  it("breadcrumbs a sitewide category up to ThinkPages; the title alone names the category (U5)", () => {
     set("category", { data: categoryData(false) });
     render(<ThreadList categoryKey="general" page={1} />);
-    expect(crumbs()).toEqual([
-      ["ThinkPages", "/thinkpages"],
-      ["General", null],
-    ]);
-    // The breadcrumb root and the header's back link both lead home.
-    const home = screen.getAllByRole("link", { name: "ThinkPages" });
-    expect(home.map((link) => link.getAttribute("href"))).toEqual(["/thinkpages", "/thinkpages"]);
+    expect(crumbs()).toEqual([["ThinkPages", "/thinkpages"]]);
+    // The trail stops above the page; the header keeps a back link to the forum home for when it has scrolled away.
+    expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
+    expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
   });
 
   it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
@@ -335,8 +345,8 @@ describe("category view", () => {
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages?realm=eurth"],
-      ["Hub", null],
     ]);
+    expect(backLink("Eurth")).toHaveAttribute("href", "/thinkpages?realm=eurth");
   });
 });
 
@@ -357,14 +367,15 @@ describe("thread view", () => {
     expect(screen.queryByText("This thread is locked.")).toBeNull();
   });
 
-  it("breadcrumbs a sitewide thread without a realm crumb", () => {
+  it("breadcrumbs a sitewide thread without a realm crumb, naming the thread and category once (U5)", () => {
     set("thread", { data: threadData() });
     render(<ThreadView threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["General", "/thinkpages/c/general"],
-      ["<b>Plain</b> title", null],
     ]);
+    expect(screen.getAllByText("<b>Plain</b> title", { ignore: HIDDEN })).toHaveLength(1);
+    expect(backLink("General")).toHaveAttribute("href", "/thinkpages/c/general");
   });
 
   it("breadcrumbs a realm thread through its realm and category", () => {
@@ -374,8 +385,8 @@ describe("thread view", () => {
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages?realm=eurth"],
       ["Hub", "/thinkpages/r/eurth/hub"],
-      ["<b>Plain</b> title", null],
     ]);
+    expect(backLink("Hub")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
   });
 
   it("hides the reply composer and edit when locked", () => {
@@ -388,8 +399,12 @@ describe("thread view", () => {
     expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 
-  it("edits only the viewer's own post, prefilled, and saves through editPost", async () => {
-    set("thread", { data: threadData() });
+  it("edits only the viewer's own post, prefilled, and saves through editPost with the loaded editedAt", async () => {
+    const data = threadData();
+    const loaded = new Date("2026-10-01T10:00:00Z");
+    set("thread", {
+      data: { ...data, posts: [{ ...data.posts[0]!, editedAt: loaded }, data.posts[1]!] },
+    });
     const editPost = jest.fn(() => Promise.resolve({}));
     mutations.editPost = editPost;
     render(<ThreadView threadId="t1" page={1} />);
@@ -400,7 +415,7 @@ describe("thread view", () => {
     expect(editor).toHaveAttribute("data-initial", "<p>First post</p>");
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
-      expect(editPost).toHaveBeenCalledWith({ postId: "p1", html: "<p>new</p>" })
+      expect(editPost).toHaveBeenCalledWith({ postId: "p1", html: "<p>new</p>", editedAt: loaded })
     );
   });
 

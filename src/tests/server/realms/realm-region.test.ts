@@ -32,7 +32,8 @@ function realmRow(overrides: Record<string, unknown> = {}) {
 
 /** A mock Prisma whose transactions run on the same mock (so their writes can be asserted). */
 function mockDb(): Db {
-  const db = createMockPrisma();
+  // $executeRaw: the forum's member lock that the board-power check takes inside the grant's transaction (M9).
+  const db = createMockPrisma({ $executeRaw: jest.fn(async () => 0) });
   db.$transaction.mockImplementation((cb: (tx: Db) => unknown) => cb(db));
   return db;
 }
@@ -126,6 +127,79 @@ describe("Manage permissions", () => {
     });
     expect(db.realmOfficer.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ userId: PLAYER, powers: ["board"], appointedBy: FOUNDER }),
+    });
+  });
+
+  describe("the board power and forum bans (M9)", () => {
+    const BANNED = {
+      code: "BAD_REQUEST",
+      message:
+        "They have an active forum ban here or sitewide. Lift it before giving them moderator powers.",
+    };
+    /** The player has an IxStats account and a live forum ban in the realm or sitewide. */
+    function bannedDb(realm = realmRow()): Db {
+      const db = makeDb(realm);
+      db.country.findFirst.mockResolvedValue({ id: "c1" });
+      db.user.findUnique.mockResolvedValue({ id: "u_player" });
+      db.forumBan.findFirst.mockResolvedValue({ id: "b1" });
+      return db;
+    }
+    const appoint = (powers: Array<"board" | "diplomacy">) => ({
+      slug: "eurth",
+      userId: PLAYER,
+      title: "Envoy",
+      powers,
+    });
+
+    it("refuses appointing a banned player with the board power, but not without it", async () => {
+      const db = bannedDb();
+      await expect(
+        callerAs(FOUNDER, db).region.appointOfficer(appoint(["board"]))
+      ).rejects.toMatchObject(BANNED);
+      expect(db.realmOfficer.create).not.toHaveBeenCalled();
+      expect(db.user.findUnique).toHaveBeenCalledWith({
+        where: { clerkUserId: PLAYER },
+        select: { id: true },
+      });
+      await callerAs(FOUNDER, db).region.appointOfficer(appoint(["diplomacy"]));
+      expect(db.realmOfficer.create).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses adding the board power to a banned officer, but leaves one who already holds it", async () => {
+      const db = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["diplomacy"] }] }));
+      await expect(
+        callerAs(FOUNDER, db).region.updateOfficer(appoint(["board"]))
+      ).rejects.toMatchObject(BANNED);
+      expect(db.realmOfficer.updateMany).not.toHaveBeenCalled();
+
+      const holder = bannedDb(realmRow({ officers: [{ userId: PLAYER, powers: ["board"] }] }));
+      holder.realmOfficer.updateMany.mockResolvedValue({ count: 1 });
+      await callerAs(FOUNDER, holder).region.updateOfficer(appoint(["board"]));
+      expect(holder.forumBan.findFirst).not.toHaveBeenCalled();
+      expect(holder.realmOfficer.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("checks the bans inside the officer write's transaction, under the player's lock (M9)", async () => {
+      const db = bannedDb();
+      db.forumBan.findFirst.mockResolvedValue(null);
+      await callerAs(FOUNDER, db).region.appointOfficer(appoint(["board"]));
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      const [, key] = db.$executeRaw.mock.calls[0]!;
+      expect(key).toBe("forum-member:u_player");
+      expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        db.forumBan.findFirst.mock.invocationCallOrder[0]!
+      );
+      expect(db.forumBan.findFirst.mock.invocationCallOrder[0]).toBeLessThan(
+        db.realmOfficer.create.mock.invocationCallOrder[0]!
+      );
+    });
+
+    it("checks the founder's permission before the player's bans", async () => {
+      const db = bannedDb();
+      await expect(
+        callerAs(OFFICER, db).region.appointOfficer(appoint(["board"]))
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(db.forumBan.findFirst).not.toHaveBeenCalled();
     });
   });
 
@@ -479,7 +553,7 @@ describe("overview and happenings", () => {
   describe("forum preview (D4)", () => {
     const lastPostAt = new Date("2026-10-01T10:00:00Z");
 
-    it("lists the realm's latest Hub threads, visible ones only, newest first", async () => {
+    it("lists the realm's latest Hub threads, visible and unarchived ones only (U12), newest first", async () => {
       const db = overviewDb();
       db.forumCategory.findFirst.mockResolvedValue({ id: "hub1" });
       db.forumThread.findMany.mockResolvedValue([
@@ -494,7 +568,7 @@ describe("overview and happenings", () => {
         visibility: { in: ["public", "reporter_staff"] },
       });
       expect(db.forumThread.findMany).toHaveBeenCalledWith({
-        where: { categoryId: "hub1", hidden: false },
+        where: { categoryId: "hub1", hidden: false, archived: false },
         orderBy: { lastPostAt: "desc" },
         take: 5,
         select: { id: true, title: true, postCount: true, lastPostAt: true },

@@ -168,12 +168,21 @@ export function writeThread(
 }
 
 /**
+ * M8: reports filed on rows that had no author take the author those rows have now, so a moderator's queue keeps
+ * leaving out reports about their own content. Only reports still unattributed are touched.
+ */
+async function attributeReports(db: Pick<ImportDb, "$executeRaw">): Promise<void> {
+  await db.$executeRaw`UPDATE "forum_reports" AS r SET "targetAuthorId" = t."authorUserId" FROM "forum_threads" AS t WHERE r."targetType" = 'thread' AND r."targetId" = t."id" AND r."targetAuthorId" IS NULL AND t."authorUserId" IS NOT NULL`;
+  await db.$executeRaw`UPDATE "forum_reports" AS r SET "targetAuthorId" = t."authorUserId" FROM "forum_posts" AS t WHERE r."targetType" = 'post' AND r."targetId" = t."id" AND r."targetAuthorId" IS NULL AND t."authorUserId" IS NOT NULL`;
+}
+
+/**
  * Imported rows with no author whose XenForo user is now linked (`User.forumUserId`, earliest account first as at
- * import) take that user. Only rows with a XenForo user id are touched; guests never match. `onlyXenforoUserId`
- * limits the pass to one XenForo user (the admin link, phase 4b).
+ * import) take that user, and so do the reports on them (M8). Only rows with a XenForo user id are touched; guests
+ * never match. `onlyXenforoUserId` limits the pass to one XenForo user (the admin link, phase 4b).
  */
 export async function relinkImportedAuthors(
-  db: Pick<ImportDb, "user" | "forumThread" | "forumPost">,
+  db: Pick<ImportDb, "user" | "forumThread" | "forumPost" | "$executeRaw">,
   onlyXenforoUserId?: number
 ): Promise<{ threads: number; posts: number }> {
   const users = await db.user.findMany({
@@ -189,6 +198,7 @@ export async function relinkImportedAuthors(
     relinked.threads += (await db.forumThread.updateMany({ where, data: { authorUserId } })).count;
     relinked.posts += (await db.forumPost.updateMany({ where, data: { authorUserId } })).count;
   }
+  if (relinked.threads + relinked.posts > 0) await attributeReports(db);
   return relinked;
 }
 

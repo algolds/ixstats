@@ -10,6 +10,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import type { ThinkpagesAccountInput } from "../account-types";
 
 interface AccountDetailsFormProps {
   formData: {
@@ -22,7 +23,7 @@ interface AccountDetailsFormProps {
     personality: "serious" | "casual" | "satirical";
     profileImageUrl?: string;
   };
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
+  setFormData: React.Dispatch<React.SetStateAction<ThinkpagesAccountInput>>;
   errors: Record<string, string>;
   isCheckingUsername: boolean;
   isUsernameAvailable: boolean | null;
@@ -63,7 +64,7 @@ export function AccountDetailsForm({
             id="thinkpages-first-name"
             type="text"
             value={formData.firstName}
-            onChange={(e) => setFormData((p: any) => ({ ...p, firstName: e.target.value }))}
+            onChange={(e) => setFormData((p) => ({ ...p, firstName: e.target.value }))}
             placeholder="Enter first name"
             aria-invalid={!!errors.firstName || undefined}
           />
@@ -80,7 +81,7 @@ export function AccountDetailsForm({
             id="thinkpages-last-name"
             type="text"
             value={formData.lastName}
-            onChange={(e) => setFormData((p: any) => ({ ...p, lastName: e.target.value }))}
+            onChange={(e) => setFormData((p) => ({ ...p, lastName: e.target.value }))}
             placeholder="Enter last name"
           />
         </div>
@@ -139,7 +140,7 @@ export function AccountDetailsForm({
         <Textarea
           id="thinkpages-bio"
           value={formData.bio}
-          onChange={(e) => setFormData((p: any) => ({ ...p, bio: e.target.value }))}
+          onChange={(e) => setFormData((p) => ({ ...p, bio: e.target.value }))}
           placeholder="Describe this account..."
           maxLength={160}
           className="min-h-[80px]"
@@ -174,7 +175,7 @@ export function AccountDetailsForm({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setFormData((p: any) => ({ ...p, profileImageUrl: "" }))}
+                onClick={() => setFormData((p) => ({ ...p, profileImageUrl: "" }))}
                 className="text-destructive hover:text-destructive"
               >
                 Remove image

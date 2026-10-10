@@ -144,6 +144,19 @@ describe("listAppeals", () => {
     expect(result.total).toBe(2);
   });
 
+  it("filters a scoped queue by the appeals' own scope, never reading every appeal of a status (M7)", async () => {
+    const store = storeWith();
+    await listAppeals(store.db as never, eurthMod2, { status: "open" }, 1);
+    expect(store.db.forumAppeal.findMany).toHaveBeenCalledTimes(1);
+    expect(store.db.forumAppeal.findMany.mock.calls[0]![0]!.where).toEqual({
+      status: "open",
+      OR: [
+        { scope: "realm", scopeId: { in: ["r_eurth"] } },
+        { scope: "category", scopeId: { in: expect.arrayContaining(["r_eurth_hub"]) } },
+      ],
+    });
+  });
+
   it("gives a category moderator the appeals on their category's bans and warnings only", async () => {
     const store = storeWith();
     const result = await listAppeals(store.db as never, generalMod, { status: "open" }, 1);

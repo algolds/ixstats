@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
+import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -168,17 +169,6 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
       </a>
     </div>
   );
-}
-
-/** Which kind(s) of game entity a link points at. */
-function entityKinds(href: string) {
-  return {
-    isLeague: href.includes("/myleague/"),
-    isClub: href.includes("/myclub/"),
-    isCountry: href.includes("/countries/"),
-    // Persona profiles: the current path and the old ThinkPages one that existing wiki pages still link.
-    isUser: href.includes("/dashboard/profile/") || href.includes("/thinkpages/profile/"),
-  };
 }
 
 const BADGE_BASE =
@@ -380,21 +370,17 @@ function PopoverCard({
 
 /** Loads the profile behind a mention link, but only once its hover card is open. */
 function useMentionProfile(open: boolean, href: string) {
-  const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
-  const entityId =
-    /\/(?:myleague|myclub|countries|dashboard\/profile|thinkpages\/profile|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/.exec(
-      href
-    )?.[1] ?? "";
+  const { entityId, ...enabled } = mentionQueries(open, href);
 
-  const league = api.sports.getLeague.useQuery({ id: entityId }, { enabled: open && isLeague });
-  const team = api.sports.getTeam.useQuery({ id: entityId }, { enabled: open && isClub });
+  const league = api.sports.getLeague.useQuery({ id: entityId }, { enabled: enabled.league });
+  const team = api.sports.getTeam.useQuery({ id: entityId }, { enabled: enabled.club });
   const country = api.countries.getWikiRichIntro.useQuery(
     { countryName: entityId },
-    { enabled: open && isCountry }
+    { enabled: enabled.country }
   );
   const author = api.users.resolveWikiAuthor.useQuery(
     { wikiUsername: entityId },
-    { enabled: open && isUser }
+    { enabled: enabled.user }
   );
 
   return {

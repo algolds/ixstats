@@ -131,8 +131,14 @@ export async function fileReport(
     // keeps the section and the audience (moveThread), so what the reporter may see is unchanged.
     const placed = await findTarget(tx, input);
     if (!placed) throw targetNotFound(input.targetType);
+    // M8: the target's author rides on the report, so the queue leaves out a moderator's own content directly.
     const report = await tx.forumReport.create({
-      data: { ...key, categoryId: placed.thread.category.id, reason },
+      data: {
+        ...key,
+        categoryId: placed.thread.category.id,
+        targetAuthorId: placed.authorUserId,
+        reason,
+      },
     });
     return { reportId: report.id };
   });

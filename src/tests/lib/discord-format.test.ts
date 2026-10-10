@@ -88,6 +88,8 @@ describe("formatThinkPagesEmbed", () => {
     expect(embeds.length).toBe(1);
     expect(embeds[0].description).toBe("Hello world!");
     expect(embeds[0].color).toBe(0x9835ff);
+    // U2: the feed is IxStats; ThinkPages names the forum.
+    expect(embeds[0].footer.text).toBe("Shared from IxStats");
   });
 
   test("formats matchday sports bulletins as rich structured embeds", () => {

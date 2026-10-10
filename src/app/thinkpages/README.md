@@ -20,7 +20,7 @@ In the sidebar, ThinkPages is a row under Home (`src/lib/navigation/app-sections
 | `/thinkpages/r/[realm]/[key]/new` | `r/[realm]/[key]/new/page.tsx` | Start a thread in a realm category |
 | `/thinkpages/t/[threadId]` | `t/[threadId]/page.tsx` | Thread view with replies, reports and moderator tools |
 | `/thinkpages/mod` | `mod/page.tsx` | Moderation console for realm and category moderators and admins |
-| `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Post permalink resolver (wiki story chains link here). A forum post the viewer may see redirects (307) to `/thinkpages/t/<threadId>?page=<n>#post-<id>`; any other id redirects (307) to the feed post at `/dashboard/post/<id>`. The server lookup sees what a guest sees; a signed-in viewer it cannot place gets `ForumPermalinkGate`, which asks again with their session. Both hops are temporary because the answer depends on the viewer and on moderation |
+| `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Post permalink resolver (wiki story chains link here). A forum post the viewer may see redirects (307) to `/thinkpages/t/<threadId>?page=<n>#post-<id>`; any other id redirects (307) to the feed post at `/dashboard/post/<id>`. The lookup runs as the session's viewer (Clerk `auth()` in the page, `locatePostFor` in `routers/thinkpagesForum/permalink.ts`), so a member's own report thread or a moderator's hidden post redirects on the server, to the page that viewer's thread view shows. Both hops are temporary because the answer depends on the viewer and on moderation |
 
 ### Retired paths
 
@@ -48,7 +48,7 @@ Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHome
 | Piece | Location |
 | --- | --- |
 | Pages | `src/app/thinkpages/` (this directory) |
-| Components | `src/components/thinkpages-forum/` (`CategoryList`, `RealmSection`, `RealmSwitcher`, `ThreadList`, `ThreadView`, `ForumComposer`, `ForumBreadcrumbs`, `ForumPermalinkGate`, moderation dialogs under `mod/`) |
+| Components | `src/components/thinkpages-forum/` (`CategoryList`, `RealmSection`, `RealmSwitcher`, `ThreadList`, `ThreadView`, `ForumComposer`, `ForumBreadcrumbs`, moderation dialogs under `mod/`) |
 | Server logic | `src/server/modules/thinkpages-forum/` |
 | tRPC routers | `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), registered in `root.ts` as `thinkpagesForum` and `thinkpagesForumMod` |
 | Pure helpers | `src/lib/thinkpages-forum/` (`links.ts`, `permalink.ts`, `categories.ts`, `moderation-policy.ts`) |

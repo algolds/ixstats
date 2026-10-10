@@ -32,6 +32,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   "ban.auto": "Automatic ban",
   "ban.extend": "Extended automatic ban",
   "ban.shorten": "Shortened automatic ban",
+  "ban.retier": "Re-tiered automatic ban",
   "ban.migrate": "Carried over board ban",
   "appeal.review": "Reviewed appeal",
   "appeal.moot": "Closed appeal",

@@ -243,16 +243,16 @@ class NotificationAPIService {
       const { id, title, action, authorId, authorName, targetUserId } = options.thinkpage;
 
       const actionMessages: Record<typeof action, string> = {
-        created: "created a new ThinkPage",
-        updated: "updated their ThinkPage",
-        commented: "commented on your ThinkPage",
-        liked: "liked your ThinkPage",
-        shared: "shared your ThinkPage",
+        created: "created a new post",
+        updated: "updated their post",
+        commented: "commented on your post",
+        liked: "liked your post",
+        shared: "shared your post",
       };
 
       const actor = authorName?.trim();
       return this.create({
-        title: actor ? `${actor} ${actionMessages[action]}` : `ThinkPage ${action}`,
+        title: actor ? `${actor} ${actionMessages[action]}` : `Post ${action}`,
         message: actor ? `"${title}"` : `${actionMessages[action]}: "${title}"`,
         userId: targetUserId ?? null,
         category: "social",

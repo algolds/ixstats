@@ -265,13 +265,18 @@ export const realmsRouter = createTRPCRouter({
         ownerId: z.string().min(1).optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const realm = await ctx.db.realm
-        .create({ data: { ...input, ownerId: input.ownerId ?? "system", status: "active" } })
-        .catch(slugTaken);
-      await seedRealmCategories(ctx.db, realm.id);
-      return realm;
-    }),
+    // The realm and its forum categories commit together (N3).
+    .mutation(({ ctx, input }) =>
+      ctx.db
+        .$transaction(async (tx) => {
+          const realm = await tx.realm.create({
+            data: { ...input, ownerId: input.ownerId ?? "system", status: "active" },
+          });
+          await seedRealmCategories(tx, realm.id);
+          return realm;
+        })
+        .catch(slugTaken)
+    ),
 
   /** Admin: update any realm (not restricted to owner) */
   adminUpdateRealm: adminProcedure

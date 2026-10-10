@@ -161,19 +161,25 @@ export function attachmentResultLines(result: AttachmentCopyResult): string[] {
           `  FAILED attachment ids (not retried; exit code 2): ${ids(result.assetsFailed.map((f) => f.attachmentId))}`,
         ]
       : []),
+    ...(result.copyFailed.length
+      ? [
+          `  FAILED copies (exit code 2; a rerun retries): ${result.copyFailed.map((f) => `${f.attachmentId} (${f.error})`).join(", ")}`,
+        ]
+      : []),
   ];
 }
 
 /**
- * The runner's exit code after --apply (M14, M19): 1 when any thread failed (listed), else 2 when any media asset
- * registration failed non-retryably (listed), else 0. Pending (retryable) registrations do not change it.
+ * The runner's exit code after --apply (M14, M19, I1): 1 when any thread failed (listed), else 2 when any media asset
+ * registration failed non-retryably or any attachment copy failed (listed), else 0. Pending (retryable)
+ * registrations do not change it.
  */
 export function applyExitCode(
   totals: Pick<ApplyTotals, "failedThreads">,
-  copy: Pick<AttachmentCopyResult, "assetsFailed">
+  copy: Pick<AttachmentCopyResult, "assetsFailed" | "copyFailed">
 ): 0 | 1 | 2 {
   if (totals.failedThreads.length) return 1;
-  return copy.assetsFailed.length ? 2 : 0;
+  return copy.assetsFailed.length || copy.copyFailed.length ? 2 : 0;
 }
 
 export function applyTotalLines(totals: ApplyTotals): string[] {

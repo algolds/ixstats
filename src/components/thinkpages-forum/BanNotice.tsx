@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { STANDING_HREF } from "~/lib/thinkpages-forum/links";
 import { createUrl } from "~/lib/utils/url-utils";
@@ -20,12 +20,17 @@ export function BanNotice({ notice }: { notice: string }) {
   );
 }
 
-/** The sign-in link; signing in brings the visitor back to this page (createUrl: the redirect is a plain URL). */
+/**
+ * The sign-in link; signing in brings the visitor back to this page with its query (`?realm=`, `?page=`), P3.
+ * createUrl: the redirect is a plain URL.
+ */
 export function SignInLink() {
   const pathname = usePathname();
+  const query = useSearchParams()?.toString();
+  const here = query ? `${pathname}?${query}` : pathname;
   return (
     <Link
-      href={`/sign-in?redirect_url=${encodeURIComponent(createUrl(pathname))}`}
+      href={`/sign-in?redirect_url=${encodeURIComponent(createUrl(here))}`}
       className="text-tint hover:underline"
     >
       {SIGN_IN}
