@@ -61,6 +61,8 @@ const fakeDb = db as unknown as {
 
 const general = { id: "cat_general", visibility: "public", scope: "site", realmId: null };
 const reports = { id: "cat_reports", visibility: "reporter_staff", scope: "site", realmId: null };
+/** Public, but not a category u_mod moderates (they moderate General only). */
+const sideGames = { id: "cat_side", visibility: "public", scope: "site", realmId: null };
 const users = [
   { id: "u_member", clerkUserId: "member", countryId: "c1", role: { name: "user", level: 100 } },
   { id: "u_mod", clerkUserId: "mod", countryId: null, role: { name: "user", level: 100 } },
@@ -72,21 +74,31 @@ interface Row {
   createdAt: Date;
 }
 interface CountArgs {
-  where: { hidden?: false; OR: [{ createdAt: { lt: Date } }, { createdAt: Date; id: { lt: string } }] };
+  where: {
+    hidden?: false;
+    OR: [{ createdAt: { lt: Date } }, { createdAt: Date; id: { lt: string } }];
+  };
 }
 
 /** A thread of `rows` in `category`; `count` answers the resolver's "posts before this one" with the hidden rule. */
 function seedThread(
   category: typeof general,
   rows: Row[],
-  thread: { authorUserId: string | null; hidden: boolean } = { authorUserId: "u_other", hidden: false }
+  thread: { authorUserId: string | null; hidden: boolean } = {
+    authorUserId: "u_other",
+    hidden: false,
+  }
 ) {
   fakeDb.forumPost.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => {
     const row = rows.find((r) => r.id === where.id);
     return row ? { ...row, threadId: "t1", thread: { ...thread, category } } : null;
   });
   fakeDb.forumPost.count.mockImplementation(async ({ where }: CountArgs) => {
-    const [{ createdAt: { lt } }] = where.OR;
+    const [
+      {
+        createdAt: { lt },
+      },
+    ] = where.OR;
     return rows.filter((r) => r.createdAt < lt && !(where.hidden === false && r.hidden)).length;
   });
 }
@@ -149,6 +161,14 @@ describe("/thinkpages/post/<id>", () => {
     signedIn("member");
     await expect(openPost("p22")).rejects.toThrow("redirect:/dashboard/post/p22");
     await expect(openPost("p23")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p23");
+  });
+
+  it("never shows a moderator of another category a hidden post here (review #7)", async () => {
+    seedThread(sideGames, postsOf(5, new Set([3])));
+    signedIn("mod");
+    await expect(openPost("p3")).rejects.toThrow("redirect:/dashboard/post/p3");
+    // The visible posts around it still resolve, on the page a non-moderator sees.
+    await expect(openPost("p4")).rejects.toThrow("redirect:/thinkpages/t/t1?page=1#post-p4");
   });
 
   it("treats a signed-in user without a user row like a guest", async () => {
