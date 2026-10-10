@@ -196,7 +196,8 @@ describe("getCategoryThreads", () => {
     expect(db.forumThread.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { categoryId: "cat_general", hidden: false },
-        orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }],
+        // N4: the id breaks a tie in lastPostAt, so no thread swaps across a page boundary.
+        orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }, { id: "desc" }],
         skip: 0,
         take: THREADS_PER_PAGE,
       })

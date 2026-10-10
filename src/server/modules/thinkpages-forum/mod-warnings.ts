@@ -5,16 +5,17 @@
  * commit (Task 5). No archived-realm check (T0-6).
  */
 import type { PrismaClient } from "@prisma/client";
-import {
-  activePoints,
-  MODERATION_POLICY,
-  warningExpiry,
-} from "~/lib/thinkpages-forum/moderation-policy";
+import { MODERATION_POLICY, warningExpiry } from "~/lib/thinkpages-forum/moderation-policy";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { mootOpenAppeal } from "./mod-appeal-moot";
-import { autoBanAfterRevoke, autoBanAfterWarning, type AutoBanChange } from "./mod-auto-bans";
+import {
+  activePointsOf,
+  autoBanAfterRevoke,
+  autoBanAfterWarning,
+  type AutoBanChange,
+} from "./mod-auto-bans";
 import { logModAction, modNote, modReason, type ModLogDetail } from "./mod-log";
 import {
   assertModeratesCategory,
@@ -125,18 +126,6 @@ function warningPoints(issuer: Issuer, points: number): number {
     throw new ForumError("BAD_REQUEST", `A warning carries 1 to ${max} points.`);
   }
   return points;
-}
-
-export async function activePointsOf(
-  db: Pick<WarningsDb, "forumWarning">,
-  userId: string,
-  now: Date = new Date()
-): Promise<number> {
-  const rows = await db.forumWarning.findMany({
-    where: { userId, revokedAt: null, expiresAt: { gt: now } },
-    select: { points: true, expiresAt: true, revokedAt: true },
-  });
-  return activePoints(rows, now);
 }
 
 async function recordWarning(

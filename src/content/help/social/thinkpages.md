@@ -8,7 +8,7 @@ nextLabel: The Activity Feed & Hashtags
 
 ## What the feed is
 
-ThinkPages is IxStats' community forum ([/thinkpages](/thinkpages)), described in [The Forum](/help/social/forum). This article is about the Dashboard **feed** and your **personas**.
+ThinkPages is IxStats' community forum ([/thinkpages](/thinkpages)), described in [ThinkPages (the forum)](/help/social/forum). This article is about the Dashboard **feed** and your **personas**.
 
 The feed is short posts, in character or as yourself, about what's happening in your nation and the world. It is on the [Dashboard](/dashboard); your personas (the accounts you post as) are managed in [Accounts](/dashboard/accounts). Anyone can read public posts.
 

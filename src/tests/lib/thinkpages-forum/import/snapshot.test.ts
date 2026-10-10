@@ -1,7 +1,6 @@
 /** @jest-environment node */
 import {
   isComplete,
-  MAX_JSONL_BYTES,
   openSnapshotWriter,
   readSnapshot,
   type AttachmentEntry,
@@ -232,12 +231,25 @@ describe("readSnapshot", () => {
     expect(snapshot.attachmentPath(55)).toBe(`${DIR}/attachments/55.bin`);
   });
 
-  it("refuses a JSON-lines file above the whole-file read limit with a clear error", async () => {
+  it("streams the JSON-lines files line by line, never reading one whole (I4)", async () => {
     const writer = await openSnapshotWriter(fs, DIR);
     await writer.writeMeta(META);
     await writer.appendPosts([post(1000, 100, 0)]);
-    const big: MemorySnapshotFs = { ...fs, stat: async () => ({ size: MAX_JSONL_BYTES + 1 }) };
-    await expect(readSnapshot(big, DIR)).rejects.toThrow(/needs a line reader/);
+    const streamed: string[] = [];
+    const lineFs: MemorySnapshotFs = {
+      ...fs,
+      readFile: async (file) => {
+        if (file.endsWith(".jsonl")) throw new Error(`read whole: ${file}`);
+        return fs.readFile(file);
+      },
+      readLines: (file) => {
+        streamed.push(file);
+        return fs.readLines(file);
+      },
+    };
+    const snapshot = await readSnapshot(lineFs, DIR);
+    expect(snapshot.postsByThread.get(100)?.map((p) => p.post_id)).toEqual([1000]);
+    expect(streamed).toEqual([`${DIR}/posts.jsonl`]);
   });
 
   it("refuses a directory that is not a snapshot", async () => {

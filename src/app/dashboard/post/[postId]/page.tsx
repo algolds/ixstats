@@ -14,6 +14,7 @@ import { extractHashtags, extractMentions } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 import { getInitials } from "~/components/thinkpages/post/ThinkpagesPostUtils";
 import { withBasePath } from "~/lib/base-path";
+import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
 /** What this page reads of a reply; ThinkpagesPost renders the rest. */
 interface ReplyRow {
@@ -43,11 +44,7 @@ function sharePostLink(
 ) {
   const postUrl = `${window.location.origin}${withBasePath(`/dashboard/post/${postId}`)}`;
   if (navigator.share) {
-    void navigator.share({
-      title: `IxStats ${kind}`,
-      text: `Check out this ${kind} on IxStats`,
-      url: postUrl,
-    });
+    void navigator.share({ ...feedShareCopy(kind), url: postUrl });
   } else {
     void navigator.clipboard.writeText(postUrl);
     notify.success("Link copied to clipboard");

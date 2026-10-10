@@ -119,6 +119,22 @@ describe("help article links", () => {
   });
 });
 
+describe("forum naming (U3, U4)", () => {
+  it("links the forum article under its own title, never as The Forum", () => {
+    for (const article of articleFiles) {
+      for (const [, label] of source(article).matchAll(/\[([^\]]*)\]\(\/help\/social\/forum\)/g)) {
+        expect({ article, label }).not.toEqual({ article, label: "The Forum" });
+      }
+    }
+  });
+
+  it("tells signed-out readers how to reach the forum, not only the signed-in sidebar", () => {
+    const forum = source("social/forum");
+    expect(forum).not.toContain("In the sidebar it is **ThinkPages** under Home.");
+    expect(forum).toContain("signed out, open it at [/thinkpages](/thinkpages)");
+  });
+});
+
 describe("filterHelpSections", () => {
   it("returns every section for an empty query and 'all'", () => {
     expect(filterHelpSections(helpSections, "", "all")).toHaveLength(helpSections.length);

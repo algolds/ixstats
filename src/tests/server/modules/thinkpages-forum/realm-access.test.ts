@@ -161,6 +161,13 @@ describe("canSeeRealm", () => {
       expect(canSeeRealm(plain, { ...EURTH, status })).toBe(true);
     }
   });
+
+  it("always shows IxWorld, whatever its row's status, as the switcher always lists it (U7)", () => {
+    for (const status of ["draft", "generating", "archived", null]) {
+      expect(canSeeRealm(null, { ...IXWORLD, status })).toBe(true);
+      expect(canSeeRealm(plain, { ...IXWORLD, status })).toBe(true);
+    }
+  });
 });
 
 describe("realmPostingAccess", () => {
@@ -183,6 +190,7 @@ describe("realmPostingAccess", () => {
       ban: null,
       canPost: false,
       notice: "Sign in and claim a nation in Eurth to post here.",
+      needsNation: false,
     });
     expect(db.country.findMany).not.toHaveBeenCalled();
     expect(db.forumBan.findMany).not.toHaveBeenCalled();
@@ -239,6 +247,7 @@ describe("realmPostingAccess", () => {
       ban: null,
       canPost: true,
       notice: null,
+      needsNation: false,
     });
     expect(db.country.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { realmId: "r_eurth", ownerUserId: "u_owner" } })
@@ -252,6 +261,8 @@ describe("realmPostingAccess", () => {
         isModerator: false,
         canPost: false,
         notice: "Only owners of a nation in Eurth can post here.",
+        // U6: the UI offers "Claim a nation" on this flag, never by matching the notice.
+        needsNation: true,
       });
     }
   });
@@ -270,7 +281,11 @@ describe("realmPostingAccess", () => {
       plain,
       EURTH
     );
-    expect(outsider).toMatchObject({ canPost: false, notice: banNotice(ban as never) });
+    expect(outsider).toMatchObject({
+      canPost: false,
+      notice: banNotice(ban as never),
+      needsNation: false,
+    });
   });
 
   it("6. refuses an owner under a site ban in the realm", async () => {
@@ -328,12 +343,13 @@ describe("realmPostingAccess", () => {
 
   it("7. makes an archived realm read-only for owners and moderators alike, but never IxWorld", async () => {
     const archived = { ...EURTH, status: "archived" };
-    for (const viewer of [owner, founder, officer]) {
+    for (const viewer of [owner, founder, officer, plain]) {
       await expect(
         realmPostingAccess(accessDb() as never, viewer, archived)
       ).resolves.toMatchObject({
         canPost: false,
         notice: "This realm is archived: its forum can be read but no longer changes.",
+        needsNation: false,
       });
     }
     const db = accessDb({ owned: { u_owner: ["c_ix"] } });
@@ -342,6 +358,14 @@ describe("realmPostingAccess", () => {
     ).resolves.toMatchObject({
       canPost: true,
     });
+  });
+
+  it("7b. spends no ban lookup in an archived realm, where nobody but site admins posts (M16)", async () => {
+    const db = accessDb({ bans: [banRow({ userId: "u_owner", scope: "site" })] });
+    await expect(
+      realmPostingAccess(db as never, owner, { ...EURTH, status: "archived" })
+    ).resolves.toMatchObject({ canPost: false, ban: null });
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
   });
 
   it("8. gives IxWorld no founder: board officers and site admins moderate", async () => {

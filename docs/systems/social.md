@@ -4,7 +4,7 @@
 
 **Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
 **Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
-**Primary Action:** `DELIBERATE` | **Domain Accent:** Blue (`#3B82F6` / `--color-blue-500`, the `/thinkpages` accent in `NavTray.tsx` and [branding.md](../reference/branding.md))  
+**Primary Action:** `DELIBERATE` | **Domain Accent:** Blue (`#3B82F6` / `--color-blue-500`, see [branding.md](../reference/branding.md))  
 **Routes:** `/dashboard` (feed), `/dashboard/accounts` (personas), `/dashboard/post/[postId]`, `/dashboard/profile/[username]`, `/dashboard/saved`, `/hashtags/[tag]`, `/thinktanks`, `/messages` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md): feed and Blurbs ✅ Live; Accounts, ThinkShare and ThinkTanks 🟡 Partial  
 
 ThinkPages now names the forum at `/thinkpages` (see [forum.md](forum.md)); this file covers the feed and personas, which live on the Dashboard.

@@ -23,10 +23,13 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     notifyWarning: jest.fn(async () => undefined),
     notifyBan: jest.fn(async () => undefined),
     notifyBanLifted: jest.fn(async () => undefined),
+    notifyAutoBanShortened: jest.fn(async () => undefined),
     notifyAppealDecision: jest.fn(async () => undefined),
   };
 });
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumModRouter } from "~/server/api/routers/thinkpagesForum/mod";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -47,6 +50,7 @@ import {
   listModLog,
   listReports,
   notifyAppealDecision,
+  notifyAutoBanShortened,
   notifyBan,
   notifyBanLifted,
   notifyWarning,
@@ -310,7 +314,7 @@ describe("thinkpagesForumMod router", () => {
     it("tells the member their ban was lifted, naming the place", async () => {
       jest
         .mocked(liftBan)
-        .mockResolvedValueOnce({ userId: "u2", scope: "realm", scopeId: "r_eurth" });
+        .mockResolvedValueOnce({ userId: "u2", scope: "realm", scopeId: "r_eurth", autoBan: null });
       await caller(founder, modDb()).liftBan({ banId: "b1", note: "Served" });
       expect(liftBan).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
         banId: "b1",
@@ -323,15 +327,38 @@ describe("thinkpagesForumMod router", () => {
     });
 
     it("never fails a committed lift when the place lookup fails; the notice names a generic place (I-2)", async () => {
-      jest
-        .mocked(liftBan)
-        .mockResolvedValueOnce({ userId: "u2", scope: "category", scopeId: "rcat_hub" });
+      jest.mocked(liftBan).mockResolvedValueOnce({
+        userId: "u2",
+        scope: "category",
+        scopeId: "rcat_hub",
+        autoBan: null,
+      });
       const db = modDb();
       db.forumCategory.findMany.mockRejectedValue(new Error("connection reset"));
       await expect(caller(founder, db).liftBan({ banId: "b1" })).resolves.toBeUndefined();
       expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
         userId: "u2",
         ban: { scope: "category", scopeName: null },
+      });
+    });
+
+    it("tells the member of the automatic ban a lift re-tiered, after the lift notice (M2)", async () => {
+      const expiresAt = new Date("2026-11-08T12:00:00Z");
+      const reason = "Automatic: 10 active warning points";
+      jest.mocked(liftBan).mockResolvedValueOnce({
+        userId: "u2",
+        scope: "site",
+        scopeId: null,
+        autoBan: { kind: "issued", banId: "b_new", autoTier: 10, days: 30, expiresAt, reason },
+      });
+      await caller(admin, modDb()).liftBan({ banId: "b1" });
+      expect(notifyBanLifted).toHaveBeenCalledWith(expect.anything(), {
+        userId: "u2",
+        ban: { scope: "site", scopeName: null },
+      });
+      expect(notifyBan).toHaveBeenCalledWith(expect.anything(), {
+        userId: "u2",
+        ban: { scope: "site", expiresAt, reason },
       });
     });
 
@@ -357,9 +384,11 @@ describe("thinkpagesForumMod router", () => {
         autoBan: { kind: "shortened", banId: "b_auto", autoTier: 5, days: 7, expiresAt, reason },
       });
       await caller(admin, modDb()).revokeWarning({ warningId: "w1" });
-      expect(notifyBan).toHaveBeenCalledWith(expect.anything(), {
+      // M5: a shortened ban is not announced as a new one.
+      expect(notifyBan).not.toHaveBeenCalled();
+      expect(notifyAutoBanShortened).toHaveBeenCalledWith(expect.anything(), {
         userId: "u2",
-        ban: { scope: "site", expiresAt, reason },
+        expiresAt,
       });
     });
 
@@ -666,5 +695,15 @@ describe("thinkpagesForumMod router", () => {
         grant: true,
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+describe("member lookup is rate limited (M10)", () => {
+  it("serves resolveMember through the rate-limited read procedure", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src/server/api/routers/thinkpagesForum/mod.ts"),
+      "utf8"
+    );
+    expect(source).toMatch(/resolveMember: readOnlyProcedure/);
   });
 });

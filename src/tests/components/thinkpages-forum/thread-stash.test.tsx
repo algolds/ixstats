@@ -2,13 +2,13 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 interface MockApi {
-  stashed: { data?: { stashed: boolean } };
+  stashed: { data?: { stashed: boolean }; isLoading?: boolean; isError?: boolean };
   mutations: { stashThread: jest.Mock; unstashThread: jest.Mock };
   invalidate: jest.Mock;
 }
 
 jest.mock("~/trpc/react", () => {
-  const stashed: { data?: { stashed: boolean } } = {};
+  const stashed: { data?: { stashed: boolean }; isLoading?: boolean; isError?: boolean } = {};
   const mutations = { stashThread: jest.fn(), unstashThread: jest.fn() };
   const invalidate = jest.fn(() => Promise.resolve());
   const mutation = (name: "stashThread" | "unstashThread") => ({
@@ -82,6 +82,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   auth.isSignedIn = true;
   stashed.data = { stashed: false };
+  stashed.isLoading = false;
+  stashed.isError = false;
+  invalidate.mockImplementation(() => Promise.resolve());
   mutations.stashThread.mockResolvedValue({ success: true, stashId: "s1" });
   mutations.unstashThread.mockResolvedValue({ success: true });
 });
@@ -128,6 +131,27 @@ describe("the stash button on a thread", () => {
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Removed from your stash"));
   });
 
+  it("waits for the stash state while it loads, but stays usable when that read failed (I6)", () => {
+    stashed.data = undefined;
+    stashed.isLoading = true;
+    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.getByRole("button", { name: "Stash thread" })).toBeDisabled();
+    unmount();
+    stashed.isLoading = false;
+    stashed.isError = true;
+    render(<ThreadView threadId="t1" page={1} />);
+    expect(screen.getByRole("button", { name: "Stash thread" })).toBeEnabled();
+  });
+
+  it("confirms a stash even when refreshing its state fails afterwards (I6)", async () => {
+    invalidate.mockImplementation(() => Promise.reject(new Error("network")));
+    render(<ThreadView threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Stash thread" }));
+    await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Saved to your stash"));
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ threadId: "t1" }));
+    expect(notify.error).not.toHaveBeenCalled();
+  });
+
   it("says so when the server refuses", async () => {
     mutations.stashThread.mockRejectedValue(new Error("Thread not found."));
     render(<ThreadView threadId="t1" page={1} />);
@@ -136,11 +160,5 @@ describe("the stash button on a thread", () => {
       expect(notify.error).toHaveBeenCalledWith("Could not update your stash", "Thread not found.")
     );
     expect(notify.success).not.toHaveBeenCalled();
-  });
-
-  it("stays disabled until the stashed state is known", () => {
-    stashed.data = undefined;
-    render(<ThreadView threadId="t1" page={1} />);
-    expect(screen.getByRole("button", { name: "Stash thread" })).toBeDisabled();
   });
 });

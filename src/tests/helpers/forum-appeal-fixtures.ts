@@ -40,6 +40,16 @@ export const warning = (id: string, extra: Row = {}): Row => ({
   ...extra,
 });
 
+/** The fixture subject's scope, as fileAppeal stores it on the appeal (M7); none for a subject not listed here. */
+function subjectScopeOf(subjectType: string, subjectId: string): Row {
+  const subject = (subjectType === "ban" ? bans : warnings).find((row) => row.id === subjectId);
+  if (!subject) return {};
+  if (subjectType === "ban") return { scope: subject.scope, scopeId: subject.scopeId };
+  return subject.categoryId === null
+    ? { scope: "site", scopeId: null }
+    : { scope: "category", scopeId: subject.categoryId };
+}
+
 export const appeal = (
   id: string,
   subjectType: string,
@@ -49,6 +59,7 @@ export const appeal = (
   id,
   subjectType,
   subjectId,
+  ...subjectScopeOf(subjectType, subjectId),
   userId: "u_m",
   body: "Please reconsider this.",
   status: "open",

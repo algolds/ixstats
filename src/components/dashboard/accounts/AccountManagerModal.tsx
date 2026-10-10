@@ -3,10 +3,9 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import type { RouterOutputs } from "~/trpc/react";
+import type { ThinkpagesAccountItem } from "./account-types";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 
-type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 interface AccountManagerModalProps {
   isOpen: boolean;

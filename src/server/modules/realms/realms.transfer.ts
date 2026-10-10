@@ -15,6 +15,7 @@ import {
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 import { notifyRealmFounderChanged } from "./realms.notices";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import type { BoardGrantGuard } from "./realms.region-actions";
 
 type TransferDb = Pick<
   PrismaClient,
@@ -50,12 +51,18 @@ async function requireActiveUser(db: TransferDb, clerkUserId: string) {
   if (!user.isActive) throw new RealmRegionError("BAD_REQUEST", "That account is deactivated");
 }
 
+/** How a handover was made, and the forum's check on the new founder's board power (M9), run under their lock. */
+interface TransferVia {
+  via: "admin" | "founder";
+  guardBoard: BoardGrantGuard;
+}
+
 async function applyTransfer(
   db: TransferDb,
   actor: RealmActor,
   realm: TransferRealm,
   choice: TransferChoice,
-  via: "admin" | "founder"
+  { via, guardBoard }: TransferVia
 ) {
   const previousOwnerId = realm.ownerId;
   const newOwnerId = choice.newOwnerId ?? STAFF_FOUNDER_ID;
@@ -74,6 +81,8 @@ async function applyTransfer(
   }
 
   await db.$transaction(async (tx) => {
+    // A founder holds the board power (M9): checked under the new founder's lock, staff excepted.
+    if (newOwnerId !== STAFF_FOUNDER_ID) await guardBoard(tx, realm.id, newOwnerId);
     await tx.realm.update({ where: { id: realm.id }, data: { ownerId: newOwnerId } });
     // The founder holds every power already; drop a now-redundant officer post.
     await tx.realmOfficer.deleteMany({ where: { realmId: realm.id, userId: newOwnerId } });
@@ -137,7 +146,8 @@ async function applyTransfer(
 export async function adminTransferRealmOwner(
   db: TransferDb,
   actor: RealmActor,
-  input: TransferChoice & { realmId: string }
+  input: TransferChoice & { realmId: string },
+  guardBoard: BoardGrantGuard
 ) {
   if (!isSiteAdmin(actor))
     throw new RealmRegionError("FORBIDDEN", "Only site admins transfer realms");
@@ -158,7 +168,7 @@ export async function adminTransferRealmOwner(
       throw new RealmRegionError("BAD_REQUEST", "IxWorld is administered by IxStats staff");
     await requireActiveUser(db, input.newOwnerId);
   }
-  return applyTransfer(db, actor, realm, input, "admin");
+  return applyTransfer(db, actor, realm, input, { via: "admin", guardBoard });
 }
 
 /** The realm, if `actor` is its founder (site admins transfer from /admin/realms instead). */
@@ -176,7 +186,8 @@ async function requireFounder(db: TransferDb, actor: RealmActor, slug: string) {
 export async function handOverRealm(
   db: TransferDb,
   actor: RealmActor,
-  input: { slug: string; newOwnerId: string; confirmSlug: string; keepPreviousAsOfficer: boolean }
+  input: { slug: string; newOwnerId: string; confirmSlug: string; keepPreviousAsOfficer: boolean },
+  guardBoard: BoardGrantGuard
 ) {
   const realm = await requireFounder(db, actor, input.slug);
   requireTypedSlug(realm, input.confirmSlug);
@@ -194,7 +205,7 @@ export async function handOverRealm(
         "The new founder must own a nation in the realm or be one of its officers"
       );
   }
-  return applyTransfer(db, actor, realm, input, "founder");
+  return applyTransfer(db, actor, realm, input, { via: "founder", guardBoard });
 }
 
 /** Founder: players who own a nation in the realm and could take it over, matched by nation name. */

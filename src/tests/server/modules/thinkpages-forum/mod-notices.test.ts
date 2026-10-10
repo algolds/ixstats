@@ -4,6 +4,7 @@ jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn
 import { notificationAPI } from "~/lib/notifications/api";
 import {
   notifyAppealDecision,
+  notifyAutoBanShortened,
   notifyBan,
   notifyBanLifted,
   notifyWarning,
@@ -91,6 +92,21 @@ describe("notifyWarning", () => {
     });
     expect(create).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("notifyAutoBanShortened (M5)", () => {
+  it("says the automatic ban was shortened and when it now ends, never as a new ban", async () => {
+    await notifyAutoBanShortened(userDb() as never, {
+      userId: "u_m",
+      expiresAt: new Date("2026-10-16T12:00:00Z"),
+    });
+    expect(create).toHaveBeenCalledWith({
+      ...COMMON,
+      title: "Your forum ban was shortened",
+      message: "Your automatic forum ban was shortened; it now ends on 16 Oct 2026.",
+      type: "info",
+    });
   });
 });
 

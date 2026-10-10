@@ -102,6 +102,14 @@ export function countTextActionTokens(html: string): number {
     .reduce((n, run) => n + countActionTokens(run.text), 0);
 }
 
+/** Distinct activity ids in the text of `html`, outside every tag and attribute (the ones that render), in order. */
+export function parseTextActionTokens(html: string): string[] {
+  const ids = htmlRuns(html)
+    .filter(cuttable)
+    .flatMap((run) => parseActionTokens(run.text));
+  return [...new Set(ids)];
+}
+
 export type BodySegment = { kind: "html"; text: string } | { kind: "action"; id: string };
 
 interface OpenTag {

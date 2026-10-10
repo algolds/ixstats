@@ -5,7 +5,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
   return {
     ...actual,
     // Spies over the real posting access, so the router's single entry (T0-2) is observable.
-    categoryPostingAccess: jest.fn(actual.categoryPostingAccess),
+    postingAccessFor: jest.fn(actual.postingAccessFor),
     canPostInCategory: jest.fn(actual.canPostInCategory),
     createThread: jest.fn(async () => ({ threadId: "t_new", postId: "p_new" })),
     replyToThread: jest.fn(async () => {
@@ -23,11 +23,11 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   canPostInCategory,
-  categoryPostingAccess,
   createThread,
   fileAppeal,
   fileReport,
   myStanding,
+  postingAccessFor,
 } from "~/server/modules/thinkpages-forum";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
@@ -332,10 +332,24 @@ describe("thinkpagesForum router", () => {
   });
 
   it("asks for posting access once per thread, never through canPostInCategory (T0-2)", async () => {
-    jest.mocked(categoryPostingAccess).mockClear();
+    jest.mocked(postingAccessFor).mockClear();
     await caller(member, forumDb()).thread({ threadId: "t1", page: 1 });
-    expect(categoryPostingAccess).toHaveBeenCalledTimes(1);
+    expect(postingAccessFor).toHaveBeenCalledTimes(1);
     expect(canPostInCategory).not.toHaveBeenCalled();
+  });
+
+  it("loads a realm category's realm once per category or thread read, and never returns it whole (N1)", async () => {
+    const db = realmForumDb(inEurth);
+    const category = await caller(member, db).category({ key: "hub", realm: "eurth", page: 1 });
+    expect(db.realm.findUnique).toHaveBeenCalledTimes(1);
+    db.realm.findUnique.mockClear();
+    const thread = await caller(member, db).thread({ threadId: "t1", page: 1 });
+    expect(db.realm.findUnique).toHaveBeenCalledTimes(1);
+    for (const out of [category, thread]) {
+      expect(out).not.toHaveProperty("forumRealm");
+      expect(JSON.stringify(out)).not.toContain('"ownerId"');
+    }
+    expect(thread.canReply).toBe(true);
   });
 
   it("offers a site-banned member no thread start, no reply and no Edit on their own sitewide post", async () => {
@@ -443,7 +457,9 @@ describe("thinkpagesForum router", () => {
     await expect(
       c.createThread({ categoryKey: "general", title: "Fine title", html: "x".repeat(50_001) })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(c.editPost({ postId: "p1", html: "x".repeat(50_001) })).rejects.toMatchObject({
+    await expect(
+      c.editPost({ postId: "p1", editedAt: null, html: "x".repeat(50_001) })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
@@ -495,6 +511,19 @@ describe("thinkpagesForum router", () => {
         expect.anything(),
         expect.objectContaining({ id: "u1" })
       );
+    });
+
+    it("spends no moderator-context queries on the standing or an appeal (M16)", async () => {
+      const db = forumDb();
+      await caller(member, db).myStanding();
+      await caller(member, db).appeal({
+        subjectType: "ban",
+        subjectId: "b1",
+        body: "Please reconsider this.",
+      });
+      expect(db.forumCategoryModerator.findMany).not.toHaveBeenCalled();
+      expect(jest.mocked(myStanding).mock.calls.at(-1)![1]).not.toHaveProperty("mod");
+      expect(jest.mocked(fileAppeal).mock.calls.at(-1)![1]).not.toHaveProperty("mod");
     });
 
     it("files an appeal as the signed-in member", async () => {
@@ -570,13 +599,18 @@ describe("thinkpagesForum router", () => {
         "banned",
         "canPost",
         "categories",
+        "needsNation",
         "notice",
         "realm",
       ]);
+      // U6: the claim-a-nation offer is the server's flag, not a match on the notice text.
+      expect(out.needsNation).toBe(true);
       expect(JSON.stringify(out)).not.toContain("ownedCountryIds");
       expect(JSON.stringify(out)).not.toContain("restriction");
       const owner = await caller(member, realmForumDb(inEurth)).realmSection({ realm: "eurth" });
-      expect(owner).toMatchObject({ canPost: true, notice: null });
+      expect(owner).toMatchObject({ canPost: true, notice: null, needsNation: false });
+      const guest = await caller(null, realmForumDb()).realmSection({ realm: "eurth" });
+      expect(guest).toMatchObject({ canPost: false, needsNation: false });
     });
 
     it("maps an unknown realm section to NOT_FOUND", async () => {

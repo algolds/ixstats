@@ -141,7 +141,7 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
             </span>
           ) : (
             <span className="text-muted-foreground text-xs font-medium">
-              Create one in ThinkPages
+              Create one under Accounts on the Dashboard
             </span>
           )}
         </SettingsRow>

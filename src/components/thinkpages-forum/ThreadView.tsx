@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, EyeClosed, Lock } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { useScrollToPostHash } from "~/hooks/useScrollToPostHash";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
@@ -22,22 +23,6 @@ import { StashThreadButton } from "./StashThreadButton";
 import { ThreadModeratorBar } from "./ThreadModeratorBar";
 
 const NO_POSTS: ForumPost[] = [];
-
-/**
- * Scrolls to `#post-<id>` once that page's posts are on screen (permalinks, after a reply), once per hash: a refetch
- * (saving an edit, a moderator action) leaves the reader where they are.
- */
-function useScrollToPostHash(posts: readonly ForumPost[]) {
-  const scrolled = useRef<string | null>(null);
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (posts.length === 0 || !hash.startsWith("#post-") || scrolled.current === hash) return;
-    const target = document.getElementById(hash.slice(1));
-    if (!target) return;
-    target.scrollIntoView({ block: "start" });
-    scrolled.current = hash;
-  }, [posts]);
-}
 
 interface ThreadViewProps {
   threadId: string;
@@ -61,7 +46,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
   const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   const posts = data?.posts ?? NO_POSTS;
   const { cards, ready, errored } = useThreadActionCards(posts);
-  useScrollToPostHash(posts);
+  useScrollToPostHash(posts, threadId, page);
   usePageTitle({ title: data?.thread.title ?? "ThinkPages" });
 
   const { mutateAsync: replyTo } = api.thinkpagesForum.reply.useMutation();
@@ -90,10 +75,12 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
 
   const edit = useCallback(
     async (postId: string, html: string) => {
-      await editPost({ postId, html });
+      // M1: the server refuses the edit if the post changed (a moderator edit) since this page loaded it.
+      const editedAt = posts.find((p) => p.id === postId)?.editedAt ?? null;
+      await editPost({ postId, html, editedAt });
       await utils.thinkpagesForum.thread.invalidate({ threadId });
     },
-    [editPost, utils, threadId]
+    [editPost, utils, threadId, posts]
   );
 
   const threadCategory = data?.category;
@@ -137,10 +124,10 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
             items={[
               ...forumTrail(category.realm),
               { label: category.name, href: categoryHref(category) },
-              { label: thread.title },
             ]}
           />
         }
+        // The trail scrolls away with the header; the compact bar keeps this way up (as NewThreadForm does).
         back={{ href: categoryHref(category), label: category.name }}
         bleed
       />

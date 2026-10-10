@@ -5,9 +5,11 @@
  * to that tier's full length from the moment of crossing (never a second ban). A revoke only moves it down, to the
  * highest tier still met, measured from the ban's original start, and lifts it when no tier is met or that length
  * has already run out. All of it runs inside the warning's transaction, under the member's lock, and logs there.
+ * When a manual site ban that covered a tier (M-2) is lifted or overturned, the tier is applied at once by the system
+ * (follow-up M2, owner ruling), logged as `ban.retier`.
  */
 import type { PrismaClient } from "@prisma/client";
-import { autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
+import { activePoints, autoBanTier, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import type { ForumViewer } from "./access";
 import { liftBanTx } from "./mod-bans";
 import { logModAction, type ModLogDetail } from "./mod-log";
@@ -16,6 +18,7 @@ export type AutoBanTx = Pick<
   PrismaClient,
   "forumBan" | "forumAppeal" | "forumModLog" | "$executeRaw"
 >;
+export type RetierTx = AutoBanTx & Pick<PrismaClient, "forumWarning">;
 export type AutoBanChange =
   | {
       kind: "issued" | "extended" | "shortened";
@@ -28,8 +31,30 @@ export type AutoBanChange =
     }
   | { kind: "lifted"; banId: string };
 
-type Actor = NonNullable<ForumViewer>;
+type Actor = Pick<NonNullable<ForumViewer>, "id">;
 type Tier = { points: number; days: number };
+/** Who raises a tier and how it is logged: a warning's issuer, or the system on a re-tier (M2). */
+interface Raise {
+  actor: Actor;
+  context: ModLogDetail;
+  retier: boolean;
+}
+
+/** M2: a re-tier after a lift is nobody's warning, so the system issues it (as the board-ban migration does). */
+const SYSTEM: Actor = { id: "system" };
+
+/** A member's live warning points, sitewide (M4). */
+export async function activePointsOf(
+  db: Pick<RetierTx, "forumWarning">,
+  userId: string,
+  now: Date = new Date()
+): Promise<number> {
+  const rows = await db.forumWarning.findMany({
+    where: { userId, revokedAt: null, expiresAt: { gt: now } },
+    select: { points: true, expiresAt: true, revokedAt: true },
+  });
+  return activePoints(rows, now);
+}
 
 interface AutoBan {
   id: string;
@@ -70,12 +95,11 @@ const siteEntry = (actor: Actor, userId: string) =>
 
 async function issueAutoBan(
   tx: AutoBanTx,
-  actor: Actor,
+  by: Raise,
   userId: string,
   tier: Tier,
   points: number,
-  now: Date,
-  context: ModLogDetail
+  now: Date
 ): Promise<AutoBanChange> {
   const expiresAt = tierEnd(now, tier);
   const reason = autoBanReason(points);
@@ -88,14 +112,14 @@ async function issueAutoBan(
       expiresAt,
       auto: true,
       autoTier: tier.points,
-      issuedBy: actor.id,
+      issuedBy: by.actor.id,
       createdAt: now,
     },
   });
   await logModAction(tx, {
-    ...siteEntry(actor, userId),
-    action: "ban.auto",
-    detail: { banId: ban.id, days: tier.days, points, autoTier: tier.points, ...context },
+    ...siteEntry(by.actor, userId),
+    action: by.retier ? "ban.retier" : "ban.auto",
+    detail: { banId: ban.id, days: tier.days, points, autoTier: tier.points, ...by.context },
   });
   return {
     kind: "issued",
@@ -107,18 +131,23 @@ async function issueAutoBan(
   };
 }
 
+function logActionOf(kind: "extended" | "shortened", retier: boolean): string {
+  if (kind === "shortened") return "ban.shorten";
+  return retier ? "ban.retier" : "ban.extend";
+}
+
 /**
  * Sets the active automatic ban to the highest tier `points` still meet (M3): up → that tier's full length from now
  * (never earlier than it already ends); down → that tier's length from the ban's original start.
  */
 async function reconcileAutoBan(
   tx: AutoBanTx,
-  actor: Actor,
+  by: Raise,
   ban: AutoBan,
   points: number,
-  now: Date,
-  context: ModLogDetail
+  now: Date
 ): Promise<AutoBanChange | null> {
+  const { actor, context } = by;
   const tier = autoBanTier(points);
   const lift = async (): Promise<AutoBanChange> => {
     await liftBanTx(tx, actor, ban, { ...context, points }, now);
@@ -139,7 +168,7 @@ async function reconcileAutoBan(
   });
   await logModAction(tx, {
     ...siteEntry(actor, ban.userId),
-    action: kind === "extended" ? "ban.extend" : "ban.shorten",
+    action: logActionOf(kind, by.retier),
     detail: {
       banId: ban.id,
       days: tier.days,
@@ -174,7 +203,7 @@ async function coveredByManualBan(
  * site ban already covers the tier (M-2). A warning never shortens or lifts a ban, even when expired points leave
  * fewer than the ban's tier; only a revoke does.
  */
-export async function autoBanAfterWarning(
+export function autoBanAfterWarning(
   tx: AutoBanTx,
   actor: Actor,
   userId: string,
@@ -182,19 +211,45 @@ export async function autoBanAfterWarning(
   now: Date,
   context: ModLogDetail
 ): Promise<AutoBanChange | null> {
-  const current = await activeAutoBan(tx, userId, now);
+  return raiseAutoBan(tx, { actor, context, retier: false }, userId, points, now);
+}
+
+async function raiseAutoBan(
+  tx: AutoBanTx,
+  by: Raise,
+  userId: string,
+  points: number,
+  now: Date
+): Promise<AutoBanChange | null> {
   const tier = autoBanTier(points);
   if (!tier) return null;
+  const current = await activeAutoBan(tx, userId, now);
   if (current && tier.points <= (current.autoTier ?? 0)) return null;
   if (await coveredByManualBan(tx, userId, tierEnd(now, tier))) return null;
-  if (!current) return issueAutoBan(tx, actor, userId, tier, points, now, context);
-  return reconcileAutoBan(tx, actor, current, points, now, context);
+  if (!current) return issueAutoBan(tx, by, userId, tier, points, now);
+  return reconcileAutoBan(tx, by, current, points, now);
+}
+
+/**
+ * M2 (owner ruling): after a manual site ban is lifted or overturned, inside that transaction and at its `now`,
+ * apply the tier the member's points meet, which the ban may have covered (M-2): issue it, or raise a lower
+ * automatic ban to it, from now. The system is its issuer and the row is `ban.retier`. Other bans change nothing.
+ */
+export async function autoBanAfterLift(
+  tx: RetierTx,
+  ban: { id: string; userId: string; scope: string; auto: boolean },
+  now: Date
+): Promise<AutoBanChange | null> {
+  if (ban.scope !== "site" || ban.auto) return null;
+  const points = await activePointsOf(tx, ban.userId, now);
+  const context = { trigger: "ban lifted", liftedBanId: ban.id };
+  return raiseAutoBan(tx, { actor: SYSTEM, context, retier: true }, ban.userId, points, now);
 }
 
 /**
  * After a revoke: move the active automatic ban down a tier or lift it; never issues or extends one. Points still at
- * or above its tier (e.g. a higher tier a manual site ban covered, M-2, and that ban lifted since) leave it alone:
- * only a new warning raises a tier, so its issuer is the one recorded for it.
+ * or above its tier (e.g. a higher tier a live manual site ban covers, M-2) leave it alone: only a new warning, or
+ * the re-tier when that manual ban ends (M2), raises a tier.
  */
 export async function autoBanAfterRevoke(
   tx: AutoBanTx,
@@ -208,5 +263,5 @@ export async function autoBanAfterRevoke(
   if (!current) return null;
   const tier = autoBanTier(points);
   if (tier && tier.points >= (current.autoTier ?? 0)) return null;
-  return reconcileAutoBan(tx, actor, current, points, now, context);
+  return reconcileAutoBan(tx, { actor, context, retier: false }, current, points, now);
 }

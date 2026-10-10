@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
 import { MOD_ROWS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { postSummary } from "~/lib/thinkpages-forum/post-summary";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { authorModeration, type AuthorModeration, type AuthorModerationDb } from "./mod-authors";
@@ -42,20 +43,16 @@ const targetKey = (type: string, id: string): string => `${type}:${id}`;
 const idsOf = (refs: readonly TargetRef[], type: string): string[] =>
   refs.filter((r) => r.targetType === type).map((r) => r.targetId);
 
-/**
- * The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`; `author` narrows them
- * to one member's content.
- */
+/** The reported threads and posts in two batched queries, keyed `thread:<id>` / `post:<id>`. */
 async function loadTargets(
   db: ReportQueueDb,
-  refs: readonly TargetRef[],
-  author: { authorUserId?: string } = {}
+  refs: readonly TargetRef[]
 ): Promise<Map<string, TargetSummary>> {
   const [threadIds, postIds] = [idsOf(refs, "thread"), idsOf(refs, "post")];
   const [threads, posts] = await Promise.all([
     threadIds.length
       ? db.forumThread.findMany({
-          where: { id: { in: threadIds }, ...author },
+          where: { id: { in: threadIds } },
           select: {
             id: true,
             title: true,
@@ -67,11 +64,12 @@ async function loadTargets(
       : [],
     postIds.length
       ? db.forumPost.findMany({
-          where: { id: { in: postIds }, ...author },
+          where: { id: { in: postIds } },
           select: {
             id: true,
             threadId: true,
             plainText: true,
+            contentHtml: true,
             authorUserId: true,
             importedAuthorName: true,
             hidden: true,
@@ -97,7 +95,7 @@ async function loadTargets(
       {
         threadId: p.threadId,
         threadTitle: p.thread.title,
-        excerpt: excerptOf(p.plainText),
+        excerpt: excerptOf(postSummary(p)),
         authorUserId: p.authorUserId,
         importedAuthorName: p.importedAuthorName,
         hidden: p.hidden,
@@ -110,33 +108,16 @@ type ReportWhere = { status: ReportStatus; categoryId?: { in: string[] } };
 
 /**
  * A moderator never sees reports about their own content, so who reported them never reaches them; site admins
- * see every report (their own content's without the reporter, and they can't handle those, resolveReport).
+ * see every report (their own content's without the reporter, and they can't handle those, resolveReport). The
+ * report's stored target author decides (M8); null (imported content without an IxStats author, or a gone target)
+ * is nobody's.
  */
-async function withoutOwnTargets(
-  db: ReportQueueDb,
+function withoutOwnTargets(
   viewer: ForumViewer,
   where: ReportWhere
-): Promise<
-  ReportWhere & { NOT?: { OR: Array<{ targetType: string; targetId: { in: string[] } }> } }
-> {
+): ReportWhere & { OR?: Array<{ targetAuthorId: null | { not: string } }> } {
   if (viewer === null || isSiteAdmin(viewer)) return where;
-  const reported = await db.forumReport.findMany({
-    where,
-    select: { targetType: true, targetId: true },
-    distinct: ["targetType", "targetId"],
-  });
-  const own = await loadTargets(db, reported, { authorUserId: viewer.id });
-  const ownIds = (type: string) =>
-    idsOf(reported, type).filter((id) => own.has(targetKey(type, id)));
-  return {
-    ...where,
-    NOT: {
-      OR: [
-        { targetType: "thread", targetId: { in: ownIds("thread") } },
-        { targetType: "post", targetId: { in: ownIds("post") } },
-      ],
-    },
-  };
+  return { ...where, OR: [{ targetAuthorId: null }, { targetAuthorId: { not: viewer.id } }] };
 }
 
 /**
@@ -214,7 +195,7 @@ export async function listReports(
   const listing = await listingScope(db, viewer, filter.realmId);
   const categoryIds =
     listing === null ? null : await readableCategoryIds(db, viewer, listing.categoryIds);
-  const where = await withoutOwnTargets(db, viewer, {
+  const where = withoutOwnTargets(viewer, {
     status: filter.status,
     ...(categoryIds === null ? {} : { categoryId: { in: categoryIds } }),
   });
@@ -242,7 +223,9 @@ export async function listReports(
     rows: rows.map((row) => {
       const target = targets.get(targetKey(row.targetType, row.targetId));
       const category = categories.get(row.categoryId) ?? null;
-      const ownTarget = target?.authorUserId === viewer?.id;
+      // The stored author (M8), so a gone target still counts; the live one only for a report not yet attributed.
+      const ownTarget =
+        viewer !== null && (row.targetAuthorId ?? target?.authorUserId) === viewer.id;
       return {
         /** What the viewer may do to the target (hide; warn or ban its author), as the server would allow. */
         ...(target && category ? moderation(target.authorUserId, category) : GONE_TARGET),

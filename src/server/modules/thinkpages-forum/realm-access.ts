@@ -76,8 +76,9 @@ export async function loadForumRealm(
   return ixworld ? canonicalRealm(ixworld) : IXWORLD_REALM;
 }
 
+/** Unpublished realms are their moderators' only; IxWorld, always listed in the switcher, is never hidden (U7). */
 export function canSeeRealm(viewer: ForumViewer, realm: ForumRealm): boolean {
-  return !isRealmHiddenFrom(viewer, realm);
+  return realm.id === DEFAULT_REALM_ID || !isRealmHiddenFrom(viewer, realm);
 }
 
 export interface RealmPostingAccess {
@@ -89,6 +90,8 @@ export interface RealmPostingAccess {
   canPost: boolean;
   /** Why the viewer cannot post, for the UI; null when they can. */
   notice: string | null;
+  /** Refused only for want of a nation here (signed in, not banned, realm open): the UI offers to claim one (U6). */
+  needsNation: boolean;
 }
 
 const ARCHIVED_NOTICE = "This realm is archived: its forum can be read but no longer changes.";
@@ -102,7 +105,7 @@ function refused(
   notice: string,
   ban: ActiveBan | null = null
 ): RealmPostingAccess {
-  return { ...base, ban, canPost: false, notice };
+  return { ...base, ban, canPost: false, notice, needsNation: false };
 }
 
 /**
@@ -131,8 +134,10 @@ export async function realmPostingAccess(
       where: { realmId: realm.id, userId: viewer.clerkUserId },
       select: { userId: true, powers: true },
     }),
-    // Null without a query for site admins (M5).
-    postingBan(db, viewer, { id: category?.id ?? null, scope: "realm", realmId: realm.id }),
+    // Null without a query for site admins (M5), and in an archived realm, which refuses first (M16).
+    isArchived(realm)
+      ? null
+      : postingBan(db, viewer, { id: category?.id ?? null, scope: "realm", realmId: realm.id }),
   ]);
   const ownedCountryIds = owned.map((c) => c.id);
   const admin = isSiteAdmin(viewer);
@@ -140,13 +145,20 @@ export async function realmPostingAccess(
     ownedCountryIds,
     isModerator: admin || hasRealmPower(viewer, realm, officers, "board"),
   };
-  const granted: RealmPostingAccess = { ...base, ban: null, canPost: true, notice: null };
+  const granted: RealmPostingAccess = {
+    ...base,
+    ban: null,
+    canPost: true,
+    notice: null,
+    needsNation: false,
+  };
   if (admin) return granted;
   if (isArchived(realm)) return refused(base, ARCHIVED_NOTICE);
   // Moderators of the realm are bound by bans too (M5): a stale row must still hold.
   if (ban) return refused(base, banNotice(ban), ban);
   if (base.isModerator) return granted;
-  if (ownedCountryIds.length === 0) return refused(base, noNationNotice(realm.name));
+  if (ownedCountryIds.length === 0)
+    return { ...refused(base, noNationNotice(realm.name)), needsNation: true };
   return granted;
 }
 

@@ -1,6 +1,6 @@
 /**
  * The appeals queue (M12, M14): appeals whose subject lies in the viewer's scope (site admins everything, optionally
- * one realm), newest first, each with its subject and whether this viewer may decide it (`canReview`: open, not
+ * one realm; the appeal's own `scope` columns, M7), newest first, each with its subject and whether this viewer may decide it (`canReview`: open, not
  * their own appeal, not a subject they issued or, for an automatic ban, raised).
  */
 import type { PrismaClient } from "@prisma/client";
@@ -16,13 +16,7 @@ import {
   type AppealStatus,
   type AppealSubject,
 } from "./mod-appeal-subjects";
-import {
-  banScopeOf,
-  listingScope,
-  pageWindow,
-  scopedRowsWhere,
-  type ListingScope,
-} from "./mod-scope";
+import { banScopeOf, listingScope, pageWindow, scopedRowsWhere } from "./mod-scope";
 
 export type AppealQueueDb = Pick<
   PrismaClient,
@@ -42,36 +36,6 @@ const idsByType = (
   ban: rows.filter((r) => r.subjectType === "ban").map((r) => r.subjectId),
   warning: rows.filter((r) => r.subjectType === "warning").map((r) => r.subjectId),
 });
-
-/**
- * For a scoped viewer: the appeals (of this status) whose ban lies in their realms or categories, or whose warning
- * was given in one of their categories. Site admins without a realm filter need no condition.
- */
-async function inScopeWhere(db: AppealQueueDb, listing: ListingScope, status: AppealStatus) {
-  if (listing === null) return {};
-  const appealed = idsByType(
-    await db.forumAppeal.findMany({
-      where: { status },
-      select: { subjectType: true, subjectId: true },
-    })
-  );
-  const [bans, warnings] = await Promise.all([
-    db.forumBan.findMany({
-      where: { id: { in: appealed.ban }, ...scopedRowsWhere(listing) },
-      select: { id: true },
-    }),
-    db.forumWarning.findMany({
-      where: { id: { in: appealed.warning }, categoryId: { in: listing.categoryIds } },
-      select: { id: true },
-    }),
-  ]);
-  return {
-    OR: [
-      { subjectType: "ban", subjectId: { in: bans.map((b) => b.id) } },
-      { subjectType: "warning", subjectId: { in: warnings.map((w) => w.id) } },
-    ],
-  };
-}
 
 /** The page's subjects in one query per kind, keyed `kind:id`. */
 async function loadSubjects(
@@ -127,7 +91,8 @@ export async function listAppeals(
   page: number
 ) {
   const listing = await listingScope(db, viewer, filter.realmId);
-  const where = { status: filter.status, ...(await inScopeWhere(db, listing, filter.status)) };
+  // M7: each appeal carries its subject's scope (filed with it), so a scoped viewer's filter is a plain where.
+  const where = { status: filter.status, ...scopedRowsWhere(listing) };
   const [rows, total] = await Promise.all([
     db.forumAppeal.findMany({
       where,

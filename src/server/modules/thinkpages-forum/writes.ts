@@ -244,14 +244,20 @@ export async function replyToThread(
   return { postId };
 }
 
+/** M1: the author's edit lost the race with a moderator's (or their own other tab's) edit. */
+const EDITED_MEANWHILE =
+  "This post changed since you opened it (a moderator's edit or another tab). Reload to see the latest version.";
+
 /**
  * The author edits (moderator edits are `modEditPost`). In a realm section the author must still be able to post
- * there (D13); sitewide only a ban stops them (T0-17), not the category's posting role.
+ * there (D13); sitewide only a ban stops them (T0-17), not the category's posting role. `editedAt` is the post's
+ * value when the author loaded it: the write is conditional on it (as `modEditPost`'s is), so an author edit never
+ * overwrites a moderator's edit made in between (M1).
  */
 export async function editPost(
   db: WritesDb,
   actor: ForumActor,
-  input: { postId: string; html: string }
+  input: { postId: string; html: string; editedAt: Date | null }
 ): Promise<void> {
   const post = await db.forumPost.findUnique({
     where: { id: input.postId },
@@ -292,6 +298,10 @@ export async function editPost(
   if (await inLockedChain(db, post.id))
     throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
   await validateLinks(db, actor, body.plainText);
-  await db.forumPost.update({ where: { id: post.id }, data: { ...body, editedAt: new Date() } });
+  const { count } = await db.forumPost.updateMany({
+    where: { id: post.id, editedAt: input.editedAt },
+    data: { ...body, editedAt: new Date() },
+  });
+  if (count === 0) throw new ForumError("CONFLICT", EDITED_MEANWHILE);
   await syncLinks(db, actor, post.id, body.plainText);
 }

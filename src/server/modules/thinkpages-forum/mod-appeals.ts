@@ -19,10 +19,10 @@ import {
   type AppealSubject,
   type AppealSubjectType,
 } from "./mod-appeal-subjects";
-import type { AutoBanChange } from "./mod-auto-bans";
+import { autoBanAfterLift, type AutoBanChange } from "./mod-auto-bans";
 import { assertBanScope, liftBanTx } from "./mod-bans";
 import { logModAction } from "./mod-log";
-import { lockMember } from "./mod-scope";
+import { lockMember, scopeColumns } from "./mod-scope";
 import { assertWarningScope, revokeWarningTx } from "./mod-warnings";
 import type { ForumActor } from "./writes";
 
@@ -42,7 +42,7 @@ export interface AppealReview {
   subjectType: AppealSubjectType;
   /** The reviewer's outcome, or `moot` when the subject had already ended. */
   outcome: AppealDecision;
-  /** An overturned warning's effect on the member's automatic ban (M3). */
+  /** An overturn's effect on the member's automatic ban: a warning's (M3), or a manual site ban's re-tier (M2). */
   autoBan: AutoBanChange | null;
 }
 
@@ -97,8 +97,15 @@ export async function fileAppeal(
         select: { id: true },
       });
       if (existing) throw alreadyAppealed(subjectType);
+      // M7: the subject's scope rides on the appeal, so the scoped queue filters appeals directly.
       const appeal = await tx.forumAppeal.create({
-        data: { subjectType, subjectId, userId: actor.id, body },
+        data: {
+          subjectType,
+          subjectId,
+          userId: actor.id,
+          body,
+          ...scopeColumns(subjectScope(subject)),
+        },
       });
       return { appealId: appeal.id };
     });
@@ -135,7 +142,10 @@ async function assertOtherReviewer(
   }
 }
 
-/** Lifts the ban, or revokes the warning with M3's re-tier, through the review's transaction and clock. */
+/**
+ * Lifts the ban (a manual site ban with M2's re-tier), or revokes the warning with M3's re-tier, through the review's
+ * transaction and clock.
+ */
 async function overturn(
   tx: Prisma.TransactionClient,
   reviewer: NonNullable<ForumViewer>,
@@ -146,15 +156,16 @@ async function overturn(
   const detail = { reason: "appeal overturned", appealId };
   if (subject.kind === "ban") {
     await liftBanTx(tx, reviewer, subject, detail, now);
-    return null;
+    return autoBanAfterLift(tx, subject, now);
   }
   return (await revokeWarningTx(tx, reviewer, subject, detail, now)).autoBan;
 }
 
 /**
- * A moderator with scope over the subject decides an open appeal. Scope is checked first (an out-of-scope moderator
- * learns nothing about its status, only that it exists), then the status, then, under the member's lock, the
- * different-reviewer rule. A subject that already ended (lifted, revoked or expired, bans and warnings alike) closes
+ * A moderator with scope over the subject decides an open appeal. Scope is checked first, so an out-of-scope
+ * moderator learns nothing about its status; they do learn that it exists (FORBIDDEN, where an unknown id is
+ * NOT_FOUND), which is accepted since appeal ids are unguessable cuids (M15). Then the status, then, under the
+ * member's lock, the different-reviewer rule. A subject that already ended (lifted, revoked or expired, bans and warnings alike) closes
  * the appeal as `moot` (`appeal.moot`) whatever the outcome asked. Otherwise the decision, its `appeal.review` row and
  * an overturn's lift or revoke (with their own rows) commit together; a lost race rolls all of it back (CONFLICT).
  */

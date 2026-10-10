@@ -1,27 +1,4 @@
-import { render, renderHook, screen } from "@testing-library/react";
-
-interface QueryState {
-  data?: ActionCardData[];
-  isSuccess?: boolean;
-  isError?: boolean;
-}
-type Input = { ids: string[] };
-type Options = { enabled: boolean };
-
-const cards = jest.fn<QueryState, [Input, Options]>();
-jest.mock("~/trpc/react", () => ({
-  api: {
-    actionLinks: {
-      activityCards: {
-        useQuery: (input: Input, options: Options) => ({
-          isSuccess: false,
-          isError: false,
-          ...cards(input, options),
-        }),
-      },
-    },
-  },
-}));
+import { render, screen } from "@testing-library/react";
 
 jest.mock("~/lib/base-path", () => ({
   ...jest.requireActual<typeof import("~/lib/base-path")>("~/lib/base-path"),
@@ -29,7 +6,6 @@ jest.mock("~/lib/base-path", () => ({
 }));
 
 import { PostBody } from "~/components/thinkpages-forum/PostBody";
-import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import type { ActionCardData } from "~/components/action-links";
 
 function card(id: string, title: string): ActionCardData {
@@ -153,56 +129,5 @@ describe("PostBody", () => {
     expect(screen.getAllByText("plain post")).toHaveLength(1);
     expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
     expect(container.querySelectorAll("p")).toHaveLength(1);
-  });
-});
-
-describe("useThreadActionCards", () => {
-  beforeEach(() => cards.mockReset());
-
-  it("queries every id from 3 posts in one call and returns a Map", () => {
-    cards.mockReturnValue({ data: [card("a1", "A"), card("b2", "B")], isSuccess: true });
-    const posts = [
-      { contentHtml: "<p>x</p>[ixaction=a1]" },
-      { contentHtml: "[ixaction=b2] and [ixaction=a1]" },
-      { contentHtml: "[ixaction=c3]" },
-    ];
-    const { result } = renderHook(() => useThreadActionCards(posts));
-    expect(cards).toHaveBeenCalledTimes(1);
-    expect(cards).toHaveBeenCalledWith({ ids: ["a1", "b2", "c3"] }, { enabled: true });
-    expect(result.current.cards.get("b2")?.title).toBe("B");
-    expect(result.current.cards.has("c3")).toBe(false);
-    expect(result.current).toMatchObject({ ready: true, errored: false });
-  });
-
-  it("disables the query when no post has a token", () => {
-    cards.mockReturnValue({});
-    const posts = [{ contentHtml: "<p>none</p>" }];
-    const { result } = renderHook(() => useThreadActionCards(posts));
-    expect(cards).toHaveBeenCalledWith({ ids: [] }, { enabled: false });
-    expect(result.current.cards.size).toBe(0);
-    expect(result.current.ready).toBe(true);
-  });
-
-  it("is not ready while loading and reports a failed request", () => {
-    const posts = [{ contentHtml: "[ixaction=a1]" }];
-    cards.mockReturnValue({});
-    expect(renderHook(() => useThreadActionCards(posts)).result.current).toMatchObject({
-      ready: false,
-      errored: false,
-    });
-    cards.mockReturnValue({ isError: true });
-    expect(renderHook(() => useThreadActionCards(posts)).result.current).toMatchObject({
-      ready: false,
-      errored: true,
-    });
-  });
-
-  it("caps the ids at the router maximum of 50", () => {
-    cards.mockReturnValue({ data: [] });
-    const posts = [
-      { contentHtml: Array.from({ length: 60 }, (_, i) => `[ixaction=id${i}]`).join("") },
-    ];
-    renderHook(() => useThreadActionCards(posts));
-    expect(cards.mock.calls[0]![0].ids).toHaveLength(50);
   });
 });

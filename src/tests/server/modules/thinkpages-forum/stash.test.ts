@@ -71,6 +71,9 @@ function fake({ threads = { t1: thread() }, stashes = [], items = [] }: Setup = 
       findUnique: jest.fn(
         async ({ where }: { where: { id: string } }) => threads[where.id] ?? null
       ),
+      findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+        where.id.in.flatMap((id) => (threads[id] ? [threads[id]] : []))
+      ),
     },
     realm: { findFirst: jest.fn(async () => null), findUnique: jest.fn(async () => null) },
     stash: {
@@ -227,6 +230,20 @@ describe("stashThread", () => {
     expect(itemRows).toHaveLength(1);
   });
 
+  it("uses the default stash a racing first stash created, instead of failing on the name (I6)", async () => {
+    const { db, raw, stashRows, itemRows } = fake();
+    raw.stash.create.mockImplementationOnce(async () => {
+      stashRows.push({ ...mine, id: "stash_raced" });
+      throw Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
+    });
+
+    await expect(stashThread(db, member, owner, { threadId: "t1" })).resolves.toEqual({
+      success: true,
+      stashId: "stash_raced",
+    });
+    expect(itemRows).toEqual([expect.objectContaining({ stashId: "stash_raced" })]);
+  });
+
   it("is idempotent: a second call keeps one row", async () => {
     const { db, itemRows } = fake({ stashes: [mine] });
 
@@ -372,7 +389,7 @@ describe("isThreadStashed and listStashedThreads", () => {
     });
   });
 
-  it("lists only native items, with their title and thread path", async () => {
+  it("lists only native items, with the thread's current title and path", async () => {
     const legacy: Item = {
       ...row("stash_1", "7", "2026-10-02"),
       pageTitle: "forum:thread:7",
@@ -380,16 +397,37 @@ describe("isThreadStashed and listStashedThreads", () => {
     };
     const { db } = fake({ stashes: [mine], items: [row("stash_1", "t1", "2026-10-01"), legacy] });
 
-    const list = await listStashedThreads(db, owner, 50);
+    const list = await listStashedThreads(db, member, owner, 50);
 
     expect(list).toEqual([
       {
         id: "i_stash_1_t1",
         threadId: "t1",
-        title: "Title t1",
+        title: "Hello there",
         href: "/thinkpages/t/t1",
         savedAt: new Date("2026-10-01"),
       },
     ]);
+  });
+
+  it("leaves out threads the caller can no longer read: hidden, staff-only or gone (I5)", async () => {
+    const { db } = fake({
+      threads: {
+        t1: thread(),
+        t_hidden: thread({ id: "t_hidden", hidden: true }),
+        t_staff: thread({ id: "t_staff" }, staff),
+      },
+      stashes: [mine],
+      items: [
+        row("stash_1", "t1", "2026-10-01"),
+        row("stash_1", "t_hidden", "2026-10-02"),
+        row("stash_1", "t_staff", "2026-10-03"),
+        row("stash_1", "t_gone", "2026-10-04"),
+      ],
+    });
+
+    const list = await listStashedThreads(db, member, owner, 50);
+
+    expect(list.map((t) => [t.threadId, t.title])).toEqual([["t1", "Hello there"]]);
   });
 });

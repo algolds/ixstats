@@ -70,6 +70,7 @@ import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
+import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
 type FeedTab = "all" | "following" | "trending" | "community";
 
@@ -238,11 +239,7 @@ export function UnifiedDashboardSection({
 
   const handleShare = () => {
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({
-        title: "ThinkPages Post",
-        text: "A post on ThinkPages",
-        url: window.location.href,
-      });
+      navigator.share({ ...feedShareCopy("post"), url: window.location.href });
     } else {
       navigator.clipboard.writeText(window.location.href);
       notify.success("Link copied");

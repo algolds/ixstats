@@ -3,9 +3,11 @@
  * or approved story chain is refused (P6, M17: hide it instead); the edit may keep or remove the author's action
  * links but never add one, since links belong to the author's nation. The write is conditional on the post being
  * unchanged since it was read (its `editedAt`), so a concurrent edit by the author is a CONFLICT, never overwritten.
- * The edit, the removal of dropped links and the log row (with the previous plain text) commit together.
+ * The edit, the removal of dropped links and the log row (with the previous plain text, or for an image-only post
+ * its images, M13) commit together.
  */
 import { parseActionTokens } from "~/lib/action-links";
+import { postSummary } from "~/lib/thinkpages-forum/post-summary";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { contentModerator, loadPost, type ContentDb } from "./mod-content-target";
@@ -49,7 +51,7 @@ export async function modEditPost(
       targetType: "post",
       targetId: post.id,
       scope: scopeOfCategory(category),
-      detail: { note, previous: post.plainText },
+      detail: { note, previous: postSummary(post) },
     });
   });
 }

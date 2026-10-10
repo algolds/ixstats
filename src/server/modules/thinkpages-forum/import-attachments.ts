@@ -8,7 +8,8 @@
  *     renamed), then registers an image only when it was copied now, has no asset row yet, or its stored visibility
  *     differs (M10; registration re-makes the thumbnail and blurhash). PDFs are copied but not registered (R2). A
  *     registration failure never fails the import: retryable ones are pending (a rerun retries), the rest are failed
- *     with their reason, and the runner exits 2 on those (M14).
+ *     with their reason, and the runner exits 2 on those (M14). A file whose write fails (a disk error) is listed in
+ *     `copyFailed` and the copy goes on; the runner exits 2 on those too, and a rerun copies them (I1).
  * Visibility: the snapshot decides (hidden post or thread, non-public category), and `restrictedPosts` (posts the
  * database holds as hidden or in a non-public category, built by the runner) overrides it: restricted always wins,
  * so a rerun never re-registers as public an image whose post was hidden or moved after the first import.
@@ -127,6 +128,8 @@ export interface AttachmentCopyResult {
   alreadyRegistered: number;
   assetsPending: number[];
   assetsFailed: Array<{ attachmentId: number; reason: RegisterUploadedAssetFailure }>;
+  /** I1: files whose write failed (a disk error): left out, listed, and copied again by a rerun. */
+  copyFailed: Array<{ attachmentId: number; error: string }>;
 }
 
 /** `<uploadsDir()>/forum`; throws when `explicit` names another directory. */
@@ -293,9 +296,27 @@ async function register(
   );
 }
 
+/** One attachment's copy; a failed write (I1) is recorded and logged, never thrown, so the rest still copy. */
+async function tryCopy(
+  a: PlannedAttachment,
+  fs: AttachmentFs,
+  result: AttachmentCopyResult,
+  log: (line: string) => void
+): Promise<"copied" | "skipped" | "missing" | "failed"> {
+  try {
+    return await copyOne(a, fs);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    result.copyFailed.push({ attachmentId: a.entry.attachment_id, error: message });
+    log(`Attachment ${a.entry.attachment_id}: copy failed (${message}), a rerun retries`);
+    return "failed";
+  }
+}
+
 /**
  * --apply: copies the planned attachments and registers the images that need it. `assets` is the "forum" asset rows
- * already stored, sourceRef → visibility (import-db's `forumAssetVisibilities`). Never fails on a registration.
+ * already stored, sourceRef → visibility (import-db's `forumAssetVisibilities`). Never fails on a registration, nor
+ * on one file's write (I1: listed in `copyFailed`).
  */
 export async function copyAttachments(
   plan: AttachmentCopyPlan,
@@ -314,10 +335,12 @@ export async function copyAttachments(
     alreadyRegistered: 0,
     assetsPending: [],
     assetsFailed: [],
+    copyFailed: [],
   };
   await fs.mkdir(plan.dir);
   for (const a of plan.attachments) {
-    const copy = await copyOne(a, fs);
+    const copy = await tryCopy(a, fs, result, log);
+    if (copy === "failed") continue;
     if (copy === "missing") {
       result.missing.push(a.entry.attachment_id);
       log(

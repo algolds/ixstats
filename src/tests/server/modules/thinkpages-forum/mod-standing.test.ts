@@ -79,6 +79,31 @@ describe("myStanding", () => {
     expect(byId.b_gone).toMatchObject({ scopeName: null });
   });
 
+  it("never names a category the member cannot see (M14)", async () => {
+    const staff: Row = {
+      ...categories[0]!,
+      id: "cat_staff",
+      key: "staff",
+      name: "Staff",
+      visibility: "staff",
+    };
+    const reports = categories.find((c) => c.id === "cat_reports")!;
+    const store = forumStore({
+      categories: [...categories, staff],
+      realms,
+      users,
+      warnings,
+      bans: [
+        ban("b_staff", { scope: "category", scopeId: "cat_staff" }),
+        ban("b_reports", { scope: "category", scopeId: reports.id as string }),
+      ],
+    });
+    const standing = await myStanding(store.db as never, member);
+    const byId = Object.fromEntries(standing.bans.map((b) => [b.id, b]));
+    expect(byId.b_staff).toMatchObject({ scope: "category", scopeName: null });
+    expect(byId.b_reports).toMatchObject({ scopeName: "reports" });
+  });
+
   it("shows each item's appeal and only offers an appeal where none was filed", async () => {
     const store = storeWith({
       appeals: [

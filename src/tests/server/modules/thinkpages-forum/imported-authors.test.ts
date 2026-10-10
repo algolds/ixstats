@@ -163,7 +163,11 @@ describe("editPost on an imported post", () => {
   it("is the author's only, and an imported post has none", async () => {
     const store = importedStore();
     await expect(
-      editPost(store.db as never, member, { postId: "p_g_imported", html: "<p>Mine now</p>" })
+      editPost(store.db as never, member, {
+        postId: "p_g_imported",
+        editedAt: null,
+        html: "<p>Mine now</p>",
+      })
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: "Only the author can edit this post." });
     expect(postIn(store, "p_g_imported").plainText).toBe("Post p_g_imported");
   });

@@ -10,7 +10,7 @@ To release, follow the [release guide](release-guide.md) (it also covers [rollba
 
 ## Build Pipeline
 1. Install dependencies: `bun install`
-2. Sync the schema: `bun run db:push:force` (`prisma db push`; the Prisma migration history stops in November 2025, so `db:migrate:deploy` does not bring a database up to date)
+2. Sync the schema: `bun run db:push:force` (`prisma db push`; the Prisma migration history stops in November 2025, so `db:migrate:deploy` does not bring a database up to date) The ThinkPages forum migrations are hand-applied instead (`docker exec -i ixstats-postgres psql -U postgres -d ixstats < prisma/migrations/<dir>/migration.sql`, all idempotent; list in [`forum-xenforo-import-runbook.md`](forum-xenforo-import-runbook.md) step 0). Order: apply before the deploy, deploy (`db push`), then re-apply `20261012120000_thinkpages_forum_followups` after every `db:push:force`: `db push` drops its partial unique index as drift and never creates its triggers (the rest re-runs as a no-op).
 3. Build: `bun run build` (wraps `./scripts/with-base-path.sh next build`, then `postbuild`)
 4. Start: `bun run start:prod` (runs `start-production.sh` → `next start -p ${PORT:-3550}`), or `bun run start` (runs `server.mjs` with WebSockets in-process)
 
@@ -52,7 +52,7 @@ the web app. The web app itself is not a PM2 app: `deploy-production.sh` starts 
 ## Database Management
 - Production database: PostgreSQL with PostGIS extension for geographic features
 - Back up with `bun run db:backup` (see [Backups and restore](#backups-and-restore)); `deploy-production.sh` takes one before every schema sync
-- Schema changes are applied with `prisma db push` (`bun run db:push:force`, also run by `deploy-production.sh`); it stops on possible data loss, so review any such warning before accepting it
+- Schema changes are applied with `prisma db push` (`bun run db:push:force`, also run by `deploy-production.sh`); it stops on possible data loss, so review any such warning before accepting it. Forum migrations are hand-applied and `20261012120000_thinkpages_forum_followups` is re-applied after every push (see Build Pipeline step 2)
 
 ## Backups and restore
 

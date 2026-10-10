@@ -40,7 +40,8 @@ function realmRow(overrides: Record<string, unknown> = {}) {
 
 /** A mock Prisma holding one realm and active accounts for everyone but `inactive`. */
 function makeDb(realm = realmRow(), { inactive = [] as string[] } = {}): Db {
-  const db = createMockPrisma();
+  // $executeRaw: the forum's member lock that the new founder's board-power check takes (M9).
+  const db = createMockPrisma({ $executeRaw: jest.fn(async () => 0) });
   db.$transaction.mockImplementation((cb: (tx: Db) => unknown) => cb(db));
   db.realm.findUnique.mockImplementation(async ({ where }: any) =>
     where.slug === realm.slug || where.id === realm.id ? realm : null
@@ -221,6 +222,74 @@ describe("site admins transfer a realm", () => {
       )
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realm.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("the new founder and forum bans (M9)", () => {
+  const BANNED = {
+    code: "BAD_REQUEST",
+    message:
+      "They have an active forum ban here or sitewide. Lift it before giving them moderator powers.",
+  };
+  /** Every account here has an IxStats id; the player has a live forum ban in the realm or sitewide. */
+  function bannedDb(): Db {
+    const db = makeDb();
+    db.user.findUnique.mockResolvedValue({ id: "u_player", isActive: true });
+    db.forumBan.findFirst.mockResolvedValue({ id: "b1" });
+    db.country.findFirst.mockResolvedValue({ id: "c1" });
+    return db;
+  }
+
+  it("refuses handing the realm to a banned player, by a site admin or the founder", async () => {
+    const db = bannedDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.adminTransferOwner({
+        realmId: "eurth",
+        newOwnerId: PLAYER,
+        confirmSlug: "eurth",
+        keepPreviousAsOfficer: false,
+      })
+    ).rejects.toMatchObject(BANNED);
+    await expect(
+      callerAs(FOUNDER, db).region.handOver({
+        slug: "eurth",
+        newOwnerId: PLAYER,
+        confirmSlug: "eurth",
+        keepPreviousAsOfficer: false,
+      })
+    ).rejects.toMatchObject(BANNED);
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
+  it("checks the new founder's bans inside the handover's transaction, under their lock", async () => {
+    const db = bannedDb();
+    db.forumBan.findFirst.mockResolvedValue(null);
+    await callerAs(FOUNDER, db).region.handOver({
+      slug: "eurth",
+      newOwnerId: PLAYER,
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: false,
+    });
+    const [, key] = db.$executeRaw.mock.calls[0]!;
+    expect(key).toBe("forum-member:u_player");
+    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      db.forumBan.findFirst.mock.invocationCallOrder[0]!
+    );
+    expect(db.forumBan.findFirst.mock.invocationCallOrder[0]).toBeLessThan(
+      db.realm.update.mock.invocationCallOrder[0]!
+    );
+  });
+
+  it("hands it back to staff without a ban check", async () => {
+    const db = bannedDb();
+    await callerAs(ADMIN, db, admin).region.adminTransferOwner({
+      realmId: "eurth",
+      newOwnerId: null,
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: false,
+    });
+    expect(db.forumBan.findFirst).not.toHaveBeenCalled();
+    expect(db.realm.update).toHaveBeenCalled();
   });
 });
 

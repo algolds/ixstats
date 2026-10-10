@@ -11,7 +11,7 @@ export function StashThreadButton({ threadId }: { threadId: string }) {
   const notify = useNotify();
   const utils = api.useUtils();
   const [busy, setBusy] = useState(false);
-  const { data } = api.thinkpagesForum.isThreadStashed.useQuery({ threadId });
+  const { data, isLoading } = api.thinkpagesForum.isThreadStashed.useQuery({ threadId });
   const { mutateAsync: stash } = api.thinkpagesForum.stashThread.useMutation();
   const { mutateAsync: unstash } = api.thinkpagesForum.unstashThread.useMutation();
   const stashed = data?.stashed ?? false;
@@ -20,13 +20,15 @@ export function StashThreadButton({ threadId }: { threadId: string }) {
     setBusy(true);
     try {
       await (stashed ? unstash({ threadId }) : stash({ threadId }));
-      await utils.thinkpagesForum.isThreadStashed.invalidate({ threadId });
       notify.success(stashed ? "Removed from your stash" : "Saved to your stash");
     } catch (e) {
       notify.error("Could not update your stash", e instanceof Error ? e.message : undefined);
+      return;
     } finally {
       setBusy(false);
     }
+    // The change is saved; a failed refresh of the button's state is not an error to report.
+    await utils.thinkpagesForum.isThreadStashed.invalidate({ threadId }).catch(() => undefined);
   };
 
   return (
@@ -34,7 +36,7 @@ export function StashThreadButton({ threadId }: { threadId: string }) {
       variant="ghost"
       size="sm"
       aria-pressed={stashed}
-      disabled={busy || data === undefined}
+      disabled={busy || isLoading}
       onClick={() => void toggle()}
     >
       {stashed ? <BookmarkSolid aria-hidden /> : <Bookmark aria-hidden />}

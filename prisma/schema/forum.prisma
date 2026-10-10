@@ -1,7 +1,14 @@
 /// ThinkPages forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md). Phase 1: the sitewide
 /// section. Phase 2 adds realm sections (scope "realm", three categories per realm) and the archive source refs;
 /// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals);
-/// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids).
+/// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids); the follow-ups
+/// add the appeal's subject scope and the report's target author (migration 20261012120000).
+///
+/// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
+/// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
+/// "forum_categories_site_key_unique" on (key) WHERE scope = 'site' (N5), and forum_mod_log's append-only triggers
+/// calling "forum_mod_log_append_only"() (M11). Order: apply the migration before the deploy (it backfills the new
+/// columns), deploy (db push), re-apply after every db:push:force (docs/operations/deployment.md).
 model ForumCategory {
   id          String        @id @default(cuid())
   scope       String        @default("site") // "site" | "realm"
@@ -17,6 +24,7 @@ model ForumCategory {
   threads     ForumThread[]
   moderators  ForumCategoryModerator[]
 
+  // Sitewide rows have a NULL realmId, which this key does not cover: see "forum_categories_site_key_unique" above.
   @@unique([scope, realmId, key])
   @@index([scope, realmId, order])
   @@map("forum_categories")
@@ -91,6 +99,7 @@ model ForumReport {
   targetId   String
   categoryId String    // the target's category when reported; re-pointed when its thread moves (M11)
   reporterId String    // User.id
+  targetAuthorId String? // User.id of the target's author (M8); null for imported content without one, or a gone target
   reason     String    @db.VarChar(1000)
   status     String    @default("open") // "open" | "resolved" | "dismissed"
   handledBy  String?   // User.id
@@ -101,6 +110,7 @@ model ForumReport {
   @@index([status, categoryId, createdAt])
   @@index([targetType, targetId])
   @@index([reporterId])
+  @@index([targetAuthorId])
   @@map("forum_reports")
 }
 
@@ -129,7 +139,7 @@ model ForumBan {
   scope     String    // "site" | "realm" | "category"
   scopeId   String?   // realmId or categoryId; null for site
   reason    String    @db.VarChar(1000)
-  issuedBy  String    // User.id (the triggering warning's issuer for auto bans, M2)
+  issuedBy  String    // User.id (the triggering warning's issuer for auto bans, M2), or "system" for a re-tier
   expiresAt DateTime? // null = permanent
   auto      Boolean   @default(false)
   autoTier  Int?      // points threshold an automatic ban is set for (MODERATION_POLICY.autoBanTiers: 5 or 10); null for manual bans
@@ -143,12 +153,12 @@ model ForumBan {
   @@map("forum_bans")
 }
 
-/// Append-only (M16): nothing updates or deletes a row; the migration adds Postgres rules and
-/// src/tests/architecture/forum-mod-log-append-only.test.ts guards the code.
+/// Append-only (M16): nothing updates or deletes a row; triggers that raise on UPDATE, DELETE and TRUNCATE
+/// (migration 20261012120000, M11) and src/tests/architecture/forum-mod-log-append-only.test.ts guard it.
 model ForumModLog {
   id         String   @id @default(cuid())
-  actorId    String   // User.id, or "system" for the migration script
-  action     String   // e.g. "thread.lock", "post.hide", "warning.issue", "ban.issue", "ban.auto", "ban.extend", "ban.lift", "report.resolve", "appeal.review", "moderator.grant"
+  actorId    String   // User.id, or "system" for the migration script and automatic re-tiers
+  action     String   // e.g. "thread.lock", "post.hide", "warning.issue", "ban.issue", "ban.auto", "ban.extend", "ban.retier", "ban.lift", "report.resolve", "appeal.review", "moderator.grant"
   targetType String   // "thread" | "post" | "user" | "report" | "warning" | "ban" | "appeal" | "category"
   targetId   String
   scope      String   // "site" | "realm" | "category"
@@ -168,6 +178,8 @@ model ForumAppeal {
   subjectType String    // "warning" | "ban"
   subjectId   String
   userId      String    // User.id, the subject's user
+  scope       String?   // the subject's scope, as ForumBan's (M7): a ban's own; a warning's "category" or "site"
+  scopeId     String?
   body        String    @db.VarChar(4000)
   status      String    @default("open") // "open" | "upheld" | "overturned" | "moot" (the subject ended before a decision)
   reviewedBy  String?   // User.id, never the subject's issuer; null when a lift or revoke mooted it
@@ -178,5 +190,6 @@ model ForumAppeal {
   @@unique([subjectType, subjectId])
   @@index([status, createdAt])
   @@index([userId])
+  @@index([scope, scopeId, status, createdAt])
   @@map("forum_appeals")
 }

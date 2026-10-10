@@ -16,6 +16,7 @@ import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 
 import { db } from "~/server/db";
+import { withReadableThreads } from "~/server/modules/thinkpages-forum";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 
 export const wikiosStashRouter = createTRPCRouter({
@@ -188,7 +189,12 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Check if a page is stashed (and in which stashes). Powers the button color. */
   isStashed: protectedProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(500), contentType: z.string().max(32).optional() }))
+    .input(
+      z.object({
+        pageTitle: z.string().min(1).max(500),
+        contentType: z.string().max(32).optional(),
+      })
+    )
     .query(async ({ input, ctx }) => {
       const items = await db.stashItem.findMany({
         where: {
@@ -227,7 +233,9 @@ export const wikiosStashRouter = createTRPCRouter({
         },
       });
       const hasMore = items.length > input.limit;
-      const results = hasMore ? items.slice(0, -1) : items;
+      const page = hasMore ? items.slice(0, -1) : items;
+      // I5: stashed forum threads show their current title; ones the user can no longer read are left out.
+      const results = await withReadableThreads(db, ctx.user, page);
       return {
         items: results.map((i) => ({
           id: i.id,
@@ -248,7 +256,7 @@ export const wikiosStashRouter = createTRPCRouter({
             i.annotations.length,
           savedAt: i.savedAt.toISOString(),
         })),
-        nextCursor: hasMore ? results[results.length - 1]?.id : null,
+        nextCursor: hasMore ? page[page.length - 1]?.id : null,
       };
     }),
 });
