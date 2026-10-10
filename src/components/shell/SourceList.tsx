@@ -12,6 +12,7 @@ import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { springSmooth } from "~/lib/design/motion";
+import { countLabel } from "~/lib/thinkpages-forum/unread";
 import {
   getActiveSectionId,
   getVisibleAppForPath,
@@ -19,6 +20,7 @@ import {
   type AppDefinition,
   type NavAction,
   type NavBadge,
+  type NavBadgeKey,
   type NavBadges,
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
@@ -61,12 +63,18 @@ export const isPending = (badge: NavBadge | undefined) =>
 export const isListed = (s: Section, badges: NavBadges) =>
   (!s.action && !s.conditional) || Boolean(s.badge && badges[s.badge]);
 
-function Trailing({ badge }: { badge: NavBadge | undefined }) {
+/** The forum's counts are capped by the server and shown as "99+"; every other badge shows its exact count. */
+const CAPPED_BADGES: ReadonlySet<NavBadgeKey> = new Set([
+  "forum-watched-unread",
+  "forum-realm-board",
+]);
+
+function Trailing({ badge, badgeKey }: { badge: NavBadge | undefined; badgeKey?: NavBadgeKey }) {
   if (!badge) return null;
   if (badge.kind === "count") {
     return badge.value > 0 ? (
       <span className="bg-tint-fill text-tint-ink text-caption rounded-full px-2 font-medium tabular-nums">
-        {badge.value}
+        {badgeKey && CAPPED_BADGES.has(badgeKey) ? countLabel(badge.value) : badge.value}
       </span>
     ) : null;
   }
@@ -93,7 +101,7 @@ function ActionRow({ section, action, ctx }: { section: Section; action: NavActi
       >
         <Icon aria-hidden className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left">{section.label}</span>
-        <Trailing badge={badge} />
+        <Trailing badge={badge} badgeKey={section.badge} />
       </button>
     </li>
   );
@@ -133,7 +141,7 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
         <Icon aria-hidden className="text-tint relative size-4 shrink-0" />
         <span className="relative min-w-0 flex-1 truncate">{section.label}</span>
         <span className="relative">
-          <Trailing badge={badge} />
+          <Trailing badge={badge} badgeKey={section.badge} />
         </span>
       </RowLink>
     </li>
@@ -273,7 +281,7 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
             <Icon aria-hidden className="size-5" />
           </span>
           <span className="min-w-0 flex-1 truncate">{app.label}</span>
-          <Trailing badge={appBadge} />
+          <Trailing badge={appBadge} badgeKey={app.badge} />
           {!open && pendingInside && (
             <span
               role="img"

@@ -37,6 +37,14 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     { countryId: countryId ?? "" },
     forCountry
   );
+  // Unread watched threads and new realm board messages, one poll a minute (they change slowly; the bell is the alert).
+  const { data: forumCounts } = api.thinkpagesForum.navCounts.useQuery(undefined, {
+    enabled: signedIn,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
   // The server snapshot is the running build, so the flag never renders (or mismatches) before hydration.
   const seenVersion = useSyncExternalStore(
     subscribeSeenVersion,
@@ -53,6 +61,10 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     if (unread > 0) badges["messages-unread"] = { kind: "count", value: unread };
     const issues = pendingIssues?.total ?? 0;
     if (issues > 0) badges["issues-pending"] = { kind: "count", value: issues };
+    const watched = forumCounts?.watchedUnread ?? 0;
+    if (watched > 0) badges["forum-watched-unread"] = { kind: "count", value: watched };
+    const board = forumCounts?.realmBoardNew ?? 0;
+    if (board > 0) badges["forum-realm-board"] = { kind: "count", value: board };
     if (unseenBuild) badges["whats-new"] = { kind: "action", label: "New" };
     if (balance?.canClaimDailyBonus) {
       badges["daily-reward"] = {
@@ -61,5 +73,14 @@ export function useNavBadges(signedIn: boolean): NavBadges {
       };
     }
     return badges;
-  }, [signedIn, inbox.count, balance, folderCounts?.inbox, pendingIssues?.total, unseenBuild]);
+  }, [
+    signedIn,
+    inbox.count,
+    balance,
+    folderCounts?.inbox,
+    pendingIssues?.total,
+    forumCounts?.watchedUnread,
+    forumCounts?.realmBoardNew,
+    unseenBuild,
+  ]);
 }

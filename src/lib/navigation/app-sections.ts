@@ -23,7 +23,12 @@ import { RealmsLogomark } from "./icons/RealmsLogomark";
 import { VaultLogomark } from "./icons/VaultLogomark";
 import { Compass as SolidCompass, RoundFlask as SolidRoundFlask } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
-import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
+import {
+  FORUM_HOME,
+  NEW_POSTS_HREF,
+  STASHED_HREF,
+  WATCHED_HREF,
+} from "~/lib/thinkpages-forum/links";
 import {
   Activity,
   Archive,
@@ -43,6 +48,7 @@ import {
   Crown,
   Database,
   Download,
+  Eye,
   Folder,
   Gamepad,
   Gift,
@@ -80,8 +86,14 @@ import {
 
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
-type NavBadgeKey =
-  "diplomacy-inbox" | "daily-reward" | "messages-unread" | "issues-pending" | "whats-new";
+export type NavBadgeKey =
+  | "diplomacy-inbox"
+  | "daily-reward"
+  | "messages-unread"
+  | "issues-pending"
+  | "whats-new"
+  | "forum-watched-unread"
+  | "forum-realm-board";
 export type NavAction = "daily-reward";
 export type NavBadge = { kind: "count"; value: number } | { kind: "action"; label: string };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
@@ -148,8 +160,9 @@ interface AppSection {
 /**
  * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `realm-member`: the viewer's
  * primary nation sits in a realm. `forum-moderator`: site staff or any forum category or realm moderator.
+ * `signed-in`: any signed-in member.
  */
-type SectionRequirement = "mycountry-premium" | "realm-member" | "forum-moderator";
+type SectionRequirement = "mycountry-premium" | "realm-member" | "forum-moderator" | "signed-in";
 
 export interface AppDefinition {
   id: AppId;
@@ -379,7 +392,7 @@ export const APPS: readonly AppDefinition[] = [
   },
   {
     // The forum, for everyone. FORUM_HOME is the prefix of every forum route (c, t, r, mod, post), so it is the
-    // whole match; signed-out visitors keep Forums only (the other sections need a realm or a moderator role).
+    // whole match; signed-out visitors keep Forums only (the other sections need a sign-in, a realm or a moderator role).
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
@@ -394,6 +407,29 @@ export const APPS: readonly AppDefinition[] = [
         href: "/thinkpages/r/mine",
         icon: RealmsLogomark,
         requires: "realm-member",
+        badge: "forum-realm-board",
+      },
+      {
+        id: "new-posts",
+        label: "New posts",
+        href: NEW_POSTS_HREF,
+        icon: ChatLines,
+        requires: "signed-in",
+      },
+      {
+        id: "watched",
+        label: "Watched",
+        href: WATCHED_HREF,
+        icon: Eye,
+        requires: "signed-in",
+        badge: "forum-watched-unread",
+      },
+      {
+        id: "stashed",
+        label: "Stashed",
+        href: STASHED_HREF,
+        icon: Bookmark,
+        requires: "signed-in",
       },
       {
         id: "moderation",
@@ -792,6 +828,7 @@ export function getVisibleApps({
     "mycountry-premium": hasMycountryPremium,
     "realm-member": realmMember,
     "forum-moderator": forumModerator,
+    "signed-in": signedIn,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;

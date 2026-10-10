@@ -146,20 +146,44 @@ describe("app section map routes", () => {
     expect(home.match).not.toContain("/thinkpages");
   });
 
-  it("makes ThinkPages its own app with Forums, Your realm and Moderation sections", () => {
+  it("makes ThinkPages its own app with Forums, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
     const forum = getApp("thinkpages");
     expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
     expect(forum.match).toEqual(["/thinkpages"]);
-    expect(forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires])).toEqual([
-      ["forums", "Forums", "/thinkpages", true, undefined],
-      ["your-realm", "Your realm", "/thinkpages/r/mine", undefined, "realm-member"],
-      ["moderation", "Moderation", "/thinkpages/mod", undefined, "forum-moderator"],
+    expect(
+      forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires, s.badge])
+    ).toEqual([
+      ["forums", "Forums", "/thinkpages", true, undefined, undefined],
+      [
+        "your-realm",
+        "Your realm",
+        "/thinkpages/r/mine",
+        undefined,
+        "realm-member",
+        "forum-realm-board",
+      ],
+      ["new-posts", "New posts", "/thinkpages/new", undefined, "signed-in", undefined],
+      ["watched", "Watched", "/thinkpages/watched", undefined, "signed-in", "forum-watched-unread"],
+      ["stashed", "Stashed", "/thinkpages/stashed", undefined, "signed-in", undefined],
+      ["moderation", "Moderation", "/thinkpages/mod", undefined, "forum-moderator", undefined],
     ]);
+  });
+
+  it("lists New posts, Watched and Stashed only for a signed-in member", () => {
+    const labels = (signedIn: boolean) =>
+      getVisibleApps({ signedIn, isAdmin: false })
+        .find((app) => app.id === "thinkpages")!
+        .sections.map((s) => s.label);
+    expect(labels(false)).toEqual(["Forums"]);
+    expect(labels(true)).toEqual(["Forums", "New posts", "Watched", "Stashed"]);
   });
 
   it.each([
     ["/thinkpages", "forums"],
     ["/thinkpages/r/mine", "your-realm"],
+    ["/thinkpages/new", "new-posts"],
+    ["/thinkpages/watched", "watched"],
+    ["/thinkpages/stashed", "stashed"],
     ["/thinkpages/mod", "moderation"],
     ["/thinkpages/mod/reports", "moderation"],
   ])("resolves %s to the ThinkPages app's %s section in the app tint", (pathname, sectionId) => {
@@ -422,18 +446,29 @@ describe("app visibility and the tab bar", () => {
         .find((app) => app.id === "thinkpages")
         ?.sections.map((s) => s.id);
     expect(sections({ signedIn: false, isAdmin: false })).toEqual(["forums"]);
-    expect(sections({ signedIn: true, isAdmin: false })).toEqual(["forums"]);
+    expect(sections({ signedIn: true, isAdmin: false })).toEqual([
+      "forums",
+      "new-posts",
+      "watched",
+      "stashed",
+    ]);
     expect(sections({ signedIn: true, isAdmin: false, realmMember: true })).toEqual([
       "forums",
       "your-realm",
+      "new-posts",
+      "watched",
+      "stashed",
     ]);
     expect(sections({ signedIn: true, isAdmin: false, forumModerator: true })).toEqual([
       "forums",
+      "new-posts",
+      "watched",
+      "stashed",
       "moderation",
     ]);
     expect(
       sections({ signedIn: true, isAdmin: true, realmMember: true, forumModerator: true })
-    ).toEqual(["forums", "your-realm", "moderation"]);
+    ).toEqual(["forums", "your-realm", "new-posts", "watched", "stashed", "moderation"]);
   });
 
   it("keeps the shared ThinkPages object when every section is granted", () => {

@@ -397,4 +397,25 @@ describe("SourceList icon colour", () => {
       .map((link) => link.textContent);
     expect(grey).toEqual([]);
   });
+
+  it("shows a forum count and caps it at 99+", () => {
+    const { nav } = setup("/thinkpages", {
+      expanded: ["thinkpages"],
+      badges: {
+        "forum-watched-unread": { kind: "count", value: 100 },
+        "forum-realm-board": { kind: "count", value: 4 },
+      },
+    });
+    expect(within(nav).getByRole("link", { name: /Watched/ })).toHaveTextContent("99+");
+    expect(within(nav).queryByText("100")).toBeNull();
+  });
+
+  it("leaves every other badge uncapped", () => {
+    const { nav } = setup("/dashboard", {
+      expanded: ["home"],
+      badges: { "messages-unread": { kind: "count", value: 100 } },
+    });
+    expect(within(nav).getByText("100")).toBeInTheDocument();
+    expect(within(nav).queryByText("99+")).toBeNull();
+  });
 });
