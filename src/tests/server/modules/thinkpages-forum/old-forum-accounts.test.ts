@@ -77,7 +77,9 @@ function store(
       }
     ),
   };
-  const tables = { user, forumThread: table(threads), forumPost: table(posts) };
+  // Report re-attribution (M8) runs as raw SQL after a relink; the fake has no reports table.
+  const $executeRaw = jest.fn(async (_sql: TemplateStringsArray, ..._values: string[]) => 0);
+  const tables = { user, forumThread: table(threads), forumPost: table(posts), $executeRaw };
   const $transaction = jest.fn(async (run: (tx: typeof tables) => Promise<object>) => run(tables));
   return {
     db: { ...tables, $transaction } as never,
