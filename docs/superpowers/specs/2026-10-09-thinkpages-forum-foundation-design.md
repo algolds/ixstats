@@ -76,7 +76,7 @@ Watched, New posts and Stashed are added by sub-project 3. Signed-out visitors k
 
 **Render pipeline (`render.ts`), built the way WikiOS builds articles:**
 1. Guard the input: reject signatures (`~~~~`), `{{subst:`, and posts over 50,000 characters; strip `[[Category:…]]`, `__NOINDEX__`, `__NOTOC__`-style magic words and `{{DISPLAYTITLE:…}}` before rendering.
-2. Render once through `renderArticleViaMediaWiki(wikitext, "ThinkPages:<threadId>")` (`src/lib/wiki-os/adapters/mediawiki/parsoid.ts`), no PST, with a 3 s timeout, behind a dedicated `OutboundLimiter` (2 concurrent) plus a per-user limit (10 renders a minute, previews included).
+2. Render once through `renderArticleViaMediaWiki(wikitext, "ThinkPages:<threadId>")` (`src/lib/wiki-os/adapters/mediawiki/parsoid.ts`), no PST, with the adapter's 6 s timeout, behind a dedicated `OutboundLimiter` (2 concurrent) plus a per-user limit (10 renders a minute, previews included).
 3. Compose like `wikios.previewWikitext` (`src/server/api/routers/wikios/editing.ts`): `transformArticleHtml` with the infobox and notices kept inline, `markTemplateChips`, `sanitizeWikiArticleHtml`, `slimArticleHtml`.
 4. Store `contentWikitext`, `contentHtml`, `plainText` (via `cleanWikiMarkup`), `rendererVersion` (the WikiOS `RENDERER_VERSION` pattern: pipeline version plus the sanitizer fingerprint), `renderedAt`, and the templates MediaWiki reported (`RenderMetadata.templates`) in `forum_post_templates`.
 5. If MediaWiki times out, throttles or fails: store `parseWikitextToHtml` output sanitized the same way, `renderedAt = null`, and tell the author "Formatting will finish shortly". A cron re-renders posts with `renderedAt is null` and wikitext present.
