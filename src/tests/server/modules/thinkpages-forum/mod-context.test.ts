@@ -91,7 +91,7 @@ describe("moderationContext", () => {
       "r_old_hub",
     ]);
     expect(store.db.forumCategory.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { style: { not: "board" } }, orderBy: { order: "asc" } })
+      expect.objectContaining({ where: { style: { not: "board" }, NOT: { scope: "realm", key: "board" } }, orderBy: { order: "asc" } })
     );
   });
 

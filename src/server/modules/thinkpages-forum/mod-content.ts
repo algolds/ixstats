@@ -6,12 +6,13 @@
  * archived-realm check (T0-6); nothing here deletes a thread or post (T0-7). A thread's `postCount` and `lastPostAt`
  * count its visible posts only, as members see them; moderators see hidden posts badged but not counted.
  */
-import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
+import { isBoardCategory, notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { logModAction, modNote } from "./mod-log";
 import { assertModeratesCategory, canModerateCategory, scopeOfCategory } from "./mod-scope";
 import {
+  assertNotBoardThread,
   contentModerator,
   loadPost,
   loadThread,
@@ -45,6 +46,7 @@ export async function setThreadFlag(
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
   const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
+  assertNotBoardThread(thread.category);
   const verb = FLAG_VERBS[input.flag];
   await db.$transaction(async (tx) => {
     const { count } = await tx.forumThread.updateMany({
@@ -115,6 +117,7 @@ export async function moveThread(
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
   const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
+  assertNotBoardThread(thread.category);
   const { category: to } = await loadCategory(db, moderator, input.to);
   assertModeratesCategory(moderator, to);
   const from = thread.category;
@@ -181,7 +184,8 @@ export async function setPostHidden(
   const post = await loadPost(db, input.postId);
   const { category } = post.thread;
   const moderator = await contentModerator(db, actor, category, post.authorUserId);
-  if (input.hidden && (await isFirstPost(db, post))) {
+  // A board's messages are all single posts of one thread: the first is hidden like any other.
+  if (input.hidden && !isBoardCategory(category) && (await isFirstPost(db, post))) {
     throw new ForumError("CONFLICT", "Hide the thread instead.");
   }
   await db.$transaction(async (tx) => {

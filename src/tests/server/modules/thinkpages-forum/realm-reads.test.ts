@@ -243,6 +243,14 @@ describe("getRealmSection", () => {
     expect(JSON.stringify(groupBy)).not.toContain("cat_board");
   });
 
+  it("seeds a realm whose only category is its board, then reads the sections", async () => {
+    const board = { ...seeded[0]!, id: "cat_board", key: "board", name: "Board", order: 0, icAllowed: true, style: "board" };
+    const db = sectionDb(EURTH, [[board], [board, ...seeded]]);
+    const out = await getRealmSection(db as never, owner, "eurth");
+    expect(db.forumCategory.createMany).toHaveBeenCalledTimes(1);
+    expect(out.categories.map((c) => c.key)).toEqual(["hub", "character-threads", "current-events"]);
+  });
+
   it("seeds a realm with no categories, then reads them again", async () => {
     const db = sectionDb(EURTH, [[], seeded]);
     const out = await getRealmSection(db as never, owner, "eurth");

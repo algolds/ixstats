@@ -550,7 +550,7 @@ describe("moveDestinations", () => {
           realmId: "r_eurth",
           visibility: "public",
           id: { not: "r_eurth_hub" },
-          style: { not: "board" },
+          style: { not: "board" }, NOT: { scope: "realm", key: "board" },
         },
         orderBy: { order: "asc" },
       })
@@ -568,5 +568,50 @@ describe("moveDestinations", () => {
     await expect(keys(admin as never, "cat_reports")).resolves.toEqual([]);
     await expect(keys(generalMod as never, "cat_general")).resolves.toEqual([]);
     await expect(keys(member as never, "cat_general")).resolves.toEqual([]);
+  });
+});
+
+describe("the realm board thread", () => {
+  function boardStore() {
+    const state = seed();
+    state.categories = [
+      ...state.categories,
+      { ...realmCat("r_eurth", "board", true), id: "r_eurth_board", style: "board" },
+    ];
+    state.threads = [...state.threads, thread("t_board", "r_eurth_board", { postCount: 2 })];
+    state.posts = [...state.posts, post("p_b1", "t_board", 0), post("p_b2", "t_board", 1)];
+    return forumStore(state);
+  }
+
+  it.each<ThreadFlag>(["locked", "pinned", "hidden", "archived"])(
+    "refuses to set %s, even for a site admin, and writes nothing",
+    async (flag) => {
+      const store = boardStore();
+      await expect(
+        setThreadFlag(store.db as never, admin, { threadId: "t_board", flag, value: true })
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: "The realm board can't be moved, hidden, archived or locked.",
+      });
+      expect(threadIn(store, "t_board")[flag]).toBe(false);
+      expect(store.logs).toHaveLength(0);
+    }
+  );
+
+  it("refuses to move the board thread to another category", async () => {
+    const store = boardStore();
+    await expect(
+      moveThread(store.db as never, admin, { threadId: "t_board", to: { key: "hub", realm: "eurth" } })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(threadIn(store, "t_board").categoryId).toBe("r_eurth_board");
+  });
+
+  it("still moderates its messages: hides and restores any post, the first included", async () => {
+    const store = boardStore();
+    await setPostHidden(store.db as never, eurthMod, { postId: "p_b1", hidden: true });
+    expect(postIn(store, "p_b1").hidden).toBe(true);
+    await setPostHidden(store.db as never, eurthMod, { postId: "p_b1", hidden: false });
+    expect(postIn(store, "p_b1").hidden).toBe(false);
+    expect(store.logs.map((l) => l.action)).toEqual(["post.hide", "post.unhide"]);
   });
 });

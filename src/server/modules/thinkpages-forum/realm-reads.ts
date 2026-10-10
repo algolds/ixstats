@@ -3,6 +3,7 @@
  * the viewer (draft, generating) reads as NOT_FOUND, like a category they cannot see.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { isSiteAdmin } from "~/server/modules/realms";
@@ -107,7 +108,7 @@ export async function forumNavFlags(
 }
 
 /**
- * A realm's section: NOT_FOUND when hidden from the viewer. Seeds the categories when the realm has none (self-heal
+ * A realm's section: NOT_FOUND when hidden from the viewer. Seeds the categories when the realm has none besides its board (self-heal
  * for realms created outside adminCreateRealm). `access` is the section-level verdict: site and realm bans bind it,
  * a category ban only that category's composer.
  */
@@ -120,7 +121,8 @@ export async function getRealmSection(db: RealmReadsDb, viewer: ForumViewer, slu
       orderBy: { order: "asc" },
     });
   let rows = await readCategories();
-  if (rows.length === 0) {
+  // The board alone is no section: a realm with only that (or nothing) still needs its three categories.
+  if (rows.every(isBoardCategory)) {
     await seedRealmCategories(db, realm);
     rows = await readCategories();
   }

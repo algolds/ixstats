@@ -4,6 +4,7 @@
  * and officers with `board`; the category's moderators) and, for content a site admin wrote, a site admin.
  */
 import type { PrismaClient } from "@prisma/client";
+import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import { assertCanModerateAuthor, assertModeratesCategory } from "./mod-scope";
@@ -31,6 +32,8 @@ const CATEGORY_SELECT = {
   realmId: true,
   visibility: true,
   icAllowed: true,
+  key: true,
+  style: true,
 } as const;
 
 export interface ContentCategory {
@@ -39,6 +42,15 @@ export interface ContentCategory {
   realmId: string | null;
   visibility: string;
   icAllowed: boolean;
+  key: string;
+  style?: string | null;
+}
+
+/** The realm board's one thread stays where it is and stays open: moving, hiding, archiving or locking it would disable the board. */
+export function assertNotBoardThread(category: ContentCategory): void {
+  if (isBoardCategory(category)) {
+    throw new ForumError("CONFLICT", "The realm board can't be moved, hidden, archived or locked.");
+  }
 }
 
 /**

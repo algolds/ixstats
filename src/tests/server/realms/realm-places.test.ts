@@ -229,7 +229,7 @@ describe("realms.directory", () => {
     const counted = db.forumPost.count.mock.calls[0]![0].where;
     expect(counted.thread).toEqual({
       hidden: false,
-      category: { scope: "realm", realmId: "eurth", visibility: "public", style: { not: "board" } },
+      category: { scope: "realm", realmId: "eurth", visibility: "public", style: { not: "board" }, NOT: { scope: "realm", key: "board" } },
     });
     expect(counted.hidden).toBe(false);
     expect(counted.createdAt.gte).toBeInstanceOf(Date);
@@ -238,7 +238,7 @@ describe("realms.directory", () => {
       where: {
         hidden: false,
         archived: false,
-        category: { scope: "realm", realmId: "eurth", visibility: "public", style: { not: "board" } },
+        category: { scope: "realm", realmId: "eurth", visibility: "public", style: { not: "board" }, NOT: { scope: "realm", key: "board" } },
       },
       orderBy: { lastPostAt: "desc" },
       select: { lastPostAt: true },

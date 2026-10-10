@@ -111,6 +111,12 @@ describe("the realm board category", () => {
     expect(isBoardCategory({ key: "board", style: null })).toBe(true);
   });
 
+  it("applies the key rule to realm categories only: a sitewide category keyed board is not the board", () => {
+    expect(isBoardCategory({ key: "board", scope: "site" })).toBe(false);
+    expect(isBoardCategory({ key: "board", scope: "realm" })).toBe(true);
+    expect(isBoardCategory({ key: "board", style: "board", scope: "site" })).toBe(true);
+  });
+
   it("does not take ordinary categories for it", () => {
     expect(isBoardCategory({ key: "hub", style: "ooc" })).toBe(false);
     expect(isBoardCategory({ key: "character-threads", style: "ic" })).toBe(false);
@@ -119,7 +125,10 @@ describe("the realm board category", () => {
   });
 
   it("gives the same rule as a Prisma where fragment over the style column", () => {
-    expect(notBoardCategory()).toEqual({ style: { not: "board" } });
+    expect(notBoardCategory()).toEqual({
+      style: { not: "board" },
+      NOT: { scope: "realm", key: "board" },
+    });
   });
 });
 

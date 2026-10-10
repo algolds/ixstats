@@ -63,14 +63,28 @@ export const REALM_CATEGORIES: readonly RealmCategorySeed[] = [
 export const REALM_BOARD_KEY = "board";
 export const BOARD_STYLE = "board";
 
-/** Whether this is a realm's board category: style "board", or the realm key "board" (a category not yet restyled). */
-export function isBoardCategory(category: { key: string; style?: string | null }): boolean {
-  return category.style === BOARD_STYLE || category.key === REALM_BOARD_KEY;
+/**
+ * Whether this is a realm's board category: style "board", or key "board" in a realm section (a category not yet
+ * restyled). A sitewide category keyed "board" is not one; `scope` left out is read as a realm category.
+ */
+export function isBoardCategory(category: {
+  key: string;
+  style?: string | null;
+  scope?: string;
+}): boolean {
+  if (category.style === BOARD_STYLE) return true;
+  return (category.scope === undefined || category.scope === "realm") && category.key === REALM_BOARD_KEY;
 }
 
-/** The Prisma where fragment for "not a board category", for a `ForumCategory` where (or a relation filter onto one). */
-export function notBoardCategory(): { style: { not: typeof BOARD_STYLE } } {
-  return { style: { not: BOARD_STYLE } };
+/**
+ * The Prisma where fragment for "not a board category" (the negation of `isBoardCategory`), for a `ForumCategory`
+ * where or a relation filter onto one.
+ */
+export function notBoardCategory(): {
+  style: { not: typeof BOARD_STYLE };
+  NOT: { scope: "realm"; key: typeof REALM_BOARD_KEY };
+} {
+  return { style: { not: BOARD_STYLE }, NOT: { scope: "realm", key: REALM_BOARD_KEY } };
 }
 
 /** Imported threads from a XenForo forum node with no mapped category live in an archive category `xf-<nodeId>`. */

@@ -17,6 +17,7 @@ type Rec = { [key: string]: Value };
 function matches(row: Rec, where: Rec): boolean {
   return Object.entries(where).every(([key, cond]) => {
     if (key === "OR") return (cond as Rec[]).some((alt) => matches(row, alt));
+    if (key === "NOT") return !matches(row, cond as Rec);
     const value = row[key];
     if (cond === null || typeof cond !== "object" || Array.isArray(cond)) return value === cond;
     const c = cond as Rec;
@@ -43,6 +44,7 @@ const THREADS = [
   thread("t_draft", DRAFT_REALM),
   thread("t_hidden", PUBLIC_SITE, { hidden: true }),
   thread("t_persona", PUBLIC_SITE, { authorPersonaId: "pa1" }),
+  thread("t_board", { ...LIVE_REALM, key: "board", style: "board" }),
 ];
 
 function post(id: string, threadRow: Rec, extra: Rec = {}): Rec {
@@ -74,6 +76,12 @@ const POSTS = [
     authorUserId: null,
     xenforoUserId: 55,
     importedAuthorName: "Drafted",
+  }),
+  post("p_board", THREADS[6]!),
+  post("p_board_import", THREADS[6]!, {
+    authorUserId: null,
+    xenforoUserId: 88,
+    importedAuthorName: "BoardTimer",
   }),
   post("p_public_import", THREADS[0]!, {
     authorUserId: null,
@@ -115,6 +123,10 @@ describe("importedAuthorByName", () => {
       userId: 77,
       username: "OldTimer",
     });
+  });
+
+  it("never confirms a name that only a realm board's messages carry", async () => {
+    await expect(importedAuthorByName(fakeDb() as never, "BoardTimer")).resolves.toBeNull();
   });
 
   it("never confirms a name that only staff-only or draft-realm content carries", async () => {

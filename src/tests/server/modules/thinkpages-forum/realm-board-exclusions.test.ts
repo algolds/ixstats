@@ -10,14 +10,14 @@ import {
   moderationContext,
   moveDestinations,
 } from "~/server/modules/thinkpages-forum";
-import { forumStatistics, trendingThreads } from "~/server/modules/thinkpages-forum/board-reads";
+import { trendingThreads } from "~/server/modules/thinkpages-forum/board-reads";
 import { latestPublicThreads, publicThreadWhere } from "~/server/modules/thinkpages-forum/public-threads";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
 import { listRealmDirectory } from "~/server/api/routers/realms/places";
 import { admin, eurthMod, realmCat, seed } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
 
-const NOT_BOARD = { style: { not: "board" } };
+const NOT_BOARD = { style: { not: "board" }, NOT: { scope: "realm", key: "board" } };
 
 const boardCategory = {
   id: "cat_board",
@@ -78,7 +78,13 @@ describe("realm board exclusions", () => {
     const count = jest.fn(async (_args: object) => 0);
     const groupBy = jest.fn(async (_args: object) => []);
     const db = { realm: noRealms, forumThread: { count }, forumPost: { count, groupBy } };
-    await forumStatistics(db as never, Date.now() + 10 * 60 * 60 * 1000);
+    // The statistics cache lives in the module: a private copy keeps this call's entry out of every other spec.
+    let forumStatistics!: typeof import("~/server/modules/thinkpages-forum/board-reads").forumStatistics;
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      forumStatistics = require("~/server/modules/thinkpages-forum/board-reads").forumStatistics;
+    });
+    await forumStatistics(db as never, Date.now());
     expect(count).toHaveBeenCalledTimes(2);
     for (const [args] of count.mock.calls as Array<[Record<string, unknown>]>) {
       expect(JSON.stringify(args)).toContain('"style":{"not":"board"}');
