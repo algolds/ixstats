@@ -8,12 +8,16 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { BOARD_EDIT_WINDOW_MS, boardExcerpt } from "~/lib/thinkpages-forum/board";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
 import { canSeeThread, type ForumViewer } from "./access";
+import { authorModeration, type AuthorModerationOf } from "./mod-authors";
 import { canSeeRealm, loadForumRealm, type ForumRealm } from "./realm-access";
 import { authorsOf, type AuthorsDb } from "./reads";
 import { roleContextOf, roleOf, type PostRole } from "./thread-extras";
 
 export type BoardMessageDb = AuthorsDb &
-  Pick<PrismaClient, "forumPost" | "forumThread" | "country" | "realm" | "realmOfficer">;
+  Pick<
+    PrismaClient,
+    "forumPost" | "forumThread" | "country" | "realm" | "realmOfficer" | "forumCategoryModerator"
+  >;
 
 /** What the board shows of an author: the persona, else the player, else the imported name. */
 export interface BoardMessageAuthor {
@@ -40,6 +44,10 @@ export interface BoardMessage {
   editedAt: Date | null;
   /** Present for moderators only: the message is hidden from everyone else. */
   hidden?: boolean;
+  /** Present for moderators only: the viewer may hide or edit the message (not a site admin's, for a realm moderator). */
+  moderable?: boolean;
+  /** Present for moderators only: the viewer may warn or ban its author. Never on the wire. */
+  sanctionable?: boolean;
   byViewer: boolean;
   /** The viewer wrote it and it is within the edit window (the server asks again on edit). */
   canEdit: boolean;
@@ -226,7 +234,11 @@ function messageOf(
   viewer: ForumViewer,
   place: BoardPlace,
   look: Lookups,
-  extras: { role: PostRole | null; visitor: { slug: string; name: string } | null | undefined },
+  extras: {
+    role: PostRole | null;
+    visitor: { slug: string; name: string } | null | undefined;
+    moderation: AuthorModerationOf | null;
+  },
   now: number
 ): BoardMessage {
   const byViewer = viewer !== null && row.authorUserId === viewer.id;
@@ -245,6 +257,7 @@ function messageOf(
     createdAt: row.createdAt,
     editedAt: row.editedAt,
     ...(place.canModerate ? { hidden: row.hidden } : {}),
+    ...(extras.moderation ? extras.moderation(row.authorUserId, place.category) : {}),
     byViewer,
     canEdit:
       byViewer &&
@@ -274,6 +287,14 @@ export async function shapeBoardMessages(
     place.realm,
     playerIds(rows).filter((id) => !staffed.has(id))
   );
+  // What a moderator may do to each author's message (the thread page's verdicts); readers get no flags.
+  const moderation = place.canModerate
+    ? await authorModeration(
+        db,
+        viewer,
+        rows.map((r) => r.authorUserId)
+      )
+    : null;
   const now = Date.now();
   return rows.map((row) =>
     messageOf(
@@ -287,6 +308,7 @@ export async function shapeBoardMessages(
           row.authorPersonaId === null && row.authorUserId
             ? visitors.get(row.authorUserId)
             : undefined,
+        moderation,
       },
       now
     )

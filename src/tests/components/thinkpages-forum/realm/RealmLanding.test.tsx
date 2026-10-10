@@ -15,6 +15,7 @@ jest.mock("~/trpc/react", () => {
     boardOptions: [] as Array<Record<string, unknown> | undefined>,
     mutations: {} as Record<string, jest.Mock>,
     setData: jest.fn(),
+    cancel: jest.fn(() => Promise.resolve()),
     invalidate: jest.fn(() => Promise.resolve()),
   };
   const mutation = (name: string) => ({
@@ -24,7 +25,13 @@ jest.mock("~/trpc/react", () => {
     state,
     api: {
       useUtils: () => ({
-        thinkpagesForum: { getBoard: { setData: state.setData, invalidate: state.invalidate } },
+        thinkpagesForum: {
+          getBoard: {
+            setData: state.setData,
+            cancel: state.cancel,
+            invalidate: state.invalidate,
+          },
+        },
         thinkpagesForumMod: { invalidate: () => Promise.resolve() },
       }),
       thinkpagesForum: {
@@ -177,6 +184,7 @@ const { state } = jest.requireMock<{
     boardOptions: Array<Record<string, unknown> | undefined>;
     mutations: Record<string, jest.Mock>;
     setData: jest.Mock;
+    cancel: jest.Mock;
     invalidate: jest.Mock;
   };
 }>("~/trpc/react");
@@ -376,6 +384,11 @@ describe("RealmLanding", () => {
         })
       );
       await waitFor(() => expect(state.setData).toHaveBeenCalled());
+      // An in-flight poll is cancelled first, or it could overwrite the upsert.
+      expect(state.cancel).toHaveBeenCalledWith({ realm: "eurth" });
+      expect(state.cancel.mock.invocationCallOrder[0]).toBeLessThan(
+        state.setData.mock.invocationCallOrder[0]!
+      );
       const [input, update] = state.setData.mock.calls[0] as [
         { realm: string },
         (old: ReturnType<typeof boardData> | undefined) => ReturnType<typeof boardData> | undefined,

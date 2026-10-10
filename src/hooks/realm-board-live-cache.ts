@@ -28,7 +28,9 @@ export function isFirstPage(queryKey: QueryKey): boolean {
 /**
  * A live (public-shape) message as a cached one. What only the viewer's own page knows is kept from the cached copy
  * of the same message: `byViewer`, `canEdit`, a continued link as the viewer may see it, and a moderator's player id
- * for a persona. A moderator's copy carries the `hidden` flag, which a message on the wire never has set.
+ * for a persona. A moderator's copy carries the `hidden` flag, which a message on the wire never has set, and the
+ * server's verdicts on what they may do to it (`moderable`, `sanctionable`; a message first seen on the wire gets
+ * the cautious ones until the next read).
  */
 export function toCachedMessage(
   live: BoardLiveMessage,
@@ -43,7 +45,13 @@ export function toCachedMessage(
     editedAt: live.editedAt ? new Date(live.editedAt) : null,
     byViewer: existing?.byViewer ?? false,
     canEdit: existing?.canEdit ?? false,
-    ...(moderator ? { hidden: false } : {}),
+    ...(moderator
+      ? {
+          hidden: false,
+          moderable: existing?.moderable ?? true,
+          sanctionable: existing?.sanctionable ?? false,
+        }
+      : {}),
   };
 }
 

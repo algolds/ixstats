@@ -275,6 +275,33 @@ describe("useRealmBoardLive cache merge", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: BOARD_KEY });
   });
 
+  it("keeps a moderator's verdicts on an edited message, and is cautious about a new one", () => {
+    client.setQueryData(
+      FIRST,
+      page([stored("p1", 1, { hidden: false, moderable: false, sanctionable: true })], {
+        moderator: true,
+      })
+    );
+    mount(true);
+    send({
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: { type: "updated", message: live("p1", 1, { contentHtml: "<p>edit</p>" }) },
+    });
+    send({ type: "board:message", realmId: "r_eurth", message: live("p2", 2) });
+    const [newest, edited] = client.getQueryData<Page>(FIRST)!.messages;
+    expect(edited).toMatchObject({ moderable: false, sanctionable: true });
+    expect(newest).toMatchObject({ moderable: true, sanctionable: false });
+  });
+
+  it("gives a reader no verdicts", () => {
+    client.setQueryData(FIRST, page([stored("p1", 1)]));
+    mount(true);
+    send({ type: "board:message", realmId: "r_eurth", message: live("p2", 2) });
+    const [newest] = client.getQueryData<Page>(FIRST)!.messages;
+    expect("moderable" in newest!).toBe(false);
+  });
+
   it("slots an unhidden message back where it belongs", () => {
     client.setQueryData(FIRST, page([stored("p3", 3), stored("p1", 1)]));
     mount(true);

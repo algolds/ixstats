@@ -36,6 +36,11 @@ const message = (extra: Partial<BoardMessage> = {}): BoardMessage => ({
 });
 
 describe("boardMessagePayload", () => {
+  it("never carries a moderator's verdicts", () => {
+    const payload = boardMessagePayload(message({ moderable: true, sanctionable: true }));
+    expect(JSON.stringify(payload)).not.toMatch(/moderable|sanctionable/);
+  });
+
   it("is the persona-safe public shape: no viewer flags, ISO times", () => {
     expect(boardMessagePayload(message({ editedAt: at(2) }))).toEqual({
       type: "updated",

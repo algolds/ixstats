@@ -56,6 +56,7 @@ const { pages, asked } = jest.requireMock<{
 
 type ObserverCallback = (entries: Array<Partial<IntersectionObserverEntry>>) => void;
 let observed: ObserverCallback | null = null;
+let observerOptions: IntersectionObserverInit | undefined;
 
 afterEach(() => {
   delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
@@ -66,9 +67,11 @@ beforeEach(() => {
   for (const key of Object.keys(pages)) delete pages[key];
   asked.length = 0;
   observed = null;
+  observerOptions = undefined;
   window.IntersectionObserver = class {
-    constructor(callback: ObserverCallback) {
+    constructor(callback: ObserverCallback, options?: IntersectionObserverInit) {
       observed = callback;
+      observerOptions = options;
     }
     observe() {}
     unobserve() {}
@@ -246,7 +249,61 @@ describe("BoardFeed", () => {
     });
   });
 
+  describe("accessibility and the sticky header", () => {
+    it("is a feed, and busy while an earlier page loads", () => {
+      pages.p1 = { isLoading: true };
+      render(<BoardFeed {...feedProps(boardData([msg("p1")], { hasMore: true }))} />);
+      const feed = screen.getByRole("feed");
+      expect(feed).toHaveAttribute("aria-busy", "false");
+      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+      expect(feed).toHaveAttribute("aria-busy", "true");
+    });
+
+    it("announces held messages politely, and stops when they are shown", () => {
+      const { rerender } = render(<BoardFeed {...feedProps()} />);
+      const status = () =>
+        screen.getAllByRole("status").find((el) => el.className.includes("sr-only"))!;
+      expect(status()).toHaveTextContent("");
+      scrollAway();
+      rerender(
+        <BoardFeed {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")]))} />
+      );
+      expect(status()).toHaveAttribute("aria-live", "polite");
+      expect(status()).toHaveTextContent("1 new message");
+      rerender(
+        <BoardFeed
+          {...feedProps(boardData([msg("p5"), msg("p4"), msg("p3"), msg("p2"), msg("p1")]))}
+        />
+      );
+      expect(status()).toHaveTextContent("2 new messages");
+      fireEvent.click(screen.getByRole("button", { name: /Jump to newest/ }));
+      expect(status()).toHaveTextContent("");
+    });
+
+    it("counts the top as out of view once it is under the sticky header", () => {
+      render(<BoardFeed {...feedProps()} />);
+      expect(observerOptions?.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);
+    });
+
+    it("leaves room under the header when it scrolls the top into view", () => {
+      const { container } = render(<BoardFeed {...feedProps()} />);
+      expect(container.querySelector(".scroll-mt-24[aria-hidden]")).not.toBeNull();
+    });
+  });
+
   describe("earlier messages", () => {
+    it("shows a message once when a moved cursor returns it again", () => {
+      pages.p1 = { data: boardData([msg("p2"), msg("o2"), msg("o1")]) };
+      const { container } = render(
+        <BoardFeed
+          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }))}
+        />
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+      expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1"]);
+      expect(container.querySelectorAll("[data-id='p2']")).toHaveLength(1);
+    });
+
     it("offers Load earlier messages only when the board has more", () => {
       const { rerender } = render(<BoardFeed {...feedProps()} />);
       expect(screen.queryByRole("button", { name: "Load earlier messages" })).toBeNull();

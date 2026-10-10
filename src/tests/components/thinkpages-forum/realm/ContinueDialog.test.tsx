@@ -125,6 +125,19 @@ describe("ContinueDialog", () => {
     );
   });
 
+  it("sends when Enter is pressed in the title, but not while the title is too short", async () => {
+    open();
+    const title = screen.getByLabelText("Thread title");
+    fireEvent.change(title, { target: { value: "ab" } });
+    fireEvent.submit(title.closest("form")!);
+    expect(mutations.continueInThread).not.toHaveBeenCalled();
+    fireEvent.change(title, { target: { value: "Topic" } });
+    fireEvent.submit(title.closest("form")!);
+    await waitFor(() =>
+      expect(mutations.continueInThread).toHaveBeenCalledWith({ postId: "p1", title: "Topic" })
+    );
+  });
+
   it("shows the server's refusal and stays open", async () => {
     mutations.continueInThread = jest
       .fn()

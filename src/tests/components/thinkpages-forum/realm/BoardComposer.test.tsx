@@ -9,20 +9,32 @@ const editorClear = jest.fn();
 interface MockEditorProps {
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
+  disabled?: boolean;
   ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
 jest.mock(
   "next/dynamic",
   () => () =>
-    function Editor({ ref, onChange, placeholder }: MockEditorProps) {
+    function Editor({ ref, onChange, placeholder, disabled }: MockEditorProps) {
+      const textarea = React.useRef<HTMLTextAreaElement>(null);
       React.useImperativeHandle(
         ref,
-        () => ({ focusEnd: editorFocusEnd, insertText: editorInsert, clear: editorClear }),
+        () => ({
+          focusEnd: () => {
+            editorFocusEnd();
+            // A disabled field cannot take focus, as the real editor in read-only mode.
+            textarea.current?.focus();
+          },
+          insertText: editorInsert,
+          clear: editorClear,
+        }),
         []
       );
       return (
         <textarea
+          ref={textarea}
+          disabled={disabled}
           data-testid="editor"
           placeholder={placeholder}
           onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value, "")}
@@ -154,6 +166,27 @@ describe("BoardComposer", () => {
     expect(editorClear).toHaveBeenCalled();
     expect(screen.getByText("0 / 1,000")).toBeInTheDocument();
     expect(post()).toBeDisabled();
+  });
+
+  it("puts the caret back in the editor after a post, once it is writable again", async () => {
+    let finish: () => void = () => undefined;
+    const onSubmit = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+    );
+    renderComposer({ onSubmit });
+    type("hello");
+    fireEvent.click(post());
+    expect(screen.getByTestId("editor")).toBeDisabled();
+    editorFocusEnd.mockClear();
+    await act(async () => {
+      finish();
+    });
+    expect(screen.getByTestId("editor")).toBeEnabled();
+    expect(editorFocusEnd).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("editor")).toHaveFocus();
   });
 
   it("keeps the text and shows the error when the post fails", async () => {

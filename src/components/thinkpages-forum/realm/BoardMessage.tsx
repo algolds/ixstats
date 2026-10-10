@@ -132,6 +132,7 @@ export const BoardMessage = memo(function BoardMessage({
   return (
     <article
       id={`post-${message.id}`}
+      aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
       data-hidden={message.hidden ? "" : undefined}
       className={cn(
         "flex scroll-mt-24 gap-3 px-4 py-3 sm:px-5",

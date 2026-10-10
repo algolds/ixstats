@@ -135,6 +135,14 @@ describe("BoardMessage header", () => {
     expect(container.querySelector("article#post-p9")).not.toBeNull();
   });
 
+  it("labels the article with its author and age", () => {
+    const { container } = renderMessage();
+    expect(container.querySelector("article")).toHaveAttribute(
+      "aria-label",
+      "Message from kir, 12m ago"
+    );
+  });
+
   it("marks an edited message", () => {
     renderMessage({ message: boardMessage({ editedAt: new Date() }) });
     expect(screen.getByText("edited")).toBeInTheDocument();
@@ -367,7 +375,10 @@ describe("BoardMessage actions", () => {
     const { unmount } = renderMessage();
     expect(screen.queryByRole("menuitem", { name: "Continue in a thread" })).toBeNull();
     unmount();
-    renderMessage({ access: boardAccess({ isModerator: true }) });
+    renderMessage({
+      access: boardAccess({ isModerator: true }),
+      message: boardMessage({ moderable: true, sanctionable: true }),
+    });
     expect(screen.getByRole("menuitem", { name: "Continue in a thread" })).toBeInTheDocument();
   });
 
@@ -387,9 +398,10 @@ describe("BoardMessage moderation", () => {
     refresh: jest.fn().mockResolvedValue(undefined),
   };
   const moderator = boardAccess({ isModerator: true });
+  const verdicts = { moderable: true, sanctionable: true };
 
   it("offers a moderator hide, edit, warn and ban on a member's message", () => {
-    renderMessage({ access: moderator, tools });
+    renderMessage({ access: moderator, tools, message: boardMessage(verdicts) });
     const menu = screen.getByRole("menu");
     for (const name of ["Hide post", "Edit as moderator", "Warn author", "Ban author"]) {
       expect(within(menu).getByRole("menuitem", { name })).toBeInTheDocument();
@@ -397,22 +409,42 @@ describe("BoardMessage moderation", () => {
     expect(within(menu).queryByRole("menuitem", { name: "Report" })).toBeNull();
   });
 
-  it("offers no warn or ban on a persona's message whose player is not revealed, or on your own", () => {
+  it("offers only what the server's verdicts allow", () => {
     const { unmount } = renderMessage({
       access: moderator,
       tools,
-      message: boardMessage({ authorUserId: null, authorPersonaId: "ps1" }),
+      message: boardMessage({ moderable: true, sanctionable: false }),
     });
     expect(screen.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Ban author" })).toBeNull();
     expect(screen.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
     unmount();
-    renderMessage({ access: moderator, tools, message: boardMessage({ byViewer: true }) });
-    expect(screen.queryByRole("menuitem", { name: "Ban author" })).toBeNull();
+    renderMessage({
+      access: moderator,
+      tools,
+      message: boardMessage({ moderable: false, sanctionable: true }),
+    });
+    expect(screen.queryByRole("menuitem", { name: "Hide post" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Edit as moderator" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Warn author" })).toBeInTheDocument();
+  });
+
+  it("has no moderator menu when the server allows nothing on the message", () => {
+    renderMessage({
+      access: moderator,
+      tools,
+      message: boardMessage({ moderable: false, sanctionable: false }),
+    });
+    expect(screen.queryByRole("button", { name: "More actions" })).toBeNull();
   });
 
   it("unhides a hidden message with the moderator's note", async () => {
     mutations.setPostHidden = jest.fn().mockResolvedValue({});
-    renderMessage({ access: moderator, tools, message: boardMessage({ hidden: true }) });
+    renderMessage({
+      access: moderator,
+      tools,
+      message: boardMessage({ hidden: true, ...verdicts }),
+    });
     fireEvent.click(screen.getByRole("menuitem", { name: "Unhide post" }));
     fireEvent.click(await screen.findByRole("button", { name: "Unhide post" }));
     await waitFor(() =>
@@ -422,7 +454,7 @@ describe("BoardMessage moderation", () => {
   });
 
   it("edits as a moderator with a note for the log", async () => {
-    renderMessage({ access: moderator, tools });
+    renderMessage({ access: moderator, tools, message: boardMessage(verdicts) });
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit as moderator" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(

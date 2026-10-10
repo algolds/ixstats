@@ -15,7 +15,7 @@ import { BoardMessage } from "./BoardMessage";
 import type { BoardAccess, BoardData, BoardMessageData, BoardRealm } from "./types";
 
 /** What every message of the feed needs besides itself. */
-interface FeedContext {
+interface MessageContext {
   realm: BoardRealm;
   access: BoardAccess;
   signedIn: boolean;
@@ -25,7 +25,17 @@ interface FeedContext {
   onChanged: () => void;
 }
 
+interface FeedContext {
+  message: MessageContext;
+  /** An earlier page is loading: the feed is busy. */
+  setLoadingMore: (loading: boolean) => void;
+}
+
+const NOTHING_SHOWN: ReadonlySet<string> = new Set();
+
 const DIVIDER = "border-separator border-t";
+/** The compact header bar's height when it cannot be measured. */
+const FALLBACK_HEADER_PX = 56;
 
 /** "Fiannria is typing", "Fiannria and Kir are typing", "3 people are typing". */
 export function typingLine(names: readonly string[]): string | null {
@@ -45,20 +55,30 @@ interface SectionProps {
   hasMore: boolean;
   /** The first message of the feed carries no divider above it. */
   first: boolean;
+  /** Messages the pages before this one already show: a moved cursor can return them again, and they show once. */
+  exclude: ReadonlySet<string>;
   context: FeedContext;
 }
 
 /** One page of messages with its action cards, then the way to the page before it. */
-function Section({ messages, cursor, hasMore, first, context }: SectionProps) {
-  const { cards, ready, errored } = useThreadActionCards(messages);
+function Section({ messages, cursor, hasMore, first, exclude, context }: SectionProps) {
+  const visible = useMemo(
+    () => (exclude.size === 0 ? messages : messages.filter((m) => !exclude.has(m.id))),
+    [messages, exclude]
+  );
+  const { cards, ready, errored } = useThreadActionCards(visible);
   const [more, setMore] = useState(false);
+  const shown = useMemo(
+    () => new Set([...exclude, ...messages.map((m) => m.id)]),
+    [exclude, messages]
+  );
   return (
     <>
-      {messages.map((message, index) => (
+      {visible.map((message, index) => (
         <BoardMessage
           key={message.id}
           message={message}
-          {...context}
+          {...context.message}
           cards={cards}
           cardsReady={ready}
           cardsErrored={errored}
@@ -67,7 +87,7 @@ function Section({ messages, cursor, hasMore, first, context }: SectionProps) {
       ))}
       {hasMore && cursor ? (
         more ? (
-          <EarlierPage before={cursor} context={context} />
+          <EarlierPage before={cursor} exclude={shown} context={context} />
         ) : (
           <div className={cn(DIVIDER, "flex items-center justify-center px-5 py-3")}>
             <Button
@@ -86,11 +106,26 @@ function Section({ messages, cursor, hasMore, first, context }: SectionProps) {
 }
 
 /** The page of 50 messages before `before`. It keeps showing its last answer while the cursor moves on a poll. */
-function EarlierPage({ before, context }: { before: string; context: FeedContext }) {
+function EarlierPage({
+  before,
+  exclude,
+  context,
+}: {
+  before: string;
+  exclude: ReadonlySet<string>;
+  context: FeedContext;
+}) {
   const { data, isLoading, isError, refetch } = api.thinkpagesForum.getBoard.useQuery(
-    { realm: context.realm.slug, before },
+    { realm: context.message.realm.slug, before },
     { placeholderData: keepPreviousData, refetchOnWindowFocus: false }
   );
+  const { setLoadingMore } = context;
+  const loading = isLoading && !data;
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingMore(true);
+    return () => setLoadingMore(false);
+  }, [loading, setLoadingMore]);
   if (data) {
     return (
       <Section
@@ -98,6 +133,7 @@ function EarlierPage({ before, context }: { before: string; context: FeedContext
         cursor={data.messages.at(-1)?.id}
         hasMore={data.hasMore}
         first={false}
+        exclude={exclude}
         context={context}
       />
     );
@@ -120,9 +156,18 @@ function EarlierPage({ before, context }: { before: string; context: FeedContext
   );
 }
 
+/** The sticky page header's lower edge: the part of the viewport the feed's top is hidden under. */
+function stickyHeaderBottom(): number {
+  const bar = document.querySelector<HTMLElement>('[data-slot="page-header-toolbar"]');
+  if (!bar) return FALLBACK_HEADER_PX;
+  const top = Number.parseFloat(getComputedStyle(bar).top) || 0;
+  return Math.round(top + (bar.getBoundingClientRect().height || FALLBACK_HEADER_PX));
+}
+
 /**
- * Whether the reader has scrolled the feed's top out of view upward, watched at `sentinel`. A feed whose top is
- * still below the fold counts as at the top: nothing has been scrolled past.
+ * Whether the reader has scrolled the feed's top out of view upward, watched at `sentinel`. The top counts as out of
+ * view once it is under the sticky header. A feed whose top is still below the fold counts as at the top: nothing
+ * has been scrolled past.
  */
 function useScrolledAway(
   sentinel: RefObject<HTMLElement | null>,
@@ -135,11 +180,15 @@ function useScrolledAway(
   useEffect(() => {
     const element = sentinel.current;
     if (!element || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry) return;
-      const viewportTop = entry.rootBounds?.top ?? 0;
-      notify.current(!entry.isIntersecting && entry.boundingClientRect.top < viewportTop);
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        // rootBounds already excludes the header band (rootMargin).
+        const viewportTop = entry.rootBounds?.top ?? 0;
+        notify.current(!entry.isIntersecting && entry.boundingClientRect.top < viewportTop);
+      },
+      { rootMargin: `-${stickyHeaderBottom()}px 0px 0px 0px` }
+    );
     observer.observe(element);
     return () => observer.disconnect();
   }, [sentinel]);
@@ -206,14 +255,10 @@ export function BoardFeed({
     [held, data.messages]
   );
   const waiting = data.messages.length - shown.length;
+  const [loadingMore, setLoadingMore] = useState(false);
   const context: FeedContext = {
-    realm,
-    access: data.access,
-    signedIn,
-    tools,
-    onReply,
-    onQuote,
-    onChanged,
+    message: { realm, access: data.access, signedIn, tools, onReply, onQuote, onChanged },
+    setLoadingMore,
   };
   const typingText = typingLine(typing);
 
@@ -224,6 +269,10 @@ export function BoardFeed({
 
   return (
     <>
+      {/* Told to assistive technology as messages are held back, since the list does not move. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {waiting > 0 ? `${waiting} new ${waiting === 1 ? "message" : "messages"}` : ""}
+      </p>
       {waiting > 0 ? (
         <div className="z-sticky sticky top-20 flex h-0 justify-center">
           <Button size="sm" className="shadow-floating" onClick={jumpToNewest}>
@@ -247,7 +296,7 @@ export function BoardFeed({
             Live updates paused, retrying
           </p>
         )}
-        <div ref={top} aria-hidden className="h-px" />
+        <div ref={top} aria-hidden className="h-px scroll-mt-24" />
         {shown.length === 0 ? (
           <EmptyState
             compact
@@ -255,13 +304,16 @@ export function BoardFeed({
             message={data.access.canPost ? `Say something to ${realm.name}` : undefined}
           />
         ) : (
-          <Section
-            messages={shown}
-            cursor={data.messages.at(-1)?.id}
-            hasMore={data.hasMore}
-            first
-            context={context}
-          />
+          <div role="feed" aria-busy={loadingMore} aria-label="Realm board messages">
+            <Section
+              messages={shown}
+              cursor={data.messages.at(-1)?.id}
+              hasMore={data.hasMore}
+              first
+              exclude={NOTHING_SHOWN}
+              context={context}
+            />
+          </div>
         )}
       </Card>
     </>

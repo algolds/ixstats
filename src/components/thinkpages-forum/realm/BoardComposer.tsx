@@ -81,6 +81,14 @@ function PostingComposer({
   const personas = useMyPersonas(true);
   const slow = useSlowMode();
   const handledQuote = useRef<number | null>(null);
+  const refocus = useRef(false);
+
+  // The editor is read-only while a post is sent, which drops its focus: take it back once it is writable again.
+  useEffect(() => {
+    if (pending || !refocus.current) return;
+    refocus.current = false;
+    editorRef.current?.focusEnd();
+  }, [pending]);
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -132,6 +140,7 @@ function PostingComposer({
       if (wait) slow.start(wait);
       else setError(e instanceof Error ? e.message : "Could not post");
     } finally {
+      refocus.current = true;
       setPending(false);
     }
   };

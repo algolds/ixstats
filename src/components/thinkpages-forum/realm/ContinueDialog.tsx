@@ -53,7 +53,10 @@ export function ContinueDialog({ message, open, onOpenChange, onDone }: Continue
   const [error, setError] = useState<string | null>(null);
   const trimmed = title.trim();
 
+  const canSend = !isPending && trimmed.length >= TITLE_MIN;
+
   const send = () => {
+    if (!canSend) return;
     setError(null);
     continueInThread({
       postId: message.id,
@@ -85,41 +88,50 @@ export function ContinueDialog({ message, open, onOpenChange, onDone }: Continue
             The message moves into a new thread as its first post. The board keeps a link to it.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="continue-title">Thread title</Label>
-          <Input
-            id="continue-title"
-            value={title}
-            maxLength={TITLE_MAX}
-            disabled={isPending}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        {inCharacter ? (
+        {/* `contents` keeps the dialog's own spacing; the form is only there so Enter in the title sends. */}
+        <form
+          className="contents"
+          onSubmit={(event) => {
+            event.preventDefault();
+            send();
+          }}
+        >
           <div className="space-y-2">
-            <Label id="continue-board-label">Where it starts</Label>
-            <Select value={boardKey} onValueChange={setBoardKey} disabled={isPending}>
-              <SelectTrigger aria-labelledby="continue-board-label">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {IC_BOARDS.map((board) => (
-                  <SelectItem key={board.key} value={board.key}>
-                    {board.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="continue-title">Thread title</Label>
+            <Input
+              id="continue-title"
+              value={title}
+              maxLength={TITLE_MAX}
+              disabled={isPending}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
-        ) : (
-          <p className="text-footnote text-label-secondary">It starts in the realm Hub.</p>
-        )}
-        <FormError message={error} />
-        <DialogFooter>
-          <Button onClick={send} disabled={isPending || trimmed.length < TITLE_MIN}>
-            Continue in a thread
-          </Button>
-        </DialogFooter>
+          {inCharacter ? (
+            <div className="space-y-2">
+              <Label id="continue-board-label">Where it starts</Label>
+              <Select value={boardKey} onValueChange={setBoardKey} disabled={isPending}>
+                <SelectTrigger aria-labelledby="continue-board-label">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {IC_BOARDS.map((board) => (
+                    <SelectItem key={board.key} value={board.key}>
+                      {board.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="text-footnote text-label-secondary">It starts in the realm Hub.</p>
+          )}
+          <FormError message={error} />
+          <DialogFooter>
+            <Button type="submit" disabled={!canSend}>
+              Continue in a thread
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

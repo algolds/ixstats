@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
+  hasModeratorActions,
   ModeratorDialogs,
   ModeratorMenuItems,
   type ModeratablePost,
@@ -34,13 +35,13 @@ interface MessageMenuProps {
 
 type Open = ModeratorDialogName | "report" | "continue" | null;
 
-/** What the moderator menu needs of a board message. The board reads carry no per-author verdicts; the server decides. */
+/** What the moderator menu needs of a board message: the server's verdicts, which only moderators receive. */
 function moderatable(message: BoardMessageData): ModeratablePost {
   return {
     id: message.id,
     hidden: message.hidden,
-    moderable: true,
-    sanctionable: !message.byViewer && message.authorUserId !== null,
+    moderable: message.moderable === true,
+    sanctionable: message.sanctionable === true,
     authorUserId: message.authorUserId,
   };
 }
@@ -59,14 +60,15 @@ export function MessageMenu({
   onChanged,
 }: MessageMenuProps) {
   const [open, setOpen] = useState<Open>(null);
-  const moderating = access.isModerator && tools !== null;
+  const post = moderatable(message);
+  const moderating = access.isModerator && tools !== null && hasModeratorActions(post);
   const canContinue =
-    message.hidden !== true && ((message.byViewer && !access.isVisitor) || access.isModerator);
+    message.hidden !== true &&
+    ((message.byViewer && !access.isVisitor) || (access.isModerator && message.moderable === true));
   const canReport = signedIn && !message.byViewer && !access.isModerator;
   const canEdit = message.canEdit;
   if (!canContinue && !canReport && !canEdit && !moderating) return null;
 
-  const post = moderatable(message);
   const moderatorOpen = open === "report" || open === "continue" ? null : open;
   const first = canContinue || canReport || canEdit;
 

@@ -144,6 +144,30 @@ describe("getBoard", () => {
     expect(JSON.stringify(byId.p6)).not.toContain("u_member");
   });
 
+  it("tells moderators what they may do to each author's message, and readers nothing", async () => {
+    const posts = [
+      ...messages,
+      boardPost("p7", 7, { authorUserId: "u_admin" }),
+      boardPost("p8", 8, { authorUserId: "u_officer" }),
+    ];
+    const asOfficer = await board(officer, {}, "eurth", storeWith(posts));
+    const byId = Object.fromEntries(asOfficer.messages.map((m) => [m.id, m]));
+    expect(byId.p1).toMatchObject({ moderable: true, sanctionable: true });
+    // A persona's message is its player's: the moderator may warn that player.
+    expect(byId.p6).toMatchObject({ moderable: true, sanctionable: true });
+    // Imported content has nobody to warn or ban; a site admin's content is site admins' only; your own is not sanctioned.
+    expect(byId.p4).toMatchObject({ moderable: true, sanctionable: false });
+    expect(byId.p7).toMatchObject({ moderable: false, sanctionable: false });
+    expect(byId.p8).toMatchObject({ sanctionable: false });
+    const asAdmin = await board(admin, {}, "eurth", storeWith(posts));
+    expect(asAdmin.messages.find((m) => m.id === "p7")).toMatchObject({ sanctionable: false });
+    expect(asAdmin.messages.find((m) => m.id === "p1")).toMatchObject({ moderable: true });
+    for (const who of [member, visitor, null]) {
+      const out = await board(who, {}, "eurth", storeWith(posts));
+      expect(out.messages.every((m) => !("moderable" in m) && !("sanctionable" in m))).toBe(true);
+    }
+  });
+
   it("gives a persona's player to moderators only", async () => {
     const out = await board(officer);
     expect(out.messages.find((m) => m.id === "p6")).toMatchObject({ authorUserId: "u_member" });

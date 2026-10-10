@@ -16,7 +16,8 @@ describe("boardQuoteText", () => {
 
   it("shortens a long message to a short passage", () => {
     const quote = boardQuoteText("kir", `<p>${"word ".repeat(100)}</p>`);
-    expect(quote.length).toBeLessThan(180);
+    expect(quote).not.toBeNull();
+    expect(quote?.length).toBeLessThan(180);
     expect(quote).toContain("…");
   });
 
