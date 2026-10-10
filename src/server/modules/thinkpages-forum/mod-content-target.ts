@@ -12,6 +12,7 @@ export type ContentDb = Pick<
   PrismaClient,
   | "forumThread"
   | "forumPost"
+  | "forumPostTemplate"
   | "forumCategory"
   | "forumReport"
   | "postActionLink"

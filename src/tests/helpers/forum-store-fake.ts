@@ -23,6 +23,7 @@ export interface StoreState {
   appeals: Row[];
   categoryModerators: Row[];
   officers: Row[];
+  postTemplates: Row[];
 }
 
 const OPERATORS = ["in", "notIn", "not", "gt", "has", "startsWith"];
@@ -105,6 +106,7 @@ const cloneState = (state: Partial<StoreState>): StoreState => ({
   appeals: cloneRows(state.appeals),
   categoryModerators: cloneRows(state.categoryModerators),
   officers: cloneRows(state.officers),
+  postTemplates: cloneRows(state.postTemplates),
 });
 
 interface Args {
@@ -205,6 +207,7 @@ export function forumStore(seed: Partial<StoreState> & { logs?: Row[] }) {
       }),
     },
     postActionLink: delegate(() => state.links),
+    forumPostTemplate: delegate(() => state.postTemplates),
     realm: delegate(() => state.realms),
     user: delegate(() => state.users),
     forumBan: delegate(

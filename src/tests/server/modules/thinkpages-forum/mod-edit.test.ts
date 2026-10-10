@@ -33,6 +33,61 @@ describe("modEditPost", () => {
     expect(detail).toEqual({ note: "removed slur", previous: "Post p_e2" });
   });
 
+  describe("a Canvas post", () => {
+    const canvasStore = () => {
+      const store = forumStore({
+        ...seed(),
+        postTemplates: [
+          { id: "pt1", postId: "p_e2", title: "Template:Flag" },
+          { id: "pt2", postId: "p_e1", title: "Template:Flag" },
+        ],
+      });
+      Object.assign(postIn(store, "p_e2"), {
+        contentWikitext: "{{Flag}} old",
+        rendererVersion: "forum-1:v",
+        renderedAt: at(5),
+      });
+      return store;
+    };
+
+    it("becomes an HTML-only post: wikitext, render metadata and templates are cleared", async () => {
+      const store = canvasStore();
+      await modEditPost(store.db as never, eurthMod, {
+        postId: "p_e2",
+        html: "<p>Cleaned up</p>",
+        note: "removed slur",
+      });
+      expect(postIn(store, "p_e2")).toMatchObject({
+        contentHtml: "<p>Cleaned up</p>",
+        contentWikitext: null,
+        rendererVersion: null,
+        renderedAt: null,
+      });
+      // Only this post's templates go; the stale selection needs contentWikitext, so it never picks the post again.
+      expect(store.state.postTemplates).toEqual([
+        { id: "pt2", postId: "p_e1", title: "Template:Flag" },
+      ]);
+    });
+
+    it("keeps the wikitext and templates when the edit loses a race", async () => {
+      const store = canvasStore();
+      const run = store.db.$transaction.getMockImplementation()!;
+      store.db.$transaction.mockImplementationOnce(async (fn) => {
+        Object.assign(postIn(store, "p_e2"), { editedAt: at(9) });
+        return run(fn);
+      });
+      await expect(
+        modEditPost(store.db as never, eurthMod, {
+          postId: "p_e2",
+          html: "<p>Cleaned up</p>",
+          note: "x",
+        })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(postIn(store, "p_e2").contentWikitext).toBe("{{Flag}} old");
+      expect(store.state.postTemplates).toHaveLength(2);
+    });
+  });
+
   it.each(["submitted", "approved"])(
     "refuses a post in a %s story chain (P6, M17)",
     async (status) => {

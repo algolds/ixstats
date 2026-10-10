@@ -15,7 +15,7 @@ type Row = { id: string; threadId: string; contentWikitext: string };
 function fakeDb(posts: Row[], editedTo?: string) {
   const updates: Array<{ id: string; renderedAt: Date | null; contentHtml: string }> = [];
   const templateWrites: string[][] = [];
-  const db = {
+  const parts = {
     forumPost: {
       findMany: jest.fn(async () => posts),
       updateMany: jest.fn(
@@ -44,7 +44,10 @@ function fakeDb(posts: Row[], editedTo?: string) {
         return { count: data.length };
       }),
     },
-    $transaction: jest.fn(async (fn: (tx: typeof db) => Promise<boolean>) => fn(db)),
+  };
+  const db = {
+    ...parts,
+    $transaction: jest.fn(async (fn: (tx: typeof parts) => Promise<boolean>) => fn(parts)),
   };
   return { db, updates, templateWrites };
 }
@@ -113,9 +116,10 @@ it("writes only the text it rendered: an edit between the read and the write is 
 
 it("selects stale post ids with the renderer version and limit bound", async () => {
   const queryRaw = jest.fn(
-    async (strings: TemplateStringsArray, ...values: Array<string | number>) =>
-      // A tagged template has one more string than values; anything else is not the query under test.
-      strings.length === values.length + 1 ? [{ id: "a" }, { id: "b" }] : []
+    async (_strings: TemplateStringsArray, ..._values: Array<string | number>) => [
+      { id: "a" },
+      { id: "b" },
+    ]
   );
   const ids = await staleForumPostIds({ $queryRaw: queryRaw } as never, 7);
   expect(ids).toEqual(["a", "b"]);
