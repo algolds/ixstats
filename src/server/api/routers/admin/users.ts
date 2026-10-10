@@ -23,6 +23,38 @@ import {
   createWikiLinkService,
   WikiLinkError,
 } from "~/server/modules/identity/identity.wiki-links";
+import {
+  ForumError,
+  linkOldForumAccount,
+  unlinkOldForumAccount,
+} from "~/server/modules/thinkpages-forum";
+
+/** Forum refusals map 1:1 to tRPC errors. */
+function forumTrpcError(error: Error): never {
+  if (error instanceof ForumError) throw new TRPCError({ code: error.code, message: error.message });
+  throw error;
+}
+
+/** The audit row for an old forum account change (adminProcedure also logs the call itself). */
+function forumAuditRow(
+  ctx: { user: { id: string; clerkUserId: string } },
+  action: string,
+  userId: string,
+  changes: object
+) {
+  return {
+    data: {
+      action,
+      targetType: "user",
+      targetId: userId,
+      targetName: userId,
+      changes: JSON.stringify(changes),
+      adminId: ctx.user.id,
+      adminName: ctx.user.clerkUserId,
+      timestamp: new Date(),
+    },
+  };
+}
 
 /** The wiki-links service for admin link/unlink — the admin's authority stands in for the token proof. */
 const adminWikiLinks = (db: PrismaClient) =>
@@ -340,6 +372,43 @@ export const adminUsersRouter = createTRPCRouter({
       });
       await globalCache.delete(`user_profile:${input.userId}`);
       return { success: true };
+    }),
+
+  // Link an old XenForo forum account (phase 4b: staff only); attributes its imported posts at once
+  linkUserForum: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1).max(191),
+        xenforoUserId: z.number().int().positive().max(2_147_483_647),
+        forumUsername: z.string().trim().max(100).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await linkOldForumAccount(ctx.db, {
+        userId: input.userId,
+        xenforoUserId: input.xenforoUserId,
+        username: input.forumUsername,
+      }).catch(forumTrpcError);
+      await ctx.db.adminAuditLog.create(
+        forumAuditRow(ctx, "FORUM_ACCOUNT_LINKED", input.userId, {
+          xenforoUserId: input.xenforoUserId,
+          ...result,
+        })
+      );
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return result;
+    }),
+
+  // Unlink an old forum account; its imported posts go back to the old name
+  unlinkUserForum: adminProcedure
+    .input(z.object({ userId: z.string().min(1).max(191) }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await unlinkOldForumAccount(ctx.db, input.userId).catch(forumTrpcError);
+      await ctx.db.adminAuditLog.create(
+        forumAuditRow(ctx, "FORUM_ACCOUNT_UNLINKED", input.userId, result)
+      );
+      await globalCache.delete(`user_profile:${input.userId}`);
+      return result;
     }),
 
   // Unlink a user's Discord account

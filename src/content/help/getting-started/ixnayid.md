@@ -46,7 +46,7 @@ Linking proves you own a wiki account. It lets you edit your own `User:` page in
 
 ## Old forum posts
 
-The old forum (forum.ixwiki.com) is retired, so forum accounts are no longer linked here. **Linked Accounts** shows your old forum account read-only: "Imported as" your old forum name when it is linked, or "No old-forum account". Linking is managed by staff: to have your old forum posts attributed to you, ask in a thread in the forum's Reports category with your old forum username. See [ThinkPages (the forum)](/help/social/forum#getting-your-posts-attributed).
+The old forum (forum.ixwiki.com) is retired, so forum accounts are no longer linked here. **Linked Accounts** shows your old forum account read-only: "Imported as" your old forum name when it is linked, or "No old-forum account". Linking is managed by staff: to have your old forum posts attributed to you, ask in a thread in the forum's Reports category with your old forum username. Staff link it in the admin users panel, and your imported posts show your name straight away. See [ThinkPages (the forum)](/help/social/forum#getting-your-posts-attributed).
 
 ## Link Discord
 

@@ -27,7 +27,7 @@ behaviour.
 | :--- | :--- |
 | View public passport, copy link | Links to `/@<handle>` |
 | Username, primary email | Read-only, from the auth provider |
-| Old forum | Read-only: "Imported as <name>" or "No old-forum account", from `ixnayid.getStatus` (`User.forumUsername`). Self-service linking was retired with the XenForo bridge (phase 4b); staff set the account and rerun the import |
+| Old forum | Read-only: "Imported as <name>" or "No old-forum account", from `ixnayid.getStatus` (`User.forumUsername`). Self-service linking was retired with the XenForo bridge (phase 4b); staff link it in the admin users panel (Old forum), which attributes the imported posts at once |
 | Wikis (IxWiki, IIWiki, AltHistory) | `ixnayid.startWikiVerification` / `confirmWikiVerification` (user-page token), `unlinkWikiAccount` |
 | Discord: unlink | `ixnayid.unlinkDiscord`. Linking happens by signing in with Discord. The row says "receive bot alerts", but no code sends per-user Discord alerts (the Discord code posts to channels) |
 

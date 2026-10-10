@@ -18,7 +18,7 @@ If your account has no nation yet, a banner links to [Setup](/setup).
 
 ## IxnayID & Passport
 
-Your username and email, a link to your public passport, and your linked accounts: IxWiki, IIWiki and AltHistory Wiki (each verified with a code), and Discord (linked by signing in with Discord). You can unlink any of them here. Your old forum account is shown read-only; staff manage it. Step-by-step: [IxnayID & Your Passport](/help/getting-started/ixnayid).
+Your username and email, a link to your public passport, and your linked accounts: IxWiki, IIWiki and AltHistory Wiki (each verified with a code), and Discord (linked by signing in with Discord). You can unlink any of them here. Your old forum account is shown read-only: to link one, ask staff, who link it in the admin users panel. Step-by-step: [IxnayID & Your Passport](/help/getting-started/ixnayid).
 
 ## MyCountry
 

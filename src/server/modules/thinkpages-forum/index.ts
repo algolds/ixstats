@@ -13,6 +13,12 @@ export {
   type LegacyDb,
 } from "./legacy-redirect";
 export { forumActivityOf, importedAuthorByName, type MemberActivityDb } from "./member-activity";
+export {
+  linkOldForumAccount,
+  unlinkOldForumAccount,
+  type OldForumAccountsDb,
+  type OldForumLink,
+} from "./old-forum-accounts";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,

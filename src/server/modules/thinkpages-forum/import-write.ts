@@ -169,13 +169,15 @@ export function writeThread(
 
 /**
  * Imported rows with no author whose XenForo user is now linked (`User.forumUserId`, earliest account first as at
- * import) take that user. Only rows with a XenForo user id are touched; guests never match.
+ * import) take that user. Only rows with a XenForo user id are touched; guests never match. `onlyXenforoUserId`
+ * limits the pass to one XenForo user (the admin link, phase 4b).
  */
 export async function relinkImportedAuthors(
-  db: Pick<ImportDb, "user" | "forumThread" | "forumPost">
+  db: Pick<ImportDb, "user" | "forumThread" | "forumPost">,
+  onlyXenforoUserId?: number
 ): Promise<{ threads: number; posts: number }> {
   const users = await db.user.findMany({
-    where: { forumUserId: { not: null } },
+    where: { forumUserId: onlyXenforoUserId ?? { not: null } },
     select: { id: true, forumUserId: true, createdAt: true },
   });
   const { byForumId } = resolveAuthors(

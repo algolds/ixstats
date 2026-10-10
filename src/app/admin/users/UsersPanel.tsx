@@ -37,6 +37,7 @@ import { Card } from "~/components/ui/card";
 import { AssignCountryDialog, LinkDiscordDialog, LinkWikiDialog } from "./UsersPanelDialogs";
 import { CountryClaimsTab, DiscordSyncTab } from "./UsersPanelTabs";
 import { usePlayAs } from "./usePlayAs";
+import { OldForumAccountDialog, type OldForumAccountTarget } from "./OldForumAccountDialog";
 
 export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
@@ -58,6 +59,7 @@ export function UsersPanel() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isWikiDialogOpen, setIsWikiDialogOpen] = useState(false);
   const [isDiscordDialogOpen, setIsDiscordDialogOpen] = useState(false);
+  const [forumUser, setForumUser] = useState<OldForumAccountTarget | null>(null);
 
   // Queries
   const {
@@ -442,6 +444,9 @@ export function UsersPanel() {
                           >
                             Discord
                           </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setForumUser(u)}>
+                            Old forum
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -639,6 +644,12 @@ export function UsersPanel() {
             discordUserId: discordUserIdInput,
           });
         }}
+      />
+
+      <OldForumAccountDialog
+        user={forumUser}
+        onClose={() => setForumUser(null)}
+        onChanged={() => void refetchIdentities()}
       />
 
       <AssignCountryDialog

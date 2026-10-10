@@ -86,7 +86,7 @@ Once the old forum has been copied here:
 
 ### Getting your posts attributed
 
-Linking an old forum account to your IxStats account is managed by staff. Ask in a thread in Reports: give your old forum username, and staff will link the account and update your imported posts, which may take a little while. [Settings](/settings) → **IxnayID & passport** → **Linked accounts** shows your old forum account once it is linked ("Imported as" your old name), but you cannot change it there. See [IxnayID & Your Passport](/help/getting-started/ixnayid#old-forum-posts).
+Linking an old forum account to your IxStats account is managed by staff. Ask in a thread in Reports: give your old forum username, and staff will link the account in the admin users panel, which attributes your imported posts straight away. [Settings](/settings) → **IxnayID & passport** → **Linked accounts** shows your old forum account once it is linked ("Imported as" your old name), but you cannot change it there. See [IxnayID & Your Passport](/help/getting-started/ixnayid#old-forum-posts).
 
 ### Old links
 
