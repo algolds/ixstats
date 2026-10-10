@@ -65,6 +65,7 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       ...summary,
       id: category.id,
       style: category.style,
+      visibility: category.visibility,
       postCount: postCounts.get(category.id) ?? 0,
       latest: last ? publicLatest(last, authors) : null,
     };

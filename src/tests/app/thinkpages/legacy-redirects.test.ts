@@ -28,7 +28,7 @@ jest.mock("~/server/db", () => ({
     forumPost: { findUnique: jest.fn(), count: jest.fn() },
   },
 }));
-jest.mock("~/components/thinkpages-forum/CategoryList", () => ({ CategoryList: jest.fn() }));
+jest.mock("~/components/thinkpages-forum/home", () => ({ ForumHome: jest.fn() }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { auth } from "@clerk/nextjs/server";
@@ -42,7 +42,7 @@ import LegacyThinkSharePage from "~/app/thinkpages/thinkshare/page";
 import LegacyThinkTanksPage from "~/app/thinkpages/thinktanks/page";
 import LegacyForumHomePage from "~/app/thinkpages/forum/page";
 import ThinkPagesHomePage, { metadata as homeMetadata } from "~/app/thinkpages/page";
-import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
+import { ForumHome } from "~/components/thinkpages-forum/home";
 
 const mockRedirect = jest.mocked(redirect);
 const mockPermanentRedirect = jest.mocked(permanentRedirect);
@@ -251,15 +251,18 @@ type RealmParam = string | string[] | undefined;
 const realmParams = (realm: RealmParam) => ({ searchParams: Promise.resolve({ realm }) });
 
 describe("/thinkpages is the forum home", () => {
-  it.each<[RealmParam, string | undefined]>([
-    ["eurth", "eurth"],
-    [["x", "y"], "x"],
-    ["", undefined],
-    [undefined, undefined],
-  ])("opens the realm section from ?realm=%j", async (realm, expected) => {
+  it.each<[RealmParam]>([[""], [undefined]])("shows the home for ?realm=%j", async (realm) => {
     const page = await ThinkPagesHomePage(realmParams(realm));
-    expect(page.type).toBe(CategoryList);
-    expect(page.props).toEqual({ realm: expected });
+    expect(page.type).toBe(ForumHome);
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it.each<[RealmParam, string]>([
+    ["eurth", "/thinkpages/r/eurth/hub"],
+    [["x", "y"], "/thinkpages/r/x/hub"],
+    ["a&b=c", "/thinkpages/r/a%26b%3Dc/hub"],
+  ])("opens that realm's Hub from ?realm=%j", async (realm, target) => {
+    await expect(ThinkPagesHomePage(realmParams(realm))).rejects.toThrow(`redirect:${target}`);
   });
 
   it("is titled ThinkPages", () => {

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { forumHomeHref } from "~/lib/thinkpages-forum/links";
+import { hubHref } from "~/lib/thinkpages-forum/links";
 
 interface RealmSwitcherProps {
   realms: ReadonlyArray<{ slug: string; name: string }>;
@@ -16,11 +16,11 @@ interface RealmSwitcherProps {
   value: string;
 }
 
-/** Picks the realm section the forum home shows; the choice lives in `?realm=` so it survives reloads. */
+/** Picks a realm to read: opens that realm's Hub board. */
 export function RealmSwitcher({ realms, value }: RealmSwitcherProps) {
   const router = useRouter();
   return (
-    <Select value={value} onValueChange={(slug) => router.replace(forumHomeHref(slug))}>
+    <Select value={value} onValueChange={(slug) => router.push(hubHref(slug))}>
       <SelectTrigger size="sm" aria-label="Realm">
         <SelectValue />
       </SelectTrigger>

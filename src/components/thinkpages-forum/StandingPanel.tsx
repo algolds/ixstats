@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { UserCircle } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import { formatBanDate } from "~/lib/thinkpages-forum/moderation-policy";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { type RouterOutputs } from "~/trpc/react";
 import { AppealDialog } from "./AppealDialog";
+import { RailPanel } from "./shell";
 
 type Standing = RouterOutputs["thinkpagesForum"]["myStanding"];
 type Warning = Standing["warnings"][number];
@@ -56,7 +57,7 @@ interface RowProps {
 
 function StandingRow({ title, reason, detail, appeal, onAppeal }: RowProps) {
   return (
-    <li className="flex items-start gap-3 px-4 py-3">
+    <li className="flex items-start gap-3 py-3">
       <div className="min-w-0 flex-1 space-y-0.5">
         <p className="text-headline text-label flex flex-wrap items-center gap-2">{title}</p>
         <p className="text-callout text-label break-words">{reason}</p>
@@ -72,40 +73,35 @@ function StandingRow({ title, reason, detail, appeal, onAppeal }: RowProps) {
   );
 }
 
+/** Whether a standing has anything to show: a member in good standing gets no panel. */
+export function hasStanding(data: Standing | undefined): data is Standing {
+  return !!data && data.warnings.length + data.bans.length + data.appeals.length > 0;
+}
+
 /**
- * The member's own warnings, bans and appeals (M20), on the forum home at `#standing` where ban notices link:
- * nothing for a member in good standing. Never who issued or reviewed anything; the server sends no such field.
+ * The member's own warnings, bans and appeals (M20), as a rail panel on the forum home at `#standing` where ban
+ * notices link. Never who issued or reviewed anything; the server sends no such field. When the link was `#standing`
+ * the panel scrolls into view once it mounts (it only exists after the standing loads).
  */
-export function StandingCard() {
-  const { data } = api.thinkpagesForum.myStanding.useQuery();
+export function StandingPanel({ standing }: { standing: Standing }) {
   const [appealing, setAppealing] = useState<Subject | null>(null);
-  const card = useRef<HTMLDivElement>(null);
-  const scrolled = useRef(false);
-  const hasStanding = !!data && data.warnings.length + data.bans.length + data.appeals.length > 0;
 
-  // The `#standing` link (a ban notice's Appeal) points at a card that only exists once the data loads: scroll to
-  // it then, once, so a refetch leaves the reader where they are.
   useEffect(() => {
-    if (!hasStanding || scrolled.current || window.location.hash !== "#standing") return;
-    card.current?.scrollIntoView({ block: "start" });
-    scrolled.current = true;
-  }, [hasStanding]);
+    if (window.location.hash === "#standing") {
+      document.getElementById("standing")?.scrollIntoView({ block: "start" });
+    }
+  }, []);
 
-  if (!data || !hasStanding) return null;
-
-  const shown = new Set([...data.warnings.map((w) => w.id), ...data.bans.map((b) => b.id)]);
-  const others = data.appeals.filter((a) => !shown.has(a.subjectId));
+  const shown = new Set([...standing.warnings.map((w) => w.id), ...standing.bans.map((b) => b.id)]);
+  const others = standing.appeals.filter((a) => !shown.has(a.subjectId));
 
   return (
-    <Card ref={card} content="data" id="standing" className="scroll-mt-24 overflow-hidden">
-      <div className="space-y-1 px-4 pt-4 pb-3">
-        <h2 className="text-title-3 text-label">Your standing</h2>
-        <p className="text-footnote text-label-secondary tabular-nums">
-          {`Active warning points: ${data.activePoints}`}
-        </p>
-      </div>
-      <ul className="divide-separator border-separator divide-y border-t">
-        {data.warnings.map((w) => (
+    <RailPanel title="Your standing" icon={<UserCircle />} id="standing">
+      <p className="text-footnote text-label-secondary tabular-nums">
+        {`Active warning points: ${standing.activePoints}`}
+      </p>
+      <ul className="divide-separator mt-2 divide-y">
+        {standing.warnings.map((w) => (
           <StandingRow
             key={w.id}
             title={points(w.points)}
@@ -115,7 +111,7 @@ export function StandingCard() {
             onAppeal={w.canAppeal ? () => setAppealing({ type: "warning", id: w.id }) : null}
           />
         ))}
-        {data.bans.map((b) => (
+        {standing.bans.map((b) => (
           <StandingRow
             key={b.id}
             title={
@@ -133,7 +129,7 @@ export function StandingCard() {
           />
         ))}
         {others.map((a) => (
-          <li key={a.id} className="space-y-0.5 px-4 py-3">
+          <li key={a.id} className="space-y-0.5 py-3">
             <p className="text-headline text-label">{`Your appeal of a ${a.subjectType ?? "decision"}`}</p>
             <AppealLine appeal={a} />
           </li>
@@ -149,6 +145,6 @@ export function StandingCard() {
           }}
         />
       ) : null}
-    </Card>
+    </RailPanel>
   );
 }

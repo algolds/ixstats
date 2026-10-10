@@ -183,17 +183,35 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
     </button>
   ),
   DropdownMenuSeparator: () => <hr />,
+  DropdownMenuRadioGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuRadioItem: ({ children }: { children: React.ReactNode }) => (
+    <button type="button" role="menuitemradio">
+      {children}
+    </button>
+  ),
 }));
 
 import { BanDialog, banScopeOptions } from "~/components/thinkpages-forum/BanDialog";
 import { BanNotice } from "~/components/thinkpages-forum/BanNotice";
-import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
+import { BoardPage } from "~/components/thinkpages-forum/board";
 import type { ModContext } from "~/components/thinkpages-forum/mod/ModRow";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
-import { StandingCard } from "~/components/thinkpages-forum/StandingCard";
-import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
+import { hasStanding, StandingPanel } from "~/components/thinkpages-forum/StandingPanel";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
+
+// A board's rail sits in the Inspector, which asks the viewport: narrow, so its panels stay out of these tests.
+beforeAll(() => {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+});
 
 const { results, mutations, invalidations, resolvePost } =
   jest.requireMock<MockApi>("~/trpc/react");
@@ -509,9 +527,9 @@ describe("moderator tools", () => {
         authors,
       },
     });
-    render(<ThreadList categoryKey="general" page={1} />);
-    const hidden = screen.getByRole("link", { name: /Thread t_hidden/ });
-    const shown = screen.getByRole("link", { name: /Thread t_shown/ });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    const hidden = screen.getByRole("row", { name: /Thread t_hidden/ });
+    const shown = screen.getByRole("row", { name: /Thread t_shown/ });
     expect(within(hidden).getByText("Hidden")).toBeInTheDocument();
     expect(within(shown).queryByText("Hidden")).toBeNull();
   });
@@ -869,13 +887,13 @@ describe("ban notices", () => {
     const category = { key: "general", name: "General", description: null, icAllowed: false };
     const base = { category, threads: [], total: 0, canStart: false, authors };
     set("category", { data: { ...base, notice: BAN, banned: true } });
-    const { rerender } = render(<ThreadList categoryKey="general" page={1} />);
+    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByText(BAN)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Appeal" })).toBeInTheDocument();
 
     const plain = "Only staff can start threads here.";
     set("category", { data: { ...base, notice: plain, banned: false } });
-    rerender(<ThreadList categoryKey="general" page={1} />);
+    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByText(plain)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Appeal" })).toBeNull();
   });
@@ -943,8 +961,7 @@ describe("standing", () => {
   it("lists a warning as text and appeals it", async () => {
     const appeal = jest.fn(() => Promise.resolve({ id: "a1" }));
     mutations.appeal = appeal;
-    set("myStanding", { data: standing });
-    const { container } = render(<StandingCard />);
+    const { container } = render(<StandingPanel standing={standing as never} />);
     const card = container.querySelector("#standing");
     expect(card).not.toBeNull();
     expect(screen.getByRole("heading", { name: "Your standing" })).toBeInTheDocument();
@@ -963,18 +980,13 @@ describe("standing", () => {
     );
   });
 
-  it("scrolls the card into view once when the link was #standing, after its data loads", () => {
+  it("scrolls the panel into view once when the link was #standing, when it mounts", () => {
     const scrollIntoView = jest.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     window.location.hash = "#standing";
-    set("myStanding", { data: undefined });
-    const { rerender } = render(<StandingCard />);
-    expect(scrollIntoView).not.toHaveBeenCalled();
-    set("myStanding", { data: standing });
-    rerender(<StandingCard />);
+    const { rerender } = render(<StandingPanel standing={standing as never} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    set("myStanding", { data: { ...standing } });
-    rerender(<StandingCard />);
+    rerender(<StandingPanel standing={{ ...standing } as never} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     window.location.hash = "";
   });
@@ -983,39 +995,14 @@ describe("standing", () => {
     const scrollIntoView = jest.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     window.location.hash = "";
-    set("myStanding", { data: standing });
-    render(<StandingCard />);
+    render(<StandingPanel standing={standing as never} />);
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it("renders nothing for a member in good standing", () => {
-    set("myStanding", { data: { activePoints: 0, warnings: [], bans: [], appeals: [] } });
-    const { container } = render(<StandingCard />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("puts the standing card and the Moderation link on the forum home", () => {
-    auth.isSignedIn = true;
-    set("categories", { data: [] });
-    set("realms", { data: { defaultSlug: "ixworld", realms: [] } });
-    set("realmSection", { isLoading: true });
-    set("myStanding", { data: standing });
-    set("context", { data: { ...NO_MOD, realms: [{ id: "r1", slug: "eurth", name: "Eurth" }] } });
-    render(<CategoryList />);
-    expect(screen.getByRole("heading", { name: "Your standing" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Moderation" })).toHaveAttribute(
-      "href",
-      "/thinkpages/mod"
-    );
-  });
-
-  it("offers no Moderation link to members who moderate nothing", () => {
-    auth.isSignedIn = true;
-    set("categories", { data: [] });
-    set("realms", { data: { defaultSlug: "ixworld", realms: [] } });
-    set("realmSection", { isLoading: true });
-    render(<CategoryList />);
-    expect(screen.queryByRole("link", { name: "Moderation" })).toBeNull();
+  it("has no panel for a member in good standing", () => {
+    expect(hasStanding(undefined)).toBe(false);
+    expect(hasStanding({ activePoints: 0, warnings: [], bans: [], appeals: [] })).toBe(false);
+    expect(hasStanding(standing as never)).toBe(true);
   });
 });
 

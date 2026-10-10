@@ -46,7 +46,9 @@ jest.mock("~/trpc/react", () => {
       thinkpagesForum: {
         categories: query("categories"),
         realms: query("realms"),
-        realmSection: query("realmSection"),
+        forumStats: query("forumStats"),
+        trending: query("trending"),
+        navFlags: query("navFlags"),
         category: query("category"),
         thread: query("thread"),
         reply: mutation("reply"),
@@ -109,8 +111,7 @@ jest.mock("~/hooks/useNotify", () => ({
 }));
 
 import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
-import { CategoryList } from "~/components/thinkpages-forum/CategoryList";
-import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
+import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import ForumHomePage from "~/app/thinkpages/page";
@@ -129,6 +130,19 @@ const authors = {
 
 const EURTH = { slug: "eurth", name: "Eurth" };
 const HUB = { key: "hub", name: "Hub", description: "Realm talk", icAllowed: false, realm: EURTH };
+
+function thread() {
+  return {
+    id: "t1",
+    title: "A thread",
+    authorUserId: "u1",
+    authorPersonaId: null,
+    pinned: false,
+    locked: false,
+    postCount: 2,
+    lastPostAt: new Date(),
+  };
+}
 
 function threadData(
   overrides: { locked?: boolean; canReply?: boolean; realm?: typeof EURTH } = {}
@@ -197,27 +211,22 @@ function crumbs() {
     .map((link) => [link.textContent, link.getAttribute("href")]);
 }
 
-const realmSection = {
-  realm: { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active" },
-  categories: [
-    {
-      key: "hub",
-      name: "Hub",
-      description: "Realm talk",
-      icAllowed: false,
-      postRole: "any",
-      threadCount: 4,
-      lastPostAt: null,
-    },
-  ],
-  canPost: true,
-  notice: null,
-};
-const realmList = { defaultSlug: "ixworld", realms: [{ id: "r_eurth", ...EURTH }] };
-
 function set(name: string, result: QueryResult) {
   results[name] = result;
 }
+
+// A board's rail sits in the Inspector, which asks the viewport: narrow, so its panels stay out of these tests.
+beforeAll(() => {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -225,43 +234,22 @@ beforeEach(() => {
 });
 
 describe("forum home", () => {
-  it("lists the categories it is given, linking to each", () => {
-    set("categories", {
-      data: [
-        { key: "general", name: "General", description: "Talk", threadCount: 2, lastPostAt: null },
-        {
-          key: "side-games",
-          name: "Side Games",
-          description: null,
-          threadCount: 1,
-          lastPostAt: null,
-        },
-      ],
-    });
-    render(<CategoryList />);
+  it("renders the forum home without a realm", async () => {
+    set("categories", { data: [] });
+    render(await ForumHomePage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /General/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/c/general"
-    );
-    expect(screen.getByRole("link", { name: /Side Games/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/c/side-games"
-    );
-    expect(screen.getByText("1 thread")).toBeInTheDocument();
+    expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("also shows the realm section, opening the realm in ?realm=", async () => {
+  it("opens an old ?realm= link on that realm's Hub", async () => {
+    await ForumHomePage({ searchParams: Promise.resolve({ realm: "eurth" }) });
+    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/eurth/hub");
+  });
+
+  it("treats an empty ?realm= as none", async () => {
     set("categories", { data: [] });
-    set("realms", { data: realmList });
-    set("realmSection", { data: realmSection });
-    render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "eurth" }) }));
-    expect(inputs.realmSection).toEqual({ realm: "eurth" });
-    expect(screen.getByRole("heading", { level: 2, name: "Eurth" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Hub/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth/hub"
-    );
+    render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "" }) }));
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("sends /thinkpages/r/<realm> to the home with that realm", async () => {
@@ -273,32 +261,32 @@ describe("forum home", () => {
 describe("category view", () => {
   it("shows New thread only when canStart", () => {
     set("category", { data: categoryData(false) });
-    const { rerender } = render(<ThreadList categoryKey="general" page={1} />);
+    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
     expect(screen.getByText("No threads yet")).toBeInTheDocument();
     expect(screen.getByText("Be the first to post")).toBeInTheDocument();
 
     set("category", { data: categoryData(true) });
-    rerender(<ThreadList categoryKey="general" page={1} />);
-    expect(screen.getByRole("link", { name: /New thread/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/c/general/new"
-    );
+    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    // In the header, and in the empty board.
+    const links = screen.getAllByRole("link", { name: /New thread/ });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toHaveAttribute("href", "/thinkpages/c/general/new");
   });
 
   it("explains why New thread is missing with the category's notice", () => {
     const notice = "Your nation is muted on this board until Jan 1.";
     set("category", { data: categoryData(false, [], undefined, notice) });
-    const { rerender } = render(<ThreadList categoryKey="general" page={1} />);
+    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByText(notice)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
 
     set("category", { data: categoryData(true, [], undefined, notice) });
-    rerender(<ThreadList categoryKey="general" page={1} />);
+    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByText(notice)).toBeNull();
 
     set("category", { data: categoryData(false) });
-    rerender(<ThreadList categoryKey="general" page={1} />);
+    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByText(notice)).toBeNull();
   });
 
@@ -317,16 +305,16 @@ describe("category view", () => {
         },
       ]),
     });
-    render(<ThreadList categoryKey="general" page={1} />);
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByText("<i>Hi</i>")).toBeInTheDocument();
     expect(screen.getByText("Aria Vance")).toBeInTheDocument();
     expect(screen.queryByText("Hidden Player")).toBeNull();
-    expect(screen.getByText("2 replies")).toBeInTheDocument();
+    expect(within(screen.getByRole("row", { name: /<i>Hi<\/i>/ })).getByText("2")).toBeInTheDocument();
   });
 
   it("breadcrumbs a sitewide category up to ThinkPages; the title alone names the category (U5)", () => {
     set("category", { data: categoryData(false) });
-    render(<ThreadList categoryKey="general" page={1} />);
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(crumbs()).toEqual([["ThinkPages", "/thinkpages"]]);
     // The trail stops above the page; the header keeps a back link to the forum home for when it has scrolled away.
     expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
@@ -335,9 +323,9 @@ describe("category view", () => {
   });
 
   it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
-    set("category", { data: categoryData(true, [], HUB) });
-    render(<ThreadList categoryKey="hub" realm="eurth" page={1} />);
-    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });
+    set("category", { data: categoryData(true, [thread()], HUB) });
+    render(<BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />);
+    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth", sort: "latest" });
     expect(screen.getByRole("link", { name: /New thread/ })).toHaveAttribute(
       "href",
       "/thinkpages/r/eurth/hub/new"
@@ -435,7 +423,7 @@ describe("thread view", () => {
 describe("load failures and out-of-range pages", () => {
   it("says Category not found only for NOT_FOUND", () => {
     set("category", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
-    render(<ThreadList categoryKey="secret" page={1} />);
+    render(<BoardPage categoryKey="secret" page={1} sort="latest" />);
     expect(screen.getByText("Category not found")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
       "href",
@@ -451,7 +439,7 @@ describe("load failures and out-of-range pages", () => {
       error: { data: { code: "INTERNAL_SERVER_ERROR" } },
       refetch,
     });
-    render(<ThreadList categoryKey="general" page={1} />);
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByText("Category not found")).toBeNull();
     expect(screen.getByText("Could not load this page")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -474,7 +462,7 @@ describe("load failures and out-of-range pages", () => {
 
   it("sends a category page past the end to the last page", () => {
     set("category", { data: { ...categoryData(false), total: 30 } });
-    render(<ThreadList categoryKey="general" page={5} />);
+    render(<BoardPage categoryKey="general" page={5} sort="latest" />);
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/c/general?page=2");
     expect(screen.queryByText("No threads yet")).toBeNull();
   });
@@ -488,7 +476,7 @@ describe("load failures and out-of-range pages", () => {
 
   it("keeps an empty category on its page without redirecting", () => {
     set("category", { data: categoryData(false) });
-    render(<ThreadList categoryKey="general" page={3} />);
+    render(<BoardPage categoryKey="general" page={3} sort="latest" />);
     expect(router.replace).not.toHaveBeenCalled();
     expect(screen.getByText("No threads yet")).toBeInTheDocument();
   });
@@ -585,7 +573,7 @@ describe("imported authors (phase 4)", () => {
         },
       ]),
     });
-    render(<ThreadList categoryKey="general" page={1} />);
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByText("OldName")).toBeInTheDocument();
   });
 
@@ -630,55 +618,11 @@ describe("imported threads and the old-forum archive (phase 4)", () => {
         { id: "t2", title: "New thread", ...row, xenforoThreadId: null },
       ]),
     });
-    render(<ThreadList categoryKey="general" page={1} />);
-    const old = screen.getByRole("link", { name: /Old thread/ });
-    const fresh = screen.getByRole("link", { name: /New thread/ });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    const old = screen.getByRole("row", { name: /Old thread/ });
+    const fresh = screen.getByRole("row", { name: /New thread/ });
     expect(within(old).getByText("Imported")).toBeInTheDocument();
     expect(within(fresh).queryByText("Imported")).toBeNull();
-  });
-
-  const site = (key: string, name: string) => ({
-    key,
-    name,
-    description: null,
-    threadCount: 5,
-    lastPostAt: null,
-  });
-
-  it("groups archive categories under From the old forum, after the regular ones", () => {
-    set("categories", {
-      data: [site("xf-12", "Old Roleplay"), site("general", "General"), site("xf-3", "Old Chat")],
-    });
-    render(<CategoryList />);
-    const heading = screen.getByRole("heading", { level: 2, name: "From the old forum" });
-    const general = screen.getByRole("link", { name: /General/ });
-    const archived = screen.getByRole("link", { name: /Old Roleplay/ });
-    expect(archived).toHaveAttribute("href", "/thinkpages/c/xf-12");
-    expect(screen.getByRole("link", { name: /Old Chat/ })).toBeInTheDocument();
-    // document order: regular category, then the heading, then the archive rows
-    expect(
-      general.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(
-      heading.compareDocumentPosition(archived) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    // the archive rows are not in the regular list
-    expect(general.closest("ul")).not.toContainElement(archived);
-  });
-
-  it("hides the old-forum group when there are no archive categories", () => {
-    set("categories", { data: [site("general", "General")] });
-    render(<CategoryList />);
-    expect(screen.queryByText("From the old forum")).toBeNull();
-  });
-
-  it("shows only the old-forum group when nothing else is visible", () => {
-    set("categories", { data: [site("xf-12", "Old Roleplay")] });
-    render(<CategoryList />);
-    expect(
-      screen.getByRole("heading", { level: 2, name: "From the old forum" })
-    ).toBeInTheDocument();
-    expect(screen.queryByText("No categories yet")).toBeNull();
   });
 });
 

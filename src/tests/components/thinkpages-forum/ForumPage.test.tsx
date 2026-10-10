@@ -85,6 +85,69 @@ describe("ForumPage", () => {
   });
 });
 
+describe("ForumPage back link and rail hash", () => {
+  afterEach(() => {
+    window.location.hash = "";
+  });
+
+  it("passes the header's back link through", () => {
+    installViewport(true);
+    render(
+      <ForumPage title="Hub" back={{ href: "/thinkpages", label: "ThinkPages" }}>
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
+  });
+
+  it("opens the rail sheet on a narrow viewport when the URL carries the hash", () => {
+    installViewport(false);
+    window.location.hash = "#standing";
+    render(
+      <ForumPage title="Home" rail={<p>Rail content</p>} openRailOnHash="#standing">
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.getByRole("dialog")).toHaveTextContent("Rail content");
+  });
+
+  it("opens the sheet once the rail appears, and not for another hash or a wide viewport", () => {
+    installViewport(false);
+    window.location.hash = "#standing";
+    const { rerender, unmount } = render(
+      <ForumPage title="Home" openRailOnHash="#standing">
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    rerender(
+      <ForumPage title="Home" rail={<p>Rail content</p>} openRailOnHash="#standing">
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    unmount();
+
+    window.location.hash = "#other";
+    const other = render(
+      <ForumPage title="Home" rail={<p>Rail content</p>} openRailOnHash="#standing">
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    other.unmount();
+
+    installViewport(true);
+    window.location.hash = "#standing";
+    render(
+      <ForumPage title="Home" rail={<p>Rail content</p>} openRailOnHash="#standing">
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
 describe("RailPanel", () => {
   it("is a data pane with an icon title and its content", () => {
     const { container } = render(
@@ -92,7 +155,7 @@ describe("RailPanel", () => {
         <p>Be kind</p>
       </RailPanel>
     );
-    expect(screen.getByText("Board rules")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Board rules" })).toBeInTheDocument();
     expect(screen.getByText("Be kind")).toBeInTheDocument();
     expect(container.querySelector('[data-slot="card"]')).toHaveAttribute("data-content", "data");
   });

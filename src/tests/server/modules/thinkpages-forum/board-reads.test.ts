@@ -414,7 +414,13 @@ describe("listBoards", () => {
     const rows = await listBoards(db as never, null);
     expect(rows.map((r) => r.key)).not.toContain("staff");
     const row = rows.find((r) => r.key === "general")!;
-    expect(row).toMatchObject({ id: general.id, style: "ooc", threadCount: 4, postCount: 20 });
+    expect(row).toMatchObject({
+      id: general.id,
+      style: "ooc",
+      visibility: "public",
+      threadCount: 4,
+      postCount: 20,
+    });
     expect(row.latest).toEqual({
       threadId: "t_g",
       threadTitle: "General chat",
