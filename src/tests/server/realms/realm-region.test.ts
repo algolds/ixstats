@@ -32,7 +32,8 @@ function realmRow(overrides: Record<string, unknown> = {}) {
 
 /** A mock Prisma whose transactions run on the same mock (so their writes can be asserted). */
 function mockDb(): Db {
-  const db = createMockPrisma();
+  // $executeRaw: the forum's member lock that the board-power check takes inside the grant's transaction (M9).
+  const db = createMockPrisma({ $executeRaw: jest.fn(async () => 0) });
   db.$transaction.mockImplementation((cb: (tx: Db) => unknown) => cb(db));
   return db;
 }
@@ -176,6 +177,21 @@ describe("Manage permissions", () => {
       await callerAs(FOUNDER, holder).region.updateOfficer(appoint(["board"]));
       expect(holder.forumBan.findFirst).not.toHaveBeenCalled();
       expect(holder.realmOfficer.updateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("checks the bans inside the officer write's transaction, under the player's lock (M9)", async () => {
+      const db = bannedDb();
+      db.forumBan.findFirst.mockResolvedValue(null);
+      await callerAs(FOUNDER, db).region.appointOfficer(appoint(["board"]));
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      const [, key] = db.$executeRaw.mock.calls[0]!;
+      expect(key).toBe("forum-member:u_player");
+      expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        db.forumBan.findFirst.mock.invocationCallOrder[0]!
+      );
+      expect(db.forumBan.findFirst.mock.invocationCallOrder[0]).toBeLessThan(
+        db.realmOfficer.create.mock.invocationCallOrder[0]!
+      );
     });
 
     it("checks the founder's permission before the player's bans", async () => {

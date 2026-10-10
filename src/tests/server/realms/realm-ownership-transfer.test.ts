@@ -40,7 +40,8 @@ function realmRow(overrides: Record<string, unknown> = {}) {
 
 /** A mock Prisma holding one realm and active accounts for everyone but `inactive`. */
 function makeDb(realm = realmRow(), { inactive = [] as string[] } = {}): Db {
-  const db = createMockPrisma();
+  // $executeRaw: the forum's member lock that the new founder's board-power check takes (M9).
+  const db = createMockPrisma({ $executeRaw: jest.fn(async () => 0) });
   db.$transaction.mockImplementation((cb: (tx: Db) => unknown) => cb(db));
   db.realm.findUnique.mockImplementation(async ({ where }: any) =>
     where.slug === realm.slug || where.id === realm.id ? realm : null
@@ -258,6 +259,25 @@ describe("the new founder and forum bans (M9)", () => {
       })
     ).rejects.toMatchObject(BANNED);
     expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
+  it("checks the new founder's bans inside the handover's transaction, under their lock", async () => {
+    const db = bannedDb();
+    db.forumBan.findFirst.mockResolvedValue(null);
+    await callerAs(FOUNDER, db).region.handOver({
+      slug: "eurth",
+      newOwnerId: PLAYER,
+      confirmSlug: "eurth",
+      keepPreviousAsOfficer: false,
+    });
+    const [, key] = db.$executeRaw.mock.calls[0]!;
+    expect(key).toBe("forum-member:u_player");
+    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      db.forumBan.findFirst.mock.invocationCallOrder[0]!
+    );
+    expect(db.forumBan.findFirst.mock.invocationCallOrder[0]).toBeLessThan(
+      db.realm.update.mock.invocationCallOrder[0]!
+    );
   });
 
   it("hands it back to staff without a ban check", async () => {

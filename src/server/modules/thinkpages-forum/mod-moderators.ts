@@ -15,7 +15,13 @@ import type { RealmDb } from "./realm-access";
 
 export type ModeratorsDb = Pick<
   PrismaClient,
-  "user" | "forumBan" | "forumCategory" | "forumCategoryModerator" | "forumModLog" | "$transaction"
+  | "user"
+  | "forumBan"
+  | "forumCategory"
+  | "forumCategoryModerator"
+  | "forumModLog"
+  | "$transaction"
+  | "$executeRaw"
 > &
   RealmDb &
   AuthorsDb;
@@ -94,12 +100,13 @@ export async function setCategoryModerator(
   const { category } = await loadCategory(db, actor, input.locator);
   const member = await db.user.findUnique({ where: { id: input.userId }, select: { id: true } });
   if (!member) throw new ForumError("NOT_FOUND", "Member not found.");
-  if (input.grant) await assertCategoryRoleGrantable(db, member.id, category);
   const row = { categoryId: category.id, userId: member.id };
   const already = new ForumError("CONFLICT", "They already moderate this category.");
   try {
     await db.$transaction(async (tx) => {
       if (input.grant) {
+        // Under the member's lock (M9), as issueBan checks the member is no moderator under it.
+        await assertCategoryRoleGrantable(tx, member.id, category);
         if (await tx.forumCategoryModerator.findFirst({ where: row, select: { id: true } })) {
           throw already;
         }

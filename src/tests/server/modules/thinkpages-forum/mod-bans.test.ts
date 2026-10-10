@@ -165,6 +165,13 @@ function banDb(opts: { bans?: BanRow[]; ban?: BanRow | null } = {}) {
     forumModLog: { create: jest.fn(async () => ({ id: "never" })) },
     $transaction: jest.fn(async (fn: (t: typeof tx) => Promise<object | void>) => fn(tx)),
   };
+  // issueBan checks the member is sanctionable under their lock (M9), through the transaction client.
+  Object.assign(tx, {
+    user: db.user,
+    realm: db.realm,
+    realmOfficer: db.realmOfficer,
+    forumCategoryModerator: db.forumCategoryModerator,
+  });
   return { db, tx };
 }
 
@@ -340,6 +347,19 @@ describe("issueBan", () => {
       banId: "b_new",
       expiresAt: new Date(WAITED.getTime() + 7 * DAY_MS),
     });
+  });
+
+  it("checks the member is no moderator here under their lock, so a grant in flight is seen (M9)", async () => {
+    const { db, tx } = banDb();
+    await issueBan(db as never, realmMod, {
+      userId: "u_m",
+      scope: { kind: "realm", realmId: "r_eurth" },
+      reason: "Spam",
+      days: 3,
+    });
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      db.user.findUnique.mock.invocationCallOrder[0]!
+    );
   });
 
   it("refuses a second live ban at the same scope, checked under the member's lock (M-1)", async () => {

@@ -46,6 +46,21 @@ describe("setCategoryModerator refuses a member banned there or sitewide (M9)", 
     expect(store.logs).toEqual([]);
   });
 
+  it("checks the bans inside the grant's transaction, under the member's lock (M9)", async () => {
+    const store = storeWith();
+    await grant(store, "general");
+    const [strings, key] = store.tx.$executeRaw.mock.calls[0]!;
+    expect(strings.join("?")).toBe("SELECT pg_advisory_xact_lock(hashtext(?))");
+    expect(key).toBe("forum-member:u_m");
+    expect(store.db.$transaction).toHaveBeenCalledTimes(1);
+    expect(store.tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      store.tx.forumBan.findMany.mock.invocationCallOrder[0]!
+    );
+    expect(store.tx.forumBan.findMany.mock.invocationCallOrder[0]).toBeLessThan(
+      store.tx.forumCategoryModerator.create.mock.invocationCallOrder[0]!
+    );
+  });
+
   it("grants despite warnings, finished bans and bans elsewhere", async () => {
     const store = storeWith({
       warnings: [warning("w1", { points: 5 })],
@@ -91,6 +106,16 @@ describe("assertBoardGrantable (M9, a realm's board power)", () => {
     await expect(
       assertBoardGrantable(store.db as never, "r_eurth", "member")
     ).rejects.toMatchObject(REFUSED);
+  });
+
+  it("takes the member's lock (by their User.id) before reading their bans (M9)", async () => {
+    const store = storeWith();
+    await assertBoardGrantable(store.tx as never, "r_eurth", "member");
+    const [, key] = store.tx.$executeRaw.mock.calls[0]!;
+    expect(key).toBe("forum-member:u_m");
+    expect(store.tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      store.tx.forumBan.findFirst.mock.invocationCallOrder[0]!
+    );
   });
 
   it("allows warnings, finished bans, bans elsewhere and players with no IxStats account", async () => {

@@ -205,11 +205,12 @@ export async function issueBan(
   const reason = modReason(input.reason);
   const days = banDays(input.days);
   const { issuer, realmId } = await resolveBanScope(db, actor, input.scope);
-  await assertSanctionable(db, input.userId, "banned", (target) =>
-    canActInScope(target, input.scope, realmId)
-  );
   return db.$transaction(async (tx) => {
     await lockMember(tx, input.userId);
+    // Under the lock (M9): a moderator role granted meanwhile is seen here, as a grant sees a ban issued meanwhile.
+    await assertSanctionable(tx, input.userId, "banned", (target) =>
+      canActInScope(target, input.scope, realmId)
+    );
     // After the lock: a wait must not date the ban, or the duplicate check, from before it.
     const now = new Date();
     await assertNoLiveBan(tx, input.userId, input.scope, now);

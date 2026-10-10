@@ -3,7 +3,7 @@
  * embassies and the realm poll — each gated by `requireRealmStaff` — plus a player leaving a
  * realm with one of their nations.
  */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   embassyPairKey,
   MAX_OFFICERS,
@@ -166,9 +166,14 @@ async function requireRealmNationOwner(db: ActionDb, realmId: string, clerkUserI
 
 /**
  * Refuses giving a player (Clerk id) a realm's `board` power, i.e. forum moderation there. The router supplies the
- * forum's check (M9: no active forum ban in the realm or sitewide), which this module cannot import.
+ * forum's check (M9: no active forum ban in the realm or sitewide), which this module cannot import. It runs inside
+ * the grant's transaction, under the member's lock.
  */
-export type BoardGrantGuard = (realmId: string, clerkUserId: string) => Promise<void>;
+export type BoardGrantGuard = (
+  tx: Prisma.TransactionClient,
+  realmId: string,
+  clerkUserId: string
+) => Promise<void>;
 
 export async function appointRealmOfficer(
   db: ActionDb,
@@ -184,15 +189,17 @@ export async function appointRealmOfficer(
   if (input.userId === realm.ownerId)
     throw new RealmRegionError("BAD_REQUEST", "The founder already holds every power");
   await requireRealmNationOwner(db, realm.id, input.userId);
-  if (input.powers.includes("board")) await guardBoard(realm.id, input.userId);
-  await db.realmOfficer.create({
-    data: {
-      realmId: realm.id,
-      userId: input.userId,
-      title: input.title.trim(),
-      powers: [...new Set(input.powers)],
-      appointedBy: actor.clerkUserId,
-    },
+  await db.$transaction(async (tx) => {
+    if (input.powers.includes("board")) await guardBoard(tx, realm.id, input.userId);
+    await tx.realmOfficer.create({
+      data: {
+        realmId: realm.id,
+        userId: input.userId,
+        title: input.title.trim(),
+        powers: [...new Set(input.powers)],
+        appointedBy: actor.clerkUserId,
+      },
+    });
   });
   return { success: true };
 }
@@ -206,11 +213,14 @@ export async function updateRealmOfficer(
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "founder");
   const current = realm.officers.find((o) => o.userId === input.userId);
-  if (current && !current.powers.includes("board") && input.powers.includes("board"))
-    await guardBoard(realm.id, input.userId);
-  const { count } = await db.realmOfficer.updateMany({
-    where: { realmId: realm.id, userId: input.userId },
-    data: { title: input.title.trim(), powers: [...new Set(input.powers)] },
+  const addsBoard =
+    current !== undefined && !current.powers.includes("board") && input.powers.includes("board");
+  const { count } = await db.$transaction(async (tx) => {
+    if (addsBoard) await guardBoard(tx, realm.id, input.userId);
+    return tx.realmOfficer.updateMany({
+      where: { realmId: realm.id, userId: input.userId },
+      data: { title: input.title.trim(), powers: [...new Set(input.powers)] },
+    });
   });
   if (count === 0) throw new RealmRegionError("NOT_FOUND", "Officer not found");
   return { success: true };
