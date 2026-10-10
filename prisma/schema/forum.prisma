@@ -7,6 +7,8 @@
 /// The realm board (migration 20261014120000) adds the post reply and continued-thread links, and seeds each realm's hidden
 /// board category (style "board", key "board") with its one thread; every forum list, count and feed leaves it out
 /// (src/lib/thinkpages-forum/categories.ts, isBoardCategory).
+/// Unread, watch and mentions (migration 20261015120000) add forum_thread_reads, forum_readers, forum_thread_watches and
+/// forum_post_mentions; all expressible in Prisma, so a db push keeps them.
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
@@ -59,6 +61,9 @@ model ForumThread {
   posts              ForumPost[]
   /// Board messages that were turned into this thread (the placeholder posts that link to it).
   continuedFrom      ForumPost[]   @relation("PostContinuedThread")
+  /// What members have read of this thread, and who watches it (migration 20261015120000).
+  reads              ForumThreadRead[]
+  watches            ForumThreadWatch[]
 
   @@index([categoryId, pinned, lastPostAt])
   @@index([xenforoUserId])
@@ -95,6 +100,8 @@ model ForumPost {
   /// Board messages: the thread a message was continued in (this post is its placeholder link line); cleared when it goes.
   continuedThreadId  String?
   continuedThread    ForumThread? @relation("PostContinuedThread", fields: [continuedThreadId], references: [id], onDelete: SetNull)
+  /// Who this post has already mentioned (an edit notifies only new mentions).
+  mentions           ForumPostMention[]
 
   @@index([threadId, createdAt])
   @@index([replyToPostId])
@@ -227,4 +234,50 @@ model ForumAppeal {
   @@index([userId])
   @@index([scope, scopeId, status, createdAt])
   @@map("forum_appeals")
+}
+
+/// What a member has read of a thread: the `lastPostAt` they have seen up to. A thread is unread when its lastPostAt is
+/// later than max(readAt, the member's allReadAt, 30 days ago). `userId` is a User.id.
+model ForumThreadRead {
+  userId   String
+  threadId String
+  thread   ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  readAt   DateTime
+
+  @@id([userId, threadId])
+  @@index([threadId])
+  @@map("forum_thread_reads")
+}
+
+/// "Mark all read": nothing before `allReadAt` is unread for the member.
+model ForumReader {
+  userId    String   @id
+  allReadAt DateTime
+
+  @@map("forum_readers")
+}
+
+/// A member watching a thread. `notifiedAt` is set when a reply notified them and cleared when they next open the
+/// thread (told once until visited).
+model ForumThreadWatch {
+  userId     String
+  threadId   String
+  thread     ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  notifiedAt DateTime?
+
+  @@id([userId, threadId])
+  @@index([threadId])
+  @@map("forum_thread_watches")
+}
+
+/// Who a post has mentioned (the recipient's User.id): an edit notifies only the mentions it adds.
+model ForumPostMention {
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime  @default(now())
+
+  @@id([postId, userId])
+  @@map("forum_post_mentions")
 }
