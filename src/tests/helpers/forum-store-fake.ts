@@ -26,7 +26,7 @@ export interface StoreState {
   postTemplates: Row[];
 }
 
-const OPERATORS = ["in", "notIn", "not", "gt", "has", "startsWith", "contains"];
+const OPERATORS = ["in", "notIn", "not", "gt", "lt", "has", "startsWith", "contains"];
 
 const isRow = (value: Value): value is Row =>
   value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
@@ -42,6 +42,9 @@ function matchOperator(actual: Value, cond: Row): boolean {
   if (Array.isArray(cond.notIn) && cond.notIn.some((v) => same(actual, v))) return false;
   if ("not" in cond && same(actual, cond.not)) return false;
   if (cond.gt instanceof Date && !(actual instanceof Date && actual > cond.gt)) return false;
+  if (cond.lt instanceof Date && !(actual instanceof Date && actual < cond.lt)) return false;
+  if (typeof cond.lt === "string" && !(typeof actual === "string" && actual < cond.lt))
+    return false;
   if (typeof cond.gt === "string" && !(typeof actual === "string" && actual > cond.gt))
     return false;
   if ("has" in cond && !(Array.isArray(actual) && actual.some((v) => same(v, cond.has))))

@@ -5,6 +5,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { AppError } from "~/lib/app-error";
 import { requireWikiUserId, requireWikiUserIds, type WikiAuthContext } from "~/lib/wiki-os/auth";
 import { MAX_PAGE } from "~/lib/thinkpages-forum/paging";
 import {
@@ -27,9 +28,20 @@ export const categoryKey = z.string().regex(/^[a-z0-9-]{2,40}$/);
 /** A realm slug, bounded as in realms/region.ts. */
 export const realm = z.string().min(1).max(100);
 
+/**
+ * ForumError 1:1 to TRPCError. A rate-limit wait travels as structured error data: the cause is an AppError, which the
+ * tRPC error formatter publishes as `data.context` (`{ retryAfterSeconds }`).
+ */
 export function mapError(error: Error): never {
-  if (error instanceof ForumError)
-    throw new TRPCError({ code: error.code, message: error.message });
+  if (error instanceof ForumError) {
+    const cause =
+      error.retryAfterSeconds === undefined
+        ? undefined
+        : new AppError("RATE_LIMITED", error.message, {
+            retryAfterSeconds: error.retryAfterSeconds,
+          });
+    throw new TRPCError({ code: error.code, message: error.message, cause });
+  }
   throw error;
 }
 

@@ -24,6 +24,8 @@ export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
 const SITE_SCOPE = { scope: "site", realmId: null } as const;
 
+const PLACED = { id: true, visibility: true, scope: true, realmId: true } as const;
+
 interface PlacedCategory {
   id: string;
   scope: string;
@@ -222,7 +224,9 @@ export async function loadVisibleThread(db: ReadsDb, viewer: ForumViewer, thread
     where: { id: threadId },
     select: { ...THREAD_FIELDS, category: true },
   });
-  if (!row || !canSeeThread(viewer, row, row.category)) throw notFound("Thread");
+  // The realm board's thread is no thread page: its messages are read through board.ts.
+  if (!row || isBoardCategory(row.category) || !canSeeThread(viewer, row, row.category))
+    throw notFound("Thread");
   const realm = await visibleRealmOf(db, viewer, row.category);
   if (realm === undefined) throw notFound("Thread");
   const { category, ...thread } = row;
@@ -295,14 +299,15 @@ export async function resolvePostLocation(
         select: {
           authorUserId: true,
           hidden: true,
-          category: { select: { id: true, visibility: true, scope: true, realmId: true } },
+          category: { select: { ...PLACED, key: true, style: true } },
         },
       },
     },
   });
   if (!post) return null;
   const { category } = post.thread;
-  if (!canSeeThread(viewer, post.thread, category)) return null;
+  // A board message has no thread page: its permalink resolves through `boardPostRealm`.
+  if (isBoardCategory(category) || !canSeeThread(viewer, post.thread, category)) return null;
   if (post.hidden && !canModerateCategory(viewer, category)) return null;
   if ((await visibleRealmOf(db, viewer, category)) === undefined) return null;
   const before = await db.forumPost.count({

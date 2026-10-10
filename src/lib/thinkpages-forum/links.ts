@@ -43,6 +43,12 @@ export function categoryHref(category: CategoryPlace): string {
   return realm ? `/thinkpages/r/${seg(realm.slug)}/${seg(key)}` : `/thinkpages/c/${seg(key)}`;
 }
 
+/** A realm's landing page, where its live board is; `postId` anchors one message. */
+export function realmBoardHref(realmSlug: string, postId?: string): string {
+  const path = `/thinkpages/r/${seg(realmSlug)}`;
+  return postId ? `${path}#post-${seg(postId)}` : path;
+}
+
 /** A realm's Hub, where its forum section starts. */
 export function hubHref(realmSlug: string): string {
   return categoryHref({ key: REALM_HUB_KEY, realm: { slug: realmSlug } });

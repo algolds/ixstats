@@ -5,7 +5,9 @@
  * server, on the page that viewer's thread view shows.
  */
 import type { PrismaClient } from "@prisma/client";
+import type { BoardPostLocation, PostLocation } from "~/lib/thinkpages-forum/permalink";
 import {
+  boardPostRealm,
   resolvePostLocation,
   type ForumViewer,
   type ReadsDb,
@@ -28,12 +30,16 @@ export async function viewerForClerkUser(
   return viewerOf(db, user);
 }
 
-/** Where the post sits for this viewer, or null: an id over the input bound, or a post they may not see. */
+/**
+ * Where the post sits for this viewer: its thread page, or for a realm board message the realm landing. Null for an
+ * id over the input bound, or a post they may not see.
+ */
 export async function locatePostFor(
   db: PermalinkDb,
   clerkUserId: string | null,
   postId: string
-): Promise<{ threadId: string; page: number } | null> {
+): Promise<PostLocation | BoardPostLocation | null> {
   if (!id.safeParse(postId).success) return null;
-  return resolvePostLocation(db, await viewerForClerkUser(db, clerkUserId), postId);
+  const viewer = await viewerForClerkUser(db, clerkUserId);
+  return (await resolvePostLocation(db, viewer, postId)) ?? boardPostRealm(db, viewer, postId);
 }

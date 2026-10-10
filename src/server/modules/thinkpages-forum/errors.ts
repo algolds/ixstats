@@ -3,11 +3,12 @@ import { Prisma } from "@prisma/client";
 export type ForumErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
 
-/** A refusal the router maps 1:1 to a TRPCError. */
+/** A refusal the router maps 1:1 to a TRPCError. `retryAfterSeconds`: how long until a rate-limited retry may succeed. */
 export class ForumError extends Error {
   constructor(
     public readonly code: ForumErrorCode,
-    message: string
+    message: string,
+    public readonly retryAfterSeconds?: number
   ) {
     super(message);
     this.name = "ForumError";

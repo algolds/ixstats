@@ -12,6 +12,7 @@ import { THREAD_SORTS } from "~/lib/thinkpages-forum/thread-sort";
 import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
 import {
   createTRPCRouter,
+  mergeRouters,
   protectedProcedure,
   publicProcedure,
   rateLimitedMutationProcedure,
@@ -54,6 +55,7 @@ import {
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
+import { thinkpagesForumBoardRouter } from "./board";
 import {
   actorOf,
   authorMaps,
@@ -101,7 +103,7 @@ async function moderatorView(
   };
 }
 
-export const thinkpagesForumRouter = createTRPCRouter({
+const forumRouter = createTRPCRouter({
   /** The Forums home: visible sitewide boards with counts, style and latest post. */
   categories: publicProcedure.query(async ({ ctx }) =>
     listBoards(ctx.db, await viewerOf(ctx.db, ctx.user))
@@ -375,3 +377,6 @@ export const thinkpagesForumRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
 });
+
+/** The forum procedures plus the realm board's (./board.ts). */
+export const thinkpagesForumRouter = mergeRouters(forumRouter, thinkpagesForumBoardRouter);

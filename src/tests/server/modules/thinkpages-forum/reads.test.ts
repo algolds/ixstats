@@ -403,7 +403,9 @@ describe("resolvePostLocation", () => {
     expect(db.forumPost.findUnique.mock.calls[0][0].select.thread.select).toEqual({
       authorUserId: true,
       hidden: true,
-      category: { select: { id: true, visibility: true, scope: true, realmId: true } },
+      category: {
+        select: { id: true, key: true, style: true, visibility: true, scope: true, realmId: true },
+      },
     });
     expect(db.forumPost.count).not.toHaveBeenCalled();
     await expect(resolvePostLocation(inDraft() as never, null, "p9")).resolves.toBeNull();

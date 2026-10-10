@@ -9,6 +9,7 @@
  * post, and another member's Reports thread (M8), read as not found.
  */
 import type { PrismaClient } from "@prisma/client";
+import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import {
   ActionLinkError,
   syncPostActionLinks,
@@ -56,7 +57,7 @@ export type WritesDb = Pick<
 const LOCKED_CHAIN_STATUSES = ["submitted", "approved"];
 const TEAM_ONLY = "Only the team can post in this category.";
 
-function prepareTitle(raw: string): string {
+export function prepareTitle(raw: string): string {
   const title = raw.trim();
   if (title.length < TITLE_MIN || title.length > TITLE_MAX) {
     throw new ForumError("BAD_REQUEST", `A title is ${TITLE_MIN} to ${TITLE_MAX} characters.`);
@@ -139,7 +140,7 @@ async function realmOfThread(
   return realm;
 }
 
-async function resolvePersona(
+export async function resolvePersona(
   db: WritesDb,
   actor: ForumActor,
   category: { icAllowed: boolean },
@@ -199,7 +200,13 @@ export async function replyToThread(
     where: { id: input.threadId },
     include: { category: true },
   });
-  if (!thread || thread.hidden || !canSeeThread(actor, thread, thread.category)) {
+  // The realm board takes messages through postBoardMessage only.
+  if (
+    !thread ||
+    thread.hidden ||
+    isBoardCategory(thread.category) ||
+    !canSeeThread(actor, thread, thread.category)
+  ) {
     throw new ForumError("NOT_FOUND", "Thread not found.");
   }
   const realm = await realmOfThread(db, actor, thread.category, "Thread");
@@ -266,16 +273,26 @@ export async function editPost(
           locked: true,
           archived: true,
           category: {
-            select: { id: true, visibility: true, postRole: true, scope: true, realmId: true },
+            select: {
+              id: true,
+              key: true,
+              style: true,
+              visibility: true,
+              postRole: true,
+              scope: true,
+              realmId: true,
+            },
           },
         },
       },
     },
   });
+  // A board message is edited through editBoardMessage (the author) or the moderator edit.
   if (
     !post ||
     post.hidden ||
     post.thread.hidden ||
+    isBoardCategory(post.thread.category) ||
     !canSeeThread(actor, post.thread, post.thread.category)
   ) {
     throw new ForumError("NOT_FOUND", "Post not found.");

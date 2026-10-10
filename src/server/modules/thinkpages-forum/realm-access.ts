@@ -97,7 +97,7 @@ export interface RealmPostingAccess {
 const ARCHIVED_NOTICE = "This realm is archived: its forum can be read but no longer changes.";
 
 /** IxWorld is never archived, whatever its row says. */
-const isArchived = (realm: ForumRealm): boolean =>
+export const isArchived = (realm: ForumRealm): boolean =>
   realm.status === "archived" && !isRealmOpen(realm.id, realm.status);
 
 function refused(
