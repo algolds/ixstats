@@ -25,13 +25,17 @@ const THREAD = {
 };
 
 function fakeDb(threads: object[], firstPost: object | null = null) {
-  const findMany = jest.fn<() => Promise<object[]>>().mockResolvedValue(threads);
-  const findFirst = jest.fn<() => Promise<object | null>>().mockResolvedValue(threads[0] ?? null);
+  const findMany = jest.fn<(args: object) => Promise<object[]>>().mockResolvedValue(threads);
+  const findFirst = jest
+    .fn<(args: object) => Promise<object | null>>()
+    .mockResolvedValue(threads[0] ?? null);
   const db = {
     forumThread: { findMany, findFirst },
-    forumPost: { findFirst: jest.fn<() => Promise<object | null>>().mockResolvedValue(firstPost) },
+    forumPost: {
+      findFirst: jest.fn<(args: object) => Promise<object | null>>().mockResolvedValue(firstPost),
+    },
     realm: {
-      findMany: jest.fn<() => Promise<object[]>>().mockResolvedValue([
+      findMany: jest.fn<(args: object) => Promise<object[]>>().mockResolvedValue([
         { id: "r_active", status: "active" },
         { id: "r_old", status: "archived" },
         { id: "r_draft", status: "draft" },
@@ -40,12 +44,12 @@ function fakeDb(threads: object[], firstPost: object | null = null) {
     },
     user: {
       findMany: jest
-        .fn<() => Promise<object[]>>()
+        .fn<(args: object) => Promise<object[]>>()
         .mockResolvedValue([{ id: "u1", handle: "jane", wikiUsername: null, country: null }]),
     },
     thinkpagesAccount: {
       findMany: jest
-        .fn<() => Promise<object[]>>()
+        .fn<(args: object) => Promise<object[]>>()
         .mockResolvedValue([{ id: "pa1", displayName: "Herald", username: "herald" }]),
     },
   };
@@ -56,10 +60,7 @@ const PUBLIC_WHERE = {
   hidden: false,
   category: {
     visibility: { in: ["public"] },
-    OR: [
-      { scope: "site" },
-      { scope: "realm", realmId: { in: ["default", "r_active", "r_old"] } },
-    ],
+    OR: [{ scope: "site" }, { scope: "realm", realmId: { in: ["default", "r_active", "r_old"] } }],
   },
 };
 

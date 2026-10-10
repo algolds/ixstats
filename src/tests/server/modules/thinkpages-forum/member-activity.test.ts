@@ -9,10 +9,10 @@ import {
 function fakeDb(found: object | null = null) {
   return {
     forumPost: {
-      count: jest.fn<() => Promise<number>>().mockResolvedValue(12),
-      findFirst: jest.fn<() => Promise<object | null>>().mockResolvedValue(found),
+      count: jest.fn<(args: object) => Promise<number>>().mockResolvedValue(12),
+      findFirst: jest.fn<(args: object) => Promise<object | null>>().mockResolvedValue(found),
     },
-    forumThread: { count: jest.fn<() => Promise<number>>().mockResolvedValue(3) },
+    forumThread: { count: jest.fn<(args: object) => Promise<number>>().mockResolvedValue(3) },
   };
 }
 

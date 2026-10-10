@@ -48,7 +48,7 @@ describe("activities.getGlobalFeed forum slice", () => {
     );
     const { activities } = await caller.getGlobalFeed({ filter: "community", limit: 20 });
 
-    expect(latestPublicThreads).toHaveBeenCalledWith(db, 20);
+    expect(latestPublicThreads).toHaveBeenCalledWith(db as never, 20);
     const forum = activities.filter((a: { source: string }) => a.source === "forum");
     expect(forum).toHaveLength(2);
     expect(forum[0]).toMatchObject({
