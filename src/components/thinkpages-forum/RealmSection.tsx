@@ -99,7 +99,9 @@ export function RealmSection({ realm, switcher = false }: RealmSectionProps) {
   const name = current?.realm.name ?? listed?.name ?? "Realm";
   // A realm opened by URL may be unlisted (D14); keep it selectable so the trigger shows its name.
   const options =
-    realms.data && !listed && current ? [{ slug, name }, ...realms.data.realms] : realms.data?.realms;
+    realms.data && !listed && current
+      ? [{ slug, name }, ...realms.data.realms]
+      : realms.data?.realms;
 
   return (
     <Card content="navigation" className="overflow-hidden">
@@ -110,7 +112,11 @@ export function RealmSection({ realm, switcher = false }: RealmSectionProps) {
         </div>
         {switcher && options ? <RealmSwitcher realms={options} value={slug} /> : null}
       </div>
-      <div aria-busy={switching} className={switching ? "opacity-60" : undefined}>
+      {/* While another realm loads, the old realm's rows stay in place, dimmed, and take no clicks. */}
+      <div
+        aria-busy={switching}
+        className={switching ? "pointer-events-none opacity-60" : undefined}
+      >
         <SectionBody
           section={section.data}
           notFound={UNAVAILABLE.has(section.error?.data?.code ?? "")}

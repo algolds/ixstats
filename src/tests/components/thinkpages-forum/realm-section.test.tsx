@@ -188,11 +188,19 @@ describe("RealmSection", () => {
     // The new realm's name, the old realm's rows dimmed and busy, no verdict that belongs to the old realm.
     expect(screen.getByRole("heading", { level: 2, name: "Other" })).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("other");
-    expect(screen.getByRole("link", { name: /Hub/ }).closest("[aria-busy]")).toHaveAttribute(
-      "aria-busy",
-      "true"
-    );
+    const busy = screen.getByRole("link", { name: /Hub/ }).closest("[aria-busy]");
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    // The old realm's rows take no clicks while the new one loads (review #9).
+    expect(busy).toHaveClass("pointer-events-none");
     expect(screen.queryByText(NO_NATION)).toBeNull();
+  });
+
+  it("lets the rows take clicks again once the realm has loaded", () => {
+    results.realmSection = { data: section(false, NO_NATION) };
+    render(<RealmSection realm="eurth" />);
+    const hub = screen.getByRole("link", { name: /Hub/ });
+    expect(hub.closest('[aria-busy="true"]')).toBeNull();
+    expect(hub.closest(".pointer-events-none")).toBeNull();
   });
 
   it("shows any other notice without the claim link", () => {
