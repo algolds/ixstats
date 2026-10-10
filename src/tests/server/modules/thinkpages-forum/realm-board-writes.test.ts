@@ -1,6 +1,10 @@
 /** @jest-environment node */
+jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
+  withMentionLinks: jest.fn(async (_db: object, body: object) => body),
+}));
 import { BOARD_TOO_LONG } from "~/lib/thinkpages-forum/board";
 import { MAX_POST_HTML } from "~/server/modules/thinkpages-forum";
+import { withMentionLinks } from "~/server/modules/thinkpages-forum/mention-links";
 import { continueInThread } from "~/server/modules/thinkpages-forum/board-continue";
 import {
   editBoardMessage,
@@ -75,6 +79,32 @@ describe("postBoardMessage", () => {
     const store = boardStore();
     await expect(post(store, founder, {})).resolves.toMatchObject({ isVisitor: false });
     await expect(post(store, admin, {})).resolves.toBeDefined();
+  });
+
+  it("stores the message with the mention links added, after the 1,000 character check", async () => {
+    const linked = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
+    jest.mocked(withMentionLinks).mockImplementationOnce((async (_db: object, body: object) => ({
+      ...body,
+      contentHtml: linked,
+    })) as never);
+    const store = boardStore();
+    const message = await post(store, member, { html: "<p>Hi @kir</p>" });
+    expect(postIn(store, message.id)).toMatchObject({ contentHtml: linked, plainText: "Hi @kir" });
+    expect(withMentionLinks).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ plainText: "Hi @kir" })
+    );
+  });
+
+  it("refuses an over-long message before looking any name up", async () => {
+    jest.mocked(withMentionLinks).mockClear();
+    const store = boardStore();
+    await expect(
+      post(store, member, { html: `<p>${"@kir ".repeat(300)}</p>` })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(withMentionLinks).not.toHaveBeenCalled();
   });
 
   describe("access", () => {
@@ -379,6 +409,17 @@ describe("editBoardMessage", () => {
     expect(message).toMatchObject({ id: "fresh", contentHtml: "<p>Edited <b>text</b></p>" });
     expect(message.editedAt).toBeInstanceOf(Date);
     expect(postIn(store, "fresh")).toMatchObject({ plainText: "Edited text" });
+  });
+
+  it("stores an edit with the mention links added", async () => {
+    const linked = '<p><a class="forum-mention" href="/id/kir">@kir</a></p>';
+    jest.mocked(withMentionLinks).mockImplementationOnce((async (_db: object, body: object) => ({
+      ...body,
+      contentHtml: linked,
+    })) as never);
+    const store = withMine();
+    await edit(store, member, "fresh", "<p>@kir</p>");
+    expect(postIn(store, "fresh")).toMatchObject({ contentHtml: linked, plainText: "@kir" });
   });
 
   it("refuses after 15 minutes, changing nothing", async () => {

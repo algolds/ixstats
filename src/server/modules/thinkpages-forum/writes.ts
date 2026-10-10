@@ -18,6 +18,7 @@ import {
 import type { RealmActor } from "~/server/modules/realms";
 import { canSeeThread } from "./access";
 import { ForumError } from "./errors";
+import { withMentionLinks } from "./mention-links";
 import { assertNotBanned } from "./mod-bans";
 import { loadCategory, visibleRealmOf } from "./reads";
 import { postingAccessFor, type ForumRealm, type PostableCategory } from "./realm-access";
@@ -45,6 +46,7 @@ export type WritesDb = Pick<
   | "forumPost"
   | "forumPostTemplate"
   | "thinkpagesAccount"
+  | "user"
   | "activityFeed"
   | "postActionLink"
   | "realm"
@@ -174,7 +176,7 @@ export async function createThread(
     authorPersonaId: await resolvePersona(db, actor, category, input.personaId),
   };
   // After every access check: a render spends the shared MediaWiki engine (P-1).
-  const body = await bodyFromInput(input, "new", actor.id);
+  const body = await withMentionLinks(db, await bodyFromInput(input, "new", actor.id));
   await validateLinks(db, actor, body.plainText);
   const now = new Date();
   const { threadId, postId } = await db.$transaction(async (tx) => {
@@ -217,7 +219,7 @@ export async function replyToThread(
     authorUserId: actor.id,
     authorPersonaId: await resolvePersona(db, actor, thread.category, input.personaId),
   };
-  const body = await bodyFromInput(input, thread.id, actor.id);
+  const body = await withMentionLinks(db, await bodyFromInput(input, thread.id, actor.id));
   await validateLinks(db, actor, body.plainText);
   const now = new Date();
   const postId = await db.$transaction(async (tx) => {
@@ -308,7 +310,7 @@ export async function editPost(
   assertEditor(post.contentWikitext !== null, input.wikitext !== undefined);
   if (await inLockedChain(db, post.id))
     throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
-  const body = await bodyFromInput(input, post.threadId, actor.id);
+  const body = await withMentionLinks(db, await bodyFromInput(input, post.threadId, actor.id));
   await validateLinks(db, actor, body.plainText);
   const written = await db.$transaction(async (tx) => {
     const { count } = await tx.forumPost.updateMany({

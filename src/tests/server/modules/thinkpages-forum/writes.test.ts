@@ -2,6 +2,9 @@
 jest.mock("~/server/modules/thinkpages-forum/render", () => ({
   renderPostWikitext: jest.fn(),
 }));
+jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
+  withMentionLinks: jest.fn(async (_db: object, body: object) => body),
+}));
 import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   createThread,
@@ -9,6 +12,7 @@ import {
   ForumError,
   replyToThread,
 } from "~/server/modules/thinkpages-forum";
+import { withMentionLinks } from "~/server/modules/thinkpages-forum/mention-links";
 import { renderPostWikitext } from "~/server/modules/thinkpages-forum/render";
 import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
@@ -1201,5 +1205,47 @@ describe("Canvas wikitext writes", () => {
       expect(tx.forumPostTemplate.deleteMany).not.toHaveBeenCalled();
       expect(tx.forumPostTemplate.createMany).not.toHaveBeenCalled();
     });
+  });
+});
+
+const LINKED = '<p><a class="forum-mention" href="/id/kir">@kir</a></p>';
+const linkedBody = async (_db: object, body: object) => ({ ...body, contentHtml: LINKED });
+
+describe("mention links at save", () => {
+  it("stores a new thread's first post with the links added", async () => {
+    jest.mocked(withMentionLinks).mockImplementationOnce(linkedBody as never);
+    const { db, tx } = writeDb();
+    await createThread(db as never, user, { ...NEW_THREAD, html: "<p>@kir</p>" });
+    expect(tx.forumPost.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ contentHtml: LINKED, plainText: "@kir" }),
+    });
+  });
+
+  it("stores a reply with the links added", async () => {
+    jest.mocked(withMentionLinks).mockImplementationOnce(linkedBody as never);
+    const { db, tx } = writeDb({ thread: threadIn("general") });
+    await replyToThread(db as never, user, { threadId: "t1", html: "<p>@kir</p>" });
+    expect(tx.forumPost.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ contentHtml: LINKED }),
+    });
+  });
+
+  it("stores an edit with the links added", async () => {
+    jest.mocked(withMentionLinks).mockImplementationOnce(linkedBody as never);
+    const { db } = writeDb({ post: postBy("u_p") });
+    await editPost(db as never, user, { postId: "p1", html: "<p>@kir</p>", editedAt: null });
+    expect(db.forumPost.updateMany.mock.calls[0]![0].data.contentHtml).toBe(LINKED);
+  });
+
+  it("links the sanitized body, so the links are the last thing added to it", async () => {
+    const { db } = writeDb();
+    await createThread(db as never, user, {
+      ...NEW_THREAD,
+      html: '<p onclick="x()">@kir</p><script>1</script>',
+    });
+    expect(withMentionLinks).toHaveBeenLastCalledWith(
+      db,
+      expect.objectContaining({ contentHtml: "<p>@kir</p>" })
+    );
   });
 });

@@ -127,3 +127,44 @@ it("selects stale post ids with the renderer version and limit bound", async () 
   expect(values).toEqual(["forum-1:v", 7]);
   expect(strings.join("?")).toContain('"contentWikitext" IS NOT NULL');
 });
+
+const LINKED = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
+const RENDERED = {
+  plainText: "Hi @kir",
+  rendererVersion: "forum-1:v",
+  renderedAt: new Date(),
+  templates: [],
+};
+
+function withNames(db: ReturnType<typeof fakeDb>["db"]) {
+  return {
+    ...db,
+    user: { findMany: jest.fn(async (_args: object) => [{ id: "u_kir", handle: "kir" }]) },
+    thinkpagesAccount: { findMany: jest.fn(async (_args: object) => []) },
+  };
+}
+
+it("adds the mention links to what it re-renders, and queries no name for a post without an @", async () => {
+  rerender.mockResolvedValue({ ...RENDERED, contentHtml: "<p>Hi @kir</p>" });
+  const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "Hi @kir" }]);
+  const names = withNames(db);
+  await rerenderPosts(names as never, ["p1"]);
+  expect(updates[0]).toMatchObject({ id: "p1", contentHtml: LINKED });
+
+  rerender.mockResolvedValue({ ...RENDERED, contentHtml: "<p>new</p>", plainText: "new" });
+  names.user.findMany.mockClear();
+  await rerenderPosts(names as never, ["p1"]);
+  expect(names.user.findMany).not.toHaveBeenCalled();
+});
+
+it("does not keep a mention link the render carried: only the ones it makes itself", async () => {
+  rerender.mockResolvedValue({
+    ...RENDERED,
+    contentHtml: '<p><a class="forum-mention" href="/id/victim">@victim</a> @kir</p>',
+  });
+  const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
+  await rerenderPosts(withNames(db) as never, ["p1"]);
+  expect(updates[0]?.contentHtml).toBe(
+    '<p><a href="/id/victim">@victim</a> <a class="forum-mention" href="/id/kir">@kir</a></p>'
+  );
+});

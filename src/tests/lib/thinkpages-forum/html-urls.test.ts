@@ -44,6 +44,8 @@ describe("rebaseRootRelativeUrls", () => {
     "/api/download/external-image?x=1",
     "/@aria",
     "/r/urcea",
+    "/id/kir",
+    "/dashboard/profile/Aria_V",
   ])("rebases the app path %s", (url) => {
     expect(rebaseRootRelativeUrls(`<a href="${url}">x</a>`, prefix)).toBe(
       `<a href="/p${url}">x</a>`
@@ -58,16 +60,23 @@ describe("rebaseRootRelativeUrls", () => {
       "/api/",
       "/@",
       "/r/",
+      "/id/",
+      "/dashboard/profile/",
     ]);
   });
 
-  it.each(["/wiki/Foo", "/countries/x", "/", "/imagesx/a.png", "/\\evil.com/x", "//evil.com/x"])(
-    "leaves %s alone",
-    (url) => {
-      const html = `<a href="${url}">x</a>`;
-      expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
-    }
-  );
+  it.each([
+    "/wiki/Foo",
+    "/countries/x",
+    "/dashboard/feed",
+    "/",
+    "/imagesx/a.png",
+    "/\\evil.com/x",
+    "//evil.com/x",
+  ])("leaves %s alone", (url) => {
+    const html = `<a href="${url}">x</a>`;
+    expect(rebaseRootRelativeUrls(html, prefix)).toBe(html);
+  });
 
   describe("with withBasePath under /projects/ixstates", () => {
     const saved = { ...process.env };

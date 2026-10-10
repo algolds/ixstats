@@ -11,7 +11,7 @@ const ATTRIBUTE = /(\s+)([^\s"'>/=]+)(?:(\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+))?/g
 const URL_ATTRIBUTES = new Set(["src", "href"]);
 /**
  * Root-relative paths the app itself serves under its base path: uploaded and downloaded images, forum and
- * ThinkPages pages (mention links included), API routes, member profiles (`/@handle`) and realms (`/r/…`). Anything
+ * ThinkPages pages (mention links included), API routes, member profiles (`/@handle`, `/id/<handle>`), persona profiles (`/dashboard/profile/<username>`) and realms (`/r/…`). Anything
  * else stays as written: notably `/wiki/…`, which opens MediaWiki at the site root.
  */
 export const APP_PATH_PREFIXES = [
@@ -21,6 +21,8 @@ export const APP_PATH_PREFIXES = [
   "/api/",
   "/@",
   "/r/",
+  "/id/",
+  "/dashboard/profile/",
 ] as const;
 // An `<img>` tag's double-quoted `src` (the sanitizer and the editor both write double quotes).
 const IMAGE_SRC = /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="([^"]*)"/gi;

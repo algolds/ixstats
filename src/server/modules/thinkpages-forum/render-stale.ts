@@ -5,12 +5,16 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { db as appDb } from "~/server/db";
+import { withMentionLinks } from "./mention-links";
 import { FORUM_RENDERER_VERSION, renderViaWiki } from "./render";
 import { writeTemplates } from "./writes-body";
 
 const BATCH = 10;
 
-export type StaleDb = Pick<PrismaClient, "forumPost" | "forumPostTemplate" | "$transaction">;
+export type StaleDb = Pick<
+  PrismaClient,
+  "forumPost" | "forumPostTemplate" | "$transaction" | "user" | "thinkpagesAccount"
+>;
 
 export async function staleForumPostIds(
   db: Pick<PrismaClient, "$queryRaw">,
@@ -51,12 +55,17 @@ export async function rerenderPosts(
       failed += 1;
       continue;
     }
+    // The renderer knows nothing of members: the mention links are added to every render, as at save.
+    const { contentHtml } = await withMentionLinks(db, {
+      contentHtml: out.contentHtml,
+      contentWikitext: source,
+    });
     // Written only if the author has not edited the post since it was read: an edit has its own fresh render.
     const written = await db.$transaction(async (tx) => {
       const { count } = await tx.forumPost.updateMany({
         where: { id: post.id, contentWikitext: source },
         data: {
-          contentHtml: out.contentHtml,
+          contentHtml,
           plainText: out.plainText,
           rendererVersion: out.rendererVersion,
           renderedAt: out.renderedAt,

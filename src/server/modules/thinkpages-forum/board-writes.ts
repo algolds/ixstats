@@ -26,6 +26,7 @@ import {
 import { BOARD_POST_SELECT, shapeBoardMessages, type BoardMessage } from "./board-messages";
 import { loadBoard, type BoardReadsDb } from "./board";
 import { ForumError } from "./errors";
+import { withMentionLinks } from "./mention-links";
 import { visibleRealmOf } from "./reads";
 import { canSeeRealm, loadForumRealm } from "./realm-access";
 import {
@@ -131,7 +132,7 @@ export async function postBoardMessage(
   const access = await boardAccessFor(db, actor, place.realm, settings, place.category);
   assertCanPostOnBoard(access);
   const authorPersonaId = await resolvePersona(db, actor, place.category, input.personaId);
-  const body = boardBody(input.html);
+  const body = await withMentionLinks(db, boardBody(input.html));
   if (input.replyToPostId) await assertReplyTarget(db, place.threadId, input.replyToPostId);
   await validateLinks(db, actor, body.plainText);
   await enforceSlowMode(db, actor, place.threadId, settings, access);
@@ -204,7 +205,7 @@ export async function editBoardMessage(
   if (await inLockedChain(db, post.id)) {
     throw new ForumError("CONFLICT", "This message is part of a submitted story chain");
   }
-  const body = boardBody(input.html);
+  const body = await withMentionLinks(db, boardBody(input.html));
   await validateLinks(db, actor, body.plainText);
   const { count } = await db.forumPost.updateMany({
     where: { id: post.id, editedAt: post.editedAt },
