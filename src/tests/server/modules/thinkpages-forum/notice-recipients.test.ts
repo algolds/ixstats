@@ -74,4 +74,63 @@ describe("readableUsers", () => {
       "u_founder",
     ]);
   });
+
+  describe("who moderates, looked up for the whole list", () => {
+    const modDb = (over: { founded?: string[]; officers?: string[]; moderators?: string[] }) => ({
+      realm: {
+        findMany: jest.fn(async (_args: object) =>
+          (over.founded ?? []).map((ownerId) => ({ ownerId }))
+        ),
+      },
+      realmOfficer: {
+        findMany: jest.fn(async (_args: object) =>
+          (over.officers ?? []).map((userId) => ({ userId }))
+        ),
+      },
+      forumCategoryModerator: {
+        findMany: jest.fn(async (_args: object) =>
+          (over.moderators ?? []).map((userId) => ({ userId }))
+        ),
+      },
+    });
+    const reports = (realmId: string | null) =>
+      place({
+        category: {
+          id: "cat",
+          scope: realmId ? "realm" : "site",
+          realmId,
+          visibility: "reporter_staff",
+        },
+      });
+    const users = [plain, author, founder];
+
+    it("lets a category moderator, a realm founder and a board officer read a Reports thread", async () => {
+      const mods = modDb({ founded: ["clerk_u_founder"], officers: ["clerk_u_plain"] });
+      const readable = await readableUsers(mods as never, reports("r1"), users);
+      expect(readable.map((u) => u.id)).toEqual(["u_plain", "u_author", "u_founder"]);
+      const catMods = modDb({ moderators: ["u_plain"] });
+      expect(
+        (await readableUsers(catMods as never, reports(null), users)).map((u) => u.id)
+      ).toEqual(["u_plain", "u_author"]);
+    });
+
+    it("asks once per kind for everybody, never per user, and skips the realm queries off a realm", async () => {
+      const mods = modDb({});
+      await readableUsers(mods as never, reports("r1"), [admin, ...users]);
+      expect(mods.realm.findMany).toHaveBeenCalledTimes(1);
+      expect(mods.realm.findMany).toHaveBeenCalledWith({
+        where: {
+          id: "r1",
+          ownerId: { in: ["clerk_u_plain", "clerk_u_author", "clerk_u_founder"] },
+        },
+        select: { ownerId: true },
+      });
+      expect(mods.realmOfficer.findMany).toHaveBeenCalledTimes(1);
+      expect(mods.forumCategoryModerator.findMany).toHaveBeenCalledTimes(1);
+      const site = modDb({});
+      await readableUsers(site as never, reports(null), users);
+      expect(site.realm.findMany).not.toHaveBeenCalled();
+      expect(site.realmOfficer.findMany).not.toHaveBeenCalled();
+    });
+  });
 });

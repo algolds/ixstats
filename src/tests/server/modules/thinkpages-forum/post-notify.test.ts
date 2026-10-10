@@ -64,6 +64,20 @@ interface Where {
   OR?: [{ id: { in: string[] } }, { clerkUserId: { in: string[] } }];
   id?: { in: string[] };
 }
+interface StoredPost {
+  id: string;
+  threadId: string;
+  hidden: boolean;
+  authorUserId: string | null;
+  authorPersonaId?: string | null;
+}
+interface QuoteWhere {
+  id: { in: string[] };
+  threadId: string;
+  hidden: boolean;
+  authorUserId: { not: null };
+}
+
 interface Setup {
   html?: string;
   category?: object;
@@ -74,6 +88,8 @@ interface Setup {
   sourceRef?: string | null;
   replyToPostId?: string | null;
   quoted?: object[];
+  /** Stored posts a quote can point at: the fake honours the lookup's `where` over these. */
+  store?: StoredPost[];
   replyTarget?: object | null;
   existing?: string[];
   personaOwners?: Array<{ username: string; clerkUserId: string }>;
@@ -103,7 +119,19 @@ function build(setup: Setup = {}) {
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         where.id === "p1" ? post : (setup.replyTarget ?? null)
       ),
-      findMany: jest.fn(async (_args: object) => setup.quoted ?? []),
+      findMany: jest.fn(async ({ where }: { where: QuoteWhere }) =>
+        setup.store
+          ? setup.store
+              .filter(
+                (row) =>
+                  where.id.in.includes(row.id) &&
+                  row.threadId === where.threadId &&
+                  row.hidden === where.hidden &&
+                  row.authorUserId !== null
+              )
+              .map((row) => ({ authorUserId: row.authorUserId }))
+          : (setup.quoted ?? [])
+      ),
     },
     forumPostMention: {
       findMany: jest.fn(async () => (setup.existing ?? []).map((userId) => ({ userId }))),
@@ -319,6 +347,102 @@ describe("quotes and board replies", () => {
     sent.mockResolvedValueOnce(false);
     await run({ html: `<p>${link("kir")}</p>` });
     expect([...watchers.mock.calls[0]![1].handled]).toEqual([]);
+  });
+
+  it("lets a member who refuses mentions keep the quote notice they were owed", async () => {
+    refusing.mockResolvedValue(["clerk_kir"]);
+    await run({
+      html: `${quoting("p0")}<p>${link("kir")}</p>`,
+      quoted: [{ authorUserId: "u_kir" }],
+    });
+    expect(notices()).toEqual([
+      expect.objectContaining({
+        clerkUserId: "clerk_kir",
+        title: "actorhandle quoted your post in Trade talks",
+        metadata: { kind: "quote", postId: "p1", threadId: "t1" },
+      }),
+    ]);
+    expect([...watchers.mock.calls[0]![1].handled]).toEqual(["u_kir"]);
+  });
+
+  it("lets a member who refuses mentions keep the board reply they were owed", async () => {
+    refusing.mockResolvedValue(["clerk_kir"]);
+    await run({
+      category: boardCategory,
+      html: `<p>${link("kir")}</p>`,
+      replyToPostId: "p0",
+      replyTarget: { authorUserId: "u_kir", hidden: false },
+    });
+    expect(notices()).toEqual([
+      expect.objectContaining({
+        clerkUserId: "clerk_kir",
+        title: "actorhandle replied to you on the Eurth board",
+        metadata: { kind: "reply", postId: "p1", threadId: "t1" },
+      }),
+    ]);
+  });
+
+  it("tells a member who refuses mentions nothing when the mention was all they were owed", async () => {
+    refusing.mockResolvedValue(["clerk_kir"]);
+    await run({ html: `<p>${link("kir")}</p>` });
+    expect(notices()).toEqual([]);
+    expect([...watchers.mock.calls[0]![1].handled]).toEqual([]);
+  });
+
+  it("skips a member who blocks the author for a quote and for a board reply", async () => {
+    blocking.mockResolvedValue(["clerk_kir"]);
+    await run({ html: quoting("p0"), quoted: [{ authorUserId: "u_kir" }] });
+    await run({
+      category: boardCategory,
+      replyToPostId: "p0",
+      replyTarget: { authorUserId: "u_kir", hidden: false },
+    });
+    expect(notices()).toEqual([]);
+  });
+
+  it("tells the owner of a persona-authored post that was quoted or replied to", async () => {
+    await run({
+      html: quoting("p0"),
+      store: [
+        {
+          id: "p0",
+          threadId: "t1",
+          hidden: false,
+          authorUserId: "u_owner",
+          authorPersonaId: "pa9",
+        },
+      ],
+    });
+    await run({
+      category: boardCategory,
+      replyToPostId: "p0",
+      replyTarget: { authorUserId: "u_owner", authorPersonaId: "pa9", hidden: false },
+    });
+    expect(notices().map((n) => [n.clerkUserId, n.metadata.kind])).toEqual([
+      ["clerk_owner", "quote"],
+      ["clerk_owner", "reply"],
+    ]);
+    expect(notices().every((n) => n.title.startsWith("actorhandle "))).toBe(true);
+  });
+
+  it("ignores a forged quote of a hidden post, of a post in another thread, or of an imported post", async () => {
+    const { db } = await run({
+      html: [quoting("p_hidden"), quoting("p_other"), quoting("p_imported")].join(""),
+      store: [
+        { id: "p_hidden", threadId: "t1", hidden: true, authorUserId: "u_kir" },
+        { id: "p_other", threadId: "t2", hidden: false, authorUserId: "u_bob" },
+        { id: "p_imported", threadId: "t1", hidden: false, authorUserId: null },
+      ],
+    });
+    expect(db.forumPost.findMany).toHaveBeenCalledTimes(1);
+    expect(notices()).toEqual([]);
+  });
+
+  it("looks up at most 5 quoted posts", async () => {
+    const ids = ["p1a", "p2a", "p3a", "p4a", "p5a", "p6a", "p7a"];
+    const { db } = await run({ html: ids.map(quoting).join("") });
+    const [[lookup]] = db.forumPost.findMany.mock.calls;
+    expect(lookup.where.id.in).toEqual(ids.slice(0, 5));
   });
 
   it("tells the author of the message a board message replies to, on the realm's board", async () => {

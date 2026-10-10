@@ -76,9 +76,20 @@ interface NoticeContext {
   subject: NoticeSubject;
 }
 
-function raise(intents: Map<string, Kind>, userId: string, kind: Kind): void {
-  const current = intents.get(userId);
-  if (!current || RANK[kind] > RANK[current]) intents.set(userId, kind);
+/** Every reason a member has to be told about this post; the strongest that survives their privacy is the notice. */
+type Intents = Map<string, Set<Kind>>;
+
+function raise(intents: Intents, userId: string, kind: Kind): void {
+  const kinds = intents.get(userId);
+  if (kinds) kinds.add(kind);
+  else intents.set(userId, new Set([kind]));
+}
+
+/** The highest-ranked of `kinds` (mention, then quote, then reply), or null when none is left. */
+function strongest(kinds: ReadonlySet<Kind>): Kind | null {
+  let best: Kind | null = null;
+  for (const kind of kinds) if (best === null || RANK[kind] > RANK[best]) best = kind;
+  return best;
 }
 
 /** The members the post's own mention links name that it has not mentioned before; records them. */
@@ -86,7 +97,7 @@ async function addMentions(
   db: NotifyDb,
   post: NoticePost,
   actor: NoticeActor,
-  intents: Map<string, Kind>
+  intents: Intents
 ): Promise<void> {
   const names = mentionAnchorNames(post.contentHtml).slice(0, MENTION_MAX_PER_POST);
   if (names.length === 0) return;
@@ -117,11 +128,7 @@ async function addMentions(
 }
 
 /** The authors of the posts this one quotes: same thread, visible, with an author (a persona post's is its player). */
-async function addQuotes(
-  db: NotifyDb,
-  post: NoticePost,
-  intents: Map<string, Kind>
-): Promise<void> {
+async function addQuotes(db: NotifyDb, post: NoticePost, intents: Intents): Promise<void> {
   const ids = quotedPostIds(post.contentHtml);
   if (ids.length === 0) return;
   const quoted = await db.forumPost.findMany({
@@ -132,11 +139,7 @@ async function addQuotes(
 }
 
 /** The author of the board message this one replies to. */
-async function addBoardReply(
-  db: NotifyDb,
-  post: NoticePost,
-  intents: Map<string, Kind>
-): Promise<void> {
+async function addBoardReply(db: NotifyDb, post: NoticePost, intents: Intents): Promise<void> {
   if (!post.replyToPostId) return;
   const target = await db.forumPost.findUnique({
     where: { id: post.replyToPostId },
@@ -170,7 +173,7 @@ async function deliver(
   db: NotifyDb,
   actor: NoticeActor,
   context: NoticeContext,
-  intents: ReadonlyMap<string, Kind>
+  intents: ReadonlyMap<string, ReadonlySet<Kind>>
 ): Promise<Set<string>> {
   const told = new Set<string>();
   if (intents.size === 0) return told;
@@ -191,12 +194,20 @@ async function deliver(
     ),
     recipientsRefusing(db, actor.clerkUserId, mentioned, "mentions"),
   ]);
-  const skipped = new Set([...blocking, ...refusing]);
-  const recipients = readable.filter((user) => !skipped.has(user.clerkUserId));
-  const settled = await sendForumNotices(
-    recipients.map((user) => noticeFor(intents.get(user.id)!, context.subject, user.clerkUserId))
-  );
-  if (settled) for (const user of recipients) told.add(user.id);
+  const blocked = new Set(blocking);
+  const refusers = new Set(refusing);
+  // A member who refuses mentions loses only the mention: a quote or a reply they were owed still reaches them.
+  const notices = readable.flatMap((user) => {
+    if (blocked.has(user.clerkUserId)) return [];
+    const kinds = new Set(intents.get(user.id));
+    if (refusers.has(user.clerkUserId)) kinds.delete("mention");
+    const kind = strongest(kinds);
+    return kind
+      ? [{ id: user.id, notice: noticeFor(kind, context.subject, user.clerkUserId) }]
+      : [];
+  });
+  const settled = await sendForumNotices(notices.map((entry) => entry.notice));
+  if (settled) for (const entry of notices) told.add(entry.id);
   return told;
 }
 
@@ -215,7 +226,7 @@ async function notify(
       ? await loadForumRealm(db, { id: category.realmId })
       : null;
   if (category.scope === "realm" && !realm) return;
-  const intents = new Map<string, Kind>();
+  const intents: Intents = new Map();
   await addMentions(db, post, actor, intents);
   if (!input.edited) {
     await addQuotes(db, post, intents);

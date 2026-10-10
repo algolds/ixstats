@@ -139,6 +139,25 @@ describe("notifyWatchers", () => {
     expect(release!.where.notifiedAt).toEqual(claim!.data.notifiedAt);
   });
 
+  it("gives back only the claims of watchers who were to be told, not those already told or blocking the author", async () => {
+    sent.mockResolvedValue(false);
+    blocking.mockResolvedValue(["clerk_w3"]);
+    const db = watchDb({ pages: [["u_w1", "u_w2", "u_w3"]] });
+    await expect(notifyWatchers(db as never, input({ handled: new Set(["u_w2"]) }))).resolves.toBe(
+      0
+    );
+    const [claim, release] = db.forumThreadWatch.updateMany.mock.calls.map(([args]) => args);
+    expect(claim!.where.userId.in).toEqual(["u_w1", "u_w2", "u_w3"]);
+    expect(release!.where.userId.in).toEqual(["u_w1"]);
+  });
+
+  it("gives nothing back when every claimed watcher was settled by the claim", async () => {
+    sent.mockResolvedValue(false);
+    const db = watchDb({ pages: [["u_w1"]] });
+    await notifyWatchers(db as never, input({ handled: new Set(["u_w1"]) }));
+    expect(db.forumThreadWatch.updateMany).toHaveBeenCalledTimes(1);
+  });
+
   it("claims nothing and reads nothing when the admin has switched forum notices off", async () => {
     enabled.mockResolvedValue(false);
     const db = watchDb({ pages: [["u_w1"]] });

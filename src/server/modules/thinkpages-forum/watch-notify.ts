@@ -5,8 +5,9 @@
  * claimed. Per chunk of watchers the rows of everyone who can read the thread are claimed with one `updateMany` (only
  * those still un-notified), so two replies arriving together tell each watcher once, and the claimed rows are the ones
  * notified. Watchers already told about this post (`handled`) are claimed but not told twice; those who block the
- * author are claimed and not told. If the notices cannot be written the claims are given back. Watchers who cannot
- * read the thread are left alone. The author is never a recipient.
+ * author are claimed and not told. If the notices cannot be written, only the claims of the watchers who were to be
+ * told are given back: the others were settled by the claim. Watchers who cannot read the thread are left alone. The
+ * author is never a recipient.
  */
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { forumNoticesEnabled, sendForumNotices } from "./forum-notices";
@@ -96,8 +97,13 @@ async function notifyChunk(
   ) {
     return recipients.length;
   }
+  if (recipients.length === 0) return 0;
   await db.forumThreadWatch.updateMany({
-    where: { threadId: input.threadId, userId: { in: [...owned] }, notifiedAt: stamp },
+    where: {
+      threadId: input.threadId,
+      userId: { in: recipients.map((user) => user.id) },
+      notifiedAt: stamp,
+    },
     data: { notifiedAt: null },
   });
   return 0;
