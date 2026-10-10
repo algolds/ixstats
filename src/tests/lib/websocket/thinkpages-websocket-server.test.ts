@@ -69,7 +69,7 @@ function connect(token?: string, origin?: string): ClientSocket {
     transports: ["websocket"],
     reconnection: false,
     forceNew: true,
-    auth: token ? { token } : {},
+    auth: token ? { token } : { anonymous: true },
     extraHeaders: origin ? { origin } : undefined,
   });
   clients.push(client);
@@ -126,6 +126,21 @@ afterAll(() => {
 describe("ThinkPagesWebSocketServer handshake", () => {
   it("lets a connection without a token in as an anonymous reader", async () => {
     await expect(connected(connect())).resolves.toBeUndefined();
+  });
+
+  it("refuses a handshake with no token that does not say it is anonymous", async () => {
+    for (const auth of [{}, { token: "" }, { anonymous: false }]) {
+      const client = connectClient(url, {
+        path: "/ws/thinkpages",
+        transports: ["websocket"],
+        reconnection: false,
+        forceNew: true,
+        auth,
+      });
+      clients.push(client);
+      const error = await nextEvent<Error>(client, "connect_error");
+      expect(error.message).toBe("unauthorized");
+    }
   });
 
   it("rejects an invalid token", async () => {
@@ -290,6 +305,7 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
       transports: ["websocket"],
       reconnection: false,
       forceNew: true,
+      auth: { anonymous: true },
     });
     clients.push(reader);
     await connected(reader);
@@ -310,6 +326,51 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
     reader.emit("subscribe", { channel: "realm-board:r_pub" });
     await again;
     expect(canJoinRealmBoard).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds a burst of subscribes to the cap and to one check per room, however fast they come", async () => {
+    const reader = connect();
+    await connected(reader);
+    const refusals: string[] = [];
+    reader.on("subscribe:error", (e: { channel: string }) => refusals.push(e.channel));
+    for (let i = 1; i <= 20; i += 1) reader.emit("subscribe", { channel: `realm-board:r_pub${i}` });
+    for (let i = 0; i < 20; i += 1) reader.emit("subscribe", { channel: "realm-board:r_pub1" });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(refusals).toHaveLength(15);
+    expect(canJoinRealmBoard).toHaveBeenCalledTimes(5);
+    const rooms = canJoinRealmBoard.mock.calls.map(([, realmId]) => realmId);
+    expect(new Set(rooms).size).toBe(5);
+  });
+
+  it("shares a join in flight with a repeat of the same room, and reports a refusal to both", async () => {
+    const reader = connect();
+    await connected(reader);
+    const refusals: string[] = [];
+    reader.on("subscribe:error", (e: { channel: string }) => refusals.push(e.channel));
+    for (let i = 0; i < 3; i += 1) reader.emit("subscribe", { channel: "realm-board:r_draft" });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(refusals).toEqual(Array(3).fill("realm-board:r_draft"));
+    expect(canJoinRealmBoard).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts no presence work for an unsubscribe from a room the socket is not in, or a bad name", async () => {
+    const inside = connect("token-a");
+    const outsider = connect("token-b");
+    await Promise.all([connected(inside), connected(outsider)]);
+    inside.emit("subscribe", { channel: "realm-board:r_pub" });
+    await nextEvent(inside, "board:presence");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const silent = silentFor(inside, "board:presence", 250);
+    outsider.emit("unsubscribe", { channel: "realm-board:r_pub" });
+    outsider.emit("unsubscribe", { channel: "realm-board:not a room" });
+    expect(await silent).toBe(true);
+    // A real leave still updates the room.
+    const update = nextEvent<{ count: number }>(inside, "board:presence");
+    outsider.emit("subscribe", { channel: "realm-board:r_pub" });
+    await update;
+    const left = nextEvent<{ count: number }>(inside, "board:presence");
+    outsider.emit("unsubscribe", { channel: "realm-board:r_pub" });
+    expect((await left).count).toBe(1);
   });
 
   it("caps the board rooms one socket reads at once", async () => {

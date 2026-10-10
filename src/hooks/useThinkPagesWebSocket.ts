@@ -34,8 +34,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const socket = useRef<Socket | null>(null);
   const optionsRef = useRef(options);
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
   const getTokenRef = useRef(getToken);
+  const isSignedInRef = useRef(isSignedIn);
 
   // Update refs when options / token source change
   useEffect(() => {
@@ -43,7 +44,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   }, [options]);
   useEffect(() => {
     getTokenRef.current = getToken;
-  }, [getToken]);
+    isSignedInRef.current = isSignedIn;
+  }, [getToken, isSignedIn]);
 
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
@@ -111,7 +113,16 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       // Callback form: re-invoked on every (re)connect so each handshake gets a fresh token
       auth: (cb) => {
         const pending: Promise<string | null> = getTokenRef.current?.() ?? Promise.resolve(null);
-        void pending.catch(() => null).then((token) => cb({ token: token ?? "" }));
+        void pending
+          .catch(() => null)
+          .then((token) => {
+            // Only a signed-out reader says so: a signed-in user whose token failed is refused, not demoted.
+            cb(
+              token || isSignedInRef.current
+                ? { token: token ?? "" }
+                : { token: "", anonymous: true }
+            );
+          });
       },
     });
 

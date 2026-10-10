@@ -24,8 +24,14 @@ const MAX_ID_LENGTH = 64;
 /** A socket reads at most this many boards at once; an anonymous reader costs a database check per join. */
 const MAX_BOARD_ROOMS_PER_SOCKET = 5;
 const PRUNE_ABOVE = 500;
-/** A socket's right to type in a room is asked again after this long. */
-const TYPING_RIGHTS_TTL_MS = 30_000;
+/** A socket's right to type in a room, and the name it types under, are asked again after this long. */
+const TYPING_CACHE_TTL_MS = 30_000;
+
+type Cached<T> = { value: T; until: number };
+
+function warnCheckFailed(what: string, error: Error): void {
+  console.warn(`[RealmBoardRooms] ${what} check failed:`, error.message);
+}
 
 /** Allows one event per key per window; forgets idle keys once the map grows. */
 export class TypingThrottle {
@@ -57,8 +63,10 @@ const idOf = (value: string | null | undefined): string | null =>
 export class RealmBoardRooms {
   private throttle = new TypingThrottle();
   private timers = new Map<string, NodeJS.Timeout>();
-  private names = new WeakMap<Socket, Map<string, string>>();
-  private rights = new WeakMap<Socket, Map<string, { allowed: boolean; until: number }>>();
+  private names = new WeakMap<Socket, Map<string, Cached<string>>>();
+  private rights = new WeakMap<Socket, Map<string, Cached<boolean>>>();
+  /** Joins in flight per socket: reserved before the first await, so a burst of subscribes cannot slip past the cap. */
+  private pending = new WeakMap<Socket, Map<string, Promise<boolean>>>();
 
   constructor(
     private io: SocketIOServer,
@@ -67,14 +75,39 @@ export class RealmBoardRooms {
     private options: ThinkPagesServerOptions
   ) {}
 
-  /** Joins the realm's room when the forum says the viewer may see the realm; false otherwise. */
-  async join(socket: Socket, clerkUserId: string | null, realmId: string): Promise<boolean> {
+  /**
+   * Joins the realm's room when the forum says the viewer may see the realm; false otherwise. A join in flight is
+   * reserved at once: a repeat for the same room shares it, and rooms joined plus joins in flight count against the cap.
+   */
+  join(socket: Socket, clerkUserId: string | null, realmId: string): Promise<boolean> {
     const room = boardRoomOf(realmId);
-    if (socket.rooms.has(room)) return true;
-    const joinedBoards = [...socket.rooms].filter((r) => r.startsWith(BOARD_ROOM_PREFIX)).length;
-    if (joinedBoards >= MAX_BOARD_ROOMS_PER_SOCKET) return false;
+    const inFlight = this.pending.get(socket) ?? new Map<string, Promise<boolean>>();
+    this.pending.set(socket, inFlight);
+    const same = inFlight.get(room);
+    if (same) return same;
+    if (socket.rooms.has(room)) return Promise.resolve(true);
+    const joined = [...socket.rooms].filter((r) => r.startsWith(BOARD_ROOM_PREFIX)).length;
+    if (joined + inFlight.size >= MAX_BOARD_ROOMS_PER_SOCKET) return Promise.resolve(false);
+    const attempt = this.admit(socket, clerkUserId, realmId, room).finally(() =>
+      inFlight.delete(room)
+    );
+    inFlight.set(room, attempt);
+    return attempt;
+  }
+
+  private async admit(
+    socket: Socket,
+    clerkUserId: string | null,
+    realmId: string,
+    room: string
+  ): Promise<boolean> {
     const check = this.options.canJoinRealmBoard;
-    const allowed = check ? await check(clerkUserId, realmId).catch(() => false) : false;
+    const allowed = check
+      ? await check(clerkUserId, realmId).catch((error: Error) => {
+          warnCheckFailed("join", error);
+          return false;
+        })
+      : false;
     if (!allowed || !socket.connected) return false;
     await socket.join(room);
     // The joiner hears the count at once (it also confirms the join); the room's follows, coalesced.
@@ -113,13 +146,18 @@ export class RealmBoardRooms {
   }
 
   private async mayType(socket: Socket, clerkUserId: string, realmId: string): Promise<boolean> {
-    const cache = this.rights.get(socket) ?? new Map<string, { allowed: boolean; until: number }>();
+    const cache = this.rights.get(socket) ?? new Map<string, Cached<boolean>>();
     this.rights.set(socket, cache);
     const known = cache.get(realmId);
-    if (known && known.until > Date.now()) return known.allowed;
+    if (known && known.until > Date.now()) return known.value;
     const check = this.options.canTypeOnBoard;
-    const allowed = check ? await check(clerkUserId, realmId).catch(() => false) : false;
-    cache.set(realmId, { allowed, until: Date.now() + TYPING_RIGHTS_TTL_MS });
+    const allowed = check
+      ? await check(clerkUserId, realmId).catch((error: Error) => {
+          warnCheckFailed("typing rights", error);
+          return false;
+        })
+      : false;
+    cache.set(realmId, { value: allowed, until: Date.now() + TYPING_CACHE_TTL_MS });
     return allowed;
   }
 
@@ -128,14 +166,20 @@ export class RealmBoardRooms {
     clerkUserId: string,
     personaId: string | null
   ): Promise<string | null> {
-    const cache = this.names.get(socket) ?? new Map<string, string>();
+    const cache = this.names.get(socket) ?? new Map<string, Cached<string>>();
     this.names.set(socket, cache);
     const key = personaId ?? "";
     const cached = cache.get(key);
-    if (cached) return cached;
+    if (cached && cached.until > Date.now()) return cached.value;
     const resolve = this.options.boardTypingName;
-    const name = resolve ? await resolve(clerkUserId, personaId).catch(() => null) : null;
-    if (name) cache.set(key, name);
+    const name = resolve
+      ? await resolve(clerkUserId, personaId).catch((error: Error) => {
+          warnCheckFailed("typing name", error);
+          return null;
+        })
+      : null;
+    if (name) cache.set(key, { value: name, until: Date.now() + TYPING_CACHE_TTL_MS });
+    else cache.delete(key);
     return name;
   }
 

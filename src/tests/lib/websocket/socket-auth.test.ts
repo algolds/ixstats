@@ -92,13 +92,36 @@ describe("createSocketAuthMiddleware", () => {
   const run = (socket: Socket) =>
     new Promise<Error | undefined>((resolve) => createSocketAuthMiddleware()(socket, resolve));
 
-  it("lets a handshake without a token in as an anonymous reader with no principal", async () => {
-    for (const auth of [{}, { token: "" }, { token: 5 }]) {
+  it("lets a handshake in as an anonymous reader only when it says so and has no token", async () => {
+    for (const auth of [
+      { anonymous: true },
+      { token: "", anonymous: true },
+      { token: 5, anonymous: true },
+    ]) {
       const socket = handshake(auth);
       await expect(run(socket)).resolves.toBeUndefined();
       expect(getPrincipal(socket)).toBeNull();
     }
     expect(mockVerifyToken).not.toHaveBeenCalled();
+  });
+
+  it("refuses a handshake with no token unless it is flagged anonymous (a signed-in client whose token failed)", async () => {
+    for (const auth of [
+      {},
+      { token: "" },
+      { anonymous: false },
+      { token: "", anonymous: "true" },
+    ]) {
+      const error = await run(handshake(auth));
+      expect(error?.message).toBe("unauthorized");
+    }
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+  });
+
+  it("verifies a token even when the handshake also claims to be anonymous", async () => {
+    mockVerifyToken.mockRejectedValueOnce(new Error("expired"));
+    const error = await run(handshake({ token: "stale", anonymous: true }));
+    expect(error?.message).toBe("unauthorized");
   });
 
   it("still fails closed on a token that does not verify", async () => {

@@ -81,6 +81,33 @@ describe("boardMessagePayload", () => {
     expect(JSON.stringify(payload)).not.toContain("u_member");
   });
 
+  it("copies the nested fields one by one, so an in-process payload equals the schema-stripped one", () => {
+    const stray = { stray: "x" };
+    const payload = boardMessagePayload(
+      message({
+        author: {
+          name: "n",
+          handle: null,
+          avatarUrl: null,
+          flagUrl: null,
+          persona: false,
+          ...stray,
+        },
+        visitorRealm: { slug: "aurora", name: "Aurora", ...stray },
+        replyTo: { postId: "p0", authorName: "a", excerpt: "e", ...stray },
+        continued: { threadId: "t1", title: "T", replies: 2, ...stray },
+      } as never)
+    );
+    expect(JSON.stringify(payload)).not.toContain("stray");
+    const settings = broadcaster();
+    publishBoardSettings(settings, "r1", {
+      visitorsAllowed: true,
+      slowModeSeconds: 0,
+      ...stray,
+    } as never);
+    expect(JSON.stringify(settings.broadcastBoard.mock.calls)).not.toContain("stray");
+  });
+
   it("turns a hidden message into a removal that names only the post", () => {
     expect(boardMessagePayload(message({ hidden: true }))).toEqual({
       type: "removed",

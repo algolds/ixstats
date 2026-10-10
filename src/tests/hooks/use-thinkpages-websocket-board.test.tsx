@@ -21,7 +21,8 @@ jest.mock("socket.io-client", () => ({
 }));
 
 let getToken: (() => Promise<string | null>) | undefined;
-jest.mock("~/context/auth-context", () => ({ useAuth: () => ({ getToken }) }));
+let isSignedIn = true;
+jest.mock("~/context/auth-context", () => ({ useAuth: () => ({ getToken, isSignedIn }) }));
 
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 
@@ -37,6 +38,7 @@ beforeEach(() => {
   fake.emit.mockReset();
   mockIo.mockClear();
   getToken = async () => "clerk-token";
+  isSignedIn = true;
   jest.spyOn(console, "log").mockImplementation(() => undefined);
 });
 afterEach(() => {
@@ -45,12 +47,25 @@ afterEach(() => {
 });
 
 describe("useThinkPagesWebSocket for realm boards", () => {
-  it("connects a signed-out reader when asked to, with an empty token", async () => {
+  it("connects a signed-out reader when asked to, flagged anonymous with an empty token", async () => {
     getToken = async () => null;
+    isSignedIn = false;
     renderHook(() => useThinkPagesWebSocket({ anonymous: true }));
     expect(mockIo).toHaveBeenCalledTimes(1);
     const auth = await new Promise<{ token: string }>((resolve) => fake.options!.auth(resolve));
+    expect(auth).toEqual({ token: "", anonymous: true });
+  });
+
+  it("does not demote a signed-in user whose token could not be fetched to anonymous", async () => {
+    getToken = async () => {
+      throw new Error("network");
+    };
+    renderHook(() => useThinkPagesWebSocket({ accountId: "user_1", anonymous: true }));
+    const auth = await new Promise<{ token: string }>((resolve) => fake.options!.auth(resolve));
     expect(auth).toEqual({ token: "" });
+    getToken = async () => null;
+    renderHook(() => useThinkPagesWebSocket({ accountId: "user_1", anonymous: true }));
+    expect(await new Promise((resolve) => fake.options!.auth(resolve))).toEqual({ token: "" });
   });
 
   it("still sends a signed-in user's token", async () => {

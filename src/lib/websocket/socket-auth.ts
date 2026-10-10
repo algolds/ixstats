@@ -82,8 +82,9 @@ export async function verifySocketToken(
 
 /**
  * Socket.IO middleware: io.use(createSocketAuthMiddleware()). A handshake with a token must carry a valid one
- * (fails closed). One without a token is an anonymous reader: it has no principal, and the server lets it join
- * public realm board rooms only and emit nothing (the origin policy still applies to it).
+ * (fails closed). One with no token and `anonymous: true` is an anonymous reader: it has no principal, and the server
+ * lets it join public realm board rooms only and emit nothing (the origin policy still applies to it). No token
+ * without the flag is refused.
  */
 export function createSocketAuthMiddleware(): (
   socket: Socket,
@@ -92,7 +93,8 @@ export function createSocketAuthMiddleware(): (
   return (socket, next) => {
     const rawToken: string | undefined = socket.handshake.auth?.token;
     const token = typeof rawToken === "string" && rawToken !== "" ? rawToken : undefined;
-    if (!token) {
+    // Anonymous only when the client says it is signed out: a signed-in client whose token failed is refused.
+    if (!token && socket.handshake.auth?.anonymous === true) {
       next();
       return;
     }

@@ -114,10 +114,13 @@ export class ThinkPagesWebSocketServer {
 
       socket.on("unsubscribe", (payload: ChannelPayload) => {
         const c = this.clients.get(socket.id);
-        if (!c || typeof payload?.channel !== "string") return;
-        c.subscriptions.delete(payload.channel);
-        void socket.leave(payload.channel);
-        this.boardRooms.left([payload.channel]);
+        const channel = payload?.channel;
+        if (!c || typeof channel !== "string" || !parseChannel(channel)) return;
+        c.subscriptions.delete(channel);
+        // Only a room the socket was in changes anything: no presence timer for an arbitrary name.
+        if (!socket.rooms.has(channel)) return;
+        void socket.leave(channel);
+        this.boardRooms.left([channel]);
       });
 
       // An anonymous reader only subscribes and receives: every emit below needs a verified principal.

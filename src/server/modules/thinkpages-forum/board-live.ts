@@ -42,15 +42,35 @@ export function boardMessagePayload(message: BoardMessage): BoardLiveChange {
     authorUserId: message.authorPersonaId ? null : message.authorUserId,
     authorPersonaId: message.authorPersonaId,
     importedAuthorName: message.importedAuthorName,
-    author: message.author,
+    author: {
+      name: message.author.name,
+      handle: message.author.handle,
+      avatarUrl: message.author.avatarUrl,
+      flagUrl: message.author.flagUrl,
+      persona: message.author.persona,
+    },
     role: message.role,
     isVisitor: message.isVisitor,
-    visitorRealm: message.visitorRealm,
+    visitorRealm: message.visitorRealm
+      ? { slug: message.visitorRealm.slug, name: message.visitorRealm.name }
+      : null,
     contentHtml: message.contentHtml,
     createdAt: message.createdAt.toISOString(),
     editedAt: message.editedAt?.toISOString() ?? null,
-    replyTo: message.replyTo,
-    continued: message.continued,
+    replyTo: message.replyTo
+      ? {
+          postId: message.replyTo.postId,
+          authorName: message.replyTo.authorName,
+          excerpt: message.replyTo.excerpt,
+        }
+      : null,
+    continued: message.continued
+      ? {
+          threadId: message.continued.threadId,
+          title: message.continued.title,
+          replies: message.continued.replies,
+        }
+      : null,
   };
   return { type: "updated", message: live };
 }
@@ -139,5 +159,12 @@ export function publishBoardSettings(
   realmId: string,
   settings: { visitorsAllowed: boolean; slowModeSeconds: number }
 ): void {
-  publish(out, { type: "board:settings", realmId, settings });
+  publish(out, {
+    type: "board:settings",
+    realmId,
+    settings: {
+      visitorsAllowed: settings.visitorsAllowed,
+      slowModeSeconds: settings.slowModeSeconds,
+    },
+  });
 }
