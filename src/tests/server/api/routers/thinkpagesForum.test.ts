@@ -36,6 +36,7 @@ import {
   renderPostWikitext,
   replyToThread,
 } from "~/server/modules/thinkpages-forum";
+import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
@@ -491,7 +492,11 @@ describe("thinkpagesForum router", () => {
 
     it("numbers posts by page and gives each its role: persona posts none, staff over starter", async () => {
       const out = await caller(member, pageDb()).thread({ threadId: "t1", page: 2 });
-      expect(out.posts.map((p) => p.number)).toEqual([21, 22, 23]);
+      expect(out.posts.map((p) => p.number)).toEqual([
+        POSTS_PER_PAGE + 1,
+        POSTS_PER_PAGE + 2,
+        POSTS_PER_PAGE + 3,
+      ]);
       expect(out.posts.map((p) => p.role)).toEqual([null, "staff", "starter"]);
       expect(out.style).toBe("ooc");
     });
@@ -515,6 +520,29 @@ describe("thinkpagesForum router", () => {
       expect(out.authors.users).toEqual({});
       expect(out.posts[0]!.role).toBe("starter");
       expect(JSON.stringify(out.participants)).not.toContain('"u1"');
+    });
+
+    it("sends a member no player id on persona posts or a persona thread, yet keeps byViewer for the author", async () => {
+      const db = pageDb({ authorUserId: "u1", authorPersonaId: "pa1" });
+      const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
+      expect(out.posts.map((p) => p.authorUserId)).toEqual([null, "u2", "u1"]);
+      expect(out.posts.map((p) => p.byViewer)).toEqual([true, false, true]);
+      expect(out.thread.authorUserId).toBeNull();
+      expect(out.viewerIsAuthor).toBe(true);
+    });
+
+    it("keeps the player ids on persona posts and the persona thread for the category's moderator", async () => {
+      const db = pageDb({ authorUserId: "u1", authorPersonaId: "pa1" });
+      const out = await caller(admin, db).thread({ threadId: "t1", page: 1 });
+      expect(out.posts.map((p) => p.authorUserId)).toEqual(["u1", "u2", "u1"]);
+      expect(out.thread.authorUserId).toBe("u1");
+    });
+
+    it("sends a member no player id on a persona thread in the category list, a moderator the id", async () => {
+      const asMember = await caller(member, forumDb()).category({ key: "general", page: 1 });
+      expect(asMember.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: null });
+      const asAdmin = await caller(admin, forumDb()).category({ key: "general", page: 1 });
+      expect(asAdmin.threads[0]).toMatchObject({ authorPersonaId: "pa1", authorUserId: "u1" });
     });
 
     it("returns participants grouped by persona with their author data", async () => {

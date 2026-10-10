@@ -64,6 +64,16 @@ export async function authorMaps(
   return { users: Object.fromEntries(users), personas: Object.fromEntries(personas) };
 }
 
+/**
+ * A persona row for a viewer who cannot moderate the category carries no player id, so the persona cannot be joined
+ * to the player's own posts. Apply it after anything computed from the id (`byViewer`, `isOwn`, `viewerIsAuthor`).
+ */
+export function maskPersona<
+  T extends { authorUserId: string | null; authorPersonaId: string | null },
+>(row: T, canModerate: boolean): T {
+  return canModerate || !row.authorPersonaId ? row : { ...row, authorUserId: null };
+}
+
 /** Display data for the members a moderator list shows (null ids skipped), keyed by user id. */
 export async function memberMaps(
   db: AuthorsDb,

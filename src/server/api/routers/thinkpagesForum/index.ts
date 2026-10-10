@@ -59,6 +59,7 @@ import {
   categoryKey,
   id,
   mapError,
+  maskPersona,
   memberOf,
   page,
   realm,
@@ -176,10 +177,9 @@ export const thinkpagesForumRouter = createTRPCRouter({
       return {
         ...result,
         // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4).
-        threads: result.threads.map(({ hidden, ...thread }) => ({
-          ...thread,
-          ...(result.canModerate ? { hidden } : {}),
-        })),
+        threads: result.threads.map(({ hidden, ...thread }) =>
+          maskPersona({ ...thread, ...(result.canModerate ? { hidden } : {}) }, result.canModerate)
+        ),
         canStart: canStartThread(viewer, result.category) && access.canPost,
         notice: access.notice,
         banned: access.ban !== null,
@@ -212,19 +212,23 @@ export const thinkpagesForumRouter = createTRPCRouter({
     ]);
     return {
       ...result,
+      thread: maskPersona(result.thread, result.canModerate),
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
       // An imported post without an IxStats author (null, phase 4) is never the viewer's.
       posts: result.posts.map(({ hidden, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
-        return {
-          ...post,
-          number: postNumberOf(input.page, index),
-          role: roleOf(post, roles),
-          ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
-          byViewer,
-          isOwn: byViewer && editable && !hidden,
-        };
+        return maskPersona(
+          {
+            ...post,
+            number: postNumberOf(input.page, index),
+            role: roleOf(post, roles),
+            ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
+            byViewer,
+            isOwn: byViewer && editable && !hidden,
+          },
+          result.canModerate
+        );
       }),
       viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
       canReply,

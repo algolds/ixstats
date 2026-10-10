@@ -71,7 +71,7 @@ describe("roleContextOf", () => {
     { id: "u_plain", clerkUserId: "c_plain", role: null },
   ];
   const fakeDb = (officers: string[] = ["c_off"]) => ({
-    user: { findMany: jest.fn(async () => users) },
+    user: { findMany: jest.fn(async (_args: object) => users) },
     realmOfficer: {
       findMany: jest.fn(async ({ where }: { where: { userId: { in: string[] } } }) =>
         where.userId.in.filter((id) => officers.includes(id)).map((userId) => ({ userId }))
