@@ -52,7 +52,7 @@ function navDb(
       ),
     },
     country: { findMany: jest.fn(async () => over.nations ?? []) },
-    realm: { findUnique: jest.fn(async () => EURTH) },
+    realm: { findUnique: jest.fn(async () => EURTH), findMany: jest.fn(async () => []) },
     forumThread: { findFirst: jest.fn(async () => ({ id: "t_board", categoryId: "cat_board" })) },
     forumPost: {
       count: jest.fn(async () => over.boardPosts ?? 0),
@@ -78,13 +78,13 @@ describe("forumNavCounts", () => {
     });
     const out = await forumNavCounts(db as never, member);
     expect(out).toEqual({ watchedUnread: 2, realmBoardNew: 4 });
-    const where = (db.forumPost.count.mock.calls[0]![0] as { where: Record<string, unknown> })
-      .where;
-    expect(where).toEqual({
-      threadId: "t_board",
-      hidden: false,
-      createdAt: { gt: read },
-      OR: [{ authorUserId: null }, { authorUserId: { not: "u1" } }],
+    expect(db.forumPost.count).toHaveBeenCalledWith({
+      where: {
+        threadId: "t_board",
+        hidden: false,
+        createdAt: { gt: read },
+        OR: [{ authorUserId: null }, { authorUserId: { not: "u1" } }],
+      },
     });
   });
 

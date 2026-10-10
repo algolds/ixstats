@@ -61,6 +61,7 @@ function listDb(threads: object[], watched: object[] = [], posts: object[] = [])
     },
     forumPost: { findMany: jest.fn(async () => posts) },
     realm: {
+      findMany: jest.fn(async (_args?: object) => [{ id: "r_draft" }]),
       findUnique: jest.fn(async ({ where }: { where: { id?: string } }) =>
         where.id === "r_eurth" ? EURTH : where.id === "r_draft" ? DRAFT : null
       ),
@@ -87,19 +88,64 @@ describe("listNewPosts", () => {
   it("asks only for threads outside the realm board and in categories the member may see", async () => {
     const db = listDb([]);
     await listNewPosts(db as never, member, 1);
-    const where = (db.forumThread.findMany.mock.calls[0]![0] as { where: Record<string, unknown> })
-      .where;
-    expect(where.hidden).toBe(false);
-    expect(where.category).toEqual({
+    const [[query]] = db.forumThread.findMany.mock.calls as never as [
+      [{ where: Record<string, object>; take: number }],
+    ];
+    expect(query.where.hidden).toBe(false);
+    expect(query.take).toBe(1000);
+    expect(query.where.category).toEqual({
       style: { not: "board" },
       NOT: { scope: "realm", key: "board" },
       visibility: { in: ["public", "reporter_staff"] },
+      AND: [{ NOT: { scope: "realm", realmId: { in: ["r_draft"] } } }],
     });
     await listNewPosts(db as never, admin, 1);
-    const adminWhere = (
-      db.forumThread.findMany.mock.calls[1]![0] as { where: { category: { visibility: object } } }
-    ).where;
-    expect(adminWhere.category.visibility).toEqual({ in: ["public", "reporter_staff", "staff"] });
+    const [, [adminQuery]] = db.forumThread.findMany.mock.calls as never as [
+      object,
+      [{ where: { category: Record<string, object> } }],
+    ];
+    expect(adminQuery.where.category).toEqual({
+      style: { not: "board" },
+      NOT: { scope: "realm", key: "board" },
+      visibility: { in: ["public", "reporter_staff", "staff"] },
+    });
+    expect(adminQuery.where).not.toHaveProperty("OR");
+  });
+
+  it("puts the Reports rule in the query: not reports, the member's own, or what they moderate", async () => {
+    const db = listDb([]);
+    await listNewPosts(db as never, member, 1);
+    await listNewPosts(
+      db as never,
+      {
+        ...member,
+        mod: { siteAdmin: false, realmIds: ["r_eurth"], categoryIds: ["cat_hub"] },
+      } as never,
+      1
+    );
+    const [[plain], [moderator]] = db.forumThread.findMany.mock.calls as never as [
+      [{ where: { OR: object[] } }],
+      [{ where: { OR: object[] } }],
+    ];
+    expect(plain.where.OR).toEqual([
+      { category: { visibility: { not: "reporter_staff" } } },
+      { authorUserId: "u1" },
+    ]);
+    expect(moderator.where.OR).toEqual([
+      { category: { visibility: { not: "reporter_staff" } } },
+      { authorUserId: "u1" },
+      { categoryId: { in: ["cat_hub"] } },
+      { category: { scope: "realm", realmId: { in: ["r_eurth"] } } },
+    ]);
+  });
+
+  it("leaves out a draft realm that is the member's own from the exclusion", async () => {
+    const db = listDb([]);
+    await listNewPosts(db as never, member, 1);
+    const [[query]] = db.realm.findMany.mock.calls as never as [
+      [{ where: { ownerId: { not: string } } }],
+    ];
+    expect(query.where.ownerId).toEqual({ not: "clerk_1" });
   });
 
   it("drops a board thread even if the query returned one", async () => {
@@ -140,8 +186,12 @@ describe("listNewPosts", () => {
     );
     const db = listDb(many);
     const second = await listNewPosts(db as never, member, 2);
-    expect(second.threads).toHaveLength(5);
+    expect(second.threads.map((t) => t.id)).toEqual(["t25", "t26", "t27", "t28", "t29"]);
     expect(second.total).toBe(30);
+    const first = await listNewPosts(db as never, member, 1);
+    expect(first.threads).toHaveLength(25);
+    expect(first.threads[0]!.id).toBe("t0");
+    expect(first.threads[24]!.id).toBe("t24");
   });
 
   it("shows a persona thread by the persona only, and its last poster without the player", async () => {
@@ -198,17 +248,53 @@ describe("listWatched", () => {
     expect(out.total).toBe(3);
   });
 
-  it("asks only for the member's watches outside the realm board", async () => {
+  it("asks only for the member's watches outside the realm board, quietest dropped first", async () => {
     const db = listDb([]);
     await listWatched(db as never, member, 1);
-    const where = (db.forumThreadWatch.findMany.mock.calls[0]![0] as { where: object }).where;
-    expect(where).toEqual({
+    const [[query]] = db.forumThreadWatch.findMany.mock.calls as never as [
+      [{ where: object; orderBy: object; take: number }],
+    ];
+    expect(query.where).toEqual({
       userId: "u1",
       thread: {
         hidden: false,
-        category: { style: { not: "board" }, NOT: { scope: "realm", key: "board" } },
+        OR: [{ category: { visibility: { not: "reporter_staff" } } }, { authorUserId: "u1" }],
+        category: {
+          style: { not: "board" },
+          NOT: { scope: "realm", key: "board" },
+          AND: [{ NOT: { scope: "realm", realmId: { in: ["r_draft"] } } }],
+        },
       },
     });
+    expect(query.orderBy).toEqual({ thread: { lastPostAt: "desc" } });
+    expect(query.take).toBe(500);
+  });
+
+  it("drops what the member cannot read: a draft realm, a staff board, another member's report, the board", async () => {
+    const staff = category({ id: "cat_staff", key: "staff", visibility: "staff" });
+    const reports = category({ id: "cat_reports", key: "reports", visibility: "reporter_staff" });
+    const draft = category({ id: "cat_draft", scope: "realm", realmId: "r_draft", key: "hub" });
+    const board = category({
+      id: "cat_board",
+      scope: "realm",
+      realmId: "r_eurth",
+      key: "board",
+      style: "board",
+    });
+    const db = listDb(
+      [],
+      [
+        row("ok"),
+        row("s", {}, staff),
+        row("r_other", { authorUserId: "u9" }, reports),
+        row("r_mine", { authorUserId: "u1" }, reports),
+        row("d", {}, draft),
+        row("b", {}, board),
+      ]
+    );
+    const out = await listWatched(db as never, member, 1);
+    expect(out.threads.map((t) => t.id).sort()).toEqual(["ok", "r_mine"]);
+    expect(out.total).toBe(2);
   });
 });
 
@@ -221,11 +307,9 @@ describe("unreadWatchedCount", () => {
       [row("a"), row("b", { reads: [{ readAt: new Date() }] }), row("c", {}, staff)]
     );
     await expect(unreadWatchedCount(db as never, member, floor)).resolves.toBe(1);
-    const where = (
-      db.forumThreadWatch.findMany.mock.calls[0]![0] as {
-        where: { thread: { lastPostAt: object } };
-      }
-    ).where;
-    expect(where.thread.lastPostAt).toEqual({ gt: floor });
+    const [[query]] = db.forumThreadWatch.findMany.mock.calls as never as [
+      [{ where: { thread: { lastPostAt: object } } }],
+    ];
+    expect(query.where.thread.lastPostAt).toEqual({ gt: floor });
   });
 });

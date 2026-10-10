@@ -12,7 +12,7 @@ import {
 } from "~/lib/thinkpages-forum/categories";
 import { THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
-import { isSiteAdmin } from "~/server/modules/realms";
+import { DEFAULT_REALM_ID, isSiteAdmin } from "~/server/modules/realms";
 import { canSeeThread, type ForumViewer } from "./access";
 import type { ForumRealm } from "./realm-access";
 import { visibleRealmOf, type ReadsDb } from "./reads";
@@ -21,7 +21,12 @@ import { readerFloor, type UnreadDb } from "./unread";
 
 export type ListingDb = ReadsDb & UnreadDb & Pick<PrismaClient, "forumThreadWatch">;
 
-/** Candidate rows read for New posts, newest first (the thirty-day window bounds it; this is the backstop). */
+/**
+ * Candidate rows read for New posts, newest first (the thirty-day window bounds it; this is the backstop).
+ * ponytail: the Reports and unpublished-realm rules are in the query, but "already read" compares two columns of
+ * different tables and is filtered here, so a member who has read more than this many newer threads of the window
+ * sees the oldest unread ones missing until they read or mark some. Past that, move the compare into SQL.
+ */
 const NEW_POSTS_MAX = 1000;
 /** Watches read for the Watched page and the sidebar count. */
 const WATCHED_MAX = 500;
@@ -142,22 +147,61 @@ async function shape(
 const pageOf = <T>(items: readonly T[], page: number): T[] =>
   items.slice((Math.max(1, page) - 1) * THREADS_PER_PAGE, Math.max(1, page) * THREADS_PER_PAGE);
 
+/** Query fragments for what the member may read, so the row caps are spent on readable threads only. */
+interface ReadableRules {
+  /** The Reports rule: other members' reports stay out unless the member moderates the place. */
+  threadOr: Prisma.ForumThreadWhereInput[];
+  /** Realms the member cannot see (draft or generating, unless theirs) stay out. */
+  categoryAnd: Prisma.ForumCategoryWhereInput[];
+}
+
+async function readableRules(
+  db: ListingDb,
+  viewer: NonNullable<ForumViewer>
+): Promise<ReadableRules> {
+  if (isSiteAdmin(viewer)) return { threadOr: [], categoryAnd: [] };
+  const { mod } = viewer;
+  const unpublished = await db.realm.findMany({
+    where: {
+      status: { in: ["draft", "generating"] },
+      id: { not: DEFAULT_REALM_ID },
+      ownerId: { not: viewer.clerkUserId },
+    },
+    select: { id: true },
+  });
+  return {
+    threadOr: [
+      { category: { visibility: { not: "reporter_staff" } } },
+      { authorUserId: viewer.id },
+      ...(mod?.categoryIds.length ? [{ categoryId: { in: [...mod.categoryIds] } }] : []),
+      ...(mod?.realmIds.length
+        ? [{ category: { scope: "realm", realmId: { in: [...mod.realmIds] } } }]
+        : []),
+    ],
+    categoryAnd: unpublished.length
+      ? [{ NOT: { scope: "realm", realmId: { in: unpublished.map(({ id }) => id) } } }]
+      : [],
+  };
+}
+
 /** Unread threads of the window across every board the member can see, newest first. */
 export async function listNewPosts(
   db: ListingDb,
   viewer: NonNullable<ForumViewer>,
   page: number
 ): Promise<ThreadListing> {
-  const floor = await readerFloor(db, viewer.id);
+  const [floor, rules] = await Promise.all([readerFloor(db, viewer.id), readableRules(db, viewer)]);
   const rows = await db.forumThread.findMany({
     where: {
       hidden: false,
       lastPostAt: { gt: floor },
+      ...(rules.threadOr.length ? { OR: rules.threadOr } : {}),
       category: {
         ...notBoardCategory(),
         visibility: {
           in: [...visibleForumVisibilities({ signedIn: true, siteAdmin: isSiteAdmin(viewer) })],
         },
+        ...(rules.categoryAnd.length ? { AND: rules.categoryAnd } : {}),
       },
     },
     orderBy: { lastPostAt: "desc" },
@@ -182,16 +226,22 @@ async function watchedRows(
   viewer: NonNullable<ForumViewer>,
   since: Date | null
 ): Promise<Candidate[]> {
+  const rules = await readableRules(db, viewer);
   const watches = await db.forumThreadWatch.findMany({
     where: {
       userId: viewer.id,
       thread: {
         hidden: false,
-        category: notBoardCategory(),
+        ...(rules.threadOr.length ? { OR: rules.threadOr } : {}),
+        category: {
+          ...notBoardCategory(),
+          ...(rules.categoryAnd.length ? { AND: rules.categoryAnd } : {}),
+        },
         ...(since ? { lastPostAt: { gt: since } } : {}),
       },
     },
-    orderBy: { createdAt: "desc" },
+    // Most recently active first, so the cap drops the quietest watches and the list agrees with the badge.
+    orderBy: { thread: { lastPostAt: "desc" } },
     take: WATCHED_MAX,
     select: { thread: { select: candidateSelect(viewer.id) } },
   });

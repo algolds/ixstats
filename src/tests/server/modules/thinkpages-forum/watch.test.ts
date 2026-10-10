@@ -22,7 +22,7 @@ const category = {
   visibility: "public",
 };
 
-function watchDb(categoryOver: object = {}) {
+function watchDb(categoryOver: object = {}, threadOver: object = {}, realm: object | null = null) {
   return {
     ...engagementTables(),
     forumThread: {
@@ -42,9 +42,10 @@ function watchDb(categoryOver: object = {}) {
         lastPostAt: new Date(),
         createdAt: new Date(),
         category: { ...category, ...categoryOver },
+        ...threadOver,
       })),
     },
-    realm: { findUnique: jest.fn(async () => null) },
+    realm: { findUnique: jest.fn(async () => realm) },
   };
 }
 
@@ -69,6 +70,31 @@ describe("watchThread", () => {
       code: "NOT_FOUND",
     });
     expect(board.forumThreadWatch.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("watchThread, what the member may not read", () => {
+  it("refuses a hidden thread to a member who does not moderate it", async () => {
+    const db = watchDb({}, { hidden: true });
+    await expect(watchThread(db as never, member, "t1")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.forumThreadWatch.createMany).not.toHaveBeenCalled();
+  });
+
+  it("refuses a thread in a realm the member cannot see", async () => {
+    const draft = {
+      id: "r_draft",
+      slug: "draft",
+      name: "Draft",
+      status: "draft",
+      ownerId: "founder",
+    };
+    const db = watchDb({ scope: "realm", realmId: "r_draft", key: "hub" }, {}, draft);
+    await expect(watchThread(db as never, member, "t1")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.forumThreadWatch.createMany).not.toHaveBeenCalled();
   });
 });
 
