@@ -47,8 +47,8 @@
   }
 }
 
-/* The primary action role (monochrome; flat gold inside MyCountry and the Builder) for an element
-   that is not a Button. */
+/* The primary action role (monochrome; flat gold inside MyCountry and the Builder; the app tint inside
+   ThinkPages, ThinkTanks and Messages) for an element that is not a Button. */
 @utility facet-primary {
   background-color: var(--primary-fill);
   color: var(--on-primary);

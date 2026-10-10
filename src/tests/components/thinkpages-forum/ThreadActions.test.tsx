@@ -86,7 +86,7 @@ describe("ThreadActions in a compact header", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
-  it("collapses the moderator bar into a single Thread actions menu", () => {
+  it("offers the moderator one Thread actions menu", () => {
     render(<ThreadActions data={data()} signedIn compact refresh={refresh} />);
     const buttons = screen.getAllByRole("button");
     // Stash and the menu trigger; a moderator is not offered Report.
@@ -167,14 +167,14 @@ describe("ThreadActions in a wide header", () => {
     );
   });
 
-  it("keeps the whole bar of buttons and no menu", () => {
+  it("still gives a moderator the one Thread actions menu, never a row of buttons beside the top chrome", () => {
     render(<ThreadActions data={data()} signedIn compact={false} refresh={refresh} />);
-    const bar = screen.getByRole("group", { name: "Moderate thread" });
+    expect(screen.getByRole("button", { name: "Thread actions" })).toBeInTheDocument();
     expect(
-      within(bar)
-        .getAllByRole("button")
-        .map((b) => b.textContent)
+      within(screen.getByRole("menu"))
+        .getAllByRole("menuitem")
+        .map((i) => i.textContent)
     ).toEqual(["Lock", "Pin", "Hide", "Archive", "Move"]);
-    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Lock" })).toBeNull();
   });
 });

@@ -80,12 +80,13 @@ interface ModeratorBarProps {
   categories: readonly Destination[];
   /** Refreshes the thread and the listings whose counts follow it. */
   refresh: () => Promise<void>;
-  /** One "Thread actions" menu in place of the row of buttons. */
-  compact: boolean;
 }
 
-/** A moderator's thread actions: lock, pin, hide, archive (each a toggle) and move. */
-function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProps) {
+/**
+ * A moderator's thread actions: lock, pin, hide, archive (each a toggle) and move, in one "Thread actions" menu at every
+ * width: five buttons never fit beside the floating top chrome.
+ */
+function ModeratorBar({ thread, categories, refresh }: ModeratorBarProps) {
   const notify = useNotify();
   const moveLabelId = useId();
   const [moving, setMoving] = useState(false);
@@ -140,63 +141,32 @@ function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProp
 
   return (
     <div role="group" aria-label="Moderate thread" className="flex flex-wrap gap-2">
-      {compact ? (
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-label-secondary"
-              aria-label="Thread actions"
-              disabled={pending}
-            >
-              <MoreHoriz aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {FLAGS.map(({ flag, on, off }) => {
-              const label = labelOf(flag, on, off);
-              return (
-                <DropdownMenuItem key={flag} onSelect={() => choose(flag, label)}>
-                  {label}
-                </DropdownMenuItem>
-              );
-            })}
-            {categories.length > 0 ? (
-              <DropdownMenuItem onSelect={startMove}>Move</DropdownMenuItem>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-label-secondary"
+            aria-label="Thread actions"
+            disabled={pending}
+          >
+            <MoreHoriz aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
           {FLAGS.map(({ flag, on, off }) => {
             const label = labelOf(flag, on, off);
             return (
-              <Button
-                key={flag}
-                variant="ghost"
-                size="sm"
-                className="text-label-secondary"
-                disabled={pending}
-                onClick={() => choose(flag, label)}
-              >
+              <DropdownMenuItem key={flag} onSelect={() => choose(flag, label)}>
                 {label}
-              </Button>
+              </DropdownMenuItem>
             );
           })}
           {categories.length > 0 ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-label-secondary"
-              disabled={pending}
-              onClick={startMove}
-            >
-              Move
-            </Button>
+            <DropdownMenuItem onSelect={startMove}>Move</DropdownMenuItem>
           ) : null}
-        </>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {confirming ? (
         <NoteDialog
@@ -259,8 +229,8 @@ interface ThreadActionsProps {
   signedIn: boolean;
   /** Refreshes the thread and the listings whose counts follow it. */
   refresh: () => Promise<void>;
-  /** A narrow header (COMPACT_QUERY): the actions share one menu, Stash and Report are icon buttons, and the
-   *  "In character" badge is the page's to show (beside the trail). */
+  /** A narrow header (COMPACT_QUERY): Stash and Report are icon buttons, and the "In character" badge is the
+   *  page's to show (beside the trail). */
   compact: boolean;
 }
 
@@ -277,7 +247,6 @@ export function ThreadActions({ data, signedIn, refresh, compact }: ThreadAction
           thread={thread}
           categories={data.moderatorTools?.categories ?? []}
           refresh={refresh}
-          compact={compact}
         />
       ) : null}
       {signedIn ? <StashThreadButton threadId={thread.id} iconOnly={compact} /> : null}

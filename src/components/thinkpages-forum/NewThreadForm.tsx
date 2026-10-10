@@ -70,7 +70,8 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   const page = (children: ReactNode) => (
     <ForumPage
       title="New thread"
-      breadcrumbs={data.category.name}
+      // The back link names the board; the line under the title adds only what it does not: the realm.
+      breadcrumbs={data.category.realm?.name}
       back={{ href: backHref, label: data.category.name }}
     >
       <div className="flex max-w-3xl min-w-0 flex-col gap-4">{children}</div>

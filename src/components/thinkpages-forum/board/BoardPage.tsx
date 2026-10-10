@@ -98,7 +98,7 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
         </>
       }
       back={back}
-      actions={
+      wideActions={
         <>
           {realm && realmOptions ? <RealmSwitcher realms={realmOptions} value={realm} /> : null}
           <SortMenu basePath={boardPath} sort={sort} />

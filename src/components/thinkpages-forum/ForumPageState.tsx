@@ -6,15 +6,18 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
+import { cn } from "~/lib/utils/cn";
 
 /** The column every forum page sits in (see ForumPage), so a loading or failed page does not jump when it arrives. */
 const STATE_COLUMN = "flex min-w-0 flex-col gap-4 px-4 pt-4 pb-8 md:pt-8";
+/** The header toolbar's height (`PageHeader`, 3.5rem), which a state keeps clear where the real page has its title. */
+const HEADER_CLEARANCE = "mt-14";
 
 /** Loading placeholder for a forum page: a title bar, then `blocks` card-sized skeletons. */
 export function ForumPageSkeleton({ blocks = 1 }: { blocks?: number }) {
   return (
     <div className={STATE_COLUMN} aria-busy="true">
-      <Skeleton className="mt-14 mb-2 h-9 w-64 max-w-full" />
+      <Skeleton className={cn(HEADER_CLEARANCE, "mb-2 h-9 w-64 max-w-full")} />
       {Array.from({ length: blocks }, (_, i) => (
         <Skeleton key={i} className="rounded-card h-48 w-full" />
       ))}
@@ -39,7 +42,7 @@ export function ForumLoadError({
 }: ForumLoadErrorProps) {
   return (
     <div className={STATE_COLUMN}>
-      <Card className="mt-14">
+      <Card className={HEADER_CLEARANCE}>
         {notFound ? (
           <EmptyState
             title={notFoundTitle}

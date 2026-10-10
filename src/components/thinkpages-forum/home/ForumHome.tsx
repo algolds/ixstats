@@ -62,7 +62,7 @@ export function ForumHome() {
   return (
     <ForumPage
       title={TITLE}
-      actions={
+      wideActions={
         moderator ? (
           <Button asChild size="sm" variant="ghost" className="text-label-secondary">
             <Link href={modHref()}>

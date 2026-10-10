@@ -611,7 +611,7 @@ describe("moderator tools", () => {
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
     const bar = screen.getByRole("group", { name: "Moderate thread" });
-    fireEvent.click(within(bar).getByRole("button", { name: "Lock" }));
+    fireEvent.click(within(bar).getByRole("menuitem", { name: "Lock" }));
     await waitFor(() =>
       expect(setThreadFlag).toHaveBeenCalledWith({ threadId: "t1", flag: "locked", value: true })
     );
@@ -628,7 +628,7 @@ describe("moderator tools", () => {
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Hide" }));
     expect(setThreadFlag).not.toHaveBeenCalled();
     const dialog = screen.getByRole("dialog", { name: "Hide this thread" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Spam" } });
@@ -650,13 +650,13 @@ describe("moderator tools", () => {
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Archive" }));
     fireEvent.keyDown(screen.getByRole("dialog", { name: "Archive this thread" }), {
       key: "Escape",
     });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(setThreadFlag).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Archive" }));
     fireEvent.click(
       within(screen.getByRole("dialog", { name: "Archive this thread" })).getByRole("button", {
         name: "Archive thread",
@@ -672,7 +672,7 @@ describe("moderator tools", () => {
     mutations.setThreadFlag = jest.fn(() => Promise.reject(new Error("Not allowed.")));
     set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Unhide" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Unhide" }));
     const dialog = screen.getByRole("dialog", { name: "Unhide this thread" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Unhide thread" }));
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("Not allowed.");
@@ -685,7 +685,7 @@ describe("moderator tools", () => {
     );
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Pin" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Pin" }));
     await waitFor(() =>
       expect(notify.error).toHaveBeenCalledWith(
         "Could not pin the thread",
@@ -700,7 +700,7 @@ describe("moderator tools", () => {
     mutations.moveThread = moveThread;
     set("thread", { data: threadData({ canModerate: true }) });
     render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Move" }));
     const dialog = screen.getByRole("alertdialog", { name: "Move this thread" });
     fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "side" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Move thread" }));
@@ -714,7 +714,7 @@ describe("moderator tools", () => {
     mutations.moveThread = jest.fn(() => Promise.resolve());
     set("thread", { data: threadData({ canModerate: true }) });
     const { rerender } = render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Move" }));
     fireEvent.click(screen.getByRole("button", { name: "Move thread" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
     // Now in Side: General (its old home) is the only destination left.
@@ -724,7 +724,7 @@ describe("moderator tools", () => {
     };
     set("thread", { data: moved });
     rerender(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Move" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Move" }));
     const dialog = screen.getByRole("alertdialog", { name: "Move this thread" });
     expect(within(dialog).getByRole("combobox")).toHaveValue("general");
     fireEvent.click(within(dialog).getByRole("button", { name: "Move thread" }));

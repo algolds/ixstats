@@ -5,6 +5,8 @@ import { InfoCircle } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Inspector } from "~/components/ui/inspector";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
+import { PHONE_QUERY } from "../composer/constants";
 
 /** The width from which the Inspector shows its panels on the page, as `Inspector` decides it. */
 const RAIL_QUERY = "(min-width: 1280px)";
@@ -22,8 +24,14 @@ interface ForumPageProps {
   breadcrumbs?: React.ReactNode;
   /** An emblem or avatar before the large title (an entity page such as a realm's landing). */
   leading?: React.ReactNode;
-  /** Page actions in the header toolbar. */
+  /** Icon-sized page actions, which fit the header toolbar at every width. */
   actions?: React.ReactNode;
+  /**
+   * Wide page actions (a realm picker, a Sort or New thread button): in the header toolbar from md up, and on a phone
+   * in a row under the title, because the toolbar's middle is kept clear for the floating top chrome and its two
+   * halves hold little more than an icon each.
+   */
+  wideActions?: React.ReactNode;
   /** Rail panels: the Inspector at 1280px and wider, a sheet behind the header's Info button below that. */
   rail?: React.ReactNode;
   /** The Inspector's accessible title and sheet heading; "Info" when omitted. */
@@ -44,6 +52,7 @@ export function ForumPage({
   breadcrumbs,
   leading,
   actions,
+  wideActions,
   rail,
   railTitle,
   openRailOnHash,
@@ -51,6 +60,8 @@ export function ForumPage({
   children,
 }: ForumPageProps) {
   const [railOpen, setRailOpen] = React.useState(false);
+  const phone = useMediaQuery(PHONE_QUERY);
+  const hasWide = wideActions != null && wideActions !== false;
   const label = railTitle ?? "Info";
   const hasRail = rail != null && rail !== false;
   const watchHash = hasRail && openRailOnHash !== undefined;
@@ -70,8 +81,9 @@ export function ForumPage({
           back={back}
           bleed
           actions={
-            actions != null || hasRail ? (
+            actions != null || hasRail || (hasWide && !phone) ? (
               <>
+                {phone ? null : wideActions}
                 {actions}
                 {hasRail && (
                   <Button
@@ -83,14 +95,24 @@ export function ForumPage({
                     onClick={() => setRailOpen(true)}
                   >
                     <InfoCircle aria-hidden />
-                    Info
+                    <span className="max-md:sr-only">Info</span>
                   </Button>
                 )}
               </>
             ) : undefined
           }
         />
-        <div className="flex min-w-0 flex-col gap-4">{children}</div>
+        <div className="flex min-w-0 flex-col gap-4">
+          {phone && hasWide ? (
+            <div
+              data-slot="forum-page-actions"
+              className="flex flex-wrap items-center gap-2 empty:hidden [&>*]:min-w-0"
+            >
+              {wideActions}
+            </div>
+          ) : null}
+          {children}
+        </div>
       </div>
       {hasRail && (
         <Inspector title={label} open={railOpen} onOpenChange={setRailOpen} className="space-y-4">

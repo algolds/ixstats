@@ -148,7 +148,7 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
       title="Moderation"
       breadcrumbs={<p className="tabular-nums">{scopeFacts(context)}</p>}
       back={{ href: FORUM_HOME, label: "ThinkPages" }}
-      actions={
+      wideActions={
         active === "moderators" ? null : (
           <ModScopeFilter
             realms={realms}

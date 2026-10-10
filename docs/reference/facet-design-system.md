@@ -72,7 +72,7 @@ The app palette has one colour per app, never shared:
 The Forum Red tint (hue 13) was retired with the XenForo bridge app in ThinkPages forum phase 4b; the native forum wears ThinkPages' emerald.
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
-- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own.
+- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own. ThinkTanks and Messages use the same scope, so their primaries are emerald too.
 
 Tint is a real accent everywhere:
 
@@ -204,7 +204,7 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
 ### Actions and data
 
 - `Button`: variants `default | destructive | outline | secondary | ghost | link`; sizes `default | xs | sm | lg | icon | icon-sm | icon-lg`.
-  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` it is the emerald app tint. Never hand-roll a gold or gradient button.
+  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` (the forum, plus ThinkTanks and Messages, which wear that scope) it is the emerald app tint. Never hand-roll a gold or gradient button.
   - Pressed is a colour change. There is no scale and no glow.
   - One primary per surface. Use `asChild` to render a link.
 - `Badge`: 7 variants (`default`, `secondary`, `success`, `warning`, `destructive`, `info`, `outline`). Status and count chips only. Pair colour with text or an icon.

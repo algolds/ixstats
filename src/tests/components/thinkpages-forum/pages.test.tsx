@@ -767,6 +767,18 @@ describe("new thread when the viewer cannot start one (phase 4, R8)", () => {
     expect(screen.getByRole("link", { name: "Back to the forum" })).toBeInTheDocument();
   });
 
+  it("names the board once, in the back link, and the realm under the title only for a realm board", () => {
+    set("category", { data: categoryData(true) });
+    const { unmount } = render(<NewThreadForm categoryKey="general" />);
+    expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
+    unmount();
+
+    set("category", { data: categoryData(true, [], HUB) });
+    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
+    expect(screen.getAllByText("Hub", { ignore: HIDDEN })).toHaveLength(1);
+    expect(screen.getByText("Eurth")).toBeInTheDocument();
+  });
+
   it("frames the plain refusal the same way", () => {
     set("category", { data: categoryData(false) });
     render(<NewThreadForm categoryKey="general" />);

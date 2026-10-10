@@ -707,7 +707,8 @@
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the emerald tint inside ThinkPages */
+    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the emerald tint inside ThinkPages
+       (and ThinkTanks and Messages, which wear its scope) */
     --primary-mono: #18181b;
     --primary-mono-hover: #3f3f46;
     --on-primary-mono: #fafafa;
@@ -736,7 +737,8 @@
     --accent-fill-mix: 18%;
   }
 
-  /* Declared on every scope so a nested app (ThinkPages inside Home) resets to monochrome. */
+  /* Declared on every scope so a nested scope (a ThinkPages section inside Home) resets to the monochrome
+     primary unless its own rule below sets one. */
   :root,
   [data-app] {
     --primary-fill: var(--primary-mono);
@@ -749,7 +751,8 @@
     --primary-fill-hover: var(--gold-hover);
     --on-primary: var(--on-gold);
   }
-  /* ThinkPages: the primary action is the emerald app tint itself. */
+  /* ThinkPages (the forum, and the ThinkTanks and Messages pages that share its emerald scope): the primary
+     action is the app tint itself. */
   [data-app="thinkpages"] {
     --primary-fill: var(--tint);
     --primary-fill-hover: var(--tint-hover);

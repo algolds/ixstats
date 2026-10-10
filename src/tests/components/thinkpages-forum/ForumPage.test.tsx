@@ -6,9 +6,10 @@ import { ForumPage, RailPanel } from "~/components/thinkpages-forum/shell";
 
 const originalMatchMedia = window.matchMedia;
 
-function installViewport(wide: boolean) {
+function installViewport(wide: boolean, phone = false) {
   window.matchMedia = ((query: string) => ({
-    matches: query === "(min-width: 1280px)" ? wide : false,
+    matches:
+      query === "(min-width: 1280px)" ? wide : query === "(max-width: 767px)" ? phone : false,
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,
@@ -38,6 +39,71 @@ describe("ForumPage", () => {
     expect(screen.getByText("Trail")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New thread" })).toBeInTheDocument();
     expect(screen.getByText("Body")).toBeInTheDocument();
+  });
+
+  describe("wide actions", () => {
+    const toolbar = (container: HTMLElement) =>
+      container.querySelector('[data-slot="page-header-toolbar"]')!;
+
+    it("sit in the header toolbar from md up, and not in the page body", () => {
+      installViewport(true);
+      const { container } = render(
+        <ForumPage title="General" wideActions={<button>Realm picker</button>}>
+          <p>Body</p>
+        </ForumPage>
+      );
+      expect(toolbar(container)).toContainElement(
+        screen.getByRole("button", { name: "Realm picker" })
+      );
+      expect(container.querySelector('[data-slot="forum-page-actions"]')).toBeNull();
+    });
+
+    it("move out of the toolbar row, which the top chrome covers, to a row under the title on a phone", () => {
+      installViewport(false, true);
+      const { container } = render(
+        <ForumPage
+          title="General"
+          wideActions={<button>Realm picker</button>}
+          actions={<button aria-label="Stash thread" />}
+        >
+          <p>Body</p>
+        </ForumPage>
+      );
+      const picker = screen.getByRole("button", { name: "Realm picker" });
+      expect(toolbar(container)).not.toContainElement(picker);
+      const row = container.querySelector('[data-slot="forum-page-actions"]')!;
+      expect(row).toContainElement(picker);
+      // Under the title, ahead of the page's own content.
+      const title = screen.getByRole("heading", { level: 1 });
+      expect(title.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        row.compareDocumentPosition(screen.getByText("Body")) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+      // Icon-sized actions stay in the toolbar.
+      expect(toolbar(container)).toContainElement(
+        screen.getByRole("button", { name: "Stash thread" })
+      );
+    });
+
+    it("leave no empty row on a phone when there is nothing to show", () => {
+      installViewport(false, true);
+      const { container } = render(
+        <ForumPage title="Moderation" wideActions={null}>
+          <p>Body</p>
+        </ForumPage>
+      );
+      expect(container.querySelector('[data-slot="forum-page-actions"]')).toBeNull();
+    });
+
+    it("keeps Info to an icon on a phone, still named Info", () => {
+      installViewport(false, true);
+      render(
+        <ForumPage title="General" rail={<p>Rail</p>}>
+          <p>Body</p>
+        </ForumPage>
+      );
+      expect(screen.getByRole("button", { name: "Info" })).toBeInTheDocument();
+    });
   });
 
   it("shows an emblem before the title", () => {
