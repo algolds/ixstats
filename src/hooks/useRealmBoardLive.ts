@@ -74,8 +74,9 @@ const holdsModeratorCopy = (queryClient: QueryClient, realmId: string): boolean 
  * A realm board kept live over the ThinkPages socket (spec section 2). Subscribes to the realm's public room, signed
  * in or not, and merges its events into the cached `getBoard` pages by post id. `live` is true once the socket is
  * connected and the room has confirmed the join (its first presence event). Until then the page polls: pass
- * `refetchInterval` to the board query and show "Live updates paused, retrying" while `live` is false. Typing is the
- * names of people typing now; `online` is the room's count, null while not live.
+ * `refetchInterval` to the board query. `paused` is true once a connected socket has dropped (show "Live updates
+ * paused, retrying"); it stays false while sockets are unavailable or have not connected yet, so the page polls
+ * silently. Typing is the names of people typing now; `online` is the room's count, null while not live.
  */
 export function useRealmBoardLive(realmId: string | null) {
   const queryClient = useQueryClient();
@@ -137,6 +138,10 @@ export function useRealmBoardLive(realmId: string | null) {
     useThinkPagesWebSocket({ accountId: user?.id, anonymous: isLoaded, onBoardEvent });
   const connected = clientState.connected;
   const live = connected && online !== null;
+  // Only a socket that was up and dropped is a reason to say so: not one that is disabled in this environment, nor
+  // one still connecting. The board polls through both without a word.
+  const [wasConnected, setWasConnected] = useState(false);
+  if (connected && !wasConnected) setWasConnected(true);
 
   useEffect(() => {
     if (!connected || !realmId) {
@@ -173,6 +178,7 @@ export function useRealmBoardLive(realmId: string | null) {
   return {
     connected,
     live,
+    paused: wasConnected && !connected,
     typing: typingNames,
     online: live ? online : null,
     sendTyping,

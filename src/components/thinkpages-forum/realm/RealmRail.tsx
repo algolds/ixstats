@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Activity, Group, List } from "iconoir-react";
+import { Stat } from "~/components/ui/stat";
 import { timeAgo } from "~/lib/format/compact";
 import { categoryHref } from "~/lib/thinkpages-forum/links";
 import type { RouterOutputs } from "~/trpc/react";
@@ -39,7 +40,7 @@ export function BoardsPanel({ slug, boards }: { slug: string; boards: readonly R
               href={categoryHref({ key: board.key, realm: { slug } })}
               className="hover:bg-fill-4 focus-visible:outline-tint rounded-control-sm block px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
             >
-              <span className="text-callout block truncate">{board.name}</span>
+              <span className="text-body text-label block truncate font-medium">{board.name}</span>
               <span className="text-footnote text-label-secondary flex min-w-0 gap-2">
                 <span className="min-w-0 flex-1 truncate">
                   {board.latest ? board.latest.threadTitle : "No threads yet"}
@@ -64,7 +65,10 @@ export function OnlinePanel({ online }: { online: number | null }) {
   if (online === null) return null;
   return (
     <RailPanel title="Online now" icon={<Group />}>
-      <p className="text-callout tabular-nums">{`${online} online`}</p>
+      <Stat
+        value={online.toLocaleString("en-US")}
+        label={online === 1 ? "person in the room" : "people in the room"}
+      />
     </RailPanel>
   );
 }
@@ -86,7 +90,7 @@ export function RecentActionsPanel({
             key={action.id}
             className="flex min-w-0 items-baseline gap-2 py-2 first:pt-0 last:pb-0"
           >
-            <span className="text-callout min-w-0 flex-1 break-words">{action.text}</span>
+            <span className="text-body min-w-0 flex-1 break-words">{action.text}</span>
             <span className="text-footnote text-label-secondary shrink-0 tabular-nums">
               {timeAgo(action.at)}
             </span>

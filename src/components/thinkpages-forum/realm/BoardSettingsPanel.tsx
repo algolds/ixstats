@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Settings as SettingsIcon } from "iconoir-react";
 import { Label } from "~/components/ui/label";
 import {
@@ -40,9 +40,17 @@ interface BoardSettingsPanelProps {
  */
 export function BoardSettingsPanel({ realmId, slug, settings }: BoardSettingsPanelProps) {
   const utils = api.useUtils();
-  const { mutateAsync } = api.thinkpagesForum.updateBoardSettings.useMutation();
+  // A refusal is the answer: retrying it would leave the optimistic value on screen through the backoff.
+  const { mutateAsync } = api.thinkpagesForum.updateBoardSettings.useMutation({ retry: false });
   const [error, setError] = useState<string | null>(null);
   const switchId = useId();
+  // What the server last confirmed. `settings` includes changes not yet confirmed (shown at once), so a refusal puts
+  // back this and not what the screen showed an instant ago (a second toggle before the first answer).
+  const confirmed = useRef(settings);
+  const inFlight = useRef(0);
+  useEffect(() => {
+    if (inFlight.current === 0) confirmed.current = settings;
+  }, [settings]);
 
   const show = useCallback(
     (change: Partial<Settings>) =>
@@ -56,21 +64,30 @@ export function BoardSettingsPanel({ realmId, slug, settings }: BoardSettingsPan
 
   const change = useCallback(
     async (patch: Partial<Settings>) => {
-      const before: Partial<Settings> = {};
-      if (patch.visitorsAllowed !== undefined) before.visitorsAllowed = settings.visitorsAllowed;
-      if (patch.slowModeSeconds !== undefined) before.slowModeSeconds = settings.slowModeSeconds;
       setError(null);
+      inFlight.current += 1;
       // A poll in flight from before the change would put the old rules back over it.
       await utils.thinkpagesForum.getBoard.cancel({ realm: slug });
       show(patch);
       try {
-        show(await mutateAsync({ realmId, ...patch }));
+        const saved = await mutateAsync({ realmId, ...patch });
+        confirmed.current = saved;
+        show(saved);
       } catch (e) {
+        const before: Partial<Settings> = {};
+        if (patch.visitorsAllowed !== undefined) {
+          before.visitorsAllowed = confirmed.current.visitorsAllowed;
+        }
+        if (patch.slowModeSeconds !== undefined) {
+          before.slowModeSeconds = confirmed.current.slowModeSeconds;
+        }
         show(before);
         setError(e instanceof Error ? e.message : "Could not save the settings");
+      } finally {
+        inFlight.current -= 1;
       }
     },
-    [settings, utils, slug, show, mutateAsync, realmId]
+    [utils, slug, show, mutateAsync, realmId]
   );
 
   return (

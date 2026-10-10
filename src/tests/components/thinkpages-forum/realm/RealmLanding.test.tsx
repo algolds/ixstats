@@ -16,6 +16,7 @@ jest.mock("~/trpc/react", () => {
     happenings: undefined as unknown,
     sectionInputs: [] as unknown[],
     happeningsInputs: [] as unknown[],
+    happeningsOptions: [] as Array<Record<string, unknown> | undefined>,
     boardOptions: [] as Array<Record<string, unknown> | undefined>,
     mutations: {} as Record<string, jest.Mock>,
     setData: jest.fn(),
@@ -66,8 +67,9 @@ jest.mock("~/trpc/react", () => {
       realms: {
         region: {
           happenings: {
-            useQuery: (input: unknown) => {
+            useQuery: (input: unknown, options?: Record<string, unknown>) => {
               state.happeningsInputs.push(input);
+              state.happeningsOptions.push(options);
               return { data: state.happenings };
             },
           },
@@ -81,6 +83,7 @@ jest.mock("~/hooks/useRealmBoardLive", () => {
   const live = {
     connected: true,
     live: true,
+    paused: false,
     typing: [] as string[],
     online: 6 as number | null,
     sendTyping: jest.fn(),
@@ -124,7 +127,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
   BoardFeed: ({
     data,
     showLatest,
-    live,
+    paused,
     typing,
     onReply,
     onQuote,
@@ -132,13 +135,13 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
   }: {
     data: { messages: Array<{ id: string; contentHtml: string; author: { name: string } }> };
     showLatest: number;
-    live: boolean;
+    paused: boolean;
     typing: string[];
     onReply: (m: unknown) => void;
     onQuote: (m: unknown) => void;
     onChanged: () => void;
   }) => (
-    <div data-testid="feed" data-show-latest={showLatest} data-live={String(live)}>
+    <div data-testid="feed" data-show-latest={showLatest} data-paused={String(paused)}>
       <span>{typing.join(",")}</span>
       {data.messages.map((m) => (
         <div key={m.id}>
@@ -158,7 +161,6 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
   ),
 }));
 jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => ({
-  DockSpacer: () => <div aria-hidden data-slot="board-dock-spacer" />,
   BoardComposer: ({
     replyTo,
     quote,
@@ -214,6 +216,7 @@ const { state } = jest.requireMock<{
     happenings: unknown;
     sectionInputs: unknown[];
     happeningsInputs: unknown[];
+    happeningsOptions: Array<Record<string, unknown> | undefined>;
     mutations: Record<string, jest.Mock>;
     setData: jest.Mock;
     cancel: jest.Mock;
@@ -224,6 +227,7 @@ const { live } = jest.requireMock<{
   live: {
     connected: boolean;
     live: boolean;
+    paused: boolean;
     typing: string[];
     online: number | null;
     sendTyping: jest.Mock;
@@ -293,6 +297,7 @@ beforeEach(() => {
   state.boardOptions.length = 0;
   state.sectionInputs.length = 0;
   state.happeningsInputs.length = 0;
+  state.happeningsOptions.length = 0;
   state.section = undefined;
   state.happenings = undefined;
   installViewport({ wide: false, phone: false });
@@ -301,6 +306,7 @@ beforeEach(() => {
   Object.assign(live, {
     connected: true,
     live: true,
+    paused: false,
     typing: [],
     online: 6,
     refetchInterval: false,
@@ -379,6 +385,22 @@ describe("RealmLanding", () => {
       expect(plain.container.querySelector("svg")).not.toBeNull();
     });
 
+    it("marks a realm without an emblem with a tinted realm mark, not a grey tile", () => {
+      const { container } = render(<RealmLanding realm="eurth" />);
+      const mark = container.querySelector('[data-slot="page-header"] .size-16')!;
+      expect(mark).toHaveClass("bg-tint-fill", "text-tint");
+      expect(mark).not.toHaveClass("bg-fill-3");
+    });
+
+    it("has no ThinkPages trail above the name, only the back link and the facts", () => {
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.queryByRole("navigation", { name: "breadcrumb" })).toBeNull();
+      expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+        "href",
+        "/thinkpages"
+      );
+    });
+
     it("lists the other realms, opening their landing pages", () => {
       render(<RealmLanding realm="eurth" />);
       expect(screen.getByLabelText("Other realms")).toHaveAttribute("data-value", "eurth");
@@ -410,7 +432,7 @@ describe("RealmLanding", () => {
         "href",
         "/thinkpages/r/eurth/hub"
       );
-      expect(within(rail).getByText("6 online")).toBeInTheDocument();
+      expect(within(rail).getByText("people in the room")).toBeInTheDocument();
       expect(
         within(rail).getByRole("heading", { name: "Recent actions in Eurth" })
       ).toBeInTheDocument();
@@ -426,7 +448,9 @@ describe("RealmLanding", () => {
 
     it("has a rail on the online count alone", () => {
       render(<RealmLanding realm="eurth" />);
-      expect(within(screen.getByRole("complementary")).getByText("6 online")).toBeInTheDocument();
+      expect(
+        within(screen.getByRole("complementary")).getByText("people in the room")
+      ).toBeInTheDocument();
     });
 
     it("offers the board settings to those who may change them, with the realm's current rules", () => {
@@ -465,7 +489,7 @@ describe("RealmLanding", () => {
 
     it("leaves room after the feed for the dock", () => {
       const { container } = render(<RealmLanding realm="eurth" />);
-      const spacer = container.querySelector('[data-slot="board-dock-spacer"]')!;
+      const spacer = container.querySelector('[data-slot="dock-spacer"]')!;
       expect(spacer).not.toBeNull();
       expect(
         screen.getByTestId("feed").compareDocumentPosition(spacer) &
@@ -478,7 +502,7 @@ describe("RealmLanding", () => {
         data: boardData(messages, { access: boardAccess({ canPost: false, reason: "sign_in" }) }),
       };
       const { container } = render(<RealmLanding realm="eurth" />);
-      expect(container.querySelector('[data-slot="board-dock-spacer"]')).toBeNull();
+      expect(container.querySelector('[data-slot="dock-spacer"]')).toBeNull();
     });
 
     it("does not dock the composer on larger screens", () => {
@@ -499,7 +523,7 @@ describe("RealmLanding", () => {
       fireEvent.click(screen.getByRole("button", { name: "Info" }));
       const dialog = screen.getByRole("dialog");
       expect(within(dialog).queryByRole("heading", { name: "Boards" })).toBeNull();
-      expect(within(dialog).getByText("6 online")).toBeInTheDocument();
+      expect(within(dialog).getByText("people in the room")).toBeInTheDocument();
     });
 
     it("shows no chips off the phone", () => {
@@ -517,18 +541,33 @@ describe("RealmLanding", () => {
     });
   });
 
+  describe("recent actions read", () => {
+    it("asks once and does not retry, so a realm without a row costs one request", () => {
+      render(<RealmLanding realm="eurth" />);
+      expect(state.happeningsOptions.at(-1)).toMatchObject({ retry: false });
+    });
+  });
+
   describe("live updates", () => {
     it("polls the board while the socket is down and stops when it is live", () => {
       live.live = false;
       live.refetchInterval = 10_000;
       const { rerender } = render(<RealmLanding realm="eurth" />);
       expect(state.boardOptions.at(-1)).toMatchObject({ refetchInterval: 10_000 });
-      expect(screen.getByTestId("feed")).toHaveAttribute("data-live", "false");
       live.live = true;
       live.refetchInterval = false;
       rerender(<RealmLanding realm="eurth" />);
       expect(state.boardOptions.at(-1)).toMatchObject({ refetchInterval: false });
-      expect(screen.getByTestId("feed")).toHaveAttribute("data-live", "true");
+    });
+
+    it("polls without a word until a connected socket drops, then tells the feed it is paused", () => {
+      live.live = false;
+      live.refetchInterval = 10_000;
+      const { rerender } = render(<RealmLanding realm="eurth" />);
+      expect(screen.getByTestId("feed")).toHaveAttribute("data-paused", "false");
+      live.paused = true;
+      rerender(<RealmLanding realm="eurth" />);
+      expect(screen.getByTestId("feed")).toHaveAttribute("data-paused", "true");
     });
 
     it("joins the room of the realm it loaded, and hands who is typing to the feed", () => {

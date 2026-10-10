@@ -5,13 +5,12 @@ import Link from "next/link";
 import { ArrowRight, Reply as ReplyIcon, Quote } from "iconoir-react";
 import type { ActionCardData } from "~/components/action-links";
 import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { timeAgo } from "~/lib/format/compact";
 import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
-import { initialsOf } from "../AuthorMark";
+import { ForumAvatar } from "../ForumAvatar";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { PostBody } from "../thread/PostBody";
 import type { PostStyle } from "../thread/types";
@@ -135,17 +134,12 @@ export const BoardMessage = memo(function BoardMessage({
       aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
       data-hidden={message.hidden ? "" : undefined}
       className={cn(
-        "flex scroll-mt-24 gap-3 px-4 py-3 sm:px-5",
+        "flex scroll-mt-24 gap-3.5 px-4 py-4 sm:px-5",
         message.hidden && "bg-fill-4 opacity-70",
         className
       )}
     >
-      <Avatar className="size-9 shrink-0">
-        {author.avatarUrl ? <AvatarImage src={author.avatarUrl} alt="" /> : null}
-        <AvatarFallback className="text-caption text-label-secondary font-medium">
-          {initialsOf(author.name)}
-        </AvatarFallback>
-      </Avatar>
+      <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" className="mt-0.5" />
       {editing ? (
         <MessageEditor
           message={message}

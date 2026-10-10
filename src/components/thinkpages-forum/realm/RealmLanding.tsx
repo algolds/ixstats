@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Globe } from "iconoir-react";
+import { Community } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
@@ -11,27 +11,34 @@ import { upsertBoardMessage } from "~/lib/thinkpages-forum/board-live";
 import { FORUM_HOME, realmHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { PHONE_QUERY } from "../composer";
-import { ForumBreadcrumbs } from "../ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { RealmSwitcher } from "../RealmSwitcher";
-import { ForumPage } from "../shell";
+import { DockSpacer, ForumPage } from "../shell";
 import { BoardChips } from "./BoardChips";
-import { BoardComposer, DockSpacer, type BoardPostInput } from "./BoardComposer";
+import { BoardComposer, type BoardPostInput } from "./BoardComposer";
 import { BoardFeed } from "./BoardFeed";
 import { boardQuoteText } from "./board-quote";
 import { RealmRail, RECENT_ACTIONS_SHOWN, railHasContent } from "./RealmRail";
 import type { BoardData, BoardMessageData, BoardQuote, ReplyTarget } from "./types";
 import { useScrollToMessageHash } from "./useScrollToMessageHash";
 
+/** Puts the caret in the board's composer, which sits above the feed. */
+function focusBoardComposer() {
+  document
+    .querySelector<HTMLElement>('[data-slot="board-composer"] [contenteditable="true"]')
+    ?.focus();
+}
+
+/** The realm's emblem (or its thumbnail, as the server resolves it); a tinted realm mark without either. */
 function Emblem({ url }: { url: string | null }) {
   const src = assetUrl(url);
   return (
-    <div className="bg-fill-3 rounded-card flex size-16 shrink-0 items-center justify-center overflow-hidden">
+    <div className="bg-tint-fill text-tint rounded-card flex size-16 shrink-0 items-center justify-center overflow-hidden">
       {src ? (
         <img src={src} alt="" className="size-full object-cover" />
       ) : (
-        <Globe aria-hidden className="text-label-secondary size-7" />
+        <Community aria-hidden className="size-8" />
       )}
     </div>
   );
@@ -79,11 +86,11 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
   const { realm, access } = data;
   const phone = useMediaQuery(PHONE_QUERY);
   const { data: sections } = api.thinkpagesForum.realmSection.useQuery({ realm: slug });
-  const { data: happenings } = api.realms.region.happenings.useQuery({
-    slug,
-    kinds: ["activity"],
-    limit: RECENT_ACTIONS_SHOWN,
-  });
+  // A realm without a row (IxWorld, synthesized) has no happenings: the read says NOT_FOUND once and the panel stays out.
+  const { data: happenings } = api.realms.region.happenings.useQuery(
+    { slug, kinds: ["activity"], limit: RECENT_ACTIONS_SHOWN },
+    { retry: false, refetchOnWindowFocus: false }
+  );
   const boards = sections?.categories ?? [];
   // On a phone the boards are chips under the header, so the Info sheet does not list them again.
   const rail = {
@@ -153,12 +160,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
     <ForumPage
       title={realm.name}
       leading={<Emblem url={realm.emblemUrl} />}
-      breadcrumbs={
-        <>
-          <ForumBreadcrumbs items={[{ label: "ThinkPages", href: FORUM_HOME }]} />
-          <p className="tabular-nums">{factsOf(data, live.online)}</p>
-        </>
-      }
+      breadcrumbs={<p className="tabular-nums">{factsOf(data, live.online)}</p>}
       back={{ href: FORUM_HOME, label: "ThinkPages" }}
       actions={<OtherRealms current={realm.slug} />}
       rail={railHasContent(rail) ? <RealmRail realm={realm} {...rail} /> : undefined}
@@ -180,13 +182,14 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         realm={realm}
         data={data}
         typing={live.typing}
-        live={live.live}
+        paused={live.paused}
         signedIn={!!isSignedIn}
         tools={tools}
         showLatest={showLatest}
         onReply={startReply}
         onQuote={startQuote}
         onChanged={changed}
+        onStart={focusBoardComposer}
       />
       {phone && access.canPost ? <DockSpacer /> : null}
     </ForumPage>

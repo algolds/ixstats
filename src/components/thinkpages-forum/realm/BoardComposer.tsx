@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
 import { Reply, Xmark } from "iconoir-react";
 import { ActionPicker } from "~/components/action-links";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { FacetMaterial } from "~/components/ui/facet";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getBasePath } from "~/lib/base-path";
@@ -16,6 +15,7 @@ import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { cn } from "~/lib/utils/cn";
 import { BanNotice, NoticeText } from "../BanNotice";
 import { PersonaSelect, useMyPersonas } from "../composer/PersonaSelect";
+import { BottomDock } from "../shell";
 import type { BoardAccess, BoardQuote, ReplyTarget } from "./types";
 import { retryAfterSecondsOf, useSlowMode } from "./useSlowMode";
 
@@ -154,8 +154,8 @@ function PostingComposer({
 
   return (
     <Card
-      variant="well"
-      padding="sm"
+      variant={docked ? "well" : "pane"}
+      padding={docked ? "sm" : "md"}
       content="input"
       data-slot="board-composer"
       className="flex cursor-text flex-col gap-2"
@@ -229,33 +229,15 @@ function PostingComposer({
   );
 }
 
-/** Above the tab bar on phones, on the shell's own offset. The page leaves room below its feed (`DockSpacer`). */
-function Dock({ children }: { children: ReactNode }) {
-  return (
-    <FacetMaterial
-      data-slot="board-dock"
-      className="z-chrome rounded-sheet fixed inset-x-2 bottom-[calc(var(--shell-tabbar-height)+0.5rem)] p-2"
-    >
-      {children}
-    </FacetMaterial>
-  );
-}
-
-/** Room at the end of the page so the last messages and "Load earlier messages" are not hidden behind the dock. */
-export function DockSpacer() {
-  return <div aria-hidden data-slot="board-dock-spacer" className="h-40" />;
-}
-
 /**
  * The realm board's composer: the light editor with Attach action, Posting as, a 1,000 counter and slow mode; the
  * reason instead when the viewer cannot post. `docked` (phones) puts the editor in a dock above the tab bar.
  */
 export function BoardComposer(props: BoardComposerProps) {
   if (!props.access.canPost) return <CannotPost access={props.access} />;
-  if (!props.docked) return <PostingComposer {...props} />;
   return (
-    <Dock>
+    <BottomDock docked={props.docked === true} slot="board-dock">
       <PostingComposer {...props} />
-    </Dock>
+    </BottomDock>
   );
 }

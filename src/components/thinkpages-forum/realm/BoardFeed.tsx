@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { ChatBubble } from "iconoir-react";
+import { ChatBubble, EditPencil } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -205,8 +205,8 @@ interface BoardFeedProps {
   data: BoardData;
   /** The names typing now. */
   typing: readonly string[];
-  /** The live connection is up; otherwise the page polls and says so. */
-  live: boolean;
+  /** A live connection that was up has dropped: the page polls and says so. */
+  paused: boolean;
   signedIn: boolean;
   tools: ModeratorTools | null;
   /** Bumped when the reader posts: show the newest messages and bring the top into view. */
@@ -214,6 +214,8 @@ interface BoardFeedProps {
   onReply: (message: BoardMessageData) => void;
   onQuote: (message: BoardMessageData) => void;
   onChanged: () => void;
+  /** The empty board's way in: takes the writer to the composer. */
+  onStart: () => void;
 }
 
 /**
@@ -225,13 +227,14 @@ export function BoardFeed({
   realm,
   data,
   typing,
-  live,
+  paused,
   signedIn,
   tools,
   showLatest,
   onReply,
   onQuote,
   onChanged,
+  onStart,
 }: BoardFeedProps) {
   const top = useRef<HTMLDivElement>(null);
   const [held, setHeld] = useState<ReadonlySet<string> | null>(null);
@@ -282,29 +285,43 @@ export function BoardFeed({
         </div>
       ) : null}
       <Card content="feed" className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 pt-4 pb-2 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-4 sm:px-5">
           <h2 className="text-headline flex items-center gap-2 leading-none">
-            <ChatBubble aria-hidden className="text-tint size-5" />
+            <ChatBubble aria-hidden className="text-tint size-4" />
             Realm board
           </h2>
           <p aria-live="polite" className="text-footnote text-label-secondary">
             {typingText}
           </p>
         </div>
-        {live ? null : (
+        {paused ? (
           <p role="status" className="text-footnote text-label-secondary px-4 pb-2 sm:px-5">
             Live updates paused, retrying
           </p>
-        )}
+        ) : null}
         <div ref={top} aria-hidden className="h-px scroll-mt-24" />
         {shown.length === 0 ? (
           <EmptyState
-            compact
+            icon={<ChatBubble className="text-tint" />}
+            className={cn(DIVIDER, "py-10")}
             title={data.access.canPost ? "Start the conversation" : "No messages yet"}
             message={data.access.canPost ? `Say something to ${realm.name}` : undefined}
+            action={
+              data.access.canPost ? (
+                <Button onClick={onStart} className="pointer-coarse:min-h-11">
+                  <EditPencil aria-hidden />
+                  Write a message
+                </Button>
+              ) : undefined
+            }
           />
         ) : (
-          <div role="feed" aria-busy={loadingMore} aria-label="Realm board messages">
+          <div
+            role="feed"
+            aria-busy={loadingMore}
+            aria-label="Realm board messages"
+            className={DIVIDER}
+          >
             <Section
               messages={shown}
               cursor={data.messages.at(-1)?.id}

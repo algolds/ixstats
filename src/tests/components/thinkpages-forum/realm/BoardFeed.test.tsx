@@ -119,13 +119,14 @@ function feedProps(
     realm: REALM,
     data,
     typing: [],
-    live: true,
+    paused: false,
     signedIn: true,
     tools: null,
     showLatest: 0,
     onReply: jest.fn(),
     onQuote: jest.fn(),
     onChanged: jest.fn(),
+    onStart: jest.fn(),
     ...over,
   };
 }
@@ -139,9 +140,12 @@ describe("BoardFeed", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Realm board" })).toBeInTheDocument();
   });
 
-  it("invites the first message on an empty board", () => {
-    render(<BoardFeed {...feedProps(boardData([]))} />);
+  it("invites the first message on an empty board, with a way to the composer", () => {
+    const props = feedProps(boardData([]));
+    render(<BoardFeed {...props} />);
     expect(screen.getByText("Start the conversation")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Write a message" }));
+    expect(props.onStart).toHaveBeenCalledTimes(1);
   });
 
   it("does not ask a reader who cannot post to start one", () => {
@@ -154,6 +158,7 @@ describe("BoardFeed", () => {
     );
     expect(screen.getByText("No messages yet")).toBeInTheDocument();
     expect(screen.queryByText("Start the conversation")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Write a message" })).toBeNull();
   });
 
   it("passes a reply up with the message", () => {
@@ -178,10 +183,15 @@ describe("BoardFeed", () => {
       expect(screen.queryByText(/typing/)).toBeNull();
     });
 
-    it("says live updates are paused, and polling, while the socket is down", () => {
-      const { rerender } = render(<BoardFeed {...feedProps(undefined, { live: false })} />);
+    it("says live updates are paused only once a connected socket has dropped", () => {
+      const { rerender } = render(<BoardFeed {...feedProps(undefined, { paused: true })} />);
       expect(screen.getByText("Live updates paused, retrying")).toBeInTheDocument();
-      rerender(<BoardFeed {...feedProps(undefined, { live: true })} />);
+      rerender(<BoardFeed {...feedProps(undefined, { paused: false })} />);
+      expect(screen.queryByText("Live updates paused, retrying")).toBeNull();
+    });
+
+    it("says nothing by default, as on a board that has never been live", () => {
+      render(<BoardFeed {...feedProps()} />);
       expect(screen.queryByText("Live updates paused, retrying")).toBeNull();
     });
   });

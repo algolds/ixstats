@@ -22,7 +22,7 @@ export function BoardChips({
         <Link
           key={board.key}
           href={categoryHref({ key: board.key, realm: { slug } })}
-          className="bg-fill-3 hover:bg-fill-4 text-callout focus-visible:outline-tint inline-flex shrink-0 items-center rounded-full px-3 py-1.5 whitespace-nowrap focus-visible:outline-2 pointer-coarse:min-h-11"
+          className="bg-tint-fill text-tint-ink text-callout focus-visible:outline-tint inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 font-medium whitespace-nowrap hover:opacity-80 focus-visible:outline-2 pointer-coarse:min-h-11"
         >
           {board.name}
         </Link>

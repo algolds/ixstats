@@ -69,12 +69,14 @@ describe("OnlinePanel", () => {
   it("counts who is online now", () => {
     render(<OnlinePanel online={6} />);
     expect(screen.getByRole("heading", { level: 2, name: "Online now" })).toBeInTheDocument();
-    expect(screen.getByText("6 online")).toBeInTheDocument();
+    expect(screen.getByText("6")).toBeInTheDocument();
+    expect(screen.getByText("people in the room")).toBeInTheDocument();
   });
 
   it("says one person is online", () => {
     render(<OnlinePanel online={1} />);
-    expect(screen.getByText("1 online")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getByText("person in the room")).toBeInTheDocument();
   });
 
   it("is left out while the count is unknown", () => {

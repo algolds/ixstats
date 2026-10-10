@@ -44,6 +44,7 @@ jest.mock("~/components/ui/select", () => {
 jest.mock("~/trpc/react", () => {
   const state = {
     mutate: jest.fn(),
+    options: undefined as unknown,
     cancel: jest.fn(() => Promise.resolve()),
     setData: jest.fn(),
   };
@@ -55,7 +56,10 @@ jest.mock("~/trpc/react", () => {
       }),
       thinkpagesForum: {
         updateBoardSettings: {
-          useMutation: () => ({ mutateAsync: state.mutate }),
+          useMutation: (options: unknown) => {
+            state.options = options;
+            return { mutateAsync: state.mutate };
+          },
         },
       },
     },
@@ -65,7 +69,7 @@ jest.mock("~/trpc/react", () => {
 import { BoardSettingsPanel } from "~/components/thinkpages-forum/realm/BoardSettingsPanel";
 
 const { state } = jest.requireMock<{
-  state: { mutate: jest.Mock; cancel: jest.Mock; setData: jest.Mock };
+  state: { mutate: jest.Mock; options: unknown; cancel: jest.Mock; setData: jest.Mock };
 }>("~/trpc/react");
 
 const settings = { visitorsAllowed: true, slowModeSeconds: 0 };
@@ -151,6 +155,36 @@ describe("BoardSettingsPanel", () => {
     // The optimistic value first, then the rollback of that one setting only.
     expect(applied(0)).toEqual({ visitorsAllowed: false, slowModeSeconds: 0 });
     expect(applied(1)).toEqual({ visitorsAllowed: true, slowModeSeconds: 0 });
+  });
+
+  it("does not retry a refused change, so the rollback is immediate", () => {
+    renderPanel();
+    expect(state.options).toEqual({ retry: false });
+  });
+
+  it("puts back what the server last confirmed, not the optimistic value of a toggle still in flight", async () => {
+    const answers: Array<(error: Error) => void> = [];
+    state.mutate.mockImplementation(() => new Promise((_resolve, reject) => answers.push(reject)));
+    const view = renderPanel({ visitorsAllowed: true, slowModeSeconds: 0 });
+    fireEvent.click(screen.getByRole("switch", { name: "Visitors can post" }));
+    await waitFor(() => expect(state.mutate).toHaveBeenCalledTimes(1));
+    // The cached board now shows the first toggle, which the server has not answered.
+    view.rerender(
+      <BoardSettingsPanel
+        realmId="r_eurth"
+        slug="eurth"
+        settings={{ visitorsAllowed: false, slowModeSeconds: 0 }}
+      />
+    );
+    fireEvent.click(screen.getByRole("switch", { name: "Visitors can post" }));
+    await waitFor(() => expect(state.mutate).toHaveBeenCalledTimes(2));
+
+    await act(async () => answers[1]!(new Error("No")));
+    // The second toggle was back to on; the server still holds on, and that is what returns.
+    expect(state.setData).toHaveBeenCalledTimes(3);
+    expect(applied(2)).toEqual({ visitorsAllowed: true, slowModeSeconds: 0 });
+    await act(async () => answers[0]!(new Error("No")));
+    expect(applied(3)).toEqual({ visitorsAllowed: true, slowModeSeconds: 0 });
   });
 
   it("rolls back only the setting that failed", async () => {

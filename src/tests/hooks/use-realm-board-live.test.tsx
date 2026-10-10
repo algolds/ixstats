@@ -158,6 +158,26 @@ describe("useRealmBoardLive connection and fallback", () => {
     expect(socket.subscribe).toHaveBeenCalledWith("realm-board:r_eurth");
   });
 
+  it("is not paused before the socket has ever connected (disabled, or still connecting), though it polls", () => {
+    const view = mount(false);
+    expect(view.result.current).toMatchObject({ paused: false, refetchInterval: 10_000 });
+    view.rerender();
+    expect(view.result.current.paused).toBe(false);
+  });
+
+  it("is paused only after a connected socket drops, and clears when it returns", () => {
+    const view = mount(true);
+    expect(view.result.current.paused).toBe(false);
+
+    socket.connected = false;
+    view.rerender();
+    expect(view.result.current).toMatchObject({ paused: true, refetchInterval: 10_000 });
+
+    socket.connected = true;
+    view.rerender();
+    expect(view.result.current.paused).toBe(false);
+  });
+
   it("leaves the room on unmount", () => {
     const view = mount(true);
     view.unmount();

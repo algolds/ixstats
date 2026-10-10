@@ -141,6 +141,53 @@ describe("BoardComposer on a phone", () => {
     expect(dock).toContainElement(post());
   });
 
+  it("keeps the editor, and the draft in it, when the viewport crosses the phone breakpoint", () => {
+    const { rerender } = renderComposer({ docked: false });
+    const editor = screen.getByTestId("editor");
+    type("half a message");
+
+    const props = {
+      realmName: "Eurth",
+      access: boardAccess(),
+      slowModeSeconds: 0,
+      replyTo: null,
+      quote: null,
+      onTyping: jest.fn(),
+      onClearReply: jest.fn(),
+      onQuoteInserted: jest.fn(),
+      onSubmit: jest.fn().mockResolvedValue(undefined),
+    };
+    rerender(<BoardComposer {...props} docked />);
+    expect(screen.getByTestId("editor")).toBe(editor);
+    expect(editor).toHaveValue("half a message");
+    expect(post()).toBeEnabled();
+
+    rerender(<BoardComposer {...props} docked={false} />);
+    expect(screen.getByTestId("editor")).toBe(editor);
+    expect(editor).toHaveValue("half a message");
+  });
+
+  it("is a pane in the page and a well inside the dock", () => {
+    const { container, rerender } = renderComposer();
+    const composer = () => container.querySelector('[data-slot="board-composer"]')!;
+    expect(composer()).toHaveAttribute("data-variant", "pane");
+    rerender(
+      <BoardComposer
+        realmName="Eurth"
+        access={boardAccess()}
+        slowModeSeconds={0}
+        replyTo={null}
+        quote={null}
+        onTyping={jest.fn()}
+        onClearReply={jest.fn()}
+        onQuoteInserted={jest.fn()}
+        onSubmit={jest.fn()}
+        docked
+      />
+    );
+    expect(composer()).toHaveAttribute("data-variant", "well");
+  });
+
   it("keeps the editor short so the dock leaves the messages in view", () => {
     renderComposer({ docked: true });
     expect(
