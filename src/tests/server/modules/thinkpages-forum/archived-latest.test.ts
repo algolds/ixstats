@@ -26,17 +26,19 @@ const newer = new Date("2026-10-05");
 
 describe("summarizeCategories", () => {
   it("counts archived threads but takes the latest activity from the others", async () => {
-    const groupBy = jest.fn(async () => [
+    const groupBy = jest.fn(async (_args: object) => [
       { categoryId: "cat_hub", archived: true, _count: { _all: 1 }, _max: { lastPostAt: newer } },
       { categoryId: "cat_hub", archived: false, _count: { _all: 3 }, _max: { lastPostAt: older } },
     ]);
     const [row] = await summarizeCategories({ forumThread: { groupBy } } as never, null, [hub]);
     expect(row).toMatchObject({ key: "hub", threadCount: 4, lastPostAt: older });
-    expect(groupBy).toHaveBeenCalledWith(expect.objectContaining({ by: ["categoryId", "archived"] }));
+    expect(groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({ by: ["categoryId", "archived"] })
+    );
   });
 
   it("has no latest activity when every thread is archived", async () => {
-    const groupBy = jest.fn(async () => [
+    const groupBy = jest.fn(async (_args: object) => [
       { categoryId: "cat_hub", archived: true, _count: { _all: 1 }, _max: { lastPostAt: newer } },
     ]);
     const [row] = await summarizeCategories({ forumThread: { groupBy } } as never, null, [hub]);
@@ -46,7 +48,7 @@ describe("summarizeCategories", () => {
 
 describe("forumPreview", () => {
   it("lists only unarchived, unhidden Hub threads", async () => {
-    const findMany = jest.fn(async () => []);
+    const findMany = jest.fn(async (_args: object) => []);
     const db = {
       forumCategory: { findFirst: jest.fn(async () => ({ id: "cat_hub" })) },
       forumThread: { findMany },

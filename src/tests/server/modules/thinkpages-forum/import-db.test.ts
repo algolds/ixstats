@@ -436,8 +436,7 @@ describe("relinkImportedAuthors", () => {
       threads: [{ id: "t-1", categoryId: "c", xenforoUserId: 8, authorUserId: null }],
       posts: [],
     });
-    const sqlOf = () =>
-      db.$executeRaw.mock.calls.map(([strings]: [TemplateStringsArray]) => strings.join("?"));
+    const sqlOf = () => db.$executeRaw.mock.calls.map(([strings]) => strings.join("?"));
     await relinkImportedAuthors(db as never);
     const updates = sqlOf().filter((sql) => sql.includes('UPDATE "forum_reports"'));
     expect(updates).toHaveLength(2);
