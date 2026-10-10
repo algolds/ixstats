@@ -1640,7 +1640,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **Country Profile & Directory HIG Redesign (/apple-design)**:
   - **Country Profile Navigation & Header (`/countries/[slug]`)**: Redesigned country header ([CountryHeader.tsx](src/app/countries/[slug]/_components/CountryHeader.tsx)) and tabs ([CountryTabs.tsx](src/app/countries/[slug]/_components/CountryTabs.tsx)) using Apple design principles, eliminating double-stacked pill containers, introducing translucent glass surfaces (`backdrop-blur-2xl`), optical typography tracking, and streamlined 4-tab layout (_Overview_, _Factbook_, _Governance_, _Community_).
-  - **Factbook & Activity Panel Overhaul**: Redesigned [FactbookSidebar.tsx](src/app/countries/[slug]/_components/FactbookSidebar.tsx) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
+  - **Factbook & Activity Panel Overhaul**: Redesigned `FactbookSidebar.tsx` (since removed) and [CountryActivityPanel.tsx](src/app/countries/[slug]/_components/CountryActivityPanel.tsx) with unified card hierarchy, responsive grid view, and type-safe data transformers (`src/app/countries/[slug]/_utils/countryDataTransformers.ts`).
   - **Countries Directory Hub (`/countries`)**: Upgraded `CountriesHeader.tsx`, `CountriesFocusGridModular.tsx`, and `CountryFocusCard.tsx` with smooth spring transitions, Apple-style search & filter pills, and clean metric badges.
   - **Design Specs**: Documented full architecture spec in `2026-08-10-countries-apple-design-redesign.md`.
 
