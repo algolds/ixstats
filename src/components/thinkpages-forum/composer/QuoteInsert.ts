@@ -54,9 +54,36 @@ const ENTITIES: Record<string, string> = {
   "&nbsp;": " ",
 };
 
-/** The text a post reads as, to quote: no markup, action tokens or earlier quotes, shortened to one short passage. */
+// Blocks that are not what the post says: the infobox card, the wiki's notices, a wiki embed (and its view).
+const NON_PROSE_BLOCK =
+  /<div\b[^>]*\bclass="(?:[^"]*\s)?(?:forum-infobox|wikios-notices-container|forum-wiki-embed|forum-embed-view)(?:\s[^"]*)?"[^>]*>/i;
+const DIV_TAG = /<(\/?)div\b[^>]*>/gi;
+
+/** `html` without each `<div>` block that matches NON_PROSE_BLOCK, nested divs included (an unclosed one runs to the end). */
+function withoutNonProse(html: string): string {
+  let rest = html;
+  let out = "";
+  for (let open = NON_PROSE_BLOCK.exec(rest); open; open = NON_PROSE_BLOCK.exec(rest)) {
+    out += `${rest.slice(0, open.index)} `;
+    const after = rest.slice(open.index + open[0].length);
+    let depth = 1;
+    let end = after.length;
+    DIV_TAG.lastIndex = 0;
+    for (let tag = DIV_TAG.exec(after); tag; tag = DIV_TAG.exec(after)) {
+      depth += tag[1] ? -1 : 1;
+      if (depth === 0) {
+        end = tag.index + tag[0].length;
+        break;
+      }
+    }
+    rest = after.slice(end);
+  }
+  return out + rest;
+}
+
+/** The text a post reads as, to quote: no markup, infobox, notices, embeds, action tokens or earlier quotes, shortened to one short passage. */
 export function htmlToQuoteText(html: string): string {
-  const text = html
+  const text = withoutNonProse(html)
     .replace(NESTED_QUOTE, " ")
     .replace(BLOCK_END, " ")
     .replace(TAG, "")

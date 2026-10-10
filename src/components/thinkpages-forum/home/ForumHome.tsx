@@ -10,6 +10,7 @@ import { useUser } from "~/context/auth-context";
 import { isArchiveCategory } from "~/lib/thinkpages-forum/categories";
 import { modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
+import { ForumLoadError } from "../ForumPageState";
 import { ForumPage } from "../shell";
 import { hasStanding, StandingPanel } from "../StandingPanel";
 import { BoardTable } from "./BoardTable";
@@ -25,7 +26,7 @@ const TITLE = "ThinkPages";
 export function ForumHome() {
   const { isSignedIn } = useUser();
   const signedIn = isSignedIn === true;
-  const { data: categories, isLoading } = api.thinkpagesForum.categories.useQuery();
+  const { data: categories, isLoading, error, refetch } = api.thinkpagesForum.categories.useQuery();
   const { data: moderates } = api.thinkpagesForumMod.context.useQuery(undefined, {
     enabled: signedIn,
   });
@@ -45,6 +46,18 @@ export function ForumHome() {
   const activeThreads = trending && trending.length > 0 ? trending : undefined;
   const ownStanding = signedIn && hasStanding(standing) ? standing : undefined;
   const hasRail = !!activeThreads || !!stats || !!ownStanding;
+
+  // A failed query is not "no boards": say so and offer a retry (a refetch that fails over cached boards keeps them).
+  if (!categories && error) {
+    return (
+      <ForumLoadError
+        notFound={false}
+        notFoundTitle=""
+        notFoundMessage=""
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <ForumPage

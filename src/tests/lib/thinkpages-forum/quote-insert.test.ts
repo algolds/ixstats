@@ -76,4 +76,22 @@ describe("htmlToQuoteText", () => {
     expect(text.length).toBeLessThanOrEqual(600);
     expect(text.endsWith("...")).toBe(true);
   });
+
+  it("leaves out the infobox, the notices and embeds, so the quote is the post's own words", () => {
+    const html =
+      '<div class="mw-parser-output"><div class="wikios-notices-container"><div class="notice"><div>Stub notice</div></div></div>' +
+      '<div class="forum-infobox"><table><tr><td>Capital</td><td>Valmora</td></tr></table><div>caption</div></div>' +
+      "<p>The treaty holds.</p>" +
+      '<div class="forum-wiki-embed" data-wiki-embed="article"><a href="/wiki/Urcea">Urcea</a><div class="forum-embed-view"><p>Summary</p></div></div>' +
+      "<p>Signed.</p></div>";
+    expect(htmlToQuoteText(html)).toBe("The treaty holds. Signed.");
+  });
+
+  it("drops an unclosed non-prose block to the end rather than quoting it", () => {
+    expect(htmlToQuoteText('<p>Before</p><div class="forum-infobox"><div>open')).toBe("Before");
+  });
+
+  it("keeps a div whose class only resembles one", () => {
+    expect(htmlToQuoteText('<div class="forum-infobox-note">Kept</div>')).toBe("Kept");
+  });
 });

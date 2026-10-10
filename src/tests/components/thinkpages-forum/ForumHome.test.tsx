@@ -5,6 +5,7 @@ interface QueryResult {
   data?: object | null;
   isLoading?: boolean;
   error?: { data?: { code: string } } | null;
+  refetch?: jest.Mock;
 }
 
 interface MockApi {
@@ -201,6 +202,30 @@ describe("Forums home: board table", () => {
     set("categories", { data: [] });
     render(<ForumHome />);
     expect(screen.getByText("No boards yet")).toBeInTheDocument();
+  });
+
+  it("offers a retry, not 'No boards yet', when the boards fail to load", () => {
+    const refetch = jest.fn();
+    set("categories", {
+      data: undefined,
+      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
+      refetch,
+    });
+    render(<ForumHome />);
+    expect(screen.queryByText("No boards yet")).toBeNull();
+    expect(screen.getByText("Could not load this page")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the boards it has when a refetch fails", () => {
+    set("categories", {
+      data: [board("general")],
+      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
+    });
+    render(<ForumHome />);
+    expect(screen.getByRole("link", { name: /General/ })).toBeInTheDocument();
+    expect(screen.queryByText("Could not load this page")).toBeNull();
   });
 
   it("shows a skeleton while the boards load", () => {

@@ -11,10 +11,12 @@ const RAIL_QUERY = "(min-width: 1280px)";
 
 /**
  * The page column's horizontal padding, which the header's `bleed` (`-mx-2`) pulls out of. Needed wherever the
- * header would otherwise reach the viewport edge (everything below xl); from xl the shell's own sidebar and
- * inspector gutters sit beside the column, so the approved flush layout stays.
+ * header would otherwise reach the viewport edge: everything below xl, and at xl and wider too when there is no
+ * rail (no Inspector gutter beside the column to absorb the bleed, which would overflow by 8px). From xl, with a
+ * rail, the shell's sidebar and inspector gutters sit beside the column, so the approved flush layout stays.
  */
-const PAGE_COLUMN = "flex min-w-0 flex-col px-4 xl:px-0";
+const PAGE_COLUMN = "flex min-w-0 flex-col px-4";
+const PAGE_COLUMN_WITH_RAIL = `${PAGE_COLUMN} xl:px-0`;
 
 interface ForumPageProps {
   title: string;
@@ -59,7 +61,7 @@ export function ForumPage({
   }, [watchHash, openRailOnHash]);
   return (
     <>
-      <div className={PAGE_COLUMN}>
+      <div className={hasRail ? PAGE_COLUMN_WITH_RAIL : PAGE_COLUMN}>
         <PageHeader
           title={title}
           subtitle={breadcrumbs}
