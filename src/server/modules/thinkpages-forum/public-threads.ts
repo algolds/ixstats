@@ -58,7 +58,11 @@ export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promis
   return [...new Set([DEFAULT_REALM_ID, ...published])];
 }
 
-async function publicThreadWhere(db: PublicThreadsDb) {
+/**
+ * The `ForumThread` where clause for what anyone may read: not hidden, a public category, in the site section or
+ * a published realm. Shared with the passport's forum footprint (member-activity.ts).
+ */
+export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
   return {
     hidden: false,
     category: {
