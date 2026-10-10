@@ -2,6 +2,7 @@
 
 import { useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { ShieldCheck } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -100,12 +101,12 @@ export function ModRow({ title, meta = [], when, children, actions }: ModRowProp
     <div
       role="row"
       className={cn(
-        "hover:bg-fill-4 grid items-start gap-x-3 px-5 py-3 pointer-coarse:min-h-11",
+        "hover:bg-fill-4 grid items-start gap-x-4 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
         COLUMNS
       )}
     >
-      <div role="cell" className="min-w-0 space-y-1.5">
-        <div className="text-headline text-label flex flex-wrap items-center gap-2 break-words">
+      <div role="cell" className="min-w-0 space-y-2">
+        <div className="text-title-3 text-label flex flex-wrap items-center gap-2 break-words">
           {title}
         </div>
         {facts.length > 0 ? (
@@ -185,13 +186,15 @@ export function ModPanel({
         />
       );
     }
-    if (rowCount === 0) return <EmptyState compact title={emptyTitle} />;
+    if (rowCount === 0) {
+      return <EmptyState compact icon={<ShieldCheck className="text-tint" />} title={emptyTitle} />;
+    }
     return (
       <div role="table" aria-label={label}>
         <div
           role="row"
           className={cn(
-            "text-footnote text-label-secondary border-separator grid items-center gap-x-3 border-b px-5 py-2 max-md:sr-only",
+            "text-footnote text-label-secondary border-separator grid items-center gap-x-4 border-y px-4 py-2 max-md:sr-only sm:px-5",
             COLUMNS
           )}
         >
@@ -209,7 +212,7 @@ export function ModPanel({
   return (
     <div className="space-y-3">
       {toolbar ? <div className="flex flex-wrap items-center gap-3">{toolbar}</div> : null}
-      <Card content="data" className="overflow-hidden py-1">
+      <Card content="data" className="overflow-hidden">
         {body}
       </Card>
       {paging && paging.total !== undefined ? (

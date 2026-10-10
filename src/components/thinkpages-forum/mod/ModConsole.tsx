@@ -3,6 +3,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Book,
+  ChatBubbleQuestion,
+  Group,
+  ShieldCheck,
+  UserXmark,
+  WarningTriangle,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -23,13 +31,25 @@ import { WarningsPanel } from "./WarningsPanel";
 
 type Panel = (props: PanelProps) => ReactNode;
 
-const TABS: ReadonlyArray<{ value: string; label: string; Panel: Panel; adminOnly?: boolean }> = [
-  { value: "queue", label: "Queue", Panel: ReportQueue },
-  { value: "warnings", label: "Warnings", Panel: WarningsPanel },
-  { value: "bans", label: "Bans", Panel: BansPanel },
-  { value: "appeals", label: "Appeals", Panel: AppealsPanel },
-  { value: "log", label: "Log", Panel: ModLogPanel },
-  { value: "moderators", label: "Moderators", Panel: ModeratorsPanel, adminOnly: true },
+const TABS: ReadonlyArray<{
+  value: string;
+  label: string;
+  icon: ReactNode;
+  Panel: Panel;
+  adminOnly?: boolean;
+}> = [
+  { value: "queue", label: "Queue", icon: <ShieldCheck />, Panel: ReportQueue },
+  { value: "warnings", label: "Warnings", icon: <WarningTriangle />, Panel: WarningsPanel },
+  { value: "bans", label: "Bans", icon: <UserXmark />, Panel: BansPanel },
+  { value: "appeals", label: "Appeals", icon: <ChatBubbleQuestion />, Panel: AppealsPanel },
+  { value: "log", label: "Log", icon: <Book />, Panel: ModLogPanel },
+  {
+    value: "moderators",
+    label: "Moderators",
+    icon: <Group />,
+    Panel: ModeratorsPanel,
+    adminOnly: true,
+  },
 ];
 
 const DEFAULT_TAB = "queue";
@@ -44,6 +64,21 @@ interface ModConsoleProps {
 
 function moderatesAnything(context: ModContext): boolean {
   return context.isSiteAdmin || context.realms.length > 0 || context.categories.length > 0;
+}
+
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** What the viewer moderates, as the header's facts line: "Site admin · 3 realms · 2 categories". */
+function scopeFacts(context: ModContext): string {
+  return [
+    context.isSiteAdmin ? "Site admin" : null,
+    context.realms.length > 0 ? count(context.realms.length, "realm", "realms") : null,
+    context.categories.length > 0
+      ? count(context.categories.length, "category", "categories")
+      : null,
+  ]
+    .filter((part) => part !== null)
+    .join(" · ");
 }
 
 /** The console's shell around a notice (signed out, or nothing to moderate). */
@@ -111,6 +146,7 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
   return (
     <ForumPage
       title="Moderation"
+      breadcrumbs={<p className="tabular-nums">{scopeFacts(context)}</p>}
       back={{ href: FORUM_HOME, label: "ThinkPages" }}
       actions={
         active === "moderators" ? null : (
@@ -123,9 +159,12 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
       }
     >
       <Tabs value={active} onValueChange={(next) => router.replace(hrefFor(next, scope))}>
-        <TabsList className="max-w-full overflow-x-auto">
+        <TabsList className="max-w-full gap-1 overflow-x-auto">
           {tabs.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
+              <span aria-hidden className="text-tint inline-flex [&_svg]:size-4">
+                {t.icon}
+              </span>
               {t.label}
             </TabsTrigger>
           ))}
