@@ -5,6 +5,8 @@
  */
 import { mapHtmlRuns } from "~/lib/action-links";
 import { replacePairs, type PairSpec } from "./bbcode-pairs";
+import { replaceWikiTags } from "./bbcode-wiki";
+import { escapeHtml, unescapeHtml } from "./html-text";
 
 /**
  * Bodies longer than this (characters) are not transformed: they render as escaped plain text with line breaks,
@@ -247,10 +249,13 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   // 17. Tables
   html = replaceSimpleTags(html, TABLE_TAGS);
 
-  // 18. Line breaks — convert newlines to <br> (XenForo stores plain newlines)
+  // 18. Wiki tags ([wikilink], [wikisummary], [wikiinfobox], [wikiimage=W])
+  html = replaceWikiTags(html);
+
+  // 19. Line breaks — convert newlines to <br> (XenForo stores plain newlines)
   html = html.replace(/\n/g, "<br />");
 
-  // 19. Strip any remaining unclosed/unknown BBCode tags, in text only (never inside a generated tag)
+  // 20. Strip any remaining unclosed/unknown BBCode tags, in text only (never inside a generated tag)
   html = mapHtmlRuns(html, {
     text: (text) => stripUnknownTags(text, options.actionTokens === "keep"),
   });
@@ -274,11 +279,13 @@ function processQuotes(html: string, quotedUsers: string[]): string {
   const quote = (option: string | undefined, content: string): string => {
     changed = true;
     const author = option && quoteAuthor(option);
+    const postId = option && quotePostId(option);
+    const open = `<blockquote class="forum-quote"${postId ? ` data-post="${postId}"` : ""}>`;
     if (author) {
       quotedUsers.push(author);
-      return `<blockquote class="forum-quote"><div class="forum-quote-author">${author} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
+      return `${open}<div class="forum-quote-author">${author} wrote:</div><div class="forum-quote-body">${content}</div></blockquote>`;
     }
-    return `<blockquote class="forum-quote"><div class="forum-quote-body">${content}</div></blockquote>`;
+    return `${open}<div class="forum-quote-body">${content}</div></blockquote>`;
   };
   // Innermost [quote] blocks (no nested [quote] inside)
   const innermost = pairs(
@@ -302,6 +309,11 @@ function quoteAuthor(option: string): string {
   return asText(optionValue(option).replace(/,\s*(?:post|member):[\s\S]*$/, "")).trim();
 }
 
+/** The quoted XenForo post id from XenForo 2.2's `, post: 12, member: 7` suffix: digits only, or null. */
+function quotePostId(option: string): string | null {
+  return /(?:^|,)\s*post:\s*(\d{1,12})(?!\w)/i.exec(optionValue(option))?.[1] ?? null;
+}
+
 function listItems(content: string): string {
   return content
     .split(/\[\*\]/)
@@ -323,25 +335,6 @@ const bulletLists = pairs(
 
 function processLists(html: string): string {
   return bulletLists(orderedLists(html));
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-/** escapeHtml undone: `&amp;` last, so escaped entity text (`&amp;lt;`) comes back as written (`&lt;`), never as `<`. */
-function unescapeHtml(str: string): string {
-  return str
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&amp;/g, "&");
 }
 
 /**

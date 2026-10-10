@@ -188,6 +188,7 @@ export function applyTotalLines(totals: ApplyTotals): string[] {
     `  threads: ${totals.threadsCreated} created, ${totals.threadsResumed} resumed`,
     `  posts: ${totals.postsCreated} created, ${totals.postsPresent} already present`,
     `  action links remapped: ${totals.linksRemapped} with their posts, ${totals.bridgeLinks.remapped} made by the bridge since (${totals.bridgeLinks.twins} already on the native post)`,
+    `  quote ids: ${totals.quoteIds.remapped} pointed at the native post, ${totals.quoteIds.dropped} dropped (the quoted post is not imported)`,
     `  authors relinked: ${totals.relinked.threads} threads, ${totals.relinked.posts} posts`,
     `  re-hidden (moderated or deleted on XenForo since imported): ${totals.rehidden.threads} threads, ${totals.rehidden.posts} posts, ${totals.rehidden.assets} media assets made restricted`,
     ...failedThreadLines(totals.failedThreads),

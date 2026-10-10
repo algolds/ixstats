@@ -229,6 +229,7 @@ describe("applyTotalLines", () => {
       postsPresent: 0,
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
+      quoteIds: { remapped: 0, dropped: 0 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 1, posts: 2, assets: 3 },
       failedThreads: [{ xenforoThreadId: 9, error: "boom" }],

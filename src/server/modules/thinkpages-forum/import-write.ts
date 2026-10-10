@@ -18,6 +18,7 @@ import type {
 } from "~/lib/thinkpages-forum/import/plan";
 import { isUniqueViolation } from "./errors";
 import { assertImportLock, storeNodeMap, type ImportDb } from "./import-db";
+import { remapQuoteIds, type QuoteRemap } from "./import-quote-ids";
 import { rehideImported, type RehideTotals } from "./import-rehide";
 import { lockThread, recountThread } from "./thread-counts";
 
@@ -273,6 +274,8 @@ export interface ApplyTotals {
   postsPresent: number;
   linksRemapped: number;
   bridgeLinks: BridgeRemap;
+  /** Quote ids pointed at the native post, and dropped when their post is not imported. */
+  quoteIds: QuoteRemap;
   relinked: { threads: number; posts: number };
   /** I7: imported rows hidden because XenForo has since moderated or deleted them. */
   rehidden: RehideTotals;
@@ -288,7 +291,7 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
 }
 
 /**
- * --apply: categories, every planned thread, the re-hide, the bridge link pass, the relink pass, the applied node map.
+ * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the relink pass, the applied node map.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
  */
@@ -307,6 +310,7 @@ export async function applyImport(
     postsPresent: 0,
     linksRemapped: 0,
     bridgeLinks: { remapped: 0, twins: 0 },
+    quoteIds: { remapped: 0, dropped: 0 },
     relinked: { threads: 0, posts: 0 },
     rehidden: { threads: 0, posts: 0, assets: 0 },
     failedThreads: [],
@@ -329,6 +333,8 @@ export async function applyImport(
   await assertImportLock(db);
   totals.rehidden = await rehideImported(db, plan.rehide, { failures: totals.failedThreads, log });
   totals.bridgeLinks = await remapBridgeLinks(db);
+  // A failed thread may hold a quoted post: keep the ids nothing maps yet, so the rerun can map them.
+  totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: totals.failedThreads.length === 0 });
   totals.relinked = await relinkImportedAuthors(db);
   await storeNodeMap(db, opts.nodeMap);
   return totals;

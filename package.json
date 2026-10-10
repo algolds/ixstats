@@ -62,6 +62,7 @@
     "db:migrate-board-bans": "bun scripts/migrations/migrate-board-bans.ts",
     "db:import-xenforo-forum": "bun scripts/migrations/import-xenforo-forum.ts",
     "forum:export-xenforo": "bun scripts/migrations/export-xenforo-forum.ts",
+    "forum:reconvert-imported": "bun scripts/migrations/reconvert-imported-posts.ts",
     "db:reset": "echo '⛔ DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
     "db:restore": "bun scripts/setup/restore-db.ts",
     "db:seed": "bun scripts/setup/seed-db.ts",

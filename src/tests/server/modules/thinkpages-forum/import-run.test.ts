@@ -29,6 +29,17 @@ function withStates(base: Snapshot, states: Record<number, string>): Snapshot {
   return { ...base, postsByThread };
 }
 
+/** The snapshot with some posts' messages replaced. */
+function withMessages(base: Snapshot, messages: Record<number, string>): Snapshot {
+  const postsByThread = new Map(
+    [...base.postsByThread].map(([id, posts]) => [
+      id,
+      posts.map((p) => ({ ...p, message: messages[p.post_id] ?? p.message })),
+    ])
+  );
+  return { ...base, postsByThread };
+}
+
 /** The imported rows by XenForo id, without generated ids, for comparing two runs. */
 function imported(tables: ImportTables) {
   const keyOf = new Map(tables.categories.map((c) => [c.id, c.key]));
@@ -92,6 +103,7 @@ describe("the XenForo import applied to the small snapshot", () => {
       postsPresent: 0,
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
+      quoteIds: { remapped: 0, dropped: 0 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 0, posts: 0, assets: 0 },
       failedThreads: [],
@@ -120,6 +132,46 @@ describe("the XenForo import applied to the small snapshot", () => {
     ).toEqual([100, 103]);
     expect(store.tables().posts.some((p) => p.xenforoPostId === 1010)).toBe(false);
     expect(store.tables().configs.map((c) => c.key)).toEqual(["forum_import_node_map"]);
+  });
+
+  it("points quotes at the native post, and drops the id of a quoted post that was not imported", async () => {
+    const store = importStore(seed());
+    const quoting = withMessages(snapshot, {
+      1011: '[QUOTE="Admin, post: 1000, member: 7"]hi[/QUOTE][QUOTE="Spam, post: 1002, member: 0"]x[/QUOTE]',
+    });
+    const { totals } = await runImport(store.db as never, quoting);
+    const native = store.tables().posts.find((p) => p.xenforoPostId === 1000)!;
+    const html = store.tables().posts.find((p) => p.xenforoPostId === 1011)!.contentHtml as string;
+    expect(html).toContain(`<blockquote class="forum-quote" data-post="${native.id}">`);
+    expect(html).not.toMatch(/data-post="\d/);
+    expect(html.match(/<blockquote class="forum-quote">/g)).toHaveLength(1);
+    expect(totals.quoteIds).toEqual({ remapped: 1, dropped: 1 });
+  });
+
+  it("keeps an unmapped quote id while a thread failed, and maps it on the rerun", async () => {
+    let armed = true;
+    const store = importStore(seed(), {
+      failWhen: (table, method, args) => {
+        if (!armed || table !== "threads" || method !== "update") return false;
+        const row = store.tables().threads.find((t) => t.id === args.where?.id);
+        if (row?.xenforoThreadId !== 101) return false;
+        armed = false;
+        return true;
+      },
+    });
+    const quoting = withMessages(snapshot, {
+      1031: '[QUOTE="Writer, post: 1010, member: 9"]end[/QUOTE]',
+    });
+    const html = () =>
+      store.tables().posts.find((p) => p.xenforoPostId === 1031)!.contentHtml as string;
+    const first = await runImport(store.db as never, quoting);
+    expect(first.totals.quoteIds).toEqual({ remapped: 0, dropped: 0 });
+    expect(html()).toContain('data-post="1010"');
+    // The rerun plans no new post for thread 103: its quote is mapped by the pass over the stored rows.
+    const rerun = await runImport(store.db as never, quoting);
+    const native = store.tables().posts.find((p) => p.xenforoPostId === 1010)!;
+    expect(rerun.totals.quoteIds).toEqual({ remapped: 1, dropped: 0 });
+    expect(html()).toContain(`data-post="${native.id}"`);
   });
 
   it("finishes a thread interrupted mid-write on the rerun, ending as one clean run would", async () => {

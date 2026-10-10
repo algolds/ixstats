@@ -158,10 +158,17 @@ export function sanitizeUserContent(html: string): string {
       "data-summary",
       "data-imageurl",
       "data-source",
+      // Forum posts: a quote's source post, and the wiki links and embeds the XenForo import converts
+      "data-post",
+      "data-wiki-embed",
+      "data-wiki-title",
+      "data-width",
     ],
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
     FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
+    // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
+    ADD_URI_SAFE_ATTR: ["data-wiki-title"],
     ALLOW_DATA_ATTR: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
     SAFE_FOR_TEMPLATES: true,

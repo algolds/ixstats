@@ -1,6 +1,6 @@
 /**
  * An in-memory forum store for the moderation suites (mod-content, mod-reports, mod-appeals, mod-standing,
- * mod-moderators). Rows live in arrays; where clauses are interpreted (equality, `in`, `notIn`, `not`, `gt`, `has`, `startsWith`,
+ * mod-moderators). Rows live in arrays; where clauses are interpreted (equality, `in`, `notIn`, `not`, `gt`, `has`, `startsWith`, `contains`,
  * `OR`, `AND`, `NOT`, nested relation objects), relations are joined on read (thread → category, post → thread →
  * category, link → storyline), selects are ignored. `$transaction` hands the callback `tx`, the only client whose
  * `forumModLog.create` records a row (both clients read the log), and rolls every store change and log row back
@@ -26,7 +26,7 @@ export interface StoreState {
   postTemplates: Row[];
 }
 
-const OPERATORS = ["in", "notIn", "not", "gt", "has", "startsWith"];
+const OPERATORS = ["in", "notIn", "not", "gt", "has", "startsWith", "contains"];
 
 const isRow = (value: Value): value is Row =>
   value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
@@ -47,6 +47,8 @@ function matchOperator(actual: Value, cond: Row): boolean {
   if ("has" in cond && !(Array.isArray(actual) && actual.some((v) => same(v, cond.has))))
     return false;
   if (typeof cond.startsWith === "string" && !String(actual ?? "").startsWith(cond.startsWith))
+    return false;
+  if (typeof cond.contains === "string" && !String(actual ?? "").includes(cond.contains))
     return false;
   return true;
 }
