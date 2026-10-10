@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
+import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { categoryLocator } from "~/lib/thinkpages-forum/links";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 import { FormError, ReasonField } from "./ReasonField";
@@ -42,7 +43,8 @@ export interface PlacedCategory {
 
 /**
  * The places the viewer may ban a member from, seen from a category: the category itself, its realm's section when
- * they moderate the realm, and the whole forum for site admins only (the server refuses anything else).
+ * they moderate the realm, and the whole forum for site admins only (the server refuses anything else). A realm's
+ * board is no category a ban can be placed in, so from a board message the realm comes first.
  */
 export function banScopeOptions(
   category: PlacedCategory,
@@ -53,12 +55,17 @@ export function banScopeOptions(
   // The category's realm, when the viewer moderates its whole section.
   const realmScope =
     realm && (admin || context?.realms.some((r) => r.slug === realm.slug)) ? realm : null;
+  const onBoard = isBoardCategory({ key: category.key, scope: realm ? "realm" : "site" });
   return [
-    {
-      value: "category",
-      label: category.name,
-      scope: { kind: "category", ...categoryLocator(category) },
-    },
+    ...(onBoard
+      ? []
+      : [
+          {
+            value: "category",
+            label: category.name,
+            scope: { kind: "category" as const, ...categoryLocator(category) },
+          },
+        ]),
     ...(realmScope
       ? [
           {

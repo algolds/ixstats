@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { banPlaceName, listingRealmId, locateBanScope } from "~/server/modules/thinkpages-forum";
-import { admin, eurthMod, member, seed } from "~/tests/helpers/forum-mod-fixtures";
+import { admin, eurthMod, member, realmCat, seed } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
 
 const withDraft = () => {
@@ -42,6 +42,31 @@ describe("locateBanScope", () => {
     await expect(
       locateBanScope(store.db as never, admin, { kind: "category", key: "general" })
     ).resolves.toEqual({ scope: { kind: "category", categoryId: "cat_general" }, name: "general" });
+  });
+
+  it("resolves a realm's board category, which no read page reaches, so a board scoped ban still works", async () => {
+    const base = seed();
+    const store = forumStore({
+      ...base,
+      categories: [...base.categories, { ...realmCat("r_eurth", "board"), style: "board" }],
+    });
+    await expect(
+      locateBanScope(store.db as never, eurthMod, {
+        kind: "category",
+        key: "board",
+        realm: "eurth",
+      })
+    ).resolves.toEqual({
+      scope: { kind: "category", categoryId: "r_eurth_board" },
+      name: "board",
+    });
+    const hidden = forumStore({
+      ...withDraft(),
+      categories: [...base.categories, { ...realmCat("r_draft", "board"), style: "board" }],
+    });
+    await expect(
+      locateBanScope(hidden.db as never, member, { kind: "category", key: "board", realm: "draft" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("is NOT_FOUND for an unknown place or a realm hidden from the viewer", async () => {

@@ -822,6 +822,22 @@ describe("bans", () => {
     ]);
   });
 
+  it("offers a board message's ban at the realm first: the board is no category the server can place a ban in", () => {
+    const board = { key: "board", name: "Board", realm: { slug: "eurth", name: "Eurth" } };
+    expect(banScopeOptions(board, eurthMod).map((o) => o.scope)).toEqual([
+      { kind: "realm", realm: "eurth" },
+    ]);
+    expect(banScopeOptions(board, { ...NO_MOD, isSiteAdmin: true }).map((o) => o.scope)).toEqual([
+      { kind: "realm", realm: "eurth" },
+      { kind: "site" },
+    ]);
+    // A sitewide category that happens to be keyed "board" is an ordinary category.
+    const sitewide = { key: "board", name: "Board", realm: null };
+    expect(banScopeOptions(sitewide, NO_MOD).map((o) => o.scope)).toEqual([
+      { kind: "category", key: "board" },
+    ]);
+  });
+
   it("bans for a custom number of days, or permanently", async () => {
     const ban = jest.fn(() => Promise.resolve({ id: "b1", expiresAt: null }));
     mutations.ban = ban;

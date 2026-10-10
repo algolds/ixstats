@@ -3,12 +3,11 @@
  * ban's place named for a notice. A realm hidden from the viewer (draft, generating) reads as NOT_FOUND, as reads do.
  */
 import type { PrismaClient } from "@prisma/client";
-import type { ForumViewer } from "./access";
+import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import type { ModScope } from "./mod-scope";
 import { placeNames } from "./mod-standing";
 import { canSeeRealm, loadForumRealm, type ForumRealm, type RealmDb } from "./realm-access";
-import { loadCategory } from "./reads";
 
 export type PlacesDb = Pick<PrismaClient, "forumCategory"> & RealmDb;
 
@@ -34,7 +33,16 @@ export async function locateBanScope(
     const realm = await visibleRealm(db, viewer, locator.realm);
     return { scope: { kind: "realm", realmId: realm.id }, name: realm.name };
   }
-  const { category } = await loadCategory(db, viewer, { key: locator.key, realm: locator.realm });
+  const realm = locator.realm ? await visibleRealm(db, viewer, locator.realm) : null;
+  // Not `loadCategory`: it refuses a realm's board category, and a ban placed in one (postingBan honours it) is valid.
+  const category = await db.forumCategory.findFirst({
+    where: realm
+      ? { scope: "realm", realmId: realm.id, key: locator.key }
+      : { scope: "site", realmId: null, key: locator.key },
+  });
+  if (!category || !canSeeCategory(viewer, category)) {
+    throw new ForumError("NOT_FOUND", "Category not found.");
+  }
   return { scope: { kind: "category", categoryId: category.id }, name: category.name };
 }
 
