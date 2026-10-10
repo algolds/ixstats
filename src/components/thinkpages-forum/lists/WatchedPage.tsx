@@ -15,8 +15,14 @@ import { ForumPage } from "../shell";
 import { useWatchToggle } from "../useWatchToggle";
 
 /** One row's Unwatch: stops watching, then refreshes this list, the sidebar count and the thread's own button. */
-function UnwatchButton({ thread }: { thread: ThreadRowData }) {
-  const { setWatching, isPending } = useWatchToggle();
+function UnwatchButton({
+  thread,
+  setWatching,
+  isPending,
+}: { thread: ThreadRowData } & Pick<
+  ReturnType<typeof useWatchToggle>,
+  "setWatching" | "isPending"
+>) {
   return (
     <Button
       variant="ghost"
@@ -36,6 +42,7 @@ export function WatchedPage({ page }: { page: number }) {
   const { data, isLoading, refetch } = api.thinkpagesForum.watchedThreads.useQuery({ page });
   const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
   const redirecting = useLastPageRedirect(WATCHED_HREF, page, data?.total, totalPages);
+  const { setWatching, isPending } = useWatchToggle();
   usePageTitle({ title: "Watched" });
 
   if (isLoading || redirecting) return <ForumPageSkeleton />;
@@ -67,7 +74,9 @@ export function WatchedPage({ page }: { page: number }) {
           <ThreadTable
             threads={data.threads}
             authors={data.authors}
-            renderAction={(thread) => <UnwatchButton thread={thread} />}
+            renderAction={(thread) => (
+              <UnwatchButton thread={thread} setWatching={setWatching} isPending={isPending} />
+            )}
           />
         ) : (
           <EmptyState

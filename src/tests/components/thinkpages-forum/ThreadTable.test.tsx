@@ -270,6 +270,14 @@ describe("ThreadTable unread rows and the list pages' options", () => {
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveClass("font-medium");
   });
 
+  it("names a persona on an unread row, never the player behind it", () => {
+    renderTable([thread("t1", { unread: true, authorUserId: "u2", authorPersonaId: "pa" })]);
+    const row = within(rowOf(/Thread t1/));
+    expect(row.getByText("Unread")).toBeInTheDocument();
+    expect(row.getByText("Aria Vance")).toBeInTheDocument();
+    expect(row.queryByText("Hidden Player")).toBeNull();
+  });
+
   it("has plain column headers, not sort links, without a base path", () => {
     render(<ThreadTable threads={[thread("t1")] as never} authors={authors} />);
     expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([

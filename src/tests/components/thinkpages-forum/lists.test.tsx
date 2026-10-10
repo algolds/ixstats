@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 
 interface QueryResult {
   data?: object | null;
@@ -62,8 +62,9 @@ jest.mock("~/trpc/react", () => {
     },
   };
 });
+const mockReplace = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), replace: mockReplace }),
   usePathname: () => "/thinkpages/new",
 }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
@@ -78,6 +79,7 @@ jest.mock("~/components/ui/avatar", () => ({
 }));
 
 import { NewPostsPage, StashedPage, WatchedPage } from "~/components/thinkpages-forum/lists";
+import { useWatchToggle } from "~/components/thinkpages-forum/useWatchToggle";
 
 const { results, mutations, invalidated } = jest.requireMock<MockApi>("~/trpc/react");
 const { notifySpy } = jest.requireMock<{ notifySpy: { error: jest.Mock } }>("~/hooks/useNotify");
@@ -110,6 +112,7 @@ beforeEach(() => {
   for (const key of Object.keys(results)) delete results[key];
   invalidated.length = 0;
   notifySpy.error.mockClear();
+  mockReplace.mockClear();
   mutations.markAllRead = jest.fn().mockResolvedValue({ allReadAt: new Date() });
   mutations.watchThread = jest.fn().mockResolvedValue({ watching: true });
   mutations.unwatchThread = jest.fn().mockResolvedValue({ watching: false });
@@ -145,6 +148,24 @@ describe("NewPostsPage", () => {
         expect.arrayContaining(["newPosts", "navCounts", "category", "categories"])
       )
     );
+  });
+
+  it("reports one error and refreshes nothing when marking everything read fails", async () => {
+    results.newPosts = { data: { threads: [listed("t1")], total: 1, authors } };
+    mutations.markAllRead = jest.fn().mockRejectedValue(new Error("Nope"));
+    render(<NewPostsPage page={1} />);
+    fireEvent.click(screen.getByRole("button", { name: "Mark all read" }));
+    await waitFor(() =>
+      expect(notifySpy.error).toHaveBeenCalledWith("Could not mark everything read", "Nope")
+    );
+    expect(invalidated).toEqual([]);
+  });
+
+  it("replaces a page past the end with the last page while showing a loader", () => {
+    results.newPosts = { data: { threads: [], total: 60, authors } };
+    render(<NewPostsPage page={9} />);
+    expect(mockReplace).toHaveBeenCalledWith("/thinkpages/new?page=3");
+    expect(screen.queryByRole("table")).toBeNull();
   });
 
   it("pages by 25 with real links", () => {
@@ -190,6 +211,24 @@ describe("WatchedPage", () => {
     results.watchedThreads = { data: { threads: [], total: 0, authors } };
     render(<WatchedPage page={1} />);
     expect(screen.getByText("Watch a thread to follow its replies here.")).toBeInTheDocument();
+  });
+});
+
+describe("useWatchToggle", () => {
+  it("watches a thread and refreshes the lists, the count and the thread", async () => {
+    const { result } = renderHook(() => useWatchToggle());
+    await expect(result.current.setWatching("t1", true)).resolves.toBe(true);
+    expect(mutations.watchThread).toHaveBeenCalledWith({ threadId: "t1" });
+    expect(mutations.unwatchThread).not.toHaveBeenCalled();
+    expect(invalidated).toEqual(expect.arrayContaining(["watchedThreads", "navCounts", "thread"]));
+  });
+
+  it("reports one error and resolves false when watching fails", async () => {
+    mutations.watchThread = jest.fn().mockRejectedValue(new Error("Nope"));
+    const { result } = renderHook(() => useWatchToggle());
+    await expect(result.current.setWatching("t1", true)).resolves.toBe(false);
+    expect(notifySpy.error).toHaveBeenCalledWith("Could not update watching", "Nope");
+    expect(invalidated).toEqual([]);
   });
 });
 

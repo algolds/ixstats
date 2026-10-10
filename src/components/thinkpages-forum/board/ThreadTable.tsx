@@ -208,16 +208,20 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
             {typeof thread.xenforoThreadId === "number" ? (
               <Badge variant="outline">Imported</Badge>
             ) : null}
-            {last > 1 ? (
-              <Link
-                href={pageHref(threadHref(thread.id), last)}
-                aria-label={`Last page of ${thread.title}`}
-                className="text-footnote text-tint relative z-10 ml-auto shrink-0 hover:underline md:hidden pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:max-md:inline-flex"
-              >
-                Last page
-              </Link>
+            {last > 1 || action ? (
+              <span className="ml-auto flex shrink-0 items-center gap-2">
+                {last > 1 ? (
+                  <Link
+                    href={pageHref(threadHref(thread.id), last)}
+                    aria-label={`Last page of ${thread.title}`}
+                    className="text-footnote text-tint relative z-10 shrink-0 hover:underline md:hidden pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:max-md:inline-flex"
+                  >
+                    Last page
+                  </Link>
+                ) : null}
+                {action ? <span className="relative z-10 shrink-0">{action}</span> : null}
+              </span>
             ) : null}
-            {action ? <span className="relative z-10 ml-auto shrink-0">{action}</span> : null}
           </div>
           <div className="text-footnote text-label-secondary mt-0.5 flex min-w-0 items-center gap-2">
             {author.flagUrl ? <AuthorFlag url={author.flagUrl} /> : null}
