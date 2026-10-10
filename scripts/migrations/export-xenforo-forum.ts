@@ -2,14 +2,16 @@
  * ThinkPages forum phase 4: read-only export of forum.ixwiki.com (XenForo REST API) into an on-disk snapshot that
  * the importer reads (format: src/lib/thinkpages-forum/import/snapshot.ts). Writes nothing to any database.
  *   bun run forum:export-xenforo -- --out .forum-import/<name> [--rps 0.9] [--nodes 12,13] [--reset-filter]
- *     [--no-attachments] [--max-attachment-mb 25] [--retry-mismatch] [--bypass-permissions | --no-bypass-permissions]
- *     [--production]
+ *     [--no-attachments] [--max-attachment-mb 25] [--retry-mismatch] [--skip-failing]
+ *     [--bypass-permissions | --no-bypass-permissions] [--production]
  * Reads XENFORO_API_URL and XENFORO_API_KEY from the environment (the key is never printed or written); --production
  * loads `.env.production.local` first (scripts/lib/load-runner-env.ts), nothing else (no database). Prints the
  * key's type and scopes, then exports nodes → threads per Forum node → posts per thread → users per distinct
  * author → attachments per post, skipping work already marked in state.json, so a rerun with the same --out
  * resumes (with the same --nodes; --reset-filter changes it). Attachments that arrived short (size_mismatch) are
- * fetched again only with --retry-mismatch.
+ * fetched again only with --retry-mismatch. An item that keeps failing (5xx or network errors after the retries; a
+ * forum's thread list also on 403/404) is listed and left for a rerun, or with --skip-failing recorded as
+ * unavailable so the snapshot can complete; five in a row stop the export.
  * Permissions: with a super-user key every read adds `api_bypass_permissions=1` (default; read-only, never
  * `XF-Api-User` impersonation), so private forums, moderated content and every attachment are exported instead of
  * a guest's view. --no-bypass-permissions turns it off; --bypass-permissions forces it on for a key whose type
@@ -51,6 +53,15 @@ function printTotals(totals: ExportTotals): void {
       `${a.ok} ok / ${a.missing} missing / ${a.forbidden} forbidden / ${a.oversize} oversize / ` +
       `${a.skipped} skipped / ${a.size_mismatch} size mismatch`
   );
+}
+
+/** I3: the items that kept failing this run, and what became of them. */
+function printFailed(failed: string[], skipped: boolean): void {
+  if (!failed.length) return;
+  const fate = skipped
+    ? "recorded as unavailable (--skip-failing)"
+    : "left for a rerun (--skip-failing records them)";
+  console.log(`failed items (${failed.length}), ${fate}: ${failed.join(", ")}`);
 }
 
 function printIds(label: string, ids: number[]): void {
@@ -137,6 +148,7 @@ async function main(): Promise<number> {
       resetFilter: args.resetFilter,
       attachments: args.attachments,
       retryMismatch: args.retryMismatch,
+      skipFailing: args.skipFailing,
       maxAttachmentBytes: args.maxAttachmentMb * 1024 * 1024,
       log: console.log,
       shouldStop: () => stopping,
@@ -145,7 +157,10 @@ async function main(): Promise<number> {
   } catch (error) {
     console.error(`export failed: ${error instanceof Error ? error.message : String(error)}`);
   }
-  if (totals) printTotals(totals);
+  if (totals) {
+    printTotals(totals);
+    printFailed(totals.failed, args.skipFailing);
+  }
   const { requests, retries, waitedMs } = client.stats();
   console.log(`requests ${requests}, retries ${retries}, waited ${Math.round(waitedMs / 1000)} s`);
 

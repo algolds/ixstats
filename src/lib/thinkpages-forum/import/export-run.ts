@@ -7,6 +7,10 @@
  * is marked gone, an attachment answering 403 is recorded `forbidden`, and unreadable users are recorded as such.
  * A rerun fetches `skipped` attachments again when it wants attachments, and `size_mismatch` ones only with
  * `retryMismatch` (I2: a file that keeps arriving short is not downloaded on every rerun).
+ * One item that keeps failing (a forum's thread list, a thread's posts, a user, an attachment) never stops the export
+ * either (I3): it is logged, listed in `failed` and left for a rerun, or with `skipFailing` recorded as unavailable
+ * (forum listed empty, thread gone, user unavailable, attachment missing) so the snapshot can complete. Five
+ * failures in a row stop it (the forum is likely down), as does any other error (a refused key, rate limiting).
  */
 import { attachmentMime } from "./attachment-mime";
 import {
@@ -39,6 +43,8 @@ export interface ExportRunOptions {
   attachments: boolean;
   /** I2: fetch `size_mismatch` attachments again (--retry-mismatch); otherwise a rerun leaves them as recorded. */
   retryMismatch?: boolean;
+  /** I3: record an item that keeps failing as unavailable (--skip-failing) instead of leaving it for a rerun. */
+  skipFailing?: boolean;
   maxAttachmentBytes: number;
   log: (line: string) => void;
   shouldStop: () => boolean;
@@ -54,9 +60,12 @@ export interface ExportTotals {
   threadsGone: number;
   threadsRedirect: number;
   attachments: Record<AttachmentStored, number>;
+  /** I3: the items that kept failing this run ("thread 101 posts", "user 8", ...). */
+  failed: string[];
 }
 
 const THREAD_APPEND_BATCH = 50;
+const MAX_FAILURES_IN_A_ROW = 5;
 const PROGRESS_EVERY = 50;
 
 const sortedKey = (filter: number[] | null) =>
@@ -132,11 +141,63 @@ async function exportForum(
   return true;
 }
 
-async function exportThreads(o: ExportRunOptions, totals: ExportTotals): Promise<void> {
+/** Runs one export item; I3's item failures are counted, logged and skipped (see the file comment). */
+type Guard = (
+  label: string,
+  work: () => Promise<void>,
+  skip: () => Promise<void>,
+  listing?: boolean
+) => Promise<void>;
+
+/**
+ * An item's failure, as opposed to the export's: a 5xx or network error after the client's retries, and a forum's
+ * thread list answering 403/404 (`listing`). null for anything else, which stops the export.
+ */
+function itemFailure(error: unknown, listing: boolean): XenForoExportError | null {
+  if (!(error instanceof XenForoExportError)) return null;
+  const { status } = error;
+  if (status === undefined || status >= 500) return error;
+  return listing && (status === 403 || status === 404) ? error : null;
+}
+
+function makeGuard(o: ExportRunOptions, totals: ExportTotals): Guard {
+  let inARow = 0;
+  return async (label, work, skip, listing = false) => {
+    try {
+      await work();
+      inARow = 0;
+    } catch (error) {
+      const failure = itemFailure(error, listing);
+      if (!failure) throw error;
+      totals.failed.push(label);
+      inARow += 1;
+      if (inARow >= MAX_FAILURES_IN_A_ROW) throw failure;
+      if (o.skipFailing) await skip();
+      o.log(
+        `${label}: ${failure.message}; ${o.skipFailing ? "skipped (--skip-failing)" : "left for a rerun"}`
+      );
+    }
+  };
+}
+
+async function exportThreads(
+  o: ExportRunOptions,
+  totals: ExportTotals,
+  guard: Guard
+): Promise<void> {
   const { nodes, meta } = await o.readBack();
   for (const forum of exportedForums(nodes, meta.nodeFilter)) {
     if (o.writer.state.threadsDone.has(forum.node_id)) continue;
-    if (!(await exportForum(o, forum, totals))) return;
+    let finished = true;
+    await guard(
+      `forum ${forum.node_id} threads`,
+      async () => {
+        finished = await exportForum(o, forum, totals);
+      },
+      () => o.writer.markThreadsDone(forum.node_id, { listed: 0, discussionCount: null }),
+      true
+    );
+    if (!finished) return;
   }
 }
 
@@ -163,7 +224,7 @@ async function exportThreadPosts(
   totals.posts += posts.length;
 }
 
-async function exportPosts(o: ExportRunOptions, totals: ExportTotals): Promise<void> {
+async function exportPosts(o: ExportRunOptions, totals: ExportTotals, guard: Guard): Promise<void> {
   const { threads } = await o.readBack();
   totals.threadsRedirect = threads.filter(isRedirectThread).length;
   const todo = threads.filter(
@@ -171,25 +232,38 @@ async function exportPosts(o: ExportRunOptions, totals: ExportTotals): Promise<v
   );
   for (const [index, thread] of todo.entries()) {
     if (o.shouldStop()) return;
-    await exportThreadPosts(o, thread.thread_id, totals);
+    await guard(
+      `thread ${thread.thread_id} posts`,
+      () => exportThreadPosts(o, thread.thread_id, totals),
+      () => o.writer.markThreadGone(thread.thread_id)
+    );
     if ((index + 1) % PROGRESS_EVERY === 0) {
       o.log(`threads ${index + 1}/${todo.length}, posts ${totals.posts}`);
     }
   }
 }
 
+async function exportUser(o: ExportRunOptions, userId: number, totals: ExportTotals) {
+  const user = await o.client.user(userId);
+  await o.writer.addUser(userId, user);
+  totals.users += 1;
+  if (!user) totals.usersUnavailable += 1;
+}
+
 async function exportUsers(
   o: ExportRunOptions,
   snapshot: Snapshot,
-  totals: ExportTotals
+  totals: ExportTotals,
+  guard: Guard
 ): Promise<void> {
   for (const userId of authorIds(snapshot)) {
     if (o.shouldStop()) return;
     if (o.writer.state.usersDone.has(userId)) continue;
-    const user = await o.client.user(userId);
-    await o.writer.addUser(userId, user);
-    totals.users += 1;
-    if (!user) totals.usersUnavailable += 1;
+    await guard(
+      `user ${userId}`,
+      () => exportUser(o, userId, totals),
+      () => o.writer.addUser(userId, null)
+    );
   }
 }
 
@@ -243,7 +317,8 @@ function wanted(o: ExportRunOptions, snapshot: Snapshot, id: number): boolean {
 async function exportAttachments(
   o: ExportRunOptions,
   snapshot: Snapshot,
-  totals: ExportTotals
+  totals: ExportTotals,
+  guard: Guard
 ): Promise<void> {
   const seen = new Set<number>();
   for (const base of postAttachments(snapshot)) {
@@ -251,7 +326,15 @@ async function exportAttachments(
     if (seen.has(base.attachment_id)) continue;
     seen.add(base.attachment_id);
     if (!wanted(o, snapshot, base.attachment_id)) continue;
-    totals.attachments[await storeAttachment(o, base)] += 1;
+    await guard(
+      `attachment ${base.attachment_id}`,
+      async () => {
+        totals.attachments[await storeAttachment(o, base)] += 1;
+      },
+      async () => {
+        totals.attachments[await record(o, { ...base, stored: "missing" })] += 1;
+      }
+    );
   }
 }
 
@@ -265,16 +348,18 @@ export async function runExport(o: ExportRunOptions): Promise<ExportTotals> {
     threadsGone: 0,
     threadsRedirect: 0,
     attachments: { ok: 0, missing: 0, forbidden: 0, oversize: 0, skipped: 0, size_mismatch: 0 },
+    failed: [],
   };
+  const guard = makeGuard(o, totals);
   await writeMeta(o);
   try {
     await exportNodes(o);
-    await exportThreads(o, totals);
-    if (!o.shouldStop()) await exportPosts(o, totals);
+    await exportThreads(o, totals, guard);
+    if (!o.shouldStop()) await exportPosts(o, totals, guard);
     if (!o.shouldStop()) {
       const snapshot = await o.readBack();
-      await exportUsers(o, snapshot, totals);
-      if (!o.shouldStop()) await exportAttachments(o, snapshot, totals);
+      await exportUsers(o, snapshot, totals, guard);
+      if (!o.shouldStop()) await exportAttachments(o, snapshot, totals, guard);
     }
   } finally {
     await o.writer.checkpoint();
