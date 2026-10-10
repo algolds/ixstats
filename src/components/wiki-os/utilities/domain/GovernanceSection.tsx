@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Shield, Archive, Book, Clock } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { Button } from "~/components/ui/button";
 import {
   InspectorEmpty,
@@ -143,7 +143,7 @@ export function GovernanceSection({ searchFilter }: { searchFilter: string }) {
         </p>
       </div>
       <Link
-        href={ixstatesHref("/admin/wikios-settings")}
+        href={ixstatesLinkHref("/admin/wikios-settings")}
         data-cuelume-press="press"
         data-cuelume-hover="tick"
         className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors"

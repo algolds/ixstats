@@ -6,7 +6,7 @@ import { ArrowRight, ArrowUpRight, ArrowDownRight, Page, EditPencil } from "icon
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import type { MainPageContentProps } from "./types";
@@ -178,7 +178,7 @@ export function CountriesSection({ countries }: Pick<MainPageContentProps, "coun
       <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
         <h2 className="text-label text-headline">Explore countries</h2>
         <Link
-          href={ixstatesHref("/countries")}
+          href={ixstatesLinkHref("/countries")}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className="text-label-secondary hover:text-label group/all rounded-control-sm text-caption focus-visible:ring-indigo flex items-center gap-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"

@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { ixstatesHref, ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
 export { injectPlaceholderElements, extractStatKeys } from "./placeholder-dom";
@@ -182,7 +182,7 @@ export function DynamicStatSpan({
 
         {metadata?.detailsUrl && (
           <Link
-            href={ixstatesHref(metadata.detailsUrl)}
+            href={ixstatesLinkHref(metadata.detailsUrl)}
             className="border-separator text-caption text-tint hover:text-tint border-t pt-2 text-center font-semibold transition-colors"
           >
             Analyze Dashboard &rarr;

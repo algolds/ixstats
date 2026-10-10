@@ -51,7 +51,7 @@ describe("links from WikiOS to IxStates routes", () => {
 
   it("uses the helper where the wiki links out (the guard is not vacuous)", () => {
     const users = WIKI_DIRS.flatMap((dir) => sourceFiles(path.join(ROOT, dir))).filter((file) =>
-      fs.readFileSync(file, "utf8").includes("ixstatesHref(")
+      /ixstates(?:Link)?Href\(/.test(fs.readFileSync(file, "utf8"))
     );
 
     expect(users.length).toBeGreaterThanOrEqual(10);

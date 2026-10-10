@@ -6,7 +6,7 @@
  * PM2 ecosystem file), so `isWikiStandalone()` is safe to call from the proxy and from pages.
  */
 
-import { withBasePath } from "~/lib/base-path";
+import { getBasePath, withBasePath } from "~/lib/base-path";
 
 const MAIN_PAGE_PATH = "/wiki/Main_Page";
 
@@ -116,6 +116,22 @@ export function ixstatesHref(path: string): string {
   const rooted = path.startsWith("/") ? path : `/${path}`;
   const basePath = base.replace(ORIGIN, "");
   return `${base}${basePath && rooted.startsWith(`${basePath}/`) ? rooted.slice(basePath.length) : rooted}`;
+}
+
+/**
+ * An IxStates path as Next's `<Link href>` takes it. `ixstatesHref` puts the deployment's base path on a relative
+ * path, and `<Link>` adds the base path itself without checking for one, so the prefix is taken off again (once;
+ * `/` stays `/`, never the empty string). An absolute URL (a standalone WikiOS build links to IxStates by its full
+ * address) stays as it is, and so does a path when the deployment has no base path. A plain `<a href>` takes
+ * `ixstatesHref` directly; only `<Link>` takes this.
+ */
+export function ixstatesLinkHref(path: string): string {
+  const href = ixstatesHref(path);
+  const base = getBasePath();
+  if (!base || !href.startsWith(base)) return href;
+  const rest = href.slice(base.length);
+  if (rest === "" || rest.startsWith("?") || rest.startsWith("#")) return `/${rest}`;
+  return rest.startsWith("/") ? rest : href;
 }
 
 /**
