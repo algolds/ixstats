@@ -216,7 +216,8 @@ configuration object, never from a literal:
   `src/components/dashboard/sections/feed/externalLinks.ts`,
   `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
   `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,
-  `src/lib/cards/ns-image-proxy.ts`, `src/lib/wiki-os/main-page/featured-article.ts`.
+  `src/lib/cards/ns-image-proxy.ts`, `src/lib/wiki-os/main-page/featured-article.ts`,
+  `src/lib/thinkpages-forum/post-html.ts` (the thread page's "Related on the wiki" panel reads the article titles a post links to).
 - **The one absolute origin a TemplateStyles `url()` may name** (`mediaWikiOrigin()`, handed to the scoper and part of the sanitizer
   fingerprint; a relative URL stays allowed, any other host is dropped): `src/lib/utils/sanitize-html.ts`.
 - **Static files on the MediaWiki host loaded by a browser as an image `src`** (media-bytes, no API): `src/components/dashboard/accounts/AccountCreationModal.tsx`,

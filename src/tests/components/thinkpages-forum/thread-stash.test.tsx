@@ -15,7 +15,18 @@ jest.mock("~/trpc/react", () => {
     useMutation: () => ({ mutateAsync: mutations[name], isPending: false }),
   });
   const thread = {
-    thread: { id: "t1", title: "Hello", locked: false, archived: false, hidden: false },
+    thread: {
+      id: "t1",
+      title: "Hello",
+      locked: false,
+      archived: false,
+      hidden: false,
+      postCount: 0,
+      lastPostAt: new Date(),
+      createdAt: new Date(),
+    },
+    style: "ooc",
+    participants: [],
     category: { key: "general", name: "General", icAllowed: false, realm: null },
     posts: [],
     total: 0,
@@ -29,6 +40,7 @@ jest.mock("~/trpc/react", () => {
     mutations,
     invalidate,
     api: {
+      wikios: { getMissingPages: { useQuery: () => ({ data: undefined }) } },
       useUtils: () => ({
         thinkpagesForum: {
           thread: { invalidate },
@@ -70,7 +82,7 @@ jest.mock("~/hooks/useNotify", () => {
 jest.mock("~/components/thinkpages-forum/ReportDialog", () => ({ ReportDialog: () => null }));
 jest.mock("~/components/thinkpages-forum/ForumComposer", () => ({ ForumComposer: () => null }));
 
-import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
+import { ThreadPage } from "~/components/thinkpages-forum/thread";
 
 const { stashed, mutations, invalidate } = jest.requireMock<MockApi>("~/trpc/react");
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
@@ -91,7 +103,7 @@ beforeEach(() => {
 
 describe("the stash button on a thread", () => {
   it("offers a signed-in reader a button that is not pressed until the thread is stashed", () => {
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByRole("button", { name: "Stash thread" })).toHaveAttribute(
       "aria-pressed",
       "false"
@@ -100,7 +112,7 @@ describe("the stash button on a thread", () => {
 
   it("shows a stashed thread as pressed", () => {
     stashed.data = { stashed: true };
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByRole("button", { name: "Stash thread" })).toHaveAttribute(
       "aria-pressed",
       "true"
@@ -109,12 +121,12 @@ describe("the stash button on a thread", () => {
 
   it("is not offered to anonymous visitors", () => {
     auth.isSignedIn = false;
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByRole("button", { name: /Stash/ })).toBeNull();
   });
 
   it("stashes the thread, refreshes the state and confirms", async () => {
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Stash thread" }));
     await waitFor(() => expect(mutations.stashThread).toHaveBeenCalledWith({ threadId: "t1" }));
     expect(mutations.unstashThread).not.toHaveBeenCalled();
@@ -124,7 +136,7 @@ describe("the stash button on a thread", () => {
 
   it("unstashes when the thread is already stashed", async () => {
     stashed.data = { stashed: true };
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Stash thread" }));
     await waitFor(() => expect(mutations.unstashThread).toHaveBeenCalledWith({ threadId: "t1" }));
     expect(mutations.stashThread).not.toHaveBeenCalled();
@@ -134,18 +146,18 @@ describe("the stash button on a thread", () => {
   it("waits for the stash state while it loads, but stays usable when that read failed (I6)", () => {
     stashed.data = undefined;
     stashed.isLoading = true;
-    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByRole("button", { name: "Stash thread" })).toBeDisabled();
     unmount();
     stashed.isLoading = false;
     stashed.isError = true;
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByRole("button", { name: "Stash thread" })).toBeEnabled();
   });
 
   it("confirms a stash even when refreshing its state fails afterwards (I6)", async () => {
     invalidate.mockImplementation(() => Promise.reject(new Error("network")));
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Stash thread" }));
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Saved to your stash"));
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ threadId: "t1" }));
@@ -154,7 +166,7 @@ describe("the stash button on a thread", () => {
 
   it("says so when the server refuses", async () => {
     mutations.stashThread.mockRejectedValue(new Error("Thread not found."));
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Stash thread" }));
     await waitFor(() =>
       expect(notify.error).toHaveBeenCalledWith("Could not update your stash", "Thread not found.")

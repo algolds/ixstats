@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHoriz } from "iconoir-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,20 +11,14 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
+import { DropdownMenuItem, DropdownMenuSeparator } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
 import { BanDialog, banScopeOptions, type PlacedCategory } from "./BanDialog";
-import type { ForumPost } from "./PostItem";
+import type { ForumPost } from "./thread/types";
 import { FormError, ReasonField } from "./ReasonField";
 import { WarnDialog } from "./WarnDialog";
 
-/** What a moderator's post menu needs from its thread, built once by ThreadView. */
+/** What a moderator's post menu needs from its thread, built once by ThreadPage. */
 export interface ModeratorTools {
   /** The thread's category: ban scopes are offered from it. */
   category: PlacedCategory;
@@ -35,18 +28,62 @@ export interface ModeratorTools {
   refresh: () => Promise<void>;
 }
 
-type Open = "hide" | "warn" | "ban" | null;
+/** The moderator dialogs a post's menu opens. */
+export type ModeratorDialogName = "hide" | "warn" | "ban";
 
-interface ModeratorMenuProps {
+interface ModeratorMenuItemsProps {
   post: ForumPost;
-  tools: ModeratorTools;
+  /** Opens one of the dialogs (rendered by `ModeratorDialogs`). */
+  onOpen: (dialog: ModeratorDialogName) => void;
   /** Opens the post's edit composer in moderator mode. */
   onEdit: () => void;
 }
 
-/** A moderator's actions on one post (those the server allows): hide or unhide, edit, warn or ban its author. */
-export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
-  const [open, setOpen] = useState<Open>(null);
+/** Whether the server allows the viewer any moderator action on this post. */
+export function hasModeratorActions(post: ForumPost): boolean {
+  return Boolean(post.moderable || post.sanctionable);
+}
+
+/**
+ * A moderator's actions on one post (those the server allows) as items of the post's menu: hide or unhide, edit, warn
+ * or ban its author. Only what the server allows: Hide and Edit unless a site admin wrote it (for non-admins); Warn
+ * and Ban unless the author is a site admin, a moderator here, or the viewer.
+ */
+export function ModeratorMenuItems({ post, onOpen, onEdit }: ModeratorMenuItemsProps) {
+  const verb = post.hidden === true ? "Unhide" : "Hide";
+  // Imported content without an IxStats author (phase 4) has nobody to warn or ban; the server says so too.
+  const sanctionable = post.sanctionable && post.authorUserId !== null;
+  return (
+    <>
+      {post.moderable ? (
+        <>
+          <DropdownMenuItem onSelect={() => onOpen("hide")}>{`${verb} post`}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
+        </>
+      ) : null}
+      {sanctionable ? (
+        <>
+          {post.moderable ? <DropdownMenuSeparator /> : null}
+          <DropdownMenuItem onSelect={() => onOpen("warn")}>Warn author</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={() => onOpen("ban")}>
+            Ban author
+          </DropdownMenuItem>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+interface ModeratorDialogsProps {
+  post: ForumPost;
+  tools: ModeratorTools;
+  /** The dialog that is open, if any. */
+  open: ModeratorDialogName | null;
+  onOpenChange: (open: ModeratorDialogName | null) => void;
+}
+
+/** The dialogs behind a post's moderator items: hide or unhide (with a note), warn and ban. */
+export function ModeratorDialogs({ post, tools, open, onOpenChange }: ModeratorDialogsProps) {
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const utils = api.useUtils();
@@ -54,13 +91,12 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
   const { mutateAsync: setHidden, isPending } = api.thinkpagesForumMod.setPostHidden.useMutation();
   const hidden = post.hidden === true;
   const verb = hidden ? "Unhide" : "Hide";
-  // Imported content without an IxStats author (phase 4) has nobody to warn or ban; the server says so too.
   const sanctionTarget = post.sanctionable ? post.authorUserId : null;
 
-  const dialog = (which: Exclude<Open, null>) => ({
+  const dialog = (which: ModeratorDialogName) => ({
     open: open === which,
     onOpenChange: (next: boolean) => {
-      setOpen(next ? which : null);
+      onOpenChange(next ? which : null);
       if (next) return;
       setError(null);
       setNote("");
@@ -81,7 +117,7 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
       .then(
         () => {
           setNote("");
-          setOpen(null);
+          onOpenChange(null);
           void tools.refresh();
         },
         (e: Error) => setError(e.message || `Could not ${verb.toLowerCase()} the post.`)
@@ -90,33 +126,6 @@ export function ModeratorMenu({ post, tools, onEdit }: ModeratorMenuProps) {
 
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label="Moderate post">
-            <MoreHoriz aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        {/* Only what the server allows: Hide and Edit unless a site admin wrote it (for non-admins); Warn and Ban
-            unless the author is a site admin, a moderator here, or the viewer. */}
-        <DropdownMenuContent align="end">
-          {post.moderable ? (
-            <>
-              <DropdownMenuItem onSelect={() => setOpen("hide")}>{`${verb} post`}</DropdownMenuItem>
-              <DropdownMenuItem onSelect={onEdit}>Edit as moderator</DropdownMenuItem>
-            </>
-          ) : null}
-          {sanctionTarget ? (
-            <>
-              {post.moderable ? <DropdownMenuSeparator /> : null}
-              <DropdownMenuItem onSelect={() => setOpen("warn")}>Warn author</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => setOpen("ban")}>
-                Ban author
-              </DropdownMenuItem>
-            </>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
       <AlertDialog {...dialog("hide")}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>

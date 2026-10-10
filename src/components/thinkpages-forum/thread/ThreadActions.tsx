@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -21,8 +22,11 @@ import {
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { NoteDialog } from "./mod/NoteDialog";
-import { FormError } from "./ReasonField";
+import { NoteDialog } from "../mod/NoteDialog";
+import { FormError } from "../ReasonField";
+import { ReportDialog } from "../ReportDialog";
+import { StashThreadButton } from "../StashThreadButton";
+import type { ThreadData } from "./types";
 
 type Flag = "locked" | "pinned" | "hidden" | "archived";
 type Destination = NonNullable<
@@ -56,7 +60,7 @@ const CONFIRMED: Readonly<Partial<Record<Flag, { on: string; off: string }>>> = 
   },
 };
 
-interface ThreadModeratorBarProps {
+interface ModeratorBarProps {
   thread: { id: string } & Record<Flag, boolean>;
   /** Categories the thread may move to (same audience, moderated by the viewer). */
   categories: readonly Destination[];
@@ -64,8 +68,8 @@ interface ThreadModeratorBarProps {
   refresh: () => Promise<void>;
 }
 
-/** A moderator's thread actions under its header: lock, pin, hide, archive (each a toggle) and move. */
-export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModeratorBarProps) {
+/** A moderator's thread actions: lock, pin, hide, archive (each a toggle) and move. */
+function ModeratorBar({ thread, categories, refresh }: ModeratorBarProps) {
   const notify = useNotify();
   const moveLabelId = useId();
   const [moving, setMoving] = useState(false);
@@ -196,5 +200,36 @@ export function ThreadModeratorBar({ thread, categories, refresh }: ThreadModera
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+interface ThreadActionsProps {
+  data: ThreadData;
+  /** The viewer is signed in: they can stash the thread. */
+  signedIn: boolean;
+  /** Refreshes the thread and the listings whose counts follow it. */
+  refresh: () => Promise<void>;
+}
+
+/** The thread's header actions: "In character", the moderator bar, Stash, and Report for a member. */
+export function ThreadActions({ data, signedIn, refresh }: ThreadActionsProps) {
+  const { thread } = data;
+  // A site admin's thread is site admins' to lock, pin, hide, archive or move.
+  const moderating = data.canModerate && data.moderable;
+  return (
+    <>
+      {data.style === "ic" ? <Badge variant="outline">In character</Badge> : null}
+      {moderating ? (
+        <ModeratorBar
+          thread={thread}
+          categories={data.moderatorTools?.categories ?? []}
+          refresh={refresh}
+        />
+      ) : null}
+      {signedIn ? <StashThreadButton threadId={thread.id} /> : null}
+      {signedIn && !data.canModerate && !data.viewerIsAuthor ? (
+        <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+      ) : null}
+    </>
   );
 }

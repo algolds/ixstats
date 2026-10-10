@@ -2,38 +2,90 @@
 
 import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, EyeClosed, Lock } from "iconoir-react";
-import { PageHeader } from "~/components/shell/PageHeader";
+import { Archive, EyeClosed } from "iconoir-react";
+import { Card } from "~/components/ui/card";
+import { Signal } from "~/components/ui/signal";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useScrollToPostHash } from "~/hooks/useScrollToPostHash";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
-import { ForumNotice } from "./BanNotice";
-import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
-import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
-import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
-import { Pagination, pageHref, useLastPageRedirect } from "./Pagination";
-import type { ModeratorTools } from "./ModeratorMenu";
-import { PostItem, type ForumPost } from "./PostItem";
-import { ReportDialog } from "./ReportDialog";
-import { StashThreadButton } from "./StashThreadButton";
-import { ThreadModeratorBar } from "./ThreadModeratorBar";
+import { ForumNotice } from "../BanNotice";
+import { ForumBreadcrumbs, forumTrail } from "../ForumBreadcrumbs";
+import { ForumComposer, type ForumComposerInput } from "../ForumComposer";
+import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
+import type { ModeratorTools } from "../ModeratorMenu";
+import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
+import { ForumPage } from "../shell";
+import { PostCard } from "./PostCard";
+import { ThreadActions } from "./ThreadActions";
+import { ThreadRail } from "./ThreadRail";
+import type { ForumPost, ThreadData } from "./types";
 
 const NO_POSTS: ForumPost[] = [];
+const REPLY_ID = "reply";
 
-interface ThreadViewProps {
+interface ThreadPageProps {
   threadId: string;
   page: number;
 }
 
+/** Takes the reader to the reply composer and puts the caret in it. */
+function focusComposer() {
+  const composer = document.getElementById(REPLY_ID);
+  composer?.scrollIntoView({ block: "center" });
+  composer?.querySelector<HTMLElement>("[contenteditable='true'], textarea, input")?.focus();
+}
+
+/** Why the thread takes no reply: it is closed (a Signal), or the viewer may not post (the server's notice). */
+function ClosedNote({ data }: { data: ThreadData }) {
+  const { thread } = data;
+  if (thread.locked || thread.archived) {
+    return (
+      <Signal tone="info" title={thread.locked ? "This thread is locked." : "This thread is archived."}>
+        No new replies can be posted. You can still read it.
+      </Signal>
+    );
+  }
+  return data.notice ? <ForumNotice notice={data.notice} banned={data.banned} /> : null;
+}
+
+/** Footer of the feed pane: where the page sits in the thread, and the page links. */
+function FeedFooter({
+  data,
+  page,
+  totalPages,
+  basePath,
+}: {
+  data: ThreadData;
+  page: number;
+  totalPages: number;
+  basePath: string;
+}) {
+  const first = data.posts[0]?.number;
+  const last = data.posts[data.posts.length - 1]?.number;
+  if (totalPages <= 1 || first === undefined || last === undefined) return null;
+  return (
+    <div className="border-separator border-t px-4 py-3 sm:px-6">
+      <Pagination
+        page={page}
+        last={totalPages}
+        hrefFor={(n) => pageHref(basePath, n)}
+        summary={`Posts ${first}–${last} of ${data.total}`}
+      />
+    </div>
+  );
+}
+
 /**
- * A thread's posts with edit in place for the author and a reply composer while it is open; members report, and the
- * category's moderators get the thread bar and each post's menu. Without a composer, the reason why (a ban notice).
+ * A thread: its posts in one feed pane (divided, no card per post) with the thread's actions in the header, the
+ * reply composer while it is open, and the Inspector rail. Authors edit in place; members report; the category's
+ * moderators get the thread bar and each post's menu.
  */
-export function ThreadView({ threadId, page }: ThreadViewProps) {
+export function ThreadPage({ threadId, page }: ThreadPageProps) {
   const router = useRouter();
   const utils = api.useUtils();
   const { isSignedIn } = useUser();
@@ -113,50 +165,26 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
   }
 
   const { thread, category } = data;
-  const open = !thread.locked && !thread.archived;
+  const style = data.style === "ic" ? "ic" : "ooc";
+  const board = categoryHref(category);
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-      <PageHeader
-        title={thread.title}
-        subtitle={
-          <ForumBreadcrumbs
-            items={[
-              ...forumTrail(category.realm),
-              { label: category.name, href: categoryHref(category) },
-            ]}
-          />
-        }
-        // The trail scrolls away with the header; the compact bar keeps this way up (as NewThreadForm does).
-        back={{ href: categoryHref(category), label: category.name }}
-        bleed
-      />
-      {/* A site admin's thread is site admins' to lock, pin, hide, archive or move. */}
-      {data.canModerate && data.moderable ? (
-        <ThreadModeratorBar
-          thread={thread}
-          categories={data.moderatorTools?.categories ?? []}
-          refresh={refresh}
+    <ForumPage
+      title={thread.title}
+      breadcrumbs={
+        <ForumBreadcrumbs
+          items={[...forumTrail(category.realm), { label: category.name, href: board }]}
         />
-      ) : null}
-      {isSignedIn ? (
-        <div className="flex justify-end gap-2">
-          <StashThreadButton threadId={thread.id} />
-          {!data.canModerate && !data.viewerIsAuthor ? (
-            <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
-          ) : null}
-        </div>
-      ) : null}
+      }
+      // The trail scrolls away with the header; the compact bar keeps this way up (as NewThreadForm does).
+      back={{ href: board, label: category.name }}
+      actions={<ThreadActions data={data} signedIn={!!isSignedIn} refresh={refresh} />}
+      rail={<ThreadRail data={data} />}
+    >
       {thread.hidden ? (
         <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
           <EyeClosed aria-hidden className="size-4 shrink-0" />
           This thread is hidden from members.
-        </p>
-      ) : null}
-      {thread.locked ? (
-        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
-          <Lock aria-hidden className="size-4 shrink-0" />
-          This thread is locked.
         </p>
       ) : null}
       {typeof thread.xenforoThreadId === "number" ? (
@@ -165,31 +193,36 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           Imported from the old forum.
         </p>
       ) : null}
-      <div className="space-y-3">
-        {posts.map((post) => (
-          <PostItem
+      <Card content="feed" className="overflow-hidden">
+        {posts.map((post, index) => (
+          <PostCard
             key={post.id}
             post={post}
             authors={data.authors}
+            style={style}
+            className={cn(index > 0 && "border-separator border-t")}
             cards={cards}
             cardsReady={ready}
             cardsErrored={errored}
-            canEdit={post.isOwn && open}
+            canReply={data.canReply}
+            onReply={focusComposer}
+            onQuote={focusComposer}
+            open={!thread.locked && !thread.archived}
+            signedIn={!!isSignedIn}
             onEdit={edit}
-            canReport={!!isSignedIn && !post.byViewer && !data.canModerate}
             canModerate={data.canModerate}
             tools={tools}
           />
         ))}
-      </div>
-      <Pagination page={page} last={totalPages} hrefFor={(n) => pageHref(basePath, n)} />
+        <FeedFooter data={data} page={page} totalPages={totalPages} basePath={basePath} />
+      </Card>
       {data.canReply ? (
-        <section aria-label="Reply" className="space-y-2">
+        <section id={REPLY_ID} aria-label="Reply" className="scroll-mt-24 space-y-2">
           <ForumComposer icAllowed={category.icAllowed} submitLabel="Reply" onSubmit={reply} />
         </section>
-      ) : data.notice ? (
-        <ForumNotice notice={data.notice} banned={data.banned} />
-      ) : null}
-    </div>
+      ) : (
+        <ClosedNote data={data} />
+      )}
+    </ForumPage>
   );
 }

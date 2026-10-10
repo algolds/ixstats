@@ -204,7 +204,21 @@ function renderEntityMention(element: HTMLElement, href: string, index: number):
   );
 }
 
-const PASSTHROUGH_ATTRS = ["href", "target", "rel", "src", "alt", "title", "scope"];
+/**
+ * The `data-*` attributes forum posts use for wiki embeds (`div.forum-wiki-embed`): kept so the forum can hydrate them
+ * from the rendered DOM. They are untrusted values; their reader validates them (lib/thinkpages-forum/post-html.ts).
+ */
+const EMBED_DATA_ATTRS = ["data-wiki-embed", "data-wiki-title", "data-width"];
+const PASSTHROUGH_ATTRS = [
+  "href",
+  "target",
+  "rel",
+  "src",
+  "alt",
+  "title",
+  "scope",
+  ...EMBED_DATA_ATTRS,
+];
 
 function elementProps(
   element: HTMLElement,

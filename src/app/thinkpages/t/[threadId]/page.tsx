@@ -1,5 +1,5 @@
 import { type Metadata } from "next";
-import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
+import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { pageParam } from "~/lib/thinkpages-forum/paging";
 
 interface ForumThreadPageProps {
@@ -13,5 +13,5 @@ export const metadata: Metadata = {
 
 export default async function ForumThreadPage({ params, searchParams }: ForumThreadPageProps) {
   const [{ threadId }, query] = await Promise.all([params, searchParams]);
-  return <ThreadView threadId={threadId} page={pageParam(query.page)} />;
+  return <ThreadPage threadId={threadId} page={pageParam(query.page)} />;
 }

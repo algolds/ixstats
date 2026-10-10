@@ -48,6 +48,7 @@ jest.mock("~/trpc/react", () => {
     mutations,
     invalidations,
     api: {
+      wikios: { getMissingPages: { useQuery: () => ({ data: undefined }) } },
       useUtils: () => utils,
       thinkpagesForum: {
         categories: query("categories"),
@@ -197,7 +198,7 @@ import { BoardPage } from "~/components/thinkpages-forum/board";
 import type { ModContext } from "~/components/thinkpages-forum/mod/ModRow";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import { hasStanding, StandingPanel } from "~/components/thinkpages-forum/StandingPanel";
-import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
+import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
 
 // A board's rail sits in the Inspector, which asks the viewport: narrow, so its panels stay out of these tests.
@@ -260,7 +261,12 @@ function threadData(o: ThreadOverrides = {}) {
       pinned: false,
       hidden: o.threadHidden ?? false,
       archived: false,
+      postCount: 2,
+      lastPostAt: new Date(),
+      createdAt: new Date(),
     },
+    style: "ooc",
+    participants: [],
     category: { id: "c1", key: "general", name: "General", icAllowed: false, realm: null },
     posts: [
       {
@@ -270,6 +276,8 @@ function threadData(o: ThreadOverrides = {}) {
         contentHtml: "<p>Mine</p>",
         editedAt: null,
         createdAt: new Date(),
+        number: 1,
+        role: null,
         byViewer: true,
         isOwn: !o.locked,
         // The moderator's own post: never sanctionable.
@@ -282,6 +290,8 @@ function threadData(o: ThreadOverrides = {}) {
         contentHtml: "<p>Theirs</p>",
         editedAt: null,
         createdAt: new Date(),
+        number: 2,
+        role: null,
         byViewer: false,
         isOwn: false,
         ...(o.canModerate
@@ -329,23 +339,23 @@ describe("reporting", () => {
   it("offers Report to a signed-in viewer on another member's post, never on their own", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData() });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
-    expect(within(post(container, "p2")).getByRole("button", { name: "Report" })).toBeTruthy();
-    expect(within(post(container, "p1")).queryByRole("button", { name: "Report" })).toBeNull();
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(within(post(container, "p2")).getByRole("menuitem", { name: "Report" })).toBeTruthy();
+    expect(within(post(container, "p1")).queryByRole("menuitem", { name: "Report" })).toBeNull();
   });
 
   it("offers no Report on the viewer's own post where they may no longer edit it", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ locked: true, canReply: false }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
-    expect(within(post(container, "p1")).queryByRole("button", { name: "Report" })).toBeNull();
-    expect(within(post(container, "p2")).getByRole("button", { name: "Report" })).toBeTruthy();
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(within(post(container, "p1")).queryByRole("menuitem", { name: "Report" })).toBeNull();
+    expect(within(post(container, "p2")).getByRole("menuitem", { name: "Report" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Report thread" })).toBeNull();
   });
 
   it("offers no Report to anonymous visitors", () => {
     set("thread", { data: threadData() });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByRole("button", { name: /Report/ })).toBeNull();
   });
 
@@ -354,8 +364,8 @@ describe("reporting", () => {
     const report = jest.fn(() => Promise.resolve({ id: "r1" }));
     mutations.report = report;
     set("thread", { data: threadData() });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
-    fireEvent.click(within(post(container, "p2")).getByRole("button", { name: "Report" }));
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Report" }));
     const dialog = screen.getByRole("dialog", { name: "Report this post" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: XSS } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Send report" }));
@@ -369,8 +379,8 @@ describe("reporting", () => {
     auth.isSignedIn = true;
     mutations.report = jest.fn(() => Promise.reject(new Error("You've already reported this.")));
     set("thread", { data: threadData() });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
-    fireEvent.click(within(post(container, "p2")).getByRole("button", { name: "Report" }));
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Report" }));
     const dialog = screen.getByRole("dialog", { name: "Report this post" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Spam link" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Send report" }));
@@ -384,7 +394,7 @@ describe("reporting", () => {
     const report = jest.fn(() => Promise.resolve({ id: "r2" }));
     mutations.report = report;
     set("thread", { data: threadData({ viewerIsAuthor: false }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Report thread" }));
     const dialog = screen.getByRole("dialog", { name: "Report this thread" });
@@ -404,14 +414,14 @@ describe("moderator tools", () => {
   it("shows the post menu and thread bar only when canModerate", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData() });
-    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
-    expect(screen.queryByRole("button", { name: "Moderate post" })).toBeNull();
+    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.queryByRole("menuitem", { name: "Hide post" })).toBeNull();
     expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
     unmount();
 
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
-    expect(screen.getAllByRole("button", { name: "Moderate post" })).toHaveLength(2);
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.getAllByRole("menuitem", { name: "Hide post" })).toHaveLength(2);
     expect(screen.getByRole("group", { name: "Moderate thread" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Report thread" })).toBeNull();
   });
@@ -421,7 +431,7 @@ describe("moderator tools", () => {
     const setPostHidden = jest.fn(() => Promise.resolve());
     mutations.setPostHidden = setPostHidden;
     set("thread", { data: threadData({ canModerate: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Hide post" }));
     expect(setPostHidden).not.toHaveBeenCalled();
     const confirm = screen.getByRole("alertdialog", { name: "Hide this post?" });
@@ -434,7 +444,7 @@ describe("moderator tools", () => {
     mutations.warn = jest.fn(() => Promise.resolve({ activePoints: 1, autoBan: null }));
     mutations.ban = jest.fn(() => Promise.resolve());
     set("thread", { data: threadData({ canModerate: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Warn author" }));
     const warn = screen.getByRole("dialog", { name: "Warn this member" });
     fireEvent.change(within(warn).getByRole("textbox"), { target: { value: "Flaming" } });
@@ -452,7 +462,7 @@ describe("moderator tools", () => {
   it("offers Warn and Ban on other members' posts, never on the moderator's own", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canModerate: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     const own = within(post(container, "p1"));
     expect(own.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
     expect(own.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
@@ -471,9 +481,9 @@ describe("moderator tools", () => {
         p2: { moderable: false, sanctionable: false },
       }),
     });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     expect(
-      within(post(container, "p2")).queryByRole("button", { name: "Moderate post" })
+      within(post(container, "p2")).queryByRole("button", { name: "More actions" })
     ).toBeNull();
     expect(within(post(container, "p2")).queryByRole("menuitem")).toBeNull();
     expect(screen.queryByRole("group", { name: "Moderate thread" })).toBeNull();
@@ -487,7 +497,7 @@ describe("moderator tools", () => {
     set("thread", {
       data: threadData({ canModerate: true, p2: { moderable: true, sanctionable: false } }),
     });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     const theirs = within(post(container, "p2"));
     expect(theirs.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
     expect(theirs.getByRole("menuitem", { name: "Edit as moderator" })).toBeInTheDocument();
@@ -498,11 +508,11 @@ describe("moderator tools", () => {
   it("says a hidden thread is hidden from members (M-4)", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canModerate: true }) });
-    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByText("This thread is hidden from members.")).toBeNull();
     unmount();
     set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByText("This thread is hidden from members.")).toBeInTheDocument();
   });
 
@@ -540,7 +550,7 @@ describe("moderator tools", () => {
   it("clears the hide note when the confirmation is cancelled", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canModerate: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     const hide = () =>
       fireEvent.click(within(post(container, "p2")).getByRole("menuitem", { name: "Hide post" }));
     hide();
@@ -555,7 +565,7 @@ describe("moderator tools", () => {
   it("marks a hidden post with a Hidden badge and offers Unhide", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canModerate: true, hidden: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     const hidden = post(container, "p2");
     expect(within(hidden).getByText("Hidden")).toBeInTheDocument();
     expect(within(hidden).getByRole("menuitem", { name: "Unhide post" })).toBeInTheDocument();
@@ -567,7 +577,7 @@ describe("moderator tools", () => {
     const modEditPost = jest.fn(() => Promise.resolve());
     mutations.modEditPost = modEditPost;
     set("thread", { data: threadData({ canModerate: true }) });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(
       within(post(container, "p2")).getByRole("menuitem", { name: "Edit as moderator" })
     );
@@ -595,7 +605,7 @@ describe("moderator tools", () => {
     const setThreadFlag = jest.fn(() => Promise.resolve());
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     const bar = screen.getByRole("group", { name: "Moderate thread" });
     fireEvent.click(within(bar).getByRole("button", { name: "Lock" }));
     await waitFor(() =>
@@ -613,7 +623,7 @@ describe("moderator tools", () => {
     const setThreadFlag = jest.fn(() => Promise.resolve());
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Hide" }));
     expect(setThreadFlag).not.toHaveBeenCalled();
     const dialog = screen.getByRole("dialog", { name: "Hide this thread" });
@@ -635,7 +645,7 @@ describe("moderator tools", () => {
     const setThreadFlag = jest.fn(() => Promise.resolve());
     mutations.setThreadFlag = setThreadFlag;
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Archive" }));
     fireEvent.keyDown(screen.getByRole("dialog", { name: "Archive this thread" }), {
       key: "Escape",
@@ -657,7 +667,7 @@ describe("moderator tools", () => {
     auth.isSignedIn = true;
     mutations.setThreadFlag = jest.fn(() => Promise.reject(new Error("Not allowed.")));
     set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Unhide" }));
     const dialog = screen.getByRole("dialog", { name: "Unhide this thread" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Unhide thread" }));
@@ -670,7 +680,7 @@ describe("moderator tools", () => {
       Promise.reject(new Error("Site admins' content is moderated by site admins."))
     );
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Pin" }));
     await waitFor(() =>
       expect(notify.error).toHaveBeenCalledWith(
@@ -685,7 +695,7 @@ describe("moderator tools", () => {
     const moveThread = jest.fn(() => Promise.resolve());
     mutations.moveThread = moveThread;
     set("thread", { data: threadData({ canModerate: true }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Move" }));
     const dialog = screen.getByRole("alertdialog", { name: "Move this thread" });
     fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "side" } });
@@ -699,7 +709,7 @@ describe("moderator tools", () => {
     auth.isSignedIn = true;
     mutations.moveThread = jest.fn(() => Promise.resolve());
     set("thread", { data: threadData({ canModerate: true }) });
-    const { rerender } = render(<ThreadView threadId="t1" page={1} />);
+    const { rerender } = render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Move" }));
     fireEvent.click(screen.getByRole("button", { name: "Move thread" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
@@ -709,7 +719,7 @@ describe("moderator tools", () => {
       moderatorTools: { categories: [{ key: "general", name: "General", realm: null }] },
     };
     set("thread", { data: moved });
-    rerender(<ThreadView threadId="t1" page={1} />);
+    rerender(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("button", { name: "Move" }));
     const dialog = screen.getByRole("alertdialog", { name: "Move this thread" });
     expect(within(dialog).getByRole("combobox")).toHaveValue("general");
@@ -865,7 +875,7 @@ describe("ban notices", () => {
   it("replaces the composer with the ban notice and an Appeal link", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canReply: false, banned: true, notice: BAN }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByTestId("composer")).toBeNull();
     expect(screen.getByText(BAN)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Appeal" })).toHaveAttribute(
@@ -877,7 +887,7 @@ describe("ban notices", () => {
   it("shows a plain notice, with a sign-in link, when the visitor is not banned", () => {
     const notice = "Sign in and claim a nation in Eurth to post here.";
     set("thread", { data: threadData({ canReply: false, notice }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByTestId("composer")).toBeNull();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
@@ -1015,10 +1025,10 @@ describe("permalink scroll", () => {
     Element.prototype.scrollIntoView = scrollIntoView;
     window.location.hash = "#post-p2";
     set("thread", { data: threadData() });
-    const { rerender } = render(<ThreadView threadId="t1" page={1} />);
+    const { rerender } = render(<ThreadPage threadId="t1" page={1} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     set("thread", { data: threadData() });
-    rerender(<ThreadView threadId="t1" page={1} />);
+    rerender(<ThreadPage threadId="t1" page={1} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     window.location.hash = "";
   });
@@ -1029,7 +1039,7 @@ describe("permalink scroll", () => {
     window.location.hash = "#post-p40";
     resolvePost.mockResolvedValueOnce({ threadId: "t1", page: 2 });
     set("thread", { data: threadData() });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     await waitFor(() =>
       expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=2#post-p40")
     );
@@ -1042,13 +1052,13 @@ describe("permalink scroll", () => {
     window.location.hash = "#post-gone";
     resolvePost.mockResolvedValueOnce(null).mockResolvedValueOnce({ threadId: "t1", page: 1 });
     set("thread", { data: threadData() });
-    const { rerender } = render(<ThreadView threadId="t1" page={1} />);
+    const { rerender } = render(<ThreadPage threadId="t1" page={1} />);
     await waitFor(() => expect(resolvePost).toHaveBeenCalledTimes(1));
     set("thread", { data: threadData() });
-    rerender(<ThreadView threadId="t1" page={1} />);
+    rerender(<ThreadPage threadId="t1" page={1} />);
     window.location.hash = "#post-p40";
     set("thread", { data: threadData() });
-    rerender(<ThreadView threadId="t1" page={1} />);
+    rerender(<ThreadPage threadId="t1" page={1} />);
     await waitFor(() => expect(resolvePost).toHaveBeenCalledTimes(2));
     expect(router.replace).not.toHaveBeenCalled();
     window.location.hash = "";

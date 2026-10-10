@@ -5,12 +5,24 @@ jest.mock("~/lib/base-path", () => ({
   withBasePath: (path: string) => (path.startsWith("/p/") ? path : `/p${path}`),
 }));
 
-import { PostBody } from "~/components/thinkpages-forum/PostBody";
+// WikiHtmlContent reads missing wiki pages through tRPC; its markup is all these tests need.
+jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
+  WikiHtmlContent: ({ html, className }: { html: string; className?: string }) => (
+    <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+  ),
+}));
+jest.mock("~/components/thinkpages-forum/thread/WikiEmbed", () => ({
+  WikiEmbeds: () => null,
+}));
+
+import { PostBody } from "~/components/thinkpages-forum/thread/PostBody";
 import type { ActionCardData } from "~/components/action-links";
 
 function card(id: string, title: string): ActionCardData {
   return { id, title, type: "diplomatic", createdAt: new Date(0), country: null };
 }
+
+const NO_CARDS = new Map<string, ActionCardData>();
 
 describe("PostBody", () => {
   it("renders text before, between and after two tokens in order, with two cards", () => {
@@ -21,6 +33,7 @@ describe("PostBody", () => {
     const { container } = render(
       <PostBody
         html="<p>before</p>[ixaction=a1]<p>between</p>[ixaction=b2]<p>after</p>"
+        style="ooc"
         cards={cardMap}
         cardsReady
       />
@@ -36,7 +49,7 @@ describe("PostBody", () => {
 
   it("caps post images to the column width and a standard height through wrapper classes", () => {
     const { container } = render(
-      <PostBody html='<p>x</p><img src="https://x/y.png" alt="">' cards={new Map()} cardsReady />
+      <PostBody html='<p>x</p><img src="https://x/y.png" alt="">' style="ooc" />
     );
     const wrapper = container.firstElementChild as HTMLElement;
     expect(wrapper).toHaveClass("[&_img]:max-w-full", "[&_img]:max-h-[640px]", "[&_img]:h-auto");
@@ -47,8 +60,8 @@ describe("PostBody", () => {
     const { container } = render(
       <PostBody
         html='<p><img src="/images/uploads/forum/55-abc-x.png" alt=""><a href="/images/uploads/forum/56-def-r.pdf">r</a><img src="/p/images/downloaded/y.png" alt=""><img src="https://x/z.png" alt=""></p>[ixaction=a1]<p><img src="/images/uploads/b.png" alt=""></p>'
-        cards={new Map()}
-        cardsReady
+        style="ooc"
+        cards={NO_CARDS}
       />
     );
     expect(Array.from(container.querySelectorAll("img"), (img) => img.getAttribute("src"))).toEqual(
@@ -65,20 +78,27 @@ describe("PostBody", () => {
   });
 
   it("renders Unverified action for an unknown id", () => {
-    render(<PostBody html="<p>hi</p>[ixaction=gone]" cards={new Map()} cardsReady />);
+    render(<PostBody html="<p>hi</p>[ixaction=gone]" style="ooc" cards={NO_CARDS} />);
     expect(screen.getByText("Unverified action")).toBeInTheDocument();
   });
 
   it("shows neutral busy placeholders, not Unverified action, while the batch loads", () => {
     const { container } = render(
-      <PostBody html="[ixaction=a1]<p>x</p>[ixaction=b2]" cards={new Map()} cardsReady={false} />
+      <PostBody
+        html="[ixaction=a1]<p>x</p>[ixaction=b2]"
+        style="ooc"
+        cards={NO_CARDS}
+        cardsReady={false}
+      />
     );
     expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
     expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(2);
   });
 
   it("says Action unavailable when the batch failed", () => {
-    render(<PostBody html="[ixaction=a1]" cards={new Map()} cardsReady={false} cardsErrored />);
+    render(
+      <PostBody html="[ixaction=a1]" style="ooc" cards={NO_CARDS} cardsReady={false} cardsErrored />
+    );
     expect(screen.getByText("Action unavailable")).toBeInTheDocument();
     expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
   });
@@ -86,7 +106,7 @@ describe("PostBody", () => {
   it("keeps a token inside a paragraph as balanced paragraphs around the card", () => {
     const cardMap = new Map([["a1", card("a1", "First action")]]);
     const { container } = render(
-      <PostBody html="<p>before [ixaction=a1] after</p>" cards={cardMap} cardsReady />
+      <PostBody html="<p>before [ixaction=a1] after</p>" style="ooc" cards={cardMap} />
     );
     expect(
       Array.from(container.querySelectorAll("p"))
@@ -100,7 +120,7 @@ describe("PostBody", () => {
     ["title", '<p>hi <span title="[ixaction=abc] ><img src=x onerror=alert(1)>">x</span></p>'],
     ["href", '<p><a href="https://e.com/?q=[ixaction=abc] <img src=x onerror=alert(1)>">l</a></p>'],
   ])("renders a token inside a %s attribute as inert text, with no live element", (_, html) => {
-    const { container } = render(<PostBody html={html} cards={new Map()} cardsReady />);
+    const { container } = render(<PostBody html={html} style="ooc" />);
     expect(container.querySelector("img")).toBeNull();
     expect(container.querySelector("[onerror]")).toBeNull();
     const handlers = Array.from(container.querySelectorAll("*")).flatMap((el) =>
@@ -113,7 +133,7 @@ describe("PostBody", () => {
   it("still renders a card for a token in a list item", () => {
     const cardMap = new Map([["a1", card("a1", "First action")]]);
     const { container } = render(
-      <PostBody html="<ul><li>one [ixaction=a1] two</li></ul>" cards={cardMap} cardsReady />
+      <PostBody html="<ul><li>one [ixaction=a1] two</li></ul>" style="ooc" cards={cardMap} />
     );
     expect(screen.getByText("First action")).toBeInTheDocument();
     expect(Array.from(container.querySelectorAll("li")).map((li) => li.textContent)).toEqual([
@@ -123,11 +143,42 @@ describe("PostBody", () => {
   });
 
   it("renders the HTML once when there are no tokens", () => {
-    const { container } = render(
-      <PostBody html="<p>plain post</p>" cards={new Map()} cardsReady />
-    );
+    const { container } = render(<PostBody html="<p>plain post</p>" style="ooc" />);
     expect(screen.getAllByText("plain post")).toHaveLength(1);
     expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
     expect(container.querySelectorAll("p")).toHaveLength(1);
+  });
+});
+
+describe("PostBody styles", () => {
+  it("applies the article style to an in-character post, and compact prose to an out-of-character one", () => {
+    const { container, rerender } = render(<PostBody html="<p>x</p>" style="ic" />);
+    const body = container.firstElementChild as HTMLElement;
+    expect(body).toHaveClass("forum-post", "forum-post--ic");
+    expect(body).not.toHaveClass("forum-post--ooc");
+    rerender(<PostBody html="<p>x</p>" style="ooc" />);
+    expect(container.firstElementChild).toHaveClass("forum-post", "forum-post--ooc", "text-callout");
+    expect(container.firstElementChild).not.toHaveClass("forum-post--ic");
+    expect(container.firstElementChild?.className).not.toMatch(/\btext-sm\b/);
+  });
+
+  it("renders a quote block and links its author line to the quoted post", () => {
+    const html =
+      '<blockquote class="forum-quote" data-post="p9"><div class="forum-quote-author">Ann wrote:</div><div class="forum-quote-body">hello</div></blockquote><p>reply</p>';
+    const { container } = render(<PostBody html={html} style="ic" />);
+    const quote = container.querySelector("blockquote.forum-quote");
+    expect(quote).toHaveTextContent("hello");
+    expect(screen.getByRole("link", { name: "Ann wrote:" })).toHaveAttribute(
+      "href",
+      "/p/thinkpages/post/p9"
+    );
+  });
+
+  it("leaves a quote with a forged post id unlinked", () => {
+    const html =
+      '<blockquote class="forum-quote" data-post="a&quot; onmouseover=&quot;x"><div class="forum-quote-author">Eve wrote:</div><div class="forum-quote-body">hi</div></blockquote>';
+    render(<PostBody html={html} style="ooc" />);
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getByText("Eve wrote:")).toBeInTheDocument();
   });
 });

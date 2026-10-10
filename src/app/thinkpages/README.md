@@ -48,7 +48,7 @@ Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHome
 | Piece | Location |
 | --- | --- |
 | Pages | `src/app/thinkpages/` (this directory) |
-| Components | `src/components/thinkpages-forum/` (`CategoryList`, `RealmSection`, `RealmSwitcher`, `ThreadList`, `ThreadView`, `ForumComposer`, `ForumBreadcrumbs`, moderation dialogs under `mod/`) |
+| Components | `src/components/thinkpages-forum/` (`CategoryList`, `RealmSection`, `RealmSwitcher`, `ThreadList`, `thread/ThreadPage`, `ForumComposer`, `ForumBreadcrumbs`, moderation dialogs under `mod/`) |
 | Server logic | `src/server/modules/thinkpages-forum/` |
 | tRPC routers | `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), registered in `root.ts` as `thinkpagesForum` and `thinkpagesForumMod` |
 | Pure helpers | `src/lib/thinkpages-forum/` (`links.ts`, `permalink.ts`, `categories.ts`, `moderation-policy.ts`) |

@@ -21,14 +21,21 @@ const REASON_MAX = 1000;
 interface ReportDialogProps {
   targetType: "thread" | "post";
   targetId: string;
-  /** The trigger's label: "Report" on a post, "Report thread" under a thread's header. */
+  /** The trigger's label: "Report thread" in a thread's header. */
   label?: string;
+  /** Opened by the caller (a menu item), which then renders no trigger. */
+  control?: { open: boolean; onOpenChange: (open: boolean) => void };
 }
 
-/** A ghost "Report" button and its dialog: the member says why, and the category's moderators get a report. */
-export function ReportDialog({ targetType, targetId, label = "Report" }: ReportDialogProps) {
+/**
+ * A ghost "Report" button and its dialog (or just the dialog, when the caller controls it): the member says why,
+ * and the category's moderators get a report.
+ */
+export function ReportDialog({ targetType, targetId, label = "Report", control }: ReportDialogProps) {
   const notify = useNotify();
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = control?.open ?? ownOpen;
+  const setOpen = control?.onOpenChange ?? setOwnOpen;
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { mutateAsync: report, isPending } = api.thinkpagesForum.report.useMutation();
@@ -53,11 +60,13 @@ export function ReportDialog({ targetType, targetId, label = "Report" }: ReportD
         if (!next) setError(null);
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          {label}
-        </Button>
-      </DialogTrigger>
+      {control ? null : (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="sm">
+            {label}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{`Report this ${targetType}`}</DialogTitle>

@@ -26,14 +26,8 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
   DropdownMenuSeparator: () => <hr />,
 }));
 
-import { ModeratorMenu, type ModeratorTools } from "~/components/thinkpages-forum/ModeratorMenu";
-import type { ForumPost } from "~/components/thinkpages-forum/PostItem";
-
-const tools: ModeratorTools = {
-  category: { key: "general", name: "General", realm: null },
-  saveEdit: async () => undefined,
-  refresh: async () => undefined,
-};
+import { ModeratorMenuItems } from "~/components/thinkpages-forum/ModeratorMenu";
+import type { ForumPost } from "~/components/thinkpages-forum/thread/types";
 
 const postBy = (authorUserId: string | null): ForumPost => ({
   id: "p1",
@@ -43,6 +37,8 @@ const postBy = (authorUserId: string | null): ForumPost => ({
   contentHtml: "<p>x</p>",
   editedAt: null,
   createdAt: new Date(),
+  number: 1,
+  role: null,
   byViewer: false,
   isOwn: false,
   hidden: false,
@@ -50,13 +46,13 @@ const postBy = (authorUserId: string | null): ForumPost => ({
   sanctionable: true,
 });
 
-describe("ModeratorMenu on imported content", () => {
+describe("ModeratorMenuItems on imported content", () => {
   it("offers Warn and Ban only on a post with an IxStats author, whatever the flags say", () => {
     const { rerender } = render(
-      <ModeratorMenu post={postBy("u2")} tools={tools} onEdit={jest.fn()} />
+      <ModeratorMenuItems post={postBy("u2")} onOpen={jest.fn()} onEdit={jest.fn()} />
     );
     expect(screen.getByRole("menuitem", { name: "Warn author" })).toBeInTheDocument();
-    rerender(<ModeratorMenu post={postBy(null)} tools={tools} onEdit={jest.fn()} />);
+    rerender(<ModeratorMenuItems post={postBy(null)} onOpen={jest.fn()} onEdit={jest.fn()} />);
     expect(screen.getByRole("menuitem", { name: "Hide post" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
     expect(screen.queryByRole("menuitem", { name: "Ban author" })).toBeNull();

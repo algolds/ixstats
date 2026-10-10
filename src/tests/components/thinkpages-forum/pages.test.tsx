@@ -32,6 +32,9 @@ jest.mock("~/trpc/react", () => {
     inputs,
     mutations,
     api: {
+      wikios: { getMissingPages: { useQuery: () => ({ data: undefined }) } },
+      // The persona's hover card loads its profile only when opened.
+      thinkpages: { getAccountProfile: { useQuery: () => ({ data: undefined, isLoading: false }) } },
       useUtils: () => ({
         thinkpagesForum: {
           thread: { invalidate: () => Promise.resolve() },
@@ -105,6 +108,33 @@ jest.mock("~/components/thinkpages-forum/ForumComposer", () => ({
   ),
 }));
 
+// Radix DropdownMenu opens on pointer events jsdom does not model; render its items inline.
+jest.mock("~/components/ui/dropdown-menu", () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div role="menu">{children}</div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onSelect,
+  }: {
+    children: React.ReactNode;
+    onSelect?: (event: Event) => void;
+  }) => (
+    <button type="button" role="menuitem" onClick={() => onSelect?.(new Event("select"))}>
+      {children}
+    </button>
+  ),
+  DropdownMenuSeparator: () => <hr />,
+  DropdownMenuRadioGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuRadioItem: ({ children }: { children: React.ReactNode }) => (
+    <button type="button" role="menuitemradio">
+      {children}
+    </button>
+  ),
+}));
+
 jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: null }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn(), info: jest.fn() }),
@@ -112,7 +142,7 @@ jest.mock("~/hooks/useNotify", () => ({
 
 import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
 import { BoardPage } from "~/components/thinkpages-forum/board";
-import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
+import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
 import ForumHomePage from "~/app/thinkpages/page";
 import RealmRedirectPage from "~/app/thinkpages/r/[realm]/page";
@@ -156,7 +186,12 @@ function threadData(
       title: "<b>Plain</b> title",
       locked: overrides.locked ?? false,
       archived: false,
+      postCount: 2,
+      lastPostAt: new Date(),
+      createdAt: new Date(),
     },
+    style: "ooc",
+    participants: [],
     category: overrides.realm
       ? { key: "hub", name: "Hub", icAllowed: false, realm: overrides.realm }
       : { key: "general", name: "General", icAllowed: false, realm: null },
@@ -168,6 +203,8 @@ function threadData(
         contentHtml: "<p>First post</p>",
         editedAt: null,
         createdAt: new Date(),
+        number: 1,
+        role: null,
         isOwn: true,
       },
       {
@@ -177,6 +214,8 @@ function threadData(
         contentHtml: "<p>In character</p>",
         editedAt: null,
         createdAt: new Date(),
+        number: 2,
+        role: null,
         isOwn: false,
       },
     ],
@@ -352,7 +391,7 @@ describe("category view", () => {
 describe("thread view", () => {
   it("renders posts with anchors, authors and the reply composer", () => {
     set("thread", { data: threadData() });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     expect(
       screen.getByRole("heading", { level: 1, name: "<b>Plain</b> title" })
     ).toBeInTheDocument();
@@ -360,15 +399,15 @@ describe("thread view", () => {
     expect(container.querySelector("#post-p2")).toHaveTextContent("In character");
     expect(screen.getByText("Kir")).toBeInTheDocument();
     expect(screen.getByText("Aria Vance")).toBeInTheDocument();
-    expect(screen.getByText("@aria")).toBeInTheDocument();
+    expect(screen.getByText(/@aria/)).toBeInTheDocument();
     expect(screen.queryByText("Hidden Player")).toBeNull();
-    expect(screen.getByRole("button", { name: "Reply" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" })).toBeInTheDocument();
     expect(screen.queryByText("This thread is locked.")).toBeNull();
   });
 
   it("breadcrumbs a sitewide thread without a realm crumb, naming the thread and category once (U5)", () => {
     set("thread", { data: threadData() });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["General", "/thinkpages/c/general"],
@@ -379,7 +418,7 @@ describe("thread view", () => {
 
   it("breadcrumbs a realm thread through its realm and category", () => {
     set("thread", { data: threadData({ realm: EURTH }) });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages/r/eurth/hub"],
@@ -392,10 +431,10 @@ describe("thread view", () => {
     set("thread", {
       data: threadData({ locked: true, canReply: false }),
     });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByText("This thread is locked.")).toBeInTheDocument();
     expect(screen.queryByTestId("composer")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Edit" })).toBeNull();
   });
 
   it("edits only the viewer's own post, prefilled, and saves through editPost with the loaded editedAt", async () => {
@@ -406,8 +445,8 @@ describe("thread view", () => {
     });
     const editPost = jest.fn(() => Promise.resolve({}));
     mutations.editPost = editPost;
-    render(<ThreadView threadId="t1" page={1} />);
-    const edits = screen.getAllByRole("button", { name: "Edit" });
+    render(<ThreadPage threadId="t1" page={1} />);
+    const edits = screen.getAllByRole("menuitem", { name: "Edit" });
     expect(edits).toHaveLength(1);
     fireEvent.click(edits[0]!);
     const editor = screen.getAllByTestId("composer")[0]!;
@@ -422,8 +461,8 @@ describe("thread view", () => {
     set("thread", { data: threadData() });
     const reply = jest.fn(() => Promise.resolve({ postId: "p9" }));
     mutations.reply = reply;
-    render(<ThreadView threadId="t1" page={1} />);
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
     await waitFor(() =>
       expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t1?page=3#post-p9")
     );
@@ -459,13 +498,13 @@ describe("load failures and out-of-range pages", () => {
 
   it("says Thread not found only for NOT_FOUND, and Retry otherwise", () => {
     set("thread", { data: undefined, error: { data: { code: "NOT_FOUND" } } });
-    const { unmount } = render(<ThreadView threadId="gone" page={1} />);
+    const { unmount } = render(<ThreadPage threadId="gone" page={1} />);
     expect(screen.getByText("Thread not found")).toBeInTheDocument();
     unmount();
 
     const refetch = jest.fn();
     set("thread", { data: undefined, error: { data: { code: "TIMEOUT" } }, refetch });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByText("Thread not found")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(refetch).toHaveBeenCalledTimes(1);
@@ -480,7 +519,7 @@ describe("load failures and out-of-range pages", () => {
 
   it("sends a thread page past the end to the last page", () => {
     set("thread", { data: { ...threadData(), posts: [] } });
-    render(<ThreadView threadId="t1" page={4} />);
+    render(<ThreadPage threadId="t1" page={4} />);
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/t/t1?page=1");
     expect(screen.queryByTestId("composer")).toBeNull();
   });
@@ -593,7 +632,7 @@ describe("imported authors (phase 4)", () => {
     set("thread", {
       data: { ...data, posts: [{ ...data.posts[0]!, ...imported, isOwn: false }] },
     });
-    const { container } = render(<ThreadView threadId="t1" page={1} />);
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
     expect(container.querySelector("#post-p1")).toHaveTextContent("OldName");
     expect(screen.queryByText("Kir")).toBeNull();
   });
@@ -613,12 +652,12 @@ describe("imported threads and the old-forum archive (phase 4)", () => {
   it("says an imported thread came from the old forum, and says nothing otherwise", () => {
     const data = threadData();
     set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: 4821 } } });
-    const { unmount } = render(<ThreadView threadId="t1" page={1} />);
+    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByText("Imported from the old forum.")).toBeInTheDocument();
     unmount();
 
     set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: null } } });
-    render(<ThreadView threadId="t1" page={1} />);
+    render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByText(/Imported from the old forum/)).toBeNull();
   });
 
