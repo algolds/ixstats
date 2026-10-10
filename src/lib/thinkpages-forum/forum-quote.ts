@@ -5,14 +5,15 @@
  */
 import { isPostId } from "./post-html";
 
-export interface ForumQuoteBlock {
+// A type alias, not an interface: an alias is assignable to Plate's index-signature `TElement`, an interface is not.
+export type ForumQuoteBlock = {
   type: "raw-wikitext";
   construct: "forum-quote";
   rawWikitext: string;
   label: string;
   caption: string;
   children: [{ text: "" }];
-}
+};
 
 /** The block for the quote `rawWikitext`, shown as `author` wrote `text`. */
 export function forumQuoteBlock(rawWikitext: string, author: string, text: string): ForumQuoteBlock {
