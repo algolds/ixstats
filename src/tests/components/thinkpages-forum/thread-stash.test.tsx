@@ -27,6 +27,7 @@ jest.mock("~/trpc/react", () => {
     },
     style: "ooc",
     participants: [],
+    participantCount: 0,
     category: { key: "general", name: "General", icAllowed: false, realm: null },
     posts: [],
     total: 0,

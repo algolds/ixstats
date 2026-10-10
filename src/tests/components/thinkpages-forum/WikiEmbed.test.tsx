@@ -99,6 +99,8 @@ describe("WikiEmbeds", () => {
     ["a title with a quote", embed("summary", "Say &quot;hi&quot;")],
     ["an overlong title", embed("summary", "x".repeat(300))],
     ["an image that is not a file", embed("image", "Juan Kerr")],
+    ["an image title that climbs out of the files", embed("image", "File:../../x?y")],
+    ["an image title with a path", embed("image", "File:a/b.png")],
     ["a width that is not a number", embed("image", "File:A.png", ' data-width="12px"')],
     ["an unknown kind", embed("iframe", "Juan Kerr")],
   ])("leaves the plain link for %s", async (_, html) => {
@@ -111,6 +113,13 @@ describe("WikiEmbeds", () => {
     expect(screen.queryByTestId("summary")).toBeNull();
     expect(container.querySelector("[data-wiki-embed] a")).not.toBeNull();
     expect(container.querySelector("img[src*='x']")).toBeNull();
+  });
+
+  it("hydrates at most ten embeds in a post and leaves the plain links for the rest", async () => {
+    const html = Array.from({ length: 13 }, (_, i) => embed("summary", `Page ${i}`)).join("");
+    render(<Harness html={html} />);
+    expect(await screen.findAllByTestId("summary")).toHaveLength(10);
+    expect(screen.getAllByRole("link")).toHaveLength(13);
   });
 
   it("hydrates embeds that appear after the first render (the body re-renders as React elements)", async () => {

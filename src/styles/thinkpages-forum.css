@@ -119,7 +119,8 @@
     }
   }
 
-  /* ---- Quotes: a Well, with the author line (a link to the quoted post when the post is known) ------------- */
+  /* ---- Quotes: a Well, with the author line (a link to the quoted post when the post is known). The body is
+     re-rendered by WikiHtmlContent, which keeps classes but not data-post, so nothing here selects on it. ---- */
 
   [data-app="thinkpages"] .forum-post .forum-quote {
     margin: 0 0 12px;
@@ -148,13 +149,13 @@
     margin-bottom: 0;
   }
 
-  [data-app="thinkpages"] .forum-post blockquote.forum-quote[data-post] .forum-quote-source {
+  [data-app="thinkpages"] .forum-post .forum-quote .forum-quote-source {
     color: inherit;
     text-decoration: none;
     border-bottom: 0;
   }
 
-  [data-app="thinkpages"] .forum-post blockquote.forum-quote[data-post] .forum-quote-source:hover {
+  [data-app="thinkpages"] .forum-post .forum-quote .forum-quote-source:hover {
     color: inherit;
     text-decoration: underline;
   }

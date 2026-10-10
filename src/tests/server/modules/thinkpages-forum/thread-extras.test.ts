@@ -141,12 +141,13 @@ describe("threadParticipants", () => {
 
   it("groups persona posts under the persona and never under the player", async () => {
     const out = await threadParticipants(fakeDb() as never, member, general, "t1");
-    expect(out).toEqual([
+    expect(out.top).toEqual([
       { authorUserId: null, authorPersonaId: "pa1", importedAuthorName: null, posts: 7 },
       { authorUserId: "u1", authorPersonaId: null, importedAuthorName: null, posts: 5 },
       { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName", posts: 3 },
       { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, posts: 2 },
     ]);
+    expect(out.total).toBe(4);
   });
 
   it("counts only the posts a member can see, and hidden ones too for a moderator", async () => {
@@ -174,7 +175,9 @@ describe("threadParticipants", () => {
       },
     };
     const out = await threadParticipants(db as never, member, general, "t1", 2);
-    expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ authorPersonaId: "pa1", posts: 12, authorUserId: null });
+    expect(out.top).toHaveLength(2);
+    expect(out.top[0]).toMatchObject({ authorPersonaId: "pa1", posts: 12, authorUserId: null });
+    // The total is counted before the cut: pa1 (merged), u1, u2, OldName.
+    expect(out.total).toBe(4);
   });
 });

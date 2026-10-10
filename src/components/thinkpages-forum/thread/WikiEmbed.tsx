@@ -4,7 +4,7 @@ import { useEffect, useState, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
-import { embedTitle, embedWidth } from "~/lib/thinkpages-forum/post-html";
+import { embedFileTitle, embedTitle, embedWidth } from "~/lib/thinkpages-forum/post-html";
 import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import { api } from "~/trpc/react";
@@ -32,6 +32,8 @@ const EMBED = ".forum-wiki-embed[data-wiki-embed]";
 /** What an embed shows is wiki content; an embed inside it is never hydrated. */
 const VIEW = ".forum-embed-view";
 const FILE_PREFIX = /^(?:File|Image):/i;
+/** A post that embeds more than this many pages keeps the plain links for the rest. */
+const MAX_EMBEDS = 10;
 
 /**
  * An embed node as a slot, or null. Every attribute is read from the DOM and checked again: any member can write
@@ -40,13 +42,17 @@ const FILE_PREFIX = /^(?:File|Image):/i;
  */
 function slotOf(node: HTMLElement): Slot | null {
   const kind = node.getAttribute("data-wiki-embed");
-  const title = embedTitle(node.getAttribute("data-wiki-title"));
+  const raw = node.getAttribute("data-wiki-title");
   const width = embedWidth(node.getAttribute("data-width"));
-  if (!title || !width) return null;
+  if (!width) return null;
   if (kind === "image") {
-    return FILE_PREFIX.test(title) ? { node, kind, title, width: width.width } : null;
+    const file = embedFileTitle(raw);
+    return file ? { node, kind, title: file, width: width.width } : null;
   }
-  return kind === "summary" || kind === "infobox" ? { node, kind, title, width: null } : null;
+  const title = embedTitle(raw);
+  return title && (kind === "summary" || kind === "infobox")
+    ? { node, kind, title, width: null }
+    : null;
 }
 
 function readSlots(root: HTMLElement): Slot[] {
@@ -54,6 +60,7 @@ function readSlots(root: HTMLElement): Slot[] {
   for (const node of Array.from(root.querySelectorAll<HTMLElement>(EMBED))) {
     const slot = node.closest(VIEW) ? null : slotOf(node);
     if (slot) slots.push(slot);
+    if (slots.length === MAX_EMBEDS) break;
   }
   return slots;
 }

@@ -192,6 +192,7 @@ function threadData(
     },
     style: "ooc",
     participants: [],
+    participantCount: 0,
     category: overrides.realm
       ? { key: "hub", name: "Hub", icAllowed: false, realm: overrides.realm }
       : { key: "general", name: "General", icAllowed: false, realm: null },

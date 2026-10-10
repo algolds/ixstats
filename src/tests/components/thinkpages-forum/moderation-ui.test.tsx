@@ -267,6 +267,7 @@ function threadData(o: ThreadOverrides = {}) {
     },
     style: "ooc",
     participants: [],
+    participantCount: 0,
     category: { id: "c1", key: "general", name: "General", icAllowed: false, realm: null },
     posts: [
       {

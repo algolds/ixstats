@@ -212,7 +212,7 @@ export const thinkpagesForumRouter = createTRPCRouter({
     const editable =
       writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
     const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
-    const [roles, participants] = await Promise.all([
+    const [roles, { top: participants, total: participantCount }] = await Promise.all([
       roleContextOf(ctx.db, result.thread, result.category, result.posts),
       threadParticipants(ctx.db, viewer, result.category, input.threadId),
     ]);
@@ -249,6 +249,8 @@ export const thinkpagesForumRouter = createTRPCRouter({
         : {}),
       style: result.category.style,
       participants,
+      /** Distinct authors of the thread; `participants` is only the top few. */
+      participantCount,
       authors: await authorMaps(ctx.db, [result.thread, ...result.posts, ...participants]),
     };
   }),

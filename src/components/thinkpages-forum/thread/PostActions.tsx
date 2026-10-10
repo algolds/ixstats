@@ -119,7 +119,8 @@ export function PostActions({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      {/* Mounted while open only: a post's closed dialogs cost no hooks, and a reopened form starts empty. */}
+      {/* The report dialog is mounted while open only, so a closed post costs no hooks and a reopened form starts empty.
+          The moderator dialogs stay mounted for a moderator's posts and open and close themselves. */}
       {open === "report" ? (
         <ReportDialog
           targetType="post"

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
+import { getBasePath } from "~/lib/base-path";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
@@ -75,6 +76,17 @@ const STRICT_TABLE_ELEMENTS = new Set([
   "colgroup",
   "select",
 ]);
+
+/**
+ * An IxStates path as `<Link href>` takes it. `ixstatesHref` puts the deployment's base path on a relative path, and
+ * Next's `<Link>` adds the base path itself without checking for one, so the prefix is taken off again; an absolute
+ * URL (a standalone WikiOS build links to IxStates by its full address) stays as it is.
+ */
+function linkHref(path: string): string {
+  const href = ixstatesHref(path);
+  const base = getBasePath();
+  return base && href.startsWith(`${base}/`) ? href.slice(base.length) : href;
+}
 
 const NO_MISSING_PAGES: ReadonlySet<string> = new Set();
 const RED_LINK_CLASS =
@@ -217,6 +229,9 @@ const PASSTHROUGH_ATTRS = [
   "alt",
   "title",
   "scope",
+  // Inert sizing attributes the sanitizer allows (an image keeps its box, so the page does not jump while it loads).
+  "width",
+  "height",
   ...EMBED_DATA_ATTRS,
 ];
 
@@ -265,7 +280,7 @@ function domNodeToReact(
       return (
         <Link
           key={index}
-          href={ixstatesHref(href)}
+          href={linkHref(href)}
           className={element.className || "text-tint cursor-pointer font-medium hover:underline"}
         >
           {renderChildren(element, missing)}
@@ -282,7 +297,7 @@ function domNodeToReact(
       return (
         <Link
           key={index}
-          href={ixstatesHref(href.replace(/^\/projects\/ixstates/, ""))}
+          href={linkHref(href.replace(/^\/projects\/ixstates/, ""))}
           className={element.className}
         >
           {renderChildren(element, missing)}
@@ -345,7 +360,7 @@ interface PopoverCardProps {
   titleClass: string;
   subtitle?: React.ReactNode;
   subtitleClass?: string;
-  /** Each `href` is already an IxStates link (ixstatesHref). */
+  /** Each `href` is already a path for `<Link>` (linkHref). */
   actions: Array<{ href: string; label: string; tone: keyof typeof ACTION_TONES }>;
 }
 
@@ -429,7 +444,7 @@ function MentionProfile({
           subtitleClass="text-footnote text-label-secondary capitalize"
           actions={[
             {
-              href: ixstatesHref(`/myleague/${entityId}`),
+              href: linkHref(`/myleague/${entityId}`),
               label: "View workspace",
               tone: "yellow",
             },
@@ -452,7 +467,7 @@ function MentionProfile({
           subtitle={`Stadium Cap: ${teamData.stadiumCapacity}`}
           actions={[
             {
-              href: ixstatesHref(`/myclub/${entityId}`),
+              href: linkHref(`/myclub/${entityId}`),
               label: "View roster & stats",
               tone: "tint",
             },
@@ -468,8 +483,8 @@ function MentionProfile({
           subtitle={countryData.paragraphs?.[0] || "Explore country details."}
           subtitleClass="text-footnote text-label-secondary line-clamp-2"
           actions={[
-            { href: ixstatesHref(`/countries/${entityId}`), label: "View profile", tone: "green" },
-            { href: ixstatesHref("/mycountry/diplomacy"), label: "Open embassy", tone: "neutral" },
+            { href: linkHref(`/countries/${entityId}`), label: "View profile", tone: "green" },
+            { href: linkHref("/mycountry/diplomacy"), label: "Open embassy", tone: "neutral" },
           ]}
         />
       )}
@@ -485,8 +500,8 @@ function MentionProfile({
           titleClass="text-tint"
           subtitle={authorData.country && `From ${authorData.country.name}`}
           actions={[
-            { href: ixstatesHref("/dashboard"), label: "View feed", tone: "tint" },
-            { href: ixstatesHref("/messages"), label: "Message", tone: "neutral" },
+            { href: linkHref("/dashboard"), label: "View feed", tone: "tint" },
+            { href: linkHref("/messages"), label: "Message", tone: "neutral" },
           ]}
         />
       )}
@@ -497,7 +512,7 @@ function MentionProfile({
           <h4 className="text-caption text-label-secondary font-semibold">{label}</h4>
           <p className="text-footnote text-label-secondary">Explore page profile.</p>
           <Link
-            href={ixstatesHref(href)}
+            href={linkHref(href)}
             className="rounded-control-sm border-separator bg-surface-secondary text-caption text-label hover:bg-fill-3 mt-1 border py-1 text-center font-semibold"
           >
             Go to page
@@ -525,7 +540,7 @@ function MentionPopover({
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
       <HoverCardTrigger asChild>
-        <Link href={ixstatesHref(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
+        <Link href={linkHref(href)} className={badgeStyle} onClick={(e) => e.stopPropagation()}>
           {icon && <span className="text-footnote shrink-0 leading-none">{icon}</span>}
           <span>{label}</span>
         </Link>

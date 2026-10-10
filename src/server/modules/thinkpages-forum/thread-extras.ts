@@ -86,6 +86,13 @@ export interface ThreadParticipant extends PostAuthor {
   posts: number;
 }
 
+export interface ThreadParticipants {
+  /** The most active authors, most posts first, at most `limit`. */
+  top: ThreadParticipant[];
+  /** Every distinct author of the visible posts (a persona counts once, under the persona). */
+  total: number;
+}
+
 /**
  * The thread's most active authors by visible post count (hidden posts only for the category's moderators). A
  * persona's posts are counted under the persona (`authorUserId: null`), so the player stays unnamed.
@@ -96,7 +103,7 @@ export async function threadParticipants(
   category: { id: string; scope: string; realmId: string | null; visibility: string },
   threadId: string,
   limit = 6
-): Promise<ThreadParticipant[]> {
+): Promise<ThreadParticipants> {
   const groups = await db.forumPost.groupBy({
     by: ["authorUserId", "authorPersonaId", "importedAuthorName"],
     where: { threadId, ...hiddenFilter(viewer, category) },
@@ -118,5 +125,6 @@ export async function threadParticipants(
     };
     merged.set(key, { ...row, posts: row.posts + g._count._all });
   }
-  return [...merged.values()].sort((a, b) => b.posts - a.posts).slice(0, limit);
+  const ranked = [...merged.values()].sort((a, b) => b.posts - a.posts);
+  return { top: ranked.slice(0, limit), total: ranked.length };
 }

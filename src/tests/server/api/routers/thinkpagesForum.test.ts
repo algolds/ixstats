@@ -585,6 +585,7 @@ describe("thinkpagesForum router", () => {
         { authorUserId: null, authorPersonaId: "pa1", importedAuthorName: null, posts: 4 },
         { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, posts: 2 },
       ]);
+      expect(out.participantCount).toBe(2);
       expect(out.authors.personas.pa1).toBeDefined();
     });
   });

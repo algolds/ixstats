@@ -15,6 +15,16 @@ export function isPostId(value: string | null | undefined): value is string {
   return typeof value === "string" && POST_ID.test(value);
 }
 
+/**
+ * A file title from an attribute (`File:Name.ext`): an `embedTitle` that also has no `/`, `\`, `..`, `?`, `#` or `%`,
+ * so it can only name a file by its name and never walk a path or add a query when it becomes an image address.
+ */
+export function embedFileTitle(value: string | null | undefined): string | null {
+  const title = embedTitle(value);
+  if (title === null || !/^(?:File|Image):\S/i.test(title)) return null;
+  return /[/\\?#%]|\.\./.test(title) ? null : title;
+}
+
 /** A wiki page or file title from an attribute: no `<`, `>`, `"`, `|`, control characters or line breaks, at most 255. */
 export function embedTitle(value: string | null | undefined): string | null {
   if (typeof value !== "string") return null;

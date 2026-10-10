@@ -167,6 +167,7 @@ interface Overrides {
   posts?: object[];
   total?: number;
   participants?: object[];
+  participantCount?: number;
   realm?: { slug: string; name: string } | null;
 }
 
@@ -201,6 +202,7 @@ function threadData(o: Overrides = {}) {
     posts,
     total: o.total ?? posts.length,
     participants: o.participants ?? [],
+    participantCount: o.participantCount ?? 0,
     canReply: o.canReply ?? true,
     canModerate: false,
     viewerIsAuthor: false,
@@ -414,6 +416,7 @@ describe("the rail", () => {
     set(
       threadData({
         total: 3,
+        participantCount: 9,
         participants: [
           { authorUserId: "u1", authorPersonaId: null, importedAuthorName: null, posts: 2 },
           { authorUserId: null, authorPersonaId: "pa", importedAuthorName: null, posts: 1 },
@@ -430,6 +433,8 @@ describe("the rail", () => {
     const thisThread = screen.getByRole("heading", { name: "This thread" }).closest("[data-slot=card]")!;
     expect(within(thisThread as HTMLElement).getByText("Replies")).toBeInTheDocument();
     expect(within(thisThread as HTMLElement).getByText("Open")).toBeInTheDocument();
+    // The figure is the thread's true count, not the length of the short top list.
+    expect(within(thisThread as HTMLElement).getByText("9")).toBeInTheDocument();
     const participants = screen.getByRole("heading", { name: "Participants" }).closest("[data-slot=card]")!;
     expect(within(participants as HTMLElement).getByText("2 posts")).toBeInTheDocument();
     expect(within(participants as HTMLElement).getByText("Aria Vance")).toBeInTheDocument();

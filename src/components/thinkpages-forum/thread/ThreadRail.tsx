@@ -31,7 +31,7 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 
 /** Replies, participants and the last reply; the board, when it started and whether it is open. */
 function ThisThreadPanel({ data }: { data: ThreadData }) {
-  const { thread, category, total, participants } = data;
+  const { thread, category, total, participantCount } = data;
   const replies = Math.max(0, total - 1);
   const status = thread.archived ? "Archived" : thread.locked ? "Locked" : "Open";
   return (
@@ -39,7 +39,7 @@ function ThisThreadPanel({ data }: { data: ThreadData }) {
       <div className="space-y-3">
         <dl className="grid grid-cols-3 gap-3">
           <Figure value={String(replies)} label="Replies" />
-          <Figure value={String(participants.length)} label="Participants" />
+          <Figure value={String(participantCount)} label="Participants" />
           <Figure
             value={replies > 0 ? timeAgo(thread.lastPostAt, { suffix: false }) : "None"}
             label="Last reply"

@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import {
+  embedFileTitle,
   embedTitle,
   embedWidth,
   isPostId,
@@ -32,6 +33,28 @@ describe("embedTitle", () => {
       expect(embedTitle(title)).toBeNull();
     }
   );
+});
+
+describe("embedFileTitle", () => {
+  it("accepts a plain file name with the File: or Image: prefix", () => {
+    expect(embedFileTitle("File:JuanKerr.jpg")).toBe("File:JuanKerr.jpg");
+    expect(embedFileTitle("image:Some map (2).png")).toBe("image:Some map (2).png");
+  });
+
+  it.each([
+    "Juan Kerr",
+    "File:../../x?y",
+    "File:../secret.png",
+    "File:a/b.png",
+    "File:a\\b.png",
+    "File:a.png?x=1",
+    "File:a.png#frag",
+    "File:%2e%2e%2fx.png",
+    "File:",
+    null,
+  ])("refuses %p", (title) => {
+    expect(embedFileTitle(title)).toBeNull();
+  });
 });
 
 describe("embedWidth", () => {
