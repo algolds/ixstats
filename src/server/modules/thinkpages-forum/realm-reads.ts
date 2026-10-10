@@ -16,6 +16,7 @@ import {
   loadForumRealm,
   REALM_SELECT,
   realmPostingAccess,
+  type ForumRealm,
   type RealmAccessDb,
   type RealmDb,
 } from "./realm-access";
@@ -83,28 +84,58 @@ export async function primaryRealmIdOf(
   return primaryNationOf(nations, viewer.countryId)?.realmId ?? null;
 }
 
-/**
- * The slug of the realm of the viewer's primary nation: where "Your realm" goes. Null for anonymous, for a viewer
- * holding no nation, and for a realm hidden from them.
- */
+/** The realm of the viewer's primary nation. Null for anonymous, for a viewer holding no nation, and for a realm hidden from them. */
+async function myRealmOf(
+  db: Pick<PrismaClient, "country"> & RealmDb,
+  viewer: ForumViewer
+): Promise<ForumRealm | null> {
+  const realmId = await primaryRealmIdOf(db, viewer);
+  if (!realmId) return null;
+  const realm = await loadForumRealm(db, { id: realmId });
+  return realm && canSeeRealm(viewer, realm) ? realm : null;
+}
+
+/** The slug of the realm of the viewer's primary nation: where "Your realm" goes. */
 export async function myRealmSlugOf(
   db: Pick<PrismaClient, "country"> & RealmDb,
   viewer: ForumViewer
 ): Promise<string | null> {
-  const realmId = await primaryRealmIdOf(db, viewer);
-  if (!realmId) return null;
-  const realm = await loadForumRealm(db, { id: realmId });
-  return realm && canSeeRealm(viewer, realm) ? realm.slug : null;
+  return (await myRealmOf(db, viewer))?.slug ?? null;
 }
 
-/** What the sidebar lists beyond Forums: "Your realm" for a realm member, "Moderation" for site staff or a moderator. */
+/** What the sidebar draws for "Your realm": the realm's name and the images that stand in for its icon. */
+export interface NavRealm {
+  slug: string;
+  name: string;
+  emblemUrl: string | null;
+  thumbnail: string | null;
+}
+
+/**
+ * What the sidebar lists beyond Forums: "Your realm" for a realm member (with the realm's emblem and thumbnail,
+ * only when the realm is visible to them), "Moderation" for site staff or a moderator.
+ */
 export async function forumNavFlags(
   db: Pick<PrismaClient, "country"> & RealmDb,
   viewer: ForumViewer
-): Promise<{ realmMember: boolean; forumModerator: boolean }> {
+): Promise<{ realmMember: boolean; forumModerator: boolean; realm: NavRealm | null }> {
+  const mine = await myRealmOf(db, viewer);
+  // IxWorld may have no row (synthesized): it has no images to show.
+  const images = mine
+    ? await db.realm.findUnique({
+        where: { id: mine.id },
+        select: { emblemUrl: true, thumbnail: true },
+      })
+    : null;
   return {
-    realmMember: (await myRealmSlugOf(db, viewer)) !== null,
+    realmMember: mine !== null,
     forumModerator: isModerator(viewer),
+    realm: mine && {
+      slug: mine.slug,
+      name: mine.name,
+      emblemUrl: images?.emblemUrl ?? null,
+      thumbnail: images?.thumbnail ?? null,
+    },
   };
 }
 

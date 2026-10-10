@@ -289,6 +289,62 @@ describe("Manage permissions", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("lets appearance officers set and clear the emblem, validated like the thumbnail", async () => {
+    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["appearance"] }] }));
+    await callerAs(OFFICER, db).region.updateAppearance({
+      slug: "eurth",
+      emblemUrl: "https://img.example/emblem.png",
+    });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { emblemUrl: "https://img.example/emblem.png" },
+    });
+    const uploaded = "/images/uploads/uploaded_1759600000000_ab12cd34_emblem.png";
+    await callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", emblemUrl: uploaded });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { emblemUrl: uploaded },
+    });
+    await callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", emblemUrl: null });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { emblemUrl: null },
+    });
+    for (const bad of ["http://img.example/e.png", "javascript:alert(1)", "/images/uploads/../x"]) {
+      await expect(
+        callerAs(OFFICER, db).region.updateAppearance({ slug: "eurth", emblemUrl: bad })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+  });
+
+  it("lets the founder set the emblem and leaves it alone when not sent", async () => {
+    const db = makeDb();
+    await callerAs(FOUNDER, db).region.updateAppearance({
+      slug: "eurth",
+      emblemUrl: "https://img.example/emblem.png",
+    });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { emblemUrl: "https://img.example/emblem.png" },
+    });
+    await callerAs(FOUNDER, db).region.updateAppearance({ slug: "eurth", tags: ["Fantasy"] });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { tags: ["Fantasy"] },
+    });
+  });
+
+  it("refuses an emblem change from an officer without the appearance power", async () => {
+    const db = makeDb();
+    await expect(
+      callerAs(OFFICER, db).region.updateAppearance({
+        slug: "eurth",
+        emblemUrl: "https://img.example/emblem.png",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
   it("accepts a banner uploaded through the image upload route", async () => {
     const db = makeDb();
     const uploaded = "/images/uploads/uploaded_1759600000000_ab12cd34_banner.png";

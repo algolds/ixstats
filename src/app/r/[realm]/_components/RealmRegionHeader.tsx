@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChatBubble, Globe, MapPin } from "iconoir-react";
+import { ChatBubble, ChatLines, Globe, MapPin } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref } from "~/lib/thinkpages-forum/links";
+import { hubHref, realmHref } from "~/lib/thinkpages-forum/links";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -22,14 +22,15 @@ interface RealmTab {
 }
 
 /**
- * The tabs of a realm page. Forum opens the realm's Hub and Map the atlas on this realm; Rules shows once the
- * realm has rules (and always to those who can write them).
+ * The tabs of a realm page. Board opens the realm's live board, Forums its Hub and Map the atlas on this realm;
+ * Rules shows once the realm has rules (and always to those who can write them).
  */
 function realmTabs(slug: string, canManage: boolean, showRules: boolean): RealmTab[] {
   const base = `/r/${encodeURIComponent(slug)}`;
   return [
     { href: base, label: "Overview", exact: true },
-    { href: hubHref(slug), label: "Forum", icon: ChatBubble },
+    { href: realmHref(slug), label: "Board", icon: ChatLines },
+    { href: hubHref(slug), label: "Forums", icon: ChatBubble },
     { href: `${base}/nations`, label: "Nations" },
     ...(showRules ? [{ href: `${base}/rules`, label: "Rules" }] : []),
     { href: `/maps?realm=${encodeURIComponent(slug)}`, label: "Map", icon: MapPin },

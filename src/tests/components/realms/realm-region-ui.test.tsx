@@ -117,18 +117,21 @@ describe("realm header", () => {
     expect(screen.queryByText("In-world date")).toBeNull();
   });
 
-  it("has a Forum tab out to the realm's Hub in place of the Board tab, each leaving tab with its own glyph", () => {
+  it("has Board and Forums tabs out to the realm's board and Hub, each leaving tab with its own glyph", () => {
     render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
     const nav = screen.getByRole("navigation", { name: "Realm sections" });
-    expect(within(nav).queryByRole("link", { name: "Board" })).toBeNull();
-    const forum = within(nav).getByRole("link", { name: "Forum" });
-    expect(forum.getAttribute("href")).toBe("/thinkpages/r/eurth/hub");
-    expect(forum.getAttribute("aria-current")).toBeNull();
+    const board = within(nav).getByRole("link", { name: "Board" });
+    expect(board.getAttribute("href")).toBe("/thinkpages/r/eurth");
+    expect(board.getAttribute("aria-current")).toBeNull();
+    const forums = within(nav).getByRole("link", { name: "Forums" });
+    expect(forums.getAttribute("href")).toBe("/thinkpages/r/eurth/hub");
+    expect(forums.getAttribute("aria-current")).toBeNull();
+    expect(within(nav).queryByRole("link", { name: "Forum" })).toBeNull();
     const map = within(nav).getByRole("link", { name: "Map" });
     expect(map.getAttribute("href")).toBe("/maps?realm=eurth");
-    expect(forum.querySelector("svg")).toBeTruthy();
-    expect(map.querySelector("svg")).toBeTruthy();
-    expect(forum.querySelector("svg")?.outerHTML).not.toBe(map.querySelector("svg")?.outerHTML);
+    for (const link of [board, forums, map]) expect(link.querySelector("svg")).toBeTruthy();
+    const glyphs = [board, forums, map].map((l) => l.querySelector("svg")?.outerHTML);
+    expect(new Set(glyphs).size).toBe(3);
     expect(within(nav).getByRole("link", { name: "Nations" }).querySelector("svg")).toBeNull();
   });
 

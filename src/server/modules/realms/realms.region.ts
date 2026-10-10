@@ -486,6 +486,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       description: true,
       bannerUrl: true,
       thumbnail: true,
+      emblemUrl: true,
       tags: true,
       factbookWikitext: true,
       factbookUpdatedAt: true,
@@ -554,6 +555,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
           description: realm.description,
           bannerUrl: realm.bannerUrl,
           thumbnail: realm.thumbnail,
+          emblemUrl: realm.emblemUrl,
           tags: realm.tags,
         }
       : null,

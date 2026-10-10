@@ -996,6 +996,7 @@ describe("thinkpagesForum router", () => {
       await expect(caller(null, db).navFlags()).resolves.toEqual({
         realmMember: false,
         forumModerator: false,
+        realm: null,
       });
       expect(db.country.findMany).not.toHaveBeenCalled();
     });
@@ -1004,11 +1005,41 @@ describe("thinkpagesForum router", () => {
       await expect(caller(member, realmForumDb(inEurth)).navFlags()).resolves.toEqual({
         realmMember: true,
         forumModerator: false,
+        realm: { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null },
       });
       await expect(caller(member, realmForumDb()).navFlags()).resolves.toEqual({
         realmMember: false,
         forumModerator: false,
+        realm: null,
       });
+    });
+
+    it("gives a member's realm its emblem and thumbnail for the sidebar, and only these", async () => {
+      const db = realmForumDb(inEurth);
+      db.realm.findUnique.mockImplementation((async ({ select }: { select?: object }) => ({
+        ...EURTH,
+        ...(select && "emblemUrl" in select
+          ? { emblemUrl: "https://img.example/e.png", thumbnail: "https://img.example/t.png" }
+          : {}),
+      })) as never);
+      await expect(caller(member, db).navFlags()).resolves.toEqual({
+        realmMember: true,
+        forumModerator: false,
+        realm: {
+          slug: "eurth",
+          name: "Eurth",
+          emblemUrl: "https://img.example/e.png",
+          thumbnail: "https://img.example/t.png",
+        },
+      });
+    });
+
+    it("gives no realm for one hidden from the viewer", async () => {
+      const db = realmForumDb(inEurth);
+      db.realm.findUnique.mockResolvedValue({ ...EURTH, status: "draft" } as never);
+      const out = await caller(member, db).navFlags();
+      expect(out.realm).toBeNull();
+      expect(out.realmMember).toBe(false);
     });
 
     it("flags site staff and any realm or category moderator as forum moderators", async () => {

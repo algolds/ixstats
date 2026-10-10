@@ -31,6 +31,7 @@ export async function updateRealmAppearance(
     slug: string;
     bannerUrl?: string | null;
     thumbnail?: string | null;
+    emblemUrl?: string | null;
     description?: string | null;
     tags?: string[];
   }
@@ -46,6 +47,7 @@ export async function updateRealmAppearance(
     data: {
       ...(input.bannerUrl !== undefined && { bannerUrl: input.bannerUrl || null }),
       ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail || null }),
+      ...(input.emblemUrl !== undefined && { emblemUrl: input.emblemUrl || null }),
       ...(input.description !== undefined && { description: input.description || null }),
       ...(tags && { tags }),
     },

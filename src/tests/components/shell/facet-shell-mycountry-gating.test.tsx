@@ -4,7 +4,9 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 let premium = false;
 let betaTester = false;
 let navSettings: { showCardsTab?: boolean } | undefined;
-let navFlags: { realmMember: boolean; forumModerator: boolean } | undefined;
+type NavRealm = { slug: string; name: string; emblemUrl: string | null; thumbnail: string | null };
+let navFlags:
+  { realmMember: boolean; forumModerator: boolean; realm?: NavRealm | null } | undefined;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/mycountry",
@@ -151,5 +153,69 @@ describe("FacetShell ThinkPages sections", () => {
       "href",
       "/thinkpages/mod"
     );
+  });
+
+  describe("Your realm icon", () => {
+    const realm = (over: Partial<NavRealm>): NavRealm => ({
+      slug: "eurth",
+      name: "Eurth",
+      emblemUrl: null,
+      thumbnail: null,
+      ...over,
+    });
+    const yourRealm = () => expandForum().getByRole("link", { name: "Your realm" });
+
+    it("shows the realm's emblem as a decorative image at the icon size", () => {
+      navFlags = {
+        realmMember: true,
+        forumModerator: false,
+        realm: realm({
+          emblemUrl: "https://img.example/emblem.png",
+          thumbnail: "https://img.example/t.png",
+        }),
+      };
+      const link = yourRealm();
+      const img = link.querySelector("img");
+      expect(img?.getAttribute("src")).toBe("https://img.example/emblem.png");
+      expect(img?.getAttribute("alt")).toBe("");
+      expect(img?.getAttribute("class")).toContain("size-4");
+      expect(link.querySelector("svg")).toBeNull();
+    });
+
+    it("falls back to the thumbnail when the realm has no emblem", () => {
+      navFlags = {
+        realmMember: true,
+        forumModerator: false,
+        realm: realm({ thumbnail: "https://img.example/t.png" }),
+      };
+      expect(yourRealm().querySelector("img")?.getAttribute("src")).toBe(
+        "https://img.example/t.png"
+      );
+    });
+
+    it("keeps the realms icon when the realm has neither, or the flags carry no realm", () => {
+      navFlags = { realmMember: true, forumModerator: false, realm: realm({}) };
+      const link = yourRealm();
+      expect(link.querySelector("img")).toBeNull();
+      expect(link.querySelector("svg")).toBeTruthy();
+    });
+
+    it("keeps the realms icon for flags without a realm", () => {
+      navFlags = { realmMember: true, forumModerator: false };
+      const link = yourRealm();
+      expect(link.querySelector("img")).toBeNull();
+      expect(link.querySelector("svg")).toBeTruthy();
+    });
+
+    it("leaves other rows' icons alone", () => {
+      navFlags = {
+        realmMember: true,
+        forumModerator: true,
+        realm: realm({ emblemUrl: "https://img.example/emblem.png" }),
+      };
+      const nav = expandForum();
+      expect(nav.getByRole("link", { name: "Forums" }).querySelector("img")).toBeNull();
+      expect(nav.getByRole("link", { name: "Moderation" }).querySelector("img")).toBeNull();
+    });
   });
 });

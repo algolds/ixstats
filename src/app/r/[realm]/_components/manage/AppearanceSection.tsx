@@ -16,7 +16,7 @@ import {
 import { ManageSection } from "./ManageSection";
 import { RealmImageField } from "./RealmImageField";
 
-/** Banner image, thumbnail, description and directory tags. */
+/** Banner image, thumbnail, emblem, description and directory tags. */
 export function AppearanceSection({
   slug,
   appearance,
@@ -25,6 +25,7 @@ export function AppearanceSection({
   appearance: {
     bannerUrl: string | null;
     thumbnail: string | null;
+    emblemUrl: string | null;
     description: string | null;
     tags: string[];
   };
@@ -33,6 +34,7 @@ export function AppearanceSection({
   const utils = api.useUtils();
   const [bannerUrl, setBannerUrl] = useState(appearance.bannerUrl ?? "");
   const [thumbnail, setThumbnail] = useState(appearance.thumbnail ?? "");
+  const [emblemUrl, setEmblemUrl] = useState(appearance.emblemUrl ?? "");
   const [description, setDescription] = useState(appearance.description ?? "");
   const [tags, setTags] = useState<string[]>(appearance.tags);
   const save = api.realms.region.updateAppearance.useMutation({
@@ -43,13 +45,14 @@ export function AppearanceSection({
     },
     onError: (error) => notify.error("Could not save", error.message),
   });
-  const imagesOk = isRealmImageUrl(bannerUrl) && isRealmImageUrl(thumbnail);
+  const imagesOk =
+    isRealmImageUrl(bannerUrl) && isRealmImageUrl(thumbnail) && isRealmImageUrl(emblemUrl);
 
   return (
     <ManageSection
       id="appearance"
       title="Appearance"
-      description="The banner across the top of the realm page, the thumbnail beside its name, its description and the tags the directory filters by."
+      description="The banner across the top of the realm page, the thumbnail beside its name, the emblem the forum board and sidebar show for it, its description and the tags the directory filters by."
     >
       <div className="flex flex-col gap-4">
         <RealmImageField
@@ -65,6 +68,13 @@ export function AppearanceSection({
           value={thumbnail}
           onChange={setThumbnail}
           previewClassName="size-20"
+        />
+        <RealmImageField
+          id="realm-emblem"
+          label="Emblem"
+          value={emblemUrl}
+          onChange={setEmblemUrl}
+          previewClassName="size-16"
         />
         <div className="flex flex-col gap-2">
           <Label htmlFor="realm-description">Description</Label>
@@ -106,6 +116,7 @@ export function AppearanceSection({
                 slug,
                 bannerUrl: bannerUrl.trim() || null,
                 thumbnail: thumbnail.trim() || null,
+                emblemUrl: emblemUrl.trim() || null,
                 description: description.trim() || null,
                 tags: tags as RealmTag[],
               })

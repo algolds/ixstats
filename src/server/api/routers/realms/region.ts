@@ -114,6 +114,7 @@ export const realmRegionRouter = createTRPCRouter({
         slug,
         bannerUrl: realmImage.nullable().optional(),
         thumbnail: realmImage.nullable().optional(),
+        emblemUrl: realmImage.nullable().optional(),
         description: z.string().trim().max(1000).nullable().optional(),
         tags: z.array(z.enum(REALM_TAGS)).max(MAX_REALM_TAGS).optional(),
       })
