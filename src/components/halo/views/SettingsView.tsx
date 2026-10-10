@@ -6,7 +6,6 @@ import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { AnimatedThemeToggler } from "~/components/ui/magicui/animated-theme-toggler";
 import { useRouter } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
 import {
@@ -409,7 +408,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   <FacetRow
                     onClick={() => {
                       onClose();
-                      router.push(withBasePath("/settings#wiki-settings"));
+                      router.push("/settings#wiki-settings");
                     }}
                     leading={
                       <span className="rounded-control-sm bg-indigo/15 block p-2">

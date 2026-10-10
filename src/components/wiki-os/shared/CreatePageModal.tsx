@@ -10,7 +10,6 @@ import {
   EditPencil as PenTool,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { generateWikitext } from "./create-page/WikitextTemplates";
@@ -183,11 +182,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
     });
     onClose();
 
-    router.push(
-      withBasePath(
-        pageEditHref(title.trim(), null, { mode: editorMode, prefill: wikitext || null })
-      )
-    );
+    router.push(pageEditHref(title.trim(), null, { mode: editorMode, prefill: wikitext || null }));
   };
 
   return (

@@ -4,7 +4,6 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shield, ArrowLeft } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -15,7 +14,7 @@ export default function VaultAdminPage() {
   const isAdmin = useIsAdmin();
 
   if (!isSignedIn) {
-    router.push(withBasePath("/sign-in"));
+    router.push("/sign-in");
     return null;
   }
 

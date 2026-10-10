@@ -8,6 +8,7 @@ import { withBasePath } from "~/lib/base-path";
  * Convert a MediaWiki-style title to a WikiOS URL path.
  * e.g., "Burgundie" -> "/wiki/Burgundie"
  *       "Category:Countries" -> "/wiki/Category:Countries"
+ * It carries the base path, for a plain `<a href>`; a `<Link>` or router takes `titleToWikiOSRoute`.
  */
 export function titleToWikiOSPath(title: string): string {
   const slug = title.replace(/ /g, "_");

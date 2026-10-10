@@ -9,7 +9,6 @@ import { useSportsFocus } from "./SportsFocusProvider";
 import { AthleteCareerHistory } from "./AthleteCareerHistory";
 import { getSportTheme } from "~/lib/sports/theming";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { attributeBadgeClass } from "~/components/sports/rating";
 import { Badge } from "~/components/ui/badge";
@@ -109,7 +108,7 @@ function OrganizationFocusContent({
       <Button
         onClick={() => {
           clearFocus();
-          router.push(withBasePath(`/myclub/${team.id}`));
+          router.push(`/myclub/${team.id}`);
         }}
         className="rounded-row border-separator bg-surface hover:bg-fill-3 text-label text-footnote shadow-card w-full cursor-pointer justify-between border px-3 py-2 font-semibold transition"
       >

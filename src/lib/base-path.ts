@@ -73,6 +73,20 @@ export function withBasePath(path: string): string {
 }
 
 /**
+ * A path as Next's `<Link>` and router (`push`/`replace`/`prefetch`) take it. They add the base path themselves and
+ * never check for one, so a path that already carries it (from `withBasePath`, `createUrl`, `ixstatesHref`) loses it
+ * again, once; `/base`, `/base?x` and `/base#x` become `/`, `/?x` and `/#x`. An absolute URL, a path without the base
+ * path, and every path where the deployment has no base path stay as they are.
+ */
+export function toRouterPath(path: string): string {
+  const base = getBasePath();
+  if (!base || !path.startsWith(base)) return path;
+  const rest = path.slice(base.length);
+  if (rest === "" || rest.startsWith("?") || rest.startsWith("#")) return `/${rest}`;
+  return rest.startsWith("/") ? rest : path;
+}
+
+/**
  * Navigates to a path using the Next.js router or window.location for external URLs.
  */
 export function navigateWithBasePath(path: string, router: any) {
@@ -80,7 +94,7 @@ export function navigateWithBasePath(path: string, router: any) {
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
     window.location.href = url;
   } else {
-    router.push(url);
+    router.push(toRouterPath(url));
   }
 }
 

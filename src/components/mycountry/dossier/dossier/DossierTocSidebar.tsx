@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import {
   Search,
   OpenBook as BookOpen,
@@ -21,6 +20,7 @@ import type { WikiSource } from "~/lib/wiki-os/config";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 export interface TocItem {
   id: string;
@@ -233,7 +233,7 @@ export function DossierTocSidebar({
   const handleItemClick = (item: TocItem) => {
     if (item.isPage && item.pageTitle) {
       // Navigate directly to WikiOS page
-      router.push(titleToWikiOSPath(item.pageTitle));
+      router.push(titleToWikiOSRoute(item.pageTitle));
     } else {
       // Scroll to or select section anchor
       onSelectSection(item.id);

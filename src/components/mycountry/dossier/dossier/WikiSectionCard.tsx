@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath, titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
 import { Button, focusRing } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -182,7 +182,7 @@ export function WikiSectionCard({
                         aria-label={`Open ${fileName}`}
                         onClick={() => {
                           if (wikiSource === "ixwiki") {
-                            router.push(titleToWikiOSPath(`File:${fileName}`));
+                            router.push(titleToWikiOSRoute(`File:${fileName}`));
                           } else {
                             window.open(publicArticleUrl(`File:${fileName}`, wikiSource), "_blank");
                           }

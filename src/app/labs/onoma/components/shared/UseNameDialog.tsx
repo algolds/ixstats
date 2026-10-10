@@ -13,7 +13,6 @@ import {
   SeaWaves as Anchor,
 } from "iconoir-react";
 import { useRouter } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
 import type { NameCategory } from "~/lib/onoma/types";
 import {
   Dialog,
@@ -132,7 +131,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
 
   const handleSelect = (href: string) => {
     onClose();
-    router.push(withBasePath(href));
+    router.push(href);
   };
 
   return (

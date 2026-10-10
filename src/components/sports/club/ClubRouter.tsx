@@ -238,7 +238,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             title="Club not found"
             message="This club does not exist or was removed."
             action={
-              <Button onClick={() => router.push(withBasePath("/myclub"))}>
+              <Button onClick={() => router.push("/myclub")}>
                 <ArrowLeft />
                 Back to MyClub lobby
               </Button>

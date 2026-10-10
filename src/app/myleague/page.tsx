@@ -136,11 +136,7 @@ export default function MyLeaguePage() {
               steps={MYLEAGUE_HELP_STEPS}
               accentClass="text-tint"
             />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push(withBasePath("/myclub"))}
-            >
+            <Button variant="secondary" size="sm" onClick={() => router.push("/myclub")}>
               <Users />
               MyClub
             </Button>
@@ -228,7 +224,7 @@ export default function MyLeaguePage() {
                   size="lg"
                   variant="secondary"
                   className="group/btn w-full sm:w-auto"
-                  onClick={() => router.push(withBasePath(`/myleague/${featuredLeague.id}`))}
+                  onClick={() => router.push(`/myleague/${featuredLeague.id}`)}
                 >
                   <span>Enter competition</span>
                   <ArrowRight className="transition-transform group-hover/btn:translate-x-0.5" />
@@ -315,7 +311,7 @@ export default function MyLeaguePage() {
                     transition={springSmooth}
                   >
                     <Card
-                      onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
+                      onClick={() => router.push(`/myleague/${league.id}`)}
                       aria-label={`Open ${league.name}`}
                       className="group flex h-full flex-col justify-between overflow-hidden"
                       interactive
@@ -373,7 +369,7 @@ export default function MyLeaguePage() {
                             className="flex-1"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(withBasePath(`/myleague/${league.id}`));
+                              router.push(`/myleague/${league.id}`);
                             }}
                           >
                             Open hub

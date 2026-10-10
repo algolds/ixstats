@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
 import { Trophy, ArrowLeft } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
@@ -13,7 +12,7 @@ export default function SeasonDetailPage() {
 
   useEffect(() => {
     if (leagueId) {
-      router.replace(withBasePath(`/myleague/${leagueId}?section=history`));
+      router.replace(`/myleague/${leagueId}?section=history`);
     }
   }, [leagueId, router]);
 
@@ -27,7 +26,7 @@ export default function SeasonDetailPage() {
       {leagueId && (
         <Button
           className="mt-6"
-          onClick={() => router.replace(withBasePath(`/myleague/${leagueId}?section=history`))}
+          onClick={() => router.replace(`/myleague/${leagueId}?section=history`)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Go to Archive
         </Button>

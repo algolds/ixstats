@@ -8,7 +8,6 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { Trophy, Group as Users, ArrowRight, Shield } from "iconoir-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
@@ -78,11 +77,7 @@ export default function MyClubPage() {
         actions={
           <>
             <HeroHelpModal title="MyClub guide" steps={MYCLUB_HELP_STEPS} accentClass="text-tint" />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push(withBasePath("/myleague"))}
-            >
+            <Button variant="secondary" size="sm" onClick={() => router.push("/myleague")}>
               <Trophy />
               Browse competitions
             </Button>
@@ -113,7 +108,7 @@ export default function MyClubPage() {
               title="No clubs claimed yet"
               message="Claim an available team in a MyLeague competition to manage it here."
               action={
-                <Button onClick={() => router.push(withBasePath("/myleague"))}>
+                <Button onClick={() => router.push("/myleague")}>
                   Browse leagues
                   <ArrowRight />
                 </Button>
@@ -131,7 +126,7 @@ export default function MyClubPage() {
               return (
                 <Card
                   key={team.id}
-                  onClick={() => router.push(withBasePath(`/myclub/${team.id}`))}
+                  onClick={() => router.push(`/myclub/${team.id}`)}
                   aria-label={`Open ${team.name}`}
                   className="group flex flex-col justify-between overflow-hidden"
                   interactive
@@ -215,7 +210,7 @@ export default function MyClubPage() {
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(withBasePath(`/myclub/${team.id}?tab=roster`));
+                          router.push(`/myclub/${team.id}?tab=roster`);
                         }}
                       >
                         <Users />
@@ -226,7 +221,7 @@ export default function MyClubPage() {
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(withBasePath(`/myclub/${team.id}`));
+                          router.push(`/myclub/${team.id}`);
                         }}
                       >
                         Manage club

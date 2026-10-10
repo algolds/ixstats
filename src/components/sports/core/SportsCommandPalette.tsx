@@ -12,7 +12,6 @@ import {
   CommandItem,
   CommandSeparator,
 } from "~/components/ui/command";
-import { withBasePath } from "~/lib/base-path";
 import { useSportsFocus } from "./SportsFocusProvider";
 
 interface SportsCommandPaletteProps {
@@ -124,7 +123,7 @@ export function SportsCommandPalette({
         {/* Global Navigation */}
         <CommandGroup heading="Portals">
           <CommandItem
-            onSelect={() => runCommand(() => router.push(withBasePath("/myleague")))}
+            onSelect={() => runCommand(() => router.push("/myleague"))}
             className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
             <Trophy className="text-label-secondary h-4 w-4" />
@@ -132,7 +131,7 @@ export function SportsCommandPalette({
           </CommandItem>
 
           <CommandItem
-            onSelect={() => runCommand(() => router.push(withBasePath("/myclub")))}
+            onSelect={() => runCommand(() => router.push("/myclub"))}
             className="rounded-row text-footnote hover:bg-fill-3 flex cursor-pointer items-center gap-2 px-3 py-2 font-semibold"
           >
             <Shield className="text-label-secondary h-4 w-4" />

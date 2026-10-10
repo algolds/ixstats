@@ -3,7 +3,6 @@ import React from "react";
 import { ShieldAlert } from "iconoir-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
-import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -62,9 +61,7 @@ export function TitleStep({
                 size="sm"
                 onClick={() => {
                   onClose();
-                  router.push(
-                    withBasePath(`/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}`)
-                  );
+                  router.push(`/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}`);
                 }}
                 className="h-auto px-0 align-baseline underline"
               >
@@ -76,7 +73,7 @@ export function TitleStep({
                 size="sm"
                 onClick={() => {
                   onClose();
-                  router.push(withBasePath(pageEditHref(title.trim())));
+                  router.push(pageEditHref(title.trim()));
                 }}
                 className="h-auto px-0 align-baseline underline"
               >

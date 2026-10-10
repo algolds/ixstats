@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboardSection";
-import { withBasePath } from "~/lib/base-path";
 import type { VaultSection } from "~/components/vault/vault-sections";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 
@@ -11,7 +10,7 @@ export default function VaultPage() {
 
   const handleNavigate = (section: VaultSection) => {
     const href = section === "dashboard" ? "/vault" : `/vault/${section}`;
-    router.push(withBasePath(href));
+    router.push(href);
   };
 
   return (

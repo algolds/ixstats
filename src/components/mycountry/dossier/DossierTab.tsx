@@ -3,7 +3,6 @@
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { motion, AnimatePresence } from "motion/react";
 import type { DossierTabProps } from "~/types/dossier";
 import { useDossier } from "~/hooks/useDossier";
@@ -24,6 +23,7 @@ import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
 import { NativeLoreView } from "./NativeLoreView";
 import { useNativeLore, type LoreDraft } from "./useNativeLore";
 import { Card, CardContent } from "~/components/ui/card";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 /**
  * DossierTab Component
@@ -77,7 +77,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
     (pageName: string) => {
       const source = wikiData.wikiSource ?? "ixwiki";
       if (source === "ixwiki") {
-        router.push(titleToWikiOSPath(pageName));
+        router.push(titleToWikiOSRoute(pageName));
       } else {
         let baseUrl = "https://iiwiki.com/wiki/";
         if (source === "althistory") {

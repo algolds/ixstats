@@ -16,7 +16,6 @@ import {
   StatsReport as BarChart3,
   Dollar as DollarSign,
 } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 
 interface ClubOverviewSectionProps {
   team: {
@@ -279,7 +278,7 @@ export function ClubOverviewSection({
                     status={m.status}
                     onTeamClick={(id) => {
                       if (id === team.id) return;
-                      router.push(withBasePath(`/myclub/${id}`));
+                      router.push(`/myclub/${id}`);
                     }}
                   />
                 );

@@ -2,13 +2,13 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { FeatureContextMenu } from "~/components/maps/editor/FeatureContextMenu";
 import type {
   EditorContextMenuData,
   MapEditorInstance,
   EditorFeature,
 } from "../types/editor-state";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 
 interface EditorContextMenuWrapperProps {
   contextMenu: EditorContextMenuData | null;
@@ -75,7 +75,7 @@ export function EditorContextMenuWrapper({
       onOpenWiki={
         contextMenu.feature.wikiPageTitle
           ? () => {
-              router.push(titleToWikiOSPath(contextMenu.feature.wikiPageTitle!));
+              router.push(titleToWikiOSRoute(contextMenu.feature.wikiPageTitle!));
               setContextMenu(null);
             }
           : undefined

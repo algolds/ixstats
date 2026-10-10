@@ -15,7 +15,6 @@ import {
 } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -95,7 +94,7 @@ export function HeroSpotlightSearch({
   const navigateToArticle = useCallback(
     (title: string) => {
       setIsOpen(false);
-      router.push(withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`));
+      router.push(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`);
     },
     [router]
   );
@@ -103,7 +102,7 @@ export function HeroSpotlightSearch({
   const handleCreatePage = useCallback(
     (rawTitle: string) => {
       setIsOpen(false);
-      router.push(withBasePath(pageEditHref(rawTitle.trim(), null, { mode: "visual" })));
+      router.push(pageEditHref(rawTitle.trim(), null, { mode: "visual" }));
     },
     [router]
   );
@@ -111,7 +110,7 @@ export function HeroSpotlightSearch({
   const navigateToSearchPage = useCallback(
     (searchTerms: string) => {
       setIsOpen(false);
-      router.push(withBasePath(`/util/search?q=${encodeURIComponent(searchTerms)}`));
+      router.push(`/util/search?q=${encodeURIComponent(searchTerms)}`);
     },
     [router]
   );

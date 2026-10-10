@@ -4,7 +4,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { Button } from "~/components/ui/button";
 
@@ -17,7 +16,7 @@ export default function RandomPage() {
 
   useEffect(() => {
     if (data?.title) {
-      router.replace(withBasePath(`/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`));
+      router.replace(`/wiki/${encodeURIComponent(data.title.replace(/ /g, "_"))}`);
     }
   }, [data, router]);
 

@@ -28,7 +28,6 @@ import {
 } from "~/components/ui/dialog";
 import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { useRouter } from "next/navigation";
 import {
   Trophy,
@@ -940,7 +939,7 @@ export default function SportsOversightPanel() {
   };
 
   const handleView = (id: string) => {
-    router.push(withBasePath(`/myleague/${id}`));
+    router.push(`/myleague/${id}`);
   };
 
   const renderTable = (leagueList: typeof leagues, _showManageButton: boolean) => {

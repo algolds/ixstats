@@ -20,7 +20,6 @@ import {
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { motion } from "motion/react";
-import { withBasePath } from "~/lib/base-path";
 import { springSmooth, tweenFast } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import {
@@ -200,11 +199,7 @@ export default function MyClubSeasonDetailPage() {
   if (!season) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.push(withBasePath(`/myclub/${teamId}`))}
-          className="mb-4"
-        >
+        <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to team
         </Button>
@@ -252,11 +247,7 @@ export default function MyClubSeasonDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button
-        variant="ghost"
-        onClick={() => router.push(withBasePath(`/myclub/${teamId}`))}
-        className="mb-4"
-      >
+      <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to team
       </Button>
