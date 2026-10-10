@@ -13,7 +13,7 @@ export function oldForumAccountText(forum: OldForumStatus): string {
 
 /**
  * The old forum account in Settings: who the imported posts are attributed to. Read-only, because attributing an
- * old account is a staff action (followed by an importer rerun), not a self-service link.
+ * old account is a staff action in the admin users panel, not a self-service link.
  */
 export function OldForumAccount({ forum }: { forum: OldForumStatus }) {
   return (
