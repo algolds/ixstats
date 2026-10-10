@@ -1,15 +1,15 @@
 /**
  * XenForo's custom wiki BBCode (`[wikilink]`, `[wikisummary]`, `[wikiinfobox]`, `[wikiimage=W]`) as forum markup the
  * post body renders as wiki links and embeds. The title is user text, so it only ever reaches an attribute escaped,
- * and the link is built here from the title alone: `https://ixwiki.com/wiki/<title>`, never from a URL the author
+ * and the link is built here from the title alone: the wiki's article URL (`wiki-os/config.ts`) plus the title, never from a URL the author
  * wrote. A title that is not a plausible MediaWiki title (markup characters, a line break, bracket, pipe, brace, `#`,
  * empty or dot path segments, over 255 characters) leaves its tags as literal text, so nothing the author typed is
  * lost. An escaped tag (`\[wikiimage=300]…[/wikiimage]`) is literal text too.
  */
+import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { replacePairs, type PairSpec } from "./bbcode-pairs";
 import { escapeHtml, unescapeHtml } from "./html-text";
 
-const WIKI_PAGE_URL = "https://ixwiki.com/wiki/";
 const TITLE_MAX = 255;
 const WIDTH_MAX = 1200;
 
@@ -34,7 +34,7 @@ function hrefOf(title: string): string | null {
       .split("/")
       .map((part) => encodeURIComponent(part).replace(/%3A/gi, ":"))
       .join("/");
-    return escapeHtml(`${WIKI_PAGE_URL}${path}`);
+    return escapeHtml(`${mediaWikiOrigin()}${wikiosConfig.articlePath}${path}`);
   } catch {
     return null;
   }
