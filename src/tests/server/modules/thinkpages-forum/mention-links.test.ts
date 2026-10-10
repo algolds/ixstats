@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { MENTION_MAX_PER_POST } from "~/lib/thinkpages-forum/mentions";
+import { mentionAnchorNames } from "~/server/modules/thinkpages-forum/mention-html";
 import {
   resolveMentionNames,
   withMentionLinks,
@@ -40,6 +41,42 @@ describe("resolveMentionNames", () => {
     });
     expect(found.get("both")).toMatchObject({ kind: "user", userId: "u_both" });
     expect(found.has("nobody")).toBe(false);
+  });
+
+  it("asks for active members only", async () => {
+    const db = mentionDb([], []);
+    await resolveMentionNames(db as never, ["kir"]);
+    expect(db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { handle: { in: ["kir"] }, isActive: true } })
+    );
+  });
+
+  it("picks one persona when two differ only by case: the exact spelling, else the oldest", async () => {
+    // The rows arrive oldest first (the query orders them by createdAt, then id).
+    const exact = mentionDb(
+      [],
+      [
+        { username: "Kira", clerkUserId: "clerk_old" },
+        { username: "kira", clerkUserId: "clerk_new" },
+      ]
+    );
+    const byExact = await resolveMentionNames(exact as never, ["kira"]);
+    expect(byExact.get("kira")).toMatchObject({
+      ownerClerkId: "clerk_new",
+      href: "/dashboard/profile/kira",
+    });
+    const oldest = mentionDb(
+      [],
+      [
+        { username: "Kira", clerkUserId: "clerk_old" },
+        { username: "KIRA", clerkUserId: "clerk_new" },
+      ]
+    );
+    const byAge = await resolveMentionNames(oldest as never, ["kira"]);
+    expect(byAge.get("kira")).toMatchObject({ ownerClerkId: "clerk_old" });
+    expect(oldest.thinkpagesAccount.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
+    );
   });
 
   it("looks up at most the first 50 names", async () => {
@@ -110,25 +147,65 @@ describe("withMentionLinks", () => {
     await expect(withMentionLinks(db() as never, body)).resolves.toBe(body);
   });
 
-  it("neutralizes a mention link the member typed, in a light post and in a Canvas render", async () => {
+  it("re-links a stored mention link that an edit sends back", async () => {
+    const stored = '<p>Hi <a class="forum-mention" href="/id/kir">@kir</a></p>';
+    const out = await withMentionLinks(db() as never, { contentHtml: stored });
+    expect(out.contentHtml).toBe(stored);
+    const canvas = `<div class="mw-parser-output">${stored}</div>`;
+    const again = await withMentionLinks(db() as never, {
+      contentHtml: canvas,
+      contentWikitext: "x",
+    });
+    expect(again.contentHtml).toBe(canvas);
+  });
+
+  it("unwraps a forged mention link to text: it stays text unless @name resolves, and then it is the real link", async () => {
     const forged = '<a class="forum-mention" href="/id/victim">@victim</a>';
     const light = await withMentionLinks(db() as never, { contentHtml: `<p>${forged}</p>` });
-    expect(light.contentHtml).toBe('<p><a href="/id/victim">@victim</a></p>');
+    expect(light.contentHtml).toBe("<p>@victim</p>");
     const canvas = await withMentionLinks(db() as never, {
       contentHtml: `<div class="mw-parser-output"><p>${forged}</p></div>`,
       contentWikitext: "x",
     });
-    expect(canvas.contentHtml).toBe(
-      '<div class="mw-parser-output"><p><a href="/id/victim">@victim</a></p></div>'
-    );
+    expect(canvas.contentHtml).toBe('<div class="mw-parser-output"><p>@victim</p></div>');
+    const named = await withMentionLinks(db() as never, {
+      contentHtml: '<p><a class="forum-mention" href="https://evil.example/">@kir</a></p>',
+    });
+    expect(named.contentHtml).toBe('<p><a class="forum-mention" href="/id/kir">@kir</a></p>');
+    expect(mentionAnchorNames(named.contentHtml)).toEqual(["kir"]);
   });
 
-  it("links the real name beside a forged anchor, and only the real one carries the class", async () => {
+  it("links a persona at its profile path, which mentionAnchorNames then trusts", async () => {
+    const personas = mentionDb([], [{ username: "Aria_V", clerkUserId: "clerk_owner" }]);
+    const out = await withMentionLinks(personas as never, { contentHtml: "<p>Hi @aria_v</p>" });
+    expect(out.contentHtml).toBe(
+      '<p>Hi <a class="forum-mention" href="/dashboard/profile/Aria_V">@aria_v</a></p>'
+    );
+    expect(mentionAnchorNames(out.contentHtml)).toEqual(["aria_v"]);
+  });
+
+  it("changes nothing in a body past the nesting ceiling, and queries no name", async () => {
+    const fake = db();
+    const body = {
+      contentHtml:
+        "<div>".repeat(500) +
+        '@kir <a class="forum-mention" href="/id/victim">@victim</a>' +
+        "</div>".repeat(500),
+    };
+    await expect(withMentionLinks(fake as never, body)).resolves.toBe(body);
+    expect(fake.user.findMany).not.toHaveBeenCalled();
+    expect(mentionAnchorNames(body.contentHtml)).toEqual([]);
+  });
+
+  it("keeps a TemplateStyles block of a Canvas render as the first sanitize left it", async () => {
+    const style =
+      '<style data-mw-deduplicate="TemplateStyles:r1">.mw-parser-output .foo{color:red}</style>';
     const out = await withMentionLinks(db() as never, {
-      contentHtml: '<p><a class="forum-mention" href="/id/victim">@victim</a> and @kir</p>',
+      contentHtml: `<div class="mw-parser-output">${style}<p class="foo">Hi @kir</p></div>`,
+      contentWikitext: "x",
     });
     expect(out.contentHtml).toBe(
-      '<p><a href="/id/victim">@victim</a> and <a class="forum-mention" href="/id/kir">@kir</a></p>'
+      `<div class="mw-parser-output">${style}<p class="foo">Hi <a class="forum-mention" href="/id/kir">@kir</a></p></div>`
     );
   });
 

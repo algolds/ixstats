@@ -21,6 +21,9 @@ export interface MentionSuggestion {
   avatarUrl: string | null;
 }
 
+/** Rows asked of each table: some are dropped (a username a mention cannot spell, a name a handle already has). */
+const FETCH = MENTION_SUGGEST_MAX * 2;
+
 /** A persona whose username a mention could actually spell. */
 const TYPABLE = /^[A-Za-z0-9_]{3,24}$/;
 
@@ -38,9 +41,9 @@ export async function mentionSuggestions(
   }
   const [users, personas] = await Promise.all([
     db.user.findMany({
-      where: { handle: { startsWith: needle } },
+      where: { handle: { startsWith: needle }, isActive: true },
       orderBy: { handle: "asc" },
-      take: MENTION_SUGGEST_MAX,
+      take: FETCH,
       select: { handle: true, clerkUserId: true },
     }),
     db.thinkpagesAccount.findMany({
@@ -53,7 +56,7 @@ export async function mentionSuggestions(
         ],
       },
       orderBy: { username: "asc" },
-      take: MENTION_SUGGEST_MAX,
+      take: FETCH,
       select: { username: true, displayName: true, profileImageUrl: true },
     }),
   ]);
@@ -61,6 +64,7 @@ export async function mentionSuggestions(
     db,
     users.map((user) => user.clerkUserId)
   );
+  // Handles first, so a handle wins a name a persona also has.
   const suggestions = new Map<string, MentionSuggestion>();
   for (const user of users) {
     if (!user.handle) continue;

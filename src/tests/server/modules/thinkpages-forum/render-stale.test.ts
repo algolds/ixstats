@@ -165,6 +165,6 @@ it("does not keep a mention link the render carried: only the ones it makes itse
   const { db, updates } = fakeDb([{ id: "p1", threadId: "t1", contentWikitext: "x" }]);
   await rerenderPosts(withNames(db) as never, ["p1"]);
   expect(updates[0]?.contentHtml).toBe(
-    '<p><a href="/id/victim">@victim</a> <a class="forum-mention" href="/id/kir">@kir</a></p>'
+    '<p>@victim <a class="forum-mention" href="/id/kir">@kir</a></p>'
   );
 });

@@ -8,7 +8,7 @@
  * that is larger than the sanitizer's ceiling, is not parsed at all (no mentions, no links). It is parsed as jsdom
  * parses it (scripting off, so the contents of a `<noscript>` are elements) and serialized the same way.
  *
- * A mention link is only ever made here. Whatever `a.forum-mention` a member sends is forged (`stripMentionClass`
+ * A mention link is only ever made here. Whatever `a.forum-mention` a member sends is forged (`unwrapMentionAnchors`
  * runs before linking), and `mentionAnchorNames` trusts an anchor only when its href is the canonical profile path of
  * the name it shows.
  */
@@ -78,38 +78,59 @@ const classTokens = (element: Element): string[] =>
 
 const isMentionToken = (token: string): boolean => token.toLowerCase() === MENTION_CLASS;
 
-/** Removes the mention class from `element` (any case, as quirks mode matches classes loosely); true when it had one. */
-function dropMentionClass(element: Element): boolean {
-  const tokens = classTokens(element);
-  if (!tokens.some(isMentionToken)) return false;
-  const kept = tokens.filter((token) => !isMentionToken(token));
+const hasMentionClass = (element: Element): boolean => classTokens(element).some(isMentionToken);
+
+/** Removes the mention class from `element` (any case, as quirks mode matches classes loosely). */
+function dropMentionClass(element: Element): void {
+  const kept = classTokens(element).filter((token) => !isMentionToken(token));
   element.attrs = element.attrs.filter((attr) => attr.name !== "class");
   if (kept.length > 0) element.attrs.push({ name: "class", value: kept.join(" ") });
-  return true;
 }
 
-function dropMentionClasses(parent: Parent): boolean {
+/** All the text under `node`, as the DOM's textContent gives it. */
+function textContentOf(node: Parent): string {
+  const adapter = parser().defaultTreeAdapter;
+  return node.childNodes
+    .map((child) => {
+      if (adapter.isTextNode(child)) return child.value;
+      return adapter.isElementNode(child) ? textContentOf(child) : "";
+    })
+    .join("");
+}
+
+/** Unwraps mention anchors to their text and drops the class elsewhere under `parent`; true when anything changed. */
+function unwrapMentions(parent: Parent): boolean {
   const adapter = parser().defaultTreeAdapter;
   let changed = false;
-  for (const child of parent.childNodes) {
+  for (const child of [...parent.childNodes]) {
     if (!adapter.isElementNode(child)) continue;
-    changed = dropMentionClass(child) || changed;
-    changed = dropMentionClasses(child) || changed;
-    if ("content" in child) changed = dropMentionClasses(child.content) || changed;
+    if (child.tagName === "a" && hasMentionClass(child)) {
+      adapter.insertTextBefore(parent, textContentOf(child), child);
+      adapter.detachNode(child);
+      changed = true;
+      continue;
+    }
+    if (hasMentionClass(child)) {
+      dropMentionClass(child);
+      changed = true;
+    }
+    changed = unwrapMentions(child) || changed;
+    if ("content" in child) changed = unwrapMentions(child.content) || changed;
   }
   return changed;
 }
 
 /**
- * `html` without the `forum-mention` class on any element. A member can type any HTML, so an anchor that arrives
- * carrying the class is a forgery (it would name a victim, or send the reader elsewhere); a mention link is made by
- * `linkMentionsInHtml` after this. The same string comes back when there was no such class.
+ * `html` without any mention link the member sent. A member can type any HTML, so an `a.forum-mention` that arrives
+ * is a forgery (it would name a victim, or send the reader elsewhere), and a stored one comes back when a post is
+ * edited: either way it is unwrapped to its text, and `linkMentionsInHtml` makes the real link again if `@name`
+ * resolves. The class is dropped from any other element. The same string comes back when there was none.
  */
-export function stripMentionClass(html: string): string {
+export function unwrapMentionAnchors(html: string): string {
   if (!/class/i.test(html)) return html;
   const root = parse(html);
   if (!root) return html;
-  return dropMentionClasses(root) ? serialize(root) : html;
+  return unwrapMentions(root) ? serialize(root) : html;
 }
 
 /** The only text a mention link shows: `@name`, nothing else. */

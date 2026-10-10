@@ -40,7 +40,7 @@ describe("mentionSuggestions", () => {
       { kind: "persona", name: "KirNews", label: "Kir News", avatarUrl: "/n.png" },
     ]);
     expect(db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { handle: { startsWith: "ki" } } })
+      expect.objectContaining({ where: { handle: { startsWith: "ki" }, isActive: true } })
     );
   });
 
@@ -70,7 +70,36 @@ describe("mentionSuggestions", () => {
     expect(out[0]).toMatchObject({ kind: "user", name: "kirk" });
     expect(out.some((s) => s.name === "kir.dot")).toBe(false);
     expect(out.filter((s) => s.name.toLowerCase() === "kirk")).toHaveLength(1);
-    expect(db.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 6 }));
+  });
+
+  it("over-fetches, so names that are dropped do not leave the page short", async () => {
+    const untypable = Array.from({ length: 8 }, (_, i) => ({
+      username: `kir.${i}`,
+      displayName: `U${i}`,
+      profileImageUrl: null,
+    }));
+    const typable = Array.from({ length: 4 }, (_, i) => ({
+      username: `kirz${i}`,
+      displayName: `T${i}`,
+      profileImageUrl: null,
+    }));
+    const db = suggestDb(
+      [{ handle: "kirk", clerkUserId: "clerk_kirk" }],
+      [...untypable, ...typable]
+    );
+    const out = await mentionSuggestions(db as never, "kir");
+    expect(out.map((s) => s.name)).toEqual(["kirk", "kirz0", "kirz1", "kirz2", "kirz3"]);
+    expect(db.user.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 12 }));
+    const [search] = db.thinkpagesAccount.findMany.mock.calls
+      .map(([args]) => args)
+      .filter((args) => !args.where.clerkUserId);
+    expect(search).toMatchObject({ take: 12 });
+  });
+
+  it("gives a handle suggestion exactly its four fields", async () => {
+    const db = suggestDb([{ handle: "kirsten", clerkUserId: "clerk_k" }]);
+    const [only] = await mentionSuggestions(db as never, "ki");
+    expect(Object.keys(only!).sort()).toEqual(["avatarUrl", "kind", "label", "name"]);
   });
 
   it("never carries a player behind a persona: a persona suggestion has only its own data", async () => {

@@ -11,7 +11,7 @@ import { MENTION_MAX_PER_POST } from "~/lib/thinkpages-forum/mentions";
 import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { sanitizeUserContent, sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
-import { linkMentionsInHtml, mentionNamesInHtml, stripMentionClass } from "./mention-html";
+import { linkMentionsInHtml, mentionNamesInHtml, unwrapMentionAnchors } from "./mention-html";
 
 export type MentionDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
@@ -39,15 +39,19 @@ export async function resolveMentionNames(
         accountType: { not: PERSONAL_ACCOUNT_TYPE },
         OR: wanted.map((name) => ({ username: { equals: name, mode: "insensitive" as const } })),
       },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: { username: true, clerkUserId: true },
     }),
     db.user.findMany({
-      where: { handle: { in: [...wanted] } },
+      where: { handle: { in: [...wanted] }, isActive: true },
       select: { id: true, handle: true },
     }),
   ]);
+  // Personas that differ only by case share a name: the one spelled exactly as the (lower-case) name wins, else the
+  // oldest (the rows come oldest first).
   for (const persona of personas) {
     const name = persona.username.toLowerCase();
+    if (found.has(name) && persona.username !== name) continue;
     found.set(name, {
       name,
       kind: "persona",
@@ -80,14 +84,14 @@ function finalPass(html: string, canvas: boolean): string {
 }
 
 /**
- * `body` with its resolved mentions linked. Any mention class the body arrived with is forged and removed first
- * (only this function makes a mention link); nothing is queried without an `@`, and the same object comes back when
+ * `body` with its resolved mentions linked. Any mention link the body arrived with, forged or stored, is unwrapped
+ * to its text first (only this function makes a mention link, and an edit keeps its mentions); nothing is queried without an `@`, and the same object comes back when
  * the body changed in no way. A body that changed is sanitized again, last, as `finalPass` says.
  */
 export async function withMentionLinks<
   T extends { contentHtml: string; contentWikitext?: string | null },
 >(db: MentionDb, body: T): Promise<T> {
-  const clean = stripMentionClass(body.contentHtml);
+  const clean = unwrapMentionAnchors(body.contentHtml);
   const names = mentionNamesInHtml(clean);
   const targets =
     names.length > 0 ? await resolveMentionNames(db, names) : new Map<string, MentionTarget>();

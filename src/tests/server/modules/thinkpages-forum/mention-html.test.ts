@@ -3,7 +3,7 @@ import {
   linkMentionsInHtml,
   mentionAnchorNames,
   mentionNamesInHtml,
-  stripMentionClass,
+  unwrapMentionAnchors,
 } from "~/server/modules/thinkpages-forum/mention-html";
 
 const KNOWN = new Set(["kir", "aria_v", "bob"]);
@@ -85,26 +85,27 @@ describe("linkMentionsInHtml", () => {
   });
 });
 
-describe("stripMentionClass", () => {
-  it("removes the class from any element and keeps the other classes and attributes", () => {
+describe("unwrapMentionAnchors", () => {
+  it("replaces a mention link by its text, and drops the class from any other element", () => {
     expect(
-      stripMentionClass(
-        '<p><a class="forum-mention" href="/id/victim">@kir</a> <a class="x Forum-Mention y" href="/z">z</a><span class="forum-mention">s</span></p>'
+      unwrapMentionAnchors(
+        '<p><a class="forum-mention" href="/id/victim">@kir</a> <a class="x Forum-Mention y" href="/z">z <b>b</b></a><span class="forum-mention a">s</span></p>'
       )
-    ).toBe('<p><a href="/id/victim">@kir</a> <a href="/z" class="x y">z</a><span>s</span></p>');
+    ).toBe('<p>@kir z b<span class="a">s</span></p>');
   });
 
   it("finds it inside a template and a noscript too", () => {
-    const out = stripMentionClass(
+    const out = unwrapMentionAnchors(
       '<template><a class="forum-mention" href="/a">@kir</a></template><noscript><a class="forum-mention">@kir</a></noscript>'
     );
     expect(out).not.toMatch(/forum-mention/i);
+    expect(out).not.toMatch(/<a\b/);
   });
 
-  it("returns the same string when there is no such class", () => {
-    const html = '<p class="x">@kir</p>';
-    expect(stripMentionClass(html)).toBe(html);
-    expect(stripMentionClass("<p>plain</p>")).toBe("<p>plain</p>");
+  it("leaves other links and classes, and returns the same string when there is no mention link", () => {
+    const html = '<p class="x"><a class="mw-redirect" href="/id/kir">@kir</a></p>';
+    expect(unwrapMentionAnchors(html)).toBe(html);
+    expect(unwrapMentionAnchors("<p>plain</p>")).toBe("<p>plain</p>");
   });
 });
 
@@ -134,6 +135,7 @@ describe("mentionAnchorNames", () => {
       '<a class="forum-mention" href="/id/kir"><b>@kir</b></a>',
       '<a class="forum-mention">@kir</a>',
       '<a class="other" href="/id/kir">@kir</a>',
+      '<a class="Forum-Mention" href="/id/kir">@kir</a>',
     ];
     for (const anchor of forged) expect(mentionAnchorNames(`<p>${anchor}</p>`)).toEqual([]);
   });
