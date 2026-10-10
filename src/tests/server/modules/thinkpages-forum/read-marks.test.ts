@@ -10,7 +10,12 @@ import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(Date.now() - days * DAY);
-const member = { id: "u1", clerkUserId: "clerk_1", countryId: null, role: { name: "user", level: 100 } };
+const member = {
+  id: "u1",
+  clerkUserId: "clerk_1",
+  countryId: null,
+  role: { name: "user", level: 100 },
+};
 
 const general = {
   id: "cat_general",
@@ -61,10 +66,15 @@ function markDb(thread: object | null, posts: Array<{ createdAt: Date }> = []) {
 describe("markThreadRead", () => {
   it("reads up to the newest post of the page shown, monotonically", async () => {
     const t3 = ago(2);
-    const db = markDb(threadRow({ lastPostAt: ago(1) }), [{ createdAt: ago(4) }, { createdAt: t3 }]);
-    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 1 })).resolves.toEqual({
-      readAt: t3,
-    });
+    const db = markDb(threadRow({ lastPostAt: ago(1) }), [
+      { createdAt: ago(4) },
+      { createdAt: t3 },
+    ]);
+    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 1 })).resolves.toEqual(
+      {
+        readAt: t3,
+      }
+    );
     expect(db.forumThreadRead.createMany).toHaveBeenCalledWith({
       data: [{ userId: "u1", threadId: "t1", readAt: t3 }],
       skipDuplicates: true,
@@ -86,14 +96,18 @@ describe("markThreadRead", () => {
   it("never reads past the thread's last post, whatever page the client names", async () => {
     const lastPostAt = ago(2);
     const db = markDb(threadRow({ lastPostAt }), [{ createdAt: ago(0.1) }]);
-    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 1 })).resolves.toEqual({
-      readAt: lastPostAt,
-    });
+    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 1 })).resolves.toEqual(
+      {
+        readAt: lastPostAt,
+      }
+    );
   });
 
   it("does nothing for a page past the end", async () => {
     const db = markDb(threadRow(), []);
-    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 99 })).resolves.toEqual({
+    await expect(
+      markThreadRead(db as never, member, { threadId: "t1", page: 99 })
+    ).resolves.toEqual({
       readAt: null,
     });
     expect(db.forumThreadRead.createMany).not.toHaveBeenCalled();
@@ -113,9 +127,18 @@ describe("markThreadRead", () => {
     await expect(
       markThreadRead(markDb(threadRow({}, staff)) as never, member, { threadId: "t1", page: 1 })
     ).rejects.toBeInstanceOf(ForumError);
-    const board = { ...general, id: "cat_board", scope: "realm", realmId: "r1", key: "board", style: "board" };
+    const board = {
+      ...general,
+      id: "cat_board",
+      scope: "realm",
+      realmId: "r1",
+      key: "board",
+      style: "board",
+    };
     const db = markDb(threadRow({}, board), [{ createdAt: ago(1) }]);
-    await expect(markThreadRead(db as never, member, { threadId: "t1", page: 1 })).rejects.toMatchObject({
+    await expect(
+      markThreadRead(db as never, member, { threadId: "t1", page: 1 })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
     expect(db.forumThreadRead.createMany).not.toHaveBeenCalled();
@@ -128,7 +151,9 @@ describe("markCategoryRead", () => {
     const seen = { id: "t_seen", lastPostAt: ago(1) };
     const db = markDb(null);
     db.forumThread.findMany.mockResolvedValue([fresh, seen] as never);
-    db.forumThreadRead.findMany.mockResolvedValue([{ threadId: "t_seen", readAt: seen.lastPostAt }]);
+    db.forumThreadRead.findMany.mockResolvedValue([
+      { threadId: "t_seen", readAt: seen.lastPostAt },
+    ]);
     await expect(markCategoryRead(db as never, member, { key: "general" })).resolves.toEqual({
       marked: 1,
     });
@@ -154,7 +179,8 @@ describe("markCategoryRead", () => {
     db.forumThreadRead.createMany.mockImplementation((async (args: {
       data: Array<{ threadId: string; readAt: Date }>;
     }) => {
-      for (const row of args.data) if (!store.has(row.threadId)) store.set(row.threadId, row.readAt);
+      for (const row of args.data)
+        if (!store.has(row.threadId)) store.set(row.threadId, row.readAt);
       return { count: 0 };
     }) as never);
     db.forumThreadRead.updateMany.mockImplementation((async (args: {
@@ -162,7 +188,8 @@ describe("markCategoryRead", () => {
       data: { readAt: Date };
     }) => {
       const current = store.get(args.where.threadId);
-      if (current && current < args.where.readAt.lt) store.set(args.where.threadId, args.data.readAt);
+      if (current && current < args.where.readAt.lt)
+        store.set(args.where.threadId, args.data.readAt);
       return { count: 0 };
     }) as never);
     await markCategoryRead(db as never, member, { key: "general" });
@@ -172,9 +199,9 @@ describe("markCategoryRead", () => {
   it("asks only for visible threads inside the thirty-day window, newest first", async () => {
     const db = markDb(null);
     await markCategoryRead(db as never, member, { key: "general" });
-    const call = db.forumThread.findMany.mock.calls[0]![0] as {
-      where: { lastPostAt: { gt: Date } };
-    };
+    const [[call]] = db.forumThread.findMany.mock.calls as never as [
+      [{ where: { lastPostAt: { gt: Date } } }],
+    ];
     expect(call).toEqual(
       expect.objectContaining({
         where: { categoryId: "cat_general", hidden: false, lastPostAt: { gt: expect.any(Date) } },
@@ -195,16 +222,29 @@ describe("markCategoryRead", () => {
         where: expect.objectContaining({ categoryId: "cat_reports", authorUserId: "u1" }),
       })
     );
-    const admin = { ...member, id: "u9", clerkUserId: "clerk_9", role: { name: "admin", level: 10 } };
+    const admin = {
+      ...member,
+      id: "u9",
+      clerkUserId: "clerk_9",
+      role: { name: "admin", level: 10 },
+    };
     const all = markDb(null);
     all.forumCategory.findFirst.mockResolvedValue(reports as never);
     await markCategoryRead(all as never, admin, { key: "reports" });
-    expect(all.forumThread.findMany.mock.calls[0]![0]).not.toHaveProperty("where.authorUserId");
+    expect(all.forumThread.findMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ authorUserId: expect.anything() }),
+      })
+    );
+    expect(all.forumThread.findMany).toHaveBeenCalled();
   });
 
   it("walks a busy board in chunks of 500 by keyset, stopping at the first short chunk", async () => {
     const chunk = (from: number, n: number) =>
-      Array.from({ length: n }, (_, i) => ({ id: `t${from + i}`, lastPostAt: ago(1 + (from + i) / 1000) }));
+      Array.from({ length: n }, (_, i) => ({
+        id: `t${from + i}`,
+        lastPostAt: ago(1 + (from + i) / 1000),
+      }));
     const first = chunk(0, 500);
     const db = markDb(null);
     db.forumThread.findMany
@@ -224,7 +264,12 @@ describe("markCategoryRead", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           AND: [
-            { OR: [{ lastPostAt: { lt: last.lastPostAt } }, { lastPostAt: last.lastPostAt, id: { lt: last.id } }] },
+            {
+              OR: [
+                { lastPostAt: { lt: last.lastPostAt } },
+                { lastPostAt: last.lastPostAt, id: { lt: last.id } },
+              ],
+            },
           ],
         }),
       })
@@ -277,7 +322,13 @@ describe("markAllRead", () => {
 });
 
 describe("markRealmBoardRead", () => {
-  const eurth = { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" };
+  const eurth = {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    status: "active",
+    ownerId: "founder",
+  };
 
   it("advances the realm board thread's read row to its last post", async () => {
     const lastPostAt = ago(1);
@@ -285,7 +336,9 @@ describe("markRealmBoardRead", () => {
     db.realm.findUnique.mockResolvedValue(eurth as never);
     db.forumThread.findFirst.mockResolvedValue({ id: "t_board", categoryId: "cat_board" } as never);
     db.forumThread.findUnique.mockResolvedValue({ lastPostAt } as never);
-    await expect(markRealmBoardRead(db as never, member, "eurth")).resolves.toEqual({ readAt: lastPostAt });
+    await expect(markRealmBoardRead(db as never, member, "eurth")).resolves.toEqual({
+      readAt: lastPostAt,
+    });
     expect(db.forumThreadRead.createMany).toHaveBeenCalledWith({
       data: [{ userId: "u1", threadId: "t_board", readAt: lastPostAt }],
       skipDuplicates: true,
