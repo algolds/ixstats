@@ -513,7 +513,8 @@ describe("editPost", () => {
       editPost(db as never, user, { postId: "p1", editedAt: null, html: "<p>[ixaction=a1]</p>" })
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "A moderator edited this post since you opened it; reload to see their changes.",
+      message:
+        "This post changed since you opened it (a moderator's edit or another tab). Reload to see the latest version.",
     });
     expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
     expect(tx.postActionLink.deleteMany).not.toHaveBeenCalled();

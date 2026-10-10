@@ -246,7 +246,7 @@ export async function replyToThread(
 
 /** M1: the author's edit lost the race with a moderator's (or their own other tab's) edit. */
 const EDITED_MEANWHILE =
-  "A moderator edited this post since you opened it; reload to see their changes.";
+  "This post changed since you opened it (a moderator's edit or another tab). Reload to see the latest version.";
 
 /**
  * The author edits (moderator edits are `modEditPost`). In a realm section the author must still be able to post
