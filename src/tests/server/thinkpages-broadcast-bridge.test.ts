@@ -1,7 +1,9 @@
 /** @jest-environment node */
+import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-websocket-server";
 import {
   THINKPAGES_BROADCAST_CHANNEL,
+  publishBoardEvent,
   publishThinkPagesEvent,
   redisThinkPagesBroadcaster,
   startThinkPagesBroadcastSubscriber,
@@ -40,8 +42,11 @@ function createFakeRedis(status = "ready") {
   return { publisher, subscriber, deliver };
 }
 
-function fakeServer(): MessageBroadcaster & { broadcastMessage: jest.Mock } {
-  return { broadcastMessage: jest.fn() };
+function fakeServer(): MessageBroadcaster & {
+  broadcastMessage: jest.Mock;
+  broadcastBoard: jest.Mock;
+} {
+  return { broadcastMessage: jest.fn(), broadcastBoard: jest.fn() };
 }
 
 const event: ThinkPagesMessageEvent = {
@@ -118,6 +123,65 @@ describe("ThinkPages broadcast bridge", () => {
     redis.deliver(THINKPAGES_BROADCAST_CHANNEL, JSON.stringify({ type: "notification:new" }));
 
     expect(server.broadcastMessage).not.toHaveBeenCalled();
+  });
+
+  describe("realm board events", () => {
+    const boardEvent: BoardLiveEvent = {
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: { type: "removed", postId: "p1" },
+    };
+
+    it("round trips a board event to broadcastBoard, not broadcastMessage", () => {
+      const redis = createFakeRedis();
+      const server = fakeServer();
+      startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+
+      publishBoardEvent(boardEvent, redis.publisher);
+
+      expect(redis.publisher.publish).toHaveBeenCalledWith(
+        THINKPAGES_BROADCAST_CHANNEL,
+        JSON.stringify(boardEvent)
+      );
+      expect(server.broadcastBoard).toHaveBeenCalledWith(boardEvent);
+      expect(server.broadcastMessage).not.toHaveBeenCalled();
+    });
+
+    it("carries every board event kind through the schema", () => {
+      const redis = createFakeRedis();
+      const server = fakeServer();
+      startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+      const kinds: BoardLiveEvent[] = [
+        {
+          type: "board:settings",
+          realmId: "r1",
+          settings: { visitorsAllowed: true, slowModeSeconds: 10 },
+        },
+        { type: "board:typing", realmId: "r1", name: "Ada" },
+        { type: "board:presence", realmId: "r1", count: 4 },
+      ];
+      for (const kind of kinds) publishBoardEvent(kind, redis.publisher);
+      expect(server.broadcastBoard.mock.calls.map(([e]) => e)).toEqual(kinds);
+    });
+
+    it("drops a malformed board event and a board event while Redis is not ready", () => {
+      const redis = createFakeRedis();
+      const server = fakeServer();
+      startThinkPagesBroadcastSubscriber(server, redis.subscriber);
+      redis.deliver(
+        THINKPAGES_BROADCAST_CHANNEL,
+        JSON.stringify({ type: "board:presence", realmId: "r1" })
+      );
+      expect(server.broadcastBoard).not.toHaveBeenCalled();
+
+      const down = createFakeRedis("connecting");
+      publishBoardEvent(boardEvent, down.publisher);
+      expect(down.publisher.publish).not.toHaveBeenCalled();
+    });
+
+    it("routes through Redis from the web process", () => {
+      expect(redisThinkPagesBroadcaster.broadcastBoard).toEqual(expect.any(Function));
+    });
   });
 
   it("returns null and does not subscribe when Redis is disabled", () => {

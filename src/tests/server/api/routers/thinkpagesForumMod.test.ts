@@ -1,5 +1,11 @@
 /** @jest-environment node */
 jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/server/websocket-server", () => ({
+  getThinkPagesBroadcaster: jest.fn(() => ({
+    broadcastBoard: jest.fn(),
+    broadcastMessage: jest.fn(),
+  })),
+}));
 jest.mock("~/server/modules/thinkpages-forum", () => {
   const actual = jest.requireActual("~/server/modules/thinkpages-forum");
   return {
@@ -20,6 +26,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     moveThread: jest.fn(async () => undefined),
     setPostHidden: jest.fn(async () => undefined),
     modEditPost: jest.fn(async () => undefined),
+    publishBoardPost: jest.fn(async () => undefined),
     notifyWarning: jest.fn(async () => undefined),
     notifyBan: jest.fn(async () => undefined),
     notifyBanLifted: jest.fn(async () => undefined),
@@ -41,6 +48,7 @@ import {
   listWarnings,
   modEditPost,
   moveThread,
+  publishBoardPost,
   resolveReport,
   setPostHidden,
   setThreadFlag,
@@ -667,6 +675,37 @@ describe("thinkpagesForumMod router", () => {
       html: "<p>x</p>",
       note: "Tidied",
     });
+  });
+
+  it("publishes a hide, an unhide and an edit of a post to the realm board's room after they commit", async () => {
+    const c = caller(founder, modDb());
+    await c.setPostHidden({ postId: "p1", hidden: true });
+    await c.setPostHidden({ postId: "p1", hidden: false });
+    await c.editPost({ postId: "p2", html: "<p>x</p>", note: "Tidied" });
+    expect(
+      jest.mocked(publishBoardPost).mock.calls.map(([, , postId, kind]) => [postId, kind])
+    ).toEqual([
+      ["p1", "updated"],
+      ["p1", "updated"],
+      ["p2", "updated"],
+    ]);
+    expect(jest.mocked(publishBoardPost).mock.calls[0]![1]).toEqual({
+      broadcastBoard: expect.any(Function),
+      broadcastMessage: expect.any(Function),
+    });
+  });
+
+  it("publishes nothing when the moderator action is refused", async () => {
+    jest.mocked(setPostHidden).mockRejectedValueOnce(new ForumError("FORBIDDEN", "No."));
+    jest.mocked(modEditPost).mockRejectedValueOnce(new ForumError("CONFLICT", "Edited."));
+    const c = caller(founder, modDb());
+    await expect(c.setPostHidden({ postId: "p1", hidden: true })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      c.editPost({ postId: "p1", html: "<p>x</p>", note: "Tidied" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(publishBoardPost).not.toHaveBeenCalled();
   });
 
   it("bounds the content actions' inputs", async () => {

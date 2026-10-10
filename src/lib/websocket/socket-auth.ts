@@ -80,14 +80,22 @@ export async function verifySocketToken(
   }
 }
 
-/** Socket.IO middleware: io.use(createSocketAuthMiddleware()) */
+/**
+ * Socket.IO middleware: io.use(createSocketAuthMiddleware()). A handshake with a token must carry a valid one
+ * (fails closed). One without a token is an anonymous reader: it has no principal, and the server lets it join
+ * public realm board rooms only and emit nothing (the origin policy still applies to it).
+ */
 export function createSocketAuthMiddleware(): (
   socket: Socket,
   next: (err?: Error) => void
 ) => void {
   return (socket, next) => {
     const rawToken: string | undefined = socket.handshake.auth?.token;
-    const token = typeof rawToken === "string" ? rawToken : undefined;
+    const token = typeof rawToken === "string" && rawToken !== "" ? rawToken : undefined;
+    if (!token) {
+      next();
+      return;
+    }
     void verifySocketToken(token).then((principal) => {
       if (!principal) {
         next(new Error("unauthorized"));
@@ -99,6 +107,7 @@ export function createSocketAuthMiddleware(): (
   };
 }
 
+/** The verified principal, or null for an anonymous reader. */
 export function getPrincipal(socket: Socket): SocketPrincipal | null {
   return principals.get(socket) ?? null;
 }

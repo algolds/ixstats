@@ -15,6 +15,13 @@ export {
   type BoardSettings,
 } from "./board-access";
 export { continueInThread, type BoardContinueDb } from "./board-continue";
+export {
+  boardMessagePayload,
+  publishBoardContinued,
+  publishBoardPost,
+  publishBoardRemoval,
+  publishBoardSettings,
+} from "./board-live";
 export { boardPostRealm, getBoard, loadBoard, type BoardReadsDb, type BoardResult } from "./board";
 export {
   type BoardMessage,

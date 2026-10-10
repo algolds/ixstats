@@ -36,6 +36,7 @@ import {
   notifyBan,
   notifyBanLifted,
   notifyWarning,
+  publishBoardPost,
   resolveMember,
   resolveReport,
   reviewAppeal,
@@ -47,6 +48,7 @@ import {
   type NoticesDb,
   type ScopeDb,
 } from "~/server/modules/thinkpages-forum";
+import { getThinkPagesBroadcaster } from "~/server/websocket-server";
 import {
   actorOf,
   categoryKey,
@@ -160,14 +162,21 @@ export const thinkpagesForumModRouter = createTRPCRouter({
   setPostHidden: rateLimitedMutationProcedure
     .input(z.object({ postId: id, hidden: z.boolean(), note }))
     .mutation(({ ctx, input }) =>
-      run(async () => setPostHidden(ctx.db, await actorOf(ctx.db, ctx.user), input))
+      run(async () => {
+        await setPostHidden(ctx.db, await actorOf(ctx.db, ctx.user), input);
+        // A board post's hide is a removal for the room, an unhide puts the message back.
+        void publishBoardPost(ctx.db, getThinkPagesBroadcaster(), input.postId, "updated");
+      })
     ),
 
   /** The note is required: the log keeps it with the previous text. */
   editPost: rateLimitedMutationProcedure
     .input(z.object({ postId: id, html, note: reason }))
     .mutation(({ ctx, input }) =>
-      run(async () => modEditPost(ctx.db, await actorOf(ctx.db, ctx.user), input))
+      run(async () => {
+        await modEditPost(ctx.db, await actorOf(ctx.db, ctx.user), input);
+        void publishBoardPost(ctx.db, getThinkPagesBroadcaster(), input.postId, "updated");
+      })
     ),
 
   /** Points 1 to 5 here; the module applies the issuer's cap (M1). */

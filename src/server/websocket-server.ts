@@ -25,7 +25,15 @@ export async function initializeWebSocketServer(httpServer: HTTPServer): Promise
     const { ThinkPagesWebSocketServer } =
       await import("~/lib/websocket/thinkpages-websocket-server");
 
-    thinkPagesServer = new ThinkPagesWebSocketServer(httpServer);
+    // The socket server (src/lib) cannot import server modules: the forum's board room checks are handed in.
+    const [{ db }, { boardTypingName, canJoinRealmBoard }] = await Promise.all([
+      import("~/server/db"),
+      import("~/server/modules/thinkpages-forum/board-socket"),
+    ]);
+    thinkPagesServer = new ThinkPagesWebSocketServer(httpServer, {
+      canJoinRealmBoard: (clerkUserId, realmId) => canJoinRealmBoard(db, clerkUserId, realmId),
+      boardTypingName: (clerkUserId, personaId) => boardTypingName(db, clerkUserId, personaId),
+    });
     // Deliver broadcasts published by other processes (the Next.js web process in production).
     broadcastSubscriber = startThinkPagesBroadcastSubscriber(thinkPagesServer);
 

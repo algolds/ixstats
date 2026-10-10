@@ -1,5 +1,9 @@
 /** @jest-environment node */
 jest.mock("~/server/db", () => ({ db: {} }));
+const mockBroadcaster = { broadcastBoard: jest.fn(), broadcastMessage: jest.fn() };
+jest.mock("~/server/websocket-server", () => ({
+  getThinkPagesBroadcaster: () => mockBroadcaster,
+}));
 
 import { createCallerFactory, t } from "~/server/api/trpc/init";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
@@ -23,6 +27,10 @@ const caller = (user: object | null, db: object) =>
     }) as never
   );
 
+/** The publish after a write is not awaited by the procedure: let it finish. */
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+const sentEvents = () => mockBroadcaster.broadcastBoard.mock.calls.map(([event]) => event);
+
 const withBoard = () =>
   boardStore(seed({ posts: [boardPost("p1", 1), boardPost("p2", 2, { createdAt: new Date() })] }));
 
@@ -33,6 +41,7 @@ describe("thinkpagesForum board procedures", () => {
       jest.spyOn(console, level).mockImplementation(() => undefined);
   });
   afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => mockBroadcaster.broadcastBoard.mockClear());
 
   it("reads the board for anyone, newest first", async () => {
     const store = withBoard();
@@ -135,5 +144,84 @@ describe("thinkpagesForum board procedures", () => {
       httpStatus: 429,
       context: { retryAfterSeconds: 23 },
     });
+  });
+
+  it("publishes a posted message, an edit and the settings to the realm's room, public shape only", async () => {
+    const store = withBoard();
+    const c = caller(member, store.db);
+    const posted = await c.postBoardMessage({ realm: "eurth", html: "<p>Hello</p>" });
+    await flush();
+    expect(sentEvents()).toEqual([
+      expect.objectContaining({
+        type: "board:message",
+        realmId: "r_eurth",
+        message: expect.objectContaining({ id: posted.id, contentHtml: "<p>Hello</p>" }),
+      }),
+    ]);
+    expect(JSON.stringify(sentEvents())).not.toMatch(/byViewer|canEdit|"hidden"/);
+
+    await c.editBoardMessage({ postId: posted.id, html: "<p>Hello again</p>" });
+    await flush();
+    expect(sentEvents().at(-1)).toMatchObject({
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: { type: "updated", message: { id: posted.id, contentHtml: "<p>Hello again</p>" } },
+    });
+
+    await caller(founder, store.db).updateBoardSettings({
+      realmId: "r_eurth",
+      visitorsAllowed: false,
+    });
+    expect(sentEvents().at(-1)).toEqual({
+      type: "board:settings",
+      realmId: "r_eurth",
+      settings: { visitorsAllowed: false, slowModeSeconds: 0 },
+    });
+  });
+
+  it("publishes a continued message as a removal plus its placeholder", async () => {
+    const store = withBoard();
+    const c = caller(member, store.db);
+    const posted = await c.postBoardMessage({ realm: "eurth", html: "<p>Long one</p>" });
+    await flush();
+    mockBroadcaster.broadcastBoard.mockClear();
+    const continued = await c.continueInThread({ postId: posted.id, title: "A real thread" });
+    await flush();
+    const events = sentEvents();
+    expect(events[0]).toEqual({
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: { type: "removed", postId: posted.id },
+    });
+    expect(events[1]).toMatchObject({
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: {
+        type: "updated",
+        message: { id: continued.placeholder.id, continued: { title: "A real thread" } },
+      },
+    });
+  });
+
+  it("publishes nothing for a refused write, and a failing broadcaster never fails a write", async () => {
+    const store = withBoard();
+    await expect(
+      caller(member, store.db).postBoardMessage({
+        realm: "eurth",
+        html: `<p>${"a".repeat(1001)}</p>`,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await flush();
+    expect(sentEvents()).toEqual([]);
+
+    mockBroadcaster.broadcastBoard.mockImplementationOnce(() => {
+      throw new Error("redis down");
+    });
+    const posted = await caller(member, store.db).postBoardMessage({
+      realm: "eurth",
+      html: "<p>still posted</p>",
+    });
+    await flush();
+    expect(posted.contentHtml).toBe("<p>still posted</p>");
   });
 });

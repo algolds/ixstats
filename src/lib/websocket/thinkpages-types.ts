@@ -1,5 +1,6 @@
 // ThinkPages WebSocket Types
 // Real-time messaging, presence, and group functionality
+import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 
 export interface PresenceUpdate {
   id: string;
@@ -73,6 +74,9 @@ export interface ThinkPagesClientState {
 
 export interface ThinkPagesWebSocketHookOptions {
   accountId?: string;
+  /** Connect without a session (a signed-out reader): the server lets it into public realm board rooms only. */
+  anonymous?: boolean;
+  onBoardEvent?: (event: BoardLiveEvent) => void;
   autoReconnect?: boolean;
   heartbeatInterval?: number;
   subscribeToPresence?: boolean;

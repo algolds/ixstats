@@ -1,6 +1,8 @@
 // ThinkPages WebSocket Server: real-time messaging, presence, typing, read receipts
 import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
+import { RealmBoardRooms, type ThinkPagesServerOptions } from "./realm-board-room";
+import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 import {
   canJoinConversation,
   canJoinThinktankGroup,
@@ -9,10 +11,19 @@ import {
   isOriginAllowed,
 } from "./socket-auth";
 
+export type { ThinkPagesServerOptions } from "./realm-board-room";
+
 type ChannelPayload = { channel?: string } | undefined;
 type RoomRef = { conversationId?: string; groupId?: string };
+type ChannelKind = "conversation" | "group" | "realm-board";
 
-const CHANNEL_PATTERN = /^(conversation|group):[A-Za-z0-9_-]{1,64}$/;
+const CHANNEL_PATTERN = /^(conversation|group|realm-board):([A-Za-z0-9_-]{1,64})$/;
+
+/** Splits a room name into its kind and id; null for anything that is not a room this server knows. */
+export function parseChannel(channel: string): { kind: ChannelKind; id: string } | null {
+  const match = CHANNEL_PATTERN.exec(channel);
+  return match ? { kind: match[1] as ChannelKind, id: match[2]! } : null;
+}
 
 function channelFor(payload: RoomRef | undefined): string | undefined {
   if (payload?.conversationId) return `conversation:${payload.conversationId}`;
@@ -20,10 +31,13 @@ function channelFor(payload: RoomRef | undefined): string | undefined {
   return undefined;
 }
 
-async function canJoinChannel(clerkUserId: string, channel: string): Promise<boolean> {
-  const [kind, id] = channel.split(":");
-  const check = kind === "conversation" ? canJoinConversation : canJoinThinktankGroup;
-  return check(clerkUserId, id).catch(() => false);
+/** The member-gated rooms; board rooms are checked by RealmBoardRooms. */
+async function canJoinMemberRoom(
+  clerkUserId: string,
+  room: { kind: "conversation" | "group"; id: string }
+): Promise<boolean> {
+  const check = room.kind === "conversation" ? canJoinConversation : canJoinThinktankGroup;
+  return check(clerkUserId, room.id).catch(() => false);
 }
 
 export interface ThinkPagesMessageEvent {
@@ -51,8 +65,9 @@ export class ThinkPagesWebSocketServer {
     string,
     { socket: Socket; accountId?: string; subscriptions: Set<string>; lastSeen: number }
   >();
+  private boardRooms: RealmBoardRooms;
 
-  constructor(server: HTTPServer) {
+  constructor(server: HTTPServer, options: ThinkPagesServerOptions = {}) {
     this.io = new SocketIOServer(server, {
       cors: {
         origin: (origin, cb) => cb(null, isOriginAllowed(origin)),
@@ -67,31 +82,34 @@ export class ThinkPagesWebSocketServer {
       path: "/ws/thinkpages",
     });
     this.io.use(createSocketAuthMiddleware());
+    this.boardRooms = new RealmBoardRooms(
+      this.io,
+      (socketId) => {
+        const client = this.clients.get(socketId);
+        return client ? (client.accountId ?? null) : undefined;
+      },
+      options
+    );
     this.setupHandlers();
   }
 
   private setupHandlers() {
     this.io.on("connection", (socket: Socket) => {
       const principal = getPrincipal(socket);
-      if (!principal) {
-        socket.disconnect(true);
-        return;
-      }
-      const accountId = principal.clerkUserId;
       this.clients.set(socket.id, {
         socket,
-        accountId,
+        accountId: principal?.clerkUserId,
         subscriptions: new Set(),
         lastSeen: Date.now(),
       });
-      socket.emit("authenticated", { success: true, timestamp: Date.now() });
 
+      socket.on("disconnecting", () => this.boardRooms.left([...socket.rooms]));
       socket.on("disconnect", () => {
         this.clients.delete(socket.id);
       });
 
       socket.on("subscribe", (payload: ChannelPayload) => {
-        void this.subscribe(socket, accountId, payload?.channel);
+        void this.subscribe(socket, principal?.clerkUserId ?? null, payload?.channel);
       });
 
       socket.on("unsubscribe", (payload: ChannelPayload) => {
@@ -99,6 +117,16 @@ export class ThinkPagesWebSocketServer {
         if (!c || typeof payload?.channel !== "string") return;
         c.subscriptions.delete(payload.channel);
         void socket.leave(payload.channel);
+        this.boardRooms.left([payload.channel]);
+      });
+
+      // An anonymous reader only subscribes and receives: every emit below needs a verified principal.
+      if (!principal) return;
+      const accountId = principal.clerkUserId;
+      socket.emit("authenticated", { success: true, timestamp: Date.now() });
+
+      socket.on("board:typing", (payload: { realmId?: string; personaId?: string | null }) => {
+        void this.boardRooms.relayTyping(socket, accountId, payload);
       });
 
       socket.on("presence:update", (payload: { status: string } | undefined) => {
@@ -130,21 +158,41 @@ export class ThinkPagesWebSocketServer {
     });
   }
 
-  /** Joins a room only after the principal passes the membership check. */
-  private async subscribe(socket: Socket, clerkUserId: string, channel: string | undefined) {
-    if (typeof channel !== "string" || !CHANNEL_PATTERN.test(channel)) {
+  /**
+   * Joins a room only after the viewer passes its check: membership for conversations and groups (signed in), the
+   * realm being visible for a board room (signed in or not). An anonymous reader gets board rooms only.
+   */
+  private async subscribe(socket: Socket, clerkUserId: string | null, channel: string | undefined) {
+    const room = typeof channel === "string" ? parseChannel(channel) : null;
+    if (typeof channel !== "string" || !room) {
       socket.emit("subscribe:error", { channel, reason: "invalid_channel" });
       return;
     }
-    const allowed = await canJoinChannel(clerkUserId, channel);
-    const c = this.clients.get(socket.id);
-    if (!c || !socket.connected) return;
-    if (!allowed) {
-      socket.emit("subscribe:error", { channel, reason: "forbidden" });
-      return;
-    }
-    c.subscriptions.add(channel);
+    const joined =
+      room.kind === "realm-board"
+        ? await this.boardRooms.join(socket, clerkUserId, room.id)
+        : await this.joinMemberRoom(socket, clerkUserId, channel, room);
+    if (!socket.connected) return;
+    if (!joined) socket.emit("subscribe:error", { channel, reason: "forbidden" });
+    else this.clients.get(socket.id)?.subscriptions.add(channel);
+  }
+
+  private async joinMemberRoom(
+    socket: Socket,
+    clerkUserId: string | null,
+    channel: string,
+    room: { kind: ChannelKind; id: string }
+  ): Promise<boolean> {
+    if (!clerkUserId || room.kind === "realm-board") return false;
+    const allowed = await canJoinMemberRoom(clerkUserId, { kind: room.kind, id: room.id });
+    if (!allowed || !this.clients.has(socket.id) || !socket.connected) return false;
     await socket.join(channel);
+    return true;
+  }
+
+  /** Emits a realm board event (a message, an update, the settings) to the realm's room. */
+  public broadcastBoard(event: BoardLiveEvent) {
+    this.boardRooms.broadcast(event);
   }
 
   public broadcastMessage(event: ThinkPagesMessageEvent) {
@@ -176,6 +224,7 @@ export class ThinkPagesWebSocketServer {
   }
 
   public async shutdown() {
+    this.boardRooms.dispose();
     await this.io.close();
   }
 }

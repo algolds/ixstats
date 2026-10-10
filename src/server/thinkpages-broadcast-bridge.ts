@@ -4,16 +4,22 @@
  * In production the Socket.IO server runs in ws-backend.mjs, so the Next.js process has no
  * local server. When no local server exists, routers publish each event to Redis; the process
  * hosting Socket.IO subscribes and re-emits it through broadcastMessage, which only targets
- * conversation/group rooms (plan 333).
+ * conversation/group rooms (plan 333). Realm board events (`board:*`, see lib/thinkpages-forum/board-live) travel the
+ * same channel and re-emit through broadcastBoard.
  */
 import { Redis } from "ioredis";
 import { z } from "zod";
 import { getEnabledRedisUrl, getSharedRedis } from "~/lib/cache/redis-client";
+import { boardLiveEventSchema, type BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-websocket-server";
 
 export const THINKPAGES_BROADCAST_CHANNEL = "ixstats:thinkpages:broadcast";
 
-export interface MessageBroadcaster {
+export interface BoardBroadcaster {
+  broadcastBoard(event: BoardLiveEvent): void;
+}
+
+export interface MessageBroadcaster extends BoardBroadcaster {
   broadcastMessage(event: ThinkPagesMessageEvent): void;
 }
 
@@ -38,6 +44,12 @@ const eventSchema = z.object({
   timestamp: z.number(),
 });
 
+/** Everything the channel carries: room messages and realm board events. */
+const busSchema = z.union([eventSchema, boardLiveEventSchema]);
+type BusEvent = z.infer<typeof busSchema>;
+
+const isBoardEvent = (event: BusEvent): event is BoardLiveEvent => event.type.startsWith("board:");
+
 let warnedUnavailable = false;
 
 /** Publishes a room event for the Socket.IO process. Room-less events are never delivered. */
@@ -46,6 +58,21 @@ export function publishThinkPagesEvent(
   publisher: BroadcastPublisher | null = getSharedRedis()
 ): void {
   if (!event.conversationId && !event.groupId) return;
+  publishToSocketServer(event, publisher);
+}
+
+/** Publishes a realm board event for the Socket.IO process, which emits it to the realm's room. */
+export function publishBoardEvent(
+  event: BoardLiveEvent,
+  publisher: BroadcastPublisher | null = getSharedRedis()
+): void {
+  publishToSocketServer(event, publisher);
+}
+
+function publishToSocketServer(
+  event: ThinkPagesMessageEvent | BoardLiveEvent,
+  publisher: BroadcastPublisher | null
+): void {
   if (publisher?.status !== "ready") {
     if (!warnedUnavailable) {
       warnedUnavailable = true;
@@ -60,11 +87,12 @@ export function publishThinkPagesEvent(
 
 export const redisThinkPagesBroadcaster: MessageBroadcaster = {
   broadcastMessage: (event) => publishThinkPagesEvent(event),
+  broadcastBoard: (event) => publishBoardEvent(event),
 };
 
-function parseEvent(raw: string): ThinkPagesMessageEvent | null {
+function parseEvent(raw: string): BusEvent | null {
   try {
-    const parsed = eventSchema.safeParse(JSON.parse(raw));
+    const parsed = busSchema.safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data : null;
   } catch {
     return null;
@@ -110,7 +138,9 @@ export function startThinkPagesBroadcastSubscriber(
   subscriber.onMessage((channel, raw) => {
     if (channel !== THINKPAGES_BROADCAST_CHANNEL) return;
     const event = parseEvent(raw);
-    if (event) server.broadcastMessage(event);
+    if (!event) return;
+    if (isBoardEvent(event)) server.broadcastBoard(event);
+    else server.broadcastMessage(event);
   });
   subscriber.subscribe(THINKPAGES_BROADCAST_CHANNEL).catch((err: Error) => {
     console.error("[ThinkPagesBridge] Subscribe failed:", err.message);

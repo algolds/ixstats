@@ -1,9 +1,12 @@
 /** @jest-environment node */
 import { verifyToken } from "@clerk/backend";
+import type { Socket } from "socket.io";
 import {
   canJoinConversation,
   canJoinThinktankGroup,
+  createSocketAuthMiddleware,
   getAllowedOrigins,
+  getPrincipal,
   isOriginAllowed,
   verifySocketToken,
 } from "~/lib/websocket/socket-auth";
@@ -81,6 +84,36 @@ describe("verifySocketToken", () => {
       secretKey: "sk_test_secret",
       authorizedParties: expect.arrayContaining(["https://maps.ixwiki.com"]),
     });
+  });
+});
+
+describe("createSocketAuthMiddleware", () => {
+  const handshake = (auth: object) => ({ handshake: { auth } }) as unknown as Socket;
+  const run = (socket: Socket) =>
+    new Promise<Error | undefined>((resolve) => createSocketAuthMiddleware()(socket, resolve));
+
+  it("lets a handshake without a token in as an anonymous reader with no principal", async () => {
+    for (const auth of [{}, { token: "" }, { token: 5 }]) {
+      const socket = handshake(auth);
+      await expect(run(socket)).resolves.toBeUndefined();
+      expect(getPrincipal(socket)).toBeNull();
+    }
+    expect(mockVerifyToken).not.toHaveBeenCalled();
+  });
+
+  it("still fails closed on a token that does not verify", async () => {
+    mockVerifyToken.mockRejectedValueOnce(new Error("expired"));
+    const error = await run(handshake({ token: "stale" }));
+    expect(error?.message).toBe("unauthorized");
+  });
+
+  it("gives a verified token its principal", async () => {
+    mockVerifyToken.mockResolvedValueOnce({ sub: "user_1" } as Awaited<
+      ReturnType<typeof verifyToken>
+    >);
+    const socket = handshake({ token: "good" });
+    await expect(run(socket)).resolves.toBeUndefined();
+    expect(getPrincipal(socket)).toEqual({ clerkUserId: "user_1" });
   });
 });
 

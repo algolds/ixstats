@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "~/context/auth-context";
+import { BOARD_EVENT_NAMES, boardLiveEventSchema } from "~/lib/thinkpages-forum/board-live";
 import type {
   ThinkPagesClientState,
   ThinkPagesWebSocketHookOptions,
@@ -83,8 +84,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
-    // The server requires a Clerk session token; no token source means signed out
-    if (!getTokenRef.current) return;
+    // A Clerk session token is required unless the caller reads public realm boards signed out
+    if (!getTokenRef.current && !optionsRef.current.anonymous) return;
 
     // Stop retrying after max attempts
     if (retryCount.current >= maxRetries) {
@@ -175,6 +176,14 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     socket.current.on("conversation:update", (data: any) => {
       optionsRef.current.onConversationUpdate?.(data);
     });
+
+    // Realm board rooms: every event is validated against the shared schema before it reaches the caller.
+    for (const name of BOARD_EVENT_NAMES) {
+      socket.current.on(name, (data: object) => {
+        const parsed = boardLiveEventSchema.safeParse(data);
+        if (parsed.success) optionsRef.current.onBoardEvent?.(parsed.data);
+      });
+    }
 
     socket.current.on("disconnect", () => {
       setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
@@ -275,6 +284,22 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     }
   }, []);
 
+  const subscribeToChannel = useCallback((channel: string) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("subscribe", { channel });
+  }, []);
+
+  const unsubscribeFromChannel = useCallback((channel: string) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("unsubscribe", { channel });
+  }, []);
+
+  /** The server resolves the display name from the verified session; the client names only a persona. */
+  const emitBoardTyping = useCallback((payload: { realmId: string; personaId: string | null }) => {
+    if (isServer) return;
+    if (socket.current?.connected) socket.current.emit("board:typing", payload);
+  }, []);
+
   const markMessageAsRead = useCallback(
     (messageId: string, conversationId?: string, groupId?: string) => {
       if (isServer) return;
@@ -296,14 +321,14 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   useEffect(() => {
     if (isServer) return;
 
-    if (options.accountId) {
+    if (options.accountId || options.anonymous) {
       connect();
     }
 
     return () => {
       disconnect();
     };
-  }, [options.accountId, connect, disconnect]);
+  }, [options.accountId, options.anonymous, connect, disconnect]);
 
   // Handle visibility change for presence (only on client)
   useEffect(() => {
@@ -334,6 +359,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       subscribeToConversation: noOp,
       unsubscribeFromConversation: noOp,
       subscribeToGroup: noOp,
+      subscribeToChannel: noOp,
+      unsubscribeFromChannel: noOp,
+      emitBoardTyping: noOp,
       markMessageAsRead: noOp,
     };
   }
@@ -347,6 +375,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     subscribeToConversation,
     unsubscribeFromConversation,
     subscribeToGroup,
+    subscribeToChannel,
+    unsubscribeFromChannel,
+    emitBoardTyping,
     markMessageAsRead,
   };
 }
