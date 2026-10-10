@@ -34,6 +34,9 @@ const diskFs: SnapshotFs = {
       () => false
     ),
   stat: (file) => fs.stat(file).then((s) => ({ size: s.size })),
+  readLines: async function* (file) {
+    yield* (await fs.readFile(file, "utf8")).split("\n");
+  },
 };
 
 const SITE = SITE_CATEGORIES.map((c) => ({

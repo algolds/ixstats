@@ -1,6 +1,7 @@
 /** The real disk behind the XenForo snapshot's injected `SnapshotFs` (export and import runners). */
-import { existsSync } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, stat, writeFile } from "node:fs/promises";
+import { createInterface } from "node:readline";
 import type { SnapshotFs } from "~/lib/thinkpages-forum/import/snapshot";
 
 export const snapshotDiskFs: SnapshotFs = {
@@ -13,4 +14,7 @@ export const snapshotDiskFs: SnapshotFs = {
   },
   exists: async (file) => existsSync(file),
   stat: async (file) => ({ size: (await stat(file)).size }),
+  // A line reader (I4): a large posts.jsonl never becomes one string.
+  readLines: (file) =>
+    createInterface({ input: createReadStream(file, "utf8"), crlfDelay: Infinity }),
 };

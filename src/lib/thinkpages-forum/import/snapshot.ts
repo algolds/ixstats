@@ -26,6 +26,8 @@ export interface SnapshotFs {
   mkdir(dir: string): Promise<void>;
   exists(file: string): Promise<boolean>;
   stat(file: string): Promise<{ size: number }>;
+  /** The file's lines, streamed (I4): threads.jsonl and posts.jsonl are never read into one string. */
+  readLines(file: string): AsyncIterable<string>;
 }
 
 export const SNAPSHOT_VERSION = 1;
@@ -162,13 +164,6 @@ export interface SnapshotGaps {
 
 const FORUM_NODE_TYPE = "Forum";
 const REDIRECT_THREAD_TYPE = "redirect";
-
-/**
- * threads.jsonl and posts.jsonl are read whole (one string each), and the importer holds the whole snapshot in
- * memory anyway. Above this size reading refuses with a clear error instead of hitting the engine's string limit;
- * a larger forum needs a line reader in `readLines`.
- */
-export const MAX_JSONL_BYTES = 512 * 1024 * 1024;
 
 export const isRedirectThread = (thread: XfThread) =>
   thread.discussion_type === REDIRECT_THREAD_TYPE;
@@ -351,13 +346,8 @@ async function readLines<T>(
   const rows = new Map<number, T>();
   let skipped = 0;
   if (!(await fs.exists(file))) return { rows, skipped };
-  const { size } = await fs.stat(file);
-  if (size > MAX_JSONL_BYTES) {
-    throw new Error(
-      `${file} is ${size} bytes, over the ${MAX_JSONL_BYTES}-byte whole-file read limit: needs a line reader`
-    );
-  }
-  for (const line of (await fs.readFile(file)).split("\n")) {
+  // Streamed line by line (I4): the parsed rows are kept, never the file as one string.
+  for await (const line of fs.readLines(file)) {
     if (!line.trim()) continue;
     try {
       const row: T = JSON.parse(line);
