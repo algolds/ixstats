@@ -16,6 +16,8 @@ export async function seedRealmCategories(db: SeedDb, realmId: string): Promise<
       visibility: "public",
       postRole: "any",
       icAllowed: c.icAllowed,
+      // IC categories render as WikiOS articles (spec section 1); the hub is compact OOC.
+      style: c.icAllowed ? "ic" : "ooc",
     })),
     skipDuplicates: true,
   });

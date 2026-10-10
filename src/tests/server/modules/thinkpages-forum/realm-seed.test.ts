@@ -16,5 +16,10 @@ describe("seedRealmCategories", () => {
       expect(row).toMatchObject({ scope: "realm", realmId: "r1", visibility: "public", postRole: "any" });
     }
     expect(arg.data.map((d) => d.icAllowed)).toEqual([false, true, true]);
+    expect(arg.data.map((d) => [d.key, d.style])).toEqual([
+      ["hub", "ooc"],
+      ["character-threads", "ic"],
+      ["current-events", "ic"],
+    ]);
   });
 });

@@ -3,6 +3,7 @@
 /// phase 3 adds the moderation models (category moderators, reports, warnings, bans, the append-only mod log, appeals);
 /// phase 4 adds the XenForo import columns (nullable authors, imported author names, XenForo user ids); the follow-ups
 /// add the appeal's subject scope and the report's target author (migration 20261012120000).
+/// The foundation (migration 20261013120000) adds category style, post wikitext and render metadata, and forum_post_templates.
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
@@ -20,6 +21,7 @@ model ForumCategory {
   visibility  String        @default("public") // "public" | "staff" | "reporter_staff"
   postRole    String        @default("any") // "any" | "staff" (who may start threads)
   icAllowed   Boolean       @default(false)
+  style       String        @default("ooc") // "ooc" | "ic": how posts render (spec §1)
   createdAt   DateTime      @default(now())
   threads     ForumThread[]
   moderators  ForumCategoryModerator[]
@@ -65,6 +67,13 @@ model ForumPost {
   authorPersonaId    String?
   contentHtml        String      @db.Text
   plainText          String      @db.Text
+  /// Canvas source (null: an HTML-only post, e.g. imported or written before the foundation).
+  contentWikitext    String?     @db.Text
+  /// Pipeline version + sanitizer fingerprint of the stored render (render.ts).
+  rendererVersion    String?
+  /// When MediaWiki rendered contentHtml; null with wikitext present = fallback or stale, the cron re-renders.
+  renderedAt         DateTime?
+  templates          ForumPostTemplate[]
   hidden             Boolean     @default(false)
   editedAt           DateTime?
   importedAuthorName String?
@@ -78,6 +87,17 @@ model ForumPost {
   @@index([xenforoUserId])
   @@index([createdAt])
   @@map("forum_posts")
+}
+
+/// Templates (and Lua modules) a post's render used, as MediaWiki titles, for re-rendering when one changes.
+model ForumPostTemplate {
+  postId String
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  title  String
+
+  @@id([postId, title])
+  @@index([title])
+  @@map("forum_post_templates")
 }
 
 model ForumCategoryModerator {
