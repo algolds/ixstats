@@ -210,6 +210,8 @@ export function forumStore(seed: Partial<StoreState> & { logs?: Row[] }) {
     forumPostTemplate: delegate(() => state.postTemplates),
     realm: delegate(() => state.realms),
     user: delegate(() => state.users),
+    // No member has a personal persona (avatar) in these stores.
+    thinkpagesAccount: { findMany: jest.fn(async (_args: Args = {}) => [] as Row[]) },
     forumBan: delegate(
       () => state.bans,
       (r) => r,

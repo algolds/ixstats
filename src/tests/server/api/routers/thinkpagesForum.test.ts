@@ -143,6 +143,7 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
         },
       ]),
       count: jest.fn(async () => 2),
+      groupBy: jest.fn(async () => []),
     },
     user: {
       findMany: jest.fn(async () => [
@@ -199,8 +200,8 @@ const inEurth = [{ id: "c1", realmId: "r_eurth", currentTotalGdp: 10 }];
 const founder = { ...member, id: "u_f", clerkUserId: "founder" };
 const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
 
-const ALLOWED_USER_FIELDS = ["name", "handle"];
-const ALLOWED_PERSONA_FIELDS = ["displayName", "username"];
+const ALLOWED_USER_FIELDS = ["name", "handle", "avatarUrl", "flagUrl"];
+const ALLOWED_PERSONA_FIELDS = ["displayName", "username", "avatarUrl"];
 
 describe("thinkpagesForum router", () => {
   it("lets an anonymous visitor read the public categories only", async () => {
@@ -419,7 +420,8 @@ describe("thinkpagesForum router", () => {
     const db = forumDb();
     const out = await caller(member, db).category({ key: "general", page: 1 });
     expect(out.canStart).toBe(true);
-    expect(Object.keys(out.authors.users.u1!).sort()).toEqual([...ALLOWED_USER_FIELDS].sort());
+    // The listed thread is a persona thread: the player behind it gets no entry (flag, avatar or name).
+    expect(out.authors.users).toEqual({});
     expect(Object.keys(out.authors.personas.pa1!).sort()).toEqual(
       [...ALLOWED_PERSONA_FIELDS].sort()
     );
@@ -451,6 +453,78 @@ describe("thinkpagesForum router", () => {
     expect(out.authors.users.u2!.name).toBe("Member");
     expect(JSON.stringify(out)).not.toContain("secret@example.com");
     expect(JSON.stringify(out)).not.toContain("disc#2");
+  });
+
+  describe("thread page authors, numbers, roles and participants", () => {
+    const post = (id: string, authorUserId: string | null, authorPersonaId: string | null) => ({
+      id,
+      authorUserId,
+      authorPersonaId,
+      importedAuthorName: null,
+      contentHtml: `<p>${id}</p>`,
+      editedAt: null,
+      createdAt: when,
+    });
+    /** Thread by u1 (no persona); posts: u1 as persona pa1, u2 as themselves (an admin), u1 as themselves. */
+    function pageDb(thread: object = {}) {
+      const db = forumDb(thread);
+      db.forumPost.findMany.mockResolvedValue([
+        post("p1", "u1", "pa1"),
+        post("p2", "u2", null),
+        post("p3", "u1", null),
+      ] as never);
+      db.forumPost.groupBy.mockResolvedValue([
+        { authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 4 } },
+        { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, _count: { _all: 2 } },
+      ] as never);
+      db.user.findMany.mockImplementation((async ({ where }: { where: { id: { in: string[] } } }) =>
+        [
+          { ...rawUser, clerkUserId: "clerk_1", country: { name: "Caphiria", flag: "/f/caph.png" }, role: null },
+          { ...rawUser, id: "u2", clerkUserId: "clerk_2", handle: "boss", country: null, role: { name: "admin", level: 10 } },
+        ].filter((u) => where.id.in.includes(u.id))) as never);
+      db.thinkpagesAccount.findMany.mockImplementation((async ({ where }: { where: { id?: unknown } }) =>
+        where.id
+          ? [{ ...rawPersona, profileImageUrl: "/p/news.png" }]
+          : [{ clerkUserId: "clerk_1", profileImageUrl: "/p/heku.png" }]) as never);
+      return db;
+    }
+
+    it("numbers posts by page and gives each its role: persona posts none, staff over starter", async () => {
+      const out = await caller(member, pageDb()).thread({ threadId: "t1", page: 2 });
+      expect(out.posts.map((p) => p.number)).toEqual([21, 22, 23]);
+      expect(out.posts.map((p) => p.role)).toEqual([null, "staff", "starter"]);
+      expect(out.style).toBe("ooc");
+    });
+
+    it("sends a persona post its persona's avatar and no player flag, avatar or name", async () => {
+      const out = await caller(member, pageDb()).thread({ threadId: "t1", page: 1 });
+      expect(out.authors.personas.pa1).toMatchObject({ avatarUrl: "/p/news.png" });
+      expect(out.authors.personas.pa1).not.toHaveProperty("flagUrl");
+      expect(out.authors.users.u2).toMatchObject({ name: "boss", flagUrl: null });
+      // u1 appears as a player on p3 only, so their data is present once, for that post.
+      expect(out.authors.users.u1).toMatchObject({ flagUrl: "/f/caph.png", avatarUrl: "/p/heku.png" });
+    });
+
+    it("keeps a player whose only posts are persona posts out of the author maps", async () => {
+      const db = pageDb({ authorUserId: "u9", authorPersonaId: "pa1" });
+      db.forumPost.findMany.mockResolvedValue([post("p1", "u1", "pa1")] as never);
+      db.forumPost.groupBy.mockResolvedValue([
+        { authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 1 } },
+      ] as never);
+      const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
+      expect(out.authors.users).toEqual({});
+      expect(out.posts[0]!.role).toBe("starter");
+      expect(JSON.stringify(out.participants)).not.toContain('"u1"');
+    });
+
+    it("returns participants grouped by persona with their author data", async () => {
+      const out = await caller(member, pageDb()).thread({ threadId: "t1", page: 1 });
+      expect(out.participants).toEqual([
+        { authorUserId: null, authorPersonaId: "pa1", importedAuthorName: null, posts: 4 },
+        { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, posts: 2 },
+      ]);
+      expect(out.authors.personas.pa1).toBeDefined();
+    });
   });
 
   it("offers an admin no reply and no Edit on a hidden thread, or on their own hidden post", async () => {

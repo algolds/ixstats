@@ -25,7 +25,7 @@ function nameOf(
   const persona = latest.authorPersonaId ? authors.personas.get(latest.authorPersonaId) : undefined;
   if (persona) return { name: persona.displayName, handle: persona.username };
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
-  if (user) return user;
+  if (user) return { name: user.name, handle: user.handle };
   return latest.importedAuthorName ? { name: latest.importedAuthorName, handle: null } : null;
 }
 

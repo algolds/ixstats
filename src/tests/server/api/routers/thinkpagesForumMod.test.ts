@@ -117,6 +117,7 @@ function modDb() {
         where.id.in.map((id) => rawUser(id, `handle_${id}`))
       ),
     },
+    thinkpagesAccount: { findMany: jest.fn(async () => []) },
   };
 }
 
@@ -485,6 +486,8 @@ describe("thinkpagesForumMod router", () => {
       expect(out.authors.users.u_reporter).toEqual({
         name: "handle_u_reporter",
         handle: "handle_u_reporter",
+        avatarUrl: null,
+        flagUrl: null,
       });
       expect(JSON.stringify(out)).not.toContain("@example.com");
       expect(JSON.stringify(out)).not.toContain("clerk_u_");

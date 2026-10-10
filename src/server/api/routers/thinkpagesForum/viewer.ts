@@ -55,9 +55,10 @@ export async function authorMaps(
   db: AuthorsDb,
   rows: ReadonlyArray<{ authorUserId: string | null; authorPersonaId: string | null }>
 ) {
+  // A persona's row names the persona only: the player behind it gets no entry (name, avatar or flag).
   const { users, personas } = await authorsOf(
     db,
-    rows.map((r) => r.authorUserId),
+    rows.map((r) => (r.authorPersonaId ? null : r.authorUserId)),
     rows.map((r) => r.authorPersonaId)
   );
   return { users: Object.fromEntries(users), personas: Object.fromEntries(personas) };

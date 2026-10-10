@@ -114,6 +114,7 @@ function importedDb() {
         }),
       ]),
       count: jest.fn(async () => 2),
+      groupBy: jest.fn(async () => []),
     },
     user: {
       findMany: jest.fn(async (_args: UserQuery) => [
@@ -151,7 +152,8 @@ describe("thinkpagesForum router with imported authors", () => {
     expect(out.posts[0]).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
     expect(out.thread).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
     expect(Object.keys(out.authors.users)).toEqual(["u1"]);
-    expect(askedUserIds(db)).toEqual(["u1"]);
+    // Authors, then the page's roles: both ask for real user ids only.
+    expect([...new Set(askedUserIds(db))]).toEqual(["u1"]);
   });
 
   it("returns the thread's own fields and never its XenForo user id or provenance", async () => {

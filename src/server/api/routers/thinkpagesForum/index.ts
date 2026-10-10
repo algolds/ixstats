@@ -7,6 +7,7 @@
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";
+import { postNumberOf } from "~/lib/thinkpages-forum/numbers";
 import { THREAD_SORTS } from "~/lib/thinkpages-forum/thread-sort";
 import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
 import {
@@ -40,8 +41,11 @@ import {
   renderPostWikitext,
   replyToThread,
   resolvePostLocation,
+  roleContextOf,
+  roleOf,
   stashThread,
   TITLE_MAX,
+  threadParticipants,
   TITLE_MIN,
   trendingThreads,
   unstashThread,
@@ -202,15 +206,21 @@ export const thinkpagesForumRouter = createTRPCRouter({
     const editable =
       writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
     const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
+    const [roles, participants] = await Promise.all([
+      roleContextOf(ctx.db, result.thread, result.category, result.posts),
+      threadParticipants(ctx.db, viewer, result.category, input.threadId),
+    ]);
     return {
       ...result,
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
       // An imported post without an IxStats author (null, phase 4) is never the viewer's.
-      posts: result.posts.map(({ hidden, ...post }) => {
+      posts: result.posts.map(({ hidden, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
         return {
           ...post,
+          number: postNumberOf(input.page, index),
+          role: roleOf(post, roles),
           ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
           byViewer,
           isOwn: byViewer && editable && !hidden,
@@ -227,7 +237,9 @@ export const thinkpagesForumRouter = createTRPCRouter({
             moderable: moderator.of(result.thread.authorUserId).moderable,
           }
         : {}),
-      authors: await authorMaps(ctx.db, [result.thread, ...result.posts]),
+      style: result.category.style,
+      participants,
+      authors: await authorMaps(ctx.db, [result.thread, ...result.posts, ...participants]),
     };
   }),
 

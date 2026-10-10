@@ -163,6 +163,7 @@ export {
   type RealmReadsDb,
 } from "./realm-reads";
 export { seedRealmCategories, type SeedDb } from "./realm-seed";
+export { roleContextOf, roleOf, threadParticipants, type PostRole } from "./thread-extras";
 export {
   isThreadStashed,
   listStashedThreads,

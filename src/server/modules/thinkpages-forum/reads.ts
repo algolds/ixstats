@@ -13,6 +13,7 @@ import { ForumError } from "./errors";
 import { canModerateCategory } from "./mod-scope";
 import { canSeeRealm, loadForumRealm, type ForumRealm, type RealmDb } from "./realm-access";
 import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { personalAvatars } from "./personal-avatars";
 import { threadOrderBy, type ThreadSort } from "~/lib/thinkpages-forum/thread-sort";
 
 export { POSTS_PER_PAGE, THREADS_PER_PAGE };
@@ -260,6 +261,7 @@ export async function getThreadPosts(
       icAllowed: category.icAllowed,
       visibility: category.visibility,
       postRole: category.postRole,
+      style: category.style,
       ...placeOf(category, realm),
     },
     posts,
@@ -313,10 +315,13 @@ export async function resolvePostLocation(
 export interface ForumUserAuthor {
   name: string;
   handle: string | null;
+  avatarUrl: string | null;
+  flagUrl: string | null;
 }
 export interface ForumPersonaAuthor {
   displayName: string;
   username: string;
+  avatarUrl: string | null;
 }
 
 /**
@@ -342,27 +347,40 @@ export async function authorsOf(
             id: true,
             handle: true,
             wikiUsername: true,
-            country: { select: { name: true } },
+            clerkUserId: true,
+            country: { select: { name: true, flag: true } },
           },
         })
       : [],
     uniquePersonas.length
       ? db.thinkpagesAccount.findMany({
           where: { id: { in: uniquePersonas } },
-          select: { id: true, displayName: true, username: true },
+          select: { id: true, displayName: true, username: true, profileImageUrl: true },
         })
       : [],
   ]);
+  const avatars = await personalAvatars(
+    db,
+    users.map((u) => u.clerkUserId)
+  );
   return {
     users: new Map<string, ForumUserAuthor>(
       // Public names only: never the Discord name, which a linked account would otherwise publish.
       users.map((u) => [
         u.id,
-        { name: u.handle ?? u.wikiUsername ?? u.country?.name ?? "Member", handle: u.handle },
+        {
+          name: u.handle ?? u.wikiUsername ?? u.country?.name ?? "Member",
+          handle: u.handle,
+          avatarUrl: avatars.get(u.clerkUserId) ?? null,
+          flagUrl: u.country?.flag ?? null,
+        },
       ])
     ),
     personas: new Map<string, ForumPersonaAuthor>(
-      personas.map((p) => [p.id, { displayName: p.displayName, username: p.username }])
+      personas.map((p) => [
+        p.id,
+        { displayName: p.displayName, username: p.username, avatarUrl: p.profileImageUrl },
+      ])
     ),
   };
 }

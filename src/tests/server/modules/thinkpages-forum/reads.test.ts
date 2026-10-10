@@ -61,12 +61,15 @@ interface AuthorUserRow {
   id: string;
   handle: string | null;
   wikiUsername: string | null;
-  country: { name: string } | null;
+  clerkUserId?: string;
+  country: { name: string; flag?: string | null } | null;
 }
 interface AuthorAccountRow {
-  id: string;
-  displayName: string;
-  username: string;
+  id?: string;
+  clerkUserId?: string;
+  displayName?: string;
+  username?: string;
+  profileImageUrl?: string | null;
 }
 
 function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
@@ -98,7 +101,7 @@ function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
       findUnique: jest.fn(async (_args: ThreadSelectArgs) => opts.post ?? null),
     },
     user: { findMany: jest.fn(async (_args: UserFindArgs): Promise<AuthorUserRow[]> => []) },
-    thinkpagesAccount: { findMany: jest.fn(async (): Promise<AuthorAccountRow[]> => []) },
+    thinkpagesAccount: { findMany: jest.fn(async (_args?: object): Promise<AuthorAccountRow[]> => []) },
   };
 }
 
@@ -433,19 +436,37 @@ describe("authorsOf", () => {
       { id: "u3", handle: null, wikiUsername: null, country: { name: "Aurelia" } },
       { id: "u4", handle: null, wikiUsername: null, country: null },
     ]);
-    db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "a1", displayName: "The Voice", username: "voice" }]);
+    db.thinkpagesAccount.findMany.mockResolvedValue([{ id: "a1", displayName: "The Voice", username: "voice", profileImageUrl: null }]);
     const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4", "u1"], ["a1"]);
-    expect(out.users.get("u1")).toEqual({ name: "heku", handle: "heku" });
-    expect(out.users.get("u2")).toEqual({ name: "WikiName", handle: null });
-    expect(out.users.get("u3")).toEqual({ name: "Aurelia", handle: null });
-    expect(out.users.get("u4")).toEqual({ name: "Member", handle: null });
-    expect(out.personas.get("a1")).toEqual({ displayName: "The Voice", username: "voice" });
+    expect(out.users.get("u1")).toEqual({ name: "heku", handle: "heku", avatarUrl: null, flagUrl: null });
+    expect(out.users.get("u2")).toEqual({ name: "WikiName", handle: null, avatarUrl: null, flagUrl: null });
+    expect(out.users.get("u3")).toEqual({ name: "Aurelia", handle: null, avatarUrl: null, flagUrl: null });
+    expect(out.users.get("u4")).toEqual({ name: "Member", handle: null, avatarUrl: null, flagUrl: null });
+    expect(out.personas.get("a1")).toEqual({ displayName: "The Voice", username: "voice", avatarUrl: null });
     expect(db.user.findMany).toHaveBeenCalledTimes(1);
     expect(db.user.findMany.mock.calls[0][0].where).toEqual({ id: { in: ["u1", "u2", "u3", "u4"] } });
-    expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("clerkUserId");
+    expect(JSON.stringify([...out.users.values()])).not.toContain("clerk");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("name");
     expect(db.user.findMany.mock.calls[0][0].select).not.toHaveProperty("discordUsername");
-    expect(db.user.findMany.mock.calls[0][0].select.country).toEqual({ select: { name: true } });
+    expect(db.user.findMany.mock.calls[0][0].select.country).toEqual({ select: { name: true, flag: true } });
+  });
+
+  it("gives a member their personal persona's avatar and their country's flag, and a persona its own avatar", async () => {
+    const db = readDb();
+    db.user.findMany.mockResolvedValue([
+      { id: "u1", clerkUserId: "c1", handle: "heku", wikiUsername: null, country: { name: "Caphiria", flag: "/flags/caph.png" } },
+      { id: "u2", clerkUserId: "c2", handle: "bee", wikiUsername: null, country: null },
+    ]);
+    db.thinkpagesAccount.findMany.mockImplementation(async (args?: object) =>
+      (args as { where: { id?: unknown } }).where.id
+        ? [{ id: "a1", displayName: "The Voice", username: "voice", profileImageUrl: "/p/voice.png" }]
+        : [{ clerkUserId: "c1", profileImageUrl: "/p/heku.png" }]);
+    const out = await authorsOf(db as never, ["u1", "u2"], ["a1"]);
+    expect(out.users.get("u1")).toEqual({ name: "heku", handle: "heku", avatarUrl: "/p/heku.png", flagUrl: "/flags/caph.png" });
+    expect(out.users.get("u2")).toMatchObject({ avatarUrl: null, flagUrl: null });
+    expect(out.personas.get("a1")).toEqual({ displayName: "The Voice", username: "voice", avatarUrl: "/p/voice.png" });
+    const personal = db.thinkpagesAccount.findMany.mock.calls.find(([a]) => !(a as { where: { id?: unknown } }).where.id)![0] as unknown as { where: object };
+    expect(personal.where).toEqual({ clerkUserId: { in: ["c1", "c2"] }, accountType: "personal", isActive: true });
   });
 
   it("skips queries for empty id lists and ignores null persona ids", async () => {
