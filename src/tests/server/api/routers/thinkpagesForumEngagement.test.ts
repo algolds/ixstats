@@ -166,6 +166,12 @@ describe("unreadTargetFor", () => {
     );
   });
 
+  it("rethrows what is not a forum refusal instead of hiding it behind a redirect", async () => {
+    const db = { ...engagementDb(), user: { findUnique: jest.fn(async () => member) } };
+    db.forumThreadRead.findUnique.mockRejectedValue(new Error("database down"));
+    await expect(unreadTargetFor(db as never, "clerk_1", "t1")).rejects.toThrow("database down");
+  });
+
   it("sends a member with nothing unread to the thread's last post", async () => {
     const base = engagementDb();
     const db = {

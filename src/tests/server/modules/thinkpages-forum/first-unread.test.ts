@@ -65,6 +65,20 @@ describe("firstUnreadPost", () => {
     expect(Date.now() - gt.getTime()).toBeGreaterThan(29 * DAY);
   });
 
+  it("keeps hidden posts in for a moderator of the category, out for a member", async () => {
+    const admin = { ...member, id: "u9", clerkUserId: "clerk_9", role: { name: "admin", level: 10 } };
+    const asAdmin = db({ id: "p_next" }, { id: "p_last" });
+    await firstUnreadPost(asAdmin as never, admin, "t1");
+    for (const [args] of asAdmin.forumPost.findFirst.mock.calls) {
+      expect(args.where).not.toHaveProperty("hidden");
+    }
+    const asMember = db({ id: "p_next" }, { id: "p_last" });
+    await firstUnreadPost(asMember as never, member, "t1");
+    for (const [args] of asMember.forumPost.findFirst.mock.calls) {
+      expect(args.where).toMatchObject({ hidden: false });
+    }
+  });
+
   it("falls back to the last post when everything is read", async () => {
     const fake = db(null, { id: "p_last" });
     await expect(firstUnreadPost(fake as never, member, "t1")).resolves.toBe("p_last");

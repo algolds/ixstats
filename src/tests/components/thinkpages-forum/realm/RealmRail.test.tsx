@@ -13,6 +13,8 @@ const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000);
 
 const boards: RailBoard[] = [
   {
+    id: "rcat_hub",
+    unreadThreads: 0,
     key: "hub",
     name: "Hub",
     description: "Out-of-character talk for the realm.",
@@ -23,6 +25,8 @@ const boards: RailBoard[] = [
     latest: { threadId: "t1", threadTitle: "Harbour tax", at: ago(5) },
   },
   {
+    id: "rcat_character-threads",
+    unreadThreads: 0,
     key: "character-threads",
     name: "Character Threads",
     description: "",

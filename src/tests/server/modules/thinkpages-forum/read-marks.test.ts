@@ -132,12 +132,74 @@ describe("markCategoryRead", () => {
     await expect(markCategoryRead(db as never, member, { key: "general" })).resolves.toEqual({
       marked: 1,
     });
-    expect(db.forumThreadRead.upsert).toHaveBeenCalledTimes(1);
-    expect(db.forumThreadRead.upsert).toHaveBeenCalledWith({
-      where: { userId_threadId: { userId: "u1", threadId: "t_new" } },
-      create: { userId: "u1", threadId: "t_new", readAt: fresh.lastPostAt },
-      update: { readAt: fresh.lastPostAt },
+    expect(db.forumThreadRead.createMany).toHaveBeenCalledTimes(1);
+    expect(db.forumThreadRead.createMany).toHaveBeenCalledWith({
+      data: [{ userId: "u1", threadId: "t_new", readAt: fresh.lastPostAt }],
+      skipDuplicates: true,
     });
+    expect(db.forumThreadRead.updateMany).toHaveBeenCalledTimes(1);
+    expect(db.forumThreadRead.updateMany).toHaveBeenCalledWith({
+      where: { userId: "u1", threadId: "t_new", readAt: { lt: fresh.lastPostAt } },
+      data: { readAt: fresh.lastPostAt },
+    });
+  });
+
+  it("never lowers a read time that a concurrent mark advanced after the unread check", async () => {
+    const lastPostAt = ago(2);
+    const newer = ago(1);
+    const store = new Map<string, Date>([["t_new", newer]]);
+    const db = markDb(null);
+    db.forumThread.findMany.mockResolvedValue([{ id: "t_new", lastPostAt }] as never);
+    // The unread check saw no read mark; by the write the store holds a newer one.
+    db.forumThreadRead.createMany.mockImplementation((async (args: {
+      data: Array<{ threadId: string; readAt: Date }>;
+    }) => {
+      for (const row of args.data) if (!store.has(row.threadId)) store.set(row.threadId, row.readAt);
+      return { count: 0 };
+    }) as never);
+    db.forumThreadRead.updateMany.mockImplementation((async (args: {
+      where: { threadId: string; readAt: { lt: Date } };
+      data: { readAt: Date };
+    }) => {
+      const current = store.get(args.where.threadId);
+      if (current && current < args.where.readAt.lt) store.set(args.where.threadId, args.data.readAt);
+      return { count: 0 };
+    }) as never);
+    await markCategoryRead(db as never, member, { key: "general" });
+    expect(store.get("t_new")).toEqual(newer);
+  });
+
+  it("asks only for visible threads inside the thirty-day window, newest first", async () => {
+    const db = markDb(null);
+    await markCategoryRead(db as never, member, { key: "general" });
+    const call = db.forumThread.findMany.mock.calls[0]![0] as {
+      where: { lastPostAt: { gt: Date } };
+    };
+    expect(call).toEqual(
+      expect.objectContaining({
+        where: { categoryId: "cat_general", hidden: false, lastPostAt: { gt: expect.any(Date) } },
+      })
+    );
+    const age = Date.now() - call.where.lastPostAt.gt.getTime();
+    expect(age).toBeGreaterThan(29.9 * DAY);
+    expect(age).toBeLessThan(30.1 * DAY);
+  });
+
+  it("marks only a member's own threads in a Reports category, all of them for a moderator", async () => {
+    const reports = { ...general, id: "cat_reports", key: "reports", visibility: "reporter_staff" };
+    const own = markDb(null);
+    own.forumCategory.findFirst.mockResolvedValue(reports as never);
+    await markCategoryRead(own as never, member, { key: "reports" });
+    expect(own.forumThread.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ categoryId: "cat_reports", authorUserId: "u1" }),
+      })
+    );
+    const admin = { ...member, id: "u9", clerkUserId: "clerk_9", role: { name: "admin", level: 10 } };
+    const all = markDb(null);
+    all.forumCategory.findFirst.mockResolvedValue(reports as never);
+    await markCategoryRead(all as never, admin, { key: "reports" });
+    expect(all.forumThread.findMany.mock.calls[0]![0]).not.toHaveProperty("where.authorUserId");
   });
 
   it("walks a busy board in chunks of 500 by keyset, stopping at the first short chunk", async () => {

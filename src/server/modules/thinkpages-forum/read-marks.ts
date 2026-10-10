@@ -110,7 +110,10 @@ export async function markCategoryRead(
   return { marked };
 }
 
-/** Marks the unread ones of `threads` read up to their last post, in one transaction; how many. */
+/**
+ * Marks the unread ones of `threads` read up to their last post, in one transaction; how many. A read time only moves
+ * forward: rows are created if missing, then bumped only where older, so a concurrent advance is never lowered.
+ */
 async function markUnreadOf(
   db: ReadMarksDb,
   userId: string,
@@ -119,15 +122,19 @@ async function markUnreadOf(
 ): Promise<number> {
   const unread = await unreadIdsOf(db, userId, threads, floor);
   const rows = threads.filter((thread) => unread.has(thread.id));
-  await db.$transaction(
-    rows.map((thread) =>
-      db.forumThreadRead.upsert({
-        where: { userId_threadId: { userId, threadId: thread.id } },
-        create: { userId, threadId: thread.id, readAt: thread.lastPostAt },
-        update: { readAt: thread.lastPostAt },
+  if (rows.length === 0) return 0;
+  await db.$transaction([
+    db.forumThreadRead.createMany({
+      data: rows.map((thread) => ({ userId, threadId: thread.id, readAt: thread.lastPostAt })),
+      skipDuplicates: true,
+    }),
+    ...rows.map((thread) =>
+      db.forumThreadRead.updateMany({
+        where: { userId, threadId: thread.id, readAt: { lt: thread.lastPostAt } },
+        data: { readAt: thread.lastPostAt },
       })
-    )
-  );
+    ),
+  ]);
   return rows.length;
 }
 

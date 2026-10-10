@@ -48,6 +48,7 @@ async function unreadCountsByCategory(
         ...ownThreadsWhere(viewer, category),
       })),
     },
+    orderBy: { lastPostAt: "desc" },
     take: COUNT_ROWS_MAX,
     select: {
       categoryId: true,

@@ -93,6 +93,14 @@ describe("withUnreadCounts", () => {
     expect(db.forumThread.findMany).toHaveBeenCalledTimes(1);
   });
 
+  it("reads the newest threads first, so the cap keeps the most recent", async () => {
+    const db = countDb([]);
+    await withUnreadCounts(db as never, member, [{ id: "cat_general" }]);
+    expect(db.forumThread.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: { lastPostAt: "desc" }, take: 5000 })
+    );
+  });
+
   it("gives an anonymous visitor zeros and runs no query", async () => {
     const db = countDb([]);
     await expect(withUnreadCounts(db as never, null, [{ id: "cat_general" }])).resolves.toEqual([
