@@ -40,7 +40,7 @@ export function ModScopeFilter({ realms, value, onChange }: ModScopeFilterProps)
       value={value ?? EVERYTHING}
       onValueChange={(next) => onChange(next === EVERYTHING ? undefined : next)}
     >
-      <SelectTrigger aria-label="Scope" className="w-full sm:w-64">
+      <SelectTrigger aria-label="Scope" className="w-44 sm:w-64">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

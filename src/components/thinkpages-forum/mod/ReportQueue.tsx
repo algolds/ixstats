@@ -64,8 +64,8 @@ export function ReportQueue({ context, realm, page, basePath }: PanelProps) {
   const rows = query.data?.rows ?? [];
   return (
     <ModPanel
-      content="feed"
       label="Reports"
+      column="Report"
       toolbar={
         <SegmentedControl
           aria-label="Report status"
@@ -118,8 +118,8 @@ function ReportRow({ report, members, context, refresh }: ReportRowProps) {
         report.category ? categoryLabel(report.category) : null,
         report.targetType === "post" ? "Post" : "Thread",
         report.reporterId ? `Reported by ${memberName(members, report.reporterId)}` : null,
-        timeAgo(report.createdAt),
       ]}
+      when={timeAgo(report.createdAt)}
       actions={
         <ReportActions
           report={report}

@@ -253,6 +253,22 @@ describe("access", () => {
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/mod?realm=caphiria");
   });
 
+  it("renders inside the forum page shell: Moderation heading, scope filter in the header, panel as a data table", () => {
+    set("context", { data: REALM_MOD });
+    set("reports", { data: { rows: [report()], total: 1, authors } });
+    const { container } = renderConsole();
+    expect(screen.getByRole("heading", { level: 1, name: "Moderation" })).toBeInTheDocument();
+    const header = container.querySelector<HTMLElement>('[data-slot="page-header"]')!;
+    expect(within(header).getByRole("combobox", { name: "Scope" })).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Reports" });
+    expect(container.querySelector('[data-content="data"]')).toContainElement(table);
+    expect(within(table).getByRole("columnheader", { name: "Report" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "When" })).toBeInTheDocument();
+    const row = within(table).getAllByRole("row")[1]!;
+    expect(within(row).getAllByRole("cell")).toHaveLength(2);
+    expect(within(row).getByRole("link", { name: "Buy cheap gold" })).toBeInTheDocument();
+  });
+
   it("applies ?realm= for a category moderator, and lists the realms of their categories", () => {
     const categoryMod = { isSiteAdmin: false, realms: [], categories: REALM_MOD.categories };
     set("context", { data: categoryMod });

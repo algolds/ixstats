@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -12,6 +11,7 @@ import { FORUM_HOME, modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { SignInLink } from "../BanNotice";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
+import { ForumPage } from "../shell";
 import { AppealsPanel } from "./AppealsPanel";
 import { BansPanel } from "./BansPanel";
 import { ModeratorsPanel } from "./ModeratorsPanel";
@@ -46,21 +46,28 @@ function moderatesAnything(context: ModContext): boolean {
   return context.isSiteAdmin || context.realms.length > 0 || context.categories.length > 0;
 }
 
+/** The console's shell around a notice (signed out, or nothing to moderate). */
+function ConsoleNotice({ children }: { children: ReactNode }) {
+  return (
+    <ForumPage title="Moderation">
+      <Card>{children}</Card>
+    </ForumPage>
+  );
+}
+
 /** The moderation console at /thinkpages/mod: queue, warnings, bans, appeals, log and (site admins) moderators. */
 export function ModConsole({ tab, realm, page }: ModConsoleProps) {
   const { data: context, isLoading, error, refetch } = api.thinkpagesForumMod.context.useQuery();
   if (isLoading) return <ForumPageSkeleton blocks={2} />;
   if (error?.data?.code === "UNAUTHORIZED") {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card>
-          <EmptyState
-            title="Sign in to moderate"
-            message="The moderation console is for signed-in moderators."
-            action={<SignInLink />}
-          />
-        </Card>
-      </div>
+      <ConsoleNotice>
+        <EmptyState
+          title="Sign in to moderate"
+          message="The moderation console is for signed-in moderators."
+          action={<SignInLink />}
+        />
+      </ConsoleNotice>
     );
   }
   if (error || !context) {
@@ -75,19 +82,17 @@ export function ModConsole({ tab, realm, page }: ModConsoleProps) {
   }
   if (!moderatesAnything(context)) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Card>
-          <EmptyState
-            title="You don't moderate anything"
-            message="Realm founders, their forum officers, category moderators and site admins see the moderation console."
-            action={
-              <Button asChild variant="secondary">
-                <Link href={FORUM_HOME}>Back to the forum</Link>
-              </Button>
-            }
-          />
-        </Card>
-      </div>
+      <ConsoleNotice>
+        <EmptyState
+          title="You don't moderate anything"
+          message="Realm founders, their forum officers, category moderators and site admins see the moderation console."
+          action={
+            <Button asChild variant="secondary">
+              <Link href={FORUM_HOME}>Back to the forum</Link>
+            </Button>
+          }
+        />
+      </ConsoleNotice>
     );
   }
   return <ConsoleTabs context={context} tab={tab} realm={realm} page={page} />;
@@ -104,15 +109,19 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
   const basePath = hrefFor(active, scope);
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-      <PageHeader title="Moderation" bleed back={{ href: FORUM_HOME, label: "ThinkPages" }} />
-      {active === "moderators" ? null : (
-        <ModScopeFilter
-          realms={realms}
-          value={scope}
-          onChange={(next) => router.replace(hrefFor(active, next))}
-        />
-      )}
+    <ForumPage
+      title="Moderation"
+      back={{ href: FORUM_HOME, label: "ThinkPages" }}
+      actions={
+        active === "moderators" ? null : (
+          <ModScopeFilter
+            realms={realms}
+            value={scope}
+            onChange={(next) => router.replace(hrefFor(active, next))}
+          />
+        )
+      }
+    >
       <Tabs value={active} onValueChange={(next) => router.replace(hrefFor(next, scope))}>
         <TabsList className="max-w-full overflow-x-auto">
           {tabs.map((t) => (
@@ -127,6 +136,6 @@ function ConsoleTabs({ context, tab, realm, page }: ModConsoleProps & { context:
           </TabsContent>
         ))}
       </Tabs>
-    </div>
+    </ForumPage>
   );
 }

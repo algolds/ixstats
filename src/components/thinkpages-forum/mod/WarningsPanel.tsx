@@ -69,8 +69,8 @@ export function WarningsPanel({ context, realm, page, basePath }: PanelProps) {
   return (
     <>
       <ModPanel
-        content="data"
         label="Warnings"
+        column="Warning"
         toolbar={
           <>
             {context.isSiteAdmin ? (
@@ -145,8 +145,8 @@ function WarningRow({ warning, members, context, canRevoke, stateLine, refresh }
         placeOf(warning, context),
         `Issued by ${memberName(members, warning.issuedBy)}`,
         stateLine,
-        timeAgo(warning.createdAt),
       ]}
+      when={timeAgo(warning.createdAt)}
       actions={
         canRevoke ? (
           <Button

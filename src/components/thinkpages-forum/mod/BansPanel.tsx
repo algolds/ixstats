@@ -64,8 +64,8 @@ export function BansPanel({ context, realm, page, basePath }: PanelProps) {
   return (
     <>
       <ModPanel
-        content="data"
         label="Bans"
+        column="Ban"
         toolbar={
           <>
             <MemberLookup action="Ban a member" onFound={(member) => setBanning(member.id)} />
@@ -135,8 +135,8 @@ function BanRow({ ban, members, context, canLift, refresh }: BanRowProps) {
         placeName(context, ban.scope, ban.scopeId),
         lengthOf(ban, members),
         issuerOf(ban, members),
-        timeAgo(ban.createdAt),
       ]}
+      when={timeAgo(ban.createdAt)}
       actions={
         canLift ? (
           <Button

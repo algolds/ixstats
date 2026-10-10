@@ -43,8 +43,8 @@ export function ModeratorsPanel({ context }: PanelProps) {
   return (
     <>
       <ModPanel
-        content="data"
         label="Category moderators"
+        column="Moderator"
         toolbar={
           <>
             <Select value={categoryId} onValueChange={setCategoryId}>
@@ -77,10 +77,8 @@ export function ModeratorsPanel({ context }: PanelProps) {
           <ModRow
             key={row.userId}
             title={row.name}
-            meta={[
-              `Appointed by ${memberName(query.data?.authors, row.grantedBy)}`,
-              timeAgo(row.createdAt),
-            ]}
+            meta={[`Appointed by ${memberName(query.data?.authors, row.grantedBy)}`]}
+            when={timeAgo(row.createdAt)}
             actions={
               <Button
                 size="sm"

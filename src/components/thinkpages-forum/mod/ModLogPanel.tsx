@@ -70,8 +70,8 @@ export function ModLogPanel({ context, realm, page, basePath }: PanelProps) {
   const rows = query.data?.rows ?? [];
   return (
     <ModPanel
-      content="feed"
       label="Moderation log"
+      column="Action"
       query={query}
       rowCount={rows.length}
       emptyTitle="Nothing logged yet"
@@ -107,8 +107,8 @@ function LogRow({
         memberName(members, entry.actorId),
         entry.targetType === "user" ? `Member: ${memberName(members, entry.targetId)}` : null,
         place,
-        timeAgo(entry.createdAt),
       ]}
+      when={timeAgo(entry.createdAt)}
       actions={
         link ? (
           <Link href={link.href} className="text-footnote text-tint-ink hover:underline">

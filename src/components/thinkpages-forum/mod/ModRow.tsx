@@ -8,6 +8,7 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { pageCount } from "~/lib/thinkpages-forum/paging";
+import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { categoryLabel } from "../BanDialog";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
@@ -79,32 +80,51 @@ export function useFilterChange(basePath: string, page: number): (apply: () => v
   };
 }
 
+/** The item column, then a "When" column from md up; below md the time sits at the row's end. */
+const COLUMNS = "grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_6rem]";
+
 interface ModRowProps {
   title: ReactNode;
   /** Short facts under the title, each its own span. */
   meta?: ReadonlyArray<ReactNode>;
+  /** When it happened, as a relative time; its own cell. */
+  when: string;
   children?: ReactNode;
   actions?: ReactNode;
 }
 
-/** One row of a console list: a title line, facts, the body, then the row's actions. */
-export function ModRow({ title, meta = [], children, actions }: ModRowProps) {
+/** One row of a console table: the item cell (title, facts, body, actions) and the time cell. */
+export function ModRow({ title, meta = [], when, children, actions }: ModRowProps) {
   const facts = meta.filter((fact) => fact !== null && fact !== false && fact !== "");
   return (
-    <li className="space-y-1.5 px-4 py-3">
-      <div className="text-headline text-label flex flex-wrap items-center gap-2 break-words">
-        {title}
+    <div
+      role="row"
+      className={cn(
+        "hover:bg-fill-4 grid items-start gap-x-3 px-5 py-3 pointer-coarse:min-h-11",
+        COLUMNS
+      )}
+    >
+      <div role="cell" className="min-w-0 space-y-1.5">
+        <div className="text-headline text-label flex flex-wrap items-center gap-2 break-words">
+          {title}
+        </div>
+        {facts.length > 0 ? (
+          <p className="text-footnote text-label-secondary flex flex-wrap gap-x-3 gap-y-0.5 tabular-nums">
+            {facts.map((fact, i) => (
+              <span key={i}>{fact}</span>
+            ))}
+          </p>
+        ) : null}
+        {children}
+        {actions ? <div className="flex flex-wrap gap-2 pt-1">{actions}</div> : null}
       </div>
-      {facts.length > 0 ? (
-        <p className="text-footnote text-label-secondary flex flex-wrap gap-x-3 gap-y-0.5 tabular-nums">
-          {facts.map((fact, i) => (
-            <span key={i}>{fact}</span>
-          ))}
-        </p>
-      ) : null}
-      {children}
-      {actions ? <div className="flex flex-wrap gap-2 pt-1">{actions}</div> : null}
-    </li>
+      <div
+        role="cell"
+        className="text-footnote text-label-secondary text-right tabular-nums md:pt-0.5"
+      >
+        {when}
+      </div>
+    </div>
   );
 }
 
@@ -115,9 +135,10 @@ interface ListQuery {
 }
 
 interface ModPanelProps {
-  content: "feed" | "data";
-  /** The list's accessible name. */
+  /** The table's accessible name. */
   label: string;
+  /** The item column's header: "Report", "Ban", ... */
+  column: string;
   toolbar?: ReactNode;
   query: ListQuery;
   rowCount: number;
@@ -127,10 +148,10 @@ interface ModPanelProps {
   children: ReactNode;
 }
 
-/** A console panel: its filters, then a card of rows (or loading, failure, empty), then page links. */
+/** A console panel: its filters, then a data pane table of rows (or loading, failure, empty), then page links. */
 export function ModPanel({
-  content,
   label,
+  column,
   toolbar,
   query,
   rowCount,
@@ -166,19 +187,37 @@ export function ModPanel({
     }
     if (rowCount === 0) return <EmptyState compact title={emptyTitle} />;
     return (
-      <ul aria-label={label} className="divide-separator divide-y">
-        {children}
-      </ul>
+      <div role="table" aria-label={label}>
+        <div
+          role="row"
+          className={cn(
+            "text-footnote text-label-secondary border-separator hidden items-center gap-x-3 border-b px-5 py-2 md:grid",
+            COLUMNS
+          )}
+        >
+          <span role="columnheader">{column}</span>
+          <span role="columnheader" className="text-right">
+            When
+          </span>
+        </div>
+        <div role="rowgroup" className="divide-separator divide-y">
+          {children}
+        </div>
+      </div>
     );
   })();
   return (
     <div className="space-y-3">
       {toolbar ? <div className="flex flex-wrap items-center gap-3">{toolbar}</div> : null}
-      <Card content={content} className="overflow-hidden">
+      <Card content="data" className="overflow-hidden py-1">
         {body}
       </Card>
       {paging && paging.total !== undefined ? (
-        <Pagination page={paging.page} last={totalPages} hrefFor={(n) => pageHref(paging.basePath, n)} />
+        <Pagination
+          page={paging.page}
+          last={totalPages}
+          hrefFor={(n) => pageHref(paging.basePath, n)}
+        />
       ) : null}
     </div>
   );

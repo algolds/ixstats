@@ -63,8 +63,8 @@ export function AppealsPanel({ context, realm, page, basePath }: PanelProps) {
   const rows = query.data?.rows ?? [];
   return (
     <ModPanel
-      content="data"
       label="Appeals"
+      column="Appeal"
       toolbar={
         <SegmentedControl
           aria-label="Appeal status"
@@ -113,8 +113,8 @@ function AppealRow({ appeal, members, context, refresh }: AppealRowProps) {
       meta={[
         subjectLine(appeal, context),
         appeal.subject ? `Issued by ${memberName(members, appeal.subject.issuedBy)}` : null,
-        timeAgo(appeal.createdAt),
       ]}
+      when={timeAgo(appeal.createdAt)}
       actions={
         <AppealActions
           appeal={appeal}
