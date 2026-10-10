@@ -244,6 +244,20 @@ describe("thinkpagesForum router", () => {
     });
   });
 
+  it("maps the render limit to TOO_MANY_REQUESTS", async () => {
+    const { ForumError } = jest.requireActual("~/server/modules/thinkpages-forum");
+    jest
+      .mocked(createThread)
+      .mockRejectedValueOnce(new ForumError("TOO_MANY_REQUESTS", "Slow down."));
+    await expect(
+      caller(member, forumDb()).createThread({
+        categoryKey: "general",
+        title: "Hello there",
+        html: "<p>x</p>",
+      })
+    ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+  });
+
   it("maps an unseen category to NOT_FOUND", async () => {
     await expect(
       caller(member, forumDb()).category({ key: "staff", page: 1 })

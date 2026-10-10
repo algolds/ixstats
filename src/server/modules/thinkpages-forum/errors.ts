@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
-export type ForumErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
+export type ForumErrorCode =
+  "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
 
 /** A refusal the router maps 1:1 to a TRPCError. */
 export class ForumError extends Error {
