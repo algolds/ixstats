@@ -34,6 +34,9 @@ const encodeEntities = (value: string): string =>
   value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const CSS_NEWLINE = /[\n\r\f]/;
+const CSS_WHITESPACE = /[ \t\n\r\f]/;
+/** A space separator, format or control character CSS does not count as whitespace (U+2003, U+3000, U+FEFF, U+000B...). */
+const NON_CSS_SPACE = /(?![ \t\n\r\f])[\p{Z}\p{Cf}\p{Cc}]/u;
 
 /**
  * For the `(` at `open`: when it opens an unquoted `url(`, the index just after its closing `)`; `open` itself when it
@@ -44,7 +47,7 @@ const CSS_NEWLINE = /[\n\r\f]/;
 function unquotedUrlEnd(css: string, open: number): number | null {
   if (css.slice(Math.max(0, open - 3), open).toLowerCase() !== "url") return open;
   let at = open + 1;
-  while (/\s/.test(css.charAt(at))) at++;
+  while (CSS_WHITESPACE.test(css.charAt(at))) at++;
   if (css.charAt(at) === '"' || css.charAt(at) === "'") return open;
   for (; at < css.length; at++) {
     const ch = css.charAt(at);
@@ -113,10 +116,13 @@ function keepDeclaration(declaration: string): boolean {
 /**
  * A style attribute's text (entities already decoded) without its overlay declarations. Kept declarations are
  * returned as written (trimmed, joined by `;`); a style with nothing to remove is returned unchanged. A style whose
- * declaration boundaries cannot be told reliably (see splitDeclarations) is dropped whole: "".
+ * declaration boundaries cannot be told reliably (see splitDeclarations), or that holds a space, format or control
+ * character CSS does not treat as whitespace, is dropped whole: "".
  */
 export function stripStyleDeclarations(css: string): string {
-  const split = splitDeclarations(css);
+  // JavaScript and a browser disagree about what is whitespace (`url(<U+2003>"y)` is a bad url to a browser): such a
+  // style is not guessed at either.
+  const split = NON_CSS_SPACE.test(css) ? null : splitDeclarations(css);
   if (split === null) return "";
   const declarations = split.filter((d) => d.trim() !== "");
   const kept = declarations.filter(keepDeclaration);

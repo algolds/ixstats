@@ -199,6 +199,40 @@ describe("stripPositioning", () => {
     );
   });
 
+  describe("characters CSS does not count as whitespace", () => {
+    const SPACES: ReadonlyArray<readonly [string, string]> = [
+      ["U+2003 em space", "\u2003"],
+      ["U+2028 line separator", "\u2028"],
+      ["U+FEFF zero width no-break space", "\uFEFF"],
+      ["U+3000 ideographic space", "\u3000"],
+      ["U+00A0 no-break space", "\u00A0"],
+      ["U+1680 ogham space mark", "\u1680"],
+      ["U+202F narrow no-break space", "\u202F"],
+      ["U+000B vertical tab", "\u000B"],
+      ["U+200B zero width space", "\u200B"],
+    ];
+
+    it.each(SPACES)(
+      "removes a style whose bad url hides declarations behind %s",
+      (_name, space) => {
+        const style = `a:url(${space}&quot;y);position:absolute;inset:0;z-index:9999;b:&quot;)`;
+        expect(stripPositioning(`<div class="keep" style="${style}">x</div>`)).toBe(
+          '<div class="keep">x</div>'
+        );
+      }
+    );
+
+    it.each(SPACES)("removes any style that holds %s", (_name, space) => {
+      expect(stripPositioning(`<p style="color:red;${space}width:1px">x</p>`)).toBe("<p>x</p>");
+    });
+
+    it("keeps the whitespace CSS does count and non-ASCII letters", () => {
+      const html =
+        '<p style="font-family:Noto Sans JP, \u30e1\u30a4\u30ea\u30aa;\tcolor:red;\nwidth:1px;\r\nmargin:0">x</p>';
+      expect(stripPositioning(html)).toBe(html);
+    });
+  });
+
   it("keeps a MediaWiki infobox style, with entities and url()", () => {
     const html =
       '<table class="infobox" style="width:22em;background:#f8f9fa url(&quot;/img/bg.png&quot;);font-family:&quot;Linux Libertine&quot;, serif;border:1px solid #a2a9b1"><tr><td style="padding:0.2em 0.4em;line-height:1.2em">x</td></tr></table>';

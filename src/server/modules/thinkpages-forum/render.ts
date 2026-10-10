@@ -16,7 +16,7 @@ import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { guardWikitext, WikitextRefusal } from "~/lib/thinkpages-forum/wikitext-guards";
 import { ForumError } from "./errors";
 
-export const FORUM_RENDERER_VERSION = `forum-4:${RENDERER_VERSION}`;
+export const FORUM_RENDERER_VERSION = `forum-5:${RENDERER_VERSION}`;
 const PER_USER_PER_MINUTE = 10;
 
 export interface RenderedPost {
