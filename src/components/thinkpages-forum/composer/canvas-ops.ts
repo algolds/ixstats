@@ -38,7 +38,12 @@ export function insertAtCaret(editor: TSlateEditor, text: string): void {
  * around it.
  */
 function quoteBlock(quote: QuoteRequest): TElement {
-  return forumQuoteBlock(quoteWikitext(quote).trimEnd(), quote.author, quote.text);
+  const { type, construct, rawWikitext, label, caption, children } = forumQuoteBlock(
+    quoteWikitext(quote).trimEnd(),
+    quote.author,
+    quote.text
+  );
+  return { type, construct, rawWikitext, label, caption, children };
 }
 
 /** Adds the quote at the end of the document (replacing an empty one) and puts the caret in a fresh paragraph after it. */
