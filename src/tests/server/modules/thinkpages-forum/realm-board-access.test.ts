@@ -15,9 +15,14 @@ import {
   visitor,
 } from "~/tests/helpers/forum-board-fake";
 
-async function accessFor(who: object | null, slug = "eurth", store = boardStore()) {
+async function accessFor(
+  who: object | null,
+  slug = "eurth",
+  store = boardStore(),
+  category?: { id: string }
+) {
   const realm = (await loadForumRealm(store.db as never, { slug })) as ForumRealm;
-  return boardAccessFor(store.db as never, who as never, realm);
+  return boardAccessFor(store.db as never, who as never, realm, undefined, category);
 }
 
 const base = {
@@ -91,6 +96,20 @@ describe("boardAccessFor", () => {
       canPost: false,
       reason: "banned",
     });
+  });
+
+  it("refuses a member banned from the board category, not one banned from another category", async () => {
+    const store = boardStore();
+    store.state.bans.push(
+      ban({ userId: "u_banned", scope: "category", scopeId: "cat_r_eurth_board" }),
+      ban({ id: "b2", userId: "u_member", scope: "category", scopeId: "cat_r_eurth_hub" })
+    );
+    const boardCategory = { id: "cat_r_eurth_board" };
+    expect(await accessFor(banned, "eurth", store, boardCategory)).toMatchObject({
+      canPost: false,
+      reason: "banned",
+    });
+    expect(await accessFor(member, "eurth", store, boardCategory)).toMatchObject({ canPost: true });
   });
 
   it("refuses a site-banned visitor too", async () => {

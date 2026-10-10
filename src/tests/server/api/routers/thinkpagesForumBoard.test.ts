@@ -1,7 +1,6 @@
 /** @jest-environment node */
 jest.mock("~/server/db", () => ({ db: {} }));
 
-import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { createCallerFactory, t } from "~/server/api/trpc/init";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -28,14 +27,10 @@ const withBoard = () =>
   boardStore(seed({ posts: [boardPost("p1", 1), boardPost("p2", 2, { createdAt: new Date() })] }));
 
 describe("thinkpagesForum board procedures", () => {
-  let check: jest.SpyInstance;
   beforeEach(() => {
     // The audit middleware logs every mutation and the auth middleware warns on anonymous calls.
     for (const level of ["log", "info", "warn"] as const)
       jest.spyOn(console, level).mockImplementation(() => undefined);
-    check = jest
-      .spyOn(rateLimiter, "check")
-      .mockResolvedValue({ success: true, remaining: 0, resetAt: new Date() });
   });
   afterEach(() => jest.restoreAllMocks());
 
@@ -107,16 +102,13 @@ describe("thinkpagesForum board procedures", () => {
   });
 
   it("returns the slow-mode wait to the client as structured error data", async () => {
-    const store = withBoard();
+    const store = boardStore(
+      seed({ posts: [boardPost("mine", 1, { createdAt: new Date(Date.now() - 7_500) })] })
+    );
     Object.assign(
       store.state.realms.find((r) => r.id === "r_eurth")!,
       { boardSlowModeSeconds: 30 }
     );
-    check.mockResolvedValue({
-      success: false,
-      remaining: 0,
-      resetAt: new Date(Date.now() + 22_400),
-    });
     const error = await caller(officer, store.db)
       .postBoardMessage({ realm: "eurth", html: "<p>hi</p>" })
       .catch((e: unknown) => e);
@@ -129,6 +121,7 @@ describe("thinkpagesForum board procedures", () => {
       code: "TOO_MANY_REQUESTS",
       message: "You can post again in 23s",
     });
+    expect(store.state.posts).toHaveLength(2);
     const shaped = t._config.errorFormatter({
       shape: { message: "x", code: -32029, data: { code: "TOO_MANY_REQUESTS", httpStatus: 429 } },
       error: refused as never,

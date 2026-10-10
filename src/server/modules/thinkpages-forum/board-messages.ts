@@ -7,7 +7,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { BOARD_EDIT_WINDOW_MS, boardExcerpt } from "~/lib/thinkpages-forum/board";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
-import type { ForumViewer } from "./access";
+import { canSeeThread, type ForumViewer } from "./access";
 import { canSeeRealm, loadForumRealm, type ForumRealm } from "./realm-access";
 import { authorsOf, type AuthorsDb } from "./reads";
 import { roleContextOf, roleOf, type PostRole } from "./thread-extras";
@@ -44,8 +44,12 @@ export interface BoardMessage {
   /** The viewer wrote it and it is within the edit window (the server asks again on edit). */
   canEdit: boolean;
   replyTo: { postId: string; authorName: string; excerpt: string } | null;
-  continued: { threadId: string; title: string; replies: number } | null;
+  /** Where a continued message went. A viewer who cannot see that thread gets no link, title or count. */
+  continued: { threadId: string | null; title: string; replies: number | null } | null;
 }
+
+/** What a viewer who cannot see a continued thread is told. */
+const CONTINUED_NOTE = "Continued in a thread";
 
 export const BOARD_POST_SELECT = {
   id: true,
@@ -144,12 +148,13 @@ async function visitorRealms(
 interface Lookups {
   maps: AuthorMaps;
   replies: Map<string, { authorName: string; excerpt: string }>;
-  continued: Map<string, { threadId: string; title: string; replies: number }>;
+  continued: Map<string, BoardMessage["continued"]>;
 }
 
 /** The messages the rows answer and the threads they were continued in, as the viewer may see them. */
 async function lookups(
   db: BoardMessageDb,
+  viewer: ForumViewer,
   place: BoardPlace,
   rows: readonly BoardRow[]
 ): Promise<Lookups> {
@@ -174,7 +179,14 @@ async function lookups(
     threadIds.length
       ? db.forumThread.findMany({
           where: { id: { in: threadIds } },
-          select: { id: true, title: true, postCount: true, hidden: true },
+          select: {
+            id: true,
+            title: true,
+            postCount: true,
+            hidden: true,
+            authorUserId: true,
+            category: { select: { id: true, visibility: true, scope: true, realmId: true } },
+          },
         })
       : [],
   ]);
@@ -196,12 +208,15 @@ async function lookups(
       )
   );
   const continued = new Map(
-    threads
-      .filter((t) => !t.hidden || place.canModerate)
-      .map(
-        (t) =>
-          [t.id, { threadId: t.id, title: t.title, replies: Math.max(0, t.postCount - 1) }] as const
-      )
+    threads.map(
+      (t) =>
+        [
+          t.id,
+          canSeeThread(viewer, t, t.category)
+            ? { threadId: t.id, title: t.title, replies: Math.max(0, t.postCount - 1) }
+            : { threadId: null, title: CONTINUED_NOTE, replies: null },
+        ] as const
+    )
   );
   return { maps, replies, continued };
 }
@@ -250,7 +265,7 @@ export async function shapeBoardMessages(
 ): Promise<BoardMessage[]> {
   if (rows.length === 0) return [];
   const [look, roles] = await Promise.all([
-    lookups(db, place, rows),
+    lookups(db, viewer, place, rows),
     roleContextOf(db, { authorUserId: null, authorPersonaId: null }, place.category, rows),
   ]);
   const staffed = new Set([...roles.staffUserIds, ...roles.officerUserIds]);

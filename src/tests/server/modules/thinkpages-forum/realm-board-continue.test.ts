@@ -80,6 +80,13 @@ describe("continueInThread", () => {
     });
   });
 
+  it("dates the new thread by the moved message and takes the board thread's lock", async () => {
+    const s = store();
+    const out = await cont(s, member, "p1");
+    expect(threadIn(s, out.threadId).lastPostAt).toEqual(at(1));
+    expect(s.tx.$executeRaw).toHaveBeenCalled();
+  });
+
   it("points replies to the moved message at its placeholder and open reports at the Hub", async () => {
     const s = store();
     const out = await cont(s, member, "p1");

@@ -121,7 +121,7 @@ export async function getBoard(
       select: BOARD_POST_SELECT,
     }),
     memberCountOf(db, place.realm.id),
-    boardAccessFor(db, viewer, place.realm, settings),
+    boardAccessFor(db, viewer, place.realm, settings, place.category),
   ]);
   const { id, slug, name } = place.realm;
   return {

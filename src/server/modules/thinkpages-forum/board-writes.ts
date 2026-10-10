@@ -7,7 +7,6 @@
  * Every write returns the stored message shaped as `getBoard` returns it, for the live publish.
  */
 import type { PrismaClient } from "@prisma/client";
-import { rateLimiter } from "~/lib/cache/rate-limiter";
 import {
   BOARD_EDIT_WINDOW_MS,
   BOARD_TOO_LONG,
@@ -31,6 +30,7 @@ import { visibleRealmOf } from "./reads";
 import { canSeeRealm, loadForumRealm } from "./realm-access";
 import {
   inLockedChain,
+  MAX_POST_HTML,
   prepareBody,
   resolvePersona,
   syncLinks,
@@ -43,6 +43,8 @@ export type BoardWritesDb = BoardReadsDb & WritesDb;
 
 /** The sanitized body of a board message, within the cap. */
 function boardBody(html: string) {
+  // A paste over the post limit is also "too long for the board", with the same way out.
+  if (html.length > MAX_POST_HTML) throw new ForumError("BAD_REQUEST", BOARD_TOO_LONG);
   const body = prepareBody(html);
   if (!isWithinBoardCap(body.plainText)) throw new ForumError("BAD_REQUEST", BOARD_TOO_LONG);
   return body;
@@ -75,22 +77,28 @@ async function assertReplyTarget(
 }
 
 /**
- * Slow mode (spec section 2): members post at most once per `slowModeSeconds`, per realm, through the rate limiter's
- * `rmb:<realmId>` bucket; moderators are exempt. Called last, so only a message that will be stored spends the slot.
+ * Slow mode (spec section 2): members post at most once per `slowModeSeconds` on a realm's board; moderators are
+ * exempt. The wait comes from the actor's latest message in the board thread (a persona's counts, a continued-in-a-thread
+ * placeholder does not), so it is exact, refused attempts never extend it, and it holds without the rate limiter.
  */
 async function enforceSlowMode(
+  db: Pick<PrismaClient, "forumPost">,
   actor: ForumActor,
-  realmId: string,
+  threadId: string,
   settings: BoardSettings,
   access: BoardAccess
 ): Promise<void> {
   if (access.isModerator || settings.slowModeSeconds <= 0) return;
-  const result = await rateLimiter.check(actor.id, `rmb:${realmId}`, {
-    maxRequests: 1,
-    windowMs: settings.slowModeSeconds * 1000,
+  const [latest] = await db.forumPost.findMany({
+    where: { threadId, authorUserId: actor.id, continuedThreadId: null },
+    orderBy: { createdAt: "desc" },
+    take: 1,
+    select: { createdAt: true },
   });
-  if (result.success) return;
-  const wait = Math.max(1, Math.ceil((result.resetAt.getTime() - Date.now()) / 1000));
+  if (!latest) return;
+  const remainingMs = settings.slowModeSeconds * 1000 - (Date.now() - latest.createdAt.getTime());
+  if (remainingMs <= 0) return;
+  const wait = Math.ceil(remainingMs / 1000);
   throw new ForumError("TOO_MANY_REQUESTS", slowModeNotice(wait), wait);
 }
 
@@ -114,13 +122,13 @@ export async function postBoardMessage(
 ): Promise<BoardMessage> {
   const place = await loadBoard(db, actor, { slug: input.realm });
   const settings = await boardSettingsOf(db, place.realm.id);
-  const access = await boardAccessFor(db, actor, place.realm, settings);
+  const access = await boardAccessFor(db, actor, place.realm, settings, place.category);
   assertCanPostOnBoard(access);
   const authorPersonaId = await resolvePersona(db, actor, place.category, input.personaId);
   const body = boardBody(input.html);
   if (input.replyToPostId) await assertReplyTarget(db, place.threadId, input.replyToPostId);
   await validateLinks(db, actor, body.plainText);
-  await enforceSlowMode(actor, place.realm.id, settings, access);
+  await enforceSlowMode(db, actor, place.threadId, settings, access);
   const now = new Date();
   const postId = await db.$transaction(async (tx) => {
     const post = await tx.forumPost.create({
@@ -186,7 +194,7 @@ export async function editBoardMessage(
     throw new ForumError("FORBIDDEN", "Board messages can be edited for 15 minutes after posting.");
   }
   const place = await loadBoard(db, actor, { id: realm.id });
-  assertCanPostOnBoard(await boardAccessFor(db, actor, realm));
+  assertCanPostOnBoard(await boardAccessFor(db, actor, realm, undefined, place.category));
   if (await inLockedChain(db, post.id)) {
     throw new ForumError("CONFLICT", "This message is part of a submitted story chain");
   }

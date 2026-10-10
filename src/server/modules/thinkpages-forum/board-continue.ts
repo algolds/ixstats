@@ -13,6 +13,7 @@ import { loadBoard } from "./board";
 import { ForumError } from "./errors";
 import { contentModerator, type ContentDb } from "./mod-content-target";
 import { logModAction } from "./mod-log";
+import { lockThread } from "./thread-counts";
 import { loadCategory, visibleRealmOf } from "./reads";
 import { postingAccessFor } from "./realm-access";
 import { inLockedChain, prepareTitle, type ForumActor } from "./writes";
@@ -100,15 +101,16 @@ export async function continueInThread(
     authorPersonaId: post.authorPersonaId,
     importedAuthorName: post.importedAuthorName,
   };
-  const now = new Date();
   const moved = await db.$transaction(async (tx) => {
+    // As a moderator's hide does, so a concurrent hide's recount cannot interleave with the move.
+    await lockThread(tx, post.threadId);
     const thread = await tx.forumThread.create({
       data: {
         categoryId: destination.category.id,
         title,
         ...author,
         postCount: 1,
-        lastPostAt: now,
+        lastPostAt: post.createdAt,
       },
     });
     const { count } = await tx.forumPost.updateMany({

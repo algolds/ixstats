@@ -94,13 +94,14 @@ async function visitorRealmOf(db: BoardAccessDb, viewer: NonNullable<ForumViewer
 
 /**
  * The viewer's access to `realm`'s board. `settings` is the realm's board settings when the caller already loaded
- * them. The caller has resolved the realm; a realm hidden from the viewer reads as no access at all.
+ * them, and `category` the board's category so a ban on that category binds. The caller has resolved the realm; a realm hidden from the viewer reads as no access at all.
  */
 export async function boardAccessFor(
   db: BoardAccessDb,
   viewer: ForumViewer,
   realm: ForumRealm,
-  settings?: Pick<BoardSettings, "visitorsAllowed">
+  settings?: Pick<BoardSettings, "visitorsAllowed">,
+  category?: { id: string }
 ): Promise<BoardAccess> {
   if (!canSeeRealm(viewer, realm)) return NO_ACCESS;
   const readable = { ...NO_ACCESS, canRead: true };
@@ -111,7 +112,7 @@ export async function boardAccessFor(
       notice: `Sign in to post on the ${realm.name} board.`,
     };
   }
-  const access = await realmPostingAccess(db, viewer, realm);
+  const access = await realmPostingAccess(db, viewer, realm, category);
   const isMember = access.ownedCountryIds.length > 0 || access.isModerator;
   const known = { ...readable, isMember, isModerator: access.isModerator };
   if (access.canPost) return { ...known, canPost: true };

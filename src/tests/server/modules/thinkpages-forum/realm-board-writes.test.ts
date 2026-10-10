@@ -1,8 +1,6 @@
 /** @jest-environment node */
-jest.mock("~/lib/cache/rate-limiter", () => ({ rateLimiter: { check: jest.fn() } }));
-
-import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { BOARD_TOO_LONG } from "~/lib/thinkpages-forum/board";
+import { MAX_POST_HTML } from "~/server/modules/thinkpages-forum";
 import {
   editBoardMessage,
   postBoardMessage,
@@ -26,12 +24,6 @@ import {
   threadIn,
   visitor,
 } from "~/tests/helpers/forum-board-fake";
-
-const check = jest.mocked(rateLimiter.check);
-beforeEach(() => {
-  check.mockReset();
-  check.mockResolvedValue({ success: true, remaining: 0, resetAt: new Date() });
-});
 
 const post = (store: ReturnType<typeof boardStore>, who: object, input: object) =>
   postBoardMessage(store.db as never, who as never, {
@@ -122,64 +114,81 @@ describe("postBoardMessage", () => {
   });
 
   describe("slow mode", () => {
-    const slow = (seconds: number) => {
-      const store = boardStore();
+    const slow = (seconds: number, posts: object[] = []) => {
+      const store = boardStore(seed({ posts: posts as never }));
       Object.assign(
         store.state.realms.find((r) => r.id === "r_eurth")!,
-        { boardSlowModeSeconds: seconds }
+        {
+          boardSlowModeSeconds: seconds,
+        }
       );
       return store;
     };
+    const ago = (ms: number) => new Date(Date.now() - ms);
 
-    it("checks the user's rmb bucket once per window when slow mode is on", async () => {
+    it("lets the first message through and refuses the next one at once", async () => {
       const store = slow(30);
       await post(store, member, {});
-      expect(check).toHaveBeenCalledWith("u_member", "rmb:r_eurth", {
-        maxRequests: 1,
-        windowMs: 30_000,
-      });
+      const error = await post(store, member, {}).catch((e: unknown) => e);
+      expect(error).toMatchObject({ code: "TOO_MANY_REQUESTS", retryAfterSeconds: 30 });
+      expect(posts(store)).toBe(1);
     });
 
-    it("refuses a second post with the remaining seconds, writing nothing", async () => {
-      const store = slow(30);
-      check.mockResolvedValue({
-        success: false,
-        remaining: 0,
-        resetAt: new Date(Date.now() + 22_400),
-      });
+    it("refuses with the exact remaining seconds, writing nothing", async () => {
+      const store = slow(30, [boardPost("mine", 1, { createdAt: ago(7_500) })]);
       const error = await post(store, member, {}).catch((e: unknown) => e);
       expect(error).toMatchObject({
         code: "TOO_MANY_REQUESTS",
         message: "You can post again in 23s",
         retryAfterSeconds: 23,
       });
-      expect(posts(store)).toBe(0);
+      expect(posts(store)).toBe(1);
     });
 
-    it("never says zero seconds", async () => {
-      const store = slow(10);
-      check.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date(Date.now() - 5) });
-      await expect(post(store, member, {})).rejects.toMatchObject({ retryAfterSeconds: 1 });
+    it("does not extend the wait when the user keeps trying", async () => {
+      const store = slow(30, [boardPost("mine", 1, { createdAt: ago(20_500) })]);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await expect(post(store, member, {})).rejects.toMatchObject({ retryAfterSeconds: 10 });
+      }
+      expect(posts(store)).toBe(1);
+    });
+
+    it("lets the user post once the interval has passed", async () => {
+      const store = slow(30, [boardPost("mine", 1, { createdAt: ago(30_100) })]);
+      await expect(post(store, member, {})).resolves.toBeDefined();
+    });
+
+    it("counts a persona message of the same player, and ignores other players and placeholders", async () => {
+      const recent = ago(1_000);
+      const persona = slow(30, [
+        boardPost("pm", 1, { createdAt: recent, authorPersonaId: "pa_news" }),
+      ]);
+      await expect(post(persona, member, {})).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+      const others = slow(30, [
+        boardPost("theirs", 1, { createdAt: recent, authorUserId: "u_member2" }),
+        boardPost("placeholder", 2, { createdAt: recent, continuedThreadId: "t_x" }),
+      ]);
+      await expect(post(others, member, {})).resolves.toBeDefined();
     });
 
     it("applies to visitors and exempts moderators", async () => {
-      const store = slow(60);
-      await post(store, visitor, {});
-      expect(check).toHaveBeenCalledTimes(1);
-      for (const who of [founder, officer, admin]) await post(store, who, {});
-      expect(check).toHaveBeenCalledTimes(1);
+      const recent = ago(1_000);
+      const store = slow(60, [
+        boardPost("v", 1, { createdAt: recent, authorUserId: "u_visitor" }),
+        ...["u_founder", "u_officer", "u_admin"].map((id) =>
+          boardPost(`m_${id}`, 2, { createdAt: recent, authorUserId: id })
+        ),
+      ]);
+      await expect(post(store, visitor, {})).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+      for (const who of [founder, officer, admin]) {
+        await expect(post(store, who, {})).resolves.toBeDefined();
+      }
     });
 
-    it("is not consulted when slow mode is off", async () => {
-      await post(boardStore(), member, {});
-      expect(check).not.toHaveBeenCalled();
-    });
-
-    it("is spent only by a message that passes every other check", async () => {
-      const store = slow(30);
-      await expect(post(store, member, { html: "<p></p>" })).rejects.toBeDefined();
-      await expect(post(store, member, { replyToPostId: "missing" })).rejects.toBeDefined();
-      expect(check).not.toHaveBeenCalled();
+    it("never refuses when slow mode is off", async () => {
+      const store = slow(0, [boardPost("mine", 1, { createdAt: new Date() })]);
+      await expect(post(store, member, {})).resolves.toBeDefined();
+      await expect(post(store, member, {})).resolves.toBeDefined();
     });
   });
 
@@ -202,6 +211,14 @@ describe("postBoardMessage", () => {
       expect(BOARD_TOO_LONG).toBe(
         "Board messages are at most 1,000 characters. Continue in a thread for longer posts."
       );
+      expect(posts(store)).toBe(0);
+    });
+
+    it("gives a paste over the post limit the board's message too", async () => {
+      const store = boardStore();
+      await expect(
+        post(store, member, { html: `<p>${"a".repeat(MAX_POST_HTML)}</p>` })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: BOARD_TOO_LONG });
       expect(posts(store)).toBe(0);
     });
 
@@ -246,6 +263,20 @@ describe("postBoardMessage", () => {
         byViewer: true,
         author: { name: "Eurth Daily", persona: true },
       });
+    });
+
+    it("keeps a visitor's persona message free of the visitor label and the player", async () => {
+      const store = boardStore();
+      const message = await post(store, visitor, { personaId: "pa_visitor" });
+      expect(message).toMatchObject({
+        authorUserId: null,
+        authorPersonaId: "pa_visitor",
+        isVisitor: false,
+        visitorRealm: null,
+        role: null,
+        author: { name: "Aurora Wire", persona: true, flagUrl: null },
+      });
+      expect(JSON.stringify(message)).not.toMatch(/u_visitor/);
     });
 
     it("refuses someone else's persona", async () => {

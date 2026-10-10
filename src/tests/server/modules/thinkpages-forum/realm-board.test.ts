@@ -220,11 +220,44 @@ describe("getBoard", () => {
     const out = await board(member, {}, "eurth", store);
     const byId = Object.fromEntries(out.messages.map((m) => [m.id, m]));
     expect(byId.c1!.continued).toEqual({ threadId: "t_long", title: "A long story", replies: 3 });
-    expect(byId.c2!.continued).toBeNull();
+    // A viewer who cannot see the thread gets no link, title or count.
+    expect(byId.c2!.continued).toEqual({
+      threadId: null,
+      title: "Continued in a thread",
+      replies: null,
+    });
     const asMod = await board(founder, {}, "eurth", store);
     expect(asMod.messages.find((m) => m.id === "c2")!.continued).toMatchObject({
       title: "Hidden one",
     });
+  });
+
+  it("does not name a continued thread in a category the viewer cannot see", async () => {
+    const store = storeWith(
+      [boardPost("c1", 1, { continuedThreadId: "t_staff" })],
+      [
+        {
+          id: "t_staff",
+          categoryId: "cat_staff",
+          title: "Secret plans",
+          postCount: 9,
+          hidden: false,
+        },
+      ]
+    );
+    store.state.categories.push({
+      id: "cat_staff",
+      key: "staff",
+      scope: "site",
+      realmId: null,
+      visibility: "staff",
+      postRole: "any",
+      icAllowed: false,
+    });
+    const asMember = await board(member, {}, "eurth", store);
+    expect(JSON.stringify(asMember.messages)).not.toContain("Secret plans");
+    const asAdmin = await board(admin, {}, "eurth", store);
+    expect(asAdmin.messages[0]!.continued).toMatchObject({ title: "Secret plans", replies: 8 });
   });
 
   it("reads as not found for an unknown realm and for a draft realm to a member", async () => {

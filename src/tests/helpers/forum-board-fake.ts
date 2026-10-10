@@ -179,6 +179,15 @@ export const personas: Row[] = [
     username: "eurthdaily",
     profileImageUrl: "https://img.example/daily.png",
   },
+  {
+    id: "pa_visitor",
+    clerkUserId: "clerk_u_visitor",
+    isActive: true,
+    accountType: "character",
+    displayName: "Aurora Wire",
+    username: "aurorawire",
+    profileImageUrl: null,
+  },
 ];
 
 export const officers: Row[] = [
