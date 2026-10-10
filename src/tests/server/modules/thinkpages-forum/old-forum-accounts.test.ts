@@ -59,7 +59,17 @@ function store(
       users.filter((u) => u.forumUserId === where.forumUserId)
     ),
     update: jest.fn(
-      async ({ where, data }: { where: { id: string }; data: { forumUserId: number | null } }) => {
+      async ({
+        where,
+        data,
+      }: {
+        where: { id: string };
+        data: {
+          forumUserId: number | null;
+          forumUsername: string | null;
+          lastForumSync: Date | null;
+        };
+      }) => {
         const u = users.find((x) => x.id === where.id)!;
         u.forumUserId = data.forumUserId;
         return u;
