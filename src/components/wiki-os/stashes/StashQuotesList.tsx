@@ -4,7 +4,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { Copy, Check, ArrowUpRight, ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
@@ -56,7 +55,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             {/* Top Row: Parent Article Link + Copy/Jump Actions */}
             <div className="flex items-center justify-between gap-2 pl-2">
               <Link
-                href={withBasePath(`/wiki/${q.pageSlug}`)}
+                href={`/wiki/${q.pageSlug}`}
                 className="text-caption text-label hover:text-tint flex max-w-sm items-center gap-2 truncate font-semibold transition-colors"
               >
                 <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
@@ -85,7 +84,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 </Button>
 
                 <Link
-                  href={withBasePath(`/wiki/${q.pageSlug}`)}
+                  href={`/wiki/${q.pageSlug}`}
                   className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Open article"
                 >

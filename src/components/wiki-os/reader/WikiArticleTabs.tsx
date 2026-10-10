@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { withBasePath } from "~/lib/base-path";
 import { articleTabHrefs, type ArticleTab } from "~/lib/wiki-os/article-route";
 
 interface WikiArticleTabsProps {
@@ -37,7 +36,7 @@ export function WikiArticleTabs({ title, active, canEdit }: WikiArticleTabsProps
         {tabs.map(({ tab, label, href }) =>
           href ? (
             <TabsTrigger key={tab} value={tab} asChild>
-              <Link href={withBasePath(href)} prefetch={tab === "read"}>
+              <Link href={href} prefetch={tab === "read"}>
                 {label}
               </Link>
             </TabsTrigger>

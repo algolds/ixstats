@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OpenBook as BookOpen, User, EditPencil as PenLine } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 
 const NAV_ITEMS = [
@@ -31,7 +30,7 @@ export function BlurbsNav() {
         return (
           <Link
             key={item.href}
-            href={withBasePath(item.href)}
+            href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "rounded-control-sm text-caption flex items-center gap-2 px-3 py-2 transition-colors",

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -36,7 +35,7 @@ function MyBlurbsList() {
           <p className="text-muted-foreground text-sm">
             Browse active prompts and share your country&apos;s perspective.
           </p>
-          <Link href={withBasePath("/blurbs")}>
+          <Link href={"/blurbs"}>
             <Button size="sm">Browse prompts</Button>
           </Link>
         </CardContent>
@@ -49,7 +48,7 @@ function MyBlurbsList() {
       {responses.map((r) => (
         <Link
           key={r.id}
-          href={withBasePath(`/blurbs/${r.prompt.slug}`)}
+          href={`/blurbs/${r.prompt.slug}`}
           className="facet-pane rounded-row block border border-white/10 p-4 transition-colors hover:border-white/20"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -122,7 +121,7 @@ export default function MyBlurbsPage() {
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign in required</h3>
               <p className="text-muted-foreground text-sm">Sign in to see your blurb responses.</p>
-              <Link href={withBasePath("/setup")}>
+              <Link href={"/setup"}>
                 <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>

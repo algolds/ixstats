@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
@@ -26,9 +25,7 @@ function ResponseCard({ response: r }: { response: any }) {
           <img src={r.country.flag} alt="" className="rounded-control-sm h-3.5 w-5 object-cover" />
         )}
         <Link
-          href={withBasePath(
-            `/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
-          )}
+          href={`/wiki/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`}
           className="text-headline text-label hover:text-tint transition-colors"
         >
           {r.country?.name ?? "Unknown"}
@@ -39,11 +36,7 @@ function ResponseCard({ response: r }: { response: any }) {
       {articles.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {articles.map((article, i) => (
-            <Link
-              key={i}
-              href={withBasePath(article.url)}
-              className="text-footnote text-tint underline"
-            >
+            <Link key={i} href={article.url} className="text-footnote text-tint underline">
               {article.title}
             </Link>
           ))}

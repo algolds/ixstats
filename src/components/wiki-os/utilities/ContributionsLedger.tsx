@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { User as UserIcon, Clock, GitCommit } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { DashedNotice, UtilitySearchShell, useSearchTerm } from "./UtilitySearchShell";
 
@@ -88,7 +87,7 @@ export function ContributionsLedger({
 
                   <div className="min-w-0">
                     <Link
-                      href={withBasePath(`/wiki/${encodeURIComponent(c.title.replace(/ /g, "_"))}`)}
+                      href={`/wiki/${encodeURIComponent(c.title.replace(/ /g, "_"))}`}
                       className="text-label text-caption hover:text-green block truncate font-semibold transition-colors"
                     >
                       {c.title}
@@ -110,7 +109,7 @@ export function ContributionsLedger({
                   </span>
                   {!c.isNew && (
                     <Link
-                      href={withBasePath(`/util/diff?to=${c.revid}`)}
+                      href={`/util/diff?to=${c.revid}`}
                       className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-3 py-1 font-semibold transition-colors"
                     >
                       <GitCommit className="text-label-secondary h-3 w-3" />

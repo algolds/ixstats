@@ -9,7 +9,6 @@ import { ArrowLeft } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ScrubbableRevisionTimeline } from "~/components/wiki-os/history/ScrubbableRevisionTimeline";
-import { withBasePath } from "~/lib/base-path";
 
 /** Revisions one history request asks for; "Older" asks for the next so many. */
 const HISTORY_PAGE = 50;
@@ -81,7 +80,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
         {/* Back Navigation Bar */}
         <div>
           <Link
-            href={withBasePath(`/wiki/${slug}`)}
+            href={`/wiki/${slug}`}
             className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

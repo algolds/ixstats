@@ -5,7 +5,6 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import { User, EditPencil as PenTool, Calendar } from "iconoir-react";
 import { CategoryBreadcrumb } from "../CategoryBreadcrumb";
-import { withBasePath } from "~/lib/base-path";
 import type { ArticleHeaderProps } from "../ArticleHeader";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { WatchButton } from "../WatchButton";
@@ -31,7 +30,7 @@ function PersonLink({
 }) {
   return (
     <Link
-      href={withBasePath(`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+      href={`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`}
       className="text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
     >
       {avatar ? (

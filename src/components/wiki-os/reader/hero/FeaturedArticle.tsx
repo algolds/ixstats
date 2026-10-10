@@ -2,7 +2,6 @@
 
 import type React from "react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
@@ -32,7 +31,7 @@ export function FeaturedThumbnailFrame({
 }) {
   return (
     <Link
-      href={withBasePath(`/wiki/${slug}`)}
+      href={`/wiki/${slug}`}
       className={cn(
         "group/img relative block w-full shrink-0 sm:w-[240px] md:w-[270px] lg:w-[290px]",
         "aspect-[16/10] sm:aspect-[3/2] md:aspect-[16/10]",

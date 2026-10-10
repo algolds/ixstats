@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { Search, Folder as FolderTree } from "iconoir-react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 
 /** Full class strings per accent so Tailwind can see them. */
@@ -99,7 +98,7 @@ export function UtilitySearchShell({
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2">
               <Link
-                href={withBasePath("/util")}
+                href={"/util"}
                 className={`group text-caption inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${a.pill}`}
               >
                 <FolderTree className="h-3.5 w-3.5" />

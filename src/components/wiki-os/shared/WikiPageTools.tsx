@@ -16,7 +16,6 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -151,7 +150,7 @@ export function WikiPageTools({
               <PageAdminMenuItems title={title} enabled={isSignedIn && !!title} />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href={withBasePath("/util")}>
+                <Link href={"/util"}>
                   <Wrench className="size-4" />
                   Utilities and special pages
                 </Link>

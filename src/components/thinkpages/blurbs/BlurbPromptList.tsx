@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
@@ -35,7 +34,7 @@ export function BlurbPromptList() {
         {prompts.map((prompt) => (
           <Link
             key={prompt.id}
-            href={withBasePath(`/blurbs/${prompt.slug}`)}
+            href={`/blurbs/${prompt.slug}`}
             className="bg-surface rounded-card border-separator hover:border-separator-opaque block border p-4 transition-colors sm:p-5"
           >
             <div className="flex items-start justify-between gap-3">

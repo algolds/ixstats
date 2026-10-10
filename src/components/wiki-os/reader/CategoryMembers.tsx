@@ -3,7 +3,6 @@
 // markup, rendered on the server so crawlers follow every member link.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import type { CategoryCursor, CategoryMember } from "~/lib/wiki-os/core/category-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
@@ -12,7 +11,7 @@ const FILE_NAMESPACE = 6;
 
 function href(title: string): string {
   const canon = canonicalizeTitle(title);
-  return withBasePath(`/wiki/${canon?.urlPath ?? encodeURIComponent(title.replace(/ /g, "_"))}`);
+  return `/wiki/${canon?.urlPath ?? encodeURIComponent(title.replace(/ /g, "_"))}`;
 }
 
 function MemberList({

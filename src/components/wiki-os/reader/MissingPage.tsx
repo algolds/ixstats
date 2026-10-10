@@ -6,7 +6,6 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { withBasePath } from "~/lib/base-path";
 
 export interface MissingPageProps {
   /** The title as the heading shows it. */
@@ -32,11 +31,11 @@ export function MissingPage({ title, createHref, searchHref }: MissingPageProps)
         <div className="mt-4 flex flex-wrap gap-3">
           {createHref && (
             <Button asChild size="sm">
-              <Link href={withBasePath(createHref)}>Create this page</Link>
+              <Link href={createHref}>Create this page</Link>
             </Button>
           )}
           <Button asChild size="sm" variant="outline">
-            <Link href={withBasePath(searchHref)}>Search for this title</Link>
+            <Link href={searchHref}>Search for this title</Link>
           </Button>
         </div>
       </Card>

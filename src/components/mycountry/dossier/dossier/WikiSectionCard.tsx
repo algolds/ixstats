@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSPath, titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { cn } from "~/lib/utils";
 import { Button, focusRing } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -223,7 +223,7 @@ export function WikiSectionCard({
                     asChild
                     className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
                   >
-                    <Link href={titleToWikiOSPath(section.sourcePage || section.title)}>
+                    <Link href={titleToWikiOSRoute(section.sourcePage || section.title)}>
                       <ExternalLink className="h-3.5 w-3.5" /> View WikiOS source
                     </Link>
                   </Button>

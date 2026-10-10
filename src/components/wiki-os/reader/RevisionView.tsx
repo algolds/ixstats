@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
@@ -22,8 +21,8 @@ export function RevisionView({ revisionRef, title }: { revisionRef: string; titl
     { staleTime: REVISION_STALE_TIME_MS, retry: false }
   );
   const canon = canonicalizeTitle(title);
-  const current = canon ? withBasePath(articleHref(canon)) : "#";
-  const diff = canon ? withBasePath(articleHref(canon, { diff: "prev", oldid: revisionRef })) : "#";
+  const current = canon ? articleHref(canon) : "#";
+  const diff = canon ? articleHref(canon, { diff: "prev", oldid: revisionRef }) : "#";
 
   return (
     <WikiOSLayout>

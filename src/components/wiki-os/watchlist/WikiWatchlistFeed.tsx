@@ -7,7 +7,6 @@ import { Eye, EyeClosed, Check, Calendar, Refresh as RefreshCw } from "iconoir-r
 import { api } from "~/trpc/react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -185,7 +184,7 @@ export function WikiWatchlistFeed() {
                     <div>
                       <div className="flex items-center gap-2">
                         <Link
-                          href={withBasePath(`/wiki/${item.articleSlug}`)}
+                          href={`/wiki/${item.articleSlug}`}
                           className="text-label hover:text-tint text-headline transition-colors"
                         >
                           {item.articleTitle}
@@ -268,7 +267,7 @@ export function WikiWatchlistFeed() {
                         Revision <strong className="text-label">{item.id}</strong> preview
                       </span>
                       <Link
-                        href={withBasePath(`/util/history/${item.articleSlug}`)}
+                        href={`/util/history/${item.articleSlug}`}
                         className="text-tint text-caption hover:underline"
                       >
                         View Full History &rarr;

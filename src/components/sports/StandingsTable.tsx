@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { OpenBook as BookOpen, Download } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { Button } from "~/components/ui/button";
@@ -254,7 +254,7 @@ export function StandingsTable({
                           </span>
                           {team.wikiSlug && (
                             <Link
-                              href={titleToWikiOSPath(team.wikiSlug)}
+                              href={titleToWikiOSRoute(team.wikiSlug)}
                               onClick={(e) => e.stopPropagation()}
                               className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${team.teamName}`}

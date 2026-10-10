@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import type { DomainCategory } from "./constants";
 
@@ -29,7 +28,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
               transition={{ duration: 0.25, delay: index * 0.02 }}
             >
               <Link
-                href={withBasePath(`/util/categories/${encodeURIComponent(domain.name)}`)}
+                href={`/util/categories/${encodeURIComponent(domain.name)}`}
                 className={cn(
                   "group rounded-card relative flex min-h-[160px] flex-col justify-between overflow-hidden p-4 sm:p-5",
                   "border-separator bg-surface border",

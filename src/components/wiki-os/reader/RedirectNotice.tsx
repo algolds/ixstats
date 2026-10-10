@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
 /**
@@ -17,7 +16,7 @@ export function RedirectNotice({ from }: { from: string }) {
     <p className="text-muted-foreground mb-3 text-xs" role="note">
       (Redirected from{" "}
       <Link
-        href={withBasePath(`/wiki/${canon.urlPath}?redirect=no`)}
+        href={`/wiki/${canon.urlPath}?redirect=no`}
         className="hover:text-wiki underline underline-offset-2"
         prefetch={false}
       >

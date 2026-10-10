@@ -2,7 +2,6 @@
 // Saved wiki articles view with lead image thumbnail, WikiOS logomark, rich metadata, and quick actions.
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import {
   Clock,
   DesignPencil as Highlighter,
@@ -77,7 +76,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
             {/* Header Lockup & Title Link */}
             <div className="flex items-start justify-between gap-3">
               <Link
-                href={withBasePath(`/wiki/${item.pageSlug}`)}
+                href={`/wiki/${item.pageSlug}`}
                 className="group/title flex min-w-0 flex-1 items-center gap-3"
               >
                 {/* Article Image / WikiOS Logomark Thumbnail Box */}
@@ -115,7 +114,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               {/* Action Buttons */}
               <div className="flex shrink-0 items-center gap-1">
                 <Link
-                  href={withBasePath(`/wiki/${item.pageSlug}`)}
+                  href={`/wiki/${item.pageSlug}`}
                   className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                   title="Read article"
                 >

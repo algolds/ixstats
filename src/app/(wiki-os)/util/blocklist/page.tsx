@@ -8,7 +8,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { AdminPage, useWikiRights } from "~/components/wiki-os/admin/AdminPage";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { withBasePath } from "~/lib/base-path";
 import { describeExpiry } from "~/lib/wiki-os/page-admin-ui";
 
 export default function BlockListPage() {
@@ -43,9 +42,7 @@ export default function BlockListPage() {
           <li key={`${block.target}-${block.createdAt.toISOString()}`} className="space-y-1 p-3">
             <div className="flex items-center justify-between gap-3">
               <Link
-                href={withBasePath(
-                  `/wiki/User:${encodeURIComponent(block.target.replace(/ /g, "_"))}`
-                )}
+                href={`/wiki/User:${encodeURIComponent(block.target.replace(/ /g, "_"))}`}
                 className="text-foreground text-sm font-semibold hover:underline"
               >
                 {block.target}

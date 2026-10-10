@@ -16,7 +16,6 @@ import {
 } from "iconoir-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
 import {
   DropdownMenu,
@@ -104,10 +103,7 @@ function PostContextBanners({ post, blurbMeta }: { post: any; blurbMeta: PostSta
           <BookOpen className="size-4" aria-hidden="true" />
           <span>{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
-            <Link
-              href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
-              className="hover:underline"
-            >
+            <Link href={`/blurbs/${blurbMeta.promptSlug}`} className="hover:underline">
               View prompt →
             </Link>
           )}

@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 
 export function CategoriesBar({ categories }: { categories: string[] }) {
   const visible = categories.filter(
@@ -21,7 +20,7 @@ export function CategoriesBar({ categories }: { categories: string[] }) {
         {visible.map((cat) => (
           <li key={cat}>
             <Link
-              href={withBasePath(`/util/categories/${encodeURIComponent(cat.replace(/ /g, "_"))}`)}
+              href={`/util/categories/${encodeURIComponent(cat.replace(/ /g, "_"))}`}
               className="wikios-category-link"
             >
               {cat.replace(/_/g, " ")}

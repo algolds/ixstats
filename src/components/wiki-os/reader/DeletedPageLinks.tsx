@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 
 /**
  * Under the 404 of a page that may have been deleted: a reader who holds `deletedhistory` (the only
@@ -22,7 +21,7 @@ export function DeletedPageLinks({ title, enabled }: { title: string; enabled: b
     <p className="text-muted-foreground mt-4 text-xs" role="note">
       If this page was deleted, see the{" "}
       <Link
-        href={withBasePath(`/util/log${query}&type=delete`)}
+        href={`/util/log${query}&type=delete`}
         className="hover:text-wiki underline underline-offset-2"
       >
         deletion log
@@ -32,7 +31,7 @@ export function DeletedPageLinks({ title, enabled }: { title: string; enabled: b
           {" "}
           or{" "}
           <Link
-            href={withBasePath(`/util/undelete${query}`)}
+            href={`/util/undelete${query}`}
             className="hover:text-wiki underline underline-offset-2"
           >
             restore it

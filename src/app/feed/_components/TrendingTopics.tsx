@@ -6,7 +6,6 @@ import { api } from "~/trpc/react";
 import { FireFlame as Flame, StatUp as TrendingUp, Minus } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import { withBasePath } from "~/lib/base-path";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Card } from "~/components/ui/card";
 
@@ -36,7 +35,7 @@ export function TrendingTopics() {
           topics.map((topic) => (
             <Link
               key={topic.id}
-              href={withBasePath(`/hashtags/${encodeURIComponent(topic.hashtag)}`)}
+              href={`/hashtags/${encodeURIComponent(topic.hashtag)}`}
               className="hover:bg-fill-4 rounded-row block cursor-pointer p-2 transition-colors"
             >
               <div className="mb-1 flex items-center justify-between">

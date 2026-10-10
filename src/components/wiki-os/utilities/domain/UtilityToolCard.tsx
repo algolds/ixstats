@@ -3,7 +3,6 @@
 import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 
 export interface UtilityTool {
   id: string;
@@ -23,7 +22,7 @@ export function UtilityToolCard({ tool }: { tool: UtilityTool }) {
 
   return (
     <Link
-      href={withBasePath(tool.href)}
+      href={tool.href}
       target={tool.isExternal ? "_blank" : undefined}
       rel={tool.isExternal ? "noreferrer" : undefined}
       data-cuelume-press="press"

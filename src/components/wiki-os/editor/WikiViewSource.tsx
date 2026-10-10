@@ -48,9 +48,8 @@ export function WikiViewSource({ title, signedIn, reason, onClose }: WikiViewSou
   const exists = data.revisionRef !== null || data.wikitext !== "";
   const verb = exists ? "edit" : "create";
   // Back to the editor after signing in: the same URL.
-  const signInHref = withBasePath(
-    `/sign-in?redirect_url=${encodeURIComponent(withBasePath(pageEditHref(title)))}`
-  );
+  // (the redirect URL is the address the browser comes back to, so it carries the base path; the <Link> adds its own)
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(withBasePath(pageEditHref(title)))}`;
   const refusal = signedIn
     ? `You do not have permission to ${verb} this page. ${reason ?? ""}`.trim()
     : `You must be signed in to ${verb} this page.`;

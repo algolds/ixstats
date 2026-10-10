@@ -28,7 +28,7 @@ import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button, buttonVariants } from "~/components/ui/button";
@@ -332,7 +332,7 @@ export function CountryActionsMenu({
               />
               <WikiLinkPreview title={targetCountryName}>
                 <Link
-                  href={titleToWikiOSPath(targetCountryName)}
+                  href={titleToWikiOSRoute(targetCountryName)}
                   className={cn(
                     buttonVariants({ variant: "outline", size: "lg" }),
                     ACTION_ROW_CLASS

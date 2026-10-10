@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 
 export default function WhatLinksHerePage() {
   const params = useParams<{ slug: string }>();
@@ -22,7 +21,7 @@ export default function WhatLinksHerePage() {
     <WikiOSLayout title={`What links here: ${title}`}>
       <div className="wikios-special-page">
         <p className="wikios-backlink-subtitle">
-          <Link href={withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`)}>
+          <Link href={`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}>
             &larr; Back to article
           </Link>
         </p>
@@ -37,9 +36,7 @@ export default function WhatLinksHerePage() {
           <ul className="wikios-backlinks-list">
             {links.map((link: { title: string; ns?: number }) => (
               <li key={link.title} className="wikios-backlink-item">
-                <Link
-                  href={withBasePath(`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}
-                >
+                <Link href={`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`}>
                   {link.title}
                 </Link>
               </li>

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { RssFeed as Rss, Group as Users } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
 import { EmptyState, type EmptyStateProps } from "~/components/ui/empty-state";
@@ -185,7 +185,7 @@ function wikiChangesAsFeed(changes: any[]): any[] {
           metadata: {
             source: "ixwiki",
             pageTitle: rc.title,
-            wikiUrl: titleToWikiOSPath(rc.title),
+            wikiUrl: titleToWikiOSRoute(rc.title),
             blurb: rc.blurb || null,
             thumbnail: rc.thumbnail || null,
           },

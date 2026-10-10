@@ -21,7 +21,6 @@ import {
   Database,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import type { MainPageContentProps } from "./types";
 import { CountriesSection, RecentActivitySection } from "./MainPageSections";
 
@@ -59,7 +58,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={withBasePath("/util/categories/Countries")}
+              href={"/util/categories/Countries"}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -78,7 +77,7 @@ export function SculptedMainPageContent({
                   return (
                     <Link
                       key={cat.name}
-                      href={withBasePath(`/util/categories/${encodeURIComponent(cat.name)}`)}
+                      href={`/util/categories/${encodeURIComponent(cat.name)}`}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className={cn(
@@ -113,7 +112,7 @@ export function SculptedMainPageContent({
                 </div>
 
                 <Link
-                  href={withBasePath("/wiki/Category:Bureau_of_International_Statistics")}
+                  href={"/wiki/Category:Bureau_of_International_Statistics"}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="text-label-secondary hover:text-label rounded-control-sm text-caption inline-flex shrink-0 items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5"
@@ -142,7 +141,7 @@ export function SculptedMainPageContent({
                 <div className="flex flex-1 flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
                   {/* Visual Frame */}
                   <Link
-                    href={withBasePath(`/wiki/${almanacSpotlight.slug}`)}
+                    href={`/wiki/${almanacSpotlight.slug}`}
                     data-cuelume-press="droplet"
                     data-cuelume-hover="tick"
                     className="group/img group/media rounded-row border-separator sm:rounded-card relative block aspect-[16/10] w-full shrink-0 overflow-hidden border bg-black/5 sm:aspect-[4/3] sm:w-[150px] md:w-[170px]"
@@ -175,7 +174,7 @@ export function SculptedMainPageContent({
                       </div>
 
                       <Link
-                        href={withBasePath(`/wiki/${almanacSpotlight.slug}`)}
+                        href={`/wiki/${almanacSpotlight.slug}`}
                         data-cuelume-press="page"
                         data-cuelume-hover="tick"
                         className="group/title mt-1 block"
@@ -192,7 +191,7 @@ export function SculptedMainPageContent({
 
                     <div className="border-separator mt-3 flex items-center justify-between border-t pt-3">
                       <Link
-                        href={withBasePath(`/wiki/${almanacSpotlight.slug}`)}
+                        href={`/wiki/${almanacSpotlight.slug}`}
                         data-cuelume-press="droplet"
                         data-cuelume-hover="tick"
                         className="group/cta text-caption text-tint hover:text-tint ml-2 inline-flex shrink-0 items-center gap-1 font-semibold transition-colors"

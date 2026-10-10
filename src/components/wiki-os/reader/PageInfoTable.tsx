@@ -1,7 +1,6 @@
 // `?action=info`: the facts about a page, as MediaWiki's "Page information" table. Plain markup.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import type { PageInfo } from "~/lib/wiki-os/core/page-info-service";
 import { articleHref } from "~/lib/wiki-os/wiki-path";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -36,7 +35,7 @@ export function PageInfoTable({ info }: { info: PageInfo }) {
     <div className="mx-auto w-full max-w-3xl px-4 py-6 text-sm">
       {canon && (
         <p className="mb-4">
-          <Link href={withBasePath(articleHref(canon))} className="hover:text-wiki text-xs">
+          <Link href={articleHref(canon)} className="hover:text-wiki text-xs">
             &larr; Back to {info.title}
           </Link>
         </p>

@@ -17,7 +17,6 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { withBasePath } from "~/lib/base-path";
 import { expiryFromPreset, type ExpiryPreset } from "~/lib/wiki-os/page-admin-ui";
 
 export default function BlockUserPage() {
@@ -93,7 +92,7 @@ export default function BlockUserPage() {
               {block.isPending ? "Blocking…" : "Block user"}
             </Button>
             <Link
-              href={withBasePath("/util/blocklist")}
+              href={"/util/blocklist"}
               className="text-muted-foreground hover:text-foreground text-sm"
             >
               Current blocks

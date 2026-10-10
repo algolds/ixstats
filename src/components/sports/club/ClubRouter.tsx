@@ -293,7 +293,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               )}
               {team.league && (
                 <Link
-                  href={withBasePath(`/myleague/${team.leagueId}`)}
+                  href={`/myleague/${team.leagueId}`}
                   className="hover:text-label flex items-center gap-1 hover:underline"
                 >
                   <Flag className="h-3.5 w-3.5" />

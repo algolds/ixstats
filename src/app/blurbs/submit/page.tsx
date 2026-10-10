@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
@@ -39,7 +38,7 @@ function SubmitPromptForm() {
             <Button size="sm" variant="ghost" onClick={() => setSubmitted(false)}>
               Submit another
             </Button>
-            <Link href={withBasePath("/blurbs")}>
+            <Link href={"/blurbs"}>
               <Button size="sm">Browse prompts</Button>
             </Link>
           </div>
@@ -139,7 +138,7 @@ export default function SubmitBlurbPage() {
               <p className="text-muted-foreground text-sm">
                 Sign in to submit a prompt suggestion.
               </p>
-              <Link href={withBasePath("/setup")}>
+              <Link href={"/setup"}>
                 <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>

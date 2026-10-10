@@ -13,7 +13,6 @@ import {
 } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { CategoryBreadcrumb } from "./CategoryBreadcrumb";
-import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { detectMediaType } from "~/lib/wiki-os/transformers/media-theme";
 import { heroImage } from "~/lib/wiki-os/transformers/image-url";
@@ -422,7 +421,7 @@ export function WikiOSHeader({
                   </div>
                   <div className="border-separator flex justify-end border-t pt-2">
                     <Link
-                      href={withBasePath("/util/lorewards")}
+                      href={"/util/lorewards"}
                       className="text-caption text-tint duration-fast hover:text-tint-hover transition-colors"
                     >
                       View Leaderboard &rarr;

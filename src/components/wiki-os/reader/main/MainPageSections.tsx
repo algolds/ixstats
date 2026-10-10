@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, ArrowDownRight, Page, EditPencil } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
@@ -48,7 +47,7 @@ export function RecentActivitySection({
       <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
         <h2 className="text-label text-headline">Recent activity</h2>
         <Link
-          href={withBasePath("/util/recent-changes")}
+          href={"/util/recent-changes"}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -84,9 +83,7 @@ export function RecentActivitySection({
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={withBasePath(
-                            `/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`
-                          )}
+                          href={`/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`}
                           data-cuelume-press="droplet"
                           data-cuelume-hover="tick"
                           className="text-label rounded-control-sm text-caption hover:text-tint focus-visible:ring-tint sm:text-headline truncate font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -197,7 +194,7 @@ export function CountriesSection({ countries }: Pick<MainPageContentProps, "coun
             transition={{ type: "spring", stiffness: 400, damping: 24 }}
           >
             <Link
-              href={withBasePath(`/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`)}
+              href={`/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`}
               data-cuelume-press="droplet"
               data-cuelume-hover="tick"
               className={cn(

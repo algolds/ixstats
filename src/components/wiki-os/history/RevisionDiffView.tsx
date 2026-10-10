@@ -16,7 +16,6 @@ import {
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { DiffViewer } from "~/components/diff-viewer";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
@@ -56,7 +55,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
         {/* Back Link */}
         <div>
           <Link
-            href={withBasePath(backHref)}
+            href={backHref}
             className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

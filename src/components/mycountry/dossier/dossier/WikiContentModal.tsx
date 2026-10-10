@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
@@ -50,7 +50,7 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
           <div className="flex items-center gap-2">
             {section && (
               <Button size="sm" variant="outline" asChild className="text-footnote h-8 gap-2">
-                <Link href={titleToWikiOSPath(section.title)}>
+                <Link href={titleToWikiOSRoute(section.title)}>
                   <ExternalLink className="h-3.5 w-3.5" />
                   WikiOS source
                 </Link>

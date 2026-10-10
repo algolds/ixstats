@@ -3,7 +3,6 @@
 // Stash manager — browse, organize, search, and annotate saved wiki pages, quotes, images, and forum threads.
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -547,7 +546,7 @@ export default function StashesPage() {
                                 <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
-                                    href={withBasePath("/util/repository")}
+                                    href={"/util/repository"}
                                     className="text-tint font-semibold hover:underline"
                                   >
                                     Media repository

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowRight, Lock, Trash } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { DropdownMenuItem, DropdownMenuSeparator } from "~/components/ui/dropdown-menu";
-import { withBasePath } from "~/lib/base-path";
 import { pageAdminActions } from "~/lib/wiki-os/page-admin-ui";
 
 const ICONS = { move: ArrowRight, protect: Lock, delete: Trash } as const;
@@ -27,7 +26,7 @@ export function PageAdminMenuItems({ title, enabled }: { title: string; enabled:
         const Icon = ICONS[action.id];
         return (
           <DropdownMenuItem key={action.id} asChild>
-            <Link href={withBasePath(action.href)} title={action.description}>
+            <Link href={action.href} title={action.description}>
               <Icon className="size-4" />
               {action.label}
             </Link>

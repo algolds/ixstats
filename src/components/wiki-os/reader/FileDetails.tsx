@@ -2,7 +2,6 @@
 // Plain markup, rendered on the server so crawlers follow every link.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import type {
   FileDetails as FileDetailsData,
   FileVersion,
@@ -54,9 +53,7 @@ function History({ history }: { history: FileVersion[] }) {
                 </td>
                 <td className="py-1.5 pr-4">
                   <Link
-                    href={withBasePath(
-                      `/wiki/User:${encodeURIComponent(version.user.replace(/ /g, "_"))}`
-                    )}
+                    href={`/wiki/User:${encodeURIComponent(version.user.replace(/ /g, "_"))}`}
                     className="hover:text-wiki"
                     prefetch={false}
                   >
@@ -88,11 +85,7 @@ function Usage({ usage, total }: { usage: FileDetailsData["usage"]; total: numbe
           <ul className="columns-1 gap-6 text-sm sm:columns-2 lg:columns-3">
             {usage.map((page) => (
               <li key={page.title} className="break-inside-avoid py-0.5">
-                <Link
-                  href={withBasePath(`/wiki/${page.urlPath}`)}
-                  className="hover:text-wiki"
-                  prefetch={false}
-                >
+                <Link href={`/wiki/${page.urlPath}`} className="hover:text-wiki" prefetch={false}>
                   {page.title}
                 </Link>
               </li>

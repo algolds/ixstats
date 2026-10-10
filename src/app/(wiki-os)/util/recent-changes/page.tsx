@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import {
   NavArrowDown as ChevronDown,
@@ -235,9 +234,7 @@ export default function RecentChangesPage() {
                     )}
 
                     <Link
-                      href={withBasePath(
-                        `/wiki/${encodeURIComponent(group.title.replace(/ /g, "_"))}`
-                      )}
+                      href={`/wiki/${encodeURIComponent(group.title.replace(/ /g, "_"))}`}
                       className="wikios-rc-group-title"
                     >
                       {group.title}

@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { withBasePath } from "~/lib/base-path";
 import { EXPIRY_PRESETS, type ExpiryPreset } from "~/lib/wiki-os/page-admin-ui";
 import type { Right } from "~/lib/wiki-os/rights";
 
@@ -42,7 +41,7 @@ export function AdminPage({ title, description, children }: AdminPageProps) {
       <div className="mx-auto w-full max-w-2xl space-y-6 pb-16">
         <header className="space-y-1.5">
           <Link
-            href={withBasePath("/util")}
+            href={"/util"}
             className="text-muted-foreground hover:text-foreground text-xs font-medium"
           >
             Special:Utilities

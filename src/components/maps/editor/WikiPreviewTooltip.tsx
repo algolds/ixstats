@@ -10,7 +10,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { createPortal } from "react-dom";
 import { OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -106,7 +106,7 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
                 <p className="text-label-secondary text-footnote">No article found.</p>
               )}
               <Link
-                href={titleToWikiOSPath(wikiTitle)}
+                href={titleToWikiOSRoute(wikiTitle)}
                 className="text-tint text-caption mt-2 flex items-center gap-1 hover:underline"
               >
                 Open on wiki

@@ -16,7 +16,6 @@ import {
   Cpu as IconoirCpu,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import type { MainPageContentProps } from "./types";
 import { CountriesSection, RecentActivitySection } from "./MainPageSections";
 
@@ -52,7 +51,7 @@ export function EditorialMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={withBasePath("/util/categories/Countries")}
+              href={"/util/categories/Countries"}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -73,7 +72,7 @@ export function EditorialMainPageContent({
                 return (
                   <Link
                     key={cat.name}
-                    href={withBasePath(`/util/categories/${encodeURIComponent(cat.name)}`)}
+                    href={`/util/categories/${encodeURIComponent(cat.name)}`}
                     data-cuelume-press="page"
                     data-cuelume-hover="tick"
                     className={cn(

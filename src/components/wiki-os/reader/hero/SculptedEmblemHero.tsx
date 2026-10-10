@@ -20,7 +20,6 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
-import { withBasePath } from "~/lib/base-path";
 import { IxWikiLogo } from "~/components/wiki-os/shared/IxWikiLogo";
 import { IxWikiWordmark } from "~/components/wiki-os/shared/IxWikiWordmark";
 import { HeroSpotlightSearch } from "./HeroSpotlightSearch";
@@ -98,7 +97,7 @@ export function SculptedEmblemHero({
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
       <Link
-        href={withBasePath("/wiki/Main_Page")}
+        href={"/wiki/Main_Page"}
         aria-label="IxWiki home"
         className="group/brand rounded-card focus-visible:outline-tint mb-1 flex cursor-pointer flex-col items-center justify-center text-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-4"
       >
@@ -146,7 +145,7 @@ export function SculptedEmblemHero({
       >
         {/* Action 1: Award-Winning Lore */}
         <Link
-          href={withBasePath("/wiki/category:featured_articles")}
+          href={"/wiki/category:featured_articles"}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -165,7 +164,7 @@ export function SculptedEmblemHero({
 
         {/* Action 2: Getting Started */}
         <Link
-          href={withBasePath("/wiki/IxWiki:Getting_Started")}
+          href={"/wiki/IxWiki:Getting_Started"}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -184,7 +183,7 @@ export function SculptedEmblemHero({
 
         {/* Action 3: Resources */}
         <Link
-          href={withBasePath("/util/repository")}
+          href={"/util/repository"}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -266,7 +265,7 @@ export function SculptedEmblemHero({
                 className="w-full"
               >
                 <Link
-                  href={withBasePath(`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`)}
+                  href={`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="group/event rounded-control-sm focus-visible:outline-tint facet-press-subtle block outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -422,7 +421,7 @@ export function SculptedEmblemHero({
               {/* Archive & Suggest Links */}
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Link
-                  href={withBasePath("/wiki/IxWiki:Featured_articles")}
+                  href={"/wiki/IxWiki:Featured_articles"}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="hover:text-label text-caption flex items-center gap-1 transition-colors"
@@ -432,7 +431,7 @@ export function SculptedEmblemHero({
                 </Link>
                 <span className="text-label-secondary select-none">·</span>
                 <Link
-                  href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
+                  href={"/wiki/IxWiki:Featured_article_candidates"}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="text-caption hover:text-yellow-ink focus-visible:text-yellow-ink flex items-center gap-1 transition-colors"
@@ -456,7 +455,7 @@ export function SculptedEmblemHero({
                 <div className="flex min-w-0 flex-1 flex-col justify-between self-stretch py-0.5">
                   <div>
                     <Link
-                      href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
+                      href={`/wiki/${featuredArticleData.slug}`}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className="group/title rounded-control-sm focus-visible:ring-tint block focus-visible:ring-2 focus-visible:outline-none"
@@ -471,7 +470,7 @@ export function SculptedEmblemHero({
                   </div>
                   <div className="mt-3 flex items-center gap-3 sm:mt-4">
                     <Link
-                      href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
+                      href={`/wiki/${featuredArticleData.slug}`}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
                       className="text-label group/cta text-caption hover:text-yellow-ink focus-visible:text-yellow-ink inline-flex items-center gap-2 font-semibold transition-colors"

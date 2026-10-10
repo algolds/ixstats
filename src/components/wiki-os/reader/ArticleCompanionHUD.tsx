@@ -13,7 +13,6 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
-import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -102,7 +101,7 @@ function IxWikiPageTools({
 }
 
 const userHref = (name: string) =>
-  withBasePath(`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`);
+  `/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
 // One locale and time zone, so the server's date and the browser's are the same text.
 const shortDate = new Intl.DateTimeFormat("en-US", {
@@ -426,7 +425,7 @@ export function ArticleCompanionHUD({
             {categoryNames.map((name) => (
               <Link
                 key={name}
-                href={withBasePath(`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`)}
+                href={`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`}
                 className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
               >
                 {name}

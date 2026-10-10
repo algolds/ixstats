@@ -4,7 +4,6 @@ import { useState, type ComponentType, type MouseEvent, type ReactNode } from "r
 import Link from "next/link";
 import { CheckCircle, NavArrowRight, Refresh, Xmark as X } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
-import { withBasePath } from "~/lib/base-path";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { Button } from "~/components/ui/button";
 import { matchesToolQuery } from "./UtilityToolCard";
@@ -198,7 +197,7 @@ export function InspectorRow({ children }: { children: ReactNode }) {
 export function InspectorPageLink({ slug, title }: { slug?: string; title: string }) {
   return (
     <Link
-      href={withBasePath(`/wiki/${encodeURIComponent(slug || title)}`)}
+      href={`/wiki/${encodeURIComponent(slug || title)}`}
       data-cuelume-press="page"
       data-cuelume-hover="tick"
       className="text-label hover:text-tint font-medium hover:underline"

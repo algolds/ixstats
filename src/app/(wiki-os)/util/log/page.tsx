@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { withBasePath } from "~/lib/base-path";
 import { LOG_TYPE_OPTIONS, describeLogEntry } from "~/lib/wiki-os/page-admin-ui";
 
 type LogFilter = (typeof LOG_TYPE_OPTIONS)[number]["value"] | "all";
@@ -25,8 +24,7 @@ type LogFilter = (typeof LOG_TYPE_OPTIONS)[number]["value"] | "all";
 const isLogFilter = (value: string): value is LogFilter =>
   value === "all" || LOG_TYPE_OPTIONS.some((option) => option.value === value);
 
-const pageHref = (title: string) =>
-  withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`);
+const pageHref = (title: string) => `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
 export default function LogPage() {
   const params = useSearchParams();

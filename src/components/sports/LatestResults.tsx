@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import Link from "next/link";
 import { OpenBook as BookOpen } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -166,7 +166,7 @@ export function LatestResults({
                           </Button>
                           {match.homeWikiSlug && (
                             <Link
-                              href={titleToWikiOSPath(match.homeWikiSlug)}
+                              href={titleToWikiOSRoute(match.homeWikiSlug)}
                               onClick={(e) => e.stopPropagation()}
                               className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${match.homeTeamName}`}
@@ -201,7 +201,7 @@ export function LatestResults({
                         <div className="flex flex-1 items-center justify-end gap-2">
                           {match.awayWikiSlug && (
                             <Link
-                              href={titleToWikiOSPath(match.awayWikiSlug)}
+                              href={titleToWikiOSRoute(match.awayWikiSlug)}
                               onClick={(e) => e.stopPropagation()}
                               className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${match.awayTeamName}`}

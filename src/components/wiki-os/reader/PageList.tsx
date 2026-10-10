@@ -2,7 +2,6 @@
 // page. Plain markup, rendered on the server.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import type { PageListing } from "~/lib/wiki-os/core/page-list-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
@@ -17,7 +16,7 @@ export interface PageListProps extends PageListing {
 
 function pageHref(title: string): string {
   const canon = canonicalizeTitle(title);
-  return withBasePath(`/wiki/${canon?.urlPath ?? encodeURIComponent(title.replace(/ /g, "_"))}`);
+  return `/wiki/${canon?.urlPath ?? encodeURIComponent(title.replace(/ /g, "_"))}`;
 }
 
 export function PageList({ pages, next, specialPath, query, from }: PageListProps) {
@@ -44,9 +43,7 @@ export function PageList({ pages, next, specialPath, query, from }: PageListProp
       <nav aria-label="List pages" className="mt-6 flex gap-4 text-sm">
         {from && (
           <Link
-            href={withBasePath(
-              `/wiki/${specialPath}${Object.keys(query).length ? `?${new URLSearchParams(query)}` : ""}`
-            )}
+            href={`/wiki/${specialPath}${Object.keys(query).length ? `?${new URLSearchParams(query)}` : ""}`}
             className="hover:text-wiki"
             prefetch={false}
           >
@@ -55,7 +52,7 @@ export function PageList({ pages, next, specialPath, query, from }: PageListProp
         )}
         {next && (
           <Link
-            href={withBasePath(`/wiki/${specialPath}?${nextQuery}`)}
+            href={`/wiki/${specialPath}?${nextQuery}`}
             className="hover:text-wiki"
             prefetch={false}
             rel="next"

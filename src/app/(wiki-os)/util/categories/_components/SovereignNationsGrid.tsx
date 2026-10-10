@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, Globe as IconoirGlobe } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 
@@ -19,9 +18,7 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
         {countries.map((country: any) => (
           <Link
             key={country.id}
-            href={withBasePath(
-              `/util/categories/${encodeURIComponent((country.name ?? "").replace(/ /g, "_"))}`
-            )}
+            href={`/util/categories/${encodeURIComponent((country.name ?? "").replace(/ /g, "_"))}`}
             className={cn(
               "group rounded-row relative flex items-center gap-3 overflow-hidden p-3",
               "border-separator border",

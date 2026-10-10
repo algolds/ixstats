@@ -8,7 +8,6 @@ import {
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -76,7 +75,7 @@ export function QuickHistoryModal({
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">
-          <Link href={withBasePath(`/util/history/${slug}`)} onClick={onClose}>
+          <Link href={`/util/history/${slug}`} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View full history
           </Link>
@@ -156,7 +155,7 @@ export function QuickBacklinksModal({
       onClose={onClose}
       footer={
         <Button asChild variant="ghost" size="sm">
-          <Link href={withBasePath(`/util/whatlinkshere/${slug}`)} onClick={onClose}>
+          <Link href={`/util/whatlinkshere/${slug}`} onClick={onClose}>
             <ExternalLink aria-hidden="true" />
             View all backlinks
           </Link>
@@ -173,7 +172,7 @@ export function QuickBacklinksModal({
         {links.map((link: { title: string }, i: number) => (
           <li key={`${link.title}-${i}`}>
             <Link
-              href={withBasePath(`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}
+              href={`/wiki/${encodeURIComponent(link.title.replace(/ /g, "_"))}`}
               className="rounded-control text-body text-tint duration-fast hover:bg-fill-4 block truncate px-2 py-2 transition-colors"
               onClick={onClose}
             >

@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { Folder } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { ALPHABET } from "./constants";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -55,9 +54,7 @@ export function AlphabetIndexBar({
           {cleanedLiveCategories.map((cat) => (
             <Link
               key={cat.name}
-              href={withBasePath(
-                `/util/categories/${encodeURIComponent(cat.name.replace(/ /g, "_"))}`
-              )}
+              href={`/util/categories/${encodeURIComponent(cat.name.replace(/ /g, "_"))}`}
               className={cn(
                 "group rounded-row relative flex flex-col justify-between overflow-hidden p-4",
                 "border-separator border",

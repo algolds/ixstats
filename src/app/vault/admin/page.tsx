@@ -29,7 +29,7 @@ export default function VaultAdminPage() {
             <p className="text-label-secondary text-body">
               You need admin permissions to access the vault admin panel.
             </p>
-            <Link href={withBasePath("/vault")}>
+            <Link href={"/vault"}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back to Vault
               </Button>
@@ -49,12 +49,12 @@ export default function VaultAdminPage() {
           <p className="text-label-secondary text-body">
             The vault admin panel has moved to the admin section.
           </p>
-          <Link href={withBasePath("/admin/vault")}>
+          <Link href={"/admin/vault"}>
             <Button size="sm">
               <Shield className="mr-1 h-4 w-4" /> Open Vault Admin
             </Button>
           </Link>
-          <Link href={withBasePath("/vault")}>
+          <Link href={"/vault"}>
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-1 h-4 w-4" /> Back to Vault
             </Button>

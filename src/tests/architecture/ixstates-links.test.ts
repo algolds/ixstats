@@ -9,7 +9,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const WIKI_DIRS = ["src/components/wiki-os", "src/app/(wiki-os)", "src/components/halo/plugins/wiki"];
+const WIKI_DIRS = [
+  "src/components/wiki-os",
+  "src/app/(wiki-os)",
+  "src/components/halo/plugins/wiki",
+];
 
 /** The first segments of IxStates routes the wiki links to (none is in WIKIOS_ALLOWED_PREFIXES). */
 const IXSTATES_ROUTES =

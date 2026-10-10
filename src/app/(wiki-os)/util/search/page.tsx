@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 
 export default function SearchPage() {
@@ -61,9 +60,7 @@ export default function SearchPage() {
               {results.map((item) => (
                 <li key={item.title} className="wikios-search-result-item">
                   <Link
-                    href={withBasePath(
-                      `/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`
-                    )}
+                    href={`/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`}
                     className="wikios-search-result-title-link"
                   >
                     {item.title}

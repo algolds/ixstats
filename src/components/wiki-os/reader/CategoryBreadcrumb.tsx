@@ -2,7 +2,6 @@
 // Shows parent category hierarchy above an article for navigation context.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { heroCardInputs } from "~/lib/wiki-os/hero-card";
 import { api } from "~/trpc/react";
@@ -53,9 +52,7 @@ export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
         <span key={catTitle} className="wikios-breadcrumb-item">
           {i > 0 && <ChevronRight className="wikios-breadcrumb-sep h-3 w-3" />}
           <Link
-            href={withBasePath(
-              `/util/categories/${encodeURIComponent(catTitle.replace(/ /g, "_"))}`
-            )}
+            href={`/util/categories/${encodeURIComponent(catTitle.replace(/ /g, "_"))}`}
             className="wikios-breadcrumb-link"
           >
             {catTitle.replace(/_/g, " ")}

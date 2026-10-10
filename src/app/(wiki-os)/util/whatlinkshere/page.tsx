@@ -3,7 +3,6 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { Link as LinkIcon, Page as FileText, ArrowRight } from "iconoir-react";
 import {
   DashedNotice,
@@ -11,8 +10,7 @@ import {
   useSearchTerm,
 } from "~/components/wiki-os/utilities/UtilitySearchShell";
 
-const wikiHref = (title: string) =>
-  withBasePath(`/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`);
+const wikiHref = (title: string) => `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
 export default function WhatLinksHereHubPage() {
   const searchParams = useSearchParams();

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import type { CategoryMember } from "./CategoryParts";
 import {
   OpenNewWindow as ExternalLink,
@@ -77,7 +76,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Link
-                  href={withBasePath("/util/categories")}
+                  href={"/util/categories"}
                   className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <span>Nations</span>
@@ -97,7 +96,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
           {/* Quick Action Navigation Buttons */}
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
-              href={withBasePath(`/wiki/${slug}`)}
+              href={`/wiki/${slug}`}
               className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               <ExternalLink className="text-tint h-3.5 w-3.5" />
@@ -177,9 +176,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                   return (
                     <Link
                       key={m.title}
-                      href={withBasePath(
-                        `/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
-                      )}
+                      href={`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`}
                       className="wikios-portal-pill"
                     >
                       {name}
@@ -198,7 +195,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                 {pages.map((m) => (
                   <Link
                     key={m.title}
-                    href={withBasePath(`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`)}
+                    href={`/wiki/${encodeURIComponent(m.title.replace(/ /g, "_"))}`}
                     className="wikios-portal-card group"
                   >
                     {m.imageUrl ? (

@@ -1,10 +1,12 @@
 /** @jest-environment node */
 /**
- * `ixstatesHref(path)` is a plain-`<a>` href: inside IxStates it carries the deployment's base path
- * (`/projects/ixstates/blurbs`). Next's `<Link>` adds the base path itself, with no check for a prefix, so handing it
- * `ixstatesHref(...)` renders `/projects/ixstates/projects/ixstates/blurbs` in production. A `<Link>` takes
- * `ixstatesLinkHref(...)`. This reads every TSX file's AST: for a `<Link>` imported from `next/link`, its `href` must
- * not hold a call to `ixstatesHref`, directly or through a same-file variable or function that calls it.
+ * `ixstatesHref(path)`, `withBasePath(path)`, `createUrl(path)`, `createAbsoluteUrl(path)` and `titleToWikiOSPath(title)` return a path with the
+ * deployment's base path in front (`/projects/ixstates/blurbs`), which is right for a plain `<a href>`, a redirect or
+ * `window.location`. Next's `<Link>` adds the base path itself, with no check for a prefix, so handing it one of them
+ * renders `/projects/ixstates/projects/ixstates/blurbs` in production. A `<Link>` takes the plain path, or
+ * `ixstatesLinkHref(...)` where the IxStates host logic matters. This reads every TSX file's AST: for a `<Link>`
+ * imported from `next/link`, its `href` must not hold a call to one of those helpers, directly or through a same-file
+ * variable or function that calls it.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -12,6 +14,14 @@ import { ts } from "ts-morph";
 
 const ROOT = process.cwd();
 const SRC = path.join(ROOT, "src");
+const BASE_PREFIXED_HELPERS: readonly string[] = [
+  "ixstatesHref",
+  "withBasePath",
+  "createUrl",
+  "createAbsoluteUrl",
+  // wiki title to its WikiOS path with the base path (titleToWikiOSRoute is the <Link> one)
+  "titleToWikiOSPath",
+];
 
 function tsxFiles(dir: string, found: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -43,9 +53,30 @@ function nextLinkNames(file: ts.SourceFile): Set<string> {
   return names;
 }
 
+/**
+ * Visits the node and what it holds, except the arguments of a call to a function that is not one of `names`: a
+ * helper's result handed to `encodeURIComponent(createUrl("/realms"))` is a value inside a query string (a
+ * `redirect_url`), not the path the `<Link>` navigates to.
+ */
+function walkPathParts(
+  node: ts.Node,
+  names: ReadonlySet<string>,
+  visit: (child: ts.Node) => void
+): void {
+  visit(node);
+  if (
+    ts.isCallExpression(node) &&
+    !(ts.isIdentifier(node.expression) && names.has(node.expression.text))
+  ) {
+    walkPathParts(node.expression, names, visit);
+    return;
+  }
+  node.forEachChild((child) => walkPathParts(child, names, visit));
+}
+
 function callsAny(node: ts.Node, callees: ReadonlySet<string>): boolean {
   let found = false;
-  descendants(node, (child) => {
+  walkPathParts(node, callees, (child) => {
     if (
       ts.isCallExpression(child) &&
       ts.isIdentifier(child.expression) &&
@@ -58,11 +89,11 @@ function callsAny(node: ts.Node, callees: ReadonlySet<string>): boolean {
 }
 
 /**
- * The file's top-level names that hold an `ixstatesHref(...)` result: `const x = ixstatesHref(..)`, a function that
- * calls it, and (repeated until nothing new turns up) anything built from those.
+ * The file's names that hold a base-prefixed path: `const x = withBasePath(..)`, a function that calls it, and
+ * (repeated until nothing new turns up) anything built from those.
  */
-function ixstatesHrefNames(file: ts.SourceFile): Set<string> {
-  const names = new Set<string>(["ixstatesHref"]);
+function basePrefixedNames(file: ts.SourceFile): Set<string> {
+  const names = new Set<string>(BASE_PREFIXED_HELPERS);
   const declarations: Array<{ name: string; node: ts.Node }> = [];
   descendants(file, (node) => {
     if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
@@ -83,7 +114,7 @@ function ixstatesHrefNames(file: ts.SourceFile): Set<string> {
   return names;
 }
 
-/** "line: <Link ...>" for every `<Link>` in the source whose `href` holds an `ixstatesHref` result. */
+/** "line: <Link ...>" for every `<Link>` in the source whose `href` holds a base-prefixed path. */
 export function linkHrefOffenders(source: string, fileName = "fixture.tsx"): string[] {
   const file = ts.createSourceFile(
     fileName,
@@ -94,7 +125,7 @@ export function linkHrefOffenders(source: string, fileName = "fixture.tsx"): str
   );
   const linkNames = nextLinkNames(file);
   if (linkNames.size === 0) return [];
-  const tainted = ixstatesHrefNames(file);
+  const tainted = basePrefixedNames(file);
   const offenders: string[] = [];
   descendants(file, (node) => {
     if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return;
@@ -104,7 +135,7 @@ export function linkHrefOffenders(source: string, fileName = "fixture.tsx"): str
       const value = attribute.initializer;
       if (!value || !ts.isJsxExpression(value) || !value.expression) continue;
       const names = new Set<string>();
-      descendants(value.expression, (child) => {
+      walkPathParts(value.expression, tainted, (child) => {
         if (ts.isIdentifier(child) && tainted.has(child.text)) names.add(child.text);
       });
       if (names.size > 0) {
@@ -139,6 +170,38 @@ describe("linkHrefOffenders (the guard itself)", () => {
     ).toHaveLength(1);
   });
 
+  it.each([
+    ["withBasePath", 'withBasePath("/blurbs")'],
+    ["createUrl", 'createUrl("/realms")'],
+    ["createAbsoluteUrl", 'createAbsoluteUrl("/realms")'],
+    ["titleToWikiOSPath", "titleToWikiOSPath(title)"],
+  ])("flags %s handed to a Next Link, directly or through a same-file helper", (_name, call) => {
+    expect(linkHrefOffenders(`${link}const a = <Link href={${call}}>x</Link>;`)).toHaveLength(1);
+    expect(
+      linkHrefOffenders(
+        `${link}const pageHref = (t: string) => ${call};\nconst a = <Link href={pageHref(t)} />;`
+      )
+    ).toHaveLength(1);
+  });
+
+  it("flags a base-prefixed path wrapped around a redirect_url, and leaves the redirect_url value alone", () => {
+    expect(
+      linkHrefOffenders(
+        `${link}const a = <Link href={withBasePath(\`/sign-in?redirect_url=\${encodeURIComponent(withBasePath("/x"))}\`)} />;`
+      )
+    ).toHaveLength(1);
+    expect(
+      linkHrefOffenders(
+        `${link}const a = <Link href={\`/sign-in?redirect_url=\${encodeURIComponent(createUrl("/realms"))}\`} />;`
+      )
+    ).toEqual([]);
+    expect(
+      linkHrefOffenders(
+        `${link}const signIn = \`/sign-in?redirect_url=\${encodeURIComponent(withBasePath("/x"))}\`;\nconst a = <Link href={signIn} />;`
+      )
+    ).toEqual([]);
+  });
+
   it("follows the local name next/link is imported under", () => {
     const aliased =
       'import NextLink from "next/link";\nconst a = <NextLink href={ixstatesHref("/x")} />;';
@@ -146,7 +209,7 @@ describe("linkHrefOffenders (the guard itself)", () => {
   });
 
   it("leaves a plain <a>, ixstatesLinkHref, and a Link that is not Next's alone", () => {
-    expect(linkHrefOffenders(`${link}const a = <a href={ixstatesHref("/blurbs")}>x</a>;`)).toEqual(
+    expect(linkHrefOffenders(`${link}const a = <a href={withBasePath("/blurbs")}>x</a>;`)).toEqual(
       []
     );
     expect(

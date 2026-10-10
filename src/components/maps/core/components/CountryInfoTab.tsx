@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { OpenBook as BookOpen, MediaImage as ImageIcon } from "iconoir-react";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
@@ -65,7 +65,7 @@ export function CountryInfoTab({
               .filter((s) => s.level <= 3)
               .map((section, i) => {
                 const key = `${section.anchor}-${i}`;
-                const href = `${wikiRichIntro?.wikiUrl ?? titleToWikiOSPath(displayName)}#${section.anchor}`;
+                const href = `${wikiRichIntro?.wikiUrl ?? titleToWikiOSRoute(displayName)}#${section.anchor}`;
                 if (section.level !== 2) {
                   return (
                     <WikiAnchor

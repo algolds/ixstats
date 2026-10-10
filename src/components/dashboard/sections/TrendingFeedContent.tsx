@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
 import { FeedEmpty, FeedList, FeedSkeletons, type FeedHandlers } from "./UnifiedFeedContent";
 
 /**
@@ -31,7 +30,7 @@ export function TrendingFeedContent(handlers: FeedHandlers) {
           {topics.map((topic) => (
             <Link
               key={topic.id}
-              href={withBasePath(`/hashtags/${encodeURIComponent(topic.hashtag)}`)}
+              href={`/hashtags/${encodeURIComponent(topic.hashtag)}`}
               className="bg-fill-3 hover:bg-fill-2 text-label text-caption duration-fast ease-out-facet focus-visible:outline-tint rounded-full px-3 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               title={`${topic.postCount} post${topic.postCount !== 1 ? "s" : ""}`}
             >
