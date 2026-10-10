@@ -1,0 +1,79 @@
+/** @jest-environment node */
+import {
+  capCount,
+  countLabel,
+  isUnread,
+  NAV_COUNT_CAP,
+  seenSince,
+  UNREAD_WINDOW_MS,
+  unreadFloor,
+} from "~/lib/thinkpages-forum/unread";
+
+const NOW = new Date("2026-10-15T12:00:00Z");
+const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);
+
+describe("unreadFloor", () => {
+  it("is thirty days back when nothing was marked read", () => {
+    expect(unreadFloor(NOW, null).getTime()).toBe(NOW.getTime() - UNREAD_WINDOW_MS);
+  });
+
+  it("is the mark-all-read time when that is later than the window", () => {
+    expect(unreadFloor(NOW, daysAgo(2))).toEqual(daysAgo(2));
+  });
+
+  it("ignores a mark-all-read older than the window", () => {
+    expect(unreadFloor(NOW, daysAgo(90)).getTime()).toBe(NOW.getTime() - UNREAD_WINDOW_MS);
+  });
+});
+
+describe("seenSince", () => {
+  const floor = daysAgo(10);
+
+  it("is the floor when nothing was read or the read mark is older than the floor", () => {
+    expect(seenSince(null, floor)).toBe(floor);
+    expect(seenSince(undefined, floor)).toBe(floor);
+    expect(seenSince(daysAgo(20), floor)).toBe(floor);
+  });
+
+  it("is the read time when it is later than the floor", () => {
+    expect(seenSince(daysAgo(3), floor)).toEqual(daysAgo(3));
+  });
+});
+
+describe("isUnread", () => {
+  const floor = unreadFloor(NOW, null);
+
+  it("never counts a thread whose last post is older than the window", () => {
+    expect(isUnread(daysAgo(31), null, floor)).toBe(false);
+  });
+
+  it("counts a recent thread nobody opened", () => {
+    expect(isUnread(daysAgo(1), null, floor)).toBe(true);
+    expect(isUnread(daysAgo(1), undefined, floor)).toBe(true);
+  });
+
+  it("treats a thread read up to its last post as read, and a later post as unread again", () => {
+    expect(isUnread(daysAgo(1), daysAgo(1), floor)).toBe(false);
+    expect(isUnread(daysAgo(1), daysAgo(2), floor)).toBe(true);
+  });
+
+  it("is not fooled by a read mark older than the floor", () => {
+    expect(isUnread(daysAgo(10), daysAgo(40), floor)).toBe(true);
+  });
+
+  it("hides what a mark-all-read covers and shows what came after it", () => {
+    const marked = unreadFloor(NOW, daysAgo(3));
+    expect(isUnread(daysAgo(4), null, marked)).toBe(false);
+    expect(isUnread(daysAgo(2), null, marked)).toBe(true);
+  });
+});
+
+describe("sidebar counts", () => {
+  it("clamps at one above the cap and labels it 99+", () => {
+    expect(NAV_COUNT_CAP).toBe(99);
+    expect(capCount(7)).toBe(7);
+    expect(capCount(250)).toBe(100);
+    expect(countLabel(99)).toBe("99");
+    expect(countLabel(100)).toBe("99+");
+  });
+});

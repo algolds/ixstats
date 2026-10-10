@@ -71,6 +71,26 @@ export function postHref(postId: string): string {
   return `/thinkpages/post/${seg(postId)}`;
 }
 
+/** The pages the sidebar lists under ThinkPages for a signed-in member. */
+export const NEW_POSTS_HREF = "/thinkpages/new";
+export const WATCHED_HREF = "/thinkpages/watched";
+export const STASHED_HREF = "/thinkpages/stashed";
+
+/** A thread opened at its first unread post (a server redirect; a signed-out visitor gets the thread itself). */
+export function unreadHref(threadId: string): string {
+  return `${threadHref(threadId)}/unread`;
+}
+
+/** A member's Passport page, by handle. */
+export function handleProfileHref(handle: string): string {
+  return `/id/${seg(handle)}`;
+}
+
+/** A persona's profile (the dashboard owns the feed; `/thinkpages/profile/*` only redirects there). */
+export function personaProfileHref(username: string): string {
+  return `/dashboard/profile/${seg(username)}`;
+}
+
 /** The realm's Nations tab, where a player claims a nation to post in its section. */
 export function claimNationHref(slug: string): string {
   return `/r/${seg(slug)}/nations`;

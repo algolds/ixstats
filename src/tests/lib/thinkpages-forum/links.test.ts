@@ -4,14 +4,20 @@ import {
   categoryHref,
   claimNationHref,
   forumHomeHref,
+  handleProfileHref,
   hubHref,
   modHref,
+  NEW_POSTS_HREF,
   newThreadHref,
+  personaProfileHref,
   postHref,
   realmBoardHref,
   realmHref,
   STANDING_HREF,
+  STASHED_HREF,
   threadHref,
+  unreadHref,
+  WATCHED_HREF,
 } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
@@ -71,5 +77,16 @@ describe("forum links", () => {
 
   it("links the member's standing on the forum home", () => {
     expect(STANDING_HREF).toBe("/thinkpages#standing");
+  });
+
+  it("names the signed-in pages, the jump to unread and the profile links", () => {
+    expect(NEW_POSTS_HREF).toBe("/thinkpages/new");
+    expect(WATCHED_HREF).toBe("/thinkpages/watched");
+    expect(STASHED_HREF).toBe("/thinkpages/stashed");
+    expect(unreadHref("t1")).toBe("/thinkpages/t/t1/unread");
+    expect(unreadHref("a/b")).toBe("/thinkpages/t/a%2Fb/unread");
+    expect(handleProfileHref("kir")).toBe("/id/kir");
+    expect(personaProfileHref("Aria_V")).toBe("/dashboard/profile/Aria_V");
+    expect(personaProfileHref("a/b")).toBe("/dashboard/profile/a%2Fb");
   });
 });

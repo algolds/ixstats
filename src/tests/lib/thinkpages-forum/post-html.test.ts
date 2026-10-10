@@ -5,6 +5,7 @@ import {
   embedWidth,
   isPostId,
   linkQuoteSources,
+  quotedPostIds,
   relatedWikiTitles,
 } from "~/lib/thinkpages-forum/post-html";
 
@@ -149,5 +150,22 @@ describe("relatedWikiTitles", () => {
 
   it("is empty when nothing links to the wiki", () => {
     expect(relatedWikiTitles("<p>plain</p>")).toEqual([]);
+  });
+});
+
+describe("quotedPostIds", () => {
+  it("lists the posts a post quotes, once each, valid ids only", () => {
+    const html =
+      '<blockquote class="forum-quote" data-post="p1"><div>x</div></blockquote>' +
+      '<blockquote data-post="p1"></blockquote>' +
+      '<blockquote data-post="bad id!"></blockquote>' +
+      '<blockquote data-post="p2"></blockquote>';
+    expect(quotedPostIds(html)).toEqual(["p1", "p2"]);
+  });
+
+  it("stops at five and ignores a data-post that is not on a blockquote", () => {
+    const many = Array.from({ length: 9 }, (_, i) => `<blockquote data-post="q${i}"></blockquote>`);
+    expect(quotedPostIds(many.join(""))).toHaveLength(5);
+    expect(quotedPostIds('<div data-post="p1"></div><a data-post="p2">x</a>')).toEqual([]);
   });
 });

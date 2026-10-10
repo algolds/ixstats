@@ -62,6 +62,20 @@ export function linkQuoteSources(html: string): string {
   );
 }
 
+const QUOTE_SOURCE = /<blockquote\b[^>]*?\sdata-post="([^"]*)"/gi;
+export const QUOTED_POSTS_MAX = 5;
+
+/** The posts a post's HTML quotes (`<blockquote data-post="id">`): valid ids only, once each, at most `max`. */
+export function quotedPostIds(html: string, max: number = QUOTED_POSTS_MAX): string[] {
+  const ids: string[] = [];
+  for (const match of html.matchAll(QUOTE_SOURCE)) {
+    const id = match[1];
+    if (isPostId(id) && !ids.includes(id)) ids.push(id);
+    if (ids.length === max) break;
+  }
+  return ids;
+}
+
 const ANCHOR_TAG = /<a\b[^>]*>/gi;
 const HREF = /\shref="([^"]*)"/i;
 const RELATIVE_WIKI = /^\/wiki\/([^#?]+)/;
