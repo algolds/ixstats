@@ -7,6 +7,7 @@
  * Invariant 7: HTML is never used as serialization intermediary.
  */
 
+import { parseForumQuote } from "~/lib/thinkpages-forum/forum-quote";
 import { parse } from "../wikitext/parser";
 import { plateFingerprint } from "./plate-fingerprint";
 import type { PlateNode } from "./plate-node";
@@ -223,6 +224,9 @@ function listToPlate(node: WikiBlockNode): PlateNode {
 const dividerToPlate = (): PlateNode => ({ type: "hr", children: [{ text: "" }] });
 
 function quoteToPlate(node: WikiBlockNode): PlateNode {
+  // A forum post's quote is one atomic block (its tags are not text to edit); any other blockquote is edited as text.
+  const forumQuote = node.raw === undefined ? null : parseForumQuote(node.raw);
+  if (forumQuote) return forumQuote;
   const qb = node as QuoteBlock;
   let inlines: any[] = [];
   if (Array.isArray(qb.children)) {

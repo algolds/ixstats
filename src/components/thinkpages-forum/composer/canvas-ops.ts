@@ -4,6 +4,7 @@
  * of truth.
  */
 import type { TElement, TSlateEditor } from "platejs";
+import { forumQuoteBlock } from "~/lib/thinkpages-forum/forum-quote";
 import { quoteWikitext, type QuoteRequest } from "./QuoteInsert";
 
 const EMPTY_PARAGRAPH: TElement = { type: "p", children: [{ text: "" }] };
@@ -37,14 +38,7 @@ export function insertAtCaret(editor: TSlateEditor, text: string): void {
  * around it.
  */
 function quoteBlock(quote: QuoteRequest): TElement {
-  return {
-    type: "raw-wikitext",
-    construct: "forum-quote",
-    rawWikitext: quoteWikitext(quote).trimEnd(),
-    label: quote.author,
-    caption: quote.text,
-    children: [{ text: "" }],
-  };
+  return forumQuoteBlock(quoteWikitext(quote).trimEnd(), quote.author, quote.text);
 }
 
 /** Adds the quote at the end of the document (replacing an empty one) and puts the caret in a fresh paragraph after it. */
