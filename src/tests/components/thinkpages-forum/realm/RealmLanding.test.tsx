@@ -495,6 +495,13 @@ describe("RealmLanding", () => {
       expect(settings).toHaveAttribute("data-slug", "eurth");
     });
 
+    it("keeps the board settings from a realm without a row of its own, which has nothing to save to", () => {
+      const base = boardData(messages, { access: boardAccess({ canManageSettings: true }) });
+      state.board = { data: { ...base, realm: { ...base.realm, hasRow: false } } };
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.queryByLabelText("Board settings")).toBeNull();
+    });
+
     it("keeps the board settings from everyone else, officers without the board power included", () => {
       state.section = section;
       render(<RealmLanding realm="eurth" />);
@@ -600,15 +607,15 @@ describe("RealmLanding", () => {
   });
 
   describe("live updates", () => {
-    it("polls the board while the socket is down and stops when it is live", () => {
+    it("polls the board every 10s while the socket is down and every 60s when it is live", () => {
       live.live = false;
       live.refetchInterval = 10_000;
       const { rerender } = render(<RealmLanding realm="eurth" />);
       expect(state.boardOptions.at(-1)).toMatchObject({ refetchInterval: 10_000 });
       live.live = true;
-      live.refetchInterval = false;
+      live.refetchInterval = 60_000;
       rerender(<RealmLanding realm="eurth" />);
-      expect(state.boardOptions.at(-1)).toMatchObject({ refetchInterval: false });
+      expect(state.boardOptions.at(-1)).toMatchObject({ refetchInterval: 60_000 });
     });
 
     it("polls without a word until a connected socket drops, then tells the feed it is paused", () => {

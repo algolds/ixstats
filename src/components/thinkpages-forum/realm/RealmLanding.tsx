@@ -90,7 +90,8 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
     boards: phone ? [] : boards,
     online: live.online,
     actions: happenings?.items ?? [],
-    canManageSettings: access.canManageSettings,
+    // A realm without a row of its own (IxWorld, synthesized) has no settings to save.
+    canManageSettings: access.canManageSettings && realm.hasRow,
   };
   usePageTitle({ title: realm.name });
   useScrollToMessageHash(data.messages.length);
