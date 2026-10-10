@@ -914,10 +914,14 @@ describe("thinkpagesForum router", () => {
       await expect(caller(founder, realmForumDb()).navFlags()).resolves.toMatchObject({
         forumModerator: true,
       });
-      const categoryMod = realmForumDb();
-      categoryMod.forumCategoryModerator.findMany.mockResolvedValue([
-        { categoryId: "cat_general" },
-      ]);
+      const categoryMod = {
+        ...realmForumDb(),
+        forumCategoryModerator: {
+          findMany: jest.fn(async (): Promise<Array<{ categoryId: string }>> => [
+            { categoryId: "cat_general" },
+          ]),
+        },
+      };
       await expect(caller(member, categoryMod).navFlags()).resolves.toMatchObject({
         forumModerator: true,
       });
