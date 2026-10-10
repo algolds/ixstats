@@ -19,6 +19,9 @@ import {
 } from "~/server/api/trpc";
 import {
   authorModeration,
+  afterEdit,
+  afterReply,
+  afterThreadStarted,
   boardTopPosters,
   canStartThread,
   createThread,
@@ -65,6 +68,7 @@ import {
   actorOf,
   authorMaps,
   categoryKey,
+  hookFailed,
   id,
   mapError,
   maskPersona,
@@ -345,15 +349,23 @@ const forumRouter = createTRPCRouter({
         })
         .refine(oneBody, ONE_BODY)
     )
-    .mutation(async ({ ctx, input }) =>
-      createThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
-    ),
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const created = await createThread(ctx.db, actor, input).catch(mapError);
+      void afterThreadStarted(ctx.db, actor, created).catch(hookFailed);
+      return created;
+    }),
 
   reply: rateLimitedMutationProcedure
     .input(z.object({ threadId: id, html, wikitext, personaId }).refine(oneBody, ONE_BODY))
-    .mutation(async ({ ctx, input }) =>
-      replyToThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
-    ),
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const replied = await replyToThread(ctx.db, actor, input).catch(mapError);
+      void afterReply(ctx.db, actor, { threadId: input.threadId, postId: replied.postId }).catch(
+        hookFailed
+      );
+      return replied;
+    }),
 
   /** `editedAt` is the post's value when the author loaded it (M1: CONFLICT if a moderator edited since). */
   editPost: rateLimitedMutationProcedure
@@ -362,9 +374,12 @@ const forumRouter = createTRPCRouter({
         .object({ postId: id, html, wikitext, editedAt: z.date().nullable() })
         .refine(oneBody, ONE_BODY)
     )
-    .mutation(async ({ ctx, input }) =>
-      editPost(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
-    ),
+    .mutation(async ({ ctx, input }) => {
+      const actor = await actorOf(ctx.db, ctx.user);
+      const edited = await editPost(ctx.db, actor, input).catch(mapError);
+      void afterEdit(ctx.db, actor, input.postId).catch(hookFailed);
+      return edited;
+    }),
 
   /** Canvas preview: the same render as a save, without writing. `pending` when the wiki was unavailable. */
   previewPost: rateLimitedMutationProcedure

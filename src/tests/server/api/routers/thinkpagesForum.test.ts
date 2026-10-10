@@ -12,6 +12,10 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
       postId: "p_new",
       formatting: "done",
     })),
+    afterThreadStarted: jest.fn(async () => undefined),
+    afterReply: jest.fn(async () => undefined),
+    afterEdit: jest.fn(async () => undefined),
+    afterBoardMessage: jest.fn(async () => undefined),
     renderPostWikitext: jest.fn(),
     replyToThread: jest.fn(async () => {
       throw new actual.ForumError("CONFLICT", "This thread is closed to replies.");

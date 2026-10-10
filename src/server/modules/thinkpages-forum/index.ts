@@ -1,3 +1,4 @@
+export { afterBoardMessage, afterEdit, afterReply, afterThreadStarted } from "./after-write";
 export {
   canPostIn,
   canSeeCategory,
@@ -50,6 +51,13 @@ export {
   type TrendingThread,
 } from "./board-reads";
 export { ForumError, type ForumErrorCode } from "./errors";
+export {
+  FORUM_NOTICE_SOURCE,
+  forumNoticesEnabled,
+  sendForumNotices,
+  type ForumNotice,
+} from "./forum-notices";
+export { notifyForumPost, type NoticeActor, type NotifyDb } from "./post-notify";
 export {
   resolveMentionNames,
   withMentionLinks,

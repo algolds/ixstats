@@ -5,6 +5,13 @@ jest.mock("~/server/websocket-server", () => ({
   getThinkPagesBroadcaster: () => mockBroadcaster,
 }));
 
+jest.mock("~/server/modules/thinkpages-forum/after-write", () => ({
+  afterThreadStarted: jest.fn(async () => undefined),
+  afterReply: jest.fn(async () => undefined),
+  afterEdit: jest.fn(async () => undefined),
+  afterBoardMessage: jest.fn(async () => undefined),
+}));
+
 import { createCallerFactory, t } from "~/server/api/trpc/init";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";

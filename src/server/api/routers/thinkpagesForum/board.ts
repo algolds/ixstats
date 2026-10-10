@@ -3,8 +3,8 @@
  * `thinkpagesForum`. Thin, as the rest of the forum router: validates, maps the signed-in user to the module's
  * viewer, calls ~/server/modules/thinkpages-forum and maps ForumError (a slow-mode wait rides along as
  * `data.context.retryAfterSeconds`, see `mapError`). Access, slow mode and the character cap are the module's. Each
- * write then publishes to the realm's live room through the ThinkPages broadcaster, without waiting for it and
- * without it ever failing the write.
+ * write then runs the notice hook and publishes to the realm's live room through the ThinkPages broadcaster, without
+ * waiting for either and without either ever failing the write.
  */
 import { z } from "zod";
 import {
@@ -14,6 +14,8 @@ import {
 } from "~/lib/thinkpages-forum/board";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import {
+  afterBoardMessage,
+  afterEdit,
   continueInThread,
   editBoardMessage,
   getBoard,
@@ -27,7 +29,7 @@ import {
   updateBoardSettings,
 } from "~/server/modules/thinkpages-forum";
 import { getThinkPagesBroadcaster } from "~/server/websocket-server";
-import { actorOf, categoryKey, id, mapError, realm, viewerOf } from "./viewer";
+import { actorOf, categoryKey, hookFailed, id, mapError, realm, viewerOf } from "./viewer";
 
 const html = z.string().max(MAX_POST_HTML);
 
@@ -58,9 +60,9 @@ export const thinkpagesForumBoardRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const message = await postBoardMessage(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(
-        mapError
-      );
+      const actor = await actorOf(ctx.db, ctx.user);
+      const message = await postBoardMessage(ctx.db, actor, input).catch(mapError);
+      void afterBoardMessage(ctx.db, actor, message.id).catch(hookFailed);
       void publishBoardPost(ctx.db, getThinkPagesBroadcaster(), message.id, "message");
       return message;
     }),
@@ -69,9 +71,9 @@ export const thinkpagesForumBoardRouter = createTRPCRouter({
   editBoardMessage: rateLimitedMutationProcedure
     .input(z.object({ postId: id, html }))
     .mutation(async ({ ctx, input }) => {
-      const message = await editBoardMessage(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(
-        mapError
-      );
+      const actor = await actorOf(ctx.db, ctx.user);
+      const message = await editBoardMessage(ctx.db, actor, input).catch(mapError);
+      void afterEdit(ctx.db, actor, message.id).catch(hookFailed);
       void publishBoardPost(ctx.db, getThinkPagesBroadcaster(), message.id, "updated");
       return message;
     }),

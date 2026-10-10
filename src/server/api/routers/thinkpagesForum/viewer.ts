@@ -45,6 +45,14 @@ export function mapError(error: Error): never {
   throw error;
 }
 
+/**
+ * The write hooks (auto-watch, notices) run after the response and never fail a write; the hooks log their own
+ * failures, so this only catches what escapes them.
+ */
+export function hookFailed(error: Error): void {
+  console.error("[thinkpages-forum] Write hook failed:", error);
+}
+
 export type ViewerSource = ForumUserSource;
 /** The signed-in user as a member, without what they moderate (M16). */
 export const memberOf = forumMemberOf;
