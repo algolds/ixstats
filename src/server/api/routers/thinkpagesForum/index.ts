@@ -7,6 +7,7 @@
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";
+import { THREAD_SORTS } from "~/lib/thinkpages-forum/thread-sort";
 import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
 import {
   createTRPCRouter,
@@ -16,18 +17,21 @@ import {
 } from "~/server/api/trpc";
 import {
   authorModeration,
+  boardTopPosters,
   canStartThread,
   createThread,
   editPost,
   fileAppeal,
   fileReport,
+  forumStatistics,
   getCategoryThreads,
   getRealmSection,
   getThreadPosts,
   isThreadStashed,
+  listBoards,
   listForumRealms,
   listStashedThreads,
-  listSiteCategories,
+  loadCategory,
   MAX_POST_HTML,
   moveDestinations,
   myStanding,
@@ -39,6 +43,7 @@ import {
   stashThread,
   TITLE_MAX,
   TITLE_MIN,
+  trendingThreads,
   unstashThread,
   type AuthorModerationDb,
   type ContentDb,
@@ -91,9 +96,36 @@ async function moderatorView(
 }
 
 export const thinkpagesForumRouter = createTRPCRouter({
+  /** The Forums home: visible sitewide boards with counts, style and latest post. */
   categories: publicProcedure.query(async ({ ctx }) =>
-    listSiteCategories(ctx.db, await viewerOf(ctx.db, ctx.user))
+    listBoards(ctx.db, await viewerOf(ctx.db, ctx.user))
   ),
+
+  /** Rail: threads, posts and member authors over public content (cached five minutes). */
+  forumStats: publicProcedure.query(({ ctx }) => forumStatistics(ctx.db)),
+
+  /** Rail: the most active threads of the last 24 hours that the viewer may see. */
+  trending: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(10).default(5) }).optional())
+    .query(async ({ ctx, input }) =>
+      trendingThreads(ctx.db, await viewerOf(ctx.db, ctx.user), input?.limit ?? 5)
+    ),
+
+  /** Rail: a board's most active authors this month, with their display data. */
+  boardTopPosters: publicProcedure
+    .input(z.object({ key: categoryKey, realm: realm.optional() }))
+    .query(async ({ ctx, input }) => {
+      const viewer = await viewerOf(ctx.db, ctx.user);
+      const { category } = await loadCategory(ctx.db, viewer, input).catch(mapError);
+      const posters = await boardTopPosters(ctx.db, viewer, category);
+      return {
+        posters,
+        authors: await authorMaps(
+          ctx.db,
+          posters.map((p) => ({ authorUserId: p.authorUserId, authorPersonaId: null }))
+        ),
+      };
+    }),
 
   /** The realm switcher: realms the viewer may pick, defaulting to their primary nation's realm. */
   realms: publicProcedure.query(async ({ ctx }) => {
@@ -119,14 +151,22 @@ export const thinkpagesForumRouter = createTRPCRouter({
   }),
 
   category: publicProcedure
-    .input(z.object({ key: categoryKey, page, realm: realm.optional() }))
+    .input(
+      z.object({
+        key: categoryKey,
+        page,
+        realm: realm.optional(),
+        sort: z.enum(THREAD_SORTS).default("latest"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const viewer = await viewerOf(ctx.db, ctx.user);
       const { forumRealm, ...result } = await getCategoryThreads(
         ctx.db,
         viewer,
         { key: input.key, realm: input.realm },
-        input.page
+        input.page,
+        input.sort
       ).catch(mapError);
       const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
       return {

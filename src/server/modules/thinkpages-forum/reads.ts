@@ -13,6 +13,7 @@ import { ForumError } from "./errors";
 import { canModerateCategory } from "./mod-scope";
 import { canSeeRealm, loadForumRealm, type ForumRealm, type RealmDb } from "./realm-access";
 import { POSTS_PER_PAGE, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { threadOrderBy, type ThreadSort } from "~/lib/thinkpages-forum/thread-sort";
 
 export { POSTS_PER_PAGE, THREADS_PER_PAGE };
 
@@ -30,14 +31,14 @@ interface PlacedCategory {
 
 const isAdmin = (viewer: ForumViewer): boolean => viewer !== null && isSiteAdmin(viewer);
 /** Hidden threads and posts stay in for the category's moderators (M9). */
-const hiddenFilter = (viewer: ForumViewer, category: PlacedCategory): { hidden?: false } =>
+export const hiddenFilter = (viewer: ForumViewer, category: PlacedCategory): { hidden?: false } =>
   canModerateCategory(viewer, category) ? {} : { hidden: false };
 /** M8: in a Reports category a member who does not moderate it sees only their own threads. */
 const onlyOwnThreads = (viewer: ForumViewer, category: PlacedCategory): boolean =>
   category.visibility === "reporter_staff" && !canModerateCategory(viewer, category);
 // Anonymous never sees a Reports category (canSeeCategory); an empty author id would match no thread regardless.
 const ownAuthor = (viewer: ForumViewer) => ({ authorUserId: viewer?.id ?? "" });
-const ownThreadsWhere = (
+export const ownThreadsWhere = (
   viewer: ForumViewer,
   category: PlacedCategory
 ): { authorUserId?: string } => (onlyOwnThreads(viewer, category) ? ownAuthor(viewer) : {});
@@ -143,7 +144,8 @@ export async function getCategoryThreads(
   db: Pick<ReadsDb, "forumCategory" | "forumThread" | "realm">,
   viewer: ForumViewer,
   where: CategoryLocator,
-  page: number
+  page: number,
+  sort: ThreadSort = "latest"
 ) {
   const { category, realm } = await loadCategory(db, viewer, where);
   const threadWhere = {
@@ -154,7 +156,7 @@ export async function getCategoryThreads(
   const [threads, total] = await Promise.all([
     db.forumThread.findMany({
       where: threadWhere,
-      orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }, { id: "desc" }],
+      orderBy: threadOrderBy(sort),
       skip: (pageOf(page) - 1) * THREADS_PER_PAGE,
       take: THREADS_PER_PAGE,
       select: {
@@ -182,6 +184,7 @@ export async function getCategoryThreads(
       icAllowed: category.icAllowed,
       postRole: category.postRole,
       visibility: category.visibility,
+      style: category.style,
       ...placeOf(category, realm),
     },
     threads,

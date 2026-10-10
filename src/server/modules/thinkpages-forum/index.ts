@@ -6,6 +6,19 @@ export {
   type ForumViewer,
   type ModeratorContext,
 } from "./access";
+export { listBoards, type BoardAuthor, type BoardLatest, type BoardsDb } from "./board-list";
+export {
+  boardTopPosters,
+  forumStatistics,
+  latestPerCategory,
+  postCountsPerCategory,
+  trendingThreads,
+  type BoardCategory,
+  type ForumStatistics,
+  type LatestPost,
+  type TopPoster,
+  type TrendingThread,
+} from "./board-reads";
 export { ForumError, type ForumErrorCode } from "./errors";
 export {
   FORUM_IMPORT_NODE_MAP_KEY,

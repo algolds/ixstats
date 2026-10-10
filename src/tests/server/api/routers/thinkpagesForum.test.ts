@@ -61,6 +61,7 @@ const categories = SITE_CATEGORIES.map((c, i) => ({
   id: `cat_${c.key}`,
   scope: "site",
   realmId: null,
+  style: "ooc",
   ...c,
   order: i,
 }));
@@ -206,6 +207,75 @@ describe("thinkpagesForum router", () => {
     const out = await caller(null, forumDb()).categories();
     expect(out.map((c) => c.key)).toContain("general");
     expect(out.map((c) => c.key)).not.toContain("staff");
+  });
+
+  describe("board reads", () => {
+    it("gives each home board its style, post count and latest post with the author's name", async () => {
+      const db = forumDb();
+      db.forumThread.groupBy.mockImplementation((async ({ by }: { by: string[] }) =>
+        by.length === 2
+          ? [
+              {
+                categoryId: general.id,
+                archived: false,
+                _count: { _all: 2 },
+                _max: { lastPostAt: when },
+              },
+            ]
+          : [{ categoryId: general.id, _sum: { postCount: 9 } }]) as never);
+      db.forumThread.findMany.mockResolvedValue([
+        { id: "t1", title: "Hello", categoryId: general.id, lastPostAt: when },
+      ] as never);
+      db.forumPost.findMany.mockResolvedValue([
+        {
+          threadId: "t1",
+          authorUserId: "u1",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          createdAt: when,
+        },
+      ] as never);
+      const out = await caller(null, db).categories();
+      const row = out.find((c) => c.key === "general")!;
+      expect(row).toMatchObject({ id: general.id, style: "ooc", threadCount: 2, postCount: 9 });
+      expect(row.latest).toMatchObject({
+        threadId: "t1",
+        threadTitle: "Hello",
+        author: { name: "heku", handle: "heku" },
+      });
+      expect(out.find((c) => c.key === "rules")!.latest).toBeNull();
+    });
+
+    it("sorts a board by the requested order and returns its style", async () => {
+      const db = forumDb();
+      const out = await caller(null, db).category({ key: "general", sort: "replies" });
+      expect(out.category.style).toBe("ooc");
+      expect(db.forumThread.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: [{ pinned: "desc" }, { postCount: "desc" }, { id: "desc" }],
+        })
+      );
+      await expect(
+        caller(null, db).category({ key: "general", sort: "oldest" as never })
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+    });
+
+    it("answers a board's top posters, and NOT_FOUND for a board the viewer cannot see", async () => {
+      const db = {
+        ...forumDb(),
+        forumPost: {
+          groupBy: jest.fn(async () => [{ authorUserId: "u1", _count: { authorUserId: 4 } }]),
+        },
+      };
+      const out = await caller(null, db).boardTopPosters({ key: "general" });
+      expect(out.posters).toEqual([{ authorUserId: "u1", postCount: 4 }]);
+      expect(out.authors.users.u1).toMatchObject({ name: "heku" });
+      await expect(caller(member, db).boardTopPosters({ key: "staff" })).rejects.toMatchObject({
+        code: "NOT_FOUND",
+      });
+    });
   });
 
   it("refuses to start a thread without signing in", async () => {
