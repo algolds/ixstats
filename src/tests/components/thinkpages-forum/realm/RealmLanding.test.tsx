@@ -132,6 +132,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onReply,
     onQuote,
     onChanged,
+    onStart,
   }: {
     data: { messages: Array<{ id: string; contentHtml: string; author: { name: string } }> };
     showLatest: number;
@@ -140,6 +141,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onReply: (m: unknown) => void;
     onQuote: (m: unknown) => void;
     onChanged: () => void;
+    onStart: () => void;
   }) => (
     <div data-testid="feed" data-show-latest={showLatest} data-paused={String(paused)}>
       <span>{typing.join(",")}</span>
@@ -157,54 +159,66 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
       <button type="button" onClick={onChanged}>
         changed
       </button>
-    </div>
-  ),
-}));
-jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => ({
-  BoardComposer: ({
-    replyTo,
-    quote,
-    onQuoteInserted,
-    onClearReply,
-    onTyping,
-    onSubmit,
-    slowModeSeconds,
-    docked,
-  }: {
-    replyTo: { postId: string; authorName: string } | null;
-    quote: { key: number; text: string } | null;
-    onQuoteInserted: () => void;
-    onClearReply: () => void;
-    onTyping: (personaId: string | null) => void;
-    onSubmit: (input: object) => Promise<void>;
-    slowModeSeconds: number;
-    docked?: boolean;
-  }) => (
-    <div data-testid="composer" data-slow={slowModeSeconds} data-docked={String(!!docked)}>
-      <span>{replyTo ? `replying:${replyTo.postId}:${replyTo.authorName}` : "no reply"}</span>
-      <span>{quote ? `quote:${quote.text}` : "no quote"}</span>
-      <button type="button" onClick={onQuoteInserted}>
-        quote inserted
-      </button>
-      <button type="button" onClick={onClearReply}>
-        clear reply
-      </button>
-      <button type="button" onClick={() => onTyping("ps1")}>
-        typing
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          void onSubmit({ html: "<p>hi</p>", personaId: "ps1", replyToPostId: "p2" }).catch(
-            () => undefined
-          )
-        }
-      >
-        submit
+      <button type="button" onClick={onStart}>
+        start
       </button>
     </div>
   ),
 }));
+jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => {
+  const composerFocus = jest.fn();
+  return {
+    composerFocus,
+    BoardComposer: ({
+      ref,
+      replyTo,
+      quote,
+      onQuoteInserted,
+      onClearReply,
+      onTyping,
+      onSubmit,
+      slowModeSeconds,
+      docked,
+    }: {
+      ref?: React.Ref<{ focus: () => void }>;
+      replyTo: { postId: string; authorName: string } | null;
+      quote: { key: number; text: string } | null;
+      onQuoteInserted: () => void;
+      onClearReply: () => void;
+      onTyping: (personaId: string | null) => void;
+      onSubmit: (input: object) => Promise<void>;
+      slowModeSeconds: number;
+      docked?: boolean;
+    }) => {
+      React.useImperativeHandle(ref, () => ({ focus: composerFocus }), []);
+      return (
+        <div data-testid="composer" data-slow={slowModeSeconds} data-docked={String(!!docked)}>
+          <span>{replyTo ? `replying:${replyTo.postId}:${replyTo.authorName}` : "no reply"}</span>
+          <span>{quote ? `quote:${quote.text}` : "no quote"}</span>
+          <button type="button" onClick={onQuoteInserted}>
+            quote inserted
+          </button>
+          <button type="button" onClick={onClearReply}>
+            clear reply
+          </button>
+          <button type="button" onClick={() => onTyping("ps1")}>
+            typing
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              void onSubmit({ html: "<p>hi</p>", personaId: "ps1", replyToPostId: "p2" }).catch(
+                () => undefined
+              )
+            }
+          >
+            submit
+          </button>
+        </div>
+      );
+    },
+  };
+});
 
 import { RealmLanding } from "~/components/thinkpages-forum/realm/RealmLanding";
 
@@ -401,6 +415,24 @@ describe("RealmLanding", () => {
       );
     });
 
+    it("puts the realm picker in the header toolbar on a wide screen", () => {
+      installViewport({ wide: true, phone: false });
+      const { container } = render(<RealmLanding realm="eurth" />);
+      expect(container.querySelector('[data-slot="page-header-toolbar"]')).toContainElement(
+        screen.getByLabelText("Other realms")
+      );
+    });
+
+    it("moves the realm picker under the title on a phone, out of the toolbar the top chrome covers", () => {
+      installViewport({ wide: false, phone: true });
+      const { container } = render(<RealmLanding realm="eurth" />);
+      const picker = screen.getByLabelText("Other realms");
+      expect(container.querySelector('[data-slot="page-header-toolbar"]')).not.toContainElement(
+        picker
+      );
+      expect(container.querySelector('[data-slot="forum-page-actions"]')).toContainElement(picker);
+    });
+
     it("lists the other realms, opening their landing pages", () => {
       render(<RealmLanding realm="eurth" />);
       expect(screen.getByLabelText("Other realms")).toHaveAttribute("data-value", "eurth");
@@ -541,10 +573,29 @@ describe("RealmLanding", () => {
     });
   });
 
-  describe("recent actions read", () => {
-    it("asks once and does not retry, so a realm without a row costs one request", () => {
+  describe("an empty board's way in", () => {
+    it("takes the writer to the composer, through its handle", () => {
+      const { composerFocus } = jest.requireMock<{ composerFocus: jest.Mock }>(
+        "~/components/thinkpages-forum/realm/BoardComposer"
+      );
+      composerFocus.mockClear();
       render(<RealmLanding realm="eurth" />);
-      expect(state.happeningsOptions.at(-1)).toMatchObject({ retry: false });
+      fireEvent.click(screen.getByRole("button", { name: "start" }));
+      expect(composerFocus).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("recent actions read", () => {
+    it("asks once and does not retry, so a failure costs one request", () => {
+      render(<RealmLanding realm="eurth" />);
+      expect(state.happeningsOptions.at(-1)).toMatchObject({ enabled: true, retry: false });
+    });
+
+    it("does not ask for a realm without a row of its own (IxWorld, synthesized)", () => {
+      const base = boardData(messages);
+      state.board = { data: { ...base, realm: { ...base.realm, hasRow: false } } };
+      render(<RealmLanding realm="eurth" />);
+      expect(state.happeningsOptions.at(-1)).toMatchObject({ enabled: false });
     });
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Community } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -16,19 +16,12 @@ import type { ModeratorTools } from "../ModeratorMenu";
 import { RealmSwitcher } from "../RealmSwitcher";
 import { DockSpacer, ForumPage } from "../shell";
 import { BoardChips } from "./BoardChips";
-import { BoardComposer, type BoardPostInput } from "./BoardComposer";
+import { BoardComposer, type BoardComposerHandle, type BoardPostInput } from "./BoardComposer";
 import { BoardFeed } from "./BoardFeed";
 import { boardQuoteText } from "./board-quote";
 import { RealmRail, RECENT_ACTIONS_SHOWN, railHasContent } from "./RealmRail";
 import type { BoardData, BoardMessageData, BoardQuote, ReplyTarget } from "./types";
 import { useScrollToMessageHash } from "./useScrollToMessageHash";
-
-/** Puts the caret in the board's composer, which sits above the feed. */
-function focusBoardComposer() {
-  document
-    .querySelector<HTMLElement>('[data-slot="board-composer"] [contenteditable="true"]')
-    ?.focus();
-}
 
 /** The realm's emblem (or its thumbnail, as the server resolves it); a tinted realm mark without either. */
 function Emblem({ url }: { url: string | null }) {
@@ -86,10 +79,10 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
   const { realm, access } = data;
   const phone = useMediaQuery(PHONE_QUERY);
   const { data: sections } = api.thinkpagesForum.realmSection.useQuery({ realm: slug });
-  // A realm without a row (IxWorld, synthesized) has no happenings: the read says NOT_FOUND once and the panel stays out.
+  // A realm without a row (IxWorld, synthesized) has no happenings to read; skip the request.
   const { data: happenings } = api.realms.region.happenings.useQuery(
     { slug, kinds: ["activity"], limit: RECENT_ACTIONS_SHOWN },
-    { retry: false, refetchOnWindowFocus: false }
+    { enabled: realm.hasRow, retry: false, refetchOnWindowFocus: false }
   );
   const boards = sections?.categories ?? [];
   // On a phone the boards are chips under the header, so the Info sheet does not list them again.
@@ -102,6 +95,8 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
   usePageTitle({ title: realm.name });
   useScrollToMessageHash(data.messages.length);
 
+  const composer = useRef<BoardComposerHandle>(null);
+  const startConversation = useCallback(() => composer.current?.focus(), []);
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const [quote, setQuote] = useState<BoardQuote | null>(null);
   const [showLatest, setShowLatest] = useState(0);
@@ -162,11 +157,12 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
       leading={<Emblem url={realm.emblemUrl} />}
       breadcrumbs={<p className="tabular-nums">{factsOf(data, live.online)}</p>}
       back={{ href: FORUM_HOME, label: "ThinkPages" }}
-      actions={<OtherRealms current={realm.slug} />}
+      wideActions={<OtherRealms current={realm.slug} />}
       rail={railHasContent(rail) ? <RealmRail realm={realm} {...rail} /> : undefined}
     >
       {phone ? <BoardChips slug={realm.slug} boards={boards} /> : null}
       <BoardComposer
+        ref={composer}
         realmName={realm.name}
         access={access}
         slowModeSeconds={realm.settings.slowModeSeconds}
@@ -189,7 +185,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         onReply={startReply}
         onQuote={startQuote}
         onChanged={changed}
-        onStart={focusBoardComposer}
+        onStart={startConversation}
       />
       {phone && access.canPost ? <DockSpacer /> : null}
     </ForumPage>

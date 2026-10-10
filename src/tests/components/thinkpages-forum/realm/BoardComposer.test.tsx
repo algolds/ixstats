@@ -7,6 +7,10 @@ const editorInsert = jest.fn();
 const editorClear = jest.fn();
 
 interface MockEditorProps {
+  onFocus?: () => void;
+  onBlur?: () => void;
+  hideToolbar?: boolean;
+  minHeight?: number;
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -17,7 +21,17 @@ interface MockEditorProps {
 jest.mock(
   "next/dynamic",
   () => () =>
-    function Editor({ ref, onChange, placeholder, disabled, maxHeight }: MockEditorProps) {
+    function Editor({
+      ref,
+      onChange,
+      onFocus,
+      onBlur,
+      hideToolbar,
+      minHeight,
+      placeholder,
+      disabled,
+      maxHeight,
+    }: MockEditorProps) {
       const textarea = React.useRef<HTMLTextAreaElement>(null);
       React.useImperativeHandle(
         ref,
@@ -38,7 +52,11 @@ jest.mock(
           disabled={disabled}
           data-testid="editor"
           data-max-height={maxHeight}
+          data-min-height={minHeight}
+          data-hide-toolbar={String(hideToolbar)}
           placeholder={placeholder}
+          onFocus={onFocus}
+          onBlur={onBlur}
           onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value, "")}
         />
       );
@@ -51,52 +69,49 @@ jest.mock("~/components/action-links", () => ({
     </button>
   ),
 }));
-jest.mock("~/trpc/react", () => ({
-  api: {
-    thinkpagesForum: {
-      myPersonas: {
-        useQuery: () => ({ data: [{ id: "ps1", displayName: "Aria", username: "aria" }] }),
-      },
-    },
-  },
-}));
+jest.mock("~/trpc/react", () => {
+  const state = { personas: [{ id: "ps1", displayName: "Aria", username: "aria" }] };
+  return {
+    state,
+    api: { thinkpagesForum: { myPersonas: { useQuery: () => ({ data: state.personas }) } } },
+  };
+});
 jest.mock("next/navigation", () => ({
   usePathname: () => "/thinkpages/r/eurth",
   useSearchParams: () => new URLSearchParams(),
 }));
-// Radix Select does not open in jsdom; a native <select> stands in for it.
-jest.mock("~/components/ui/select", () => {
+// Radix DropdownMenu opens on pointer events jsdom does not model; render its items inline.
+jest.mock("~/components/ui/dropdown-menu", () => {
   const { createContext, useContext } = jest.requireActual<typeof React>("react");
-  const Ctx = createContext<{ value?: string; onValueChange?: (v: string) => void }>({});
+  const Ctx = createContext<(value: string) => void>(() => undefined);
   return {
-    Select: ({
-      value,
+    DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+      <div role="menu">{children}</div>
+    ),
+    DropdownMenuRadioGroup: ({
       onValueChange,
       children,
     }: {
-      value?: string;
-      onValueChange?: (v: string) => void;
+      onValueChange: (value: string) => void;
       children: React.ReactNode;
-    }) => <Ctx.Provider value={{ value, onValueChange }}>{children}</Ctx.Provider>,
-    SelectTrigger: () => null,
-    SelectValue: () => null,
-    SelectContent: ({ children }: { children: React.ReactNode }) => {
-      const { value, onValueChange } = useContext(Ctx);
+    }) => <Ctx.Provider value={onValueChange}>{children}</Ctx.Provider>,
+    DropdownMenuRadioItem: ({ value, children }: { value: string; children: React.ReactNode }) => {
+      const choose = useContext(Ctx);
       return (
-        <select
-          aria-label="Post as"
-          value={value}
-          onChange={(e) => onValueChange?.(e.target.value)}
-        >
+        <button type="button" role="menuitemradio" onClick={() => choose(value)}>
           {children}
-        </select>
+        </button>
       );
     },
-    SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => (
-      <option value={value}>{children}</option>
-    ),
   };
 });
+
+const trpc = jest.requireMock<{
+  state: { personas: Array<{ id: string; displayName: string; username: string }> };
+}>("~/trpc/react");
+const PERSONAS = [{ id: "ps1", displayName: "Aria", username: "aria" }];
 
 import { BoardComposer } from "~/components/thinkpages-forum/realm/BoardComposer";
 
@@ -129,7 +144,10 @@ function type(text: string) {
 
 const post = () => screen.getByRole("button", { name: "Post" });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  trpc.state.personas = PERSONAS;
+});
 
 describe("BoardComposer on a phone", () => {
   it("sits in a dock above the tab bar, on the shell's own offset", () => {
@@ -186,6 +204,79 @@ describe("BoardComposer on a phone", () => {
       />
     );
     expect(composer()).toHaveAttribute("data-variant", "well");
+  });
+
+  describe("folded in the dock", () => {
+    const composer = (container: HTMLElement) =>
+      container.querySelector('[data-slot="board-composer"]')!;
+
+    it("is a one-line bar, the placeholder and Post, until it has focus or a draft", () => {
+      const { container } = renderComposer({ docked: true });
+      expect(composer(container)).toHaveAttribute("data-collapsed");
+      const editor = screen.getByTestId("editor");
+      expect(editor).toHaveAttribute("data-hide-toolbar", "true");
+      expect(Number(editor.getAttribute("data-min-height"))).toBeLessThanOrEqual(24);
+      expect(post()).toBeDisabled();
+      // The rest of the footer is hidden, not removed: the composer's tree does not change.
+      expect(screen.getByRole("button", { name: "Attach action" }).closest("div")).toHaveClass(
+        "group-data-[collapsed]:hidden"
+      );
+    });
+
+    it("opens, without remounting the editor, when it is focused", () => {
+      const { container } = renderComposer({ docked: true });
+      const editor = screen.getByTestId("editor");
+      fireEvent.focus(editor);
+      expect(composer(container)).not.toHaveAttribute("data-collapsed");
+      expect(screen.getByTestId("editor")).toBe(editor);
+      expect(editor).toHaveAttribute("data-hide-toolbar", "false");
+    });
+
+    it("stays open once there is a draft, and keeps it, when focus leaves", async () => {
+      jest.useFakeTimers();
+      try {
+        const { container } = renderComposer({ docked: true });
+        const editor = screen.getByTestId("editor");
+        fireEvent.focus(editor);
+        type("half a message");
+        fireEvent.blur(editor);
+        await act(async () => jest.runAllTimers());
+        expect(composer(container)).not.toHaveAttribute("data-collapsed");
+        expect(screen.getByTestId("editor")).toBe(editor);
+        expect(editor).toHaveValue("half a message");
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("folds again when it is empty and focus has left", async () => {
+      jest.useFakeTimers();
+      try {
+        const { container } = renderComposer({ docked: true });
+        const editor = screen.getByTestId("editor");
+        fireEvent.focus(editor);
+        expect(composer(container)).not.toHaveAttribute("data-collapsed");
+        fireEvent.blur(editor);
+        await act(async () => jest.runAllTimers());
+        expect(composer(container)).toHaveAttribute("data-collapsed");
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("stays open while it is replying, whatever has focus", () => {
+      const { container } = renderComposer({
+        docked: true,
+        replyTo: { postId: "p1", authorName: "Kir" },
+      });
+      expect(composer(container)).not.toHaveAttribute("data-collapsed");
+    });
+
+    it("is never folded in the page", () => {
+      const { container } = renderComposer();
+      expect(composer(container)).not.toHaveAttribute("data-collapsed");
+      expect(screen.getByTestId("editor")).toHaveAttribute("data-hide-toolbar", "false");
+    });
   });
 
   it("keeps the editor short so the dock leaves the messages in view", () => {
@@ -300,8 +391,12 @@ describe("BoardComposer", () => {
 
   it("offers Posting as when the member has personas, and posts with the chosen one", async () => {
     const { onSubmit, onTyping } = renderComposer();
+    // Said as the Home composer says it, with a Switch link.
     expect(screen.getByText("Posting as")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Post as"), { target: { value: "ps1" } });
+    expect(screen.getByText("yourself")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Switch" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Aria (@aria)" }));
+    expect(screen.getByText("@aria")).toBeInTheDocument();
     type("in character");
     expect(onTyping).toHaveBeenLastCalledWith("ps1");
     await act(async () => {
@@ -312,6 +407,13 @@ describe("BoardComposer", () => {
       personaId: "ps1",
       replyToPostId: null,
     });
+  });
+
+  it("offers no Switch to a member without personas", () => {
+    trpc.state.personas = [];
+    renderComposer();
+    expect(screen.queryByText("Posting as")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Switch" })).toBeNull();
   });
 
   it("tells the room you are typing, as yourself by default, and not for an empty editor", () => {
