@@ -78,8 +78,8 @@ async function assertReplyTarget(
 
 /**
  * Slow mode (spec section 2): members post at most once per `slowModeSeconds` on a realm's board; moderators are
- * exempt. The wait comes from the actor's latest message in the board thread (a persona's counts, a continued-in-a-thread
- * placeholder does not), so it is exact, refused attempts never extend it, and it holds without the rate limiter.
+ * exempt. The wait comes from the actor's latest message in the board thread (a persona's counts, and so does the placeholder
+ * a continued message leaves behind, which keeps the message's author and time), so it is exact, refused attempts never extend it, and it holds without the rate limiter.
  */
 async function enforceSlowMode(
   db: Pick<PrismaClient, "forumPost">,
@@ -90,7 +90,7 @@ async function enforceSlowMode(
 ): Promise<void> {
   if (access.isModerator || settings.slowModeSeconds <= 0) return;
   const [latest] = await db.forumPost.findMany({
-    where: { threadId, authorUserId: actor.id, continuedThreadId: null },
+    where: { threadId, authorUserId: actor.id },
     orderBy: { createdAt: "desc" },
     take: 1,
     select: { createdAt: true },

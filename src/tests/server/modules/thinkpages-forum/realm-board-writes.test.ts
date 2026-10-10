@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { BOARD_TOO_LONG } from "~/lib/thinkpages-forum/board";
 import { MAX_POST_HTML } from "~/server/modules/thinkpages-forum";
+import { continueInThread } from "~/server/modules/thinkpages-forum/board-continue";
 import {
   editBoardMessage,
   postBoardMessage,
@@ -158,17 +159,32 @@ describe("postBoardMessage", () => {
       await expect(post(store, member, {})).resolves.toBeDefined();
     });
 
-    it("counts a persona message of the same player, and ignores other players and placeholders", async () => {
+    it("counts a persona message of the same player and a continued message, not other players", async () => {
       const recent = ago(1_000);
       const persona = slow(30, [
         boardPost("pm", 1, { createdAt: recent, authorPersonaId: "pa_news" }),
       ]);
       await expect(post(persona, member, {})).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
-      const others = slow(30, [
-        boardPost("theirs", 1, { createdAt: recent, authorUserId: "u_member2" }),
+      const continued = slow(30, [
         boardPost("placeholder", 2, { createdAt: recent, continuedThreadId: "t_x" }),
       ]);
+      await expect(post(continued, member, {})).rejects.toMatchObject({
+        code: "TOO_MANY_REQUESTS",
+      });
+      const others = slow(30, [
+        boardPost("theirs", 1, { createdAt: recent, authorUserId: "u_member2" }),
+      ]);
       await expect(post(others, member, {})).resolves.toBeDefined();
+    });
+
+    it("cannot be skipped by continuing the message in a thread", async () => {
+      const store = slow(30);
+      const first = await post(store, member, {});
+      await continueInThread(store.db as never, member as never, {
+        postId: first.id,
+        title: "Moving on",
+      });
+      await expect(post(store, member, {})).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
     });
 
     it("applies to visitors and exempts moderators", async () => {
