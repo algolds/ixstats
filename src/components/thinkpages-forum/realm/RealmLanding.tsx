@@ -4,19 +4,23 @@ import { useCallback, useMemo, useState } from "react";
 import { Globe } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useRealmBoardLive } from "~/hooks/useRealmBoardLive";
 import { assetUrl } from "~/lib/base-path";
 import { upsertBoardMessage } from "~/lib/thinkpages-forum/board-live";
 import { FORUM_HOME, realmHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
+import { PHONE_QUERY } from "../composer";
 import { ForumBreadcrumbs } from "../ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { RealmSwitcher } from "../RealmSwitcher";
 import { ForumPage } from "../shell";
-import { BoardComposer, type BoardPostInput } from "./BoardComposer";
+import { BoardChips } from "./BoardChips";
+import { BoardComposer, DockSpacer, type BoardPostInput } from "./BoardComposer";
 import { BoardFeed } from "./BoardFeed";
 import { boardQuoteText } from "./board-quote";
+import { RealmRail, RECENT_ACTIONS_SHOWN, railHasContent } from "./RealmRail";
 import type { BoardData, BoardMessageData, BoardQuote, ReplyTarget } from "./types";
 import { useScrollToMessageHash } from "./useScrollToMessageHash";
 
@@ -73,6 +77,21 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
     { refetchInterval: live.refetchInterval }
   );
   const { realm, access } = data;
+  const phone = useMediaQuery(PHONE_QUERY);
+  const { data: sections } = api.thinkpagesForum.realmSection.useQuery({ realm: slug });
+  const { data: happenings } = api.realms.region.happenings.useQuery({
+    slug,
+    kinds: ["activity"],
+    limit: RECENT_ACTIONS_SHOWN,
+  });
+  const boards = sections?.categories ?? [];
+  // On a phone the boards are chips under the header, so the Info sheet does not list them again.
+  const rail = {
+    boards: phone ? [] : boards,
+    online: live.online,
+    actions: happenings?.items ?? [],
+    canManageSettings: access.canManageSettings,
+  };
   usePageTitle({ title: realm.name });
   useScrollToMessageHash(data.messages.length);
 
@@ -142,7 +161,9 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
       }
       back={{ href: FORUM_HOME, label: "ThinkPages" }}
       actions={<OtherRealms current={realm.slug} />}
+      rail={railHasContent(rail) ? <RealmRail realm={realm} {...rail} /> : undefined}
     >
+      {phone ? <BoardChips slug={realm.slug} boards={boards} /> : null}
       <BoardComposer
         realmName={realm.name}
         access={access}
@@ -153,6 +174,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         onQuoteInserted={clearQuote}
         onTyping={live.sendTyping}
         onSubmit={post}
+        docked={phone}
       />
       <BoardFeed
         realm={realm}
@@ -166,6 +188,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         onQuote={startQuote}
         onChanged={changed}
       />
+      {phone && access.canPost ? <DockSpacer /> : null}
     </ForumPage>
   );
 }

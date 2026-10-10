@@ -150,11 +150,30 @@ describe("getRealmSection", () => {
       },
       forumThread: {
         createMany: jest.fn(async () => ({ count: 1 })),
+        findMany: jest.fn(async (_args: { where: object }) => [
+          {
+            id: "t_hub",
+            title: "Harbour tax",
+            categoryId: "cat_hub",
+            lastPostAt: new Date("2026-10-05"),
+          },
+        ]),
         groupBy: jest.fn(async (_args: { where: object }) => [
           {
             categoryId: "cat_hub",
             _count: { _all: 2 },
             _max: { lastPostAt: new Date("2026-10-05") },
+          },
+        ]),
+      },
+      forumPost: {
+        findMany: jest.fn(async () => [
+          {
+            threadId: "t_hub",
+            authorUserId: "u_owner",
+            authorPersonaId: null,
+            importedAuthorName: null,
+            createdAt: new Date("2026-10-06"),
           },
         ]),
       },
@@ -181,8 +200,9 @@ describe("getRealmSection", () => {
       postRole: "any",
       threadCount: 2,
       lastPostAt: new Date("2026-10-05"),
+      latest: { threadId: "t_hub", threadTitle: "Harbour tax", at: new Date("2026-10-06") },
     });
-    expect(out.categories[1]).toMatchObject({ threadCount: 0, lastPostAt: null });
+    expect(out.categories[1]).toMatchObject({ threadCount: 0, lastPostAt: null, latest: null });
     expect(out.access).toMatchObject({ canPost: true, notice: null, ban: null });
     expect(out.access).not.toHaveProperty("restriction");
     expect(db.forumCategory.findMany).toHaveBeenCalledWith(
@@ -241,6 +261,12 @@ describe("getRealmSection", () => {
     expect(out.categories.map((c) => c.key)).toEqual(["hub", "character-threads", "current-events"]);
     const groupBy = db.forumThread.groupBy.mock.calls[0]![0];
     expect(JSON.stringify(groupBy)).not.toContain("cat_board");
+    expect(JSON.stringify(db.forumThread.findMany.mock.calls[0]![0])).not.toContain("cat_board");
+  });
+
+  it("names each board's latest thread without its author, so a persona's player never leaks", async () => {
+    const out = await getRealmSection(sectionDb(EURTH) as never, owner, "eurth");
+    expect(Object.keys(out.categories[0]!.latest!).sort()).toEqual(["at", "threadId", "threadTitle"]);
   });
 
   it("seeds a realm whose only category is its board, then reads the sections", async () => {

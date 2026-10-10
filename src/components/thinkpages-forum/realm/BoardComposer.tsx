@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Reply, Xmark } from "iconoir-react";
 import { ActionPicker } from "~/components/action-links";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getBasePath } from "~/lib/base-path";
@@ -25,6 +26,9 @@ const GlassPlateEditor = dynamic(
 
 /** Elements that handle their own focus; a mouse down on them must not be redirected. */
 const OWN_FOCUS = "input, textarea, select, button, a, [contenteditable='true'], [role='combobox']";
+
+/** The docked editor stays short, so the dock leaves most of the screen to the messages. */
+const DOCKED_EDITOR_MAX_HEIGHT = 96;
 
 export interface BoardPostInput {
   html: string;
@@ -46,6 +50,8 @@ interface BoardComposerProps {
   onTyping: (personaId: string | null) => void;
   /** Posts the message; rejects with the server's refusal. */
   onSubmit: (input: BoardPostInput) => Promise<void>;
+  /** Phones: the composer is docked above the tab bar instead of sitting in the page. */
+  docked?: boolean;
 }
 
 /** Why the viewer cannot post, in place of the composer: a ban with its appeal, else the server's notice. */
@@ -71,6 +77,7 @@ function PostingComposer({
   onQuoteInserted,
   onTyping,
   onSubmit,
+  docked = false,
 }: BoardComposerProps) {
   const editorRef = useRef<GlassPlateEditorRef>(null);
   const [html, setHtml] = useState("");
@@ -181,8 +188,8 @@ function PostingComposer({
         placeholder={`Say something to ${realmName}`}
         allowImageInsert
         disabled={pending}
-        minHeight={64}
-        maxHeight={240}
+        minHeight={docked ? 40 : 64}
+        maxHeight={docked ? DOCKED_EDITOR_MAX_HEIGHT : 240}
         className="border-transparent bg-transparent shadow-none"
       />
 
@@ -222,8 +229,33 @@ function PostingComposer({
   );
 }
 
-/** The realm board's composer: the light editor with Attach action, Posting as, a 1,000 counter and slow mode; the reason instead when the viewer cannot post. */
+/** Above the tab bar on phones, on the shell's own offset. The page leaves room below its feed (`DockSpacer`). */
+function Dock({ children }: { children: ReactNode }) {
+  return (
+    <FacetMaterial
+      data-slot="board-dock"
+      className="z-chrome rounded-sheet fixed inset-x-2 bottom-[calc(var(--shell-tabbar-height)+0.5rem)] p-2"
+    >
+      {children}
+    </FacetMaterial>
+  );
+}
+
+/** Room at the end of the page so the last messages and "Load earlier messages" are not hidden behind the dock. */
+export function DockSpacer() {
+  return <div aria-hidden data-slot="board-dock-spacer" className="h-40" />;
+}
+
+/**
+ * The realm board's composer: the light editor with Attach action, Posting as, a 1,000 counter and slow mode; the
+ * reason instead when the viewer cannot post. `docked` (phones) puts the editor in a dock above the tab bar.
+ */
 export function BoardComposer(props: BoardComposerProps) {
   if (!props.access.canPost) return <CannotPost access={props.access} />;
-  return <PostingComposer {...props} />;
+  if (!props.docked) return <PostingComposer {...props} />;
+  return (
+    <Dock>
+      <PostingComposer {...props} />
+    </Dock>
+  );
 }

@@ -35,6 +35,11 @@ export interface BoardAccess {
   /** Signed in, sees the realm, is not a member. */
   isVisitor: boolean;
   isModerator: boolean;
+  /**
+   * May change the board's settings: the founder, a site admin or an officer with the `board` power, the same rule
+   * `updateBoardSettings` enforces (and the same people as `isModerator`, whose realm power is `board`).
+   */
+  canManageSettings: boolean;
   /** Why the viewer cannot post; null when they can. */
   reason: BoardRefusal | null;
   /** The refusal in words, for the composer and the server's own refusal. */
@@ -78,6 +83,7 @@ const NO_ACCESS: BoardAccess = {
   isMember: false,
   isVisitor: false,
   isModerator: false,
+  canManageSettings: false,
   reason: null,
   notice: null,
   visitorRealm: null,
@@ -114,7 +120,12 @@ export async function boardAccessFor(
   }
   const access = await realmPostingAccess(db, viewer, realm, category);
   const isMember = access.ownedCountryIds.length > 0 || access.isModerator;
-  const known = { ...readable, isMember, isModerator: access.isModerator };
+  const known = {
+    ...readable,
+    isMember,
+    isModerator: access.isModerator,
+    canManageSettings: access.isModerator,
+  };
   if (access.canPost) return { ...known, canPost: true };
   if (isArchived(realm)) return { ...known, reason: "archived", notice: access.notice };
   if (access.ban) return { ...known, reason: "banned", notice: access.notice };

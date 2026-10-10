@@ -296,6 +296,15 @@ describe("getBoard", () => {
     expect(out.messages.length).toBeGreaterThan(0);
   });
 
+  it("tells the board's settings managers, and only them, they may change the settings", async () => {
+    for (const who of [founder, officer, admin]) {
+      expect((await board(who)).access.canManageSettings).toBe(true);
+    }
+    for (const who of [member, plain, null]) {
+      expect((await board(who)).access.canManageSettings).toBe(false);
+    }
+  });
+
   it("gives a no-nation visitor the board and no visitor realm", async () => {
     expect((await board(plain)).access).toMatchObject({ isVisitor: true, visitorRealm: null });
   });

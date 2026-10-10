@@ -44,6 +44,7 @@ export function boardAccess(overrides: Partial<FixtureAccess> = {}): FixtureAcce
     isMember: true,
     isVisitor: false,
     isModerator: false,
+    canManageSettings: false,
     reason: null,
     notice: null,
     visitorRealm: null,

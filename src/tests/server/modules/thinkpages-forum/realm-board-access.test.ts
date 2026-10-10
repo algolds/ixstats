@@ -31,6 +31,7 @@ const base = {
   isMember: false,
   isVisitor: false,
   isModerator: false,
+  canManageSettings: false,
   reason: null,
   visitorRealm: null,
 };
@@ -128,6 +129,15 @@ describe("boardAccessFor", () => {
         isModerator: true,
         isMember: true,
       });
+    }
+  });
+
+  it("lets the founder, a board officer and a site admin change the board's settings, and no one else", async () => {
+    for (const who of [founder, officer, admin]) {
+      expect(await accessFor(who)).toMatchObject({ canManageSettings: true });
+    }
+    for (const who of [member, visitor, plain, claimsOfficer, null]) {
+      expect(await accessFor(who)).toMatchObject({ canManageSettings: false });
     }
   });
 

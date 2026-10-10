@@ -10,13 +10,14 @@ interface MockEditorProps {
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  maxHeight?: number;
   ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
 jest.mock(
   "next/dynamic",
   () => () =>
-    function Editor({ ref, onChange, placeholder, disabled }: MockEditorProps) {
+    function Editor({ ref, onChange, placeholder, disabled, maxHeight }: MockEditorProps) {
       const textarea = React.useRef<HTMLTextAreaElement>(null);
       React.useImperativeHandle(
         ref,
@@ -36,6 +37,7 @@ jest.mock(
           ref={textarea}
           disabled={disabled}
           data-testid="editor"
+          data-max-height={maxHeight}
           placeholder={placeholder}
           onChange={(e) => onChange?.(`<p>${e.target.value}</p>`, e.target.value, "")}
         />
@@ -128,6 +130,48 @@ function type(text: string) {
 const post = () => screen.getByRole("button", { name: "Post" });
 
 beforeEach(() => jest.clearAllMocks());
+
+describe("BoardComposer on a phone", () => {
+  it("sits in a dock above the tab bar, on the shell's own offset", () => {
+    const { container } = renderComposer({ docked: true });
+    const dock = container.querySelector('[data-slot="board-dock"]');
+    expect(dock).toHaveClass("fixed");
+    expect(dock?.className).toContain("var(--shell-tabbar-height)");
+    expect(dock).toContainElement(screen.getByTestId("editor"));
+    expect(dock).toContainElement(post());
+  });
+
+  it("keeps the editor short so the dock leaves the messages in view", () => {
+    renderComposer({ docked: true });
+    expect(
+      Number(screen.getByTestId("editor").getAttribute("data-max-height"))
+    ).toBeLessThanOrEqual(120);
+  });
+
+  it("is in the page when not docked", () => {
+    const { container } = renderComposer();
+    expect(container.querySelector('[data-slot="board-dock"]')).toBeNull();
+    expect(Number(screen.getByTestId("editor").getAttribute("data-max-height"))).toBeGreaterThan(
+      120
+    );
+  });
+
+  it("does not dock the reason a viewer cannot post", () => {
+    const { container } = renderComposer({
+      docked: true,
+      access: boardAccess({ canPost: false, reason: "visitors_off", notice: "Visitors are off." }),
+    });
+    expect(screen.getByText("Visitors are off.")).toBeInTheDocument();
+    expect(container.querySelector('[data-slot="board-dock"]')).toBeNull();
+  });
+
+  it("still posts from the dock", async () => {
+    const { onSubmit } = renderComposer({ docked: true });
+    type("Hello");
+    await act(async () => fireEvent.click(post()));
+    expect(onSubmit).toHaveBeenCalled();
+  });
+});
 
 describe("BoardComposer", () => {
   it("counts the plain text against the 1,000 limit", () => {

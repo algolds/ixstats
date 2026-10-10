@@ -7,7 +7,7 @@ import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
 import { isSiteAdmin } from "~/server/modules/realms";
-import type { ForumViewer } from "./access";
+import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import {
   canonicalRealm,
@@ -19,6 +19,7 @@ import {
   type RealmAccessDb,
   type RealmDb,
 } from "./realm-access";
+import { latestPerCategory } from "./board-reads";
 import { summarizeCategories, type ReadsDb } from "./reads";
 import { isModerator } from "./mod-scope";
 import { seedRealmCategories } from "./realm-seed";
@@ -126,10 +127,21 @@ export async function getRealmSection(db: RealmReadsDb, viewer: ForumViewer, slu
     await seedRealmCategories(db, realm);
     rows = await readCategories();
   }
-  const [categories, access] = await Promise.all([
+  const listed = rows.filter((c) => canSeeCategory(viewer, c) && !isBoardCategory(c));
+  const [summaries, latest, access] = await Promise.all([
     summarizeCategories(db, viewer, rows),
+    latestPerCategory(db, viewer, listed),
     realmPostingAccess(db, viewer, realm),
   ]);
+  const idOf = new Map(listed.map((c) => [c.key, c.id]));
+  const categories = summaries.map((summary) => {
+    const last = latest.get(idOf.get(summary.key) ?? "");
+    // The thread and when, never its author: a persona thread's player must not leave this read.
+    return {
+      ...summary,
+      latest: last ? { threadId: last.threadId, threadTitle: last.threadTitle, at: last.at } : null,
+    };
+  });
   return {
     realm: { id: realm.id, slug: realm.slug, name: realm.name, status: realm.status },
     categories,

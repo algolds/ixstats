@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { boardAccess, boardData, boardMessage } from "~/tests/helpers/realm-board-fixtures";
 
 interface Query {
@@ -12,6 +12,10 @@ interface Query {
 jest.mock("~/trpc/react", () => {
   const state = {
     board: {} as Query,
+    section: undefined as unknown,
+    happenings: undefined as unknown,
+    sectionInputs: [] as unknown[],
+    happeningsInputs: [] as unknown[],
     boardOptions: [] as Array<Record<string, unknown> | undefined>,
     mutations: {} as Record<string, jest.Mock>,
     setData: jest.fn(),
@@ -51,7 +55,23 @@ jest.mock("~/trpc/react", () => {
             },
           }),
         },
+        realmSection: {
+          useQuery: (input: unknown) => {
+            state.sectionInputs.push(input);
+            return { data: state.section };
+          },
+        },
         postBoardMessage: mutation("postBoardMessage"),
+      },
+      realms: {
+        region: {
+          happenings: {
+            useQuery: (input: unknown) => {
+              state.happeningsInputs.push(input);
+              return { data: state.happenings };
+            },
+          },
+        },
       },
       thinkpagesForumMod: { editPost: mutation("modEditPost") },
     },
@@ -95,6 +115,11 @@ jest.mock("~/components/thinkpages-forum/RealmSwitcher", () => ({
     </ul>
   ),
 }));
+jest.mock("~/components/thinkpages-forum/realm/BoardSettingsPanel", () => ({
+  BoardSettingsPanel: ({ realmId, slug }: { realmId: string; slug: string }) => (
+    <section aria-label="Board settings" data-realm-id={realmId} data-slug={slug} />
+  ),
+}));
 jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
   BoardFeed: ({
     data,
@@ -133,6 +158,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
   ),
 }));
 jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => ({
+  DockSpacer: () => <div aria-hidden data-slot="board-dock-spacer" />,
   BoardComposer: ({
     replyTo,
     quote,
@@ -141,6 +167,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => ({
     onTyping,
     onSubmit,
     slowModeSeconds,
+    docked,
   }: {
     replyTo: { postId: string; authorName: string } | null;
     quote: { key: number; text: string } | null;
@@ -149,8 +176,9 @@ jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => ({
     onTyping: (personaId: string | null) => void;
     onSubmit: (input: object) => Promise<void>;
     slowModeSeconds: number;
+    docked?: boolean;
   }) => (
-    <div data-testid="composer" data-slow={slowModeSeconds}>
+    <div data-testid="composer" data-slow={slowModeSeconds} data-docked={String(!!docked)}>
       <span>{replyTo ? `replying:${replyTo.postId}:${replyTo.authorName}` : "no reply"}</span>
       <span>{quote ? `quote:${quote.text}` : "no quote"}</span>
       <button type="button" onClick={onQuoteInserted}>
@@ -182,6 +210,10 @@ const { state } = jest.requireMock<{
   state: {
     board: Query;
     boardOptions: Array<Record<string, unknown> | undefined>;
+    section: unknown;
+    happenings: unknown;
+    sectionInputs: unknown[];
+    happeningsInputs: unknown[];
     mutations: Record<string, jest.Mock>;
     setData: jest.Mock;
     cancel: jest.Mock;
@@ -200,6 +232,57 @@ const { live } = jest.requireMock<{
 }>("~/hooks/useRealmBoardLive");
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
 
+const originalMatchMedia = window.matchMedia;
+
+function installViewport({ wide, phone }: { wide: boolean; phone: boolean }) {
+  window.matchMedia = ((query: string) => ({
+    matches:
+      query === "(min-width: 1280px)" ? wide : query === "(max-width: 767px)" ? phone : false,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
+
+afterAll(() => {
+  window.matchMedia = originalMatchMedia;
+});
+
+const section = {
+  realm: { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active" },
+  categories: [
+    {
+      key: "hub",
+      name: "Hub",
+      description: "",
+      icAllowed: false,
+      postRole: "any",
+      threadCount: 4,
+      lastPostAt: new Date(),
+      latest: { threadId: "t1", threadTitle: "Harbour tax", at: new Date() },
+    },
+    {
+      key: "current-events",
+      name: "Current Events",
+      description: "",
+      icAllowed: true,
+      postRole: "any",
+      threadCount: 0,
+      lastPostAt: null,
+      latest: null,
+    },
+  ],
+};
+const happenings = {
+  items: [
+    { id: "activity:1", at: new Date(), kind: "activity", text: "Passed a trade act", href: null },
+  ],
+  nextCursor: null,
+};
+
 const messages = [
   boardMessage({ id: "p2", contentHtml: "Second" }),
   boardMessage({ id: "p1", contentHtml: "First" }),
@@ -208,6 +291,11 @@ const messages = [
 beforeEach(() => {
   jest.clearAllMocks();
   state.boardOptions.length = 0;
+  state.sectionInputs.length = 0;
+  state.happeningsInputs.length = 0;
+  state.section = undefined;
+  state.happenings = undefined;
+  installViewport({ wide: false, phone: false });
   state.board = { data: boardData(messages) };
   state.mutations = {};
   Object.assign(live, {
@@ -296,8 +384,134 @@ describe("RealmLanding", () => {
       expect(screen.getByLabelText("Other realms")).toHaveAttribute("data-value", "eurth");
       expect(screen.getByText("Kiro-Borea /thinkpages/r/kiro")).toBeInTheDocument();
     });
+  });
 
-    it("has no rail yet", () => {
+  describe("rail", () => {
+    beforeEach(() => installViewport({ wide: true, phone: false }));
+
+    it("reads the realm's boards and its five latest public actions", () => {
+      state.section = section;
+      state.happenings = happenings;
+      render(<RealmLanding realm="eurth" />);
+      expect(state.sectionInputs.at(-1)).toEqual({ realm: "eurth" });
+      expect(state.happeningsInputs.at(-1)).toEqual({
+        slug: "eurth",
+        kinds: ["activity"],
+        limit: 5,
+      });
+    });
+
+    it("shows the boards, who is online, and recent actions in the realm", () => {
+      state.section = section;
+      state.happenings = happenings;
+      render(<RealmLanding realm="eurth" />);
+      const rail = screen.getByRole("complementary");
+      expect(within(rail).getByRole("link", { name: /Hub/ })).toHaveAttribute(
+        "href",
+        "/thinkpages/r/eurth/hub"
+      );
+      expect(within(rail).getByText("6 online")).toBeInTheDocument();
+      expect(
+        within(rail).getByRole("heading", { name: "Recent actions in Eurth" })
+      ).toBeInTheDocument();
+      expect(within(rail).getByText("Passed a trade act")).toBeInTheDocument();
+    });
+
+    it("has no rail, and no Info button, when no panel has anything to show", () => {
+      live.online = null;
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.queryByRole("complementary")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Info" })).toBeNull();
+    });
+
+    it("has a rail on the online count alone", () => {
+      render(<RealmLanding realm="eurth" />);
+      expect(within(screen.getByRole("complementary")).getByText("6 online")).toBeInTheDocument();
+    });
+
+    it("offers the board settings to those who may change them, with the realm's current rules", () => {
+      state.board = {
+        data: boardData(messages, { access: boardAccess({ canManageSettings: true }) }),
+      };
+      render(<RealmLanding realm="eurth" />);
+      const settings = within(screen.getByRole("complementary")).getByLabelText("Board settings");
+      expect(settings).toHaveAttribute("data-realm-id", "r_eurth");
+      expect(settings).toHaveAttribute("data-slug", "eurth");
+    });
+
+    it("keeps the board settings from everyone else, officers without the board power included", () => {
+      state.section = section;
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.queryByLabelText("Board settings")).toBeNull();
+    });
+
+    it("opens the rail in the Info sheet below the wide layout", () => {
+      installViewport({ wide: false, phone: false });
+      state.section = section;
+      render(<RealmLanding realm="eurth" />);
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).getByRole("link", { name: /Hub/ })).toBeInTheDocument();
+    });
+  });
+
+  describe("phone", () => {
+    beforeEach(() => installViewport({ wide: false, phone: true }));
+
+    it("docks the composer above the tab bar", () => {
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.getByTestId("composer")).toHaveAttribute("data-docked", "true");
+    });
+
+    it("leaves room after the feed for the dock", () => {
+      const { container } = render(<RealmLanding realm="eurth" />);
+      const spacer = container.querySelector('[data-slot="board-dock-spacer"]')!;
+      expect(spacer).not.toBeNull();
+      expect(
+        screen.getByTestId("feed").compareDocumentPosition(spacer) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+
+    it("leaves no room when the viewer cannot post, so nothing is docked", () => {
+      state.board = {
+        data: boardData(messages, { access: boardAccess({ canPost: false, reason: "sign_in" }) }),
+      };
+      const { container } = render(<RealmLanding realm="eurth" />);
+      expect(container.querySelector('[data-slot="board-dock-spacer"]')).toBeNull();
+    });
+
+    it("does not dock the composer on larger screens", () => {
+      installViewport({ wide: false, phone: false });
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.getByTestId("composer")).toHaveAttribute("data-docked", "false");
+    });
+
+    it("lists the boards as chips under the header, and not again in the Info sheet", () => {
+      state.section = section;
+      render(<RealmLanding realm="eurth" />);
+      const chips = screen.getByRole("navigation", { name: "Boards" });
+      expect(within(chips).getByRole("link", { name: "Hub" })).toHaveAttribute(
+        "href",
+        "/thinkpages/r/eurth/hub"
+      );
+      expect(within(chips).getByRole("link", { name: "Current Events" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+      const dialog = screen.getByRole("dialog");
+      expect(within(dialog).queryByRole("heading", { name: "Boards" })).toBeNull();
+      expect(within(dialog).getByText("6 online")).toBeInTheDocument();
+    });
+
+    it("shows no chips off the phone", () => {
+      installViewport({ wide: true, phone: false });
+      state.section = section;
+      render(<RealmLanding realm="eurth" />);
+      expect(screen.queryByRole("navigation", { name: "Boards" })).toBeNull();
+    });
+
+    it("has no Info button on a phone with nothing for the sheet", () => {
+      live.online = null;
+      state.section = section;
       render(<RealmLanding realm="eurth" />);
       expect(screen.queryByRole("button", { name: "Info" })).toBeNull();
     });
