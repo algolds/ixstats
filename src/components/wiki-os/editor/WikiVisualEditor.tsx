@@ -51,6 +51,8 @@ interface WikiVisualEditorProps {
    * viewport-sized frame; the host owns saving and reads the content through `registerContentReader`.
    */
   bare?: boolean;
+  /** Start with a short toolbar (bold, italic, lists, quote, link, image) and a More control for the rest. */
+  compactToolbar?: boolean;
   /** Hands the host the Plate editor once it is ready (to insert text or blocks from outside). */
   onEditorReady?: (editor: TSlateEditor) => void;
 }
@@ -68,6 +70,7 @@ export function WikiVisualEditor({
   registerContentReader,
   restoreLocalDraft = true,
   bare = false,
+  compactToolbar = false,
   onEditorReady,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
@@ -312,6 +315,7 @@ export function WikiVisualEditor({
           clearFormatting={fmt.clearFormatting}
           handleInsertStashedImage={handleInsertStashedImage}
           hideHeader={bare}
+          compact={compactToolbar}
         />
 
         {bare ? null : (

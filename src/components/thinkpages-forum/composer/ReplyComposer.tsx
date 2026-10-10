@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Reply } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetMaterial } from "~/components/ui/facet";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { BottomDock, DockSpacer } from "../shell";
 import { CanvasComposer, type CanvasComposerProps } from "./CanvasComposer";
 import { REPLY_ID } from "./constants";
 import { useMyPersonas } from "./PersonaSelect";
@@ -47,11 +47,8 @@ export function ReplyComposer({
   return (
     <>
       {/* Keeps the last post clear of the docked bar. */}
-      <div aria-hidden className="h-16" />
-      <FacetMaterial
-        data-slot="reply-dock"
-        className="z-chrome rounded-sheet fixed inset-x-2 bottom-[calc(var(--shell-tabbar-height)+0.5rem)] p-2"
-      >
+      <DockSpacer />
+      <BottomDock docked slot="reply-dock">
         <Button
           type="button"
           className="w-full pointer-coarse:min-h-11"
@@ -60,7 +57,7 @@ export function ReplyComposer({
           <Reply aria-hidden />
           Reply
         </Button>
-      </FacetMaterial>
+      </BottomDock>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" detents={["large"]} aria-describedby={undefined}>
           <SheetTitle className="text-headline mb-3">Reply</SheetTitle>

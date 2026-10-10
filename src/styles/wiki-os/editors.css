@@ -437,7 +437,7 @@
 
   .forum-canvas .wikios-ve-editor-wrapper {
     height: auto;
-    min-height: 9rem;
+    min-height: 7rem;
     max-height: min(24rem, 50dvh);
     background: transparent;
   }

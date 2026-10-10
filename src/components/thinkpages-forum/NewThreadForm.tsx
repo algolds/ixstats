@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
+import { Lock } from "iconoir-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Skeleton } from "~/components/ui/skeleton";
 import { categoryHref, FORUM_HOME, hubHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { BanNotice } from "./BanNotice";
 import { CanvasComposer, useMyPersonas, type CanvasSubmitMeta } from "./composer";
-import { ForumLoadError } from "./ForumPageState";
+import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
+import { ForumPage } from "./shell";
 
 interface NewThreadFormProps {
   categoryKey: string;
@@ -54,13 +54,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     [createThread, categoryKey, realm, utils, router]
   );
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-3xl px-4 py-8">
-        <Skeleton className="rounded-card h-48 w-full" />
-      </div>
-    );
-  }
+  if (isLoading) return <ForumPageSkeleton />;
 
   if (!data) {
     return (
@@ -73,13 +67,14 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     );
   }
 
-  const header = (
-    <PageHeader
+  const page = (children: ReactNode) => (
+    <ForumPage
       title="New thread"
-      subtitle={data.category.name}
+      breadcrumbs={data.category.name}
       back={{ href: backHref, label: data.category.name }}
-      bleed
-    />
+    >
+      <div className="flex max-w-3xl min-w-0 flex-col gap-4">{children}</div>
+    </ForumPage>
   );
 
   if (!data.canStart) {
@@ -88,30 +83,27 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
         <Link href={realm ? hubHref(realm) : FORUM_HOME}>Back to the forum</Link>
       </Button>
     );
-    return (
-      <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-        {header}
-        {data.banned && data.notice ? (
-          <>
-            <BanNotice notice={data.notice} />
-            {back}
-          </>
-        ) : (
-          <Card>
-            <EmptyState
-              title="You can't start a thread here"
-              message={data.notice ?? "Sign in, or pick a category open to members."}
-              action={back}
-            />
-          </Card>
-        )}
-      </div>
+    return page(
+      data.banned && data.notice ? (
+        <>
+          <BanNotice notice={data.notice} />
+          {back}
+        </>
+      ) : (
+        <Card>
+          <EmptyState
+            icon={<Lock />}
+            title="You can't start a thread here"
+            message={data.notice ?? "Sign in, or pick a category open to members."}
+            action={back}
+          />
+        </Card>
+      )
     );
   }
 
-  return (
-    <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
-      {header}
+  return page(
+    <>
       <CanvasComposer
         mode="thread"
         personas={personas}
@@ -123,6 +115,6 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
           <Link href={threadHref(startedId)}>Open the thread</Link>
         </Button>
       ) : null}
-    </div>
+    </>
   );
 }

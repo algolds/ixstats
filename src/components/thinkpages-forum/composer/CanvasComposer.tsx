@@ -193,7 +193,7 @@ export function CanvasComposer({
   return (
     <Card
       content="input"
-      padding="sm"
+      padding="md"
       data-slot="canvas-composer"
       className={cn("flex flex-col gap-3", className)}
     >
@@ -232,6 +232,7 @@ export function CanvasComposer({
         <WikiVisualEditor
           key={editorKey}
           bare
+          compactToolbar
           title="ThinkPages post"
           initialWikitext={seed}
           restoreLocalDraft={false}

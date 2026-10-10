@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ComponentProps, type ComponentType, type ReactNode } from "react";
+import { Fragment, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
 import {
   Bold,
   Italic,
@@ -19,6 +19,7 @@ import {
   Type,
   Undo as Undo2,
   Redo as Redo2,
+  MoreHoriz,
   Erase as RemoveFormatting,
   Table,
   ArrowRight as Indent,
@@ -55,6 +56,8 @@ interface WikiVisualToolbarProps {
   handleInsertStashedImage: (filename: string) => void;
   /** Leave out the page title bar (a host that is not editing a page has no title, drafts or save menu). */
   hideHeader?: boolean;
+  /** Start with the few controls a short post needs; "More" opens the full toolbar. */
+  compact?: boolean;
 }
 
 interface ToolbarButton {
@@ -87,8 +90,10 @@ export function WikiVisualToolbar({
   restoreSelection,
   handleInsertStashedImage,
   hideHeader = false,
+  compact = false,
 }: WikiVisualToolbarProps) {
   const modal = useEditorModalContext();
+  const [expanded, setExpanded] = useState(false);
 
   const buttonGroups: Array<Array<ToolbarButton | ReactNode>> = [
     [
@@ -193,6 +198,9 @@ export function WikiVisualToolbar({
     [{ icon: RemoveFormatting, title: "Clear formatting", onClick: clearFormatting }],
   ];
 
+  const showAll = !compact || expanded;
+  const groups = showAll ? buttonGroups : compactGroups(buttonGroups);
+
   return (
     <>
       {hideHeader ? null : (
@@ -215,7 +223,7 @@ export function WikiVisualToolbar({
       )}
 
       <div className="wikios-ve-toolbar">
-        {buttonGroups.map((group, i) => (
+        {groups.map((group, i) => (
           <Fragment key={i}>
             <div className="wikios-ve-toolbar-group">
               {group.map((item, j) =>
@@ -232,13 +240,26 @@ export function WikiVisualToolbar({
                 )
               )}
             </div>
-            {i < buttonGroups.length - 1 && <span className="wikios-ve-toolbar-sep" />}
+            {i < groups.length - 1 && <span className="wikios-ve-toolbar-sep" />}
           </Fragment>
         ))}
 
-        {/* Far right: Editor Settings */}
-        <div className="ml-auto flex items-center">
-          <SettingsDropdown />
+        {/* Far right: the compact toolbar's More, and Editor Settings */}
+        <div className="ml-auto flex items-center gap-1">
+          {compact ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={expanded}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setExpanded((open) => !open)}
+              className="text-label-secondary"
+            >
+              <MoreHoriz aria-hidden />
+              {expanded ? "Fewer" : "More"}
+            </Button>
+          ) : null}
+          {showAll ? <SettingsDropdown /> : null}
         </div>
       </div>
     </>
@@ -251,6 +272,23 @@ function ScrollAwareHeader(
 ) {
   const { repulsionProgress } = useNavigationScroll();
   return <WikiEditorHeader {...props} repulsionProgress={repulsionProgress} />;
+}
+
+/** What a short post needs: bold, italic, lists, quote, link (or wiki page) and image; the rest is behind More. */
+const COMPACT_TITLES: ReadonlySet<string> = new Set([
+  "Bold (Ctrl+B)",
+  "Italic (Ctrl+I)",
+  "Bullet list",
+  "Numbered list",
+  "Blockquote",
+  "Insert link (Ctrl+K)",
+  "Insert image",
+]);
+
+function compactGroups(groups: ReadonlyArray<Array<ToolbarButton | ReactNode>>) {
+  return groups
+    .map((group) => group.filter((item) => isToolbarButton(item) && COMPACT_TITLES.has(item.title)))
+    .filter((group) => group.length > 0);
 }
 
 const isToolbarButton = (item: ToolbarButton | ReactNode): item is ToolbarButton =>

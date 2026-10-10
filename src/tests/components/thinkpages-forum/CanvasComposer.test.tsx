@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 interface FakeEditorProps {
   initialWikitext?: string;
   bare?: boolean;
+  compactToolbar?: boolean;
   onSerializedWikitext?: (r: { wikitext: string; complete: boolean; notices: string[] }) => void;
   onEditorReady?: (editor: object) => void;
 }
@@ -15,6 +16,7 @@ jest.mock(
     function FakeCanvas({
       initialWikitext,
       bare,
+      compactToolbar,
       onSerializedWikitext,
       onEditorReady,
     }: FakeEditorProps) {
@@ -27,6 +29,7 @@ jest.mock(
         <textarea
           data-testid="canvas"
           data-bare={String(bare)}
+          data-compact={String(compactToolbar)}
           defaultValue={initialWikitext}
           onChange={(e) =>
             onSerializedWikitext?.({
@@ -95,6 +98,11 @@ describe("CanvasComposer", () => {
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith("Hello ''world''", { personaId: null, title: "" })
     );
+  });
+
+  it("starts with the compact toolbar, whose More control opens the full one", () => {
+    render(<CanvasComposer mode="reply" onSubmit={jest.fn()} />);
+    expect(screen.getByTestId("canvas")).toHaveAttribute("data-compact", "true");
   });
 
   it("starts an edit from the post's wikitext and saves it", async () => {
