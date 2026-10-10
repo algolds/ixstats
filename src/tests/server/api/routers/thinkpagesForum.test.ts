@@ -723,6 +723,13 @@ describe("thinkpagesForum router", () => {
       expect(out.viewerIsAuthor).toBe(true);
     });
 
+    it("tells a signed-in reader whether they watch the thread, and an anonymous one never", async () => {
+      const db = pageDb();
+      db.forumThreadWatch.count.mockResolvedValue(1);
+      expect((await caller(member, db).thread({ threadId: "t1", page: 1 })).watching).toBe(true);
+      expect((await caller(null, db).thread({ threadId: "t1", page: 1 })).watching).toBe(false);
+    });
+
     it("keeps the player ids on persona posts and the persona thread for the category's moderator", async () => {
       const db = pageDb({ authorUserId: "u1", authorPersonaId: "pa1" });
       const out = await caller(admin, db).thread({ threadId: "t1", page: 1 });

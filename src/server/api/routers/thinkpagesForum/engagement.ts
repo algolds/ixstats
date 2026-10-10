@@ -5,14 +5,31 @@
  * ~/server/modules/thinkpages-forum.
  */
 import { z } from "zod";
-import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import {
+  createTRPCRouter,
+  rateLimitedMutationProcedure,
+  readOnlyProcedure,
+} from "~/server/api/trpc";
+import {
+  forumNavCounts,
+  listNewPosts,
+  listWatched,
   markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
+  unwatchThread,
+  watchThread,
+  type AuthorsDb,
+  type ThreadListing,
 } from "~/server/modules/thinkpages-forum";
-import { actorOf, categoryKey, id, mapError, memberOf, page, realm } from "./viewer";
+import { actorOf, authorMaps, categoryKey, id, mapError, memberOf, page, realm } from "./viewer";
+
+/** A list page with the display data of its authors and last posters (a persona by name, never its player). */
+async function withAuthors(db: AuthorsDb, listing: ThreadListing) {
+  const posters = listing.threads.flatMap((thread) => thread.lastPoster ?? []);
+  return { ...listing, authors: await authorMaps(db, [...listing.threads, ...posters]) };
+}
 
 export const thinkpagesForumEngagementRouter = createTRPCRouter({
   /** The thread page was shown: the member has read up to its newest post on `page`. */
@@ -40,4 +57,34 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) =>
       markRealmBoardRead(ctx.db, await actorOf(ctx.db, ctx.user), input.realm).catch(mapError)
     ),
+
+  /** Watches a thread the caller may read (NOT_FOUND otherwise, the realm board included). */
+  watchThread: rateLimitedMutationProcedure
+    .input(z.object({ threadId: id }))
+    .mutation(async ({ ctx, input }) =>
+      watchThread(ctx.db, await actorOf(ctx.db, ctx.user), input.threadId).catch(mapError)
+    ),
+
+  unwatchThread: rateLimitedMutationProcedure
+    .input(z.object({ threadId: id }))
+    .mutation(({ ctx, input }) => unwatchThread(ctx.db, memberOf(ctx.user).id, input.threadId)),
+
+  /** New posts: unread threads of the last 30 days across the boards the caller can see, newest first. */
+  newPosts: readOnlyProcedure
+    .input(z.object({ page }))
+    .query(async ({ ctx, input }) =>
+      withAuthors(ctx.db, await listNewPosts(ctx.db, await actorOf(ctx.db, ctx.user), input.page))
+    ),
+
+  /** Watched: the caller's watched threads, unread first, then by last post. */
+  watchedThreads: readOnlyProcedure
+    .input(z.object({ page }))
+    .query(async ({ ctx, input }) =>
+      withAuthors(ctx.db, await listWatched(ctx.db, await actorOf(ctx.db, ctx.user), input.page))
+    ),
+
+  /** The sidebar's badges, polled every 60 seconds: unread watched threads and new board messages. */
+  navCounts: readOnlyProcedure.query(async ({ ctx }) =>
+    forumNavCounts(ctx.db, await actorOf(ctx.db, ctx.user))
+  ),
 });

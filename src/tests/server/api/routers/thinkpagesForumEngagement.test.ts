@@ -124,7 +124,9 @@ describe("thinkpagesForum read marks", () => {
   it("maps a refusal to NOT_FOUND", async () => {
     const db = engagementDb();
     db.forumThread.findUnique.mockResolvedValueOnce(null as never);
-    await expect(caller(member, db).markThreadRead({ threadId: "t9", page: 1 })).rejects.toMatchObject({
+    await expect(
+      caller(member, db).markThreadRead({ threadId: "t9", page: 1 })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });
@@ -139,7 +141,9 @@ describe("unreadTargetFor", () => {
   });
 
   it("sends an id over the input bound to the forum home", async () => {
-    await expect(unreadTargetFor({} as never, "clerk_1", "x".repeat(65))).resolves.toBe("/thinkpages");
+    await expect(unreadTargetFor({} as never, "clerk_1", "x".repeat(65))).resolves.toBe(
+      "/thinkpages"
+    );
   });
 
   it("sends a signed-in member to the page and anchor of the first post they have not read", async () => {
@@ -180,10 +184,7 @@ describe("unreadTargetFor", () => {
       forumPost: {
         findMany: base.forumPost.findMany,
         // the first call (newer than the read mark) finds nothing, the second (the last post) finds p9
-        findFirst: jest
-          .fn()
-          .mockResolvedValueOnce(null)
-          .mockResolvedValueOnce({ id: "p9" }),
+        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "p9" }),
         findUnique: jest.fn(async () => ({
           id: "p9",
           threadId: "t1",
@@ -197,5 +198,60 @@ describe("unreadTargetFor", () => {
     await expect(unreadTargetFor(db as never, "clerk_1", "t1")).resolves.toBe(
       "/thinkpages/t/t1?page=1#post-p9"
     );
+  });
+});
+
+describe("thinkpagesForum watch, lists and counts", () => {
+  beforeEach(() => {
+    jest.spyOn(console, "info").mockImplementation(() => {});
+    jest.spyOn(console, "warn").mockImplementation(() => {});
+    jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("refuses every watch, list and count to a signed-out caller", async () => {
+    const c = caller(null);
+    for (const call of [
+      () => c.watchThread({ threadId: "t1" }),
+      () => c.unwatchThread({ threadId: "t1" }),
+      () => c.newPosts({ page: 1 }),
+      () => c.watchedThreads({ page: 1 }),
+      () => c.navCounts(),
+    ]) {
+      await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
+    }
+  });
+
+  it("watches and unwatches through the module", async () => {
+    const db = engagementDb();
+    const c = caller(member, db);
+    await expect(c.watchThread({ threadId: "t1" })).resolves.toEqual({ watching: true });
+    await expect(c.unwatchThread({ threadId: "t1" })).resolves.toEqual({ watching: false });
+    expect(db.forumThreadWatch.createMany).toHaveBeenCalledTimes(1);
+    expect(db.forumThreadWatch.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "u1", threadId: "t1" },
+    });
+  });
+
+  it("answers an empty New posts and Watched with an authors map, and navCounts with two numbers", async () => {
+    const db = {
+      ...engagementDb(),
+      user: { findMany: jest.fn(async () => []) },
+      thinkpagesAccount: { findMany: jest.fn(async () => []) },
+    };
+    const c = caller(member, db);
+    await expect(c.newPosts({ page: 1 })).resolves.toEqual({
+      threads: [],
+      total: 0,
+      authors: { users: {}, personas: {} },
+    });
+    await expect(c.watchedThreads({ page: 1 })).resolves.toMatchObject({ threads: [], total: 0 });
+    await expect(c.navCounts()).resolves.toEqual({ watchedUnread: 0, realmBoardNew: 0 });
+  });
+
+  it("bounds the page of a list", async () => {
+    await expect(caller(member, engagementDb()).newPosts({ page: 0 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 });

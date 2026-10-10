@@ -31,6 +31,7 @@ import {
   getRealmSection,
   getThreadPosts,
   isThreadStashed,
+  isWatching,
   listBoards,
   listForumRealms,
   listStashedThreads,
@@ -265,6 +266,7 @@ const forumRouter = createTRPCRouter({
         );
       }),
       viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
+      watching: viewer ? await isWatching(ctx.db, viewer.id, input.threadId) : false,
       canReply,
       notice: access.notice,
       banned: access.ban !== null,
