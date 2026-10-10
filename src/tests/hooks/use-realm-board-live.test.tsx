@@ -130,13 +130,13 @@ describe("useRealmBoardLive connection and fallback", () => {
     expect(socket.subscribe).not.toHaveBeenCalled();
   });
 
-  it("subscribes to the realm's room once connected and stops polling when the room confirms", () => {
+  it("subscribes to the realm's room once connected and slows polling to 60s when the room confirms", () => {
     const { result } = mount(true);
     expect(socket.subscribe).toHaveBeenCalledWith("realm-board:r_eurth");
     // Connected, but the join is only confirmed by the room's first presence event.
     expect(result.current).toMatchObject({ connected: true, live: false, refetchInterval: 10_000 });
     send({ type: "board:presence", realmId: "r_eurth", count: 3 });
-    expect(result.current).toMatchObject({ live: true, refetchInterval: false, online: 3 });
+    expect(result.current).toMatchObject({ live: true, refetchInterval: 60_000, online: 3 });
   });
 
   it("goes back to polling and hides the online count when the socket drops, and resubscribes on return", () => {

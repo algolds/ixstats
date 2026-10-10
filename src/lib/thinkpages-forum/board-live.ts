@@ -18,8 +18,11 @@ export const BOARD_TYPING_THROTTLE_MS = 1_000;
 /** Without a live connection the board is polled at this interval. */
 export const BOARD_POLL_MS = 10_000;
 
-export const boardRefetchInterval = (live: boolean): number | false =>
-  live ? false : BOARD_POLL_MS;
+/** With one, a slow safety poll still covers a publish that never reached the socket server. */
+export const BOARD_LIVE_POLL_MS = 60_000;
+
+export const boardRefetchInterval = (live: boolean): number =>
+  live ? BOARD_LIVE_POLL_MS : BOARD_POLL_MS;
 
 const authorSchema = z.object({
   name: z.string(),
