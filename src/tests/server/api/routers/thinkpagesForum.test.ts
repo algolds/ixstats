@@ -128,6 +128,7 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
       findMany: jest.fn(async (_args?: { select?: Record<string, boolean> }) => [
         {
           id: "p1",
+          threadId: "t1",
           authorUserId: "u1",
           authorPersonaId: "pa1",
           contentHtml: "<p>hi</p>",
@@ -483,6 +484,41 @@ describe("thinkpagesForum router", () => {
     ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+
+  it("names each listed thread's last poster without the player behind a persona", async () => {
+    const asMember = await caller(member, forumDb()).category({ key: "general", page: 1 });
+    // The default last post (p1) is the persona's: the persona, never u1.
+    expect(asMember.threads[0]!.lastPoster).toEqual({
+      authorUserId: null,
+      authorPersonaId: "pa1",
+      importedAuthorName: null,
+    });
+    expect(asMember.authors.users).toEqual({});
+    expect(asMember.authors.personas.pa1).toBeDefined();
+    const asAdmin = await caller(admin, forumDb()).category({ key: "general", page: 1 });
+    expect(asAdmin.threads[0]!.lastPoster).toEqual(asMember.threads[0]!.lastPoster);
+    expect(asAdmin.authors.users).toEqual({});
+  });
+
+  it("names a member's last post by their public data, and has none for a thread with no visible post", async () => {
+    const db = forumDb();
+    db.forumPost.findMany.mockResolvedValueOnce([
+      { threadId: "t1", authorUserId: "u2", authorPersonaId: null, importedAuthorName: null },
+    ] as never);
+    const out = await caller(member, db).category({ key: "general", page: 1 });
+    expect(out.threads[0]!.lastPoster).toEqual({
+      authorUserId: "u2",
+      authorPersonaId: null,
+      importedAuthorName: null,
+    });
+    expect(out.authors.users.u2).toBeDefined();
+
+    const empty = forumDb();
+    empty.forumPost.findMany.mockResolvedValueOnce([] as never);
+    expect(
+      (await caller(member, empty).category({ key: "general", page: 1 })).threads[0]!.lastPoster
+    ).toBeNull();
   });
 
   it("returns display-safe authors and canStart on a category", async () => {
@@ -1150,7 +1186,8 @@ describe("thinkpagesForum router", () => {
             realmId: "r_eurth",
             visibility: "public",
             id: { not: "rcat_hub" },
-            style: { not: "board" }, NOT: { scope: "realm", key: "board" },
+            style: { not: "board" },
+            NOT: { scope: "realm", key: "board" },
           },
         })
       );

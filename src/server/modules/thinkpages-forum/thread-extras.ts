@@ -128,3 +128,45 @@ export async function threadParticipants(
   const ranked = [...merged.values()].sort((a, b) => b.posts - a.posts);
   return { top: ranked.slice(0, limit), total: ranked.length };
 }
+
+/** Who wrote a thread's last visible post, by id (resolve with `authorsOf`). */
+export interface ThreadLastPoster {
+  authorUserId: string | null;
+  authorPersonaId: string | null;
+  importedAuthorName: string | null;
+}
+
+/**
+ * The last visible post's author of each thread of a listing, in one query (hidden posts count only for the
+ * category's moderators). A persona's post carries the persona and never the player's id, whoever asks: the list
+ * shows a persona by name and picture only. A thread with no visible post has no entry.
+ */
+export async function threadLastPosters(
+  db: Pick<PrismaClient, "forumPost">,
+  viewer: ForumViewer,
+  category: { id: string; scope: string; realmId: string | null; visibility: string },
+  threadIds: readonly string[]
+): Promise<Map<string, ThreadLastPoster>> {
+  if (threadIds.length === 0) return new Map();
+  const posts = await db.forumPost.findMany({
+    where: { threadId: { in: [...threadIds] }, ...hiddenFilter(viewer, category) },
+    orderBy: { createdAt: "desc" },
+    distinct: ["threadId"],
+    select: {
+      threadId: true,
+      authorUserId: true,
+      authorPersonaId: true,
+      importedAuthorName: true,
+    },
+  });
+  return new Map(
+    posts.map((p) => [
+      p.threadId,
+      {
+        authorUserId: p.authorPersonaId ? null : p.authorUserId,
+        authorPersonaId: p.authorPersonaId,
+        importedAuthorName: p.authorPersonaId ? null : p.importedAuthorName,
+      },
+    ])
+  );
+}

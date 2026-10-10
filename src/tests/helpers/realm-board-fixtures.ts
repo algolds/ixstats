@@ -63,6 +63,7 @@ export function boardData(
       name: "Eurth",
       emblemUrl: null,
       memberCount: 31,
+      hasRow: true,
       settings: { visitorsAllowed: true, slowModeSeconds: 0 },
     },
     messages,

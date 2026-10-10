@@ -288,7 +288,8 @@ describe("trendingThreads", () => {
     await trendingThreads(db as never, member, 5, NOW);
     const category = (argsOf(db.forumPost.groupBy).where.thread as { category: object }).category;
     expect(category).toEqual({
-      style: { not: "board" }, NOT: { scope: "realm", key: "board" },
+      style: { not: "board" },
+      NOT: { scope: "realm", key: "board" },
       OR: [{ scope: "site" }, { scope: "realm", realmId: { in: expect.arrayContaining(["r1"]) } }],
     });
     const realmIds = (category as { OR: Array<{ realmId?: { in: string[] } }> }).OR[1]!.realmId!.in;
@@ -429,7 +430,7 @@ describe("listBoards", () => {
       authorPersonaId: null,
       importedAuthorName: null,
       at: T2,
-      author: { name: "heku", handle: "heku" },
+      author: { name: "heku", handle: "heku", avatarUrl: null },
     });
     expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
     expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
@@ -462,7 +463,12 @@ describe("listBoards", () => {
       },
       thinkpagesAccount: {
         findMany: jest.fn(async (_args: object) => [
-          { id: "pa_1", displayName: "Caphiria News", username: "caphnews" },
+          {
+            id: "pa_1",
+            displayName: "Caphiria News",
+            username: "caphnews",
+            profileImageUrl: "/p/news.png",
+          },
         ]),
       },
     };
@@ -470,7 +476,7 @@ describe("listBoards", () => {
     expect(row!.latest).toMatchObject({
       authorUserId: null,
       authorPersonaId: "pa_1",
-      author: { name: "Caphiria News", handle: "caphnews" },
+      author: { name: "Caphiria News", handle: "caphnews", avatarUrl: "/p/news.png" },
     });
     expect(JSON.stringify(row)).not.toContain("u_x");
   });

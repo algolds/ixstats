@@ -18,8 +18,14 @@ import { pageHref } from "../Pagination";
 
 type Thread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
-/** Phones: the thread on a line, then replies and time. md+: Thread / Replies / Last post columns. */
-const GRID = "grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1fr)_5rem_8rem]";
+/**
+ * Phones: the thread on a line, then replies and the last post. md+: Thread / Replies / Last post columns, which the
+ * table sizes once (the first fills, the others fit their widest cell) and every row, header and group shares by
+ * subgrid, so the figures line up and no column keeps room it does not use.
+ */
+const TABLE = "md:grid md:grid-cols-[minmax(0,1fr)_auto_auto]";
+const SPAN = "md:col-span-3 md:grid md:grid-cols-subgrid";
+const GRID = `grid grid-cols-[minmax(0,1fr)_auto] ${SPAN}`;
 
 const SORT_COLUMNS: ReadonlyArray<{ label: string; sort: ThreadSort; align?: "right" }> = [
   { label: "Thread", sort: "newest" },
@@ -82,6 +88,39 @@ function PageShortcuts({ thread, last }: { thread: Thread; last: number }) {
           </Link>
         )
       )}
+    </span>
+  );
+}
+
+/** Who wrote the thread's last post and when: avatar, name and time from md up, "name · time" on a phone. */
+function LastPost({ thread, authors }: { thread: Thread; authors: ForumAuthors }) {
+  const when = timeAgo(thread.lastPostAt);
+  if (!thread.lastPoster) {
+    return <span className="text-footnote text-label-secondary tabular-nums">{when}</span>;
+  }
+  const poster = resolveAuthor({
+    authors,
+    userId: thread.lastPoster.authorUserId,
+    personaId: thread.lastPoster.authorPersonaId,
+    importedName: thread.lastPoster.importedAuthorName,
+  });
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      <ForumAvatar
+        name={poster.name}
+        avatarUrl={poster.avatarUrl}
+        size="sm"
+        className="hidden md:flex"
+      />
+      <span className="flex min-w-0 items-baseline gap-1.5 md:flex-col md:items-start md:gap-0">
+        <span className="text-footnote text-label md:text-callout max-w-40 truncate md:max-w-48">
+          {poster.name}
+        </span>
+        <span aria-hidden className="text-footnote text-label-secondary md:hidden">
+          ·
+        </span>
+        <span className="text-footnote text-label-secondary tabular-nums">{when}</span>
+      </span>
     </span>
   );
 }
@@ -155,9 +194,9 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
       </div>
       <div
         role="cell"
-        className="text-footnote text-label-secondary text-right tabular-nums md:col-start-3 md:row-start-1 md:text-left"
+        className="col-start-2 min-w-0 justify-self-end md:col-start-3 md:row-start-1 md:justify-self-start"
       >
-        {timeAgo(thread.lastPostAt)}
+        <LastPost thread={thread} authors={authors} />
       </div>
     </div>
   );
@@ -173,9 +212,9 @@ function Group({
   authors: ForumAuthors;
 }) {
   return (
-    <div role="rowgroup" className="divide-separator divide-y">
+    <div role="rowgroup" className={cn("divide-separator divide-y", SPAN)}>
       {label ? (
-        <div role="row">
+        <div role="row" className="md:col-span-3">
           <div
             role="rowheader"
             className="text-footnote text-label-secondary bg-fill-4 flex items-center gap-1.5 px-4 py-2 font-medium sm:px-5"
@@ -205,8 +244,8 @@ export function ThreadTable({ threads, authors, basePath, sort }: ThreadTablePro
   const pinned = threads.filter((t) => t.pinned);
   const others = threads.filter((t) => !t.pinned);
   return (
-    <div role="table" aria-label="Threads">
-      <div role="rowgroup">
+    <div role="table" aria-label="Threads" className={TABLE}>
+      <div role="rowgroup" className={SPAN}>
         <SortHeaders basePath={basePath} sort={sort} />
       </div>
       {pinned.length > 0 ? (

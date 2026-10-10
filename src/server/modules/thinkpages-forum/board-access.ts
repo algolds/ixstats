@@ -23,6 +23,8 @@ export interface BoardSettings {
   emblemUrl: string | null;
   visitorsAllowed: boolean;
   slowModeSeconds: number;
+  /** The realm has a row of its own; false for IxWorld synthesized without one, which has no region page data. */
+  hasRow: boolean;
 }
 
 export type BoardRefusal = "sign_in" | "visitors_off" | "banned" | "archived";
@@ -53,6 +55,7 @@ const DEFAULT_SETTINGS: BoardSettings = {
   emblemUrl: null,
   visitorsAllowed: true,
   slowModeSeconds: 0,
+  hasRow: false,
 };
 
 export async function boardSettingsOf(
@@ -74,6 +77,7 @@ export async function boardSettingsOf(
     emblemUrl: row.emblemUrl ?? row.thumbnail ?? null,
     visitorsAllowed: row.boardVisitorsAllowed,
     slowModeSeconds: row.boardSlowModeSeconds,
+    hasRow: true,
   };
 }
 

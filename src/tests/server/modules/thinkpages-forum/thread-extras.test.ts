@@ -4,6 +4,7 @@ import { postNumberOf } from "~/lib/thinkpages-forum/numbers";
 import {
   roleContextOf,
   roleOf,
+  threadLastPosters,
   threadParticipants,
   type RoleContext,
 } from "~/server/modules/thinkpages-forum/thread-extras";
@@ -105,12 +106,10 @@ describe("roleContextOf", () => {
 
   it("never loads the player behind a persona post", async () => {
     const db = fakeDb();
-    await roleContextOf(
-      db as never,
-      thread,
-      { scope: "realm", realmId: "r1" },
-      [{ authorUserId: "u_admin", authorPersonaId: "pa1" }, player("u_off")]
-    );
+    await roleContextOf(db as never, thread, { scope: "realm", realmId: "r1" }, [
+      { authorUserId: "u_admin", authorPersonaId: "pa1" },
+      player("u_off"),
+    ]);
     expect(db.user.findMany.mock.calls[0]![0]).toMatchObject({ where: { id: { in: ["u_off"] } } });
   });
 
@@ -127,13 +126,28 @@ describe("roleContextOf", () => {
 
 describe("threadParticipants", () => {
   const general = { id: "cat_g", scope: "site", realmId: null, visibility: "public" };
-  const member = { id: "u_m", clerkUserId: "m", countryId: null, role: { name: "user", level: 100 } };
-  const admin = { id: "u_a", clerkUserId: "a", countryId: null, role: { name: "admin", level: 10 } };
+  const member = {
+    id: "u_m",
+    clerkUserId: "m",
+    countryId: null,
+    role: { name: "user", level: 100 },
+  };
+  const admin = {
+    id: "u_a",
+    clerkUserId: "a",
+    countryId: null,
+    role: { name: "admin", level: 10 },
+  };
   const rows = [
     { authorUserId: "u1", authorPersonaId: null, importedAuthorName: null, _count: { _all: 5 } },
     { authorUserId: "u2", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 7 } },
     { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null, _count: { _all: 2 } },
-    { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName", _count: { _all: 3 } },
+    {
+      authorUserId: null,
+      authorPersonaId: null,
+      importedAuthorName: "OldName",
+      _count: { _all: 3 },
+    },
   ];
   const fakeDb = () => ({
     forumPost: { groupBy: jest.fn(async (_args: object) => rows) },
@@ -159,17 +173,27 @@ describe("threadParticipants", () => {
     });
     await threadParticipants(db as never, admin, general, "t1");
     expect(db.forumPost.groupBy.mock.calls[1]![0]).toMatchObject({ where: { threadId: "t1" } });
-    expect(
-      (db.forumPost.groupBy.mock.calls[1]![0] as { where: object }).where
-    ).not.toHaveProperty("hidden");
+    expect((db.forumPost.groupBy.mock.calls[1]![0] as { where: object }).where).not.toHaveProperty(
+      "hidden"
+    );
   });
 
   it("merges one persona's rows and honours the limit", async () => {
     const db = {
       forumPost: {
         groupBy: jest.fn(async () => [
-          { authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 2 } },
-          { authorUserId: "u9", authorPersonaId: "pa1", importedAuthorName: null, _count: { _all: 3 } },
+          {
+            authorUserId: "u1",
+            authorPersonaId: "pa1",
+            importedAuthorName: null,
+            _count: { _all: 2 },
+          },
+          {
+            authorUserId: "u9",
+            authorPersonaId: "pa1",
+            importedAuthorName: null,
+            _count: { _all: 3 },
+          },
           ...rows,
         ]),
       },
@@ -179,5 +203,71 @@ describe("threadParticipants", () => {
     expect(out.top[0]).toMatchObject({ authorPersonaId: "pa1", posts: 12, authorUserId: null });
     // The total is counted before the cut: pa1 (merged), u1, u2, OldName.
     expect(out.total).toBe(4);
+  });
+});
+
+describe("threadLastPosters", () => {
+  const general = { id: "cat_g", scope: "site", realmId: null, visibility: "public" };
+  const member = {
+    id: "u_m",
+    clerkUserId: "m",
+    countryId: null,
+    role: { name: "user", level: 100 },
+  };
+  const admin = {
+    id: "u_a",
+    clerkUserId: "a",
+    countryId: null,
+    role: { name: "admin", level: 10 },
+  };
+  const posts = [
+    { threadId: "t1", authorUserId: "u1", authorPersonaId: "pa1", importedAuthorName: "Old" },
+    { threadId: "t2", authorUserId: "u2", authorPersonaId: null, importedAuthorName: null },
+    { threadId: "t3", authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" },
+  ];
+  const fakeDb = () => ({ forumPost: { findMany: jest.fn(async (_args: object) => posts) } });
+
+  it("asks once for the newest visible post of each listed thread", async () => {
+    const db = fakeDb();
+    await threadLastPosters(db as never, member, general, ["t1", "t2", "t3"]);
+    expect(db.forumPost.findMany).toHaveBeenCalledTimes(1);
+    expect(db.forumPost.findMany.mock.calls[0]![0]).toMatchObject({
+      where: { threadId: { in: ["t1", "t2", "t3"] }, hidden: false },
+      orderBy: { createdAt: "desc" },
+      distinct: ["threadId"],
+    });
+  });
+
+  it("reads hidden posts too for the category's moderator only", async () => {
+    const db = fakeDb();
+    await threadLastPosters(db as never, admin, general, ["t1"]);
+    expect(JSON.stringify(db.forumPost.findMany.mock.calls[0]![0])).not.toContain('"hidden"');
+  });
+
+  it("names a persona post by the persona alone, for a member and a moderator alike", async () => {
+    for (const viewer of [member, admin]) {
+      const out = await threadLastPosters(fakeDb() as never, viewer, general, ["t1", "t2", "t3"]);
+      expect(out.get("t1")).toEqual({
+        authorUserId: null,
+        authorPersonaId: "pa1",
+        importedAuthorName: null,
+      });
+      expect(out.get("t2")).toEqual({
+        authorUserId: "u2",
+        authorPersonaId: null,
+        importedAuthorName: null,
+      });
+      expect(out.get("t3")).toEqual({
+        authorUserId: null,
+        authorPersonaId: null,
+        importedAuthorName: "OldName",
+      });
+    }
+  });
+
+  it("does not query for an empty list", async () => {
+    const db = fakeDb();
+    expect((await threadLastPosters(db as never, member, general, [])).size).toBe(0);
+    expect(db.forumPost.findMany).not.toHaveBeenCalled();
   });
 });

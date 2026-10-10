@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { boardSettingsOf } from "~/server/modules/thinkpages-forum/board-access";
 import { boardPostRealm, getBoard } from "~/server/modules/thinkpages-forum/board";
 import {
   admin,
@@ -36,6 +37,37 @@ const board = (
   store = storeWith()
 ) => getBoard(store.db as never, who as never, slug, opts);
 
+describe("boardSettingsOf", () => {
+  const dbWith = (row: object | null) => ({ realm: { findUnique: jest.fn(async () => row) } });
+
+  it("reports the defaults and no row for a realm without one (IxWorld, synthesized)", async () => {
+    expect(await boardSettingsOf(dbWith(null) as never, "default")).toEqual({
+      emblemUrl: null,
+      visitorsAllowed: true,
+      slowModeSeconds: 0,
+      hasRow: false,
+    });
+  });
+
+  it("reports the row's own settings, and that it has one", async () => {
+    const out = await boardSettingsOf(
+      dbWith({
+        emblemUrl: null,
+        thumbnail: "https://img.example/t.png",
+        boardVisitorsAllowed: false,
+        boardSlowModeSeconds: 30,
+      }) as never,
+      "r_eurth"
+    );
+    expect(out).toEqual({
+      emblemUrl: "https://img.example/t.png",
+      visitorsAllowed: false,
+      slowModeSeconds: 30,
+      hasRow: true,
+    });
+  });
+});
+
 describe("getBoard", () => {
   it("returns the realm, its settings and member count, newest message first", async () => {
     const out = await board(member);
@@ -45,6 +77,7 @@ describe("getBoard", () => {
       name: "Eurth",
       emblemUrl: "https://img.example/eurth.png",
       memberCount: 4,
+      hasRow: true,
       settings: { visitorsAllowed: true, slowModeSeconds: 0 },
     });
     expect(out.messages.map((m) => m.id)).toEqual(["p6", "p4", "p3", "p2", "p1"]);

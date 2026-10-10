@@ -116,6 +116,55 @@ describe("ThreadTable rows", () => {
     expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-title-3");
   });
 
+  describe("last post", () => {
+    const lastCell = (name: RegExp) => within(rowOf(name)).getAllByRole("cell")[2]!;
+
+    it("shows who wrote the last post with their avatar and when, not the thread's starter", () => {
+      renderTable([
+        thread("t1", {
+          authorUserId: "u1",
+          lastPoster: { authorUserId: "u2", authorPersonaId: null, importedAuthorName: null },
+        }),
+      ]);
+      const cell = lastCell(/Thread t1/);
+      expect(within(cell).getByText("Hidden Player")).toBeInTheDocument();
+      expect(within(cell).queryByText("Kir")).toBeNull();
+      expect(cell.querySelector('[data-slot="avatar"]')).not.toBeNull();
+      expect(within(cell).getByText(/ago|now|just/i)).toBeInTheDocument();
+    });
+
+    it("names a persona's last post by the persona and its picture, never the player", () => {
+      renderTable([
+        thread("t1", {
+          lastPoster: { authorUserId: null, authorPersonaId: "pa", importedAuthorName: null },
+        }),
+      ]);
+      const cell = lastCell(/Thread t1/);
+      expect(within(cell).getByText("Aria Vance")).toBeInTheDocument();
+      expect(cell.querySelector('img[src="/avatars/aria.png"]')).not.toBeNull();
+      expect(cell.querySelector('img[src^="/flags/"]')).toBeNull();
+    });
+
+    it("names an imported last post by its old name, and falls back to the time alone without a last post", () => {
+      renderTable([
+        thread("t1", {
+          lastPoster: { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" },
+        }),
+        thread("t2", { lastPoster: null }),
+      ]);
+      expect(within(lastCell(/Thread t1/)).getByText("OldName")).toBeInTheDocument();
+      expect(lastCell(/Thread t2/).querySelector('[data-slot="avatar"]')).toBeNull();
+    });
+
+    it("sizes the columns once for every row, so nothing keeps room it does not use", () => {
+      renderTable([thread("t1")]);
+      const table = screen.getByRole("table", { name: "Threads" });
+      expect(table).toHaveClass("md:grid-cols-[minmax(0,1fr)_auto_auto]");
+      const row = rowOf(/Thread t1/);
+      expect(row).toHaveClass("md:grid-cols-subgrid", "md:col-span-3");
+    });
+  });
+
   it("shows a lock for locked threads, Imported only for imported ones and Hidden only when flagged", () => {
     renderTable([thread("a", { locked: true, xenforoThreadId: 7, hidden: true }), thread("b")]);
     const a = rowOf(/Thread a/);

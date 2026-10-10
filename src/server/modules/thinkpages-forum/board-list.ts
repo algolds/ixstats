@@ -13,6 +13,8 @@ export type BoardsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "for
 export interface BoardAuthor {
   name: string;
   handle: string | null;
+  /** The persona's picture for a persona, the member's own otherwise; never the player's behind a persona. */
+  avatarUrl: string | null;
 }
 
 export type BoardLatest = LatestPost & { author: BoardAuthor | null };
@@ -23,10 +25,14 @@ function nameOf(
   authors: Awaited<ReturnType<typeof authorsOf>>
 ): BoardAuthor | null {
   const persona = latest.authorPersonaId ? authors.personas.get(latest.authorPersonaId) : undefined;
-  if (persona) return { name: persona.displayName, handle: persona.username };
+  if (persona) {
+    return { name: persona.displayName, handle: persona.username, avatarUrl: persona.avatarUrl };
+  }
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
-  if (user) return { name: user.name, handle: user.handle };
-  return latest.importedAuthorName ? { name: latest.importedAuthorName, handle: null } : null;
+  if (user) return { name: user.name, handle: user.handle, avatarUrl: user.avatarUrl };
+  return latest.importedAuthorName
+    ? { name: latest.importedAuthorName, handle: null, avatarUrl: null }
+    : null;
 }
 
 /** A persona post never carries the player's user id on this public read; the resolved `author` is the persona. */

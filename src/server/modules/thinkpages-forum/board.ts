@@ -38,6 +38,8 @@ export interface BoardResult {
     name: string;
     emblemUrl: string | null;
     memberCount: number;
+    /** False for a realm without a row (IxWorld, synthesized): nothing reads its realm page data. */
+    hasRow: boolean;
     settings: { visitorsAllowed: boolean; slowModeSeconds: number };
   };
   messages: BoardMessage[];
@@ -131,6 +133,7 @@ export async function getBoard(
       name,
       emblemUrl: settings.emblemUrl,
       memberCount,
+      hasRow: settings.hasRow,
       settings: {
         visitorsAllowed: settings.visitorsAllowed,
         slowModeSeconds: settings.slowModeSeconds,

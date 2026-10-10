@@ -56,7 +56,12 @@ function LatestCell({ latest }: { latest: Board["latest"] }) {
   const author = latest.author?.name ?? "Member";
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      <ForumAvatar name={author} size="sm" className="hidden md:flex" />
+      <ForumAvatar
+        name={author}
+        avatarUrl={latest.author?.avatarUrl}
+        size="sm"
+        className="hidden md:flex"
+      />
       <span className="min-w-0">
         <span className="text-callout text-label block truncate">{latest.threadTitle}</span>
         <span className="text-footnote text-label-secondary block truncate tabular-nums">

@@ -47,6 +47,7 @@ import {
   roleOf,
   stashThread,
   TITLE_MAX,
+  threadLastPosters,
   threadParticipants,
   TITLE_MIN,
   trendingThreads,
@@ -182,16 +183,33 @@ const forumRouter = createTRPCRouter({
         input.sort
       ).catch(mapError);
       const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
+      const lastPosters = await threadLastPosters(
+        ctx.db,
+        viewer,
+        result.category,
+        result.threads.map((t) => t.id)
+      );
       return {
         ...result,
-        // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4).
+        // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4). Each thread
+        // carries its last visible post's author (a persona never with the player's id).
         threads: result.threads.map(({ hidden, ...thread }) =>
-          maskPersona({ ...thread, ...(result.canModerate ? { hidden } : {}) }, result.canModerate)
+          maskPersona(
+            {
+              ...thread,
+              ...(result.canModerate ? { hidden } : {}),
+              lastPoster: lastPosters.get(thread.id) ?? null,
+            },
+            result.canModerate
+          )
         ),
         canStart: canStartThread(viewer, result.category) && access.canPost,
         notice: access.notice,
         banned: access.ban !== null,
-        authors: await authorMaps(ctx.db, result.threads),
+        authors: await authorMaps(ctx.db, [
+          ...result.threads,
+          ...result.threads.flatMap((t) => lastPosters.get(t.id) ?? []),
+        ]),
       };
     }),
 
