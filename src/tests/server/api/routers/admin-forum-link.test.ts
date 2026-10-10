@@ -43,11 +43,15 @@ function caller(role: "member" | "admin") {
 }
 type AuditDb = { adminAuditLog: { create: jest.Mock } };
 
+const LINKED = {
+  username: "OldTimer",
+  previousXenforoUserId: 55,
+  released: { threads: 0, posts: 3 },
+  relinked: { threads: 1, posts: 2 },
+};
+
 beforeEach(() => {
-  jest
-    .mocked(linkOldForumAccount)
-    .mockReset()
-    .mockResolvedValue({ username: "OldTimer", relinked: { threads: 1, posts: 2 } });
+  jest.mocked(linkOldForumAccount).mockReset().mockResolvedValue(LINKED);
   jest
     .mocked(unlinkOldForumAccount)
     .mockReset()
@@ -71,7 +75,7 @@ describe("admin.linkUserForum / unlinkUserForum", () => {
     const { caller: admin, db } = caller("admin");
     await expect(
       admin.linkUserForum({ userId: "u1", xenforoUserId: 77, forumUsername: "OldTimer" })
-    ).resolves.toEqual({ username: "OldTimer", relinked: { threads: 1, posts: 2 } });
+    ).resolves.toEqual(LINKED);
     expect(jest.mocked(linkOldForumAccount).mock.calls[0]![1]).toEqual({
       userId: "u1",
       xenforoUserId: 77,
@@ -84,6 +88,8 @@ describe("admin.linkUserForum / unlinkUserForum", () => {
         adminId: "db_user_caller",
       }),
     });
+    const changes = JSON.parse(db.adminAuditLog.create.mock.calls[0]![0].data.changes);
+    expect(changes).toMatchObject({ xenforoUserId: 77, previousXenforoUserId: 55 });
   });
 
   it("unlinks and audits", async () => {

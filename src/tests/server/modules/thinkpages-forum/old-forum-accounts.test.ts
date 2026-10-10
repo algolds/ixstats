@@ -30,6 +30,7 @@ function store(
     { id: "p1", authorUserId: null, xenforoUserId: 77, importedAuthorName: "OldTimer" },
     { id: "p2", authorUserId: null, xenforoUserId: 77, importedAuthorName: "OldTimer" },
     { id: "p3", authorUserId: "u1", xenforoUserId: null, importedAuthorName: null },
+    { id: "p4", authorUserId: null, xenforoUserId: 88, importedAuthorName: "Other" },
   ];
   const matches = (r: Row, w: Where) =>
     (w.xenforoUserId === undefined || r.xenforoUserId === w.xenforoUserId) &&
@@ -76,8 +77,10 @@ function store(
       }
     ),
   };
+  const tables = { user, forumThread: table(threads), forumPost: table(posts) };
+  const $transaction = jest.fn(async (run: (tx: typeof tables) => Promise<object>) => run(tables));
   return {
-    db: { user, forumThread: table(threads), forumPost: table(posts) } as never,
+    db: { ...tables, $transaction } as never,
     threads,
     posts,
     user,
@@ -89,6 +92,8 @@ describe("linkOldForumAccount", () => {
     const s = store();
     await expect(linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 })).resolves.toEqual({
       username: "OldTimer",
+      previousXenforoUserId: null,
+      released: { threads: 0, posts: 0 },
       relinked: { threads: 1, posts: 2 },
     });
     expect(s.user.update).toHaveBeenCalledWith({
@@ -96,7 +101,21 @@ describe("linkOldForumAccount", () => {
       data: { forumUserId: 77, forumUsername: "OldTimer", lastForumSync: expect.any(Date) },
     });
     expect(s.threads.map((t) => t.authorUserId)).toEqual(["u1", null, "u1"]);
-    expect(s.posts.every((p) => p.authorUserId === "u1")).toBe(true);
+    expect(s.posts.map((p) => p.authorUserId)).toEqual(["u1", "u1", "u1", null]);
+  });
+
+  it("re-linking to another id hands the previous id's posts back before attributing the new one's", async () => {
+    const s = store();
+    await linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 77 });
+    await expect(linkOldForumAccount(s.db, { userId: "u1", xenforoUserId: 88 })).resolves.toEqual({
+      username: "Other",
+      previousXenforoUserId: 77,
+      released: { threads: 1, posts: 2 },
+      relinked: { threads: 1, posts: 1 },
+    });
+    // 77's imported rows are back on the old name; 88's are u1's; native content is untouched.
+    expect(s.threads.map((t) => t.authorUserId)).toEqual([null, "u1", "u1"]);
+    expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1", "u1"]);
   });
 
   it("takes a typed name for an id no imported post carries yet", async () => {
@@ -131,7 +150,7 @@ describe("unlinkOldForumAccount", () => {
       released: { threads: 1, posts: 2 },
     });
     expect(s.threads.map((t) => t.authorUserId)).toEqual([null, null, "u1"]);
-    expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1"]);
+    expect(s.posts.map((p) => p.authorUserId)).toEqual([null, null, "u1", null]);
     expect(s.user.update).toHaveBeenLastCalledWith({
       where: { id: "u1" },
       data: { forumUserId: null, forumUsername: null, lastForumSync: null },

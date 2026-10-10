@@ -18,6 +18,7 @@ export {
   unlinkOldForumAccount,
   type OldForumAccountsDb,
   type OldForumLink,
+  type OldForumLinkResult,
 } from "./old-forum-accounts";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
