@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { MoreHoriz } from "iconoir-react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -12,6 +13,12 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -27,6 +34,9 @@ import { FormError } from "../ReasonField";
 import { ReportDialog } from "../ReportDialog";
 import { StashThreadButton } from "../StashThreadButton";
 import type { ThreadData } from "./types";
+
+/** The widths below which the header cannot hold the whole bar: actions collapse into one menu and icon buttons. */
+export const COMPACT_QUERY = "(max-width: 1023px)";
 
 type Flag = "locked" | "pinned" | "hidden" | "archived";
 type Destination = NonNullable<
@@ -66,10 +76,12 @@ interface ModeratorBarProps {
   categories: readonly Destination[];
   /** Refreshes the thread and the listings whose counts follow it. */
   refresh: () => Promise<void>;
+  /** One "Thread actions" menu in place of the row of buttons. */
+  compact: boolean;
 }
 
 /** A moderator's thread actions: lock, pin, hide, archive (each a toggle) and move. */
-function ModeratorBar({ thread, categories, refresh }: ModeratorBarProps) {
+function ModeratorBar({ thread, categories, refresh, compact }: ModeratorBarProps) {
   const notify = useNotify();
   const moveLabelId = useId();
   const [moving, setMoving] = useState(false);
@@ -113,40 +125,66 @@ function ModeratorBar({ thread, categories, refresh }: ModeratorBarProps) {
     );
   };
 
+  const choose = (flag: Flag, label: string) =>
+    CONFIRMED[flag] ? setConfirming({ flag, label, value: !thread[flag] }) : toggle(flag, label);
+  const startMove = () => {
+    // Start from the current list: a move changes it (the old home joins, the new one leaves).
+    setTo(categories[0]?.key ?? "");
+    setMoving(true);
+  };
+  const labelOf = (flag: Flag, on: string, off: string) => (thread[flag] ? off : on);
+
   return (
     <div role="group" aria-label="Moderate thread" className="flex flex-wrap gap-2">
-      {FLAGS.map(({ flag, on, off }) => {
-        const label = thread[flag] ? off : on;
-        return (
-          <Button
-            key={flag}
-            variant="secondary"
-            size="sm"
-            disabled={pending}
-            onClick={() =>
-              CONFIRMED[flag]
-                ? setConfirming({ flag, label, value: !thread[flag] })
-                : toggle(flag, label)
-            }
-          >
-            {label}
-          </Button>
-        );
-      })}
-      {categories.length > 0 ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={pending}
-          onClick={() => {
-            // Start from the current list: a move changes it (the old home joins, the new one leaves).
-            setTo(categories[0]?.key ?? "");
-            setMoving(true);
-          }}
-        >
-          Move
-        </Button>
-      ) : null}
+      {compact ? (
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="secondary"
+              size="icon-sm"
+              aria-label="Thread actions"
+              disabled={pending}
+            >
+              <MoreHoriz aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {FLAGS.map(({ flag, on, off }) => {
+              const label = labelOf(flag, on, off);
+              return (
+                <DropdownMenuItem key={flag} onSelect={() => choose(flag, label)}>
+                  {label}
+                </DropdownMenuItem>
+              );
+            })}
+            {categories.length > 0 ? (
+              <DropdownMenuItem onSelect={startMove}>Move</DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <>
+          {FLAGS.map(({ flag, on, off }) => {
+            const label = labelOf(flag, on, off);
+            return (
+              <Button
+                key={flag}
+                variant="secondary"
+                size="sm"
+                disabled={pending}
+                onClick={() => choose(flag, label)}
+              >
+                {label}
+              </Button>
+            );
+          })}
+          {categories.length > 0 ? (
+            <Button variant="secondary" size="sm" disabled={pending} onClick={startMove}>
+              Move
+            </Button>
+          ) : null}
+        </>
+      )}
 
       {confirming ? (
         <NoteDialog
@@ -209,26 +247,35 @@ interface ThreadActionsProps {
   signedIn: boolean;
   /** Refreshes the thread and the listings whose counts follow it. */
   refresh: () => Promise<void>;
+  /** A narrow header (COMPACT_QUERY): the actions share one menu, Stash and Report are icon buttons, and the
+   *  "In character" badge is the page's to show (beside the trail). */
+  compact: boolean;
 }
 
 /** The thread's header actions: "In character", the moderator bar, Stash, and Report for a member. */
-export function ThreadActions({ data, signedIn, refresh }: ThreadActionsProps) {
+export function ThreadActions({ data, signedIn, refresh, compact }: ThreadActionsProps) {
   const { thread } = data;
   // A site admin's thread is site admins' to lock, pin, hide, archive or move.
   const moderating = data.canModerate && data.moderable;
   return (
     <>
-      {data.style === "ic" ? <Badge variant="outline">In character</Badge> : null}
+      {data.style === "ic" && !compact ? <Badge variant="outline">In character</Badge> : null}
       {moderating ? (
         <ModeratorBar
           thread={thread}
           categories={data.moderatorTools?.categories ?? []}
           refresh={refresh}
+          compact={compact}
         />
       ) : null}
-      {signedIn ? <StashThreadButton threadId={thread.id} /> : null}
+      {signedIn ? <StashThreadButton threadId={thread.id} iconOnly={compact} /> : null}
       {signedIn && !data.canModerate && !data.viewerIsAuthor ? (
-        <ReportDialog targetType="thread" targetId={thread.id} label="Report thread" />
+        <ReportDialog
+          targetType="thread"
+          targetId={thread.id}
+          label="Report thread"
+          iconOnly={compact}
+        />
       ) : null}
     </>
   );

@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, EyeClosed } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { Signal } from "~/components/ui/signal";
 import { useUser } from "~/context/auth-context";
@@ -28,7 +29,7 @@ import type { ModeratorTools } from "../ModeratorMenu";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
 import { ForumPage } from "../shell";
 import { PostCard } from "./PostCard";
-import { ThreadActions } from "./ThreadActions";
+import { COMPACT_QUERY, ThreadActions } from "./ThreadActions";
 import { ThreadRail } from "./ThreadRail";
 import type { EditBody, ForumPost, ThreadData } from "./types";
 
@@ -112,6 +113,7 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
 
   // Phones reply from a docked bar and a sheet; wider screens from the composer under the posts.
   const phone = useMediaQuery(PHONE_QUERY);
+  const compactHeader = useMediaQuery(COMPACT_QUERY);
   const [replyOpen, setReplyOpen] = useState(false);
   const [quote, setQuote] = useState<QuoteRequest | null>(null);
   const startReply = useCallback(() => (phone ? setReplyOpen(true) : focusComposer()), [phone]);
@@ -197,13 +199,26 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
     <ForumPage
       title={thread.title}
       breadcrumbs={
-        <ForumBreadcrumbs
-          items={[...forumTrail(category.realm), { label: category.name, href: board }]}
-        />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <ForumBreadcrumbs
+            items={[...forumTrail(category.realm), { label: category.name, href: board }]}
+          />
+          {/* The header has no room for it beside the actions on a narrow screen. */}
+          {compactHeader && data.style === "ic" ? (
+            <Badge variant="outline">In character</Badge>
+          ) : null}
+        </div>
       }
       // The trail scrolls away with the header; the compact bar keeps this way up (as NewThreadForm does).
       back={{ href: board, label: category.name }}
-      actions={<ThreadActions data={data} signedIn={!!isSignedIn} refresh={refresh} />}
+      actions={
+        <ThreadActions
+          data={data}
+          signedIn={!!isSignedIn}
+          refresh={refresh}
+          compact={compactHeader}
+        />
+      }
       rail={<ThreadRail data={data} />}
     >
       {thread.hidden ? (

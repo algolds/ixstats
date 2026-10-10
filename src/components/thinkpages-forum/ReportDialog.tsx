@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { WarningTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -23,6 +24,8 @@ interface ReportDialogProps {
   targetId: string;
   /** The trigger's label: "Report thread" in a thread's header. */
   label?: string;
+  /** A square icon button for a narrow header; the label stays as its accessible name. */
+  iconOnly?: boolean;
   /** Opened by the caller (a menu item), which then renders no trigger. */
   control?: { open: boolean; onOpenChange: (open: boolean) => void };
 }
@@ -31,7 +34,13 @@ interface ReportDialogProps {
  * A ghost "Report" button and its dialog (or just the dialog, when the caller controls it): the member says why,
  * and the category's moderators get a report.
  */
-export function ReportDialog({ targetType, targetId, label = "Report", control }: ReportDialogProps) {
+export function ReportDialog({
+  targetType,
+  targetId,
+  label = "Report",
+  iconOnly = false,
+  control,
+}: ReportDialogProps) {
   const notify = useNotify();
   const [ownOpen, setOwnOpen] = useState(false);
   const open = control?.open ?? ownOpen;
@@ -62,9 +71,15 @@ export function ReportDialog({ targetType, targetId, label = "Report", control }
     >
       {control ? null : (
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm">
-            {label}
-          </Button>
+          {iconOnly ? (
+            <Button variant="ghost" size="icon-sm" aria-label={label}>
+              <WarningTriangle aria-hidden />
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm">
+              {label}
+            </Button>
+          )}
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-md">

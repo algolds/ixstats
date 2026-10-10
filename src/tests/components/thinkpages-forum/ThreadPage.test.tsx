@@ -270,6 +270,35 @@ describe("the thread page", () => {
     expect(ooc.container.querySelector(".forum-post--ic")).toBeNull();
   });
 
+  it("on a narrow screen puts In character beside the trail and keeps the header to icons and one menu", () => {
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 1023px)" || query === "(max-width: 767px)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    set({
+      ...threadData({ style: "ic" }),
+      canModerate: true,
+      moderable: true,
+      moderatorTools: { categories: [] },
+    });
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    const header = container.querySelector<HTMLElement>('[data-slot="page-header"]')!;
+    const badge = within(header).getByText("In character");
+    expect(badge.closest("nav")).toBeNull();
+    expect(badge.parentElement).toContainElement(within(header).getByRole("navigation"));
+    const names = within(header)
+      .getAllByRole("button")
+      .map((b) => b.getAttribute("aria-label") ?? b.textContent);
+    // Info, the icon-only Stash, and the one Thread actions menu: no labelled moderator or Report buttons.
+    expect(names).toEqual(["Thread actions", "Stash thread", "Info"]);
+    expect(within(header).queryByRole("button", { name: "Lock" })).toBeNull();
+  });
+
   it("shows a persona post as the persona only: no player, no flag, no role", () => {
     set(
       threadData({
@@ -329,7 +358,9 @@ describe("the thread page", () => {
     const { container } = render(<ThreadPage threadId="t1" page={2} />);
     const feed = container.querySelector('[data-content="feed"]')!;
     expect(within(feed as HTMLElement).getByText("Posts 21–22 of 87")).toBeInTheDocument();
-    expect(within(feed as HTMLElement).getAllByRole("navigation", { name: "Pagination" })).toHaveLength(1);
+    expect(
+      within(feed as HTMLElement).getAllByRole("navigation", { name: "Pagination" })
+    ).toHaveLength(1);
   });
 
   it("goes back to the thread's board", () => {
@@ -371,7 +402,11 @@ describe("the reply area", () => {
     const { container } = render(<ThreadPage threadId="t1" page={1} />);
     const scroll = jest.fn();
     Element.prototype.scrollIntoView = scroll;
-    fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Reply" }));
+    fireEvent.click(
+      within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", {
+        name: "Reply",
+      })
+    );
     expect(scroll).toHaveBeenCalled();
     expect(document.activeElement).toBe(screen.getByTestId("composer"));
   });
@@ -380,7 +415,11 @@ describe("the reply area", () => {
     set(threadData());
     const { container } = render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "");
-    fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Quote" }));
+    fireEvent.click(
+      within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", {
+        name: "Quote",
+      })
+    );
     expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "p2");
   });
 
@@ -403,7 +442,11 @@ describe("the reply area", () => {
       const { container } = render(<ThreadPage threadId="t1" page={1} />);
       expect(screen.getByTestId("reply-dock")).toBeInTheDocument();
       expect(screen.queryByTestId("composer")).toBeNull();
-      fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Quote" }));
+      fireEvent.click(
+        within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", {
+          name: "Quote",
+        })
+      );
       expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "p2");
     });
 
@@ -423,7 +466,11 @@ describe("post actions", () => {
     const writeText = jest.fn(() => Promise.resolve());
     Object.assign(navigator, { clipboard: { writeText } });
     const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Share" }));
+    fireEvent.click(
+      within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", {
+        name: "Share",
+      })
+    );
     await waitFor(() =>
       expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/thinkpages/post/p2`)
     );
@@ -473,20 +520,27 @@ describe("the rail", () => {
       })
     );
     render(<ThreadPage threadId="t1" page={1} />);
-    const thisThread = screen.getByRole("heading", { name: "This thread" }).closest("[data-slot=card]")!;
+    const thisThread = screen
+      .getByRole("heading", { name: "This thread" })
+      .closest("[data-slot=card]")!;
     expect(within(thisThread as HTMLElement).getByText("Replies")).toBeInTheDocument();
     expect(within(thisThread as HTMLElement).getByText("Open")).toBeInTheDocument();
     // The figure is the thread's true count, not the length of the short top list.
     expect(within(thisThread as HTMLElement).getByText("9")).toBeInTheDocument();
-    const participants = screen.getByRole("heading", { name: "Participants" }).closest("[data-slot=card]")!;
+    const participants = screen
+      .getByRole("heading", { name: "Participants" })
+      .closest("[data-slot=card]")!;
     expect(within(participants as HTMLElement).getByText("2 posts")).toBeInTheDocument();
     expect(within(participants as HTMLElement).getByText("Aria Vance")).toBeInTheDocument();
-    const related = screen.getByRole("heading", { name: "Related on the wiki" }).closest("[data-slot=card]")!;
-    expect(within(related as HTMLElement).getByRole("link", { name: "River compacts" })).toHaveAttribute(
-      "href",
-      "/wiki/River_compacts"
-    );
-    expect(within(related as HTMLElement).getByRole("link", { name: "Juan Kerr" })).toBeInTheDocument();
+    const related = screen
+      .getByRole("heading", { name: "Related on the wiki" })
+      .closest("[data-slot=card]")!;
+    expect(
+      within(related as HTMLElement).getByRole("link", { name: "River compacts" })
+    ).toHaveAttribute("href", "/wiki/River_compacts");
+    expect(
+      within(related as HTMLElement).getByRole("link", { name: "Juan Kerr" })
+    ).toBeInTheDocument();
   });
 
   it("hides the Participants and Related panels when they have nothing to show", () => {

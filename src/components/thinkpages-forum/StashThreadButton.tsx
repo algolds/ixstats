@@ -7,7 +7,14 @@ import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 
 /** Saves the thread to the signed-in member's stash, or takes it out again (a toggle; the state comes from the server). */
-export function StashThreadButton({ threadId }: { threadId: string }) {
+export function StashThreadButton({
+  threadId,
+  iconOnly = false,
+}: {
+  threadId: string;
+  /** A square icon button for a narrow header; the name stays for assistive technology. */
+  iconOnly?: boolean;
+}) {
   const notify = useNotify();
   const utils = api.useUtils();
   const [busy, setBusy] = useState(false);
@@ -34,13 +41,14 @@ export function StashThreadButton({ threadId }: { threadId: string }) {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size={iconOnly ? "icon-sm" : "sm"}
+      aria-label={iconOnly ? "Stash thread" : undefined}
       aria-pressed={stashed}
       disabled={busy || isLoading}
       onClick={() => void toggle()}
     >
       {stashed ? <BookmarkSolid aria-hidden /> : <Bookmark aria-hidden />}
-      Stash thread
+      {iconOnly ? null : "Stash thread"}
     </Button>
   );
 }
