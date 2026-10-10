@@ -111,7 +111,7 @@ function LogRow({
       when={timeAgo(entry.createdAt)}
       actions={
         link ? (
-          <Link href={link.href} className="text-footnote text-tint-ink hover:underline">
+          <Link href={link.href} className="text-footnote text-tint-ink hover:underline pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
             {link.label}
           </Link>
         ) : null

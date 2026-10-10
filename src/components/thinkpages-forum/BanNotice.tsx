@@ -13,7 +13,7 @@ export function BanNotice({ notice }: { notice: string }) {
   return (
     <Card content="signal" className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3">
       <p className="text-callout text-label min-w-0 flex-1">{notice}</p>
-      <Link href={STANDING_HREF} className="text-callout text-tint shrink-0 hover:underline">
+      <Link href={STANDING_HREF} className="text-callout text-tint shrink-0 hover:underline pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
         Appeal
       </Link>
     </Card>

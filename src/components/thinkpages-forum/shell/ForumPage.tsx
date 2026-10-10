@@ -62,7 +62,14 @@ export function ForumPage({
             <>
               {actions}
               {hasRail && (
-                <Button variant="secondary" size="sm" className="xl:hidden" onClick={() => setRailOpen(true)}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="xl:hidden"
+                  aria-haspopup="dialog"
+                  aria-expanded={railOpen}
+                  onClick={() => setRailOpen(true)}
+                >
                   <InfoCircle aria-hidden />
                   Info
                 </Button>

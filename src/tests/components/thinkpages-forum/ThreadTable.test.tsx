@@ -173,4 +173,18 @@ describe("ThreadTable page shortcuts", () => {
     expect(within(row).queryByRole("link", { name: "Page 2 of Thread t1" })).toBeNull();
     expect(within(row).queryByRole("link", { name: "Last page of Thread t1" })).toBeNull();
   });
+
+  it("shows Last page only below md, whatever the pointer", () => {
+    renderTable([thread("t1", { postCount: 45 })]);
+    const link = within(rowOf(/Thread t1/)).getByRole("link", { name: "Last page of Thread t1" });
+    expect(link).toHaveClass("md:hidden", "pointer-coarse:max-md:inline-flex");
+    expect(link).not.toHaveClass("pointer-coarse:inline-flex");
+  });
+
+  it("keeps the header row for screen readers below md instead of removing it", () => {
+    renderTable([thread("t1")]);
+    const headerRow = screen.getAllByRole("columnheader")[0]!.parentElement!;
+    expect(headerRow).toHaveClass("max-md:sr-only");
+    expect(headerRow).not.toHaveClass("hidden");
+  });
 });

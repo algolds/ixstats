@@ -131,6 +131,9 @@ describe("Forums home: board table", () => {
       "Posts",
       "Latest",
     ]);
+    const headerRow = screen.getAllByRole("columnheader")[0]!.parentElement!;
+    expect(headerRow).toHaveClass("max-md:sr-only");
+    expect(headerRow).not.toHaveClass("hidden");
     const general = screen.getByRole("row", { name: /General/ });
     expect(within(general).getByRole("link", { name: "General" })).toHaveAttribute(
       "href",

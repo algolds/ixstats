@@ -148,7 +148,7 @@ function BoardRows({ boards }: { boards: readonly Board[] }) {
     <div role="table" aria-label="Boards">
       <div
         role="row"
-        className="text-footnote text-label-secondary border-separator hidden grid-cols-[minmax(0,1fr)_5rem_5rem_15rem] items-center gap-x-3 border-b px-5 pb-2 md:grid"
+        className="text-footnote text-label-secondary border-separator grid grid-cols-[minmax(0,1fr)_5rem_5rem_15rem] items-center gap-x-3 border-b px-5 pb-2 max-md:sr-only"
       >
         <span role="columnheader">Board</span>
         <span role="columnheader" className="text-right">

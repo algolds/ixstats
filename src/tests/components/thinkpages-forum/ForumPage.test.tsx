@@ -83,6 +83,22 @@ describe("ForumPage", () => {
     });
     expect(screen.getByRole("dialog")).toHaveTextContent("Rail content");
   });
+
+  it("marks the Info button as a dialog opener and reflects the open sheet", () => {
+    installViewport(false);
+    render(
+      <ForumPage title="General" rail={<p>Rail content</p>}>
+        <p>Body</p>
+      </ForumPage>
+    );
+    const info = screen.getByRole("button", { name: "Info" });
+    expect(info).toHaveAttribute("aria-haspopup", "dialog");
+    expect(info).toHaveAttribute("aria-expanded", "false");
+    act(() => {
+      fireEvent.click(info);
+    });
+    expect(info).toHaveAttribute("aria-expanded", "true");
+  });
 });
 
 describe("ForumPage back link and rail hash", () => {
@@ -158,6 +174,33 @@ describe("RailPanel", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Board rules" })).toBeInTheDocument();
     expect(screen.getByText("Be kind")).toBeInTheDocument();
     expect(container.querySelector('[data-slot="card"]')).toHaveAttribute("data-content", "data");
+  });
+
+  it("is a pane in the desktop aside and a well inside the narrow sheet, so glass never sits on glass", () => {
+    installViewport(true);
+    const wide = render(
+      <ForumPage title="Home" rail={<RailPanel title="Standing" icon={<Folder />}><p>Points</p></RailPanel>}>
+        <p>Body</p>
+      </ForumPage>
+    );
+    expect(wide.container.querySelector('[data-slot="inspector"] [data-slot="card"]')).toHaveAttribute(
+      "data-variant",
+      "pane"
+    );
+    wide.unmount();
+
+    installViewport(false);
+    render(
+      <ForumPage title="Home" rail={<RailPanel title="Standing" icon={<Folder />}><p>Points</p></RailPanel>}>
+        <p>Body</p>
+      </ForumPage>
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Info" }));
+    });
+    const card = screen.getByRole("dialog").querySelector('[data-slot="card"]');
+    expect(card).toHaveAttribute("data-variant", "well");
+    expect(card).toHaveAttribute("data-content", "data");
   });
 
   it("renders nothing without children", () => {

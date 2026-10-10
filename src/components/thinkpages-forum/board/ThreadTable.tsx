@@ -32,7 +32,7 @@ function SortHeaders({ basePath, sort }: { basePath: string; sort: ThreadSort })
       role="row"
       className={cn(
         GRID,
-        "text-footnote text-label-secondary border-separator hidden items-center gap-x-3 border-b px-5 pb-2 md:grid"
+        "text-footnote text-label-secondary border-separator items-center gap-x-3 border-b px-5 pb-2 max-md:sr-only max-md:focus-within:not-sr-only"
       )}
     >
       {SORT_COLUMNS.map((column) => {
@@ -47,7 +47,7 @@ function SortHeaders({ basePath, sort }: { basePath: string; sort: ThreadSort })
             <Link
               href={sortHref(basePath, column.sort)}
               className={cn(
-                "hover:text-label focus-visible:outline-tint inline-flex items-center gap-1 focus-visible:outline-2",
+                "hover:text-label focus-visible:outline-tint inline-flex items-center gap-1 focus-visible:outline-2 pointer-coarse:min-h-11",
                 active && "text-label"
               )}
             >
@@ -115,7 +115,7 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
           <Link
             href={pageHref(threadHref(thread.id), last)}
             aria-label={`Last page of ${thread.title}`}
-            className="text-footnote text-tint relative z-10 ml-auto shrink-0 hover:underline md:hidden pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
+            className="text-footnote text-tint relative z-10 ml-auto shrink-0 hover:underline md:hidden pointer-coarse:max-md:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
           >
             Last page
           </Link>

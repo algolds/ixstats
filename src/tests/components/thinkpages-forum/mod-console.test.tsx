@@ -264,6 +264,10 @@ describe("access", () => {
     expect(container.querySelector('[data-content="data"]')).toContainElement(table);
     expect(within(table).getByRole("columnheader", { name: "Report" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "When" })).toBeInTheDocument();
+    // The header row stays for screen readers below md; only the sighted phone layout drops it.
+    const headerRow = within(table).getByRole("columnheader", { name: "Report" }).parentElement;
+    expect(headerRow).toHaveClass("max-md:sr-only");
+    expect(headerRow).not.toHaveClass("hidden");
     const row = within(table).getAllByRole("row")[1]!;
     expect(within(row).getAllByRole("cell")).toHaveLength(2);
     expect(within(row).getByRole("link", { name: "Buy cheap gold" })).toBeInTheDocument();

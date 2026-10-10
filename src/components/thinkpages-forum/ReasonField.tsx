@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { Label } from "~/components/ui/label";
+import { Signal } from "~/components/ui/signal";
 import { Textarea } from "~/components/ui/textarea";
 
 interface ReasonFieldProps {
@@ -45,11 +46,6 @@ export function ReasonField({
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <p
-      role="alert"
-      className="bg-destructive/10 text-destructive text-footnote rounded-control px-3 py-2"
-    >
-      {message}
-    </p>
+    <Signal tone="destructive" title={message} />
   );
 }

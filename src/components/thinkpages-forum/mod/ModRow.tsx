@@ -191,7 +191,7 @@ export function ModPanel({
         <div
           role="row"
           className={cn(
-            "text-footnote text-label-secondary border-separator hidden items-center gap-x-3 border-b px-5 py-2 md:grid",
+            "text-footnote text-label-secondary border-separator grid items-center gap-x-3 border-b px-5 py-2 max-md:sr-only",
             COLUMNS
           )}
         >
