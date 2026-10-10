@@ -70,8 +70,14 @@ describe("chatMessageBody", () => {
     expect(chatMessageBody("  \n\t ").plainText).toBe("");
   });
 
-  it("leaves an action token as plain text inside a paragraph", () => {
-    expect(chatMessageBody("see [ixaction=abc]").contentHtml).toBe("<p>see [ixaction=abc]</p>");
+  it("removes action tokens, so history never renders someone's activity as a card", () => {
+    const body = chatMessageBody("see [ixaction=abc] and [ixact[ixaction=x]ion=y]");
+    expect(body.contentHtml).toBe("<p>see  and</p>");
+    expect(body.plainText).not.toMatch(/ixaction/);
+  });
+
+  it("skips a message that is only an action token as blank", () => {
+    expect(chatMessageBody("[ixaction=abc]").plainText).toBe("");
   });
 });
 
@@ -130,6 +136,19 @@ describe("planBoardHistory", () => {
     expect(result.unknownAuthors).toBe(2);
   });
 
+  it("falls back to a former member for an empty or blank persona name", () => {
+    const result = plan([msg("a", 1, { userId: "clerk-x" }), msg("b", 2, { userId: "clerk-y" })], {
+      names: [
+        ["clerk-x", ""],
+        ["clerk-y", "  "],
+      ],
+    });
+    expect(result.posts.map((p) => p.importedAuthorName)).toEqual([
+      FORMER_MEMBER_NAME,
+      FORMER_MEMBER_NAME,
+    ]);
+  });
+
   it("plans nothing on a second run once every message is imported", () => {
     const messages = [msg("a", 1), msg("b", 2)];
     const first = plan(messages);
@@ -182,6 +201,14 @@ describe("parseBoardHistoryArgs", () => {
     expect(parseBoardHistoryArgs([], "postgresql://u:p@db.example.com/ixstats_wv1")).toEqual({
       error: expect.stringMatching(/not local/),
     });
+  });
+
+  it("refuses a localhost URL that a host or hostaddr parameter redirects", () => {
+    for (const param of ["host=db.example.com", "hostaddr=10.0.0.5"]) {
+      expect(parseBoardHistoryArgs([], `${local}?${param}`)).toEqual({
+        error: expect.stringMatching(/host or hostaddr/),
+      });
+    }
   });
 
   it("refuses a missing DATABASE_URL and an unknown argument", () => {

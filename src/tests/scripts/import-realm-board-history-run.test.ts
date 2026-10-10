@@ -120,4 +120,25 @@ describe("runBoardHistory", () => {
     expect(errors[0]).toMatch(/No board thread for: Eurth \(eurth\)/);
     expect(db.forumPost.createMany).not.toHaveBeenCalled();
   });
+
+  it("recounts a board whose posts all exist already, healing a run that stopped before the recount", async () => {
+    const { db, tx } = makeDb();
+    db.forumPost.findMany.mockResolvedValue([
+      { sourceRef: "realm_board_message:m1" },
+      { sourceRef: "realm_board_message:m2" },
+    ]);
+    await runBoardHistory(db as never as PrismaClient, true, () => undefined);
+    expect(db.forumPost.createMany).not.toHaveBeenCalled();
+    expect(tx.forumThread.update).toHaveBeenCalledWith({
+      where: { id: "t1" },
+      data: { postCount: 2, lastPostAt: at(2) },
+    });
+  });
+
+  it("does not touch a board with no history at all", async () => {
+    const { db, tx } = makeDb();
+    db.thinkshareMessage.findMany.mockResolvedValue([]);
+    await runBoardHistory(db as never as PrismaClient, true, () => undefined);
+    expect(tx.forumThread.update).not.toHaveBeenCalled();
+  });
 });

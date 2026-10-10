@@ -4,8 +4,9 @@
  * under the original author and time. No database access here.
  *
  * A chat message is plain text. It becomes escaped HTML paragraphs, sanitized last as every stored forum body is, and
- * its full text is kept: the 1,000 character cap applies to new board messages, not to history.
+ * its full text is kept (action tokens excepted, which are removed): the 1,000 character cap applies to new board messages, not to history.
  */
+import { withoutActionTokens } from "~/lib/action-links";
 import { escapeHtml, sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
 import { productionDatabaseRefusal } from "../lib/database-guard";
 import { localDatabaseRefusal } from "./reconvert-imported-posts-plan";
@@ -52,7 +53,8 @@ export interface HistoryPlan {
 
 /** A plain-text chat message as stored forum HTML plus its plain text. */
 export function chatMessageBody(content: string): { contentHtml: string; plainText: string } {
-  const paragraphs = content
+  // An action token would render someone's activity as a card in the author's name: history carries none.
+  const paragraphs = withoutActionTokens(content)
     .replace(/\r\n?/g, "\n")
     .trim()
     .split(/\n[ \t]*\n\s*/)
@@ -101,7 +103,7 @@ export function planBoardHistory(input: {
       authorPersonaId: null,
       importedAuthorName: authorUserId
         ? null
-        : (input.nameByClerk.get(row.userId) ?? FORMER_MEMBER_NAME),
+        : input.nameByClerk.get(row.userId)?.trim() || FORMER_MEMBER_NAME,
       ...body,
       createdAt: row.createdAt,
       sourceRef: messageSourceRef(row.id),

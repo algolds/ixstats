@@ -155,9 +155,9 @@ export async function runBoardHistory(
 
   let created = 0;
   for (const run of runs) {
-    if (run.threadId && run.plan.posts.length > 0) {
-      created += await applyBoard(db, run.threadId, run.plan);
-    }
+    // A board with earlier history is recounted too: a run that stopped after the posts, before the recount, is healed.
+    const hasHistory = run.plan.posts.length > 0 || run.plan.skipped.alreadyImported > 0;
+    if (run.threadId && hasHistory) created += await applyBoard(db, run.threadId, run.plan);
   }
   log(`Applied: ${boards.length} boards, ${created} posts created.`);
   return 0;

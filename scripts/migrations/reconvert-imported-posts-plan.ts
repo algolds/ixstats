@@ -17,7 +17,11 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 /** Why the database in `databaseUrl` is not a local one, or null. A re-convert never touches a remote database. */
 export function localDatabaseRefusal(databaseUrl: string | undefined): string | null {
   try {
-    const { hostname } = new URL(databaseUrl ?? "");
+    const { hostname, searchParams } = new URL(databaseUrl ?? "");
+    // `host` and `hostaddr` query parameters override the URL's host, so a localhost URL can point anywhere.
+    if (searchParams.has("host") || searchParams.has("hostaddr")) {
+      return "DATABASE_URL carries a host or hostaddr parameter, which can redirect it. This script only runs against a local database.";
+    }
     return LOCAL_HOSTS.has(hostname)
       ? null
       : `DATABASE_URL names ${hostname}, which is not local. This script only runs against a local database (the clone or the dev database).`;
