@@ -93,7 +93,9 @@ describe("upsertBoardMessage", () => {
   });
 
   it("replaces by id without duplicating, keeping the place", () => {
-    const next = upsertBoardMessage(list, { ...item("p3", 3), extra: 1 }, { complete: false });
+    const next = upsertBoardMessage(list, { ...item("p3", 3), extra: 1 } as never, {
+      complete: false,
+    });
     expect(next.map((m) => m.id)).toEqual(["p5", "p3", "p1"]);
     expect(next[1]).toMatchObject({ extra: 1 });
   });

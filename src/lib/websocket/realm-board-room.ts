@@ -13,6 +13,8 @@ export interface ThinkPagesServerOptions {
   canJoinRealmBoard?: (clerkUserId: string | null, realmId: string) => Promise<boolean>;
   /** The persona-safe name a typing indicator shows, or null to drop it (the persona is not the user's own). */
   boardTypingName?: (clerkUserId: string, personaId: string | null) => Promise<string | null>;
+  /** Whether the user may post on the realm's board now; only then is their typing relayed. Refused when absent. */
+  canTypeOnBoard?: (clerkUserId: string, realmId: string) => Promise<boolean>;
   /** Presence events for a room are coalesced into one per this many ms. */
   presenceDelayMs?: number;
 }
@@ -22,6 +24,8 @@ const MAX_ID_LENGTH = 64;
 /** A socket reads at most this many boards at once; an anonymous reader costs a database check per join. */
 const MAX_BOARD_ROOMS_PER_SOCKET = 5;
 const PRUNE_ABOVE = 500;
+/** A socket's right to type in a room is asked again after this long. */
+const TYPING_RIGHTS_TTL_MS = 30_000;
 
 /** Allows one event per key per window; forgets idle keys once the map grows. */
 export class TypingThrottle {
@@ -54,6 +58,7 @@ export class RealmBoardRooms {
   private throttle = new TypingThrottle();
   private timers = new Map<string, NodeJS.Timeout>();
   private names = new WeakMap<Socket, Map<string, string>>();
+  private rights = new WeakMap<Socket, Map<string, { allowed: boolean; until: number }>>();
 
   constructor(
     private io: SocketIOServer,
@@ -90,6 +95,7 @@ export class RealmBoardRooms {
     const room = boardRoomOf(realmId);
     if (!socket.rooms.has(room)) return;
     if (!this.throttle.allow(`${clerkUserId}|${room}`, Date.now())) return;
+    if (!(await this.mayType(socket, clerkUserId, realmId))) return;
     const name = await this.typingName(socket, clerkUserId, idOf(payload?.personaId));
     if (!name || !socket.connected) return;
     const event: BoardLiveEvent = { type: "board:typing", realmId, name };
@@ -104,6 +110,17 @@ export class RealmBoardRooms {
   dispose(): void {
     for (const timer of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
+  }
+
+  private async mayType(socket: Socket, clerkUserId: string, realmId: string): Promise<boolean> {
+    const cache = this.rights.get(socket) ?? new Map<string, { allowed: boolean; until: number }>();
+    this.rights.set(socket, cache);
+    const known = cache.get(realmId);
+    if (known && known.until > Date.now()) return known.allowed;
+    const check = this.options.canTypeOnBoard;
+    const allowed = check ? await check(clerkUserId, realmId).catch(() => false) : false;
+    cache.set(realmId, { allowed, until: Date.now() + TYPING_RIGHTS_TTL_MS });
+    return allowed;
   }
 
   private async typingName(

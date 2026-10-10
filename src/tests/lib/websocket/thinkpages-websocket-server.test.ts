@@ -9,7 +9,11 @@ import {
 } from "~/lib/websocket/thinkpages-websocket-server";
 import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
 
-const mockTokens: Record<string, string> = { "token-a": "user_a", "token-b": "user_b" };
+const mockTokens: Record<string, string> = {
+  "token-a": "user_a",
+  "token-b": "user_b",
+  "token-banned": "user_banned",
+};
 
 jest.mock("@clerk/backend", () => ({
   verifyToken: jest.fn(async (token: string) => {
@@ -40,11 +44,16 @@ const savedEnv = { NODE_ENV: env.NODE_ENV, CLERK_SECRET_KEY: env.CLERK_SECRET_KE
 const canJoinRealmBoard = jest.fn(async (_clerkUserId: string | null, realmId: string) =>
   realmId.startsWith("r_pub")
 );
+/** Banned users and visitors of a visitors-off board are the ones the forum refuses. */
+const canTypeOnBoard = jest.fn(
+  async (clerkUserId: string, _realmId: string) => clerkUserId !== "user_banned"
+);
 const boardTypingName = jest.fn(async (clerkUserId: string, personaId: string | null) =>
   personaId ? (personaId === "pa_own" ? "Persona Name" : null) : `Handle of ${clerkUserId}`
 );
 const serverOptions = (): ThinkPagesServerOptions => ({
   canJoinRealmBoard,
+  canTypeOnBoard,
   boardTypingName,
   presenceDelayMs: 20,
 });
@@ -97,6 +106,7 @@ beforeEach(async () => {
   httpServer = createServer();
   canJoinRealmBoard.mockClear();
   boardTypingName.mockClear();
+  canTypeOnBoard.mockClear();
   wsServer = new ThinkPagesWebSocketServer(httpServer, serverOptions());
   await new Promise<void>((resolve) => httpServer.listen(0, resolve));
   url = `http://localhost:${(httpServer.address() as AddressInfo).port}`;
@@ -384,6 +394,64 @@ describe("ThinkPagesWebSocketServer board typing", () => {
     typist.emit("board:typing", { realmId: "r_pub" });
     await new Promise((resolve) => setTimeout(resolve, 200));
     expect(seen).toHaveLength(2);
+  });
+
+  it("relays no typing from a user who may not post, and asks the forum once per room", async () => {
+    const { watcher } = await pair();
+    const banned = connect("token-banned");
+    await connected(banned);
+    banned.emit("subscribe", { channel: "realm-board:r_pub" });
+    await nextEvent(banned, "board:presence");
+    const silent = silentFor(watcher, "board:typing", 250);
+    banned.emit("board:typing", { realmId: "r_pub" });
+    expect(await silent).toBe(true);
+    expect(canTypeOnBoard).toHaveBeenCalledWith("user_banned", "r_pub");
+    expect(boardTypingName).not.toHaveBeenCalled();
+  });
+
+  it("caches the right to type for the socket, so typing does not query on every event", async () => {
+    const { typist, watcher } = await pair();
+    const seen: string[] = [];
+    watcher.on("board:typing", (e: { name: string }) => seen.push(e.name));
+    typist.emit("board:typing", { realmId: "r_pub" });
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    typist.emit("board:typing", { realmId: "r_pub" });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(seen).toHaveLength(2);
+    expect(canTypeOnBoard).toHaveBeenCalledTimes(1);
+  });
+
+  it("relays no typing at all when the server was given no typing check", async () => {
+    const bare = createServer();
+    const bareWs = new ThinkPagesWebSocketServer(bare, {
+      canJoinRealmBoard,
+      boardTypingName,
+      presenceDelayMs: 20,
+    });
+    await new Promise<void>((resolve) => bare.listen(0, resolve));
+    const bareUrl = `http://localhost:${(bare.address() as AddressInfo).port}`;
+    const open = (token: string) => {
+      const c = connectClient(bareUrl, {
+        path: "/ws/thinkpages",
+        transports: ["websocket"],
+        reconnection: false,
+        forceNew: true,
+        auth: { token },
+      });
+      clients.push(c);
+      return c;
+    };
+    const [typist, watcher] = [open("token-a"), open("token-b")];
+    await Promise.all([connected(typist), connected(watcher)]);
+    typist.emit("subscribe", { channel: "realm-board:r_pub" });
+    watcher.emit("subscribe", { channel: "realm-board:r_pub" });
+    await Promise.all([nextEvent(typist, "board:presence"), nextEvent(watcher, "board:presence")]);
+    const silent = silentFor(watcher, "board:typing", 250);
+    typist.emit("board:typing", { realmId: "r_pub" });
+    expect(await silent).toBe(true);
+    typist.disconnect();
+    watcher.disconnect();
+    await bareWs.shutdown();
   });
 
   it("ignores typing for a room the socket has not joined", async () => {

@@ -7,8 +7,12 @@ import {
   publishBoardRemoval,
   publishBoardSettings,
 } from "~/server/modules/thinkpages-forum/board-live";
-import { boardTypingName, canJoinRealmBoard } from "~/server/modules/thinkpages-forum/board-socket";
-import { at, boardPost, boardStore, seed, users } from "~/tests/helpers/forum-board-fake";
+import {
+  boardTypingName,
+  canJoinRealmBoard,
+  canTypeOnBoard,
+} from "~/server/modules/thinkpages-forum/board-socket";
+import { at, ban, boardPost, boardStore, seed, users } from "~/tests/helpers/forum-board-fake";
 
 const broadcaster = () => ({ broadcastBoard: jest.fn<void, [BoardLiveEvent]>() });
 
@@ -283,5 +287,48 @@ describe("boardTypingName", () => {
   it("drops a persona that is not the user's own, or an unknown user", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_visitor")).resolves.toBeNull();
     await expect(boardTypingName(db(), "clerk_nobody", null)).resolves.toBeNull();
+  });
+});
+
+describe("canTypeOnBoard", () => {
+  const store = () => {
+    const s = eurth();
+    s.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
+    return s;
+  };
+
+  it("is true for whoever may post: a member, a visitor while visitors are allowed, a moderator", async () => {
+    const { db } = store();
+    for (const clerk of [
+      "clerk_u_member",
+      "clerk_u_visitor",
+      "clerk_u_plain",
+      "founder",
+      "clerk_u_admin",
+    ])
+      await expect(canTypeOnBoard(db as never, clerk, "r_eurth")).resolves.toBe(true);
+  });
+
+  it("is false for a banned user", async () => {
+    await expect(canTypeOnBoard(store().db as never, "clerk_u_banned", "r_eurth")).resolves.toBe(
+      false
+    );
+  });
+
+  it("is false for a visitor when the board turned visitors off, but not for a member", async () => {
+    const s = store();
+    Object.assign(
+      s.state.realms.find((r) => r.id === "r_eurth")!,
+      { boardVisitorsAllowed: false }
+    );
+    await expect(canTypeOnBoard(s.db as never, "clerk_u_visitor", "r_eurth")).resolves.toBe(false);
+    await expect(canTypeOnBoard(s.db as never, "clerk_u_member", "r_eurth")).resolves.toBe(true);
+  });
+
+  it("is false in an archived realm, for an unknown user and for an unknown realm", async () => {
+    const { db } = store();
+    await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_old")).resolves.toBe(false);
+    await expect(canTypeOnBoard(db as never, "clerk_nobody", "r_eurth")).resolves.toBe(false);
+    await expect(canTypeOnBoard(db as never, "clerk_u_member", "r_nope")).rejects.toBeDefined();
   });
 });
