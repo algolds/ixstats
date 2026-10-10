@@ -5,14 +5,14 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1064 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1066 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 5 | 2 | 0 | **7** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 5 | 5 | 0 | **10** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
-| **`api.admin`** | 36 | 46 | 0 | **82** | `src/server/api/routers/admin/index.ts` |
+| **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
 | **`api.autosaveHistory`** | 2 | 0 | 0 | **2** | `src/server/api/routers/autosaveHistory.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
@@ -87,7 +87,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 26 | 19 | 0 | **45** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **506** | **549** | **0** | **1064** | **78 registered namespaces** |
+| **TOTALS** | **506** | **551** | **0** | **1066** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
@@ -229,6 +229,8 @@ api.admin.linkUserWiki.useMutation() // { userId, wikiUsername }
 api.admin.unlinkUserWiki.useMutation() // { userId, source? }
 api.admin.linkUserDiscord.useMutation() // { userId, discordUserId, discordUsername }
 api.admin.unlinkUserDiscord.useMutation() // { userId }
+api.admin.linkUserForum.useMutation() // { userId, xenforoUserId, forumUsername? } (old forum account; attributes its imported posts)
+api.admin.unlinkUserForum.useMutation() // { userId }
 api.admin.applyDiscordAutoAssignments.useMutation() // { assignments }
 api.admin.analyzeImport.useMutation() // { fileData, fileName }
 api.admin.importRosterData.useMutation() // { analysisId, replaceExisting, fileData?, fileName?, changes? }
