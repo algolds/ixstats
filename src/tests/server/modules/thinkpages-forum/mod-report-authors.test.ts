@@ -50,6 +50,14 @@ describe("listReports leaves out a moderator's own content by the stored author 
     });
   });
 
+  it("marks a site admin's own target by the stored author, even once it is gone (review #5)", async () => {
+    const store = storeWith({
+      reports: [report("rep_own_gone", "post", "p_deleted", { targetAuthorId: "u_a" })],
+    });
+    const { rows } = await listReports(store.db as never, admin, { status: "open" }, 1);
+    expect(rows[0]).toMatchObject({ ownTarget: true, reporterId: null });
+  });
+
   it("puts no author condition on a site admin's queue", async () => {
     const store = storeWith({ reports });
     const { total } = await listReports(store.db as never, admin, { status: "open" }, 1);

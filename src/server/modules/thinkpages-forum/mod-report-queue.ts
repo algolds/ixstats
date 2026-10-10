@@ -223,7 +223,9 @@ export async function listReports(
     rows: rows.map((row) => {
       const target = targets.get(targetKey(row.targetType, row.targetId));
       const category = categories.get(row.categoryId) ?? null;
-      const ownTarget = target?.authorUserId === viewer?.id;
+      // The stored author (M8), so a gone target still counts; the live one only for a report not yet attributed.
+      const ownTarget =
+        viewer !== null && (row.targetAuthorId ?? target?.authorUserId) === viewer.id;
       return {
         /** What the viewer may do to the target (hide; warn or ban its author), as the server would allow. */
         ...(target && category ? moderation(target.authorUserId, category) : GONE_TARGET),
