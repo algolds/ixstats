@@ -7,7 +7,9 @@
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
-/// "forum_categories_site_key_unique" on (key) WHERE scope = 'site' (N5), and forum_mod_log's append-only triggers
+/// "forum_categories_site_key_unique" on (key) WHERE scope = 'site' (N5), the partial index "forum_posts_stale_idx" on
+/// forum_posts("renderedAt") WHERE "contentWikitext" IS NOT NULL (the stale re-render cron; re-apply
+/// 20261013120000_thinkpages_forum_foundation after a push), and forum_mod_log's append-only triggers
 /// calling "forum_mod_log_append_only"() (M11). Order: apply the migration before the deploy (it backfills the new
 /// columns), deploy (db push), re-apply after every db:push:force (docs/operations/deployment.md).
 model ForumCategory {

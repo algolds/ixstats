@@ -202,6 +202,16 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/wiki-os/services/render-service")).renderStaleBatch,
   },
   {
+    // Re-renders forum posts left with a fallback render, an older pipeline, or an older template (forum foundation §3).
+    name: "forum-render-stale",
+    defaultSchedule: "*/2 * * * *",
+    lockName: "forum-render-stale",
+    timeoutMs: 110_000,
+    modulePath: "~/server/modules/thinkpages-forum/render-stale",
+    exportName: "renderStaleForumPosts",
+    load: async () => (await import("~/server/modules/thinkpages-forum/render-stale")).renderStaleForumPosts,
+  },
+  {
     // Once per new IxTime year, remind each owned country to set that year's budget (MC-1).
     name: "budget-year-rollover",
     defaultSchedule: "41 * * * *",

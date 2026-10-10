@@ -8,6 +8,7 @@ import { ForumError } from "~/server/modules/thinkpages-forum/errors";
 import {
   composePostHtml,
   FORUM_RENDERER_VERSION,
+  renderLimitUsersForTests,
   renderPostWikitext,
   resetRenderLimitsForTests,
 } from "~/server/modules/thinkpages-forum/render";
@@ -61,6 +62,21 @@ it("limits renders per user", async () => {
   for (let i = 0; i < 10; i++) await renderPostWikitext("x", "t1", "u1");
   await expect(renderPostWikitext("x", "t1", "u1")).rejects.toBeInstanceOf(ForumError);
   await expect(renderPostWikitext("x", "t1", "u2")).resolves.toBeDefined();
+});
+
+it("sweeps idle users from the per-user limiter once it holds more than 1,000", async () => {
+  render.mockResolvedValue({ html: MW_HTML, metadata: meta });
+  const now = jest.spyOn(Date, "now");
+  try {
+    now.mockReturnValue(1_000_000);
+    for (let i = 0; i < 1_000; i++) await renderPostWikitext("x", "t1", `idle-${i}`);
+    expect(renderLimitUsersForTests()).toBe(1_000);
+    now.mockReturnValue(1_000_000 + 61_000);
+    await renderPostWikitext("x", "t1", "newcomer");
+    expect(renderLimitUsersForTests()).toBe(1);
+  } finally {
+    now.mockRestore();
+  }
 });
 
 it("composes notices, a floated infobox and the body inside mw-parser-output", () => {

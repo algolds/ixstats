@@ -1,5 +1,6 @@
 -- ThinkPages forum foundation (docs/superpowers/specs/2026-10-09-thinkpages-forum-foundation-design.md §3).
--- Hand-written, additive and idempotent: safe to re-apply. Everything here is expressible in Prisma.
+-- Hand-written, additive and idempotent: safe to re-apply. Everything here is expressible in Prisma except the partial index "forum_posts_stale_idx" (WHERE "contentWikitext" IS NOT NULL),
+-- which `prisma db push` can drop as drift: re-apply this migration after every db:push:force.
 
 -- IC categories render as WikiOS articles; 'ooc' (default) renders compact.
 ALTER TABLE "forum_categories" ADD COLUMN IF NOT EXISTS "style" TEXT NOT NULL DEFAULT 'ooc';

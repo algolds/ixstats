@@ -39,6 +39,18 @@ export function resetRenderLimitsForTests(): void {
   perUser = new Map();
 }
 
+const SWEEP_ABOVE_USERS = 1_000;
+
+function sweepStaleUsers(now: number): void {
+  for (const [id, times] of perUser) {
+    if (times.every((t) => now - t >= 60_000)) perUser.delete(id);
+  }
+}
+
+export function renderLimitUsersForTests(): number {
+  return perUser.size;
+}
+
 function takeUserSlot(userId: string): void {
   const now = Date.now();
   const recent = (perUser.get(userId) ?? []).filter((t) => now - t < 60_000);
@@ -50,6 +62,7 @@ function takeUserSlot(userId: string): void {
   }
   recent.push(now);
   perUser.set(userId, recent);
+  if (perUser.size > SWEEP_ABOVE_USERS) sweepStaleUsers(now);
 }
 
 export function composePostHtml(bundle: ViewBundle): string {

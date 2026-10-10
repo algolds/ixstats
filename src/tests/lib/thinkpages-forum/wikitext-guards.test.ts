@@ -10,6 +10,15 @@ describe("guardWikitext", () => {
     expect(() => guardWikitext("{{subst:Foo}}")).toThrow(/subst/i);
     expect(() => guardWikitext("{{ SUBST:Foo}}")).toThrow(WikitextRefusal);
   });
+  it("refuses a subst or signature that a stripped switch would reassemble", () => {
+    expect(() => guardWikitext("{{sub__NOTOC__st:X}}")).toThrow(/subst/i);
+    expect(() => guardWikitext("~~__NOTOC__~~")).toThrow(/Signatures/);
+  });
+  it("strips a category that a stripped switch would reassemble", () => {
+    const out = guardWikitext("Text [[Categ__A__ory:Foo]] end");
+    expect(out).not.toMatch(/Category:|__A__/);
+    expect(out).toContain("Text");
+  });
   it("refuses posts over the cap", () => {
     expect(() => guardWikitext("a".repeat(MAX_POST_WIKITEXT + 1))).toThrow(/at most/);
   });
