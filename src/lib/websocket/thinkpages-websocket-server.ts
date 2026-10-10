@@ -109,7 +109,12 @@ export class ThinkPagesWebSocketServer {
       });
 
       socket.on("subscribe", (payload: ChannelPayload) => {
-        void this.subscribe(socket, principal?.clerkUserId ?? null, payload?.channel);
+        const channel = payload?.channel;
+        this.subscribe(socket, principal?.clerkUserId ?? null, channel).catch((error: Error) => {
+          // A failing check refuses the join the way a denied one does; it never escapes as an unhandled rejection.
+          console.error("[ThinkPagesWS] subscribe failed:", error);
+          if (socket.connected) socket.emit("subscribe:error", { channel, reason: "forbidden" });
+        });
       });
 
       socket.on("unsubscribe", (payload: ChannelPayload) => {

@@ -286,6 +286,26 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
     expect(await silent).toBe(true);
   });
 
+  it("answers a failing join check with the forbidden refusal and keeps the server alive", async () => {
+    const unhandled = jest.fn();
+    process.on("unhandledRejection", unhandled);
+    const errors = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    // The room adapter failing mid-join is the rejection the checks' own catches do not cover.
+    const rooms = (wsServer as never as { boardRooms: { join: () => Promise<boolean> } })
+      .boardRooms;
+    jest.spyOn(rooms, "join").mockRejectedValueOnce(new Error("adapter is down"));
+    const reader = connect();
+    await connected(reader);
+    const refused = nextEvent<{ reason: string }>(reader, "subscribe:error");
+    reader.emit("subscribe", { channel: "realm-board:r_pub" });
+    expect(await refused).toEqual({ channel: "realm-board:r_pub", reason: "forbidden" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    process.off("unhandledRejection", unhandled);
+    errors.mockRestore();
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(reader.connected).toBe(true);
+  });
+
   it("refuses an anonymous reader every room that is not a board room, without asking the database", async () => {
     const reader = connect();
     await connected(reader);
