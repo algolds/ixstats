@@ -15,7 +15,7 @@ import { ForumNotice } from "./BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
-import { Pagination, useLastPageRedirect } from "./Pagination";
+import { Pagination, pageHref, useLastPageRedirect } from "./Pagination";
 import type { ModeratorTools } from "./ModeratorMenu";
 import { PostItem, type ForumPost } from "./PostItem";
 import { ReportDialog } from "./ReportDialog";
@@ -182,7 +182,7 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
           />
         ))}
       </div>
-      <Pagination basePath={basePath} page={page} totalPages={totalPages} />
+      <Pagination page={page} last={totalPages} hrefFor={(n) => pageHref(basePath, n)} />
       {data.canReply ? (
         <section aria-label="Reply" className="space-y-2">
           <ForumComposer icAllowed={category.icAllowed} submitLabel="Reply" onSubmit={reply} />

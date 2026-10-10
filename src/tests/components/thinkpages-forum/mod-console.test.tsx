@@ -645,7 +645,7 @@ describe("paging", () => {
     set("context", { data: REALM_MOD });
     set("bans", { data: { rows: [], total: 30, authors: { users: {} } } });
     renderConsole({ tab: "bans", realm: "caphiria" });
-    expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute(
+    expect(screen.getAllByRole("link", { name: "Next" })[0]).toHaveAttribute(
       "href",
       "/thinkpages/mod?tab=bans&realm=caphiria&page=2"
     );

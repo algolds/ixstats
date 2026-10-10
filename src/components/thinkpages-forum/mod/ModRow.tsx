@@ -10,7 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { pageCount } from "~/lib/thinkpages-forum/paging";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { categoryLabel } from "../BanDialog";
-import { Pagination, useLastPageRedirect } from "../Pagination";
+import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
 
 export type ModContext = RouterOutputs["thinkpagesForumMod"]["context"];
 /** Display names by user id, as every console list returns them. */
@@ -178,7 +178,7 @@ export function ModPanel({
         {body}
       </Card>
       {paging && paging.total !== undefined ? (
-        <Pagination basePath={paging.basePath} page={paging.page} totalPages={totalPages} />
+        <Pagination page={paging.page} last={totalPages} hrefFor={(n) => pageHref(paging.basePath, n)} />
       ) : null}
     </div>
   );

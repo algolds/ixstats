@@ -150,6 +150,13 @@ Three rules for every type:
 - A subtitle only when it adds information the title lacks.
 - `Stat` is a large tinted figure with a regular-case label below. No uppercase labels.
 
+### Facet exceptions
+
+Recorded departures from a rule above. An exception is scoped to the surface named here and does not generalise.
+
+1. **Country flags in forum author lines and lists (ThinkPages forum).** Identity art otherwise stays in `entity` cards. The forum's identity is the player's country, as on an RMB, so a flag beside an author name in a post header, thread row or list is allowed. Flags stay small and are never used as backdrops or watermarks.
+2. **Board chips on phones (ThinkPages realm landing).** On phones the realm landing shows its boards as a horizontal chip row under the realm header, although `navigation` is otherwise the sidebar and More sheet only. The boards are the realm's content list, not app navigation, and the rail is hidden on phones, so the chips are the only place they can sit.
+
 ## 5. Type
 
 - Font: Schibsted Grotesk, weights 400 to 800 (`font-sans`). Do not set another family.

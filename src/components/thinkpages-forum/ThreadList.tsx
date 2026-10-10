@@ -21,7 +21,7 @@ import { AuthorName, type ForumAuthors } from "./AuthorName";
 import { ForumNotice } from "./BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "./ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
-import { Pagination, useLastPageRedirect } from "./Pagination";
+import { Pagination, pageHref, useLastPageRedirect } from "./Pagination";
 
 type Thread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
@@ -141,7 +141,7 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
           <EmptyState compact title="No threads yet" message="Be the first to post" />
         )}
       </Card>
-      <Pagination basePath={basePath} page={page} totalPages={totalPages} />
+      <Pagination page={page} last={totalPages} hrefFor={(n) => pageHref(basePath, n)} />
     </div>
   );
 }
