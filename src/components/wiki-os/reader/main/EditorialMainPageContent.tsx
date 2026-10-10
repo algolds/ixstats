@@ -51,7 +51,7 @@ export function EditorialMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={"/util/categories/Countries"}
+              href="/util/categories/Countries"
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"

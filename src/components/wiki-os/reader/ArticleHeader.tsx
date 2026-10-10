@@ -421,7 +421,7 @@ export function WikiOSHeader({
                   </div>
                   <div className="border-separator flex justify-end border-t pt-2">
                     <Link
-                      href={"/util/lorewards"}
+                      href="/util/lorewards"
                       className="text-caption text-tint duration-fast hover:text-tint-hover transition-colors"
                     >
                       View Leaderboard &rarr;

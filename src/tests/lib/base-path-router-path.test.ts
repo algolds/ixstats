@@ -38,6 +38,14 @@ describe("toRouterPath", () => {
     expect(toRouterPath(`${BASE}x/y`)).toBe(`${BASE}x/y`);
   });
 
+  it("never produces a protocol-relative path that would leave the site", () => {
+    process.env.NEXT_PUBLIC_BASE_PATH = BASE;
+
+    expect(toRouterPath(`${BASE}//evil.com/x`)).toBe(`${BASE}//evil.com/x`);
+    expect(toRouterPath(`${BASE}/\\evil.com/x`)).toBe(`${BASE}/\\evil.com/x`);
+    expect(toRouterPath(`${BASE}///evil.com`)).toBe(`${BASE}///evil.com`);
+  });
+
   it("changes nothing where the deployment has no base path", () => {
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     delete process.env.BASE_PATH;

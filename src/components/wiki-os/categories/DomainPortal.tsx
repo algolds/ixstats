@@ -81,7 +81,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
             directory.
           </p>
           <Link
-            href={"/util/categories"}
+            href="/util/categories"
             className="bg-tint text-on-tint hover:bg-tint/90 rounded-row text-caption mt-2 inline-flex items-center gap-2 px-4 py-2 font-semibold transition-colors"
           >
             <Folder className="h-3.5 w-3.5" />

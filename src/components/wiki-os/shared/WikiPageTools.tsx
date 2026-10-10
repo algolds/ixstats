@@ -150,7 +150,7 @@ export function WikiPageTools({
               <PageAdminMenuItems title={title} enabled={isSignedIn && !!title} />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href={"/util"}>
+                <Link href="/util">
                   <Wrench className="size-4" />
                   Utilities and special pages
                 </Link>

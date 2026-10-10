@@ -125,6 +125,6 @@ describe("members cannot position their post over the app", () => {
   });
 
   it("stamps the renderer version that re-renders stored posts", () => {
-    expect(FORUM_RENDERER_VERSION).toMatch(/^forum-3:/);
+    expect(FORUM_RENDERER_VERSION).toMatch(/^forum-4:/);
   });
 });

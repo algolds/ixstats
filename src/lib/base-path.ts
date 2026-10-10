@@ -76,14 +76,17 @@ export function withBasePath(path: string): string {
  * A path as Next's `<Link>` and router (`push`/`replace`/`prefetch`) take it. They add the base path themselves and
  * never check for one, so a path that already carries it (from `withBasePath`, `createUrl`, `ixstatesHref`) loses it
  * again, once; `/base`, `/base?x` and `/base#x` become `/`, `/?x` and `/#x`. An absolute URL, a path without the base
- * path, and every path where the deployment has no base path stay as they are.
+ * path, a remainder that would read as another host (`//` or `/\`) and every path where the deployment has no base
+ * path stay as they are.
  */
 export function toRouterPath(path: string): string {
   const base = getBasePath();
   if (!base || !path.startsWith(base)) return path;
   const rest = path.slice(base.length);
   if (rest === "" || rest.startsWith("?") || rest.startsWith("#")) return `/${rest}`;
-  return rest.startsWith("/") ? rest : path;
+  // `/base//evil.com/x` would become the protocol-relative `//evil.com/x`: leave such a path as it is.
+  if (!rest.startsWith("/") || rest.startsWith("//") || rest.startsWith("/\\")) return path;
+  return rest;
 }
 
 /**

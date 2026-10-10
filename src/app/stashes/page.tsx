@@ -546,7 +546,7 @@ export default function StashesPage() {
                                 <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
-                                    href={"/util/repository"}
+                                    href="/util/repository"
                                     className="text-tint font-semibold hover:underline"
                                   >
                                     Media repository

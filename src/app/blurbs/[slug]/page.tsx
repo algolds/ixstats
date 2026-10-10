@@ -17,7 +17,7 @@ export default function BlurbDetailPage({ params }: { params: Promise<{ slug: st
       <div className="mx-auto max-w-3xl py-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            <Link href={"/blurbs"} className="hover:text-foreground transition-colors">
+            <Link href="/blurbs" className="hover:text-foreground transition-colors">
               Blurbs
             </Link>
             <ChevronRight className="h-3 w-3 opacity-50" />

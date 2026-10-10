@@ -38,7 +38,7 @@ export function CategoryMasthead({
       <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div className="max-w-2xl space-y-2">
           <Link
-            href={"/util/categories"}
+            href="/util/categories"
             className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 focus-visible:outline-tint inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <ArrowLeft

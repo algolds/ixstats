@@ -97,7 +97,7 @@ export function SculptedEmblemHero({
       className="relative flex w-full flex-col items-center justify-center pt-1 pb-2 text-center select-none sm:pb-3"
     >
       <Link
-        href={"/wiki/Main_Page"}
+        href="/wiki/Main_Page"
         aria-label="IxWiki home"
         className="group/brand rounded-card focus-visible:outline-tint mb-1 flex cursor-pointer flex-col items-center justify-center text-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-4"
       >
@@ -145,7 +145,7 @@ export function SculptedEmblemHero({
       >
         {/* Action 1: Award-Winning Lore */}
         <Link
-          href={"/wiki/category:featured_articles"}
+          href="/wiki/category:featured_articles"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -164,7 +164,7 @@ export function SculptedEmblemHero({
 
         {/* Action 2: Getting Started */}
         <Link
-          href={"/wiki/IxWiki:Getting_Started"}
+          href="/wiki/IxWiki:Getting_Started"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -183,7 +183,7 @@ export function SculptedEmblemHero({
 
         {/* Action 3: Resources */}
         <Link
-          href={"/util/repository"}
+          href="/util/repository"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -421,7 +421,7 @@ export function SculptedEmblemHero({
               {/* Archive & Suggest Links */}
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Link
-                  href={"/wiki/IxWiki:Featured_articles"}
+                  href="/wiki/IxWiki:Featured_articles"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="hover:text-label text-caption flex items-center gap-1 transition-colors"
@@ -431,7 +431,7 @@ export function SculptedEmblemHero({
                 </Link>
                 <span className="text-label-secondary select-none">·</span>
                 <Link
-                  href={"/wiki/IxWiki:Featured_article_candidates"}
+                  href="/wiki/IxWiki:Featured_article_candidates"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="text-caption hover:text-yellow-ink focus-visible:text-yellow-ink flex items-center gap-1 transition-colors"

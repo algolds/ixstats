@@ -32,7 +32,10 @@ describe("stripStyleDeclarations", () => {
 
   describe("styles the declaration tokenizer cannot read reliably are dropped whole", () => {
     it.each([
-      ["a backslash outside quotes ending a declaration early", 'a:\\";position:\\66ixed;inset:0;z-index:9999'],
+      [
+        "a backslash outside quotes ending a declaration early",
+        'a:\\";position:\\66ixed;inset:0;z-index:9999',
+      ],
       ["an escaped paren", "a:\\(;position:\\66ixed;inset:0"],
       ["a string a newline ends", 'a:"x\n;position:\\66ixed;top:0'],
       ["a string a newline ends, plain values", 'a:"x\n;position:fixed;top:0'],
@@ -50,14 +53,44 @@ describe("stripStyleDeclarations", () => {
       expect(stripStyleDeclarations(input)).toBe("");
     });
 
+    it.each([
+      [
+        "a double quote inside an unquoted url()",
+        'a:url(x"y);position:absolute;inset:0;z-index:9999;b:")',
+      ],
+      [
+        "a single quote inside an unquoted url()",
+        "a:url(x'y);position:absolute;inset:0;z-index:9999;b:')",
+      ],
+      ["a paren inside an unquoted url()", "a:url(a(b);position:absolute;inset:0;z-index:9999;b:)"],
+      ["the same with upper-case URL(", 'a:URL(x"y);position:fixed;top:0;b:")'],
+      ["an unquoted url() nested in a function", 'a:image-set(url(x"y)),position:fixed;top:0;b:")'],
+      ["an unquoted url() that never closes", "a:url(x;position:fixed"],
+    ])("%s", (_name, input) => {
+      expect(stripStyleDeclarations(input)).toBe("");
+    });
+
+    it("keeps ordinary url() backgrounds, quoted or not", () => {
+      for (const style of [
+        "background:url(https://ixwiki.com/images/x.png) no-repeat;width:22em",
+        'background:url("https://ixwiki.com/images/a;b.png");width:22em',
+        "background:url( 'a.png' ) center;width:22em",
+        "background:url(a;b.png);width:22em",
+        "background:image-set(url(a.png) 1x, url(b.png) 2x)",
+      ]) {
+        expect(stripStyleDeclarations(style)).toBe(style);
+      }
+    });
+
     it("does not let a comment marker inside a string hide a declaration", () => {
       expect(stripStyleDeclarations('a:"/*";position:fixed;b:"*/"')).toBe('a:"/*";b:"*/"');
     });
 
     it("keeps balanced quotes, parens, nested functions and comments", () => {
-      const style = "font-family:'A;B', \"C\";background:url(\"a;b.png\");width:calc(10px + (2px * 3))";
+      const style =
+        'font-family:\'A;B\', "C";background:url("a;b.png");width:calc(10px + (2px * 3))';
       expect(stripStyleDeclarations(style)).toBe(style);
-      expect(stripStyleDeclarations("color:red;/* \" ( */width:1px")).toBe("color:red;width:1px");
+      expect(stripStyleDeclarations('color:red;/* " ( */width:1px')).toBe("color:red;width:1px");
     });
   });
 
@@ -144,7 +177,7 @@ describe("stripPositioning", () => {
   });
 
   it.each([
-    'a:\\&quot;;position:\\66ixed;inset:0;z-index:9999',
+    "a:\\&quot;;position:\\66ixed;inset:0;z-index:9999",
     "a:\\(;position:\\66ixed;inset:0",
     "a:&quot;x\n;position:\\66ixed;top:0",
     "position:\\66ixed;inset:0",
@@ -153,6 +186,16 @@ describe("stripPositioning", () => {
   ])("removes the style attribute that holds %j", (style) => {
     expect(stripPositioning(`<div class="keep" style="${style}">Please sign in</div>`)).toBe(
       '<div class="keep">Please sign in</div>'
+    );
+  });
+
+  it.each([
+    "a:url(x&quot;y);position:absolute;inset:0;z-index:9999;b:&quot;)",
+    "a:url(x&#39;y);position:absolute;inset:0;z-index:9999;b:&#39;)",
+    "a:url(a(b);position:absolute;inset:0;z-index:9999;b:)",
+  ])("removes the style attribute that hides a declaration behind a bad url: %j", (style) => {
+    expect(stripPositioning(`<div class="keep" style="${style}">x</div>`)).toBe(
+      '<div class="keep">x</div>'
     );
   });
 

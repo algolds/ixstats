@@ -287,7 +287,7 @@ export function FollowingFeedContent(handlers: FeedHandlers) {
         message="Follow countries or ThinkPages accounts to see their activity here."
         action={
           <Button asChild size="sm" variant="outline">
-            <Link href={"/countries"}>Explore countries</Link>
+            <Link href="/countries">Explore countries</Link>
           </Button>
         }
       />

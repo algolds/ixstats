@@ -41,7 +41,7 @@ export function AdminPage({ title, description, children }: AdminPageProps) {
       <div className="mx-auto w-full max-w-2xl space-y-6 pb-16">
         <header className="space-y-1.5">
           <Link
-            href={"/util"}
+            href="/util"
             className="text-muted-foreground hover:text-foreground text-xs font-medium"
           >
             Special:Utilities

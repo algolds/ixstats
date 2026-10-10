@@ -35,7 +35,7 @@ function MyBlurbsList() {
           <p className="text-muted-foreground text-sm">
             Browse active prompts and share your country&apos;s perspective.
           </p>
-          <Link href={"/blurbs"}>
+          <Link href="/blurbs">
             <Button size="sm">Browse prompts</Button>
           </Link>
         </CardContent>
@@ -121,7 +121,7 @@ export default function MyBlurbsPage() {
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign in required</h3>
               <p className="text-muted-foreground text-sm">Sign in to see your blurb responses.</p>
-              <Link href={"/setup"}>
+              <Link href="/setup">
                 <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>

@@ -33,6 +33,7 @@ import { MessagesViewDetailsModal } from "./MessagesViewDetailsModal";
 import { MessagesAddParticipantsModal } from "./MessagesAddParticipantsModal";
 import { LoreBotFeedView } from "./LoreBotFeedView";
 import Link from "next/link";
+import { toRouterPath } from "~/lib/base-path";
 
 const DISPATCH_PATTERN = /diplomatic|treaty|embassy|alliance|summons|dispatch/;
 
@@ -53,7 +54,7 @@ function getSystemAlertStyle(content: string, type?: string) {
   };
 }
 
-function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () => void }) {
+export function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () => void }) {
   const content = item.description || item.message || item.content || "";
   const title = item.title || item.subject || "System Notification";
   const {
@@ -96,7 +97,7 @@ function SystemBroadcastCard({ item, onDismiss }: { item: any; onDismiss?: () =>
         {item.href && (
           <div className="mt-2 flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href={item.href}>
+              <Link href={toRouterPath(item.href)}>
                 <span>Open details</span>
                 <ExternalLink aria-hidden="true" />
               </Link>

@@ -92,7 +92,7 @@ export default function BlockUserPage() {
               {block.isPending ? "Blocking…" : "Block user"}
             </Button>
             <Link
-              href={"/util/blocklist"}
+              href="/util/blocklist"
               className="text-muted-foreground hover:text-foreground text-sm"
             >
               Current blocks

@@ -1,7 +1,7 @@
 "use client";
 // Saved forum threads view with rich metadata and direct link to native forum.
 import Link from "next/link";
-import { ixstatesLinkHref, isWikiStandalone } from "~/lib/system/wikios-standalone";
+import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { LEGACY_THREAD_PREFIX, nativeThreadIdOf } from "~/lib/wiki-os/stash-content-type";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
@@ -31,15 +31,13 @@ export function stashedThreadTarget(item: StashedThreadItem): { title: string; h
   };
 }
 
-/** Standalone WikiOS serves no forum, so its links go to IxStates; inside IxStates a plain path is right for `<Link>`. */
-const forumLink = (path: string): string => (isWikiStandalone() ? ixstatesLinkHref(path) : path);
-
 export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
   return (
     <div className="space-y-3">
       {items.map((item) => {
         const { title: cleanTitle, href } = stashedThreadTarget(item);
-        const forumUrl = forumLink(href);
+        // Standalone WikiOS serves no forum, so there the link goes to IxStates; inside IxStates it is the plain path.
+        const forumUrl = ixstatesLinkHref(href);
 
         return (
           <div

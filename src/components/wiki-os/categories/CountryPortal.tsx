@@ -76,7 +76,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Link
-                  href={"/util/categories"}
+                  href="/util/categories"
                   className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <span>Nations</span>

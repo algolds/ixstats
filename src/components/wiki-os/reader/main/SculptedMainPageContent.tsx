@@ -58,7 +58,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={"/util/categories/Countries"}
+              href="/util/categories/Countries"
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -112,7 +112,7 @@ export function SculptedMainPageContent({
                 </div>
 
                 <Link
-                  href={"/wiki/Category:Bureau_of_International_Statistics"}
+                  href="/wiki/Category:Bureau_of_International_Statistics"
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
                   className="text-label-secondary hover:text-label rounded-control-sm text-caption inline-flex shrink-0 items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/5"

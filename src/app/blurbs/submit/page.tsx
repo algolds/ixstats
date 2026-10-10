@@ -38,7 +38,7 @@ function SubmitPromptForm() {
             <Button size="sm" variant="ghost" onClick={() => setSubmitted(false)}>
               Submit another
             </Button>
-            <Link href={"/blurbs"}>
+            <Link href="/blurbs">
               <Button size="sm">Browse prompts</Button>
             </Link>
           </div>
@@ -138,7 +138,7 @@ export default function SubmitBlurbPage() {
               <p className="text-muted-foreground text-sm">
                 Sign in to submit a prompt suggestion.
               </p>
-              <Link href={"/setup"}>
+              <Link href="/setup">
                 <Button size="sm">Sign in</Button>
               </Link>
             </CardContent>

@@ -98,7 +98,7 @@ export function UtilitySearchShell({
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2">
               <Link
-                href={"/util"}
+                href="/util"
                 className={`group text-caption inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${a.pill}`}
               >
                 <FolderTree className="h-3.5 w-3.5" />

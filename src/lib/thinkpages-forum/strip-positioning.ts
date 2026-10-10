@@ -36,6 +36,25 @@ const encodeEntities = (value: string): string =>
 const CSS_NEWLINE = /[\n\r\f]/;
 
 /**
+ * For the `(` at `open`: when it opens an unquoted `url(`, the index just after its closing `)`; `open` itself when it
+ * opens anything else (a function, or `url(` with a string in it); null when the unquoted url holds a quote or a paren
+ * or never closes. A browser reads those as a bad-url token that runs to the first `)`, where this scan would start a
+ * string or a nested paren and see the following declarations differently.
+ */
+function unquotedUrlEnd(css: string, open: number): number | null {
+  if (css.slice(Math.max(0, open - 3), open).toLowerCase() !== "url") return open;
+  let at = open + 1;
+  while (/\s/.test(css.charAt(at))) at++;
+  if (css.charAt(at) === '"' || css.charAt(at) === "'") return open;
+  for (; at < css.length; at++) {
+    const ch = css.charAt(at);
+    if (ch === ")") return at + 1;
+    if (ch === '"' || ch === "'" || ch === "(") return null;
+  }
+  return null;
+}
+
+/**
  * Splits a declaration list at top-level `;`, so a `;` in a string or `url()` does not split a value, and removes
  * comments (an unterminated one runs to the end). This is deliberately not a CSS parser: it returns null, meaning
  * "do not guess where the declarations end", for any text a browser could read differently from this scan: a
@@ -59,8 +78,16 @@ function splitDeclarations(css: string): string[] | null {
       i = end + 1;
       continue;
     } else if (ch === '"' || ch === "'") quote = ch;
-    else if (ch === "(") depth++;
-    else if (ch === ")") {
+    else if (ch === "(") {
+      const close = unquotedUrlEnd(css, i);
+      if (close === null) return null;
+      if (close > i) {
+        current += css.slice(i, close);
+        i = close - 1;
+        continue;
+      }
+      depth++;
+    } else if (ch === ")") {
       if (depth === 0) return null;
       depth--;
     } else if (ch === ";" && depth === 0) {

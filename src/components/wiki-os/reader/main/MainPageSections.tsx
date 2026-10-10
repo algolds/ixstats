@@ -47,7 +47,7 @@ export function RecentActivitySection({
       <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
         <h2 className="text-label text-headline">Recent activity</h2>
         <Link
-          href={"/util/recent-changes"}
+          href="/util/recent-changes"
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
