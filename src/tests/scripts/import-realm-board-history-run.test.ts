@@ -97,6 +97,59 @@ describe("runBoardHistory", () => {
     expect(lines[lines.length - 1]).toBe("Applied: 1 boards, 2 posts created.");
   });
 
+  describe("paging and chunking boundaries", () => {
+    const many = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `m${String(i).padStart(5, "0")}`,
+        userId: "clerk-1",
+        content: `message ${i}`,
+        ixTimeTimestamp: at(i % 50),
+        deletedAt: null,
+        isSystem: false,
+      }));
+    const paged = (count: number) => {
+      const rows = many(count);
+      const made = makeDb();
+      made.db.thinkshareMessage.findMany.mockImplementation(
+        async ({ where, take }: { where: { id: { gt: string } }; take: number }) =>
+          rows.filter((r) => r.id > where.id.gt).slice(0, take)
+      );
+      return made;
+    };
+
+    it("keyset-pages the chat by 1000 and creates every post in chunks of 500", async () => {
+      const { db } = paged(2300);
+      await runBoardHistory(db as never as PrismaClient, true, () => undefined);
+      expect(
+        db.thinkshareMessage.findMany.mock.calls.map(([a]) => (a as { where: object }).where)
+      ).toEqual([
+        { conversationId: "c1", id: { gt: "" } },
+        { conversationId: "c1", id: { gt: "m00999" } },
+        { conversationId: "c1", id: { gt: "m01999" } },
+      ]);
+      expect(db.forumPost.findMany).toHaveBeenCalledTimes(3);
+      const sizes = db.forumPost.createMany.mock.calls.map(([a]) => a.data.length);
+      expect(sizes).toEqual([500, 500, 500, 500, 300]);
+      const refs = db.forumPost.createMany.mock.calls.flatMap(([a]) =>
+        a.data.map((p: { sourceRef: string }) => p.sourceRef)
+      );
+      expect(new Set(refs).size).toBe(2300);
+    });
+
+    it("reads one more, empty, page after exactly 1000 messages, and one chunk for exactly 500", async () => {
+      const full = paged(1000);
+      await runBoardHistory(full.db as never as PrismaClient, true, () => undefined);
+      expect(full.db.thinkshareMessage.findMany).toHaveBeenCalledTimes(2);
+      expect(full.db.forumPost.createMany.mock.calls.map(([a]) => a.data.length)).toEqual([
+        500, 500,
+      ]);
+      const half = paged(500);
+      await runBoardHistory(half.db as never as PrismaClient, true, () => undefined);
+      expect(half.db.thinkshareMessage.findMany).toHaveBeenCalledTimes(1);
+      expect(half.db.forumPost.createMany).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("creates nothing on a rerun when every message is already imported", async () => {
     const { db } = makeDb();
     db.forumPost.findMany.mockResolvedValue([
