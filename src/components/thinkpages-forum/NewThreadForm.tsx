@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
-import { categoryHref, forumHomeHref, threadHref } from "~/lib/thinkpages-forum/links";
+import { categoryHref, FORUM_HOME, hubHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { BanNotice } from "./BanNotice";
 import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
@@ -80,7 +80,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   if (!data.canStart) {
     const back = (
       <Button asChild variant="secondary">
-        <Link href={forumHomeHref(realm)}>Back to the forum</Link>
+        <Link href={realm ? hubHref(realm) : FORUM_HOME}>Back to the forum</Link>
       </Button>
     );
     return (

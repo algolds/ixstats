@@ -140,11 +140,11 @@ describe("ThreadTable page shortcuts", () => {
     // 45 posts at 20 a page: 3 pages.
     renderTable([thread("t1", { postCount: 45 })]);
     const row = rowOf(/Thread t1/);
-    expect(within(row).getByRole("link", { name: "2" })).toHaveAttribute(
+    expect(within(row).getByRole("link", { name: "Page 2 of Thread t1" })).toHaveAttribute(
       "href",
       "/thinkpages/t/t1?page=2"
     );
-    expect(within(row).getByRole("link", { name: "3" })).toHaveAttribute(
+    expect(within(row).getByRole("link", { name: "Page 3 of Thread t1" })).toHaveAttribute(
       "href",
       "/thinkpages/t/t1?page=3"
     );
@@ -163,15 +163,14 @@ describe("ThreadTable page shortcuts", () => {
 
   it("offers Last page on phones, and no shortcuts, for a one-page thread", () => {
     const { unmount } = renderTable([thread("t1", { postCount: 45 })]);
-    expect(within(rowOf(/Thread t1/)).getByRole("link", { name: "Last page" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t1?page=3"
-    );
+    expect(
+      within(rowOf(/Thread t1/)).getByRole("link", { name: "Last page of Thread t1" })
+    ).toHaveAttribute("href", "/thinkpages/t/t1?page=3");
     unmount();
 
     renderTable([thread("t1", { postCount: 5 })]);
     const row = rowOf(/Thread t1/);
-    expect(within(row).queryByRole("link", { name: "2" })).toBeNull();
-    expect(within(row).queryByRole("link", { name: "Last page" })).toBeNull();
+    expect(within(row).queryByRole("link", { name: "Page 2 of Thread t1" })).toBeNull();
+    expect(within(row).queryByRole("link", { name: "Last page of Thread t1" })).toBeNull();
   });
 });

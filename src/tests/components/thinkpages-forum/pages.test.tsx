@@ -124,8 +124,11 @@ const { router, redirect } = jest.requireMock<{
 }>("next/navigation");
 
 const authors = {
-  users: { u1: { name: "Kir", handle: "kir" }, u2: { name: "Hidden Player", handle: null } },
-  personas: { pa: { displayName: "Aria Vance", username: "aria" } },
+  users: {
+    u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
+    u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: null },
+  },
+  personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null } },
 };
 
 const EURTH = { slug: "eurth", name: "Eurth" };
@@ -252,9 +255,9 @@ describe("forum home", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("sends /thinkpages/r/<realm> to the home with that realm", async () => {
+  it("sends /thinkpages/r/<realm> straight to that realm's Hub", async () => {
     await RealmRedirectPage({ params: Promise.resolve({ realm: "eurth" }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages?realm=eurth");
+    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/eurth/hub");
   });
 });
 
@@ -332,9 +335,17 @@ describe("category view", () => {
     );
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
-      ["Eurth", "/thinkpages?realm=eurth"],
+      ["Eurth", "/thinkpages/r/eurth/hub"],
     ]);
-    expect(backLink("Eurth")).toHaveAttribute("href", "/thinkpages?realm=eurth");
+    // The Hub is the top of its realm: back goes to the forum home, not to itself.
+    expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
+  });
+
+  it("sends a realm's other boards back to its Hub", () => {
+    const events = { ...HUB, key: "current-events", name: "Current Events" };
+    set("category", { data: categoryData(false, [thread()], events) });
+    render(<BoardPage categoryKey="current-events" realm="eurth" page={1} sort="latest" />);
+    expect(backLink("Eurth")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
   });
 });
 
@@ -371,7 +382,7 @@ describe("thread view", () => {
     render(<ThreadView threadId="t1" page={1} />);
     expect(crumbs()).toEqual([
       ["ThinkPages", "/thinkpages"],
-      ["Eurth", "/thinkpages?realm=eurth"],
+      ["Eurth", "/thinkpages/r/eurth/hub"],
       ["Hub", "/thinkpages/r/eurth/hub"],
     ]);
     expect(backLink("Hub")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
@@ -522,7 +533,7 @@ describe("new thread", () => {
     expect(screen.getByText(notice)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the forum" })).toHaveAttribute(
       "href",
-      "/thinkpages?realm=eurth"
+      "/thinkpages/r/eurth/hub"
     );
     unmount();
 

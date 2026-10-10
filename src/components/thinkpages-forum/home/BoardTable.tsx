@@ -41,9 +41,19 @@ const BOARD_ICONS: Record<string, typeof Folder> = {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
+/** An empty value: a dash to the eye, "None" to a screen reader. */
+function None({ className }: { className?: string }) {
+  return (
+    <span className={className}>
+      <span aria-hidden>–</span>
+      <span className="sr-only">None</span>
+    </span>
+  );
+}
+
 /** A count, or a dash for none; below md it carries its unit so the stacked counts read on their own. */
 function Count({ value, one, many }: { value: number; one: string; many: string }) {
-  if (value === 0) return <span className="text-label-tertiary">–</span>;
+  if (value === 0) return <None className="text-label-tertiary" />;
   return (
     <>
       <span>{value}</span>
@@ -53,7 +63,7 @@ function Count({ value, one, many }: { value: number; one: string; many: string 
 }
 
 function LatestCell({ latest }: { latest: Board["latest"] }) {
-  if (!latest) return <span className="text-callout text-label-tertiary">–</span>;
+  if (!latest) return <None className="text-callout text-label-tertiary" />;
   const author = latest.author?.name ?? "Member";
   return (
     <span className="flex min-w-0 items-center gap-2">
@@ -72,18 +82,22 @@ function LatestCell({ latest }: { latest: Board["latest"] }) {
   );
 }
 
+/**
+ * One board: the name is the row's link, stretched over the whole row; Threads, Posts and Latest are cells under
+ * their headers. Below md the same cells lay out as two lines.
+ */
 function BoardRow({ board }: { board: Board }) {
   const Icon = BOARD_ICONS[board.key] ?? Folder;
   const empty = board.threadCount === 0;
   return (
-    <Link
-      href={categoryHref({ key: board.key })}
+    <li
+      role="row"
       className={cn(
-        "hover:bg-fill-4 focus-visible:outline-tint grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 pointer-coarse:min-h-11",
+        "hover:bg-fill-4 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 pointer-coarse:min-h-11",
         COLUMNS
       )}
     >
-      <span className="col-start-1 row-start-1 flex min-w-0 items-center gap-3">
+      <div role="cell" className="col-start-1 row-start-1 flex min-w-0 items-center gap-3">
         <span
           aria-hidden
           className={cn(
@@ -95,7 +109,12 @@ function BoardRow({ board }: { board: Board }) {
         </span>
         <span className="min-w-0">
           <span className="text-headline flex items-center gap-2">
-            <span className="min-w-0 truncate">{board.name}</span>
+            <Link
+              href={categoryHref({ key: board.key })}
+              className="focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2"
+            >
+              {board.name}
+            </Link>
             {board.visibility === "staff" ? <Badge variant="outline">Staff</Badge> : null}
           </span>
           {board.description ? (
@@ -104,17 +123,23 @@ function BoardRow({ board }: { board: Board }) {
             </span>
           ) : null}
         </span>
-      </span>
-      <span className="text-callout col-start-2 row-start-1 text-right tabular-nums md:col-start-2">
+      </div>
+      <div
+        role="cell"
+        className="text-callout col-start-2 row-start-1 text-right tabular-nums md:col-start-2"
+      >
         <Count value={board.threadCount} one="thread" many="threads" />
-      </span>
-      <span className="text-callout col-start-2 row-start-2 text-right tabular-nums md:col-start-3 md:row-start-1">
+      </div>
+      <div
+        role="cell"
+        className="text-callout col-start-2 row-start-2 text-right tabular-nums md:col-start-3 md:row-start-1"
+      >
         <Count value={board.postCount} one="post" many="posts" />
-      </span>
-      <span className="col-start-1 row-start-2 min-w-0 md:col-start-4 md:row-start-1">
+      </div>
+      <div role="cell" className="col-start-1 row-start-2 min-w-0 md:col-start-4 md:row-start-1">
         <LatestCell latest={board.latest} />
-      </span>
-    </Link>
+      </div>
+    </li>
   );
 }
 
@@ -136,11 +161,7 @@ function BoardRows({ boards }: { boards: readonly Board[] }) {
       </div>
       <ul role="rowgroup" className="divide-separator divide-y">
         {boards.map((board) => (
-          <li key={board.key} role="row">
-            <div role="cell">
-              <BoardRow board={board} />
-            </div>
-          </li>
+          <BoardRow key={board.key} board={board} />
         ))}
       </ul>
     </div>

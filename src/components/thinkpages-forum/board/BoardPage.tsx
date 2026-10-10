@@ -7,7 +7,8 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { categoryHref, forumHomeHref, newThreadHref } from "~/lib/thinkpages-forum/links";
+import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
+import { categoryHref, FORUM_HOME, hubHref, newThreadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { sortHref, type ThreadSort } from "~/lib/thinkpages-forum/thread-sort";
 import { api } from "~/trpc/react";
@@ -74,6 +75,12 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
         ? realms.data.realms
         : [{ slug: realm, name: category.realm?.name ?? realm }, ...realms.data.realms]
       : undefined;
+  // The trail scrolls away with the header; the compact bar keeps this way up: the realm's Hub, or the home
+  // (from a sitewide board, and from a Hub, which is the top of its realm).
+  const back =
+    category.realm && category.key !== REALM_HUB_KEY
+      ? { href: hubHref(category.realm.slug), label: category.realm.name }
+      : { href: FORUM_HOME, label: "ThinkPages" };
   const hrefFor = (n: number) => pageHref(sortedPath, n);
 
   return (
@@ -86,11 +93,7 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
           {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
         </>
       }
-      // The trail scrolls away with the header; the compact bar keeps this way up: the realm's section or the home.
-      back={{
-        href: forumHomeHref(category.realm?.slug),
-        label: category.realm?.name ?? "ThinkPages",
-      }}
+      back={back}
       actions={
         <>
           {realm && realmOptions ? <RealmSwitcher realms={realmOptions} value={realm} /> : null}

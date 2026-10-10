@@ -131,8 +131,11 @@ describe("Forums home: board table", () => {
       "Posts",
       "Latest",
     ]);
-    const general = screen.getByRole("link", { name: /General/ });
-    expect(general).toHaveAttribute("href", "/thinkpages/c/general");
+    const general = screen.getByRole("row", { name: /General/ });
+    expect(within(general).getByRole("link", { name: "General" })).toHaveAttribute(
+      "href",
+      "/thinkpages/c/general"
+    );
     expect(within(general).getByText("general talk")).toBeInTheDocument();
     expect(within(general).getByText("8")).toBeInTheDocument();
     expect(within(general).getByText("23")).toBeInTheDocument();
@@ -144,10 +147,24 @@ describe("Forums home: board table", () => {
     );
   });
 
-  it("shows a dash for an empty board's threads, posts and latest", () => {
+  it("gives each row one cell per column, so counts sit under their headers", () => {
+    set("categories", { data: [board("general")] });
+    render(<ForumHome />);
+    const row = screen.getByRole("row", { name: /General/ });
+    const cells = within(row).getAllByRole("cell");
+    expect(cells).toHaveLength(4);
+    expect(within(cells[1]!).getByText("8")).toBeInTheDocument();
+    expect(within(cells[2]!).getByText("23")).toBeInTheDocument();
+    expect(within(cells[3]!).getByText("Latest in general")).toBeInTheDocument();
+    expect(within(row).getAllByRole("link")).toHaveLength(1);
+  });
+
+  it("shows a dash, read as None, for an empty board's threads, posts and latest", () => {
     set("categories", { data: [EMPTY_BOARD] });
     render(<ForumHome />);
-    expect(within(screen.getByRole("link", { name: /Rules/ })).getAllByText("–")).toHaveLength(3);
+    const row = screen.getByRole("row", { name: /Rules/ });
+    expect(within(row).getAllByText("–")).toHaveLength(3);
+    expect(within(row).getAllByText("None")).toHaveLength(3);
   });
 
   it("names the persona, not the player, for a persona's latest post", () => {
@@ -170,10 +187,10 @@ describe("Forums home: board table", () => {
     render(<ForumHome />);
     const pill = { selector: '[data-slot="badge"]' };
     expect(
-      within(screen.getByRole("link", { name: /Staff/ })).getByText("Staff", pill)
+      within(screen.getByRole("row", { name: /Staff/ })).getByText("Staff", pill)
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole("link", { name: /General/ })).queryByText("Staff", pill)
+      within(screen.getByRole("row", { name: /General/ })).queryByText("Staff", pill)
     ).toBeNull();
   });
 
@@ -255,7 +272,10 @@ describe("Forums home: Your realm and Moderation", () => {
       },
     ],
     authors: {
-      users: { u1: { name: "Kir", handle: "kir" }, u2: { name: "Hidden Player", handle: null } },
+      users: {
+        u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
+        u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: null },
+      },
       personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null } },
     },
   };

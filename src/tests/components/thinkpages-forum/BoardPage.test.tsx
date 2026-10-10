@@ -168,7 +168,8 @@ describe("BoardPage", () => {
   it("shows the In character pill in the header only for an IC board", () => {
     set("category", { data: board({ category: { style: "ic" } }) });
     const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getAllByText("In character").length).toBeGreaterThan(0);
+    // In the header and in About this board.
+    expect(screen.getAllByText("In character")).toHaveLength(2);
     unmount();
 
     set("category", { data: board() });

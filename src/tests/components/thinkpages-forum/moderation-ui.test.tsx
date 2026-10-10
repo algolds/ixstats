@@ -226,7 +226,10 @@ const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.
 const XSS = '<img src=x onerror="alert(1)">';
 const BAN = "You are banned from the forum until 12 Oct 2026: spam";
 const authors = {
-  users: { u1: { name: "Kir", handle: "kir" }, u2: { name: "Rhea", handle: "rhea" } },
+  users: {
+    u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
+    u2: { name: "Rhea", handle: "rhea", avatarUrl: null, flagUrl: null },
+  },
   personas: {},
 };
 const NO_MOD: ModContext = { isSiteAdmin: false, realms: [], categories: [] };

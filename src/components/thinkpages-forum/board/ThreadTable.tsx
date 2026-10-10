@@ -62,7 +62,7 @@ function SortHeaders({ basePath, sort }: { basePath: string; sort: ThreadSort })
 }
 
 /** `1 2 … 9`: links into a thread's pages, above the title link so they stay clickable. */
-function PageShortcuts({ threadId, last }: { threadId: string; last: number }) {
+function PageShortcuts({ thread, last }: { thread: Thread; last: number }) {
   return (
     <span className="relative z-10 hidden items-center gap-0.5 md:inline-flex">
       {pageWindow(1, last).map((entry, index) =>
@@ -73,7 +73,8 @@ function PageShortcuts({ threadId, last }: { threadId: string; last: number }) {
         ) : (
           <Link
             key={entry}
-            href={pageHref(threadHref(threadId), entry)}
+            href={pageHref(threadHref(thread.id), entry)}
+            aria-label={`Page ${entry} of ${thread.title}`}
             className="text-tint focus-visible:outline-tint inline-flex min-w-5 justify-center tabular-nums hover:underline focus-visible:outline-2 pointer-coarse:min-h-11 pointer-coarse:min-w-8 pointer-coarse:items-center"
           >
             {entry}
@@ -113,7 +114,8 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
         {last > 1 ? (
           <Link
             href={pageHref(threadHref(thread.id), last)}
-            className="text-footnote text-tint relative z-10 ml-auto shrink-0 hover:underline md:hidden"
+            aria-label={`Last page of ${thread.title}`}
+            className="text-footnote text-tint relative z-10 ml-auto shrink-0 hover:underline md:hidden pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
           >
             Last page
           </Link>
@@ -135,7 +137,7 @@ function ThreadRow({ thread, authors }: { thread: Thread; authors: ForumAuthors 
           personaId={thread.authorPersonaId}
           importedName={thread.importedAuthorName}
         />
-        {last > 1 ? <PageShortcuts threadId={thread.id} last={last} /> : null}
+        {last > 1 ? <PageShortcuts thread={thread} last={last} /> : null}
       </div>
       <div
         role="cell"

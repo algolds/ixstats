@@ -10,17 +10,17 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
-import { FORUM_HOME, forumHomeHref } from "~/lib/thinkpages-forum/links";
+import { FORUM_HOME, hubHref } from "~/lib/thinkpages-forum/links";
 
 export interface ForumCrumb {
   label: string;
   href?: string;
 }
 
-/** The trail's start: ThinkPages (the forum home), then the realm (opening its section there) for a realm category. */
+/** The trail's start: ThinkPages (the forum home), then the realm (its Hub) for a realm category. */
 export function forumTrail(realm: { slug: string; name: string } | null | undefined): ForumCrumb[] {
   const home = { label: "ThinkPages", href: FORUM_HOME };
-  return realm ? [home, { label: realm.name, href: forumHomeHref(realm.slug) }] : [home];
+  return realm ? [home, { label: realm.name, href: hubHref(realm.slug) }] : [home];
 }
 
 /**
