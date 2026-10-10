@@ -98,6 +98,7 @@ type AppId =
   | "maps"
   | "vault"
   | "wiki"
+  | "thinkpages"
   | "countries"
   | "labs"
   | "help"
@@ -162,6 +163,8 @@ export interface AppDefinition {
   match: string[];
   sections: AppSection[];
   requiresAuth?: boolean;
+  /** Listed only to signed-out visitors (the forum, which Home carries for signed-in users). */
+  signedOutOnly?: true;
   adminOnly?: boolean;
   /** Admin navigation setting that hides the app when false. */
   navSetting?: keyof NavigationVisibilitySettings;
@@ -394,6 +397,17 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
+    // Signed out, Home (which lists ThinkPages) is hidden, so the public forum gets an app of its own.
+    id: "thinkpages",
+    label: "ThinkPages",
+    href: FORUM_HOME,
+    icon: ChatBubble,
+    tint: "thinkpages",
+    match: [FORUM_HOME],
+    signedOutOnly: true,
+    sections: [],
+  },
+  {
     id: "countries",
     label: "Realms",
     // /realms is the landing page for exploring, searching and joining realms.
@@ -609,6 +623,7 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "maps",
   "countries",
   "wiki",
+  "thinkpages",
   "vault",
   "labs",
   "help",
@@ -656,10 +671,16 @@ export function getApp(id: AppId): AppDefinition {
   return app;
 }
 
-/** The app that owns `pathname` (longest matching prefix), if any. */
-export function getAppForPath(pathname: string): AppDefinition | undefined {
+/**
+ * The app a path belongs to: the longest matching prefix, the first app winning a tie. Pass the visible apps to
+ * resolve among them only (signed out, `/thinkpages` is the ThinkPages app's, since Home is not listed).
+ */
+export function getAppForPath(
+  pathname: string,
+  apps: readonly AppDefinition[] = APPS
+): AppDefinition | undefined {
   let best: { app: AppDefinition; length: number } | undefined;
-  for (const app of APPS) {
+  for (const app of apps) {
     for (const prefix of app.match) {
       if (matchesPrefix(pathname, prefix) && (!best || prefix.length > best.length)) {
         best = { app, length: prefix.length };
@@ -667,6 +688,17 @@ export function getAppForPath(pathname: string): AppDefinition | undefined {
     }
   }
   return best?.app;
+}
+
+/**
+ * The app the navigation marks current: the owner among the visible apps when there is one (signed out,
+ * `/thinkpages` belongs to the ThinkPages app rather than the hidden Home), else the owner among all apps.
+ */
+export function getVisibleAppForPath(
+  pathname: string,
+  visible: readonly AppDefinition[]
+): AppDefinition | undefined {
+  return getAppForPath(pathname, visible) ?? getAppForPath(pathname);
 }
 
 /**
@@ -758,6 +790,7 @@ export function getVisibleApps({
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
+    if (app.signedOutOnly && signedIn) return false;
     if (app.adminOnly && !isAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
       const bypass = app.navSettingBypass;

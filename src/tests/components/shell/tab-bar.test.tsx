@@ -44,6 +44,16 @@ describe("TabBar", () => {
     );
   });
 
+  it("gives signed-out visitors a ThinkPages tab, current on the forum's pages (phase 4b)", () => {
+    const guestApps = getVisibleApps({ signedIn: false, isAdmin: false });
+    render(<TabBar pathname="/thinkpages/t/abc" searchParams={null} apps={guestApps} {...navProps} />);
+    const nav = screen.getByRole("navigation", { name: "Tab bar" });
+    expect(within(nav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+  });
+
   it("opens More as a bottom sheet with the app's sections and the other apps", () => {
     mockPhoneWidth();
     render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);

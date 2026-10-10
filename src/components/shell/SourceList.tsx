@@ -14,7 +14,7 @@ import { focusRing } from "~/components/ui/button";
 import { springSmooth } from "~/lib/design/motion";
 import {
   getActiveSectionId,
-  getAppForPath,
+  getVisibleAppForPath,
   groupSections,
   type AppDefinition,
   type NavAction,
@@ -350,7 +350,7 @@ function resolveCurrent(
   apps: readonly AppDefinition[],
   badges: NavBadges
 ): { current: AppDefinition | undefined; activeSectionId: string | undefined } {
-  const owner = getAppForPath(pathname);
+  const owner = getVisibleAppForPath(pathname, apps);
   if (!owner || apps.some((a) => a.id === owner.id)) {
     return {
       current: owner,

@@ -128,7 +128,10 @@ describe("app section map routes", () => {
   });
 
   it("lists ThinkPages (the forum) and ThinkTanks under Home, both emerald-tinted", () => {
-    expect(APPS.map((app) => app.id)).not.toContain("thinkpages");
+    // Signed in, ThinkPages is a Home row, not an app (the app of that id is for signed-out visitors only).
+    expect(
+      getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)
+    ).not.toContain("thinkpages");
     const home = getApp("home");
     expect(home.sections.map((s) => s.label)).toEqual([
       "What's new",
@@ -382,7 +385,25 @@ describe("app visibility and the tab bar", () => {
       expect.arrayContaining(["wiki", "vault", "labs", "admin"])
     );
     const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
-    // Phase 4b: the XenForo bridge app is gone; the forum is Home's ThinkPages row (signed in).
-    expect(signedOut.primary.map((app) => app.id)).toEqual(["maps", "countries", "wiki", "help"]);
+    // Phase 4b: the XenForo bridge app is gone. Signed in, the forum is Home's ThinkPages row; signed out,
+    // Home is hidden, so a ThinkPages app takes the tab instead.
+    expect(signedOut.primary.map((app) => app.id)).toEqual([
+      "maps",
+      "countries",
+      "wiki",
+      "thinkpages",
+    ]);
+  });
+
+  it("lists ThinkPages as its own app only for signed-out visitors (Home carries it when signed in)", () => {
+    const signedOut = getVisibleApps({ signedIn: false, isAdmin: false });
+    const forum = signedOut.find((app) => app.id === "thinkpages");
+    expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
+    expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
+      "thinkpages"
+    );
+    // The forum's pages belong to Home when it is listed, and to the signed-out app when it is not.
+    expect(getAppForPath("/thinkpages/t/1")?.id).toBe("home");
+    expect(getAppForPath("/thinkpages/t/1", signedOut)?.id).toBe("thinkpages");
   });
 });
