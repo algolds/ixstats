@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Book, ChatBubble, Group } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { Stat } from "~/components/ui/stat";
 import { timeAgo } from "~/lib/format/compact";
 import { relatedWikiTitles } from "~/lib/thinkpages-forum/post-html";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
@@ -10,15 +11,6 @@ import { AuthorMark } from "../AuthorMark";
 import { AuthorName } from "../AuthorName";
 import { RailPanel } from "../shell";
 import type { ThreadData } from "./types";
-
-function Figure({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <dd className="text-title-2 text-tint tabular-nums">{value}</dd>
-      <dt className="text-footnote text-label-secondary">{label}</dt>
-    </div>
-  );
-}
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -37,14 +29,15 @@ function ThisThreadPanel({ data }: { data: ThreadData }) {
   return (
     <RailPanel title="This thread" icon={<ChatBubble />}>
       <div className="space-y-3">
-        <dl className="grid grid-cols-3 gap-3">
-          <Figure value={String(replies)} label="Replies" />
-          <Figure value={String(participantCount)} label="Participants" />
-          <Figure
+        <div className="grid grid-cols-3 gap-3">
+          <Stat size="sm" value={String(replies)} label="Replies" />
+          <Stat size="sm" value={String(participantCount)} label="Participants" />
+          <Stat
+            size="sm"
             value={replies > 0 ? timeAgo(thread.lastPostAt, { suffix: false }) : "None"}
             label="Last reply"
           />
-        </dl>
+        </div>
         <dl>
           <Fact label="Category">{category.name}</Fact>
           <Fact label="Started">
@@ -108,7 +101,7 @@ function RelatedPanel({ titles }: { titles: readonly string[] }) {
             <li key={title}>
               <Link
                 href={titleToWikiOSRoute(title)}
-                className="text-callout hover:bg-fill-4 focus-visible:outline-tint block truncate rounded-control px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
+                className="text-callout hover:bg-fill-4 focus-visible:outline-tint rounded-control block truncate px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
               >
                 {title}
               </Link>

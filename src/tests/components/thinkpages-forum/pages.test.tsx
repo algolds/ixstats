@@ -34,7 +34,9 @@ jest.mock("~/trpc/react", () => {
     api: {
       wikios: { getMissingPages: { useQuery: () => ({ data: undefined }) } },
       // The persona's hover card loads its profile only when opened.
-      thinkpages: { getAccountProfile: { useQuery: () => ({ data: undefined, isLoading: false }) } },
+      thinkpages: {
+        getAccountProfile: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      },
       useUtils: () => ({
         thinkpagesForum: {
           thread: { invalidate: () => Promise.resolve() },
@@ -350,15 +352,17 @@ describe("category view", () => {
     expect(screen.getByText("<i>Hi</i>")).toBeInTheDocument();
     expect(screen.getByText("Aria Vance")).toBeInTheDocument();
     expect(screen.queryByText("Hidden Player")).toBeNull();
-    expect(within(screen.getByRole("row", { name: /<i>Hi<\/i>/ })).getByText("2")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("row", { name: /<i>Hi<\/i>/ })).getByText("2")
+    ).toBeInTheDocument();
   });
 
-  it("breadcrumbs a sitewide category up to ThinkPages; the title alone names the category (U5)", () => {
+  it("has no trail on a sitewide category, whose only step up is the back link to ThinkPages (U5)", () => {
     set("category", { data: categoryData(false) });
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(crumbs()).toEqual([["ThinkPages", "/thinkpages"]]);
-    // The trail stops above the page; the header keeps a back link to the forum home for when it has scrolled away.
-    expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
+    expect(screen.queryByRole("navigation", { name: "breadcrumb" })).toBeNull();
+    // The header keeps a back link to the forum home, which is all a top-level board has above it.
+    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
     expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
   });
@@ -400,7 +404,9 @@ describe("thread view", () => {
     expect(screen.getByText("Aria Vance")).toBeInTheDocument();
     expect(screen.getByText(/@aria/)).toBeInTheDocument();
     expect(screen.queryByText("Hidden Player")).toBeNull();
-    expect(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" })).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" })
+    ).toBeInTheDocument();
     expect(screen.queryByText("This thread is locked.")).toBeNull();
   });
 
@@ -472,10 +478,17 @@ describe("thread view", () => {
     mutations.editPost = editPost;
     render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
-    expect(screen.getByTestId("canvas-composer")).toHaveAttribute("data-initial", "First '''post'''");
+    expect(screen.getByTestId("canvas-composer")).toHaveAttribute(
+      "data-initial",
+      "First '''post'''"
+    );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
-      expect(editPost).toHaveBeenCalledWith({ postId: "p1", wikitext: STUB_WIKITEXT, editedAt: loaded })
+      expect(editPost).toHaveBeenCalledWith({
+        postId: "p1",
+        wikitext: STUB_WIKITEXT,
+        editedAt: loaded,
+      })
     );
     // Saved and formatted: the editor closes.
     await waitFor(() => expect(screen.queryByTestId("canvas-composer")).toBeNull());
@@ -504,7 +517,11 @@ describe("thread view", () => {
     await waitFor(() =>
       expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t1?page=3#post-p9")
     );
-    expect(reply).toHaveBeenCalledWith({ threadId: "t1", wikitext: STUB_WIKITEXT, personaId: null });
+    expect(reply).toHaveBeenCalledWith({
+      threadId: "t1",
+      wikitext: STUB_WIKITEXT,
+      personaId: null,
+    });
   });
 });
 
@@ -573,7 +590,9 @@ describe("load failures and out-of-range pages", () => {
 describe("new thread", () => {
   it("creates the thread and opens it", async () => {
     set("category", { data: categoryData(true) });
-    const create = jest.fn(() => Promise.resolve({ threadId: "t7", postId: "p7", formatting: "done" }));
+    const create = jest.fn(() =>
+      Promise.resolve({ threadId: "t7", postId: "p7", formatting: "done" })
+    );
     mutations.createThread = create;
     render(<NewThreadForm categoryKey="general" />);
     fireEvent.click(screen.getByRole("button", { name: "Post" }));
@@ -588,7 +607,9 @@ describe("new thread", () => {
 
   it("starts a realm thread in that realm", async () => {
     set("category", { data: categoryData(true, [], HUB) });
-    const create = jest.fn(() => Promise.resolve({ threadId: "t8", postId: "p8", formatting: "done" }));
+    const create = jest.fn(() =>
+      Promise.resolve({ threadId: "t8", postId: "p8", formatting: "done" })
+    );
     mutations.createThread = create;
     render(<NewThreadForm categoryKey="hub" realm="eurth" />);
     expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });

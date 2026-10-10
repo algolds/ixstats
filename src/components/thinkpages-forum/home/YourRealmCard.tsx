@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { skipToken } from "@tanstack/react-query";
 import { Community, NavArrowRight } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
 import { timeAgo } from "~/lib/format/compact";
@@ -38,22 +39,22 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
     <Card content="entity" className="overflow-hidden">
       <Link
         href={MINE_HREF}
-        className="hover:bg-fill-4 focus-visible:outline-tint flex items-center gap-3 px-5 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 pointer-coarse:min-h-11"
+        className="hover:bg-fill-4 focus-visible:outline-tint flex items-center gap-3.5 px-4 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-5 pointer-coarse:min-h-11"
       >
         <span
           aria-hidden
-          className="bg-tint-fill text-tint rounded-control-sm flex size-9 shrink-0 items-center justify-center [&_svg]:size-5"
+          className="bg-tint-fill text-tint rounded-row flex size-10 shrink-0 items-center justify-center [&_svg]:size-5"
         >
           <Community />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="text-headline flex items-baseline gap-2">
+          <span className="text-title-3 flex items-center gap-2">
             <span className="min-w-0 truncate">{name}</span>
-            <span className="text-footnote text-label-secondary font-normal">Your realm</span>
+            <Badge variant="secondary">Your realm</Badge>
           </span>
           {latest && hub.data ? (
-            <span className="text-footnote text-label-secondary flex min-w-0 items-center gap-1">
-              <span className="text-callout text-label min-w-0 truncate">{latest.title}</span>
+            <span className="text-callout text-label-secondary flex min-w-0 items-center gap-1">
+              <span className="text-label min-w-0 truncate">{latest.title}</span>
               <span aria-hidden>·</span>
               <AuthorName
                 authors={hub.data.authors}

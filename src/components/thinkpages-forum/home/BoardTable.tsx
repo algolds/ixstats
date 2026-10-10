@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  Archive,
   ChatBubble,
   Folder,
   Gamepad,
@@ -14,7 +15,6 @@ import {
   ShieldCheck,
   WarningTriangle,
 } from "iconoir-react";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardTitle } from "~/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -22,12 +22,12 @@ import { timeAgo } from "~/lib/format/compact";
 import { categoryHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
 import type { RouterOutputs } from "~/trpc/react";
-import { initialsOf } from "../AuthorMark";
+import { ForumAvatar } from "../ForumAvatar";
 
 type Board = RouterOutputs["thinkpagesForum"]["categories"][number];
 
 /** Name, Threads, Posts, Latest from md up; below md each row is two lines (see `BoardRow`). */
-const COLUMNS = "md:grid-cols-[minmax(0,1fr)_5rem_5rem_15rem]";
+const COLUMNS = "md:grid-cols-[minmax(0,1fr)_5rem_5rem_17rem]";
 
 const BOARD_ICONS: Record<string, typeof Folder> = {
   rules: Page,
@@ -41,39 +41,24 @@ const BOARD_ICONS: Record<string, typeof Folder> = {
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
-/** An empty value: a dash to the eye, "None" to a screen reader. */
-function None({ className }: { className?: string }) {
+/** A count with its unit: beside each other on phones, the figure over its unit from md up. */
+function Count({ value, one, many }: { value: number; one: string; many: string }) {
   return (
-    <span className={className}>
-      <span aria-hidden>–</span>
-      <span className="sr-only">None</span>
+    <span className="flex items-baseline justify-end gap-1 md:flex-col md:items-end md:gap-0.5">
+      <span className="text-headline text-label md:text-title-3">{value}</span>
+      <span className="text-footnote text-label-secondary">{plural(value, one, many)}</span>
     </span>
   );
 }
 
-/** A count, or a dash for none; below md it carries its unit so the stacked counts read on their own. */
-function Count({ value, one, many }: { value: number; one: string; many: string }) {
-  if (value === 0) return <None className="text-label-tertiary" />;
-  return (
-    <>
-      <span>{value}</span>
-      <span className="text-label-secondary md:hidden">{` ${plural(value, one, many)}`}</span>
-    </>
-  );
-}
-
 function LatestCell({ latest }: { latest: Board["latest"] }) {
-  if (!latest) return <None className="text-callout text-label-tertiary" />;
+  if (!latest) return <span className="text-callout text-label-tertiary">No threads yet</span>;
   const author = latest.author?.name ?? "Member";
   return (
-    <span className="flex min-w-0 items-center gap-2">
-      <Avatar className="hidden size-7 md:flex">
-        <AvatarFallback className="text-caption text-label-secondary">
-          {initialsOf(author)}
-        </AvatarFallback>
-      </Avatar>
+    <span className="flex min-w-0 items-center gap-2.5">
+      <ForumAvatar name={author} size="sm" className="hidden md:flex" />
       <span className="min-w-0">
-        <span className="text-callout block truncate">{latest.threadTitle}</span>
+        <span className="text-callout text-label block truncate">{latest.threadTitle}</span>
         <span className="text-footnote text-label-secondary block truncate tabular-nums">
           {`${author} · ${timeAgo(latest.at)}`}
         </span>
@@ -88,27 +73,23 @@ function LatestCell({ latest }: { latest: Board["latest"] }) {
  */
 function BoardRow({ board }: { board: Board }) {
   const Icon = BOARD_ICONS[board.key] ?? Folder;
-  const empty = board.threadCount === 0;
   return (
     <li
       role="row"
       className={cn(
-        "hover:bg-fill-4 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-3 pointer-coarse:min-h-11",
+        "hover:bg-fill-4 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
         COLUMNS
       )}
     >
-      <div role="cell" className="col-start-1 row-start-1 flex min-w-0 items-center gap-3">
+      <div role="cell" className="col-start-1 row-start-1 flex min-w-0 items-center gap-3.5">
         <span
           aria-hidden
-          className={cn(
-            "rounded-control-sm flex size-9 shrink-0 items-center justify-center [&_svg]:size-5",
-            empty ? "bg-fill-3 text-label-secondary" : "bg-tint-fill text-tint"
-          )}
+          className="bg-tint-fill text-tint rounded-row flex size-10 shrink-0 items-center justify-center [&_svg]:size-5"
         >
           <Icon />
         </span>
         <span className="min-w-0">
-          <span className="text-headline flex items-center gap-2">
+          <span className="text-title-3 flex items-center gap-2">
             <Link
               href={categoryHref({ key: board.key })}
               className="focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2"
@@ -118,21 +99,18 @@ function BoardRow({ board }: { board: Board }) {
             {board.visibility === "staff" ? <Badge variant="outline">Staff</Badge> : null}
           </span>
           {board.description ? (
-            <span className="text-footnote text-label-secondary hidden truncate md:block">
+            <span className="text-callout text-label-secondary line-clamp-1 block">
               {board.description}
             </span>
           ) : null}
         </span>
       </div>
-      <div
-        role="cell"
-        className="text-callout col-start-2 row-start-1 text-right tabular-nums md:col-start-2"
-      >
+      <div role="cell" className="col-start-2 row-start-1 text-right tabular-nums md:col-start-2">
         <Count value={board.threadCount} one="thread" many="threads" />
       </div>
       <div
         role="cell"
-        className="text-callout col-start-2 row-start-2 text-right tabular-nums md:col-start-3 md:row-start-1"
+        className="col-start-2 row-start-2 text-right tabular-nums md:col-start-3 md:row-start-1"
       >
         <Count value={board.postCount} one="post" many="posts" />
       </div>
@@ -146,10 +124,7 @@ function BoardRow({ board }: { board: Board }) {
 function BoardRows({ boards }: { boards: readonly Board[] }) {
   return (
     <div role="table" aria-label="Boards">
-      <div
-        role="row"
-        className="text-footnote text-label-secondary border-separator grid grid-cols-[minmax(0,1fr)_5rem_5rem_15rem] items-center gap-x-3 border-b px-5 pb-2 max-md:sr-only"
-      >
+      <div role="row" className="sr-only">
         <span role="columnheader">Board</span>
         <span role="columnheader" className="text-right">
           Threads
@@ -159,7 +134,7 @@ function BoardRows({ boards }: { boards: readonly Board[] }) {
         </span>
         <span role="columnheader">Latest</span>
       </div>
-      <ul role="rowgroup" className="divide-separator divide-y">
+      <ul role="rowgroup" className="divide-separator border-separator divide-y border-t">
         {boards.map((board) => (
           <BoardRow key={board.key} board={board} />
         ))}
@@ -181,8 +156,9 @@ export function BoardTable({ boards, title, collapsible = false }: BoardTablePro
     return (
       <Collapsible asChild>
         <Card content="data" className="overflow-hidden">
-          <h2 className="px-5 py-4">
+          <h2 className="px-4 py-4 sm:px-5">
             <CollapsibleTrigger className="text-headline group focus-visible:outline-tint flex w-full items-center gap-2 text-left leading-none focus-visible:outline-2 pointer-coarse:min-h-11">
+              <Archive aria-hidden className="text-tint size-4 shrink-0" />
               {title}
               <NavArrowDown
                 aria-hidden
@@ -198,8 +174,8 @@ export function BoardTable({ boards, title, collapsible = false }: BoardTablePro
     );
   }
   return (
-    <Card content="data" className="overflow-hidden pb-1">
-      <div className="px-5 pt-5 pb-3">
+    <Card content="data" className="overflow-hidden">
+      <div className="px-4 py-4 sm:px-5">
         <CardTitle icon={<Globe />} role="heading" aria-level={2}>
           {title}
         </CardTitle>

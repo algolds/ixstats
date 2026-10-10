@@ -133,7 +133,8 @@ describe("Forums home: board table", () => {
       "Latest",
     ]);
     const headerRow = screen.getAllByRole("columnheader")[0]!.parentElement!;
-    expect(headerRow).toHaveClass("max-md:sr-only");
+    // Every figure names its unit, so the header row is for assistive technology at every width.
+    expect(headerRow).toHaveClass("sr-only");
     expect(headerRow).not.toHaveClass("hidden");
     const general = screen.getByRole("row", { name: /General/ });
     expect(within(general).getByRole("link", { name: "General" })).toHaveAttribute(
@@ -163,12 +164,29 @@ describe("Forums home: board table", () => {
     expect(within(row).getAllByRole("link")).toHaveLength(1);
   });
 
-  it("shows a dash, read as None, for an empty board's threads, posts and latest", () => {
+  it("says 0 threads, 0 posts and No threads yet for an empty board, never a dash", () => {
     set("categories", { data: [EMPTY_BOARD] });
     render(<ForumHome />);
     const row = screen.getByRole("row", { name: /Rules/ });
-    expect(within(row).getAllByText("–")).toHaveLength(3);
-    expect(within(row).getAllByText("None")).toHaveLength(3);
+    const cells = within(row).getAllByRole("cell");
+    expect(cells[1]).toHaveTextContent("0threads");
+    expect(cells[2]).toHaveTextContent("0posts");
+    expect(within(cells[3]!).getByText("No threads yet")).toBeInTheDocument();
+    expect(within(row).queryByText("–")).toBeNull();
+  });
+
+  it("sets each board as a rich row: a tinted icon tile, a list-size name, its description, and counts with units", () => {
+    set("categories", { data: [board("general")] });
+    render(<ForumHome />);
+    const row = screen.getByRole("row", { name: /General/ });
+    const tile = row.querySelector("span[aria-hidden]")!;
+    expect(tile).toHaveClass("bg-tint-fill", "text-tint");
+    expect(within(row).getByRole("link", { name: "General" }).parentElement).toHaveClass(
+      "text-title-3"
+    );
+    expect(within(row).getByText("general talk")).toHaveClass("text-callout");
+    expect(within(row).getByText("threads")).toBeInTheDocument();
+    expect(within(row).getByText("posts")).toBeInTheDocument();
   });
 
   it("names the persona, not the player, for a persona's latest post", () => {
@@ -382,7 +400,7 @@ describe("Forums home: rail", () => {
     expect(within(trending).getByText("General · 1 reply today")).toBeInTheDocument();
 
     const stats = screen.getByText("Forum statistics").closest('[data-slot="card"]') as HTMLElement;
-    expect(within(stats).getByText("48")).toHaveClass("text-title-2", "text-tint", "tabular-nums");
+    expect(within(stats).getByText("48")).toHaveClass("text-title-1", "text-tint", "tabular-nums");
     expect(within(stats).getByText("1,730")).toBeInTheDocument();
     expect(within(stats).getByText("Members")).toBeInTheDocument();
   });

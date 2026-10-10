@@ -1,10 +1,9 @@
 "use client";
 
 import { Medal, Page } from "iconoir-react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { initialsOf } from "../AuthorMark";
+import { ForumAvatar } from "../ForumAvatar";
 import { RailPanel } from "../shell";
 
 type Category = RouterOutputs["thinkpagesForum"]["category"]["category"];
@@ -19,7 +18,7 @@ export function AboutPanel({ category }: { category: Category }) {
     <RailPanel title="About this board" icon={<Page />}>
       <div className="space-y-3">
         {category.description ? (
-          <p className="text-callout text-label">{category.description}</p>
+          <p className="text-body text-label">{category.description}</p>
         ) : null}
         {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
         <p className="text-footnote text-label-secondary">{rule}</p>
@@ -49,13 +48,8 @@ export function TopPostersPanel({ categoryKey, realm }: TopPostersPanelProps) {
                 key={poster.authorUserId}
                 className="flex items-center gap-3 px-2 py-2 pointer-coarse:min-h-11"
               >
-                <Avatar className="size-7">
-                  {author?.avatarUrl ? <AvatarImage src={author.avatarUrl} alt="" /> : null}
-                  <AvatarFallback className="text-caption text-label-secondary">
-                    {initialsOf(name)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-callout min-w-0 flex-1 truncate">{name}</span>
+                <ForumAvatar name={name} avatarUrl={author?.avatarUrl} size="sm" />
+                <span className="text-body text-label min-w-0 flex-1 truncate">{name}</span>
                 <span className="text-callout text-label-secondary tabular-nums">
                   {`${poster.postCount} ${poster.postCount === 1 ? "post" : "posts"}`}
                 </span>

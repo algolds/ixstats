@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { Link as LinkIcon } from "iconoir-react";
 import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { postHref } from "~/lib/thinkpages-forum/links";
-import { initialsOf } from "../AuthorMark";
+import { ForumAvatar } from "../ForumAvatar";
 
 export type PostRole = "staff" | "officer" | "starter";
 
@@ -53,15 +52,10 @@ export function PostHeader({
   personaUsername,
   hidden = false,
 }: PostHeaderProps) {
-  const title = <span className="text-headline text-label min-w-0 truncate">{name}</span>;
+  const title = <span className="text-title-3 text-label min-w-0 truncate">{name}</span>;
   return (
     <header className="flex items-center gap-3">
-      <Avatar className="size-8 sm:size-10">
-        {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
-        <AvatarFallback className="text-footnote text-label-secondary font-medium">
-          {initialsOf(name)}
-        </AvatarFallback>
-      </Avatar>
+      <ForumAvatar name={name} avatarUrl={avatarUrl} size="md" className="sm:size-10" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {personaUsername ? (

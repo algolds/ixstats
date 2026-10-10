@@ -88,9 +88,13 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
       title={category.name}
       breadcrumbs={
         <>
-          <ForumBreadcrumbs items={forumTrail(category.realm)} />
+          {/* Above a realm's board the trail has somewhere to go; a sitewide board's only step is the back link. */}
+          {category.realm ? <ForumBreadcrumbs items={forumTrail(category.realm)} /> : null}
           {category.description ? <p>{category.description}</p> : null}
-          {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
+          <p className="text-footnote text-label-tertiary mt-1 flex items-center gap-2 tabular-nums">
+            {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
+            {data.total === 1 ? "1 thread" : `${data.total} threads`}
+          </p>
         </>
       }
       back={back}

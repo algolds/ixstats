@@ -102,6 +102,20 @@ describe("ThreadTable rows", () => {
     expect(screen.queryByRole("rowheader", { name: "Pinned" })).toBeNull();
   });
 
+  it("marks a pinned thread with a pin in the app tint, and leads each row with the author's avatar", () => {
+    renderTable([thread("p1", { pinned: true }), thread("t1")]);
+    expect(within(rowOf(/Thread p1/)).getByLabelText("Pinned")).toHaveClass("text-tint");
+    expect(within(rowOf(/Thread t1/)).queryByLabelText("Pinned")).toBeNull();
+    // The avatar is the row's first cell content, ahead of the title.
+    const cell = within(rowOf(/Thread t1/)).getAllByRole("cell")[0]!;
+    expect(cell.firstElementChild).toHaveAttribute("data-slot", "avatar");
+  });
+
+  it("sets the title at the platform's list-title size", () => {
+    renderTable([thread("t1")]);
+    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-title-3");
+  });
+
   it("shows a lock for locked threads, Imported only for imported ones and Hidden only when flagged", () => {
     renderTable([thread("a", { locked: true, xenforoThreadId: 7, hidden: true }), thread("b")]);
     const a = rowOf(/Thread a/);
