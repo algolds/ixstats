@@ -11,6 +11,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { timeAgo } from "~/lib/format/compact";
 import {
   categoryHref,
+  forumHomeHref,
   newThreadHref,
   threadHref,
 } from "~/lib/thinkpages-forum/links";
@@ -109,6 +110,11 @@ export function ThreadList({ categoryKey, page, realm }: ThreadListProps) {
             {category.description ? <p>{category.description}</p> : null}
           </>
         }
+        // The trail scrolls away with the header; the compact bar keeps this way up: the realm's section or the home.
+        back={{
+          href: forumHomeHref(category.realm?.slug),
+          label: category.realm?.name ?? "ThinkPages",
+        }}
         bleed
         actions={
           data.canStart ? (

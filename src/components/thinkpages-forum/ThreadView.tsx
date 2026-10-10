@@ -127,6 +127,8 @@ export function ThreadView({ threadId, page }: ThreadViewProps) {
             ]}
           />
         }
+        // The trail scrolls away with the header; the compact bar keeps this way up (as NewThreadForm does).
+        back={{ href: categoryHref(category), label: category.name }}
         bleed
       />
       {/* A site admin's thread is site admins' to lock, pin, hide, archive or move. */}

@@ -182,6 +182,14 @@ function categoryData(
 const HIDDEN = '[aria-hidden="true"]';
 
 /** The breadcrumb trail's labels and hrefs: the pages above this one, each a link. */
+/** The header's back link: the one link named `name` outside the breadcrumb trail. */
+function backLink(name: string) {
+  const trail = screen.getByRole("navigation", { name: "breadcrumb" });
+  const outside = screen.getAllByRole("link", { name }).filter((link) => !trail.contains(link));
+  expect(outside).toHaveLength(1);
+  return outside[0]!;
+}
+
 function crumbs() {
   const trail = screen.getByRole("navigation", { name: "breadcrumb" });
   return within(trail)
@@ -320,8 +328,8 @@ describe("category view", () => {
     set("category", { data: categoryData(false) });
     render(<ThreadList categoryKey="general" page={1} />);
     expect(crumbs()).toEqual([["ThinkPages", "/thinkpages"]]);
-    // One way home, and the category's name once, as the page title.
-    expect(screen.getAllByRole("link", { name: "ThinkPages" })).toHaveLength(1);
+    // The trail stops above the page; the header keeps a back link to the forum home for when it has scrolled away.
+    expect(backLink("ThinkPages")).toHaveAttribute("href", "/thinkpages");
     expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
   });
@@ -338,6 +346,7 @@ describe("category view", () => {
       ["ThinkPages", "/thinkpages"],
       ["Eurth", "/thinkpages?realm=eurth"],
     ]);
+    expect(backLink("Eurth")).toHaveAttribute("href", "/thinkpages?realm=eurth");
   });
 });
 
@@ -366,7 +375,7 @@ describe("thread view", () => {
       ["General", "/thinkpages/c/general"],
     ]);
     expect(screen.getAllByText("<b>Plain</b> title", { ignore: HIDDEN })).toHaveLength(1);
-    expect(screen.getAllByRole("link", { name: "General" })).toHaveLength(1);
+    expect(backLink("General")).toHaveAttribute("href", "/thinkpages/c/general");
   });
 
   it("breadcrumbs a realm thread through its realm and category", () => {
@@ -377,6 +386,7 @@ describe("thread view", () => {
       ["Eurth", "/thinkpages?realm=eurth"],
       ["Hub", "/thinkpages/r/eurth/hub"],
     ]);
+    expect(backLink("Hub")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
   });
 
   it("hides the reply composer and edit when locked", () => {

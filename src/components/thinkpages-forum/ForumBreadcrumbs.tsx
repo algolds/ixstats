@@ -25,7 +25,8 @@ export function forumTrail(realm: { slug: string; name: string } | null | undefi
 
 /**
  * Where a forum page sits: the pages above it (ThinkPages, realm, category), each a link. The page itself is the
- * header's title, so the trail does not repeat it (U5); the header carries no back link beside it either.
+ * header's title, so the trail does not repeat it (U5). The header's back link stays: the trail scrolls away with
+ * the expanded header, the compact bar's back link does not.
  */
 export function ForumBreadcrumbs({ items }: { items: readonly ForumCrumb[] }) {
   return (
