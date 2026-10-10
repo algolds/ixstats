@@ -25,9 +25,40 @@ describe("stripStyleDeclarations", () => {
     expect(stripStyleDeclarations(style)).toBe(style);
   });
 
-  it("drops a declaration whose property name uses a CSS escape", () => {
-    expect(stripStyleDeclarations("p\\6fsition:fixed;color:red")).toBe("color:red");
+  it("drops the whole style when a property name uses a CSS escape", () => {
+    expect(stripStyleDeclarations("p\\6fsition:fixed;color:red")).toBe("");
     expect(stripStyleDeclarations("\\70osition: fixed")).toBe("");
+  });
+
+  describe("styles the declaration tokenizer cannot read reliably are dropped whole", () => {
+    it.each([
+      ["a backslash outside quotes ending a declaration early", 'a:\\";position:\\66ixed;inset:0;z-index:9999'],
+      ["an escaped paren", "a:\\(;position:\\66ixed;inset:0"],
+      ["a string a newline ends", 'a:"x\n;position:\\66ixed;top:0'],
+      ["a string a newline ends, plain values", 'a:"x\n;position:fixed;top:0'],
+      ["a carriage return in a string", 'a:"x\r;position:fixed'],
+      ["a form feed in a string", "a:'x\f;position:fixed"],
+      ["an escaped value (short form)", "position:\\66ixed;color:red"],
+      ["an escaped value (long form)", "position:\\000066ixed;color:red"],
+      ["an escaped value in a kept property", "color:red;display:\\66ixed"],
+      ["a backslash inside a string", 'font-family:"a\\"b";position:fixed'],
+      ["an unterminated string", 'font-family:"abc;position:fixed'],
+      ["an unterminated single-quoted string", "font-family:'abc;position:fixed"],
+      ["an unclosed paren", "background:url(a;position:fixed"],
+      ["a stray closing paren", "a:);position:fixed;color:red"],
+    ])("%s", (_name, input) => {
+      expect(stripStyleDeclarations(input)).toBe("");
+    });
+
+    it("does not let a comment marker inside a string hide a declaration", () => {
+      expect(stripStyleDeclarations('a:"/*";position:fixed;b:"*/"')).toBe('a:"/*";b:"*/"');
+    });
+
+    it("keeps balanced quotes, parens, nested functions and comments", () => {
+      const style = "font-family:'A;B', \"C\";background:url(\"a;b.png\");width:calc(10px + (2px * 3))";
+      expect(stripStyleDeclarations(style)).toBe(style);
+      expect(stripStyleDeclarations("color:red;/* \" ( */width:1px")).toBe("color:red;width:1px");
+    });
   });
 
   it("drops a declaration without a property or a colon", () => {
@@ -110,6 +141,25 @@ describe("stripPositioning", () => {
     expect(stripPositioning('<p style="color:red" class="a&#102;ixed b">x</p>')).toBe(
       '<p style="color:red" class="b">x</p>'
     );
+  });
+
+  it.each([
+    'a:\\&quot;;position:\\66ixed;inset:0;z-index:9999',
+    "a:\\(;position:\\66ixed;inset:0",
+    "a:&quot;x\n;position:\\66ixed;top:0",
+    "position:\\66ixed;inset:0",
+    "position:\\000066ixed;inset:0",
+    "p\\6fsition:fixed",
+  ])("removes the style attribute that holds %j", (style) => {
+    expect(stripPositioning(`<div class="keep" style="${style}">Please sign in</div>`)).toBe(
+      '<div class="keep">Please sign in</div>'
+    );
+  });
+
+  it("keeps a MediaWiki infobox style, with entities and url()", () => {
+    const html =
+      '<table class="infobox" style="width:22em;background:#f8f9fa url(&quot;/img/bg.png&quot;);font-family:&quot;Linux Libertine&quot;, serif;border:1px solid #a2a9b1"><tr><td style="padding:0.2em 0.4em;line-height:1.2em">x</td></tr></table>';
+    expect(stripPositioning(html)).toBe(html);
   });
 
   it("leaves text and escaped markup alone", () => {

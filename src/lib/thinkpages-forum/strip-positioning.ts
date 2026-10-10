@@ -33,31 +33,45 @@ const decodeEntities = (value: string): string =>
 const encodeEntities = (value: string): string =>
   value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** Removes `/* ... *\/` comments (an unterminated one runs to the end), which could hide a property from a reader. */
-function withoutComments(css: string): string {
-  return css.replace(/\/\*[\s\S]*?(?:\*\/|$)/g, "");
-}
+const CSS_NEWLINE = /[\n\r\f]/;
 
-/** Splits a declaration list at top-level `;`, so a `;` in a string or `url()` does not split a value. */
-function splitDeclarations(css: string): string[] {
+/**
+ * Splits a declaration list at top-level `;`, so a `;` in a string or `url()` does not split a value, and removes
+ * comments (an unterminated one runs to the end). This is deliberately not a CSS parser: it returns null, meaning
+ * "do not guess where the declarations end", for any text a browser could read differently from this scan: a
+ * backslash anywhere (an escape can turn a quote, a paren or a `;` into plain text, or spell `position`), a string
+ * a newline ends (a browser ends it there, this scan would keep it open), or a quote or paren left unbalanced.
+ */
+function splitDeclarations(css: string): string[] | null {
+  if (css.includes("\\")) return null;
   const out: string[] = [];
+  let current = "";
   let quote = "";
   let depth = 0;
-  let start = 0;
   for (let i = 0; i < css.length; i++) {
     const ch = css.charAt(i);
     if (quote) {
-      if (ch === "\\") i++;
-      else if (ch === quote) quote = "";
+      if (CSS_NEWLINE.test(ch)) return null;
+      if (ch === quote) quote = "";
+    } else if (css.startsWith("/*", i)) {
+      const end = css.indexOf("*/", i + 2);
+      if (end < 0) break;
+      i = end + 1;
+      continue;
     } else if (ch === '"' || ch === "'") quote = ch;
     else if (ch === "(") depth++;
-    else if (ch === ")") depth = Math.max(0, depth - 1);
-    else if (ch === ";" && depth === 0) {
-      out.push(css.slice(start, i));
-      start = i + 1;
+    else if (ch === ")") {
+      if (depth === 0) return null;
+      depth--;
+    } else if (ch === ";" && depth === 0) {
+      out.push(current);
+      current = "";
+      continue;
     }
+    current += ch;
   }
-  out.push(css.slice(start));
+  if (quote || depth !== 0) return null;
+  out.push(current);
   return out;
 }
 
@@ -65,17 +79,19 @@ function keepDeclaration(declaration: string): boolean {
   const colon = declaration.indexOf(":");
   if (colon < 1) return false;
   const property = declaration.slice(0, colon).trim().toLowerCase();
-  // A CSS escape can spell any property name (`p\6fsition`): such a name is refused outright.
-  if (property.includes("\\") || OVERLAY_PROPERTY.test(property)) return false;
+  if (OVERLAY_PROPERTY.test(property)) return false;
   return !OVERLAY_VALUE.test(declaration.slice(colon + 1));
 }
 
 /**
  * A style attribute's text (entities already decoded) without its overlay declarations. Kept declarations are
- * returned as written (trimmed, joined by `;`); a style with nothing to remove is returned unchanged.
+ * returned as written (trimmed, joined by `;`); a style with nothing to remove is returned unchanged. A style whose
+ * declaration boundaries cannot be told reliably (see splitDeclarations) is dropped whole: "".
  */
 export function stripStyleDeclarations(css: string): string {
-  const declarations = splitDeclarations(withoutComments(css)).filter((d) => d.trim() !== "");
+  const split = splitDeclarations(css);
+  if (split === null) return "";
+  const declarations = split.filter((d) => d.trim() !== "");
   const kept = declarations.filter(keepDeclaration);
   if (kept.length === declarations.length && !css.includes("/*")) return css;
   return kept.map((d) => d.trim()).join(";");
