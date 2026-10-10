@@ -976,6 +976,14 @@ describe("log post links", () => {
     );
   });
 
+  it("names a continued board message in words, not as the stored action", () => {
+    set("context", { data: REALM_MOD });
+    set("log", { data: { rows: [entry({ action: "post.continue" })], total: 1, authors } });
+    renderConsole({ tab: "log" });
+    expect(screen.getByText("Continued post in a thread")).toBeInTheDocument();
+    expect(screen.queryByText("post.continue")).toBeNull();
+  });
+
   it("links a report on a post to the post's permalink", () => {
     set("context", { data: REALM_MOD });
     const detail = { targetType: "post", targetId: "p7" };

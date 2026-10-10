@@ -23,6 +23,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   "post.hide": "Hid post",
   "post.unhide": "Unhid post",
   "post.edit": "Edited post",
+  "post.continue": "Continued post in a thread",
   "report.resolve": "Resolved report",
   "report.dismiss": "Dismissed report",
   "warning.issue": "Warned member",
@@ -111,7 +112,10 @@ function LogRow({
       when={timeAgo(entry.createdAt)}
       actions={
         link ? (
-          <Link href={link.href} className="text-footnote text-tint-ink hover:underline pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center">
+          <Link
+            href={link.href}
+            className="text-footnote text-tint-ink hover:underline pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center"
+          >
             {link.label}
           </Link>
         ) : null
