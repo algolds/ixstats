@@ -4,10 +4,6 @@
  * credits while it was off. REFUND stays allowed: it returns credits the user already paid.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
-
 import { earnCreditsTx, LedgerError } from "~/lib/vault/vault-ledger";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import type { VaultTransactionType } from "@prisma/client";

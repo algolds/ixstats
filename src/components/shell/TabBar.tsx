@@ -30,7 +30,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { SourceList } from "./SourceList";
 import {
   getActiveSectionId,
-  getAppForPath,
+  getVisibleAppForPath,
   getTintForPath,
   splitTabBarApps,
   type AppDefinition,
@@ -95,7 +95,7 @@ export function TabBar({
 }: TabBarProps) {
   const [moreOpen, setMoreOpen] = React.useState(false);
   const { primary } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
-  const current = getAppForPath(pathname);
+  const current = getVisibleAppForPath(pathname, apps);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
   const tint = getTintForPath(current, activeSectionId);
   const currentIsPrimary = primary.some((app) => app.id === current?.id);

@@ -42,8 +42,8 @@ import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
   AwardHistoryItem,
+  IdentityForumActivity,
   IdentityForumGateway,
-  IdentityForumMember,
   IdentityHistoryPage,
   PassportCard,
   PassportCardNation,
@@ -115,35 +115,6 @@ async function loadWikiFeed(identity: ResolvedIdentity, visibility: PassportVisi
 
 type WikiInfo = Awaited<ReturnType<typeof loadWikiInfo>>;
 
-/**
- * Refresh the signed-in user's own linked forum name from XenForo. Called only from their own
- * `ixnayid.getStatus`, never from a public read. Never throws: a forum or write failure is ignored.
- *
- * Wiki identity is deliberately NOT synced here: only a verified `WikiAccountLink`
- * (identity.wiki-links.ts) may set the legacy `User.wikiUsername` / `wikiUserId` columns.
- */
-export async function syncOwnForumAccount(
-  user: { id: string; forumUserId: number | null; forumUsername: string | null },
-  forum: Pick<IdentityForumGateway, "getMember">
-): Promise<void> {
-  if (!user.forumUserId) return;
-  try {
-    const member = await forum.getMember(user.forumUserId);
-    if (!member) return;
-    if (member.user_id === user.forumUserId && member.username === user.forumUsername) return;
-    await db.user.update({
-      where: { id: user.id },
-      data: {
-        forumUserId: member.user_id,
-        forumUsername: member.username,
-        lastForumSync: new Date(),
-      },
-    });
-  } catch {
-    // Best effort: the stored name stays as it was.
-  }
-}
-
 type LoreStats = Awaited<ReturnType<typeof loadLoreStats>>;
 type ClerkProfile = Awaited<ReturnType<typeof loadClerkProfile>>;
 
@@ -164,14 +135,10 @@ function toLorewards(stats: LoreStats, rank: number | null): PassportLorewards |
   };
 }
 
-function toForumStats(member: IdentityForumMember | null): PassportForumStats | null {
-  if (!member) return null;
-  return {
-    userTitle: member.user_title ?? null,
-    messageCount: member.message_count ?? 0,
-    reactionScore: member.reaction_score ?? 0,
-    trophyPoints: member.trophy_points ?? 0,
-  };
+/** Counters for a holder with forum content; null without any (or when they could not be read). */
+function toForumStats(activity: IdentityForumActivity | null): PassportForumStats | null {
+  if (!activity || activity.posts + activity.threads === 0) return null;
+  return { messageCount: activity.posts, threadCount: activity.threads };
 }
 
 function passportAccount(
@@ -214,15 +181,15 @@ const HIDDEN_WIKI = {
   awardHistory: [] as AwardHistoryItem[],
 };
 
+/** The old forum account (the kept `forumUserId` / `forumUsername` columns, or an imported name) and counters. */
 function passportForum(
   identity: ResolvedIdentity,
-  member: IdentityForumMember | null,
-  /** Counters; null when hidden or when the forum member could not be read. */
+  /** Counters; null when hidden, empty or unreadable. */
   stats: PassportForumStats | null
 ) {
   return {
-    linked: Boolean(member || identity.forumUserId),
-    username: member?.username ?? identity.forumUsername,
+    linked: Boolean(identity.forumUserId),
+    username: identity.forumUsername,
     stats,
   };
 }
@@ -235,7 +202,7 @@ function passportForum(
 export async function getPassport(query: IdentityQuery, forum: IdentityForumGateway) {
   const identity = await resolveIdentity(query.handle, query.viewerClerkId, forum);
   if (!identity) return null;
-  const { user, wikiName, forumUserId } = identity;
+  const { user, wikiName } = identity;
   const [settings, { hideWiki }] = await Promise.all([
     loadPassportSettings(user?.id),
     loadLinkPrivacy(identity),
@@ -249,7 +216,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     verifiedWikiName,
     loreStats,
     awards,
-    member,
+    forumActivity,
     persona,
     clerk,
     nations,
@@ -262,7 +229,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     loadVerifiedWikiName(user?.id),
     showLore ? loadLoreStats(wikiName) : null,
     showLore ? loadLoreAwards(wikiName) : [],
-    forumUserId ? forum.getMember(forumUserId).catch(() => null) : null,
+    shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
     loadClerkProfile(identity),
     resolveIdentityNations(identity),
@@ -278,7 +245,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     user ? passportHandleOf(user, verifiedWikiName) : identity.handle,
   ]);
 
-  const forumStats = toForumStats(member);
+  const forumStats = toForumStats(forumActivity);
   // Loaders above already skip most hidden sections; the redaction is the single enforcement point.
   const sections = redactPassportSections(
     {
@@ -309,7 +276,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     wiki: hideWiki
       ? { ...HIDDEN_WIKI, username: null }
       : passportWiki(identity, wikiInfo, verifiedWikiName, sections),
-    forum: passportForum(identity, member, sections.forumStats),
+    forum: passportForum(identity, sections.forumStats),
     /** Credits and collection; null when the owner hides them. */
     vault: sections.vault,
     showcase: {

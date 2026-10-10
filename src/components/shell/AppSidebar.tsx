@@ -30,7 +30,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
-  getAppForPath,
+  getVisibleAppForPath,
   getTintForPath,
   type AppDefinition,
   type NavAction,
@@ -294,7 +294,7 @@ export function AppSidebar({
   onAction,
   className,
 }: AppSidebarProps) {
-  const current = getAppForPath(pathname);
+  const current = getVisibleAppForPath(pathname, apps);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
   const tint = getTintForPath(current, activeSectionId);
   const isCollapsed = collapsed ?? false;

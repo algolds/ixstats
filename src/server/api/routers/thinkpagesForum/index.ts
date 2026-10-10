@@ -2,7 +2,8 @@
  * ThinkPages Forum (docs/superpowers/specs/2026-10-07-forum-concept-b-thinkpages-forum-design.md, phases 1-4).
  * Thin: validates, maps the signed-in user to the module's viewer (with what they moderate), calls
  * ~/server/modules/thinkpages-forum, maps ForumError 1:1 to TRPCError. Author display data goes through authorsOf,
- * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` is the XenForo bridge until phase 4b.
+ * so no raw user row leaves here. Named `thinkpagesForum` because `api.forum` was the XenForo bridge (retired in
+ * phase 4b).
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";

@@ -7,7 +7,6 @@
 
 import { Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
-import { syncUserToForum } from "~/server/modules/forum";
 import {
   checkDailyCap as ledgerCheckDailyCap,
   earnCredits as ledgerEarnCredits,
@@ -77,7 +76,6 @@ export async function earnCreditsOnce(
       const { newBalance } = await ledgerEarnCreditsTx(tx, input);
       return { newBalance, alreadyApplied: false };
     });
-    if (!r.alreadyApplied) syncUserToForum(input.userId).catch(() => {});
     return { success: true, alreadyApplied: r.alreadyApplied, newBalance: r.newBalance };
   } catch (error) {
     const duplicate =

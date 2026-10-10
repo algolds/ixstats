@@ -49,8 +49,8 @@ describe("SourceList", () => {
   it("opens remembered apps and toggles others", () => {
     const { nav, onToggle } = setup("/vault", { expanded: ["wiki"] });
     expect(within(nav).getByRole("link", { name: "Recent changes" })).toBeInTheDocument();
-    fireEvent.click(within(nav).getByRole("button", { name: "Expand Forum" }));
-    expect(onToggle).toHaveBeenCalledWith("forum");
+    fireEvent.click(within(nav).getByRole("button", { name: "Expand Help" }));
+    expect(onToggle).toHaveBeenCalledWith("help");
     expect(within(nav).queryByRole("button", { name: /Vault$/ })).toBeNull();
   });
 
@@ -219,7 +219,7 @@ describe("SourceList", () => {
 
   it("keeps a collapsed app's section list mounted but hidden", () => {
     const { nav } = setup("/vault");
-    const expand = within(nav).getByRole("button", { name: "Expand Forum" });
+    const expand = within(nav).getByRole("button", { name: "Expand Help" });
     const list = document.getElementById(expand.getAttribute("aria-controls")!);
     expect(list).not.toBeNull();
     expect(list).toHaveAttribute("hidden");

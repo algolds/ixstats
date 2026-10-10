@@ -87,15 +87,9 @@ const owner = {
   countryId: null,
 };
 
-const member = {
-  user_id: 9,
-  username: "alex",
-  user_title: "Senator",
-  message_count: 120,
-  reaction_score: 44,
-  trophy_points: 12,
-};
-const forum = { getMember: jest.fn(), lookupUser: jest.fn() };
+/** Native forum activity (phase 4b): own visible posts and threads. */
+const activity = { posts: 120, threads: 7 };
+const forum = { getActivity: jest.fn(), lookupUser: jest.fn() };
 
 const LORE_STATS = {
   totalScore: 900,
@@ -158,7 +152,7 @@ function asViewer(viewerClerkId: string | null) {
 beforeEach(() => {
   jest.clearAllMocks();
   mocked.passportPreference.findUnique.mockResolvedValue(null);
-  forum.getMember.mockResolvedValue(member);
+  forum.getActivity.mockResolvedValue(activity);
   (loadLoreStats as jest.Mock).mockResolvedValue(LORE_STATS);
   (loadLoreAwards as jest.Mock).mockResolvedValue([AWARD]);
   (resolvePassportVault as jest.Mock).mockResolvedValue(VAULT);
@@ -188,7 +182,7 @@ describe("redactPassportSections", () => {
   const sections: PassportSections = {
     lorewards: { ...LORE_STATS, rank: 4 },
     awardHistory: [{ id: "1", date: "d", type: "daily", role: "winner", page: null, score: 1 }],
-    forumStats: { userTitle: "Senator", messageCount: 1, reactionScore: 2, trophyPoints: 3 },
+    forumStats: { messageCount: 1, threadCount: 2 },
     vault: VAULT,
     achievements: SHOWCASE,
   };
@@ -210,7 +204,10 @@ describe("getPassport enforces privacy server-side", () => {
     expect(passport?.privacy).toEqual(DEFAULT_PASSPORT_VISIBILITY);
     expect(passport?.wiki.lorewards?.totalScore).toBe(900);
     expect(passport?.wiki.awardHistory).toHaveLength(1);
-    expect(passport?.forum.stats?.messageCount).toBe(120);
+    expect(passport?.forum.stats).toEqual({ messageCount: 120, threadCount: 7 });
+    expect(forum.getActivity).toHaveBeenCalledWith(owner.id);
+    // The old forum account is read from the kept columns only.
+    expect(passport?.forum).toMatchObject({ linked: true, username: "alex" });
     expect(passport?.vault?.credits).toBe(5150);
     expect(passport?.showcase.achievements).toEqual(SHOWCASE);
   });
@@ -228,7 +225,6 @@ describe("getPassport enforces privacy server-side", () => {
     const json = JSON.stringify(passport);
     expect(json).not.toContain("5150");
     expect(json).not.toContain("Imperial Senate");
-    expect(json).not.toContain("Senator");
     // Hidden sections are not even loaded.
     expect(resolvePassportVault).not.toHaveBeenCalled();
     expect(loadLoreStats).not.toHaveBeenCalled();
@@ -245,7 +241,6 @@ describe("getPassport enforces privacy server-side", () => {
   });
 
   it("never writes to the database (a public read)", async () => {
-    forum.getMember.mockResolvedValue({ ...member, user_id: 10, username: "alex_renamed" });
     await getPassport(asViewer("someone_else"), forum);
     expect((db as unknown as { user: { update: jest.Mock } }).user.update).not.toHaveBeenCalled();
   });

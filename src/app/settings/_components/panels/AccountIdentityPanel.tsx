@@ -28,7 +28,7 @@ import { useUserCountry } from "~/hooks/useUserCountry";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
 import { WikiAccountVerifyRow } from "~/components/settings/WikiAccountVerifyRow";
-import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
+import { oldForumAccountText } from "~/components/settings/OldForumAccount";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -53,8 +53,6 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   const [showLinkedAccounts, setShowLinkedAccounts] = useState(false);
   const [copiedHandle, setCopiedHandle] = useState(false);
 
-  // Forum link state
-  const [showForumInput, setShowForumInput] = useState(false);
   const [handleDraft, setHandleDraft] = useState("");
 
   // Mutations
@@ -66,14 +64,6 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
       void utils.ixnayid.getStatus.invalidate();
     },
     onError: (err) => notify.error(err.message || "Failed to change handle"),
-  });
-
-  const unlinkForum = api.ixnayid.unlinkForum.useMutation({
-    onSuccess: () => {
-      notify.success("Forum unlinked");
-      void utils.ixnayid.getStatus.invalidate();
-    },
-    onError: (err) => notify.error(err.message || "Failed to unlink Forum"),
   });
 
   const unlinkDiscord = api.ixnayid.unlinkDiscord.useMutation({
@@ -328,8 +318,8 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           label="Linked accounts"
           description={
             status
-              ? `${linkedServicesCount} of 3 connected (Forum, wikis, Discord)`
-              : "Connect your forum, wiki and Discord accounts"
+              ? `${linkedServicesCount} of 3 connected (old forum, wikis, Discord)`
+              : "Connect your wiki and Discord accounts"
           }
           icon={LinkIcon}
           glyphClass="bg-indigo/15 text-indigo"
@@ -355,50 +345,13 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         {/* Expanded linked accounts */}
         {showLinkedAccounts && (
           <div className="divide-separator bg-surface-secondary border-separator divide-y border-t">
-            {/* Forum */}
+            {/* Old forum: read-only since phase 4b (staff attribute imported posts) */}
             <SettingsRow
-              label="Community forum"
-              description={
-                status?.forum.linked
-                  ? `Connected as @${status.forum.username}`
-                  : "Connect your XenForo account to sync forum activity"
-              }
+              label="Old forum"
+              description={oldForumAccountText(status?.forum ?? { linked: false, username: null })}
               icon={MessageSquare}
-              glyphClass="bg-orange/15 text-orange"
-            >
-              {status?.forum.linked ? (
-                <div className="flex items-center gap-2">
-                  <Badge variant="success">Connected</Badge>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => unlinkForum.mutate()}
-                    disabled={unlinkForum.isPending}
-                  >
-                    {unlinkForum.isPending ? "Unlinking..." : "Unlink"}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  aria-expanded={showForumInput}
-                  onClick={() => setShowForumInput((prev) => !prev)}
-                >
-                  {showForumInput ? "Cancel" : "Connect"}
-                </Button>
-              )}
-            </SettingsRow>
-
-            {showForumInput && !status?.forum.linked && (
-              <div className="space-y-3 p-4">
-                {/* A code on the forum profile proves the account (WK-1) */}
-                <ForumAccountVerify onLinked={() => setShowForumInput(false)} />
-              </div>
-            )}
+              glyphClass="bg-fill-3 text-label-secondary"
+            />
 
             {/* Wiki accounts (verified by user-page token) */}
             <div className="flex items-start gap-3 p-4">

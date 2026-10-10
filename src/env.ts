@@ -41,11 +41,6 @@ export const env = createEnv({
     ENABLE_COMPRESSION: z.string().optional().default("true"),
     // NationStates verification secret (required for NS nation verification)
     NS_VERIFICATION_SECRET: z.string().optional(),
-    // XenForo Forum API Configuration
-    XENFORO_API_KEY: z.string().optional(),
-    XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
-    // HMAC key for forum account verification codes (falls back to CRON_SECRET when unset)
-    FORUM_VERIFICATION_SECRET: z.string().optional(),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -218,10 +213,6 @@ export const env = createEnv({
     ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
     // NationStates
     NS_VERIFICATION_SECRET: process.env.NS_VERIFICATION_SECRET,
-    // XenForo Forum
-    XENFORO_API_KEY: process.env.XENFORO_API_KEY,
-    XENFORO_API_URL: process.env.XENFORO_API_URL,
-    FORUM_VERIFICATION_SECRET: process.env.FORUM_VERIFICATION_SECRET,
     NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,

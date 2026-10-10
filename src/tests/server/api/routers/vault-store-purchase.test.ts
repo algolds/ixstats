@@ -15,9 +15,6 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
 jest.mock("~/lib/vault/vault-perks", () => ({
   clearUserPerksCache: jest.fn(),
 }));
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"), // the tRPC context needs the real Cache class
   globalCache: { delete: jest.fn().mockResolvedValue(undefined) },

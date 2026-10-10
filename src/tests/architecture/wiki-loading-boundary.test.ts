@@ -10,10 +10,10 @@
  * `/r/[realm]/[username]` have no `loading.tsx` above them. `/r`'s loading UI sits in the realm's
  * `(region)` group instead, below the legacy path.
  *
- * The legacy forum redirects need the real 307 too (ThinkPages forum phase 4): every `/forum/*` page awaits the
- * legacy switch and calls `redirect()` before rendering, so the `(forum)` group has no `loading.tsx` at all. With
- * one, a switched-on `/forum/thread/<id>` answered 200 with a streamed meta-refresh instead of the 307 (seen on
- * the clone). A bridge page that needs a fallback puts its `<Suspense>` inside its `*Client.tsx`, below the gate.
+ * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page of the retired
+ * XenForo bridge calls `permanentRedirect()` before rendering anything, so the `(forum)` group has no `loading.tsx`
+ * and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
+ * instead of the redirect (seen on the clone in phase 4).
  *
  * The ThinkPages redirects need the real 307 and 308 too (phase 5): the forum post permalink resolver, the feed's
  * old pages and the realm redirect. `/thinkpages` has no `loading.tsx`; the forum's category, thread and moderation
@@ -109,14 +109,14 @@ describe("no loading.tsx above the legacy forum redirects", () => {
       dirs.push(path.dirname(file));
       if (PAGE_FILE.test(path.basename(file))) pages.push(file);
     });
-    expect(pages.length).toBeGreaterThanOrEqual(8); // the walk found the gated bridge pages
+    expect(pages.length).toBeGreaterThanOrEqual(8); // the walk found the redirect pages
     const offenders = [...new Set([FORUM_GROUP, ...dirs])].filter(hasLoading);
     expect(offenders.map((dir) => path.relative(process.cwd(), dir))).toEqual([]);
   });
 
-  it("the forum layouts add no Suspense boundary around the gated pages", () => {
+  it("no layout wraps the redirects (nothing in the group renders)", () => {
     for (const layout of ["(forum)/layout.tsx", "(forum)/forum/layout.tsx"]) {
-      expect(fs.readFileSync(path.join(APP, layout), "utf8")).not.toMatch(/Suspense/);
+      expect(fs.existsSync(path.join(APP, layout))).toBe(false);
     }
   });
 });

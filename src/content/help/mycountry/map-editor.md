@@ -63,6 +63,6 @@ The **Wiki** tab scans your features for matching IxWiki pages, lets you link th
 
 ## Common questions
 
-**My border is wrong. Can I fix it?** Not yourself. Border changes are made by map admins; ask on the [Forum](/forum) or a realm board.
+**My border is wrong. Can I fix it?** Not yourself. Border changes are made by map admins; ask on the [Forum](/thinkpages) or a realm board.
 
 **Why can't I see Edit Map?** You need to be signed in and own a nation on the map you're viewing.

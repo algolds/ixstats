@@ -58,6 +58,6 @@ The image tab resolves Commons thumbnails via `api.commons.getImageInfoByTitles`
 |---------|-----------------|-----------|
 | Wiki pages | `pageTitle` as-is, slug `/wiki/<slug>` | `wikios.stashPage` / `unstashPage` |
 | Media-repository images | `pageTitle` prefixed `commons:` | `wikios.stashPage` (re-resolved via `commons.getImageInfoByTitles`) |
-| Forum threads | `pageTitle` prefixed `forum:thread:`, `contentType` = `forum_thread` | `forum.stashThread` / `unstashThread` / `isThreadStashed` / `getStashedThreads` (`src/server/api/routers/forum/stash.ts`) |
+| Forum threads | `pageTitle` prefixed `thinkpages:thread:` (legacy bridge items: `forum:thread:`, kept and redirected), `contentType` = `forum_thread` | `thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (`src/server/modules/thinkpages-forum/stash.ts`) |
 
 All three content types share the same underlying `Stash` / `StashItem` tables; the `/stashes` page disambiguates them by `pageTitle` prefix at render time.

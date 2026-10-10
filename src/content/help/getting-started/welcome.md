@@ -35,7 +35,7 @@ The idea is the same: make a country, give it character, tell its story. The dif
 | [Explore](/countries) | Browse and compare every nation |
 | [MyCountry](/mycountry) | Run your nation |
 | [Maps](/maps) | The interactive world map |
-| [Forum](/forum) | Community discussion |
+| [Forum](/thinkpages) | Community discussion |
 | [Wiki](/wiki) | Read and edit lore |
 | [Vault](/vault) | IxCredits, cards and achievements |
 | [Help](/help) | These guides |
@@ -45,5 +45,5 @@ More on menus and shortcuts: [Finding Your Way Around](/help/getting-started/nav
 ## Getting help
 
 - Search this [Help Center](/help) from the box at the top.
-- Ask other players on the [Forum](/forum) or in a [ThinkTank](/thinktanks).
+- Ask other players on the [Forum](/thinkpages) or in a [ThinkTank](/thinktanks).
 - See what changed recently in the [changelog](/changelog).

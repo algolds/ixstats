@@ -3,8 +3,8 @@
 //
 // Plan 416 item 6: public WikiOS endpoints must not hand out internals. The deleted-pages list is for
 // those who may browse deleted pages; the audit log names actors by name, never by internal user id;
-// `downloadFile` fetches only allowlisted hosts and at most 10 MB; the forum thread preview is
-// rate-limited and shows only threads XenForo reports as visible.
+// `downloadFile` fetches only allowlisted hosts and at most 10 MB; the old-forum thread preview is
+// rate-limited and shows only imported threads anyone may read (phase 4b: native, no XenForo call).
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
@@ -48,10 +48,9 @@ jest.mock("~/lib/wiki-os/services/media-download", () => ({
   __esModule: true,
   downloadMedia: jest.fn(),
 }));
-jest.mock("~/server/modules/forum", () => ({
+jest.mock("~/server/modules/thinkpages-forum", () => ({
   __esModule: true,
-  getXfApiKey: jest.fn(() => "xf-test-key"),
-  getXfApiUrl: jest.fn(() => "https://forum.test/api"),
+  publicThreadByXenforoId: jest.fn(),
 }));
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
@@ -63,7 +62,7 @@ import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { MediaAssetService } from "~/lib/wiki-os/core";
 import { getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
-import { getXfApiKey } from "~/server/modules/forum";
+import { publicThreadByXenforoId } from "~/server/modules/thinkpages-forum";
 import { rateLimiter } from "~/lib/cache";
 
 const { tables } = fakeWikiDb;
@@ -229,89 +228,56 @@ describe("downloadFile", () => {
 });
 
 describe("getForumThreadPreview", () => {
-  const thread = (overrides: Record<string, unknown> = {}) => ({
-    thread_id: 42,
+  const AT = new Date("2026-10-01T00:00:00Z");
+  const native = {
+    id: "t_native",
     title: "Senate agenda",
-    username: "Marcus",
-    post_date: 1_700_000_000,
-    reply_count: 7,
-    view_count: 99,
-    discussion_state: "visible",
-    Forum: { title: "Senate" },
-    first_post: { message: "[b]Agenda[/b]\nfor [url=x]today[/url]" },
-    ...overrides,
-  });
+    author: "Marcus",
+    categoryName: "Senate",
+    replyCount: 7,
+    createdAt: AT,
+    lastPostAt: AT,
+    href: "/thinkpages/t/t_native",
+    excerpt: "Agenda for today",
+  };
   const realFetch = globalThis.fetch;
   const fetchMock = jest.fn();
-
-  const answer = (body: object, ok = true) =>
-    fetchMock.mockResolvedValue({ ok, json: async () => body });
 
   beforeEach(() => {
     fetchMock.mockReset();
     globalThis.fetch = fetchMock as never;
+    jest.mocked(publicThreadByXenforoId).mockReset().mockResolvedValue(native);
   });
   afterEach(() => {
     globalThis.fetch = realFetch;
     jest.restoreAllMocks();
-    jest.mocked(getXfApiKey).mockReturnValue("xf-test-key");
   });
 
-  it("previews a visible thread for an anonymous reader, asking XenForo without a user header", async () => {
-    answer({ thread: thread() });
-
+  it("previews the imported thread for an anonymous reader, without asking XenForo", async () => {
     await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toEqual({
       threadId: 42,
       title: "Senate agenda",
       author: "Marcus",
-      postDate: 1_700_000_000,
       replyCount: 7,
-      viewCount: 99,
-      forumTitle: "Senate",
       forumName: "Senate",
       excerpt: "Agenda for today",
+      href: "/thinkpages/t/t_native",
     });
-    const [url, init] = fetchMock.mock.calls[0] as [string, { headers: object }];
-    expect(url).toBe("https://forum.test/api/threads/42/");
-    expect(init.headers).toEqual({ "XF-Api-Key": "xf-test-key" });
-  });
-
-  it.each([["moderated"], ["deleted"], [""], ["Visible"]])(
-    "shows nothing for a thread in the %p state, however it got here",
-    async (state) => {
-      answer({ thread: thread({ discussion_state: state }) });
-
-      await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-    }
-  );
-
-  it("fails closed when the answer carries no discussion state at all", async () => {
-    const { discussion_state: _omitted, ...withoutState } = thread();
-    answer({ thread: withoutState });
-
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-  });
-
-  it("shows nothing for an answer with no thread", async () => {
-    answer({});
-
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-  });
-
-  it("shows nothing when the forum refuses the key or the thread (not ok)", async () => {
-    answer({ thread: thread() }, false);
-
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-  });
-
-  it("shows nothing, and asks nothing, when no forum key is configured", async () => {
-    jest.mocked(getXfApiKey).mockReturnValue(undefined as never);
-
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
+    expect(jest.mocked(publicThreadByXenforoId).mock.calls[0]![1]).toBe(42);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("is rate-limited for anonymous callers and stops before asking the forum", async () => {
+  it("shows nothing for an id with no thread anyone may read", async () => {
+    jest.mocked(publicThreadByXenforoId).mockResolvedValue(null);
+    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
+  });
+
+  it("shows nothing when the lookup fails", async () => {
+    jest.mocked(publicThreadByXenforoId).mockRejectedValue(new Error("db down"));
+    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
+  });
+
+  it("is rate-limited for anonymous callers and stops before the lookup", async () => {
     jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
     jest.spyOn(rateLimiter, "check").mockResolvedValue({
       success: false,
@@ -319,11 +285,10 @@ describe("getForumThreadPreview", () => {
       resetAt: new Date(Date.now() + 60_000),
     } as never);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    answer({ thread: thread() });
 
     await expect(content(null).getForumThreadPreview({ threadId: 42 })).rejects.toThrow(
       /Too many requests/
     );
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(publicThreadByXenforoId).not.toHaveBeenCalled();
   });
 });

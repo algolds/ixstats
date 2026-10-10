@@ -7,9 +7,6 @@
  * compare-and-swap guarded so nothing is paid twice.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn().mockResolvedValue(undefined) },
 }));

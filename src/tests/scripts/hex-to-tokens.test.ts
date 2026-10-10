@@ -96,7 +96,7 @@ describe("hex-to-tokens transformSource: data colours stay literal", () => {
 
   it.each([
     "src/components/shared/charts/Series.tsx",
-    "src/app/(widget)/layout.tsx", // no app stylesheet: var(--token) would resolve to nothing
+    "src/app/api/og/route.tsx", // no app stylesheet: var(--token) would resolve to nothing
   ])("does not edit anything under a data path: %s", (file) => {
     const src = `<div className="bg-[#16181d]" style={{ color: "#ffffff" }} />`;
     const { output, sites } = tsx(src, file);

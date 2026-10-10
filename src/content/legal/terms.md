@@ -80,7 +80,7 @@ Certain features permit users to link or reference nation data and cards from Na
 
 ### 3.3 External Accounts & Services
 
-Connecting third-party accounts (such as Discord OAuth or XenForo forum credentials) is subject to those third parties’ independent terms and privacy policies. Alpaia Holdings does not control and assumes no liability for the availability, uptime, or data handling practices of third-party platforms.
+Connecting third-party accounts (such as Discord OAuth) is subject to those third parties’ independent terms and privacy policies. Alpaia Holdings does not control and assumes no liability for the availability, uptime, or data handling practices of third-party platforms.
 
 ## 4. Conduct, Roleplay & Platform Security {#acceptable-use}
 

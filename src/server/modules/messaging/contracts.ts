@@ -82,7 +82,6 @@ export interface MessagingDependencies {
   db: PrismaClient | any;
   notifications?: NotificationCollaborator | any;
   websocket?: WebSocketCollaborator | any | null;
-  forumBridge?: BridgeCollaborator | any;
   wikiBridge?: BridgeCollaborator | any;
   telemetry?: TelemetryLogger;
 }

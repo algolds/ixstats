@@ -7,8 +7,8 @@
  * deleted content stay (the report queue handles gone targets; the log is append-only). Threads go in chunks, one
  * transaction each, so an interrupted rollback is finished by a rerun. The import lock is asserted before every chunk
  * and before the remaining deletes (ImportLockLostError stops it).
- * `previewRollback` (I2, `--rollback` without `--yes`) counts the same rows and files and deletes nothing; the runner
- * refuses `--yes` while the legacy redirect switch is on (`legacyRedirectOn`).
+ * `previewRollback` (I2, `--rollback` without `--yes`) counts the same rows and files and deletes nothing. The legacy
+ * `/forum/*` redirects need no switching off first (phase 4b): an id that no longer resolves lands on the forum home.
  */
 import { promises as nodeFs } from "fs";
 import path from "path";
@@ -16,7 +16,6 @@ import { ARCHIVE_KEY_PREFIX } from "~/lib/thinkpages-forum/import/node-map";
 import { assertImportLock, type ImportDb } from "./import-db";
 import { TRANSACTION_TIMEOUT_MS } from "./import-write";
 import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
-import { LEGACY_FORUM_REDIRECT_KEY } from "./legacy-switch";
 
 const THREAD_CHUNK = 100;
 const ID_CHUNK = 1000;
@@ -191,15 +190,6 @@ export async function previewRollback(
     assets: await db.uploadedAsset.count({ where: FORUM_SOURCE }),
     files: (await copiedFiles(opts.uploadsDir, opts.fs ?? diskFs)).length,
   };
-}
-
-/** I2: whether the legacy forum switch is on (`--rollback --yes` refuses then: redirects would point at nothing). */
-export async function legacyRedirectOn(db: Pick<ImportDb, "systemConfig">): Promise<boolean> {
-  const row = await db.systemConfig.findUnique({
-    where: { key: LEGACY_FORUM_REDIRECT_KEY },
-    select: { value: true },
-  });
-  return row?.value === "true";
 }
 
 export async function rollbackImport(

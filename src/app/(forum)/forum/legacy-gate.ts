@@ -1,16 +1,16 @@
 /**
- * The legacy redirect gate every `/forum/*` page awaits first (phase 4, Task 6): while the legacy switch is on it
- * redirects (307, temporary: Q8) to the native forum page for `ref`; while off it returns and the bridge page renders.
- * `connection()` keeps every gated page dynamic, so the switch is never frozen into a prerendered page.
+ * The redirect every `/forum/*` page of the retired XenForo bridge answers (phase 4b): a permanent redirect (308) to
+ * the native forum page for `ref`, resolved through the import's id map; anything unknown lands on the forum home.
+ * `connection()` keeps every page dynamic, so a target is never frozen into a prerendered page while the import
+ * fills the id map.
  */
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import type { LegacyForumRef } from "~/lib/thinkpages-forum/legacy-forum";
 import { db } from "~/server/db";
 import { legacyForumRedirectFor } from "~/server/modules/thinkpages-forum";
 
-export async function followLegacyRedirect(ref: LegacyForumRef): Promise<void> {
+export async function followLegacyRedirect(ref: LegacyForumRef): Promise<never> {
   await connection();
-  const to = await legacyForumRedirectFor(db, ref);
-  if (to) redirect(to);
+  permanentRedirect(await legacyForumRedirectFor(db, ref));
 }

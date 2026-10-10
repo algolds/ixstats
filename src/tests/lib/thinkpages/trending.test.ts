@@ -14,8 +14,8 @@ jest.mock("~/lib/cache", () => ({
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getRecentChanges: jest.fn().mockResolvedValue([]),
 }));
-jest.mock("~/server/modules/forum", () => ({
-  getForumTrendingThreads: jest.fn().mockResolvedValue([]),
+jest.mock("~/server/modules/thinkpages-forum", () => ({
+  latestPublicThreads: jest.fn().mockResolvedValue([]),
 }));
 
 import { describe, it, expect } from "@jest/globals";
@@ -38,6 +38,7 @@ import { activitiesTrendingRouter } from "~/server/api/routers/activities/trendi
 import { createCallerFactory } from "~/server/api/trpc";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { latestPublicThreads } from "~/server/modules/thinkpages-forum";
 
 const NOW = new Date("2026-09-30T12:00:00Z");
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3600_000);
@@ -387,6 +388,38 @@ describe("activities.getUnifiedTrending ThinkPages source", () => {
     expect(db.thinkpagesPost.findMany.mock.calls[0][0]).toMatchObject({
       where: { visibility: "public", trendingScore: { gt: 0 } },
       orderBy: { trendingScore: "desc" },
+    });
+  });
+});
+
+describe("activities.getUnifiedTrending forum source (phase 4b)", () => {
+  it("lists native public threads, scored by replies, linking to the thread", async () => {
+    const db: any = createMockPrisma();
+    const lastPostAt = new Date();
+    jest.mocked(latestPublicThreads).mockResolvedValueOnce([
+      {
+        id: "t1",
+        title: "Old forum favourites",
+        author: "jane",
+        categoryName: "General",
+        replyCount: 4,
+        createdAt: lastPostAt,
+        lastPostAt,
+        href: "/thinkpages/t/t1",
+      },
+    ]);
+    const caller = createCallerFactory(activitiesTrendingRouter)(
+      createMockRouterContext({ db }) as never
+    );
+    const { items } = await caller.getUnifiedTrending({ limit: 10 });
+    expect(latestPublicThreads).toHaveBeenCalledWith(db, 25);
+    expect(items.find((i) => i.source === "forum")).toMatchObject({
+      id: "forum-t1",
+      title: "Old forum favourites",
+      author: "jane",
+      url: "/thinkpages/t/t1",
+      engagement: { replies: 4, views: 0 },
+      timestamp: lastPostAt.toISOString(),
     });
   });
 });

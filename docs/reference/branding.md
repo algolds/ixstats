@@ -41,7 +41,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 │   └── Facet (glass / refraction / depth design language)
 
 ├── Inherits platform version (NOT independently versioned)
-│   ├── IxForum (community — not promoted to an App yet)
+│   ├── IxForum (community; the XenForo bridge is retired, the forum is ThinkPages)
 │   ├── Platform Utilities: IxTime (game clock), IxnayID (cross-platform identity)
 │   ├── Experimental / Labs: Vexel, Onoma, Strata, Dynas, Nomora (preview label only)
 │   └── Navigation Hubs: Dashboard, Explore / Countries, Feed
@@ -104,7 +104,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 
 ## 2. Apps
 
-Integrated apps with their own distinct brand identity that ship and break independently (each carries a single capability integer). **IxForum** is documented here for reference but is **not** an independently-versioned App yet — it inherits the platform version until promoted.
+Integrated apps with their own distinct brand identity that ship and break independently (each carries a single capability integer). **IxForum** (§2.2) was never promoted to an App; its XenForo bridge is retired and the forum is the native ThinkPages forum.
 
 ### 2.1 IxWorld (Maps)
 
@@ -131,20 +131,12 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Transport Network** | Routes & hubs with generator (`src/lib/economy/transport-generator.ts`)                  |
 | **SVG Upload**        | Flag/map SVG management (`src/lib/flags/svg-parser.ts`)                                |
 
-### 2.2 IxForum (Community)
+### 2.2 IxForum (Community, retired bridge)
 
-| Token              | Value                                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| **Version**        | `IXFORUM_VERSION` (from registry) — **inherits the platform version**; not promoted to an independently-versioned App yet |
-| **Nav icon**       | MessageSquare (Lucide)                                                                                                    |
-| **Accent hex**     | `#f97316` (orange-500)                                                                                                    |
-| **Shine**          | `["#f97316", "#ea580c", "#fb923c"]`                                                                                       |
-| **Glow**           | `text-orange-400`                                                                                                         |
-| **Glass var**      | `--glass-forum: #f97316`                                                                                                  |
-| **Integration**    | XenForo REST API proxy (tRPC `forum.ts`, 1185 lines)                                                                      |
-| **Routes**         | `src/app/(forum)/forum/`, `src/components/forum/{composer,reader,shared}/`                                                |
-| **Widgets**        | ForumMiniCard, ForumRarityBar at `/(widget)/forum/cards/[username]/`                                                      |
-| **Layout tagline** | `Powered by IxForum v{IXFORUM_VERSION}`                                                                                   |
+The XenForo bridge that carried the IxForum name (`/forum`, its orange accent, the forum widget cards and the
+Halo forum plugin) was retired in ThinkPages forum phase 4b. The community forum is the native ThinkPages forum
+at `/thinkpages`, in ThinkPages' emerald tint; `/forum/*` only redirects to it. Whether `IXFORUM_VERSION` stays in
+the version registry is an open owner decision (`docs/reference/revision.md` is unchanged until then).
 
 ### 2.3 IxVault (Wallet / Economy / Trading Cards)
 
@@ -470,7 +462,6 @@ The platform's design system (independently versioned; `FACET_VERSION` = 3.1 in 
 | `--glass-eci`       | `#4f46e5` | indigo-600  | Economic indicators          |
 | `--glass-sdi`       | `#dc2626` | red-600     | Strategic Defense Initiative |
 | `--glass-builder`   | `#10b981` | emerald-500 | Builder wizard               |
-| `--glass-forum`     | `#f97316` | orange-500  | Forum community              |
 
 ### 6.2 Notifications
 
@@ -538,7 +529,6 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | Feed                | `#8b5cf6`  | `["#8b5cf6", "#7c3aed", "#a78bfa"]` | `text-purple-400`  |
 | Maps / IxWorld      | `#06b6d4`  | (nav tray only)                     | —                  |
 | Cards / Vault       | `#06b6d4`  | `["#06b6d4", "#0891b2", "#22d3ee"]` | `text-cyan-400`    |
-| Forum / IxForum     | `#f97316`  | `["#f97316", "#ea580c", "#fb923c"]` | `text-orange-400`  |
 | Wiki / WikiOS       | `#3b82f6`  | (nav tray only)                     | —                  |
 | Admin               | `#ef4444`  | `["#ef4444", "#dc2626", "#f87171"]` | `text-red-400`     |
 | Help                | `#fb923c`  | `["#fb923c", "#f97316", "#fdba74"]` | `text-orange-400`  |
@@ -553,7 +543,6 @@ Entry-point pages that aggregate content from multiple systems. Not branded prod
 | `/countries`  | `#8b5cf6`  | Explore    |
 | `/maps`       | `#06b6d4`  | Maps       |
 | `/w`          | `#3b82f6`  | Wiki       |
-| `/forum`      | `#f97316`  | Forum      |
 | `/vault`      | `#06b6d4`  | Cards      |
 | `/thinkpages` | `#3b82f6`  | ThinkPages |
 | `/admin`      | `#ef4444`  | Admin      |
@@ -631,7 +620,7 @@ Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Bra
 | **Althistory Wiki**    | Tertiary wiki source                  | `mediawiki-config.ts` (WikiSource.ALTHISTORY) |
 | **Clerk**              | Authentication                        | `@clerk/nextjs`, `src/proxy.ts`               |
 | **Discord API**        | Bot, webhooks, user sync              | `discord.ts`, `discord-webhook.ts`            |
-| **XenForo**            | Forum backend                         | `modules/forum/services/xenforo-service.ts`   |
+| **XenForo**            | Old forum, import source only         | `scripts/migrations/export-xenforo-forum.ts`  |
 | **Unsplash**           | Card backgrounds                      | `unsplash-service.ts`                         |
 | **Giphy**              | GIF picker                            | ThinkPages composer                           |
 | **Wikimedia Commons**  | Image repository                      | `wikiCommonsImageService.ts`                  |

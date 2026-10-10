@@ -1,5 +1,4 @@
 import { type Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
-import { syncUserToForum } from "~/server/modules/forum";
 import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
 import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
 
@@ -203,7 +202,7 @@ function assertSpendAllowed(config: VaultConfig, type: VaultTransactionType): vo
  * Earn IxCredits inside the caller's transaction.
  *
  * Throws LedgerError on any business failure so the surrounding transaction
- * rolls back. Does not call syncUserToForum (the transaction has not committed).
+ * rolls back.
  */
 export async function earnCreditsTx(
   tx: Prisma.TransactionClient,
@@ -348,8 +347,6 @@ export async function earnCredits(
       `[Vault Service] User ${userId} earned ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
     );
 
-    syncUserToForum(userId).catch(() => {});
-
     return { success: true, newBalance: r.newBalance };
   } catch (error) {
     if (error instanceof LedgerError) {
@@ -380,8 +377,6 @@ export async function spendCredits(
     console.log(
       `[Vault Service] User ${userId} spent ${r.amount} IxC (${type}) - New balance: ${r.newBalance}`
     );
-
-    syncUserToForum(userId).catch(() => {});
 
     return { success: true, newBalance: r.newBalance };
   } catch (error) {

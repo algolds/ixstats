@@ -128,7 +128,10 @@ describe("app section map routes", () => {
   });
 
   it("lists ThinkPages (the forum) and ThinkTanks under Home, both emerald-tinted", () => {
-    expect(APPS.map((app) => app.id)).not.toContain("thinkpages");
+    // Signed in, ThinkPages is a Home row, not an app (the app of that id is for signed-out visitors only).
+    expect(
+      getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)
+    ).not.toContain("thinkpages");
     const home = getApp("home");
     expect(home.sections.map((s) => s.label)).toEqual([
       "What's new",
@@ -217,7 +220,6 @@ describe("app section map resolvers", () => {
     ["/util/search", "wiki"],
     ["/blurbs/abc", "wiki"],
     ["/wiki/Some_Article", "wiki"],
-    ["/forum/thread/1", "forum"],
     ["/myclub/2", "labs"],
     ["/myleague", "labs"],
     ["/countries/caphiria/dossier", "countries"],
@@ -233,6 +235,13 @@ describe("app section map resolvers", () => {
     expect(getAppForPath("/setup")).toBeUndefined();
   });
 
+  it("has no Forum app: /forum/* are legacy redirects (phase 4b)", () => {
+    expect(getAppForPath("/forum/thread/1")).toBeUndefined();
+    expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
+      "forum"
+    );
+  });
+
   it("picks the most specific section", () => {
     const mycountry = getApp("mycountry");
     expect(getActiveSectionId(mycountry, "/mycountry", null)).toBe("overview");
@@ -241,18 +250,9 @@ describe("app section map resolvers", () => {
     const vault = getApp("vault");
     expect(getActiveSectionId(vault, "/vault/trading", null)).toBe("marketplace");
     expect(getActiveSectionId(vault, "/vault/inventory", null)).toBe("cards");
-    const forum = getApp("forum");
-    expect(getActiveSectionId(forum, "/forum/search", null)).toBe("search");
-    expect(getActiveSectionId(forum, "/forum/thread/9", null)).toBe("forums");
   });
 
-  it("resolves forum feeds and wiki aliases", () => {
-    const forum = getApp("forum");
-    expect(getActiveSectionId(forum, "/forum", new URLSearchParams("sort=trending"))).toBe(
-      "trending"
-    );
-    expect(getActiveSectionId(forum, "/forum", new URLSearchParams("sort=new"))).toBe("new-posts");
-    expect(getActiveSectionId(forum, "/forum", new URLSearchParams())).toBe("forums");
+  it("resolves wiki aliases", () => {
     const wiki = getApp("wiki");
     expect(getActiveSectionId(wiki, "/wiki/Main_Page", null)).toBe("main");
     expect(getActiveSectionId(wiki, "/wiki/Some_Article", null)).toBeUndefined();
@@ -382,9 +382,28 @@ describe("app visibility and the tab bar", () => {
     expect(primary.map((app) => app.id)).toEqual(["home", "mycountry", "maps", "countries"]);
     expect(primary).toHaveLength(TAB_BAR_SLOTS);
     expect(more.map((app) => app.id)).toEqual(
-      expect.arrayContaining(["wiki", "forum", "vault", "labs", "admin"])
+      expect.arrayContaining(["wiki", "vault", "labs", "admin"])
     );
     const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
-    expect(signedOut.primary.map((app) => app.id)).toEqual(["maps", "countries", "wiki", "forum"]);
+    // Phase 4b: the XenForo bridge app is gone. Signed in, the forum is Home's ThinkPages row; signed out,
+    // Home is hidden, so a ThinkPages app takes the tab instead.
+    expect(signedOut.primary.map((app) => app.id)).toEqual([
+      "maps",
+      "countries",
+      "wiki",
+      "thinkpages",
+    ]);
+  });
+
+  it("lists ThinkPages as its own app only for signed-out visitors (Home carries it when signed in)", () => {
+    const signedOut = getVisibleApps({ signedIn: false, isAdmin: false });
+    const forum = signedOut.find((app) => app.id === "thinkpages");
+    expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
+    expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
+      "thinkpages"
+    );
+    // The forum's pages belong to Home when it is listed, and to the signed-out app when it is not.
+    expect(getAppForPath("/thinkpages/t/1")?.id).toBe("home");
+    expect(getAppForPath("/thinkpages/t/1", signedOut)?.id).toBe("thinkpages");
   });
 });

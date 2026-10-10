@@ -6,10 +6,6 @@
  * caller's transaction rolls back.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
-
 import {
   earnCredits,
   earnCreditsTx,

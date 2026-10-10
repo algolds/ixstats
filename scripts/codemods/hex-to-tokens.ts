@@ -235,10 +235,9 @@ export const DATA_PATHS: readonly RegExp[] = [
   /\/lib\/themes\/themes\.ts$/,
   /color-picker/,
   /^src\/server\//,
-  // Standalone documents without the app stylesheet (API-rendered SVG, the forum-embed widget):
-  // a var(--token) there resolves to nothing.
+  // Standalone documents without the app stylesheet (API-rendered SVG): a var(--token) there
+  // resolves to nothing.
   /^src\/app\/api\//,
-  /^src\/app\/\(widget\)\//,
 ];
 
 /** Line-level data signals: SVG/canvas paint props, map paint keys, and inline palettes. */

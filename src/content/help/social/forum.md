@@ -12,7 +12,7 @@ nextLabel: Blurbs
 
 The forum is the community's discussion space, built into ThinkPages at [/thinkpages](/thinkpages). Signed in, it is **ThinkPages** under Home in the sidebar; signed out, open it at [/thinkpages](/thinkpages) or from any link to a thread. Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
 
-Until the old forum is archived here, [/forum](/forum) still opens the older forum on a separate site; this article is about the forum at /thinkpages.
+The older forum on a separate site (forum.ixwiki.com) no longer takes posts. Links to IxStats' old `/forum` pages open the matching place here (see [Old links](#old-links)); this article is about the forum at /thinkpages.
 
 The forum home lists the sitewide categories first (Rules, Announcements, Reports, Find a Realm, General and Side Games), then a section for one realm with a switcher to pick another. Each realm section has its own categories: Hub for out-of-character talk, and Character Threads and Current Events for in-character writing.
 
@@ -86,13 +86,11 @@ Once the old forum has been copied here:
 
 ### Getting your posts attributed
 
-If your old forum account is linked to your IxStats account when the posts are copied, they show your IxStats name. Link it before then to be attributed automatically: open [Settings](/settings) → **IxnayID & passport** → **Linked accounts** → **Manage**, then connect Community forum. Full steps: [IxnayID & Your Passport](/help/getting-started/ixnayid#link-your-forum-account).
-
-Once the old forum has been archived here and linking is retired, ask in a thread in Reports instead: give your old forum username, and staff will link the account and update your imported posts, which may take a little while.
+Linking an old forum account to your IxStats account is managed by staff. Ask in a thread in Reports: give your old forum username, and staff will link the account in the admin users panel, which attributes your imported posts straight away. [Settings](/settings) → **IxnayID & passport** → **Linked accounts** shows your old forum account once it is linked ("Imported as" your old name), but you cannot change it there. See [IxnayID & Your Passport](/help/getting-started/ixnayid#old-forum-posts).
 
 ### Old links
 
-Once the old forum is archived here, links to its pages open the matching thread, post or category here when it was imported, and anything that cannot be matched opens the forum home. Until then, old links open the old forum's pages as before.
+Links to IxStats' old forum pages (`/forum/...`) open the matching thread, post or category here when it was imported, and anything that cannot be matched opens the forum home. Links to the old forum's own site (forum.ixwiki.com) are sent here the same way once that site is switched off; until then they open its read-only pages.
 
 ## Good to know
 

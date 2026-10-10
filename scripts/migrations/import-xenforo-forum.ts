@@ -51,11 +51,7 @@ import {
   restrictedImportedPosts,
   takeImportLock,
 } from "~/server/modules/thinkpages-forum/import-db";
-import {
-  legacyRedirectOn,
-  previewRollback,
-  rollbackImport,
-} from "~/server/modules/thinkpages-forum/import-rollback";
+import { previewRollback, rollbackImport } from "~/server/modules/thinkpages-forum/import-rollback";
 import { applyImport } from "~/server/modules/thinkpages-forum/import-write";
 import { uploadsDir } from "~/server/shared/upload-storage";
 import { databaseLabel } from "../lib/database-guard";
@@ -73,7 +69,6 @@ import {
   attachmentPlanLines,
   attachmentResultLines,
   diskRefusal,
-  redirectOnRefusal,
   reportFile,
   rollbackLines,
   rollbackPreviewLines,
@@ -121,14 +116,13 @@ function planOrRefusal(make: () => ImportPlan): ImportPlan | string {
   }
 }
 
-/** I2, M18: a preview without --yes; with it, refused while the legacy redirect is on. Needs no snapshot. */
+/** I2, M18: a preview without --yes; with it, the rollback. Needs no snapshot. */
 async function rollback(db: PrismaClient, args: ImportArgs): Promise<number> {
   const dir = uploadsDir();
   if (!args.yes) {
     print(rollbackPreviewLines(await previewRollback(db, { uploadsDir: dir })));
     return 0;
   }
-  if (await legacyRedirectOn(db)) return refuse([redirectOnRefusal(args.production)]);
   print(targetLines(dir, databaseLabel(process.env.DATABASE_URL)));
   print(rollbackLines(await rollbackImport(db, { uploadsDir: dir })));
   return 0;

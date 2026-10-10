@@ -7,9 +7,9 @@
 **Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
 **Status:** ✅ Live (Halo v6: standard chrome glass with no glow); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 
-> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `app/builder`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `ForumHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `app/builder`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
-Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Forum, Vault, Labs, and Builder).
+Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Vault, Labs, and Builder).
 
 ---
 
@@ -51,12 +51,6 @@ src/components/halo/
     │       ├── index.ts
     │       ├── MyCountryView.tsx
     │       └── MyCountryActionsView.tsx
-    ├── forum/                    # Forum discussion plugin
-    │   ├── ForumHalo.tsx         # Thread breadcrumbs & alert count registration
-    │   ├── index.ts
-    │   └── views/
-    │       ├── index.ts
-    │       └── ForumView.tsx
     ├── wiki/                     # WikiOS encyclopedia plugin
     │   ├── WikiHalo.tsx          # Reading progress & narrator player registration
     │   ├── types.ts              # Voice labels, reading sessions, local drafts
@@ -87,12 +81,12 @@ src/components/halo/
 Every Halo plugin is a self-contained module in `src/components/halo/plugins/<feature>/`:
 
 1. **`<Name>Halo.tsx`**: Calls `useDIPlugin(pluginConfig)` to mount capsule center content, action buttons, accent color, and custom modal views.
-2. **`views/`**: Contains modal expanded components (e.g. `MyCountryView.tsx`, `ForumView.tsx`, `WikiView.tsx`).
+2. **`views/`**: Contains modal expanded components (e.g. `MyCountryView.tsx`, `WikiView.tsx`).
 3. **`components/`** (optional): Contains sub-widgets (e.g. narrator player, search dropdown, morph toggles).
 4. **`types.ts`** (optional): Contains domain-specific types.
 5. **`index.ts`**: Clean barrel export exporting `<Name>Halo`, views, and backwards-compatible aliases (`*DIPlugin`).
 
-To create a new plugin, copy the smallest existing plugin (e.g. `src/components/halo/plugins/forum/`) as a starting point and mount `<FeatureHalo />` in the route layout. (The former `_template/` starter directory was removed.)
+To create a new plugin, copy the smallest existing plugin (e.g. `src/components/halo/plugins/mycountry/`) as a starting point and mount `<FeatureHalo />` in the route layout. (The former `_template/` starter directory was removed.)
 
 ---
 
@@ -106,7 +100,7 @@ The registry provides comprehensive coverage across eight platform domains:
 - **Vault**: Trading Cards (`/vault/cards`), Pack Openings (`/vault/packs`), Marketplace (`/vault/marketplace`), Lore Gallery (`/vault/lore-gallery`), and NS Decks (`/vault/ns-deck`).
 - **Geography**: Interactive Map (`/maps`), Country Directory (`/countries`), Leaderboards (`/leaderboards`), and Nation Builder (`/builder`).
 - **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
-- **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum, the XenForo bridge (`/forum`), New Thread (`/forum/new-thread`), and Achievements (`/achievements`).
+- **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum (the forum home), New Thread (`/thinkpages/c/general/new`), and Achievements (`/achievements`).
 - **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
 - **Labs**: Onoma Linguistics (`/labs/onoma`), Vexel Heraldry (`/labs/vexel`), and Map Pipeline (`/labs/map-pipeline`).
 - **System**: Theme toggles, audio controls, compact mode, mark-all-read, notifications, settings, changelog, and admin.
@@ -194,13 +188,12 @@ Pages and layouts register their custom plugins on mount. Halo uses `useSyncExte
 graph TD
     subgraph Pages & Layouts
         Wiki[WikiOS Layout] -- Registers --> PluginW[WikiHalo]
-        Forum[Forum Layout] -- Registers --> PluginF[ForumHalo]
         Builder[Builder Layout] -- Registers --> PluginB[BuilderHalo]
         Country[MyCountry Layout] -- Registers --> PluginC[MyCountryHalo]
     end
 
     subgraph Halo Engine
-        PluginW & PluginF & PluginB & PluginC -- useDIPlugin --> Registry[DIPluginRegistry]
+        PluginW & PluginB & PluginC -- useDIPlugin --> Registry[DIPluginRegistry]
         Registry -- Resolves active plugin --> Hook[useActiveDIPlugin]
     end
 
@@ -218,7 +211,7 @@ graph TD
 ### `DIPlugin` & `DIViewProps`
 ```typescript
 export interface DIPlugin<F = unknown, C = unknown> {
-  id: string;                                                        // Unique identifier (e.g. "wiki", "forum", "mycountry")
+  id: string;                                                        // Unique identifier (e.g. "wiki", "mycountry")
   priority?: number;                                                 // Priority weight (highest priority active plugin renders)
   center?: React.ReactNode;                                          // Custom component replacing the default clock/greeting
   actions?: DIAction[];                                              // Action buttons on the pill's right rail
@@ -268,6 +261,6 @@ Under clean modular boundaries:
 
 - [MyCountry Design & Statecraft Guide](./mycountry.md)
 - [WikiOS System Guide](./wikios/WIKIOS.md)
-- [Forum Integration](./forum.md)
+- [ThinkPages forum](./forum.md)
 - [Cards & Vault System](./cards.md)
 - [Facet Design System](../reference/facet-design-system.md)

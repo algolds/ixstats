@@ -31,13 +31,11 @@ const CONVERSATION_DETAIL_INCLUDE = {
 
 export class MessagingQueryOperations {
   private db: any;
-  private forumBridge?: any;
   private wikiBridge?: any;
   private telemetry?: any;
 
   constructor(dependencies: MessagingDependencies) {
     this.db = dependencies.db;
-    this.forumBridge = dependencies.forumBridge;
     this.wikiBridge = dependencies.wikiBridge;
     this.telemetry = dependencies.telemetry;
   }
@@ -182,9 +180,6 @@ export class MessagingQueryOperations {
 
   public getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
     return this.withTelemetry("messages", "getConversationsByFolder", actorId, async () => {
-      if (this.forumBridge?.syncInbound) {
-        await this.forumBridge.syncInbound(actorId, this.db).catch(() => {});
-      }
       if (this.wikiBridge?.syncInbound) {
         await this.wikiBridge.syncInbound(actorId, this.db).catch(() => {});
       }

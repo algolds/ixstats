@@ -95,7 +95,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 ### 🗨️ Forum & identity
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **IxForum** | [systems/forum.md](systems/forum.md) | XenForo bridge: read, write, stash, IxnayID account linking | ✅ Live |
+| **ThinkPages forum** | [systems/forum.md](systems/forum.md) | Native forum, moderation, XenForo import; `/forum/*` legacy redirects (the XenForo bridge is retired) | ✅ Live |
 | **IxnayID passport** | [systems/ixnayid-passport.md](systems/ixnayid-passport.md) | Public passport, showcase, privacy settings, nation switcher | ✅ Live |
 | **Explore & country profiles** | [systems/explore-and-country-profiles.md](systems/explore-and-country-profiles.md) | `/countries`, `/explore`, the country profile and its public record | ✅ Live |
 

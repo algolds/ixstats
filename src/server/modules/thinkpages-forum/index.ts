@@ -12,7 +12,14 @@ export {
   legacyForumRedirectFor,
   type LegacyDb,
 } from "./legacy-redirect";
-export { LEGACY_FORUM_REDIRECT_KEY, setLegacyForumRedirect } from "./legacy-switch";
+export { forumActivityOf, importedAuthorByName, type MemberActivityDb } from "./member-activity";
+export {
+  linkOldForumAccount,
+  unlinkOldForumAccount,
+  type OldForumAccountsDb,
+  type OldForumLink,
+  type OldForumLinkResult,
+} from "./old-forum-accounts";
 export { APPEALS_PER_PAGE, listAppeals, type AppealQueueDb } from "./mod-appeal-queue";
 export {
   type AppealOutcome,
@@ -103,6 +110,12 @@ export {
   type WarningOutcome,
   type WarningsDb,
 } from "./mod-warnings";
+export {
+  latestPublicThreads,
+  publicThreadByXenforoId,
+  type PublicForumThread,
+  type PublicThreadsDb,
+} from "./public-threads";
 export {
   authorsOf,
   getCategoryThreads,

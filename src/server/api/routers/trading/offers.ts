@@ -3,7 +3,6 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "@prisma/client";
 import { TRADE_PARTIES_INCLUDE, assertTradingOpen } from "./_shared";
-import { syncUserToForum } from "~/server/modules/forum";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
@@ -444,14 +443,6 @@ export const tradingOffersRouter = createTRPCRouter({
         });
 
         return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
-      });
-
-      // Sync both traders to forum profile (fire-and-forget)
-      syncUserToForum(trade.initiatorId).catch((err: unknown) => {
-        console.error("[Trading] Background op failed:", (err as Error).message);
-      });
-      syncUserToForum(trade.recipientId).catch((err: unknown) => {
-        console.error("[Trading] Background op failed:", (err as Error).message);
       });
 
       await clearVaultCaches(trade.initiator, trade.recipient);

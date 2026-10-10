@@ -179,13 +179,14 @@ async function attributeReports(db: Pick<ImportDb, "$executeRaw">): Promise<void
 /**
  * Imported rows with no author whose XenForo user is now linked (`User.forumUserId`, earliest account first as at
  * import) take that user, and so do the reports on them (M8). Only rows with a XenForo user id are touched; guests
- * never match.
+ * never match. `onlyXenforoUserId` limits the pass to one XenForo user (the admin link, phase 4b).
  */
 export async function relinkImportedAuthors(
-  db: Pick<ImportDb, "user" | "forumThread" | "forumPost" | "$executeRaw">
+  db: Pick<ImportDb, "user" | "forumThread" | "forumPost" | "$executeRaw">,
+  onlyXenforoUserId?: number
 ): Promise<{ threads: number; posts: number }> {
   const users = await db.user.findMany({
-    where: { forumUserId: { not: null } },
+    where: { forumUserId: onlyXenforoUserId ?? { not: null } },
     select: { id: true, forumUserId: true, createdAt: true },
   });
   const { byForumId } = resolveAuthors(

@@ -4,9 +4,6 @@
  * ids from Date.now() + user + card, which collide when a pack pulls the same card twice.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn().mockResolvedValue(undefined) },
 }));

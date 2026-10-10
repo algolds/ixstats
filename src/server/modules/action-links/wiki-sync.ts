@@ -16,9 +16,9 @@ export type WikiSyncDb = Pick<PrismaClient, "storyline">;
 
 const PENDING = { kind: "chain", status: "approved", wikiSyncedAt: null, wikiPageTitle: { not: null } } as const;
 
+/** A linked post's permalink as an absolute IxStates URL (every permalink is an app path). */
 function postUrl(source: PostSource, postRef: string): string {
-  const path = postPermalinkPath(source, postRef);
-  return path.startsWith("http") ? path : `${mediaWikiOrigin()}${createAbsoluteUrl(path)}`;
+  return `${mediaWikiOrigin()}${createAbsoluteUrl(postPermalinkPath(source, postRef))}`;
 }
 
 export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Promise<boolean> {

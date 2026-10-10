@@ -22,7 +22,8 @@ export function NavigationSettings() {
     showWikiTab: true,
     showCardsTab: true,
     showLabsTab: true,
-    // No switches for these two: nothing reads them (Defense follows MyCountry Premium access).
+    // No switches for these three: nothing reads them (Defense follows MyCountry Premium access; the Forum
+    // tab belonged to the XenForo bridge app, retired in phase 4b). Their stored values round-trip.
     showIntelligenceTab: false,
     showDefenseTab: false,
     showMapsTab: true,
@@ -212,31 +213,6 @@ export function NavigationSettings() {
             id="maps-tab"
             checked={localSettings.showMapsTab}
             onCheckedChange={(checked) => handleToggle("showMapsTab", checked)}
-          />
-        </div>
-
-        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
-              {localSettings.showForumTab ? (
-                <Eye className="text-orange h-4 w-4" />
-              ) : (
-                <EyeOff className="text-label-secondary h-4 w-4" />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="forum-tab" className="text-body font-medium">
-                Forum tab
-              </Label>
-              <p className="text-label-secondary text-footnote">
-                Show/hide the Forum navigation tab
-              </p>
-            </div>
-          </div>
-          <Switch
-            id="forum-tab"
-            checked={localSettings.showForumTab}
-            onCheckedChange={(checked) => handleToggle("showForumTab", checked)}
           />
         </div>
 

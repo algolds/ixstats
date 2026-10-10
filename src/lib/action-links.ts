@@ -7,6 +7,10 @@ import { IxTime } from "~/lib/ixtime";
 
 export const MAX_ACTIONS_PER_POST = 10;
 
+/**
+ * Where a linked post lives. "xenforo" rows predate the native forum: the XenForo import remaps them to "native"
+ * (and its rollback restores them), so the type stays while such rows may exist; nothing creates new ones.
+ */
 export type PostSource = "native" | "xenforo";
 
 const TOKEN = /\[ixaction=([A-Za-z0-9_-]{1,64})\]/g;
@@ -183,11 +187,14 @@ export function splitActionTokens(body: string): BodySegment[] {
   return state.segments;
 }
 
-/** Where a linked post lives: native posts by the ThinkPages permalink, imported ones on the old forum. */
+/**
+ * A linked post's permalink: native posts by the ThinkPages permalink; a XenForo post by its legacy `/forum/post/`
+ * path, which 308s to the imported post (or the forum home) through the import id map.
+ */
 export function postPermalinkPath(source: PostSource, postRef: string): string {
   return source === "native"
     ? `/thinkpages/post/${encodeURIComponent(postRef)}`
-    : `https://forum.ixwiki.com/posts/${encodeURIComponent(postRef)}/`;
+    : `/forum/post/${encodeURIComponent(postRef)}`;
 }
 
 export interface ChainWikiEntry {

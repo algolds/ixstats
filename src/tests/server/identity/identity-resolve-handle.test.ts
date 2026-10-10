@@ -42,7 +42,7 @@ const kir = {
 
 const caphiria = { id: "c_cap", name: "Caphiria", slug: "caphiria", owner: { ...kir, isActive: true } };
 
-const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getMember: jest.fn() };
+const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getActivity: jest.fn() };
 
 /** `findUnique` answers only the stored-handle lookup; viewer lookups go through clerkUserId. */
 function storedHandles(byHandle: Record<string, typeof kir>) {

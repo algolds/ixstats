@@ -156,7 +156,7 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 | Utility | Description |
 |---|---|
 | **IxTime** | The universal Temporal Engine operating on mathematical time dilation ($2.0\times$ modern era) with automated drift synchronization. Drives economic ticks, election cycles, card seasons, and wiki timestamps across the ecosystem. |
-| **IxnayID** | Unified authentication and identity layer bridging Clerk credentials, XenForo forum profiles, and Discord accounts into a single persona. |
+| **IxnayID** | Unified authentication and identity layer bridging Clerk credentials, verified wiki accounts and Discord accounts into a single persona (old XenForo forum accounts are kept read-only for imported posts). |
 | **Facet** | The signature design system: volumetric glass surfaces, physical spring animations, edge-glare refraction, and a strict 4-tier Z-axis depth hierarchy. |
 | **Halo** | Context-aware dynamic action bar providing universal notifications, command palettes, and fast actions across all applications. |
 

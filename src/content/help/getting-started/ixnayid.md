@@ -1,6 +1,6 @@
 ---
 title: IxnayID & Your Passport
-description: Your account, your public passport, and linking your wiki, forum and Discord accounts.
+description: Your account, your public passport, linking your wiki and Discord accounts, and your old forum posts.
 badge: Start Here
 prevHref: /help/getting-started/ixtime
 prevLabel: The World Clock (IxTime)
@@ -44,11 +44,9 @@ Linking proves you own a wiki account. It lets you edit your own `User:` page in
 3. Paste the code anywhere on your user page on that wiki and save it while logged in as that user.
 4. Come back and choose **Verify**. The code works for 24 hours; if it expires, choose **New code**.
 
-## Link your forum account
+## Old forum posts
 
-1. In **Linked Accounts**, choose **Connect** next to Community Forum and enter your forum username.
-2. Choose **Get code** and paste the code into the **Location** or **About** field of your forum profile, then save.
-3. Choose **Verify**. The code expires after about 30 minutes; choose **New code** for another.
+The old forum (forum.ixwiki.com) is retired, so forum accounts are no longer linked here. **Linked Accounts** shows your old forum account read-only: "Imported as" your old forum name when it is linked, or "No old-forum account". Linking is managed by staff: to have your old forum posts attributed to you, ask in a thread in the forum's Reports category with your old forum username. Staff link it in the admin users panel, and your imported posts show your name straight away. See [ThinkPages (the forum)](/help/social/forum#getting-your-posts-attributed).
 
 ## Link Discord
 

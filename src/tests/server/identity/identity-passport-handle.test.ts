@@ -43,7 +43,10 @@ import { getPassport } from "~/server/modules/identity/identity.service";
 import { resolveHandleUser, resolveIdentity } from "~/server/modules/identity/identity.resolve";
 
 const mocked = db as unknown as { wikiAccountLink: { findFirst: jest.Mock } };
-const forum = { getMember: jest.fn(), lookupUser: jest.fn() } as never;
+const forum = {
+  getActivity: jest.fn().mockResolvedValue({ posts: 0, threads: 0 }),
+  lookupUser: jest.fn(),
+} as never;
 
 const user = {
   id: "db_1",

@@ -3,9 +3,6 @@
  * the claim would then fail (or double-fire) against a database that is down.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 // vault-ledger <-> vault-passive-income import each other; mock one side to
 // avoid the re-entrant require.
 jest.mock("~/lib/vault/vault-passive-income", () => ({

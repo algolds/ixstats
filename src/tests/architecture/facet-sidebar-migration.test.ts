@@ -64,15 +64,6 @@ describe("per-app sidebars are migrated to the source list", () => {
     expect(wiki).toMatch(/New page/);
   });
 
-  it("forum: no hidden rails; Reply and Share are thread header actions", () => {
-    const layout = read("src/components/forum/shared/ForumLayout.tsx");
-    expect(layout).not.toMatch(/data-app-subnav|forum-icon-rail|forum-mobile-nav/);
-    expect(read("src/styles/forum.css")).not.toMatch(/forum-icon-rail|forum-mobile-nav/);
-    const header = read("src/components/forum/reader/ThreadHeader.tsx");
-    expect(header).toMatch(/onClick=\{onReply\}/);
-    expect(header).toMatch(/onClick=\{handleShare\}/);
-  });
-
   it("sports: no left nav, command bar or main-column Card; tabs and Inspector instead", () => {
     const exists = (p: string) => fs.existsSync(path.join(ROOT, p));
     expect(exists("src/components/sports/core/SportsSidebarNav.tsx")).toBe(false);

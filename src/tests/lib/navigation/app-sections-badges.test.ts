@@ -11,7 +11,6 @@ import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
 import { VaultLogomark } from "~/lib/navigation/icons/VaultLogomark";
 import {
   Compass as SolidCompass,
-  MultiBubble as SolidMultiBubble,
   RoundFlask as SolidRoundFlask,
 } from "iconoir-react/solid";
 import { Search } from "iconoir-react";
@@ -38,9 +37,8 @@ describe("section map badges", () => {
     expect(app("countries").icon).toBe(RealmsLogomark);
   });
 
-  it("Vault, Forum and Labs wear solid marks like the other apps", () => {
+  it("Vault and Labs wear solid marks like the other apps", () => {
     expect(app("vault").icon).toBe(VaultLogomark);
-    expect(app("forum").icon).toBe(SolidMultiBubble);
     expect(app("labs").icon).toBe(SolidRoundFlask);
   });
 

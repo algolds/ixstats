@@ -23,7 +23,6 @@ import { RealmsLogomark } from "./icons/RealmsLogomark";
 import { VaultLogomark } from "./icons/VaultLogomark";
 import {
   Compass as SolidCompass,
-  MultiBubble as SolidMultiBubble,
   RoundFlask as SolidRoundFlask,
 } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
@@ -47,7 +46,6 @@ import {
   Crown,
   Database,
   Download,
-  FireFlame,
   Folder,
   Gamepad,
   Gift,
@@ -68,7 +66,6 @@ import {
   Package,
   Page,
   Palette,
-  Plus,
   Search,
   Server,
   Settings,
@@ -93,8 +90,7 @@ export type NavBadge = { kind: "count"; value: number } | { kind: "action"; labe
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
-type AppTint =
-  "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "forum" | "wiki" | "realms" | "labs";
+type AppTint = "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs";
 
 type AppId =
   | "home"
@@ -102,7 +98,7 @@ type AppId =
   | "maps"
   | "vault"
   | "wiki"
-  | "forum"
+  | "thinkpages"
   | "countries"
   | "labs"
   | "help"
@@ -115,7 +111,6 @@ export interface NavigationVisibilitySettings {
   showCardsTab?: boolean;
   showLabsTab?: boolean;
   showMapsTab?: boolean;
-  showForumTab?: boolean;
   showHelpTab?: boolean;
 }
 
@@ -168,6 +163,8 @@ export interface AppDefinition {
   match: string[];
   sections: AppSection[];
   requiresAuth?: boolean;
+  /** Listed only to signed-out visitors (the forum, which Home carries for signed-in users). */
+  signedOutOnly?: true;
   adminOnly?: boolean;
   /** Admin navigation setting that hides the app when false. */
   navSetting?: keyof NavigationVisibilitySettings;
@@ -400,22 +397,15 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    id: "forum",
-    label: "Forum",
-    href: "/forum",
-    icon: SolidMultiBubble,
-    tint: "forum",
-    match: ["/forum"],
-    navSetting: "showForumTab",
-    // The forum's rail entry "Messages" is ThinkPages → Messages.
-    sections: [
-      { id: "forums", label: "All forums", href: "/forum", icon: ChatBubble },
-      { id: "trending", label: "Trending", href: "/forum?sort=trending", icon: FireFlame },
-      { id: "new-posts", label: "New posts", href: "/forum?sort=new", icon: Clock },
-      { id: "search", label: "Search", href: "/forum/search", icon: Search },
-      { id: "bookmarks", label: "Bookmarks", href: "/forum/bookmarks", icon: Bookmark },
-      { id: "new-thread", label: "New thread", href: "/forum/new-thread", icon: Plus },
-    ],
+    // Signed out, Home (which lists ThinkPages) is hidden, so the public forum gets an app of its own.
+    id: "thinkpages",
+    label: "ThinkPages",
+    href: FORUM_HOME,
+    icon: ChatBubble,
+    tint: "thinkpages",
+    match: [FORUM_HOME],
+    signedOutOnly: true,
+    sections: [],
   },
   {
     id: "countries",
@@ -633,7 +623,7 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "maps",
   "countries",
   "wiki",
-  "forum",
+  "thinkpages",
   "vault",
   "labs",
   "help",
@@ -681,10 +671,16 @@ export function getApp(id: AppId): AppDefinition {
   return app;
 }
 
-/** The app that owns `pathname` (longest matching prefix), if any. */
-export function getAppForPath(pathname: string): AppDefinition | undefined {
+/**
+ * The app a path belongs to: the longest matching prefix, the first app winning a tie. Pass the visible apps to
+ * resolve among them only (signed out, `/thinkpages` is the ThinkPages app's, since Home is not listed).
+ */
+export function getAppForPath(
+  pathname: string,
+  apps: readonly AppDefinition[] = APPS
+): AppDefinition | undefined {
   let best: { app: AppDefinition; length: number } | undefined;
-  for (const app of APPS) {
+  for (const app of apps) {
     for (const prefix of app.match) {
       if (matchesPrefix(pathname, prefix) && (!best || prefix.length > best.length)) {
         best = { app, length: prefix.length };
@@ -692,6 +688,17 @@ export function getAppForPath(pathname: string): AppDefinition | undefined {
     }
   }
   return best?.app;
+}
+
+/**
+ * The app the navigation marks current: the owner among the visible apps when there is one (signed out,
+ * `/thinkpages` belongs to the ThinkPages app rather than the hidden Home), else the owner among all apps.
+ */
+export function getVisibleAppForPath(
+  pathname: string,
+  visible: readonly AppDefinition[]
+): AppDefinition | undefined {
+  return getAppForPath(pathname, visible) ?? getAppForPath(pathname);
 }
 
 /**
@@ -783,6 +790,7 @@ export function getVisibleApps({
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
+    if (app.signedOutOnly && signedIn) return false;
     if (app.adminOnly && !isAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
       const bypass = app.navSettingBypass;

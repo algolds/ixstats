@@ -6,12 +6,10 @@ import os from "node:os";
 import path from "node:path";
 import { DEFAULT_ENV_FILES, envFiles, PRODUCTION_ENV_FILE } from "../../../scripts/lib/env-files";
 import { parseExportArgs } from "../../../scripts/migrations/export-xenforo-forum-args";
-import { parseLegacyRedirectArgs } from "../../../scripts/ops/forum-legacy-redirect-args";
 
 const RUNNERS = [
   "scripts/migrations/import-xenforo-forum.ts",
   "scripts/migrations/export-xenforo-forum.ts",
-  "scripts/ops/forum-legacy-redirect.ts",
 ];
 
 describe("envFiles", () => {
@@ -84,31 +82,6 @@ describe("scripts/lib/load-runner-env", () => {
   });
 });
 
-describe("parseLegacyRedirectArgs", () => {
-  it("takes --production before or after the verb", () => {
-    for (const argv of [
-      ["--production", "on"],
-      ["on", "--production"],
-      ["--", "--production", "off"],
-    ]) {
-      expect(parseLegacyRedirectArgs(argv)).toEqual({
-        command: argv.includes("on") ? "on" : "off",
-        production: true,
-      });
-    }
-    expect(parseLegacyRedirectArgs(["status"])).toEqual({ command: "status", production: false });
-    expect(parseLegacyRedirectArgs(["--production", "status"])).toEqual({
-      command: "status",
-      production: true,
-    });
-  });
-
-  it("refuses anything else with the usage line", () => {
-    for (const argv of [[], ["toggle"], ["on", "off"], ["on", "--prod"], ["--production"]]) {
-      expect(parseLegacyRedirectArgs(argv)).toEqual({ error: expect.stringMatching(/^Usage:/) });
-    }
-  });
-});
 
 describe("parseExportArgs", () => {
   it("accepts --production anywhere and keeps the defaults", () => {

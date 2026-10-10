@@ -44,6 +44,16 @@ describe("TabBar", () => {
     );
   });
 
+  it("gives signed-out visitors a ThinkPages tab, current on the forum's pages (phase 4b)", () => {
+    const guestApps = getVisibleApps({ signedIn: false, isAdmin: false });
+    render(<TabBar pathname="/thinkpages/t/abc" searchParams={null} apps={guestApps} {...navProps} />);
+    const nav = screen.getByRole("navigation", { name: "Tab bar" });
+    expect(within(nav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+  });
+
   it("opens More as a bottom sheet with the app's sections and the other apps", () => {
     mockPhoneWidth();
     render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);
@@ -82,18 +92,18 @@ describe("TabBar", () => {
 
   it("marks More when the current app is not a primary tab", () => {
     mockPhoneWidth();
-    render(<TabBar pathname="/forum/search" searchParams={null} apps={apps} {...navProps} />);
+    render(<TabBar pathname="/stashes" searchParams={null} apps={apps} {...navProps} />);
     const more = screen.getByRole("button", { name: "More" });
     expect(more).toHaveAttribute("data-current");
     fireEvent.click(more);
     const sheet = screen.getByRole("dialog", { name: "More" });
-    expect(within(sheet).getByRole("link", { name: "Search" })).toHaveAttribute(
+    expect(within(sheet).getByRole("link", { name: "Stashes" })).toHaveAttribute(
       "aria-current",
       "page"
     );
-    // Forum's own section list is open (the current app always is), with no disclosure to
+    // Wiki's own section list is open (the current app always is), with no disclosure to
     // collapse it.
-    expect(within(sheet).queryByRole("button", { name: /Forum/ })).not.toBeInTheDocument();
+    expect(within(sheet).queryByRole("button", { name: /Wiki/ })).not.toBeInTheDocument();
   });
 
   it("lists the account at the end of More and closes the sheet when one of its links is used", () => {

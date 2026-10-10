@@ -68,7 +68,8 @@ The app palette has one colour per app, never shared:
 | `maps` | Cyan | 212 |
 | `realms` | Purple | 302 |
 | `vault` | Raspberry | 338 |
-| `forum` | Red | 13 |
+
+The Forum Red tint (hue 13) was retired with the XenForo bridge app in ThinkPages forum phase 4b; the native forum wears ThinkPages' emerald.
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
 

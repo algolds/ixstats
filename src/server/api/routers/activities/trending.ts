@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { getForumTrendingThreads } from "~/server/modules/forum";
+import { latestPublicThreads } from "~/server/modules/thinkpages-forum";
 import { TRENDING_CONFIG, topicRank } from "~/lib/thinkpages/trending";
 
 type TrendingItem = {
@@ -135,18 +135,18 @@ async function thinkpagesItems(db: PrismaClient): Promise<TrendingItem[]> {
   }));
 }
 
-async function forumItems(now: number): Promise<TrendingItem[]> {
-  const threads = await getForumTrendingThreads(25);
+/** Native forum threads anyone may read (phase 4b), scored by replies with time decay. */
+async function forumItems(db: PrismaClient, now: number): Promise<TrendingItem[]> {
+  const threads = await latestPublicThreads(db, 25);
   return threads.map((thread): TrendingItem => ({
-    id: `forum-${thread.threadId}`,
+    id: `forum-${thread.id}`,
     title: thread.title,
     source: "forum",
-    // Views are significant, replies = comments
-    score: (thread.replyCount * 2 + thread.viewCount * 0.05) * timeDecay(thread.timestamp, now),
-    engagement: { ...NO_ENGAGEMENT, views: thread.viewCount, replies: thread.replyCount },
+    score: thread.replyCount * 2 * timeDecay(thread.lastPostAt, now),
+    engagement: { ...NO_ENGAGEMENT, replies: thread.replyCount },
     author: thread.author,
-    url: thread.url,
-    timestamp: thread.timestamp.toISOString(),
+    url: thread.href,
+    timestamp: thread.lastPostAt.toISOString(),
   }));
 }
 
@@ -328,7 +328,7 @@ export const activitiesTrendingRouter = createTRPCRouter({
       const now = Date.now();
       const sources = await Promise.all([
         collect("ThinkPages", () => thinkpagesItems(ctx.db)),
-        collect("Forum", () => forumItems(now)),
+        collect("Forum", () => forumItems(ctx.db, now)),
         collect("Wiki", () => wikiItems(now)),
         collect("IxStats activities", () => activityItems(ctx.db, now)),
         collect("Crisis events", () => crisisItems(ctx.db, now)),

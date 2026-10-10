@@ -3,9 +3,6 @@
  * today), taken inside the same transaction as the payout.
  */
 
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 jest.mock("~/lib/cards/xp-utils", () => ({
   grantCardXp: jest.fn().mockResolvedValue(undefined),
 }));

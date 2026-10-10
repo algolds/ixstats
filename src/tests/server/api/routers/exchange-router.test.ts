@@ -6,9 +6,6 @@ jest.mock("~/lib/exchange/notify", () => ({
   notifyExchange: jest.fn(),
   sendExchangeNotices: jest.fn(),
 }));
-jest.mock("~/server/modules/forum", () => ({
-  syncUserToForum: jest.fn().mockResolvedValue(true),
-}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { exchangeRouter } from "~/server/api/routers/exchange";

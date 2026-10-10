@@ -272,9 +272,6 @@
   --color-wiki: #1d4e89;
   --color-wiki-hover: #184275;
   --color-map-ocean: #0a1628;
-  --color-forum-accent: #f97316;
-  --color-forum-accent-hover: #fb923c;
-  --color-forum-accent-active: #ea580c;
 
   --color-theme-gold: #b45309;
   --color-theme-ocean: #0369a1;
@@ -513,9 +510,6 @@
   :root[data-theme="light"] {
     --color-text-secondary: #52525b;
     --color-poll: #ea580c;
-    --color-forum-accent: #ea580c;
-    --color-forum-accent-hover: #c2410c;
-    --color-forum-accent-active: #9a3412;
     --color-theme-gold: #92400e;
     --color-theme-ocean: #0284c7;
     --color-theme-emerald: #059669;
@@ -598,14 +592,6 @@
     --tint-dark-strong: #f9b5e5;
     --on-tint-dark: #0b0c0f;
   }
-  [data-app="forum"] {
-    --tint-light: #aa2e49;
-    --tint-light-strong: #961739;
-    --on-tint-light: #ffffff;
-    --tint-dark: #ff93a0;
-    --tint-dark-strong: #ffb8be;
-    --on-tint-dark: #0b0c0f;
-  }
   [data-app="vault"] {
     --tint-light: #993582;
     --tint-light-strong: #862270;
@@ -614,28 +600,12 @@
     --tint-dark-strong: #f9b5e5;
     --on-tint-dark: #0b0c0f;
   }
-  [data-app="forum"] {
-    --tint-light: #aa2e49;
-    --tint-light-strong: #961739;
-    --on-tint-light: #ffffff;
-    --tint-dark: #ff93a0;
-    --tint-dark-strong: #ffb8be;
-    --on-tint-dark: #0b0c0f;
-  }
   [data-app="vault"] {
     --tint-light: #a03273;
     --tint-light-strong: #8c1d62;
     --on-tint-light: #ffffff;
     --tint-dark: #f494c6;
     --tint-dark-strong: #feb4d9;
-    --on-tint-dark: #0b0c0f;
-  }
-  [data-app="forum"] {
-    --tint-light: #ab2f3f;
-    --tint-light-strong: #97182f;
-    --on-tint-light: #ffffff;
-    --tint-dark: #fe9498;
-    --tint-dark-strong: #feb9ba;
     --on-tint-dark: #0b0c0f;
   }
 

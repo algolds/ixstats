@@ -76,7 +76,6 @@ import { blurbsRouter } from "./routers/blurbs";
 import { thinkpagesRouter } from "./routers/thinkpages";
 import { messagesRouter } from "./routers/messages";
 import { pollsRouter } from "./routers/polls";
-import { forumRouter } from "./routers/forum";
 import { ixnayidRouter } from "./routers/ixnayid";
 import { sportsRouter } from "./routers/sports";
 import { myCountryRouter } from "./routers/mycountry";
@@ -157,7 +156,6 @@ export const appRouter = createTRPCRouter({
   thinkpages: thinkpagesRouter,
   messages: messagesRouter,
   polls: pollsRouter,
-  forum: forumRouter,
   ixnayid: ixnayidRouter,
   sports: sportsRouter,
   mycountry: myCountryRouter,
