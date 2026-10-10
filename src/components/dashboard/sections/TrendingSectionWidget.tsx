@@ -6,7 +6,6 @@ import {
   RssFeed as Rss,
   Journal as Newspaper,
   OpenBook as BookOpen,
-  Group as Users,
   Eye,
   ChatBubble as MessageSquare,
   WarningTriangle as AlertTriangle,
@@ -22,7 +21,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { useWikiLeadImage } from "./feed/useWikiLeadImage";
-import { forumThreadIdFromUrl, wikiTitleFromUrl } from "./feed/externalLinks";
+import { wikiTitleFromUrl } from "./feed/externalLinks";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 const TRENDING_DEFAULT_LIMIT = 4;
@@ -63,7 +62,7 @@ const INTERACTION_SCORE: Record<string, (item: any, e: Record<string, number>) =
     const editors = parseInt(item.excerpt?.match(/(\d+)\s+editor/)?.[1] ?? "1", 10);
     return edits * 3 + editors * 5;
   },
-  forum: (_, e) => e.replies! * 5 + Math.min(e.views! * 0.03, 15),
+  forum: (_, e) => e.replies! * 5,
 };
 const DEFAULT_INTERACTION = (_: unknown, e: Record<string, number>) =>
   e.likes! * 3 + e.replies! * 5 + 15;
@@ -151,7 +150,6 @@ function TrendingRow({ item }: { item: any }) {
   const src = TRENDING_SOURCE[item.source as string] ?? DEFAULT_SOURCE;
   const SrcIcon = src.icon;
   const wikiTitle = wikiTitleFromUrl(item.url);
-  const forumThreadId = forumThreadIdFromUrl(item.url);
   const excerpt = trendingExcerpt(item);
 
   const row = (
@@ -196,13 +194,11 @@ function TrendingRow({ item }: { item: any }) {
     </RowLink>
   );
 
-  const preview = wikiTitle ? (
-    <WikiPreviewContent title={wikiTitle} wiki="ixwiki" />
-  ) : forumThreadId ? (
-    <ForumPreviewContent threadId={forumThreadId} />
-  ) : null;
-  return preview ? (
-    <Tooltip content={preview} containerClassName="block">
+  return wikiTitle ? (
+    <Tooltip
+      content={<WikiPreviewContent title={wikiTitle} wiki="ixwiki" />}
+      containerClassName="block"
+    >
       {row}
     </Tooltip>
   ) : (
@@ -240,51 +236,6 @@ function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "
             <img src={leadImage} alt={title} className="h-full w-full object-cover" />
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ForumPreviewContent({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
-    { threadId },
-    { staleTime: 10 * 60_000 }
-  );
-  const heading = (
-    <div className="flex items-center gap-2">
-      <MessageSquare aria-hidden className="text-label-secondary size-3.5 shrink-0" />
-      <span className={cn("text-label text-headline", thread && "truncate")}>
-        {thread?.title ?? "Loading thread..."}
-      </span>
-    </div>
-  );
-  if (!thread) {
-    return (
-      <div className="space-y-2">
-        {heading}
-        <Skeleton className="rounded-control-sm h-10" />
-      </div>
-    );
-  }
-  return (
-    <div className="space-y-2">
-      {heading}
-      {thread.forumName && <Badge variant="default">{thread.forumName}</Badge>}
-      {thread.excerpt && (
-        <p className="text-label-secondary text-footnote line-clamp-3">
-          {thread.excerpt.substring(0, 250)}
-          {thread.excerpt.length > 250 ? "…" : ""}
-        </p>
-      )}
-      <div className="text-label-secondary text-footnote flex items-center gap-3 tabular-nums">
-        <span className="flex items-center gap-1">
-          <Users aria-hidden className="size-3.5" />
-          {thread.author}
-        </span>
-        <span className="flex items-center gap-1">
-          <MessageSquare aria-hidden className="size-3.5" />
-          {thread.replyCount} replies
-        </span>
       </div>
     </div>
   );

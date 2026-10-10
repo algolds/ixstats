@@ -4,12 +4,8 @@ import Link from "next/link";
 import { Clock, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { timeAgo } from "~/lib/format/compact";
-import { forumThreadIdFromUrl, wikiTitleFromUrl } from "./externalLinks";
-import {
-  WikiHtmlContent,
-  WikiLinkPreview,
-  ForumLinkPreview,
-} from "~/components/wiki-os/reader/WikiLinkPreview";
+import { wikiTitleFromUrl } from "./externalLinks";
+import { WikiHtmlContent, WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 interface FeedItemHeaderProps {
   activity: any;
@@ -23,7 +19,8 @@ const OPEN_LINK_CLASS =
   "text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
 
 function FeedExternalLink({ url }: { url: string }) {
-  // An app path (a native forum thread) opens in the app; `Link` adds the production base path.
+  // An app path (a native forum thread) opens in the app; `Link` adds the production base path. Off-site URLs
+  // (wiki pages) open in a new tab, with the wiki preview.
   if (url.startsWith("/")) {
     return (
       <Link href={url} className={OPEN_LINK_CLASS}>
@@ -33,7 +30,6 @@ function FeedExternalLink({ url }: { url: string }) {
     );
   }
   const wikiTitle = wikiTitleFromUrl(url);
-  const forumThreadId = forumThreadIdFromUrl(url);
 
   const link = (
     <a href={url} target="_blank" rel="noopener noreferrer" className={OPEN_LINK_CLASS}>
@@ -49,7 +45,6 @@ function FeedExternalLink({ url }: { url: string }) {
       </WikiLinkPreview>
     );
   }
-  if (forumThreadId) return <ForumLinkPreview threadId={forumThreadId}>{link}</ForumLinkPreview>;
 
   return link;
 }

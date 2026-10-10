@@ -225,7 +225,7 @@ configuration object, never from a literal:
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
   forum phase 4b; links to it are parsed to preview or redirect the imported thread): `src/lib/thinkpages-forum/import/bbcode.ts`,
-  `src/components/dashboard/sections/feed/externalLinks.ts`, `src/components/thinkpages/post/PostInlineLinkPreview.tsx`,
+  `src/components/thinkpages/post/PostInlineLinkPreview.tsx`,
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`; the export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
