@@ -6,12 +6,13 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils/cn";
 import type { ForumAuthors } from "../AuthorName";
+import { CanvasComposer, htmlToQuoteText, type QuoteRequest } from "../composer";
 import { ForumComposer } from "../ForumComposer";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { PostActions } from "./PostActions";
 import { PostBody } from "./PostBody";
 import { PostHeader } from "./PostHeader";
-import type { ForumPost, PostStyle } from "./types";
+import type { EditBody, ForumPost, PostStyle } from "./types";
 
 interface PostCardProps {
   post: ForumPost;
@@ -25,11 +26,11 @@ interface PostCardProps {
   /** The viewer may reply here: Reply and Quote are offered. */
   canReply: boolean;
   onReply: () => void;
-  onQuote: (postId: string) => void;
+  onQuote: (quote: QuoteRequest) => void;
   /** The thread takes edits and replies: not locked or archived. */
   open: boolean;
   signedIn: boolean;
-  onEdit: (postId: string, html: string) => Promise<void>;
+  onEdit: (postId: string, body: EditBody) => Promise<{ formatting: "done" | "pending" }>;
   /** The viewer moderates this thread's category. */
   canModerate: boolean;
   tools: ModeratorTools | null;
@@ -40,16 +41,33 @@ type Editing = "author" | "moderator" | null;
 
 interface PostEditorProps {
   post: ForumPost;
+  style: PostStyle;
   asModerator: boolean;
-  onSave: (html: string, note: string) => Promise<void>;
+  onSaveHtml: (html: string, note: string) => Promise<void>;
+  /** Saves Canvas wikitext; resolves with whether the wiki finished formatting it. */
+  onSaveWikitext: (wikitext: string) => Promise<{ formatting: "done" | "pending" }>;
   onCancel: () => void;
 }
 
-/** The post's edit composer in place; a moderator also gives a note for the moderation log. */
-function PostEditor({ post, asModerator, onSave, onCancel }: PostEditorProps) {
+/**
+ * The post's editor in place. A post written in Canvas (the author receives its wikitext) opens in Canvas; an older or
+ * imported HTML post, and any moderator edit, keeps the light editor. A moderator also gives a note for the log.
+ */
+function PostEditor({
+  post,
+  style,
+  asModerator,
+  onSaveHtml,
+  onSaveWikitext,
+  onCancel,
+}: PostEditorProps) {
   const [note, setNote] = useState("");
+  const canvas = !asModerator && post.contentWikitext !== undefined;
   return (
-    <section aria-label={asModerator ? "Edit post as moderator" : "Edit post"} className="space-y-2">
+    <section
+      aria-label={asModerator ? "Edit post as moderator" : "Edit post"}
+      className="space-y-2"
+    >
       {asModerator ? (
         <Input
           aria-label="Note for the moderation log"
@@ -59,15 +77,24 @@ function PostEditor({ post, asModerator, onSave, onCancel }: PostEditorProps) {
           onChange={(e) => setNote(e.target.value)}
         />
       ) : null}
-      <ForumComposer
-        icAllowed={false}
-        initialHtml={post.contentHtml}
-        submitLabel="Save"
-        onSubmit={async ({ html }) => {
-          if (asModerator && !note.trim()) throw new Error("Add a note for the moderation log.");
-          await onSave(html, note.trim());
-        }}
-      />
+      {canvas ? (
+        <CanvasComposer
+          mode="edit"
+          initialWikitext={post.contentWikitext}
+          postStyle={style}
+          onSubmit={onSaveWikitext}
+        />
+      ) : (
+        <ForumComposer
+          icAllowed={false}
+          initialHtml={post.contentHtml}
+          submitLabel="Save"
+          onSubmit={async ({ html }) => {
+            if (asModerator && !note.trim()) throw new Error("Add a note for the moderation log.");
+            await onSaveHtml(html, note.trim());
+          }}
+        />
+      )}
       <Button variant="ghost" size="sm" className="pointer-coarse:min-h-11" onClick={onCancel}>
         Cancel
       </Button>
@@ -124,10 +151,22 @@ export const PostCard = memo(function PostCard({
   const [editing, setEditing] = useState<Editing>(null);
   const author = headerAuthor(post, authors);
 
-  const save = async (html: string, note: string) => {
-    await (editing === "moderator" && tools ? tools.saveEdit(post.id, html, note) : onEdit(post.id, html));
+  const saveHtml = async (html: string, note: string) => {
+    await (editing === "moderator" && tools
+      ? tools.saveEdit(post.id, html, note)
+      : onEdit(post.id, { html }));
     setEditing(null);
   };
+
+  const saveWikitext = async (wikitext: string) => {
+    const saved = await onEdit(post.id, { wikitext });
+    // A save still formatting stays open, so the author is told.
+    if (saved.formatting === "done") setEditing(null);
+    return saved;
+  };
+
+  const quote = () =>
+    onQuote({ postId: post.id, author: author.name, text: htmlToQuoteText(post.contentHtml) });
 
   return (
     <article
@@ -142,8 +181,10 @@ export const PostCard = memo(function PostCard({
       {editing ? (
         <PostEditor
           post={post}
+          style={style}
           asModerator={editing === "moderator"}
-          onSave={save}
+          onSaveHtml={saveHtml}
+          onSaveWikitext={saveWikitext}
           onCancel={() => setEditing(null)}
         />
       ) : (
@@ -168,7 +209,7 @@ export const PostCard = memo(function PostCard({
             post={post}
             canReply={canReply}
             onReply={onReply}
-            onQuote={onQuote}
+            onQuote={quote}
             // Authors edit their own post while the thread is open; any other member may report it.
             canEdit={post.isOwn && open}
             onEdit={() => setEditing("author")}

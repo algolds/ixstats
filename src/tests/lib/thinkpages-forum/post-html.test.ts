@@ -27,7 +27,7 @@ describe("embedTitle", () => {
     expect(embedTitle("File:JuanKerr.jpg")).toBe("File:JuanKerr.jpg");
   });
 
-  it.each(['<script>', 'a"b', "a>b", "a\nb", "a\u0000b", "", "   ", "x".repeat(256), null])(
+  it.each(["<script>", 'a"b', "a>b", "a\nb", "a\u0000b", "", "   ", "x".repeat(256), null])(
     "refuses %p",
     (title) => {
       expect(embedTitle(title)).toBeNull();
@@ -95,6 +95,18 @@ describe("linkQuoteSources", () => {
     ['class="forum-quote" data-post="a b"'],
   ])("leaves a quote with %s as written", (attrs) => {
     const html = quote(attrs);
+    expect(linkQuoteSources(html)).toBe(html);
+  });
+
+  it("links a Canvas quote's author line, where MediaWiki renders the bold name as <b>", () => {
+    const out = linkQuoteSources(quote('class="forum-quote" data-post="p9"', "<b>Heku</b> wrote:"));
+    expect(out).toContain(
+      '<a class="forum-quote-source" href="/thinkpages/post/p9"><b>Heku</b> wrote:</a>'
+    );
+  });
+
+  it("does not take other markup in the author line as part of the link text", () => {
+    const html = quote('class="forum-quote" data-post="p9"', '<img src="x" onerror="y"> wrote:');
     expect(linkQuoteSources(html)).toBe(html);
   });
 

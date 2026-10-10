@@ -110,6 +110,9 @@ interface ComposerStubProps {
 }
 
 // Submits fixed HTML and shows a refused submit, as the real composer does.
+jest.mock("~/components/thinkpages-forum/composer", () =>
+  jest.requireActual("~/tests/helpers/forum-composer-stub").composerStub()
+);
 jest.mock("~/components/thinkpages-forum/ForumComposer", () => {
   const { useState } = jest.requireActual<typeof React>("react");
   return {

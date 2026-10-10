@@ -30,7 +30,7 @@ interface PostActionsProps {
   /** Takes the reader to the composer. */
   onReply: () => void;
   /** Quotes the post in the composer. */
-  onQuote: (postId: string) => void;
+  onQuote: () => void;
   /** The viewer may edit this post (their own, in an open thread). */
   canEdit: boolean;
   onEdit: () => void;
@@ -87,7 +87,7 @@ export function PostActions({
             <Reply aria-hidden />
             Reply
           </Button>
-          <Button variant="ghost" size="sm" className={ACTION} onClick={() => onQuote(post.id)}>
+          <Button variant="ghost" size="sm" className={ACTION} onClick={onQuote}>
             <Quote aria-hidden />
             Quote
           </Button>

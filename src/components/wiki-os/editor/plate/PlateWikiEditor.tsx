@@ -26,6 +26,7 @@ import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/Plat
 import { PlateMediaElement } from "./elements/PlateMediaElement";
 import { PlateRawWikitextElement } from "./elements/PlateRawWikitextElement";
 import { handleEditorKeyDown } from "./plate-key-handlers";
+import { cn } from "~/lib/utils/cn";
 
 interface PlateWikiEditorProps {
   initialHtml?: string;
@@ -37,6 +38,8 @@ interface PlateWikiEditorProps {
   deleteNode: (id: string) => void;
   onKeyDownExtra?: (e: React.KeyboardEvent) => void;
   onSelectionChange?: () => void;
+  /** Classes merged over the editing surface's own (a host that is not a full page trims its padding). */
+  contentClassName?: string;
 }
 
 /** Leaf marks (and their legacy aliases) mapped to the element that renders them, innermost first. */
@@ -271,6 +274,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
   deleteNode,
   onKeyDownExtra,
   onSelectionChange,
+  contentClassName,
 }: PlateWikiEditorProps) {
   const computedInitialValue = useMemo(() => {
     if (initialValue && Array.isArray(initialValue) && initialValue.length > 0) {
@@ -371,7 +375,10 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
       <Plate editor={editor}>
         <ValueReporter editor={editor} onValueChange={onValueChange} readyRef={readyFired} />
         <PlateContent
-          className="wikios-ve-content wikios-ve-editable min-h-full w-full flex-1 cursor-text p-6 pb-48 outline-none"
+          className={cn(
+            "wikios-ve-content wikios-ve-editable min-h-full w-full flex-1 cursor-text p-6 pb-48 outline-none",
+            contentClassName
+          )}
           spellCheck
           renderElement={((props: any) => <ElementRenderer {...props} />) as never}
           renderLeaf={((props: any) => <LeafRenderer {...props} />) as never}

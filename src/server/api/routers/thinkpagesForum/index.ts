@@ -221,17 +221,20 @@ export const thinkpagesForumRouter = createTRPCRouter({
       thread: maskPersona(result.thread, result.canModerate),
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
-      // An imported post without an IxStats author (null, phase 4) is never the viewer's.
-      posts: result.posts.map(({ hidden, ...post }, index) => {
+      // An imported post without an IxStats author (null, phase 4) is never the viewer's. A Canvas post's wikitext
+      // (what its editor opens) goes only to the author who may edit it now, never to another reader or a moderator.
+      posts: result.posts.map(({ hidden, contentWikitext, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
+        const isOwn = byViewer && editable && !hidden;
         return maskPersona(
           {
             ...post,
             number: postNumberOf(input.page, index),
             role: roleOf(post, roles),
             ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
+            ...(isOwn && contentWikitext !== null ? { contentWikitext } : {}),
             byViewer,
-            isOwn: byViewer && editable && !hidden,
+            isOwn,
           },
           result.canModerate
         );

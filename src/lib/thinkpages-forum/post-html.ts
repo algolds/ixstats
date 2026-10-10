@@ -41,14 +41,15 @@ export function embedWidth(value: string | null | undefined): { width: number | 
   return { width: Math.min(Math.max(parseInt(value, 10), 1), EMBED_WIDTH_MAX) };
 }
 
-// A quote's opening tag, then (after any whitespace) the importer's author line: plain text, since the importer escapes it.
+// A quote's opening tag, then (after any whitespace) its author line: the importer's plain escaped text, or a Canvas
+// quote's line as MediaWiki renders it, where the bold author name is a <b>.
 const QUOTE_WITH_AUTHOR =
-  /(<blockquote\b[^>]*>)(\s*)<div\b([^>]*\bclass="[^"]*\bforum-quote-author\b[^"]*"[^>]*)>([^<]*)<\/div>/gi;
+  /(<blockquote\b[^>]*>)(\s*)<div\b([^>]*\bclass="[^"]*\bforum-quote-author\b[^"]*"[^>]*)>((?:[^<]|<\/?(?:b|strong|i|em)>)*)<\/div>/gi;
 const DATA_POST = /\sdata-post="([^"]*)"/i;
 
 /**
  * Makes a quote's author line a link to the quoted post when the quote's `data-post` is a valid post id; a quote
- * without one (or with a forged value) stays as written. The link text is the line's own escaped text.
+ * without one (or with a forged value) stays as written. The link text is the line's own text, bold name included.
  */
 export function linkQuoteSources(html: string): string {
   return html.replace(

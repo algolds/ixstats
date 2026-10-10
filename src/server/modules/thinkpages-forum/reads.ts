@@ -245,6 +245,8 @@ export async function getThreadPosts(
         authorPersonaId: true,
         importedAuthorName: true,
         contentHtml: true,
+        // Never sent whole: the router returns it for the posts the viewer may edit and strips it from the rest.
+        contentWikitext: true,
         editedAt: true,
         createdAt: true,
         hidden: true,

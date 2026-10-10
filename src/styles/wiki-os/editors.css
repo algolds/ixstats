@@ -423,6 +423,31 @@
     flex-direction: column;
   }
 
+  /* Hosted bare in a forum composer (.forum-canvas, see WikiVisualEditor's `bare`): sized by its Card rather
+     than the viewport, and unframed (the Card is the frame). */
+  .forum-canvas .wikios-ve-container {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    border: 0;
+    border-radius: inherit;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .forum-canvas .wikios-ve-editor-wrapper {
+    height: auto;
+    min-height: 9rem;
+    max-height: min(24rem, 50dvh);
+    background: transparent;
+  }
+
+  /* The phone sheet gives the editor most of its height. */
+  .forum-canvas[data-fill] .wikios-ve-editor-wrapper {
+    min-height: 40dvh;
+    max-height: 56dvh;
+  }
+
   /* Title bar */
 
   /* Segmented Control styling */

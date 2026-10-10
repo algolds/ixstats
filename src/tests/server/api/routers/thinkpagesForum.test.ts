@@ -387,6 +387,74 @@ describe("thinkpagesForum router", () => {
     });
   });
 
+  describe("a post's wikitext on the thread read", () => {
+    function wikitextDb(thread: object = {}) {
+      const db = forumDb(thread);
+      db.forumPost.findMany.mockResolvedValue([
+        {
+          id: "p1",
+          authorUserId: "u1",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          contentHtml: "<p>mine</p>",
+          contentWikitext: "mine ''wiki''",
+          editedAt: null,
+          createdAt: when,
+          hidden: false,
+        },
+        {
+          id: "p2",
+          authorUserId: "u2",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          contentHtml: "<p>theirs</p>",
+          contentWikitext: "theirs ''wiki''",
+          editedAt: null,
+          createdAt: when,
+          hidden: false,
+        },
+        {
+          id: "p3",
+          authorUserId: "u1",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          contentHtml: "<p>html only</p>",
+          contentWikitext: null,
+          editedAt: null,
+          createdAt: when,
+          hidden: false,
+        },
+      ] as never);
+      return db;
+    }
+
+    it("asks for it and returns it for the viewer's own editable posts only", async () => {
+      const db = wikitextDb();
+      const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
+      expect(db.forumPost.findMany.mock.calls[0]![0].select).toMatchObject({
+        contentWikitext: true,
+      });
+      expect(out.posts.map((p) => p.contentWikitext ?? null)).toEqual([
+        "mine ''wiki''",
+        null,
+        null,
+      ]);
+      expect(JSON.stringify(out)).not.toContain("theirs ''wiki''");
+    });
+
+    it("sends it to nobody where the viewer may not edit: a locked thread, an anonymous reader, a moderator's view of others", async () => {
+      const locked = await caller(member, wikitextDb({ locked: true })).thread({
+        threadId: "t1",
+        page: 1,
+      });
+      expect(JSON.stringify(locked)).not.toContain("''wiki''");
+      const anon = await caller(null, wikitextDb()).thread({ threadId: "t1", page: 1 });
+      expect(JSON.stringify(anon)).not.toContain("''wiki''");
+      const asAdmin = await caller(admin, wikitextDb()).thread({ threadId: "t1", page: 1 });
+      expect(JSON.stringify(asAdmin)).not.toContain("''wiki''");
+    });
+  });
+
   it("keeps the code of a ForumError", async () => {
     await expect(
       caller(member, forumDb()).reply({ threadId: "t1", html: "<p>x</p>" })

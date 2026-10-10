@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type ComponentType, type ReactNode } from "react";
+import { Fragment, type ComponentProps, type ComponentType, type ReactNode } from "react";
 import {
   Bold,
   Italic,
@@ -29,6 +29,7 @@ import { useEditorModalContext } from "../context/EditorModalContext";
 import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
+import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { Button } from "~/components/ui/button";
 
@@ -36,7 +37,6 @@ interface WikiVisualToolbarProps {
   title: string;
   wordCount: number;
   isDirty: boolean;
-  repulsionProgress: number;
   onSwitchToSource?: () => void;
   onCancel: () => void;
   handleSaveDraft: () => void;
@@ -53,6 +53,8 @@ interface WikiVisualToolbarProps {
   saveSelection?: () => void;
   restoreSelection?: () => void;
   handleInsertStashedImage: (filename: string) => void;
+  /** Leave out the page title bar (a host that is not editing a page has no title, drafts or save menu). */
+  hideHeader?: boolean;
 }
 
 interface ToolbarButton {
@@ -68,7 +70,6 @@ export function WikiVisualToolbar({
   title,
   wordCount,
   isDirty,
-  repulsionProgress,
   onSwitchToSource,
   onCancel,
   handleSaveDraft,
@@ -85,6 +86,7 @@ export function WikiVisualToolbar({
   saveSelection,
   restoreSelection,
   handleInsertStashedImage,
+  hideHeader = false,
 }: WikiVisualToolbarProps) {
   const modal = useEditorModalContext();
 
@@ -193,23 +195,24 @@ export function WikiVisualToolbar({
 
   return (
     <>
-      <WikiEditorHeader
-        title={title}
-        mode="visual"
-        wordCount={wordCount}
-        isDirty={isDirty}
-        repulsionProgress={repulsionProgress}
-        onSwitchMode={onSwitchToSource}
-        onCancel={onCancel}
-        handleSaveDraft={handleSaveDraft}
-        saving={modal.saving}
-        saveDropdownOpen={modal.saveDropdownOpen}
-        setSaveDropdownOpen={modal.setSaveDropdownOpen}
-        setSaveActionType={modal.setSaveActionType}
-        setShowSavePanel={modal.setShowSavePanel}
-        summary={modal.summary}
-        setSummary={modal.setSummary}
-      />
+      {hideHeader ? null : (
+        <ScrollAwareHeader
+          title={title}
+          mode="visual"
+          wordCount={wordCount}
+          isDirty={isDirty}
+          onSwitchMode={onSwitchToSource}
+          onCancel={onCancel}
+          handleSaveDraft={handleSaveDraft}
+          saving={modal.saving}
+          saveDropdownOpen={modal.saveDropdownOpen}
+          setSaveDropdownOpen={modal.setSaveDropdownOpen}
+          setSaveActionType={modal.setSaveActionType}
+          setShowSavePanel={modal.setShowSavePanel}
+          summary={modal.summary}
+          setSummary={modal.setSummary}
+        />
+      )}
 
       <div className="wikios-ve-toolbar">
         {buttonGroups.map((group, i) => (
@@ -240,6 +243,14 @@ export function WikiVisualToolbar({
       </div>
     </>
   );
+}
+
+/** The title bar, which slides away with the page's navigation; only mounted where the bar is shown, so a host without it follows no scrolling. */
+function ScrollAwareHeader(
+  props: Omit<ComponentProps<typeof WikiEditorHeader>, "repulsionProgress">
+) {
+  const { repulsionProgress } = useNavigationScroll();
+  return <WikiEditorHeader {...props} repulsionProgress={repulsionProgress} />;
 }
 
 const isToolbarButton = (item: ToolbarButton | ReactNode): item is ToolbarButton =>

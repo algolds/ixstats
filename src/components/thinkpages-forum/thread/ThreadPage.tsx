@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, EyeClosed } from "iconoir-react";
 import { Card } from "~/components/ui/card";
 import { Signal } from "~/components/ui/signal";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useScrollToPostHash } from "~/hooks/useScrollToPostHash";
 import { useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
@@ -15,7 +16,13 @@ import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
 import { ForumNotice } from "../BanNotice";
 import { ForumBreadcrumbs, forumTrail } from "../ForumBreadcrumbs";
-import { ForumComposer, type ForumComposerInput } from "../ForumComposer";
+import {
+  PHONE_QUERY,
+  REPLY_ID,
+  ReplyComposer,
+  type CanvasSubmitMeta,
+  type QuoteRequest,
+} from "../composer";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
@@ -23,17 +30,16 @@ import { ForumPage } from "../shell";
 import { PostCard } from "./PostCard";
 import { ThreadActions } from "./ThreadActions";
 import { ThreadRail } from "./ThreadRail";
-import type { ForumPost, ThreadData } from "./types";
+import type { EditBody, ForumPost, ThreadData } from "./types";
 
 const NO_POSTS: ForumPost[] = [];
-const REPLY_ID = "reply";
 
 interface ThreadPageProps {
   threadId: string;
   page: number;
 }
 
-/** Takes the reader to the reply composer and puts the caret in it. */
+/** Takes the reader to the reply composer under the posts and puts the caret in it. */
 function focusComposer() {
   const composer = document.getElementById(REPLY_ID);
   composer?.scrollIntoView({ block: "center" });
@@ -45,7 +51,10 @@ function ClosedNote({ data }: { data: ThreadData }) {
   const { thread } = data;
   if (thread.locked || thread.archived) {
     return (
-      <Signal tone="info" title={thread.locked ? "This thread is locked." : "This thread is archived."}>
+      <Signal
+        tone="info"
+        title={thread.locked ? "This thread is locked." : "This thread is archived."}
+      >
         No new replies can be posted. You can still read it.
       </Signal>
     );
@@ -101,6 +110,20 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
   useScrollToPostHash(posts, threadId, page);
   usePageTitle({ title: data?.thread.title ?? "ThinkPages" });
 
+  // Phones reply from a docked bar and a sheet; wider screens from the composer under the posts.
+  const phone = useMediaQuery(PHONE_QUERY);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [quote, setQuote] = useState<QuoteRequest | null>(null);
+  const startReply = useCallback(() => (phone ? setReplyOpen(true) : focusComposer()), [phone]);
+  const startQuote = useCallback(
+    (next: QuoteRequest) => {
+      setQuote(next);
+      startReply();
+    },
+    [startReply]
+  );
+  const clearQuote = useCallback(() => setQuote(null), []);
+
   const { mutateAsync: replyTo } = api.thinkpagesForum.reply.useMutation();
   const { mutateAsync: editPost } = api.thinkpagesForum.editPost.useMutation();
   const { mutateAsync: modEditPost } = api.thinkpagesForumMod.editPost.useMutation();
@@ -114,23 +137,25 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
   }, [utils, threadId]);
 
   const reply = useCallback(
-    async ({ html, personaId }: ForumComposerInput) => {
-      const { postId } = await replyTo({ threadId, html, personaId });
+    async (wikitext: string, { personaId }: CanvasSubmitMeta) => {
+      const { postId, formatting } = await replyTo({ threadId, wikitext, personaId });
       await refresh();
       // The reply is the thread's last post; ask where that is rather than guessing the page.
       const at = await utils.thinkpagesForum.resolvePost.fetch({ postId }).catch(() => null);
       const target = at?.page ?? page;
       router.push(`${basePath}?page=${target}#post-${postId}`);
+      return { formatting };
     },
     [replyTo, refresh, utils, threadId, basePath, page, router]
   );
 
   const edit = useCallback(
-    async (postId: string, html: string) => {
+    async (postId: string, body: EditBody) => {
       // M1: the server refuses the edit if the post changed (a moderator edit) since this page loaded it.
       const editedAt = posts.find((p) => p.id === postId)?.editedAt ?? null;
-      await editPost({ postId, html, editedAt });
+      const { formatting } = await editPost({ postId, ...body, editedAt });
       await utils.thinkpagesForum.thread.invalidate({ threadId });
+      return { formatting };
     },
     [editPost, utils, threadId, posts]
   );
@@ -205,8 +230,8 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
             cardsReady={ready}
             cardsErrored={errored}
             canReply={data.canReply}
-            onReply={focusComposer}
-            onQuote={focusComposer}
+            onReply={startReply}
+            onQuote={startQuote}
             open={!thread.locked && !thread.archived}
             signedIn={!!isSignedIn}
             onEdit={edit}
@@ -217,9 +242,17 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
         <FeedFooter data={data} page={page} totalPages={totalPages} basePath={basePath} />
       </Card>
       {data.canReply ? (
-        <section id={REPLY_ID} aria-label="Reply" className="scroll-mt-24 space-y-2">
-          <ForumComposer icAllowed={category.icAllowed} submitLabel="Reply" onSubmit={reply} />
-        </section>
+        <ReplyComposer
+          icAllowed={category.icAllowed}
+          threadId={threadId}
+          postStyle={style}
+          phone={phone}
+          open={replyOpen}
+          onOpenChange={setReplyOpen}
+          quoteRequest={quote}
+          onQuoteInserted={clearQuote}
+          onSubmit={reply}
+        />
       ) : (
         <ClosedNote data={data} />
       )}

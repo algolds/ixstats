@@ -5,7 +5,6 @@
 import "~/styles/wiki-os/editors.css";
 import "~/styles/wiki-os/mediawiki-editors.css";
 import React, { useEffect, useRef, useCallback } from "react";
-import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
@@ -47,6 +46,13 @@ interface WikiVisualEditorProps {
    * question itself (the edit bridge) passes false and hands the text to start from as `initialWikitext`.
    */
   restoreLocalDraft?: boolean;
+  /**
+   * Hosted inside another surface (the forum composer): no title bar, save panel or status bar, and no
+   * viewport-sized frame; the host owns saving and reads the content through `registerContentReader`.
+   */
+  bare?: boolean;
+  /** Hands the host the Plate editor once it is ready (to insert text or blocks from outside). */
+  onEditorReady?: (editor: TSlateEditor) => void;
 }
 
 type PlateEditorLike = TSlateEditor;
@@ -61,6 +67,8 @@ export function WikiVisualEditor({
   onSerializedWikitext,
   registerContentReader,
   restoreLocalDraft = true,
+  bare = false,
+  onEditorReady,
 }: WikiVisualEditorProps) {
   const editorRef = useRef<PlateEditorLike | null>(null);
   const wtRef = useRef<WikitextSerializeResult>({
@@ -68,7 +76,6 @@ export function WikiVisualEditor({
     complete: true,
     notices: [],
   });
-  const { repulsionProgress } = useNavigationScroll();
   const { user } = useWikiAuth();
   const userId = user?.id ?? null;
 
@@ -271,9 +278,13 @@ export function WikiVisualEditor({
     fmt.removeEditingNode();
   }, [fmt]);
 
+  const onEditorReadyRef = useRef(onEditorReady);
+  onEditorReadyRef.current = onEditorReady;
+
   const handleEditorReady = useCallback(
     (editor: unknown) => {
       editorRef.current = editor as PlateEditorLike;
+      onEditorReadyRef.current?.(editor as PlateEditorLike);
       refreshActiveFormats();
     },
     [refreshActiveFormats]
@@ -286,7 +297,6 @@ export function WikiVisualEditor({
           title={title}
           wordCount={state.wordCount}
           isDirty={state.isDirty}
-          repulsionProgress={repulsionProgress}
           onSwitchToSource={handleSwitchToSource}
           onCancel={onCancel}
           handleSaveDraft={handleSaveDraft}
@@ -301,18 +311,21 @@ export function WikiVisualEditor({
           insertRef={fmt.insertRef}
           clearFormatting={fmt.clearFormatting}
           handleInsertStashedImage={handleInsertStashedImage}
+          hideHeader={bare}
         />
 
-        <WikiEditorSavePanel
-          showSavePanel={state.showSavePanel}
-          summary={state.summary}
-          setSummary={state.setSummary}
-          minor={state.minor}
-          setMinor={state.setMinor}
-          saving={state.saving}
-          saveActionType={state.saveActionType}
-          onSave={handleSave}
-        />
+        {bare ? null : (
+          <WikiEditorSavePanel
+            showSavePanel={state.showSavePanel}
+            summary={state.summary}
+            setSummary={state.setSummary}
+            minor={state.minor}
+            setMinor={state.setMinor}
+            saving={state.saving}
+            saveActionType={state.saveActionType}
+            onSave={handleSave}
+          />
+        )}
 
         <div className="wikios-ve-editor-wrapper">
           <PlateWikiEditor
@@ -323,16 +336,19 @@ export function WikiVisualEditor({
             onSelectionChange={refreshActiveFormats}
             openTemplateEditor={handleOpenTemplateEditor}
             deleteNode={handleDeleteNode}
+            contentClassName={bare ? "p-3 pb-6" : undefined}
           />
         </div>
 
-        <WikiEditorStatusBar
-          cursorPos={{ line: 1, col: 1 }}
-          wordCount={state.wordCount}
-          lineCount={1}
-          formatName="Canvas Block AST"
-          encoding="UTF-8"
-        />
+        {bare ? null : (
+          <WikiEditorStatusBar
+            cursorPos={{ line: 1, col: 1 }}
+            wordCount={state.wordCount}
+            lineCount={1}
+            formatName="Canvas Block AST"
+            encoding="UTF-8"
+          />
+        )}
 
         <WikiEditorModalHost
           onInsertImage={fmt.handleInsertImage}

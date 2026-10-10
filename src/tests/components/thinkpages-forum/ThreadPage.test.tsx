@@ -77,6 +77,9 @@ jest.mock("~/hooks/useNotify", () => {
   const notify = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
   return { notify, useNotify: () => notify };
 });
+jest.mock("~/components/thinkpages-forum/composer", () =>
+  jest.requireActual("~/tests/helpers/forum-composer-stub").composerStub()
+);
 jest.mock("~/components/thinkpages-forum/ForumComposer", () => ({
   ForumComposer: ({ submitLabel = "Post" }: { submitLabel?: string }) => (
     <div data-testid="composer" contentEditable suppressContentEditableWarning>
@@ -371,6 +374,46 @@ describe("the reply area", () => {
     fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Reply" }));
     expect(scroll).toHaveBeenCalled();
     expect(document.activeElement).toBe(screen.getByTestId("composer"));
+  });
+
+  it("Quote hands the composer the post's id, author and text", () => {
+    set(threadData());
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "");
+    fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Quote" }));
+    expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "p2");
+  });
+
+  describe("on a phone", () => {
+    function installPhone() {
+      window.matchMedia = ((query: string) => ({
+        matches: query === "(max-width: 767px)",
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+    }
+
+    it("docks a Reply bar instead of the composer, and Reply or Quote on a post opens it", () => {
+      installPhone();
+      set(threadData());
+      const { container } = render(<ThreadPage threadId="t1" page={1} />);
+      expect(screen.getByTestId("reply-dock")).toBeInTheDocument();
+      expect(screen.queryByTestId("composer")).toBeNull();
+      fireEvent.click(within(container.querySelector<HTMLElement>("#post-p2")!).getByRole("button", { name: "Quote" }));
+      expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "p2");
+    });
+
+    it("opens the composer from the dock", () => {
+      installPhone();
+      set(threadData());
+      render(<ThreadPage threadId="t1" page={1} />);
+      fireEvent.click(screen.getByTestId("reply-dock"));
+      expect(screen.getByTestId("composer")).toBeInTheDocument();
+    });
   });
 });
 

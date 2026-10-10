@@ -81,6 +81,9 @@ jest.mock("~/hooks/useNotify", () => {
   return { notify, useNotify: () => notify };
 });
 jest.mock("~/components/thinkpages-forum/ReportDialog", () => ({ ReportDialog: () => null }));
+jest.mock("~/components/thinkpages-forum/composer", () =>
+  jest.requireActual("~/tests/helpers/forum-composer-stub").composerStub()
+);
 jest.mock("~/components/thinkpages-forum/ForumComposer", () => ({ ForumComposer: () => null }));
 
 import { ThreadPage } from "~/components/thinkpages-forum/thread";

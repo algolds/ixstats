@@ -1,29 +1,23 @@
 "use client";
 
-import { useCallback, useId, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useRef, useState, type MouseEvent } from "react";
 import dynamic from "next/dynamic";
 import { ActionPicker } from "~/components/action-links";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { getBasePath } from "~/lib/base-path";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
-import { api } from "~/trpc/react";
+import { PersonaSelect, useMyPersonas } from "./composer/PersonaSelect";
 
 const GlassPlateEditor = dynamic(
   () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
   { loading: () => <Skeleton className="rounded-control h-20" />, ssr: false }
 );
 
-const SELF = "self";
 /** Elements that handle their own focus; a mouse down on them must not be redirected. */
 const OWN_FOCUS = "input, textarea, select, button, a, [contenteditable='true'], [role='combobox']";
 
@@ -54,7 +48,6 @@ export function ForumComposer({
   onSubmit,
 }: ForumComposerProps) {
   const editorRef = useRef<GlassPlateEditorRef>(null);
-  const postAsId = useId();
   const [html, setHtml] = useState(initialHtml);
   // Only gates Save until the editor reports its own plain text.
   const [plain, setPlain] = useState(() => initialHtml.replace(/<[^>]*>/g, ""));
@@ -62,9 +55,7 @@ export function ForumComposer({
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { data: personas = [] } = api.thinkpagesForum.myPersonas.useQuery(undefined, {
-    enabled: icAllowed,
-  });
+  const personas = useMyPersonas(icAllowed);
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -109,9 +100,12 @@ export function ForumComposer({
   }, [canSubmit, onSubmit, html, icAllowed, personaId, titleField, title]);
 
   return (
-    <div
+    <Card
+      variant="well"
+      padding="sm"
+      content="input"
       data-slot="forum-composer"
-      className="facet-chrome rounded-card flex cursor-text flex-col gap-2 p-2"
+      className="flex cursor-text flex-col gap-2"
       onMouseDown={focusEditor}
     >
       {titleField ? (
@@ -139,47 +133,25 @@ export function ForumComposer({
         className="border-transparent bg-transparent shadow-none"
       />
 
-      {error ? (
-        <div
-          role="alert"
-          className="bg-destructive/10 text-destructive text-footnote rounded-control px-3 py-2"
-        >
-          {error}
-        </div>
-      ) : null}
+      {error ? <Signal tone="destructive" title={error} /> : null}
 
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
         <div className="flex flex-wrap items-center gap-2">
           <ActionPicker onPick={insertToken} />
           {icAllowed ? (
-            <div className="flex items-center gap-2">
-              <span id={postAsId} className="text-footnote text-label-secondary">
-                Post as
-              </span>
-              <Select
-                value={personaId ?? SELF}
-                onValueChange={(v) => setPersonaId(v === SELF ? null : v)}
-                disabled={pending}
-              >
-                <SelectTrigger size="sm" aria-labelledby={postAsId}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SELF}>Yourself</SelectItem>
-                  {personas.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.displayName} (@{p.username})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <PersonaSelect
+              label="Post as"
+              personas={personas}
+              value={personaId}
+              onChange={setPersonaId}
+              disabled={pending}
+            />
           ) : null}
         </div>
         <Button type="button" size="sm" onClick={() => void submit()} disabled={!canSubmit}>
           {submitLabel}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

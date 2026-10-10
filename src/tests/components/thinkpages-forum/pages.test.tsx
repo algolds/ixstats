@@ -95,6 +95,9 @@ interface ComposerStubProps {
   onSubmit: (input: { html: string; personaId: string | null; title?: string }) => Promise<void>;
 }
 
+jest.mock("~/components/thinkpages-forum/composer", () =>
+  jest.requireActual("~/tests/helpers/forum-composer-stub").composerStub()
+);
 jest.mock("~/components/thinkpages-forum/ForumComposer", () => ({
   ForumComposer: ({ submitLabel = "Post", initialHtml, onSubmit }: ComposerStubProps) => (
     <div data-testid="composer" data-initial={initialHtml ?? ""}>
@@ -140,6 +143,7 @@ jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn(), info: jest.fn() }),
 }));
 
+import { STUB_WIKITEXT } from "~/tests/helpers/forum-composer-stub";
 import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
 import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
@@ -458,16 +462,55 @@ describe("thread view", () => {
     );
   });
 
+  it("edits a Canvas post in Canvas from its wikitext and saves wikitext, never html", async () => {
+    const data = threadData();
+    const loaded = new Date("2026-10-01T10:00:00Z");
+    set("thread", {
+      data: {
+        ...data,
+        posts: [
+          { ...data.posts[0]!, editedAt: loaded, contentWikitext: "First '''post'''" },
+          data.posts[1]!,
+        ],
+      },
+    });
+    const editPost = jest.fn(() => Promise.resolve({ formatting: "done" }));
+    mutations.editPost = editPost;
+    render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
+    expect(screen.getByTestId("canvas-composer")).toHaveAttribute("data-initial", "First '''post'''");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(editPost).toHaveBeenCalledWith({ postId: "p1", wikitext: STUB_WIKITEXT, editedAt: loaded })
+    );
+    // Saved and formatted: the editor closes.
+    await waitFor(() => expect(screen.queryByTestId("canvas-composer")).toBeNull());
+  });
+
+  it("keeps the Canvas editor open when the wiki is still formatting the edit", async () => {
+    const data = threadData();
+    set("thread", {
+      data: { ...data, posts: [{ ...data.posts[0]!, contentWikitext: "x" }, data.posts[1]!] },
+    });
+    const editPost = jest.fn(() => Promise.resolve({ formatting: "pending" }));
+    mutations.editPost = editPost;
+    render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(editPost).toHaveBeenCalled());
+    expect(screen.getByTestId("canvas-composer")).toBeInTheDocument();
+  });
+
   it("after a reply goes to the reply's page and anchor", async () => {
     set("thread", { data: threadData() });
-    const reply = jest.fn(() => Promise.resolve({ postId: "p9" }));
+    const reply = jest.fn(() => Promise.resolve({ postId: "p9", formatting: "done" }));
     mutations.reply = reply;
     render(<ThreadPage threadId="t1" page={1} />);
     fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
     await waitFor(() =>
       expect(router.push).toHaveBeenCalledWith("/thinkpages/t/t1?page=3#post-p9")
     );
-    expect(reply).toHaveBeenCalledWith({ threadId: "t1", html: "<p>new</p>", personaId: null });
+    expect(reply).toHaveBeenCalledWith({ threadId: "t1", wikitext: STUB_WIKITEXT, personaId: null });
   });
 });
 
@@ -536,7 +579,7 @@ describe("load failures and out-of-range pages", () => {
 describe("new thread", () => {
   it("creates the thread and opens it", async () => {
     set("category", { data: categoryData(true) });
-    const create = jest.fn(() => Promise.resolve({ threadId: "t7", postId: "p7" }));
+    const create = jest.fn(() => Promise.resolve({ threadId: "t7", postId: "p7", formatting: "done" }));
     mutations.createThread = create;
     render(<NewThreadForm categoryKey="general" />);
     fireEvent.click(screen.getByRole("button", { name: "Post" }));
@@ -544,14 +587,14 @@ describe("new thread", () => {
     expect(create).toHaveBeenCalledWith({
       categoryKey: "general",
       title: "Hello",
-      html: "<p>new</p>",
+      wikitext: STUB_WIKITEXT,
       personaId: null,
     });
   });
 
   it("starts a realm thread in that realm", async () => {
     set("category", { data: categoryData(true, [], HUB) });
-    const create = jest.fn(() => Promise.resolve({ threadId: "t8", postId: "p8" }));
+    const create = jest.fn(() => Promise.resolve({ threadId: "t8", postId: "p8", formatting: "done" }));
     mutations.createThread = create;
     render(<NewThreadForm categoryKey="hub" realm="eurth" />);
     expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth" });
@@ -561,9 +604,24 @@ describe("new thread", () => {
       categoryKey: "hub",
       realm: "eurth",
       title: "Hello",
-      html: "<p>new</p>",
+      wikitext: STUB_WIKITEXT,
       personaId: null,
     });
+  });
+
+  it("stays on the page while the first post is still being formatted, with a way in", async () => {
+    set("category", { data: categoryData(true) });
+    mutations.createThread = jest.fn(() =>
+      Promise.resolve({ threadId: "t9", postId: "p9", formatting: "pending" })
+    );
+    router.push.mockClear();
+    render(<NewThreadForm categoryKey="general" />);
+    fireEvent.click(screen.getByRole("button", { name: "Post" }));
+    expect(await screen.findByRole("link", { name: "Open the thread" })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/t9"
+    );
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it("explains a refusal with the category's notice, else the general copy", () => {

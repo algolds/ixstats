@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "~/components/shell/PageHeader";
@@ -11,7 +11,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { categoryHref, FORUM_HOME, hubHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { BanNotice } from "./BanNotice";
-import { ForumComposer, type ForumComposerInput } from "./ForumComposer";
+import { CanvasComposer, useMyPersonas, type CanvasSubmitMeta } from "./composer";
 import { ForumLoadError } from "./ForumPageState";
 
 interface NewThreadFormProps {
@@ -30,21 +30,26 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     realm,
   });
   const { mutateAsync: createThread } = api.thinkpagesForum.createThread.useMutation();
+  const personas = useMyPersonas(data?.category.icAllowed === true);
+  // A thread whose first post is still being formatted opens on request, so the composer can say so first.
+  const [startedId, setStartedId] = useState<string | null>(null);
   const backHref = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
 
   const submit = useCallback(
-    async ({ html, personaId, title }: ForumComposerInput) => {
-      const { threadId } = await createThread({
+    async (wikitext: string, { personaId, title }: CanvasSubmitMeta) => {
+      const { threadId, formatting } = await createThread({
         categoryKey,
         realm,
-        title: title ?? "",
-        html,
+        title,
+        wikitext,
         personaId,
       });
       void utils.thinkpagesForum.category.invalidate({ key: categoryKey });
       void utils.thinkpagesForum.categories.invalidate();
       void utils.thinkpagesForum.realmSection.invalidate();
-      router.push(threadHref(threadId));
+      if (formatting === "done") router.push(threadHref(threadId));
+      else setStartedId(threadId);
+      return { formatting };
     },
     [createThread, categoryKey, realm, utils, router]
   );
@@ -107,7 +112,17 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   return (
     <div className="container mx-auto max-w-3xl space-y-4 px-4 py-4 sm:py-6 md:py-8">
       {header}
-      <ForumComposer icAllowed={data.category.icAllowed} titleField onSubmit={submit} />
+      <CanvasComposer
+        mode="thread"
+        personas={personas}
+        postStyle={data.category.style === "ic" ? "ic" : "ooc"}
+        onSubmit={submit}
+      />
+      {startedId ? (
+        <Button asChild variant="secondary" className="pointer-coarse:min-h-11">
+          <Link href={threadHref(startedId)}>Open the thread</Link>
+        </Button>
+      ) : null}
     </div>
   );
 }
