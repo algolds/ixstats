@@ -1,44 +1,59 @@
 /**
- * Writing into the Canvas editor from outside it (the Quote button, Attach action). Plain Slate transforms on the
- * editor the host got from `onEditorReady`; wikitext is read back the way a save reads it, so nothing here is a
- * second source of truth.
+ * Writing into the Canvas editor from outside it (the Quote button, Attach action). Plate transforms on the editor the
+ * host got from `onEditorReady`; the document is read back the way a save reads it, so nothing here is a second source
+ * of truth.
  */
-import { Editor, Transforms, type Descendant } from "slate";
-import { ReactEditor } from "slate-react";
-import { wikitextToAst, astToPlateNodes } from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import type { TElement, TSlateEditor } from "platejs";
+import { quoteWikitext, type QuoteRequest } from "./QuoteInsert";
 
-const EMPTY_PARAGRAPH = { type: "p", children: [{ text: "" }] } as unknown as Descendant;
-
-function isBlank(editor: Editor): boolean {
-  return editor.children.length === 1 && Editor.string(editor, [0]) === "";
-}
+const EMPTY_PARAGRAPH: TElement = { type: "p", children: [{ text: "" }] };
 
 /** Puts the keyboard back in the editor after a popover or button took it; a no-op where the editor is not mounted. */
-function focusSoon(editor: Editor): void {
+function focusSoon(editor: TSlateEditor): void {
   requestAnimationFrame(() => {
     try {
-      ReactEditor.focus(editor as ReactEditor);
+      editor.tf.focus();
     } catch {
       // Not mounted (closed sheet, test): nothing to focus.
     }
   });
 }
 
+function selectEnd(editor: TSlateEditor): void {
+  const end = editor.api.end([]);
+  if (end) editor.tf.select(end);
+}
+
 /** Inserts text at the caret, or at the end of the document when nothing is selected. */
-export function insertAtCaret(editor: Editor, text: string): void {
-  if (!editor.selection) Transforms.select(editor, Editor.end(editor, []));
-  Transforms.insertText(editor, text);
+export function insertAtCaret(editor: TSlateEditor, text: string): void {
+  if (!editor.selection) selectEnd(editor);
+  editor.tf.insertText(text);
   focusSoon(editor);
 }
 
-/** Adds wikitext as blocks at the end of the document (replacing an empty one) and puts the caret in a fresh paragraph after. */
-export function appendWikitext(editor: Editor, wikitext: string): void {
-  const blank = isBlank(editor);
-  const blocks = astToPlateNodes(wikitextToAst(wikitext)) as Descendant[];
-  Editor.withoutNormalizing(editor, () => {
-    Transforms.insertNodes(editor, [...blocks, EMPTY_PARAGRAPH], { at: [editor.children.length] });
-    if (blank) Transforms.removeNodes(editor, { at: [0] });
+/**
+ * The quote as one atomic block: the read-only wikitext block the Canvas already has for source it must not touch,
+ * shown as who wrote what (never as tags) and saved exactly as `quoteWikitext` wrote it, whatever the author types
+ * around it.
+ */
+function quoteBlock(quote: QuoteRequest): TElement {
+  return {
+    type: "raw-wikitext",
+    construct: "forum-quote",
+    rawWikitext: quoteWikitext(quote).trimEnd(),
+    label: quote.author,
+    caption: quote.text,
+    children: [{ text: "" }],
+  };
+}
+
+/** Adds the quote at the end of the document (replacing an empty one) and puts the caret in a fresh paragraph after it. */
+export function appendQuote(editor: TSlateEditor, quote: QuoteRequest): void {
+  const blank = editor.children.length === 1 && editor.api.string([0]) === "";
+  editor.tf.withoutNormalizing(() => {
+    editor.tf.insertNodes([quoteBlock(quote), EMPTY_PARAGRAPH], { at: [editor.children.length] });
+    if (blank) editor.tf.removeNodes({ at: [0] });
   });
-  Transforms.select(editor, Editor.end(editor, []));
+  selectEnd(editor);
   focusSoon(editor);
 }

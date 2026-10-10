@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { Editor } from "slate";
+import type { TSlateEditor } from "platejs";
 import { ActionPicker } from "~/components/action-links";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -15,9 +15,9 @@ import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
 import { PostBody } from "../thread/PostBody";
 import type { PostStyle } from "../thread/types";
-import { appendWikitext, insertAtCaret } from "./canvas-ops";
+import { appendQuote, insertAtCaret } from "./canvas-ops";
 import { PersonaSelect, type PersonaOption } from "./PersonaSelect";
-import { quoteWikitext, type QuoteRequest } from "./QuoteInsert";
+import type { QuoteRequest } from "./QuoteInsert";
 
 // The Canvas editor, hosted bare: its toolbar, slash menu and modals, without the page title bar or save menu.
 const WikiVisualEditor = dynamic(
@@ -105,7 +105,9 @@ export function CanvasComposer({
   const [preview, setPreview] = useState<Preview | null>(null);
   const { mutateAsync: previewPost } = api.thinkpagesForum.previewPost.useMutation();
 
-  const editorRef = useRef<Editor | null>(null);
+  const editorRef = useRef<TSlateEditor | null>(null);
+  // The last wikitext the editor reported: a Signal about the previous save goes when the content differs from it.
+  const lastTextRef = useRef(initialWikitext);
   const quotedRef = useRef<QuoteRequest | null>(null);
   const onQuoteInsertedRef = useRef(onQuoteInserted);
   onQuoteInsertedRef.current = onQuoteInserted;
@@ -120,14 +122,14 @@ export function CanvasComposer({
   const applyQuote = useCallback((quote: QuoteRequest) => {
     if (!editorRef.current || quotedRef.current === quote) return;
     quotedRef.current = quote;
-    appendWikitext(editorRef.current, quoteWikitext(quote));
+    appendQuote(editorRef.current, quote);
     onQuoteInsertedRef.current?.();
   }, []);
 
   // The quote may arrive before the editor has loaded (a phone sheet that has just opened): it waits for it.
   const handleEditorReady = useCallback(
-    (editor: unknown) => {
-      editorRef.current = editor as Editor;
+    (editor: TSlateEditor) => {
+      editorRef.current = editor;
       if (quoteRequest) applyQuote(quoteRequest);
     },
     [quoteRequest, applyQuote]
@@ -138,6 +140,11 @@ export function CanvasComposer({
 
   const handleSerialized = useCallback((next: WikitextSerializeResult) => {
     setDoc(next);
+    if (next.wikitext !== lastTextRef.current) {
+      lastTextRef.current = next.wikitext;
+      // An edit makes the last save's outcome (a refusal, "formatting") stale.
+      setPhase((current) => (current.kind === "sending" ? current : { kind: "idle" }));
+    }
     onWikitextChangeRef.current?.(next.wikitext);
   }, []);
 
@@ -170,7 +177,8 @@ export function CanvasComposer({
       const { formatting } = await onSubmit(doc.wikitext, { personaId, title: title.trim() });
       setPhase(formatting === "pending" ? { kind: "pending" } : { kind: "idle" });
       if (mode !== "edit") {
-        // A posted reply or thread starts the next one blank.
+        // A posted reply or thread starts the next one blank (its report of "" is not an edit).
+        lastTextRef.current = "";
         setSeed("");
         setDoc({ wikitext: "", complete: true, notices: [] });
         onWikitextChangeRef.current?.("");
@@ -207,12 +215,18 @@ export function CanvasComposer({
           value={view}
           onValueChange={(v) => void changeView(v)}
         />
-        {view === "write" ? <ActionPicker onPick={attach} /> : null}
+        {view === "write" ? (
+          <div inert={sending}>
+            <ActionPicker onPick={attach} />
+          </div>
+        ) : null}
       </div>
 
       <div
         hidden={view !== "write"}
         data-fill={fill ? "" : undefined}
+        // What is typed while the post is being sent would be lost when the editor clears.
+        inert={sending}
         className="forum-canvas rounded-row overflow-hidden"
       >
         <WikiVisualEditor

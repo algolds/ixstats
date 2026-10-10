@@ -50,7 +50,7 @@ jest.mock("~/components/action-links", () => ({
 
 jest.mock("~/components/thinkpages-forum/composer/canvas-ops", () => ({
   insertAtCaret: jest.fn(),
-  appendWikitext: jest.fn(),
+  appendQuote: jest.fn(),
 }));
 
 jest.mock("~/components/thinkpages-forum/thread/PostBody", () => ({
@@ -72,11 +72,11 @@ jest.mock("~/trpc/react", () => {
 });
 
 import { CanvasComposer } from "~/components/thinkpages-forum/composer";
-import { appendWikitext, insertAtCaret } from "~/components/thinkpages-forum/composer/canvas-ops";
+import { appendQuote, insertAtCaret } from "~/components/thinkpages-forum/composer/canvas-ops";
 
 const { previewPost } = jest.requireMock<{ previewPost: jest.Mock }>("~/trpc/react");
 const insert = jest.mocked(insertAtCaret);
-const append = jest.mocked(appendWikitext);
+const append = jest.mocked(appendQuote);
 
 const write = (text: string) =>
   fireEvent.change(screen.getByTestId("canvas"), { target: { value: text } });
@@ -181,6 +181,42 @@ describe("CanvasComposer", () => {
     expect(screen.getByRole("button", { name: "Reply" })).toBeEnabled();
   });
 
+  it("drops the last save's Signal when the content changes, but not when a posted reply clears", async () => {
+    const onSubmit = jest
+      .fn()
+      .mockRejectedValueOnce(new Error("Signatures are not allowed here."))
+      .mockResolvedValueOnce({ formatting: "pending" });
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("Hello ~~~~");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    expect(await screen.findByText("Signatures are not allowed here.")).toBeInTheDocument();
+    write("Hello");
+    expect(screen.queryByText("Signatures are not allowed here.")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    expect(await screen.findByText("Formatting will finish shortly")).toBeInTheDocument();
+    // The editor cleared itself, which is not an edit.
+    expect(screen.getByTestId("canvas")).toHaveValue("");
+    expect(screen.getByText("Formatting will finish shortly")).toBeInTheDocument();
+    write("Next reply");
+    expect(screen.queryByText("Formatting will finish shortly")).toBeNull();
+  });
+
+  it("makes the editor and Attach action inert while the post is being sent", async () => {
+    let finish: (value: { formatting: "done" }) => void = () => undefined;
+    const onSubmit = jest.fn(
+      () => new Promise<{ formatting: "done" }>((resolve) => (finish = resolve))
+    );
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("Hello");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    await waitFor(() => expect(screen.getByTestId("canvas").closest("[inert]")).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Attach action" }).closest("[inert]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Reply" })).toBeDisabled();
+    finish({ formatting: "done" });
+    await waitFor(() => expect(screen.getByTestId("canvas").closest("[inert]")).toBeNull());
+  });
+
   it("will not submit content that has no wikitext form yet", () => {
     render(<CanvasComposer mode="reply" threadId="t1" onSubmit={jest.fn()} />);
     write("INCOMPLETE");
@@ -207,10 +243,7 @@ describe("CanvasComposer", () => {
       />
     );
     expect(append).toHaveBeenCalledTimes(1);
-    expect(append).toHaveBeenCalledWith(
-      { fake: true },
-      expect.stringContaining('<blockquote class="forum-quote" data-post="p9">')
-    );
+    expect(append).toHaveBeenCalledWith({ fake: true }, quote);
     expect(done).toHaveBeenCalledTimes(1);
     rerender(
       <CanvasComposer

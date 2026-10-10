@@ -15,8 +15,20 @@ const QUOTE_TEXT_MAX = 600;
 const WIKI_MARKUP = /[<>]|\{\{|\}\}|\[\[|\]\]|~{3,}/g;
 const LINE_BREAKS = /\s*\n\s*/g;
 
+/**
+ * Strips until nothing more goes: removing `<>` from "{<>{" or a token from "[[x[[" joins what was around it into a
+ * new one (the same reason the server strips to a fixed point).
+ */
 function plain(value: string): string {
-  return value.replace(WIKI_MARKUP, "").replace(LINE_BREAKS, " ").trim();
+  let text = value.replace(WIKI_MARKUP, "");
+  for (
+    let next = text.replace(WIKI_MARKUP, "");
+    next !== text;
+    next = text.replace(WIKI_MARKUP, "")
+  ) {
+    text = next;
+  }
+  return text.replace(LINE_BREAKS, " ").trim();
 }
 
 /** A quote of `q` as wikitext for the composer; a post id that is not a valid id is left out. */

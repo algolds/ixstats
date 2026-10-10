@@ -26,6 +26,28 @@ describe("quoteWikitext", () => {
     expect(out).toContain('<div class="forum-quote-body">one two three</div>');
   });
 
+  // Taking out the `<>` (or an inner token) must not join what was around it into a new token.
+  it.each([
+    ["{<>{subst:x}<>}", /\{\{|\}\}/],
+    ["[<>[Category:X]<>]", /\[\[|\]\]/],
+    ["~~<>~ and ~<>~<>~~", /~~~/],
+    ["<<>script>x<</>/script>", /[<>]/],
+  ])("strips %p to a fixed point, in the text and in the author", (hostile, bad) => {
+    const out = quoteWikitext({ postId: "p1", author: hostile, text: hostile });
+    const author = /<div class="forum-quote-author">'''(.*)''' wrote:/.exec(out)?.[1] ?? "";
+    const body = /<div class="forum-quote-body">(.*)<\/div><\/blockquote>/.exec(out)?.[1] ?? "";
+    expect(author).not.toBe("");
+    expect(author).not.toMatch(bad);
+    expect(body).not.toMatch(bad);
+  });
+
+  it("holds for another member's post, whose entity-encoded markup is decoded first", () => {
+    const html = "<p>{&lt;&gt;{subst:x}&lt;&gt;} [&lt;&gt;[Category:X]&lt;&gt;] ~~&lt;&gt;~</p>";
+    const out = quoteWikitext({ postId: "p1", author: "A", text: htmlToQuoteText(html) });
+    expect(out).not.toMatch(/\{\{|\}\}|\[\[|\]\]|~~~/);
+    expect(out).toContain("subst:x");
+  });
+
   it("never lets a signature through (the server refuses them)", () => {
     expect(quoteWikitext({ postId: "p1", author: "A", text: "x ~~~~ y" })).not.toContain("~~~");
   });

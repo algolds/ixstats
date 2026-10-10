@@ -125,7 +125,7 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
       })),
     },
     forumPost: {
-      findMany: jest.fn(async () => [
+      findMany: jest.fn(async (_args?: { select?: Record<string, boolean> }) => [
         {
           id: "p1",
           authorUserId: "u1",
@@ -431,7 +431,7 @@ describe("thinkpagesForum router", () => {
     it("asks for it and returns it for the viewer's own editable posts only", async () => {
       const db = wikitextDb();
       const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
-      expect(db.forumPost.findMany.mock.calls[0]![0].select).toMatchObject({
+      expect(db.forumPost.findMany.mock.calls[0]?.[0]?.select).toMatchObject({
         contentWikitext: true,
       });
       expect(out.posts.map((p) => p.contentWikitext ?? null)).toEqual([

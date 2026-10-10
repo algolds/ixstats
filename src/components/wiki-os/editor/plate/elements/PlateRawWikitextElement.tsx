@@ -47,6 +47,11 @@ function describeConstruct(el: PlateNode): ConstructInfo {
         label: `<${el.tag ?? "tag"}>`,
         description: `A <${el.tag ?? "tag"}> block whose content is literal text or belongs to an extension, so the visual editor cannot edit it without changing it. ${READ_ONLY}`,
       };
+    case "forum-quote":
+      return {
+        label: "Quote",
+        description: "A quote of another post, saved as it is. Remove it to leave it out.",
+      };
     case "nested-table":
       return { label: "Nested table", description: `A table inside a table cell. ${READ_ONLY}` };
     case "table-template":
@@ -148,15 +153,23 @@ export function PlateRawWikitextElement({
             )}
           </div>
         </div>
-        <pre
-          tabIndex={0}
-          aria-label={`Source of the ${label} block`}
-          // A drag over the source selects text; the editor must not take it for a move of the block.
-          onMouseDown={(event) => event.stopPropagation()}
-          className="text-foreground/80 max-h-48 cursor-text overflow-auto font-mono text-xs break-words whitespace-pre-wrap select-text"
-        >
-          {source}
-        </pre>
+        {element.construct === "forum-quote" ? (
+          // Who wrote what, never the tags the quote is saved with.
+          <div className="text-callout text-label-secondary min-w-0 break-words">
+            <span className="text-label font-medium">{element.label} wrote: </span>
+            {element.caption}
+          </div>
+        ) : (
+          <pre
+            tabIndex={0}
+            aria-label={`Source of the ${label} block`}
+            // A drag over the source selects text; the editor must not take it for a move of the block.
+            onMouseDown={(event) => event.stopPropagation()}
+            className="text-foreground/80 max-h-48 cursor-text overflow-auto font-mono text-xs break-words whitespace-pre-wrap select-text"
+          >
+            {source}
+          </pre>
+        )}
       </div>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

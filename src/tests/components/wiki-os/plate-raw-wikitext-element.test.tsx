@@ -8,7 +8,9 @@ const mockNotifyError = jest.fn();
 let mockElement: Record<string, unknown> = {};
 let mockReadOnly = false;
 
-jest.mock("slate", () => ({ Transforms: { removeNodes: (...args: unknown[]) => mockRemoveNodes(...args) } }));
+jest.mock("slate", () => ({
+  Transforms: { removeNodes: (...args: unknown[]) => mockRemoveNodes(...args) },
+}));
 jest.mock("platejs/react", () => ({
   useElement: () => mockElement,
   usePath: () => [3],
@@ -64,7 +66,9 @@ describe("PlateRawWikitextElement (review fix 11)", () => {
 
   it("labels its buttons", () => {
     renderBlock();
-    expect(screen.getByRole("button", { name: "Copy the source of this <pre> block" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Copy the source of this <pre> block" })
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Remove this <pre> block" })).toBeTruthy();
   });
 
@@ -93,7 +97,9 @@ describe("PlateRawWikitextElement (review fix 11)", () => {
   it("removes the block once the author confirms", async () => {
     renderBlock();
     fireEvent.click(screen.getByRole("button", { name: "Remove this <pre> block" }));
-    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Remove" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Remove" })
+    );
 
     expect(mockRemoveNodes).toHaveBeenCalledTimes(1);
     expect(mockRemoveNodes.mock.calls[0]![1]).toEqual({ at: [3] });
@@ -118,5 +124,32 @@ describe("PlateRawWikitextElement (review fix 11)", () => {
     renderBlock();
     expect(screen.getByRole("group", { name: `${label} block, read-only source` })).toBeTruthy();
     expect(screen.getByText(description)).toBeTruthy();
+  });
+});
+
+describe("PlateRawWikitextElement as a forum quote", () => {
+  beforeEach(() => {
+    mockReadOnly = false;
+    mockElement = {
+      type: "raw-wikitext",
+      construct: "forum-quote",
+      rawWikitext: '<blockquote class="forum-quote" data-post="p1">...</blockquote>',
+      label: "Heku",
+      caption: "Hello there",
+    };
+  });
+
+  it("shows who wrote what, never the tags the quote is saved with", () => {
+    const { container } = renderBlock();
+    expect(screen.getByText("Heku wrote:")).toBeTruthy();
+    expect(screen.getByText(/Hello there/)).toBeTruthy();
+    expect(container.textContent).not.toContain("<blockquote");
+    expect(screen.getByRole("group", { name: "Quote block, read-only source" })).toBeTruthy();
+    expect(container.querySelector("pre")).toBeNull();
+  });
+
+  it("can be removed, after asking", () => {
+    renderBlock();
+    expect(screen.getByRole("button", { name: "Remove this Quote block" })).toBeTruthy();
   });
 });
