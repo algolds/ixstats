@@ -6,6 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { db as appDb } from "~/server/db";
 import { FORUM_RENDERER_VERSION, renderViaWiki } from "./render";
+import { writeTemplates } from "./writes-body";
 
 const BATCH = 10;
 
@@ -44,14 +45,16 @@ export async function rerenderPosts(
   let rendered = 0;
   let failed = 0;
   for (const post of posts) {
-    const out = await renderViaWiki(post.contentWikitext ?? "", post.threadId);
+    const source = post.contentWikitext ?? "";
+    const out = await renderViaWiki(source, post.threadId);
     if (!out) {
       failed += 1;
       continue;
     }
-    await db.$transaction(async (tx) => {
-      await tx.forumPost.update({
-        where: { id: post.id },
+    // Written only if the author has not edited the post since it was read: an edit has its own fresh render.
+    const written = await db.$transaction(async (tx) => {
+      const { count } = await tx.forumPost.updateMany({
+        where: { id: post.id, contentWikitext: source },
         data: {
           contentHtml: out.contentHtml,
           plainText: out.plainText,
@@ -59,15 +62,11 @@ export async function rerenderPosts(
           renderedAt: out.renderedAt,
         },
       });
-      await tx.forumPostTemplate.deleteMany({ where: { postId: post.id } });
-      if (out.templates.length > 0) {
-        await tx.forumPostTemplate.createMany({
-          data: out.templates.map((title) => ({ postId: post.id, title })),
-          skipDuplicates: true,
-        });
-      }
+      if (count === 0) return false;
+      await writeTemplates(tx, post.id, out.templates, true);
+      return true;
     });
-    rendered += 1;
+    if (written) rendered += 1;
   }
   return { rendered, failed };
 }

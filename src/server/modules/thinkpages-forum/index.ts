@@ -160,6 +160,7 @@ export {
   type StashDb,
   type StashOwner,
 } from "./stash";
+export { renderPostWikitext, type RenderedPost } from "./render";
 export {
   createThread,
   editPost,

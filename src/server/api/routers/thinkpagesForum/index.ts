@@ -7,6 +7,7 @@
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";
+import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -32,6 +33,7 @@ import {
   myStanding,
   postingAccessFor,
   primaryRealmIdOf,
+  renderPostWikitext,
   replyToThread,
   resolvePostLocation,
   stashThread,
@@ -55,7 +57,12 @@ import {
   viewerOf,
 } from "./viewer";
 
-const html = z.string().max(MAX_POST_HTML);
+const html = z.string().max(MAX_POST_HTML).optional();
+const wikitext = z.string().max(MAX_POST_WIKITEXT).optional();
+/** A post is sent as light-editor html or as Canvas wikitext, never both and never neither. */
+const oneBody = (v: { html?: string; wikitext?: string }) =>
+  (v.html === undefined) !== (v.wikitext === undefined);
+const ONE_BODY = "Send html or wikitext";
 const personaId = id.nullish();
 const stashTarget = z.object({ threadId: id, stashId: id.optional() });
 
@@ -233,30 +240,49 @@ export const thinkpagesForumRouter = createTRPCRouter({
 
   createThread: rateLimitedMutationProcedure
     .input(
-      z.object({
-        categoryKey,
-        realm: realm.optional(),
-        title: z.string().trim().min(TITLE_MIN).max(TITLE_MAX),
-        html,
-        personaId,
-      })
+      z
+        .object({
+          categoryKey,
+          realm: realm.optional(),
+          title: z.string().trim().min(TITLE_MIN).max(TITLE_MAX),
+          html,
+          wikitext,
+          personaId,
+        })
+        .refine(oneBody, ONE_BODY)
     )
     .mutation(async ({ ctx, input }) =>
       createThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
 
   reply: rateLimitedMutationProcedure
-    .input(z.object({ threadId: id, html, personaId }))
+    .input(z.object({ threadId: id, html, wikitext, personaId }).refine(oneBody, ONE_BODY))
     .mutation(async ({ ctx, input }) =>
       replyToThread(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
 
   /** `editedAt` is the post's value when the author loaded it (M1: CONFLICT if a moderator edited since). */
   editPost: rateLimitedMutationProcedure
-    .input(z.object({ postId: id, html, editedAt: z.date().nullable() }))
+    .input(
+      z
+        .object({ postId: id, html, wikitext, editedAt: z.date().nullable() })
+        .refine(oneBody, ONE_BODY)
+    )
     .mutation(async ({ ctx, input }) =>
       editPost(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
+
+  /** Canvas preview: the same render as a save, without writing. `pending` when the wiki was unavailable. */
+  previewPost: rateLimitedMutationProcedure
+    .input(z.object({ wikitext: z.string().max(MAX_POST_WIKITEXT), threadId: id.optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const out = await renderPostWikitext(
+        input.wikitext,
+        input.threadId ?? "preview",
+        memberOf(ctx.user).id
+      ).catch(mapError);
+      return { html: out.contentHtml, pending: out.renderedAt === null };
+    }),
 
   /** M11: returns only the report's id; the reporter is never shown to the reported member. */
   report: rateLimitedMutationProcedure

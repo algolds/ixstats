@@ -7,7 +7,12 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     // Spies over the real posting access, so the router's single entry (T0-2) is observable.
     postingAccessFor: jest.fn(actual.postingAccessFor),
     canPostInCategory: jest.fn(actual.canPostInCategory),
-    createThread: jest.fn(async () => ({ threadId: "t_new", postId: "p_new" })),
+    createThread: jest.fn(async () => ({
+      threadId: "t_new",
+      postId: "p_new",
+      formatting: "done",
+    })),
+    renderPostWikitext: jest.fn(),
     replyToThread: jest.fn(async () => {
       throw new actual.ForumError("CONFLICT", "This thread is closed to replies.");
     }),
@@ -28,6 +33,8 @@ import {
   fileReport,
   myStanding,
   postingAccessFor,
+  renderPostWikitext,
+  replyToThread,
 } from "~/server/modules/thinkpages-forum";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
@@ -222,7 +229,7 @@ describe("thinkpagesForum router", () => {
         title: "Hello there",
         html: "<p>x</p>",
       })
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new" });
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
     expect(createThread).toHaveBeenCalledWith(
       expect.anything(),
       {
@@ -234,6 +241,78 @@ describe("thinkpagesForum router", () => {
       },
       expect.objectContaining({ categoryKey: "general", title: "Hello there" })
     );
+  });
+
+  describe("the post body and previewPost", () => {
+    const NEW = { categoryKey: "general", title: "Hello there" };
+
+    it("takes exactly one of html and wikitext", async () => {
+      jest.mocked(createThread).mockClear();
+      const c = caller(member, forumDb());
+      await expect(c.createThread({ ...NEW })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(
+        c.createThread({ ...NEW, html: "<p>x</p>", wikitext: "x" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(c.reply({ threadId: "t1" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(
+        c.reply({ threadId: "t1", html: "<p>x</p>", wikitext: "x" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(c.editPost({ postId: "p1", editedAt: null })).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+      });
+      await expect(
+        c.editPost({ postId: "p1", editedAt: null, wikitext: "x".repeat(50_001) })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(createThread).not.toHaveBeenCalled();
+    });
+
+    it("passes wikitext to the module and returns its formatting", async () => {
+      jest.mocked(replyToThread).mockClear();
+      await expect(
+        caller(member, forumDb()).createThread({ ...NEW, wikitext: "== x ==" })
+      ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
+      expect(createThread).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ wikitext: "== x ==" })
+      );
+      expect(replyToThread).not.toHaveBeenCalled();
+    });
+
+    it("previews wikitext for a signed-in user under the thread id, or 'preview'", async () => {
+      jest.mocked(renderPostWikitext).mockResolvedValue({
+        contentHtml: "<p>x</p>",
+        plainText: "x",
+        rendererVersion: "forum-1:v",
+        renderedAt: null,
+        templates: [],
+      });
+      const c = caller(member, forumDb());
+      await expect(c.previewPost({ wikitext: "x" })).resolves.toEqual({
+        html: "<p>x</p>",
+        pending: true,
+      });
+      expect(renderPostWikitext).toHaveBeenLastCalledWith("x", "preview", "u1");
+      await c.previewPost({ wikitext: "x", threadId: "t9" });
+      expect(renderPostWikitext).toHaveBeenLastCalledWith("x", "t9", "u1");
+    });
+
+    it("refuses a preview to an anonymous visitor and maps a refused render", async () => {
+      jest.mocked(renderPostWikitext).mockClear();
+      const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+      await expect(caller(null, forumDb()).previewPost({ wikitext: "x" })).rejects.toMatchObject({
+        cause: { code: "UNAUTHORIZED" },
+      });
+      warn.mockRestore();
+      expect(renderPostWikitext).not.toHaveBeenCalled();
+      const { ForumError } = jest.requireActual("~/server/modules/thinkpages-forum");
+      jest
+        .mocked(renderPostWikitext)
+        .mockRejectedValueOnce(new ForumError("BAD_REQUEST", "Signatures are not used."));
+      await expect(
+        caller(member, forumDb()).previewPost({ wikitext: "~~~~" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
   });
 
   it("keeps the code of a ForumError", async () => {

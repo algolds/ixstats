@@ -1,4 +1,7 @@
 /** @jest-environment node */
+jest.mock("~/server/modules/thinkpages-forum/render", () => ({
+  renderPostWikitext: jest.fn(),
+}));
 import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   createThread,
@@ -6,6 +9,7 @@ import {
   ForumError,
   replyToThread,
 } from "~/server/modules/thinkpages-forum";
+import { renderPostWikitext } from "~/server/modules/thinkpages-forum/render";
 import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
@@ -49,6 +53,7 @@ const realmRows = [
 interface PostUpdate {
   contentHtml: string;
   plainText: string;
+  contentWikitext: string | null;
   editedAt: Date;
 }
 
@@ -66,6 +71,11 @@ interface Opts {
 }
 
 function writeDb(opts: Opts = {}) {
+  const updateMany = jest.fn(
+    async (_args: { where: { id: string; editedAt: Date | null }; data: PostUpdate }) => ({
+      count: opts.editedMeanwhile ? 0 : 1,
+    })
+  );
   const tx = {
     forumThread: {
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "t_new", ...data })),
@@ -73,6 +83,11 @@ function writeDb(opts: Opts = {}) {
     },
     forumPost: {
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "p_new", ...data })),
+      updateMany,
+    },
+    forumPostTemplate: {
+      deleteMany: jest.fn(async () => ({ count: 0 })),
+      createMany: jest.fn(async () => ({ count: 0 })),
     },
     postActionLink: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
@@ -108,11 +123,7 @@ function writeDb(opts: Opts = {}) {
     forumThread: { findUnique: jest.fn(async () => opts.thread ?? null) },
     forumPost: {
       findUnique: jest.fn(async () => opts.post ?? null),
-      updateMany: jest.fn(
-        async (_args: { where: { id: string; editedAt: Date | null }; data: PostUpdate }) => ({
-          count: opts.editedMeanwhile ? 0 : 1,
-        })
-      ),
+      updateMany,
     },
     thinkpagesAccount: { findFirst: jest.fn(async () => opts.persona ?? null) },
     activityFeed: {
@@ -145,7 +156,9 @@ const threadIn = (key: string, extra: object = {}) => ({
 
 const postBy = (authorUserId: string, extra: object = {}) => ({
   id: "p1",
+  threadId: "t1",
   authorUserId,
+  contentWikitext: null,
   hidden: false,
   thread: {
     authorUserId: "u_p",
@@ -171,6 +184,7 @@ describe("createThread", () => {
     await expect(createThread(db as never, user, NEW_THREAD)).resolves.toEqual({
       threadId: "t_new",
       postId: "p_new",
+      formatting: "done",
     });
     // The first transaction writes the thread and post; the second is the link sync.
     expect(db.$transaction).toHaveBeenCalledTimes(2);
@@ -219,6 +233,7 @@ describe("createThread", () => {
     ).resolves.toEqual({
       threadId: "t_new",
       postId: "p_new",
+      formatting: "done",
     });
     const refused = writeDb();
     await expect(
@@ -262,6 +277,7 @@ describe("createThread", () => {
     ).resolves.toEqual({
       threadId: "t_new",
       postId: "p_new",
+      formatting: "done",
     });
   });
 
@@ -361,6 +377,7 @@ describe("replyToThread", () => {
       replyToThread(db as never, user, { threadId: "t1", html: "<p>Agreed</p>" })
     ).resolves.toEqual({
       postId: "p_new",
+      formatting: "done",
     });
     expect(db.$transaction).toHaveBeenCalledTimes(2);
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
@@ -415,6 +432,7 @@ describe("replyToThread", () => {
       replyToThread(db as never, admin, { threadId: "t1", html: "<p>Noted</p>" })
     ).resolves.toEqual({
       postId: "p_new",
+      formatting: "done",
     });
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({ authorUserId: "u_a" });
   });
@@ -427,7 +445,7 @@ describe("replyToThread", () => {
         html: "<p>In character</p>",
         personaId: "pa1",
       })
-    ).resolves.toEqual({ postId: "p_new" });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     expect(db.thinkpagesAccount.findFirst).toHaveBeenCalledWith({
       where: { id: "pa1", clerkUserId: "plain", isActive: true },
       select: { id: true },
@@ -661,6 +679,7 @@ describe("realm sections", () => {
       await expect(createThread(db as never, owner, IN_HUB)).resolves.toEqual({
         threadId: "t_new",
         postId: "p_new",
+        formatting: "done",
       });
       expect(db.forumCategory.findFirst).toHaveBeenCalledWith({
         where: { scope: "realm", realmId: "r_eurth", key: "hub" },
@@ -689,6 +708,7 @@ describe("realm sections", () => {
       await expect(createThread(db as never, owner, NEW_THREAD)).resolves.toEqual({
         threadId: "t_new",
         postId: "p_new",
+        formatting: "done",
       });
     });
 
@@ -698,6 +718,7 @@ describe("realm sections", () => {
         await expect(createThread(db as never, actor, IN_HUB)).resolves.toEqual({
           threadId: "t_new",
           postId: "p_new",
+          formatting: "done",
         });
       }
     });
@@ -754,6 +775,7 @@ describe("realm sections", () => {
       const free = writeDb({ thread: realmThread("hub"), bans: [ban] });
       await expect(replyToThread(free.db as never, officer, reply)).resolves.toEqual({
         postId: "p_new",
+        formatting: "done",
       });
       const banned = writeDb({
         thread: realmThread("hub"),
@@ -853,7 +875,7 @@ describe("forum bans on every write", () => {
     });
     await expect(
       createThread(db as never, user, { ...NEW_THREAD, categoryKey: "find-a-realm" })
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new" });
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
     const change = writeDb({ post: postBy("u_p"), bans: [ban] });
     await expect(editPost(change.db as never, user, edit)).rejects.toMatchObject({
       code: "FORBIDDEN",
@@ -868,10 +890,11 @@ describe("forum bans on every write", () => {
     await expect(createThread(writeDb({ bans }).db as never, user, NEW_THREAD)).resolves.toEqual({
       threadId: "t_new",
       postId: "p_new",
+      formatting: "done",
     });
     await expect(
       replyToThread(writeDb({ thread: threadIn("general"), bans }).db as never, user, reply)
-    ).resolves.toEqual({ postId: "p_new" });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     const change = writeDb({ post: postBy("u_p"), bans });
     await editPost(change.db as never, user, edit);
     expect(change.db.forumPost.updateMany).toHaveBeenCalled();
@@ -883,6 +906,7 @@ describe("forum bans on every write", () => {
     await expect(createThread(db as never, admin, NEW_THREAD)).resolves.toEqual({
       threadId: "t_new",
       postId: "p_new",
+      formatting: "done",
     });
     expect(db.forumBan.findMany).not.toHaveBeenCalled();
     const change = writeDb({ post: postBy("u_a"), bans });
@@ -923,7 +947,7 @@ describe("the Reports category (M8)", () => {
   it("lets a member reply in and edit within their own report thread", async () => {
     await expect(
       replyToThread(writeDb({ thread: reportThread("u_p") }).db as never, user, reply)
-    ).resolves.toEqual({ postId: "p_new" });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     const change = writeDb({ post: reportPost("u_p", "u_p") });
     await editPost(change.db as never, user, { postId: "p1", editedAt: null, html: "<p>x</p>" });
     expect(change.db.forumPost.updateMany).toHaveBeenCalled();
@@ -933,7 +957,249 @@ describe("the Reports category (M8)", () => {
     for (const author of ["u_p", "u_other"]) {
       await expect(
         replyToThread(writeDb({ thread: reportThread(author) }).db as never, admin, reply)
-      ).resolves.toEqual({ postId: "p_new" });
+      ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     }
+  });
+});
+
+describe("Canvas wikitext writes", () => {
+  const renderMock = jest.mocked(renderPostWikitext);
+  const RENDERED_AT = new Date("2026-10-09T10:00:00Z");
+  const rendered = (over: Partial<Awaited<ReturnType<typeof renderPostWikitext>>> = {}) => ({
+    contentHtml: '<div class="mw-parser-output"><p>Hi</p></div>',
+    plainText: "Hi",
+    rendererVersion: "forum-1:v",
+    renderedAt: RENDERED_AT,
+    templates: ["Template:Flag"],
+    ...over,
+  });
+  const WIKI = { threadId: "t1", wikitext: "'''Hi''' {{Flag}}" };
+
+  beforeEach(() => {
+    renderMock.mockReset();
+    renderMock.mockResolvedValue(rendered());
+  });
+
+  it("stores the wikitext, the rendered html, renderedAt and the templates on a reply", async () => {
+    const { db, tx } = writeDb({ thread: threadIn("general") });
+    await expect(replyToThread(db as never, user, WIKI)).resolves.toEqual({
+      postId: "p_new",
+      formatting: "done",
+    });
+    expect(renderMock).toHaveBeenCalledWith("'''Hi''' {{Flag}}", "t1", "u_p");
+    expect(tx.forumPost.create.mock.calls[0]![0].data).toEqual({
+      threadId: "t1",
+      authorUserId: "u_p",
+      authorPersonaId: null,
+      contentHtml: '<div class="mw-parser-output"><p>Hi</p></div>',
+      plainText: "Hi",
+      contentWikitext: "'''Hi''' {{Flag}}",
+      rendererVersion: "forum-1:v",
+      renderedAt: RENDERED_AT,
+      createdAt: expect.any(Date),
+    });
+    expect(tx.forumPostTemplate.createMany).toHaveBeenCalledWith({
+      data: [{ postId: "p_new", title: "Template:Flag" }],
+      skipDuplicates: true,
+    });
+  });
+
+  it("stores the guarded text, not the raw input, so the stale cron never renders what was stripped", async () => {
+    const { db, tx } = writeDb({ thread: threadIn("general") });
+    await replyToThread(db as never, user, { threadId: "t1", wikitext: "Hi [[Category:X]]" });
+    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({ contentWikitext: "Hi " });
+  });
+
+  it("stores a fallback render with renderedAt null and reports formatting pending", async () => {
+    renderMock.mockResolvedValue(rendered({ renderedAt: null, templates: [] }));
+    const { db, tx } = writeDb({ thread: threadIn("general") });
+    await expect(replyToThread(db as never, user, WIKI)).resolves.toEqual({
+      postId: "p_new",
+      formatting: "pending",
+    });
+    expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
+      contentWikitext: "'''Hi''' {{Flag}}",
+      renderedAt: null,
+    });
+    expect(tx.forumPostTemplate.createMany).not.toHaveBeenCalled();
+  });
+
+  it("renders a new thread's first post under the id 'new'", async () => {
+    const { db, tx } = writeDb();
+    await expect(
+      createThread(db as never, user, {
+        categoryKey: "general",
+        title: "Hello there",
+        wikitext: "x",
+      })
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
+    expect(renderMock).toHaveBeenCalledWith("x", "new", "u_p");
+    expect(tx.forumPostTemplate.createMany).toHaveBeenCalled();
+  });
+
+  it("refuses a create or reply with neither html nor wikitext, rendering nothing", async () => {
+    const create = writeDb();
+    await expect(
+      createThread(create.db as never, user, { categoryKey: "general", title: "Hello there" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "A post needs some text." });
+    const reply = writeDb({ thread: threadIn("general") });
+    await expect(replyToThread(reply.db as never, user, { threadId: "t1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "A post needs some text.",
+    });
+    expect(create.db.$transaction).not.toHaveBeenCalled();
+    expect(reply.db.$transaction).not.toHaveBeenCalled();
+    expect(renderMock).not.toHaveBeenCalled();
+  });
+
+  it("writes nothing when the render refuses the wikitext", async () => {
+    renderMock.mockRejectedValue(new ForumError("BAD_REQUEST", "Signatures are not used."));
+    const create = writeDb();
+    await expect(
+      createThread(create.db as never, user, {
+        categoryKey: "general",
+        title: "Hello there",
+        wikitext: "~~~~",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(create.tx.forumPost.create).not.toHaveBeenCalled();
+    expect(create.tx.forumThread.create).not.toHaveBeenCalled();
+    const reply = writeDb({ thread: threadIn("general") });
+    await expect(
+      replyToThread(reply.db as never, user, { threadId: "t1", wikitext: "~~~~" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(reply.tx.forumPost.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses rendered text whose action token is not plain text", async () => {
+    renderMock.mockResolvedValue(
+      rendered({ contentHtml: '<p title="[ixaction=a1]">x</p>', plainText: "x" })
+    );
+    const { db } = writeDb({ thread: threadIn("general") });
+    await expect(replyToThread(db as never, user, WIKI)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Action links must be plain text in the post body",
+    });
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  describe("renders only after every access check (P-1)", () => {
+    const wikitext = "x";
+
+    it("never renders for a thread closed to replies, a hidden thread or a member who cannot post", async () => {
+      const locked = writeDb({ thread: threadIn("general", { locked: true }) });
+      await expect(
+        replyToThread(locked.db as never, user, { threadId: "t1", wikitext })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      const hidden = writeDb({ thread: threadIn("general", { hidden: true }) });
+      await expect(
+        replyToThread(hidden.db as never, user, { threadId: "t1", wikitext })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      const staffOnly = writeDb({ thread: threadIn("announcements") });
+      await expect(
+        replyToThread(staffOnly.db as never, user, { threadId: "t1", wikitext })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      const start = writeDb();
+      await expect(
+        createThread(start.db as never, user, {
+          categoryKey: "announcements",
+          title: "Hello there",
+          wikitext,
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(renderMock).not.toHaveBeenCalled();
+    });
+
+    it("never renders for a banned member or a persona they do not own", async () => {
+      const banned = writeDb({
+        thread: threadIn("general"),
+        bans: [banRow({ userId: "u_p", scope: "site", expiresAt: null })],
+      });
+      await expect(
+        replyToThread(banned.db as never, user, { threadId: "t1", wikitext })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      const persona = writeDb({ thread: threadIn("side-games"), persona: null });
+      await expect(
+        replyToThread(persona.db as never, user, { threadId: "t1", wikitext, personaId: "pa9" })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(renderMock).not.toHaveBeenCalled();
+    });
+
+    it("never renders an edit by a non-author, in a closed thread, in a locked chain or with the wrong editor", async () => {
+      const edit = { postId: "p1", editedAt: null, wikitext };
+      const post = (extra: object = {}) => postBy("u_p", { contentWikitext: "old", ...extra });
+      const closed = {
+        authorUserId: "u_p",
+        hidden: false,
+        locked: true,
+        archived: false,
+        category: { id: "cat_general", scope: "site", realmId: null, visibility: "public" },
+      };
+      await expect(
+        editPost(writeDb({ post: postBy("u_other") }).db as never, user, edit)
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(
+        editPost(writeDb({ post: post({ thread: closed }) }).db as never, user, edit)
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      await expect(
+        editPost(writeDb({ post: post(), chainedLinks: 1 }).db as never, user, edit)
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      await expect(
+        editPost(writeDb({ post: postBy("u_p") }).db as never, user, edit)
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(renderMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("editPost", () => {
+    const wikiPost = () => postBy("u_p", { contentWikitext: "old" });
+
+    it("refuses wikitext on an HTML post and html on a wikitext post", async () => {
+      const html = writeDb({ post: postBy("u_p") });
+      await expect(
+        editPost(html.db as never, user, { postId: "p1", editedAt: null, wikitext: "x" })
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "This post is edited with the standard editor.",
+      });
+      const wiki = writeDb({ post: wikiPost() });
+      await expect(
+        editPost(wiki.db as never, user, { postId: "p1", editedAt: null, html: "<p>x</p>" })
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Edit this post in the wiki editor.",
+      });
+      expect(html.db.forumPost.updateMany).not.toHaveBeenCalled();
+      expect(wiki.db.forumPost.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("re-renders, conditions the write on editedAt and replaces the templates", async () => {
+      const { db, tx } = writeDb({ post: wikiPost() });
+      await expect(
+        editPost(db as never, user, { postId: "p1", editedAt: null, wikitext: "new" })
+      ).resolves.toEqual({ formatting: "done" });
+      expect(renderMock).toHaveBeenCalledWith("new", "t1", "u_p");
+      const update = db.forumPost.updateMany.mock.calls[0]![0];
+      expect(update.where).toEqual({ id: "p1", editedAt: null });
+      expect(update.data).toMatchObject({
+        contentWikitext: "new",
+        renderedAt: RENDERED_AT,
+        editedAt: expect.any(Date),
+      });
+      expect(tx.forumPostTemplate.deleteMany).toHaveBeenCalledWith({ where: { postId: "p1" } });
+      expect(tx.forumPostTemplate.createMany).toHaveBeenCalledWith({
+        data: [{ postId: "p1", title: "Template:Flag" }],
+        skipDuplicates: true,
+      });
+    });
+
+    it("leaves the templates alone when the edit lost the race", async () => {
+      const { db, tx } = writeDb({ post: wikiPost(), editedMeanwhile: true });
+      await expect(
+        editPost(db as never, user, { postId: "p1", editedAt: null, wikitext: "new" })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(tx.forumPostTemplate.deleteMany).not.toHaveBeenCalled();
+      expect(tx.forumPostTemplate.createMany).not.toHaveBeenCalled();
+    });
   });
 });

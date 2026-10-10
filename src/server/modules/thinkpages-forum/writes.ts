@@ -1,5 +1,6 @@
 /**
- * Forum writes: start a thread, reply, edit. Bodies are sanitized HTML plus their plain text (ruling P3). Action
+ * Forum writes: start a thread, reply, edit. Bodies are sanitized HTML plus their plain text (ruling P3), from the
+ * light editor or rendered from Canvas wikitext (writes-body.ts; the render runs after every access check). Action
  * tokens are validated before anything is written, so a refused link never leaves a post behind; the links are
  * synced once the post exists. A persona post needs an in-character category and the actor's own active persona
  * (P9), and a post inside a submitted or approved story chain can no longer change (P6). In a realm section,
@@ -8,10 +9,6 @@
  * post, and another member's Reports thread (M8), read as not found.
  */
 import type { PrismaClient } from "@prisma/client";
-import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
-import { getBasePath } from "~/lib/base-path";
-import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
-import { sanitizeUserContent, stripHtml } from "~/lib/utils/sanitize-html";
 import {
   ActionLinkError,
   syncPostActionLinks,
@@ -23,8 +20,19 @@ import { ForumError } from "./errors";
 import { assertNotBanned } from "./mod-bans";
 import { loadCategory, visibleRealmOf } from "./reads";
 import { postingAccessFor, type ForumRealm, type PostableCategory } from "./realm-access";
+import {
+  bodyFromInput,
+  formattingOf,
+  MAX_POST_HTML,
+  postColumns,
+  prepareBody,
+  writeTemplates,
+  type Formatting,
+  type PostInput,
+  type PreparedBody,
+} from "./writes-body";
 
-export const MAX_POST_HTML = 50_000;
+export { MAX_POST_HTML, prepareBody, type PostInput, type PreparedBody };
 export const TITLE_MIN = 3;
 export const TITLE_MAX = 200;
 
@@ -34,6 +42,7 @@ export type WritesDb = Pick<
   | "forumCategory"
   | "forumThread"
   | "forumPost"
+  | "forumPostTemplate"
   | "thinkpagesAccount"
   | "activityFeed"
   | "postActionLink"
@@ -44,36 +53,8 @@ export type WritesDb = Pick<
   | "$transaction"
 >;
 
-export interface PostInput {
-  html: string;
-  personaId?: string | null;
-}
-
-export interface PreparedBody {
-  contentHtml: string;
-  plainText: string;
-}
-
 const LOCKED_CHAIN_STATUSES = ["submitted", "approved"];
 const TEAM_ONLY = "Only the team can post in this category.";
-
-export function prepareBody(html: string): PreparedBody {
-  if (html.length > MAX_POST_HTML) {
-    throw new ForumError("BAD_REQUEST", `A post can be at most ${MAX_POST_HTML} characters.`);
-  }
-  const contentHtml = sanitizeUserContent(html);
-  const plainText = stripHtml(contentHtml);
-  // An image is content too (an image-only post), as the Realm Board archive keeps them.
-  if (!plainText && !hasImageSrc(contentHtml, getBasePath())) {
-    throw new ForumError("BAD_REQUEST", "A post needs some text.");
-  }
-  // A token inside a tag or attribute would never render as a card and must never be cut by the renderer.
-  const rendered = countTextActionTokens(contentHtml);
-  if (rendered !== countActionTokens(contentHtml) || rendered !== countActionTokens(plainText)) {
-    throw new ForumError("BAD_REQUEST", "Action links must be plain text in the post body");
-  }
-  return { contentHtml, plainText };
-}
 
 function prepareTitle(raw: string): string {
   const title = raw.trim();
@@ -180,9 +161,8 @@ export async function createThread(
   db: WritesDb,
   actor: ForumActor,
   input: PostInput & { categoryKey: string; realm?: string | null; title: string }
-): Promise<{ threadId: string; postId: string }> {
+): Promise<{ threadId: string; postId: string; formatting: Formatting }> {
   const title = prepareTitle(input.title);
-  const body = prepareBody(input.html);
   const { category, realm } = await loadCategory(db, actor, {
     key: input.categoryKey,
     realm: input.realm,
@@ -192,6 +172,8 @@ export async function createThread(
     authorUserId: actor.id,
     authorPersonaId: await resolvePersona(db, actor, category, input.personaId),
   };
+  // After every access check: a render spends the shared MediaWiki engine (P-1).
+  const body = await bodyFromInput(input, "new", actor.id);
   await validateLinks(db, actor, body.plainText);
   const now = new Date();
   const { threadId, postId } = await db.$transaction(async (tx) => {
@@ -199,20 +181,20 @@ export async function createThread(
       data: { categoryId: category.id, title, ...author, postCount: 1, lastPostAt: now },
     });
     const post = await tx.forumPost.create({
-      data: { threadId: thread.id, ...author, ...body, createdAt: now },
+      data: { threadId: thread.id, ...author, ...postColumns(body), createdAt: now },
     });
+    await writeTemplates(tx, post.id, body.templates, false);
     return { threadId: thread.id, postId: post.id };
   });
   await syncLinks(db, actor, postId, body.plainText);
-  return { threadId, postId };
+  return { threadId, postId, formatting: formattingOf(body) };
 }
 
 export async function replyToThread(
   db: WritesDb,
   actor: ForumActor,
   input: PostInput & { threadId: string }
-): Promise<{ postId: string }> {
-  const body = prepareBody(input.html);
+): Promise<{ postId: string; formatting: Formatting }> {
   const thread = await db.forumThread.findUnique({
     where: { id: input.threadId },
     include: { category: true },
@@ -228,12 +210,14 @@ export async function replyToThread(
     authorUserId: actor.id,
     authorPersonaId: await resolvePersona(db, actor, thread.category, input.personaId),
   };
+  const body = await bodyFromInput(input, thread.id, actor.id);
   await validateLinks(db, actor, body.plainText);
   const now = new Date();
   const postId = await db.$transaction(async (tx) => {
     const post = await tx.forumPost.create({
-      data: { threadId: thread.id, ...author, ...body, createdAt: now },
+      data: { threadId: thread.id, ...author, ...postColumns(body), createdAt: now },
     });
+    await writeTemplates(tx, post.id, body.templates, false);
     await tx.forumThread.update({
       where: { id: thread.id },
       data: { postCount: { increment: 1 }, lastPostAt: now },
@@ -241,7 +225,15 @@ export async function replyToThread(
     return post.id;
   });
   await syncLinks(db, actor, postId, body.plainText);
-  return { postId };
+  return { postId, formatting: formattingOf(body) };
+}
+
+/** A Canvas post keeps its wikitext as the source and an HTML post its HTML: an edit cannot switch editors. */
+function assertEditor(isWikitextPost: boolean, sendsWikitext: boolean): void {
+  if (isWikitextPost && !sendsWikitext)
+    throw new ForumError("BAD_REQUEST", "Edit this post in the wiki editor.");
+  if (!isWikitextPost && sendsWikitext)
+    throw new ForumError("BAD_REQUEST", "This post is edited with the standard editor.");
 }
 
 /** M1: the author's edit lost the race with a moderator's (or their own other tab's) edit. */
@@ -257,14 +249,16 @@ const EDITED_MEANWHILE =
 export async function editPost(
   db: WritesDb,
   actor: ForumActor,
-  input: { postId: string; html: string; editedAt: Date | null }
-): Promise<void> {
+  input: { postId: string; html?: string; wikitext?: string; editedAt: Date | null }
+): Promise<{ formatting: Formatting }> {
   const post = await db.forumPost.findUnique({
     where: { id: input.postId },
     select: {
       id: true,
+      threadId: true,
       authorUserId: true,
       hidden: true,
+      contentWikitext: true,
       thread: {
         select: {
           authorUserId: true,
@@ -294,14 +288,21 @@ export async function editPost(
     throw new ForumError("CONFLICT", "This thread is closed to edits.");
   if (realm) await assertCanPost(db, actor, category, realm, TEAM_ONLY);
   else await assertNotBanned(db, actor, category);
-  const body = prepareBody(input.html);
+  assertEditor(post.contentWikitext !== null, input.wikitext !== undefined);
   if (await inLockedChain(db, post.id))
     throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
+  const body = await bodyFromInput(input, post.threadId, actor.id);
   await validateLinks(db, actor, body.plainText);
-  const { count } = await db.forumPost.updateMany({
-    where: { id: post.id, editedAt: input.editedAt },
-    data: { ...body, editedAt: new Date() },
+  const written = await db.$transaction(async (tx) => {
+    const { count } = await tx.forumPost.updateMany({
+      where: { id: post.id, editedAt: input.editedAt },
+      data: { ...postColumns(body), editedAt: new Date() },
+    });
+    if (count === 0) return false;
+    await writeTemplates(tx, post.id, body.templates, true);
+    return true;
   });
-  if (count === 0) throw new ForumError("CONFLICT", EDITED_MEANWHILE);
+  if (!written) throw new ForumError("CONFLICT", EDITED_MEANWHILE);
   await syncLinks(db, actor, post.id, body.plainText);
+  return { formatting: formattingOf(body) };
 }

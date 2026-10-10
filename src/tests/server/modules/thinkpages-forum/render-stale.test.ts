@@ -9,25 +9,31 @@ import { rerenderPosts, staleForumPostIds } from "~/server/modules/thinkpages-fo
 
 const rerender = jest.mocked(renderViaWiki);
 
-function fakeDb(posts: Array<{ id: string; threadId: string; contentWikitext: string }>) {
+type Row = { id: string; threadId: string; contentWikitext: string };
+
+/** `editedTo`: the wikitext an author saves between the cron's read and its write. */
+function fakeDb(posts: Row[], editedTo?: string) {
   const updates: Array<{ id: string; renderedAt: Date | null; contentHtml: string }> = [];
   const templateWrites: string[][] = [];
   const db = {
     forumPost: {
       findMany: jest.fn(async () => posts),
-      update: jest.fn(
+      updateMany: jest.fn(
         async ({
           where,
           data,
         }: {
-          where: { id: string };
+          where: { id: string; contentWikitext: string };
           data: { renderedAt: Date | null; contentHtml: string };
         }) => {
+          const current = editedTo ?? posts.find((p) => p.id === where.id)?.contentWikitext;
+          if (current !== where.contentWikitext) return { count: 0 };
           updates.push({
             id: where.id,
             renderedAt: data.renderedAt,
             contentHtml: data.contentHtml,
           });
+          return { count: 1 };
         }
       ),
     },
@@ -38,7 +44,7 @@ function fakeDb(posts: Array<{ id: string; threadId: string; contentWikitext: st
         return { count: data.length };
       }),
     },
-    $transaction: jest.fn(async (fn: (tx: typeof db) => Promise<void>) => fn(db)),
+    $transaction: jest.fn(async (fn: (tx: typeof db) => Promise<boolean>) => fn(db)),
   };
   return { db, updates, templateWrites };
 }
@@ -83,14 +89,37 @@ it("skips the template insert when the render used no templates", async () => {
   expect(templateWrites).toEqual([]);
 });
 
+it("writes only the text it rendered: an edit between the read and the write is left untouched", async () => {
+  rerender.mockResolvedValue({
+    contentHtml: "<p>stale</p>",
+    plainText: "stale",
+    rendererVersion: "forum-1:v",
+    renderedAt: new Date(),
+    templates: ["Template:Flag"],
+  });
+  const { db, updates, templateWrites } = fakeDb(
+    [{ id: "p1", threadId: "t1", contentWikitext: "x" }],
+    "edited"
+  );
+  expect(await rerenderPosts(db as never, ["p1"])).toEqual({ rendered: 0, failed: 0 });
+  expect(db.forumPost.updateMany.mock.calls[0]![0].where).toEqual({
+    id: "p1",
+    contentWikitext: "x",
+  });
+  expect(updates).toHaveLength(0);
+  expect(db.forumPostTemplate.deleteMany).not.toHaveBeenCalled();
+  expect(templateWrites).toEqual([]);
+});
+
 it("selects stale post ids with the renderer version and limit bound", async () => {
-  const queryRaw = jest.fn(async () => [{ id: "a" }, { id: "b" }]);
+  const queryRaw = jest.fn(
+    async (strings: TemplateStringsArray, ...values: Array<string | number>) =>
+      // A tagged template has one more string than values; anything else is not the query under test.
+      strings.length === values.length + 1 ? [{ id: "a" }, { id: "b" }] : []
+  );
   const ids = await staleForumPostIds({ $queryRaw: queryRaw } as never, 7);
   expect(ids).toEqual(["a", "b"]);
-  const call = queryRaw.mock.calls[0] as unknown as [
-    TemplateStringsArray,
-    ...Array<string | number>,
-  ];
-  expect(call.slice(1)).toEqual(["forum-1:v", 7]);
-  expect(call[0].join("?")).toContain('"contentWikitext" IS NOT NULL');
+  const [strings, ...values] = queryRaw.mock.calls[0]!;
+  expect(values).toEqual(["forum-1:v", 7]);
+  expect(strings.join("?")).toContain('"contentWikitext" IS NOT NULL');
 });
