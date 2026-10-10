@@ -65,7 +65,9 @@ jest.mock("~/trpc/react", () => {
         warn: mutation("warn"),
         ban: mutation("ban"),
       },
-      actionLinks: { activityCards: query("activityCards") },
+      // useThreadActionCards batches through useQueries; no post here holds a token.
+      useQueries: (_queries: unknown, opts: { combine: (results: never[]) => unknown }) =>
+        opts.combine([]),
     },
   };
 });
@@ -212,7 +214,6 @@ function set(name: string, result: QueryResult) {
 beforeEach(() => {
   jest.clearAllMocks();
   for (const key of Object.keys(results)) delete results[key];
-  set("activityCards", { data: [] });
 });
 
 describe("forum home", () => {

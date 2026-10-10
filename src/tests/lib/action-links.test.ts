@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import {
+  parseTextActionTokens,
   chainWikiSection,
   MAX_ACTIONS_PER_POST,
   countActionTokens,
@@ -152,6 +153,19 @@ describe("splitActionTokens", () => {
     expect(splitActionTokens("a < b [ixaction=a1]")).toEqual([
       { kind: "html", text: "a < b [ixaction=a1]" },
     ]);
+  });
+});
+
+describe("parseTextActionTokens (I7)", () => {
+  it("lists the distinct ids in text runs only, in first-seen order", () => {
+    const html =
+      '<p title="[ixaction=attr]">[ixaction=b] then [ixaction=a]</p><!-- [ixaction=c] -->[ixaction=b]';
+    expect(parseTextActionTokens(html)).toEqual(["b", "a"]);
+  });
+
+  it("is empty for markup-only tokens and plain text", () => {
+    expect(parseTextActionTokens('<img src="x" alt="[ixaction=a]">')).toEqual([]);
+    expect(parseTextActionTokens("<p>none</p>")).toEqual([]);
   });
 });
 

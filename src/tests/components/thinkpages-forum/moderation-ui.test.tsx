@@ -74,7 +74,9 @@ jest.mock("~/trpc/react", () => {
         warn: mutation("warn"),
         ban: mutation("ban"),
       },
-      actionLinks: { activityCards: query("activityCards") },
+      // useThreadActionCards batches through useQueries; no post here holds a token.
+      useQueries: (_queries: unknown, opts: { combine: (results: never[]) => unknown }) =>
+        opts.combine([]),
     },
   };
 });
@@ -193,7 +195,8 @@ import { ThreadList } from "~/components/thinkpages-forum/ThreadList";
 import { ThreadView } from "~/components/thinkpages-forum/ThreadView";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
 
-const { results, mutations, invalidations, resolvePost } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations, invalidations, resolvePost } =
+  jest.requireMock<MockApi>("~/trpc/react");
 const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
   "next/navigation"
 );
@@ -297,7 +300,6 @@ beforeEach(() => {
   for (const key of Object.keys(results)) delete results[key];
   for (const key of Object.keys(mutations)) delete mutations[key];
   auth.isSignedIn = false;
-  set("activityCards", { data: [] });
   set("context", { data: NO_MOD });
   set("isThreadStashed", { data: { stashed: false } });
 });
