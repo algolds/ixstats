@@ -121,7 +121,7 @@ function Section({ messages, cursor, hasMore, first, exclude, depth, context }: 
           className={cn((!first || index > 0) && DIVIDER)}
         />
       ))}
-      {seeking && !searching ? <NotFound everythingLoaded={!canGoBack} /> : null}
+      {seeking && !searching && !more ? <NotFound everythingLoaded={!canGoBack} /> : null}
       {canGoBack ? (
         more || searching ? (
           <EarlierPage before={cursor} exclude={shown} depth={depth + 1} context={context} />

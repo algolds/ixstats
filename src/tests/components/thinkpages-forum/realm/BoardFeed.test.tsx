@@ -458,6 +458,21 @@ describe("BoardFeed", () => {
       expect(asked.filter((a) => a.before)).toHaveLength(11);
     });
 
+    it("keeps one notice while the reader loads past the bound, and drops it once a page has the message", () => {
+      for (let i = 0; i < 12; i++) {
+        pages[`m${i}`] = { data: boardData([msg(`m${i + 1}`)], { hasMore: true }) };
+      }
+      const seek = seekTo("m12");
+      render(<BoardFeed {...feedProps(boardData([msg("m0")], { hasMore: true }), { seek })} />);
+      const notice = "That message is older than what is loaded.";
+      expect(screen.getAllByText(notice)).toHaveLength(1);
+      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+      expect(screen.getAllByText(notice)).toHaveLength(1);
+      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+      expect(seek.found).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText(notice)).toBeNull();
+    });
+
     it("says so when the whole board is loaded and the message is not on it", () => {
       render(<BoardFeed {...feedProps(undefined, { seek: seekTo("gone") })} />);
       expect(screen.getByText("That message is no longer on this board.")).toBeInTheDocument();
