@@ -4,6 +4,7 @@ import type { BoardPreviewMessage } from "~/lib/thinkpages-forum/preview";
 import type { BoardPreview } from "~/server/modules/thinkpages-forum/board-preview";
 
 interface PanelOptions {
+  enabled?: boolean;
   staleTime?: number;
   refetchOnWindowFocus?: boolean;
   retry?: boolean;
@@ -14,7 +15,20 @@ const state: {
   counts: { watchedUnread: number; realmBoardNew: number } | undefined;
   loading: boolean;
   panelOptions: PanelOptions | undefined;
-} = { panel: undefined, counts: undefined, loading: false, panelOptions: undefined };
+  countsOptions: PanelOptions | undefined;
+  signedIn: boolean;
+} = {
+  panel: undefined,
+  counts: undefined,
+  loading: false,
+  panelOptions: undefined,
+  countsOptions: undefined,
+  signedIn: true,
+};
+
+jest.mock("~/context/auth-context", () => ({
+  useUser: () => ({ isSignedIn: state.signedIn }),
+}));
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -25,7 +39,12 @@ jest.mock("~/trpc/react", () => ({
           return { data: state.panel, isLoading: state.loading };
         },
       },
-      navCounts: { useQuery: () => ({ data: state.counts }) },
+      navCounts: {
+        useQuery: (_input: undefined, options: PanelOptions) => {
+          state.countsOptions = options;
+          return { data: state.counts };
+        },
+      },
     },
   },
 }));
@@ -59,6 +78,8 @@ beforeEach(() => {
   state.counts = undefined;
   state.loading = false;
   state.panelOptions = undefined;
+  state.countsOptions = undefined;
+  state.signedIn = true;
 });
 
 describe("YourRealmPanel", () => {
@@ -68,7 +89,7 @@ describe("YourRealmPanel", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing while the read has not answered and is not loading", () => {
+  it("renders nothing when the read has no data and is not loading (signed out or failed)", () => {
     const { container } = render(<YourRealmPanel />);
     expect(container).toBeEmptyDOMElement();
   });
@@ -103,11 +124,16 @@ describe("YourRealmPanel", () => {
     );
   });
 
-  it("shows the realm emblem on every viewport", () => {
+  it("shows the realm emblem and name on every viewport", () => {
     state.panel = panel([message("p1", "jane", "Hi")]);
-    const { container } = render(<YourRealmPanel />);
-    expect(container.querySelector("img[src*='e.png']")).not.toBeNull();
-    expect(container.querySelector(".hidden")).toBeNull();
+    render(<YourRealmPanel />);
+    const region = screen.getByRole("region", { name: "Your realm, Eurth" });
+    const emblem = region.querySelector("img[src*='e.png']");
+    expect(emblem).not.toBeNull();
+    // Neither the emblem nor the heading sits under a display:none-at-phone-width ancestor.
+    for (const node of [emblem, within(region).getByRole("heading", { name: "Eurth" })]) {
+      expect(node?.closest(".hidden, [class*='max-sm:hidden']")).toBeNull();
+    }
   });
 
   it("keeps the two links at the coarse-pointer touch height", () => {
@@ -128,14 +154,30 @@ describe("YourRealmPanel", () => {
     expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
-  it("says the member is up to date when nothing is new, or while the count is unknown", () => {
+  it("says the member is up to date when the count is zero", () => {
     state.panel = panel([message("p1", "jane", "Hi")]);
     state.counts = { watchedUnread: 0, realmBoardNew: 0 };
-    const { rerender } = render(<YourRealmPanel />);
+    render(<YourRealmPanel />);
     expect(screen.getByText("Up to date on the board")).toBeInTheDocument();
-    state.counts = undefined;
-    rerender(<YourRealmPanel />);
-    expect(screen.getByText("Up to date on the board")).toBeInTheDocument();
+  });
+
+  it("shows no count line while the count is unknown", () => {
+    state.panel = panel([message("p1", "jane", "Hi")]);
+    render(<YourRealmPanel />);
+    expect(screen.queryByText(/on the board/)).toBeNull();
+    expect(screen.getByRole("heading", { name: "Eurth" })).toBeInTheDocument();
+  });
+
+  it("enables both reads only for a signed-in viewer", () => {
+    state.panel = panel([]);
+    const { unmount } = render(<YourRealmPanel />);
+    expect(state.panelOptions).toMatchObject({ enabled: true });
+    expect(state.countsOptions).toMatchObject({ enabled: true });
+    unmount();
+    state.signedIn = false;
+    render(<YourRealmPanel />);
+    expect(state.panelOptions).toMatchObject({ enabled: false });
+    expect(state.countsOptions).toMatchObject({ enabled: false });
   });
 
   it("explains an empty board and still links to it", () => {

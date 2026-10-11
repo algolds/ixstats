@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useUser } from "~/context/auth-context";
 import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
 import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -19,28 +20,33 @@ const LINK = cn(buttonVariants({ variant: "secondary", size: "sm" }), "pointer-c
  * viewer without a realm. Refreshes once a minute at most; there is no socket here.
  */
 export function YourRealmPanel() {
+  const { isSignedIn } = useUser();
   const panel = api.thinkpagesForum.realmPanel.useQuery(undefined, {
+    enabled: isSignedIn,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
   const counts = api.thinkpagesForum.navCounts.useQuery(undefined, {
+    enabled: isSignedIn,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
   if (panel.isLoading) return <Skeleton className="rounded-card h-40" />;
   if (!panel.data) return null;
   const { realm, messages } = panel.data;
-  const fresh = counts.data?.realmBoardNew ?? 0;
+  const fresh = counts.data?.realmBoardNew;
   return (
     <Card padding="md" content="entity" role="region" aria-label={`Your realm, ${realm.name}`}>
       <div className="flex items-center gap-3">
         <RealmAvatar thumbnail={realm.emblemUrl || realm.thumbnail} />
         <div className="min-w-0">
           <h2 className="text-headline text-label truncate">{realm.name}</h2>
-          <p className="text-footnote text-label-secondary tabular-nums">
-            {fresh > 0 ? `${countLabel(fresh)} new on the board` : "Up to date on the board"}
-          </p>
+          {fresh === undefined ? null : (
+            <p className="text-footnote text-label-secondary tabular-nums">
+              {fresh > 0 ? `${countLabel(fresh)} new on the board` : "Up to date on the board"}
+            </p>
+          )}
         </div>
       </div>
       <div className="mt-3">
