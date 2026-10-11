@@ -284,15 +284,17 @@ export function UnifiedDashboardSection({
         <motion.div variants={staggerItem}>
           <div className="flex min-w-0 flex-col space-y-5">
             <motion.div variants={staggerItem} className="flex items-center gap-2">
-              <SegmentedControl
-                options={tabs}
-                value={activeTab}
-                onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
-                size="md"
-                className="min-w-0 flex-1"
-                scrollable
-                asTabs
-              />
+              {/* The flex item is the wrapper: with asTabs the control's className lands on the inner tab list. */}
+              <div className="min-w-0 flex-1">
+                <SegmentedControl
+                  options={tabs}
+                  value={activeTab}
+                  onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                  size="md"
+                  scrollable
+                  asTabs
+                />
+              </div>
               <Button
                 variant="secondary"
                 size="sm"
