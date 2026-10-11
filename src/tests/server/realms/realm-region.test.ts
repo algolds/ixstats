@@ -874,6 +874,18 @@ describe("deleting a realm (AT-8)", () => {
     );
   });
 
+  it("hides the realm's advert thread before the realm goes, so it does not outlive it as an ordinary thread", async () => {
+    const db = deletableDb();
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.forumThread.updateMany).toHaveBeenCalledWith({
+      where: { advertRealmId: "eurth" },
+      data: { hidden: true },
+    });
+    expect(db.forumThread.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      db.realm.delete.mock.invocationCallOrder[0]!
+    );
+  });
+
   it("skips the link cleanup when the realm has no posts", async () => {
     const db = deletableDb();
     db.forumPost.findMany.mockResolvedValue([]);

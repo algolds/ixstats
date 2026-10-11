@@ -18,6 +18,8 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import {
+  advertRowOf,
+  advertViewOf,
   authorModeration,
   afterEdit,
   afterReply,
@@ -91,7 +93,8 @@ const ONE_BODY = "Send html or wikitext";
 const personaId = id.nullish();
 const stashTarget = z.object({ threadId: id, stashId: id.optional() });
 
-type ThreadPage = Omit<Awaited<ReturnType<typeof getThreadPosts>>, "forumRealm">;
+/** The thread read without the realm rows it joined: they carry the founder's Clerk id and never leave the router. */
+type ThreadPage = Omit<Awaited<ReturnType<typeof getThreadPosts>>, "forumRealm" | "advertRealm">;
 
 /**
  * A moderator's extras on a thread: Move destinations, and what they may do to each author's posts (I-1, M-8), so
@@ -206,11 +209,12 @@ const forumRouter = createTRPCRouter({
         ...result,
         // Moderators of the category get the Hidden badge; members never receive hidden threads (M-4). Each thread
         // carries its last visible post's author (a persona never with the player's id).
-        threads: listed.map(({ hidden, ...thread }) =>
+        threads: listed.map(({ hidden, advertRealm, ...thread }) =>
           maskPersona(
             {
               ...thread,
               ...(result.canModerate ? { hidden } : {}),
+              advert: advertRowOf(advertRealm),
               lastPoster: lastPosters.get(thread.id) ?? null,
             },
             result.canModerate
@@ -228,7 +232,7 @@ const forumRouter = createTRPCRouter({
 
   thread: publicProcedure.input(z.object({ threadId: id, page })).query(async ({ ctx, input }) => {
     const viewer = await viewerOf(ctx.db, ctx.user);
-    const { forumRealm, ...result } = await getThreadPosts(
+    const { forumRealm, advertRealm, ...result } = await getThreadPosts(
       ctx.db,
       viewer,
       input.threadId,
@@ -278,6 +282,7 @@ const forumRouter = createTRPCRouter({
       watching: viewer ? await isWatching(ctx.db, viewer.id, input.threadId) : false,
       canReply,
       canReact: threadReactable(viewer, result.thread, access.ban !== null, forumRealm),
+      advert: advertRealm ? await advertViewOf(ctx.db, viewer, advertRealm) : null,
       notice: access.notice,
       banned: access.ban !== null,
       // The thread bar's actions (lock, pin, hide, archive, move): a site admin's thread is site admins' only.

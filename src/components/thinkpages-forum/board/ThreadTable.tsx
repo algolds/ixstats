@@ -38,6 +38,14 @@ export interface ThreadRowData {
   unread?: boolean;
   /** The list pages name each thread's board (and its realm). */
   board?: { name: string; realm: { name: string } | null };
+  /** Find a Realm: the realm this thread advertises, else null. */
+  advert?: {
+    realmSlug: string;
+    realmName: string;
+    emblemUrl: string | null;
+    thumbnail: string | null;
+    claimsOpen: boolean;
+  } | null;
 }
 type Thread = ThreadRowData;
 

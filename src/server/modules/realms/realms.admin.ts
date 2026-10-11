@@ -74,6 +74,8 @@ export async function deleteRealm(
         where: { postSource: "native", postRef: { in: posts.map((p) => p.id) } },
       });
     }
+    // The realm's Find a Realm advert is a sitewide thread: the foreign key would turn it into an ordinary thread, so hide it.
+    await tx.forumThread.updateMany({ where: { advertRealmId: realm.id }, data: { hidden: true } });
     await tx.forumCategory.deleteMany({ where: { scope: "realm", realmId: realm.id } });
     await tx.realm.delete({ where: { id: realm.id } });
   });
