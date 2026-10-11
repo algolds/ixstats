@@ -7,6 +7,7 @@
  * carries no player id. A hidden message is never sent; a hide is a `removed` change.
  */
 import { z } from "zod";
+import { isReactionType } from "./reactions";
 
 export const BOARD_ROOM_PREFIX = "realm-board:";
 export const boardRoomOf = (realmId: string): string => `${BOARD_ROOM_PREFIX}${realmId}`;
@@ -44,8 +45,16 @@ export const boardLiveMessageSchema = z.object({
   isVisitor: z.boolean(),
   visitorRealm: realmRefSchema.nullable(),
   contentHtml: z.string(),
-  /** The message's `{type: count}`; the viewer's own reaction never goes on the wire. */
-  reactions: z.record(z.string(), z.number()).default({}),
+  /**
+   * The message's `{type: count}`; the viewer's own reaction never goes on the wire. A count is a positive whole
+   * number, and a key that is not a reaction type is dropped, as the server's reader drops it.
+   */
+  reactions: z
+    .record(z.string(), z.number().int().positive())
+    .transform((counts) =>
+      Object.fromEntries(Object.entries(counts).filter(([type]) => isReactionType(type)))
+    )
+    .default({}),
   /** ISO time. */
   createdAt: z.string(),
   editedAt: z.string().nullable(),

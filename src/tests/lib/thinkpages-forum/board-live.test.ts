@@ -169,6 +169,22 @@ describe("boardLiveMessageSchema reactions", () => {
     );
   });
 
+  it("rejects a count that is zero, negative or fractional, as the server reader would not count it", () => {
+    for (const count of [0, -1, 1.5]) {
+      expect(
+        boardLiveMessageSchema.safeParse({ ...message, reactions: { like: count } }).success
+      ).toBe(false);
+    }
+  });
+
+  it("drops a key that is not a reaction type, and keeps the valid ones", () => {
+    const parsed = boardLiveMessageSchema.parse({
+      ...message,
+      reactions: { like: 2, "not a type": 1, "discord:": 3, sad: 4, "discord:pog:12": 5 },
+    });
+    expect(parsed.reactions).toEqual({ like: 2, "discord:pog:12": 5 });
+  });
+
   it("drops a viewer's own reaction if one is sent", () => {
     const parsed = boardLiveMessageSchema.parse({ ...message, myReaction: "like" });
     expect(parsed).not.toHaveProperty("myReaction");
