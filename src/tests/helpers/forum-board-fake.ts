@@ -279,9 +279,9 @@ function reactionDelegate(rows: Row[]) {
       return { ...hit };
     }),
     delete: jest.fn(async ({ where }: { where: Row }) => {
-      const at = rows.findIndex((row) => row.id === where.id);
-      if (at < 0) throw new Error("Record to delete does not exist.");
-      return rows.splice(at, 1)[0]!;
+      const index = rows.findIndex((row) => row.id === where.id);
+      if (index < 0) throw new Error("Record to delete does not exist.");
+      return rows.splice(index, 1)[0]!;
     }),
     groupBy: jest.fn(async ({ where }: ListArgs = {}) => {
       const counts = new Map<string, number>();
