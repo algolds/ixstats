@@ -2,11 +2,12 @@
 
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { Reply, SendDiagonal } from "iconoir-react";
 import type { TSlateEditor } from "platejs";
 import { ActionPicker } from "~/components/action-links";
 import { useAttachPrefill } from "~/components/action-links/useAttachPrefill";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { Card, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Signal } from "~/components/ui/signal";
@@ -180,13 +181,21 @@ export function CanvasComposer({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <SegmentedControl
-          size="sm"
-          aria-label="Editor view"
-          options={VIEWS}
-          value={view}
-          onValueChange={(v) => void changeView(v)}
-        />
+        <div className="flex items-center gap-3">
+          {/* The inline reply box names itself; the phone sheet has its own title. */}
+          {mode === "reply" && !fill ? (
+            <CardTitle icon={<Reply />} role="heading" aria-level={2}>
+              Reply
+            </CardTitle>
+          ) : null}
+          <SegmentedControl
+            size="sm"
+            aria-label="Editor view"
+            options={VIEWS}
+            value={view}
+            onValueChange={(v) => void changeView(v)}
+          />
+        </div>
         {view === "write" ? (
           <div inert={sending}>
             <ActionPicker onPick={attach} />
@@ -199,7 +208,7 @@ export function CanvasComposer({
         data-fill={fill ? "" : undefined}
         // What is typed while the post is being sent would be lost when the editor clears.
         inert={sending}
-        className="forum-canvas rounded-row overflow-hidden"
+        className="forum-canvas facet-well rounded-row ring-separator focus-within:ring-tint overflow-hidden ring-1 transition-shadow"
       >
         <WikiVisualEditor
           key={editorKey}
@@ -241,11 +250,11 @@ export function CanvasComposer({
         )}
         <Button
           type="button"
-          size="sm"
           className="pointer-coarse:min-h-11"
           onClick={submit}
           disabled={!canSubmit}
         >
+          {mode === "edit" ? null : <SendDiagonal aria-hidden />}
           {SUBMIT_LABEL[mode]}
         </Button>
       </div>

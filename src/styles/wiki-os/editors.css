@@ -442,6 +442,12 @@
     background: transparent;
   }
 
+  /* The toolbar is part of the composer's Well, not the wiki editor's own grey bar. */
+  .forum-canvas .wikios-ve-toolbar {
+    background: transparent;
+    border-bottom-color: var(--color-separator);
+  }
+
   /* The phone sheet gives the editor most of its height. */
   .forum-canvas[data-fill] .wikios-ve-editor-wrapper {
     min-height: 40dvh;

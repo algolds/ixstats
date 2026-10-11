@@ -336,7 +336,7 @@ describe("the thread page", () => {
     expect(ooc.container.querySelector(".forum-post--ic")).toBeNull();
   });
 
-  it("on a narrow screen puts In character beside the trail and keeps the header to icons and one menu", () => {
+  it("on a phone puts In character beside the trail, keeps Info in the header and the icons and one menu under the title", () => {
     window.matchMedia = ((query: string) => ({
       matches: query === "(max-width: 1535px)" || query === "(max-width: 767px)",
       media: query,
@@ -357,12 +357,15 @@ describe("the thread page", () => {
     const badge = within(header).getByText("In character");
     expect(badge.closest("nav")).toBeNull();
     expect(badge.parentElement).toContainElement(within(header).getByRole("navigation"));
-    const names = within(header)
-      .getAllByRole("button")
-      .map((b) => b.getAttribute("aria-label") ?? b.textContent);
-    // Info, the icon-only Watch and Stash, and the one Thread actions menu: no labelled moderator or Report buttons.
-    expect(names).toEqual(["Thread actions", "Watch thread", "Stash thread", "Info"]);
-    expect(within(header).queryByRole("button", { name: "Lock" })).toBeNull();
+    const names = (root: HTMLElement) =>
+      within(root)
+        .getAllByRole("button")
+        .map((b) => b.getAttribute("aria-label") ?? b.textContent);
+    expect(names(header)).toEqual(["Info"]);
+    // The icon-only Watch and Stash and the one Thread actions menu: no labelled moderator or Report buttons.
+    const row = container.querySelector<HTMLElement>('[data-slot="forum-page-actions"]')!;
+    expect(names(row)).toEqual(["Thread actions", "Watch thread", "Stash thread"]);
+    expect(within(row).queryByRole("button", { name: "Lock" })).toBeNull();
   });
 
   it("shows a persona post as the persona only: no player, no flag, no role", () => {

@@ -10,7 +10,7 @@ import {
   type Ref,
 } from "react";
 import dynamic from "next/dynamic";
-import { Reply, Xmark } from "iconoir-react";
+import { Reply, SendDiagonal, Xmark } from "iconoir-react";
 import { ActionPicker } from "~/components/action-links";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { Button } from "~/components/ui/button";
@@ -179,6 +179,7 @@ function ComposerFooter({
         {`${count.toLocaleString("en-US")} / ${BOARD_MESSAGE_MAX.toLocaleString("en-US")}`}
       </span>
       <Button type="button" size="sm" onClick={onPost} disabled={!canSubmit}>
+        <SendDiagonal aria-hidden />
         Post
       </Button>
     </div>
@@ -272,7 +273,14 @@ function PostingComposer({
       {replyTo ? <ReplyBanner authorName={replyTo.authorName} onClear={onClearReply} /> : null}
 
       {/* The editor is always here: folding the dock only hides what surrounds it, so a draft is never remounted. */}
-      <div className={cn("min-w-0", collapsed && "flex-1")}>
+      <div
+        className={cn(
+          "min-w-0",
+          collapsed
+            ? "flex-1"
+            : "facet-well rounded-row ring-separator focus-within:ring-tint ring-1 transition-shadow"
+        )}
+      >
         <GlassPlateEditor
           ref={editorRef}
           value={html}

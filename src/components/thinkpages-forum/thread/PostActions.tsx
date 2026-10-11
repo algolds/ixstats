@@ -99,13 +99,13 @@ export function PostActions({
           </Button>
           <Button variant="ghost" size="sm" className={ACTION} onClick={onQuote}>
             <Quote aria-hidden />
-            Quote
+            <span className="max-sm:sr-only">Quote</span>
           </Button>
         </>
       ) : null}
       <Button variant="ghost" size="sm" className={ACTION} onClick={() => void share()}>
         <ShareIos aria-hidden />
-        Share
+        <span className="max-sm:sr-only">Share</span>
       </Button>
       <span className="flex-1" />
       {canReport || canEdit || moderating ? (

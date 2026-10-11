@@ -79,10 +79,10 @@ describe("ForumPage", () => {
       expect(
         row.compareDocumentPosition(screen.getByText("Body")) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
-      // Icon-sized actions stay in the toolbar.
-      expect(toolbar(container)).toContainElement(
-        screen.getByRole("button", { name: "Stash thread" })
-      );
+      // Icon-sized actions join them: the toolbar halves beside the top chrome are too narrow for several icons.
+      const stash = screen.getByRole("button", { name: "Stash thread" });
+      expect(toolbar(container)).not.toContainElement(stash);
+      expect(row).toContainElement(stash);
     });
 
     it("leave no empty row on a phone when there is nothing to show", () => {

@@ -108,6 +108,10 @@ function ContinuedLine({ continued }: { continued: NonNullable<BoardMessageData[
   );
 }
 
+/** Hidden until the message is hovered or focused, for a fine pointer. */
+const REVEAL =
+  "pointer-fine:opacity-0 pointer-fine:group-hover/message:opacity-100 pointer-fine:group-focus-within/message:opacity-100 transition-opacity duration-fast";
+
 const ACTION = "text-label-secondary hover:text-label pointer-coarse:min-h-11";
 
 /**
@@ -140,7 +144,7 @@ export const BoardMessage = memo(function BoardMessage({
       aria-label={`Message from ${author.name}, ${timeAgo(message.createdAt)}`}
       data-hidden={message.hidden ? "" : undefined}
       className={cn(
-        "flex scroll-mt-24 gap-3.5 px-4 py-4 sm:px-5",
+        "group/message hover:bg-fill-4 flex scroll-mt-24 gap-3.5 px-4 py-4 transition-colors sm:px-5",
         message.hidden && "bg-fill-4 opacity-70",
         className
       )}
@@ -191,8 +195,10 @@ export const BoardMessage = memo(function BoardMessage({
                 mine={message.myReaction}
                 canReact={canReactToMessage(canReact, message)}
               />
+              {/* With a mouse, Reply, Quote and the menu show on hover or focus, so a long board reads as messages,
+                  not rows of buttons; reactions with counts always show. Touch keeps them visible. */}
               {access.canPost ? (
-                <>
+                <span className={cn("flex items-center gap-1", REVEAL)}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -211,17 +217,19 @@ export const BoardMessage = memo(function BoardMessage({
                     <Quote aria-hidden />
                     Quote
                   </Button>
-                </>
+                </span>
               ) : null}
               <span className="flex-1" />
-              <MessageMenu
-                message={message}
-                access={access}
-                signedIn={signedIn}
-                tools={tools}
-                onEdit={(asModerator) => setEditing(asModerator ? "moderator" : "author")}
-                onChanged={onChanged}
-              />
+              <span className={REVEAL}>
+                <MessageMenu
+                  message={message}
+                  access={access}
+                  signedIn={signedIn}
+                  tools={tools}
+                  onEdit={(asModerator) => setEditing(asModerator ? "moderator" : "author")}
+                  onChanged={onChanged}
+                />
+              </span>
             </div>
           )}
         </div>

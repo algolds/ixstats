@@ -140,3 +140,28 @@
     border-top: 1px solid var(--color-separator);
   }
 }
+
+/* Fills carry the app tint. The neutral fills (Input, the SegmentedControl track and thumb, secondary and ghost
+   buttons, hovers, toolbars) read as sterile grey on the tinted canvas; here each is the same strength of an ink that
+   is the tint pulled toward the label, recomposed at every [data-app] scope as --tint-fill is in tokens.css. Light
+   fills darken toward ink, dark fills lighten toward it. Under Increase Contrast the tint is already stronger. */
+@layer base {
+  :root,
+  [data-app] {
+    --fill-ink: color-mix(in srgb, var(--tint) 40%, rgb(9 9 11));
+    --color-fill: color-mix(in srgb, var(--fill-ink) 16%, transparent);
+    --color-fill-2: color-mix(in srgb, var(--fill-ink) 12%, transparent);
+    --color-fill-3: color-mix(in srgb, var(--fill-ink) 8%, transparent);
+    --color-fill-4: color-mix(in srgb, var(--fill-ink) 5%, transparent);
+    --color-control-thumb: color-mix(in srgb, var(--tint) 6%, #ffffff);
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    --fill-ink: color-mix(in srgb, var(--tint) 45%, rgb(244 244 245));
+    --color-fill: color-mix(in srgb, var(--fill-ink) 24%, transparent);
+    --color-fill-2: color-mix(in srgb, var(--fill-ink) 18%, transparent);
+    --color-fill-3: color-mix(in srgb, var(--fill-ink) 12%, transparent);
+    --color-fill-4: color-mix(in srgb, var(--fill-ink) 8%, transparent);
+    --color-control-thumb: color-mix(in srgb, var(--fill-ink) 26%, transparent);
+  }
+}

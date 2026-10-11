@@ -37,7 +37,10 @@ interface PostHeaderProps {
 const formatDate = (date: Date) =>
   date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-/** A post's header: avatar, name and flag, its role pill, handle and full date, and its `#N` permalink. */
+/**
+ * A post's header: avatar, name and flag, its role pill, handle and full date, and its `#N` permalink, on a Well band
+ * across the top of the post, so each post in the feed's one Pane starts on its own surface.
+ */
 export function PostHeader({
   name,
   handle,
@@ -54,7 +57,7 @@ export function PostHeader({
 }: PostHeaderProps) {
   const title = <span className="text-title-3 text-label min-w-0 truncate">{name}</span>;
   return (
-    <header className="flex items-center gap-3">
+    <header className="facet-well rounded-row -mx-2 flex items-center gap-3 px-3 py-2.5 sm:-mx-3">
       <ForumAvatar name={name} avatarUrl={avatarUrl} size="md" className="sm:size-10" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">

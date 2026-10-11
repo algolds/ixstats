@@ -72,7 +72,8 @@ function SortHeaders({ basePath, sort }: { basePath?: string; sort?: ThreadSort 
       role="row"
       className={cn(
         GRID,
-        "text-footnote text-label-secondary border-separator items-center gap-x-4 border-b px-4 py-2 max-md:sr-only max-md:focus-within:not-sr-only sm:px-5"
+        // The column headings sit on a Well band, as each post starts on one.
+        "facet-well text-footnote text-label-secondary border-separator items-center gap-x-4 border-b px-4 py-2 max-md:sr-only max-md:focus-within:not-sr-only sm:px-5"
       )}
     >
       {SORT_COLUMNS.map((column) => {
@@ -213,7 +214,9 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
       role="row"
       className={cn(
         GRID,
-        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11"
+        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
+        // An unread thread carries a wash of the tint, so new activity reads down the list at a glance.
+        unread && "bg-tint-fill/50"
       )}
     >
       <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3.5 md:col-span-1">

@@ -24,7 +24,10 @@ interface ForumPageProps {
   breadcrumbs?: React.ReactNode;
   /** An emblem or avatar before the large title (an entity page such as a realm's landing). */
   leading?: React.ReactNode;
-  /** Icon-sized page actions, which fit the header toolbar at every width. */
+  /**
+   * Icon-sized page actions: in the header toolbar from md up, and on a phone in the row under the title with the
+   * wide actions, so the toolbar halves beside the floating top chrome hold only the Info button.
+   */
   actions?: React.ReactNode;
   /**
    * Wide page actions (a realm picker, a Sort or New thread button): in the header toolbar from md up, and on a phone
@@ -62,6 +65,7 @@ export function ForumPage({
   const [railOpen, setRailOpen] = React.useState(false);
   const phone = useMediaQuery(PHONE_QUERY);
   const hasWide = wideActions != null && wideActions !== false;
+  const hasActions = actions != null && actions !== false;
   const label = railTitle ?? "Info";
   const hasRail = rail != null && rail !== false;
   const watchHash = hasRail && openRailOnHash !== undefined;
@@ -81,10 +85,10 @@ export function ForumPage({
           back={back}
           bleed
           actions={
-            actions != null || hasRail || (hasWide && !phone) ? (
+            hasRail || (!phone && (hasActions || hasWide)) ? (
               <>
                 {phone ? null : wideActions}
-                {actions}
+                {phone ? null : actions}
                 {hasRail && (
                   <Button
                     variant="ghost"
@@ -103,12 +107,13 @@ export function ForumPage({
           }
         />
         <div className="flex min-w-0 flex-col gap-4">
-          {phone && hasWide ? (
+          {phone && (hasWide || hasActions) ? (
             <div
               data-slot="forum-page-actions"
               className="flex flex-wrap items-center gap-2 empty:hidden [&>*]:min-w-0"
             >
               {wideActions}
+              {actions}
             </div>
           ) : null}
           {children}
