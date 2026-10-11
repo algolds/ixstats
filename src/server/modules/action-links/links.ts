@@ -19,29 +19,31 @@ export type LinksDb = Pick<PrismaClient, "activityFeed" | "postActionLink" | "$t
 
 /**
  * The token parse, the per-post cap and the ownership check, with no writes, so a caller can refuse a post before
- * saving it. Returns the linked activity ids.
+ * saving it. Returns every linked activity id. `keep` lists the ids the post already carried (an edit): they count toward the
+ * cap but are not checked again, since an action withdrawn or a nation switched since posting must not block a typo fix.
  */
 export async function validatePostActionTokens(
   db: Pick<PrismaClient, "activityFeed">,
-  input: { countryId: string | null; body: string }
+  input: { countryId: string | null; body: string; keep?: readonly string[] }
 ): Promise<string[]> {
   const { countryId } = input;
   const ids = parseActionTokens(input.body);
+  const fresh = ids.filter((id) => !input.keep?.includes(id));
   if (ids.length > MAX_ACTIONS_PER_POST) {
     throw new ActionLinkError(
       "BAD_REQUEST",
       `A post can link at most ${MAX_ACTIONS_PER_POST} actions`
     );
   }
-  if (ids.length > 0 && !countryId) {
+  if (fresh.length > 0 && !countryId) {
     throw new ActionLinkError("FORBIDDEN", "Only a nation's posts can link its actions");
   }
-  if (ids.length > 0 && countryId) {
+  if (fresh.length > 0 && countryId) {
     const owned = await db.activityFeed.findMany({
-      where: { id: { in: ids }, countryId, visibility: "public" },
+      where: { id: { in: fresh }, countryId, visibility: "public" },
       select: { id: true },
     });
-    if (owned.length !== ids.length) {
+    if (owned.length !== fresh.length) {
       throw new ActionLinkError(
         "BAD_REQUEST",
         "A linked action is not one of your nation's public actions"
@@ -58,17 +60,24 @@ export async function validatePostActionTokens(
  */
 export async function syncPostActionLinks(
   db: LinksDb,
-  input: { postSource: PostSource; postRef: string; countryId: string | null; body: string }
+  input: {
+    postSource: PostSource;
+    postRef: string;
+    countryId: string | null;
+    body: string;
+    keep?: readonly string[];
+  }
 ): Promise<{ created: string[] }> {
-  const { postSource, postRef, countryId: owner } = input;
+  const { postSource, postRef, countryId: owner, keep } = input;
   const ids = await validatePostActionTokens(db, input);
+  const fresh = ids.filter((id) => !keep?.includes(id));
   return db.$transaction(async (tx) => {
     await tx.postActionLink.deleteMany({
       where: { postSource, postRef, activityId: { notIn: ids } },
     });
-    if (ids.length === 0 || !owner) return { created: [] };
+    if (fresh.length === 0 || !owner) return { created: [] };
     const rows = await tx.postActionLink.createManyAndReturn({
-      data: ids.map((activityId) => ({ postSource, postRef, activityId, countryId: owner })),
+      data: fresh.map((activityId) => ({ postSource, postRef, activityId, countryId: owner })),
       skipDuplicates: true,
       select: { activityId: true },
     });

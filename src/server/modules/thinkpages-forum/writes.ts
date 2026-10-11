@@ -47,7 +47,7 @@ import {
 } from "./writes-links";
 
 export { MAX_POST_HTML, prepareBody, type PostInput, type PreparedBody };
-export { inLockedChain, syncLinks, validateLinks };
+export { inLockedChain, syncEditLinks, syncLinks, validateEditLinks, validateLinks };
 export const TITLE_MIN = 3;
 export const TITLE_MAX = 200;
 
