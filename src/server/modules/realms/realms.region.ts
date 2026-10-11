@@ -4,6 +4,7 @@
  * forum threads and happenings — and the staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
+import { UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
@@ -75,7 +76,7 @@ export async function requireRealmStaff(
 }
 
 /** A partner realm shown to everyone: not a draft or generating realm, which only its own staff see (AT-6). */
-const PUBLISHED_PARTNER = { status: { notIn: ["draft", "generating"] } };
+const PUBLISHED_PARTNER = { status: { notIn: [...UNPUBLISHED_REALM_STATUSES] } };
 
 type OverviewDb = Pick<
   PrismaClient,

@@ -5,7 +5,7 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, isUnpublishedStatus } from "~/lib/realms/realm-ids";
 import {
   parseRealmMapSettings,
   realmRadiusKm,
@@ -235,6 +235,6 @@ export async function realmForWikiArticle(
     where: { id: realmId },
     select: { slug: true, status: true },
   });
-  if (!realm || realm.status === "draft" || realm.status === "generating") return null;
+  if (!realm || isUnpublishedStatus(realm.status)) return null;
   return { slug: realm.slug };
 }
