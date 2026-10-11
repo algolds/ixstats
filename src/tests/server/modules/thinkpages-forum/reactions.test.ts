@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { Prisma } from "@prisma/client";
-import { ConflictError } from "~/lib/app-error";
+import { ConflictError, NotFoundError, ValidationError } from "~/lib/app-error";
 import {
   listReactors,
   reactToPost,
@@ -173,6 +173,35 @@ describe("reactToPost", () => {
     const store = reactionStore();
     store.reactionDb.create.mockRejectedValueOnce(new Error("connection lost"));
     await expect(react(store, member, "p_hub", "like")).rejects.toThrow("connection lost");
+  });
+
+  it("answers NOT_FOUND for the same lost post when the app's db client wraps the failure", async () => {
+    const lostUpdate = reactionStore();
+    lostUpdate.tx.forumPost.update.mockRejectedValueOnce(
+      new NotFoundError("ForumPost", undefined, { prismaError: "Record to update not found." })
+    );
+    await expect(react(lostUpdate, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Post not found.",
+    });
+    const lostParent = reactionStore();
+    lostParent.reactionDb.create.mockRejectedValueOnce(
+      new ValidationError("Foreign key constraint failed on ForumPostReaction (postId)")
+    );
+    await expect(react(lostParent, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("does not take an unrelated ValidationError or NotFoundError for a lost post", async () => {
+    const store = reactionStore();
+    const unrelated = new ValidationError("Reaction type is not allowed");
+    store.reactionDb.create.mockRejectedValueOnce(unrelated);
+    await expect(react(store, member, "p_hub", "like")).rejects.toBe(unrelated);
+    const other = reactionStore();
+    const missing = new NotFoundError("Post");
+    other.reactionDb.create.mockRejectedValueOnce(missing);
+    await expect(react(other, member, "p_hub", "like")).rejects.toBe(missing);
   });
 
   it("answers NOT_FOUND when the post is deleted between the checks and the write", async () => {

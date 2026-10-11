@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { isUniqueViolation } from "~/lib/prisma-error";
+import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 
 export type ForumErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
@@ -20,7 +20,7 @@ export class ForumError extends Error {
   }
 }
 
-export { isUniqueViolation };
+export { isMissingRecord, isUniqueViolation };
 
 /**
  * An interactive transaction that ran past its timeout or was closed under the write (Prisma P2028), for mapping to
@@ -28,12 +28,4 @@ export { isUniqueViolation };
  */
 export function isTransactionTimeout<E>(error: E): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028";
-}
-
-/** A row deleted under a write (Prisma P2025, or P2003 for an insert whose parent is gone), for mapping to NOT_FOUND. */
-export function isMissingRecord<E>(error: E): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === "P2025" || error.code === "P2003")
-  );
 }

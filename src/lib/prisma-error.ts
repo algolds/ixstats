@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import { NotFoundError, ConflictError, ValidationError, InternalError } from "~/lib/app-error";
 
+const FOREIGN_KEY_PREFIX = "Foreign key constraint failed";
+
 interface ParsedPrismaError {
   type: "unique_constraint" | "not_found" | "foreign_key" | "constraint" | "timeout" | "unknown";
   model?: string;
@@ -37,7 +39,7 @@ export function parsePrismaError(error: unknown): ParsedPrismaError | null {
         type: "foreign_key",
         model: modelName,
         field: fieldName,
-        message: `Foreign key constraint failed${modelName ? ` on ${modelName}` : ""}${fieldName ? ` (${fieldName})` : ""}`,
+        message: `${FOREIGN_KEY_PREFIX}${modelName ? ` on ${modelName}` : ""}${fieldName ? ` (${fieldName})` : ""}`,
       };
     }
     case "P2014": {
@@ -97,4 +99,18 @@ export function isUniqueViolation(error: unknown, field?: string): boolean {
   const meta = "meta" in error && typeof error.meta === "object" ? error.meta : null;
   const target = meta && "target" in meta ? String(meta.target) : "";
   return field === undefined || target.includes(field);
+}
+
+/**
+ * A row deleted under a write: P2025 (record not found) or P2003 (an insert whose parent is gone), however it arrives:
+ * the raw Prisma error from a bare client, or what `~/server/db` wraps it into (a `NotFoundError` carrying the Prisma
+ * message in its context, a `ValidationError` for the foreign key). A `NotFoundError` or `ValidationError` raised by
+ * application code is not taken for one.
+ */
+export function isMissingRecord(error: unknown): boolean {
+  if (error instanceof NotFoundError) return typeof error.context?.prismaError === "string";
+  if (error instanceof ValidationError) return error.message.startsWith(FOREIGN_KEY_PREFIX);
+  return (
+    error instanceof Error && "code" in error && (error.code === "P2025" || error.code === "P2003")
+  );
 }
