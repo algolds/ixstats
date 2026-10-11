@@ -34,6 +34,12 @@ interface StoredNotice {
  */
 function setup() {
   const store = reactionStore();
+  // Each reactor the suite uses has reacted to every post, as when the hook runs right after the reaction commits.
+  for (const row of store.state.posts) {
+    for (const userId of [reactor.id, "u_plain"]) {
+      store.reactions.push({ id: `rx_${row.id}_${userId}`, postId: row.id, userId, type: "like" });
+    }
+  }
   const stored: StoredNotice[] = [];
   sent.mockImplementation(async (notices: readonly ForumNotice[]) => {
     for (const notice of notices) {
@@ -153,6 +159,24 @@ describe("notifyReaction", () => {
       await notifyReaction(db, reactor, { postId });
     }
     expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("tells nobody when the reactor already took the reaction back", async () => {
+    const { db, store, notification } = setup();
+    store.reactions.length = 0;
+    await notifyReaction(db, reactor, { postId: "p_hub" });
+    expect(sent).not.toHaveBeenCalled();
+    expect(notification.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("looks for the reaction by its post and reactor", async () => {
+    const { db, store } = setup();
+    await notifyReaction(db, reactor, { postId: "p_hub" });
+    expect(store.reactionDb.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { postId_userId: { postId: "p_hub", userId: "u_member" } },
+      })
+    );
   });
 
   it("tells nobody who cannot read the post", async () => {
