@@ -102,7 +102,7 @@ function textContentOf(node: Parent): string {
 function unwrapMentions(parent: Parent): boolean {
   const adapter = parser().defaultTreeAdapter;
   let changed = false;
-  for (const child of [...parent.childNodes]) {
+  for (const child of parent.childNodes.slice()) {
     if (!adapter.isElementNode(child)) continue;
     if (child.tagName === "a" && hasMentionClass(child)) {
       adapter.insertTextBefore(parent, textContentOf(child), child);
