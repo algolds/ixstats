@@ -85,7 +85,7 @@ export async function primaryRealmIdOf(
 }
 
 /** The realm of the viewer's primary nation. Null for anonymous, for a viewer holding no nation, and for a realm hidden from them. */
-async function myRealmOf(
+export async function myRealmOf(
   db: Pick<PrismaClient, "country"> & RealmDb,
   viewer: ForumViewer
 ): Promise<ForumRealm | null> {

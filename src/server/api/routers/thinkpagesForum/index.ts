@@ -71,6 +71,7 @@ import {
 import { thinkpagesForumAdvertsRouter } from "./adverts";
 import { thinkpagesForumBoardRouter } from "./board";
 import { thinkpagesForumEngagementRouter } from "./engagement";
+import { thinkpagesForumIntegrationsRouter } from "./integrations";
 import { thinkpagesForumReactionsRouter } from "./reactions";
 import {
   actorOf,
@@ -459,12 +460,13 @@ const forumRouter = createTRPCRouter({
 
 /**
  * The forum procedures plus the realm board's (./board.ts), the engagement procedures (./engagement.ts), the
- * reactions (./reactions.ts) and the Find a Realm adverts (./adverts.ts).
+ * reactions (./reactions.ts), the Find a Realm adverts (./adverts.ts) and the board previews (./integrations.ts).
  */
 export const thinkpagesForumRouter = mergeRouters(
   forumRouter,
   thinkpagesForumBoardRouter,
   thinkpagesForumEngagementRouter,
   thinkpagesForumReactionsRouter,
-  thinkpagesForumAdvertsRouter
+  thinkpagesForumAdvertsRouter,
+  thinkpagesForumIntegrationsRouter
 );
