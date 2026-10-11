@@ -2,6 +2,7 @@
 
 import React from "react";
 import { CheckCircle, GitFork } from "iconoir-react";
+import { ShareToRealmButton } from "~/components/action-links/ShareToRealmButton";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
@@ -73,6 +74,9 @@ export function DeclaredCard({
             <GitFork /> Build a follow-up
           </Button>
         )}
+        {res.activityId ? (
+          <ShareToRealmButton activityId={res.activityId} className="sm:h-9" />
+        ) : null}
         <Button variant="ghost" className="max-sm:h-11" onClick={onDismiss}>
           Declare another
         </Button>

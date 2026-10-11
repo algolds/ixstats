@@ -18,6 +18,7 @@ import {
   City as Building2,
   GitBranch,
 } from "iconoir-react";
+import { ShareToRealmButton } from "~/components/action-links/ShareToRealmButton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -137,12 +138,14 @@ const detailButton = "h-11 sm:h-8";
 
 function IntentHeader({
   intent,
+  activityId,
   isUpdating,
   onBuildOn,
   onComplete,
   onShareToThinkPages,
 }: {
   intent: IntentItem;
+  activityId: string | null;
   isUpdating: boolean;
   onBuildOn: () => void;
   onComplete: () => void;
@@ -232,6 +235,8 @@ function IntentHeader({
               Complete directive
             </Button>
           )}
+
+          {activityId ? <ShareToRealmButton activityId={activityId} /> : null}
 
           <Button
             type="button"
@@ -437,6 +442,11 @@ export function IntentDetail({
 }) {
   const tree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
   const linked = api.intent.getLinkedIssues.useQuery({ intentId }, { enabled: !!intentId });
+  // The directive's public row (written at commit); an older or abandoned directive has none and cannot be shared to the forum.
+  const directive = api.actionLinks.directiveActivity.useQuery(
+    { intentId },
+    { enabled: !!intentId, staleTime: 5 * 60_000 }
+  );
   const updateM = api.intent.updateStatus.useMutation({
     onSuccess: () => tree.refetch(),
   });
@@ -461,6 +471,7 @@ export function IntentDetail({
     <div className="space-y-4 pb-4">
       <IntentHeader
         intent={intent}
+        activityId={directive.data?.activityId ?? null}
         isUpdating={updateM.isPending}
         onBuildOn={() => {
           onClose?.();
