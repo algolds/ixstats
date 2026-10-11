@@ -12,7 +12,9 @@ import {
   Trophy,
   Group as Users,
   ChatBubble as MessageCircle,
+  ClipboardCheck,
 } from "iconoir-react";
+import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -37,8 +39,10 @@ const SOURCE_CONFIG: Record<string, FeedBadge> = {
   forum: { icon: MessageCircle, color: "text-orange", bg: "bg-orange/10", label: "Forum" },
 };
 
-/** First match wins: a category or a keyword in the title. */
-const ACTIVITY_RULES: (FeedBadge & { cats?: string[]; words: string[] })[] = [
+/** First match wins: an activity type, a category or a keyword in the title. */
+const ACTIVITY_RULES: (FeedBadge & { types?: string[]; cats?: string[]; words: string[] })[] = [
+  // A directive is named by its activity type; its title is the player's own goal text, so words never apply.
+  { label: "Directive", icon: ClipboardCheck, ...BLUE, types: ["directive"], words: [] },
   { label: "POI", icon: MapIcon, ...GREEN, words: ["point of interest", "poi"] },
   { label: "City", icon: MapIcon, ...GREEN, words: ["city", "settlement"] },
   {
@@ -75,7 +79,7 @@ const ACTIVITY_RULES: (FeedBadge & { cats?: string[]; words: string[] })[] = [
     icon: Landmark,
     color: "text-indigo",
     bg: "bg-indigo/10",
-    cats: ["political"],
+    cats: ["political", "government"],
     words: ["govern", "politic", "election"],
   },
   { label: "Crisis", icon: AlertTriangle, ...RED, cats: ["crisis"], words: ["crisis"] },
@@ -93,7 +97,10 @@ export function getActivityLabel(activity: any): FeedBadge {
   const cat = activity.category ?? activity.content?.metadata?.category ?? "";
   const title = (activity.content?.title ?? "").toLowerCase();
   const rule = ACTIVITY_RULES.find(
-    (r) => r.cats?.includes(cat) || r.words.some((word) => title.includes(word))
+    (r) =>
+      r.types?.includes(activity.type) ||
+      r.cats?.includes(cat) ||
+      r.words.some((word) => title.includes(word))
   );
   return rule ?? SOURCE_CONFIG.activity!;
 }
@@ -180,6 +187,9 @@ function ActivityCard({ activity }: { activity: any }) {
             <Byline activity={activity} />
           </div>
           <ActivityBody activity={activity} sportsBulletin={sportsBulletin} />
+          {source === "activity" && !activity._grouped ? (
+            <DiscussedInBadge activityId={activity.id} />
+          ) : null}
         </div>
       </div>
     </Card>

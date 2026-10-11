@@ -21,6 +21,8 @@ import {
   RssFeed as Rss,
   OpenBook as BookOpen,
 } from "iconoir-react";
+import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
+import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -133,6 +135,9 @@ function ActivityRow({ item }: { item: CountryActivityItem }) {
             );
           })}
         </div>
+        {item.source === "activity" ? (
+          <DiscussedInBadge activityId={item.id} className="mt-1" />
+        ) : null}
       </div>
     </li>
   );
@@ -167,6 +172,12 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
     return items.filter(FILTERS.find((f) => f.value === filter)?.test ?? (() => true));
   }, [activityData, filter]);
+
+  // Only an ActivityFeed row can be discussed in the forum; a ThinkPages post cannot.
+  const activityIds = useMemo(
+    () => feed.filter((item) => item.source === "activity").map((item) => item.id),
+    [feed]
+  );
 
   const summary = [
     { label: "Total items", value: feed.length },
@@ -225,11 +236,13 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
             </Card>
           ) : feed.length > 0 ? (
             <Card padding="md">
-              <ul className="divide-separator divide-y">
-                {feed.map((item) => (
-                  <ActivityRow key={item.id} item={item} />
-                ))}
-              </ul>
+              <DiscussionCountsProvider activityIds={activityIds}>
+                <ul className="divide-separator divide-y">
+                  {feed.map((item) => (
+                    <ActivityRow key={item.id} item={item} />
+                  ))}
+                </ul>
+              </DiscussionCountsProvider>
 
               {!showMore && feed.length >= 15 && (
                 <div className="pt-3 text-center">

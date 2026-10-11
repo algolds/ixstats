@@ -1,0 +1,104 @@
+import React from "react";
+import { render, screen } from "@testing-library/react";
+
+const captured = jest.fn();
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
+  DiscussionCountsProvider: ({
+    activityIds,
+    children,
+  }: {
+    activityIds: string[];
+    children: React.ReactNode;
+  }) => {
+    captured(activityIds);
+    return <>{children}</>;
+  },
+}));
+jest.mock("~/components/action-links/DiscussedIn", () => ({
+  DiscussedInBadge: ({ activityId }: { activityId: string }) => (
+    <span data-testid="badge">{activityId}</span>
+  ),
+}));
+jest.mock("~/components/dashboard/sections/feed/FeedItemHeader", () => ({
+  FeedItemHeader: () => null,
+}));
+jest.mock("~/components/dashboard/sections/feed/FeedGroupedDrawer", () => ({
+  FeedGroupedDrawer: () => null,
+}));
+jest.mock("~/components/dashboard/sections/feed/WikiFeedCard", () => ({
+  WikiFeedCard: () => null,
+}));
+jest.mock("~/components/shared/polls/FeedPollWidget", () => ({ FeedPollWidget: () => null }));
+jest.mock("~/components/thinkpages/SportsBulletinCard", () => ({ SportsBulletinCard: () => null }));
+jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
+  WikiHtmlContent: ({ html }: { html: string }) => <span>{html}</span>,
+}));
+jest.mock("~/components/thinkpages/ThinkpagesPost", () => ({ ThinkpagesPost: () => null }));
+jest.mock("~/trpc/react", () => ({ api: {} }));
+
+import { FeedList } from "~/components/dashboard/sections/UnifiedFeedContent";
+import { UnifiedFeedItem, getActivityLabel } from "~/components/dashboard/sections/UnifiedFeedItem";
+
+const activity = (id: string, extra: object = {}) => ({
+  id,
+  source: "activity",
+  timestamp: new Date("2026-10-01T00:00:00Z"),
+  content: { title: "A directive", description: "Declared." },
+  ...extra,
+});
+
+describe("UnifiedFeedItem discussed-in badge", () => {
+  it("shows the badge on a plain activity card", () => {
+    render(<UnifiedFeedItem activity={activity("a1")} />);
+    expect(screen.getByTestId("badge")).toHaveTextContent("a1");
+  });
+
+  it.each([
+    ["a grouped run", activity("g1", { _grouped: true })],
+    ["a forum row", activity("f1", { source: "forum" })],
+  ])("shows no badge on %s", (_label, row) => {
+    render(<UnifiedFeedItem activity={row} />);
+    expect(screen.queryByTestId("badge")).toBeNull();
+  });
+
+  it("labels a government row as Politics", () => {
+    expect(getActivityLabel({ category: "government", content: { title: "x" } }).label).toBe(
+      "Politics"
+    );
+  });
+
+  it("labels a directive by its activity type, whatever its title says", () => {
+    const row = (title: string) => ({
+      type: "directive",
+      category: "government",
+      content: { title },
+    });
+    expect(getActivityLabel(row("Raise taxes")).label).toBe("Directive");
+    // The goal text is the player's own: a keyword in it must not decide the label.
+    expect(getActivityLabel(row("Build a city and a treaty")).label).toBe("Directive");
+    expect(
+      getActivityLabel({ category: "government", content: { title: "Directive" } }).label
+    ).toBe("Politics");
+  });
+});
+
+describe("FeedList counts", () => {
+  const handlers = {} as never;
+
+  it("asks for the counts of the plain activity rows only", () => {
+    captured.mockClear();
+    render(
+      <FeedList
+        {...handlers}
+        items={[
+          activity("a1"),
+          activity("g1", { _grouped: true }),
+          activity("w1", { source: "wiki" }),
+          activity("f1", { source: "forum" }),
+          activity("a2"),
+        ]}
+      />
+    );
+    expect(captured).toHaveBeenLastCalledWith(["a1", "a2"]);
+  });
+});

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { RssFeed as Rss, Group as Users } from "iconoir-react";
+import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
@@ -119,40 +120,47 @@ export function FeedSkeletons({ count = 5 }: { count?: number }) {
 
 /** ThinkPages posts render as threads; every other activity as a unified feed item. */
 export function FeedList({ items, ...h }: FeedHandlers & { items: any[] }) {
+  // Only a plain activity card is an ActivityFeed row; wiki, forum, ThinkPages and grouped rows have no discussion.
+  const activityIds = useMemo(
+    () => items.filter((a) => a.source === "activity" && !a._grouped).map((a) => a.id as string),
+    [items]
+  );
   return (
-    <div className="space-y-2">
-      {items.map((a) => {
-        if (a.source === "thinkpages" && a.rawPost) {
-          return (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={springSmooth}
-            >
-              <ThinkpagesPost
-                post={a.rawPost}
-                currentUserAccountId={h.currentUserAccountId}
-                accounts={h.accounts}
-                countryId={h.countryId}
-                isOwner={h.isOwner}
-                onAccountSelect={h.onAccountSelectAction}
-                onAccountSettings={h.onAccountSettingsAction}
-                onCreateAccount={h.onCreateAccountAction}
-                onLike={h.onLikeAction}
-                onRepost={() => h.onRepostAction(a.rawPost)}
-                onReaction={h.onReactionAction}
-                onReply={h.onReplyAction}
-                onShare={h.onShareAction}
-                onAccountClick={() => {}}
-                showThread={true}
-              />
-            </motion.div>
-          );
-        }
-        return <UnifiedFeedItem key={a.id} activity={a} />;
-      })}
-    </div>
+    <DiscussionCountsProvider activityIds={activityIds}>
+      <div className="space-y-2">
+        {items.map((a) => {
+          if (a.source === "thinkpages" && a.rawPost) {
+            return (
+              <motion.div
+                key={a.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={springSmooth}
+              >
+                <ThinkpagesPost
+                  post={a.rawPost}
+                  currentUserAccountId={h.currentUserAccountId}
+                  accounts={h.accounts}
+                  countryId={h.countryId}
+                  isOwner={h.isOwner}
+                  onAccountSelect={h.onAccountSelectAction}
+                  onAccountSettings={h.onAccountSettingsAction}
+                  onCreateAccount={h.onCreateAccountAction}
+                  onLike={h.onLikeAction}
+                  onRepost={() => h.onRepostAction(a.rawPost)}
+                  onReaction={h.onReactionAction}
+                  onReply={h.onReplyAction}
+                  onShare={h.onShareAction}
+                  onAccountClick={() => {}}
+                  showThread={true}
+                />
+              </motion.div>
+            );
+          }
+          return <UnifiedFeedItem key={a.id} activity={a} />;
+        })}
+      </div>
+    </DiscussionCountsProvider>
   );
 }
 
