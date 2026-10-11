@@ -28,7 +28,8 @@ const lastOptions = () => mockSuggestions.mock.calls.at(-1)![1] as { enabled: bo
 const lastInput = () => mockSuggestions.mock.calls.at(-1)![0];
 
 beforeEach(() => {
-  mockSuggestions.mockClear();
+  mockSuggestions.mockReset();
+  mockSuggestions.mockReturnValue({ data: undefined, isFetching: false });
   mockDebounce.mockClear();
   mockAuth.isSignedIn = true;
 });
@@ -67,6 +68,21 @@ describe("useMentionSource", () => {
     act(() => result.current.onQueryChange("ki"));
     expect(result.current.items).toEqual(items);
     act(() => result.current.onQueryChange(""));
+    expect(result.current.items).toEqual([]);
+  });
+
+  it("shows only the latest query's answer when the query changes", () => {
+    const answers: Record<string, object[]> = {
+      ki: [{ kind: "user", name: "kirsten", label: "kirsten", avatarUrl: null }],
+      kir: [{ kind: "user", name: "kirill", label: "kirill", avatarUrl: null }],
+    };
+    mockSuggestions.mockImplementation(({ q }) => ({ data: answers[q], isFetching: false }));
+    const { result } = renderHook(() => useMentionSource());
+    act(() => result.current.onQueryChange("ki"));
+    expect(result.current.items).toEqual(answers.ki);
+    act(() => result.current.onQueryChange("kir"));
+    expect(result.current.items).toEqual(answers.kir);
+    act(() => result.current.onQueryChange("k"));
     expect(result.current.items).toEqual([]);
   });
 

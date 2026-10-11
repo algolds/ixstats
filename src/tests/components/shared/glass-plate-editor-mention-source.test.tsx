@@ -13,12 +13,36 @@ const mockAccountsQuery = jest.fn((_input?: object, _options?: { enabled?: boole
   ],
   isLoading: false,
 }));
+// A disabled query has no data, as react-query's.
+const mockWikiQuery = jest.fn((_input?: object, options?: { enabled?: boolean }) => ({
+  data: options?.enabled ? [{ title: "Owl", source: "ixwiki" }] : undefined,
+  isLoading: false,
+}));
+const mockSportsQuery = jest.fn((_input?: object, options?: { enabled?: boolean }) => ({
+  data: options?.enabled ? { leagues: [{ id: "l1", name: "Owl League" }], teams: [] } : undefined,
+  isLoading: false,
+}));
 const mockEditor = createEditor();
-function typeText(text: string) {
-  mockEditor.children = [{ type: "p", children: [{ text }] }] as never;
-  const at = { path: [0, 0], offset: text.length };
+interface Leaf {
+  text: string;
+}
+interface WikiLink {
+  type: "wikilink";
+  target: string;
+  children: Leaf[];
+}
+type Block = Leaf | WikiLink;
+/** One paragraph per entry; the cursor sits at the end of the last paragraph's last leaf. */
+function typeBlocks(...paragraphs: Block[][]) {
+  mockEditor.children = paragraphs.map((children) => ({ type: "p", children })) as never;
+  const block = paragraphs.length - 1;
+  const leaf = paragraphs[block]!.length - 1;
+  const last = paragraphs[block]![leaf]!;
+  const text = "text" in last ? last.text : last.children[0]!.text;
+  const at = { path: [block, leaf], offset: text.length };
   mockEditor.selection = { anchor: at, focus: at };
 }
+const typeText = (text: string) => typeBlocks([{ text }]);
 Object.assign(mockEditor, {
   tf: { setValue: jest.fn() },
   isInline: () => false,
@@ -76,7 +100,19 @@ jest.mock("~/trpc/react", () => {
       {},
       {
         get: (_target, prop) =>
-          prop === "thinkpages" ? { getMyAccounts: { useQuery: mockAccountsQuery } } : group,
+          prop === "thinkpages"
+            ? { getMyAccounts: { useQuery: mockAccountsQuery } }
+            : prop === "wikios"
+              ? new Proxy(
+                  {},
+                  {
+                    get: (_t, name) =>
+                      name === "search" ? { useQuery: mockWikiQuery } : { useQuery: query },
+                  }
+                )
+              : prop === "sports"
+                ? { searchSportsEntities: { useQuery: mockSportsQuery } }
+                : group,
       }
     ),
   };
@@ -92,6 +128,8 @@ function typeAt() {
 
 beforeEach(() => {
   mockAccountsQuery.mockClear();
+  mockWikiQuery.mockClear();
+  mockSportsQuery.mockClear();
   window.getSelection = () =>
     ({
       rangeCount: 1,
@@ -115,34 +153,66 @@ describe("GlassPlateEditor @ menu", () => {
     expect(screen.queryByTestId("menu")).toBeNull();
   });
 
-  it("lists the source's names instead, asks for no personas and reports the typed name", () => {
-    typeText("hi @ow");
-    const onQueryChange = jest.fn();
-    render(
-      <GlassPlateEditor
-        mentionSource={{
-          items: [{ kind: "user", name: "owena", label: "owena", avatarUrl: null }],
-          isLoading: true,
-          onQueryChange,
-        }}
-      />
-    );
-    expect(mockAccountsQuery).toHaveBeenCalledWith(undefined, {
-      staleTime: 60_000,
-      enabled: false,
-    });
-    typeAt();
-    expect(menuItems()).toEqual(["@owena"]);
-    expect(screen.getByTestId("menu")).toHaveAttribute("data-loading", "true");
-    expect(onQueryChange).toHaveBeenLastCalledWith("ow");
-  });
+  describe("with a mention source", () => {
+    const items = [{ kind: "user" as const, name: "owena", label: "owena", avatarUrl: null }];
+    const withSource = (onQueryChange = jest.fn()) =>
+      render(<GlassPlateEditor mentionSource={{ items, isLoading: true, onQueryChange }} />);
 
-  it("does not take an address for a mention", () => {
-    typeText("mail me@ow");
-    render(
-      <GlassPlateEditor mentionSource={{ items: [], isLoading: false, onQueryChange: jest.fn() }} />
+    it("lists the source's names only, asks for no personas, wiki or sports, and reports the typed name", () => {
+      typeText("hi @ow");
+      const onQueryChange = jest.fn();
+      withSource(onQueryChange);
+      expect(mockAccountsQuery).toHaveBeenCalledWith(undefined, {
+        staleTime: 60_000,
+        enabled: false,
+      });
+      typeAt();
+      expect(menuItems()).toEqual(["@owena"]);
+      expect(screen.getByTestId("menu")).toHaveAttribute("data-loading", "true");
+      expect(onQueryChange).toHaveBeenLastCalledWith("ow");
+      for (const call of [...mockWikiQuery.mock.calls, ...mockSportsQuery.mock.calls]) {
+        expect(call[1]).toEqual(expect.objectContaining({ enabled: false }));
+      }
+    });
+
+    it.each([
+      ["at a block start", [[{ text: "@ki" }]], "ki"],
+      ["in a second block", [[{ text: "first" }], [{ text: "@ki" }]], "ki"],
+      ["after punctuation", [[{ text: "(@ki" }]], "ki"],
+      ["with an underscore in the name", [[{ text: "hey @kir_n" }]], "kir_n"],
+      ["after an emoji", [[{ text: "\u{1F600}@ki" }]], "ki"],
+      [
+        "right after an inline wikilink",
+        [
+          [
+            { text: "" },
+            { type: "wikilink", target: "Page", children: [{ text: "Page" }] },
+            { text: "@ki" },
+          ],
+        ],
+        "ki",
+      ],
+      ["as a bare @", [[{ text: "x @" }]], ""],
+    ] as Array<[string, Block[][], string]>)(
+      "opens on a typed name %s",
+      (_label, paragraphs, query) => {
+        typeBlocks(...paragraphs);
+        const onQueryChange = jest.fn();
+        withSource(onQueryChange);
+        typeAt();
+        expect(screen.getByTestId("menu")).toBeInTheDocument();
+        expect(onQueryChange).toHaveBeenLastCalledWith(query);
+      }
     );
-    typeAt();
-    expect(screen.queryByTestId("menu")).toBeNull();
+
+    it.each([["mail me@ow"], ["@@ow"], ["word_@ow"], ["no at sign"], ["x@"]])(
+      "stays closed for %s",
+      (text) => {
+        typeText(text);
+        withSource();
+        typeAt();
+        expect(screen.queryByTestId("menu")).toBeNull();
+      }
+    );
   });
 });

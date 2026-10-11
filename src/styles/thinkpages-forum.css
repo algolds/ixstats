@@ -165,7 +165,7 @@
     text-decoration: underline;
   }
 
-  /* ---- A resolved @mention: a link in the app tint at the text's own weight, in both post styles ------------- */
+  /* ---- A resolved @mention: a link in the app tint, one step heavier than the text, in both post styles ------------- */
 
   [data-app="thinkpages"] .forum-post a.forum-mention,
   [data-app="thinkpages"] .forum-post a.forum-mention:visited {

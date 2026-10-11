@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { createPlateEditor, ParagraphPlugin } from "platejs/react";
-import { Transforms, Editor, Range, Node as SlateNode } from "slate";
+import { Transforms, Editor, Point, Range, Text, Node as SlateNode } from "slate";
 import { ReactEditor } from "slate-react";
 import { api } from "~/trpc/react";
 import {
@@ -35,17 +35,20 @@ function getMentionItemIcon(name: string, type: "league" | "club") {
   return type === "league" ? "🏆" : "🛡️";
 }
 
+/** The server's mention rule (`MENTION_PATTERN`): an `@` not preceded by a name character or another `@`, then the name so far. */
+const TYPED_MENTION = /(?<![A-Za-z0-9_@])@[A-Za-z0-9_]*$/;
+
 /**
- * Slate's word unit stops after a `@`, so the word before the cursor in "@ki" reads "ki". Widen it to the `@` when one
- * starts the word (at the start of a block or after a space), so a typed name is the menu's query.
+ * The `@name` being typed before `cursor`, or null. Slate's word unit stops at `@` and at `_`, so it cannot find a
+ * name: read the text node up to the cursor instead and apply the server's rule for where a mention may start. The
+ * server parses text nodes too, so a link or a mark right before the `@` counts as the start of the text.
  */
-function widenToAt(editor: Editor, word: Range): Range {
-  const before = Editor.before(editor, word.anchor);
-  if (!before || Editor.string(editor, Editor.range(editor, before, word.anchor)) !== "@")
-    return word;
-  const ahead = Editor.before(editor, before);
-  const gap = ahead ? Editor.string(editor, Editor.range(editor, ahead, before)) : "";
-  return /^\s?$/.test(gap) ? Editor.range(editor, before, word.focus) : word;
+function typedMentionRange(editor: Editor, cursor: Point): Range | null {
+  const node = SlateNode.get(editor, cursor.path);
+  if (!Text.isText(node)) return null;
+  const typed = TYPED_MENTION.exec(node.text.slice(0, cursor.offset))?.[0];
+  if (!typed) return null;
+  return { anchor: { path: cursor.path, offset: cursor.offset - typed.length }, focus: cursor };
 }
 
 interface UseGlassPlateEditorProps {
@@ -125,7 +128,7 @@ export function useGlassPlateEditor({
   const [mentionRange, setMentionRange] = useState<Range | null>(null);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
 
-  // The member's own personas, unless a source replaces them.
+  // The member's own personas, unless a source replaces them (a source also makes the menu people only).
   const mentionSearch = api.thinkpages.getMyAccounts.useQuery(undefined, {
     staleTime: 60_000,
     enabled: !mentionSource,
@@ -138,12 +141,12 @@ export function useGlassPlateEditor({
 
   const wikiSearchForMention = api.wikios.search.useQuery(
     { query: mentionQuery, limit: 3, wikiSource: "all" },
-    { enabled: mentionQuery.trim().length > 1, staleTime: 10_000 }
+    { enabled: !mentionSource && mentionQuery.trim().length > 1, staleTime: 10_000 }
   );
 
   const sportsMentionSearch = api.sports.searchSportsEntities.useQuery(
     { query: mentionQuery },
-    { enabled: mentionQuery.trim().length > 1, staleTime: 10_000 }
+    { enabled: !mentionSource && mentionQuery.trim().length > 1, staleTime: 10_000 }
   );
 
   const mentionResults = useMemo(() => {
@@ -319,13 +322,14 @@ export function useGlassPlateEditor({
       const { selection } = editor;
       if (selection && Range.isCollapsed(selection)) {
         const [start] = Range.edges(selection);
-        let wordRange = Editor.range(
-          editor as any,
-          Editor.before(editor as any, start, { unit: "word" }) || start,
-          start
-        );
-        // Only the forum's source needs the typed name; every other editor keeps opening on a bare `@`.
-        if (hasMentionSource) wordRange = widenToAt(editor as never, wordRange);
+        // Only the forum's source reads the typed name; every other editor keeps opening on a bare `@`.
+        const wordRange = hasMentionSource
+          ? (typedMentionRange(editor as never, start) ?? Editor.range(editor as any, start, start))
+          : Editor.range(
+              editor as any,
+              Editor.before(editor as any, start, { unit: "word" }) || start,
+              start
+            );
         const wordText = Editor.string(editor as any, wordRange);
 
         if (wordText.startsWith("@")) {
