@@ -4,7 +4,7 @@
  * first post the realm's founder and officers with the appearance power own (advert-access.ts). IxWorld, which has no
  * realm row to carry one, cannot have an advert.
  */
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import {
   ADVERT_ARCHIVED_NOTICE,
@@ -16,9 +16,9 @@ import {
   ADVERT_UNLOCK_NOTICE,
 } from "~/lib/thinkpages-forum/adverts";
 import { ADVERT_REALM_SELECT, canManageAdvert } from "./advert-access";
-import { ForumError, isUniqueViolation } from "./errors";
+import { ForumError } from "./errors";
 import { assertNotBanned } from "./mod-bans";
-import { canModerateCategory } from "./mod-scope";
+import { assertCanModerateAuthor, canModerateCategory } from "./mod-scope";
 import { canSeeRealm, isArchived, loadForumRealm, type ForumRealm } from "./realm-access";
 import { createThread, type ForumActor, type WritesDb } from "./writes";
 
@@ -98,6 +98,15 @@ function existsError(thread: AdvertThread): ForumError {
   );
 }
 
+/** The unique index on `advertRealmId` lost to a concurrent creation (not any other unique violation after commit). */
+function lostAdvertRace<E>(error: E): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    String(error.meta?.target ?? "").includes("advertRealmId")
+  );
+}
+
 /**
  * Creates the realm's advert. Refused: unknown or hidden realm (NOT_FOUND), IxWorld (BAD_REQUEST), no power
  * (FORBIDDEN), an archived realm (CONFLICT), a realm that has one (CONFLICT with the existing thread's id, also when two
@@ -127,21 +136,25 @@ export async function createAdvert(
       { advertRealmId: realm.id }
     );
   } catch (error) {
-    if (!isUniqueViolation(error)) throw error;
+    if (!lostAdvertRace(error)) throw error;
     throw existsError(await advertOf(db, realm.id));
   }
 }
 
-/** The realm's advert thread id (null when it has none, or a moderator hid it), for a manager: the Manage page's Advert row. */
+/**
+ * The realm's advert for a manager: the Manage page's Advert row. `threadId` is null when it has none or a moderator
+ * hid it; `hiddenByModerator` tells the second case apart, so the page says so instead of offering to create one.
+ */
 export async function advertStatus(
   db: WritesDb,
   actor: ForumActor,
   slug: string
-): Promise<{ threadId: string | null }> {
+): Promise<{ threadId: string | null; hiddenByModerator: boolean }> {
   const realm = await loadAdvertRealm(db, actor, slug);
   if (!(await canManageAdvert(db, actor, realm)))
     throw new ForumError("FORBIDDEN", ADVERT_POWER_NOTICE);
-  return { threadId: openableId(await advertOf(db, realm.id)) };
+  const advert = await advertOf(db, realm.id);
+  return { threadId: openableId(advert), hiddenByModerator: advert?.hidden === true };
 }
 
 /**
@@ -159,6 +172,7 @@ export async function setAdvertLocked(
     select: {
       id: true,
       hidden: true,
+      authorUserId: true,
       advertRealm: { select: ADVERT_REALM_SELECT },
       category: { select: { id: true, scope: true, realmId: true } },
     },
@@ -171,6 +185,8 @@ export async function setAdvertLocked(
     : canModerateCategory(actor, thread.category);
   if (!allowed)
     throw new ForumError("FORBIDDEN", input.locked ? ADVERT_POWER_NOTICE : ADVERT_UNLOCK_NOTICE);
+  // Unlocking is moderation: content a site admin wrote is a site admin's to moderate (as contentModerator).
+  if (!input.locked) await assertCanModerateAuthor(db, actor, thread.authorUserId);
   await assertNotBanned(db, actor, thread.category);
   if (isArchived(realm)) throw new ForumError("CONFLICT", ADVERT_ARCHIVED_NOTICE);
   await db.forumThread.update({ where: { id: thread.id }, data: { locked: input.locked } });

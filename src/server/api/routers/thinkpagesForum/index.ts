@@ -31,6 +31,7 @@ import {
   editPost,
   fileAppeal,
   fileReport,
+  firstPostIdOf,
   forumNavFlags,
   forumStatistics,
   getCategoryThreads,
@@ -251,6 +252,8 @@ const forumRouter = createTRPCRouter({
     // An advert: the realm, whether the viewer manages it, and whether its realm is archived (closed to writes).
     const advert = advertRealm ? await advertViewOf(ctx.db, viewer, advertRealm) : null;
     const closed = advert?.closed === true;
+    // The advert's first post is the thread's first, hidden or not (the notion `canEditPost` uses), not page 1's first row.
+    const advertFirst = advert ? await firstPostIdOf(ctx.db, input.threadId) : null;
     const writable =
       viewer !== null &&
       !result.thread.locked &&
@@ -281,14 +284,13 @@ const forumRouter = createTRPCRouter({
       // (what its editor opens) goes only to the author who may edit it now, never to another reader or a moderator.
       posts: reacted.map(({ hidden, contentWikitext, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
-        const number = postNumberOf(input.page, index);
         // An advert's first post is edited by whoever manages the advert, not by its author as such (writes.ts).
-        const mayEdit = advert && number === 1 ? advert.canManage : byViewer;
+        const mayEdit = advert && post.id === advertFirst ? advert.canManage : byViewer;
         const isOwn = mayEdit && editable && !hidden;
         return maskPersona(
           {
             ...post,
-            number,
+            number: postNumberOf(input.page, index),
             role: roleOf(post, roles),
             ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
             ...(isOwn && contentWikitext !== null ? { contentWikitext } : {}),

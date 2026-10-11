@@ -100,6 +100,19 @@ export async function canManageAdvert(
   return hasRealmPower(actor, realm, officers, "appearance");
 }
 
+/** The thread's first post (hidden ones count), the one an advert's managers edit. */
+export async function firstPostIdOf(
+  db: Pick<PrismaClient, "forumPost">,
+  threadId: string
+): Promise<string | null> {
+  const first = await db.forumPost.findFirst({
+    where: { threadId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { id: true },
+  });
+  return first?.id ?? null;
+}
+
 /** Find a Realm takes adverts only: a thread started there must name the realm it advertises (`createAdvert` does). */
 export function assertAdvertsOnly(
   category: { key: string; scope?: string },
@@ -122,12 +135,8 @@ export async function canEditPost(
 ): Promise<boolean> {
   const own = post.authorUserId === actor.id;
   if (!advertRealm) return own;
-  const first = await db.forumPost.findFirst({
-    where: { threadId: post.threadId },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { id: true },
-  });
-  return first?.id === post.id ? canManageAdvert(db, actor, advertRealm) : own;
+  const first = await firstPostIdOf(db, post.threadId);
+  return first === post.id ? canManageAdvert(db, actor, advertRealm) : own;
 }
 
 /** What a board row shows about its advert: the realm's mark and whether it is open to join. Never the founder. */

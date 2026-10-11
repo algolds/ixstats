@@ -60,7 +60,7 @@ const ACTIVE = {
 const DRAFT = { ...ACTIVE, status: "draft" };
 const ARCHIVED = { ...ACTIVE, status: "archived" };
 
-function advertDb(advertRealm: object, grants: object[] = []) {
+function advertDb(advertRealm: object, grants: object[] = [], firstPostId = "p1") {
   return {
     ...engagementTables(),
     forumBan: forumBanFake([]),
@@ -122,6 +122,7 @@ function advertDb(advertRealm: object, grants: object[] = []) {
           createdAt: when,
         },
       ]),
+      findFirst: jest.fn(async () => ({ id: firstPostId })),
       count: jest.fn(async () => 2),
       groupBy: jest.fn(async () => []),
     },
@@ -216,6 +217,15 @@ describe("an advert on the thread page", () => {
     expect(reader.posts.map((p) => p.isOwn)).toEqual([false, false]);
     const replier = await caller(member, advertDb(ACTIVE)).thread({ threadId: "t_ad", page: 1 });
     expect(replier.posts.map((p) => p.isOwn)).toEqual([false, true]);
+  });
+
+  it("decides the first post by the thread's first post, so a hidden first post does not move Edit to the next", async () => {
+    const grants = [{ userId: "officer", powers: ["appearance"] }];
+    const out = await caller(officer, advertDb(ACTIVE, grants, "p_hidden_first")).thread({
+      threadId: "t_ad",
+      page: 1,
+    });
+    expect(out.posts.map((p) => p.isOwn)).toEqual([false, false]);
   });
 
   it("does not offer the first post's Edit to its author once they no longer manage the advert", async () => {

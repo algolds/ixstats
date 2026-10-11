@@ -1476,6 +1476,22 @@ describe("Find a Realm adverts", () => {
     });
   });
 
+  it("refuses a site-banned officer creating the advert, writing nothing", async () => {
+    const { db, tx } = writeDb({
+      bans: [banRow({ userId: "u_off", scope: "site", reason: "Abuse" })],
+    });
+    await expect(
+      createThread(
+        db as never,
+        adOfficer,
+        { ...NEW_THREAD, categoryKey: "find-a-realm" },
+        { advertRealmId: "r_eurth" }
+      )
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(tx.forumThread.create).not.toHaveBeenCalled();
+    expect(tx.forumPost.create).not.toHaveBeenCalled();
+  });
+
   it("still lets anyone signed in reply to an advert and to an imported thread there", async () => {
     for (const thread of [advertThread(EURTH), threadIn("find-a-realm")]) {
       const { db } = writeDb({ thread });

@@ -140,9 +140,10 @@ describe("thinkpagesForum adverts reads and lock", () => {
   });
 
   it("answers a realm's advert status and maps a refusal", async () => {
-    jest.mocked(advertStatus).mockResolvedValue({ threadId: "t_old" });
+    jest.mocked(advertStatus).mockResolvedValue({ threadId: "t_old", hiddenByModerator: false });
     await expect(caller(member).advertFor({ realm: "eurth" })).resolves.toEqual({
       threadId: "t_old",
+      hiddenByModerator: false,
     });
     expect(advertStatus).toHaveBeenCalledWith({}, actor, "eurth");
     jest.mocked(advertStatus).mockRejectedValue(new ForumError("FORBIDDEN", "No."));

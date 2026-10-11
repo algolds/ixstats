@@ -5,7 +5,11 @@ jest.mock("~/server/modules/thinkpages-forum/writes", () => ({
 }));
 
 import { Prisma } from "@prisma/client";
-import { ADVERT_HIDDEN_NOTICE, ADVERT_UNLOCK_NOTICE } from "~/lib/thinkpages-forum/adverts";
+import {
+  ADVERT_HIDDEN_NOTICE,
+  ADVERT_POWER_NOTICE,
+  ADVERT_UNLOCK_NOTICE,
+} from "~/lib/thinkpages-forum/adverts";
 import {
   advertRealmsOf,
   advertStatus,
@@ -66,6 +70,11 @@ function advertDb(over: Over = {}) {
       ),
     },
     forumBan: forumBanFake(over.bans),
+    user: {
+      findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
+        where.id === "u_a" ? admin : { id: where.id, clerkUserId: where.id, role: USER }
+      ),
+    },
     forumThread: {
       findUnique: jest.fn(async ({ where }: { where: { id?: string; advertRealmId?: string } }) =>
         where.advertRealmId !== undefined ? (over.advert ?? null) : (over.thread ?? null)
@@ -205,6 +214,7 @@ describe("createAdvert", () => {
       new Prisma.PrismaClientKnownRequestError("duplicate", {
         code: "P2002",
         clientVersion: "test",
+        meta: { target: ["advertRealmId"] },
       })
     );
     await expect(createAdvert(db as never, founder, NEW)).rejects.toMatchObject({
@@ -215,6 +225,18 @@ describe("createAdvert", () => {
       where: { advertRealmId: "r_eurth" },
       select: { id: true, hidden: true },
     });
+  });
+
+  it("does not report another unique violation as an existing advert", async () => {
+    const other = new Prisma.PrismaClientKnownRequestError("duplicate", {
+      code: "P2002",
+      clientVersion: "test",
+      meta: { target: ["activityId"] },
+    });
+    const db = advertDb();
+    jest.mocked(createThread).mockRejectedValue(other);
+    await expect(createAdvert(db as never, founder, NEW)).rejects.toBe(other);
+    expect(db.forumThread.findUnique).toHaveBeenCalledTimes(1);
   });
 
   it("passes any other refusal through unchanged", async () => {
@@ -268,16 +290,19 @@ describe("advertStatus", () => {
     const taken = advertDb({ advert: { id: "t_old", hidden: false } });
     await expect(advertStatus(taken as never, officer, "eurth")).resolves.toEqual({
       threadId: "t_old",
+      hiddenByModerator: false,
     });
     await expect(advertStatus(advertDb() as never, founder, "eurth")).resolves.toEqual({
       threadId: null,
+      hiddenByModerator: false,
     });
   });
 
-  it("reads an advert a moderator hid as none", async () => {
+  it("tells a manager a moderator hid the advert, with no thread id to open", async () => {
     const hidden = advertDb({ advert: { id: "t_old", hidden: true } });
     await expect(advertStatus(hidden as never, founder, "eurth")).resolves.toEqual({
       threadId: null,
+      hiddenByModerator: true,
     });
   });
 
@@ -343,6 +368,34 @@ describe("setAdvertLocked", () => {
         data: { locked: false },
       });
     }
+  });
+
+  it("lets a Find a Realm moderator unlock, but not an advert a site admin wrote", async () => {
+    const own = advertDb({ thread: advertThread({ authorUserId: "u_f" }) });
+    await expect(lock(own, moderator, false)).resolves.toEqual({ locked: false });
+    const adminsAdvert = advertDb({ thread: advertThread({ authorUserId: "u_a" }) });
+    await expect(lock(adminsAdvert, moderator, false)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "Only site admins moderate a site admin's posts.",
+    });
+    expect(adminsAdvert.forumThread.update).not.toHaveBeenCalled();
+    await expect(lock(adminsAdvert, admin, false)).resolves.toEqual({ locked: false });
+  });
+
+  it("does not let a moderator who is not a manager lock the advert", async () => {
+    const db = advertDb({ thread: advertThread() });
+    await expect(lock(db, moderator, true)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: ADVERT_POWER_NOTICE,
+    });
+    expect(db.forumThread.update).not.toHaveBeenCalled();
+  });
+
+  it("reads the advert of a draft realm as not found to an officer who does not found it", async () => {
+    const draft = advertThread({ advertRealm: { ...EURTH, status: "draft" } });
+    const db = advertDb({ thread: draft });
+    await expect(lock(db, officer, true)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(lock(db, founder, true)).resolves.toEqual({ locked: true });
   });
 
   it("refuses an officer without the power and a member to lock it, writing nothing", async () => {
