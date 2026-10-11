@@ -5,25 +5,15 @@
  * dropped again here. A persona thread is named by the persona only, never the player.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import {
-  isBoardCategory,
-  notBoardCategory,
-  visibleForumVisibilities,
-} from "~/lib/thinkpages-forum/categories";
+import { notBoardCategory, visibleForumVisibilities } from "~/lib/thinkpages-forum/categories";
 import { UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import { THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
 import { DEFAULT_REALM_ID, isSiteAdmin } from "~/server/modules/realms";
-import { canSeeThread, type ForumViewer } from "./access";
-import {
-  advertGate,
-  advertRealmHiddenFrom,
-  advertRowOf,
-  ADVERT_REALM_SELECT,
-  type AdvertRow,
-} from "./advert-access";
-import { canSeeRealm, loadForumRealms, type ForumRealm } from "./realm-access";
+import type { ForumViewer } from "./access";
+import { advertGate, advertRowOf, type AdvertRow } from "./advert-access";
 import type { ReadsDb } from "./reads";
+import { candidateSelect, readable, type Candidate, type Placed } from "./thread-candidates";
 import { threadLastPosters, type ThreadLastPoster } from "./thread-extras";
 import { readerFloor, type UnreadDb } from "./unread";
 
@@ -63,79 +53,11 @@ export interface ThreadListing {
   total: number;
 }
 
-const candidateSelect = (userId: string) =>
-  ({
-    id: true,
-    title: true,
-    authorUserId: true,
-    authorPersonaId: true,
-    importedAuthorName: true,
-    xenforoThreadId: true,
-    pinned: true,
-    locked: true,
-    hidden: true,
-    postCount: true,
-    lastPostAt: true,
-    category: {
-      select: {
-        id: true,
-        key: true,
-        name: true,
-        style: true,
-        scope: true,
-        realmId: true,
-        visibility: true,
-      },
-    },
-    advertRealm: { select: ADVERT_REALM_SELECT },
-    reads: { where: { userId }, select: { readAt: true } },
-  }) as const satisfies Prisma.ForumThreadSelect;
-
-type Candidate = Prisma.ForumThreadGetPayload<{ select: ReturnType<typeof candidateSelect> }>;
-interface Placed {
-  row: Candidate;
-  realm: ForumRealm | null;
-}
-
 /** Hidden last posts never show in a list, whoever asks: the listing reads as a member. */
 const LISTING_VIEW = { id: "", scope: "site", realmId: null, visibility: "public" } as const;
 
 const unreadOf = (row: Candidate, floor: Date): boolean =>
   isUnread(row.lastPostAt, row.reads[0]?.readAt, floor);
-
-/**
- * What the member may read: not the board, not hidden, the thread rule, and a realm that is visible to them. The
- * distinct realms of the rows that pass are loaded in one read, then each row is placed synchronously.
- */
-async function readable(
-  db: ReadsDb,
-  viewer: NonNullable<ForumViewer>,
-  rows: readonly Candidate[]
-): Promise<Placed[]> {
-  const passing = rows.filter(
-    (row) =>
-      !isBoardCategory(row.category) &&
-      !row.hidden &&
-      canSeeThread(viewer, row, row.category) &&
-      !advertRealmHiddenFrom(viewer, row.advertRealm)
-  );
-  const realmIds = new Set<string>();
-  for (const { category } of passing) {
-    if (category.scope === "realm" && category.realmId) realmIds.add(category.realmId);
-  }
-  const realms = await loadForumRealms(db, [...realmIds]);
-  const placed: Placed[] = [];
-  for (const row of passing) {
-    const { category } = row;
-    if (category.scope !== "realm") {
-      placed.push({ row, realm: null });
-      continue;
-    }
-    const realm = category.realmId ? realms.get(category.realmId) : undefined;
-    if (realm && canSeeRealm(viewer, realm)) placed.push({ row, realm });
-  }
-  return placed;
-}
 
 async function shape(
   db: ReadsDb,
