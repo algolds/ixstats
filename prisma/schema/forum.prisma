@@ -9,6 +9,8 @@
 /// (src/lib/thinkpages-forum/categories.ts, isBoardCategory).
 /// Unread, watch and mentions (migration 20261015120000) add forum_thread_reads, forum_readers, forum_thread_watches and
 /// forum_post_mentions; all expressible in Prisma, so a db push keeps them.
+/// Reactions (migration 20261016120000) add forum_post_reactions and forum_posts."reactionCounts"; both are expressible
+/// in Prisma, so a db push keeps them.
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
@@ -103,6 +105,9 @@ model ForumPost {
   continuedThread    ForumThread? @relation("PostContinuedThread", fields: [continuedThreadId], references: [id], onDelete: SetNull)
   /// Who this post has already mentioned (an edit notifies only new mentions).
   mentions           ForumPostMention[]
+  /// Denormalized `{type: count}` of this post's reactions, recounted in the same transaction as the reaction row.
+  reactionCounts     Json        @default("{}")
+  reactions          ForumPostReaction[]
 
   @@index([threadId, createdAt])
   @@index([replyToPostId])
@@ -281,4 +286,20 @@ model ForumPostMention {
 
   @@id([postId, userId])
   @@map("forum_post_mentions")
+}
+
+/// A member's one reaction to a post (a thread post or a realm board message). `type` is a built-in reaction or
+/// `discord:<name>[:<id>]` (src/lib/thinkpages-forum/reactions.ts). The reaction is the player's own, never a persona's.
+model ForumPostReaction {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId, type])
+  @@map("forum_post_reactions")
 }

@@ -264,6 +264,7 @@ model User {
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]
   realmClaims         RealmClaim[]
+  forumPostReactions  ForumPostReaction[]
   // IxnayID: Discord account linking
   discordUserId       String?                  @unique
   discordUsername      String?
