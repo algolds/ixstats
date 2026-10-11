@@ -21,8 +21,8 @@ describe("buildPopupTitleNode", () => {
 });
 
 describe("embedRealm", () => {
-  it("puts an IxWiki article's coordinates on IxWorld's map, whoever reads it", () => {
-    expect(embedRealm(undefined, { isWikiPage: true, articleSource: "ixwiki" })).toBe("ixworld");
+  it("puts an IxWiki article's coordinates on Ixnay's map, whoever reads it", () => {
+    expect(embedRealm(undefined, { isWikiPage: true, articleSource: "ixwiki" })).toBe("ixnay");
   });
 
   it("leaves other wikis' articles and non-article pages to the viewer's realm", () => {

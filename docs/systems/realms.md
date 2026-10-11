@@ -9,7 +9,7 @@
 **Product model and decisions:** [Realms framework spec](../architecture/realms-framework-spec.md) ·
 [region page design](../specs/2026-10-05-realm-regions-design.md)
 
-A realm is a world that nations live in (`Country.realmId`; IxWorld is `id: "default"`). The ownership,
+A realm is a world that nations live in (`Country.realmId`; Ixnay is `id: "default"`, slug `ixnay`; `ixworld` and `default` resolve to it as legacy aliases via `isIxnaySlug`). The ownership,
 claims, lore index and admin parts are described in the framework spec. This page covers realms as
 **places**, the equivalent of a NationStates region: a directory to find them, a board where their nations
 talk, a region page with its founder, officers, factbook, embassies and poll, and a feed that can be scoped to
@@ -22,13 +22,13 @@ one realm.
 `realms.directory` (public) lists the open realms:
 
 - every realm with `visibility: "public"` and `status: "active"`;
-- IxWorld (`DEFAULT_REALM_ID`), whatever its row says.
+- Ixnay (`DEFAULT_REALM_ID`), whatever its row says.
 
 **Visibility and status rule (AT-6):**
 
 | Realm                         | Listed (directory, its feed picker, embassy proposals) | Reachable by link (page, board, `?realm=`) |
 | :---------------------------- | :----------------------------------------------------- | :----------------------------------------- |
-| Public and active, or IxWorld | Yes                                                    | Yes                                        |
+| Public and active, or Ixnay   | Yes                                                    | Yes                                        |
 | Unlisted and active           | No                                                     | Yes                                        |
 | Archived                      | No                                                     | Yes, read-only and closed to claims        |
 | Draft or generating           | No                                                     | Only its staff (founder, site admins)      |
@@ -39,8 +39,8 @@ one realm.
 - Draft and generating realms are hidden by `isRealmHiddenFrom` / `isRealmPublished` (`realms.access.ts`): the realm
   page and header (`getBySlug`, `region.overview`, happenings, Manage), its board (`realms.getBoard`), the
   `?realm=<slug>` scope of the countries directory, leaderboards and maps (`resolveViewerRealmId`, which falls back
-  to IxWorld as for an unknown slug), and other realms' embassy panels.
-- Claims (filing, and approving a pending one) need an active realm or IxWorld (`isRealmOpen`).
+  to Ixnay as for an unknown slug), and other realms' embassy panels.
+- Claims (filing, and approving a pending one) need an active realm or Ixnay (`isRealmOpen`).
 - The realm feed (`thinkpages.getFeed({ realmId })`) takes a realm id, which only the pages above hand out.
 
 Each row reports only counted facts:
@@ -189,7 +189,7 @@ on save like the factbook). While a realm has rules, the claim list shows their 
 and an **I have read the realm's rules** checkbox, and Claim stays disabled until it is ticked. The server enforces
 it: `realms.claimNationPage` and `realms.claimCountry` take `acceptedRules` and refuse with `PRECONDITION_FAILED`
 (`RULES_NOT_ACCEPTED`) when the realm has rules and it is missing; the filed claim records `rulesAcceptedAt`.
-(`/setup` claims IxWorld nations and shows that error if IxWorld ever gets rules.)
+(`/setup` claims Ixnay nations and shows that error if Ixnay ever gets rules.)
 
 **In-world date:** a display label in the stats strip (`Realm.settings.inWorldDate`, `realmInWorldDate` /
 `withInWorldDate` in `realms.settings.ts`, formatted by `formatInWorldDate` in `src/lib/realms/realm-community.ts`):
@@ -225,7 +225,7 @@ restriction on it stays (it keeps binding the player, never the next claimant), 
 Manage action and makes an archived realm read-only. Officers must own a nation in the realm (at most 12).
 
 **Map editors:** `canEditRealmMap` / `canImportRealmMap` (`realms.access.ts`) allow site admins, the founder and
-officers holding `map`, in their own realm only; IxWorld's map stays with site admins, and an archived realm's map is
+officers holding `map`, in their own realm only; Ixnay's map stays with site admins, and an archived realm's map is
 read-only (`realmMapAccess`, `realms.map-access.ts`). The world editor's procedures (border edit, split and merge,
 region links, linkage validation and Auto-Match, realm labels) resolve the edited realm through `editableMapRealmId`
 (`src/server/api/trpc/realm-scope.ts`) and refuse any other realm with `FORBIDDEN`. Founders and map officers open the
@@ -239,7 +239,7 @@ admins can.
 
 **Handing a realm over** (`realms.transfer.ts`): site admins transfer any realm in `/admin/realms` (the Transfer
 action, `realms.region.adminTransferOwner`) to an active account picked from the user list (by nation or Clerk id),
-or back to IxStats staff; IxWorld stays with staff. The founder hands their own realm to a player who owns a nation
+or back to IxStats staff; Ixnay stays with staff. The founder hands their own realm to a player who owns a nation
 in it or is one of its officers (Manage → **Hand over**, `realms.region.handOver`, candidates from
 `handOverCandidates`). Both need the realm's slug typed (checked on the server), write an `AdminAuditLog` row
 (`REALM_OWNER_TRANSFERRED`, `changes` holding `previousOwnerId`, `newOwnerId`, `keptPreviousAsOfficer` and `via`),
@@ -248,7 +248,7 @@ previous founder loses the founder's powers unless **Keep previous owner as offi
 "Former founder" officer holding every power. Until a realm is handed to a player it is administered by staff.
 
 **Deleting a realm (AT-8):** site admins delete a realm created by mistake from `/admin/realms`
-(`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses IxWorld, and any realm
+(`realms.region.deleteRealm`, `realms.admin.ts`), confirmed by typing its slug. It refuses Ixnay, and any realm
 that still has nations or map regions: deleting never releases, moves or deletes a nation, so such a realm is
 archived instead (status Archived: read-only, closed to claims). An empty realm's claims, lore index, officers,
 embassies, frozen board restrictions, polls and forum categories go with it, and its board group is deactivated.
@@ -333,12 +333,12 @@ dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file 
 ## 6. Map and transport isolation
 
 - Transport routes and hubs take their owning country's `realmId` when created (AT-1). Rows created before this
-  were all saved to IxWorld: run `bun run db:backfill-transport-realm` (dry run) and then with `-- --apply`. It is
+  were all saved to Ixnay: run `bun run db:backfill-transport-realm` (dry run) and then with `-- --apply`. It is
   idempotent and leaves rows with no owning country where they are.
 - The flag lookup by country name (`countries.flags.resolveBatch`) is scoped to the viewer's realm, or `?realm=` (AT-18).
-- IxWorld's ocean labels and guided tour show only on IxWorld's map (AT-2).
+- Ixnay's ocean labels and guided tour show only on Ixnay's map (AT-2).
 - Map wiki lookups (`geoWiki.*`) use the wiki the realm's lore index was imported from (its `RealmPage.wikiSource`),
-  and link to the in-site reader. IxWorld, and a realm with no lore index, keep ixwiki then iiwiki (AT-12).
-- A coordinates embed in a wiki article shows IxWorld's map in an IxWiki article; in another wiki's article, the map
+  and link to the in-site reader. Ixnay, and a realm with no lore index, keep ixwiki then iiwiki (AT-12).
+- A coordinates embed in a wiki article shows Ixnay's map in an IxWiki article; in another wiki's article, the map
   of the realm whose lore index holds the article, else of the only realm whose lore comes from that wiki
   (`realms.map.realmForWikiArticle`); otherwise the viewer's realm.

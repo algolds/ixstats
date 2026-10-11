@@ -41,7 +41,7 @@ const board = (
 describe("boardSettingsOf", () => {
   const dbWith = (row: object | null) => ({ realm: { findUnique: jest.fn(async () => row) } });
 
-  it("reports the defaults and no row for a realm without one (IxWorld, synthesized)", async () => {
+  it("reports the defaults and no row for a realm without one (Ixnay, synthesized)", async () => {
     expect(await boardSettingsOf(dbWith(null) as never, "default")).toEqual({
       emblemUrl: null,
       visitorsAllowed: true,

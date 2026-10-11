@@ -65,7 +65,7 @@ const xenforoIds = (ids: ReadonlyArray<number | null>) =>
 
 /**
  * Linked users, sitewide categories with their visibility, the realm categories of the mapped realms (resolved by
- * the module's loadForumRealm, so IxWorld's "ixworld" and "default" both find realm "default"), and what an earlier
+ * the module's loadForumRealm, so Ixnay's "ixnay", "ixworld" and "default" all find realm "default"), and what an earlier
  * run already imported (and which of it is hidden, for the I7 re-hide).
  */
 export async function loadImportDbState(

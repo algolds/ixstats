@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-07
 
 **Audience:** the site admin deploying the Realms feature and bringing up Eurth, the first realm outside
-IxWorld. Exact commands, no fluff. Background/decisions: [`docs/architecture/realms-framework-spec.md`](../architecture/realms-framework-spec.md).
+Ixnay. Exact commands, no fluff. Background/decisions: [`docs/architecture/realms-framework-spec.md`](../architecture/realms-framework-spec.md).
 
 Run every step against **dev first**. Only repeat the full sequence against **prod** once dev looks right.
 
@@ -58,12 +58,12 @@ constraints) — answer yes.
 bun scripts/realms/backfill-foundation.ts
 ```
 
-Before it reads anything else, the script checks that the IxWorld realm row (`id = "default"`) exists; if
-it doesn't, it stops with `realms row id="default" (IxWorld) is missing — …` and exits non-zero **before
+Before it reads anything else, the script checks that the Ixnay realm row (`id = "default"`) exists; if
+it doesn't, it stops with `realms row id="default" (Ixnay) is missing — …` and exits non-zero **before
 writing anything** (with or without `--apply`). Create that row first — `Country.realmId` depends on it.
 
-The first line is `DRY RUN — pass --apply to write`; the second is `IxWorld realm ownerId: <id>`, which
-must read `system` (IxWorld has no player owner — site admins moderate its claims). Read all five sections
+The first line is `DRY RUN — pass --apply to write`; the second is `Ixnay realm ownerId: <id>`, which
+must read `system` (Ixnay has no player owner — site admins moderate its claims). Read all five sections
 that follow before doing anything else:
 
 1. **Owners** — `owners: <n> to assign, <n> collisions`: `Country.ownerUserId` derived from
@@ -71,16 +71,16 @@ that follow before doing anything else:
    users point at the same country — the script will **not** guess; you must resolve it by hand (pick the
    real owner and null out the others' `User.countryId`, or reassign them) before applying.
    Right after this section, one `  BLOCKS --apply: …` line appears per blocker — owner collisions left, or
-   an IxWorld ownerId other than `system`. While any is printed, `--apply` refuses (see 1.4).
-2. **IxWorld realm slug** — `IxWorld slug: default → ixworld` (the current slug, then the new one).
+   an Ixnay ownerId other than `system`. While any is printed, `--apply` refuses (see 1.4).
+2. **Ixnay realm slug** — `Ixnay slug: default → ixnay` (the current slug, then the new one).
 3. **Visibility** — `private realms → unlisted: <n>`: `private` realms that will flip to `unlisted`
    (private is no longer a valid value).
 4. **Wiki links** — `ixwiki links to record (unverified): <n>`: legacy `User.wikiUsername` rows that
    will become **unverified** `ixwiki` `WikiAccountLink` rows (players re-verify later from Settings).
-5. **Map layers** — `map layers with no realm → IxWorld: N (M clash with an IxWorld feature, D keys held
+5. **Map layers** — `map layers with no realm → Ixnay: N (M clash with an Ixnay feature, D keys held
    by more than one of them)`, then one `  DUPLICATE <layerType>/<featureId>: <id>, <id>` line per
    duplicated key. Compare `N` to your 1.1 baseline. `M` counts NULL-realm rows whose
-   `(layerType, featureId)` IxWorld already has; `D` counts keys shared by two or more NULL-realm rows.
+   `(layerType, featureId)` Ixnay already has; `D` counts keys shared by two or more NULL-realm rows.
    Either would break the realm-scoped unique key, so if `M > 0` or `D > 0`, `--apply` **skips this step**
    (no rows are moved) and prints `  SKIPPED — resolve the clashing/duplicate rows by hand (deactivate or
    delete the NULL duplicates), then re-run`. Deactivate or delete the offending NULL-realm rows (the
@@ -88,7 +88,7 @@ that follow before doing anything else:
 
 ### 1.4 Resolve collisions, then apply
 
-Once owner collisions are resolved, the IxWorld ownerId reads `system`, and map-layer clashes and
+Once owner collisions are resolved, the Ixnay ownerId reads `system`, and map-layer clashes and
 duplicates are both `0`:
 
 ```bash
@@ -100,8 +100,8 @@ bun scripts/realms/backfill-foundation.ts --apply
 any write. Fix what the lines name and re-run the dry run first.
 
 Re-run the dry run afterward (omit `--apply`) as a sanity check — it should report
-`owners: 0 to assign, 0 collisions`, `IxWorld slug: ixworld → ixworld`, `private realms → unlisted: 0` and
-`map layers with no realm → IxWorld: 0 (0 clash with an IxWorld feature, 0 keys held by more than one of
+`owners: 0 to assign, 0 collisions`, `Ixnay slug: ixnay → ixnay`, `private realms → unlisted: 0` and
+`map layers with no realm → Ixnay: 0 (0 clash with an Ixnay feature, 0 keys held by more than one of
 them)`. The wiki-link count stays above `0` only for users whose legacy username duplicated another's
 (`--apply` printed a `  skip <userId>: …` line for each; they re-verify from Settings).
 
@@ -367,7 +367,7 @@ The local end-to-end rehearsal (2026-10-07, real GitHub source, a simulated 107-
 (before NPC entries, wiki-link checks and secondary figures were handled) created 132 nations (129 from the map
 plus 3 roster-only pages), matched 1, left the claimed nation's figures
 alone, wrote and linked 115 borders (PostGIS geometry and areas filled by the writer, 76 with neighbours), created
-8 alliances with 54 members alongside an IxWorld alliance of the same name, and a second dry run showed no changes.
+8 alliances with 54 members alongside an Ixnay alliance of the same name, and a second dry run showed no changes.
 IIWiki refuses requests from outside production (HTTP 403), so every infobox read fell back: all 132 new nations
 were still created from the map's figures (defaults where the map has none) and listed under "wiki infobox gave
 nothing (re-run to retry)". On production the reads succeed; re-run the apply to fill any that failed: it reads the
@@ -399,7 +399,7 @@ Eurth's map editing no longer needs a site admin. The founder appoints the commu
 `/r/eurth/manage` → **Officers** → tick **Map** ("Edit the realm's map, borders and labels, and import maps").
 While Eurth's `ownerId` is still `"system"` (no founder yet, §5.1), a **site admin** appoints officers from the same
 page.
-The founder and Map officers edit **Eurth's map only**; IxWorld's map stays with site admins.
+The founder and Map officers edit **Eurth's map only**; Ixnay's map stays with site admins.
 
 Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
 
@@ -413,7 +413,7 @@ Then the founder or the Map officer opens `/r/eurth/manage` → **Map**:
 4. **Default view and labels:** open `/maps?realm=eurth` → **World editor** → the map icon in the editor's header:
    **Save current view as default** (where the map opens), and **Realm labels…** for Eurth's oceans, seas,
    regions and continents. Without a default view the map opens at 0°, 0°, which on Eurth is open ocean. Use
-   IxWorld's opening zoom (1.8) centred on Europa, the region with the most nations and land (the local dev DB
+   Ixnay's opening zoom (1.8) centred on Europa, the region with the most nations and land (the local dev DB
    has `{"center":[108.3,32.9],"zoom":1.8}`, from the area-weighted centroid of Europa's nations).
 
 ### 4.7 Eurth's map pipeline (art, physical layers, labels, flags)
@@ -434,11 +434,11 @@ credited in the map's credit line).
 | Labels | 83 oceans, seas, regions and continents, typed into the preset (read from the geography art) |
 | Flags, view, smoothing | `flags.localize`; `defaultView: "auto"` (Europa, 40 nations: `[108.3, 32.9]`, zoom 1.8); `coverage` 0.045° (one source pixel), 2 rounds |
 
-**Elevation bands.** The legend has six land bands; each takes the IxWorld band whose range holds its lowest
+**Elevation bands.** The legend has six land bands; each takes the Ixnay band whose range holds its lowest
 elevation (the next band up when a lower Eurth band already took it). The tints are sampled from the map itself (the
 legend swatches differ by up to ΔE 2.7):
 
-| Eurth band | Map tint | IxWorld style |
+| Eurth band | Map tint | Ixnay style |
 |---|---|---|
 | 0–50 m | `#a5bb8c` | `coastlines` (the whole land) |
 | 50–500 m | `#b8c9a4` | `Altitude-1` |
@@ -583,7 +583,7 @@ map thumbnail, for the colour to nation step; a complete answer is cached for an
 ### 6.1 Import the map (the realm map import)
 
 > **Warning: don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode, and Quick
-> Update always writes **IxWorld's** map. Realm maps go through **Full pipeline** → **Realm map**, or the realm's
+> Update always writes **Ixnay's** map. Realm maps go through **Full pipeline** → **Realm map**, or the realm's
 > Manage tab → **Map import** (the founder and Map officers).
 
 1. **The file:** a **flat-colour political map** (PNG best; JPEG works, its compression noise is cleaned up), an
@@ -627,8 +627,8 @@ map thumbnail, for the colour to nation step; a complete answer is cached for an
      and the nations' source keys; it lists each match with its confidence, confident ones ticked, similar
      spellings unticked. **Link selected**, then link any leftovers by hand.
 
-Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
-(`(realmId, layerType, featureId)`), so nothing you draw here touches IxWorld's map or vice versa.
+Eurth's map is fully isolated from Ixnay's — features are keyed per-realm
+(`(realmId, layerType, featureId)`), so nothing you draw here touches Ixnay's map or vice versa.
 
 ---
 
@@ -640,9 +640,9 @@ Eurth's map is fully isolated from IxWorld's — features are keyed per-realm
 - **Eurth's stat caps aren't enforced.** Eurth's "Starting Stats v6.1" house rules are not encoded anywhere
   — new Eurth nations run the identical simulation as every other realm (decision 17: one sim, no per-realm
   presets). If Eurth wants caps enforced, that's a future feature, not a config flag today.
-- **A second nation doesn't take over.** A player who already plays a nation (say in IxWorld) keeps
+- **A second nation doesn't take over.** A player who already plays a nation (say in Ixnay) keeps
   acting as it after their Eurth claim is approved; they switch with **Play as <nation>** next to their
-  nation on `/r/eurth` (and back the same way on `/r/ixworld`). The active one shows **Active**.
+  nation on `/r/eurth` (and back the same way on `/r/ixnay`). The active one shows **Active**.
 - **Staff-run until handed over.** The realm's `ownerId` is `"system"` until an Eurth leader is handed the
   realm (5.1); until then, site admins act on Eurth's claims and appoint its officers.
 - **Not shipped yet** (later phases, don't promise these): a public founding application form, a founder

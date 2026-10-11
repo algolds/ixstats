@@ -161,7 +161,7 @@ function buildCountryNumbers(econ: EconInputs, taxRate: number | undefined, base
   ]) as Record<NumberKey, number>;
 }
 
-/** Foundations are IxWorld nations; names repeat across realms (ruling E-p). */
+/** Foundations are Ixnay nations; names repeat across realms (ruling E-p). */
 function findFoundation(db: PrismaClient, ref: string) {
   return db.country.findFirst({
     where: { realmId: DEFAULT_REALM_ID, OR: [{ slug: ref }, { name: ref }] },
@@ -450,7 +450,7 @@ const createCountryInput = z.object({
   governmentStructure: countryGovernmentStructureInputSchema.nullish(),
   economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
   archetypeId: z.string().optional(),
-  /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else IxWorld. */
+  /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else Ixnay. */
   realmId: z.string().min(1).max(100).optional(),
 });
 type CreateCountryInput = z.infer<typeof createCountryInput>;
@@ -473,7 +473,7 @@ export const managementCreateProcedures = {
         throw new TRPCError({ code: "NOT_FOUND", message: "User account not found" });
       }
 
-      // The target realm (input, else the realm of the nation the player acts as, else IxWorld), open and
+      // The target realm (input, else the realm of the nation the player acts as, else Ixnay), open and
       // under the player's nation cap there — a player at the cap gets a clear refusal, never their old nation.
       const { realmId } = await resolveBuilderRealm(
         ctx.db,

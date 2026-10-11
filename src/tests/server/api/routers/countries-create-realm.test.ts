@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * countries.createCountry is realm-aware and capped: it founds the nation in the chosen realm (else the realm of
- * the nation the player acts as, else IxWorld), refuses a closed or unknown realm, and refuses a player at their
+ * the nation the player acts as, else Ixnay), refuses a closed or unknown realm, and refuses a player at their
  * nation cap instead of silently returning the nation they already have.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
@@ -120,7 +120,7 @@ describe("countries.createCountry — realm and cap", () => {
   beforeEach(() => jest.spyOn(console, "error").mockImplementation(() => undefined));
   afterEach(() => jest.restoreAllMocks());
 
-  it("a free player who already holds an IxWorld nation is refused (CONFLICT), not handed the old nation", async () => {
+  it("a free player who already holds an Ixnay nation is refused (CONFLICT), not handed the old nation", async () => {
     const { db, caller } = setup({ activeRealmId: "default", held: { default: 1 } });
     await expect(caller.createCountry(input() as never)).rejects.toMatchObject({
       code: "CONFLICT",
@@ -173,7 +173,7 @@ describe("countries.createCountry — realm and cap", () => {
     });
   });
 
-  it("a new player with no nation defaults to IxWorld", async () => {
+  it("a new player with no nation defaults to Ixnay", async () => {
     const { db, caller } = setup();
     await caller.createCountry(input() as never);
     expect(db.country.create).toHaveBeenCalledWith({

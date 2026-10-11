@@ -1,7 +1,7 @@
 /**
  * A realm's map settings (`Realm.settings.map`: planet radius, default view, base image, attribution), what its
  * map viewer needs, and the "Recompute areas" action. Edits go through `realmMapAccess` (site admins, the founder
- * and officers with the Map power, in their own realm; IxWorld stays with site admins).
+ * and officers with the Map power, in their own realm; Ixnay stays with site admins).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
@@ -24,7 +24,7 @@ const SQ_KM_TO_SQ_MI = 0.386102;
 /** Rows read per page when the database has no PostGIS and areas are measured here. */
 const AREA_PAGE_SIZE = 500;
 
-/** The realm's planet radius in km (`settings.map.radiusKm`), else Earth's. IxWorld without a row: Earth's. */
+/** The realm's planet radius in km (`settings.map.radiusKm`), else Earth's. Ixnay without a row: Earth's. */
 export async function realmRadiusKmById(
   db: Pick<PrismaClient, "realm">,
   realmId: string
@@ -51,7 +51,7 @@ export async function getRealmMapDisplay(
     select: { id: true, slug: true, name: true, settings: true },
   });
   const settings = parseRealmMapSettings(realm?.settings);
-  const isIxWorld = realmId === DEFAULT_REALM_ID;
+  const isIxnay = realmId === DEFAULT_REALM_ID;
 
   let attribution = settings.attribution ?? null;
   if (!attribution) {
@@ -74,7 +74,7 @@ export async function getRealmMapDisplay(
     realmId,
     realmSlug: realm?.slug ?? null,
     realmName: realm?.name ?? null,
-    isIxWorld,
+    isIxnay,
     radiusKm: settings.radiusKm ?? EARTH_RADIUS_KM,
     defaultView: settings.defaultView ?? null,
     baseImage: settings.baseImage ?? null,
@@ -112,7 +112,7 @@ export async function updateRealmMapSettings(
   await requireMapEditor(db, actor, realmId);
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm) {
-    // IxWorld may have no realm row; staff set its settings once it has one.
+    // Ixnay may have no realm row; staff set its settings once it has one.
     throw new RealmRegionError(
       "NOT_FOUND",
       "This realm has no settings row to store map settings in"

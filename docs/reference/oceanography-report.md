@@ -1,8 +1,8 @@
-# IxWorld Comprehensive Oceanography Report
+# Ixnay Comprehensive Oceanography Report
 
 **Last updated:** 2026-08-20
 
-*Prepared by the IxWorld Bureau of Oceanographic Sciences*
+*Prepared by the Ixnay Bureau of Oceanographic Sciences*
 *Date: IxYear 2041 — Compiled from climate simulation data, geographic survey, and economic analysis*
 
 ---
@@ -196,7 +196,7 @@ The smallest and coldest of the four major oceans, the Absurian Ocean separates 
 
 ### 5.1 Theoretical Framework
 
-Ocean currents in IxWorld are driven by three primary mechanisms:
+Ocean currents in Ixnay are driven by three primary mechanisms:
 
 1. **Wind-driven (Ekman) circulation**: Surface currents deflected 45° from wind direction by Coriolis force
 2. **Western boundary intensification** (Stommel theory): Currents are narrow and fast on western boundaries, broad and slow on eastern boundaries
@@ -270,7 +270,7 @@ Where:
 
 ### 5.3 Western Boundary Intensification
 
-The IxWorld climate simulation models western boundary current intensification using:
+The Ixnay climate simulation models western boundary current intensification using:
 
 ```
 ψ = (τ₀ / (ρ · β · H)) · [1 - e^(-x/δ_w)] · sin(πy/L)
@@ -287,7 +287,7 @@ This produces the characteristic narrow, fast currents on western ocean boundari
 
 ### 6.1 Global Wind Belts
 
-The IxWorld atmospheric circulation follows the standard three-cell model:
+The Ixnay atmospheric circulation follows the standard three-cell model:
 
 | Latitude Band | Wind Belt | Direction (surface) | Average Speed (knots) |
 |---------------|-----------|--------------------|-----------------------|
@@ -334,7 +334,7 @@ u_final = u_base + pressure_gradient · continental_factor
 
 ### 7.1 SST Distribution
 
-Using the Trewartha climate classification and the IxWorld climate simulation:
+Using the Trewartha climate classification and the Ixnay climate simulation:
 
 | Zone | Latitude Range | SST Range (°C) | Climate Type |
 |------|---------------|-----------------|--------------|
@@ -923,6 +923,6 @@ Top 10 bilateral maritime trade corridors by estimated annual value:
 
 ---
 
-*This report was compiled using IxWorld climate simulation data (Trewartha classification), geographic survey coordinates, and economic modeling from IxStates 1.0 Ogma. All distances computed via Haversine formula. Shipping times assume standard commercial vessel operations with weather routing. Current speeds derived from the IxWorld ocean circulation model with western boundary intensification.*
+*This report was compiled using Ixnay climate simulation data (Trewartha classification), geographic survey coordinates, and economic modeling from IxStates 1.0 Ogma. All distances computed via Haversine formula. Shipping times assume standard commercial vessel operations with weather routing. Current speeds derived from the Ixnay ocean circulation model with western boundary intensification.*
 
-*© IxWorld Bureau of Oceanographic Sciences, IxYear 2041*
+*© Ixnay Bureau of Oceanographic Sciences, IxYear 2041*

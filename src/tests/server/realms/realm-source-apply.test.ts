@@ -404,7 +404,7 @@ describe("applySyncPlan", () => {
       countryId: "c1",
       properties: { attribution: "Map: test", fill: "#a547a5" },
     });
-    // No source colour: no fill, so the map's default colouring applies (as on IxWorld)
+    // No source colour: no fill, so the map's default colouring applies (as on Ixnay)
     expect(features[1].properties).not.toHaveProperty("fill");
     expect(db.country.update).toHaveBeenCalledTimes(1);
     expect(db.country.update).toHaveBeenCalledWith({

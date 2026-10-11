@@ -19,8 +19,8 @@ describe("/r/[realm]/board", () => {
     expect(redirect).toHaveBeenCalledWith("/thinkpages/r/a%2Fb%20c");
   });
 
-  it.each(["ixworld", "default"])("sends %s to IxWorld's canonical slug", async (realm) => {
+  it.each(["ixnay", "ixworld", "default"])("sends %s to Ixnay's canonical slug", async (realm) => {
     await RealmBoardPage({ params: Promise.resolve({ realm }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/ixworld");
+    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/ixnay");
   });
 });

@@ -2,7 +2,7 @@
 
 **Last updated:** September 2026
 
-The `/maps` route is the public, full-screen interactive viewer for **IxWorld** — the IxEarth fictional world (six continents, four oceans, 60+ countries). It is built on MapLibre GL JS and renders a globe at low zoom that transitions to a flat (Mercator) projection at higher zoom. This route is a thin page that mounts the shared map core (`MapContainer` → `IxWorldMap`); the same components also power the standalone deployment at **maps.ixwiki.com** and the map widgets embedded in country pages, MyCountry, WikiOS and the Dashboard. With `?realm=<slug>` it shows another realm's map (see [`docs/architecture/realms-framework-spec.md`](../../../docs/architecture/realms-framework-spec.md)).
+The `/maps` route is IxWorld, the public, full-screen interactive map viewer; by default it shows **Ixnay** — the IxEarth fictional world (six continents, four oceans, 60+ countries). It is built on MapLibre GL JS and renders a globe at low zoom that transitions to a flat (Mercator) projection at higher zoom. This route is a thin page that mounts the shared map core (`MapContainer` → `IxWorldMap`); the same components also power the standalone deployment at **maps.ixwiki.com** and the map widgets embedded in country pages, MyCountry, WikiOS and the Dashboard. With `?realm=<slug>` it shows another realm's map (see [`docs/architecture/realms-framework-spec.md`](../../../docs/architecture/realms-framework-spec.md)).
 
 For the full system guide (component catalog, procedural worldgen, classification systems, caching), see [`docs/systems/maps.md`](../../../docs/systems/maps.md).
 
@@ -31,7 +31,7 @@ The page reads the following query params via `useSearchParams`:
 | `?layers=a,b,c` | Comma-separated initial layers |
 | `?embed=true` | Chromeless mode for iframe embedding (no nav, no controls) |
 | `?controls=true` | Force-show controls even in embed mode |
-| `?realm=<slug>` | Show that realm's map (default: the viewer's active nation's realm, else IxWorld) |
+| `?realm=<slug>` | Show that realm's map (default: the viewer's active nation's realm, else Ixnay) |
 
 ## Key features
 

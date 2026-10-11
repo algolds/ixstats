@@ -16,7 +16,7 @@ describe("buildBaselineCountryData", () => {
 
     expect(data).toMatchObject({
       name: "Aurelia",
-      // Unknown stays empty, as on IxWorld's countries: every reader shows its own fallback.
+      // Unknown stays empty, as on Ixnay's countries: every reader shows its own fallback.
       continent: null,
       region: null,
       baselinePopulation: 1_000_000,

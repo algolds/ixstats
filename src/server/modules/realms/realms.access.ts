@@ -57,7 +57,7 @@ export function hasRealmPower(
 
 /**
  * `Realm.status` (draft, generating, active, archived): only an active realm takes new nations and claims.
- * IxWorld predates realms and is always open, with or without a realm row.
+ * Ixnay predates realms and is always open, with or without a realm row.
  */
 export function isRealmOpen(realmId: string, status: string | null | undefined): boolean {
   return realmId === DEFAULT_REALM_ID || status === "active";
@@ -71,7 +71,7 @@ export function isRealmPublished(realmId: string, status: string | null | undefi
 /**
  * AT-6: whether a realm is hidden from `viewer`. Draft and generating realms are visible only to their staff
  * (the founder and site admins); public, unlisted and archived realms are readable by anyone with the link.
- * Listing is a separate rule (`DIRECTORY_REALM_WHERE`): only public, active realms (and IxWorld) are listed.
+ * Listing is a separate rule (`DIRECTORY_REALM_WHERE`): only public, active realms (and Ixnay) are listed.
  */
 export function isRealmHiddenFrom(
   viewer: RealmActor | null | undefined,
@@ -83,7 +83,7 @@ export function isRealmHiddenFrom(
 
 /**
  * Whether `actor` may edit the realm's map (borders, region links, labels, map settings): a site admin, the
- * founder, or an officer granted `map`. IxWorld (`DEFAULT_REALM_ID`) has no founder: only site admins edit it,
+ * founder, or an officer granted `map`. Ixnay (`DEFAULT_REALM_ID`) has no founder: only site admins edit it,
  * whatever its realm row says.
  */
 export function canEditRealmMap(

@@ -37,7 +37,7 @@ export const SITE_CATEGORIES: readonly SiteCategorySeed[] = [
   { key: "side-games", name: "Side Games", description: "Play-by-post games and other things to play.", order: 70, visibility: "public", postRole: "any", icAllowed: true },
 ];
 
-/** The three categories every realm section (and IxWorld's) has. Seeded by the phase 2 migration and on realm creation. */
+/** The three categories every realm section (and Ixnay's) has. Seeded by the phase 2 migration and on realm creation. */
 export const REALM_HUB_KEY = "hub";
 
 export interface RealmCategorySeed {

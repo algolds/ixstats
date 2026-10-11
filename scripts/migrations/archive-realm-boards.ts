@@ -54,7 +54,7 @@ async function loadBoards(db: PrismaClient): Promise<{ boards: Board[]; missing:
       where: { id: realmId },
       select: { name: true, slug: true },
     });
-    const realm = realmRow ? `${realmRow.name} (${realmRow.slug})` : "IxWorld";
+    const realm = realmRow ? `${realmRow.name} (${realmRow.slug})` : "Ixnay";
     const hub = await db.forumCategory.findFirst({
       where: { scope: "realm", realmId, key: REALM_HUB_KEY },
       select: { id: true },

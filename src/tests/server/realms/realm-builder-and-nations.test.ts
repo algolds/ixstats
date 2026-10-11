@@ -30,13 +30,13 @@ function builderDb(opts: {
 }
 
 describe("listBuilderRealms", () => {
-  it("lists IxWorld first, with the player's standing against each realm's effective cap", async () => {
+  it("lists Ixnay first, with the player's standing against each realm's effective cap", async () => {
     const db = builderDb({
       membershipTier: "mycountry_premium",
       activeRealmId: "eurth",
       realms: [
         { id: "eurth", slug: "eurth", name: "Eurth", settings: { maxNationsPerUser: 3 } },
-        { id: "default", slug: "ixworld", name: "IxWorld", settings: null },
+        { id: "default", slug: "ixnay", name: "Ixnay", settings: null },
         { id: "zed", slug: "zed", name: "Zed", settings: { maxNationsPerUser: 20 } },
       ],
       owned: ["default", "eurth", "eurth", "eurth"],
@@ -44,14 +44,14 @@ describe("listBuilderRealms", () => {
     await expect(listBuilderRealms(db, user)).resolves.toEqual({
       defaultRealmId: "eurth",
       realms: [
-        { id: "default", slug: "ixworld", name: "IxWorld", held: 1, cap: 1, canCreate: false },
+        { id: "default", slug: "ixnay", name: "Ixnay", held: 1, cap: 1, canCreate: false },
         { id: "eurth", slug: "eurth", name: "Eurth", held: 3, cap: 3, canCreate: false },
         { id: "zed", slug: "zed", name: "Zed", held: 0, cap: 5, canCreate: true },
       ],
     });
   });
 
-  it("offers IxWorld and active realms that are public, founded by the player, or where they hold a nation", async () => {
+  it("offers Ixnay and active realms that are public, founded by the player, or where they hold a nation", async () => {
     const db = builderDb({ realms: [] });
     await listBuilderRealms(db, user);
     expect(db.realm.findMany).toHaveBeenCalledWith({
@@ -73,10 +73,10 @@ describe("listBuilderRealms", () => {
     });
   });
 
-  it("falls back to IxWorld as the default when the active nation's realm is not offered", async () => {
+  it("falls back to Ixnay as the default when the active nation's realm is not offered", async () => {
     const db = builderDb({
       activeRealmId: "closed",
-      realms: [{ id: "default", slug: "ixworld", name: "IxWorld", settings: null }],
+      realms: [{ id: "default", slug: "ixnay", name: "Ixnay", settings: null }],
     });
     await expect(listBuilderRealms(db, user)).resolves.toMatchObject({ defaultRealmId: "default" });
   });
@@ -91,13 +91,13 @@ describe("resolveBuilderRealm", () => {
     } as any;
   }
 
-  it("IxWorld needs no realm row", async () => {
+  it("Ixnay needs no realm row", async () => {
     await expect(resolveBuilderRealm(db(null), user)).resolves.toMatchObject({
       realmId: "default",
     });
   });
 
-  it("IxWorld's row is open whatever its status", async () => {
+  it("Ixnay's row is open whatever its status", async () => {
     await expect(
       resolveBuilderRealm(db({ id: "default", status: "draft", settings: null }), user, "default")
     ).resolves.toMatchObject({ realmId: "default" });
@@ -133,7 +133,7 @@ describe("resolveBuilderRealm", () => {
 });
 
 describe("listMyNations", () => {
-  it("groups the player's nations by realm (IxWorld first), with the active and dividend nations", async () => {
+  it("groups the player's nations by realm (Ixnay first), with the active and dividend nations", async () => {
     const owned = [
       {
         id: "c1",
@@ -141,7 +141,7 @@ describe("listMyNations", () => {
         slug: "aurelia",
         flag: null,
         realmId: "default",
-        realm: { slug: "ixworld", name: "IxWorld" },
+        realm: { slug: "ixnay", name: "Ixnay" },
       },
       {
         id: "e1",

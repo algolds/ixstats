@@ -106,9 +106,9 @@ function safeJsonStringify(obj: unknown): string {
 }
 
 /**
- * The realm part of a cached read's key. The viewer's active realm, unless it is IxWorld (ruling E-q). When the
+ * The realm part of a cached read's key. The viewer's active realm, unless it is Ixnay (ruling E-q). When the
  * input names a realm, a signed-in caller gets their own entry: a draft realm's slug resolves for its staff but
- * falls back to IxWorld for everyone else (AT-6), so one shared entry would serve one the other's answer.
+ * falls back to Ixnay for everyone else (AT-6), so one shared entry would serve one the other's answer.
  */
 export function cacheRealmKey(opts: {
   activeRealmId?: string;
@@ -253,7 +253,7 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     type: TrpcProcedureType;
     input: unknown;
     next: () => Promise<T>;
-    /** The viewer's realm when it isn't IxWorld (computed by the tRPC middleware, ruling E-q). */
+    /** The viewer's realm when it isn't Ixnay (computed by the tRPC middleware, ruling E-q). */
     realmKey?: string;
   }): Promise<T> {
     const { ctx, path, type, input, next, realmKey } = opts;

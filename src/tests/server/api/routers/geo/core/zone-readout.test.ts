@@ -28,7 +28,7 @@ const LAND_BAND = { fill: "#a8c995", zoneId: "land", zoneName: "Land" };
 
 type Mock = jest.Mock;
 
-/** A db whose realms are IxWorld and Eurth (with the Köppen key), and whose raw SQL answers `rows`. */
+/** A db whose realms are Ixnay and Eurth (with the Köppen key), and whose raw SQL answers `rows`. */
 function fakeDb(rows: (sql: string) => unknown[]) {
   const settings = { map: { climateKey: KOPPEN } };
   const db = {
@@ -95,13 +95,13 @@ describe("climate and elevation zones of a country", () => {
     ]);
   });
 
-  it("keeps IxWorld's Trewartha colours when the realm has no key", () => {
+  it("keeps Ixnay's Trewartha colours when the realm has no key", () => {
     const [zone] = buildClimateZones([{ fill: "#00fd97", overlapArea: 5 }], true, null);
     expect(zone).toMatchObject({ type: "Temperate Oceanic (Do)", percentArea: 100 });
     expect(zone).not.toHaveProperty("code");
   });
 
-  it("counts no elevation for a land-only band, but IxWorld's bands as before", () => {
+  it("counts no elevation for a land-only band, but Ixnay's bands as before", () => {
     expect(buildElevationZones([{ ...LAND_BAND, overlapArea: 50 }])).toEqual([]);
     expect(buildElevationZones([{ fill: "#a8c995", overlapArea: 50 }])).toMatchObject([
       { zone: "zone_0", percentArea: 100 },
@@ -166,7 +166,7 @@ describe("the pin tool's zone readout", () => {
     expect(info.climate?.climateName).toBe("EF: Ice Cap");
   });
 
-  it("keeps IxWorld's Trewartha names and elevation bands", async () => {
+  it("keeps Ixnay's Trewartha names and elevation bands", async () => {
     const db = layersAt([
       { layerType: "climate", properties: { fill: "#00fd97" } },
       { layerType: "altitudes", properties: { fill: "#c3d3a1" } },

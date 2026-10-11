@@ -34,8 +34,8 @@ const passport: PassportPayload = {
   },
   primaryNation: {
     id: "default",
-    name: "IxWorld",
-    slug: "ixworld",
+    name: "Ixnay",
+    slug: "ixnay",
     role: "founder",
     isPrimary: true,
     country: {

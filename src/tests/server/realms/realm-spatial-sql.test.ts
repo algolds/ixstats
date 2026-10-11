@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Realms share one coordinate space, so every raw spatial join on map_layers must match the realm of the
- * country, subdivision or city it measures; otherwise IxWorld's climate, altitudes, rivers and lakes answer for
+ * country, subdivision or city it measures; otherwise Ixnay's climate, altitudes, rivers and lakes answer for
  * another realm's land.
  */
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
@@ -177,6 +177,7 @@ describe("terrain lookups take a realm", () => {
       return mapLayerSql()[0]!.params[2];
     };
     expect(await sample()).toBe(EURTH);
+    expect(await sample("ixnay")).toBe(DEFAULT_REALM_ID);
     expect(await sample("ixworld")).toBe(DEFAULT_REALM_ID);
   });
 });

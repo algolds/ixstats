@@ -205,7 +205,7 @@ export const realmRegionRouter = createTRPCRouter({
     }),
 
   /**
-   * Site admins: delete a realm created by mistake (AT-8), confirmed by its slug. Refuses IxWorld and any realm
+   * Site admins: delete a realm created by mistake (AT-8), confirmed by its slug. Refuses Ixnay and any realm
    * that still has nations or map regions; archive those instead.
    */
   deleteRealm: adminProcedure

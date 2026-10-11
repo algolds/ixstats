@@ -16,11 +16,11 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 type Db = ReturnType<typeof createMockPrisma>;
 
 const EURTH = { id: "eurth", slug: "eurth", name: "Eurth" };
-const IXWORLD = { id: "default", slug: "ixworld", name: "IxWorld" };
+const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay" };
 
 function makeDb(): Db {
   const db = createMockPrisma();
-  db.realm.findMany.mockResolvedValue([IXWORLD, EURTH]);
+  db.realm.findMany.mockResolvedValue([IXNAY, EURTH]);
   db.country.findMany.mockImplementation(async ({ where }: any) => {
     // The "which pages has a country taken" lookup: Aurora by name (no page reference), Auberon renamed.
     if (where.OR)
@@ -98,7 +98,7 @@ describe("realms.searchNations", () => {
         name: "Austral",
         flag: "/f.png",
         claimable: true,
-        realm: IXWORLD,
+        realm: IXNAY,
       }),
       expect.objectContaining({ kind: "page", name: "Auvergne", claimable: true, realm: EURTH }),
     ]);
@@ -161,7 +161,7 @@ describe("realms.directory claimable nation pages", () => {
     const db = createMockPrisma();
     db.realm.findMany.mockResolvedValue([
       { ...EURTH, description: null, thumbnail: null, settings: null, _count: { countries: 1 } },
-      { ...IXWORLD, description: null, thumbnail: null, settings: null, _count: { countries: 0 } },
+      { ...IXNAY, description: null, thumbnail: null, settings: null, _count: { countries: 0 } },
     ]);
     db.country.groupBy.mockResolvedValue([]);
     db.realmPage.findMany.mockResolvedValue([

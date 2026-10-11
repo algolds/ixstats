@@ -20,7 +20,7 @@ import {
 } from "~/lib/thinkpages-forum/preview";
 import { readReactionCounts, reactionTotal } from "~/lib/thinkpages-forum/reactions";
 import { authorsOf, previewAuthorOf, type AuthorMaps } from "./authors";
-import { IXWORLD_REALM } from "./realm-access";
+import { IXNAY_REALM } from "./realm-access";
 import {
   authorRef,
   latestPublicThreads,
@@ -104,13 +104,13 @@ async function previewPosts(
   return posts;
 }
 
-/** The realms a preview names, by id; IxWorld goes by its `ixworld` slug and may have no row of its own. */
+/** The realms a preview names, by id; Ixnay goes by its `ixnay` slug and may have no row of its own. */
 function realmsById(published: readonly PublishedRealm[]): Map<string, ForumFeedPreviewRealm> {
   const out = new Map<string, ForumFeedPreviewRealm>();
   for (const { id, slug, name, emblemUrl, thumbnail } of published) {
-    // IxWorld always goes by its `ixworld` slug, even when its row carries the legacy slug "default".
+    // Ixnay always goes by its `ixnay` slug, even when its row carries an older slug.
     out.set(id, {
-      slug: id === DEFAULT_REALM_ID ? IXWORLD_REALM.slug : slug,
+      slug: id === DEFAULT_REALM_ID ? IXNAY_REALM.slug : slug,
       name,
       emblemUrl,
       thumbnail,
@@ -118,8 +118,8 @@ function realmsById(published: readonly PublishedRealm[]): Map<string, ForumFeed
   }
   if (!out.has(DEFAULT_REALM_ID)) {
     out.set(DEFAULT_REALM_ID, {
-      slug: IXWORLD_REALM.slug,
-      name: IXWORLD_REALM.name,
+      slug: IXNAY_REALM.slug,
+      name: IXNAY_REALM.name,
       emblemUrl: null,
       thumbnail: null,
     });

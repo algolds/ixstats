@@ -26,7 +26,7 @@ const get = (realm: string, layer: string, z: string, x: string, y: string) =>
 beforeEach(() => jest.clearAllMocks());
 
 describe("GET /api/map-tiles", () => {
-  it("serves an IxWorld tile with a public day-long cache", async () => {
+  it("serves an Ixnay tile with a public day-long cache", async () => {
     const res = await get("default", "rivers", "2", "1", "3");
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/x-protobuf");

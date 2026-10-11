@@ -60,7 +60,7 @@ describe("loadLayerFromDB is realm-scoped", () => {
     expect(whereOf(db)).toMatchObject({ layerType: "lakes", isActive: true, realmId: "r_eurth" });
   });
 
-  it("defaults to IxWorld when no realm is given", async () => {
+  it("defaults to Ixnay when no realm is given", async () => {
     const db = makeDb([row("l1")]);
     await loadLayerFromDB(db, "lakes", 1);
 
@@ -85,7 +85,7 @@ describe("loadLayerFromDB is realm-scoped", () => {
   });
 });
 
-describe("loadLayerWithFallback: the static GeoJSON fallback is IxWorld's only", () => {
+describe("loadLayerWithFallback: the static GeoJSON fallback is Ixnay's only", () => {
   beforeEach(() => {
     clearLayerCache();
     readFileMock.mockReset();
@@ -99,7 +99,7 @@ describe("loadLayerWithFallback: the static GeoJSON fallback is IxWorld's only",
     expect(readFileMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to the static IxWorld file when IxWorld has no DB layer", async () => {
+  it("falls back to the static Ixnay file when Ixnay has no DB layer", async () => {
     readFileMock.mockResolvedValue(JSON.stringify({ type: "FeatureCollection", features: [] }));
     const db = makeDb([]);
     const fc = await loadLayerWithFallback(db, "lakes", 1, DEFAULT_REALM_ID);
@@ -109,7 +109,7 @@ describe("loadLayerWithFallback: the static GeoJSON fallback is IxWorld's only",
     expect(fc?.type).toBe("FeatureCollection");
   });
 
-  it("omits an IxWorld layer whose file is missing (null), as before", async () => {
+  it("omits an Ixnay layer whose file is missing (null), as before", async () => {
     readFileMock.mockRejectedValue(new Error("ENOENT"));
     const db = makeDb([]);
 

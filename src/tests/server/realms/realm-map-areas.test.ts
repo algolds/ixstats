@@ -178,7 +178,7 @@ describe("Recompute areas", () => {
     expect(db.mapLayer!.findMany!.mock.calls[0][0].where).toMatchObject({ realmId: EURTH });
   });
 
-  it("refuses an unknown realm slug, even for a site admin, instead of falling back to IxWorld", async () => {
+  it("refuses an unknown realm slug, even for a site admin, instead of falling back to Ixnay", async () => {
     const db = realmDb();
     const ctx = createMockRouterContext({
       db,
@@ -291,7 +291,7 @@ describe("what the realm's map viewer shows", () => {
     });
     await expect(display(db, "clerk_player")).resolves.toMatchObject({
       realmId: EURTH,
-      isIxWorld: false,
+      isIxnay: false,
       radiusKm: EARTH_RADIUS_KM,
       attribution: "Borders: Eurth map project",
       canEdit: false,

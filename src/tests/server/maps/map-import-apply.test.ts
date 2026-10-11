@@ -349,7 +349,7 @@ describe("importPipelineResult on the shared writer", () => {
 });
 
 describe("canImportRealmMap (who reaches the import)", () => {
-  it("allows site admins, the founder and officers with the Map power; IxWorld is admin-only", () => {
+  it("allows site admins, the founder and officers with the Map power; Ixnay is admin-only", () => {
     const realm = { id: "r1", ownerId: "founder_1" };
     expect(canImportRealmMap(admin, realm, [])).toBe(true);
     expect(canImportRealmMap(founder, realm, [])).toBe(true);

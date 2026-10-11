@@ -106,7 +106,7 @@ beforeEach(() => {
 });
 
 describe("resolveIdentityNations", () => {
-  it("asks only for owned nations in listed realms (IxWorld whatever its row says)", async () => {
+  it("asks only for owned nations in listed realms (Ixnay whatever its row says)", async () => {
     countryTable([]);
     await resolveIdentityNations(identityOf());
     expect(mocked.country.findMany.mock.calls[0]![0].where).toEqual({
@@ -146,10 +146,10 @@ describe("resolveIdentityNations", () => {
         realmId: "r3",
         realm: { id: "r3", visibility: "unlisted", status: "active" },
       }),
-      nation("c_ixworld", { realmId: DEFAULT_REALM_ID, realm: null }),
+      nation("c_ixnay", { realmId: DEFAULT_REALM_ID, realm: null }),
     ]);
     const nations = await resolveIdentityNations(identityOf());
-    expect(nations.map((n) => n.id)).toEqual(["c_public", "c_ixworld"]);
+    expect(nations.map((n) => n.id)).toEqual(["c_public", "c_ixnay"]);
   });
 });
 
@@ -174,7 +174,7 @@ describe("loadRealmRoles", () => {
     });
   });
 
-  it("never makes anyone founder of IxWorld", async () => {
+  it("never makes anyone founder of Ixnay", async () => {
     mocked.realm.findMany.mockResolvedValue([
       { id: DEFAULT_REALM_ID, ownerId: "clerk_kir", officers: [] },
     ]);

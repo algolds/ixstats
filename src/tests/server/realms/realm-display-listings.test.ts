@@ -62,16 +62,16 @@ describe("countries.getAll (the /countries directory) is realm-scoped", () => {
     const db = makeDb();
     await createCallerFactory(directory)(ctxFor(db, eurthViewer())).getAll({
       limit: 10,
-      realm: "ixworld",
+      realm: "ixnay",
     });
 
     expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { slug: "ixworld" } })
+      expect.objectContaining({ where: { slug: "ixnay" } })
     );
     expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: DEFAULT_REALM_ID });
   });
 
-  it("falls back to IxWorld for a signed-out viewer", async () => {
+  it("falls back to Ixnay for a signed-out viewer", async () => {
     const db = makeDb();
     await createCallerFactory(directory)(ctxFor(db, null)).getAll();
 
@@ -269,8 +269,8 @@ describe("a country's own rankings compare it within its own realm", () => {
   });
 });
 
-describe("CountryData:<name> placeholders name an IxWorld nation", () => {
-  it("resolves IxWorld's nation even when the viewer's same-name Eurth nation is loaded first", async () => {
+describe("CountryData:<name> placeholders name an Ixnay nation", () => {
+  it("resolves Ixnay's nation even when the viewer's same-name Eurth nation is loaded first", async () => {
     const db = {
       country: {
         findMany: jest.fn().mockResolvedValue([

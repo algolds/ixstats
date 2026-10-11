@@ -48,7 +48,7 @@ jest.mock("~/trpc/react", () => {
         adminListRealms: {
           useQuery: () => ({
             data: [
-              { id: "default", slug: "ixworld", name: "IxWorld" },
+              { id: "default", slug: "ixnay", name: "Ixnay" },
               { id: "eurth-id", slug: "eurth", name: "Eurth" },
             ],
             isLoading: false,
@@ -299,7 +299,7 @@ describe("/admin/realms Map tab", () => {
     runs = [];
   });
 
-  it("opens on the first realm other than IxWorld", () => {
+  it("opens on the first realm other than Ixnay", () => {
     render(<MapPipelineTab />);
     expect(screen.getByText("Art files")).toBeInTheDocument();
     expect(screen.getByText(/someone\/eurth-map at main/)).toBeInTheDocument();

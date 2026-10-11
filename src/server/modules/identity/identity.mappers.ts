@@ -1,7 +1,7 @@
 /**
  * Pure mappers from resolved identity rows to the passport's Realms and History payloads.
  */
-import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
 import { isAwardWinner, type LoreAwardRow } from "./identity.feed";
 import type { IdentityCountry } from "./identity.selects";
 import type {
@@ -14,11 +14,11 @@ import type {
   WikiActivityType,
 } from "./identity.types";
 
-/** The realm a country belongs to; IxWorld is named even when its realm row is missing. */
+/** The realm a country belongs to; Ixnay is named even when its realm row is missing. */
 function realmOf(country: IdentityCountry): { id: string; name: string; slug: string } {
   if (country.realm) return country.realm;
   if (country.realmId === DEFAULT_REALM_ID) {
-    return { id: DEFAULT_REALM_ID, name: "IxWorld", slug: IXWORLD_SLUG };
+    return { id: DEFAULT_REALM_ID, name: "Ixnay", slug: IXNAY_SLUG };
   }
   return { id: country.realmId, name: country.realmId, slug: country.realmId };
 }

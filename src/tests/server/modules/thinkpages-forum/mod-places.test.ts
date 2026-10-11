@@ -30,8 +30,8 @@ describe("locateBanScope", () => {
       locateBanScope(store.db as never, eurthMod, { kind: "realm", realm: "eurth" })
     ).resolves.toEqual({ scope: { kind: "realm", realmId: "r_eurth" }, name: "Eurth" });
     await expect(
-      locateBanScope(store.db as never, admin, { kind: "realm", realm: "ixworld" })
-    ).resolves.toEqual({ scope: { kind: "realm", realmId: "default" }, name: "IxWorld" });
+      locateBanScope(store.db as never, admin, { kind: "realm", realm: "ixnay" })
+    ).resolves.toEqual({ scope: { kind: "realm", realmId: "default" }, name: "Ixnay" });
   });
 
   it("resolves a category by key and realm to its id and name", async () => {
@@ -89,6 +89,7 @@ describe("listingRealmId", () => {
     await expect(listingRealmId(store.db as never, eurthMod, undefined)).resolves.toBeNull();
     expect(store.db.realm.findUnique).not.toHaveBeenCalled();
     await expect(listingRealmId(store.db as never, eurthMod, "eurth")).resolves.toBe("r_eurth");
+    await expect(listingRealmId(store.db as never, admin, "ixnay")).resolves.toBe("default");
     await expect(listingRealmId(store.db as never, admin, "ixworld")).resolves.toBe("default");
   });
 

@@ -5,14 +5,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
-import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeCategory, type ForumViewer } from "./access";
 import { ForumError } from "./errors";
 import {
   canonicalRealm,
   canSeeRealm,
-  IXWORLD_REALM,
+  IXNAY_REALM,
   loadForumRealm,
   loadForumRealmLook,
   REALM_SELECT,
@@ -28,7 +28,7 @@ import { seedRealmCategories } from "./realm-seed";
 
 export type RealmReadsDb = ReadsDb & RealmDb & RealmAccessDb;
 
-/** IxWorld, public active realms, and realms the viewer holds a nation in, founded or serves; all for site admins. */
+/** Ixnay, public active realms, and realms the viewer holds a nation in, founded or serves; all for site admins. */
 function switcherWhere(viewer: ForumViewer): Prisma.RealmWhereInput {
   if (viewer && isSiteAdmin(viewer)) return {};
   return {
@@ -46,7 +46,7 @@ function switcherWhere(viewer: ForumViewer): Prisma.RealmWhereInput {
   };
 }
 
-/** The realms the viewer may pick (D14), IxWorld first then by name, and the one to open by default. */
+/** The realms the viewer may pick (D14), Ixnay first then by name, and the one to open by default. */
 export async function listForumRealms(
   db: RealmDb,
   viewer: ForumViewer
@@ -57,8 +57,8 @@ export async function listForumRealms(
     select: REALM_SELECT,
   });
   const visible = rows.filter((r) => canSeeRealm(viewer, r)).map(canonicalRealm);
-  const ixworld = visible.find((r) => r.id === DEFAULT_REALM_ID) ?? IXWORLD_REALM;
-  const realms = [ixworld, ...visible.filter((r) => r.id !== DEFAULT_REALM_ID)].map(
+  const ixnay = visible.find((r) => r.id === DEFAULT_REALM_ID) ?? IXNAY_REALM;
+  const realms = [ixnay, ...visible.filter((r) => r.id !== DEFAULT_REALM_ID)].map(
     ({ id, slug, name }) => ({
       id,
       slug,
@@ -66,7 +66,7 @@ export async function listForumRealms(
     })
   );
   const active = realms.find((r) => r.id === viewer?.activeRealmId);
-  return { defaultSlug: active?.slug ?? IXWORLD_SLUG, realms };
+  return { defaultSlug: active?.slug ?? IXNAY_SLUG, realms };
 }
 
 /**

@@ -3,7 +3,7 @@
 /**
  * PipelineWizard - Unified import pipeline with two modes:
  *
- * 1. Quick Update (default): Drop SVG → auto-detect layer → diff → one-click apply (IxWorld only)
+ * 1. Quick Update (default): Drop SVG → auto-detect layer → diff → one-click apply (Ixnay only)
  * 2. Full Pipeline: the realm map import (a flat-colour PNG/JPEG, an SVG of nations or GeoJSON, analysed in
  *    the background, mapped to the realm's nations, dry run, apply, roll back; map-import/), or the layered
  *    Inkscape SVG pipeline (LayeredSvgPipeline)
@@ -450,7 +450,7 @@ function QuickUpdatePanel() {
                 Drop SVG file here or click to browse
               </p>
               <p className="text-label-secondary text-footnote mt-1">
-                Layer type will be auto-detected from filename. Quick Update changes IxWorld's map;
+                Layer type will be auto-detected from filename. Quick Update changes Ixnay's map;
                 use Full Pipeline to import another realm's.
               </p>
             </div>

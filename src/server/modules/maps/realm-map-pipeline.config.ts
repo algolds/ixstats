@@ -2,7 +2,7 @@
  * A realm's map pipeline from its admin panel (`/admin/realms` → Map for site admins, `/r/<realm>/manage` → Map for
  * the founder and Map officers): read and save the config (`Realm.settings.map.pipeline`), fill it from a source
  * preset, start a run (dry run or apply, any steps), follow it, list past runs and cancel. Everything goes through
- * `realmMapAccess` (IxWorld stays with site admins; archived realms are read-only), and every change is recorded
+ * `realmMapAccess` (Ixnay stays with site admins; archived realms are read-only), and every change is recorded
  * in `AdminAuditLog`.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -65,7 +65,7 @@ async function editableRealm(
     where: { id: realmId },
     select: { id: true, slug: true, name: true, settings: true },
   });
-  // IxWorld may have no realm row; it keeps no pipeline until it has one.
+  // Ixnay may have no realm row; it keeps no pipeline until it has one.
   if (!realm)
     throw new MapImportError(
       "NOT_FOUND",

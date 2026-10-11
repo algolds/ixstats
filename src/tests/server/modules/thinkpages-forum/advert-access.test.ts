@@ -69,7 +69,7 @@ describe("advertGate", () => {
     expect(advertGate(admin)).toEqual({});
   });
 
-  it("lets anonymous readers see adverts of published realms, ordinary threads and IxWorld only", () => {
+  it("lets anonymous readers see adverts of published realms, ordinary threads and Ixnay only", () => {
     expect(advertGate(null)).toEqual({
       AND: [
         {
@@ -207,12 +207,12 @@ describe("advertHiddenFrom", () => {
   });
 });
 
-describe("IxWorld", () => {
-  const ixworld = { ...realm, id: "default", slug: "ixworld", name: "IxWorld", status: "draft" };
+describe("Ixnay", () => {
+  const ixnay = { ...realm, id: "default", slug: "ixnay", name: "Ixnay", status: "draft" };
 
   it("is never hidden, whatever its row says", async () => {
-    expect(advertRealmHiddenFrom(member, ixworld)).toBe(false);
-    const db = { realm: { findUnique: jest.fn(async (_args?: object) => ixworld) } };
+    expect(advertRealmHiddenFrom(member, ixnay)).toBe(false);
+    const db = { realm: { findUnique: jest.fn(async (_args?: object) => ixnay) } };
     await expect(advertHiddenFrom(db as never, null, { advertRealmId: "default" })).resolves.toBe(
       false
     );
@@ -232,7 +232,7 @@ describe("advertClosed", () => {
     expect(advertClosed(undefined)).toBe(false);
   });
 
-  it("never closes IxWorld", () => {
+  it("never closes Ixnay", () => {
     expect(advertClosed({ ...archived, id: "default" })).toBe(false);
   });
 });

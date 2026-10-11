@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** IxWorld — tenant 0. Client-safe; `~/server/modules/realms` re-exports it for the server. */
+/** Ixnay — tenant 0. Client-safe; `~/server/modules/realms` re-exports it for the server. */
 export const DEFAULT_REALM_ID = "default";
 
 /** `Realm.status` values nobody but the realm's staff can see (unpublished). One rule for every reader and list. */
@@ -17,14 +17,22 @@ export const ALL_REALMS = "*";
 /** The optional `realm` slug a realm-scoped procedure accepts (`?realm=`), or `ALL_REALMS`. */
 export const realmScopeInput = z.object({ realm: z.string().max(100).optional() });
 
-/** IxWorld's realm slug (`?realm=ixworld`). Legacy rows may still carry the slug "default". */
-export const IXWORLD_SLUG = "ixworld";
+/** Ixnay's realm slug (`?realm=ixnay`). */
+export const IXNAY_SLUG = "ixnay";
+
+/** Slugs that still name Ixnay: its former slug `ixworld` and the legacy "default", so old links keep working. */
+const IXNAY_SLUGS: ReadonlySet<string> = new Set([IXNAY_SLUG, "ixworld", DEFAULT_REALM_ID]);
+
+/** Whether a slug names Ixnay (its slug or a legacy alias). */
+export function isIxnaySlug(slug: string): boolean {
+  return IXNAY_SLUGS.has(slug);
+}
 
 /**
- * Whether a page shows IxWorld: the `?realm=` slug names it, or no slug is given and the viewer's active
- * nation is in IxWorld (or they have none). Mirrors resolveViewerRealmId (decision 4).
+ * Whether a page shows Ixnay: the `?realm=` slug names it, or no slug is given and the viewer's active
+ * nation is in Ixnay (or they have none). Mirrors resolveViewerRealmId (decision 4).
  */
-export function isIxWorldView(realmSlug?: string | null, activeRealmId?: string | null): boolean {
-  if (realmSlug) return realmSlug === IXWORLD_SLUG || realmSlug === DEFAULT_REALM_ID;
+export function isIxnayView(realmSlug?: string | null, activeRealmId?: string | null): boolean {
+  if (realmSlug) return isIxnaySlug(realmSlug);
   return !activeRealmId || activeRealmId === DEFAULT_REALM_ID;
 }

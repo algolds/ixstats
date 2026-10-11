@@ -2,7 +2,7 @@
 /**
  * Country Geographic Report Generator
  *
- * Generates a comprehensive geographic report for any IxWorld country
+ * Generates a comprehensive geographic report for any Ixnay country
  * using GeoJSON data layers (political, altitude, climate, rivers, lakes, icecaps).
  *
  * Usage:

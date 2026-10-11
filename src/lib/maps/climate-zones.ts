@@ -4,7 +4,7 @@
  */
 import type { ClimateKey, ClimateZone } from "./realm-map-settings";
 
-/** "Cfb: Oceanic": a zone as the pin readout and the Geography tab show it (as IxWorld's "Do: Temperate Oceanic"). */
+/** "Cfb: Oceanic": a zone as the pin readout and the Geography tab show it (as Ixnay's "Do: Temperate Oceanic"). */
 export const climateZoneLabel = (zone: Pick<ClimateZone, "code" | "name">): string =>
   `${zone.code}: ${zone.name}`;
 

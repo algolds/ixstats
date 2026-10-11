@@ -46,7 +46,7 @@ import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
-import { isIxWorldView } from "~/lib/realms/realm-ids";
+import { isIxnayView } from "~/lib/realms/realm-ids";
 import {
   useArtModeLabels,
   useRealmDefaultView,
@@ -234,7 +234,7 @@ interface MapToolbarsProps {
   realm: string | undefined;
   /** The realm's planet radius (km), for the measure tool. */
   radiusKm: number | undefined;
-  /** The realm's vector layer types (undefined on IxWorld: every switch), climate key and raster art switches. */
+  /** The realm's vector layer types (undefined on Ixnay: every switch), climate key and raster art switches. */
   layerTypes: readonly string[] | undefined;
   climateKey: ClimateKey | null | undefined;
   raster: RasterControls | undefined;
@@ -319,7 +319,7 @@ function MapToolbars({
 interface MapOverlaysProps {
   state: MapState;
   tour: ReturnType<typeof useMapTour>;
-  /** The IxWorld tour is offered only on IxWorld's map. */
+  /** The tour is offered only on Ixnay's map. */
   tourAvailable: boolean;
   showLoading: boolean;
   showControls: boolean;
@@ -422,8 +422,8 @@ export function MapContainer({
     retry: false,
   });
   const userCountryId = userProfile?.countryId ?? null;
-  // Ocean labels, the prime meridian, the home view and the guided tour describe IxWorld only (AT-2).
-  const ixWorld = isIxWorldView(realm, userProfile?.country?.realmId);
+  // Ocean labels, the prime meridian, the home view and the guided tour describe Ixnay only (AT-2).
+  const ixnay = isIxnayView(realm, userProfile?.country?.realmId);
   // The realm's planet radius, default view, base image, credit line, raster art and climate key
   const realmDisplay = useRealmMapDisplay(realm);
   // Its raster art: a base map (art mode while one is shown) and overlays
@@ -610,8 +610,8 @@ export function MapContainer({
         initialZoom={initialZoom}
         overlayData={deferredOverlayData}
         onRouteClick={state.setSelectedRouteId}
-        showOceanLabels={ixWorld}
-        ixWorld={ixWorld}
+        showOceanLabels={ixnay}
+        ixnay={ixnay}
         baseImageUrl={realmDisplay?.baseImage}
         tileRealmId={realmId}
         rasterRealmId={realmDisplay?.realmId}
@@ -639,7 +639,7 @@ export function MapContainer({
         onOpenWelcome={handleOpenWelcome}
         realm={realm}
         radiusKm={realmDisplay?.radiusKm}
-        layerTypes={realmDisplay?.isIxWorld ? undefined : realmDisplay?.layerTypes}
+        layerTypes={realmDisplay?.isIxnay ? undefined : realmDisplay?.layerTypes}
         climateKey={realmDisplay?.climateKey}
         raster={rasterControls}
       />
@@ -668,7 +668,7 @@ export function MapContainer({
         onProjectionChange={handleProjectionChange}
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
-        homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixWorld)}
+        homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixnay)}
         attribution={realmDisplay?.attribution}
       />
 
@@ -687,7 +687,7 @@ export function MapContainer({
       <MapOverlays
         state={state}
         tour={tour}
-        tourAvailable={ixWorld}
+        tourAvailable={ixnay}
         showLoading={showLoading}
         showControls={showControls}
         mapReady={mapReady}

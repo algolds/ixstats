@@ -8,7 +8,7 @@ nextLabel: Realms & Claiming a Nation
 
 ## What IxMaps is
 
-[IxMaps](/maps) is the interactive map of IxWorld. Zoomed out it is a globe; as you zoom in it flattens into a regular map. Every nation has territory on it, and you can open the map for another realm from that realm's page (see [Realms & Claiming a Nation](/help/world/realms)).
+[IxMaps](/maps) is the interactive map of Ixnay. Zoomed out it is a globe; as you zoom in it flattens into a regular map. Every nation has territory on it, and you can open the map for another realm from that realm's page (see [Realms & Claiming a Nation](/help/world/realms)).
 
 ## Finding a nation
 

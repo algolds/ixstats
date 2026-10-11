@@ -69,14 +69,14 @@ describe("moderationContext", () => {
     });
   });
 
-  it("gives a site admin every realm by name, IxWorld included without a row, and sitewide categories first", async () => {
+  it("gives a site admin every realm by name, Ixnay included without a row, and sitewide categories first", async () => {
     const store = forumStore(seed());
     const context = await moderationContext(store.db as never, admin);
     expect(context.isSiteAdmin).toBe(true);
     expect(context.realms).toEqual([
       { id: "r_aurora", slug: "aurora", name: "Aurora" },
       { id: "r_eurth", slug: "eurth", name: "Eurth" },
-      { id: "default", slug: "ixworld", name: "IxWorld" },
+      { id: "default", slug: "ixnay", name: "Ixnay" },
       { id: "r_old", slug: "old", name: "Old" },
     ]);
     expect(context.categories.map((c) => c.id)).toEqual([
@@ -95,7 +95,7 @@ describe("moderationContext", () => {
     );
   });
 
-  it("names IxWorld for a moderator of its categories when it has no realm row", async () => {
+  it("names Ixnay for a moderator of its categories when it has no realm row", async () => {
     const store = forumStore({
       ...seed(),
       categories: [
@@ -109,12 +109,12 @@ describe("moderationContext", () => {
         },
       ],
     });
-    const ixworldMod = moderatorOf("u_ix", ["default"]);
-    await expect(moderationContext(store.db as never, ixworldMod)).resolves.toEqual({
+    const ixnayMod = moderatorOf("u_ix", ["default"]);
+    await expect(moderationContext(store.db as never, ixnayMod)).resolves.toEqual({
       isSiteAdmin: false,
-      realms: [{ id: "default", slug: "ixworld", name: "IxWorld" }],
+      realms: [{ id: "default", slug: "ixnay", name: "Ixnay" }],
       categories: [
-        { id: "default_hub", key: "hub", name: "Hub", realm: { slug: "ixworld", name: "IxWorld" } },
+        { id: "default_hub", key: "hub", name: "Hub", realm: { slug: "ixnay", name: "Ixnay" } },
       ],
     });
   });

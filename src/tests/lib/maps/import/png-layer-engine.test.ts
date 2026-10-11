@@ -107,7 +107,7 @@ describe("PNG layer engine: land, lakes, climate and ice from map art", () => {
     );
   });
 
-  it("traces land as one altitude band styled as IxWorld's lowest band, border lines counted as land", () => {
+  it("traces land as one altitude band styled as Ixnay's lowest band, border lines counted as land", () => {
     const land = result.layers.altitudes!;
     // A (not split by its border lines), B (across a strait too wide to be a line), C joined to D, the islet
     expect(land).toHaveLength(4);

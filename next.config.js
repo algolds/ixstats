@@ -250,6 +250,9 @@ const config = {
 
   async redirects() {
     return [
+      // The tenant-0 realm's former slug: IxWorld is now Ixnay.
+      { source: "/r/ixworld/:path*", destination: "/r/ixnay/:path*", permanent: true },
+      { source: "/thinkpages/r/ixworld/:path*", destination: "/thinkpages/r/ixnay/:path*", permanent: true },
       // Passport: /@username is canonical. The page reads its tab from ?tab=, so tab paths redirect to the query form.
       {
         source: "/@:username/:tab",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Crown, Globe, UserCircle } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
+import { isIxnaySlug } from "~/lib/realms/realm-ids";
 import { ClaimNationButton } from "~/components/realms/ClaimNationButton";
 
 const PILL =
@@ -29,9 +30,9 @@ export function CountryIdentityStrip({
   claim,
   className,
 }: CountryIdentityStripProps) {
-  const realmName = realm?.name || "IxWorld";
+  const realmName = realm?.name || "Ixnay";
   const realmSlug = realm?.slug || "default";
-  const isPrimary = realmSlug === "default" || realmSlug === "ixworld";
+  const isPrimary = isIxnaySlug(realmSlug);
   const handle = sovereign?.username?.replace(/^@/, "").trim() || null;
 
   return (

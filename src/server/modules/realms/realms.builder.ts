@@ -1,6 +1,6 @@
 /**
  * Which realm the country builder creates a nation in (decisions 13–15: create new nations freely, within the
- * nation cap). A realm is open to the builder while it is `active`; IxWorld (tenant 0) always is.
+ * nation cap). A realm is open to the builder while it is `active`; Ixnay (tenant 0) always is.
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
@@ -50,7 +50,7 @@ async function builderProfile(db: BuilderDb, userId: string) {
 
 /**
  * The realm a new builder nation goes into: `realmId` when given, else the realm of the nation the user acts as,
- * else IxWorld. Refuses an unknown or closed realm, and a realm where the user is at their nation cap.
+ * else Ixnay. Refuses an unknown or closed realm, and a realm where the user is at their nation cap.
  */
 export async function resolveBuilderRealm(
   db: BuilderDb,
@@ -63,7 +63,7 @@ export async function resolveBuilderRealm(
     where: { id: target },
     select: { id: true, status: true, settings: true },
   });
-  // IxWorld needs no realm row (it predates realms); every other realm must exist and be open.
+  // Ixnay needs no realm row (it predates realms); every other realm must exist and be open.
   if (!realm && target !== DEFAULT_REALM_ID) {
     throw new BuilderRealmError("REALM_NOT_FOUND", "Realm not found");
   }
@@ -92,7 +92,7 @@ interface BuilderRealmOption {
 }
 
 /**
- * The realms the builder's picker offers: IxWorld, plus active realms that are public, that the user founded,
+ * The realms the builder's picker offers: Ixnay, plus active realms that are public, that the user founded,
  * or where they already hold a nation (unlisted realms stay out of everyone else's list — decision 19).
  * `defaultRealmId` is the realm of the nation the user acts as.
  */
@@ -135,7 +135,7 @@ export async function listBuilderRealms(
       canCreate: capacity.canTakeAnother,
     };
   });
-  // IxWorld first, then by name (the query's order; Array.prototype.sort is stable).
+  // Ixnay first, then by name (the query's order; Array.prototype.sort is stable).
   options.sort((a, b) => Number(b.id === DEFAULT_REALM_ID) - Number(a.id === DEFAULT_REALM_ID));
   const defaultRealmId = options.some((r) => r.id === profile.currentRealmId)
     ? profile.currentRealmId

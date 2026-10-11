@@ -11,7 +11,7 @@ import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { authorModeration, type AuthorModeration, type AuthorModerationDb } from "./mod-authors";
 import { listingScope, pageWindow } from "./mod-scope";
-import { canonicalRealm, IXWORLD_REALM, REALM_SELECT } from "./realm-access";
+import { canonicalRealm, IXNAY_REALM, REALM_SELECT } from "./realm-access";
 
 export type ReportQueueDb = Pick<
   PrismaClient,
@@ -150,7 +150,7 @@ interface ReportCategory {
   realm: { slug: string; name: string } | null;
 }
 
-/** The reports' categories with their realm's slug and name (IxWorld without a row is synthesized, D8). */
+/** The reports' categories with their realm's slug and name (Ixnay without a row is synthesized, D8). */
 async function summarizeCategories(
   db: ReportQueueDb,
   categoryIds: readonly string[]
@@ -171,7 +171,7 @@ async function summarizeCategories(
     const realm = realmId ? realms.get(realmId) : undefined;
     if (realm) return { slug: realm.slug, name: realm.name };
     return realmId === DEFAULT_REALM_ID
-      ? { slug: IXWORLD_REALM.slug, name: IXWORLD_REALM.name }
+      ? { slug: IXNAY_REALM.slug, name: IXNAY_REALM.name }
       : null;
   };
   return new Map(

@@ -27,7 +27,7 @@ import type { PageCountryData } from "./CountriesGrid";
 /**
  * The nations of a realm (My realm, /countries): search, filter by tier, continent, region and population,
  * sort, page through and compare. `realm` is a realm slug; without it the server lists the viewer's active
- * nation's realm (IxWorld when signed out).
+ * nation's realm (Ixnay when signed out).
  */
 export function CountriesDirectory({ realm, title }: { realm?: string; title: string }) {
   const router = useRouter();

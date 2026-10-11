@@ -14,7 +14,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { SISTER_READER_IDS, SISTER_WIKI_HOSTS, type SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 
-/** The wikis a realm can name: every sister wiki WikiOS reads. IxWiki is IxWorld's and is never crawled. */
+/** The wikis a realm can name: every sister wiki WikiOS reads. IxWiki is Ixnay's and is never crawled. */
 export const REALM_WIKI_SOURCES: readonly SisterReaderId[] = SISTER_READER_IDS;
 export type RealmWikiSource = SisterReaderId;
 

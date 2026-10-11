@@ -2,7 +2,7 @@
  * A realm's nation growth defaults (site admins, /admin/realms "Nations"): the per-tier table its new nations
  * get (`Realm.settings.nationDefaults`, else IxStats's defaults), and applying it to the realm's unclaimed
  * nations with a dry-run preview first. A claimed nation's growth is its player's, so it is never touched;
- * IxWorld is refused, its nations keeping their curated roster values.
+ * Ixnay is refused, its nations keeping their curated roster values.
  * Saving and applying are recorded in `AdminAuditLog`, like the other realm admin actions.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -49,7 +49,7 @@ async function loadRealm(db: Pick<PrismaClient, "realm">, actor: RealmActor, rea
   if (realmId === DEFAULT_REALM_ID)
     throw new RealmRegionError(
       "BAD_REQUEST",
-      "IxWorld's nations keep their roster values: edit them one by one in Countries"
+      "Ixnay's nations keep their roster values: edit them one by one in Countries"
     );
   const realm = await db.realm.findUnique({
     where: { id: realmId },

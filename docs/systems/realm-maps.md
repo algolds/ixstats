@@ -64,7 +64,7 @@ the panel), never a new script.
   it the labels are edited in the map editor only.
 - **`flags.localize`**: copy the nations' wiki flags and coats of arms to local files (`public/flags/`).
 - **`defaultView: "auto"`**: centre the map on the continent with the most nations (area-weighted centre of their
-  borders, longitudes taken round the largest one), at IxWorld's home zoom (1.8). Absent: the view saved in the
+  borders, longitudes taken round the largest one), at Ixnay's home zoom (1.8). Absent: the view saved in the
   editor stays.
 - **`coverage`**: smooth the realm's borders as one coverage (`ST_CoverageSimplify` at `tolerance` degrees, about one
   source pixel: 0.045° on an 8000 px wide globe, then `smooth` rounds of corner cutting), shared edges kept shared.
@@ -127,7 +127,7 @@ no repair run is needed after a sync.
 ### Admin panel (Map)
 
 `/admin/realms` → **Map** (site admins, any realm) and `/r/<realm>/manage` → **Map pipeline** (the founder and Map officers;
-IxWorld stays with site admins; an archived realm is read-only).
+Ixnay stays with site admins; an archived realm is read-only).
 
 #### In the admin panel
 

@@ -17,7 +17,7 @@ export interface NodeReportRow {
   nodeId: number;
   title: string;
   type: string;
-  /** "site:general", "realm:ixworld/hub", "archive:xf-13 (staff)" or "skip". */
+  /** "site:general", "realm:ixnay/hub", "archive:xf-13 (staff)" or "skip". */
   target: string;
   source: TargetSource;
   threads: number;

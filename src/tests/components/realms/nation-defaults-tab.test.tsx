@@ -15,7 +15,7 @@ let previewData: object | undefined;
 let view: object;
 
 const realms = [
-  { id: "default", slug: "ixworld", name: "IxWorld" },
+  { id: "default", slug: "ixnay", name: "Ixnay" },
   { id: "eurth-id", slug: "eurth", name: "Eurth" },
 ];
 
@@ -60,7 +60,7 @@ describe("/admin/realms Nations tab", () => {
     view = baseView;
   });
 
-  it("opens on the first realm other than IxWorld and shows its per-tier table as percents", () => {
+  it("opens on the first realm other than Ixnay and shows its per-tier table as percents", () => {
     render(<NationsTab />);
     expect(screen.getByText(/Eurth follows the IxStats defaults/)).toBeInTheDocument();
     expect(screen.getByLabelText("Population growth, Developing")).toHaveValue(2.6);

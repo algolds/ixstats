@@ -63,7 +63,7 @@ describe("realm forum categories", () => {
     ]);
   });
 
-  it("is seeded by the phase 2 migration for every realm and IxWorld", () => {
+  it("is seeded by the phase 2 migration for every realm and Ixnay", () => {
     for (const c of REALM_CATEGORIES) {
       expect(realmSql).toContain(`'${c.key}'`);
       expect(realmSql).toContain(`'${c.name.replace(/'/g, "''")}'`);
@@ -169,7 +169,7 @@ describe("the realm board migration", () => {
     expect(boardSql).toContain("IF NOT EXISTS");
   });
 
-  it("backfills one board category and thread per realm, IxWorld included, guarded by NOT EXISTS", () => {
+  it("backfills one board category and thread per realm, Ixnay included, guarded by NOT EXISTS", () => {
     expect(boardSql).toContain("UNION SELECT 'default'");
     expect(boardSql).toContain("'board'");
     expect(boardSql).toContain("0, 'public', 'any', true, 'board'");

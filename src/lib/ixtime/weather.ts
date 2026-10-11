@@ -1,5 +1,5 @@
 // src/lib/ixtime/weather.ts
-// In-Universe Meteorological Engine for the Prime Meridian of IxWorld (0° Longitude)
+// In-Universe Meteorological Engine for the Prime Meridian of Ixnay (0° Longitude)
 
 type Season = "Spring" | "Summer" | "Autumn" | "Winter";
 
@@ -25,7 +25,7 @@ function pseudoRandom(seed: number): number {
 }
 
 /**
- * Calculates in-universe meteorological conditions at the Prime Meridian (0° Longitude) of IxWorld.
+ * Calculates in-universe meteorological conditions at the Prime Meridian (0° Longitude) of Ixnay.
  *
  * Combines:
  * - Orbital seasonal baseline (Summer ~22°C, Autumn ~14°C, Spring ~15°C, Winter ~3°C)

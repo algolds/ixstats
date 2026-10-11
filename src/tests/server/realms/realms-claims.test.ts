@@ -503,7 +503,7 @@ describe("officers with the claims power", () => {
   });
 });
 
-/** A nation page of Eurth; `takenSlugs` already belong to countries elsewhere (e.g. IxWorld). */
+/** A nation page of Eurth; `takenSlugs` already belong to countries elsewhere (e.g. Ixnay). */
 function pageSetup({ takenSlugs = [] as string[] } = {}) {
   const s = setup();
   s.db.country.findUnique.mockImplementation(({ where }: any) =>
@@ -969,7 +969,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     areaSqKm: 1000,
     ...overrides,
   });
-  const ixworldRegion = () => region({ id: "ml-ixworld", realmId: DEFAULT_REALM_ID });
+  const ixnayRegion = () => region({ id: "ml-ixnay", realmId: DEFAULT_REALM_ID });
   const pendingPage = {
     id: "cl1",
     status: "pending",
@@ -998,7 +998,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
   }
 
   it("auto-approval links the realm's unlinked region named after the nation and syncs its geometry in the transaction", async () => {
-    const rows = [ixworldRegion(), region()];
+    const rows = [ixnayRegion(), region()];
     const { tx, claims } = regionSetup(rows);
     await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
       status: "approved",
@@ -1038,7 +1038,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
       boundingBox: [5, 5, 6, 6],
       areaSqKm: 1000,
     });
-    const rows = [region({ centroid: [0.5, 0.5] }), islands, ixworldRegion()];
+    const rows = [region({ centroid: [0.5, 0.5] }), islands, ixnayRegion()];
     const { tx, claims } = regionSetup(rows);
     await claims.claimNationPage(actor, EURTH, "Aurelia");
     expect(rows.map((r) => r.countryId)).toEqual(["new-c", "new-c", null]);
@@ -1071,7 +1071,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
 
   it("never takes another realm's region, one already linked, or an inactive one", async () => {
     const rows = [
-      ixworldRegion(),
+      ixnayRegion(),
       region({ id: "ml-linked", countryId: "c-other" }),
       region({ id: "ml-old", isActive: false }),
     ];
@@ -1120,13 +1120,13 @@ describe("realm status (AT-7)", () => {
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
 
-  it("an active realm and IxWorld (with or without a realm row) take claims", async () => {
+  it("an active realm and Ixnay (with or without a realm row) take claims", async () => {
     const { db, claims } = setup();
     db.country.findUnique.mockResolvedValue(eurthCountry("active"));
     await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
-    const ixworld = setup();
-    ixworld.db.country.findUnique.mockResolvedValue({ ...country, realm: null });
-    await expect(ixworld.claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+    const ixnay = setup();
+    ixnay.db.country.findUnique.mockResolvedValue({ ...country, realm: null });
+    await expect(ixnay.claims.claimCountry(actor, "c1")).resolves.toMatchObject({
       status: "approved",
     });
   });
@@ -1220,7 +1220,7 @@ describe("claimants see their claims and hear about rejections (AT-5)", () => {
     userId: "u1",
     countryId: "c1",
     realmId: "default",
-    realm: { ownerId: "system", slug: "ixworld" },
+    realm: { ownerId: "system", slug: "ixnay" },
     user: { clerkUserId: "clerk_u1" },
     country: { name: "Aurelia" },
   };
@@ -1232,7 +1232,7 @@ describe("claimants see their claims and hear about rejections (AT-5)", () => {
     expect(deps.onClaimRejected).toHaveBeenCalledWith({
       clerkUserId: "clerk_u1",
       nationName: "Aurelia",
-      realmSlug: "ixworld",
+      realmSlug: "ixnay",
       reason: "Not your nation",
     });
   });
@@ -1261,7 +1261,7 @@ describe("claimants see their claims and hear about rejections (AT-5)", () => {
     expect(deps.onClaimRejected).toHaveBeenCalledWith({
       clerkUserId: "clerk_rival",
       nationName: "Aurelia",
-      realmSlug: "ixworld",
+      realmSlug: "ixnay",
       reason: "Another claim for this nation was approved",
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);

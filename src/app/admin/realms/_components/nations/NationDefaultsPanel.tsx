@@ -110,7 +110,7 @@ function NationDefaultsEditor({ view }: { view: NationDefaultsView }) {
             <p className="text-label-secondary text-footnote">
               {view.custom
                 ? `${view.realm.name} uses its own table.`
-                : `${view.realm.name} follows the IxStats defaults (IxWorld's medians).`}{" "}
+                : `${view.realm.name} follows the IxStats defaults (Ixnay's medians).`}{" "}
               Nations its source sync or claims create start with the rates for their tier. GDP
               growth is capped by the IxStats tier rule. Rates are percent a year.
             </p>

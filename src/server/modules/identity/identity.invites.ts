@@ -3,7 +3,7 @@
  * inviter a realm's Join panel shows, and how many players the passport holder recruited.
  */
 import { db } from "~/server/db";
-import { DEFAULT_REALM_ID, isIxWorldView } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, isIxnayView } from "~/lib/realms/realm-ids";
 import { countRecruits } from "~/lib/realms/recruits";
 import { loadPersonalPersona } from "./identity.loaders";
 import { loadPassportHandle } from "./identity.passport-handle";
@@ -31,9 +31,9 @@ export async function resolveRealmInviter(
 ): Promise<RealmInviter | null> {
   const user = await resolveHandleUser(via);
   if (!user) return null;
-  // The claims rule (realms.access `isRealmOpen`): IxWorld is always open, even without a realm row; any
+  // The claims rule (realms.access `isRealmOpen`): Ixnay is always open, even without a realm row; any
   // other realm only while active. Unlisted realms count: they are reachable by link.
-  const inRealm = isIxWorldView(realmSlug)
+  const inRealm = isIxnayView(realmSlug)
     ? { realmId: DEFAULT_REALM_ID }
     : { realm: { slug: realmSlug, status: "active" } };
   const member = await db.country.findFirst({

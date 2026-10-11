@@ -109,7 +109,7 @@ describe("ForumPage", () => {
   it("shows an emblem before the title", () => {
     installViewport(true);
     render(
-      <ForumPage title="IxWorld" leading={<span data-testid="emblem" />}>
+      <ForumPage title="Ixnay" leading={<span data-testid="emblem" />}>
         <p>Body</p>
       </ForumPage>
     );

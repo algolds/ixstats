@@ -44,7 +44,7 @@ export interface ImportDbState {
   users: LinkedForumUser[];
   /** Sitewide categories (seeds and earlier archive categories) with their current visibility. */
   siteCategories: Array<{ id: string; key: string; visibility: string }>;
-  /** Realm slug as the node map names it → realm id, resolved by the module's loadForumRealm (IxWorld: "ixworld" or "default" → "default"). */
+  /** Realm slug as the node map names it → realm id, resolved by the module's loadForumRealm (Ixnay: "ixnay", the former "ixworld" or "default" → "default"). */
   realmIds: ReadonlyMap<string, string>;
   realmCategories: Array<{ id: string; realmId: string; key: string }>;
   /** Mapped realm slugs whose realm is published: only their categories count as public (I6). */
@@ -124,7 +124,7 @@ interface PlanContext {
   attachmentsByPost: ReadonlyMap<number, readonly number[]>;
 }
 
-/** "site:general", "realm:ixworld/hub", "archive:xf-13 (staff)" or "skip". */
+/** "site:general", "realm:ixnay/hub", "archive:xf-13 (staff)" or "skip". */
 export function describeTarget(target: NodeTarget, nodeId: number): string {
   if ("skip" in target) return "skip";
   if ("archive" in target)

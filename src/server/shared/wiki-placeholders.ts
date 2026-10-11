@@ -33,7 +33,7 @@ interface RankRow {
   realmId: string;
 }
 
-/** A country's rank within its own realm (ruling E-h): an Eurth nation is never ranked against IxWorld. */
+/** A country's rank within its own realm (ruling E-h): an Eurth nation is never ranked against Ixnay. */
 function realmRankLabel(sorted: readonly RankRow[], country: RankRow): string | undefined {
   const index = sorted
     .filter((c) => c.realmId === country.realmId)
@@ -325,7 +325,7 @@ export async function resolveWikiPlaceholderValues(
     where: {
       OR: [
         ...(activeCountryId ? [{ id: activeCountryId }] : []),
-        // CountryData:<name> names an IxWorld nation — names repeat across realms (ruling E-p).
+        // CountryData:<name> names an Ixnay nation — names repeat across realms (ruling E-p).
         ...(countryNames.length > 0
           ? [{ realmId: DEFAULT_REALM_ID, name: { in: countryNames, mode: "insensitive" } }]
           : []),

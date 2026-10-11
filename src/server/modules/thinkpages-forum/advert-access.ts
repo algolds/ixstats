@@ -28,7 +28,7 @@ export type AdvertRealm = ForumRealm & { thumbnail: string | null; emblemUrl: st
 
 /**
  * The `ForumThread` where fragment that leaves out adverts of realms the viewer cannot see. Spread it into a thread
- * where (it uses the `AND` key). Site admins see everything; IxWorld's adverts are never hidden.
+ * where (it uses the `AND` key). Site admins see everything; Ixnay's adverts are never hidden.
  */
 export function advertGate(viewer: ForumViewer): Prisma.ForumThreadWhereInput {
   if (viewer && isSiteAdmin(viewer)) return {};

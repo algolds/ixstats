@@ -55,13 +55,13 @@ export const nationGrowthTableSchema = z.object({
 });
 
 /**
- * IxStats's system defaults: the per-tier medians of IxWorld's curated nations (the admin roster import), read
- * from the database on 2026-10-07 (145 IxWorld countries, grouped by `Country.economicTier`).
- * - populationGrowthRate: IxWorld's median (Impoverished 9 nations, Developing 30, Developed 31, Healthy 43,
+ * IxStats's system defaults: the per-tier medians of Ixnay's curated nations (the admin roster import), read
+ * from the database on 2026-10-07 (145 Ixnay countries, grouped by `Country.economicTier`).
+ * - populationGrowthRate: Ixnay's median (Impoverished 9 nations, Developing 30, Developed 31, Healthy 43,
  *   Strong 19, Very Strong 7, Extravagant 6).
- * - adjustedGdpGrowth: IxWorld's median. The roster sets it to a tier's max GDP growth × 3.21% (the global
+ * - adjustedGdpGrowth: Ixnay's median. The roster sets it to a tier's max GDP growth × 3.21% (the global
  *   growth factor), so each median is one of those products; Strong's falls below Very Strong's because 10 of
- *   IxWorld's 19 Strong nations carry zero or the Extravagant product. Admins can change any of it per realm.
+ *   Ixnay's 19 Strong nations carry zero or the Extravagant product. Admins can change any of it per realm.
  */
 export const IXSTATS_NATION_GROWTH_DEFAULTS: NationGrowthTable = {
   Impoverished: { populationGrowthRate: 0.031, adjustedGdpGrowth: 0.00321 },

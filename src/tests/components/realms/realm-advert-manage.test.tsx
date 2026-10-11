@@ -79,10 +79,10 @@ describe("the Manage page's Advert row", () => {
     expect(screen.queryByRole("link", { name: "Create advert" })).toBeNull();
   });
 
-  it("says IxWorld cannot be advertised and never queries the advert", () => {
+  it("says Ixnay cannot be advertised and never queries the advert", () => {
     mockAdvert.data = { threadId: "t_ad", hiddenByModerator: false };
-    render(<AdvertSection slug="ixworld" realmId="default" archived={false} />);
-    expect(screen.getByText("IxWorld cannot be advertised in Find a Realm.")).toBeInTheDocument();
+    render(<AdvertSection slug="ixnay" realmId="default" archived={false} />);
+    expect(screen.getByText("Ixnay cannot be advertised in Find a Realm.")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
     expect(mockSlug).toBe("");
   });

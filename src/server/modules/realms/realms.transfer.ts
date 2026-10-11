@@ -141,7 +141,7 @@ async function applyTransfer(
 
 /**
  * Site admins: hand a realm to a player (an existing, active account) or back to staff (`newOwnerId: null`),
- * confirmed by typing its slug. IxWorld stays staff-administered.
+ * confirmed by typing its slug. Ixnay stays staff-administered.
  */
 export async function adminTransferRealmOwner(
   db: TransferDb,
@@ -165,7 +165,7 @@ export async function adminTransferRealmOwner(
   requireTypedSlug(realm, input.confirmSlug);
   if (input.newOwnerId) {
     if (realm.id === DEFAULT_REALM_ID)
-      throw new RealmRegionError("BAD_REQUEST", "IxWorld is administered by IxStats staff");
+      throw new RealmRegionError("BAD_REQUEST", "Ixnay is administered by IxStats staff");
     await requireActiveUser(db, input.newOwnerId);
   }
   return applyTransfer(db, actor, realm, input, { via: "admin", guardBoard });

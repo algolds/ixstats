@@ -1,5 +1,5 @@
 /**
- * A realm's nation flags and coats of arms as local files, the way IxWorld's flags are: the image in
+ * A realm's nation flags and coats of arms as local files, the way Ixnay's flags are: the image in
  * `public/flags/`, registered in `public/flags/metadata.json`, and `Country.flag` / `Country.coatOfArms` set to
  * `/flags/<file>`. Realm nations otherwise show their wiki's file through the media proxy on every view. The map
  * pipeline's `flags` step and `scripts/realms/localize-realm-flags.ts`.

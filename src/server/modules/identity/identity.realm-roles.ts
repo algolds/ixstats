@@ -12,7 +12,7 @@ interface RealmStanding {
   officers: { id: string }[];
 }
 
-/** IxWorld has no founder, whatever its realm row says (see realms.access.ts). */
+/** Ixnay has no founder, whatever its realm row says (see realms.access.ts). */
 function roleIn(realm: RealmStanding, clerkUserId: string): RealmRole {
   if (realm.id !== DEFAULT_REALM_ID && realm.ownerId === clerkUserId) return "founder";
   return realm.officers.length > 0 ? "officer" : "member";

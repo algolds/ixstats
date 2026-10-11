@@ -93,20 +93,21 @@ describe("loadImportDbState", () => {
         { id: "p-native", threadId: "t-1", xenforoPostId: null },
       ],
     });
-    const state = await loadImportDbState(db as never, ["ixworld", "urcea", "drafty", "nowhere"]);
+    const state = await loadImportDbState(db as never, ["ixnay", "ixworld", "urcea", "drafty", "nowhere"]);
     expect(state.users).toEqual([{ id: "u-1", forumUserId: 7, createdAt: day(1) }]);
     expect(state.siteCategories).toHaveLength(7);
     expect(state.siteCategories.find((c) => c.key === "staff")?.visibility).toBe("staff");
     expect([...state.realmIds]).toEqual([
+      ["ixnay", "default"],
       ["ixworld", "default"],
       ["urcea", "realm-urcea"],
       ["drafty", "realm-draft"],
     ]);
-    expect([...state.publishedRealms]).toEqual(["ixworld", "urcea"]);
+    expect([...state.publishedRealms]).toEqual(["ixnay", "ixworld", "urcea"]);
     expect(state.realmCategories.map((c) => c.id).sort()).toEqual(["rc-hub", "rc-urcea"]);
     expect([...state.existingThreads]).toEqual([[100, "t-1"]]);
     expect([...state.existingPosts]).toEqual([1000]);
-    expect(missingTargets(state, ["ixworld", "urcea", "drafty", "nowhere"])).toEqual([
+    expect(missingTargets(state, ["ixnay", "ixworld", "urcea", "drafty", "nowhere"])).toEqual([
       'The node map names realm "nowhere", which does not exist.',
     ]);
   });
@@ -171,19 +172,19 @@ describe("restrictedImportedPosts", () => {
       ],
       categories: [
         ...SITE,
-        { id: "rc-ixworld", scope: "realm", realmId: "default", key: "hub" },
+        { id: "rc-ixnay", scope: "realm", realmId: "default", key: "hub" },
         { id: "rc-active", scope: "realm", realmId: "r-active", key: "hub" },
         { id: "rc-archived", scope: "realm", realmId: "r-archived", key: "hub" },
         { id: "rc-draft", scope: "realm", realmId: "r-draft", key: "hub" },
         { id: "rc-generating", scope: "realm", realmId: "r-generating", key: "hub" },
         { id: "rc-gone", scope: "realm", realmId: "r-gone", key: "hub" },
       ],
-      threads: ["ixworld", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
+      threads: ["ixnay", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
         id: `t-${k}`,
         categoryId: `rc-${k}`,
         xenforoThreadId: i + 1,
       })),
-      posts: ["ixworld", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
+      posts: ["ixnay", "active", "archived", "draft", "generating", "gone"].map((k, i) => ({
         id: `p-${k}`,
         threadId: `t-${k}`,
         xenforoPostId: 20 + i,

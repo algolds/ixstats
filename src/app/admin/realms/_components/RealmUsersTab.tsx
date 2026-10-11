@@ -80,7 +80,7 @@ export function RealmUsersTab() {
                           className={`text-footnote ${nation.realmId === "default" ? "text-green" : "text-purple"}`}
                         >
                           {nation.realmId === "default"
-                            ? "IxWorld"
+                            ? "Ixnay"
                             : (nation.realmName ?? nation.realmId.slice(0, 12))}
                         </span>
                         {nation.active && (

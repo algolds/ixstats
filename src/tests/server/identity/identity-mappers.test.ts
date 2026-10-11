@@ -34,7 +34,7 @@ function country(overrides: Partial<IdentityCountry>): IdentityCountry {
     currentGdpPerCapita: 3,
     publicApproval: 61,
     realmId: "default",
-    realm: { id: "default", name: "IxWorld", slug: "ixworld" },
+    realm: { id: "default", name: "Ixnay", slug: "ixnay" },
     ...overrides,
   };
 }
@@ -54,7 +54,7 @@ function award(overrides: Partial<LoreAwardRow>): LoreAwardRow {
 }
 
 describe("toRealmMemberships / filterByRealm", () => {
-  it("places default-realm countries in IxWorld, marks the primary nation and the realm role", () => {
+  it("places default-realm countries in Ixnay, marks the primary nation and the realm role", () => {
     const custom = country({
       id: "c2",
       name: "New Arathia",
@@ -67,8 +67,8 @@ describe("toRealmMemberships / filterByRealm", () => {
 
     expect(earth).toMatchObject({
       id: "default",
-      name: "IxWorld",
-      slug: "ixworld",
+      name: "Ixnay",
+      slug: "ixnay",
       role: "member",
     });
     expect(earth?.isPrimary).toBe(false);
@@ -87,7 +87,7 @@ describe("toRealmMemberships / filterByRealm", () => {
       null,
       new Map()
     );
-    expect(filterByRealm(memberships, "IXWORLD").map((m) => m.country.id)).toEqual(["c1"]);
+    expect(filterByRealm(memberships, "IXNAY").map((m) => m.country.id)).toEqual(["c1"]);
     expect(filterByRealm(memberships, "r9").map((m) => m.country.id)).toEqual(["c2"]);
     expect(filterByRealm(memberships, "nowhere")).toEqual([]);
   });
@@ -97,9 +97,9 @@ describe("toRealmMemberships / filterByRealm", () => {
     expect(m).toMatchObject({ id: "r7", name: "r7", slug: "r7" });
   });
 
-  it("names IxWorld when its realm row is missing", () => {
+  it("names Ixnay when its realm row is missing", () => {
     const [m] = toRealmMemberships([country({ realm: null })], null, new Map());
-    expect(m).toMatchObject({ id: "default", name: "IxWorld", slug: "ixworld" });
+    expect(m).toMatchObject({ id: "default", name: "Ixnay", slug: "ixnay" });
   });
 });
 

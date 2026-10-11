@@ -15,7 +15,7 @@ import { NationDefaultsPanel } from "./NationDefaultsPanel";
 
 /**
  * /admin/realms "Nations": pick a realm, then its nation growth defaults by economic tier and applying them to
- * its unclaimed nations. IxWorld is not listed: its nations keep their curated roster values.
+ * its unclaimed nations. Ixnay is not listed: its nations keep their curated roster values.
  */
 export function NationsTab() {
   const { data: realms, isLoading } = api.realms.adminListRealms.useQuery();

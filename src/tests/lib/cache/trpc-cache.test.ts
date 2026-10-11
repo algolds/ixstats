@@ -11,7 +11,7 @@ type CacheMiddlewareOpts = Parameters<ReturnType<typeof createCacheMiddlewareFac
 const ctx = {} as CacheMiddlewareOpts["ctx"];
 
 describe("cacheRealmKey", () => {
-  it("shares IxWorld reads and keys other active realms", () => {
+  it("shares Ixnay reads and keys other active realms", () => {
     expect(cacheRealmKey({ activeRealmId: "default" })).toBeUndefined();
     expect(cacheRealmKey({ activeRealmId: "r_eurth" })).toBe("r_eurth");
   });

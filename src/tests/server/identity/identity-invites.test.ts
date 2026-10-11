@@ -114,10 +114,10 @@ describe("resolveRealmInviter", () => {
     await expect(resolveRealmInviter("unlisted", "kir")).resolves.not.toBeNull();
   });
 
-  it("reads IxWorld membership by its realm id", async () => {
+  it("reads Ixnay membership by its realm id", async () => {
     mocked.user.findUnique.mockResolvedValue(kir);
     mocked.country.findFirst.mockResolvedValue({ id: "c1" });
-    await expect(resolveRealmInviter("ixworld", "kir")).resolves.toEqual({
+    await expect(resolveRealmInviter("ixnay", "kir")).resolves.toEqual({
       handle: "kir",
       displayName: "Kir Forum",
     });

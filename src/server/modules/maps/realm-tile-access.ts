@@ -1,13 +1,13 @@
 /**
  * Who may read a realm's map tiles (the vector tiles of `/api/map-tiles` and the raster art of
- * `/api/map-rasters`): anyone for IxWorld and published realms, cacheable by any cache; an unpublished realm
+ * `/api/map-rasters`): anyone for Ixnay and published realms, cacheable by any cache; an unpublished realm
  * only for those who may see it, never cached. Server only.
  */
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { DEFAULT_REALM_ID, isRealmHiddenFrom, isRealmPublished } from "~/server/modules/realms";
 
-/** "public" (IxWorld, a published realm), "private" (an unpublished realm the viewer may see), else null. */
+/** "public" (Ixnay, a published realm), "private" (an unpublished realm the viewer may see), else null. */
 export async function realmTileAccess(realmId: string): Promise<"public" | "private" | null> {
   if (realmId === DEFAULT_REALM_ID) return "public";
   const realm = await db.realm.findUnique({

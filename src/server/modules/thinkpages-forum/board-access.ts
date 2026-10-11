@@ -23,7 +23,7 @@ export interface BoardSettings {
   emblemUrl: string | null;
   visitorsAllowed: boolean;
   slowModeSeconds: number;
-  /** The realm has a row of its own; false for IxWorld synthesized without one, which has no region page data. */
+  /** The realm has a row of its own; false for Ixnay synthesized without one, which has no region page data. */
   hasRow: boolean;
 }
 
@@ -50,7 +50,7 @@ export interface BoardAccess {
   visitorRealm: { slug: string; name: string } | null;
 }
 
-/** The defaults of a realm with no row (IxWorld before it has one): visitors welcome, no slow mode, no emblem. */
+/** The defaults of a realm with no row (Ixnay before it has one): visitors welcome, no slow mode, no emblem. */
 const DEFAULT_SETTINGS: BoardSettings = {
   emblemUrl: null,
   visitorsAllowed: true,

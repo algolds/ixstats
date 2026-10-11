@@ -1,6 +1,6 @@
 /**
  * What the moderation console shows a viewer (M10, M14): whether they are a site admin, the realms they moderate
- * (every realm for site admins, IxWorld included without a row, D8) and the categories they moderate with their
+ * (every realm for site admins, Ixnay included without a row, D8) and the categories they moderate with their
  * realm's slug and name. Members get empty lists, never an error, and cost no query.
  */
 import type { PrismaClient } from "@prisma/client";
@@ -9,7 +9,7 @@ import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import { isModerator } from "./mod-scope";
-import { canonicalRealm, IXWORLD_REALM, REALM_SELECT, type ForumRealm } from "./realm-access";
+import { canonicalRealm, IXNAY_REALM, REALM_SELECT, type ForumRealm } from "./realm-access";
 
 export type ContextDb = Pick<PrismaClient, "realm" | "forumCategory">;
 
@@ -26,7 +26,7 @@ export interface ModerationContext {
 
 const EMPTY: ModerationContext = { isSiteAdmin: false, realms: [], categories: [] };
 
-/** The realms by id (every realm when `ids` is null); IxWorld is synthesized when asked for and rowless. */
+/** The realms by id (every realm when `ids` is null); Ixnay is synthesized when asked for and rowless. */
 async function realmsById(
   db: Pick<ContextDb, "realm">,
   ids: readonly string[] | null
@@ -38,7 +38,7 @@ async function realmsById(
   });
   const realms = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
   if (!realms.has(DEFAULT_REALM_ID) && (ids === null || ids.includes(DEFAULT_REALM_ID))) {
-    realms.set(DEFAULT_REALM_ID, IXWORLD_REALM);
+    realms.set(DEFAULT_REALM_ID, IXNAY_REALM);
   }
   return realms;
 }

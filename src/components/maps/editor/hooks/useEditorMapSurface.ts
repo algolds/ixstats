@@ -3,7 +3,7 @@ import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { buildBaseStyle, mapHomeCenter } from "~/lib/maps/map-config";
 import { acquireSurface } from "~/lib/maps/map-engine";
-import { isIxWorldView } from "~/lib/realms/realm-ids";
+import { isIxnayView } from "~/lib/realms/realm-ids";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 
 function lockFlatProjection(map: MapLibreMap) {
@@ -36,8 +36,8 @@ export function useEditorMapSurface({
   setPluginMap,
   onMapReady,
 }: UseEditorMapSurfaceProps) {
-  // With no country to centre on, open on the realm's home view (IxWorld's prime meridian there)
-  const homeCenter = mapHomeCenter(isIxWorldView(useMapRealm()));
+  // With no country to centre on, open on the realm's home view (Ixnay's prime meridian there)
+  const homeCenter = mapHomeCenter(isIxnayView(useMapRealm()));
 
   // Theme change: swap the base style, then wait for it before layers are re-added.
   useEffect(() => {

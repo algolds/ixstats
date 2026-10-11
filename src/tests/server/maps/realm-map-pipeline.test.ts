@@ -303,7 +303,7 @@ describe("art", () => {
 });
 
 describe("autoDefaultView", () => {
-  it("centres on the continent with the most nations, weighted by area, at IxWorld's home zoom", () => {
+  it("centres on the continent with the most nations, weighted by area, at Ixnay's home zoom", () => {
     expect(
       autoDefaultView([
         { continent: "Europa", lng: 100, lat: 30, area: 3 },

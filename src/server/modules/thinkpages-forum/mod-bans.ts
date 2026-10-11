@@ -149,7 +149,7 @@ export async function assertBanScope(
   return actor;
 }
 
-/** IxWorld exists with or without a realm row (D8). */
+/** Ixnay exists with or without a realm row (D8). */
 async function realmExists(db: Pick<BansDb, "realm">, realmId: string): Promise<boolean> {
   if (realmId === DEFAULT_REALM_ID) return true;
   return (await db.realm.findUnique({ where: { id: realmId }, select: { id: true } })) !== null;

@@ -12,7 +12,7 @@ nextLabel: How the World Moves
 
 **My realm** ([/countries](/countries)), under **Realms** in the sidebar, is a searchable, sortable list of every nation in your realm: filter, sort, page through results and compare. Anyone can use it, signed in or not. The old `/explore` address opens it too.
 
-It lists the nations of your active nation's realm (IxWorld if you're signed out or have no nation); add `?realm=<realm>` to its address to list another realm. The sidebar's **Explore** opens the [realm directory](/realms), where you find, search and join realms.
+It lists the nations of your active nation's realm (Ixnay if you're signed out or have no nation); add `?realm=<realm>` to its address to list another realm. The sidebar's **Explore** opens the [realm directory](/realms), where you find, search and join realms.
 
 ## Filtering and sorting
 

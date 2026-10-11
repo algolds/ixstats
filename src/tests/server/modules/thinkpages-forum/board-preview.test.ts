@@ -193,10 +193,10 @@ describe("realmBoardPreview", () => {
     expect(s.db.forumThread.create).not.toHaveBeenCalled();
   });
 
-  it("works for IxWorld, which has no realm row and no board yet", async () => {
-    const out = await realmBoardPreview(store().db as never, null, "ixworld");
+  it("works for Ixnay, which has no realm row and no board yet", async () => {
+    const out = await realmBoardPreview(store().db as never, null, "ixnay");
     expect(out).toEqual({
-      realm: { slug: "ixworld", name: "IxWorld", emblemUrl: null, thumbnail: null },
+      realm: { slug: "ixnay", name: "Ixnay", emblemUrl: null, thumbnail: null },
       messages: [],
     });
   });

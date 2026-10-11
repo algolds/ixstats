@@ -61,9 +61,9 @@ interface MapControlsProps {
   onOpenWorldEditor?: () => void;
   /** Responsive layout variant: desktop horizontal bar, mobile FAB, or auto */
   variant?: "desktop" | "mobile" | "auto";
-  /** The vector layer types the realm has (`display.layerTypes`); undefined offers every switch (IxWorld). */
+  /** The vector layer types the realm has (`display.layerTypes`); undefined offers every switch (Ixnay). */
   layerTypes?: readonly string[];
-  /** The realm's climate classification for the climate legend; null or undefined: IxWorld's Trewartha key. */
+  /** The realm's climate classification for the climate legend; null or undefined: Ixnay's Trewartha key. */
   climateKey?: ClimateKey | null;
   /** The realm's raster art switches, when it has any. */
   raster?: RasterControls;
@@ -78,7 +78,7 @@ function toggleableLayers(layerTypes: readonly string[] | undefined): MapLayerTy
   );
 }
 
-/** The climate legend: the realm's own classification when it has one, else IxWorld's Trewartha key. */
+/** The climate legend: the realm's own classification when it has one, else Ixnay's Trewartha key. */
 function climateLegend(climateKey: ClimateKey | null | undefined) {
   if (!climateKey) return getClimateLegend();
   return climateKey.zones.map((z) => ({

@@ -38,7 +38,7 @@ export interface BoardResult {
     name: string;
     emblemUrl: string | null;
     memberCount: number;
-    /** False for a realm without a row (IxWorld, synthesized): nothing reads its realm page data. */
+    /** False for a realm without a row (Ixnay, synthesized): nothing reads its realm page data. */
     hasRow: boolean;
     settings: { visitorsAllowed: boolean; slowModeSeconds: number };
   };

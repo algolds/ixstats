@@ -70,7 +70,7 @@ export interface PublishedRealm {
   thumbnail: string | null;
 }
 
-/** The published realms' rows (one query; IxWorld may have none). */
+/** The published realms' rows (one query; Ixnay may have none). */
 export async function publishedRealms(db: Pick<PrismaClient, "realm">): Promise<PublishedRealm[]> {
   const realms = await db.realm.findMany({
     select: { id: true, status: true, slug: true, name: true, emblemUrl: true, thumbnail: true },
@@ -86,13 +86,13 @@ export async function publishedRealms(db: Pick<PrismaClient, "realm">): Promise<
     }));
 }
 
-const withIxWorld = (realms: readonly PublishedRealm[]): string[] => [
+const withIxnay = (realms: readonly PublishedRealm[]): string[] => [
   ...new Set([DEFAULT_REALM_ID, ...realms.map((r) => r.id)]),
 ];
 
-/** Ids of the published realms (IxWorld always, with or without its row). */
+/** Ids of the published realms (Ixnay always, with or without its row). */
 export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promise<string[]> {
-  return withIxWorld(await publishedRealms(db));
+  return withIxnay(await publishedRealms(db));
 }
 
 function publicThreadWhereIn(realmIds: readonly string[]) {
@@ -172,7 +172,7 @@ export async function latestPublicThreads(
 ): Promise<{ threads: PlacedThread[]; realms: PublishedRealm[] }> {
   const realms = await publishedRealms(db);
   const rows = await db.forumThread.findMany({
-    where: publicThreadWhereIn(withIxWorld(realms)),
+    where: publicThreadWhereIn(withIxnay(realms)),
     orderBy: { lastPostAt: "desc" },
     take: limit,
     select: THREAD_SELECT,

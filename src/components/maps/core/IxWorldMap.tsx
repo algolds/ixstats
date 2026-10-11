@@ -120,11 +120,11 @@ interface IxWorldMapProps {
   onZoomChange?: (zoom: number) => void;
   overlayData?: Record<string, unknown>;
   onRouteClick?: (routeId: string) => void;
-  /** IxWorld's ocean and sea names; off unless the map shows IxWorld (AT-2). A realm's own labels (oceans, seas,
+  /** Ixnay's ocean and sea names; off unless the map shows Ixnay (AT-2). A realm's own labels (oceans, seas,
    * regions, continents from `overlayFeatures.mapLabels`) join them in the same layer and style. */
   showOceanLabels?: boolean;
-  /** The map shows IxWorld: its prime meridian line and home view centre (56.1842°); else the origin. */
-  ixWorld?: boolean;
+  /** The map shows Ixnay: its prime meridian line and home view centre (56.1842°); else the origin. */
+  ixnay?: boolean;
   /** The realm's base image (full-globe equirectangular), drawn under the political layer. */
   baseImageUrl?: string | null;
   /** The realm whose decorative layers (altitudes, rivers, lakes) draw from vector tiles. */
@@ -169,7 +169,7 @@ const IxWorldMap = memo(
       overlayData,
       onRouteClick,
       showOceanLabels = false,
-      ixWorld = false,
+      ixnay = false,
       baseImageUrl,
       tileRealmId,
       rasterRealmId,
@@ -247,7 +247,7 @@ const IxWorldMap = memo(
       labelFeaturesRef,
       theme,
       oceanLabels,
-      showPrimeMeridian: ixWorld,
+      showPrimeMeridian: ixnay,
       labelsVisible,
       tileRealmId,
       artMode,
@@ -291,7 +291,7 @@ const IxWorldMap = memo(
       const init = () => {
         const handle = acquireSurface("world", {
           container: el,
-          initialCenter: initialCenter || mapHomeCenter(ixWorld),
+          initialCenter: initialCenter || mapHomeCenter(ixnay),
           initialZoom: initialZoom ?? MAP_DEFAULTS.zoom,
           minZoom: MAP_DEFAULTS.minZoom,
           maxZoom: MAP_DEFAULTS.maxZoom,

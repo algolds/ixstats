@@ -1,6 +1,6 @@
 /**
  * Who edits a realm's map (borders, region links, labels, map settings): site admins, the founder and officers
- * holding the `map` power, in their own realm only. IxWorld stays with site admins.
+ * holding the `map` power, in their own realm only. Ixnay stays with site admins.
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
@@ -24,7 +24,7 @@ export async function realmMapAccess(
   if (!actor) return { canEdit: false, isFounder: false, reason: "Sign in to edit the map" };
   if (isSiteAdmin(actor)) return { canEdit: true, isFounder: true, reason: null };
   if (realmId === DEFAULT_REALM_ID) {
-    return { canEdit: false, isFounder: false, reason: "Only site staff edit IxWorld's map" };
+    return { canEdit: false, isFounder: false, reason: "Only site staff edit Ixnay's map" };
   }
   const realm = await db.realm.findUnique({
     where: { id: realmId },

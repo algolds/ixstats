@@ -21,7 +21,7 @@ export interface BuilderState {
   selectedCountry: RealCountryData | null;
   /** Selected Faction Archetype key/id (optional) */
   selectedArchetypeId: string | null;
-  /** Realm to found the nation in (create mode); unset → the server's default (active nation's realm, else IxWorld) */
+  /** Realm to found the nation in (create mode); unset → the server's default (active nation's realm, else Ixnay) */
   realmId?: string | null;
   /** All economic indicators and metrics for the country */
   economicInputs: EconomicInputs | null;

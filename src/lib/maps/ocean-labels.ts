@@ -1,7 +1,7 @@
 /**
- * The map's ocean-label layer data: IxWorld's water names (`WATER_BODY_LABELS`) and every realm's own labels
+ * The map's ocean-label layer data: Ixnay's water names (`WATER_BODY_LABELS`) and every realm's own labels
  * (oceans, seas, regions, continents; `realm-labels.ts`) as one feature list for the theme style's `ocean-labels`
- * layer (src/lib/map-styles/*.json), so a realm's names look and behave exactly like IxWorld's: size, spacing and
+ * layer (src/lib/map-styles/*.json), so a realm's names look and behave exactly like Ixnay's: size, spacing and
  * zoom steps by rank, water in the theme's blues, land names (regions, continents) in capitals and a land colour.
  * Client-safe.
  */
@@ -11,7 +11,7 @@ import { realmLabelRank, type RealmLabelRank } from "~/lib/maps/realm-labels";
 
 export interface OceanLabelProperties {
   name: string;
-  /** IxWorld's water kind (ocean, sea, strait) or a realm label's kind (ocean, sea, region, continent). */
+  /** Ixnay's water kind (ocean, sea, strait) or a realm label's kind (ocean, sea, region, continent). */
   wbType: string;
   rank: RealmLabelRank;
 }
@@ -45,12 +45,12 @@ function realmLabelProperties(mapLabels: FeatureCollection | undefined) {
   });
 }
 
-/** IxWorld's water names (only when the map shows IxWorld) followed by the realm's own labels. */
+/** Ixnay's water names (only when the map shows Ixnay) followed by the realm's own labels. */
 export function oceanLabelFeatures(
-  ixWorld: boolean,
+  ixnay: boolean,
   mapLabels: FeatureCollection | undefined
 ): OceanLabelFeature[] {
-  const builtIn = ixWorld
+  const builtIn = ixnay
     ? WATER_BODY_LABELS.map((wb) => ({
         coordinates: wb.coordinates,
         properties: { name: wb.name, wbType: wb.type, rank: wb.rank },

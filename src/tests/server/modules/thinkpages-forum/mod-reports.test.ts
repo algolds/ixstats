@@ -87,7 +87,7 @@ const seed = () => ({
     thread("t_hidden", "cat_general", { hidden: true }),
     thread("t_report", "cat_reports"),
     thread("t_draft", "r_draft_hub"),
-    thread("t_ixworld", "default_hub"),
+    thread("t_ixnay", "default_hub"),
     thread("t_staff", "cat_staff"),
   ],
   posts: [
@@ -271,7 +271,7 @@ const report = (
 const queue = (): Row[] => [
   report("rep_general", "post", "p_general", "cat_general", { createdAt: at(3) }),
   report("rep_eurth", "thread", "t_eurth", "r_eurth_hub", { createdAt: at(2) }),
-  report("rep_ixworld", "thread", "t_ixworld", "default_hub", { createdAt: at(1) }),
+  report("rep_ixnay", "thread", "t_ixnay", "default_hub", { createdAt: at(1) }),
   report("rep_gone", "post", "p_deleted", "cat_general", { createdAt: at(0) }),
   report("rep_done", "post", "p_eurth", "r_eurth_hub", { status: "resolved", createdAt: at(4) }),
 ];
@@ -281,7 +281,7 @@ describe("listReports", () => {
     const store = reportsStore([], { reports: queue() });
     const { rows, total } = await listReports(store.db as never, admin, { status: "open" }, 1);
     expect(total).toBe(4);
-    expect(rows.map((r) => r.id)).toEqual(["rep_general", "rep_eurth", "rep_ixworld", "rep_gone"]);
+    expect(rows.map((r) => r.id)).toEqual(["rep_general", "rep_eurth", "rep_ixnay", "rep_gone"]);
     expect(rows[0]).toMatchObject({
       targetType: "post",
       targetId: "p_general",
@@ -301,7 +301,7 @@ describe("listReports", () => {
       excerpt: "Thread t_eurth",
       category: { key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
     });
-    expect(rows[2]!.category?.realm).toEqual({ slug: "ixworld", name: "IxWorld" });
+    expect(rows[2]!.category?.realm).toEqual({ slug: "ixnay", name: "Ixnay" });
     expect(rows[3]).toMatchObject({
       threadId: null,
       threadTitle: null,

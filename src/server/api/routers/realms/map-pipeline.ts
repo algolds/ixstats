@@ -2,7 +2,7 @@
  * realms.mapPipeline: a realm's map pipeline for its admin panel (Map): the config (`Realm.settings.map.pipeline`),
  * filling it from a source preset, runs (dry run or apply, any steps) as background jobs, their progress and
  * history, and cancel. The realm's map editors only (realmMapAccess: site admins, the founder, officers with the
- * Map power; IxWorld stays with site admins). Logic lives in ~/server/modules/maps/realm-map-pipeline.*.ts; the
+ * Map power; Ixnay stays with site admins). Logic lives in ~/server/modules/maps/realm-map-pipeline.*.ts; the
  * runbook is docs/systems/realm-maps.md.
  */
 import { z } from "zod";
@@ -32,7 +32,7 @@ function pipelineError(error: Error): never {
   throw error;
 }
 
-/** The realm, by slug, resolved strictly (an unknown slug is NOT_FOUND, never IxWorld). */
+/** The realm, by slug, resolved strictly (an unknown slug is NOT_FOUND, never Ixnay). */
 const realmInput = z.object({ realm: z.string().min(1).max(100) });
 const jobInput = z.object({ jobId: z.string().min(1).max(64) });
 

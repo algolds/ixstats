@@ -11,7 +11,7 @@ import { clearLayerCache, extractAllPositions } from "../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
-/** SVG uploads carry no realm: the Quick Update commit/rollback flow reads and replaces IxWorld's layers only. */
+/** SVG uploads carry no realm: the Quick Update commit/rollback flow reads and replaces Ixnay's layers only. */
 const SVG_REALM = { realmId: DEFAULT_REALM_ID };
 
 /** Mean-position centroid and [minX, minY, maxX, maxY] bounds of a geometry (null when empty). */

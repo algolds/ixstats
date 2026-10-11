@@ -1,16 +1,16 @@
 /**
  * The PNG engine for a realm's physical layers: whole-globe map art traced into the non-political layer types with
- * a fixed palette, so the features carry the properties IxWorld's own have and its styling applies.
+ * a fixed palette, so the features carry the properties Ixnay's own have and its styling applies.
  *
  *   altitudes  land from a blank map (grey land on a white sea): R+G+B below `landMaxSum`. Its border lines are
  *              as white as the sea, so a water gap at most `lineWidth` px across (or down) with land on both
- *              sides is land too. Without elevation art: one band, styled as IxWorld's lowest band and marked as
+ *              sides is land too. Without elevation art: one band, styled as Ixnay's lowest band and marked as
  *              land only (LAND_BAND). With a geography map and its legend's bands: the hypsometric tints
- *              (png/elevation.ts), stored nested as IxWorld stores its bands: each band's polygons cover the land
+ *              (png/elevation.ts), stored nested as Ixnay stores its bands: each band's polygons cover the land
  *              at or above its lowest elevation, the coast band the whole land.
  *   lakes      water not connected to the ocean (the largest water body, which meets itself across ±180°).
  *   rivers     the geography map's river colour on land, thinned to centre lines (png/rivers.ts): one
- *              MultiLineString per river system, as IxWorld's rivers are lines.
+ *              MultiLineString per river system, as Ixnay's rivers are lines.
  *   climate    a climate map painted in the climate key's colours, on the land of the blank map: land pixels near
  *              no zone colour (lines, text, a legend box) take the nearest zone; specks merge into a neighbour.
  *   icecaps    land whose darkest channel is above `iceMinChannel` on a geography map (white ice); white label
@@ -21,7 +21,7 @@
  * land and its zone. The arcs are simplified (`simplify` px²) and then smoothed (`smooth` rounds of Chaikin corner
  * cutting, junctions kept, topology-smooth.ts), so traced edges have no pixel steps and shared edges stay shared.
  * Pixels become lon/lat as a whole-globe equirectangular image (features meet ±180° as the political import's
- * do), and each layer is split into one feature per polygon, as IxWorld stores them, largest first.
+ * do), and each layer is split into one feature per polygon, as Ixnay stores them, largest first.
  * Server only (sharp).
  */
 import type { Feature, LineString, MultiLineString, MultiPolygon, Polygon } from "geojson";
@@ -120,7 +120,7 @@ const ICE_CLASS: Omit<TraceClass, "label"> = {
   name: "Ice cap",
   properties: { fill: "#ffffff", "ixmap-subgroup": null },
 };
-/** IxWorld's river style. */
+/** Ixnay's river style. */
 const RIVER_FILL = "#6f95ff";
 
 /** Called with a water gap of the mask: its first pixel, the pixel after it, and the step between pixels. */
@@ -381,7 +381,7 @@ async function traceClasses(
   return out;
 }
 
-/** The elevation bands as IxWorld stores them: band i covers every band from i up (the coast band, all land). */
+/** The elevation bands as Ixnay stores them: band i covers every band from i up (the coast band, all land). */
 async function traceElevation(
   image: DecodedImage,
   rawBands: readonly ElevationBand[],

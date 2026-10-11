@@ -18,7 +18,7 @@ const ICON = "h-3.5 w-3.5 shrink-0";
 
 /**
  * The world editor's realm menu, for the realm's map editors (site admins, the founder, officers with the Map
- * power) on a realm other than IxWorld: save the current view as the map's default, and manage the realm's own
+ * power) on a realm other than Ixnay: save the current view as the map's default, and manage the realm's own
  * labels (oceans, seas, regions, continents).
  */
 export function RealmMapMenu({ mapRef }: { mapRef: RefObject<EditorMapRef | null> }) {
@@ -38,7 +38,7 @@ export function RealmMapMenu({ mapRef }: { mapRef: RefObject<EditorMapRef | null
     onError: (error) => notify.error("Could not save the default view", error.message),
   });
 
-  if (!display?.canEdit || display.isIxWorld || !display.realmSlug) return null;
+  if (!display?.canEdit || display.isIxnay || !display.realmSlug) return null;
   const realmSlug = display.realmSlug;
 
   const saveView = () => {

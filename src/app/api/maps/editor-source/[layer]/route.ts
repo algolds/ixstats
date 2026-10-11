@@ -1,7 +1,7 @@
 /**
  * GeoJSON for the Maputnik style editor's preview sources (`/api/maps/style-store` points each geojson source here).
  * Admins only, like the style editor itself: the overlays carry every approved feature's full geometry. One realm
- * per request (`?realm=<slug>`, IxWorld by default), rate limited per admin, and privately cacheable for a minute.
+ * per request (`?realm=<slug>`, Ixnay by default), rate limited per admin, and privately cacheable for a minute.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
@@ -210,7 +210,7 @@ const OVERLAY_ALIASES = new Map(
   })
 );
 
-/** The `?realm=` slug's realm id (IxWorld when absent), or null when no realm has that slug. */
+/** The `?realm=` slug's realm id (Ixnay when absent), or null when no realm has that slug. */
 async function requestedRealmId(request: NextRequest): Promise<string | null> {
   const slug = request.nextUrl.searchParams.get("realm");
   if (!slug) return DEFAULT_REALM_ID;

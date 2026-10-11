@@ -24,7 +24,7 @@ describe("Decoupled IxnayID Passport & Sovereign Factbook Architecture (Plan 188
           name: "Grand Valora",
           slug: "grand_valora",
           realmId: "default",
-          realmName: "IxWorld",
+          realmName: "Ixnay",
           currentPopulation: 45200000,
           currentTotalGdp: 2820000000000,
           continent: "Euraxis",
@@ -45,7 +45,7 @@ describe("Decoupled IxnayID Passport & Sovereign Factbook Architecture (Plan 188
     };
 
     expect(userWithMultiRealmHoldings.nations).toHaveLength(2);
-    expect(userWithMultiRealmHoldings.nations[0]?.realmName).toBe("IxWorld");
+    expect(userWithMultiRealmHoldings.nations[0]?.realmName).toBe("Ixnay");
     expect(userWithMultiRealmHoldings.nations[0]?.isFlagship).toBe(true);
     expect(userWithMultiRealmHoldings.nations[1]?.realmName).toBe("Novaterra");
     expect(userWithMultiRealmHoldings.nations[1]?.isFlagship).toBe(false);

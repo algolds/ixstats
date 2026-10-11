@@ -25,13 +25,13 @@ function mapError(error: Error): never {
   throw error;
 }
 
-/** A mutation names its realm by slug, resolved strictly (an unknown slug is NOT_FOUND, never IxWorld). */
+/** A mutation names its realm by slug, resolved strictly (an unknown slug is NOT_FOUND, never Ixnay). */
 const realmInput = z.object({ realm: z.string().min(1).max(100) });
 
 const settingsShape = RealmMapSettingsSchema.shape;
 
 export const realmMapRouter = createTRPCRouter({
-  /** The viewer's realm (`?realm=`, else their active nation's, else IxWorld) and how its map is shown. */
+  /** The viewer's realm (`?realm=`, else their active nation's, else Ixnay) and how its map is shown. */
   display: publicProcedure.input(realmScopeInput.optional()).query(async ({ ctx, input }) => {
     const realmId = await viewerRealmId(ctx, input?.realm);
     return getRealmMapDisplay(ctx.db, ctx.user ?? null, realmId);

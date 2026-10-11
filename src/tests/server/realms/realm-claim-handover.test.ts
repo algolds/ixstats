@@ -155,7 +155,7 @@ describe("claiming an unclaimed nation the source sync created", () => {
     expect(db.country.updateMany).not.toHaveBeenCalled();
   });
 
-  it("an IxWorld country's claim reads no infobox (unchanged behaviour)", async () => {
+  it("an Ixnay country's claim reads no infobox (unchanged behaviour)", async () => {
     const { db, deps, claims } = setup();
     db.country.findUnique.mockResolvedValue({ ...unclaimed, realmId: "default", wikiSource: "ixwiki" });
     await claims.claimCountry(actor, "c-sync");

@@ -341,7 +341,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           title="Climate"
           noun="climate"
           rows={climateZones.map((z) => ({
-            // A realm's own climate key names its zones; IxWorld's are Trewartha types
+            // A realm's own climate key names its zones; Ixnay's are Trewartha types
             label: z.code && z.name ? climateZoneLabel({ code: z.code, name: z.name }) : z.type,
             percentArea: z.percentArea,
             color: z.color ?? getClimateColor(z.type),

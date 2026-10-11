@@ -327,10 +327,10 @@ describe("planBoardArchive", () => {
 describe("summarizeArchive", () => {
   it("reports each realm and the totals", () => {
     const a = { realm: "Eurth", ...plan([row("a", 1), row("r", 2, { visibility: "removed" })]) };
-    const b = { realm: "IxWorld", ...plan([]) };
+    const b = { realm: "Ixnay", ...plan([]) };
     expect(summarizeArchive([a, b])).toEqual([
       "Eurth: 1 to create; skipped 1 removed, 0 no user, 0 already migrated, 0 blank",
-      "IxWorld: 0 to create; skipped 0 removed, 0 no user, 0 already migrated, 0 blank; empty board",
+      "Ixnay: 0 to create; skipped 0 removed, 0 no user, 0 already migrated, 0 blank; empty board",
       "Total: 1 to create across 2 boards; skipped 1 removed, 0 no user, 0 already migrated, 0 blank; 1 empty board",
     ]);
   });

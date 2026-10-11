@@ -10,7 +10,7 @@ import type { FeatureCollection } from "geojson";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { addGeoLayers } from "~/components/maps/shared/geo-layers";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { IXWORLD_SLUG } from "~/lib/realms/realm-ids";
+import { IXNAY_SLUG } from "~/lib/realms/realm-ids";
 
 interface CoordinatesMapEmbedProps {
   lat: number;
@@ -18,8 +18,8 @@ interface CoordinatesMapEmbedProps {
   zoom?: number;
   options?: string; // height=400|width=100%|interactive=yes|title=My Title
   /**
-   * The realm slug whose map the coordinates are on. Omitted: IxWorld inside an IxWiki article (its lore is
-   * IxWorld's, whoever reads it); inside another wiki's article, the realm whose lore index holds it; else the
+   * The realm slug whose map the coordinates are on. Omitted: Ixnay inside an IxWiki article (its lore is
+   * Ixnay's, whoever reads it); inside another wiki's article, the realm whose lore index holds it; else the
    * viewer's realm.
    */
   realm?: string;
@@ -35,7 +35,7 @@ export function buildPopupTitleNode(title: string): HTMLDivElement {
 }
 
 /**
- * The realm whose map an embed's coordinates are on: the given slug, IxWorld in an IxWiki article, else undefined:
+ * The realm whose map an embed's coordinates are on: the given slug, Ixnay in an IxWiki article, else undefined:
  * another wiki's article asks `realms.map.realmForWikiArticle` (`needsWikiRealmLookup`), anything else shows the
  * viewer's realm.
  */
@@ -43,7 +43,7 @@ export function embedRealm(
   realm: string | undefined,
   wiki: { isWikiPage: boolean; articleSource: string }
 ): string | undefined {
-  return realm ?? (wiki.isWikiPage && wiki.articleSource === "ixwiki" ? IXWORLD_SLUG : undefined);
+  return realm ?? (wiki.isWikiPage && wiki.articleSource === "ixwiki" ? IXNAY_SLUG : undefined);
 }
 
 /** A non-IxWiki article without an explicit realm: its realm is looked up from its wiki and title. */

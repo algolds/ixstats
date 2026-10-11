@@ -120,7 +120,7 @@ export function MarginInspectTab({
   const handleGenerateFactDiff = () => {
     if (!matchedCountry) return;
     const oldText = `Population: (outdated value)\nGDP: (outdated value)`;
-    const newText = `Population: ${formattedPop ?? "Unknown"}\nGDP: ${formattedGdp ?? "Unknown"}\nRegion: ${matchedCountry.continent ?? "IxWorld"}`;
+    const newText = `Population: ${formattedPop ?? "Unknown"}\nGDP: ${formattedGdp ?? "Unknown"}\nRegion: ${matchedCountry.continent ?? "Ixnay"}`;
 
     onProposeEdit(oldText, newText);
   };

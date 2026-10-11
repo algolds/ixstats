@@ -46,7 +46,7 @@ describe("nodeMapSchema", () => {
       nodes: {
         "12": { scope: "site", key: "general" },
         "13": { scope: "site", key: "staff" },
-        "14": { scope: "realm", realm: "ixworld", key: "current-events" },
+        "14": { scope: "realm", realm: "ixnay", key: "current-events" },
         "15": { archive: true, visibility: "staff" },
         "16": { skip: true },
       },

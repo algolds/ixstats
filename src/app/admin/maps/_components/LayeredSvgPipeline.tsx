@@ -44,14 +44,14 @@ export function LayeredSvgPipeline() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<{ imported: number } | null>(null);
-  // Realm the layers are imported into; "" = the server default, IxWorld
+  // Realm the layers are imported into; "" = the server default, Ixnay
   const [targetRealmId, setTargetRealmId] = useState("");
 
   const runPipeline = api.geoEditor.runPipeline.useMutation();
   const importPipeline = api.geoEditor.importPipelineResult.useMutation();
   const { data: realms } = api.realms.adminListRealms.useQuery();
   const targetRealm = realms?.find((r) => r.id === (targetRealmId || DEFAULT_REALM_ID));
-  const realmName = targetRealm?.name ?? "IxWorld";
+  const realmName = targetRealm?.name ?? "Ixnay";
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -135,7 +135,7 @@ export function LayeredSvgPipeline() {
       <h3 className="text-label text-title-3 mb-4">Layered SVG pipeline</h3>
       <p className="text-label-secondary text-footnote mb-4">
         An Inkscape SVG with its political, altitude and other layers, imported into a realm. For a
-        single layer of IxWorld use Quick Update; for a flat-colour image, an SVG of nations or
+        single layer of Ixnay use Quick Update; for a flat-colour image, an SVG of nations or
         GeoJSON use the realm map import.
       </p>
 
@@ -189,7 +189,7 @@ export function LayeredSvgPipeline() {
               <label className="text-label text-body font-medium">Target realm:</label>
               <Select value={targetRealmId} onValueChange={setTargetRealmId}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="IxWorld (default)" />
+                  <SelectValue placeholder="Ixnay (default)" />
                 </SelectTrigger>
                 <SelectContent>
                   {realms?.map((r) => (

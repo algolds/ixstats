@@ -1,5 +1,5 @@
 /**
- * Site-admin realm actions that end a realm (AT-8). Deleting is for realms created by mistake: it refuses IxWorld,
+ * Site-admin realm actions that end a realm (AT-8). Deleting is for realms created by mistake: it refuses Ixnay,
  * and any realm that still has nations or map regions. It never releases, moves or deletes a nation; a realm with
  * nations is archived instead (read-only, closed to claims).
  */
@@ -28,7 +28,7 @@ export async function deleteRealm(
   if (!isSiteAdmin(actor))
     throw new RealmRegionError("FORBIDDEN", "Only site admins delete realms");
   if (input.realmId === DEFAULT_REALM_ID)
-    throw new RealmRegionError("BAD_REQUEST", "IxWorld can't be deleted");
+    throw new RealmRegionError("BAD_REQUEST", "Ixnay can't be deleted");
   const realm = await db.realm.findUnique({
     where: { id: input.realmId },
     select: { id: true, slug: true, name: true, _count: { select: { countries: true } } },

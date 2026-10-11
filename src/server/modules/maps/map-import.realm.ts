@@ -47,7 +47,7 @@ export async function findImportRealm(
 
 /**
  * The realm, when `actor` may import its map (canImportRealmMap: site admins, the founder, officers with the
- * `map` power; IxWorld is admin-only) and it is not archived; NOT_FOUND, FORBIDDEN or BAD_REQUEST otherwise.
+ * `map` power; Ixnay is admin-only) and it is not archived; NOT_FOUND, FORBIDDEN or BAD_REQUEST otherwise.
  */
 export async function loadImportRealm(
   db: Pick<PrismaClient, "realm">,

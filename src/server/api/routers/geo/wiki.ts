@@ -18,24 +18,24 @@ import {
   parseCoordTemplate,
 } from "~/lib/wiki-os/transformers/infobox-parser";
 
-/** IxWorld's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). */
-const IXWORLD_WIKIS: readonly WikiSource[] = ["ixwiki", "iiwiki"];
+/** Ixnay's lookup order: ixwiki (direct DB, fast), then iiwiki (HTTP). */
+const IXNAY_WIKIS: readonly WikiSource[] = ["ixwiki", "iiwiki"];
 
 /**
  * The wikis a realm's map looks pages up in (AT-12): the wiki its lore index was imported from, else
- * IxWorld's order. A realm's wiki is recorded on its RealmPage rows; Realm has no wiki setting of its own.
+ * Ixnay's order. A realm's wiki is recorded on its RealmPage rows; Realm has no wiki setting of its own.
  */
 async function realmWikis(
   ctx: Parameters<typeof viewerRealmId>[0] & { db: Pick<PrismaClient, "realmPage"> },
   realmSlug: string | undefined
 ): Promise<readonly WikiSource[]> {
   const realmId = await viewerRealmId(ctx, realmSlug);
-  if (realmId === DEFAULT_REALM_ID) return IXWORLD_WIKIS;
+  if (realmId === DEFAULT_REALM_ID) return IXNAY_WIKIS;
   const lore = await ctx.db.realmPage.findFirst({
     where: { realmId },
     select: { wikiSource: true },
   });
-  return lore ? [parseWikiSource(lore.wikiSource)] : IXWORLD_WIKIS;
+  return lore ? [parseWikiSource(lore.wikiSource)] : IXNAY_WIKIS;
 }
 
 export const geoWikiRouter = createTRPCRouter({

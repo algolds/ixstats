@@ -27,7 +27,7 @@ const worldMapInput = z
   })
   .optional();
 
-/** The realm's requested layers (DB first; IxWorld alone falls back to its static files). */
+/** The realm's requested layers (DB first; Ixnay alone falls back to its static files). */
 async function loadWorldMapLayers(
   db: Parameters<typeof loadLayerWithFallback>[0],
   layers: string[],

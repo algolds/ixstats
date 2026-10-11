@@ -6,7 +6,7 @@
  * banned. Every write and every posting flag goes through `postingAccessFor`, so a ban binds them all (T0-9).
  */
 import type { PrismaClient } from "@prisma/client";
-import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, IXNAY_SLUG, isIxnaySlug } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID } from "~/lib/realms/realm-region";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { noNationNotice } from "~/lib/thinkpages-forum/notices";
@@ -30,11 +30,11 @@ export interface ForumRealm {
 export type RealmDb = Pick<PrismaClient, "realm">;
 export type RealmAccessDb = Pick<PrismaClient, "country" | "realmOfficer" | "forumBan">;
 
-/** IxWorld when it has no realm row (D8): always active, and its founder is staff, so nobody is its founder. */
-export const IXWORLD_REALM: ForumRealm = {
+/** Ixnay when it has no realm row (D8): always active, and its founder is staff, so nobody is its founder. */
+export const IXNAY_REALM: ForumRealm = {
   id: DEFAULT_REALM_ID,
-  slug: IXWORLD_SLUG,
-  name: "IxWorld",
+  slug: IXNAY_SLUG,
+  name: "Ixnay",
   status: "active",
   ownerId: STAFF_FOUNDER_ID,
 };
@@ -47,20 +47,20 @@ export const REALM_SELECT = {
   ownerId: true,
 } as const;
 
-/** IxWorld always goes by its `ixworld` slug, even when its row carries the legacy slug "default". */
+/** Ixnay always goes by its `ixnay` slug, even when its row carries the former slug `ixworld` or the legacy "default". */
 export function canonicalRealm<R extends ForumRealm>(row: R): R {
-  return row.id === DEFAULT_REALM_ID ? { ...row, slug: IXWORLD_SLUG } : row;
+  return row.id === DEFAULT_REALM_ID ? { ...row, slug: IXNAY_SLUG } : row;
 }
 
-const namesIxWorld = (ref: { slug: string } | { id: string }): boolean =>
+const namesIxnay = (ref: { slug: string } | { id: string }): boolean =>
   "slug" in ref
-    ? ref.slug === IXWORLD_SLUG || ref.slug === DEFAULT_REALM_ID
+    ? isIxnaySlug(ref.slug)
     : ref.id === DEFAULT_REALM_ID;
 
 type RealmRef = { slug: string } | { id: string };
 
 /**
- * The lookup `loadForumRealm` and `loadForumRealmLook` share: the row, else IxWorld synthesized (D8). `find` reads
+ * The lookup `loadForumRealm` and `loadForumRealmLook` share: the row, else Ixnay synthesized (D8). `find` reads
  * one realm row with whatever columns the caller selects.
  */
 async function resolveRealm<R extends ForumRealm>(
@@ -70,24 +70,24 @@ async function resolveRealm<R extends ForumRealm>(
 ): Promise<R | null> {
   const row = await find("slug" in ref ? { slug: ref.slug } : { id: ref.id });
   if (row) return canonicalRealm(row);
-  if (!namesIxWorld(ref)) return null;
-  const ixworld = "slug" in ref ? await find({ id: DEFAULT_REALM_ID }) : null;
-  return ixworld ? canonicalRealm(ixworld) : synthesized;
+  if (!namesIxnay(ref)) return null;
+  const ixnay = "slug" in ref ? await find({ id: DEFAULT_REALM_ID }) : null;
+  return ixnay ? canonicalRealm(ixnay) : synthesized;
 }
 
 /**
- * A realm by slug or id. IxWorld's slugs (`ixworld`, legacy `default`) and id resolve even without a realm row
+ * A realm by slug or id. Ixnay's slugs (`ixnay`, the former `ixworld`, legacy `default`) and id resolve even without a realm row
  * (synthesized, D8); with one, it is named from the row.
  */
 export function loadForumRealm(db: RealmDb, ref: RealmRef): Promise<ForumRealm | null> {
   return resolveRealm<ForumRealm>(
     (where) => db.realm.findUnique({ where, select: REALM_SELECT }),
     ref,
-    IXWORLD_REALM
+    IXNAY_REALM
   );
 }
 
-/** `loadForumRealm` for many ids in one read: the realms found by id (IxWorld synthesized when it has no row). */
+/** `loadForumRealm` for many ids in one read: the realms found by id (Ixnay synthesized when it has no row). */
 export async function loadForumRealms(
   db: RealmDb,
   ids: readonly string[]
@@ -97,7 +97,7 @@ export async function loadForumRealms(
     : [];
   const found = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
   if (ids.includes(DEFAULT_REALM_ID) && !found.has(DEFAULT_REALM_ID)) {
-    found.set(DEFAULT_REALM_ID, IXWORLD_REALM);
+    found.set(DEFAULT_REALM_ID, IXNAY_REALM);
   }
   return found;
 }
@@ -108,7 +108,7 @@ export interface ForumRealmLook extends ForumRealm {
   thumbnail: string | null;
 }
 
-/** `loadForumRealm` in one read that also brings the realm's images; IxWorld without a row has none. */
+/** `loadForumRealm` in one read that also brings the realm's images; Ixnay without a row has none. */
 export function loadForumRealmLook(db: RealmDb, ref: RealmRef): Promise<ForumRealmLook | null> {
   return resolveRealm<ForumRealmLook>(
     (where) =>
@@ -117,11 +117,11 @@ export function loadForumRealmLook(db: RealmDb, ref: RealmRef): Promise<ForumRea
         select: { ...REALM_SELECT, emblemUrl: true, thumbnail: true },
       }),
     ref,
-    { ...IXWORLD_REALM, emblemUrl: null, thumbnail: null }
+    { ...IXNAY_REALM, emblemUrl: null, thumbnail: null }
   );
 }
 
-/** Unpublished realms are their moderators' only; IxWorld, always listed in the switcher, is never hidden (U7). */
+/** Unpublished realms are their moderators' only; Ixnay, always listed in the switcher, is never hidden (U7). */
 export function canSeeRealm(viewer: ForumViewer, realm: ForumRealm): boolean {
   return realm.id === DEFAULT_REALM_ID || !isRealmHiddenFrom(viewer, realm);
 }
@@ -141,7 +141,7 @@ export interface RealmPostingAccess {
 
 const ARCHIVED_NOTICE = "This realm is archived: its forum can be read but no longer changes.";
 
-/** IxWorld is never archived, whatever its row says. */
+/** Ixnay is never archived, whatever its row says. */
 export const isArchived = (realm: ForumRealm): boolean =>
   realm.status === "archived" && !isRealmOpen(realm.id, realm.status);
 

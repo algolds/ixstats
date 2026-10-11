@@ -520,7 +520,7 @@ model GeographicResource {
 }
 
 /// A Realm is a self-contained world instance with its own map, countries, and IxStats data.
-/// The "default" realm is IxWorld. Custom realms are created via World Studio.
+/// The "default" realm is Ixnay (slug `ixnay`; `ixworld` is a legacy alias). Custom realms are created via World Studio.
 model Realm {
   id              String       @id @default(cuid())
   slug            String       @unique // URL-safe: "my-fantasy-world"

@@ -161,7 +161,7 @@ export function MapEditorWelcomeModal({
           <div>
             <DialogTitle className="text-body sm:text-body">Map editor onboarding</DialogTitle>
             <DialogDescription className="text-footnote">
-              Forge the geography, borders, and features of IxWorld
+              Forge the geography, borders, and features of Ixnay
             </DialogDescription>
           </div>
         </DialogHeader>

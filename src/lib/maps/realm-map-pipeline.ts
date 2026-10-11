@@ -51,7 +51,7 @@ export const mapPipelineOptionsSchema = z.object({
 });
 export type MapPipelineOptions = z.infer<typeof mapPipelineOptionsSchema>;
 
-/** Where `defaultView: "auto"` opens the map: IxWorld's home zoom. */
+/** Where `defaultView: "auto"` opens the map: Ixnay's home zoom. */
 export const AUTO_VIEW_ZOOM = MAP_DEFAULTS.zoom;
 
 const pipelineRasterSchema = RealmRasterLayerSchema.pick({

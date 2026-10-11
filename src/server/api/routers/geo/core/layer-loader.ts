@@ -23,7 +23,7 @@ import {
 import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
-/** Warms IxWorld's layers only — other realms build on first request. */
+/** Warms Ixnay's layers only — other realms build on first request. */
 export async function warmGeoCache(db: any): Promise<void> {
   const start = Date.now();
   const layers = [
@@ -130,9 +130,9 @@ async function loadGeoJSONFromFile(layerType: string): Promise<FeatureCollection
 }
 
 /**
- * The realm's layer from the DB, else — for IxWorld only — the static GeoJSON file
+ * The realm's layer from the DB, else — for Ixnay only — the static GeoJSON file
  * (null when that file is missing too). Another realm with no DB layer gets an empty
- * collection: IxWorld's files are never drawn on another realm's map.
+ * collection: Ixnay's files are never drawn on another realm's map.
  */
 export async function loadLayerWithFallback(
   db: Parameters<typeof loadLayerFromDB>[0],

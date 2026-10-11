@@ -166,11 +166,11 @@ describe("createAdvert", () => {
     expect(createThread).not.toHaveBeenCalled();
   });
 
-  it("refuses IxWorld, by either slug and for a site admin, since it has no realm row to carry an advert", async () => {
-    for (const slug of ["ixworld", "default"]) {
+  it("refuses Ixnay, by any of its slugs and for a site admin, since it has no realm row to carry an advert", async () => {
+    for (const slug of ["ixnay", "ixworld", "default"]) {
       await expect(
         createAdvert(advertDb({ realm: null }) as never, admin, { ...NEW, realm: slug })
-      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "IxWorld has no advert." });
+      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Ixnay has no advert." });
     }
     expect(createThread).not.toHaveBeenCalled();
   });
@@ -272,7 +272,7 @@ describe("createAdvert", () => {
 });
 
 describe("advertRealmsOf", () => {
-  it("lists only the realms createAdvert would accept: founded, or served with the appearance power in a published realm, never archived or IxWorld", async () => {
+  it("lists only the realms createAdvert would accept: founded, or served with the appearance power in a published realm, never archived or Ixnay", async () => {
     const db = advertDb();
     db.realm.findMany.mockResolvedValue([
       { slug: "eurth", name: "Eurth", advertThread: { id: "t_ad", hidden: false } },
@@ -347,7 +347,7 @@ describe("advertStatus", () => {
       code: "NOT_FOUND",
     });
     await expect(
-      advertStatus(advertDb({ realm: null }) as never, admin, "ixworld")
+      advertStatus(advertDb({ realm: null }) as never, admin, "ixnay")
     ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });

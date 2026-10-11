@@ -109,7 +109,7 @@ export const transportRouteMutationsRouter = createTRPCRouter({
 
       const bbox = country.boundingBox as [number, number, number, number] | null;
       if (!bbox) throw new Error("Country has no bounding box");
-      // Routes and hubs live in their owner's realm (AT-1), not IxWorld by default.
+      // Routes and hubs live in their owner's realm (AT-1), not Ixnay by default.
       const realmId = country.realmId ?? DEFAULT_REALM_ID;
 
       // Fetch airport POIs for air corridor generation
@@ -515,7 +515,7 @@ async function computeRouteLengthAndDifficulty(
   return { lengthKm, terrainDifficulty };
 }
 
-/** The realm a country's transport belongs to (AT-1); IxWorld when the country can't be read. */
+/** The realm a country's transport belongs to (AT-1); Ixnay when the country can't be read. */
 async function countryRealmId(
   db: PrismaClient | Prisma.TransactionClient,
   countryId: string

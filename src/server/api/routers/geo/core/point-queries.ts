@@ -61,7 +61,7 @@ function elevationInfo(altitude: PointLayer | undefined) {
   };
 }
 
-/** Climate zone at the point: through the realm's climate key when it has one, else IxWorld's Trewartha colours. */
+/** Climate zone at the point: through the realm's climate key when it has one, else Ixnay's Trewartha colours. */
 function climateInfo(climate: PointLayer | undefined, key: ClimateKey | null) {
   if (!climate) return null;
   const props = climate.properties ?? {};

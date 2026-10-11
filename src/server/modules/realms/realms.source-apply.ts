@@ -301,7 +301,7 @@ async function writeFeatures(
         sourceKey: feature.key,
         sourceHash: feature.sourceHash,
         ...(ctx.attribution && { attribution: ctx.attribution }),
-        // The political colouring reads `fill`, as on IxWorld
+        // The political colouring reads `fill`, as on Ixnay
         ...(feature.fill && { fill: feature.fill }),
       },
     })),

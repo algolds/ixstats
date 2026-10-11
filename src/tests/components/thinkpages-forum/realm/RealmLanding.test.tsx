@@ -617,7 +617,7 @@ describe("RealmLanding", () => {
       expect(state.happeningsOptions.at(-1)).toMatchObject({ enabled: true, retry: false });
     });
 
-    it("does not ask for a realm without a row of its own (IxWorld, synthesized)", () => {
+    it("does not ask for a realm without a row of its own (Ixnay, synthesized)", () => {
       const base = boardData(messages);
       state.board = { data: { ...base, realm: { ...base.realm, hasRow: false } } };
       render(<RealmLanding realm="eurth" />);

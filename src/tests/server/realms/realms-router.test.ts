@@ -34,8 +34,8 @@ describe("realms.getBySlug", () => {
   it("replaces owner ids with a claimed flag", async () => {
     const findUnique = jest.fn().mockResolvedValue({
       id: "default",
-      slug: "ixworld",
-      name: "IxWorld",
+      slug: "ixnay",
+      name: "Ixnay",
       description: null,
       thumbnail: null,
       status: "active",
@@ -47,7 +47,7 @@ describe("realms.getBySlug", () => {
       pages: [],
       _count: { pages: 0 },
     });
-    const realm = await caller(findUnique).getBySlug({ slug: "ixworld" });
+    const realm = await caller(findUnique).getBySlug({ slug: "ixnay" });
 
     expect(realm?.countries).toEqual([
       { id: "c1", name: "Aurelia", slug: "aurelia", flag: null, claimed: true, mine: false },
@@ -185,8 +185,8 @@ describe("realms.getBySlug", () => {
   it("a realm without a lore index has no nation pages and no lore source", async () => {
     const findUnique = jest.fn().mockResolvedValue({
       id: "default",
-      slug: "ixworld",
-      name: "IxWorld",
+      slug: "ixnay",
+      name: "Ixnay",
       description: null,
       thumbnail: null,
       status: "active",
@@ -196,7 +196,7 @@ describe("realms.getBySlug", () => {
       _count: { pages: 0 },
     });
     const realmPage = { findFirst: jest.fn() };
-    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "ixworld" });
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "ixnay" });
     expect(realm).toMatchObject({ nationPages: [], lorePageCount: 0, loreSource: null });
     expect(realmPage.findFirst).not.toHaveBeenCalled();
   });
@@ -610,7 +610,7 @@ describe("realms.adminCreateRealm", () => {
       })
     );
     await expect(
-      adminCaller(create).adminCreateRealm({ slug: "ixworld", name: "Copy", visibility: "public" })
+      adminCaller(create).adminCreateRealm({ slug: "ixnay", name: "Copy", visibility: "public" })
     ).rejects.toMatchObject({ code: "CONFLICT", message: "That slug is taken" });
   });
 

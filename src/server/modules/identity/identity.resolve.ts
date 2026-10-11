@@ -259,7 +259,7 @@ export async function resolveIdentityNations(
   return db.country.findMany({
     where: {
       ownerUserId: user.id,
-      // IxWorld nations count even when IxWorld has no realm row (the relation filter needs one).
+      // Ixnay nations count even when Ixnay has no realm row (the relation filter needs one).
       OR: [{ realmId: DEFAULT_REALM_ID }, { realm: DIRECTORY_REALM_WHERE }],
     },
     select: IDENTITY_COUNTRY_SELECT,

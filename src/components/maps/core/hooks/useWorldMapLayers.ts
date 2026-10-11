@@ -7,7 +7,7 @@ import {
   LAYER_CONFIGS,
   MAP_SYMBOL_FONTS,
   MAP_LAYER_TYPES,
-  IXWORLD_PRIME_MERIDIAN_LNG,
+  IXNAY_PRIME_MERIDIAN_LNG,
 } from "~/lib/maps/map-config";
 import type { OceanLabelFeature } from "~/lib/maps/ocean-labels";
 import type { MapTheme } from "~/lib/map-styles/registry";
@@ -85,7 +85,7 @@ function addCountryLabelLayer(map: MapLibreMap) {
   });
 }
 
-/** Graticule lines (IxWorld's prime meridian only on IxWorld) and ocean/sea name labels, refreshed in place. */
+/** Graticule lines (Ixnay's prime meridian only on Ixnay) and ocean/sea name labels, refreshed in place. */
 function syncGraticuleAndOceanLabels(
   map: MapLibreMap,
   oceanLabels: OceanLabelFeature[],
@@ -101,8 +101,8 @@ function syncGraticuleAndOceanLabels(
       ...(showPrimeMeridian
         ? [
             graticuleLine(2, "Prime Meridian", [
-              [IXWORLD_PRIME_MERIDIAN_LNG, -90],
-              [IXWORLD_PRIME_MERIDIAN_LNG, 90],
+              [IXNAY_PRIME_MERIDIAN_LNG, -90],
+              [IXNAY_PRIME_MERIDIAN_LNG, 90],
             ]),
           ]
         : []),
@@ -337,9 +337,9 @@ interface UseWorldMapLayersProps {
   updateDistanceFade: () => void;
   labelFeaturesRef: React.MutableRefObject<FeatureCollection | null>;
   theme?: MapTheme;
-  /** The ocean-label layer's names: IxWorld's water names on IxWorld (AT-2), and the realm's own labels. */
+  /** The ocean-label layer's names: Ixnay's water names on Ixnay (AT-2), and the realm's own labels. */
   oceanLabels?: OceanLabelFeature[];
-  /** IxWorld's prime meridian line; off unless the map shows IxWorld. */
+  /** Ixnay's prime meridian line; off unless the map shows Ixnay. */
   showPrimeMeridian?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;

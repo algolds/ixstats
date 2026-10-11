@@ -13,7 +13,7 @@ import { unpackLayers } from "~/lib/maps/geojson-pack";
 
 type ModelMock = Record<string, jest.Mock>;
 
-/** Every model answers empty unless overridden; no map layer rows, so IxWorld reads its static files. */
+/** Every model answers empty unless overridden; no map layer rows, so Ixnay reads its static files. */
 function dbWith(overrides: Record<string, Partial<ModelMock>> = {}) {
   const models = new Map<string, ModelMock>();
   return new Proxy({} as Record<string, ModelMock>, {

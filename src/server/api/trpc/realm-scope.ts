@@ -28,7 +28,7 @@ export function viewerRealmId(
 
 /**
  * The realm a mutation names by slug, resolved strictly: an unknown slug, or a draft the caller can't see, is
- * NOT_FOUND rather than the viewer's fallback realm, so a typo never writes to IxWorld.
+ * NOT_FOUND rather than the viewer's fallback realm, so a typo never writes to Ixnay.
  */
 export async function mutationRealmId(
   ctx: { db: Pick<PrismaClient, "realm">; user?: Partial<RealmActor> | null },
@@ -58,7 +58,7 @@ export async function realmWhere(
 /**
  * The realm a world-mode map editor works in (`?realm=`, else the viewer's realm), once the caller may edit its
  * map: site admins anywhere, a realm's founder and its officers holding the `map` power in that realm only
- * (`canEditRealmMap`). Throws FORBIDDEN otherwise, so IxWorld stays admin-only.
+ * (`canEditRealmMap`). Throws FORBIDDEN otherwise, so Ixnay stays admin-only.
  */
 export async function editableMapRealmId(
   ctx: {

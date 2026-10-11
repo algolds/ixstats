@@ -52,6 +52,7 @@ const dbState = (overrides: Partial<ImportDbState> = {}): ImportDbState => ({
   ],
   siteCategories: SITE,
   realmIds: new Map([
+    ["ixnay", "default"],
     ["ixworld", "default"],
     ["default", "default"],
     ["urcea", "realm-urcea"],
@@ -60,7 +61,7 @@ const dbState = (overrides: Partial<ImportDbState> = {}): ImportDbState => ({
     { id: "rc-default-hub", realmId: "default", key: "hub" },
     { id: "rc-urcea-current", realmId: "realm-urcea", key: "current-events" },
   ],
-  publishedRealms: new Set(["ixworld", "default", "urcea"]),
+  publishedRealms: new Set(["ixnay", "ixworld", "default", "urcea"]),
   existingThreads: new Map(),
   existingPosts: new Set(),
   hiddenThreads: new Set(),
@@ -430,8 +431,8 @@ describe("planImport rules", () => {
     );
   });
 
-  it("resolves realm targets through the resolved realm id (IxWorld by either slug)", () => {
-    for (const realm of ["ixworld", "default"]) {
+  it("resolves realm targets through the resolved realm id (Ixnay by any of its slugs)", () => {
+    for (const realm of ["ixnay", "ixworld", "default"]) {
       const plan = planImport(snap([GENERAL], [thread(1, 12)], [post(10, 1, 0)]), dbState(), {
         nodes: { "12": { scope: "realm", realm, key: "hub" } },
       });

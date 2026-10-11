@@ -213,7 +213,7 @@ function formatPostContent(message: DiscordMessage): string {
 
 async function loadCountryIdCache(db: PrismaClient) {
   const countryNames = Array.from(new Set(Object.values(DISCORD_COUNTRY_MAP)));
-  // The Discord map names IxWorld nations; names repeat across realms (ruling E-p).
+  // The Discord map names Ixnay nations; names repeat across realms (ruling E-p).
   const countries = await db.country.findMany({
     where: { realmId: DEFAULT_REALM_ID, name: { in: countryNames } },
     select: { name: true, id: true },

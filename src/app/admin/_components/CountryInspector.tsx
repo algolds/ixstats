@@ -98,7 +98,7 @@ export function CountryInspector() {
 
   // Fetch list of countries
   const { data: countryList } = api.countries.getSelectList.useQuery(
-    { limit: 1000, realm: ALL_REALMS }, // every realm's nations (IxWorld alone is ~150)
+    { limit: 1000, realm: ALL_REALMS }, // every realm's nations (Ixnay alone is ~150)
     { refetchOnWindowFocus: false }
   );
 

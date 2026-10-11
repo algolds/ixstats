@@ -117,7 +117,7 @@ export const DEFAULT_DESIGN_STATE: CardDesignState = {
   wikiSource: "wikios",
   wikiArticleTitle: "Concord of Nations",
   wikiExcerpt:
-    "The '''Concord of Nations''' serves as the supreme diplomatic council, uniting sovereign states across IxWorld under a unified charter of peace, trade, and non-aggression.",
+    "The '''Concord of Nations''' serves as the supreme diplomatic council, uniting sovereign states across Ixnay under a unified charter of peace, trade, and non-aggression.",
   description:
     "Supreme diplomatic council uniting sovereign states under a unified charter of peace and trade.",
 

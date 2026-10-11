@@ -486,7 +486,7 @@ export const wikiReadRateLimit = createRateLimitMiddleware({
 });
 
 /**
- * Cached reads. The key carries the viewer's realm unless it is IxWorld (ruling E-q), because realm-scoped
+ * Cached reads. The key carries the viewer's realm unless it is Ixnay (ruling E-q), because realm-scoped
  * listings fall back to it when the input names none. An all-realms read ("*") is never cached: whether
  * "*" applies depends on the caller being a site admin (ruling E-o).
  */

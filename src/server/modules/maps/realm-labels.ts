@@ -1,7 +1,7 @@
 /**
  * A realm's own labels (oceans, seas, regions, continents; `MapLabel` with `realmId` and no nation): the stored
  * shape shared by the realm-label API and the seed script. A label's look comes from its kind and rank (kept in
- * `metadata.rank`), drawn in IxWorld's ocean-label style (`src/lib/maps/ocean-labels.ts`).
+ * `metadata.rank`), drawn in Ixnay's ocean-label style (`src/lib/maps/ocean-labels.ts`).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import {

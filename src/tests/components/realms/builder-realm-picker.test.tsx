@@ -49,10 +49,10 @@ jest.mock("~/trpc/react", () => ({
   api: { realms: { builderRealms: { useQuery: () => ({ data: mockData }) } } },
 }));
 
-const ixworld = {
+const ixnay = {
   id: "default",
-  slug: "ixworld",
-  name: "IxWorld",
+  slug: "ixnay",
+  name: "Ixnay",
   held: 1,
   cap: 1,
   canCreate: false,
@@ -66,37 +66,37 @@ describe("BuilderRealmPicker", () => {
       <BuilderRealmPicker value={null} onChange={jest.fn()} />
     );
     expect(container).toBeEmptyDOMElement();
-    mockData = { defaultRealmId: "default", realms: [{ ...ixworld, held: 0, canCreate: true }] };
+    mockData = { defaultRealmId: "default", realms: [{ ...ixnay, held: 0, canCreate: true }] };
     rerender(<BuilderRealmPicker value={null} onChange={jest.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it("with one realm, says so when the player is at the cap there", () => {
-    mockData = { defaultRealmId: "default", realms: [ixworld] };
+    mockData = { defaultRealmId: "default", realms: [ixnay] };
     render(<BuilderRealmPicker value={null} onChange={jest.fn()} />);
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
-      "You hold 1 of 1 nation allowed in IxWorld."
+      "You hold 1 of 1 nation allowed in Ixnay."
     );
   });
 
   it("with several realms, picks among them; full realms are disabled", () => {
-    mockData = { defaultRealmId: "default", realms: [ixworld, eurth] };
+    mockData = { defaultRealmId: "default", realms: [ixnay, eurth] };
     const onChange = jest.fn();
     render(<BuilderRealmPicker value={null} onChange={onChange} />);
     const select = screen.getByRole("combobox");
     expect(select).toHaveValue("default");
-    expect(screen.getByRole("option", { name: "IxWorld (1/1)" })).toBeDisabled();
+    expect(screen.getByRole("option", { name: "Ixnay (1/1)" })).toBeDisabled();
     expect(screen.getByRole("option", { name: "Eurth (0/1)" })).toBeEnabled();
     // The default realm is full, so the player is told why they must choose another.
-    expect(screen.getByRole("status")).toHaveTextContent("IxWorld");
+    expect(screen.getByRole("status")).toHaveTextContent("Ixnay");
 
     fireEvent.change(select, { target: { value: "eurth" } });
     expect(onChange).toHaveBeenCalledWith("eurth");
   });
 
   it("shows the chosen realm and no cap notice when it has room", () => {
-    mockData = { defaultRealmId: "default", realms: [ixworld, eurth] };
+    mockData = { defaultRealmId: "default", realms: [ixnay, eurth] };
     render(<BuilderRealmPicker value="eurth" onChange={jest.fn()} />);
     expect(screen.getByRole("combobox")).toHaveValue("eurth");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

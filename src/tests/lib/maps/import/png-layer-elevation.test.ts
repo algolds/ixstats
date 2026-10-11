@@ -116,7 +116,7 @@ const expectNear = (actual: number, expected: number, share = 0.01) =>
 const latOf = (y: number) => 90 - y * DEG;
 
 describe("altitudeStyles", () => {
-  it("maps Eurth's six bands onto IxWorld's coast band and bands 1, 3, 5, 7 and 8 by their lowest elevation", () => {
+  it("maps Eurth's six bands onto Ixnay's coast band and bands 1, 3, 5, 7 and 8 by their lowest elevation", () => {
     expect(altitudeStyles(EURTH_BANDS)).toEqual([
       { subgroup: "coastlines", fill: "#a8c995", zoneId: "zone_0", label: "0–50 m" },
       { subgroup: "Altitude-1", fill: "#c3d3a1", zoneId: "zone_1", label: "50–500 m" },
@@ -127,7 +127,7 @@ describe("altitudeStyles", () => {
     ]);
   });
 
-  it("steps up a band when two realm bands start in one IxWorld band, and stops at the top band", () => {
+  it("steps up a band when two realm bands start in one Ixnay band, and stops at the top band", () => {
     const bands = [0, 10, 20, 5000, 6000, 7000].map((min) => ({
       color: "#000000",
       min,
@@ -168,7 +168,7 @@ describe("PNG layer engine: elevation bands and rivers from a geography map", ()
   const band = (r: LayerEngineResult, subgroup: string) =>
     r.layers.altitudes!.filter((f) => f.properties["ixmap-subgroup"] === subgroup);
 
-  it("stores the bands nested, as IxWorld does: each covers the land at or above its lowest elevation", () => {
+  it("stores the bands nested, as Ixnay does: each covers the land at or above its lowest elevation", () => {
     const land = 180 * 80 - 10 * 8 + W * 12;
     expectNear(areaPx(band(result, "coastlines")), land);
     expectNear(areaPx(band(result, "Altitude-1")), 120 * 50);

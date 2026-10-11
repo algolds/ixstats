@@ -22,7 +22,7 @@ const CACHE_TTL = 24 * 60 * 60 * 1000;
 export interface MapCacheScope {
   /** The map's `?realm=` slug, when it names one */
   realm?: string;
-  /** Without a slug: the realm the server resolves for this viewer (active nation's, else IxWorld); undefined while unknown */
+  /** Without a slug: the realm the server resolves for this viewer (active nation's, else Ixnay); undefined while unknown */
   viewerRealmId?: string;
 }
 

@@ -19,7 +19,7 @@ Both directories call `countries.getAll` (`cachedPublicProcedure`, realm-aware c
 the browser. `getAll` always excludes `isDemo` countries and is scoped to one realm (`realmWhere`):
 
 - `?realm=<slug>` lists that realm;
-- with no `realm`, it uses the realm of the viewer's active nation, or IxWorld when signed out;
+- with no `realm`, it uses the realm of the viewer's active nation, or Ixnay when signed out;
 - `realm: "*"` (`ALL_REALMS`) returns every realm for site admins; anyone else gets their own realm.
 
 | | `/countries` | `/explore` |

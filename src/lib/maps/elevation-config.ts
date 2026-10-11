@@ -129,7 +129,7 @@ export function getZoneByColor(hexColor: string): ElevationZoneConfig | null {
 }
 
 /**
- * A realm whose map art has land but no elevations draws its land as one altitude band in IxWorld's lowest band
+ * A realm whose map art has land but no elevations draws its land as one altitude band in Ixnay's lowest band
  * colour, marked with this zone id so readouts say "Land" instead of claiming that band's elevations.
  */
 export const LAND_BAND = { zoneId: "land", zoneName: "Land", color: "#a8c995" } as const;

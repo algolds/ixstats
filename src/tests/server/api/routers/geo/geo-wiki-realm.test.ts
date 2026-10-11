@@ -1,5 +1,5 @@
 /** @jest-environment node */
-/** AT-12: map wiki lookups use the realm's wiki; IxWorld keeps ixwiki then iiwiki. */
+/** AT-12: map wiki lookups use the realm's wiki; Ixnay keeps ixwiki then iiwiki. */
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 
 describe("geoWiki realm wiki source", () => {
-  it("keeps IxWorld's ixwiki-then-iiwiki order", async () => {
+  it("keeps Ixnay's ixwiki-then-iiwiki order", async () => {
     const db = createMockPrisma();
     await caller(db).getFeatureWikiIntro({ wikiPageTitle: "Lucrecia" });
 
@@ -72,7 +72,7 @@ describe("geoWiki realm wiki source", () => {
     expect(wikisTried(searchPages, 2)).toEqual(["althistory"]);
   });
 
-  it("falls back to IxWorld's order for a realm with no lore index", async () => {
+  it("falls back to Ixnay's order for a realm with no lore index", async () => {
     const db = createMockPrisma();
     db.realm.findUnique.mockResolvedValue({ id: "realm_new" });
     db.realmPage.findFirst.mockResolvedValue(null);

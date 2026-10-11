@@ -20,7 +20,7 @@ describe("categoryVisibility", () => {
   it("makes a realm category public only while its realm is published", () => {
     const urcea = { scope: "realm", realm: "urcea", key: "hub" } as const;
     expect(categoryVisibility(urcea, [], new Set(["urcea"]))).toBe("public");
-    expect(categoryVisibility(urcea, [], new Set(["ixworld"]))).toBe("restricted");
+    expect(categoryVisibility(urcea, [], new Set(["ixnay"]))).toBe("restricted");
     expect(categoryVisibility(urcea, [])).toBe("restricted");
   });
 });

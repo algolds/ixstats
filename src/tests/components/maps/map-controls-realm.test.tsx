@@ -51,7 +51,7 @@ const checkboxNames = (panel: HTMLElement) =>
     .map((c) => c.closest("label")?.textContent);
 
 describe("layer panel on a realm", () => {
-  it("offers every switch when the layer types are not known (IxWorld)", () => {
+  it("offers every switch when the layer types are not known (Ixnay)", () => {
     const { panel } = openLayers();
     expect(checkboxNames(panel)).toEqual([
       "Countries",

@@ -53,14 +53,14 @@ describe("myStanding", () => {
     const store = storeWith({
       bans: [
         ...bans,
-        ban("b_ixworld", { scopeId: "default" }),
+        ban("b_ixnay", { scopeId: "default" }),
         ban("b_gone", { scope: "category", scopeId: "cat_gone" }),
       ],
     });
     const standing = await myStanding(store.db as never, member);
     const byId = Object.fromEntries(standing.bans.map((b) => [b.id, b]));
     expect(Object.keys(byId).sort()).toEqual(
-      ["b_auto", "b_cat", "b_gone", "b_ixworld", "b_realm", "b_site"].sort()
+      ["b_auto", "b_cat", "b_gone", "b_ixnay", "b_realm", "b_site"].sort()
     );
     expect(byId.b_realm).toEqual({
       id: "b_realm",
@@ -75,7 +75,7 @@ describe("myStanding", () => {
     expect(byId.b_cat).toMatchObject({ scope: "category", scopeName: "general" });
     expect(byId.b_site).toMatchObject({ scope: "site", scopeName: null, expiresAt: null });
     expect(byId.b_auto).toMatchObject({ scope: "site", auto: true });
-    expect(byId.b_ixworld).toMatchObject({ scopeName: "IxWorld" });
+    expect(byId.b_ixnay).toMatchObject({ scopeName: "Ixnay" });
     expect(byId.b_gone).toMatchObject({ scopeName: null });
   });
 

@@ -105,7 +105,7 @@ describe("realm nation defaults service", () => {
     expect(db.country.updateMany).not.toHaveBeenCalled();
   });
 
-  it("leaves IxWorld alone: its nations keep their curated roster values", async () => {
+  it("leaves Ixnay alone: its nations keep their curated roster values", async () => {
     const { db } = setup();
     await expect(applyNationDefaults(db, admin, "default")).rejects.toMatchObject({
       code: "BAD_REQUEST",

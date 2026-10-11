@@ -46,7 +46,7 @@ const RANK_OPTIONS = REALM_LABEL_RANKS.map((rank) => ({
 }));
 
 /**
- * The realm's own labels: oceans, seas, regions and continents, drawn like IxWorld's ocean names. Each has a kind and
+ * The realm's own labels: oceans, seas, regions and continents, drawn like Ixnay's ocean names. Each has a kind and
  * a rank: major names show from the globe view, medium ones from a closer zoom, minor ones (bays, straits) closer in.
  * A new label goes at the centre of the editor's view; "Move here" re-anchors one there.
  */
@@ -101,7 +101,7 @@ export function RealmLabelsDialog({
         <DialogHeader>
           <DialogTitle>Realm labels</DialogTitle>
           <DialogDescription>
-            Name the realm's oceans, seas, regions and continents, drawn like IxWorld's ocean names.
+            Name the realm's oceans, seas, regions and continents, drawn like Ixnay's ocean names.
             Major names show from the globe view, medium ones closer in, minor ones (bays, straits)
             closest. A new label goes at the centre of the current view.
           </DialogDescription>

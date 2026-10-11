@@ -2,10 +2,10 @@
  * Geographic Accuracy & Realism Normalizer
  *
  * Evaluates generated procedural worlds against empirical geographic metrics
- * derived from IxWorld (IxEarth) baseline and IRL Earth geographic standards.
+ * derived from Ixnay (IxEarth) baseline and IRL Earth geographic standards.
  *
  * Targets & Safe Tolerance Bands:
- * 1. Land Coverage: 25% - 45% (IRL: 29%, IxWorld: 35%)
+ * 1. Land Coverage: 25% - 45% (IRL: 29%, Ixnay: 35%)
  * 2. Elevation Distribution: Coastal Lowlands (0-500m) >= 45%, Highlands <= 40%, Alpine <= 15%
  * 3. Major Continent Count: 3 - 7 distinct landmasses
  * 4. Nation Size Distribution: Max nation area <= 35% of total land
@@ -55,7 +55,7 @@ const check = (metric: MetricResult, penalty: number, warning: string) => ({
 });
 
 /**
- * Audit a generated world against IxWorld & IRL geographic accuracy standards.
+ * Audit a generated world against Ixnay & IRL geographic accuracy standards.
  */
 export function evaluateWorldAccuracy(world: GeneratedWorld): AccuracyScoreCard {
   const { stats, layers } = world;

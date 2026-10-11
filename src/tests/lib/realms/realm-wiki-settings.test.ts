@@ -49,7 +49,7 @@ describe("realm wiki settings validation", () => {
   });
 
   it.each<[Record<string, unknown>, string]>([
-    [{ ...base, source: "ixwiki" }, "IxWiki is IxWorld's and never crawled"],
+    [{ ...base, source: "ixwiki" }, "IxWiki is Ixnay's and never crawled"],
     [{ ...base, source: "https://evil.example" }, "a wiki is named by id, never by URL"],
     [{ ...base, rootCategory: "Eurth" }, "the root must be a category"],
     [{ ...base, rootCategory: "Category:" }, "an empty category name"],

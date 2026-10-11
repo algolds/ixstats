@@ -47,10 +47,10 @@ const EURTH: ForumRealm = {
   status: "active",
   ownerId: "founder",
 };
-const IXWORLD: ForumRealm = {
+const IXNAY: ForumRealm = {
   id: "default",
-  slug: "ixworld",
-  name: "IxWorld",
+  slug: "ixnay",
+  name: "Ixnay",
   status: "active",
   ownerId: "system",
 };
@@ -100,29 +100,29 @@ describe("loadForumRealm", () => {
     };
   }
 
-  it("synthesizes IxWorld for its slugs and id when it has no realm row", async () => {
-    for (const ref of [{ slug: "ixworld" }, { slug: "default" }, { id: "default" }]) {
-      await expect(loadForumRealm(realmDb() as never, ref)).resolves.toEqual(IXWORLD);
+  it("synthesizes Ixnay for its slugs and id when it has no realm row", async () => {
+    for (const ref of [{ slug: "ixnay" }, { slug: "ixworld" }, { slug: "default" }, { id: "default" }]) {
+      await expect(loadForumRealm(realmDb() as never, ref)).resolves.toEqual(IXNAY);
     }
   });
 
-  it("names IxWorld from its row when one exists, under the ixworld slug", async () => {
+  it("names Ixnay from its row when one exists, under the ixnay slug", async () => {
     const db = realmDb([
       {
         id: "default",
         slug: "default",
-        name: "IxWorld Prime",
+        name: "Ixnay Prime",
         status: "active",
         ownerId: "system",
       },
     ]);
     await expect(loadForumRealm(db as never, { slug: "ixworld" })).resolves.toEqual({
-      ...IXWORLD,
-      name: "IxWorld Prime",
+      ...IXNAY,
+      name: "Ixnay Prime",
     });
     await expect(loadForumRealm(db as never, { id: "default" })).resolves.toEqual({
-      ...IXWORLD,
-      name: "IxWorld Prime",
+      ...IXNAY,
+      name: "Ixnay Prime",
     });
   });
 
@@ -168,11 +168,11 @@ describe("loadForumRealms", () => {
     expect(found.has("r_nowhere")).toBe(false);
   });
 
-  it("synthesizes IxWorld without a row and names it from its row under the ixworld slug", async () => {
-    expect((await loadForumRealms(dbOf([]) as never, ["default"])).get("default")).toEqual(IXWORLD);
-    const row = { ...eurth, id: "default", slug: "default", name: "IxWorld Prime" };
+  it("synthesizes Ixnay without a row and names it from its row under the ixnay slug", async () => {
+    expect((await loadForumRealms(dbOf([]) as never, ["default"])).get("default")).toEqual(IXNAY);
+    const row = { ...eurth, id: "default", slug: "default", name: "Ixnay Prime" };
     const named = await loadForumRealms(dbOf([row]) as never, ["default"]);
-    expect(named.get("default")).toEqual({ ...row, slug: "ixworld" });
+    expect(named.get("default")).toEqual({ ...row, slug: "ixnay" });
   });
 
   it("reads nothing for no ids", async () => {
@@ -201,10 +201,10 @@ describe("canSeeRealm", () => {
     }
   });
 
-  it("always shows IxWorld, whatever its row's status, as the switcher always lists it (U7)", () => {
+  it("always shows Ixnay, whatever its row's status, as the switcher always lists it (U7)", () => {
     for (const status of ["draft", "generating", "archived", null]) {
-      expect(canSeeRealm(null, { ...IXWORLD, status })).toBe(true);
-      expect(canSeeRealm(plain, { ...IXWORLD, status })).toBe(true);
+      expect(canSeeRealm(null, { ...IXNAY, status })).toBe(true);
+      expect(canSeeRealm(plain, { ...IXNAY, status })).toBe(true);
     }
   });
 });
@@ -380,7 +380,7 @@ describe("realmPostingAccess", () => {
     ).resolves.toMatchObject({ canPost: true, notice: null, ban: null });
   });
 
-  it("7. makes an archived realm read-only for owners and moderators alike, but never IxWorld", async () => {
+  it("7. makes an archived realm read-only for owners and moderators alike, but never Ixnay", async () => {
     const archived = { ...EURTH, status: "archived" };
     for (const viewer of [owner, founder, officer, plain]) {
       await expect(
@@ -393,7 +393,7 @@ describe("realmPostingAccess", () => {
     }
     const db = accessDb({ owned: { u_owner: ["c_ix"] } });
     await expect(
-      realmPostingAccess(db as never, owner, { ...IXWORLD, status: "archived" })
+      realmPostingAccess(db as never, owner, { ...IXNAY, status: "archived" })
     ).resolves.toMatchObject({
       canPost: true,
     });
@@ -407,22 +407,22 @@ describe("realmPostingAccess", () => {
     expect(db.forumBan.findMany).not.toHaveBeenCalled();
   });
 
-  it("8. gives IxWorld no founder: board officers and site admins moderate", async () => {
+  it("8. gives Ixnay no founder: board officers and site admins moderate", async () => {
     await expect(
-      realmPostingAccess(accessDb({ owned: {} }) as never, plain, IXWORLD)
+      realmPostingAccess(accessDb({ owned: {} }) as never, plain, IXNAY)
     ).resolves.toMatchObject({
       isModerator: false,
       canPost: false,
-      notice: "Only owners of a nation in IxWorld can post here.",
+      notice: "Only owners of a nation in Ixnay can post here.",
     });
     await expect(
-      realmPostingAccess(accessDb({ owned: {} }) as never, officer, IXWORLD)
+      realmPostingAccess(accessDb({ owned: {} }) as never, officer, IXNAY)
     ).resolves.toMatchObject({
       isModerator: true,
       canPost: true,
     });
     await expect(
-      realmPostingAccess(accessDb({ owned: {} }) as never, admin, IXWORLD)
+      realmPostingAccess(accessDb({ owned: {} }) as never, admin, IXNAY)
     ).resolves.toMatchObject({
       isModerator: true,
       canPost: true,

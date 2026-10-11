@@ -56,8 +56,8 @@ export async function listMyNations(
       group = {
         id: realmId,
         slug: realm?.slug ?? null,
-        // IxWorld may have no realm row (it predates realms).
-        name: realm?.name ?? (realmId === DEFAULT_REALM_ID ? "IxWorld" : realmId),
+        // Ixnay may have no realm row (it predates realms).
+        name: realm?.name ?? (realmId === DEFAULT_REALM_ID ? "Ixnay" : realmId),
         nations: [],
       };
       byRealm.set(realmId, group);

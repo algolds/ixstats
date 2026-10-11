@@ -79,7 +79,7 @@ describe("map layer cache reads and writes", () => {
     idb = installFakeIndexedDB();
   });
 
-  it("never shows IxWorld's cached map to a viewer whose active nation moved to Eurth", async () => {
+  it("never shows Ixnay's cached map to a viewer whose active nation moved to Eurth", async () => {
     await setCachedMapLayers({ viewerRealmId: "default" }, { political }, "default");
 
     await expect(getCachedMapLayers({ viewerRealmId: "default" })).resolves.toEqual({ political });

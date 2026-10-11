@@ -200,7 +200,7 @@ export const onomaNameBankRouter = createTRPCRouter({
     }),
 
   /**
-   * Retrieve real database naming records to train Markov chains in "IxWorld" mode.
+   * Retrieve real database naming records to train Markov chains in "ixnay" mode.
    */
   getTrainingData: protectedProcedure
     .input(

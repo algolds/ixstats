@@ -159,7 +159,7 @@ function moderatorRole(
   const user = facts.users.get(userId);
   if (!user) return null;
   if (isSiteAdmin({ id: userId, ...user })) return "site admin";
-  // As the board: its manager is a site admin or the realm's founder (IxWorld included), or a `board` officer.
+  // As the board: its manager is a site admin or the realm's founder (Ixnay included), or a `board` officer.
   const founder = facts.realmOwners.get(realmId) === user.clerkUserId;
   const officer = (facts.officers.get(realmId) ?? []).some(
     (o) => o.userId === user.clerkUserId && o.powers.includes("board")

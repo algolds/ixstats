@@ -1,7 +1,7 @@
 /**
  * Realm labels: names a realm's map editors (site admins, the founder, officers with the Map power) place on the
  * realm's map anywhere, not inside a nation: oceans, seas, regions and continents (`MapLabel` with `realmId` set
- * and no `countryId`). They are drawn in IxWorld's ocean-label layer with its style, so each one has a kind and a
+ * and no `countryId`). They are drawn in Ixnay's ocean-label layer with its style, so each one has a kind and a
  * rank instead of a font of its own (`ocean-labels.ts`). Client-safe.
  */
 import { z } from "zod";
@@ -17,7 +17,7 @@ export const REALM_LABEL_TYPE_NAMES: Record<RealmLabelType, string> = {
   continent: "Continent",
 };
 
-/** IxWorld's water-name ranks: major names show from the globe view, medium from zoom 1.5, minor from zoom 3. */
+/** Ixnay's water-name ranks: major names show from the globe view, medium from zoom 1.5, minor from zoom 3. */
 export const REALM_LABEL_RANKS = ["major", "medium", "minor"] as const;
 
 export type RealmLabelRank = (typeof REALM_LABEL_RANKS)[number];

@@ -76,7 +76,7 @@ const CLIPPED_FILLS_SQL = `
 
 /**
  * The fills of a country's realm layer and the area each covers in it. A realm's layers are clipped to the
- * nation in PostGIS (its zones are large pieces whose boxes span continents); IxWorld keeps the bounding-box
+ * nation in PostGIS (its zones are large pieces whose boxes span continents); Ixnay keeps the bounding-box
  * estimate, which is also the fallback when PostGIS fails.
  */
 export async function countryZoneFills(
@@ -115,7 +115,7 @@ function withPercentAreas<T extends { areaSqKm: number; percentArea: number }>(z
   return zones;
 }
 
-/** A fill's zone: named by the realm's climate key when it has one, else by IxWorld's Trewartha colours. */
+/** A fill's zone: named by the realm's climate key when it has one, else by Ixnay's Trewartha colours. */
 function climateEntry(fill: ZoneFill, key: ClimateKey | null): ClimateZoneEntry | null {
   if (!key) {
     // Climate type comes from the fill colour (SVG paths have no text names)

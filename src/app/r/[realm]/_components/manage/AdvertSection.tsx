@@ -28,7 +28,7 @@ export function AdvertSection({
     <ManageSection id="advert" title="Advert" description={DESCRIPTION}>
       {realmId === DEFAULT_REALM_ID ? (
         <p className="text-label-secondary text-footnote">
-          IxWorld cannot be advertised in Find a Realm.
+          Ixnay cannot be advertised in Find a Realm.
         </p>
       ) : (
         <AdvertState slug={slug} archived={archived} />

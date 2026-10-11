@@ -7,8 +7,8 @@ Phase 1 spec: [`docs/specs/2026-09-27-realms-foundation-design.md`](../specs/202
 
 ## What a realm is
 
-A realm is a **separate world**: its own nations, map, lore and calendar. IxWorld is a realm — tenant 0,
-the Ixnay community's world (`Realm.id = "default"`, slug `ixworld`). First outside community planned as a
+A realm is a **separate world**: its own nations, map, lore and calendar. Ixnay is a realm — tenant 0,
+the Ixnay community's world (`Realm.id = "default"`, slug `ixnay`; `ixworld` and `default` still resolve to it as legacy aliases). First outside community planned as a
 live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurth`; equirectangular map).
 
 ## The one rule
@@ -26,7 +26,7 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Meaning | Separate worlds; IxWorld is tenant 0 |
+| 1 | Meaning | Separate worlds; Ixnay is tenant 0 |
 | 2 | Scope | Country stuff → realm. Passport, messages, notifications, settings, **Vault (global)**, **achievements (per account)** → passport |
 | 2 | ThinkPages | One feed per realm; a user setting shows one global feed |
 | 3 | WikiOS / forum | Shared app, content tagged per realm (`WikiArticle.source` = realm), one backend; the WikiOS front page is a portal to all lore. Forum follows the same model |
@@ -38,7 +38,7 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 9 | Map | Generated (UPG v2) or an uploaded image |
 | 10–11 | Image maps | Auto-vectorised by the IxMap pipeline (`runMapPipeline`: PNG → potrace → SVG → GeoJSON); the admin runs `PipelineWizard` at approval and maps colours → nations. Founders supply a clean flat-colour political PNG |
 | 12 | Membership | Owning a nation in a realm = membership. Founder = `Realm.ownerId`; no other roles yet |
-| 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for IxWorld) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
+| 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for Ixnay) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
 | 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned. The effective cap is min(realm cap, tier cap): 1 for free accounts, 5 for MyCountry Premium (`realms.nation-cap.ts`) |
 | 16 | Vault income | One dividend per account, from its primary (earliest-created owned) nation — not the active one, so switching cannot farm payouts |
 | 17 | Simulation | Identical in every realm |
@@ -47,7 +47,7 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 20 | Founder powers | Settings, claim queue, remove nations (data kept → claimable; appeal to site admin), moderate their realm's WikiOS articles and feed posts. One check: `canModerateRealm(user, realmId)` = site admin ∨ `realm.ownerId === user.id` |
 | 21 | Lifecycle | Automatic founder succession (60 days unseen → earliest active nation owner; admin override); archived realms are read-only, excluded from crons and payouts |
 | 22 | Passport | The passport is the hub: realms, nations, switching, claims, verification, applications, founder queue. A nav chip shows the active nation and opens it |
-| 23 | IxWorld | Uses the same claim flow as every realm |
+| 23 | Ixnay | Uses the same claim flow as every realm |
 | 25 | Ownership | `Country.ownerUserId`; `User.countryId` becomes the *active* nation pointer |
 
 ## Explicitly not doing
@@ -87,20 +87,20 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   admins set it in `/admin/realms` → Realms → edit → Nations per player, 1–20); a system owner *acting as*
   a nation is no longer treated as its real owner for notifications, crons, or auctions (T3, T5).
 - `MapLayer` realm scaffolding and admin nation-assignment tooling (T4, T5).
-- `scripts/realms/backfill-foundation.ts` — one-shot data backfill for owners, the IxWorld slug,
-  unverified wiki links, visibility, and orphaned map layers; it checks the IxWorld realm row before any
-  write and skips the map-layer move (reporting the ids) when NULL-realm rows clash with IxWorld's or with
+- `scripts/realms/backfill-foundation.ts` — one-shot data backfill for owners, the Ixnay slug,
+  unverified wiki links, visibility, and orphaned map layers; it checks the Ixnay realm row before any
+  write and skips the map-layer move (reporting the ids) when NULL-realm rows clash with Ixnay's or with
   each other (T8, E4, E-t).
 - Nation claim flow (`/r/eurth`-style `claimCountry`) with instant approval for the verified creator of
   the claimed page, and an `/admin/realms` → Claims review queue for everyone else (T6).
 - Settings UI to link and verify wiki accounts (`WikiAccountVerifyRow`, Settings → IxnayID & Passport →
   Linked Accounts) (T7).
 
-**Implemented — Eurth slice, first realm outside IxWorld (tasks E1–E7; status above):**
+**Implemented — Eurth slice, first realm outside Ixnay (tasks E1–E7; status above):**
 
 - `RealmPage` model indexing a realm's lore (titles only, never content) (E1).
 - `DEFAULT_REALM_ID` and realm-scope query helpers; viewer-realm resolution (`?realm=` → active nation →
-  IxWorld) (E2).
+  Ixnay) (E2).
 - Realm lore crawler/importer (`scripts/realms/import-realm-lore.ts`): keyword-subcategory crawl (depth 5,
   5,000-page cap, truncation reported), nations from an optional curated `--nation-roster` category or an
   infobox-heuristic fallback (E5).
@@ -109,9 +109,9 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   the page's `?source=` (E6).
 - Country-facing queries and caches made realm-correct (name lookups resolve within one realm; a nation
   name a player types — block, mute — is looked up in their own realm before any slug; admin tools and the
-  admin flag warmers opt into every realm via `realm: "*"`; IxWorld's cache keys are unaffected) (E3, E-s).
+  admin flag warmers opt into every realm via `realm: "*"`; Ixnay's cache keys are unaffected) (E3, E-s).
 - Map layers and the pipeline wizard are realm-scoped: the **Full Pipeline** mode imports into a chosen
-  target realm and refuses an unknown one, while **Quick Update** always edits IxWorld's map. The world
+  target realm and refuses an unknown one, while **Quick Update** always edits Ixnay's map. The world
   editor's realm follows the map it's drawn over; the country editor always works in the realm of the
   viewer's own nation, even when opened from another realm's map (E4, E-t).
 - This runbook, [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md) (E7).
@@ -127,7 +127,7 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   assignment releases only the player's nations in the target realm; admins revoke verified wiki links on
   any wiki; a pending verification can be unlinked and an expired code is not shown as pending; a pending
   claim is re-verified and upgraded in place; claims, verification and Play as are rate-limited; the
-  backfill refuses `--apply` while owner collisions remain or IxWorld is not owned by `system`.
+  backfill refuses `--apply` while owner collisions remain or Ixnay is not owned by `system`.
 
 **Not implemented yet (planned):** founder tooling (settings
 such as the nation cap, moderation, removal, succession), the public founding application, a per-realm
@@ -154,10 +154,10 @@ the edit route, and session history are all read-only and source-aware for non-i
 E-l″); `ArticleNotFound` extracted to keep reader complexity under threshold (E-m); single-country
 rankings scope by that country's own realm, not the viewer's (E-n); admin tools pass `realm: "*"` to see
 every realm (E-o); name-based country lookups across ~8 call sites are made deterministic and
-realm-correct (E-p); cache keys omit the realm segment for the default realm, preserving IxWorld's cache
-sharing (E-q); the map editor's realm is the realm of the map being edited, not a fixed IxWorld default
+realm-correct (E-p); cache keys omit the realm segment for the default realm, preserving Ixnay's cache
+sharing (E-q); the map editor's realm is the realm of the map being edited, not a fixed Ixnay default
 (E-r); a nation name a player types (block, mute) resolves by name within the viewer's realm first, then
-by slug — IxWorld holds the plain slugs — while URL/id lookups keep id → slug → name (E-s); and the E7
+by slug — Ixnay holds the plain slugs — while URL/id lookups keep id → slug → name (E-s); and the E7
 fix round carries the remaining final-wave code items so the docs describe the final code — E-s, the
 `CountryData:` placeholder realm check, procedure-level `realmWhere` tests, all-realm admin flag warmers,
 the admin nation-cap setting, the backfill preflight and duplicate report, the unknown-realm import guard,
@@ -177,5 +177,5 @@ refused. **F-4:** a pending verification can be unlinked, and
 only an unexpired code counts as pending. **F-5:** a reused pending claim re-runs the creator check and is
 upgraded in place; known alt accounts merge on ixwiki only; a lost auto-approval race is a claim error;
 claims, verification and Play as use the light mutation rate limit; the backfill refuses `--apply` while
-owner collisions remain or IxWorld's owner is not `system`, and the runbook re-runs the dry run after
+owner collisions remain or Ixnay's owner is not `system`, and the runbook re-runs the dry run after
 deploy.

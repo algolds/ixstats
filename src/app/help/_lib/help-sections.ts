@@ -349,7 +349,7 @@ export const helpSections: HelpSection[] = [
         title: "Realms & Claiming a Nation",
         description: "The worlds nations live in, realm boards, and claiming a nation.",
         path: "/help/world/realms",
-        tags: ["realms", "claim", "ixworld", "board"],
+        tags: ["realms", "claim", "ixnay", "board"],
       },
       {
         id: "countries",

@@ -260,7 +260,7 @@ function threadData(o: Overrides = {}) {
       key: "hub",
       name: "Hub",
       icAllowed: true,
-      realm: o.realm === undefined ? { slug: "ixworld", name: "IxWorld" } : o.realm,
+      realm: o.realm === undefined ? { slug: "ixnay", name: "Ixnay" } : o.realm,
     },
     style: o.style ?? "ooc",
     posts,
@@ -440,7 +440,7 @@ describe("the thread page", () => {
       .getAllByRole("link", { name: "Hub" })
       .filter((link) => !trail.contains(link));
     expect(back).toHaveLength(1);
-    expect(back[0]).toHaveAttribute("href", "/thinkpages/r/ixworld/hub");
+    expect(back[0]).toHaveAttribute("href", "/thinkpages/r/ixnay/hub");
   });
 });
 
@@ -569,9 +569,9 @@ describe("the reply area", () => {
   });
 
   it("gives the server's notice when the viewer may not post", () => {
-    set(threadData({ canReply: false, notice: "Only IxWorld members can post here." }));
+    set(threadData({ canReply: false, notice: "Only Ixnay members can post here." }));
     render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("Only IxWorld members can post here.")).toBeInTheDocument();
+    expect(screen.getByText("Only Ixnay members can post here.")).toBeInTheDocument();
     expect(screen.queryByTestId("composer")).toBeNull();
   });
 

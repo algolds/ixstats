@@ -59,7 +59,7 @@ export const adminCountriesImportRouter = createTRPCRouter({
         throw new Error("No valid countries found in the file");
       }
 
-      // Check for existing countries (the roster is IxWorld's; names repeat across realms)
+      // Check for existing countries (the roster is Ixnay's; names repeat across realms)
       const existingCountries = await ctx.db.country.findMany({
         where: {
           realmId: DEFAULT_REALM_ID,
@@ -221,7 +221,7 @@ export const adminCountriesImportRouter = createTRPCRouter({
         if (countries.length === 0) {
           throw new Error("No valid countries found in the file");
         }
-        // Get all existing IxWorld countries by name (never another realm's same-name nation)
+        // Get all existing Ixnay countries by name (never another realm's same-name nation)
         const existingCountries = await ctx.db.country.findMany({
           where: {
             realmId: DEFAULT_REALM_ID,

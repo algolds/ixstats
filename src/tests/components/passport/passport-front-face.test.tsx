@@ -20,8 +20,8 @@ function face(over: Partial<PassportFaceData> = {}): PassportFaceData {
     realmCount: 2,
     nationCount: 3,
     primaryNation: {
-      name: "IxWorld",
-      slug: "ixworld",
+      name: "Ixnay",
+      slug: "ixnay",
       role: "founder",
       country: { name: "Caphiria", slug: "caphiria", flagUrl: "https://example.com/flag.png" },
     },
@@ -196,9 +196,9 @@ describe("PassportFrontFace", () => {
       "href",
       "/countries/caphiria"
     );
-    expect(within(line).getByRole("link", { name: "IxWorld" })).toHaveAttribute(
+    expect(within(line).getByRole("link", { name: "Ixnay" })).toHaveAttribute(
       "href",
-      "/r/ixworld"
+      "/r/ixnay"
     );
     expect(line).toHaveTextContent("Founder");
   });

@@ -56,13 +56,13 @@ graph LR
 
 ### Realm and nation cap
 
-- `createCountry` takes an optional `realmId`. Without one it uses the realm of the nation the player acts as, else IxWorld (`resolveBuilderRealm`, `src/server/modules/realms/realms.builder.ts`).
-- The realm must exist and be `active` (IxWorld always is): an unknown realm is `NOT_FOUND`, a closed one `FORBIDDEN`.
+- `createCountry` takes an optional `realmId`. Without one it uses the realm of the nation the player acts as, else Ixnay (`resolveBuilderRealm`, `src/server/modules/realms/realms.builder.ts`).
+- The realm must exist and be `active` (Ixnay always is): an unknown realm is `NOT_FOUND`, a closed one `FORBIDDEN`.
 - The player must be under their nation cap in that realm, otherwise `CONFLICT` with a message naming the limit. The builder never hands back an existing nation instead.
 - A name already used in the realm is a `CONFLICT` before anything is written. Slugs stay globally unique (`-2`, `-3`, … suffixes).
 - The cap is `min(realm cap, tier cap)`, computed by `nationCapacity` (`realms.nation-cap.ts`). The realm cap is `Realm.settings.maxNationsPerUser` (default 1, admins set 1–20). The tier cap is `NATION_TIER_CAPS`: 1 for free accounts, 5 for MyCountry Premium (`hasPremiumTier`). The same helper gates claims and `assignNation`, which re-checks the cap inside the create transaction.
-- On the Preview step the footer shows a realm picker (`BuilderRealmPicker`, fed by `realms.builderRealms`) when more than one realm is open to the player. The list holds IxWorld plus active realms that are public, that the player founded, or where they hold a nation; each shows held/cap, and full realms are disabled. With one realm the footer only says so when the player is at the cap there. The choice is stored as `builderState.realmId`.
-- Foundation templates are always IxWorld nations, whatever the target realm.
+- On the Preview step the footer shows a realm picker (`BuilderRealmPicker`, fed by `realms.builderRealms`) when more than one realm is open to the player. The list holds Ixnay plus active realms that are public, that the player founded, or where they hold a nation; each shows held/cap, and full realms are disabled. With one realm the footer only says so when the player is at the cap there. The choice is stored as `builderState.realmId`.
+- Foundation templates are always Ixnay nations, whatever the target realm.
 
 ---
 

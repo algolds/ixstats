@@ -27,7 +27,7 @@ const row = (id: string, slug: string, name: string, status = "active", ownerId 
   status,
   ownerId,
 });
-const IXWORLD_ROW = row("default", "ixworld", "IxWorld", "active", "system");
+const IXNAY_ROW = row("default", "ixnay", "Ixnay", "active", "system");
 const EURTH = row("r_eurth", "eurth", "Eurth");
 const ALBA = row("r_alba", "alba", "Alba");
 const DRAFT = row("r_draft", "draft-land", "Draft Land", "draft");
@@ -37,8 +37,8 @@ describe("listForumRealms", () => {
     return { realm: { findMany: jest.fn(async (_args: { where: object }) => rows) } };
   }
 
-  it("asks for IxWorld and public active realms only, for anonymous", async () => {
-    const db = listDb([ALBA, EURTH, IXWORLD_ROW]);
+  it("asks for Ixnay and public active realms only, for anonymous", async () => {
+    const db = listDb([ALBA, EURTH, IXNAY_ROW]);
     await listForumRealms(db as never, null);
     expect(db.realm.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -68,40 +68,45 @@ describe("listForumRealms", () => {
     expect(db.realm.findMany.mock.calls[0][0].where).toEqual({});
   });
 
-  it("puts IxWorld first, then by name, and drops realms hidden from the viewer", async () => {
-    const out = await listForumRealms(listDb([ALBA, DRAFT, EURTH, IXWORLD_ROW]) as never, plain);
+  it("puts Ixnay first, then by name, and drops realms hidden from the viewer", async () => {
+    const out = await listForumRealms(listDb([ALBA, DRAFT, EURTH, IXNAY_ROW]) as never, plain);
     expect(out.realms).toEqual([
-      { id: "default", slug: "ixworld", name: "IxWorld" },
+      { id: "default", slug: "ixnay", name: "Ixnay" },
       { id: "r_alba", slug: "alba", name: "Alba" },
       { id: "r_eurth", slug: "eurth", name: "Eurth" },
     ]);
     const forFounder = await listForumRealms(
-      listDb([ALBA, DRAFT, EURTH, IXWORLD_ROW]) as never,
+      listDb([ALBA, DRAFT, EURTH, IXNAY_ROW]) as never,
       founder
     );
     expect(forFounder.realms.map((r) => r.slug)).toEqual([
-      "ixworld",
+      "ixnay",
       "alba",
       "draft-land",
       "eurth",
     ]);
   });
 
-  it("synthesizes IxWorld when it has no realm row, and gives a legacy row the ixworld slug", async () => {
+  it("synthesizes Ixnay when it has no realm row, and gives a legacy row (slug default or ixworld) the ixnay slug", async () => {
     const out = await listForumRealms(listDb([EURTH]) as never, null);
     expect(out.realms).toEqual([
-      { id: "default", slug: "ixworld", name: "IxWorld" },
+      { id: "default", slug: "ixnay", name: "Ixnay" },
       { id: "r_eurth", slug: "eurth", name: "Eurth" },
     ]);
     const legacy = await listForumRealms(
-      listDb([row("default", "default", "IxWorld Prime", "active", "system")]) as never,
+      listDb([row("default", "default", "Ixnay Prime", "active", "system")]) as never,
       null
     );
-    expect(legacy.realms).toEqual([{ id: "default", slug: "ixworld", name: "IxWorld Prime" }]);
+    expect(legacy.realms).toEqual([{ id: "default", slug: "ixnay", name: "Ixnay Prime" }]);
+    const formerSlug = await listForumRealms(
+      listDb([row("default", "ixworld", "Ixnay", "active", "system")]) as never,
+      null
+    );
+    expect(formerSlug.realms).toEqual([{ id: "default", slug: "ixnay", name: "Ixnay" }]);
   });
 
-  it("opens the realm of the viewer's active nation by default, else IxWorld", async () => {
-    const rows = [EURTH, IXWORLD_ROW];
+  it("opens the realm of the viewer's active nation by default, else Ixnay", async () => {
+    const rows = [EURTH, IXNAY_ROW];
     await expect(
       listForumRealms(listDb(rows) as never, { ...owner, activeRealmId: "r_eurth" })
     ).resolves.toMatchObject({
@@ -110,13 +115,13 @@ describe("listForumRealms", () => {
     await expect(
       listForumRealms(listDb(rows) as never, { ...owner, activeRealmId: "r_gone" })
     ).resolves.toMatchObject({
-      defaultSlug: "ixworld",
+      defaultSlug: "ixnay",
     });
     await expect(listForumRealms(listDb(rows) as never, plain)).resolves.toMatchObject({
-      defaultSlug: "ixworld",
+      defaultSlug: "ixnay",
     });
     await expect(listForumRealms(listDb(rows) as never, null)).resolves.toMatchObject({
-      defaultSlug: "ixworld",
+      defaultSlug: "ixnay",
     });
   });
 });
@@ -290,13 +295,13 @@ describe("getRealmSection", () => {
     expect(out.categories).toHaveLength(3);
   });
 
-  it("opens IxWorld's section without a realm row", async () => {
+  it("opens Ixnay's section without a realm row", async () => {
     const db = sectionDb(null);
-    const out = await getRealmSection(db as never, null, "ixworld");
+    const out = await getRealmSection(db as never, null, "ixnay");
     expect(out.realm).toEqual({
       id: "default",
-      slug: "ixworld",
-      name: "IxWorld",
+      slug: "ixnay",
+      name: "Ixnay",
       status: "active",
     });
     expect(db.forumCategory.findMany).toHaveBeenCalledWith(

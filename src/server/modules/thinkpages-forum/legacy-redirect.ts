@@ -72,7 +72,7 @@ async function siteCategory(db: LegacyDb, key: string): Promise<Category> {
   return row ? { key: row.key, realmSlug: null } : null;
 }
 
-/** A realm category, under its realm's canonical slug (IxWorld's legacy "default" becomes "ixworld"). */
+/** A realm category, under its realm's canonical slug (Ixnay's legacy "default" and former "ixworld" become "ixnay"). */
 async function realmCategory(db: LegacyDb, slug: string, key: string): Promise<Category> {
   const realm = await loadForumRealm(db, { slug });
   if (!realm || !isRealmPublished(realm.id, realm.status)) return null;

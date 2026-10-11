@@ -235,7 +235,7 @@ export function useOnomaGenerator() {
           names: results,
           category,
           culturalProfile: culture,
-          trainingMode: includeWorldData ? "ixworld" : "preset",
+          trainingMode: includeWorldData ? "ixnay" : "preset",
           parameters: options as Record<string, unknown>,
           count: results.length,
         })

@@ -300,7 +300,7 @@ describe("canJoinRealmBoard", () => {
     }
   });
 
-  it("joins IxWorld even without a realm row", async () => {
+  it("joins Ixnay even without a realm row", async () => {
     await expect(canJoinRealmBoard(db(), null, "default")).resolves.toBe(true);
   });
 

@@ -46,7 +46,7 @@ describe("adminAssignNation", () => {
   const country = { id: "c2", realmId: "default", ownerUserId: "u_old", realm: { settings: null } };
 
   it("regular user: the previous owner loses c2 and the user keeps their other nation in the same realm", async () => {
-    // u1 owns and acts as c1 in IxWorld; the realm allows 2 and u1 is premium, so c2 fits.
+    // u1 owns and acts as c1 in Ixnay; the realm allows 2 and u1 is premium, so c2 fits.
     const d = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: "c1" },
       { ...country, ownerUserId: null, realm: { settings: { maxNationsPerUser: 2 } } }
@@ -118,7 +118,7 @@ describe("adminAssignNation", () => {
   });
 
   it("cross-realm (ruling F-1): the user's nation in ANOTHER realm stays owned", async () => {
-    // u1 owns and acts as e1 in Eurth; the admin gives them IxWorld's c2.
+    // u1 owns and acts as e1 in Eurth; the admin gives them Ixnay's c2.
     const d = db(
       { id: "u1", clerkUserId: "clerk_u1", countryId: "e1" },
       { ...country, ownerUserId: null }

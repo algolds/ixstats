@@ -5,7 +5,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 /**
  * The realm the server resolves for this viewer when a page names none: their active nation's
- * realm, else IxWorld (ruling E-h). Undefined while the profile is loading or unavailable.
+ * realm, else Ixnay (ruling E-h). Undefined while the profile is loading or unavailable.
  * Shares the `users.getProfile` query other map components already make.
  */
 export function useViewerRealmId(): string | undefined {

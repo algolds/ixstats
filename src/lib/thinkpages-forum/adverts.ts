@@ -24,5 +24,5 @@ export const ADVERT_ARCHIVED_NOTICE =
   "An archived realm cannot be advertised, and its advert stays locked.";
 export const ADVERT_EXISTS_NOTICE = "This realm already has an advert.";
 export const ADVERT_HIDDEN_NOTICE = "Your realm's advert was hidden by a moderator.";
-export const ADVERT_IXWORLD_NOTICE = "IxWorld has no advert.";
+export const ADVERT_IXNAY_NOTICE = "Ixnay has no advert.";
 export const ADVERT_UNLOCK_NOTICE = "Only a moderator can unlock an advert.";

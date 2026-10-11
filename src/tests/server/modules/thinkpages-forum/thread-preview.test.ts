@@ -433,19 +433,19 @@ describe("latestPublicThreadPreviews", () => {
     await expect(fake.postFindMany.mock.results[0]!.value).resolves.toHaveLength(1);
   });
 
-  it("names IxWorld when it has no realm row, and links the board by the canonical slug", async () => {
+  it("names Ixnay when it has no realm row, and links the board by the canonical slug", async () => {
     const fake = fakeDb({
       listing: [listed("t4", 1, inRealm("default", "hub", "Hub", "ooc"))],
       realms: [],
     });
     const [preview] = await previewsOf(fake);
     expect(preview!.realm).toEqual({
-      slug: "ixworld",
-      name: "IxWorld",
+      slug: "ixnay",
+      name: "Ixnay",
       emblemUrl: null,
       thumbnail: null,
     });
-    expect(preview!.board.href).toBe("/thinkpages/r/ixworld/hub");
+    expect(preview!.board.href).toBe("/thinkpages/r/ixnay/hub");
   });
 
   it("links the thread when a realm board's realm cannot be resolved", async () => {

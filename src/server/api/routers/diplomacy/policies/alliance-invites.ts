@@ -20,7 +20,7 @@ export const ALLIANCE_LEADER_ROLES = ["founder", "leader"];
 
 /**
  * Alliances are realm-scoped (Alliance.realmId): only a nation of the alliance's realm can be invited to, or
- * join, it. Rows without a realm (older data, test doubles) count as IxWorld's, like Country.realmId's default.
+ * join, it. Rows without a realm (older data, test doubles) count as Ixnay's, like Country.realmId's default.
  */
 export async function assertAllianceRealm(
   db: any,

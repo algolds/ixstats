@@ -10,17 +10,17 @@ nextLabel: Exploring Countries
 
 ## What realms are
 
-A realm is a world that nations live in, a bit like a NationStates region. **IxWorld** is the main realm; other realms are run by their founders. Each nation belongs to one realm, and rankings in the [World Census](/help/mycountry/overview#world-census) and the [leaderboards](/help/gameplay/leaderboards) are per realm. All realms share the same [IxTime](/help/getting-started/ixtime) clock.
+A realm is a world that nations live in, a bit like a NationStates region. **Ixnay** is the main realm; other realms are run by their founders. Each nation belongs to one realm, and rankings in the [World Census](/help/mycountry/overview#world-census) and the [leaderboards](/help/gameplay/leaderboards) are per realm. All realms share the same [IxTime](/help/getting-started/ixtime) clock.
 
 ## Finding realms
 
-The [realm directory](/realms) lists every public, active realm (IxWorld always), with how many nations it has, how many are unclaimed, how many you own, the realm's nation limit, and recent board activity. Unlisted realms can still be opened by link.
+The [realm directory](/realms) lists every public, active realm (Ixnay always), with how many nations it has, how many are unclaimed, how many you own, the realm's nation limit, and recent board activity. Unlisted realms can still be opened by link.
 
 Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/r/<realm>/board`. The **Community** panel links to the realm's forum, Discord, wiki or map, and the header shows the realm's **in-world date** if its founder set one.
 
 ## Claiming a nation
 
-1. Open the realm's page from the [directory](/realms) (or use **Link to Existing Country** in [Setup](/setup) for IxWorld).
+1. Open the realm's page from the [directory](/realms) (or use **Link to Existing Country** in [Setup](/setup) for Ixnay).
 2. In the claim list, choose an unclaimed nation and submit your claim. If the realm has **rules** (its **Rules** tab), read them and tick **I have read the realm's rules** first; you can't claim without it.
 3. A moderator (a site admin or the realm's founder) reviews it. If you've [verified the wiki account](/help/getting-started/ixnayid#link-your-wiki-accounts) that created that nation's wiki page, the claim is approved immediately.
 

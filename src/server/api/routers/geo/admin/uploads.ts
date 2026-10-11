@@ -64,7 +64,7 @@ export const geoAdminUploadsRouter = createTRPCRouter({
           { countryId: string; countryName: string; matchType: string }
         > = {};
         if (upload.layerType === "political") {
-          // SVG uploads are IxWorld's (no realm on SvgUpload): match and diff against IxWorld only
+          // SVG uploads are Ixnay's (no realm on SvgUpload): match and diff against Ixnay only
           const countries = await ctx.db.country.findMany({
             where: { realmId: DEFAULT_REALM_ID },
             select: { id: true, name: true, slug: true },

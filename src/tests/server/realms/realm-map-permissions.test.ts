@@ -2,7 +2,7 @@
 /**
  * Realm map editing (the `map` officer power): site admins edit any map; a realm's founder and its officers
  * holding `map` edit their own realm's borders, region links and labels, never another realm's and never
- * IxWorld's.
+ * Ixnay's.
  */
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
@@ -39,7 +39,7 @@ type Db = Record<string, ModelMock>;
 const REALMS: Record<string, { id: string; slug: string; ownerId: string; status: string }> = {
   eurth: { id: EURTH, slug: "eurth", ownerId: FOUNDER, status: "active" },
   other: { id: OTHER, slug: "other", ownerId: "clerk_someone_else", status: "active" },
-  ixworld: { id: DEFAULT_REALM_ID, slug: "ixworld", ownerId: "system", status: "active" },
+  ixnay: { id: DEFAULT_REALM_ID, slug: "ixnay", ownerId: "system", status: "active" },
 };
 const OFFICERS: Record<string, Array<{ userId: string; powers: string[] }>> = {
   [EURTH]: [
@@ -138,12 +138,12 @@ describe("the map power", () => {
     expect(canEditRealmMap(null, realm, officers)).toBe(false);
   });
 
-  it("IxWorld's map is for site admins only, whoever its realm row names", () => {
-    const ixworld = { id: DEFAULT_REALM_ID, ownerId: FOUNDER };
+  it("Ixnay's map is for site admins only, whoever its realm row names", () => {
+    const ixnay = { id: DEFAULT_REALM_ID, ownerId: FOUNDER };
     const grants = [{ userId: MAP_OFFICER, powers: ["map"] }];
-    expect(canEditRealmMap(actor(FOUNDER), ixworld, grants)).toBe(false);
-    expect(canEditRealmMap(actor(MAP_OFFICER), ixworld, grants)).toBe(false);
-    expect(canEditRealmMap(actor(ADMIN, true), ixworld, grants)).toBe(true);
+    expect(canEditRealmMap(actor(FOUNDER), ixnay, grants)).toBe(false);
+    expect(canEditRealmMap(actor(MAP_OFFICER), ixnay, grants)).toBe(false);
+    expect(canEditRealmMap(actor(ADMIN, true), ixnay, grants)).toBe(true);
   });
 
   it("canImportRealmMap follows the same rule", () => {
@@ -186,10 +186,10 @@ describe("world-mode border editing is realm-scoped", () => {
     }
   });
 
-  it("nor IxWorld's, even with no ?realm= (the viewer's realm defaults to IxWorld)", async () => {
+  it("nor Ixnay's, even with no ?realm= (the viewer's realm defaults to Ixnay)", async () => {
     for (const who of [FOUNDER, MAP_OFFICER]) {
       const db = withFeature(realmDb());
-      await expect(start(db, who, "ixworld")).rejects.toMatchObject({ code: "FORBIDDEN" });
+      await expect(start(db, who, "ixnay")).rejects.toMatchObject({ code: "FORBIDDEN" });
       await expect(
         borders(db, who).startBorderEditSession({ featureId: "Gallambria" })
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -219,7 +219,7 @@ describe("world-mode border editing is realm-scoped", () => {
       borders(db, FOUNDER).mergeCountries({
         featureIds: ["A", "B"],
         newName: "AB",
-        realm: "ixworld",
+        realm: "ixnay",
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.mapLayer!.findFirst).not.toHaveBeenCalled();
@@ -270,7 +270,7 @@ describe("linkage and auto-match are realm-scoped", () => {
       validation(BOARD_OFFICER).repairLinkage({ action: "auto_match", realm: "eurth" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
-      validation(FOUNDER).repairLinkage({ action: "sync_all", realm: "ixworld" })
+      validation(FOUNDER).repairLinkage({ action: "sync_all", realm: "ixnay" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
@@ -334,13 +334,13 @@ describe("realm labels", () => {
     }
   });
 
-  it("nobody else labels Eurth, and Eurth's staff never label IxWorld or another realm", async () => {
+  it("nobody else labels Eurth, and Eurth's staff never label Ixnay or another realm", async () => {
     const db = realmDb();
     await expect(
       labels(db, BOARD_OFFICER).createRealmLabel({ ...LABEL, realm: "eurth" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
-      labels(db, FOUNDER).createRealmLabel({ ...LABEL, realm: "ixworld" })
+      labels(db, FOUNDER).createRealmLabel({ ...LABEL, realm: "ixnay" })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
       labels(db, MAP_OFFICER).createRealmLabel({ ...LABEL, realm: "other" })
@@ -442,8 +442,8 @@ describe("the map pipeline (realms.mapPipeline) is for the realm's map editors",
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("IxWorld's pipeline is for site admins only; an archived realm's is read-only", async () => {
-    await expect(pipeline(realmDb(), FOUNDER).get({ realm: "ixworld" })).rejects.toMatchObject({
+  it("Ixnay's pipeline is for site admins only; an archived realm's is read-only", async () => {
+    await expect(pipeline(realmDb(), FOUNDER).get({ realm: "ixnay" })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
     await expect(

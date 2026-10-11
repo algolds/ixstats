@@ -1,5 +1,5 @@
 /**
- * Elevation bands from a geography map's hypsometric tints, and the IxWorld altitude style each band takes.
+ * Elevation bands from a geography map's hypsometric tints, and the Ixnay altitude style each band takes.
  *
  *   land pixels snapped to the nearest band colour (CIEDE2000, within `tolerance`); everything else on the land
  *   (rivers, borders, labels, flags, symbols, shading blends) starts unlabelled; ice (`ice` mask) is the lowest
@@ -12,8 +12,8 @@
  *   → `smoothing` passes of a 5 × 5 mode filter, which rounds the bands' pixel steps
  *   → land the fill never reached (an island of cleared patches only) is the lowest band.
  *
- * IxWorld's altitude layer has a coast band (`coastlines`, the whole land) and eight bands above it
- * (`Altitude-1` .. `Altitude-8`, ELEVATION_ZONES). A realm's band takes the IxWorld band whose range holds the
+ * Ixnay's altitude layer has a coast band (`coastlines`, the whole land) and eight bands above it
+ * (`Altitude-1` .. `Altitude-8`, ELEVATION_ZONES). A realm's band takes the Ixnay band whose range holds the
  * band's lowest elevation, or the next band up when a lower realm band already took that one. Pure.
  */
 import { ELEVATION_ZONES } from "~/lib/maps/elevation-config";
@@ -33,7 +33,7 @@ export interface ElevationBand {
   max: number | null;
 }
 
-/** How a band is stored: the IxWorld altitude band it is drawn as, and its own elevations. */
+/** How a band is stored: the Ixnay altitude band it is drawn as, and its own elevations. */
 export interface BandStyle {
   subgroup: string;
   fill: string;
@@ -56,7 +56,7 @@ export function bandLabel(band: ElevationBand): string {
   return band.max === null ? `${m(band.min)} m and above` : `${m(band.min)}–${m(band.max)} m`;
 }
 
-/** Each band's IxWorld style (bands sorted by `min`; see the module comment). */
+/** Each band's Ixnay style (bands sorted by `min`; see the module comment). */
 export function altitudeStyles(bands: readonly ElevationBand[]): BandStyle[] {
   let previous = -1;
   return bands.map((band) => {

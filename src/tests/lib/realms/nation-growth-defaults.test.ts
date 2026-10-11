@@ -34,7 +34,7 @@ describe("IXSTATS_NATION_GROWTH_DEFAULTS", () => {
     );
   });
 
-  it("gives poorer tiers faster population growth, as IxWorld's nations have", () => {
+  it("gives poorer tiers faster population growth, as Ixnay's nations have", () => {
     const pop = ECONOMIC_TIERS.map((t) => IXSTATS_NATION_GROWTH_DEFAULTS[t].populationGrowthRate);
     expect(pop[0]).toBe(0.031);
     expect(pop[1]).toBe(0.026);

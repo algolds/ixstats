@@ -331,7 +331,7 @@ describe("planBoardBanMigration: bound players who moderate the realm (M5)", () 
     expect(result.moderatorSkips.map((s) => s.holder)).toEqual(["site admin"]);
   });
 
-  it("skips IxWorld's founder too, as the board never restricted its manager", () => {
+  it("skips Ixnay's founder too, as the board never restricted its manager", () => {
     const result = plan([ban({ realmId: "default" })], {
       countries: owned("user-owner", "default"),
       moderators: { realmOwners: new Map([["default", "clerk-user-owner"]]) },
@@ -476,8 +476,8 @@ describe("summarizeBanMigration", () => {
         { countries: twoNations }
       ),
     };
-    const ixworld = {
-      realm: "IxWorld",
+    const ixnay = {
+      realm: "Ixnay",
       rows: 1,
       plan: plan([ban()], { countries: owned(null) }),
     };
@@ -488,9 +488,9 @@ describe("summarizeBanMigration", () => {
         moderators: { realmOwners: new Map([["realm-1", "clerk-user-owner"]]) },
       }),
     };
-    expect(summarizeBanMigration([eurth, ixworld, caphiria])).toEqual([
+    expect(summarizeBanMigration([eurth, ixnay, caphiria])).toEqual([
       "Eurth: 4 board bans, 2 forum bans to create; skipped 1 expired, 0 no holder, 0 already migrated, 0 binding a realm moderator, 1 collapsed into a stronger ban for the same member and realm; 1 issued by the system, 0 reasons clipped",
-      "IxWorld: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated, 0 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped",
+      "Ixnay: 1 board ban, 0 forum bans to create; skipped 0 expired, 1 no holder, 0 already migrated, 0 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped",
       "Caphiria: 1 board ban, 0 forum bans to create; skipped 0 expired, 0 no holder, 0 already migrated, 1 binding a realm moderator, 0 collapsed into a stronger ban for the same member and realm; 0 issued by the system, 0 reasons clipped",
       "Total: 6 board bans in 3 realms, 2 forum bans to create; skipped 1 expired, 1 no holder, 0 already migrated, 1 binding a realm moderator, 1 collapsed into a stronger ban for the same member and realm; 1 issued by the system, 0 reasons clipped",
     ]);

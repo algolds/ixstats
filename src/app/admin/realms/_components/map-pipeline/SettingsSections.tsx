@@ -48,7 +48,7 @@ export function DefaultViewSection({
     <PipelineSection
       icon={<Compass />}
       title="Default view"
-      description="The automatic centre is the area-weighted middle of the biggest continent's nations, at IxWorld's home zoom."
+      description="The automatic centre is the area-weighted middle of the biggest continent's nations, at Ixnay's home zoom."
     >
       <div className="max-w-md">
         <ValueSelect

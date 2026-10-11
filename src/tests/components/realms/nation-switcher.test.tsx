@@ -45,7 +45,7 @@ describe("NationSwitcher", () => {
       activeCountryId: "c1",
       dividendCountryId: "c1",
       realms: [
-        { id: "default", slug: "ixworld", name: "IxWorld", nations: [nation("c1", "Aurelia")] },
+        { id: "default", slug: "ixnay", name: "Ixnay", nations: [nation("c1", "Aurelia")] },
       ],
     };
     const { container } = render(<NationSwitcher />);
@@ -57,7 +57,7 @@ describe("NationSwitcher", () => {
       activeCountryId: "c1",
       dividendCountryId: "c1",
       realms: [
-        { id: "default", slug: "ixworld", name: "IxWorld", nations: [nation("c1", "Aurelia")] },
+        { id: "default", slug: "ixnay", name: "Ixnay", nations: [nation("c1", "Aurelia")] },
         {
           id: "eurth",
           slug: "eurth",
@@ -69,7 +69,7 @@ describe("NationSwitcher", () => {
     const onSwitched = jest.fn();
     render(<NationSwitcher onSwitched={onSwitched} />);
 
-    expect(screen.getByRole("group", { name: "IxWorld" })).toHaveTextContent("Aurelia");
+    expect(screen.getByRole("group", { name: "Ixnay" })).toHaveTextContent("Aurelia");
     expect(screen.getByRole("group", { name: "Eurth" })).toHaveTextContent("BravaDorn");
     const active = screen.getByRole("button", { name: /Aurelia/ });
     expect(active).toHaveAttribute("aria-current", "true");
@@ -91,8 +91,8 @@ describe("NationSwitcher", () => {
       realms: [
         {
           id: "default",
-          slug: "ixworld",
-          name: "IxWorld",
+          slug: "ixnay",
+          name: "Ixnay",
           nations: [nation("c1", "Aurelia"), nation("c2", "Cadiz")],
         },
       ],

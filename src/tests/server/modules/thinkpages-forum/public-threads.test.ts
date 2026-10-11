@@ -2,7 +2,7 @@
 /**
  * Phase 4b (Q10): the activity feed, Trending and the forum-link previews read native threads instead of XenForo.
  * Only what an anonymous visitor may read is listed: not hidden, in a public category, in the site section or a
- * published realm (IxWorld, active and archived realms; never a draft or generating one).
+ * published realm (Ixnay, active and archived realms; never a draft or generating one).
  */
 import { describe, expect, it, jest } from "@jest/globals";
 import {

@@ -1,8 +1,8 @@
 /**
  * Realm labels: oceans, seas, regions and continents on a realm's map (`MapLabel` with `realmId`, no nation), drawn
- * in IxWorld's ocean-label style by kind and rank (`src/lib/maps/ocean-labels.ts`).
+ * in Ixnay's ocean-label style by kind and rank (`src/lib/maps/ocean-labels.ts`).
  * The realm's map editors manage them (site admins anywhere; the founder and officers holding the Map power in
- * their own realm; IxWorld stays with site admins). Nations' own labels stay in `labels.ts`.
+ * their own realm; Ixnay stays with site admins). Nations' own labels stay in `labels.ts`.
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -19,7 +19,7 @@ import { REALM_LABEL_RANKS, REALM_LABEL_TYPES, realmLabelRank } from "~/lib/maps
 import { realmLabelData, storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
 import { coordinatesSchema } from "../core/shared";
 
-/** A realm label is a name, a kind, an anchor and a rank; its look is IxWorld's ocean-label style for that rank. */
+/** A realm label is a name, a kind, an anchor and a rank; its look is Ixnay's ocean-label style for that rank. */
 const labelFields = {
   text: z.string().trim().min(1).max(100),
   labelType: z.enum(REALM_LABEL_TYPES),

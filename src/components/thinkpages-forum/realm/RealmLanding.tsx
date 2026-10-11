@@ -81,7 +81,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
   const { realm, access } = data;
   const phone = useMediaQuery(PHONE_QUERY);
   const { data: sections } = api.thinkpagesForum.realmSection.useQuery({ realm: slug });
-  // A realm without a row (IxWorld, synthesized) has no happenings to read; skip the request.
+  // A realm without a row (Ixnay, synthesized) has no happenings to read; skip the request.
   const { data: happenings } = api.realms.region.happenings.useQuery(
     { slug, kinds: ["activity"], limit: RECENT_ACTIONS_SHOWN },
     { enabled: realm.hasRow, retry: false, refetchOnWindowFocus: false }
@@ -92,7 +92,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
     boards: phone ? [] : boards,
     online: live.online,
     actions: happenings?.items ?? [],
-    // A realm without a row of its own (IxWorld, synthesized) has no settings to save.
+    // A realm without a row of its own (Ixnay, synthesized) has no settings to save.
     canManageSettings: access.canManageSettings && realm.hasRow,
   };
   usePageTitle({ title: realm.name });

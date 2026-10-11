@@ -318,7 +318,7 @@ describe("Map Editor Source Layer API — access and realm scope", () => {
     expect(db.city.findMany).not.toHaveBeenCalled();
   });
 
-  it("serves IxWorld's features by default, privately cacheable", async () => {
+  it("serves Ixnay's features by default, privately cacheable", async () => {
     const response = await get("cities", "cities");
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("private, max-age=60");

@@ -1,16 +1,16 @@
 /**
- * IxWorld's prime meridian (lng 56.1842) is its own: the meridian line, the home view and the R (reset view)
- * shortcut use it only on IxWorld's map; any other realm's map centres on the origin with no meridian line.
+ * Ixnay's prime meridian (lng 56.1842) is its own: the meridian line, the home view and the R (reset view)
+ * shortcut use it only on Ixnay's map; any other realm's map centres on the origin with no meridian line.
  */
 import { fireEvent, render, renderHook } from "@testing-library/react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { MapKeyboardControls } from "~/components/maps/core/MapKeyboardControls";
 import { useWorldMapLayers } from "~/components/maps/core/hooks/useWorldMapLayers";
-import { IXWORLD_PRIME_MERIDIAN_LNG, MAP_DEFAULTS, mapHomeCenter } from "~/lib/maps/map-config";
+import { IXNAY_PRIME_MERIDIAN_LNG, MAP_DEFAULTS, mapHomeCenter } from "~/lib/maps/map-config";
 
 describe("mapHomeCenter", () => {
-  it("is IxWorld's prime meridian on IxWorld and the origin elsewhere", () => {
-    expect(mapHomeCenter(true)).toEqual([IXWORLD_PRIME_MERIDIAN_LNG, 0]);
+  it("is Ixnay's prime meridian on Ixnay and the origin elsewhere", () => {
+    expect(mapHomeCenter(true)).toEqual([IXNAY_PRIME_MERIDIAN_LNG, 0]);
     expect(mapHomeCenter(false)).toEqual([0, 0]);
     expect(MAP_DEFAULTS.center).toEqual([0, 0]);
   });
@@ -69,7 +69,7 @@ describe("graticule", () => {
     return sources.get("graticule")!.data.features.map((f) => f.properties.label);
   }
 
-  it("draws IxWorld's prime meridian on IxWorld only", () => {
+  it("draws Ixnay's prime meridian on Ixnay only", () => {
     expect(graticuleNames(true)).toEqual(["Equator", "Prime Meridian"]);
     expect(graticuleNames(false)).toEqual(["Equator"]);
   });

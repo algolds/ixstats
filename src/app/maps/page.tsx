@@ -16,7 +16,7 @@
  *   ?layers=political,POIs — comma-separated initial layers
  *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
  *   ?controls=true         — force-show zoom/layer controls even in embed mode
- *   ?realm=<slug>          — show that realm's map (default: the viewer's active nation's realm, else IxWorld)
+ *   ?realm=<slug>          — show that realm's map (default: the viewer's active nation's realm, else Ixnay)
  *
  * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */

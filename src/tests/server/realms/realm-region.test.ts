@@ -837,10 +837,10 @@ describe("deleting a realm (AT-8)", () => {
     expect(db.realm.delete).not.toHaveBeenCalled();
   });
 
-  it("never deletes IxWorld", async () => {
+  it("never deletes Ixnay", async () => {
     const db = deletableDb();
     await expect(
-      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixworld" })
+      callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "default", confirmSlug: "ixnay" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realm.delete).not.toHaveBeenCalled();
   });

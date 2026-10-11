@@ -1,6 +1,6 @@
 /**
- * AT-1 backfill: transport routes and hubs were always saved with the default realm (IxWorld), so a
- * non-IxWorld nation's network showed on IxWorld's map. Moves each row to its owning country's realm.
+ * AT-1 backfill: transport routes and hubs were always saved with the default realm (Ixnay), so a
+ * non-Ixnay nation's network showed on Ixnay's map. Moves each row to its owning country's realm.
  * Dry run by default; pass --apply to write. Idempotent: rows already in the right realm are skipped.
  *   bun scripts/realms/backfill-transport-realm.ts [--apply]
  */

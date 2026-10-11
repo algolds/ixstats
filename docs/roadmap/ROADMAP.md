@@ -159,7 +159,7 @@ half-built features players can already see, and remove every fabricated number.
 | ✅ **Done:** native uploads mirrored to MediaWiki (#52, D3); the editor's image picker searches Wikimedia Commons through `commons.search`, paged, with licence and author (WK-6, 2026-10-06) | WK-5, WK-6 | S | — |
 | ✅ **Done:** Docs and Chat tabs and username invites (#48); an invites inbox with accept/decline and join-by-code on the existing `inviteCode` (SL-13, 2026-10-05) | PF§3, SL-22, SL-13 | M | M0 #7 |
 | ✅ **Done (2026-10-05):** routes and hubs are saved with the owning country's realm, with `db:backfill-transport-realm` (dry run, then `--apply`); `flags.resolveBatch` filters by realm | AT-1, AT-18 | S | — |
-| ✅ **Done (2026-10-05):** ocean labels and the tour only on IxWorld; map wiki lookups use the realm's lore-index wiki source | AT-2, AT-12 | S | — |
+| ✅ **Done (2026-10-05):** ocean labels and the tour only on Ixnay; map wiki lookups use the realm's lore-index wiki source | AT-2, AT-12 | S | — |
 | ✅ **Done:** the admin role counts as admin in the map editor, and `/mycountry/map-editor` renders the editor full-screen | AT-13, PF§2 | S–M | — |
 | Vexel. **Partial (2026-10-05):** attaching a design with no image now refuses instead of blanking the coat of arms, and Vexel is in the Labs menu. Left: render a PNG on attach (no render utility exists, so attach always refuses today) | PF§2 | M | — |
 
@@ -218,7 +218,7 @@ shipped system.
 | 3 | ✅ **Done (2026-10-05):** claimants see pending, approved and rejected claims (with the reason) on `/realms` and the realm's Nations tab; a rejection notifies them | AT-5 | S |
 | 4 | ✅ **Done (2026-10-05):** the builder creates nations in any realm (realm input, nation cap, #49) but not a realm's unclaimed nation pages, which are claimed; a claimed nation page prefills its new country (baseline, flag, identity) from the page's infobox | AT-3, PF§4 | M |
 | 5 | ✅ **Done (#49):** nation switcher in the nav and on the passport | PF§4 | M |
-| 6 | ✅ **Done (2026-10-05):** realm visibility and status rule: only public, active realms (and IxWorld) are listed; unlisted realms are reachable by link only; draft and generating realms (page, board, `?realm=` scope, embassy panels) only for their staff | AT-6 | M |
+| 6 | ✅ **Done (2026-10-05):** realm visibility and status rule: only public, active realms (and Ixnay) are listed; unlisted realms are reachable by link only; draft and generating realms (page, board, `?realm=` scope, embassy panels) only for their staff | AT-6 | M |
 | 7 | Founder tooling: settings, moderation, removing nations, succession using `lastSeenAt` | PF§4 | L |
 | 8 | Archived realms: read-only; excluded from jobs and payouts; every job made realm-aware | PF§4, code audit §9 | M |
 | 9 | Public founding application (decisions 6–7) | PF§4 | M |
@@ -231,7 +231,7 @@ shipped system.
 | 16 | ✅ **Done (2026-10-05):** NationStates-style realm pages: banner and stats strip, factbook, founder and officers with powers, embassies with cross-posting, realm poll, census, happenings, board mutes and bans, Manage tab, leaving a realm, directory tags, search and sort ([design](../specs/2026-10-05-realm-regions-design.md)) | — | L |
 
 **Exit:** a test founder creates a realm (by application), approves claims, moderates, archives it, and nothing leaks into
-IxWorld.
+Ixnay.
 
 ---
 

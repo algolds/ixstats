@@ -45,7 +45,7 @@ const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.M
 );
 
 const realms = [
-  { slug: "ixworld", name: "IxWorld" },
+  { slug: "ixnay", name: "Ixnay" },
   { slug: "eurth", name: "Eurth" },
   { slug: "other", name: "Other" },
 ];
@@ -59,7 +59,7 @@ describe("RealmSwitcher", () => {
       within(select)
         .getAllByRole("option")
         .map((o) => o.textContent)
-    ).toEqual(["IxWorld", "Eurth", "Other"]);
+    ).toEqual(["Ixnay", "Eurth", "Other"]);
     expect(select).toHaveValue("eurth");
   });
 

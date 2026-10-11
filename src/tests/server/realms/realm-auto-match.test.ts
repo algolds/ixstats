@@ -185,12 +185,12 @@ describe("Auto-Match", () => {
         realm: "eurth",
         matches: [
           { featureId: "Ostai", countryId: "c_ost" },
-          { featureId: "Elsewhere", countryId: "c_ixworld" },
+          { featureId: "Elsewhere", countryId: "c_ixnay" },
         ],
       })
     ).resolves.toEqual({ repaired: 1 });
     expect(db.country.findMany.mock.calls[0][0].where).toEqual({
-      id: { in: ["c_ost", "c_ixworld"] },
+      id: { in: ["c_ost", "c_ixnay"] },
       realmId: EURTH,
     });
     expect(db.mapLayer.updateMany).toHaveBeenCalledTimes(1);

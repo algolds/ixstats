@@ -70,7 +70,7 @@ function emptyDb(): Db {
   // ?realm=eurth resolves to the Eurth realm id; the two known realm ids resolve to themselves
   db.realm!.findUnique!.mockImplementation(
     async (args: { where: { slug?: string; id?: string } }) =>
-      ({ eurth: { id: EURTH }, ixworld: { id: DEFAULT_REALM_ID } })[args.where.slug ?? ""] ??
+      ({ eurth: { id: EURTH }, ixnay: { id: DEFAULT_REALM_ID } })[args.where.slug ?? ""] ??
       ([EURTH, DEFAULT_REALM_ID].includes(args.where.id ?? "") ? { id: args.where.id } : null)
   );
   return db;
@@ -131,7 +131,7 @@ beforeEach(() => {
 });
 
 describe("/maps shows only the viewed realm's map", () => {
-  it("an Eurth viewer's world map reads Eurth layers and never IxWorld's static files", async () => {
+  it("an Eurth viewer's world map reads Eurth layers and never Ixnay's static files", async () => {
     const db = emptyDb();
     const map = await geoCaller(ctxFor(db, eurthViewer())).getWorldMap({
       layers: ["background", "political"],
@@ -148,7 +148,7 @@ describe("/maps shows only the viewed realm's map", () => {
   it("?realm= picks the realm over the viewer's active nation", async () => {
     const db = emptyDb();
     (readFile as unknown as jest.Mock).mockRejectedValue(new Error("ENOENT"));
-    await geoCaller(ctxFor(db, eurthViewer())).getWorldMap({ layers: ["lakes"], realm: "ixworld" });
+    await geoCaller(ctxFor(db, eurthViewer())).getWorldMap({ layers: ["lakes"], realm: "ixnay" });
 
     expect(wheres(db, "mapLayer").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
   });
@@ -411,7 +411,7 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
 });
 
 describe("imports and SVG commits never touch another realm's layers", () => {
-  it("an SVG commit (IxWorld's Quick Update) replaces IxWorld's layer, matching IxWorld nations only", async () => {
+  it("an SVG commit (Ixnay's Quick Update) replaces Ixnay's layer, matching Ixnay nations only", async () => {
     const db = emptyDb();
     db.svgUpload!.findUnique!.mockResolvedValue({
       id: "up1",

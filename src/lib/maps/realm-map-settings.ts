@@ -1,6 +1,6 @@
 /**
  * A realm's map settings: the `map` key of `Realm.settings`. Every key is optional; a realm without them gets
- * IxWorld's planet and a plain map. Client-safe.
+ * Ixnay's planet and a plain map. Client-safe.
  *
  * - `radiusKm`: the planet's radius, which scales every area and distance measured on the realm's map
  *   (`src/lib/maps/planet.ts`). Default 6371 km (Earth, and IxEarth).
@@ -18,7 +18,7 @@
  *   `version` is the built tiles' content hash, part of every tile URL so a rebuilt image is never served stale.
  *   None is shown when the map opens (it opens on the standard IxWorld style); a viewer switches them on.
  * - `climateKey`: the climate classification the realm's `climate` layer uses (zone code, name, fill colour), for
- *   its legend and the zone readout. None set: IxWorld's Trewartha key.
+ *   its legend and the zone readout. None set: Ixnay's Trewartha key.
  *
  * Other keys stored under `map` (the wiki map's `source` and `file`, written by `withRealmWikiMap`) are not read
  * here and are never dropped when the settings are saved.

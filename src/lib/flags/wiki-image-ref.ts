@@ -2,7 +2,7 @@
  * A country's flag or coat of arms as a wiki file, and the local file it becomes. Realm nations get their images
  * from their wiki's infobox as URLs on this app's media proxy (`/api/mediawiki/<wiki>/wiki/Special:FilePath/<file>`
  * or `/api/mediawiki/<wiki>/images/...`) or as https URLs on the wiki, which the proxy fetches on every view.
- * `scripts/realms/localize-realm-flags.ts` turns them into files in `public/flags/` the way IxWorld's flags are.
+ * `scripts/realms/localize-realm-flags.ts` turns them into files in `public/flags/` the way Ixnay's flags are.
  *
  * Any wiki WikiOS reads (IxWiki and the sister wikis of `wiki-hosts.ts`) is understood; nothing names a realm.
  * Pure and client-safe.
@@ -20,7 +20,7 @@ export interface WikiImageRef {
 export type ImageField = "flag" | "coatOfArms";
 const IMAGE_FIELDS: readonly ImageField[] = ["flag", "coatOfArms"];
 
-/** Where local flag and arms files are served from (`public/flags/`), as IxWorld's `Country.flag` stores them. */
+/** Where local flag and arms files are served from (`public/flags/`), as Ixnay's `Country.flag` stores them. */
 export const LOCAL_FLAG_PREFIX = "/flags/";
 
 const PROXY_PREFIX = "/api/mediawiki/";
@@ -117,7 +117,7 @@ function slugPart(value: string): string {
 
 /**
  * The local file of a realm nation's image: `<realm>--<country>.<ext>` for a flag, `<realm>--<country>--arms.<ext>`
- * for arms. The realm prefix keeps realms apart from each other and from IxWorld's `<country>.<ext>` files; slugs
+ * for arms. The realm prefix keeps realms apart from each other and from Ixnay's `<country>.<ext>` files; slugs
  * never hold `--`, so the name is unambiguous. Null when a slug folds to nothing.
  */
 export function localImageFileName(

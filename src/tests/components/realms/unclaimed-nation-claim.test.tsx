@@ -90,7 +90,7 @@ describe("CountryIdentityStrip", () => {
     expect(screen.getByRole("button", { name: "Claim this nation" })).toBeInTheDocument();
   });
 
-  it("offers no claim for a held nation or an IxWorld nation", () => {
+  it("offers no claim for a held nation or an Ixnay nation", () => {
     const { rerender } = render(
       <CountryIdentityStrip
         realm={{ name: "Eurth", slug: "eurth" }}
@@ -101,7 +101,7 @@ describe("CountryIdentityStrip", () => {
     expect(screen.queryByRole("button", { name: "Claim this nation" })).toBeNull();
     rerender(
       <CountryIdentityStrip
-        realm={{ name: "IxWorld", slug: "ixworld" }}
+        realm={{ name: "Ixnay", slug: "ixnay" }}
         sovereign={null}
         claim={{ countryId: "c1", countryName: "Tavok" }}
       />
@@ -113,14 +113,14 @@ describe("CountryIdentityStrip", () => {
 describe("claimableNation", () => {
   const base = { id: "c1", name: "Bainbridge_Islands", owner: null, realm: { slug: "eurth", status: "active" } };
 
-  it("is claimable when unowned in an open realm other than IxWorld", () => {
+  it("is claimable when unowned in an open realm other than Ixnay", () => {
     expect(claimableNation(base)).toEqual({ countryId: "c1", countryName: "Bainbridge Islands" });
   });
 
-  it("is not claimable when owned, in IxWorld, or in a closed realm", () => {
+  it("is not claimable when owned, in Ixnay, or in a closed realm", () => {
     expect(claimableNation({ ...base, owner: { id: "u" } })).toBeNull();
     expect(claimableNation({ ...base, ownerUserId: "u" })).toBeNull();
-    expect(claimableNation({ ...base, realm: { slug: "ixworld", status: "active" } })).toBeNull();
+    expect(claimableNation({ ...base, realm: { slug: "ixnay", status: "active" } })).toBeNull();
     expect(claimableNation({ ...base, realm: { slug: "eurth", status: "archived" } })).toBeNull();
     expect(claimableNation({ ...base, realm: null })).toBeNull();
   });

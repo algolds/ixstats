@@ -35,7 +35,7 @@ const mapLabels: FeatureCollection = {
 };
 
 describe("ocean labels", () => {
-  it("IxWorld's built-in water names, unchanged", () => {
+  it("Ixnay's built-in water names, unchanged", () => {
     const features = oceanLabelFeatures(true, undefined);
     expect(features).toHaveLength(WATER_BODY_LABELS.length);
     expect(features[0]).toMatchObject({
@@ -59,13 +59,13 @@ describe("ocean labels", () => {
     expect(features[0]!.geometry.coordinates).toEqual([-33.3, 82.8]);
   });
 
-  it("both lists on IxWorld, with unique ids", () => {
+  it("both lists on Ixnay, with unique ids", () => {
     const features = oceanLabelFeatures(true, mapLabels);
     expect(features).toHaveLength(WATER_BODY_LABELS.length + 2);
     expect(new Set(features.map((f) => f.id)).size).toBe(features.length);
   });
 
-  it("nothing outside IxWorld without realm labels", () => {
+  it("nothing outside Ixnay without realm labels", () => {
     expect(oceanLabelFeatures(false, undefined)).toEqual([]);
   });
 
@@ -96,7 +96,7 @@ describe("the theme styles' ocean-label layer", () => {
     (style.layers as StyleLayer[]).find((l) => l.id === "ocean-labels")!;
 
   it.each(["standard", "dark", "paper"] as const)(
-    "%s: valid, IxWorld's water look kept, land names in capitals and a colour of their own",
+    "%s: valid, Ixnay's water look kept, land names in capitals and a colour of their own",
     (theme) => {
       const style = getStyleForTheme(theme, "https://example.com/{fontstack}/{range}.pbf", FONTS);
       expect(validateStyleMin(style as Parameters<typeof validateStyleMin>[0])).toEqual([]);
@@ -132,7 +132,7 @@ describe("the theme styles' ocean-label layer", () => {
     }
   );
 
-  it("standard: IxWorld's blues by rank, unchanged", () => {
+  it("standard: Ixnay's blues by rank, unchanged", () => {
     const style = getStyleForTheme("standard", "g", FONTS);
     const layer = oceanLayer(style as Record<string, object | string | number>);
     expect((layer.paint["text-color"] as Expr[])[4]).toEqual([

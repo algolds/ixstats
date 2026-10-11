@@ -17,7 +17,7 @@ import { clearOwnHistory } from "~/server/shared/clear-history";
 
 /**
  * The nation a player typed: its name within the viewer's realm first, else a (globally unique) slug.
- * IxWorld holds the plain slugs, so slug-first would send an Eurth player's "Gallambria" to IxWorld's
+ * Ixnay holds the plain slugs, so slug-first would send an Eurth player's "Gallambria" to Ixnay's
  * owner (ruling E-s).
  */
 async function findTypedCountry(

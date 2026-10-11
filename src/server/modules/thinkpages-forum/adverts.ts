@@ -1,7 +1,7 @@
 /**
  * Find a Realm adverts: which realms a viewer may advertise, creating the one advert per realm, and locking it. The
  * advert is an ordinary thread in the sitewide find-a-realm category (made by `createThread` with the realm named) whose
- * first post the realm's founder and officers with the appearance power own (advert-access.ts). IxWorld, which has no
+ * first post the realm's founder and officers with the appearance power own (advert-access.ts). Ixnay, which has no
  * realm row to carry one, cannot have an advert.
  */
 import type { PrismaClient } from "@prisma/client";
@@ -12,7 +12,7 @@ import {
   ADVERT_CATEGORY_KEY,
   ADVERT_EXISTS_NOTICE,
   ADVERT_HIDDEN_NOTICE,
-  ADVERT_IXWORLD_NOTICE,
+  ADVERT_IXNAY_NOTICE,
   ADVERT_POWER_NOTICE,
   ADVERT_UNLOCK_NOTICE,
 } from "~/lib/thinkpages-forum/adverts";
@@ -38,7 +38,7 @@ const openableId = (thread: { id: string; hidden: boolean } | null | undefined):
 /**
  * The realms where `createAdvert` would succeed for the actor, with their adverts: the realms they found, and the
  * ones where an officer grant carries the appearance power and the realm is published; never an archived realm, and
- * never IxWorld.
+ * never Ixnay.
  */
 export async function advertRealmsOf(
   db: Pick<PrismaClient, "realm">,
@@ -75,7 +75,7 @@ async function loadAdvertRealm(
 ): Promise<ForumRealm> {
   const realm = await loadForumRealm(db, { slug });
   if (!realm || !canSeeRealm(actor, realm)) throw new ForumError("NOT_FOUND", "Realm not found.");
-  if (realm.id === DEFAULT_REALM_ID) throw new ForumError("BAD_REQUEST", ADVERT_IXWORLD_NOTICE);
+  if (realm.id === DEFAULT_REALM_ID) throw new ForumError("BAD_REQUEST", ADVERT_IXNAY_NOTICE);
   return realm;
 }
 
@@ -108,7 +108,7 @@ function lostAdvertRace<E>(error: E): boolean {
 }
 
 /**
- * Creates the realm's advert. Refused: unknown or hidden realm (NOT_FOUND), IxWorld (BAD_REQUEST), no power
+ * Creates the realm's advert. Refused: unknown or hidden realm (NOT_FOUND), Ixnay (BAD_REQUEST), no power
  * (FORBIDDEN), an archived realm (CONFLICT), a realm that has one (CONFLICT with the existing thread's id, also when two
  * creations race; a moderator-hidden one says so and names none).
  */

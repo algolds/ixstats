@@ -1130,11 +1130,11 @@ describe("thinkpagesForum router", () => {
   });
 
   describe("realm sections", () => {
-    it("lists IxWorld for an anonymous visitor, with IxWorld as the default", async () => {
+    it("lists Ixnay for an anonymous visitor, with Ixnay as the default", async () => {
       const db = { realm: { findMany: jest.fn(async () => []) } };
       await expect(caller(null, db).realms()).resolves.toEqual({
-        defaultSlug: "ixworld",
-        realms: [{ id: "default", slug: "ixworld", name: "IxWorld" }],
+        defaultSlug: "ixnay",
+        realms: [{ id: "default", slug: "ixnay", name: "Ixnay" }],
       });
     });
 
@@ -1152,7 +1152,7 @@ describe("thinkpagesForum router", () => {
         { id: "c1", realmId: "default", currentTotalGdp: 1 },
         { id: "c_big", realmId: "r_eurth", currentTotalGdp: 99 },
       ]);
-      expect((await caller(member, linked).realms()).defaultSlug).toBe("ixworld");
+      expect((await caller(member, linked).realms()).defaultSlug).toBe("ixnay");
     });
 
     it("reports no sidebar flags to an anonymous visitor, without a query", async () => {

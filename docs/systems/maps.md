@@ -71,9 +71,9 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
 - **Planet figures.** The radius and degree → km factors (6371 km, 111.32 / 110.574 km per degree) live in
   `src/lib/maps/planet.ts`; its helpers take an optional radius, and a realm's own radius (`Realm.settings.map.radiusKm`)
   scales its areas and distances (see [Realm maps](#realm-maps)).
-- **IxWorld only.** The 56.1842° prime meridian, the home view and the R shortcut follow `mapHomeCenter(ixWorld)`;
+- **Ixnay only.** The 56.1842° prime meridian, the home view and the R shortcut follow `mapHomeCenter(ixnay)`;
   other realms' maps centre on the origin with no meridian line. The style editor's preview sources
-  (`/api/maps/editor-source/[layer]`) are admin-only and serve one realm (`?realm=`, IxWorld by default).
+  (`/api/maps/editor-source/[layer]`) are admin-only and serve one realm (`?realm=`, Ixnay by default).
 
 - **MapLibre web worker.** MapLibre 6 finds its worker next to its own module, which is a bundled chunk under Turbopack, so `src/lib/maps/load-maplibre.ts` points it at `/maplibre/maplibre-gl-worker.mjs`. `scripts/setup/copy-maplibre-worker.mjs` copies that file and `maplibre-gl-shared.mjs` into the gitignored `public/maplibre/`; it runs from `postinstall`, `build`, `build:fast` and `start-development.sh`. If the files are missing, every map stalls with "Worker failed to load".
 - **Direct dependencies.** Map code imports individual `@turf/*` packages (`@turf/intersect`, `@turf/union`, …). They are declared in `package.json` next to `@turf/turf`; an import of a package that is only a transitive dependency resolves under a hoisted `node_modules` but fails ("Module not found") under isolated installs.
@@ -87,7 +87,7 @@ viewer shows it.
 
 - **The Map power.** A realm officer can hold `map` ("Edit the realm's map, borders and labels, and import maps").
   `canEditRealmMap` / `canImportRealmMap` (`src/server/modules/realms/realms.access.ts`) allow site admins, the
-  founder and map officers; IxWorld stays with site admins, and an archived realm is read-only (`realmMapAccess`).
+  founder and map officers; Ixnay stays with site admins, and an archived realm is read-only (`realmMapAccess`).
 - **World editor procedures are realm-scoped.** Border edit, split and merge (`geo/editor/borders.ts`), region links
   (`linkage/assignment.ts`), linkage validation and Auto-Match (`linkage/validation.ts`) and realm labels
   (`geo/features/realm-labels.ts`) call `editableMapRealmId` (`src/server/api/trpc/realm-scope.ts`): the edited
@@ -156,7 +156,7 @@ viewer with the realm's data: the same vector style, colouring, panels and chrom
   (one at a time, or **None**) and the overlays as switches; a layer's key image shows in the panel while that layer
   is on, as the climate key does for **Climate Zones**. Art mode (political fills clear except under the pointer,
   borders and country names off) lasts only while a base map is shown.
-- **Political colours:** the same path as IxWorld (`getColorForFeature`: the feature's `properties.fill`, else a
+- **Political colours:** the same path as Ixnay (`getColorForFeature`: the feature's `properties.fill`, else a
   colour hashed from its id). A realm's source sync stores each nation's source colour as `fill`. Unclaimed nations
   look like any other; the country panel says **Unclaimed**.
 - **Credit line:** the realm's own (`settings.map.attribution`), else its source sync's, shown in the bottom-right
@@ -192,7 +192,7 @@ self-hosted glyphs have no oblique face, so labels are drawn upright.
 ### Not done yet
 
 - Per-realm overrides of the fixed elevation and climate colour keys (`getZoneByColor`, `resolveClimateFromColor`):
-  every realm still reads IxWorld's keys.
+  every realm still reads Ixnay's keys.
 - A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
   realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
 
@@ -204,7 +204,7 @@ a **GeoJSON** FeatureCollection. Code: `src/lib/maps/import/` (engines, georefer
 `geoEditor.mapImport` (`geo/editor/map-import.ts`), upload route `/api/admin/map-import/upload`, wizard
 `src/app/admin/maps/_components/map-import/`.
 
-**Who:** `canImportRealmMap` (site admins, the founder, officers with the Map power; IxWorld admin-only; archived
+**Who:** `canImportRealmMap` (site admins, the founder, officers with the Map power; Ixnay admin-only; archived
 realms refused) for uploads, analyses, dry runs, applies and rollbacks. Quick Update and the layered SVG pipeline stay
 admin-only.
 
@@ -297,7 +297,7 @@ wizard on it. The wizard shows each nation's locator map from `realms.wiki.infob
 The Inkscape SVG pipeline (all layers) stays in Full pipeline (`LayeredSvgPipeline`). `importPipelineResult` is a thin
 wrapper over the same writer (`map-import.pipeline.ts`): validated geometry (lines and points accepted on
 non-political layers), batched transactions, display names from `properties.name`, a `MapImport` snapshot, and replace
-mode retires only the stale features of the layer types it imports. Quick Update (IxWorld's single-layer SVG commits)
+mode retires only the stale features of the layer types it imports. Quick Update (Ixnay's single-layer SVG commits)
 is unchanged.
 
 ## Viewer Performance

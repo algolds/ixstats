@@ -156,7 +156,7 @@ describe("writeRealmMapFeatures", () => {
           ],
         } as never,
       },
-      { key: "Elsewhere", geometry: square(0), countryId: "c-ixworld" },
+      { key: "Elsewhere", geometry: square(0), countryId: "c-ixnay" },
     ]);
     expect(result.written).toEqual([]);
     expect(result.rejected.map((r) => r.key)).toEqual(["Bad", "Elsewhere"]);

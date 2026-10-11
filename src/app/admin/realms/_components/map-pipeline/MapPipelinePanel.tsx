@@ -23,7 +23,7 @@ function builtText(built: PipelineView["built"]): string {
       ? `${layers.length} raster ${layers.length === 1 ? "layer" : "layers"} (${layers.join(", ")})`
       : "no raster layers",
     built.defaultView ? "a default view" : "no default view",
-    built.hasClimateKey ? "its own climate key" : "IxWorld's climate key",
+    built.hasClimateKey ? "its own climate key" : "Ixnay's climate key",
   ].join(", ");
 }
 

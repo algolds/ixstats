@@ -135,10 +135,10 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
   },
 };
 
-/** IxWorld's prime meridian: its map is drawn around lng 56.1842, the meridian line and home view centre. */
-export const IXWORLD_PRIME_MERIDIAN_LNG = 56.1842;
+/** Ixnay's prime meridian: its map is drawn around lng 56.1842, the meridian line and home view centre. */
+export const IXNAY_PRIME_MERIDIAN_LNG = 56.1842;
 
-/** Map view defaults (any realm; IxWorld's home view centre is mapHomeCenter(true)) */
+/** Map view defaults (any realm; Ixnay's home view centre is mapHomeCenter(true)) */
 export const MAP_DEFAULTS = {
   center: [0, 0] as [number, number],
   zoom: 1.8,
@@ -148,11 +148,11 @@ export const MAP_DEFAULTS = {
   pitch: 0,
 };
 
-const IXWORLD_HOME_CENTER: [number, number] = [IXWORLD_PRIME_MERIDIAN_LNG, 0];
+const IXNAY_HOME_CENTER: [number, number] = [IXNAY_PRIME_MERIDIAN_LNG, 0];
 
-/** The home view's centre: IxWorld's prime meridian there, the origin in any other realm (stable references). */
-export function mapHomeCenter(ixWorld: boolean): [number, number] {
-  return ixWorld ? IXWORLD_HOME_CENTER : MAP_DEFAULTS.center;
+/** The home view's centre: Ixnay's prime meridian there, the origin in any other realm (stable references). */
+export function mapHomeCenter(ixnay: boolean): [number, number] {
+  return ixnay ? IXNAY_HOME_CENTER : MAP_DEFAULTS.center;
 }
 
 /** Projection mode for the IxWorld map */

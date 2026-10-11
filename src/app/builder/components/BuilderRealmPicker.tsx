@@ -11,7 +11,7 @@ import {
 } from "~/components/ui/select";
 
 interface BuilderRealmPickerProps {
-  /** The chosen realm id; null/undefined → the server's default (the active nation's realm, else IxWorld). */
+  /** The chosen realm id; null/undefined → the server's default (the active nation's realm, else Ixnay). */
   value: string | null | undefined;
   onChange: (realmId: string) => void;
 }

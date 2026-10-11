@@ -2,7 +2,7 @@
  * Realm claims: "claim anything that already exists" — an existing country, or a nation page in the realm's
  * lore index, whose approval creates the country (ruling E-f). A claim is auto-approved when the claimant's
  * *verified* wiki account created the nation's wiki page; otherwise it waits for a realm moderator (site
- * admins for IxWorld, whose owner is "system").
+ * admins for Ixnay, whose owner is "system").
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
@@ -158,7 +158,7 @@ const canonical = (source: ProofSource, name: string) => {
     : normalized;
 };
 const notPending = () => new ClaimError("NOT_PENDING", "This claim was already decided");
-/** AT-7: only an active realm (or IxWorld) hands out nations; draft, generating and archived realms refuse claims. */
+/** AT-7: only an active realm (or Ixnay) hands out nations; draft, generating and archived realms refuse claims. */
 function assertRealmOpen(realmId: string, status: string | null | undefined): void {
   if (!isRealmOpen(realmId, status))
     throw new ClaimError("REALM_CLOSED", "This realm is not open for claims");
@@ -173,7 +173,7 @@ export interface ClaimOptions {
 
 /**
  * A realm with rules (`Realm.rulesHtml`) takes claims only from players who confirmed reading them; the claim
- * records when. A realm without rules (or IxWorld without a realm row) needs nothing.
+ * records when. A realm without rules (or Ixnay without a realm row) needs nothing.
  */
 function rulesAcceptance(
   realm: { rulesHtml?: string | null } | null | undefined,

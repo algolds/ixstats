@@ -5,7 +5,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { CountriesDirectory } from "./_components/CountriesDirectory";
 
 /**
- * My realm: the nations of the viewer's realm (their active nation's realm, else IxWorld), or of the realm
+ * My realm: the nations of the viewer's realm (their active nation's realm, else Ixnay), or of the realm
  * named by `?realm=<slug>`. Exploring every realm happens on /realms.
  */
 export default function CountriesPage() {

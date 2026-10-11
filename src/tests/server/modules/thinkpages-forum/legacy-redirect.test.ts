@@ -56,7 +56,7 @@ const CATEGORIES: CategoryRow[] = [
 
 const REALMS = [
   { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "u_founder" },
-  { id: "default", slug: "default", name: "IxWorld", status: "active", ownerId: "staff" },
+  { id: "default", slug: "default", name: "Ixnay", status: "active", ownerId: "staff" },
   { id: "r_draft", slug: "drafty", name: "Drafty", status: "draft", ownerId: "u_founder" },
   { id: "r_old", slug: "old", name: "Old", status: "archived", ownerId: "u_founder" },
 ];
@@ -258,7 +258,7 @@ describe("legacyForumRedirectFor", () => {
       "/thinkpages/r/eurth/hub"
     );
     await expect(legacyForumRedirectFor(db, { kind: "forum", nodeId: 20 })).resolves.toBe(
-      "/thinkpages/r/ixworld/hub"
+      "/thinkpages/r/ixnay/hub"
     );
   });
 

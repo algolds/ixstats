@@ -75,7 +75,7 @@ export async function findUnclaimedNation(
 }
 
 /**
- * The wiki page an existing nation's claim reads its infobox from: only outside IxWorld (an IxWorld country's
+ * The wiki page an existing nation's claim reads its infobox from: only outside Ixnay (an Ixnay country's
  * claim never read one), and only for a nation with a page.
  */
 export function existingNationPage(country: {

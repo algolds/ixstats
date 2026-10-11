@@ -1,5 +1,5 @@
 /** @jest-environment node */
-// Fix round 1 (rulings E-o, E-p, E-q): admin "*" reads, realm-correct name lookups, IxWorld-less cache keys.
+// Fix round 1 (rulings E-o, E-p, E-q): admin "*" reads, realm-correct name lookups, Ixnay-less cache keys.
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
@@ -73,7 +73,7 @@ const IX_GALLAMBRIA: Row = {
   name: "Gallambria",
   slug: "gallambria-ix",
   realmId: DEFAULT_REALM_ID,
-  leader: "IxWorld leader",
+  leader: "Ixnay leader",
 };
 
 function publicCtx(country: ReturnType<typeof countryTable>, realmId?: string) {
@@ -135,7 +135,7 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
       intent: { findMany: jest.fn().mockResolvedValue([{ target: "Gallambria" }]) },
     };
     const byIntent = await resolveTargetCountryRecord("c_subj", db as never, {} as never);
-    expect(byIntent?.leader).toBe("IxWorld leader");
+    expect(byIntent?.leader).toBe("Ixnay leader");
 
     db.intent.findMany.mockResolvedValue([]);
     db.country = countryTable([subject, EURTH_GALLAMBRIA]);
@@ -165,7 +165,7 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
     expect(db.userConnection.create.mock.calls[1][0].data.targetCountryId).toBe("c_eu");
   });
 
-  it("the roster import (IxWorld-only) never updates another realm's same-name nation", async () => {
+  it("the roster import (Ixnay-only) never updates another realm's same-name nation", async () => {
     const table = countryTable([EURTH_GALLAMBRIA]);
     (parseRosterFile as jest.Mock).mockResolvedValue([
       { country: "Gallambria", population: 1_000_000, gdpPerCapita: 10_000 },
@@ -190,7 +190,7 @@ describe("E-p: a name resolves inside one realm; ids and slugs win first", () =>
 });
 
 describe("E-s: a typed nation name resolves in the viewer's realm before any slug", () => {
-  // IxWorld holds the plain slug; Eurth's same-name nation was suffixed on claim.
+  // Ixnay holds the plain slug; Eurth's same-name nation was suffixed on claim.
   const IX_PLAIN = { ...IX_GALLAMBRIA, slug: "gallambria" };
   const users = [
     { id: "u_ix", clerkUserId: "clerk_ix", countryId: "c_ix" },
@@ -214,7 +214,7 @@ describe("E-s: a typed nation name resolves in the viewer's realm before any slu
     return { db, caller: createCallerFactory(usersPreferencesRouter)(ctx as never) };
   }
 
-  it("blockAccount blocks the Eurth nation and its owner, not IxWorld's plain-slug holder", async () => {
+  it("blockAccount blocks the Eurth nation and its owner, not Ixnay's plain-slug holder", async () => {
     const { db, caller } = viewer();
     await caller.blockAccount({ identifier: "Gallambria" });
     expect(db.userConnection.create.mock.calls[0][0].data).toMatchObject({
@@ -256,7 +256,7 @@ describe('E-o: admins read every realm with realm "*"', () => {
   });
 });
 
-describe("E-q: the cache key names a realm only when it isn't IxWorld", () => {
+describe("E-q: the cache key names a realm only when it isn't Ixnay", () => {
   beforeEach(() => clearTrpcMemoryCache());
 
   const probe = jest.fn(async () => "rows");
@@ -266,7 +266,7 @@ describe("E-q: the cache key names a realm only when it isn't IxWorld", () => {
   const as = (realmId?: string) =>
     createCallerFactory(router)(publicCtx(countryTable([]), realmId));
 
-  it("anonymous and IxWorld-nation viewers share an entry; an Eurth viewer gets its own", async () => {
+  it("anonymous and Ixnay-nation viewers share an entry; an Eurth viewer gets its own", async () => {
     probe.mockClear();
     await as().probe();
     await as(DEFAULT_REALM_ID).probe();

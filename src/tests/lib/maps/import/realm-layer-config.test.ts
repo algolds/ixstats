@@ -42,7 +42,7 @@ describe("realm layer config", () => {
     expect(layerConfigArt(file)).toEqual(["blank", "climate", "key"]);
   });
 
-  it("reads the Eurth preset's physical config: every layer, its legend on IxWorld's bands, engine overrides", () => {
+  it("reads the Eurth preset's physical config: every layer, its legend on Ixnay's bands, engine overrides", () => {
     const config = sourcePreset("eurth-map")!.mapPipeline!.physical!;
     expect(config.climate && "zonesBinding" in config.climate.key).toBe(true);
     expect(config.ice?.art).toBe(config.elevation?.art);

@@ -203,11 +203,11 @@ describe("site admins transfer a realm", () => {
     });
   });
 
-  it("keeps IxWorld with staff", async () => {
-    const db = makeDb(realmRow({ id: "default", slug: "ixworld", ownerId: "system" }));
+  it("keeps Ixnay with staff", async () => {
+    const db = makeDb(realmRow({ id: "default", slug: "ixnay", ownerId: "system" }));
     await expect(
       callerAs(ADMIN, db, admin).region.adminTransferOwner(
-        transfer({ realmId: "default", confirmSlug: "ixworld" })
+        transfer({ realmId: "default", confirmSlug: "ixnay" })
       )
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.realm.update).not.toHaveBeenCalled();
