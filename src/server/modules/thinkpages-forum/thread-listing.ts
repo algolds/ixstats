@@ -22,8 +22,8 @@ import {
   ADVERT_REALM_SELECT,
   type AdvertRow,
 } from "./advert-access";
-import type { ForumRealm } from "./realm-access";
-import { visibleRealmOf, type ReadsDb } from "./reads";
+import { canSeeRealm, loadForumRealms, type ForumRealm } from "./realm-access";
+import type { ReadsDb } from "./reads";
 import { threadLastPosters, type ThreadLastPoster } from "./thread-extras";
 import { readerFloor, type UnreadDb } from "./unread";
 
@@ -103,22 +103,36 @@ const LISTING_VIEW = { id: "", scope: "site", realmId: null, visibility: "public
 const unreadOf = (row: Candidate, floor: Date): boolean =>
   isUnread(row.lastPostAt, row.reads[0]?.readAt, floor);
 
-/** What the member may read: not the board, not hidden, the thread rule, and a realm that is visible to them. */
+/**
+ * What the member may read: not the board, not hidden, the thread rule, and a realm that is visible to them. The
+ * distinct realms of the rows that pass are loaded in one read, then each row is placed synchronously.
+ */
 async function readable(
   db: ReadsDb,
   viewer: NonNullable<ForumViewer>,
   rows: readonly Candidate[]
 ): Promise<Placed[]> {
-  const realms = new Map<string, ForumRealm | null | undefined>();
+  const passing = rows.filter(
+    (row) =>
+      !isBoardCategory(row.category) &&
+      !row.hidden &&
+      canSeeThread(viewer, row, row.category) &&
+      !advertRealmHiddenFrom(viewer, row.advertRealm)
+  );
+  const realmIds = new Set<string>();
+  for (const { category } of passing) {
+    if (category.scope === "realm" && category.realmId) realmIds.add(category.realmId);
+  }
+  const realms = await loadForumRealms(db, [...realmIds]);
   const placed: Placed[] = [];
-  for (const row of rows) {
+  for (const row of passing) {
     const { category } = row;
-    if (isBoardCategory(category) || row.hidden || !canSeeThread(viewer, row, category)) continue;
-    if (advertRealmHiddenFrom(viewer, row.advertRealm)) continue;
-    const key = category.realmId ?? "";
-    if (!realms.has(key)) realms.set(key, await visibleRealmOf(db, viewer, category));
-    const realm = realms.get(key);
-    if (realm !== undefined) placed.push({ row, realm });
+    if (category.scope !== "realm") {
+      placed.push({ row, realm: null });
+      continue;
+    }
+    const realm = category.realmId ? realms.get(category.realmId) : undefined;
+    if (realm && canSeeRealm(viewer, realm)) placed.push({ row, realm });
   }
   return placed;
 }

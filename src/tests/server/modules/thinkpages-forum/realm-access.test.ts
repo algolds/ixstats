@@ -8,6 +8,7 @@ import {
   realmPostingAccess,
   type ForumRealm,
 } from "~/server/modules/thinkpages-forum";
+import { loadForumRealms } from "~/server/modules/thinkpages-forum/realm-access";
 import { banRow, forumBanFake, type BanRow } from "~/tests/helpers/forum-ban-fake";
 
 const role = (name: string, level: number) => ({ name, level });
@@ -140,6 +141,44 @@ describe("loadForumRealm", () => {
   it("returns null for an unknown realm", async () => {
     await expect(loadForumRealm(realmDb() as never, { slug: "nowhere" })).resolves.toBeNull();
     await expect(loadForumRealm(realmDb() as never, { id: "r_nowhere" })).resolves.toBeNull();
+  });
+});
+
+describe("loadForumRealms", () => {
+  const eurth = {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    status: "active",
+    ownerId: "founder",
+  };
+  const dbOf = (rows: Array<typeof eurth>) => ({
+    realm: {
+      findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+        rows.filter((r) => where.id.in.includes(r.id))
+      ),
+    },
+  });
+
+  it("reads every id in one query and answers by id, leaving unknown ids out", async () => {
+    const db = dbOf([eurth]);
+    const found = await loadForumRealms(db as never, ["r_eurth", "r_nowhere"]);
+    expect(db.realm.findMany).toHaveBeenCalledTimes(1);
+    expect(found.get("r_eurth")).toEqual(EURTH);
+    expect(found.has("r_nowhere")).toBe(false);
+  });
+
+  it("synthesizes IxWorld without a row and names it from its row under the ixworld slug", async () => {
+    expect((await loadForumRealms(dbOf([]) as never, ["default"])).get("default")).toEqual(IXWORLD);
+    const row = { ...eurth, id: "default", slug: "default", name: "IxWorld Prime" };
+    const named = await loadForumRealms(dbOf([row]) as never, ["default"]);
+    expect(named.get("default")).toEqual({ ...row, slug: "ixworld" });
+  });
+
+  it("reads nothing for no ids", async () => {
+    const db = dbOf([eurth]);
+    expect((await loadForumRealms(db as never, [])).size).toBe(0);
+    expect(db.realm.findMany).not.toHaveBeenCalled();
   });
 });
 
