@@ -20,7 +20,10 @@ export async function validatePostActionTokens(
   const { countryId } = input;
   const ids = parseActionTokens(input.body);
   if (ids.length > MAX_ACTIONS_PER_POST) {
-    throw new ActionLinkError("BAD_REQUEST", `A post can link at most ${MAX_ACTIONS_PER_POST} actions`);
+    throw new ActionLinkError(
+      "BAD_REQUEST",
+      `A post can link at most ${MAX_ACTIONS_PER_POST} actions`
+    );
   }
   if (ids.length > 0 && !countryId) {
     throw new ActionLinkError("FORBIDDEN", "Only a nation's posts can link its actions");
@@ -31,28 +34,38 @@ export async function validatePostActionTokens(
       select: { id: true },
     });
     if (owned.length !== ids.length) {
-      throw new ActionLinkError("BAD_REQUEST", "A linked action is not one of your nation's public actions");
+      throw new ActionLinkError(
+        "BAD_REQUEST",
+        "A linked action is not one of your nation's public actions"
+      );
     }
   }
   return ids;
 }
 
+/**
+ * Replaces the post's links with the tokens in its text and reports the activity ids whose link row this call
+ * inserted. `createManyAndReturn` with `skipDuplicates` returns only the inserted rows, so two saves racing on one
+ * post cannot both claim the same link as new (the forum's reward step pays on this set).
+ */
 export async function syncPostActionLinks(
   db: LinksDb,
   input: { postSource: PostSource; postRef: string; countryId: string | null; body: string }
-): Promise<string[]> {
+): Promise<{ created: string[] }> {
   const { postSource, postRef, countryId: owner } = input;
   const ids = await validatePostActionTokens(db, input);
-  await db.$transaction(async (tx) => {
-    await tx.postActionLink.deleteMany({ where: { postSource, postRef, activityId: { notIn: ids } } });
-    if (ids.length > 0 && owner) {
-      await tx.postActionLink.createMany({
-        data: ids.map((activityId) => ({ postSource, postRef, activityId, countryId: owner })),
-        skipDuplicates: true,
-      });
-    }
+  return db.$transaction(async (tx) => {
+    await tx.postActionLink.deleteMany({
+      where: { postSource, postRef, activityId: { notIn: ids } },
+    });
+    if (ids.length === 0 || !owner) return { created: [] };
+    const rows = await tx.postActionLink.createManyAndReturn({
+      data: ids.map((activityId) => ({ postSource, postRef, activityId, countryId: owner })),
+      skipDuplicates: true,
+      select: { activityId: true },
+    });
+    return { created: rows.map((row) => row.activityId) };
   });
-  return ids;
 }
 
 /** The posts that link an activity ("discussed in N posts"). */

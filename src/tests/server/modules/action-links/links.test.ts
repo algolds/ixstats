@@ -9,32 +9,42 @@ import { MAX_ACTIONS_PER_POST } from "~/lib/action-links";
 
 type Row = { id: string; countryId: string; visibility: string };
 
-function fakeDb(activities: Row[]) {
+function fakeDb(activities: Row[], alreadyLinked: string[] = []) {
   const tx = {
     postActionLink: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
-      createMany: jest.fn(async () => ({ count: 0 })),
+      // The rows this call inserted: skipDuplicates leaves out the ones that already exist.
+      createManyAndReturn: jest.fn(async (args: { data: Array<{ activityId: string }> }) =>
+        args.data
+          .filter((d) => !alreadyLinked.includes(d.activityId))
+          .map((d) => ({ activityId: d.activityId }))
+      ),
     },
   };
   return {
     tx,
     db: {
       activityFeed: {
-        findMany: jest.fn(async ({ where }: { where: { id: { in: string[] }; countryId: string; visibility: string } }) =>
-          activities
-            .filter(
-              (a) =>
-                where.id.in.includes(a.id) &&
-                a.countryId === where.countryId &&
-                a.visibility === where.visibility
-            )
-            .map((a) => ({ id: a.id }))
+        findMany: jest.fn(
+          async ({
+            where,
+          }: {
+            where: { id: { in: string[] }; countryId: string; visibility: string };
+          }) =>
+            activities
+              .filter(
+                (a) =>
+                  where.id.in.includes(a.id) &&
+                  a.countryId === where.countryId &&
+                  a.visibility === where.visibility
+              )
+              .map((a) => ({ id: a.id }))
         ),
       },
       postActionLink: {
         findMany: jest.fn(async () => [{ postSource: "native", postRef: "p1" }]),
       },
-      $transaction: jest.fn(async (fn: (t: typeof tx) => Promise<void>) => fn(tx)),
+      $transaction: jest.fn(async <T>(fn: (t: typeof tx) => Promise<T>) => fn(tx)),
     },
   };
 }
@@ -42,33 +52,66 @@ function fakeDb(activities: Row[]) {
 const POST = { postSource: "native" as const, postRef: "p1", countryId: "c1" };
 
 describe("syncPostActionLinks", () => {
-  it("links the poster's own public actions", async () => {
+  it("links the poster's own public actions and reports them as created", async () => {
     const { db, tx } = fakeDb([{ id: "a1", countryId: "c1", visibility: "public" }]);
-    await expect(syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a1]" })).resolves.toEqual(["a1"]);
-    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a1]" })
+    ).resolves.toEqual({
+      created: ["a1"],
+    });
+    expect(tx.postActionLink.createManyAndReturn).toHaveBeenCalledWith({
       data: [{ postSource: "native", postRef: "p1", activityId: "a1", countryId: "c1" }],
       skipDuplicates: true,
+      select: { activityId: true },
     });
+  });
+
+  it("reports only the links this save inserted, not the ones the post already had", async () => {
+    const { db } = fakeDb(
+      [
+        { id: "a1", countryId: "c1", visibility: "public" },
+        { id: "a2", countryId: "c1", visibility: "public" },
+      ],
+      ["a1"]
+    );
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a1] and [ixaction=a2]" })
+    ).resolves.toEqual({ created: ["a2"] });
+  });
+
+  it("creates nothing for a post whose poster has no country", async () => {
+    const { db, tx } = fakeDb([]);
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, countryId: null, body: "plain" })
+    ).resolves.toEqual({ created: [] });
+    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
   });
 
   it("rejects another country's action", async () => {
     const { db } = fakeDb([{ id: "a2", countryId: "c2", visibility: "public" }]);
-    await expect(syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a2]" })).rejects.toMatchObject({
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a2]" })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
 
   it("rejects a private action of the poster's own country", async () => {
     const { db } = fakeDb([{ id: "a3", countryId: "c1", visibility: "private" }]);
-    await expect(syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a3]" })).rejects.toBeInstanceOf(
-      ActionLinkError
-    );
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a3]" })
+    ).rejects.toBeInstanceOf(ActionLinkError);
   });
 
   it("rejects more than the per-post cap", async () => {
     const { db } = fakeDb([]);
-    const body = Array.from({ length: MAX_ACTIONS_PER_POST + 1 }, (_, i) => `[ixaction=a${i}]`).join("");
-    await expect(syncPostActionLinks(db as never, { ...POST, body })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    const body = Array.from(
+      { length: MAX_ACTIONS_PER_POST + 1 },
+      (_, i) => `[ixaction=a${i}]`
+    ).join("");
+    await expect(syncPostActionLinks(db as never, { ...POST, body })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 
   it("forbids links from a poster with no country", async () => {
@@ -88,27 +131,31 @@ describe("syncPostActionLinks", () => {
 
   it("removes every link when the edit drops all tokens", async () => {
     const { db, tx } = fakeDb([]);
-    await expect(syncPostActionLinks(db as never, { ...POST, body: "no tokens" })).resolves.toEqual([]);
+    await expect(syncPostActionLinks(db as never, { ...POST, body: "no tokens" })).resolves.toEqual(
+      { created: [] }
+    );
     expect(tx.postActionLink.deleteMany).toHaveBeenCalledWith({
       where: { postSource: "native", postRef: "p1", activityId: { notIn: [] } },
     });
-    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
   });
 });
 
 describe("validatePostActionTokens", () => {
   it("returns the owned token ids without writing anything", async () => {
     const { db, tx } = fakeDb([{ id: "a1", countryId: "c1", visibility: "public" }]);
-    await expect(validatePostActionTokens(db as never, { countryId: "c1", body: "[ixaction=a1]" })).resolves.toEqual([
-      "a1",
-    ]);
+    await expect(
+      validatePostActionTokens(db as never, { countryId: "c1", body: "[ixaction=a1]" })
+    ).resolves.toEqual(["a1"]);
     expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
   });
 
   it("skips the ownership query for a body with no tokens", async () => {
     const { db } = fakeDb([]);
-    await expect(validatePostActionTokens(db as never, { countryId: null, body: "plain" })).resolves.toEqual([]);
+    await expect(
+      validatePostActionTokens(db as never, { countryId: null, body: "plain" })
+    ).resolves.toEqual([]);
     expect(db.activityFeed.findMany).not.toHaveBeenCalled();
   });
 
@@ -117,13 +164,17 @@ describe("validatePostActionTokens", () => {
     ["a poster with no country", null, "[ixaction=a1]", "FORBIDDEN"],
   ])("refuses %s", async (_label, countryId, body, code) => {
     const { db } = fakeDb([{ id: "a2", countryId: "c2", visibility: "public" }]);
-    await expect(validatePostActionTokens(db as never, { countryId, body })).rejects.toMatchObject({ code });
+    await expect(validatePostActionTokens(db as never, { countryId, body })).rejects.toMatchObject({
+      code,
+    });
   });
 });
 
 describe("linkedPosts", () => {
   it("lists the posts discussing an activity", async () => {
     const { db } = fakeDb([]);
-    await expect(linkedPosts(db as never, "a1")).resolves.toEqual([{ postSource: "native", postRef: "p1" }]);
+    await expect(linkedPosts(db as never, "a1")).resolves.toEqual([
+      { postSource: "native", postRef: "p1" },
+    ]);
   });
 });

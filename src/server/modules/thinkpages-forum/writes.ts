@@ -92,7 +92,7 @@ export function syncLinks(
   actor: ForumActor,
   postId: string,
   plainText: string
-): Promise<string[]> {
+): Promise<{ created: string[] }> {
   return asForumRefusal(() =>
     syncPostActionLinks(db, {
       postSource: "native",
