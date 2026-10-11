@@ -58,14 +58,13 @@ const namesIxWorld = (ref: { slug: string } | { id: string }): boolean =>
     : ref.id === DEFAULT_REALM_ID;
 
 type RealmRef = { slug: string } | { id: string };
-type RealmWhere = { slug: string } | { id: string };
 
 /**
  * The lookup `loadForumRealm` and `loadForumRealmLook` share: the row, else IxWorld synthesized (D8). `find` reads
  * one realm row with whatever columns the caller selects.
  */
 async function resolveRealm<R extends ForumRealm>(
-  find: (where: RealmWhere) => Promise<R | null>,
+  find: (where: RealmRef) => Promise<R | null>,
   ref: RealmRef,
   synthesized: R
 ): Promise<R | null> {
