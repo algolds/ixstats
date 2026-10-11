@@ -36,19 +36,26 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   });
   if (!chain?.wikiPageTitle) return false;
 
+  // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
+  const entries = chain.actionLinks
+    .filter((l) => l.activity.visibility === "public")
+    .map((l) => ({
+      title: l.activity.title,
+      type: l.activity.type,
+      ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
+      url: postUrl(l.postSource as PostSource, l.postRef),
+    }));
+  if (entries.length === 0) {
+    // Nothing public to publish: write no section, and mark the chain done so the cron does not retry it forever.
+    await db.storyline.update({ where: { id: chain.id }, data: { wikiSyncedAt: new Date() } });
+    return true;
+  }
+
   const marker = `<!-- story-chain:${chain.id} -->`;
   const section = `${marker}\n${chainWikiSection({
     title: chain.title,
     approvedIxTime: IxTime.convertToIxTime((chain.reviewedAt ?? new Date()).getTime()),
-    // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
-    entries: chain.actionLinks
-      .filter((l) => l.activity.visibility === "public")
-      .map((l) => ({
-        title: l.activity.title,
-        type: l.activity.type,
-        ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
-        url: postUrl(l.postSource as PostSource, l.postRef),
-      })),
+    entries,
   })}`;
   // Head first, then text: findBySlug swallows read errors as null, so a page that exists but cannot be read
   // must abort rather than be overwritten by the section alone. The head ref also makes a concurrent edit conflict.

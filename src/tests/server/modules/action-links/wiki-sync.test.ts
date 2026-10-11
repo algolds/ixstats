@@ -70,6 +70,19 @@ describe("appendChainToWiki", () => {
     expect(wikitext).not.toContain("/thinkpages/post/p2");
   });
 
+  it("writes no section when every action of the chain is withdrawn, and marks it synced", async () => {
+    const withdrawn = {
+      postSource: "native",
+      postRef: "p2",
+      activity: { title: "Secret overhaul", type: "policy", createdAt: new Date(0), visibility: "private" },
+    };
+    const d = db({ ...CHAIN, actionLinks: [withdrawn] });
+    await expect(appendChainToWiki(d as never, "s1")).resolves.toBe(true);
+    expect(commitWikitextSave).not.toHaveBeenCalled();
+    expect(ArticleRepository.findBySlug).not.toHaveBeenCalled();
+    expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
+  });
+
   it("creates the page when it does not exist", async () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     await appendChainToWiki(db(CHAIN) as never, "s1");
