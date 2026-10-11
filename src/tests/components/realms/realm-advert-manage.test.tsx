@@ -31,7 +31,7 @@ beforeEach(() => {
 describe("the Manage page's Advert row", () => {
   it("links the advert the realm already has", () => {
     mockAdvert.data = { threadId: "t_ad", hiddenByModerator: false };
-    render(<AdvertSection slug="eurth" archived={false} />);
+    render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
     expect(screen.getByRole("heading", { name: "Advert" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open the advert" })).toHaveAttribute(
       "href",
@@ -43,7 +43,7 @@ describe("the Manage page's Advert row", () => {
 
   it("offers Create advert, opening the form for this realm, when there is none", () => {
     mockAdvert.data = { threadId: null, hiddenByModerator: false };
-    render(<AdvertSection slug="a-b" archived={false} />);
+    render(<AdvertSection slug="a-b" realmId="r_ab" archived={false} />);
     expect(screen.getByRole("link", { name: "Create advert" })).toHaveAttribute(
       "href",
       "/thinkpages/c/find-a-realm/new?advert=a-b"
@@ -52,30 +52,38 @@ describe("the Manage page's Advert row", () => {
 
   it("offers no Create for an archived realm, but still links an advert it has", () => {
     mockAdvert.data = { threadId: null, hiddenByModerator: false };
-    const none = render(<AdvertSection slug="eurth" archived />);
+    const none = render(<AdvertSection slug="eurth" realmId="r_eurth" archived />);
     expect(screen.queryByRole("link", { name: "Create advert" })).toBeNull();
     expect(screen.getByText("An archived realm cannot be advertised.")).toBeInTheDocument();
     none.unmount();
     mockAdvert.data = { threadId: "t_ad", hiddenByModerator: false };
-    render(<AdvertSection slug="eurth" archived />);
+    render(<AdvertSection slug="eurth" realmId="r_eurth" archived />);
     expect(screen.getByRole("link", { name: "Open the advert" })).toBeInTheDocument();
   });
 
   it("says a moderator hid the advert, with no link and no Create", () => {
     mockAdvert.data = { threadId: null, hiddenByModerator: true };
-    render(<AdvertSection slug="eurth" archived={false} />);
+    render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
     expect(screen.getByText("Your advert was hidden by a moderator.")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("says so while loading and when the advert could not be read", () => {
     mockAdvert.isLoading = true;
-    const loading = render(<AdvertSection slug="eurth" archived={false} />);
+    const loading = render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
     expect(screen.getByText("Loading…")).toBeInTheDocument();
     loading.unmount();
     delete mockAdvert.isLoading;
-    render(<AdvertSection slug="eurth" archived={false} />);
+    render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
     expect(screen.getByText("The advert could not be loaded.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Create advert" })).toBeNull();
+  });
+
+  it("says IxWorld cannot be advertised and never queries the advert", () => {
+    mockAdvert.data = { threadId: "t_ad", hiddenByModerator: false };
+    render(<AdvertSection slug="ixworld" realmId="default" archived={false} />);
+    expect(screen.getByText("IxWorld cannot be advertised in Find a Realm.")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(mockSlug).toBe("");
   });
 });

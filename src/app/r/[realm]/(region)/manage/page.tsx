@@ -100,7 +100,9 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           <FactbookSection slug={slug} realmName={manage.realm.name} factbook={manage.factbook} />
         )}
         {manage.rules && <RulesSection slug={slug} rules={manage.rules} />}
-        {can("appearance") && <AdvertSection slug={slug} archived={manage.archived} />}
+        {can("appearance") && (
+          <AdvertSection slug={slug} realmId={manage.realm.id} archived={manage.archived} />
+        )}
         <OfficersSection slug={slug} manage={manage} />
         {can("claims") && (
           <ManageSection
