@@ -32,7 +32,7 @@ Versioning communicates:
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Command Surface (v6)     │ Single-page executive console across 4 active domains: Identity,  │
  │                            │ Economy, Politics, Diplomacy. (Defense & Intel in preview).       │
- │ • Directives System        │ Declare national mandates, balance civil capacity (CivCap), and   │
+ │ • Directives System        │ Declare national mandates, balance civil capacity (executive bandwidth), and   │
  │                            │ resolve factional resistance.                                     │
  │ • Statecraft Engine (v4)   │ Deterministic sim: 42-tax bracket calculus, parliamentary D'Hondt │
  │                            │ representation, and composite vitality scoring.                   │

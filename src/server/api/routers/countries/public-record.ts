@@ -12,7 +12,7 @@ import {
  * The country profile's public record (`/countries/[slug]`), readable by anyone, signed out
  * included. Only enacted directives and resolved national issues leave the server, and only
  * their public fields: no drafts, abandoned directives, open/expired/dismissed issues, package
- * line items, budgets, CivCap or applied consequences (`~/lib/country/public-record`).
+ * line items, budgets, executive bandwidth or applied consequences (`~/lib/country/public-record`).
  */
 export const publicRecordProcedures = {
   getPublicRecord: publicProcedure

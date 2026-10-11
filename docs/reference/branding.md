@@ -21,7 +21,7 @@ IxStates (platform/ecosystem)         ← versioned: 1.4.0 "Lobster Crosby" (Maj
 │   └── IxVault (wallet/economy/trading cards)
 
 ├── Engines (internal-only simulation cores — single integer)
-│   ├── MyCountry  (nation-scoped deterministic sim; includes the Statecraft code: intent parsing, power brokers, CivCap throughput, recon research. Statecraft has no engine version of its own)
+│   ├── MyCountry  (nation-scoped deterministic sim; includes the Statecraft code: intent parsing, power brokers, executive bandwidth throughput, recon research. Statecraft has no engine version of its own)
 │   ├── Concord    (living-world sim — time, diplomacy, crises, NPCs)
 │   └── Atlas      (spatial foundation — worldgen, geo, maps; powers IxWorld)
 

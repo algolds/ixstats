@@ -35,7 +35,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
-import { globalCache } from "~/lib/cache";
+import { globalCache, invalidateCache } from "~/lib/cache";
 import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
@@ -68,6 +68,10 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
   queueAchievementCheck(event.inviterUserId);
   await ActivityHooks.User.onCountryLink(event.clerkUserId, event.countryId, false);
   await globalCache.delete(`user_profile:${event.clerkUserId}`);
+  // Map summaries and flags (cachedStaticProcedure, 1h) still say "unclaimed" otherwise.
+  await invalidateCache(["countries."]).catch((e: Error) =>
+    console.error("[realms] countries cache invalidation failed:", e)
+  );
 }
 
 const claims = (db: PrismaClient) =>

@@ -102,7 +102,7 @@ function DirectivesHeader({
           Directives
         </h2>
         <p className="text-label-secondary text-callout mt-1 max-w-2xl">
-          Each directive uses a weekly slot and holds CivCap while it executes.
+          Each directive uses a weekly slot and holds executive bandwidth while it executes.
         </p>
       </div>
       {!readOnly && (

@@ -17,9 +17,6 @@ jest.mock("~/components/mycountry/shell/ExecutiveAgenda", () => ({
   ExecutiveAgenda: stub("agenda"),
 }));
 jest.mock("~/components/mycountry/shell/StandingBands", () => ({ StandingBands: stub("bands") }));
-jest.mock("~/components/mycountry/shell/WorldCensusCard", () => ({
-  WorldCensusCard: stub("census"),
-}));
 jest.mock("~/components/mycountry/shell/TerritoryMapWidget", () => ({
   TerritoryMapWidget: stub("territory"),
 }));

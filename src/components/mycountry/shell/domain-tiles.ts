@@ -6,7 +6,6 @@ import {
   Globe,
   Globe as Globe2,
   Shield,
-  HistoricShieldAlt,
   Bank as Landmark,
   StatUp as TrendingUp,
   Heart,
@@ -54,9 +53,9 @@ export function formatGrowthPeek(country: CountryPeekData | null | undefined): s
 }
 
 /**
- * The four domain destinations, shown as rows on the Overview. `getPeek` only ever reports real
- * data; when a figure is missing it falls back to a plain description of what the domain holds,
- * never a number.
+ * The four base MyCountry destinations, shown as quick actions on the Overview. `getPeek` only
+ * ever reports real data; when a figure is missing it falls back to a plain description of what
+ * the destination holds, never a number.
  */
 export const DOMAIN_TILES: {
   id: MyCountrySection;
@@ -65,16 +64,13 @@ export const DOMAIN_TILES: {
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
   {
-    id: "diplomacy",
-    title: "Diplomacy",
-    icon: Globe,
-    getPeek: () => "Relations, embassies and alliances",
-  },
-  {
-    id: "defense",
-    title: "Defense",
-    icon: HistoricShieldAlt,
-    getPeek: () => "Forces, readiness and threats",
+    id: "economy",
+    title: "Economy",
+    icon: TrendingUp,
+    getPeek: (c) => {
+      const growth = formatGrowthPeek(c);
+      return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
+    },
   },
   {
     id: "politics",
@@ -88,12 +84,15 @@ export const DOMAIN_TILES: {
     },
   },
   {
-    id: "economy",
-    title: "Economy & budget",
-    icon: TrendingUp,
-    getPeek: (c) => {
-      const growth = formatGrowthPeek(c);
-      return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
-    },
+    id: "diplomacy",
+    title: "Diplomacy",
+    icon: Globe,
+    getPeek: () => "Relations, embassies and alliances",
+  },
+  {
+    id: "executive",
+    title: "Directives",
+    icon: Command,
+    getPeek: () => "Declare and track national goals",
   },
 ];

@@ -18,6 +18,7 @@ import { isRealmPublished, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { withInWorldDate } from "./realms.settings";
+import { invalidateCache } from "~/lib/cache";
 
 type ActionDb = Pick<
   PrismaClient,
@@ -413,5 +414,7 @@ export async function abandonNation(
     await releaseNation(tx, nation.id);
     await dropOfficerPostWithoutNation(tx, nation.realmId, actor);
   });
+  // Map summaries (cachedStaticProcedure, 1h) would keep showing the nation as claimed.
+  await invalidateCache(["countries."]).catch(() => undefined);
   return { success: true, realmId: nation.realmId, name: nation.name };
 }

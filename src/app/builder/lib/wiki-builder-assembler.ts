@@ -345,13 +345,14 @@ function createDepartmentsFromParsed(
       organizationalLevel: "Ministry",
       functions: [],
     };
-    departments.push(deptInput);
     allocations.push({
-      departmentId: dept.name,
+      // The builder keys allocations by department index.
+      departmentId: String(departments.length),
       allocatedPercent: 5,
       budgetYear: currentBudgetYear(),
       allocatedAmount: totalBudget * 0.05,
     });
+    departments.push(deptInput);
   }
 
   return { departments, allocations };

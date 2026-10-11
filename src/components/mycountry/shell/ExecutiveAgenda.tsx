@@ -8,6 +8,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { DirectiveStatusLine } from "./DirectiveStatusLine";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import {
   type AgendaItem,
@@ -96,10 +97,11 @@ function ExecutiveAgendaComponent({
 
   return (
     <Card id="executive-agenda" role="region" aria-labelledby="executive-agenda-title">
-      <CardHeader className="p-4 pb-0 sm:p-5 sm:pb-0">
+      <CardHeader className="flex flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1 p-4 pb-0 sm:p-5 sm:pb-0">
         <h2 id="executive-agenda-title" className="text-label text-title-3">
           Agenda
         </h2>
+        <DirectiveStatusLine countryId={countryId} />
       </CardHeader>
 
       <CardContent className="p-4 sm:p-5">

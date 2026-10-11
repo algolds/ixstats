@@ -101,9 +101,9 @@ that chose to be close allies).
 - **Coalitions and mandate:** a leader balances cabinet support and party polling, which became the Mandate and
   Cabinet Deliberation designs. Status: cabinet meetings conclude with decisions; the deliberation loop and mandate as a
   gate are not built.
-- **Civil Service Capacity (CivCap):** shown as `Allocated (+Temp) / Total`, for example `100 (+50) / 300`
-  (`src/lib/government/civcap.ts`).
-- **Issue delegation:** hand a non-urgent issue to the civil service for 15 CivCap (`DELEGATED_ISSUE_CIVCAP`).
+- **Executive bandwidth:** shown as `Allocated (+Temp) / Total`, for example `100 (+50) / 300`
+  (`src/lib/government/exec-bandwidth.ts`).
+- **Issue delegation:** hand a non-urgent issue to the civil service for 15 executive bandwidth (`DELEGATED_ISSUE_EXEC_BANDWIDTH`).
 
 ### Burg — guardrails
 
@@ -125,7 +125,7 @@ that chose to be close allies).
 ### The resulting Statecraft loop
 
 1. **IN:** the world (or power brokers) presents an issue or crisis.
-2. **SEE:** the player spends CivCap to assess it, limited by information fog.
+2. **SEE:** the player spends executive bandwidth to assess it, limited by information fog.
 3. **OUT:** the player declares an intent or directive, or responds to the issue.
 4. **RIPPLE:** the engine clamps the change, writes it to the ledger (Burg's guardrail) and broadcasts the story to
    ThinkPages (Urcea's canonical loop).

@@ -92,7 +92,7 @@ export function ConfirmDirectiveModal() {
         <DialogHeader>
           <DialogTitle>Confirm Policy Directive</DialogTitle>
           <DialogDescription>
-            Are you sure you want to allocate CivCap capacity to this measure?
+            Are you sure you want to allocate executive bandwidth capacity to this measure?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0 mt-4">

@@ -65,7 +65,7 @@ prisma/schema/
 ### 3.2 Statecraft & Executive Simulation
 - **`Intent`**: Player-declared strategic directive. Stores `goal`, `category`, `status`, `riskRating` (`stable` | `volatile` | `high-risk`), and `progress`.
 - **`NationalIssue`**: Dilemmas arriving in the executive inbox. Linked to `intentId` for grounded feedback loops.
-- **`Policy`**: Active government policies. Carries `civCapCost`.
+- **`Policy`**: Active government policies. Carries `execBandwidthCost`.
 - **`CountryChangeLog`**: Ledger written by the `CountryEventSpine` service (`src/lib/activity/event-spine.ts` — code, not a model) for statecraft actions and metric shifts; feed entries go to `ActivityFeed`.
 
 ### 3.3 Spatial & GIS Geometry (PostGIS)

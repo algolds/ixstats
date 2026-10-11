@@ -52,12 +52,12 @@ export function ClaimNationButton({
   const claim = api.realms.claimCountry.useMutation({
     onSuccess: (result) => {
       setOpen(false);
-      void utils.realms.myClaims.invalidate();
-      void utils.realms.getBySlug.invalidate({ slug: realmSlug });
+      // Every realm list (hub, claims, directory, search) shows claim state.
+      void utils.realms.invalidate();
       if (result.status === "approved") {
         notify.success(`${countryName} is yours`, "Manage it from MyCountry.");
-        void utils.realms.myNations.invalidate();
-        void utils.realms.region.invalidate();
+        // The country page and map read ownership from the country queries.
+        void utils.countries.invalidate();
         void utils.users.getProfile.invalidate();
         return;
       }

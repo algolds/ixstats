@@ -56,7 +56,7 @@ Commitments produce a **bounded, clamped** world-state change and a narrative en
 | Engine | Role |
 | :--- | :--- |
 | **IxTime** (Temporal) | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps. |
-| **Statecraft** (MyCountry Engine v4) | Tracks Civil Service Capacity (CivCap), applies clamped stat modifiers, classifies intent, and spawns resistance issues from domestic power brokers. |
+| **Statecraft** (MyCountry Engine v4) | Tracks executive bandwidth, applies clamped stat modifiers, classifies intent, and spawns resistance issues from domestic power brokers. |
 | **Concord** (Living-World, v2) | IxTime, diplomatic stance drift, and NPC personality traits (8 traits scored from live data). The crisis lifecycle (`BREWING → … → RESOLVED`), NPC trait drift and event-fatigue dampening are designed but not yet built; crisis events are read-only today. |
 | **Atlas** (Spatial, v5) | 100,000-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
 
@@ -79,10 +79,10 @@ IxWorld is one realm among several: every country belongs to a realm (`Country.r
 
 The flagship executive desk (`systems.mycountry` v6, `engines.mycountry` v4 in `src/lib/buildVersion.ts`). Lead your nation through authentic governance systems centered around executive power:
 
-- **The Single Command Surface**: Unified leadership cockpit (`src/components/mycountry/shell/CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, CivCap, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
-- **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft engine (`src/lib/statecraft/`, `src/lib/intent/`) tracks Civil Service Capacity (CivCap), applies clamped stat modifiers, and writes narrative entries to the country's canon feed. Directives are capped at 3 per IxTime week with a cooldown. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from domestic power brokers. Over-extended CivCap or low government effectiveness raises **Information Fog** warnings on policy previews (numbers are not yet masked into qualitative bands).
+- **The Single Command Surface**: Unified leadership cockpit (`src/components/mycountry/shell/CommandSurface.tsx`) featuring Telemetry Standing Bands (Approval, Stability, executive bandwidth, Vitality Rings), an interactive 7-day IxTime Executive Agenda horizon strip, and Priority Crisis hero spotlights.
+- **National Directives & Statecraft Engine**: Declare national policy packages across 3 intensity levels (Measured, Moderate, Extreme). The Statecraft engine (`src/lib/statecraft/`, `src/lib/intent/`) tracks executive bandwidth, applies clamped stat modifiers, and writes narrative entries to the country's canon feed. Directives are capped at 3 per IxTime week with a cooldown. Committing extreme directives triggers the **Intent ↔ Issues Resistance Rhythm**, spawning political pushback from domestic power brokers. Over-extended executive bandwidth or low government effectiveness raises **Information Fog** warnings on policy previews (numbers are not yet masked into qualitative bands).
 - **Grounded National Issues & 4-Branch Briefs**: The dynamic issue engine builds real-time national dilemmas by resolving live PostGIS `ST_Touches` neighboring countries, active cabinet ministers, and trade partners into templates (`{{neighborName}}`, `{{ministerName}}`). Leaders resolve dilemmas via 4 distinct action paths:
-  - `Delegate`: Consumes 15 CivCap to pass non-urgent matters to the civil service for 5 in-game days.
+  - `Delegate`: Consumes 15 executive bandwidth to pass non-urgent matters to the civil service for 5 in-game days.
   - `Resolve Brief`: Choose an immediate executive option with direct statistical tradeoffs.
   - `Set Cabinet Meeting`: Schedule a meeting in the 7-day Agenda (+7 IxTime days). Meetings are schedule-only for now — outcomes and decisions are not yet recorded.
   - `Make Directive`: Escalate the dilemma directly into the Intent Composer to enact a formal national directive.

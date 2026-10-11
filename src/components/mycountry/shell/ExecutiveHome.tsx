@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -8,40 +8,12 @@ import { CrisisSignal } from "./CrisisSignal";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
-import { WorldCensusCard } from "./WorldCensusCard";
 import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
 import { DomainPeeksCard } from "./DomainPeeksCard";
 import { IntelligenceAlertsCard } from "./IntelligenceAlertsCard";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-
-function formatCooldownTime(cooldownUntil: number | null | undefined, now = Date.now()): string {
-  if (!cooldownUntil) return "Resets next weekly cycle";
-  const diffMs = Math.max(0, cooldownUntil - now);
-  if (diffMs <= 0) return "Cooldown expiring soon";
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
-  if (days > 0) return `${days}d ${hours}h ${mins}m`;
-  if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
-  return `${mins}m ${secs}s`;
-}
-
-/** Leaf countdown — ticks every second without re-rendering the whole executive home. */
-export const CooldownTimer = React.memo(function CooldownTimer({
-  cooldownUntil,
-}: {
-  cooldownUntil: number | null | undefined;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <>{formatCooldownTime(cooldownUntil, now)}</>;
-});
 
 function ExecutiveHomeComponent({
   countryId,
@@ -94,8 +66,6 @@ function ExecutiveHomeComponent({
             onOpenDrill={onOpenDrill}
           />
 
-          <DomainPeeksCard onNavigate={onNavigate} />
-
           <Card role="region" aria-labelledby="recent-activity-title">
             <CardHeader className="p-4 pb-0 sm:p-5 sm:pb-0">
               <h2 id="recent-activity-title" className="text-label text-title-3">
@@ -122,14 +92,14 @@ function ExecutiveHomeComponent({
           </Card>
         </div>
 
-        {/* Rail: open intelligence alerts, national standing, rank among peers and the territory */}
+        {/* Rail: open intelligence alerts, national standing, domain quick actions and the territory */}
         <aside
           className="min-w-0 space-y-6"
-          aria-label="Intelligence alerts, national standing, rankings and territory"
+          aria-label="Intelligence alerts, national standing, domains and territory"
         >
-          <IntelligenceAlertsCard countryId={countryId} />
+          <IntelligenceAlertsCard countryId={countryId} onOpenDrill={onOpenDrill} />
           <StandingBands countryId={countryId} />
-          <WorldCensusCard countryId={countryId} />
+          <DomainPeeksCard onNavigate={onNavigate} />
           <TerritoryMapWidget countryId={countryId} />
         </aside>
       </div>

@@ -52,7 +52,7 @@ describe("Intent System & Package Assembly", () => {
 
     for (const pkg of result.packages) {
       expect(pkg.changes.length).toBeLessThanOrEqual(4);
-      expect(pkg.civCapCost).toBeGreaterThan(0);
+      expect(pkg.execBandwidthCost).toBeGreaterThan(0);
     }
   });
 

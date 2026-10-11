@@ -318,6 +318,10 @@ export function hydrateGovernmentStructure(
     };
   }
 
+  // The builder keys allocations and parent links by department index ("0", "1", …), as the
+  // government save path expects; map the stored ids onto those indices.
+  const indexOf = new Map(government.departments.map((d, i) => [d.id, String(i)]));
+
   return {
     structure: {
       governmentName: government.governmentName,
@@ -347,19 +351,28 @@ export function hydrateGovernmentStructure(
           icon: dept.icon ?? undefined,
           color: dept.color ?? undefined,
           priority: dept.priority ?? undefined,
-          parentDepartmentId: dept.parentDepartmentId ?? undefined,
+          parentDepartmentId: dept.parentDepartmentId
+            ? indexOf.get(dept.parentDepartmentId)
+            : undefined,
           organizationalLevel: (dept.organizationalLevel || "Department") as OrganizationalLevel,
           functions: parseJsonArray<string>(dept.functions),
           kpis: parseJsonArray<KeyPerformanceIndicator>(dept.kpis),
         }) as DepartmentInput
     ),
-    budgetAllocations: government.budgetAllocations.map((alloc) => ({
-      departmentId: alloc.departmentId,
-      budgetYear: alloc.budgetYear,
-      allocatedAmount: alloc.allocatedAmount,
-      allocatedPercent: alloc.allocatedPercent,
-      notes: alloc.notes ?? undefined,
-    })),
+    budgetAllocations: government.budgetAllocations.flatMap((alloc) => {
+      const departmentId = indexOf.get(alloc.departmentId);
+      return departmentId === undefined
+        ? []
+        : [
+            {
+              departmentId,
+              budgetYear: alloc.budgetYear,
+              allocatedAmount: alloc.allocatedAmount,
+              allocatedPercent: alloc.allocatedPercent,
+              notes: alloc.notes ?? undefined,
+            },
+          ];
+    }),
     revenueSources: government.revenueSources.map((rev) => ({
       name: rev.name,
       category: toRevenueCategory(rev.category),

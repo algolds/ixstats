@@ -6,7 +6,7 @@ This document outlines the core structural and gameplay philosophies governing t
 >
 > | PRD / section | Status | Where it stands |
 > | :--- | :--- | :--- |
-> | §1–3 Philosophy, fog, policy origins | ✅ Mostly built | Derived policy risk/CivCap, department gate for custom policies, reactive 25%/15% discounts (`policies/crud.ts`). Fog is warnings only (`PolicyReconBanner`) — no qualitative-band masking. |
+> | §1–3 Philosophy, fog, policy origins | ✅ Mostly built | Derived policy risk/executive bandwidth, department gate for custom policies, reactive 25%/15% discounts (`policies/crud.ts`). Fog is warnings only (`PolicyReconBanner`) — no qualitative-band masking. |
 > | Gameplay Frameworks 1–4 (Milestone, Coalition, Geography, Crisis) | 💡 Exploration | Not built as loops. Pieces exist: power brokers and bills (Coalition), neighbor-grounded issues (Geography). |
 > | Intent Engine PRD | 🟡 Partial | `Intent` tree + `intent` router + measured/moderate/extreme packages + resistance issues + weekly cap. No `NationalIntent`/`IntentDependency` DAG, Vision/Strategic/Operational layers, Blocked→Proposed auto-transition, or ministry-generated Plans A/B/C. |
 > | Executive Meeting System PRD | ❌ Not built | Meetings are schedule-only (`meetings.createMeeting`, `quickActions.createMeeting`). No deliberation phases, meeting categories, participant profiles, recommendation engine, or decision recording (completion mutations deleted in plans 312/332). |
@@ -25,9 +25,9 @@ The single most critical design pillar of MyCountry is: **players should want to
 * **Summits/Agendas are Intentional**: The **Meeting Scheduler** serves as the vehicle for aligning the cabinet and coordinating summits. When players select an *Intent* (e.g., bilateral agreement, cabinet realignment), the system collapses alternatives and shapes the entire meeting flow to realize that specific objective.
 
 ### Key Gameplay Rules
-- **No Arbitrary Numbers**: Players do not configure raw numbers (e.g. choosing a specific risk rating or CivCap cost) in the creator interface. Instead, the attributes are derived from the player's core administrative choices (e.g. Priority, Category, and Decretal Key).
+- **No Arbitrary Numbers**: Players do not configure raw numbers (e.g. choosing a specific risk rating or executive bandwidth cost) in the creator interface. Instead, the attributes are derived from the player's core administrative choices (e.g. Priority, Category, and Decretal Key).
 - **Extraordinary Efforts**: Policies represent *active, unusual* drives. They are not passive laws; they require continuous attention and civil service capacity.
-- **Unified Stakeholder Concessions**: Policies are a primary way to manage stakeholder pressures without directly giving in to their standard demands. A player can enact a policy as a political concession to appease an interest group, but it comes at the cost of ongoing CivCap and budget upkeeps.
+- **Unified Stakeholder Concessions**: Policies are a primary way to manage stakeholder pressures without directly giving in to their standard demands. A player can enact a policy as a political concession to appease an interest group, but it comes at the cost of ongoing executive bandwidth and budget upkeeps.
 
 ---
 
@@ -44,8 +44,8 @@ A realistic simulation must avoid the "omniscient player" trap. The player's vie
 ## 3. Policy Origins & Advantages
 
 To reward reactive play and create a dynamic loop:
-1. **Whole-Cloth Initiatives**: Policies drafted independently from the player's general vision are harder to pass and maintain (standard CivCap and budget upkeeps).
-2. **Reactive Opportunities**: Policies created as direct responses to Issues or Broker Requests are "easier" to implement. They gain **25% CivCap upkeep relief** and **15% maintenance cost reductions**, reflecting political alignment and lower friction.
+1. **Whole-Cloth Initiatives**: Policies drafted independently from the player's general vision are harder to pass and maintain (standard executive bandwidth and budget upkeeps).
+2. **Reactive Opportunities**: Policies created as direct responses to Issues or Broker Requests are "easier" to implement. They gain **25% executive bandwidth upkeep relief** and **15% maintenance cost reductions**, reflecting political alignment and lower friction.
 
 ---
 
@@ -113,8 +113,8 @@ The player declares a proactive objective (e.g., *Modernize the Navy, Eradicate 
 The mechanical facilitation of the intent. The player holds Cabinet Meetings, drafts targeted Policies, allocates budgets, and dispatches diplomatic envoys to lock the government into the objective.
 
 ### 4. Execution
-*(Civil Service, Ministries, CivCap, Budgets)*
-The actual friction of governing. Commitments drain Civil Service Capacity (CivCap) and treasury funds. Poor government efficiency creates a "Fog of Information," obscuring progress and exact metrics.
+*(Civil Service, Ministries, executive bandwidth, Budgets)*
+The actual friction of governing. Commitments drain executive bandwidth and treasury funds. Poor government efficiency creates a "Fog of Information," obscuring progress and exact metrics.
 
 ### 5. Reaction
 *(Stakeholders, Other Players, Markets, Events)*
@@ -145,7 +145,7 @@ The traditional NationStates model relies heavily on a *reactive, slot-machine* 
 
 Applying the new MyCountry philosophy—**"players declare an intent, and mechanics facilitate that intent"**—means we can completely invert this loop. Gameplay should be *proactive*. The player decides what they want to achieve, and the game provides the friction, tools, and consequences of pursuing that goal.
 
-Here are four completely new, distinct gameplay frameworks that utilize our existing base (Policies, Meetings, CivCap, Budgets, Demographics, Geography, Power Brokers, Fog of Information) to reinvent the core loop.
+Here are four completely new, distinct gameplay frameworks that utilize our existing base (Policies, Meetings, executive bandwidth, Budgets, Demographics, Geography, Power Brokers, Fog of Information) to reinvent the core loop.
 
 ---
 
@@ -157,7 +157,7 @@ Here are four completely new, distinct gameplay frameworks that utilize our exis
     1.  **Declare Intent:** At the start of a term/year, the player selects a Grand Milestone (e.g., *Transition to a Green Economy, Establish a Space Program, Eradicate Extreme Poverty, Achieve Continental Hegemony*).
     2.  **Facilitation (Meetings & Policies):** The Milestone requires specific prerequisites (e.g., High Tech Industry > 25%, a Budget Surplus, a Level 3 Education system). The player must use **Cabinet Meetings** to coordinate departments and draft **Policies** specifically designed to clear these bottlenecks.
     3.  **Targeted Friction (Issues):** Issues are no longer random background noise. They are spawned as direct consequences of the Milestone. Transitioning to a Green Economy? The Magnates (fossil fuel lobby) spawn crisis issues, strikes, and capital flight. Building a Space Program? You get budget overrun issues and scientific failure events.
-    4.  **Resource Sink:** **CivCap** and the national budget are heavily invested into advancing the Milestone's progress bar.
+    4.  **Resource Sink:** **Executive bandwidth** and the national budget are heavily invested into advancing the Milestone's progress bar.
 *   **Why it fits the philosophy:** The player's intent is the engine of the game. Every policy they draft, every meeting they hold, and every issue they face is contextually tied to the goal they chose.
 
 ---
@@ -181,9 +181,9 @@ Here are four completely new, distinct gameplay frameworks that utilize our exis
 *   **The Core Verb:** Securing and Developing Geography.
 *   **The Loop:**
     1.  **Declare Intent:** The player clicks directly on their map to declare an intent for a specific region (e.g., *Develop the Northern Resource Basin, Fortify the Eastern Border, Establish a Trade Hub in the Capital*).
-    2.  **Facilitation (Regional Focus):** **Meetings** are held to allocate national budget and CivCap to those specific geographic regions. **Policies** become regionalized (e.g., *Subsidize Northern Industry* rather than a blanket national subsidy).
-    3.  **Targeted Friction (Issues):** Issues arise geographically. You don't get a generic "Crime is up" issue; you get a "Cartel violence in the Southern Province" issue. You must dispatch resources (consuming CivCap) specifically to that map location to resolve it.
-    4.  **Fog of Information:** Distant or underdeveloped provinces on the map have masked stats. You must spend CivCap to "survey" or establish administrative presence there before you can even accurately gauge their unemployment or GDP.
+    2.  **Facilitation (Regional Focus):** **Meetings** are held to allocate national budget and executive bandwidth to those specific geographic regions. **Policies** become regionalized (e.g., *Subsidize Northern Industry* rather than a blanket national subsidy).
+    3.  **Targeted Friction (Issues):** Issues arise geographically. You don't get a generic "Crime is up" issue; you get a "Cartel violence in the Southern Province" issue. You must dispatch resources (consuming executive bandwidth) specifically to that map location to resolve it.
+    4.  **Fog of Information:** Distant or underdeveloped provinces on the map have masked stats. You must spend executive bandwidth to "survey" or establish administrative presence there before you can even accurately gauge their unemployment or GDP.
 *   **Why it fits the philosophy:** Intent is grounded in physical reality. The mechanics facilitate interacting with the map, making the simulation feel deeply tangible.
 
 ---
@@ -195,7 +195,7 @@ Here are four completely new, distinct gameplay frameworks that utilize our exis
 *   **The Loop:**
     1.  **Declare Intent:** The player can see a "Looming Crisis" on a global timeline (e.g., *Global Economic Recession, Climate Shift, Global War, Technological Singularity*). Their Intent is their chosen strategy for weathering it (e.g., *Pursue Autarky/Self-Reliance, Form Global Alliances, Fast-Track Technological Leapfrogging*).
     2.  **Facilitation (The Preparation Phase):** The player uses **Policies** and **Meetings** to stockpile specific resources, build designated infrastructure, and shape the economy according to their chosen strategy.
-    3.  **Targeted Friction (The Survival Phase):** When the Crisis hits, the game state shifts. The severity and type of **Issues** that spawn are dictated by how well the player's preparations align with the crisis. A highly prepared nation gets manageable, localized issues. An unprepared nation gets cascaded, catastrophic issues that drain CivCap and plummet Stability.
+    3.  **Targeted Friction (The Survival Phase):** When the Crisis hits, the game state shifts. The severity and type of **Issues** that spawn are dictated by how well the player's preparations align with the crisis. A highly prepared nation gets manageable, localized issues. An unprepared nation gets cascaded, catastrophic issues that drain executive bandwidth and plummet Stability.
 *   **Why it fits the philosophy:** The intent is the long-term survival strategy. The mechanics provide the runway to build that strategy, and the issues are the ultimate test of its validity.
 
 ---
@@ -296,11 +296,11 @@ Vision
   ↓
 Intent Created (Goal Statement, Wizard, Opportunity, or Vision continuation)
   ↓
-Analysis (Ministries assess budget, CivCap, Power Broker support, and Fog of Information)
+Analysis (Ministries assess budget, executive bandwidth, Power Broker support, and Fog of Information)
   ↓
 Government Deliberation (Dynamic generation of Plans A, B, and C with pros/cons)
   ↓
-Commitment (Selected plan reserves CivCap, schedules Meetings, drafts Policies)
+Commitment (Selected plan reserves executive bandwidth, schedules Meetings, drafts Policies)
   ↓
 Execution & Bureaucratic Action (Departments implement; low efficiency creates Fog)
   ↓
@@ -308,7 +308,7 @@ Reaction & Resistance (Contextual issues spawn directly in response to active in
   ↓
 Adaptation (Player resolves complications through secondary choices, e.g. budget injection)
   ↓
-Completion / Failure (Outcome summary finalized; CivCap released)
+Completion / Failure (Outcome summary finalized; executive bandwidth released)
   ↓
 Historical Legacy (Timeline and ThinkPages permanently record the result)
 ```
@@ -342,7 +342,7 @@ model NationalIntent {
   description    String?
   layer          String             // "VISION" | "STRATEGIC" | "OPERATIONAL"
   status         String             // "blocked" | "proposed" | "active" | "completed" | "failed"
-  civCapCost     Float              @default(0)
+  execBandwidthCost     Float              @default(0)
   budgetCost     Float              @default(0)
   category       String
   createdAt      DateTime           @default(now())
@@ -401,7 +401,7 @@ Government Need (Intent/Issue/Opportunity/Promise)
   ↓
 Meeting Convened
   ↓
-Preparation (Departments compile intelligence; CivCap spent)
+Preparation (Departments compile intelligence; executive bandwidth spent)
   ↓
 Government Briefing (Executive summary, cost estimates, confidence rating)
   ↓
@@ -439,7 +439,7 @@ Every meeting attendee has a defined profile affecting discussions and options:
 
 ## 6. Dynamic Recommendation Engine
 Rather than presenting single answers, the government generates dynamically tailored plans based on the nation's state:
-*   *Option A (State-Driven):* High bureaucratic control, expensive, fast, high CivCap cost.
+*   *Option A (State-Driven):* High bureaucratic control, expensive, fast, high executive bandwidth cost.
 *   *Option B (Market-Driven):* Cheap, private incentives, fast, satisfies Magnates, but carries lower public approval.
 *   *Option C (Balanced/Targeted):* Moderate cost and timing, balanced broker support.
 *   *Option D (Emergency Triage):* Drastic cuts or high-risk measures.
@@ -478,7 +478,7 @@ The landing page coordinates information into clean, progressive sections:
 1.  **Executive Briefing (AI Morning Report):** Dynamically compiled recap of Yesterday's Developments, Government Assessment, Today's Priorities, and Emerging Risks.
 2.  **Urgent Matters (Max 5):** Emergency sessions, expiring treaty deadlines, or Power Broker ultimatums requiring immediate signatures.
 3.  **Government Agenda:** Live strategic progress meters pulled from active `NationalIntent` graph nodes.
-4.  **Active Commitments:** Operational programs currently consuming CivCap, budget, and department bandwidth.
+4.  **Active Commitments:** Operational programs currently consuming executive bandwidth, budget, and department bandwidth.
 5.  **Executive Calendar:** Upcoming scheduled Cabinet meetings, summits, and reviews.
 6.  **Cabinet Recommendations:** Actionable proposals submitted directly from active departments.
 7.  **Political & Diplomatic Climate:** Status of Power Broker relationships and outstanding external embassies.
@@ -547,6 +547,6 @@ The concept of a separate "Elections System" is removed. Instead, elections repr
 Governments do not "do diplomacy"—foreign ministries execute foreign policy.
 
 ### Core Architecture:
-1.  **Embassies as Departments:** Embassies are no longer passive buildings. They are treated as local departments consuming budget/CivCap to execute specific `ForeignMission` objectives (e.g., trade generation, visa processing, strategic intelligence).
-2.  **Treaties as Living Programs:** Treaties are commitment nodes in the Intent Graph. They reserve budget/CivCap and require periodic Review Meetings to maintain alignment. 
+1.  **Embassies as Departments:** Embassies are no longer passive buildings. They are treated as local departments consuming budget/executive bandwidth to execute specific `ForeignMission` objectives (e.g., trade generation, visa processing, strategic intelligence).
+2.  **Treaties as Living Programs:** Treaties are commitment nodes in the Intent Graph. They reserve budget/executive bandwidth and require periodic Review Meetings to maintain alignment. 
 3.  **Summits are Meetings:** International summits, G7-style talks, trade pact negotiations, and war councils use the same `CabinetMeeting` engine.

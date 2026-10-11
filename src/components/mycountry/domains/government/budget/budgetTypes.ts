@@ -66,5 +66,4 @@ export interface BudgetTrendItem {
   year: string;
   budget: number;
   spent: number;
-  revenue: number;
 }

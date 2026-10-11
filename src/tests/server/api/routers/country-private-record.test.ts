@@ -4,7 +4,7 @@
 //
 // The owner's side of a nation's statecraft, enforced on the server (the public side is
 // country-public-record.test.ts). Owner-only: open issues and their detail (nationalIssues.*),
-// the directive status/suggest/linked-issue reads, CivCap (policies.getPolicyReconContext) and
+// the directive status/suggest/linked-issue reads, executive bandwidth (policies.getPolicyReconContext) and
 // draft policies. Every procedure is checked for the owner, another player, an admin (the
 // dev "view as" toolbar is system-owner only, which is privileged the same way) and a
 // signed-out caller.
@@ -61,12 +61,12 @@ jest.mock("~/lib/gameplay-flags", () => {
     GAMEPLAY_FLAGS: { ...actual.GAMEPLAY_FLAGS, statecraftSpine: true },
   };
 });
-jest.mock("~/lib/government/civcap", () => {
-  const actual = jest.requireActual("~/lib/government/civcap");
+jest.mock("~/lib/government/exec-bandwidth", () => {
+  const actual = jest.requireActual("~/lib/government/exec-bandwidth");
   return {
     __esModule: true,
     ...actual,
-    loadCivCapState: jest.fn(async () => ({
+    loadExecBandwidthState: jest.fn(async () => ({
       componentTypes: [],
       departmentCategories: [],
       capacity: 100,
@@ -85,7 +85,7 @@ import { intentRouter } from "~/server/api/routers/intent";
 import { nationalIssuesPlayerRouter } from "~/server/api/routers/national-issues/player";
 import { policiesRouter } from "~/server/api/routers/policies";
 import { NationalIssuesConsequences } from "~/lib/national-issues";
-import { loadCivCapState } from "~/lib/government/civcap";
+import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = "country_owned";
@@ -254,7 +254,7 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
   [
     "policies.getPolicyReconContext",
     (ctx) => policies(ctx).getPolicyReconContext({ countryId: COUNTRY }),
-    () => loadCivCapState as unknown as jest.Mock,
+    () => loadExecBandwidthState as unknown as jest.Mock,
   ],
 ];
 

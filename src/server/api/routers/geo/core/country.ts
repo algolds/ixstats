@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
-import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { cachedPublicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import type { Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
@@ -304,10 +304,11 @@ export const countryProcedures = {
    * Get all geographic features for a specific country.
    * Includes subdivisions, cities, and points of interest.
    */
-  getNeighborGeometries: adminProcedure
+  // Same gate as the border edit it serves: site admins, or the realm's map editors.
+  getNeighborGeometries: protectedProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
-      const realmId = await viewerRealmId(ctx, input.realm);
+      const realmId = await editableMapRealmId(ctx, input.realm);
       const feature = await ctx.db.mapLayer.findFirst({
         where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
         select: { boundingBox: true },

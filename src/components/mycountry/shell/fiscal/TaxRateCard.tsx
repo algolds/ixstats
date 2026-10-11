@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { type TaxChannel, ACCENT_BG } from "./taxChannels";
 import { Card } from "~/components/ui/card";
+import { RateInput } from "../RateInput";
 
 interface TaxRateCardProps {
   channel: TaxChannel;
@@ -103,7 +104,12 @@ function TaxRateCardComponent({
       </div>
 
       {/* Rate slider */}
-      <div className={cn("transition-opacity duration-200", isLocked && "opacity-50")}>
+      <div
+        className={cn(
+          "flex items-center gap-3 transition-opacity duration-200",
+          isLocked && "opacity-50"
+        )}
+      >
         <Slider
           min={channel.min}
           max={channel.max}
@@ -114,6 +120,15 @@ function TaxRateCardComponent({
           onValueCommit={([v]) => v !== undefined && onCommit(v)}
           aria-label={`${channel.label} rate`}
           className="w-full"
+        />
+        <RateInput
+          value={sliderValue}
+          min={channel.min}
+          max={channel.max}
+          step={channel.step}
+          disabled={isLocked}
+          onCommit={onCommit}
+          aria-label={`${channel.label} rate, percent`}
         />
       </div>
 

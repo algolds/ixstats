@@ -1,6 +1,7 @@
 import { type Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
 import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
 import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
+import { computeNextStreak } from "~/lib/vault/daily-roll";
 
 type LedgerErrorCode =
   | "MAINTENANCE"
@@ -430,6 +431,8 @@ export async function getBalance(userId: string, db: PrismaClient) {
       vaultXp: updatedVault.vaultXp,
       loginStreak: updatedVault.loginStreak,
       canClaimDailyBonus,
+      /** The streak today's claim will have (the credit roll's streak boost uses it). */
+      claimStreak: computeNextStreak(lastLoginDate, updatedVault.loginStreak, now),
       premiumMultiplier: vaultCfg.premiumMultiplier,
       isPremium: false,
     };
@@ -445,6 +448,7 @@ export async function getBalance(userId: string, db: PrismaClient) {
       loginStreak: 0,
       // A failed read cannot know whether today's claim was taken, so never offer one.
       canClaimDailyBonus: false,
+      claimStreak: 0,
       premiumMultiplier: 1.0,
       isPremium: false,
     };

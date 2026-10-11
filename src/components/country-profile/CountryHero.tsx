@@ -56,7 +56,15 @@ function resolveSrc(src: string | null | undefined): string | null {
 }
 
 /** The flag as a bordered tile; the first letter of the name when there is no flag. */
-function FlagTile({ src, name, lifted }: { src: string | null; name: string; lifted: boolean }) {
+export function FlagTile({
+  src,
+  name,
+  lifted = false,
+}: {
+  src: string | null;
+  name: string;
+  lifted?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   const resolved = resolveSrc(src);
   return (

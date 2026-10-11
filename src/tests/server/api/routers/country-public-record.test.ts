@@ -55,7 +55,7 @@ const intentRow = (overrides: Record<string, unknown>) => ({
   progress: 40,
   parentId: null,
   cooldownUntil: 123,
-  civCapCost: 12,
+  execBandwidthCost: 12,
   createdIxTime: 1_000,
   createdAt: new Date("2026-01-01"),
   updatedAt: new Date("2026-01-01"),
@@ -187,7 +187,7 @@ describe("countries.getPublicRecord", () => {
     expect(record.issueOutcomes.map((o) => o.id)).toEqual(["lapsed", "resolved"]);
   });
 
-  it("returns public fields only (no package, CivCap, cooldown or applied consequences)", async () => {
+  it("returns public fields only (no package, executive bandwidth, cooldown or applied consequences)", async () => {
     const db = makeDb();
     const record = await publicRecordCaller(signedOut(db)).getPublicRecord({ countryId: COUNTRY });
 
@@ -212,7 +212,7 @@ describe("countries.getPublicRecord", () => {
       { select: Record<string, boolean> },
     ];
     expect(intentSelect).not.toHaveProperty("changesJson");
-    expect(intentSelect).not.toHaveProperty("civCapCost");
+    expect(intentSelect).not.toHaveProperty("execBandwidthCost");
     const [{ select: issueSelect }] = db.nationalIssue.findMany.mock.calls[0] as unknown as [
       { select: Record<string, boolean> },
     ];
@@ -253,7 +253,7 @@ describe("intent.getTree", () => {
     expect(tree.allIntents.map((i) => i.id).sort()).toEqual(["done", "in_force"]);
     for (const intent of tree.allIntents) {
       expect(intent.changesJson).toBe("[]");
-      expect(intent.civCapCost).toBeNull();
+      expect(intent.execBandwidthCost).toBeNull();
       expect(intent.cooldownUntil).toBeNull();
     }
     expect(tree.roots).toHaveLength(2);

@@ -17,48 +17,53 @@ import {
   filterPresets,
 } from "~/components/mycountry/shared/primitives/composer/directive-presets";
 import { assemblePackages } from "~/lib/intent/assemble";
-import { DIRECTIVE_CIVCAP_WINDOW_MS } from "~/lib/government/civcap";
+import { DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS } from "~/lib/government/exec-bandwidth";
 
 describe("directiveTimeline", () => {
   const created = 1_000_000;
 
-  it("mirrors the server's CivCap execution window", () => {
-    expect(DIRECTIVE_EXECUTION_WINDOW_MS).toBe(DIRECTIVE_CIVCAP_WINDOW_MS);
+  it("mirrors the server's executive bandwidth execution window", () => {
+    expect(DIRECTIVE_EXECUTION_WINDOW_MS).toBe(DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS);
   });
 
-  it("holds CivCap while an active directive is inside its execution week", () => {
+  it("holds executive bandwidth while an active directive is inside its execution week", () => {
     const t = directiveTimeline(
-      { status: "active", createdIxTime: created, civCapCost: 12 },
+      { status: "active", createdIxTime: created, execBandwidthCost: 12 },
       created + DIRECTIVE_EXECUTION_WINDOW_MS / 2
     );
     expect(t.phase).toBe("executing");
-    expect(t.heldCivCap).toBe(12);
+    expect(t.heldExecBandwidth).toBe(12);
     expect(t.executionProgress).toBeCloseTo(0.5);
     expect(t.releasesAt).toBe(created + DIRECTIVE_EXECUTION_WINDOW_MS);
   });
 
-  it("is in force (CivCap released) after the week, until completed", () => {
+  it("is in force (executive bandwidth released) after the week, until completed", () => {
     const t = directiveTimeline(
-      { status: "active", createdIxTime: created, civCapCost: 12 },
+      { status: "active", createdIxTime: created, execBandwidthCost: 12 },
       created + DIRECTIVE_EXECUTION_WINDOW_MS + 1
     );
-    expect(t).toMatchObject({ phase: "in_force", heldCivCap: 0, releasesAt: null });
+    expect(t).toMatchObject({ phase: "in_force", heldExecBandwidth: 0, releasesAt: null });
   });
 
   it("maps closed statuses and treats legacy rows without a cost as holding nothing", () => {
     const now = created + 10;
     expect(
-      directiveTimeline({ status: "completed", createdIxTime: created, civCapCost: 5 }, now).phase
+      directiveTimeline({ status: "completed", createdIxTime: created, execBandwidthCost: 5 }, now)
+        .phase
     ).toBe("completed");
     expect(
-      directiveTimeline({ status: "abandoned", createdIxTime: created, civCapCost: 5 }, now).phase
+      directiveTimeline({ status: "abandoned", createdIxTime: created, execBandwidthCost: 5 }, now)
+        .phase
     ).toBe("abandoned");
     expect(
-      directiveTimeline({ status: "proposed", createdIxTime: created, civCapCost: null }, now).phase
+      directiveTimeline(
+        { status: "proposed", createdIxTime: created, execBandwidthCost: null },
+        now
+      ).phase
     ).toBe("draft");
     expect(
-      directiveTimeline({ status: "active", createdIxTime: created, civCapCost: null }, now)
-        .heldCivCap
+      directiveTimeline({ status: "active", createdIxTime: created, execBandwidthCost: null }, now)
+        .heldExecBandwidth
     ).toBe(0);
   });
 });

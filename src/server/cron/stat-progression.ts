@@ -2,7 +2,7 @@
  * Stat progression (MC-7): persist the economic projection into the stored `current*` columns.
  *
  * MyCountry shows `getByIdWithEconomicData`, which projects population and GDP from each
- * country's baseline with its active StorytellerEffects. Rankings, vitality, CivCap, foreign-policy
+ * country's baseline with its active StorytellerEffects. Rankings, vitality, executive bandwidth, foreign-policy
  * maths and passive income read the stored `current*` columns instead, which used to move only
  * when an admin pressed "force recalculation". This job writes the same projection (the one the
  * admin button uses: `projectCountryStats` in server/shared/country-helpers) for every country,

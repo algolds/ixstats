@@ -127,7 +127,15 @@ const billions = (amount: number | null | undefined, suffix = "") =>
 
 const outOf100 = (score: number | null | undefined) => (score != null ? `${score}/100` : "—");
 
-function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboard | undefined }) {
+function MacroTab({
+  country,
+  countryId,
+  dashboard,
+}: {
+  country: Country;
+  countryId: string;
+  dashboard: Dashboard | undefined;
+}) {
   // Economy relation rows ride along on the country record (getByIdWithEconomicData).
   const {
     economicProfile: profile,
@@ -265,6 +273,8 @@ function MacroTab({ country, dashboard }: { country: Country; dashboard: Dashboa
           />
         </div>
       </SheetSection>
+
+      <InfrastructureMaintenanceCard countryId={countryId} />
     </div>
   );
 }
@@ -310,8 +320,6 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
       </SheetSection>
 
       <BudgetManagementDashboard countryId={countryId} />
-
-      <InfrastructureMaintenanceCard countryId={countryId} />
     </div>
   );
 }
@@ -332,7 +340,9 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
   return (
     <div className="space-y-4">
       <SectionTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
-      {activeTab === "macro" && <MacroTab country={country} dashboard={dashboard} />}
+      {activeTab === "macro" && (
+        <MacroTab country={country} countryId={countryId} dashboard={dashboard} />
+      )}
       {activeTab === "fiscal" && <FiscalTab country={country} countryId={countryId} />}
       {activeTab === "monetary" && <FiscalPolicyConsole countryId={countryId} />}
       {activeTab === "trade" && <TradeCommerceConsole countryId={countryId} />}

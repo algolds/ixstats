@@ -22,7 +22,7 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import type { CountryWithEconomicData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
-import { formatCensusValue } from "~/components/mycountry/shell/WorldCensusCard";
+import { formatCensusValue } from "~/lib/format/census";
 import {
   LORE_CHAPTER_KEYWORDS,
   buildChronicle,
@@ -282,7 +282,7 @@ function buildIdentity(
       str(c.coatOfArms) ?? (coatFile ? (resolveImageUrl(coatFile, imageSource) ?? null) : null),
     sovereign: owner
       ? {
-          username: firstStr(owner.forumUsername, owner.wikiUsername),
+          username: firstStr(owner.handle, owner.forumUsername, owner.wikiUsername),
           roleName: firstStr(owner.role?.displayName, owner.role?.name),
         }
       : null,

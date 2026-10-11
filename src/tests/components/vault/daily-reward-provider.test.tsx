@@ -2,7 +2,12 @@ import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 let mockUserId: string | null = "user-1";
-let balance = { canClaimDailyBonus: true, loginStreak: 4 };
+let balance: {
+  canClaimDailyBonus: boolean;
+  loginStreak: number;
+  claimStreak?: number;
+  vaultLevel?: number;
+} = { canClaimDailyBonus: true, loginStreak: 4 };
 const mutate = jest.fn();
 const invalidateBalance = jest.fn();
 let mutationOptions: {
@@ -66,11 +71,11 @@ beforeEach(() => {
 const dialog = () => screen.getByRole("dialog");
 
 describe("DailyRewardProvider", () => {
-  it("auto-opens a copper dialog with two choices and the streak", () => {
+  it("auto-opens the vault dialog with two choices and the streak", () => {
     render(<Widget />);
     expect(dialog()).toHaveAttribute("data-app", "vault");
     expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
-    expect(within(dialog()).getByText("4-day streak")).toBeInTheDocument();
+    expect(within(dialog()).getByText(/Day 4 today/)).toBeInTheDocument();
     expect(within(dialog()).getByRole("button", { name: /IxCredits/ })).toBeInTheDocument();
     expect(within(dialog()).getByRole("button", { name: /Card pull/ })).toBeInTheDocument();
     expect(within(dialog()).queryByText(/maybe later/i)).toBeNull();
@@ -90,7 +95,7 @@ describe("DailyRewardProvider", () => {
     act(() => mutationOptions.onSuccess({ creditsAwarded: 0, streak: 5 }));
     expect(await screen.findByRole("heading", { name: "Reward claimed" })).toBeInTheDocument();
     expect(screen.getByText("+0")).toBeInTheDocument();
-    expect(screen.getByText("5-day streak")).toBeInTheDocument();
+    expect(screen.getByText("5 days")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Collect" })).toBeInTheDocument();
     expect(reveal).toHaveBeenCalledTimes(1);
   });
@@ -152,11 +157,24 @@ describe("DailyRewardProvider", () => {
     expect(trigger.className).toContain("hover:bg-tint-fill");
   });
 
-  it("keeps the solid well on tile hover", () => {
+  it("raises the choice tiles as panes that lift, and drops the lift while claiming", () => {
     render(<Widget />);
     const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
-    expect(tile.className).toContain("facet-well");
+    expect(tile.className).toContain("facet-pane");
+    expect(tile.className).toContain("facet-lift");
     expect(tile.className).not.toContain("hover:bg-tint-fill");
+    fireEvent.click(tile);
+    expect(tile.className).not.toContain("facet-lift");
+  });
+
+  it("shows the boost today's claim will roll with", () => {
+    // Day 5 of the streak (×1.25) at vault level 10 (×1.20): ×1.50 on the credits tile.
+    balance = { canClaimDailyBonus: true, loginStreak: 4, claimStreak: 5, vaultLevel: 10 };
+    render(<Widget />);
+    const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
+    expect(within(tile).getByText("×1.50")).toBeInTheDocument();
+    expect(within(dialog()).getByText(/Day 5 today/)).toBeInTheDocument();
+    expect(within(dialog()).getByText("×1.25")).toBeInTheDocument();
   });
 
   it("cannot be dismissed while a claim is in flight", () => {

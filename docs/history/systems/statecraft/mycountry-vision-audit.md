@@ -24,7 +24,7 @@ Across all docs, the north star is stable and genuinely distinct from NationStat
 
 MyCountry is not a nation simulator. It is an executive decision simulator. You don't play the country — you play the government currently trying to steer it.
 
-This single reframe is the most valuable idea in the entire corpus (chatgpt-logs §"Government Is the Main Character"). It retroactively justifies every existing subsystem: Policies = directing government, Meetings = coordinating it, CivCap = its bandwidth, Power Brokers = its constraints, Fog = its incompetence.
+This single reframe is the most valuable idea in the entire corpus (chatgpt-logs §"Government Is the Main Character"). It retroactively justifies every existing subsystem: Policies = directing government, Meetings = coordinating it, executive bandwidth = its bandwidth, Power Brokers = its constraints, Fog = its incompetence.
 
 The grammar everyone converges on:
 
@@ -46,7 +46,7 @@ The spine exists. CountryEventSpine / recordCountryEvent (country-event-spine.ts
 Burg's demo is built. CountryChangeLog model + CountryChangeLogTimeline.tsx + getChangeLog. Governance legibility is shipping.
 National Issues — the gold-standard closed loop, and now ON by default (issuesAutoGenerate: true in gameplay-flags.ts). This is the only end-to-end Action→Effect→Narrative→Ledger example in the codebase.
 Statecraft primitives are built as pure libs and wired: statecraft-recon.ts (fog: classifyDomain/revealConsequences), statecraft-power-brokers.ts (Keaor's archetypes — technocrats, party, generals, magnates, clergy…), statecraft-whip.ts (fogVoteProjection = mandate/whip). These are imported by national-issues, policies, elections/brokers, legislation, foreignPolicy. The conceptual vocabulary exists in code.
-Policies (plan 056) — riskRating/origin/civCapCost derived backend-side (not player-configured ✓), calculatedEffects, StorytellerEffect sync.
+Policies (plan 056) — riskRating/origin/execBandwidthCost derived backend-side (not player-configured ✓), calculatedEffects, StorytellerEffect sync.
 Diplomacy root fix, Foreign Policy closed loop, scheduled-election cron, politics-drift cron — all present.
 ❌ Gen 2 (the design bible) is essentially unbuilt
 No Intent Engine. No NationalIntent / IntentDependency models, no intent/ router, no DAG. The bible's central architecture — Vision→Intent→Deliberation — does not exist in any form.

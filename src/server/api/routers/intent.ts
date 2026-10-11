@@ -56,7 +56,7 @@ const BUDGET_PCT_MAX = 60; // clamp a single department's allocatedPercent
 /**
  * updateStatus transitions. A draft becomes active only through commit() (which applies the
  * package and checks the weekly cap); completed and abandoned are final, so a finished directive
- * cannot be re-activated to hold CivCap again.
+ * cannot be re-activated to hold executive bandwidth again.
  */
 const STATUS_TRANSITIONS: Record<string, readonly string[]> = {
   proposed: ["abandoned"],
@@ -92,7 +92,7 @@ function alignedBroker(brokers: ActiveBroker[], category: Category): ActiveBroke
 
 /**
  * Weekly slots: every directive committed in the last IxTime week uses one, whatever its
- * status now. Abandoning (or completing) a directive releases its CivCap but not its slot, so
+ * status now. Abandoning (or completing) a directive releases its executive bandwidth but not its slot, so
  * declare → abandon → redeclare cannot exceed the cap. Drafts (`tier: "proposed"`, never
  * committed) don't use a slot. This is the one server value the UI slot counters read
  * (`getStatus`).
@@ -183,8 +183,8 @@ async function saveActiveIntent(
     cooldownUntil: now + COOLDOWN_MS,
     createdIxTime: now,
     riskRating: TIER_RISK[tier],
-    // Held against CivCap while the directive executes (lib/government/civcap.ts).
-    civCapCost: pkg.civCapCost,
+    // Held against executive bandwidth while the directive executes (lib/government/exec-bandwidth.ts).
+    execBandwidthCost: pkg.execBandwidthCost,
   };
 
   if (!intentId) {
@@ -541,7 +541,7 @@ export const intentRouter = createTRPCRouter({
    * The owner (and privileged roles) get every intent, drafts and abandoned ones included.
    * Everyone else — other players and signed-out visitors — gets the public record only:
    * enacted directives (`active`/`completed`, never the draft tier) with the package line items,
-   * CivCap and cooldown redacted (`~/lib/country/public-record`).
+   * Executive bandwidth and cooldown redacted (`~/lib/country/public-record`).
    */
   getTree: publicProcedure
     .input(z.object({ countryId: z.string() }))
@@ -562,7 +562,7 @@ export const intentRouter = createTRPCRouter({
         : found.map((intent) => ({
             ...intent,
             changesJson: "[]",
-            civCapCost: null,
+            execBandwidthCost: null,
             cooldownUntil: null,
           }));
 

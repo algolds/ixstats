@@ -9,7 +9,7 @@ window.NATION = {
     Economy: { band: "good", label: "Expanding" },
     Approval: { band: "mid", label: "Restless" },
     Stability: { band: "good", label: "Steady" },
-    Capacity: { band: "mid", label: "Stretched" }, // CivCap
+    Capacity: { band: "mid", label: "Stretched" }, // Executive bandwidth
     Standing: { band: "info", label: "Respected" }, // diplomatic
     Treasury: { band: "fog", label: "Unclear" }, // Fog of Information
   },

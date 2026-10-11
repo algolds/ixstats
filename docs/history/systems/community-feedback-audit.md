@@ -31,8 +31,8 @@ Keaor focused on the mechanical depth of the simulation, ensuring that the engin
 **Key Feedback & Proposals:**
 - **Relative-Development Asymmetry**: Pointed out that absolute effects make no sense in geopolitics (*"Free trade with Pooristan $\neq$ Free trade with Goldland"*). Trade agreements dynamically price benefits based on the relative development tiers of both nations.
 - **Coalition Dynamics & Mandate**: A national leader is not a dictator. Leaders must balance cabinet support and party polling. This resulted in the **Mandate** and **Cabinet Deliberation** systems.
-- **Civil Service Capacity (CivCap)**: Proposed the precise UI structure for administrative bandwidth: `Allocated (+Temp) / Total` (e.g. `100 (+50) / 300`).
-- **Issue Delegation**: Proposed the delegation mechanism on non-urgent issues, consuming 15 CivCap to dismiss non-urgent matters to civil servants.
+- **Executive bandwidth**: Proposed the precise UI structure for administrative bandwidth: `Allocated (+Temp) / Total` (e.g. `100 (+50) / 300`).
+- **Issue Delegation**: Proposed the delegation mechanism on non-urgent issues, consuming 15 executive bandwidth to dismiss non-urgent matters to civil servants.
 
 ---
 
@@ -64,6 +64,6 @@ Heku's role was translating the creative tension between Urcea's narrative freed
 
 The collision of this community feedback created the definitive **Statecraft Loop**:
 1. **IN**: The World (or Power Brokers) presents an Issue or Crisis.
-2. **SEE**: The player uses Civil Service Capacity (CivCap) to assess the situation, bounded by Information Fog.
+2. **SEE**: The player uses executive bandwidth to assess the situation, bounded by Information Fog.
 3. **OUT**: The player declares an Intent / Directive or responds to the Issue.
 4. **RIPPLE**: The engine clamps the change, writes to the immutable ledger (Burg's guardrail), and automatically broadcasts the narrative to ThinkPages (Urcea's canonical loop).

@@ -8,13 +8,14 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "~/components/mycountry/directives/directive-model";
+import { BandwidthHelp, hasBandwidth } from "~/components/mycountry/directives/BandwidthHelp";
 import { FollowUpChip } from "./FollowUpChip";
 
 interface DeclarePanelProps {
   goal: string;
   approachLabel: string;
-  civCapCost: number | null;
-  civCap:
+  execBandwidthCost: number | null;
+  execBandwidth:
     { capacity: number; used: number; available: number; overCapacity: boolean } | null | undefined;
   slots:
     | { usedThisWeek: number; cap: number; canCommit: boolean; cooldownUntil: number | null }
@@ -29,7 +30,7 @@ interface DeclarePanelProps {
   onDeclare: () => void;
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2">
       <dt className="text-label-secondary text-body shrink-0">{label}</dt>
@@ -70,8 +71,8 @@ function blockedReasonOf(
 export function DeclarePanel({
   goal,
   approachLabel,
-  civCapCost,
-  civCap,
+  execBandwidthCost,
+  execBandwidth,
   slots,
   nowIxTime,
   followUpOf,
@@ -82,9 +83,8 @@ export function DeclarePanel({
   disabled,
   onDeclare,
 }: DeclarePanelProps) {
-  const cost = civCapCost ?? 0;
-  const hasCivCap = !!civCap && Number.isFinite(civCap.capacity) && civCap.capacity > 0;
-  const available = hasCivCap ? civCap.available : null;
+  const cost = execBandwidthCost ?? 0;
+  const available = hasBandwidth(execBandwidth) ? execBandwidth.available : null;
   const availableAfter = available == null ? null : Math.round(available - cost);
   const goesOver = availableAfter != null && availableAfter < 0;
   const blockedReason = blockedReasonOf(readOnly, slots, nowIxTime);
@@ -96,9 +96,18 @@ export function DeclarePanel({
           <span className="line-clamp-3">{goal}</span>
         </Row>
         <Row label="Approach">{approachLabel}</Row>
-        <Row label="CivCap">{civCapCost == null ? "–" : `${cost} held for one IxTime week`}</Row>
+        <Row
+          label={
+            <span className="inline-flex items-center gap-1">
+              Bandwidth
+              <BandwidthHelp state={execBandwidth} />
+            </span>
+          }
+        >
+          {execBandwidthCost == null ? "–" : `${cost} held for one IxTime week`}
+        </Row>
         <Row label="Available after">
-          {civCap === undefined ? (
+          {execBandwidth === undefined ? (
             <Skeleton className="ml-auto h-4 w-20" />
           ) : availableAfter == null ? (
             "–"
@@ -119,7 +128,7 @@ export function DeclarePanel({
         <Alert role="note" variant="warning">
           <WarningTriangle aria-hidden />
           <AlertDescription className="text-footnote">
-            This puts you over civil-service capacity. You can still declare it, but recon and
+            This puts you over your executive bandwidth. You can still declare it, but recon and
             policy previews become less reliable until capacity frees up.
           </AlertDescription>
         </Alert>

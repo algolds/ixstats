@@ -54,8 +54,8 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
           >
             <dl className="text-footnote mt-3 space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <dt className="text-label-secondary">CivCap</dt>
-                <dd className="text-label font-medium tabular-nums">{pkg.civCapCost}</dd>
+                <dt className="text-label-secondary">Bandwidth</dt>
+                <dd className="text-label font-medium tabular-nums">{pkg.execBandwidthCost}</dd>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <dt className="text-label-secondary">Acceptance</dt>

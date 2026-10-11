@@ -71,7 +71,7 @@ or left as found. The area reports are unchanged snapshots; this page tracks sta
    `/realms` directory (in the sidebar since 2026-10-05) and a realm filter on the ThinkPages feed. The dashboard
    feed and trending are not realm-scoped.
 7. ✅ **Remaining truth fixes:** Diplomatic Standing is computed, the Trending tab has real data or an honest empty
-   state, passport privacy is persisted and enforced on the server, and the Capacity band shows real CivCap.
+   state, passport privacy is persisted and enforced on the server, and the Capacity band shows real executive bandwidth.
 
 **Still open:** the owner actions above; PR #49's known gaps (no region filter on rankings, DMs can't be sent as a
 persona or country, appointed chambers are still seated by the vote simulation); the GDP-growth trigger unit bug in
@@ -306,7 +306,7 @@ fixed, and statements updated for the fixes that merged with them. The list belo
 - "Gold Master (100% Ready)" status headers in `maps.md`, `social.md`, `halo.md`, `ixtime.md` and other system docs.
 - `SYSTEM_STATUS.md`: Politics, Diplomacy, Economy, National Issues, Worldgen/procedural pipeline, ThinkShare,
   Accounts, the ledger and the marketplace are rated ✅ Live; the code supports 🟡 Partial.
-- `mycountry.md` (directives consume CivCap; premium sidebar gating), `economy.md` (a growth tick that doesn't
+- `mycountry.md` (directives consume executive bandwidth; premium sidebar gating), `economy.md` (a growth tick that doesn't
   exist), `wikios.md` family (sub-2 ms reads with no PHP, Postgres 100% authoritative, trigram search,
   `@wikios/core`), `branding.md` (Stash models, Halo plugins, missing files), `thinktanks.md` (personas and routes
   that don't exist), `ixcredits.md` / `ns-integration.md` (old NS bonus), help `thinkshare.md` (encryption that

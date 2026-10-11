@@ -7,22 +7,35 @@ import { Card } from "~/components/ui/card";
 
 interface BudgetDepartmentItem {
   department: GovernmentDepartment;
-  allocation: BudgetAllocation;
+  allocation: BudgetAllocation | null;
 }
 
 interface BudgetDepartmentListProps {
   departments: BudgetDepartmentItem[];
+  year: number;
   formatNumber: (num: number) => string;
 }
 
-export function BudgetDepartmentList({ departments, formatNumber }: BudgetDepartmentListProps) {
+export function BudgetDepartmentList({
+  departments,
+  year,
+  formatNumber,
+}: BudgetDepartmentListProps) {
+  if (departments.length === 0) {
+    return (
+      <p className="text-label-secondary border-separator rounded-row text-footnote border border-dashed py-8 text-center">
+        No departments yet. Add them in the Government step of the Country Editor.
+      </p>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-3">
       {departments.map(({ department, allocation }) => {
-        const allocatedAmount = allocation.allocatedAmount ?? 0;
-        const spentAmount = allocation.spentAmount ?? 0;
-        const availableAmount = allocation.availableAmount ?? 0;
-        const allocatedPercent = allocation.allocatedPercent ?? 0;
+        const allocatedAmount = allocation?.allocatedAmount ?? 0;
+        const spentAmount = allocation?.spentAmount ?? 0;
+        const availableAmount = allocation?.availableAmount ?? 0;
+        const allocatedPercent = allocation?.allocatedPercent ?? 0;
         const utilizationRate = allocatedAmount > 0 ? (spentAmount / allocatedAmount) * 100 : 0;
 
         return (
@@ -45,41 +58,49 @@ export function BudgetDepartmentList({ departments, formatNumber }: BudgetDepart
                   </p>
                 </div>
               </div>
-              <div className="shrink-0 text-right">
-                <p className="text-label text-title-3 tabular-nums">
-                  {formatNumber(allocatedAmount)}
-                </p>
-                <p className="text-label-secondary text-footnote tabular-nums">
-                  {allocatedPercent.toFixed(1)}% of budget
-                </p>
-              </div>
+              {allocation && (
+                <div className="shrink-0 text-right">
+                  <p className="text-label text-title-3 tabular-nums">
+                    {formatNumber(allocatedAmount)}
+                  </p>
+                  <p className="text-label-secondary text-footnote tabular-nums">
+                    {allocatedPercent.toFixed(1)}% of budget
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="text-footnote space-y-2">
-              <div className="text-footnote flex items-center justify-between">
-                <span className="text-label-secondary font-medium">Budget utilization</span>
-                <span className="text-label font-semibold tabular-nums">
-                  {utilizationRate.toFixed(1)}%
-                </span>
+            {!allocation ? (
+              <p className="text-label-secondary text-footnote">
+                No allocation for {year}. Set one in the Government step of the Country Editor.
+              </p>
+            ) : (
+              <div className="text-footnote space-y-2">
+                <div className="text-footnote flex items-center justify-between">
+                  <span className="text-label-secondary font-medium">Budget utilization</span>
+                  <span className="text-label font-semibold tabular-nums">
+                    {utilizationRate.toFixed(1)}%
+                  </span>
+                </div>
+                <Progress value={utilizationRate} className="h-1.5" />
+                <dl className="text-footnote grid grid-cols-3 gap-3 pt-1">
+                  {[
+                    { label: "Allocated", value: allocatedAmount },
+                    { label: "Spent", value: spentAmount },
+                    { label: "Remaining", value: availableAmount },
+                  ].map((item) => (
+                    <div key={item.label} className="min-w-0">
+                      <dt>
+                        <span className="text-stat-label text-label-secondary">{item.label}</span>
+                      </dt>
+                      <dd className="text-label mt-0.5 truncate font-semibold tabular-nums">
+                        {formatNumber(item.value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-              <Progress value={utilizationRate} className="h-1.5" />
-              <dl className="text-footnote grid grid-cols-3 gap-3 pt-1">
-                {[
-                  { label: "Allocated", value: allocatedAmount },
-                  { label: "Spent", value: spentAmount },
-                  { label: "Remaining", value: availableAmount },
-                ].map((item) => (
-                  <div key={item.label} className="min-w-0">
-                    <dt>
-                      <span className="text-stat-label text-label-secondary">{item.label}</span>
-                    </dt>
-                    <dd className="text-label mt-0.5 truncate font-semibold tabular-nums">
-                      {formatNumber(item.value)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            )}
           </Card>
         );
       })}

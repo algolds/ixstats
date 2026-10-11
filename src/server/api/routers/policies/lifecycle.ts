@@ -9,8 +9,8 @@ import { ENACTED_POLICY_STATUSES, endPolicy } from "~/lib/policies/lifecycle";
 
 export const policiesLifecycleRouter = createTRPCRouter({
   /**
-   * Repeal an enacted (active or suspended) policy. Its CivCap is released (only active
-   * policies count toward CivCap), its growth effect is cleared, and later maintenance runs
+   * Repeal an enacted (active or suspended) policy. Its executive bandwidth is released (only active
+   * policies count toward executive bandwidth), its growth effect is cleared, and later maintenance runs
    * stop debiting it. Country owner or privileged roles only.
    */
   repealPolicy: lightMutationProcedure
@@ -23,7 +23,7 @@ export const policiesLifecycleRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const policy = await ctx.db.policy.findUnique({
         where: { id: input.policyId },
-        select: { id: true, countryId: true, name: true, status: true, civCapCost: true },
+        select: { id: true, countryId: true, name: true, status: true, execBandwidthCost: true },
       });
       if (!policy) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Policy not found" });
@@ -44,7 +44,7 @@ export const policiesLifecycleRouter = createTRPCRouter({
       return {
         id: policy.id,
         status: "repealed" as const,
-        civCapReleased: policy.status === "active" ? policy.civCapCost : 0,
+        execBandwidthReleased: policy.status === "active" ? policy.execBandwidthCost : 0,
       };
     }),
 });

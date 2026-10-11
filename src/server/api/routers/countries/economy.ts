@@ -33,6 +33,7 @@ const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: tr
 const SOVEREIGN_OWNER_SELECT = {
   id: true,
   clerkUserId: true,
+  handle: true,
   forumUsername: true,
   wikiUsername: true,
   membershipTier: true,
@@ -243,7 +244,12 @@ export const economyProcedures = {
       const sovereignUser = rawUser
         ? {
             id: rawUser.id,
-            username: rawUser.forumUsername || rawUser.wikiUsername || rawUser.clerkUserId || null,
+            username:
+              rawUser.handle ||
+              rawUser.forumUsername ||
+              rawUser.wikiUsername ||
+              rawUser.clerkUserId ||
+              null,
             roleName: rawUser.role?.displayName || rawUser.role?.name || "Sovereign Regent",
             membershipTier: rawUser.membershipTier || "citizen",
           }

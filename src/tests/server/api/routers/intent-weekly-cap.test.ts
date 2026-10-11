@@ -3,7 +3,7 @@
 // the hoisted jest.mock() factories rely on the ambient global.
 //
 // The weekly directive cap (3 per IxTime week) counts every directive committed in the window,
-// whatever its status now: abandoning one releases its CivCap but not its slot, so
+// whatever its status now: abandoning one releases its executive bandwidth but not its slot, so
 // declare → abandon → redeclare cannot exceed the cap. Drafts (tier "proposed") use no slot.
 jest.mock("~/server/db", () => ({
   __esModule: true,

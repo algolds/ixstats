@@ -50,9 +50,9 @@ taken on trust. Findings marked **NEW** do not appear in SYSTEM_STATUS, pending-
 | Stat progression over time | Partial: projection on read only | `lib/economy/calculations.ts` (`IxStatsCalculator`, 667); `countries/economy.ts:101-160, 302-345` | Pop/GDP = f(baseline, `baselineDate`, `adjustedGdpGrowth`, `StorytellerEffect`s). Persisted only by admin `forceRecalculation` (`admin/system.ts:374`). No cron (MC-7). History is synthesised when fewer than 5 points (`economy.ts:136-160`) |
 | National Issues | Working for generate / resolve / log | `lib/national-issues/` (2,775); `routers/national-issues/` (1,165); 114 templates, 342 options (`prisma/seeds/national-issue-templates.ts`) | Cron every 30 min for owned countries (`jobs.ts:172`, `generation-cron.ts`). Capped at 5 per week via `data/national-issues-config.json` (a file on disk, not the DB) |
 | Issue consequences | Partial | `lib/national-issues/consequences.ts` (550) → `lib/activity/event-spine.ts` (311) | Direct clamped field writes plus `CountryChangeLog`. Most don't reach anything the player sees (1.3) |
-| Directives (Intent) | Working | `routers/intent.ts` (425); `lib/intent/` (819) | 3 per IxTime week (`intent.ts:31-33`); packages from the policy registry; resistance issues; budget deltas. The `civCapCost` it computes is display-only: never stored or consumed (**NEW**) |
+| Directives (Intent) | Working | `routers/intent.ts` (425); `lib/intent/` (819) | 3 per IxTime week (`intent.ts:31-33`); packages from the policy registry; resistance issues; budget deltas. The `execBandwidthCost` it computes is display-only: never stored or consumed (**NEW**) |
 | Policies | Partial | `routers/policies/crud.ts` (304); `lib/policies/` (1,406) | Create and read only. No repeal or expiry (MC-5). `policy-maintenance` job unsafe to enable (PL-8) |
-| CivCap | Partial | `lib/government/atomic-utils.ts:340`; duplicated in `national-issues/player.ts:37-120` and `policies/crud.ts` (MC-21) | Uses stored `currentPopulation`, which does not progress. The "Capacity" band shows directive slots, not CivCap (**NEW**) |
+| Executive bandwidth | Partial | `lib/government/atomic-utils.ts:340`; duplicated in `national-issues/player.ts:37-120` and `policies/crud.ts` (MC-21) | Uses stored `currentPopulation`, which does not progress. The "Capacity" band shows directive slots, not executive bandwidth (**NEW**) |
 | Recon ("SEE") | Built, off by default | `lib/statecraft/recon.ts`; `nationalIssues.commissionRecon/getReconReveal` | `STATECRAFT_SPINE` defaults false (`lib/gameplay-flags.ts`) |
 | Cabinet meetings | Stub (schedule only) | `routers/meetings/` (329); `quickactions/meetings.ts` | No complete / decide mutations |
 | Parties / legislature / bills | **Dead end** | `routers/elections/` (481); `legislation.ts` (245); `lib/statecraft/{whip,legislative-vote}.ts` | `election.create` exists only in the follow-up branch of `election-cron.ts:65`. No first election or candidate is ever made. Seats are created without a party (`legislature.ts:158-171`), so `holdVote` always throws (`legislation.ts:162-167`) (MC-2) |
@@ -84,7 +84,7 @@ taken on trust. Findings marked **NEW** do not appear in SYSTEM_STATUS, pending-
    - The MyCountry UI shows `getByIdWithEconomicData`, which projects from `baselinePopulation` / `baselineGdpPerCapita`
      at `baselineDate` using `adjustedGdpGrowth` and active `StorytellerEffect`s (`country-helpers.ts:17-36`,
      `calculations.ts:178-240`).
-   - Stored `current*` fields (read by rankings, `getCountryDashboard` vitality, `/countries` sort, CivCap, foreign-policy
+   - Stored `current*` fields (read by rankings, `getCountryDashboard` vitality, `/countries` sort, executive bandwidth, foreign-policy
      impact maths, passive income) are refreshed only by the admin `forceRecalculation`.
    - ⚠️ So there are two sources of truth.
 3. **Issues and directives.**
@@ -126,7 +126,7 @@ country?.currentStability ?? country?.stability ?? 0.78           // :62
   - `ExecutiveOpportunityHero.tsx:125` and `ExecutiveActionCards.tsx:147` (stability 0.78);
   - `IntentComposer.tsx:97` (`approvalRating ?? 65`), so its `approval < 50` branch never fires.
 - `identity.mappers.ts:45` does map `publicApproval → currentPublicApproval`, but only for the passport.
-- The third band, "Capacity" (`:67-70`), is `(3 − directivesUsedThisWeek)/3`. It is not the CivCap
+- The third band, "Capacity" (`:67-70`), is `(3 − directivesUsedThisWeek)/3`. It is not the executive bandwidth
   Allocated / Total that `mycountry.md` and `statecraft-game-loops.md §3` describe.
 
 ### 1.4 NEW: the editor is an unlogged stat-edit path
@@ -173,8 +173,8 @@ country?.currentStability ?? country?.stability ?? 0.78           // :62
 | `SYSTEM_STATUS.md` Concord row "IxTime — Concord v2" | IxTime is versioned under Concord | `VERSIONS.engines.concord` is never read anywhere. It is a doc-only grouping |
 | `mycountry.md:4`, `builder.md:6`, `economy.md:6`, `elections.md:6`, `diplomacy.md:6`, `calculations.md:6` | "📀 Gold Master (100% Ready)" | Contradicts SYSTEM_STATUS, which says it replaced the Gold Master matrix. `elections.md` even carries a "Current gap" box under the Gold Master badge |
 | `mycountry.md:11` and `:44` | Defense and Map Editor hidden from the sidebar unless the admin teaser is on; "premium gating lives here" (`MyCountrySidebarNav`) | `MyCountrySidebarNav` is imported only as a type (5 files). The component is never rendered (pending-features §2 agrees) |
-| `mycountry.md:27` | `StandingBands` = "Approval, Stability, CivCap Bands" | Approval and Stability are hard-coded fallbacks; "CivCap" is directive slots (1.3) |
-| `mycountry.md` §CivCap: "Directives and active policies consume CivCap" | Directives consume CivCap | `intent.ts` never stores or consumes `civCapCost`. CivCap sums `policy.civCapCost`, recon and dismissals only (`player.ts:66-69`) |
+| `mycountry.md:27` | `StandingBands` = "Approval, Stability, executive bandwidth Bands" | Approval and Stability are hard-coded fallbacks; "Executive bandwidth" is directive slots (1.3) |
+| `mycountry.md` §executive bandwidth: "Directives and active policies consume executive bandwidth" | Directives consume executive bandwidth | `intent.ts` never stores or consumes `execBandwidthCost`. Executive bandwidth sums `policy.execBandwidthCost`, recon and dismissals only (`player.ts:66-69`) |
 | `mycountry.md` §Vitality: "Clients cannot forge vitality numbers" | Server-computed vitality | True, but inputs are the stored, non-progressing `current*`. "Diplomatic Standing" reads nonexistent `globalDiplomaticInfluence` / `tradeRelationshipStrength` / etc. via `(country as any)` (`mycountry-helpers.ts:45-53`), so it is always `clamp(50+10+15-5)` = 70. "Governmental Efficiency" is just the economic tier × 0.8 and ignores government entirely |
 | `mycountry-design-philosophy-and-prds.md` §2 (~line 45) | "Low efficiency … numeric effects are masked and converted to qualitative bands" | Stated as behaviour; its own status table says it is not built |
 | `economy.md` "Core Economic Loops" diagram | Tax → budget → dividend → growth tick loop | There is no growth tick. Tax and budget don't feed growth |
@@ -308,7 +308,7 @@ Gaps, ranked by impact:
 | # | Gap | Why it matters | Evidence / size |
 |---|---|---|---|
 | 1 | **Decisions don't visibly change the nation.** Bands are hard-coded; GDP ignores issue consequences; rankings use stale stored stats | This is the whole NS hook. Without it the loop is a log | 1.2 step 4, 1.3. Fix: bands read `publicApproval` + stability; route issue GDP effects through `StorytellerEffect` (as foreign policy does); a stat-progression job (MC-7). S–M each |
-| 2 | **One source of truth for stats** (projection vs stored vs editor) | Every other system (CivCap, rankings, FP maths, vitality, passive income, cards) reads the stale copy | MC-7 plus 1.4. M |
+| 2 | **One source of truth for stats** (projection vs stored vs editor) | Every other system (executive bandwidth, rankings, FP maths, vitality, passive income, cards) reads the stale copy | MC-7 plus 1.4. M |
 | 3 | **Politics is inert** (no elections, no seated parties, no bills) | Politics is the second arena of the loop and the main differentiator versus NS | MC-2, decision D1. M–L |
 | 4 | **No player-to-player consent mechanics** (cooperative FP dead, alliance invite auto-joins, embassy missions deleted) | "Better together" needs handshake interactions; today most diplomacy is unilateral | NEW FP finding plus MC-10. S–M to restore the accept / decline procedure (it existed; see `git show b1749b594`) |
 | 5 | **Rankings / census** | NS players compete on scales. Here: 2 categories (GDP per capita, population), and `/leaderboards` is achievements | `mycountry-helpers.ts:82-200`. M: add approval, stability, debt, inequality, infrastructure, etc. from existing fields, with realm and region filters |

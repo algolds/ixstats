@@ -83,7 +83,7 @@ export const governmentComponentsRouter = createTRPCRouter({
   // Aggregates government / economic / tax components: staff is consumed by both
   // active and still-implementing components, while only implementing ones appear
   // in the rollout queue (with a progress estimate based on createdAt → implementationDate).
-  // Owner/privileged only: civil-service capacity is private like CivCap.
+  // Owner/privileged only: civil-service capacity is private like executive bandwidth.
   getCivilServiceStatus: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {

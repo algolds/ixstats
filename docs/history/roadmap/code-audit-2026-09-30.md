@@ -71,7 +71,7 @@ audit:vault-exploits` shows them (dry run) and `bun run audit:vault-exploits:app
 | MC-2 | BUG | **Politics dead end.** Nothing creates an `Election` or `ElectionCandidate` outside the demo seed. Legislature seats have no party, so `legislation.holdVote` always throws "No seated legislature" and no bill can pass. | `lib/government/election-cron.ts:65`; `elections/legislature.ts:158-171`; `legislation.ts:162-167` | M–L | H |
 | MC-3 | UNFINISHED | Defense force structure can't be created: branch and unit CRUD was deleted in plan 312. `createMilitaryAsset` returns NOT_FOUND, the Deployment wizard is empty and PvNPC strength is 0. | `security/military.ts:64-74`; `security/conflicts.ts:357-378`; `DeploymentWizard.tsx:136` | M–L | H (Premium) |
 | MC-4 | UNFINISHED | Accepted PvP conflicts never resolve. | `security/conflicts.ts:188-195` | M | M |
-| MC-5 | UNFINISHED | Policies can't be repealed or expire; their CivCap cost counts forever. | `policies/crud.ts:274`; `national-issues/player.ts:108-110` | S–M | M |
+| MC-5 | UNFINISHED | Policies can't be repealed or expire; their executive bandwidth cost counts forever. | `policies/crud.ts:274`; `national-issues/player.ts:108-110` | S–M | M |
 | MC-6 | DEAD | The ScheduledChange pipeline (service, cron job, `usePendingLocks` UI) has no producer. | `server/modules/scheduled-changes/service.ts:15` | M | L |
 | MC-7 | UNFINISHED | **No stat progression.** Stored `current*` stats refresh only on the admin `forceRecalculation`; `HistoricalDataPoint` is written only when a country is linked. Six metric modals and the `LiveDataCard` chart are empty or single-point, and the economy history is made up. | `admin/system.ts:374`; `users/country-linking.ts:137`; `countries/economy.ts:136-160` | M | H |
 | MC-8 | STUB | Embassy "shared data" is synthesised from embassy level and age; "Share New Data" only says "coming soon". | `diplomacy/core/sharedData.ts:30,188-203`; `SharedDataModal.tsx:636` | M | M |
@@ -87,7 +87,7 @@ audit:vault-exploits` shows them (dry run) and `bun run audit:vault-exploits:app
 | MC-18 | DEAD | About 3,000 lines with zero importers: `lib/activity/auto-post.ts`, `lib/government/builder-validation.ts`, `lib/economy/atomic-tax-integration.ts`, `lib/builder/tax-revenue-mapping.ts`, builder `government-preview/*`, `WikiDeepScanPanel`, `LegislativePolicies`, `IssueCountBadge`, `useBuilderAutoSync`, `governmentTemplates`. | — | S | L |
 | MC-19 | DEAD | Unused area models (see §8). These models are read but never written outside the seed: `CrisisEvent`, `Treaty`, `DiplomaticChannel`, `MeetingDecision`, `MeetingActionItem`, `ElectionCandidate`, `TaxPolicy`, `PolicyEffectLog`, `QuickActionTemplate`, `VitalityHistory`. | `prisma/schema/*` | S | L |
 | MC-20 | STUB | The auction archive step only logs "feature not implemented". | `lib/economy/auction-completion-cron.ts:218-222` | S | L |
-| MC-21 | DEBT | Civil-service capacity (CivCap) logic is duplicated between two routers and is already drifting. | `national-issues/player.ts:37-120`; `policies/crud.ts` | S | L |
+| MC-21 | DEBT | Executive bandwidth logic is duplicated between two routers and is already drifting. | `national-issues/player.ts:37-120`; `policies/crud.ts` | S | L |
 
 ## 3. Atlas, Realms & identity (AT)
 

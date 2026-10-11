@@ -1,13 +1,15 @@
 "use client";
 
 import React from "react";
+import { NavArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
-import { Stat } from "~/components/ui/stat";
-import { Card } from "~/components/ui/card";
+import { BandwidthBar, BandwidthHelp, hasBandwidth } from "./BandwidthHelp";
 
 interface DirectiveStatusStripProps {
   countryId: string;
@@ -19,40 +21,54 @@ interface DirectiveStatusStripProps {
 
 function Tile({
   label,
+  help,
   value,
   detail,
-  tone,
-  onClick,
+  children,
 }: {
   label: string;
+  help?: React.ReactNode;
   value: React.ReactNode;
   detail: React.ReactNode;
-  tone?: "negative";
-  onClick?: () => void;
+  /** A meter under the figure. */
+  children?: React.ReactNode;
 }) {
-  const body = (
-    <Stat
-      label={label}
-      value={tone ? <span className="text-destructive">{value}</span> : value}
-      hint={detail}
-    />
+  return (
+    <div className="flex min-w-0 flex-col gap-2 px-4 py-3 sm:px-5 sm:py-4">
+      <Stat
+        label={
+          <span className="inline-flex items-center gap-1">
+            {label}
+            {help}
+          </span>
+        }
+        value={value}
+        hint={detail}
+      />
+      {children}
+    </div>
   );
-  const cls = "block w-full px-4 py-3 text-left sm:px-5 sm:py-4";
-  return onClick ? (
-    <Button
-      variant="ghost"
-      onClick={onClick}
-      className={cn(cls, "h-auto rounded-none whitespace-normal focus-visible:ring-inset")}
-    >
-      {body}
-    </Button>
-  ) : (
-    <div className={cls}>{body}</div>
+}
+
+const valueSkeleton = <Skeleton className="my-1 h-6 w-16" />;
+
+/** One pip per weekly slot: gold while free, a track once used. */
+function SlotPips({ left, cap }: { left: number; cap: number }) {
+  return (
+    <div className="flex gap-1" aria-hidden>
+      {Array.from({ length: cap }, (_, i) => (
+        <span
+          key={i}
+          className={cn("h-1.5 flex-1 rounded-full", i < left ? "facet-gold" : "bg-fill-3")}
+        />
+      ))}
+    </div>
   );
 }
 
 /**
- * The three numbers that gate a new directive: weekly slots, CivCap, and what is in force.
+ * The three things that gate a new directive: weekly slots, executive bandwidth, and what is
+ * already in force.
  */
 export function DirectiveStatusStrip({
   countryId,
@@ -62,72 +78,81 @@ export function DirectiveStatusStrip({
   onShowActive,
 }: DirectiveStatusStripProps) {
   const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
-  const civCap = api.policies.getPolicyReconContext.useQuery(
+  const execBandwidth = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
 
-  const slotsLeft = status.data ? Math.max(0, status.data.cap - status.data.usedThisWeek) : null;
-  const cc = civCap.data;
-  const civCapKnown = !!cc && Number.isFinite(cc.capacity) && cc.capacity > 0;
+  const slots = status.data;
+  const slotsLeft = slots ? Math.max(0, slots.cap - slots.usedThisWeek) : null;
+  const bw = execBandwidth.data;
+  const bwKnown = hasBandwidth(bw);
+
+  const slotDetail = !slots
+    ? status.error
+      ? "Unavailable"
+      : " "
+    : slots.canCommit
+      ? "Each reopens 7 IxTime days after use"
+      : slots.cooldownUntil
+        ? `Next opens in ${formatIxCountdown(slots.cooldownUntil, nowIxTime)}`
+        : "All used this week";
 
   return (
     <Card className="divide-separator grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <Tile
         label="Weekly slots"
-        value={
-          status.isLoading ? (
-            <Skeleton className="my-1 h-6 w-16" />
-          ) : status.data ? (
-            `${slotsLeft} of ${status.data.cap}`
-          ) : (
-            "–"
-          )
-        }
-        detail={
-          !status.data
-            ? status.error
-              ? "Unavailable"
-              : " "
-            : status.data.canCommit
-              ? "Left this IxTime week"
-              : status.data.cooldownUntil
-                ? `Next slot in ${formatIxCountdown(status.data.cooldownUntil, nowIxTime)}`
-                : "All used this week"
-        }
-      />
+        value={status.isLoading ? valueSkeleton : slots ? `${slotsLeft} of ${slots.cap} left` : "–"}
+        detail={slotDetail}
+      >
+        {slots && slotsLeft != null && <SlotPips left={slotsLeft} cap={slots.cap} />}
+      </Tile>
+
       <Tile
-        label="CivCap available"
-        tone={cc?.overCapacity ? "negative" : undefined}
+        label="Executive bandwidth"
+        help={<BandwidthHelp state={bw} />}
         value={
-          civCap.isLoading ? (
-            <Skeleton className="my-1 h-6 w-16" />
-          ) : civCapKnown ? (
-            Math.round(cc.available)
+          execBandwidth.isLoading ? (
+            valueSkeleton
+          ) : bwKnown ? (
+            <span className={cn(bw.overCapacity && "text-destructive")}>
+              {Math.round(bw.available)} free
+            </span>
           ) : (
             "–"
           )
         }
         detail={
-          civCapKnown
-            ? `${Math.round(cc.used)} of ${Math.round(cc.capacity)} used${
-                cc.breakdown ? ` · directives ${Math.round(cc.breakdown.directives)}` : ""
-              }${cc.overCapacity ? " · over capacity" : ""}`
-            : civCap.isLoading
-              ? " "
-              : "Capacity unavailable"
+          bwKnown
+            ? `${Math.round(bw.used)} of ${Math.round(bw.capacity)} in use${bw.overCapacity ? " · over capacity" : ""}`
+            : execBandwidth.isLoading
+              ? " "
+              : "Unavailable"
         }
-      />
+      >
+        {bwKnown && <BandwidthBar state={bw} />}
+      </Tile>
+
       <Tile
         label="In force"
-        onClick={onShowActive}
-        value={activeCount == null ? <Skeleton className="my-1 h-6 w-10" /> : activeCount}
+        value={activeCount == null ? valueSkeleton : activeCount}
         detail={
-          activeCount == null
-            ? " "
-            : activeCount === 0
-              ? "No directives running"
-              : `${executingCount ?? 0} executing this week`
+          activeCount == null ? (
+            " "
+          ) : activeCount === 0 ? (
+            "No directives running"
+          ) : (
+            <Button
+              variant="link"
+              size="xs"
+              onClick={onShowActive}
+              disabled={!onShowActive}
+              className="text-footnote text-label-secondary hover:text-label h-auto gap-1 px-0 max-sm:h-11"
+            >
+              {executingCount ?? 0} executing this week
+              <NavArrowRight aria-hidden />
+            </Button>
+          )
         }
       />
     </Card>

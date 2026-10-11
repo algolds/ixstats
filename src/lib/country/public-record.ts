@@ -6,7 +6,7 @@
  *
  * - Directives: only enacted ones (`active` = in force, `completed`). Drafts (`proposed`, which
  *   also carry `tier: "proposed"`) and `abandoned` directives stay private, and so do the
- *   package line items (`changesJson`), CivCap and cooldowns.
+ *   package line items (`changesJson`), executive bandwidth and cooldowns.
  * - National issues: only resolved ones (`responded`, `auto_resolved`) with the decision label
  *   and the engine's outcome summary. Open, expired and dismissed issues stay private.
  * - Budgets: the government budget (total, department allocations, sub-budgets, revenue
@@ -59,7 +59,7 @@ export interface PublicDirective {
   createdIxTime: number;
 }
 
-/** Enacted directives only, newest first. `changesJson`, CivCap and cooldowns are never copied. */
+/** Enacted directives only, newest first. `changesJson`, executive bandwidth and cooldowns are never copied. */
 export function toPublicDirectives(
   intents: readonly IntentLike[] | null | undefined
 ): PublicDirective[] {

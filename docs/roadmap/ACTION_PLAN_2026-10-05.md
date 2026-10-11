@@ -250,7 +250,7 @@ Only the items still open or partial in code are listed. Everything else in M2 i
 | Item | Refs | Status | What remains | Size |
 |---|---|---|---|---|
 | Cabinet meetings conclude | pending §2 | Open | Complete and decision mutations, with UI; `meetingDecision` is read but never written | M |
-| Policy repeal, expiry, CivCap release | MC-5 | Open | Repeal mutation and UI; an expiry sweep. The `policies/index.ts:8` comment claims repeal exists, but it doesn't | S–M |
+| Policy repeal, expiry, executive bandwidth release | MC-5 | Open | Repeal mutation and UI; an expiry sweep. The `policies/index.ts:8` comment claims repeal exists, but it doesn't | S–M |
 | Defense force structure | MC-3 | Done (2026-10-06) | D2 (a): branch and unit authoring, a starter force from builder data, and strength computed from the authored structure ([defense.md](../systems/defense.md#force-structure-and-combat-strength)) | L |
 | PvP conflict resolution | MC-4 | Open | `security/conflicts.ts:188` sets conflicts `active`, and nothing resolves them | M |
 | Alliance invite NPC auto-response | MC-10 | Partial | Accept, decline and withdraw are done; NPC targets never answer | S |

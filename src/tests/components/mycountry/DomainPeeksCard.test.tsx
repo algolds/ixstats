@@ -32,17 +32,16 @@ describe("DomainPeeksCard", () => {
 
     const links = within(nav).getAllByRole("link");
     expect(links.map((l) => l.getAttribute("href"))).toEqual([
-      "/mycountry/diplomacy",
-      "/mycountry/defense",
-      "/mycountry/politics",
       "/mycountry/economy",
+      "/mycountry/politics",
+      "/mycountry/diplomacy",
+      "/mycountry/executive",
     ]);
-    expect(within(links[0]!).getByText("Diplomacy")).toBeTruthy();
-    expect(within(links[0]!).getByText("Relations, embassies and alliances")).toBeTruthy();
-    expect(within(links[1]!).getByText("Forces, readiness and threats")).toBeTruthy();
-    expect(within(links[2]!).getByText("Stability 71%")).toBeTruthy();
-    expect(within(links[3]!).getByText("Economy & budget")).toBeTruthy();
-    expect(within(links[3]!).getByText("GDP growth +3.4%")).toBeTruthy();
+    expect(within(links[0]!).getByText("Economy")).toBeTruthy();
+    expect(within(links[0]!).getByText("GDP growth +3.4%")).toBeTruthy();
+    expect(within(links[1]!).getByText("Stability 71%")).toBeTruthy();
+    expect(within(links[2]!).getByText("Relations, embassies and alliances")).toBeTruthy();
+    expect(within(links[3]!).getByText("Directives")).toBeTruthy();
   });
 
   it("falls back to a plain description when the figures are missing", () => {
@@ -62,10 +61,10 @@ describe("DomainPeeksCard", () => {
   it("switches sections in place on a plain click and leaves modified clicks to the browser", () => {
     const calls: string[] = [];
     render(<DomainPeeksCard onNavigate={(s) => calls.push(s)} />);
-    const defense = screen.getByRole("link", { name: /Defense/ });
-    expect(fireEvent.click(defense)).toBe(false);
-    expect(calls).toEqual(["defense"]);
-    expect(fireEvent.click(defense, { metaKey: true })).toBe(true);
-    expect(calls).toEqual(["defense"]);
+    const directives = screen.getByRole("link", { name: /Directives/ });
+    expect(fireEvent.click(directives)).toBe(false);
+    expect(calls).toEqual(["executive"]);
+    expect(fireEvent.click(directives, { metaKey: true })).toBe(true);
+    expect(calls).toEqual(["executive"]);
   });
 });

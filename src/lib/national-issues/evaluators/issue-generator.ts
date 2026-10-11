@@ -272,7 +272,7 @@ export async function maybeTriggerStaffingShortage(
           activeComponents: snapshot.activeComponents.length,
           implementingComponents: snapshot.implementingComponents.length,
         }),
-        triggerReason: `Civil service capacity exceeded (${Math.round(
+        triggerReason: `Executive bandwidth exceeded (${Math.round(
           snapshot.consumedStaff
         )} staff required vs. ${Math.round(
           snapshot.civilServiceCapacity

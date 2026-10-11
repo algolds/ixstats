@@ -45,7 +45,7 @@ export function BudgetOverviewCharts({
           <h4 className="text-label text-headline">
             {overviewChartMode === "allocation"
               ? "Budget allocation by department"
-              : "Budget vs revenue trend"}
+              : "Budget by year"}
           </h4>
           <SegmentedControl
             aria-label="Chart"
@@ -60,7 +60,16 @@ export function BudgetOverviewCharts({
         </div>
 
         <div className="h-72">
-          {overviewChartMode === "allocation" ? (
+          {overviewChartMode === "allocation" && departmentChartData.length === 0 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              No department has an allocation this year. Set allocations in the Government step of
+              the Country Editor.
+            </p>
+          ) : overviewChartMode === "trend" && budgetTrendData.length < 2 ? (
+            <p className="text-label-secondary text-footnote flex h-full items-center justify-center text-center">
+              The trend appears once budgets are recorded for two or more years.
+            </p>
+          ) : overviewChartMode === "allocation" ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -96,7 +105,7 @@ export function BudgetOverviewCharts({
                   type="monotone"
                   dataKey="budget"
                   stroke="var(--color-amber-500)"
-                  name="Budget"
+                  name="Allocated"
                   strokeWidth={2}
                 />
                 <Line
@@ -104,13 +113,6 @@ export function BudgetOverviewCharts({
                   dataKey="spent"
                   stroke="var(--color-label-secondary)"
                   name="Spending"
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="var(--color-emerald-500)"
-                  name="Revenue"
                   strokeWidth={2}
                 />
               </LineChart>

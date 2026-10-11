@@ -86,8 +86,11 @@ export function WikiOSContentWrapper({
           {tabs && <ArticleToolsRow>{tabs}</ArticleToolsRow>}
         </>
       ) : tabs ? (
-        <ArticleToolsRow className="flex flex-wrap items-center gap-2 pt-2">
+        // No page header, so this row shares the Halo band: at ≥1024px its centre stays clear for
+        // Halo as in PageHeader; narrower, there is no room beside Halo and the row starts below it.
+        <ArticleToolsRow className="flex min-h-14 flex-wrap items-center gap-2 max-lg:pt-14">
           {tabs}
+          <div aria-hidden className="hidden w-(--shell-halo-reserve) shrink lg:block" />
           <div className="ml-auto flex items-center gap-2">{actions}</div>
         </ArticleToolsRow>
       ) : (

@@ -21,7 +21,7 @@ interface RepealPolicyButtonProps {
   onRepealed?: () => void;
 }
 
-/** Repeal an enacted policy (MC-5), behind a confirmation. Releases its CivCap. */
+/** Repeal an enacted policy (MC-5), behind a confirmation. Releases its executive bandwidth. */
 export function RepealPolicyButton({ policyId, policyName, onRepealed }: RepealPolicyButtonProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -50,8 +50,8 @@ export function RepealPolicyButton({ policyId, policyName, onRepealed }: RepealP
         <AlertDialogHeader>
           <AlertDialogTitle>Repeal this law?</AlertDialogTitle>
           <AlertDialogDescription>
-            &ldquo;{policyName}&rdquo; stops taking effect, releases the CivCap it holds and is no
-            longer charged maintenance. Effects already applied stay in place.
+            &ldquo;{policyName}&rdquo; stops taking effect, releases the bandwidth it holds and is
+            no longer charged maintenance. Effects already applied stay in place.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

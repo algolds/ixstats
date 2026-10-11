@@ -22,12 +22,12 @@ National issues are situations that come up in your nation and ask how you'll re
 
 Every issue brief offers four routes:
 
-| Option | What happens |
-| --- | --- |
-| **Resolve** | Pick one of the response options. Its consequences apply straight away. |
-| **Delegate** | Hand the issue to the civil service. It's closed with no consequences, but uses 15 [CivCap](/help/mycountry/executive#civil-service-capacity) for 5 IxTime days. Not allowed for high-severity or urgent issues, or when you have less than 15 CivCap free. |
-| **Cabinet meeting** | Schedule a cabinet meeting about it on next week's agenda. The issue stays open for you to resolve. |
-| **Make a directive** | Open the directive composer with the issue as a starting point. |
+| Option               | What happens                                                                                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Resolve**          | Pick one of the response options. Its consequences apply straight away.                                                                                                                                                                                                  |
+| **Delegate**         | Hand the issue to the civil service. It's closed with no consequences, but uses 15 [executive bandwidth](/help/mycountry/executive#executive-bandwidth) for 5 IxTime days. Not allowed for high-severity or urgent issues, or when you have less than 15 bandwidth free. |
+| **Cabinet meeting**  | Schedule a cabinet meeting about it on next week's agenda. The issue stays open for you to resolve.                                                                                                                                                                      |
+| **Make a directive** | Open the directive composer with the issue as a starting point.                                                                                                                                                                                                          |
 
 ## What your choice changes
 
@@ -45,5 +45,5 @@ Some issues show a deadline. Deadlines are not enforced by default: an issue pas
 ## Tips
 
 - Read the whole brief before choosing; the option labels don't tell you everything.
-- Delegate small issues when you have spare CivCap, and save your attention for high-severity ones (those can't be delegated).
+- Delegate small issues when you have spare bandwidth, and save your attention for high-severity ones (those can't be delegated).
 - If the same kind of issue keeps appearing, a [directive](/help/mycountry/executive) aimed at the cause can help.

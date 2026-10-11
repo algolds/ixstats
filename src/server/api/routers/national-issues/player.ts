@@ -27,7 +27,7 @@ import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
-import { loadCivCapState, RECON_CAPACITY_COST } from "~/lib/government/civcap";
+import { loadExecBandwidthState, RECON_CAPACITY_COST } from "~/lib/government/exec-bandwidth";
 import {
   assertCountryResourceWriteAccess,
   assertCountryWriteAccess,
@@ -39,19 +39,19 @@ const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT 
 /**
  * Recon context for a country: its atomic build (for the fog) + Capacity state.
  * `used` includes in-progress recon Meetings, so over-committing recon over-extends
- * the civil service and clouds results (the Capacity lever biting). The CivCap sum
- * itself lives in lib/government/civcap.ts (shared with policies and the MyCountry band).
+ * the civil service and clouds results (the Capacity lever biting). The executive bandwidth sum
+ * itself lives in lib/government/exec-bandwidth.ts (shared with policies and the MyCountry band).
  */
 async function loadReconContext(db: PrismaClient, countryId: string) {
-  const civCap = await loadCivCapState(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId);
   return {
-    componentTypes: civCap.componentTypes,
-    departmentCategories: civCap.departmentCategories,
-    capacity: civCap.capacity,
-    used: civCap.used,
-    available: civCap.available,
-    overCapacity: civCap.overCapacity,
-    lowEfficiency: civCap.effectiveness < 40,
+    componentTypes: execBandwidth.componentTypes,
+    departmentCategories: execBandwidth.departmentCategories,
+    capacity: execBandwidth.capacity,
+    used: execBandwidth.used,
+    available: execBandwidth.available,
+    overCapacity: execBandwidth.overCapacity,
+    lowEfficiency: execBandwidth.effectiveness < 40,
   };
 }
 
@@ -461,7 +461,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message:
-            "Insufficient Civil Capacity to delegate this issue. You need at least 15 available CivCap.",
+            "Not enough executive bandwidth to delegate this issue. You need at least 15 free.",
         });
       }
 

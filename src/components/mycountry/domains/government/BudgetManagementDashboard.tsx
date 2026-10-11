@@ -218,10 +218,7 @@ export function BudgetManagementDashboard({
     percent: item.percent,
     color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-amber-500)",
   }));
-  const budgetTrendData = buildTrendData(
-    governmentStructure?.totalBudget ?? 0,
-    revenueSummary.totalRevenue
-  );
+  const budgetTrendData = buildTrendData(budgetAllocations);
 
   const budgetHealth = getBudgetHealthStatus(revenueSummary.totalRevenue, budgetSummary.totalSpent);
 
@@ -276,7 +273,8 @@ export function BudgetManagementDashboard({
             ),
             departments: (
               <BudgetDepartmentList
-                departments={budgetSummary.topSpendingDepartments}
+                departments={budgetSummary.departmentAllocations}
+                year={selectedYear}
                 formatNumber={formatNumber}
               />
             ),

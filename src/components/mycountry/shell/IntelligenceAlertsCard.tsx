@@ -10,6 +10,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { timeAgo } from "~/lib/format/compact";
 import { useNotify } from "~/hooks/useNotify";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 
 /** Element id the `?focus=alerts` deep link (threshold-alert notifications) scrolls to. */
 export const INTELLIGENCE_ALERTS_ANCHOR = "intelligence-alerts";
@@ -24,6 +25,21 @@ export function severityTone(severity: string): BadgeTone {
   return SEVERITY_TONE[severity.toLowerCase()] ?? "default";
 }
 
+/** The MyCountry drill sheet an alert's category belongs to; null when none fits. */
+const CATEGORY_DRILL: Record<string, NonNullable<DrillSheetKind>> = {
+  economic: { kind: "economy" },
+  infrastructure: { kind: "economy" },
+  diplomatic: { kind: "relations" },
+  security: { kind: "defense" },
+  crisis: { kind: "defense" },
+  governance: { kind: "politics" },
+  social: { kind: "politics" },
+};
+
+export function alertDrill(category: string): DrillSheetKind {
+  return CATEGORY_DRILL[category.toLowerCase()] ?? null;
+}
+
 function severityLabel(severity: string): string {
   const s = severity.toLowerCase();
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -34,7 +50,14 @@ function severityLabel(severity: string): string {
  * in notification preferences), most severe first. Unread rows are marked; the owner marks them
  * read or dismisses them. Renders nothing while there are no open alerts.
  */
-export function IntelligenceAlertsCard({ countryId }: { countryId: string }) {
+export function IntelligenceAlertsCard({
+  countryId,
+  onOpenDrill,
+}: {
+  countryId: string;
+  /** Opens the drill sheet for an alert's domain when its title is clicked. */
+  onOpenDrill?: (drill: DrillSheetKind) => void;
+}) {
   const notify = useNotify();
   const utils = api.useUtils();
   const { data } = api.intelligence.getMyAlerts.useQuery(
@@ -103,6 +126,11 @@ export function IntelligenceAlertsCard({ countryId }: { countryId: string }) {
         <ul className="divide-separator divide-y" aria-label="Open intelligence alerts">
           {alerts.map((alert) => {
             const isUnread = !alert.readAt;
+            const drill = onOpenDrill ? alertDrill(alert.category) : null;
+            const openAlert = () => {
+              if (isUnread) markRead.mutate({ id: alert.id });
+              onOpenDrill?.(drill);
+            };
             return (
               <li key={alert.id} className="flex flex-col gap-1 py-3">
                 <div className="flex items-start gap-2">
@@ -115,7 +143,17 @@ export function IntelligenceAlertsCard({ countryId }: { countryId: string }) {
                       isUnread ? "font-semibold" : "font-normal"
                     )}
                   >
-                    {alert.title}
+                    {drill ? (
+                      <button
+                        type="button"
+                        onClick={openAlert}
+                        className="text-left hover:underline focus-visible:underline"
+                      >
+                        {alert.title}
+                      </button>
+                    ) : (
+                      alert.title
+                    )}
                     {isUnread ? <span className="sr-only"> (unread)</span> : null}
                   </p>
                 </div>

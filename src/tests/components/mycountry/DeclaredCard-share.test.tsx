@@ -12,7 +12,7 @@ import { DeclaredCard } from "~/components/mycountry/shared/primitives/composer/
 const declared = (activityId: string | null) => ({
   goal: "Create industrial manufacturing jobs",
   res: {
-    intent: { changesJson: "[]", tier: "moderate", category: "economy", civCapCost: null },
+    intent: { changesJson: "[]", tier: "moderate", category: "economy", execBandwidthCost: null },
     changes: [],
     applied: [],
     summary: "",

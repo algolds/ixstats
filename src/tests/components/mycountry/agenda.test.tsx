@@ -12,6 +12,9 @@ jest.mock("~/trpc/react", () => ({
   api: {
     intent: {
       getTree: { useQuery: () => ok({ roots: [], allIntents: mockIntents }) },
+      getStatus: {
+        useQuery: () => ok({ canCommit: true, usedThisWeek: 1, cap: 3, cooldownUntil: null }),
+      },
     },
     elections: { getElections: { useQuery: () => ok(mockElections) } },
     nationalIssues: { getMyIssues: { useQuery: () => ok({ issues: mockIssues }) } },
@@ -159,5 +162,11 @@ describe("ExecutiveAgenda", () => {
     render(<ExecutiveAgenda countryId="c1" />);
     expect(screen.getByText("Nothing on your agenda")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Declare/ })).toBeNull();
+  });
+
+  it("shows the directives left this week beside its title", () => {
+    render(<ExecutiveAgenda countryId="c1" />);
+    const title = screen.getByRole("heading", { name: "Agenda" });
+    expect(title.parentElement?.textContent).toContain("2 of 3 directives left this week");
   });
 });

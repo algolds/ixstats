@@ -168,7 +168,7 @@ export const IntentComposer = React.memo(function IntentComposer({
   }, [initialGoal]);
 
   const statusQuery = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
-  const civCapQuery = api.policies.getPolicyReconContext.useQuery(
+  const execBandwidthQuery = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId }
   );
@@ -296,7 +296,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             <StepSection
               step={2}
               title="Choose an approach"
-              description="How hard your government pushes. Bigger pushes move more, cost more CivCap, and meet more resistance."
+              description="How hard your government pushes. Bigger pushes move more, cost more bandwidth, and meet more resistance."
             >
               <ApproachPicker
                 packages={packages}
@@ -317,8 +317,10 @@ export const IntentComposer = React.memo(function IntentComposer({
             <DeclarePanel
               goal={goal}
               approachLabel={activePackage ? tierMeta(activePackage.tier).label : "–"}
-              civCapCost={activePackage?.civCapCost ?? null}
-              civCap={civCapQuery.isLoading ? undefined : (civCapQuery.data ?? null)}
+              execBandwidthCost={activePackage?.execBandwidthCost ?? null}
+              execBandwidth={
+                execBandwidthQuery.isLoading ? undefined : (execBandwidthQuery.data ?? null)
+              }
               slots={statusQuery.data}
               nowIxTime={nowIxTime}
               followUpOf={followUpOf}

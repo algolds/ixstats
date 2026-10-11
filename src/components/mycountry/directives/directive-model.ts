@@ -3,8 +3,8 @@
  * No React, no server imports, so it is safe on the client and easy to unit test.
  *
  * Engine facts mirrored here (see docs/systems/mycountry.md, "Civil Service Capacity"):
- * - a directive holds its CivCap while it is `active` and inside one IxTime week of its commit
- *   (`DIRECTIVE_CIVCAP_WINDOW_MS` in src/lib/government/civcap.ts, which is server-only);
+ * - a directive holds its executive bandwidth while it is `active` and inside one IxTime week of its commit
+ *   (`DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS` in src/lib/government/exec-bandwidth.ts, which is server-only);
  * - moderate and extreme directives may spawn a resistance issue that must be resolved before
  *   the directive can be completed (src/lib/intent/resistance.ts, `intent.updateStatus`).
  */
@@ -18,7 +18,7 @@ export type IntentRow = RouterOutputs["intent"]["getTree"]["allIntents"][number]
 export type IntentPackageView = RouterOutputs["intent"]["suggest"]["packages"][number];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-/** Mirrors DIRECTIVE_CIVCAP_WINDOW_MS (src/lib/government/civcap.ts): one IxTime week. */
+/** Mirrors DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS (src/lib/government/exec-bandwidth.ts): one IxTime week. */
 export const DIRECTIVE_EXECUTION_WINDOW_MS = 7 * DAY_MS;
 
 /** Tiers the composer offers. `structural_unlocked` has no unlock check yet, so it is not shown. */
@@ -156,12 +156,12 @@ export const PHASE_META: Record<DirectivePhase, { label: string; tone: Tone; hin
   executing: {
     label: "Executing",
     tone: "caution",
-    hint: "The civil service is carrying it out and it is holding CivCap.",
+    hint: "The civil service is carrying it out and it is holding executive bandwidth.",
   },
   in_force: {
     label: "In force",
     tone: "info",
-    hint: "Execution week is over and its CivCap is released. Complete it to close it out.",
+    hint: "Execution week is over and its bandwidth is released. Complete it to close it out.",
   },
   completed: { label: "Completed", tone: "positive", hint: "Closed out." },
   abandoned: { label: "Abandoned", tone: "negative", hint: "Withdrawn before completion." },
@@ -171,14 +171,14 @@ interface DirectiveTimeline {
   phase: DirectivePhase;
   /** 0-1 through the execution week (1 once it is over or closed). */
   executionProgress: number;
-  /** IxTime at which the held CivCap is released, when still executing. */
+  /** IxTime at which the held executive bandwidth is released, when still executing. */
   releasesAt: number | null;
-  /** CivCap currently held by this directive (0 unless executing). */
-  heldCivCap: number;
+  /** Executive bandwidth currently held by this directive (0 unless executing). */
+  heldExecBandwidth: number;
 }
 
 export function directiveTimeline(
-  intent: Pick<IntentRow, "status" | "createdIxTime" | "civCapCost">,
+  intent: Pick<IntentRow, "status" | "createdIxTime" | "execBandwidthCost">,
   nowIxTime: number
 ): DirectiveTimeline {
   const endsAt = intent.createdIxTime + DIRECTIVE_EXECUTION_WINDOW_MS;
@@ -187,18 +187,23 @@ export function directiveTimeline(
 
   switch (intent.status) {
     case "proposed":
-      return { phase: "draft", executionProgress: 0, releasesAt: null, heldCivCap: 0 };
+      return { phase: "draft", executionProgress: 0, releasesAt: null, heldExecBandwidth: 0 };
     case "completed":
-      return { phase: "completed", executionProgress: 1, releasesAt: null, heldCivCap: 0 };
+      return { phase: "completed", executionProgress: 1, releasesAt: null, heldExecBandwidth: 0 };
     case "abandoned":
-      return { phase: "abandoned", executionProgress: progress, releasesAt: null, heldCivCap: 0 };
+      return {
+        phase: "abandoned",
+        executionProgress: progress,
+        releasesAt: null,
+        heldExecBandwidth: 0,
+      };
     default: {
       const executing = nowIxTime < endsAt;
       return {
         phase: executing ? "executing" : "in_force",
         executionProgress: progress,
         releasesAt: executing ? endsAt : null,
-        heldCivCap: executing ? (intent.civCapCost ?? 0) : 0,
+        heldExecBandwidth: executing ? (intent.execBandwidthCost ?? 0) : 0,
       };
     }
   }

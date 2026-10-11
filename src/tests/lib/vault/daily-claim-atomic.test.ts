@@ -22,9 +22,9 @@ import {
   claimCombinedDailyClaim,
   claimDailyBonus,
   claimDailySlot,
-  computeNextStreak,
   startOfUtcDay,
 } from "~/lib/vault/vault-daily-bonus";
+import { computeNextStreak } from "~/lib/vault/daily-roll";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
 const getVaultMock = jest.mocked(getOrCreateVault);

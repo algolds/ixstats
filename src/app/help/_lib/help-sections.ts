@@ -135,7 +135,7 @@ export const helpSections: HelpSection[] = [
         title: "Executive Directives",
         description: "Declare directives: state a goal, pick a package, and live with the result.",
         path: "/help/mycountry/executive",
-        tags: ["directives", "executive", "civcap", "policy"],
+        tags: ["directives", "executive", "bandwidth", "exec-bandwidth", "policy"],
       },
       {
         id: "national-issues",
@@ -529,7 +529,15 @@ export const helpSections: HelpSection[] = [
         title: "ThinkPages (the forum)",
         description: "Sitewide boards and a section for every realm.",
         path: "/help/social/forum",
-        tags: ["forum", "thinkpages", "threads", "discussion", "moderation", "appeals", "old forum"],
+        tags: [
+          "forum",
+          "thinkpages",
+          "threads",
+          "discussion",
+          "moderation",
+          "appeals",
+          "old forum",
+        ],
       },
       {
         id: "blurbs",

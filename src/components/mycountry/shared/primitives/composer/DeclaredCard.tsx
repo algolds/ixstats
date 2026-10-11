@@ -44,7 +44,9 @@ export function DeclaredCard({
           <p className="text-label text-body mt-1 font-medium">{declared.goal}</p>
           <p className="text-label-secondary text-body mt-1">
             {meta.label} approach · {categoryLabel(res.intent.category)}
-            {res.intent.civCapCost ? ` · ${res.intent.civCapCost} CivCap held for a week` : ""}
+            {res.intent.execBandwidthCost
+              ? ` · ${res.intent.execBandwidthCost} bandwidth held for a week`
+              : ""}
           </p>
         </div>
       </div>

@@ -364,7 +364,7 @@ model Policy {
   priority                    String            @default("medium")
   riskRating                  String            @default("stable")
   origin                      String            @default("personal")
-  civCapCost                  Float             @default(0)
+  execBandwidthCost                  Float             @default(0) @map("civCapCost")
   objectives                  String?
   targetMetrics               String?
   implementationCost          Float             @default(0)
@@ -887,7 +887,7 @@ model Intent {
   progress      Float    @default(0)            // cached 0-100, updated as linked resistance issues resolve
   parentId      String?                         // tree dependency (bible: no full DAG)
   cooldownUntil Float?                           // IxTime ms — next intent allowed after this
-  civCapCost    Int?                             // CivCap reserved while the directive executes (lib/government/civcap.ts); null on legacy rows
+  execBandwidthCost    Int?                             @map("civCapCost") // Executive bandwidth reserved while the directive executes (lib/government/exec-bandwidth.ts); null on legacy rows
   createdIxTime Float
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

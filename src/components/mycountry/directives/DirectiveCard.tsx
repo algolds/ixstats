@@ -158,7 +158,7 @@ function AbandonDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Abandon this directive?</AlertDialogTitle>
           <AlertDialogDescription>
-            &ldquo;{goal}&rdquo; will stop executing and release any CivCap it holds. Effects
+            &ldquo;{goal}&rdquo; will stop executing and release the bandwidth it holds. Effects
             already applied stay in place.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -205,8 +205,8 @@ function ProgressMeters({
         value={timeline.executionProgress}
         detail={
           timeline.releasesAt
-            ? `${timeline.heldCivCap} CivCap held · ${formatIxCountdown(timeline.releasesAt, nowIxTime)} left`
-            : "Done · CivCap released"
+            ? `${timeline.heldExecBandwidth} bandwidth held · ${formatIxCountdown(timeline.releasesAt, nowIxTime)} left`
+            : "Done · bandwidth released"
         }
         barClass={TONE_CLASSES[timeline.releasesAt ? "caution" : "info"].bar}
       />
@@ -401,7 +401,7 @@ export function DirectiveCard({
       if (vars.status === "completed") {
         notify.success("Directive completed", "A summary post draft is ready for you.");
       } else {
-        notify.success("Directive abandoned", "Its CivCap has been released.");
+        notify.success("Directive abandoned", "Its bandwidth has been released.");
       }
     },
     onError: (e) => notify.error("Could not update directive", e.message),

@@ -11,24 +11,24 @@ import {
 import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import type { PrismaClient } from "@prisma/client";
-import { loadCivCapState } from "~/lib/government/civcap";
+import { loadExecBandwidthState } from "~/lib/government/exec-bandwidth";
 import {
   assertCountryWriteAccess,
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
 
-/** Policy recon context: the shared CivCap state (lib/government/civcap.ts) + an efficiency flag. */
+/** Policy recon context: the shared executive bandwidth state (lib/government/exec-bandwidth.ts) + an efficiency flag. */
 async function loadPolicyReconContext(db: PrismaClient, countryId: string) {
-  const civCap = await loadCivCapState(db, countryId);
+  const execBandwidth = await loadExecBandwidthState(db, countryId);
   return {
-    componentTypes: civCap.componentTypes,
-    departmentCategories: civCap.departmentCategories,
-    capacity: civCap.capacity,
-    used: civCap.used,
-    available: civCap.available,
-    overCapacity: civCap.overCapacity,
-    lowEfficiency: civCap.effectiveness < 45,
-    breakdown: civCap.breakdown,
+    componentTypes: execBandwidth.componentTypes,
+    departmentCategories: execBandwidth.departmentCategories,
+    capacity: execBandwidth.capacity,
+    used: execBandwidth.used,
+    available: execBandwidth.available,
+    overCapacity: execBandwidth.overCapacity,
+    lowEfficiency: execBandwidth.effectiveness < 45,
+    breakdown: execBandwidth.breakdown,
   };
 }
 
@@ -53,20 +53,20 @@ function getMatchingDepartmentCategory(policyCategory: string): string {
 
 function getCustomPolicyAttributes(priority: string) {
   let riskRating: "stable" | "volatile" | "high-risk" = "stable";
-  let civCapCost = 10;
+  let execBandwidthCost = 10;
 
   if (priority === "critical" || priority === "CRITICAL") {
     riskRating = "high-risk";
-    civCapCost = 25;
+    execBandwidthCost = 25;
   } else if (priority === "high" || priority === "HIGH") {
     riskRating = "volatile";
-    civCapCost = 15;
+    execBandwidthCost = 15;
   } else if (priority === "low" || priority === "LOW") {
     riskRating = "stable";
-    civCapCost = 5;
+    execBandwidthCost = 5;
   }
 
-  return { riskRating, civCapCost, origin: "personal" as const };
+  return { riskRating, execBandwidthCost, origin: "personal" as const };
 }
 
 export const policiesCrudRouter = createTRPCRouter({
@@ -109,7 +109,7 @@ export const policiesCrudRouter = createTRPCRouter({
       let policyRiskRating = customAttrs.riskRating as "stable" | "volatile" | "high-risk";
       let policyOrigin = (origin || customAttrs.origin) as
         "personal" | "crisis_response" | "broker_request";
-      let policyCivCapCost = customAttrs.civCapCost;
+      let policyExecBandwidthCost = customAttrs.execBandwidthCost;
 
       if (!decretalKey) {
         // Custom policy category-department alignment check
@@ -148,7 +148,7 @@ export const policiesCrudRouter = createTRPCRouter({
             "stable" | "volatile" | "high-risk";
           policyOrigin = (origin ?? decretal.origin ?? "personal") as
             "personal" | "crisis_response" | "broker_request";
-          policyCivCapCost = decretal.civCapCost ?? 0;
+          policyExecBandwidthCost = decretal.execBandwidthCost ?? 0;
 
           calculatedEffectsJson = JSON.stringify({
             decretalKey,
@@ -160,9 +160,9 @@ export const policiesCrudRouter = createTRPCRouter({
 
       // Apply discounts if reactively-born (crisis response or broker request)
       if (policyOrigin === "crisis_response" || policyOrigin === "broker_request") {
-        policyCivCapCost = Math.max(
-          policyCivCapCost > 0 ? 1 : 0,
-          Math.round(policyCivCapCost * 0.75)
+        policyExecBandwidthCost = Math.max(
+          policyExecBandwidthCost > 0 ? 1 : 0,
+          Math.round(policyExecBandwidthCost * 0.75)
         );
         maintenanceCost = Math.round(maintenanceCost * 0.85);
       }
@@ -179,7 +179,7 @@ export const policiesCrudRouter = createTRPCRouter({
           taxRevenueEffect,
           riskRating: policyRiskRating,
           origin: policyOrigin,
-          civCapCost: policyCivCapCost,
+          execBandwidthCost: policyExecBandwidthCost,
           calculatedEffects: calculatedEffectsJson,
           status: "draft",
         },
@@ -228,7 +228,7 @@ export const policiesCrudRouter = createTRPCRouter({
 
   // ==================== ENHANCED POLICY INTEGRATION ====================
 
-  /** The nation's CivCap state (capacity, usage, breakdown). Owner / privileged roles only. */
+  /** The nation's executive bandwidth state (capacity, usage, breakdown). Owner / privileged roles only. */
   getPolicyReconContext: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {

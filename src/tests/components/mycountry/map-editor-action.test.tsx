@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 let canUseMapEditor = false;
 let betaTester = false;
@@ -29,7 +29,12 @@ jest.mock("~/hooks/usePermissions", () => ({ useIsBetaTester: () => betaTester }
 jest.mock("~/components/mycountry/shared/primitives", () => ({
   useCountryData: () => ({ country: { name: "Pelaxia" } }),
 }));
-jest.mock("~/components/mycountry/shell/ExecutiveHome", () => ({ CooldownTimer: () => null }));
+jest.mock("~/components/achievements/FloatingRibbonRack", () => ({
+  CountryOwnerRibbonRack: () => null,
+}));
+jest.mock("~/components/country-profile/CountryIdentityStrip", () => ({
+  CountryIdentityStrip: () => null,
+}));
 
 import { UnifiedGlassCommandBar } from "~/components/mycountry/shell/headers/UnifiedGlassCommandBar";
 
@@ -49,33 +54,55 @@ beforeEach(() => {
   } as unknown as typeof IntersectionObserver;
 });
 
+/** Premium users reach the map editor by opening the Edit pill. */
+function openEditPill() {
+  fireEvent.click(screen.getByRole("button", { name: "Edit country or map" }));
+}
+
 describe("MyCountry header Map editor action", () => {
-  it("links to the map editor for users who pass the premium map-editor ability", () => {
+  it("opens the Edit pill into country and map editors for premium users", () => {
     canUseMapEditor = true;
     renderBar();
-    expect(screen.getByRole("link", { name: "Open map editor" })).toHaveAttribute(
+    openEditPill();
+    expect(screen.getByRole("link", { name: "Country editor" })).toHaveAttribute(
+      "href",
+      "/mycountry/editor"
+    );
+    expect(screen.getByRole("link", { name: "Map editor" })).toHaveAttribute(
       "href",
       "/mycountry/map-editor"
     );
     expect(can).toHaveBeenCalledWith("access", "MyCountryFeature", "map-editor");
   });
 
-  it("links to the map editor for a beta tester without premium", () => {
+  it("moves keyboard focus into the open pill and closes it on Escape", () => {
+    canUseMapEditor = true;
+    renderBar();
+    openEditPill();
+    expect(screen.getByRole("link", { name: "Country editor" })).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Edit country or map" })).toHaveFocus();
+  });
+
+  it("offers the map editor to a beta tester without premium", () => {
     canUseMapEditor = false;
     betaTester = true;
     renderBar();
-    expect(screen.getByRole("link", { name: "Open map editor" })).toHaveAttribute(
+    openEditPill();
+    expect(screen.getByRole("link", { name: "Map editor" })).toHaveAttribute(
       "href",
       "/mycountry/map-editor"
     );
   });
 
-  it("is absent for everyone else", () => {
+  it("is a plain Edit link for everyone else", () => {
     canUseMapEditor = false;
     renderBar();
-    expect(screen.queryByRole("link", { name: "Open map editor" })).toBeNull();
-    // The other header actions are unaffected.
+    expect(screen.queryByRole("button", { name: "Edit country or map" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Edit country" })).toHaveAttribute(
+      "href",
+      "/mycountry/editor"
+    );
     expect(screen.getByRole("link", { name: "Open public profile" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Edit country" })).toBeInTheDocument();
   });
 });

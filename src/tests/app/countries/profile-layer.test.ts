@@ -58,7 +58,7 @@ describe("public record filter", () => {
     );
     // Nothing private rides along.
     expect(Object.keys(result[0]!)).not.toContain("changesJson");
-    expect(Object.keys(result[0]!)).not.toContain("civCapCost");
+    expect(Object.keys(result[0]!)).not.toContain("execBandwidthCost");
   });
 
   it("counts drafts and directives in force for the owner layer only", () => {

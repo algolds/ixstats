@@ -462,9 +462,10 @@ export interface BudgetSummary {
   totalAvailable: number;
   utilizationRate: number;
   departmentCount: number;
-  topSpendingDepartments: {
+  /** Every department, highest allocation first; `allocation` is null when it has none this year. */
+  departmentAllocations: {
     department: GovernmentDepartment;
-    allocation: BudgetAllocation;
+    allocation: BudgetAllocation | null;
   }[];
 }
 

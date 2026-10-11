@@ -23,6 +23,7 @@ import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
+import { BandwidthHelp } from "~/components/mycountry/directives/BandwidthHelp";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -37,8 +38,8 @@ interface StandingBandsProps {
   countryId: string;
 }
 
-/** CivCap state as served by `policies.getPolicyReconContext` (lib/government/civcap.ts). */
-interface CivCapBandInput {
+/** Executive bandwidth state as served by `policies.getPolicyReconContext` (lib/government/exec-bandwidth.ts). */
+interface ExecBandwidthBandInput {
   capacity: number;
   used: number;
   available: number;
@@ -52,33 +53,40 @@ interface CivCapBandInput {
   };
 }
 
-/** The CivCap band: real CivCap used/capacity, with the weekly directive slots in the tooltip. */
-export function describeCivCapBand(
-  civCap: CivCapBandInput | null | undefined,
+/** The executive bandwidth band: real executive bandwidth used/capacity, with the weekly directive slots in the tooltip. */
+export function describeExecBandwidthBand(
+  execBandwidth: ExecBandwidthBandInput | null | undefined,
   slots: { used: number; cap: number } | null | undefined
 ): { value: string; title: string } {
   const slotLine = slots
     ? `Directives this week: ${slots.used}/${slots.cap} slots used.`
     : "Directive slots unavailable.";
-  if (!civCap || !Number.isFinite(civCap.capacity) || !Number.isFinite(civCap.used)) {
-    return { value: "—", title: `Civil Service Capacity unavailable. ${slotLine}` };
+  if (
+    !execBandwidth ||
+    !Number.isFinite(execBandwidth.capacity) ||
+    !Number.isFinite(execBandwidth.used)
+  ) {
+    return { value: "—", title: `Executive bandwidth unavailable. ${slotLine}` };
   }
-  const b = civCap.breakdown;
+  const b = execBandwidth.breakdown;
   const breakdown = b
     ? ` Staff ${b.governmentStaff}, policies ${b.policies}, directives ${b.directives}, recon ${b.recon}, delegated issues ${b.delegatedIssues}.`
     : "";
-  const status = civCap.overCapacity ? " Over capacity." : "";
+  const status = execBandwidth.overCapacity ? " Over capacity." : "";
   return {
-    value: `${Math.round(civCap.used)}/${Math.round(civCap.capacity)}`,
+    value: `${Math.round(execBandwidth.used)}/${Math.round(execBandwidth.capacity)}`,
     title:
-      `CivCap: ${Math.round(civCap.used)} used of ${Math.round(civCap.capacity)} ` +
-      `(${Math.round(civCap.available)} available).${status}${breakdown} ${slotLine}`,
+      `Executive bandwidth: ${Math.round(execBandwidth.used)} used of ${Math.round(execBandwidth.capacity)} ` +
+      `(${Math.round(execBandwidth.available)} available).${status}${breakdown} ${slotLine}`,
   };
 }
 
-function civCapPercent(civCap: CivCapBandInput | null | undefined): number | null {
-  if (!civCap || !Number.isFinite(civCap.capacity) || civCap.capacity <= 0) return null;
-  return Math.min(100, Math.max(0, (civCap.used / civCap.capacity) * 100));
+function execBandwidthPercent(
+  execBandwidth: ExecBandwidthBandInput | null | undefined
+): number | null {
+  if (!execBandwidth || !Number.isFinite(execBandwidth.capacity) || execBandwidth.capacity <= 0)
+    return null;
+  return Math.min(100, Math.max(0, (execBandwidth.used / execBandwidth.capacity) * 100));
 }
 
 type RingKey =
@@ -190,13 +198,13 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   const [showExactPop, setShowExactPop] = useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
 
-  // Weekly directive slots (shown in the CivCap tooltip)
+  // Weekly directive slots (shown in the executive bandwidth tooltip)
   const intentStatus = api.intent.getStatus.useQuery(
     { countryId },
     { enabled: !!countryId, refetchInterval: 20_000 }
   );
-  // Civil Service Capacity: the shared used/available sum (lib/government/civcap.ts)
-  const civCapQuery = api.policies.getPolicyReconContext.useQuery(
+  // Civil Service Capacity: the shared used/available sum (lib/government/exec-bandwidth.ts)
+  const execBandwidthQuery = api.policies.getPolicyReconContext.useQuery(
     { countryId },
     { enabled: !!countryId, refetchInterval: 20_000 }
   );
@@ -211,13 +219,13 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
     ? Math.round(population).toLocaleString()
     : formatCompact(population);
 
-  // CivCap used/capacity; directive slots go in the tooltip
-  const civCapData = civCapQuery.data;
-  const civCapBand = describeCivCapBand(
-    civCapData,
+  // Executive bandwidth used/capacity; directive slots go in the tooltip
+  const execBandwidthData = execBandwidthQuery.data;
+  const execBandwidthBand = describeExecBandwidthBand(
+    execBandwidthData,
     intentStatus.data ? { used: intentStatus.data.usedThisWeek, cap: intentStatus.data.cap } : null
   );
-  const civCapPct = civCapPercent(civCapData);
+  const execBandwidthPct = execBandwidthPercent(execBandwidthData);
 
   const handleOpenBreakdown = () => setIsBreakdownOpen(true);
   const handleTogglePop = () => setShowExactPop((prev) => !prev);
@@ -268,7 +276,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
           </Button>
         </div>
 
-        {/* Population, GDP, approval, stability and CivCap */}
+        {/* Population, GDP, approval, stability and executive bandwidth */}
         {country && (
           <Card variant="well" padding="none" className="relative flex flex-col gap-2 p-3">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
@@ -309,37 +317,49 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 value={stabilityPct === null ? "—" : `${stabilityPct}%`}
                 divided
               />
-              <div
-                className="border-separator flex min-w-0 flex-col gap-1 border-l pl-2"
-                title={civCapBand.title}
-                data-testid="civcap-band"
-              >
-                <VitalCell
-                  icon={Zap}
-                  label="CivCap"
-                  value={civCapBand.value}
-                  valueClassName={civCapData?.overCapacity ? "text-destructive" : undefined}
-                  bare
-                />
-                {civCapPct !== null && (
-                  <div
-                    className="bg-fill-3 h-1 overflow-hidden rounded-full"
-                    role="meter"
-                    aria-label="Civil service capacity used"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={Math.round(civCapPct)}
+              <BandwidthHelp
+                state={execBandwidthData}
+                trigger={
+                  <button
+                    type="button"
+                    className={cn(
+                      "border-separator hover:bg-fill-3 flex min-w-0 flex-col gap-1 rounded-r-md border-l pl-2 text-left",
+                      focusRing
+                    )}
+                    title={execBandwidthBand.title}
+                    aria-label={`${execBandwidthBand.title} Show the breakdown.`}
+                    data-testid="exec-bandwidth-band"
                   >
-                    <div
-                      className={cn(
-                        "h-full rounded-full",
-                        civCapData?.overCapacity ? "bg-destructive" : "bg-tint"
-                      )}
-                      style={{ width: `${civCapPct}%` }}
+                    <VitalCell
+                      icon={Zap}
+                      label="Bandwidth"
+                      value={execBandwidthBand.value}
+                      valueClassName={
+                        execBandwidthData?.overCapacity ? "text-destructive" : undefined
+                      }
+                      bare
                     />
-                  </div>
-                )}
-              </div>
+                    {execBandwidthPct !== null && (
+                      <div
+                        className="bg-fill-3 h-1 overflow-hidden rounded-full"
+                        role="meter"
+                        aria-label="Executive bandwidth used"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.round(execBandwidthPct)}
+                      >
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            execBandwidthData?.overCapacity ? "bg-destructive" : "bg-tint"
+                          )}
+                          style={{ width: `${execBandwidthPct}%` }}
+                        />
+                      </div>
+                    )}
+                  </button>
+                }
+              />
             </div>
           </Card>
         )}

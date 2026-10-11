@@ -139,7 +139,7 @@ The mathematical heartbeat of the MyCountry governance simulation and national g
 | `src/tests/lib/national-issues-evaluator.test.ts` | Validates recursive AST evaluation for issue spawn conditions (`count`, `any`, nested `and`/`or`/`not`). | National issues spawning for the wrong countries or never triggering. |
 | `src/tests/lib/national-issues-limits.test.ts` | Enforces weekly issue generation caps and bypass capacity checks. | Event spam flooding players' dashboards. |
 | `src/tests/lib/national-issues-consequences.test.ts` | Validates directive intent completion calculation from linked issue resolution statuses. | Broken progression on player directives. |
-| `src/tests/lib/statecraft/recon.test.ts` | Validates CivCap recon cost formulas, reconnaissance depth, and fog-of-war reveals. | Exploits allowing players to scout rivals for zero cost. |
+| `src/tests/lib/statecraft/recon.test.ts` | Validates executive bandwidth recon cost formulas, reconnaissance depth, and fog-of-war reveals. | Exploits allowing players to scout rivals for zero cost. |
 | `src/tests/lib/statecraft/whip.test.ts` | Validates party whip pressure, defection risk, and legislative discipline. | Incorrect parliamentary voting predictions. |
 | `src/tests/lib/statecraft/power-brokers.test.ts` | Validates broker influence, alignment scores, and endorsement leverage. | Broken faction influence mechanics. |
 | `src/tests/lib/economic-simulations.test.ts` | Validates GDP growth, corporate tax efficiency curves, and inflation adjustments. | Economic balance runaway bugs (infinite money glitches). |

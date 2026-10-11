@@ -1,6 +1,6 @@
 /** @jest-environment node */
-// MC-5: policies.repealPolicy — owner-guarded, only enacted policies, releases CivCap (the
-// policy leaves the `active` set the CivCap sum reads) and clears its growth effect.
+// MC-5: policies.repealPolicy — owner-guarded, only enacted policies, releases executive bandwidth (the
+// policy leaves the `active` set the executive bandwidth sum reads) and clears its growth effect.
 import { describe, it, expect } from "@jest/globals";
 import { policiesRouter } from "~/server/api/routers/policies";
 import {
@@ -41,17 +41,17 @@ const activePolicy = (countryId: string, status = "active") => ({
   countryId,
   name: "Universal Stipend",
   status,
-  civCapCost: 15,
+  execBandwidthCost: 15,
 });
 
 describe("policies.repealPolicy", () => {
-  it("repeals an active policy, releasing its CivCap and growth effect", async () => {
+  it("repeals an active policy, releasing its executive bandwidth and growth effect", async () => {
     const db = policiesDb(activePolicy(CALLER_COUNTRY));
     const caller = policiesRouter.createCaller(createIdorContext(db));
 
     const result = await caller.repealPolicy({ policyId: "pol_1", reason: "Too costly" });
 
-    expect(result).toEqual({ id: "pol_1", status: "repealed", civCapReleased: 15 });
+    expect(result).toEqual({ id: "pol_1", status: "repealed", execBandwidthReleased: 15 });
     expect(db.state.policy?.status).toBe("repealed");
     expect(db.storytellerEffect.updateMany).toHaveBeenCalledWith({
       where: { createdBy: "POLICY:pol_1", isActive: true },

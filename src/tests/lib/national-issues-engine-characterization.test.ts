@@ -568,7 +568,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "62cf98dfd6be8e961c65a25e04f0fb61e73b972a3d47325f16fbadced8bcf61b",
+    digest: "89998c51a20b8ad070d82d23b217dcb7f5fa206c8386043941fd887b9fc161f8",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -609,7 +609,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "9eae36692c9a39e87fad891a46bb31c9bc41e0a33e9842c308b284df0e396639",
+    digest: "e1f2b602e09955e88a04493571d6fbea43302c351b6f0d6ad2b05b166d903dc6",
   },
   evaluateMissingCountry: {
     summary: {
@@ -689,7 +689,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "7992a266a47e19fd629b742eaa79d73d4db33dff65fc9c607f1901532d2797e2",
+    digest: "4096a780053adec3c23ee420176932705f77cac344ce43457bd57f986c5881df",
   },
   evaluateTemplateQueryThrows: {
     summary: {
@@ -719,7 +719,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "a07a1a2b9aae1b49b9f7b1d4df136ab1b9d09802773c507030b45a9fc428d68c",
+    digest: "88f98301814acedff2df3da368907207f736e6634612a8a78d05ffdd0a850bb1",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -757,7 +757,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "b20bf46e0627b382b764a4f13b03820fd1b198a3d9bd343c9e2131eef565e64f",
+    digest: "f1a55eece57b3620e6297bffee5f79dcc050e96116c4c5840f0a96a6897d0c9f",
   },
   forceGenerateFollowUp: {
     summary: {

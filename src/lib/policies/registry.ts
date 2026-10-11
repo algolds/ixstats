@@ -18,7 +18,7 @@ interface PolicyDecretal {
   sliders: DecretalSlider[];
   riskRating?: string;
   origin?: string;
-  civCapCost?: number;
+  execBandwidthCost?: number;
   calculate: (
     settings: Record<string, number>,
     countryMetrics: any
@@ -43,7 +43,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "economic",
     riskRating: "volatile",
     origin: "personal",
-    civCapCost: 15,
+    execBandwidthCost: 15,
     sliders: [
       {
         key: "stipend",
@@ -131,7 +131,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "economic",
     riskRating: "stable",
     origin: "personal",
-    civCapCost: 5,
+    execBandwidthCost: 5,
     sliders: [
       {
         key: "tariffRate",
@@ -213,7 +213,7 @@ export const PREDEFINED_DECRETALS: Record<string, PolicyDecretal> = {
     policyType: "social",
     riskRating: "high-risk",
     origin: "personal",
-    civCapCost: 20,
+    execBandwidthCost: 20,
     sliders: [
       {
         key: "surveillance",
@@ -291,7 +291,7 @@ export async function getPolicyDecretals(db: any): Promise<Record<string, Policy
         policyType: "economic",
         riskRating: "stable",
         origin: "personal",
-        civCapCost: 0,
+        execBandwidthCost: 0,
         sliders: [
           {
             key: "funding",

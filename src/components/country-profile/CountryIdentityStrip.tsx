@@ -60,12 +60,13 @@ export function CountryIdentityStrip({
           )}
         </Link>
       ) : (
+        // Ownership, not a username, decides "Claimed": a new player may have no handle yet.
         <span className={cn(PILL, "text-label-secondary")}>
           <UserCircle aria-hidden className="size-3.5" />
-          Unclaimed
+          {sovereign ? "Claimed" : "Unclaimed"}
         </span>
       )}
-      {!handle && claim && !isPrimary && (
+      {!sovereign && claim && !isPrimary && (
         <ClaimNationButton
           realmSlug={realmSlug}
           countryId={claim.countryId}

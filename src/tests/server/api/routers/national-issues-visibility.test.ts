@@ -50,10 +50,10 @@ jest.mock("~/lib/national-issues", () => ({
     recomputeIntentProgress: jest.fn(),
   },
 }));
-jest.mock("~/lib/government/civcap", () => ({
+jest.mock("~/lib/government/exec-bandwidth", () => ({
   __esModule: true,
-  ...(jest.requireActual("~/lib/government/civcap") as Record<string, unknown>),
-  loadCivCapState: jest.fn(async () => ({
+  ...(jest.requireActual("~/lib/government/exec-bandwidth") as Record<string, unknown>),
+  loadExecBandwidthState: jest.fn(async () => ({
     componentTypes: [],
     departmentCategories: [],
     capacity: 100,

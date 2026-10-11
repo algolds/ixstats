@@ -9,30 +9,18 @@ import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Progress } from "~/components/ui/progress";
+import { Stat } from "~/components/ui/stat";
+import { CutoutCard } from "~/components/ui/cutout-card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
+import { CardBack } from "~/components/cards/display/CardBack";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springGentle, springSmooth } from "~/lib/design/motion";
+import { STREAK_BOOST_FULL_DAYS, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
 import { cn } from "~/lib/utils";
-
-const IxCardIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="5" y="3" width="14" height="18" rx="2" ry="2" />
-    <path d="M5 9h14" />
-    <path d="M5 15h14" />
-    <circle cx="12" cy="12" r="1.5" />
-  </svg>
-);
 
 type ClaimChoice = "CREDITS" | "CARD";
 
@@ -71,26 +59,35 @@ function markAutoOpenedToday(userId: string) {
   }
 }
 
-function StreakPill({ streak }: { streak: number }) {
-  return (
-    <span className="bg-tint-fill text-tint-ink text-footnote inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 font-medium tabular-nums">
-      <Flame aria-hidden className="size-3.5" />
-      {streak > 0 ? `${streak}-day streak` : "New streak"}
-    </span>
-  );
+/** The roll's boost for today's claim, as the server applies it (`lib/vault/daily-roll.ts`). */
+const formatBoost = (multiplier: number) => `×${multiplier.toFixed(2)}`;
+
+/** Time until the next claim opens at 00:00 UTC, e.g. "9h 12m". */
+function untilNextClaim(now = new Date()): string {
+  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+  const mins = Math.max(1, Math.ceil((next - now.getTime()) / 60_000));
+  return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
 }
 
+/**
+ * A choice: a raised pane that lifts on hover and presses in, its art set into a recessed socket.
+ * The socket sits 4px inside the tile so the radii stay concentric (card 16, row 12).
+ */
 function ChoiceTile({
   title,
-  description,
-  icon,
+  detail,
+  figure,
+  figureTitle,
+  art,
   loading,
   disabled,
   onClick,
 }: {
   title: string;
-  description: string;
-  icon: React.ReactNode;
+  detail: string;
+  figure?: string;
+  figureTitle?: string;
+  art: React.ReactNode;
   loading: boolean;
   disabled: boolean;
   onClick: () => void;
@@ -102,23 +99,68 @@ function ChoiceTile({
       disabled={disabled}
       aria-busy={loading}
       className={cn(
-        "facet-well facet-press rounded-row flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center",
-        "enabled:hover:ring-tint/40 focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2 enabled:hover:ring-2",
+        "facet-pane facet-press facet-press-subtle rounded-card flex flex-col p-1 text-left",
+        "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2",
         "disabled:cursor-not-allowed",
+        !disabled && "facet-lift",
         disabled && !loading && "opacity-50"
       )}
     >
       <span
         aria-hidden
-        className="bg-tint-fill text-tint grid size-12 place-items-center rounded-full"
+        className="facet-recess rounded-row grid h-32 place-items-center overflow-hidden"
       >
-        {loading ? <Loader className="size-6 animate-spin" /> : icon}
+        {loading ? <Loader className="text-tint size-6 animate-spin" /> : art}
       </span>
-      <span className="space-y-1">
-        <span className="text-headline text-label block">{title}</span>
-        <span className="text-footnote text-label-secondary block leading-snug">{description}</span>
+      <span className="block px-3 pt-3 pb-2">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-headline text-label">{title}</span>
+          {figure && (
+            <span title={figureTitle} className="text-tint text-headline shrink-0 tabular-nums">
+              {figure}
+            </span>
+          )}
+        </span>
+        <span className="text-footnote text-label-secondary block">{detail}</span>
       </span>
     </button>
+  );
+}
+
+/** The real card back, face down and tilted in its socket: the pull is a card you have not seen. */
+function FaceDownCard() {
+  return (
+    <span className="rounded-control shadow-card relative block h-28 w-20 -rotate-2 overflow-hidden">
+      {/* CardBack is laid out for a full-size card, so it renders at 160×224 and scales to fit. */}
+      <span className="absolute top-0 left-0 block h-56 w-40 origin-top-left scale-50">
+        <CardBack size="small" performanceMode className="h-full w-full" />
+      </span>
+    </span>
+  );
+}
+
+/** Progress toward the full streak boost, in a well under the choices. */
+function StreakBoostWell({ claimStreak }: { claimStreak: number }) {
+  const full = claimStreak >= STREAK_BOOST_FULL_DAYS;
+  return (
+    <div className="facet-well rounded-card space-y-2 p-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-subhead text-label">Streak boost</span>
+        <span className="text-tint text-headline tabular-nums">
+          {formatBoost(streakMultiplier(claimStreak))}
+        </span>
+      </div>
+      <Progress
+        value={Math.min(claimStreak, STREAK_BOOST_FULL_DAYS)}
+        max={STREAK_BOOST_FULL_DAYS}
+        aria-label="Streak boost progress"
+      />
+      <p className="text-footnote text-label-secondary">
+        {full
+          ? "Full boost. Claim every day to keep it."
+          : `Day ${claimStreak} today. The boost peaks at ${formatBoost(streakMultiplier(STREAK_BOOST_FULL_DAYS))} on day ${STREAK_BOOST_FULL_DAYS}.`}
+      </p>
+    </div>
   );
 }
 
@@ -131,7 +173,7 @@ function CreditsReveal({ amount }: { amount: number }) {
       className="flex flex-col items-center gap-1"
     >
       <span className="text-tint flex items-center gap-2">
-        <IxCreditsSymbol decorative className="size-9" />
+        <IxCreditsSymbol decorative className="size-10" />
         <span className="text-large-title tabular-nums">+{amount.toLocaleString()}</span>
       </span>
       <p className="text-body text-label-secondary">IxCredits added to your vault</p>
@@ -139,30 +181,47 @@ function CreditsReveal({ amount }: { amount: number }) {
   );
 }
 
+/** The pulled card as a collectible: a cutout pane whose art keeps its own palette. */
 function CardReveal({ card }: { card: NonNullable<ClaimResult["cardAwarded"]> }) {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <motion.div
-        initial={{ y: 12, rotate: -2, opacity: 0 }}
-        animate={{ y: 0, rotate: 0, opacity: 1 }}
-        transition={springGentle}
-        className="rounded-card shadow-floating relative h-56 w-40 overflow-hidden"
-      >
-        <CardHolographicCover cardType="LORE" rarity={card.rarity} title={card.title} />
-        {card.artwork && (
-          <img
-            src={card.artwork}
-            alt={card.title}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-        <span className="bg-surface-elevated text-label text-footnote absolute inset-x-0 bottom-0 truncate px-2 py-2 font-semibold">
-          {card.title}
-        </span>
-      </motion.div>
-      <Badge variant="secondary" className="capitalize">
-        {card.rarity.toLowerCase().replace(/_/g, " ")}
-      </Badge>
+    <motion.div
+      initial={{ y: 12, rotate: -2, opacity: 0 }}
+      animate={{ y: 0, rotate: 0, opacity: 1 }}
+      transition={springGentle}
+    >
+      <CutoutCard className="shadow-floating w-44 text-left">
+        <div className="relative aspect-[5/7] overflow-hidden">
+          <CardHolographicCover cardType="LORE" rarity={card.rarity} title={card.title} />
+          {card.artwork && (
+            <img
+              src={card.artwork}
+              alt={card.title}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+        </div>
+        <div className="space-y-2 p-3">
+          <p className="text-headline text-label truncate">{card.title}</p>
+          <Badge variant="secondary" className="capitalize">
+            {card.rarity.toLowerCase().replace(/_/g, " ")}
+          </Badge>
+        </div>
+      </CutoutCard>
+    </motion.div>
+  );
+}
+
+/** Streak and the next claim, as a two-figure well under the reward. */
+function ClaimFacts({ streak }: { streak: number }) {
+  return (
+    <div className="facet-well rounded-card divide-separator grid w-full grid-cols-2 divide-x text-left">
+      <Stat
+        size="sm"
+        className="p-4"
+        label="Streak"
+        value={`${streak} ${streak === 1 ? "day" : "days"}`}
+      />
+      <Stat size="sm" className="p-4" label="Next reward" value={`in ${untilNextClaim()}`} />
     </div>
   );
 }
@@ -206,6 +265,9 @@ function DailyRewardDialog({
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
   const streak = balanceData?.loginStreak ?? 0;
+  const claimStreak = balanceData?.claimStreak ?? streak;
+  const levelBoost = levelMultiplier(balanceData?.vaultLevel ?? 1);
+  const streakBoost = streakMultiplier(claimStreak);
 
   // Auto-open at most once per user per UTC day, not on every page load or navigation. Routes
   // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open.
@@ -261,15 +323,28 @@ function DailyRewardDialog({
       <DialogContent
         data-app="vault"
         showCloseButton={!claiming}
-        className="max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
+        className="isolate max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-md"
       >
+        {/* The reveal's art stage: the pulled card's art, full bleed behind the overlay's content. */}
+        {claimResult?.cardAwarded?.artwork && (
+          <img
+            aria-hidden
+            alt=""
+            src={claimResult.cardAwarded.artwork}
+            className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-20"
+          />
+        )}
         <AnimatePresence mode="wait" initial={false}>
           {!claimResult ? (
-            <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-5 p-6">
+            <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-4 p-6">
               <div className="flex items-center gap-3 pr-8">
-                <Trophy aria-hidden className="text-tint size-6 shrink-0" />
+                <span
+                  aria-hidden
+                  className="facet-recess rounded-control text-tint grid size-10 shrink-0 place-items-center"
+                >
+                  <Trophy className="size-5" />
+                </span>
                 <DialogTitle className="text-title-3 text-label flex-1">Daily reward</DialogTitle>
-                <StreakPill streak={streak} />
               </div>
               <DialogDescription className="sr-only">
                 Choose IxCredits or a card pull. You can claim again tomorrow.
@@ -277,21 +352,24 @@ function DailyRewardDialog({
               <div className="grid grid-cols-2 gap-3">
                 <ChoiceTile
                   title="IxCredits"
-                  description="Random roll, boosted by level and streak"
-                  icon={<IxCreditsSymbol decorative className="size-6" />}
+                  detail="Random roll"
+                  figure={formatBoost(streakBoost * levelBoost)}
+                  figureTitle={`Streak ${formatBoost(streakBoost)}, vault level ${formatBoost(levelBoost)}`}
+                  art={<IxCreditsSymbol decorative className="text-tint size-12" />}
                   loading={claiming === "CREDITS"}
                   disabled={claiming !== null}
                   onClick={() => handleClaim("CREDITS")}
                 />
                 <ChoiceTile
                   title="Card pull"
-                  description="One random card"
-                  icon={<IxCardIcon className="size-6" />}
+                  detail="One random card"
+                  art={<FaceDownCard />}
                   loading={claiming === "CARD"}
                   disabled={claiming !== null}
                   onClick={() => handleClaim("CARD")}
                 />
               </div>
+              <StreakBoostWell claimStreak={claimStreak} />
             </motion.div>
           ) : (
             <motion.div
@@ -311,14 +389,14 @@ function DailyRewardDialog({
               )}
               {claimResult.cardAwarded && <CardReveal card={claimResult.cardAwarded} />}
 
-              <StreakPill streak={claimResult.streak} />
+              <ClaimFacts streak={claimResult.streak} />
 
               <div className="flex w-full flex-col gap-2 sm:flex-row-reverse">
-                <Button className="flex-1" onClick={() => handleOpenChange(false)}>
+                <Button className="sm:flex-1" onClick={() => handleOpenChange(false)}>
                   Collect
                 </Button>
                 {claimResult.cardAwarded && (
-                  <Button variant="outline" className="flex-1" asChild>
+                  <Button variant="outline" className="sm:flex-1" asChild>
                     <Link href="/vault/inventory" onClick={() => handleOpenChange(false)}>
                       View collection
                     </Link>

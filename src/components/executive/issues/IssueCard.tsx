@@ -175,7 +175,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
                   }}
                   className="ml-auto"
                 >
-                  Delegate (-15 CivCap)
+                  Delegate (−15 bandwidth)
                 </Button>
               )}
           </div>

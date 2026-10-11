@@ -11,7 +11,7 @@ function policiesDb() {
   return {
     policy: {
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "policy_new", ...data })),
-      aggregate: jest.fn().mockResolvedValue({ _sum: { civCapCost: 0 } }),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { execBandwidthCost: 0 } }),
     },
     governmentStructure: {
       findUnique: jest.fn().mockResolvedValue({
@@ -21,7 +21,7 @@ function policiesDb() {
     },
     governmentComponent: { findMany: jest.fn().mockResolvedValue([]) },
     nationalIssue: { count: jest.fn().mockResolvedValue(0) },
-    intent: { aggregate: jest.fn().mockResolvedValue({ _sum: { civCapCost: 0 } }) },
+    intent: { aggregate: jest.fn().mockResolvedValue({ _sum: { execBandwidthCost: 0 } }) },
     budgetAllocation: {
       findFirst: jest.fn().mockResolvedValue(null),
       findMany: jest.fn().mockResolvedValue([]),

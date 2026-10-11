@@ -33,7 +33,7 @@ interface Suggestion {
   suggestedType?: string;
   suggestedName?: string;
   color: string;
-  civCapImpact?: string;
+  siteImpact?: string;
 }
 
 const has = (text: string, ...words: string[]) => {
@@ -43,7 +43,7 @@ const has = (text: string, ...words: string[]) => {
 
 const clampScore = (score: number) => Math.min(100, Math.max(5, score));
 
-function computeCivCapMetrics(elev: string, climate: string) {
+function computeSiteMetrics(elev: string, climate: string) {
   let agriScore = 50;
   let tradeScore = 40;
   let defenseScore = 40;
@@ -87,7 +87,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       suggestedType: props.featureType === "city" ? "fortress" : "military",
       suggestedName: "Kragtor Keep",
       color: "text-label-secondary",
-      civCapImpact: "+45% Defensive Security",
+      siteImpact: "+45% Defensive Security",
     });
   } else if (has(elev, "lowland", "valley", "coastal")) {
     suggestions.push({
@@ -97,7 +97,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       suggestedType: "city",
       suggestedName: "Oakhaven",
       color: "text-green",
-      civCapImpact: "+35% Agricultural Yield",
+      siteImpact: "+35% Agricultural Yield",
     });
   }
 
@@ -109,7 +109,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       suggestedType: "town",
       suggestedName: "Al-Zahra",
       color: "text-yellow",
-      civCapImpact: "+20% Trans-Arid Trade",
+      siteImpact: "+20% Trans-Arid Trade",
     });
   } else if (has(climate, "tropical")) {
     suggestions.push({
@@ -119,7 +119,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       suggestedType: props.featureType === "poi" ? "natural" : "city",
       suggestedName: "Verdant Reach",
       color: "text-green",
-      civCapImpact: "+25% Lore Harvest",
+      siteImpact: "+25% Lore Harvest",
     });
   }
 
@@ -139,13 +139,13 @@ export function SmartPlacement(props: SmartPlacementProps) {
   const elev = props.terrainInfo.elevation?.zoneName ?? "";
   const climate = props.terrainInfo.climate?.climateName ?? "";
   const suggestions = generateSuggestions(props);
-  const metrics = computeCivCapMetrics(elev, climate);
+  const metrics = computeSiteMetrics(elev, climate);
 
   return (
     <Card className="space-y-2 p-2">
       <div className="flex items-center justify-between">
         <Eyebrow className="flex items-center gap-2">
-          <span>CivCap geographic intelligence</span>
+          <span>Site suitability</span>
         </Eyebrow>
         <span className="text-label-secondary text-footnote tabular-nums">
           {elev || "Terrain"} · {climate || "Climate"}
@@ -180,9 +180,9 @@ export function SmartPlacement(props: SmartPlacementProps) {
                     <Icon className={`h-3 w-3 shrink-0 ${s.color}`} />
                     <span className="text-label">{s.title}</span>
                   </div>
-                  {s.civCapImpact && (
+                  {s.siteImpact && (
                     <span className="text-caption text-green font-semibold tabular-nums">
-                      {s.civCapImpact}
+                      {s.siteImpact}
                     </span>
                   )}
                 </div>

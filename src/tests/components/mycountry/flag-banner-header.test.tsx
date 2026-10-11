@@ -44,12 +44,22 @@ jest.mock("~/hooks/useHasMycountryPremium", () => ({ useHasMycountryPremium: () 
 jest.mock("~/components/mycountry/shared/primitives", () => ({
   useCountryData: () => ({ country: mockCountry }),
 }));
-jest.mock("~/components/mycountry/shell/ExecutiveHome", () => ({ CooldownTimer: () => null }));
+jest.mock("~/components/achievements/FloatingRibbonRack", () => ({
+  CountryOwnerRibbonRack: () => null,
+}));
+jest.mock("~/components/country-profile/CountryIdentityStrip", () => ({
+  CountryIdentityStrip: () => null,
+}));
 
 import { UnifiedGlassCommandBar } from "~/components/mycountry/shell/headers/UnifiedGlassCommandBar";
 
 function renderBar() {
   return render(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
+}
+
+/** The cover art; the flag tile beside the title is a second image. */
+function bannerImg(container: HTMLElement) {
+  return container.querySelector('[data-slot="page-header-backdrop"] img');
 }
 
 function scrollTitleUnderToolbar() {
@@ -69,7 +79,7 @@ describe("MyCountry header flag banner", () => {
     mockCountry = { name: "Pelaxia", flagUrl: "https://example.test/flags/pelaxia.svg" };
   });
 
-  it("renders the flag as a cover image behind the header, with a scrim over it", () => {
+  it("renders the flag as cover art that fades into the canvas, with no scrim over it", () => {
     const { container } = renderBar();
     const backdrop = container.querySelector('[data-slot="page-header-backdrop"]');
     expect(backdrop).not.toBeNull();
@@ -80,9 +90,9 @@ describe("MyCountry header flag banner", () => {
     expect(img).toHaveAttribute("alt", "");
     expect(img!.className).toContain("object-cover");
 
-    // The flag stays vivid: at most a light wash over the art, not a readability scrim.
-    const wash = backdrop!.querySelector('[data-slot="flag-banner-wash"]');
-    expect(wash!.className).toMatch(/\bbg-grouped\/(?:\d|1[0-5])\b/);
+    // The flag stays vivid: its edges are masked into the canvas, with no scrim over the art.
+    expect(img!.className).toContain("mask-b-from-30%");
+    expect(backdrop!.querySelectorAll("div")).toHaveLength(0);
     expect(img!.className).toContain("object-[center_35%]");
   });
 
@@ -114,12 +124,23 @@ describe("MyCountry header flag banner", () => {
     ).toBe(flagged);
   });
 
-  it("puts the title, subtitle and facts on a page-background plate, opaque when transparency is reduced", () => {
-    mockCountry = { name: "Pelaxia", leader: "Ana", flagUrl: "https://example.test/f.svg" };
+  it("puts the title, motto and government on a page-background plate, opaque when transparency is reduced", () => {
+    mockCountry = {
+      name: "Pelaxia",
+      leader: "Ana",
+      economicTier: "ADVANCED",
+      governmentType: "CONSTITUTIONAL_MONARCHY",
+      nationalIdentity: { motto: "Ever onward" },
+      flagUrl: "https://example.test/f.svg",
+    };
     const { container } = renderBar();
     const plate = container.querySelector('[data-slot="page-header-plate"]')!;
     expect(plate.contains(screen.getByRole("heading", { level: 1, name: "Pelaxia" }))).toBe(true);
-    expect(plate.textContent).toContain("Ana");
+    expect(plate.textContent).toContain("Ever onward");
+    expect(plate.textContent).toContain("Constitutional monarchy");
+    // The leader and economic tier are not part of the header.
+    expect(plate.textContent).not.toContain("Ana");
+    expect(plate.textContent).not.toMatch(/advanced/i);
     expect(plate.className).toMatch(/\bbg-grouped\/90\b/);
     expect(plate.className).toContain("transparency-reduced:bg-grouped");
     expect(plate.className).toContain("contrast-more:bg-grouped");
@@ -140,7 +161,7 @@ describe("MyCountry header flag banner", () => {
   });
 
   it("drops the title plate and the action pills when there is no flag", () => {
-    mockCountry = { name: "Pelaxia", leader: "Ana" };
+    mockCountry = { name: "Pelaxia" };
     const { container } = renderBar();
     expect(container.querySelector('[data-slot="page-header-plate"]')!.className).not.toMatch(
       /bg-grouped/
@@ -156,7 +177,7 @@ describe("MyCountry header flag banner", () => {
     const { container, rerender } = renderBar();
     const plate = () => container.querySelector('[data-slot="page-header-plate"]')!;
     expect(plate().className).toMatch(/bg-grouped/);
-    fireEvent.error(container.querySelector("img")!);
+    fireEvent.error(bannerImg(container)!);
     expect(plate().className).not.toMatch(/bg-grouped/);
     expect(container.querySelector('[aria-label="Edit country"]')!.className).not.toMatch(
       /bg-grouped/
@@ -178,14 +199,11 @@ describe("MyCountry header flag banner", () => {
 
   it("resets a failed flag load when the flag changes", () => {
     const { container, rerender } = renderBar();
-    fireEvent.error(container.querySelector("img")!);
-    expect(container.querySelector("img")).toBeNull();
+    fireEvent.error(bannerImg(container)!);
+    expect(bannerImg(container)).toBeNull();
     mockCountry = { name: "Pelaxia", flagUrl: "https://example.test/flags/new.svg" };
     rerender(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
-    expect(container.querySelector("img")).toHaveAttribute(
-      "src",
-      "https://example.test/flags/new.svg"
-    );
+    expect(bannerImg(container)).toHaveAttribute("src", "https://example.test/flags/new.svg");
   });
 });
 

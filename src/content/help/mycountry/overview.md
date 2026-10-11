@@ -23,7 +23,7 @@ nextLabel: Executive Directives
 
 - **Population** (tap it to switch between the short and the exact figure) and **GDP**.
 - **Approval** and **Stability.** Issue responses, directives and elections move them.
-- **CivCap** (civil service capacity): how much work your government can carry, shown as used/capacity. The bar turns red when you're over capacity. See [Civil service capacity](/help/mycountry/executive#civil-service-capacity).
+- **Bandwidth** (executive bandwidth): how much work your government can carry, shown as used/capacity. The bar turns red when you're over capacity. See [Executive bandwidth](/help/mycountry/executive#executive-bandwidth).
 - **Vitality rings**, four scores from 0 to 100:
   - **Economic:** from GDP per person and growth.
   - **Wellbeing:** from population growth and density.
@@ -47,15 +47,15 @@ Read, snoozed and done are remembered in this browser, separately for each of yo
 
 Domain tiles on the home page link to Politics, Economy, Diplomacy and Defense. Each tile shows a real figure when there is one (your stability, your real GDP growth, and the number of Diplomacy items awaiting your answer); otherwise it shows a short description.
 
-| Section | Address | What you do there | Guide |
-| --- | --- | --- | --- |
-| Executive | [/mycountry/executive](/mycountry/executive) | Declare directives, respond to issues | [Executive Directives](/help/mycountry/executive) |
-| Economy | [/mycountry/economy](/mycountry/economy) | Budget, tax rates, trade | [Economy & Budget](/help/mycountry/economy) |
-| Politics | [/mycountry/politics](/mycountry/politics) | Cabinet, parties, legislature, bills | [Politics & Elections](/help/mycountry/politics) |
-| Diplomacy | [/mycountry/diplomacy](/mycountry/diplomacy) | Embassies, relations, alliances | [Foreign Affairs](/help/mycountry/diplomacy) |
-| Defense | [/mycountry/defense](/mycountry/defense) | Military and security (Premium) | [Defense & Security](/help/mycountry/defense) |
-| Editor | [/mycountry/editor](/mycountry/editor) | Change identity, government, economy | [The Country Editor](/help/mycountry/editor) |
-| Map editor | [/mycountry/map-editor](/mycountry/map-editor) | Your territory | [Editing Your Territory](/help/mycountry/map-editor) |
+| Section    | Address                                        | What you do there                     | Guide                                                |
+| ---------- | ---------------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| Executive  | [/mycountry/executive](/mycountry/executive)   | Declare directives, respond to issues | [Executive Directives](/help/mycountry/executive)    |
+| Economy    | [/mycountry/economy](/mycountry/economy)       | Budget, tax rates, trade              | [Economy & Budget](/help/mycountry/economy)          |
+| Politics   | [/mycountry/politics](/mycountry/politics)     | Cabinet, parties, legislature, bills  | [Politics & Elections](/help/mycountry/politics)     |
+| Diplomacy  | [/mycountry/diplomacy](/mycountry/diplomacy)   | Embassies, relations, alliances       | [Foreign Affairs](/help/mycountry/diplomacy)         |
+| Defense    | [/mycountry/defense](/mycountry/defense)       | Military and security (Premium)       | [Defense & Security](/help/mycountry/defense)        |
+| Editor     | [/mycountry/editor](/mycountry/editor)         | Change identity, government, economy  | [The Country Editor](/help/mycountry/editor)         |
+| Map editor | [/mycountry/map-editor](/mycountry/map-editor) | Your territory                        | [Editing Your Territory](/help/mycountry/map-editor) |
 
 ## World Census
 

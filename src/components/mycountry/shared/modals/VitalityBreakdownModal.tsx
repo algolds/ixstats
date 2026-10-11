@@ -69,8 +69,7 @@ const DOMAIN_CONFIG: Record<
   },
   government: {
     title: "Government efficiency",
-    description:
-      "Tracks civil service capacity utilization, legislative throughput, and bureaucracy health.",
+    description: "Tracks executive bandwidth use, legislative throughput, and bureaucracy health.",
     drivers: [
       "Civil Service Utilization",
       "Policy Implementation Speed",

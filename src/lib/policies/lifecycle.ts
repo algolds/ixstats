@@ -1,8 +1,8 @@
 /**
  * Policy lifecycle: repeal, expiry, and the once-per-budget-year maintenance debit.
  *
- * - CivCap: a policy holds `civCapCost` only while `status === "active"` (the shared sum in
- *   lib/government/civcap.ts), so moving it to `repealed` or `expired` releases it.
+ * - Executive bandwidth: a policy holds `execBandwidthCost` only while `status === "active"` (the shared sum in
+ *   lib/government/exec-bandwidth.ts), so moving it to `repealed` or `expired` releases it.
  * - Simulation: an active policy's growth effect is a StorytellerEffect tagged `POLICY:<id>`
  *   (./effects-sync); ending the policy clears it.
  * - Maintenance (PL-8): `maintenanceCost` is an annual figure (e.g. a stipend × population), and

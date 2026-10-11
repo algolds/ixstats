@@ -26,13 +26,12 @@ export function summarizeBudget(
 ): BudgetSummary {
   const totalAllocated = sumOf(allocations, (a) => a.allocatedAmount);
   const totalSpent = sumOf(allocations, (a) => a.spentAmount);
-  const topSpendingDepartments = allocations
-    .flatMap((allocation) => {
-      const department = departments.find((d) => d.id === allocation.departmentId);
-      return department ? [{ department, allocation }] : [];
-    })
-    .sort((a, b) => (b.allocation.allocatedAmount ?? 0) - (a.allocation.allocatedAmount ?? 0))
-    .slice(0, 5);
+  const departmentAllocations = departments
+    .map((department) => ({
+      department,
+      allocation: allocations.find((a) => a.departmentId === department.id) ?? null,
+    }))
+    .sort((a, b) => (b.allocation?.allocatedAmount ?? 0) - (a.allocation?.allocatedAmount ?? 0));
 
   return {
     totalBudget,
@@ -41,7 +40,7 @@ export function summarizeBudget(
     totalAvailable: totalAllocated - totalSpent,
     utilizationRate: totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0,
     departmentCount: departments.length,
-    topSpendingDepartments,
+    departmentAllocations,
   };
 }
 
@@ -89,11 +88,15 @@ export function buildDepartmentChartData(
     .sort((a, b) => b.allocated - a.allocated);
 }
 
-export function buildTrendData(baseBudget: number, totalRevenue: number): BudgetTrendItem[] {
-  return [2020, 2021, 2022, 2023, 2024].map((year) => ({
-    year: year.toString(),
-    budget: baseBudget * (0.95 + (year % 3) * 0.03),
-    spent: baseBudget * (0.85 + (year % 2) * 0.04),
-    revenue: totalRevenue * (0.9 + (year % 4) * 0.03),
-  }));
+/** Allocated and spent per recorded budget year, oldest first. Revenue has no history, so no revenue line. */
+export function buildTrendData(allocations: BudgetAllocation[]): BudgetTrendItem[] {
+  const years = [...new Set(allocations.map((a) => a.budgetYear))].sort((a, b) => a - b);
+  return years.map((year) => {
+    const inYear = allocations.filter((a) => a.budgetYear === year);
+    return {
+      year: String(year),
+      budget: sumOf(inYear, (a) => a.allocatedAmount),
+      spent: sumOf(inYear, (a) => a.spentAmount),
+    };
+  });
 }

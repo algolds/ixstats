@@ -5,30 +5,7 @@ import { grantCardXp } from "~/lib/cards/xp-utils";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-function utcDayNumber(date: Date): number {
-  return Math.floor(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) / MS_PER_DAY
-  );
-}
-
-/**
- * Streak after a claim at `now`: +1 on the next UTC calendar day, reset to 1 after
- * a missed day, unchanged on the same day. No previous login starts at 1.
- */
-export function computeNextStreak(
-  lastLoginDate: Date | null,
-  currentStreak: number,
-  now: Date
-): number {
-  if (!lastLoginDate) return 1;
-  const daysDiff = utcDayNumber(now) - utcDayNumber(new Date(lastLoginDate));
-  if (daysDiff === 1) return currentStreak + 1;
-  if (daysDiff > 1) return 1;
-  return currentStreak;
-}
+import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
 
 export function startOfUtcDay(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -180,9 +157,10 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
     baseCredits = Math.floor(Math.random() * 190) + 10;
   }
 
-  const streakMultiplier = 1 + Math.min(streak * 0.05, 1.5);
-  const levelMultiplier = 1 + Math.min(vaultLevel * 0.02, 1.0);
-  return Math.min(10000, Math.floor(baseCredits * streakMultiplier * levelMultiplier));
+  return Math.min(
+    10000,
+    Math.floor(baseCredits * streakMultiplier(streak) * levelMultiplier(vaultLevel))
+  );
 }
 
 /** Random non-retired card, falling back to any card; null when none exist. */

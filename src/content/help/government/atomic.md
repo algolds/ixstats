@@ -31,7 +31,7 @@ There are 45 synergy pairs and 45 conflict pairs in all. See [Synergies & Confli
 ## What effectiveness affects
 
 - **Your Efficiency vitality ring** on the MyCountry home page is your effectiveness score.
-- **Civil service capacity (CivCap)** grows with effectiveness, which lets you run more [directives](/help/mycountry/executive) and policies at once. Your components also use some CivCap themselves.
+- **[Executive bandwidth](/help/mycountry/executive#executive-bandwidth)** grows with effectiveness, which lets you run more [directives](/help/mycountry/executive) and policies at once. Your components also use some bandwidth themselves.
 - **Previews and fog.** Below 45% effectiveness, policy previews are flagged as unreliable.
 - **National issues** can move effectiveness up or down.
 

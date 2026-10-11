@@ -33,6 +33,9 @@ const DOMAIN_ICONS: Record<DirectiveDomain, React.ComponentType<{ className?: st
   Governance: Bank,
 };
 
+/** Presets per domain in the unsearched All view; the rest are one domain filter away. */
+const ALL_VIEW_PREVIEW = 3;
+
 interface DirectivePresetsCatalogProps {
   /** Free-text filter from the goal field. */
   query: string;
@@ -69,6 +72,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
     [counts]
   );
 
+  const previewOnly = domain === "All" && !query.trim();
   const groups = useMemo(() => {
     const byDomain = new Map<DirectiveDomain, DirectivePreset[]>();
     for (const p of matches) {
@@ -121,6 +125,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
         <div className="space-y-6">
           {groups.map(({ domain: d, presets }) => {
             const Icon = DOMAIN_ICONS[d];
+            const shown = previewOnly ? presets.slice(0, ALL_VIEW_PREVIEW) : presets;
             return (
               <section key={d} aria-label={`${d} presets`} className="space-y-2">
                 <h4 className="text-label text-subhead flex items-center gap-2 px-1 font-semibold">
@@ -128,7 +133,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                   {d}
                 </h4>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {presets.map((p) => (
+                  {shown.map((p) => (
                     <li key={p.label}>
                       <Button
                         variant="outline"
@@ -143,6 +148,17 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                     </li>
                   ))}
                 </ul>
+                {shown.length < presets.length && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDomain(d)}
+                    className="text-label-secondary max-sm:h-11"
+                  >
+                    Show all {presets.length} {d} presets
+                    <NavArrowRight aria-hidden />
+                  </Button>
+                )}
               </section>
             );
           })}

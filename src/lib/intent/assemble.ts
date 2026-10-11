@@ -35,7 +35,7 @@ interface IntentPackage {
   consequences: IntentConsequence[];
   acceptance: Acceptance;
   risk: "stable" | "volatile" | "high-risk" | "unlocked";
-  civCapCost: number;
+  execBandwidthCost: number;
   /**
    * GDP-per-capita growth-rate modifier applied as a StorytellerEffect
    * ("growth_rate_modifier", like active policies) for GROWTH_EFFECT_YEARS. 0 = none.
@@ -375,7 +375,7 @@ export const TIER_RISK: Record<Tier, IntentPackage["risk"]> = {
   broker_unlocked: "unlocked",
   structural_unlocked: "unlocked",
 };
-const TIER_CIVCAP: Record<Tier, number> = {
+const TIER_EXEC_BANDWIDTH: Record<Tier, number> = {
   measured: 5,
   moderate: 12,
   extreme: 25,
@@ -477,7 +477,7 @@ function buildPackage(tier: Tier, cat: Category, goal: string, target?: string):
     consequences: consequences.filter((c) => c.value !== 0),
     acceptance: TIER_ACCEPT[tier],
     risk: TIER_RISK[tier],
-    civCapCost: TIER_CIVCAP[tier],
+    execBandwidthCost: TIER_EXEC_BANDWIDTH[tier],
     gdpGrowthModifier: r.growth
       ? Math.min(MAX_GROWTH_MODIFIER, Math.round(r.growth * f * 10000) / 10000)
       : 0,

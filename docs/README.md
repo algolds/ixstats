@@ -47,7 +47,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 ### 🏛️ MyCountry — executive simulation
 | System | Document | Scope | Status |
 | :--- | :--- | :--- | :---: |
-| **Command Suite** | [systems/mycountry.md](systems/mycountry.md) | Command surface, directives, national issues, CivCap, meetings, gating | ✅ Live (meetings schedule-only) |
+| **Command Suite** | [systems/mycountry.md](systems/mycountry.md) | Command surface, directives, national issues, executive bandwidth, meetings, gating | ✅ Live (meetings schedule-only) |
 | **Country Builder** | [systems/builder.md](systems/builder.md) | Builder v4: 4-step wizard, wiki import, edit mode | ✅ Live |
 | **Economy** | [systems/economy.md](systems/economy.md) · [systems/calculations.md](systems/calculations.md) | Indicators, fiscal policy (42 engine tax components), archetypes, vitality and reference formulas | ✅ Live |
 | **Diplomacy** | [systems/diplomacy.md](systems/diplomacy.md) | Embassies, alliances, cultural exchange, stances with drift | ✅ Live |

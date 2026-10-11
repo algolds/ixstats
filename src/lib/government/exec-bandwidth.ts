@@ -1,16 +1,16 @@
 /**
- * Civil Service Capacity (CivCap) — the one place the used/available sum is computed.
+ * Executive bandwidth — the one place the used/available sum is computed.
  *
  * Capacity comes from population × government effectiveness
  * (`calculateCivilServiceCapacity`). It is consumed by:
  * - government components' staff (15% relief when the Technocrats broker is satisfied);
  * - in-progress recon Meetings;
- * - active policies (`Policy.civCapCost`);
- * - executing directives (`Intent.civCapCost`, while active and inside the execution window);
+ * - active policies (`Policy.execBandwidthCost`);
+ * - executing directives (`Intent.execBandwidthCost`, while active and inside the execution window);
  * - recently delegated (dismissed) national issues.
  *
  * Used by the National Issues recon context, the policy recon context and the MyCountry
- * "CivCap" band. Server-only (reads the database).
+ * "Executive bandwidth" band. Server-only (reads the database).
  */
 
 import type { PrismaClient } from "@prisma/client";
@@ -24,22 +24,22 @@ import { loadEffectiveBudget } from "~/lib/government/budget-allocations";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** CivCap reserved per in-progress recon Meeting. */
+/** Executive bandwidth reserved per in-progress recon Meeting. */
 export const RECON_CAPACITY_COST = 20;
-/** CivCap held by each delegated (dismissed) issue while it is inside the delegation window. */
-export const DELEGATED_ISSUE_CIVCAP = 15;
-/** Delegated issues keep consuming CivCap for 5 IxTime days. */
+/** Executive bandwidth held by each delegated (dismissed) issue while it is inside the delegation window. */
+export const DELEGATED_ISSUE_EXEC_BANDWIDTH = 15;
+/** Delegated issues keep consuming executive bandwidth for 5 IxTime days. */
 export const DELEGATION_WINDOW_MS = 5 * DAY_MS;
 /**
- * A directive holds its CivCap while it is active and was committed within this window
+ * A directive holds its executive bandwidth while it is active and was committed within this window
  * (one IxTime week, the same span as the directive cooldown). Completing or abandoning it
- * releases the CivCap early.
+ * releases the executive bandwidth early.
  */
-export const DIRECTIVE_CIVCAP_WINDOW_MS = 7 * DAY_MS;
+export const DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS = 7 * DAY_MS;
 /** Share of component staff still needed when the Technocrats broker is satisfied. */
 const TECHNOCRAT_STAFF_FACTOR = 0.85;
 
-interface CivCapBreakdown {
+interface ExecBandwidthBreakdown {
   governmentStaff: number;
   recon: number;
   policies: number;
@@ -47,7 +47,7 @@ interface CivCapBreakdown {
   delegatedIssues: number;
 }
 
-interface CivCapState {
+interface ExecBandwidthState {
   componentTypes: string[];
   departmentCategories: string[];
   /** Government effectiveness (0-100) the capacity was derived from. */
@@ -56,11 +56,11 @@ interface CivCapState {
   used: number;
   available: number;
   overCapacity: boolean;
-  breakdown: CivCapBreakdown;
+  breakdown: ExecBandwidthBreakdown;
 }
 
-/** Sum the CivCap consumers. */
-export function sumCivCapUsed(breakdown: CivCapBreakdown): number {
+/** Sum the executive bandwidth consumers. */
+export function sumExecBandwidthUsed(breakdown: ExecBandwidthBreakdown): number {
   return (
     breakdown.governmentStaff +
     breakdown.recon +
@@ -70,8 +70,11 @@ export function sumCivCapUsed(breakdown: CivCapBreakdown): number {
   );
 }
 
-/** Load a country's CivCap capacity, what consumes it, and what is left. */
-export async function loadCivCapState(db: PrismaClient, countryId: string): Promise<CivCapState> {
+/** Load a country's executive bandwidth capacity, what consumes it, and what is left. */
+export async function loadExecBandwidthState(
+  db: PrismaClient,
+  countryId: string
+): Promise<ExecBandwidthState> {
   const now = IxTime.getCurrentIxTime();
   const [
     country,
@@ -104,15 +107,15 @@ export async function loadCivCapState(db: PrismaClient, countryId: string): Prom
     loadEffectiveBudget(db, countryId, { take: 50 }).then((budget) => budget.allocations),
     db.policy.aggregate({
       where: { countryId, status: "active" },
-      _sum: { civCapCost: true },
+      _sum: { execBandwidthCost: true },
     }),
     db.intent.aggregate({
       where: {
         countryId,
         status: "active",
-        createdIxTime: { gte: now - DIRECTIVE_CIVCAP_WINDOW_MS },
+        createdIxTime: { gte: now - DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS },
       },
-      _sum: { civCapCost: true },
+      _sum: { execBandwidthCost: true },
     }),
     db.nationalIssue.count({
       where: {
@@ -142,16 +145,16 @@ export async function loadCivCapState(db: PrismaClient, countryId: string): Prom
     []
   );
 
-  const breakdown: CivCapBreakdown = {
+  const breakdown: ExecBandwidthBreakdown = {
     governmentStaff: isTechnocratsSatisfied
       ? Math.round(govStaff * TECHNOCRAT_STAFF_FACTOR)
       : govStaff,
     recon: pendingRecon * RECON_CAPACITY_COST,
-    policies: activePoliciesSum._sum.civCapCost ?? 0,
-    directives: executingDirectivesSum._sum.civCapCost ?? 0,
-    delegatedIssues: dismissedIssuesCount * DELEGATED_ISSUE_CIVCAP,
+    policies: activePoliciesSum._sum.execBandwidthCost ?? 0,
+    directives: executingDirectivesSum._sum.execBandwidthCost ?? 0,
+    delegatedIssues: dismissedIssuesCount * DELEGATED_ISSUE_EXEC_BANDWIDTH,
   };
-  const used = sumCivCapUsed(breakdown);
+  const used = sumExecBandwidthUsed(breakdown);
 
   return {
     componentTypes: activeComponentTypes.map((type) => String(type)),

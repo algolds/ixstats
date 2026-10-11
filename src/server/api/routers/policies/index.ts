@@ -5,7 +5,7 @@
  * `api.policies.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - crud:      create, list, CivCap recon context
+ *  - crud:      create, list, executive bandwidth recon context
  *  - lifecycle: repeal (expiry runs in the policy-maintenance job, lib/policies/lifecycle.ts)
  *
  * Bills (policies voted into force) live in the legislation router.

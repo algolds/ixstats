@@ -145,7 +145,7 @@ half-built features players can already see, and remove every fabricated number.
 |---|---|---|---|
 | ✅ **Done (#49):** first elections are scheduled once a legislature has at least 2 parties, candidates come from the parties, resolution seats them and bills can pass (D1 option a; seat-by-vote-share not built) | MC-2, PF§2 | M–L | Decision D1 |
 | ✅ **Done (2026-10-05):** `meetings.concludeMeeting` records the outcome and one decision per agenda item; `CabinetMeetingsPanel` in the Cabinet tab. Left: decisions don't reach the event spine or become policies (M4) | PF§2 | M | — |
-| ✅ **Done (2026-10-05):** `policies.repealPolicy` (Repeal on passed bills), expiry in `policy-maintenance`, CivCap released (the shared sum counts active policies only); upkeep debited once per IxTime budget year (PL-8) | MC-5 | S–M | — |
+| ✅ **Done (2026-10-05):** `policies.repealPolicy` (Repeal on passed bills), expiry in `policy-maintenance`, executive bandwidth released (the shared sum counts active policies only); upkeep debited once per IxTime budget year (PL-8) | MC-5 | S–M | — |
 | ✅ **Done (2026-10-06):** defense force structure. Owners create, edit and delete branches and units in Defense → Branches and readiness (or start from their builder data), deployments pick real units, and PvNPC strikes and PvP resolution (`security.concludePvPConflict`, MC-4) use strength computed from that structure (D2 option a; see [defense.md](../systems/defense.md#force-structure-and-combat-strength)) | MC-3, MC-4 | L | Decision D2 |
 | ✅ **Done:** pending invites (#48), the diplomacy Inbox (#49), and NPC targets answer at invite time from their personality's alliance prediction (2026-10-05) | MC-10 | S–M | — |
 | ✅ **Done (2026-10-05):** `diplomatic-drift` completes exchange missions when the exchange ends (cancels them with it); embassy details show elapsed-time progress | MC-11 | S | — |
@@ -352,7 +352,7 @@ Run throughout, preferably in PRs that already touch the area.
   `diplomaticScenarios/scenarios`).
 - **Size ratchet:** reduce the 52 files of 800+ lines; `audit:arch` becomes blocking in M1. The baseline holds real
   line counts since 2026-10-05, so a file can no longer grow past its recorded size unnoticed.
-- **Refactors:** a service layer over direct `ctx.db` in 199 router files; one shared CivCap module (MC-21).
+- **Refactors:** a service layer over direct `ctx.db` in 199 router files; one shared executive bandwidth module (MC-21).
 - **Other decisions:** logging framework decision; design-token cleanup (hex colours, blur and pulse counts) from the
   Facet audits. Done: env hygiene (PL-19); Prisma logs only slow queries (PL-22); IxTime fields store IxTime (MC-16); `alert()` → `notify` in the map editor (AT-20); `editableByOwner` enforced (PL-21).
 - **Dependencies:** Prisma 7 migration (dependabot #25), after M0 backups.

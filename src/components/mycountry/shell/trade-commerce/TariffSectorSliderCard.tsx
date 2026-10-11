@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import type { CustomSector } from "./trade-commerce-types";
 import { ACCENT_BG } from "./trade-commerce-types";
 import { Card } from "~/components/ui/card";
+import { RateInput } from "../RateInput";
 
 interface TariffSectorSliderCardProps {
   sector: CustomSector;
@@ -79,16 +80,27 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
         </div>
       </div>
 
-      <Slider
-        value={[currentTariff]}
-        min={sector.min}
-        max={sector.max}
-        step={sector.step}
-        disabled={isLocked}
-        onValueChange={([val]) => onTariffChange(val || 0)}
-        aria-label={`${sector.label} tariff`}
-        className="py-1"
-      />
+      <div className="flex items-center gap-3">
+        <Slider
+          value={[currentTariff]}
+          min={sector.min}
+          max={sector.max}
+          step={sector.step}
+          disabled={isLocked}
+          onValueChange={([val]) => onTariffChange(val || 0)}
+          aria-label={`${sector.label} tariff`}
+          className="py-1"
+        />
+        <RateInput
+          value={currentTariff}
+          min={sector.min}
+          max={sector.max}
+          step={sector.step}
+          disabled={isLocked}
+          onCommit={onTariffChange}
+          aria-label={`${sector.label} tariff, percent`}
+        />
+      </div>
     </Card>
   );
 });

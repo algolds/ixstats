@@ -132,7 +132,7 @@ export function revealConsequences(
         domain,
         state: "questioned",
         reason: input.overCapacity
-          ? "Civil service over capacity — estimate may be inaccurate"
+          ? "Executive bandwidth over capacity. Estimate may be inaccurate"
           : "Low government efficiency — estimate may be inaccurate",
       };
     }

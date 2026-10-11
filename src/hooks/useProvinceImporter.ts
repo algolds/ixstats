@@ -144,7 +144,8 @@ export function useProvinceImporter(countryId: string) {
   });
   const previewQuery = api.geoAdmin.getProvinceImportPreview.useQuery(
     { countryId },
-    { enabled: step === "upload" || step === "commit" }
+    // The World Editor mounts the importer with no country ("__none__"); previewing that is FORBIDDEN.
+    { enabled: countryId !== "__none__" && (step === "upload" || step === "commit") }
   );
 
   // Auto-align after parsing

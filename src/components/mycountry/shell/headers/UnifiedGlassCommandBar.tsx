@@ -1,24 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  KeyCommand as Command,
-  EditPencil as Edit3,
-  User,
-  ClockRotateRight as FileClock,
-  MapPin,
-} from "iconoir-react";
+import { KeyCommand as Command, User } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { api } from "~/trpc/react";
 import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../command-nav-mode";
 import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
 import { assetUrl } from "~/lib/base-path";
+import { CountryIdentityStrip } from "~/components/country-profile/CountryIdentityStrip";
+import { FlagTile } from "~/components/country-profile/CountryHero";
+import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
+import { stripHtml } from "~/lib/utils/sanitize-html";
+import { EditMorphButton } from "./EditMorphButton";
 import { FlagBanner } from "./FlagBanner";
 
 /** Ghost actions over the flag get the title plate's strength, with an opaque hover and press. */
@@ -33,6 +29,10 @@ interface UnifiedGlassCommandBarProps {
   onDeclare?: () => void;
 }
 
+function str(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
+
 /** "CONSTITUTIONAL_MONARCHY" → "Constitutional monarchy"; ordinary text passes through. */
 function humanizeEnum(value: string): string {
   if (!/^[A-Z0-9_]+$/.test(value)) return value;
@@ -40,41 +40,10 @@ function humanizeEnum(value: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** One line under the primary action: how many directives are left this week, or when the next one opens. */
-function DirectiveStatusLine({ countryId }: { countryId?: string }) {
-  const status = api.intent.getStatus.useQuery(
-    { countryId: countryId ?? "" },
-    { enabled: !!countryId }
-  );
-  if (!status.data) return null;
-  const { canCommit, usedThisWeek, cap, cooldownUntil } = status.data;
-  if (!canCommit) {
-    return (
-      <p className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
-        <FileClock aria-hidden="true" className="h-3.5 w-3.5" />
-        <span>
-          {cooldownUntil ? (
-            <>
-              Next directive in <CooldownTimer cooldownUntil={cooldownUntil} />
-            </>
-          ) : (
-            `All ${cap} directives used · slots reset next week`
-          )}
-        </span>
-      </p>
-    );
-  }
-  const left = Math.max(0, cap - usedThisWeek);
-  return (
-    <p className="text-label-secondary text-footnote tabular-nums">
-      {left} of {cap} directives left this week
-    </p>
-  );
-}
-
 /**
  * The MyCountry page header: the country's name and identity over its flag as cover art, and a
- * toolbar (Profile, Editor, and Map editor for premium users) with the one Declare Directive button. The banner is the identity art
+ * toolbar (Profile, Edit, and the one Declare Directive button). Identity follows the country
+ * profile hero: the flag tile, realm and IxnayID strip, ribbons and motto. The banner is cover art
  * (no small flag beside the title) and collapses with the header. Section switching is the global
  * source list.
  */
@@ -83,7 +52,6 @@ export function UnifiedGlassCommandBar({
   onChangeMode,
   onDeclare,
 }: UnifiedGlassCommandBarProps) {
-  const router = useRouter();
   const { country } = useCountryData();
   // The map editor is a MyCountry Premium tool (beta testers included), so others never see the entry.
   const canUseMapEditor = useHasMycountryPremium("map-editor");
@@ -92,14 +60,17 @@ export function UnifiedGlassCommandBar({
 
   const isExecutiveMode = mode === "executive";
 
-  const realmName: string | null =
-    typeof country?.realm?.name === "string" ? country.realm.name : null;
-  const subtitle = [country?.leader, country?.governmentType, country?.economicTier]
-    .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
-    .map(humanizeEnum)
-    .join(" · ");
-
-  const identity = [subtitle, realmName].filter(Boolean).join(" · ");
+  const name = country?.name ?? "MyCountry";
+  const motto = str(country?.nationalIdentity?.motto);
+  const governmentType = str(country?.governmentType);
+  const realm = country?.realm ? { name: country.realm.name, slug: country.realm.slug } : null;
+  const owner = country?.owner;
+  const sovereign = owner
+    ? {
+        username: str(owner.forumUsername) ?? str(owner.wikiUsername),
+        roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
+      }
+    : null;
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
   // The flag whose image failed to load; a different flag is tried afresh. The plates behind the
   // title and the action pills exist only to sit over the art, so they follow whether it shows.
@@ -110,17 +81,27 @@ export function UnifiedGlassCommandBar({
 
   return (
     <PageHeader
-      title={country?.name ?? "MyCountry"}
+      title={name}
+      className="group/hero"
+      leading={<FlagTile src={flagUrl ?? null} name={name} />}
       // Always present, so the header's padding never jumps when the flag arrives late or fails.
       backdrop={
         <FlagBanner src={bannerShowing ? flagUrl : null} onError={() => setFailedFlag(flagUrl)} />
       }
       backdropVisible={bannerShowing}
       subtitle={
-        <>
-          {identity ? <p>{identity}</p> : null}
-          <DirectiveStatusLine countryId={country?.id} />
-        </>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <CountryIdentityStrip realm={realm} sovereign={sovereign} />
+            {country?.slug && <CountryOwnerRibbonRack countrySlug={country.slug} />}
+          </div>
+          {motto && (
+            <p className="text-pretty">
+              <span className="sr-only">Motto: </span>&ldquo;{stripHtml(motto)}&rdquo;
+            </p>
+          )}
+          {governmentType && <p className="text-footnote">{humanizeEnum(governmentType)}</p>}
+        </div>
       }
       actions={({ collapsed }) => (
         <>
@@ -130,33 +111,7 @@ export function UnifiedGlassCommandBar({
               <span className="hidden md:inline">Profile</span>
             </Link>
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push("/mycountry/editor")}
-            className={cn("text-label-secondary", plate(collapsed))}
-            aria-label="Edit country"
-            title="Edit country and territory"
-          >
-            <Edit3 aria-hidden="true" />
-            <span className="hidden md:inline">Editor</span>
-          </Button>
-          {canUseMapEditor && (
-            <Button
-              asChild
-              variant="ghost"
-              className={cn("text-label-secondary", plate(collapsed))}
-            >
-              <Link
-                href="/mycountry/map-editor"
-                aria-label="Open map editor"
-                title="Open the map editor"
-              >
-                <MapPin aria-hidden="true" />
-                <span className="hidden md:inline">Map editor</span>
-              </Link>
-            </Button>
-          )}
+          <EditMorphButton plate={plate(collapsed)} withMapEditor={canUseMapEditor} />
           <Button
             type="button"
             aria-pressed={isExecutiveMode}

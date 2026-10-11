@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 
-let mockCivCap: any = null;
+let mockExecBandwidth: any = null;
 let mockIntentStatus: any = null;
 let mockCountryData: any = {};
 
@@ -12,7 +12,7 @@ jest.mock("~/trpc/react", () => ({
       getStatus: { useQuery: () => ({ data: mockIntentStatus }) },
     },
     policies: {
-      getPolicyReconContext: { useQuery: () => ({ data: mockCivCap }) },
+      getPolicyReconContext: { useQuery: () => ({ data: mockExecBandwidth }) },
     },
   },
 }));
@@ -30,7 +30,10 @@ jest.mock("~/components/mycountry/shared/primitives", () => {
   return { ...actual, useCountryData: () => mockCountryData };
 });
 
-import { StandingBands, describeCivCapBand } from "~/components/mycountry/shell/StandingBands";
+import {
+  StandingBands,
+  describeExecBandwidthBand,
+} from "~/components/mycountry/shell/StandingBands";
 
 const country = {
   id: "c1",
@@ -41,9 +44,9 @@ const country = {
   stabilityMetrics: { stabilityScore: 72 },
 };
 
-describe("describeCivCapBand", () => {
-  it("shows real CivCap used/capacity with directive slots in the tooltip", () => {
-    const band = describeCivCapBand(
+describe("describeExecBandwidthBand", () => {
+  it("shows real executive bandwidth used/capacity with directive slots in the tooltip", () => {
+    const band = describeExecBandwidthBand(
       {
         capacity: 180,
         used: 42,
@@ -65,14 +68,14 @@ describe("describeCivCapBand", () => {
     expect(band.title).toContain("Directives this week: 1/3");
   });
 
-  it("shows a dash when CivCap is unavailable", () => {
-    expect(describeCivCapBand(null, { used: 0, cap: 3 }).value).toBe("—");
+  it("shows a dash when executive bandwidth is unavailable", () => {
+    expect(describeExecBandwidthBand(null, { used: 0, cap: 3 }).value).toBe("—");
   });
 });
 
 describe("StandingBands", () => {
   beforeEach(() => {
-    mockCivCap = {
+    mockExecBandwidth = {
       capacity: 200,
       used: 57,
       available: 143,
@@ -97,11 +100,11 @@ describe("StandingBands", () => {
     };
   });
 
-  it("labels the band CivCap and shows CivCap, not directive slots", () => {
+  it("labels the band Bandwidth and shows bandwidth, not directive slots", () => {
     render(<StandingBands countryId="c1" />);
-    const band = screen.getByTestId("civcap-band");
+    const band = screen.getByTestId("exec-bandwidth-band");
 
-    expect(band.textContent).toContain("CivCap");
+    expect(band.textContent).toContain("Bandwidth");
     expect(band.textContent).toContain("57/200");
     expect(band.textContent).not.toContain("2/3");
     expect(band.getAttribute("title")).toContain("Directives this week: 2/3");

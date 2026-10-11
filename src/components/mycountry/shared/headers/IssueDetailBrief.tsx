@@ -551,7 +551,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               <PathwayButton
                 icon={Users}
                 label="Delegate"
-                sub={canDismiss ? "-15 CivCap" : "Unavailable"}
+                sub={canDismiss ? "−15 bandwidth" : "Unavailable"}
                 onClick={() => dismissM.mutate({ id: issue.id })}
                 disabled={!canDismiss || dismissM.isPending}
               />
