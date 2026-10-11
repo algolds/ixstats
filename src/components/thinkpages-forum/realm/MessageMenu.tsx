@@ -46,66 +46,80 @@ function moderatable(message: BoardMessageData): ModeratablePost {
   };
 }
 
-/**
- * A board message's "More actions" menu: Continue in a thread, Report, Edit, and a moderator's hide or unhide, edit,
- * warn and ban. Each item appears only when the viewer may use it (the server asks again); the menu is left out when
- * it would be empty.
- */
-export function MessageMenu({
-  message,
-  access,
-  signedIn,
-  tools,
-  onEdit,
-  onChanged,
-}: MessageMenuProps) {
-  const [open, setOpen] = useState<Open>(null);
-  const post = moderatable(message);
-  const moderating = access.isModerator && tools !== null && hasModeratorActions(post);
-  const canContinue =
-    message.hidden !== true &&
-    ((message.byViewer && !access.isVisitor) || (access.isModerator && message.moderable === true));
-  const canReport = signedIn && !message.byViewer && !access.isModerator;
-  const canEdit = message.canEdit;
-  if (!canContinue && !canReport && !canEdit && !moderating) return null;
+/** Which items the viewer may use on a message; the server asks again on every action. */
+function abilitiesOf(
+  message: BoardMessageData,
+  access: BoardAccess,
+  signedIn: boolean,
+  tools: ModeratorTools | null,
+  post: ModeratablePost
+) {
+  const continuable =
+    (message.byViewer && !access.isVisitor) || (access.isModerator && message.moderable === true);
+  return {
+    canContinue: message.hidden !== true && continuable,
+    canReport: signedIn && !message.byViewer && !access.isModerator,
+    canEdit: message.canEdit,
+    moderating: access.isModerator && tools !== null && hasModeratorActions(post),
+  };
+}
 
-  const moderatorOpen = open === "report" || open === "continue" ? null : open;
+type Abilities = ReturnType<typeof abilitiesOf>;
+
+interface MenuItemsProps {
+  abilities: Abilities;
+  post: ModeratablePost;
+  setOpen: (next: Open) => void;
+  onEdit: (asModerator: boolean) => void;
+}
+
+function MenuItems({ abilities, post, setOpen, onEdit }: MenuItemsProps) {
+  const { canContinue, canReport, canEdit, moderating } = abilities;
   const first = canContinue || canReport || canEdit;
-
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="More actions"
-            className="text-label-secondary hover:text-label pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-          >
-            <MoreHoriz aria-hidden />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {canContinue ? (
-            <DropdownMenuItem onSelect={() => setOpen("continue")}>
-              Continue in a thread
-            </DropdownMenuItem>
-          ) : null}
-          {canReport ? (
-            <DropdownMenuItem onSelect={() => setOpen("report")}>Report</DropdownMenuItem>
-          ) : null}
-          {canEdit ? (
-            <DropdownMenuItem onSelect={() => onEdit(false)}>Edit</DropdownMenuItem>
-          ) : null}
-          {moderating ? (
-            <>
-              {first ? <DropdownMenuSeparator /> : null}
-              <ModeratorMenuItems post={post} onOpen={setOpen} onEdit={() => onEdit(true)} />
-            </>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {/* Mounted while open only: a closed message costs no hooks and a reopened form starts empty. */}
+      {canContinue ? (
+        <DropdownMenuItem onSelect={() => setOpen("continue")}>
+          Continue in a thread
+        </DropdownMenuItem>
+      ) : null}
+      {canReport ? (
+        <DropdownMenuItem onSelect={() => setOpen("report")}>Report</DropdownMenuItem>
+      ) : null}
+      {canEdit ? <DropdownMenuItem onSelect={() => onEdit(false)}>Edit</DropdownMenuItem> : null}
+      {moderating ? (
+        <>
+          {first ? <DropdownMenuSeparator /> : null}
+          <ModeratorMenuItems post={post} onOpen={setOpen} onEdit={() => onEdit(true)} />
+        </>
+      ) : null}
+    </>
+  );
+}
+
+interface MenuDialogsProps {
+  message: BoardMessageData;
+  post: ModeratablePost;
+  tools: ModeratorTools | null;
+  moderating: boolean;
+  open: Open;
+  setOpen: (next: Open) => void;
+  onChanged: () => void;
+}
+
+/** Mounted while open only: a closed message costs no hooks and a reopened form starts empty. */
+function MenuDialogs({
+  message,
+  post,
+  tools,
+  moderating,
+  open,
+  setOpen,
+  onChanged,
+}: MenuDialogsProps) {
+  const moderatorOpen = open === "report" || open === "continue" ? null : open;
+  return (
+    <>
       {open === "report" ? (
         <ReportDialog
           targetType="post"
@@ -124,6 +138,55 @@ export function MessageMenu({
       {moderating && tools ? (
         <ModeratorDialogs post={post} tools={tools} open={moderatorOpen} onOpenChange={setOpen} />
       ) : null}
+    </>
+  );
+}
+
+/**
+ * A board message's "More actions" menu: Continue in a thread, Report, Edit, and a moderator's hide or unhide, edit,
+ * warn and ban. Each item appears only when the viewer may use it (the server asks again); the menu is left out when
+ * it would be empty.
+ */
+export function MessageMenu({
+  message,
+  access,
+  signedIn,
+  tools,
+  onEdit,
+  onChanged,
+}: MessageMenuProps) {
+  const [open, setOpen] = useState<Open>(null);
+  const post = moderatable(message);
+  const abilities = abilitiesOf(message, access, signedIn, tools, post);
+  const { canContinue, canReport, canEdit, moderating } = abilities;
+  if (!canContinue && !canReport && !canEdit && !moderating) return null;
+
+  return (
+    <>
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="More actions"
+            className="text-label-secondary hover:text-label pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+          >
+            <MoreHoriz aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <MenuItems abilities={abilities} post={post} setOpen={setOpen} onEdit={onEdit} />
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <MenuDialogs
+        message={message}
+        post={post}
+        tools={tools}
+        moderating={moderating}
+        open={open}
+        setOpen={setOpen}
+        onChanged={onChanged}
+      />
     </>
   );
 }
