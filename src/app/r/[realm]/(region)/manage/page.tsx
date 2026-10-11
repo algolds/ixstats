@@ -8,6 +8,7 @@ import { ClaimsTab } from "~/app/admin/realms/_components/ClaimsTab";
 import { SourceSyncPanel } from "~/app/admin/realms/_components/source-sync/SourceSyncPanel";
 import { RealmWikiPanel } from "~/app/admin/realms/_components/wiki/RealmWikiPanel";
 import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
+import { AdvertSection } from "../../_components/manage/AdvertSection";
 import { AppearanceSection } from "../../_components/manage/AppearanceSection";
 import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
@@ -53,6 +54,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     manage.inWorldDate && { id: "calendar", label: "In-world date" },
     manage.factbook && { id: "factbook", label: "Factbook" },
     manage.rules && { id: "rules", label: "Rules" },
+    can("appearance") && { id: "advert", label: "Advert" },
     { id: "officers", label: "Officers" },
     can("claims") && { id: "claims", label: "Claims" },
     can("diplomacy") && { id: "embassies", label: "Embassies" },
@@ -98,6 +100,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           <FactbookSection slug={slug} realmName={manage.realm.name} factbook={manage.factbook} />
         )}
         {manage.rules && <RulesSection slug={slug} rules={manage.rules} />}
+        {can("appearance") && <AdvertSection slug={slug} archived={manage.archived} />}
         <OfficersSection slug={slug} manage={manage} />
         {can("claims") && (
           <ManageSection
