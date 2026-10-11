@@ -46,7 +46,13 @@ export async function setThreadFlag(
 ): Promise<void> {
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
-  const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
+  const moderator = await contentModerator(
+    db,
+    actor,
+    thread.category,
+    thread.authorUserId,
+    thread.advertRealmId
+  );
   assertNotBoardThread(thread.category);
   const verb = FLAG_VERBS[input.flag];
   await db.$transaction(async (tx) => {
@@ -117,7 +123,13 @@ export async function moveThread(
 ): Promise<void> {
   const note = modNote(input.note);
   const thread = await loadThread(db, input.threadId);
-  const moderator = await contentModerator(db, actor, thread.category, thread.authorUserId);
+  const moderator = await contentModerator(
+    db,
+    actor,
+    thread.category,
+    thread.authorUserId,
+    thread.advertRealmId
+  );
   assertNotBoardThread(thread.category);
   const { category: to } = await loadCategory(db, moderator, input.to);
   assertModeratesCategory(moderator, to);
@@ -185,7 +197,13 @@ export async function setPostHidden(
   const note = modNote(input.note);
   const post = await loadPost(db, input.postId);
   const { category } = post.thread;
-  const moderator = await contentModerator(db, actor, category, post.authorUserId);
+  const moderator = await contentModerator(
+    db,
+    actor,
+    category,
+    post.authorUserId,
+    post.thread.advertRealmId
+  );
   // A board's messages are all single posts of one thread: the first is hidden like any other.
   if (input.hidden && !isBoardCategory(category) && (await isFirstPost(db, post))) {
     throw new ForumError("CONFLICT", "Hide the thread instead.");

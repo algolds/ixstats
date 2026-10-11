@@ -6,6 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { canSeeCategory, type ForumViewer } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { ForumError } from "./errors";
 import { assertCanModerateAuthor, assertModeratesCategory } from "./mod-scope";
 
@@ -59,16 +60,20 @@ export function assertNotBoardThread(category: ContentCategory): void {
  * The actor, once it moderates `category` and may act on `authorUserId`'s content (FORBIDDEN otherwise; null is
  * imported content without an IxStats author, which any moderator of the category may act on). M8: a
  * moderator reads the category's threads (canSeeThread) only when they can see the category; content a moderator
- * can't read (a non-admin appointed on a staff category) is NOT_FOUND to them, as it is in reads and the report queue.
+ * can't read (a non-admin appointed on a staff category) is NOT_FOUND to them, as it is in reads and the report queue;
+ * so is the advert of a realm they can't see (`advertRealmId`, set on an advert thread and its posts).
  */
 export async function contentModerator(
-  db: Pick<ContentDb, "user">,
+  db: Pick<ContentDb, "user" | "realm">,
   actor: ForumViewer,
   category: ContentCategory,
-  authorUserId: string | null
+  authorUserId: string | null,
+  advertRealmId?: string | null
 ): Promise<Moderator> {
   assertModeratesCategory(actor, category);
-  if (!canSeeCategory(actor, category)) throw new ForumError("NOT_FOUND", "Content not found.");
+  if (!canSeeCategory(actor, category) || (await advertHiddenFrom(db, actor, { advertRealmId }))) {
+    throw new ForumError("NOT_FOUND", "Content not found.");
+  }
   await assertCanModerateAuthor(db, actor, authorUserId);
   return actor;
 }
@@ -76,7 +81,12 @@ export async function contentModerator(
 export async function loadThread(db: Pick<ContentDb, "forumThread">, threadId: string) {
   const thread = await db.forumThread.findUnique({
     where: { id: threadId },
-    select: { id: true, authorUserId: true, category: { select: CATEGORY_SELECT } },
+    select: {
+      id: true,
+      authorUserId: true,
+      advertRealmId: true,
+      category: { select: CATEGORY_SELECT },
+    },
   });
   if (!thread) throw new ForumError("NOT_FOUND", "Thread not found.");
   return thread;
@@ -92,7 +102,7 @@ export async function loadPost(db: Pick<ContentDb, "forumPost">, postId: string)
       plainText: true,
       contentHtml: true,
       editedAt: true,
-      thread: { select: { category: { select: CATEGORY_SELECT } } },
+      thread: { select: { advertRealmId: true, category: { select: CATEGORY_SELECT } } },
     },
   });
   if (!post) throw new ForumError("NOT_FOUND", "Post not found.");

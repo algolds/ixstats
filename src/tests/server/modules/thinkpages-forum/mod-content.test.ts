@@ -478,6 +478,66 @@ describe("content in a category the moderator can't read (M8)", () => {
   });
 });
 
+describe("the advert of a realm the moderator can't see", () => {
+  // A non-admin appointed on Find a Realm moderates the category but not a draft realm's advert.
+  const findMod = moderatorOf("u_findmod", [], ["cat_find"]);
+  const advertStore = () => {
+    const base = seed();
+    return forumStore({
+      ...base,
+      realms: [
+        ...base.realms,
+        { id: "r_draft", slug: "draft", name: "Draft", status: "draft", ownerId: "draft_founder" },
+      ],
+      threads: [
+        ...base.threads,
+        thread("t_ad_draft", "cat_find", { advertRealmId: "r_draft" }),
+        thread("t_ad_eurth", "cat_find", { advertRealmId: "r_eurth" }),
+      ],
+      posts: [
+        ...base.posts,
+        post("p_ad_draft_first", "t_ad_draft", 0),
+        post("p_ad_draft", "t_ad_draft", 1),
+        post("p_ad_eurth_first", "t_ad_eurth", 0),
+        post("p_ad_eurth", "t_ad_eurth", 1),
+      ],
+    });
+  };
+
+  it("answers NOT_FOUND to hide, lock and post hide, and writes nothing", async () => {
+    const store = advertStore();
+    const refusals = [
+      setThreadFlag(store.db as never, findMod, {
+        threadId: "t_ad_draft",
+        flag: "hidden",
+        value: true,
+      }),
+      setThreadFlag(store.db as never, findMod, {
+        threadId: "t_ad_draft",
+        flag: "locked",
+        value: true,
+      }),
+      setPostHidden(store.db as never, findMod, { postId: "p_ad_draft", hidden: true }),
+    ];
+    for (const refusal of refusals) {
+      await expect(refusal).rejects.toMatchObject({ code: "NOT_FOUND" });
+    }
+    expect(store.logs).toEqual([]);
+  });
+
+  it("stays a site admin's to moderate, and a visible realm's advert is the moderator's", async () => {
+    const store = advertStore();
+    await setThreadFlag(store.db as never, admin, {
+      threadId: "t_ad_draft",
+      flag: "locked",
+      value: true,
+    });
+    expect(threadIn(store, "t_ad_draft").locked).toBe(true);
+    await setPostHidden(store.db as never, findMod, { postId: "p_ad_eurth", hidden: true });
+    expect(postIn(store, "p_ad_eurth").hidden).toBe(true);
+  });
+});
+
 describe("content a site admin wrote", () => {
   const flags = ["locked", "pinned", "hidden", "archived"] as const;
 

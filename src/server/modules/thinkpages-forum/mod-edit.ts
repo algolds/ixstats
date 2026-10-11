@@ -30,7 +30,13 @@ export async function modEditPost(
   const note = modReason(input.note);
   const post = await loadPost(db, input.postId);
   const { category } = post.thread;
-  const moderator = await contentModerator(db, actor, category, post.authorUserId);
+  const moderator = await contentModerator(
+    db,
+    actor,
+    category,
+    post.authorUserId,
+    post.thread.advertRealmId
+  );
   const prepared = prepareBody(input.html);
   const before = new Set(parseActionTokens(post.plainText));
   const tokens = parseActionTokens(prepared.plainText);
