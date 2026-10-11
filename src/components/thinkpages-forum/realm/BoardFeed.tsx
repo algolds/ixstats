@@ -18,6 +18,7 @@ import type { BoardAccess, BoardData, BoardMessageData, BoardRealm } from "./typ
 interface MessageContext {
   realm: BoardRealm;
   access: BoardAccess;
+  canReact: boolean;
   signedIn: boolean;
   tools: ModeratorTools | null;
   onReply: (message: BoardMessageData) => void;
@@ -272,7 +273,16 @@ export function BoardFeed({
   const waiting = data.messages.length - shown.length;
   const [loadingMore, setLoadingMore] = useState(false);
   const context: FeedContext = {
-    message: { realm, access: data.access, signedIn, tools, onReply, onQuote, onChanged },
+    message: {
+      realm,
+      access: data.access,
+      canReact: data.canReact,
+      signedIn,
+      tools,
+      onReply,
+      onQuote,
+      onChanged,
+    },
     setLoadingMore,
   };
   const typingText = typingLine(typing);

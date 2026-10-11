@@ -15,10 +15,15 @@ describe("canReactToPost", () => {
 });
 
 describe("canReactToMessage", () => {
-  it("needs board posting access, and another member's visible message", () => {
-    expect(canReactToMessage({ canPost: true }, { byViewer: false })).toBe(true);
-    expect(canReactToMessage({ canPost: false }, { byViewer: false })).toBe(false);
-    expect(canReactToMessage({ canPost: true }, { byViewer: true })).toBe(false);
-    expect(canReactToMessage({ canPost: true }, { byViewer: false, hidden: true })).toBe(false);
+  it("is the board's verdict, narrowed to another member's visible message", () => {
+    expect(canReactToMessage(true, { byViewer: false })).toBe(true);
+    expect(canReactToMessage(false, { byViewer: false })).toBe(false);
+    expect(canReactToMessage(true, { byViewer: true })).toBe(false);
+    expect(canReactToMessage(true, { byViewer: false, hidden: true })).toBe(false);
+  });
+
+  it("stays closed for an admin in an archived realm, whom the board's verdict already excludes", () => {
+    // The board read says canReact: false there although canPost is true.
+    expect(canReactToMessage(false, { byViewer: false, hidden: false })).toBe(false);
   });
 });

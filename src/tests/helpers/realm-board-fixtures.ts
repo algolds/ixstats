@@ -71,6 +71,7 @@ export function boardData(
     messages,
     hasMore: false,
     access: boardAccess(),
+    canReact: true,
     ...overrides,
   };
 }

@@ -12,10 +12,13 @@ export function canReactToPost(
   return threadCanReact && !post.byViewer && post.hidden !== true;
 }
 
-/** A board message: the viewer may post on the board, and the message is another member's and visible. */
+/**
+ * A board message: the board lets the viewer react (the board read's `canReact`: they may post there and the realm is
+ * not archived), and the message is another member's and visible.
+ */
 export function canReactToMessage(
-  access: { canPost: boolean },
+  boardCanReact: boolean,
   message: { byViewer: boolean; hidden?: boolean | undefined }
 ): boolean {
-  return access.canPost && !message.byViewer && message.hidden !== true;
+  return boardCanReact && !message.byViewer && message.hidden !== true;
 }

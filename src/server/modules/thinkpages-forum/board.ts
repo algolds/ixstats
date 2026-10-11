@@ -23,7 +23,7 @@ import {
 import { boardThreadOf } from "./board-thread";
 import { ForumError } from "./errors";
 import { canModerateCategory } from "./mod-scope";
-import { canSeeRealm, loadForumRealm } from "./realm-access";
+import { canSeeRealm, isArchived, loadForumRealm } from "./realm-access";
 import { seedRealmCategories } from "./realm-seed";
 import { hiddenFilter, visibleRealmOf } from "./reads";
 
@@ -45,6 +45,11 @@ export interface BoardResult {
   messages: BoardMessage[];
   hasMore: boolean;
   access: BoardAccess;
+  /**
+   * The viewer may react to other members' messages: they may post here and the realm is not archived (a site admin
+   * posts in an archived realm, but the server refuses every reaction there).
+   */
+  canReact: boolean;
 }
 
 /**
@@ -142,6 +147,7 @@ export async function getBoard(
     messages: await shapeBoardMessages(db, viewer, place, rows.slice(0, limit)),
     hasMore: rows.length > limit,
     access,
+    canReact: access.canPost && !isArchived(place.realm),
   };
 }
 

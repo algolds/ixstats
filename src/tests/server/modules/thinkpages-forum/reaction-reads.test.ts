@@ -6,7 +6,7 @@ import {
   publishBoardPost,
 } from "~/server/modules/thinkpages-forum/board-live";
 import { reactToPost } from "~/server/modules/thinkpages-forum/reactions";
-import { member, plain, visitor } from "~/tests/helpers/forum-board-fake";
+import { admin, member, plain, visitor } from "~/tests/helpers/forum-board-fake";
 import { reactionStore } from "~/tests/helpers/forum-reaction-fixtures";
 
 const broadcaster = () => ({ broadcastBoard: jest.fn<void, [BoardLiveEvent]>() });
@@ -54,6 +54,19 @@ describe("board reads with reactions", () => {
       myReaction: null,
     });
     expect(store.reactionDb.findMany).not.toHaveBeenCalled();
+  });
+
+  it("says who may react: a member, not a reader who cannot post, and not anyone in an archived realm", async () => {
+    const store = await reactedBoard();
+    expect((await board(store, member)).canReact).toBe(true);
+    expect((await board(store, null)).canReact).toBe(false);
+    const archived = (viewer: object) =>
+      getBoard(store.db as never, viewer as never, "old").then((out) => ({
+        canPost: out.access.canPost,
+        canReact: out.canReact,
+      }));
+    // A site admin may post in an archived realm, yet the server refuses their reactions there.
+    expect(await archived(admin)).toEqual({ canPost: true, canReact: false });
   });
 
   it("reads a corrupt counts column as no reactions", async () => {

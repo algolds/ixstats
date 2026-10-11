@@ -119,6 +119,7 @@ function renderMessage(props: Partial<Props> = {}) {
       message={boardMessage()}
       realm={REALM}
       access={boardAccess()}
+      canReact
       signedIn
       cards={new Map<string, ActionCardData>()}
       cardsReady
@@ -506,8 +507,25 @@ describe("BoardMessage reactions", () => {
     const hidden = renderMessage({ message: boardMessage({ hidden: true }) });
     expect(bar()).toHaveAttribute("data-can-react", "false");
     hidden.unmount();
-    renderMessage({ access: boardAccess({ canPost: false, reason: "sign_in" }), signedIn: false });
+    renderMessage({
+      access: boardAccess({ canPost: false, reason: "sign_in" }),
+      canReact: false,
+      signedIn: false,
+    });
     expect(bar()).toHaveAttribute("data-can-react", "false");
+  });
+
+  it("offers no React button where the board does not let the viewer react, though they may reply", () => {
+    // A site admin may post in an archived realm; the server refuses every reaction there.
+    renderMessage({ access: boardAccess({ canPost: true }), canReact: false });
+    expect(bar()).toHaveAttribute("data-can-react", "false");
+    expect(screen.getByRole("button", { name: "Reply" })).toBeInTheDocument();
+  });
+
+  it("keeps the message menu after the bar", () => {
+    renderMessage({ message: boardMessage({ canEdit: true }) });
+    const more = screen.getByRole("button", { name: "More actions" });
+    expect(bar().compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("has no reaction bar on a message that continued in a thread", () => {

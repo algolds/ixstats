@@ -24,6 +24,8 @@ interface BoardMessageProps {
   message: BoardMessageData;
   realm: BoardRealm;
   access: BoardAccess;
+  /** The board lets the viewer react (the board read's `canReact`); narrowed here per message. */
+  canReact: boolean;
   signedIn: boolean;
   /** Cards for the page of messages this one is on (see useThreadActionCards). */
   cards: ReadonlyMap<string, ActionCardData>;
@@ -116,6 +118,7 @@ export const BoardMessage = memo(function BoardMessage({
   message,
   realm,
   access,
+  canReact,
   signedIn,
   cards,
   cardsReady,
@@ -184,7 +187,7 @@ export const BoardMessage = memo(function BoardMessage({
                 postId={message.id}
                 counts={message.reactions}
                 mine={message.myReaction}
-                canReact={canReactToMessage(access, message)}
+                canReact={canReactToMessage(canReact, message)}
               />
               {access.canPost ? (
                 <>
