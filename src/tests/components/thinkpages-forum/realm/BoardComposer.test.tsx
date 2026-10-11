@@ -15,6 +15,7 @@ interface MockEditorProps {
   placeholder?: string;
   disabled?: boolean;
   maxHeight?: number;
+  mentionSource?: object;
   ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
@@ -31,6 +32,7 @@ jest.mock(
       placeholder,
       disabled,
       maxHeight,
+      mentionSource,
     }: MockEditorProps) {
       const textarea = React.useRef<HTMLTextAreaElement>(null);
       React.useImperativeHandle(
@@ -54,6 +56,7 @@ jest.mock(
           data-max-height={maxHeight}
           data-min-height={minHeight}
           data-hide-toolbar={String(hideToolbar)}
+          data-mention-source={String(!!mentionSource)}
           placeholder={placeholder}
           onFocus={onFocus}
           onBlur={onBlur}
@@ -62,6 +65,10 @@ jest.mock(
       );
     }
 );
+jest.mock("~/components/thinkpages-forum/composer/useMentionSource", () => ({
+  useMentionSource: () => ({ items: [], isLoading: false, onQueryChange: jest.fn() }),
+}));
+
 jest.mock("~/components/action-links", () => ({
   ActionPicker: ({ onPick }: { onPick: (token: string) => void }) => (
     <button type="button" onClick={() => onPick("[ixaction=a1]")}>
@@ -308,6 +315,13 @@ describe("BoardComposer on a phone", () => {
     type("Hello");
     await act(async () => fireEvent.click(post()));
     expect(onSubmit).toHaveBeenCalled();
+  });
+});
+
+describe("BoardComposer @ menu", () => {
+  it("gives the editor the forum's @ menu source", () => {
+    renderComposer();
+    expect(screen.getByTestId("editor")).toHaveAttribute("data-mention-source", "true");
   });
 });
 

@@ -21,4 +21,15 @@ describe("a forum post's stylesheet", () => {
   it("still floats the infobox inside the contained post", () => {
     expect(rule('[data-app="thinkpages"] .forum-post .forum-infobox')).toMatch(/float:\s*right;/);
   });
+
+  it("styles a resolved mention as a tinted link in both post styles", () => {
+    const mention = rule(
+      '[data-app="thinkpages"] .forum-post a.forum-mention,\n  [data-app="thinkpages"] .forum-post a.forum-mention:visited'
+    );
+    expect(mention).toMatch(/color:\s*var\(--tint\);/);
+    expect(mention).toMatch(/text-decoration:\s*none;/);
+    expect(rule('[data-app="thinkpages"] .forum-post a.forum-mention:hover')).toMatch(
+      /text-decoration:\s*underline;/
+    );
+  });
 });

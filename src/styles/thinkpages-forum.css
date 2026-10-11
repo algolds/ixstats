@@ -165,6 +165,21 @@
     text-decoration: underline;
   }
 
+  /* ---- A resolved @mention: a link in the app tint at the text's own weight, in both post styles ------------- */
+
+  [data-app="thinkpages"] .forum-post a.forum-mention,
+  [data-app="thinkpages"] .forum-post a.forum-mention:visited {
+    color: var(--tint);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 0;
+  }
+
+  [data-app="thinkpages"] .forum-post a.forum-mention:hover {
+    color: var(--tint);
+    text-decoration: underline;
+  }
+
   /* ---- Wiki embeds: the plain link in the stored HTML gives way once the embed has content ----------------- */
 
   [data-app="thinkpages"] .forum-post .forum-wiki-embed:has(> .forum-embed-view > *) > a {

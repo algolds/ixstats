@@ -12,6 +12,7 @@ import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { getBasePath } from "~/lib/base-path";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { PersonaSelect, useMyPersonas } from "./composer/PersonaSelect";
+import { useMentionSource } from "./composer/useMentionSource";
 
 const GlassPlateEditor = dynamic(
   () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
@@ -56,6 +57,7 @@ export function ForumComposer({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const personas = useMyPersonas(icAllowed);
+  const mentions = useMentionSource();
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -127,6 +129,7 @@ export function ForumComposer({
         }}
         placeholder="Write something"
         allowImageInsert
+        mentionSource={mentions}
         disabled={pending}
         minHeight={96}
         maxHeight={320}

@@ -24,6 +24,7 @@ import { cn } from "~/lib/utils/cn";
 import { BanNotice, NoticeText } from "../BanNotice";
 import { useMyPersonas } from "../composer/PersonaSelect";
 import { PostingAs } from "../composer/PostingAs";
+import { useMentionSource } from "../composer/useMentionSource";
 import { BottomDock } from "../shell";
 import type { BoardAccess, BoardQuote, ReplyTarget } from "./types";
 import { useDockCollapse } from "./useDockCollapse";
@@ -106,6 +107,7 @@ function PostingComposer({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const personas = useMyPersonas(true);
+  const mentions = useMentionSource();
   const slow = useSlowMode();
   const handledQuote = useRef<number | null>(null);
   const refocus = useRef(false);
@@ -217,6 +219,7 @@ function PostingComposer({
           }}
           placeholder={`Say something to ${realmName}`}
           allowImageInsert
+          mentionSource={mentions}
           disabled={pending}
           hideToolbar={collapsed}
           minHeight={collapsed ? COLLAPSED_EDITOR_HEIGHT : docked ? 40 : 64}

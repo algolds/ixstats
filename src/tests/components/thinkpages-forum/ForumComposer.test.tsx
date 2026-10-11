@@ -9,13 +9,20 @@ interface MockEditorProps {
   onChange?: (html: string, plain: string, bbcode: string) => void;
   placeholder?: string;
   allowImageInsert?: boolean;
+  mentionSource?: object;
   ref?: React.Ref<{ focusEnd: () => void; insertText: (t: string) => void; clear: () => void }>;
 }
 
 jest.mock(
   "next/dynamic",
   () => () =>
-    function Editor({ ref, onChange, placeholder, allowImageInsert }: MockEditorProps) {
+    function Editor({
+      ref,
+      onChange,
+      placeholder,
+      allowImageInsert,
+      mentionSource,
+    }: MockEditorProps) {
       React.useImperativeHandle(
         ref,
         () => ({ focusEnd: editorFocusEnd, insertText: editorInsert, clear: editorClear }),
@@ -26,6 +33,7 @@ jest.mock(
           data-testid="editor"
           placeholder={placeholder}
           data-allow-image={String(allowImageInsert)}
+          data-mention-source={String(!!mentionSource)}
           onChange={(e) => {
             const value = e.target.value;
             // "img:<src>" stands for an inserted image with no text around it.
@@ -37,6 +45,10 @@ jest.mock(
       );
     }
 );
+
+jest.mock("~/components/thinkpages-forum/composer/useMentionSource", () => ({
+  useMentionSource: () => ({ items: [], isLoading: false, onQueryChange: jest.fn() }),
+}));
 
 jest.mock("~/components/action-links", () => ({
   ActionPicker: ({ onPick }: { onPick: (token: string) => void }) => (
@@ -134,6 +146,11 @@ describe("ForumComposer", () => {
   it("opts the editor into image inserts", () => {
     render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
     expect(screen.getByTestId("editor")).toHaveAttribute("data-allow-image", "true");
+  });
+
+  it("gives the editor the forum's @ menu source", () => {
+    render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
+    expect(screen.getByTestId("editor")).toHaveAttribute("data-mention-source", "true");
   });
 
   it("submits an image-only post and keeps Post disabled for an image with no src", async () => {
