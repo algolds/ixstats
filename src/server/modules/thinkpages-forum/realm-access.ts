@@ -81,7 +81,7 @@ async function resolveRealm<R extends ForumRealm>(
  * (synthesized, D8); with one, it is named from the row.
  */
 export function loadForumRealm(db: RealmDb, ref: RealmRef): Promise<ForumRealm | null> {
-  return resolveRealm(
+  return resolveRealm<ForumRealm>(
     (where) => db.realm.findUnique({ where, select: REALM_SELECT }),
     ref,
     IXWORLD_REALM
@@ -96,7 +96,7 @@ export interface ForumRealmLook extends ForumRealm {
 
 /** `loadForumRealm` in one read that also brings the realm's images; IxWorld without a row has none. */
 export function loadForumRealmLook(db: RealmDb, ref: RealmRef): Promise<ForumRealmLook | null> {
-  return resolveRealm(
+  return resolveRealm<ForumRealmLook>(
     (where) =>
       db.realm.findUnique({
         where,

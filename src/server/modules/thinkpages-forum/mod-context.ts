@@ -36,7 +36,7 @@ async function realmsById(
     where: ids === null ? {} : { id: { in: [...ids] } },
     select: REALM_SELECT,
   });
-  const realms = new Map(rows.map((row) => [row.id, canonicalRealm(row)]));
+  const realms = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
   if (!realms.has(DEFAULT_REALM_ID) && (ids === null || ids.includes(DEFAULT_REALM_ID))) {
     realms.set(DEFAULT_REALM_ID, IXWORLD_REALM);
   }
