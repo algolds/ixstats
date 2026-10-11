@@ -11,6 +11,8 @@
 /// forum_post_mentions; all expressible in Prisma, so a db push keeps them.
 /// Reactions (migration 20261016120000) add forum_post_reactions and forum_posts."reactionCounts"; both are expressible
 /// in Prisma, so a db push keeps them.
+/// Realm adverts (migration 20261018120000) add forum_threads.advertRealmId: a unique, nullable foreign key to realms that
+/// marks a thread as its realm's Find a Realm advert; expressible in Prisma, so a db push keeps it.
 ///
 /// Not expressible in Prisma, so kept by hand-written migrations (and possibly dropped by `prisma db push` as drift;
 /// re-apply 20261012120000_thinkpages_forum_followups after a push): the partial unique index
@@ -60,6 +62,9 @@ model ForumThread {
   createdAt          DateTime      @default(now())
   xenforoThreadId    Int?          @unique
   sourceRef          String?       @unique // archive provenance, e.g. "realm_board:<groupId>" / "thinkpages_post:<postId>" / "realm_board_thread:<realmId>"
+  /// Find a Realm: the realm this thread advertises (at most one advert per realm); null for every other thread.
+  advertRealmId      String?       @unique
+  advertRealm        Realm?        @relation("RealmAdvert", fields: [advertRealmId], references: [id], onDelete: SetNull)
   posts              ForumPost[]
   /// Board messages that were turned into this thread (the placeholder posts that link to it).
   continuedFrom      ForumPost[]   @relation("PostContinuedThread")

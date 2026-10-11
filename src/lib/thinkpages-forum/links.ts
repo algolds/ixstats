@@ -3,6 +3,7 @@
  * `createUrl()` (it would double the production basePath). Slugs and keys are encoded, so a slug cannot add a path
  * segment or a query parameter.
  */
+import { ADVERT_CATEGORY_KEY } from "./adverts";
 import { REALM_HUB_KEY } from "./categories";
 
 export const FORUM_HOME = "/thinkpages";
@@ -65,6 +66,11 @@ export function hubHref(realmSlug: string): string {
 
 export function newThreadHref(category: CategoryPlace): string {
   return `${categoryHref(category)}/new`;
+}
+
+/** The form that creates a realm's advert in Find a Realm; the realm is fixed by `advert`. */
+export function newAdvertHref(realmSlug: string): string {
+  return `${newThreadHref({ key: ADVERT_CATEGORY_KEY })}?advert=${seg(realmSlug)}`;
 }
 
 /** The query parameter that carries an activity id into a composer, which inserts its action token once. */
