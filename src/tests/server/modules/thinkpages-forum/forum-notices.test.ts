@@ -48,6 +48,21 @@ describe("sendForumNotices", () => {
     ]);
   });
 
+  it("carries a reaction notice's dedupe key in the stored metadata", async () => {
+    await sendForumNotices([
+      {
+        ...notice(1),
+        priority: "low",
+        metadata: { kind: "reaction", postId: "p1", threadId: "t1", reactionKey: "p1:u9" },
+      },
+    ]);
+    const [[batch]] = createMany.mock.calls;
+    expect(batch![0]).toMatchObject({
+      priority: "low",
+      metadata: { kind: "reaction", reactionKey: "p1:u9" },
+    });
+  });
+
   it("checks the admin switch itself, since createMany has no guard, and writes nothing when it is off", async () => {
     enabled.mockResolvedValue(false);
     await expect(sendForumNotices([notice(1)])).resolves.toBe(true);

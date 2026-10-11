@@ -5,6 +5,7 @@
  * a notice.
  */
 import { notifyForumPost, type NoticeActor, type NotifyDb } from "./post-notify";
+import { notifyReaction, type ReactionNoticeDb } from "./reaction-notify";
 import { autoWatch } from "./watch";
 
 async function watchQuietly(db: NotifyDb, userId: string, threadId: string): Promise<void> {
@@ -40,4 +41,13 @@ export function afterBoardMessage(db: NotifyDb, actor: NoticeActor, postId: stri
 /** An edit of a thread post or a board message: only the mentions it adds are told. */
 export function afterEdit(db: NotifyDb, actor: NoticeActor, postId: string): Promise<void> {
   return notifyForumPost(db, actor, { postId, edited: true });
+}
+
+/** A reaction to a post: only its owner is told (once), and nothing is watched. */
+export function afterReaction(
+  db: ReactionNoticeDb,
+  actor: NoticeActor,
+  postId: string
+): Promise<void> {
+  return notifyReaction(db, actor, { postId });
 }

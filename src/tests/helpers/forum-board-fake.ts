@@ -142,6 +142,7 @@ const userRow = (id: string, extra: Row = {}): Row => ({
   countryId: null,
   country: { name: `Nation of ${id}`, flag: `https://flags.example/${id}.png` },
   role: USER_ROLE,
+  isActive: true,
   ...extra,
 });
 export const users: Row[] = [

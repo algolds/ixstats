@@ -16,7 +16,7 @@ import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { sendForumNotices } from "./forum-notices";
 import { mentionedMemberIds, recordMentions } from "./mention-rows";
 import { readableUsers, RECIPIENT_SELECT, type NoticePlace } from "./notice-recipients";
-import { noticeFor, type NoticeKind, type NoticeSubject } from "./notice-text";
+import { memberName, noticeFor, type NoticeKind, type NoticeSubject } from "./notice-text";
 import { loadForumRealm } from "./realm-access";
 import { notifyWatchers } from "./watch-notify";
 
@@ -41,7 +41,7 @@ export interface NoticeActor {
   clerkUserId: string;
 }
 
-type Kind = Exclude<NoticeKind, "watch">;
+type Kind = Exclude<NoticeKind, "watch" | "reaction">;
 const RANK: Record<Kind, number> = { mention: 3, quote: 2, reply: 1 };
 
 const POST_SELECT = {
@@ -132,11 +132,7 @@ async function authorName(db: NotifyDb, post: NoticePost): Promise<string> {
     return persona?.displayName ?? "A persona";
   }
   if (!post.authorUserId) return "Someone";
-  const user = await db.user.findUnique({
-    where: { id: post.authorUserId },
-    select: { handle: true, wikiUsername: true },
-  });
-  return user?.handle ?? user?.wikiUsername ?? "Member";
+  return memberName(db, post.authorUserId, "Member");
 }
 
 /**

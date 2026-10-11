@@ -44,7 +44,13 @@ const thread = (id: string, categoryId: string, extra: Row = {}): Row => ({
 });
 
 const post = (id: string, threadId: string, extra: Row = {}): Row =>
-  boardPost(id, 1, { threadId, authorUserId: "u_member2", reactionCounts: {}, ...extra });
+  boardPost(id, 1, {
+    threadId,
+    authorUserId: "u_member2",
+    reactionCounts: {},
+    sourceRef: null,
+    ...extra,
+  });
 
 export function reactionStore(): BoardStore {
   const base = seed();

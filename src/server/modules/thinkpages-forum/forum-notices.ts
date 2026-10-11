@@ -19,7 +19,13 @@ export interface ForumNotice {
   message: string;
   href: string;
   priority: "medium" | "low";
-  metadata: { kind: "mention" | "quote" | "reply" | "watch"; postId: string; threadId: string };
+  metadata: {
+    kind: "mention" | "quote" | "reply" | "watch" | "reaction";
+    postId: string;
+    threadId: string;
+    /** `<post id>:<reactor user id>` on a reaction notice: a reaction toggled off and on tells the owner once. */
+    reactionKey?: string;
+  };
 }
 
 /** Whether the admin source switch lets forum notices through; the watcher step reads it before it claims anything. */

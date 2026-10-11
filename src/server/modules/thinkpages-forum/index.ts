@@ -1,4 +1,10 @@
-export { afterBoardMessage, afterEdit, afterReply, afterThreadStarted } from "./after-write";
+export {
+  afterBoardMessage,
+  afterEdit,
+  afterReaction,
+  afterReply,
+  afterThreadStarted,
+} from "./after-write";
 export {
   canPostIn,
   canSeeCategory,
@@ -58,6 +64,7 @@ export {
   type ForumNotice,
 } from "./forum-notices";
 export { notifyForumPost, type NoticeActor, type NotifyDb } from "./post-notify";
+export { notifyReaction, type ReactionNoticeDb } from "./reaction-notify";
 export {
   resolveMentionNames,
   withMentionLinks,

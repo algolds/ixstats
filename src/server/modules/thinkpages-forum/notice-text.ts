@@ -3,6 +3,7 @@
  * the watcher notice (`watch-notify.ts`), so a title is clipped and a link made in one place. The name is the post's
  * displayed author: a persona's name for a persona post, never the player's.
  */
+import type { PrismaClient } from "@prisma/client";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import type { ForumNotice } from "./forum-notices";
 
@@ -24,6 +25,21 @@ export interface NoticeSubject {
   realmName: string;
   /** The post is on the realm board. */
   board: boolean;
+  /** A reaction notice's dedupe key (`<post id>:<reactor id>`); `name` is then the reactor's. */
+  reactionKey?: string;
+}
+
+/** A member's displayed name: their Passport handle, else their wiki name, else `fallback`. */
+export async function memberName(
+  db: Pick<PrismaClient, "user">,
+  userId: string,
+  fallback: string
+): Promise<string> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { handle: true, wikiUsername: true },
+  });
+  return user?.handle ?? user?.wikiUsername ?? fallback;
 }
 
 export function noticeFor(
@@ -38,6 +54,7 @@ export function noticeFor(
     quote: `${name} quoted your post in ${where}`,
     reply: `${name} replied to you on the ${realmName} board`,
     watch: `New reply in ${subject.threadTitle}`,
+    reaction: `${name} reacted to your post in ${where}`,
   };
   const watch = kind === "watch";
   return {
@@ -45,7 +62,12 @@ export function noticeFor(
     title: clip(titles[kind]),
     message: watch ? clip(`${name}: ${subject.excerpt}`) : subject.excerpt,
     href: postHref(subject.postId),
-    priority: watch ? "low" : "medium",
-    metadata: { kind, postId: subject.postId, threadId: subject.threadId },
+    priority: watch || kind === "reaction" ? "low" : "medium",
+    metadata: {
+      kind,
+      postId: subject.postId,
+      threadId: subject.threadId,
+      ...(subject.reactionKey ? { reactionKey: subject.reactionKey } : {}),
+    },
   };
 }

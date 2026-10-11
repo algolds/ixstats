@@ -3,13 +3,19 @@ jest.mock("~/server/modules/thinkpages-forum/post-notify", () => ({
   notifyForumPost: jest.fn(async () => undefined),
 }));
 
+jest.mock("~/server/modules/thinkpages-forum/reaction-notify", () => ({
+  notifyReaction: jest.fn(async () => undefined),
+}));
+
 import {
   afterBoardMessage,
   afterEdit,
+  afterReaction,
   afterReply,
   afterThreadStarted,
 } from "~/server/modules/thinkpages-forum/after-write";
 import { notifyForumPost } from "~/server/modules/thinkpages-forum/post-notify";
+import { notifyReaction } from "~/server/modules/thinkpages-forum/reaction-notify";
 
 const notify = jest.mocked(notifyForumPost);
 const actor = { id: "u1", clerkUserId: "clerk_1" };
@@ -25,6 +31,13 @@ beforeEach(() => {
 afterEach(() => errorSpy.mockRestore());
 
 describe("after-write hooks", () => {
+  it("notifies about a reaction without watching anything", async () => {
+    const db = fakeDb();
+    await afterReaction(db as never, actor, "p1");
+    expect(db.forumThreadWatch.createMany).not.toHaveBeenCalled();
+    expect(jest.mocked(notifyReaction)).toHaveBeenCalledWith(db, actor, { postId: "p1" });
+  });
+
   it("watches a new thread and then notifies about its first post", async () => {
     const db = fakeDb();
     await afterThreadStarted(db as never, actor, { threadId: "t1", postId: "p1" });

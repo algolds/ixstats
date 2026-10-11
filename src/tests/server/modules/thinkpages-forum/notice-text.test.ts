@@ -34,6 +34,20 @@ describe("noticeFor", () => {
     expect(noticeFor("mention", subject(), "c").priority).toBe("medium");
   });
 
+  it("words a reaction at low priority, naming the reactor, with its dedupe key", () => {
+    expect(noticeFor("reaction", subject({ name: "member", reactionKey: "p1:u9" }), "c")).toEqual({
+      clerkUserId: "c",
+      title: "member reacted to your post in Trade talks",
+      message: "hello",
+      href: "/thinkpages/post/p1",
+      priority: "low",
+      metadata: { kind: "reaction", postId: "p1", threadId: "t1", reactionKey: "p1:u9" },
+    });
+    expect(noticeFor("reaction", subject({ board: true }), "c").title).toBe(
+      "Aria Vance reacted to your post in the Eurth board"
+    );
+  });
+
   it("names the realm board instead of the thread on the board", () => {
     expect(noticeFor("mention", subject({ board: true }), "c").title).toBe(
       "Aria Vance mentioned you in the Eurth board"
