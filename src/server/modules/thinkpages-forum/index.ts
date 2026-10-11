@@ -1,4 +1,5 @@
 export * from "./advert-access";
+export * from "./adverts";
 export {
   discussionCountsOf,
   discussionsOf,

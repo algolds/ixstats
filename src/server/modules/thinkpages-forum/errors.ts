@@ -3,12 +3,16 @@ import { Prisma } from "@prisma/client";
 export type ForumErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
 
-/** A refusal the router maps 1:1 to a TRPCError. `retryAfterSeconds`: how long until a rate-limited retry may succeed. */
+/**
+ * A refusal the router maps 1:1 to a TRPCError. `retryAfterSeconds`: how long until a rate-limited retry may succeed.
+ * `context`: structured data the client reads from `error.data.context` (the advert refusal names the existing thread).
+ */
 export class ForumError extends Error {
   constructor(
     public readonly code: ForumErrorCode,
     message: string,
-    public readonly retryAfterSeconds?: number
+    public readonly retryAfterSeconds?: number,
+    public readonly context?: Record<string, string>
   ) {
     super(message);
     this.name = "ForumError";
