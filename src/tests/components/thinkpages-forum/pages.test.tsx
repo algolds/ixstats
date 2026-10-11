@@ -98,6 +98,7 @@ jest.mock("next/navigation", () => {
   };
 });
 
+jest.mock("~/components/thinkpages-forum/reactions", () => ({ ReactionBar: () => null }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 
 interface ComposerStubProps {
@@ -221,6 +222,8 @@ function threadData(
         number: 1,
         role: null,
         isOwn: true,
+        reactions: {},
+        myReaction: null,
       },
       {
         id: "p2",
@@ -232,10 +235,13 @@ function threadData(
         number: 2,
         role: null,
         isOwn: false,
+        reactions: {},
+        myReaction: null,
       },
     ],
     total: 2,
     canReply: overrides.canReply ?? true,
+    canReact: true,
     authors,
   };
 }

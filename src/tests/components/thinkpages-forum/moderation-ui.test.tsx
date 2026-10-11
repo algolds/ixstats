@@ -99,6 +99,7 @@ jest.mock("next/navigation", () => {
   };
 });
 
+jest.mock("~/components/thinkpages-forum/reactions", () => ({ ReactionBar: () => null }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 
 jest.mock("~/context/auth-context", () => {
@@ -291,6 +292,8 @@ function threadData(o: ThreadOverrides = {}) {
         role: null,
         byViewer: true,
         isOwn: !o.locked,
+        reactions: {},
+        myReaction: null,
         // The moderator's own post: never sanctionable.
         ...(o.canModerate ? { hidden: false, moderable: true, sanctionable: false } : {}),
       },
@@ -305,6 +308,8 @@ function threadData(o: ThreadOverrides = {}) {
         role: null,
         byViewer: false,
         isOwn: false,
+        reactions: {},
+        myReaction: null,
         ...(o.canModerate
           ? { hidden: o.hidden ?? false, ...(o.p2 ?? { moderable: true, sanctionable: true }) }
           : {}),
@@ -312,6 +317,7 @@ function threadData(o: ThreadOverrides = {}) {
     ],
     total: 2,
     canReply: o.canReply ?? true,
+    canReact: true,
     notice: o.notice ?? null,
     banned: o.banned ?? false,
     canModerate: o.canModerate ?? false,
