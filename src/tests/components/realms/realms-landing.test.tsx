@@ -268,6 +268,18 @@ describe("realms landing sections", () => {
     ).toBe("/thinkpages/r/eurth");
   });
 
+  it("lets an Open to join row and its links wrap on a phone, with tappable links", () => {
+    render(<RealmsLandingPage />);
+    const open = screen.getByRole("region", { name: "Open to join" });
+    const board = within(open).getByRole("link", { name: "Open the board of Eurth" });
+    const nations = within(open).getByRole("link", { name: "See the nations of Eurth" });
+    expect(board.parentElement).toHaveClass("flex-wrap");
+    expect(nations.parentElement).toBe(board.parentElement);
+    expect(board.closest("li")).toHaveClass("flex-wrap");
+    for (const link of [board, nations]) expect(link).toHaveClass("pointer-coarse:min-h-11");
+    expect(board.parentElement).not.toHaveClass("shrink-0");
+  });
+
   it("links each of Your realms to its board", () => {
     auth = { isLoaded: true, isSignedIn: true };
     queries["realms.myNations"] = {

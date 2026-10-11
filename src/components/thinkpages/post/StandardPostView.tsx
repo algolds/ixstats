@@ -191,7 +191,7 @@ export function StandardPostView({
         </button>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             <PersonaAuthorCard username={account?.username ?? ""}>
               <button
                 onClick={() => onAccountClick?.(account?.id)}

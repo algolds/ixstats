@@ -43,14 +43,14 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
           return (
             <li
               key={realm.id}
-              className="border-separator rounded-row flex items-center gap-3 border p-3"
+              className="border-separator rounded-row flex flex-wrap items-center gap-x-3 gap-y-1 border p-3"
             >
               <RealmAvatar thumbnail={realm.thumbnail} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1 basis-40">
+                <div className="flex min-w-0 items-center gap-2">
                   <Link
                     href={realmHref(realm.slug)}
-                    className="text-label text-body truncate font-medium hover:underline"
+                    className="text-label text-body min-w-0 truncate font-medium hover:underline"
                   >
                     {realm.name}
                   </Link>
@@ -60,7 +60,7 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
                   {atCap ? "You hold the most nations allowed here" : openDetail(realm)}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3">
                 <Link
                   href={realmBoardHref(realm.slug)}
                   className="text-tint text-footnote underline-offset-4 hover:underline pointer-coarse:min-h-11"
@@ -70,7 +70,7 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
                 </Link>
                 <Link
                   href={realmHref(realm.slug, "nations")}
-                  className="text-tint text-footnote underline-offset-4 hover:underline"
+                  className="text-tint text-footnote underline-offset-4 hover:underline pointer-coarse:min-h-11"
                   aria-label={`See the nations of ${realm.name}`}
                 >
                   See nations
