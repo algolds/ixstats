@@ -169,6 +169,7 @@ describe("BoardMessage header", () => {
           message={boardMessage({ role })}
           realm={REALM}
           access={boardAccess()}
+          canReact
           signedIn
           cards={new Map()}
           cardsReady
@@ -199,6 +200,7 @@ describe("BoardMessage header", () => {
         message={boardMessage({ isVisitor: true })}
         realm={REALM}
         access={boardAccess()}
+        canReact
         signedIn
         cards={new Map()}
         cardsReady
