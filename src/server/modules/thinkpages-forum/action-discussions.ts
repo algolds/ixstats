@@ -28,8 +28,7 @@ export interface DiscussionItem {
   kind: "thread" | "board";
   categoryName: string | null;
   realmName: string | null;
-  /** `persona` is always false: persona posts are left out of the list entirely. */
-  author: { name: string; persona: boolean };
+  author: { name: string };
   createdAt: Date;
   /** Present for moderators only: the post or its thread is hidden from members. */
   hidden?: true;
@@ -37,7 +36,7 @@ export interface DiscussionItem {
 
 export interface DiscussionPage {
   items: DiscussionItem[];
-  /** A link id: pass it back to continue after the last link this page used. Null at the end. */
+  /** Opaque: pass it back to continue after the last link this page used, even if that link is gone. Null at the end. */
   nextCursor: string | null;
 }
 
@@ -50,11 +49,31 @@ export interface DiscussionCount {
 const PAGE_SIZE = 20;
 /** Links read per call; hidden ones do not take page slots, so one call may scan past 20. */
 const SCAN = 100;
-// ponytail: the counts call reads at most this many links (newest first) across all requested ids, in one query. An
-// action with more links than that, or a batch whose first 1,000 links are mostly hidden, undercounts the older ones;
-// a page of 50 cards stays far below it, and an exact count would need a per-post visibility join.
+// ponytail: one bound for the whole counts call. It reads at most this many links, newest first, across ALL requested
+// ids, then drops the ones this viewer cannot see. So one busy action (a country may link its own action any number of
+// times) or many persona and hidden links can use the budget up and push the other cards, or the older links of the
+// same card, to a count of 0 or too low. A 50-card page of ordinary traffic stays far below it. Upgrade path: a bounded
+// scan per id (one take per activity), so a busy action can only shortchange itself.
 const COUNT_SCAN = 1000;
 const LONE_IDS = 2;
+
+/** The cursor names the last link used by its time and id, so it still works after that link row is deleted. */
+const encodeCursor = (link: { createdAt: Date; id: string }): string =>
+  `${link.createdAt.getTime()}.${link.id}`;
+
+function decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
+  const dot = cursor.indexOf(".");
+  const time = Number(cursor.slice(0, dot));
+  const id = cursor.slice(dot + 1);
+  if (dot < 1 || id === "" || !Number.isSafeInteger(time)) return null;
+  const createdAt = new Date(time);
+  return Number.isNaN(createdAt.getTime()) ? null : { createdAt, id };
+}
+
+/** The links after the cursor in (createdAt desc, id desc) order. */
+const afterCursor = (at: { createdAt: Date; id: string }) => ({
+  OR: [{ createdAt: { lt: at.createdAt } }, { createdAt: at.createdAt, id: { lt: at.id } }],
+});
 
 /** Only a public activity has backlinks (R3): a private one is a draft or a withdrawn directive. */
 const PUBLIC_ACTIVITY = { visibility: "public" } as const;
@@ -117,27 +136,39 @@ async function visiblePosts(
     where: { id: { in: [...new Set(refs)] } },
     select: POST_SELECT,
   });
-  const realms = new Map<string, ForumRealm | null | undefined>();
-  for (const row of rows) {
-    if (row.authorPersonaId) continue;
+  const readable = rows.filter((row) => {
+    if (row.authorPersonaId) return false;
     const { category } = row.thread;
-    const moderated = canModerateCategory(viewer, category);
-    if (!canSeeThread(viewer, row.thread, category)) continue;
-    if (row.hidden && !moderated) continue;
-    const place = `${category.scope}:${category.realmId ?? ""}`;
-    if (!realms.has(place)) realms.set(place, await visibleRealmOf(db, viewer, category));
-    const realm = realms.get(place);
+    if (!canSeeThread(viewer, row.thread, category)) return false;
+    return !row.hidden || canModerateCategory(viewer, category);
+  });
+  const places = new Map(
+    readable.map(({ thread: { category } }) => [
+      `${category.scope}:${category.realmId ?? ""}`,
+      category,
+    ])
+  );
+  const realms = new Map(
+    await Promise.all(
+      [...places].map(
+        async ([place, category]) => [place, await visibleRealmOf(db, viewer, category)] as const
+      )
+    )
+  );
+  for (const row of readable) {
+    const { category } = row.thread;
+    const realm = realms.get(`${category.scope}:${category.realmId ?? ""}`);
     if (realm === undefined) continue;
-    seen.set(row.id, { row, realm, moderated });
+    seen.set(row.id, { row, realm, moderated: canModerateCategory(viewer, category) });
   }
   return seen;
 }
 
 type AuthorMaps = Awaited<ReturnType<typeof authorsOf>>;
 
-function authorOf(row: PostRow, maps: AuthorMaps): { name: string; persona: boolean } {
+function authorOf(row: PostRow, maps: AuthorMaps): { name: string } {
   const user = row.authorUserId ? maps.users.get(row.authorUserId) : undefined;
-  return { name: user?.name ?? row.importedAuthorName ?? "Member", persona: false };
+  return { name: user?.name ?? row.importedAuthorName ?? "Member" };
 }
 
 function itemOf({ row, realm, moderated }: Seen, maps: AuthorMaps): DiscussionItem {
@@ -162,12 +193,19 @@ export async function discussionsOf(
   viewer: ForumViewer,
   input: { activityId: string; cursor?: string }
 ): Promise<DiscussionPage> {
+  // A cursor that does not parse reads as the end of the list.
+  const at = input.cursor ? decodeCursor(input.cursor) : undefined;
+  if (at === null) return { items: [], nextCursor: null };
   const links = await db.postActionLink.findMany({
-    where: { activityId: input.activityId, postSource: "native", activity: PUBLIC_ACTIVITY },
+    where: {
+      activityId: input.activityId,
+      postSource: "native",
+      activity: PUBLIC_ACTIVITY,
+      ...(at ? afterCursor(at) : {}),
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: SCAN + 1,
-    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-    select: { id: true, postRef: true },
+    select: { id: true, createdAt: true, postRef: true },
   });
   const scanned = links.slice(0, SCAN);
   const seen = await visiblePosts(
@@ -185,14 +223,15 @@ export async function discussionsOf(
   );
   const items = rows.map((s) => itemOf(s, maps));
   let nextCursor: string | null = null;
-  if (visible.length > PAGE_SIZE) nextCursor = shown[PAGE_SIZE - 1]!.id;
-  else if (links.length > SCAN) nextCursor = scanned[SCAN - 1]!.id;
+  if (visible.length > PAGE_SIZE) nextCursor = encodeCursor(shown[PAGE_SIZE - 1]!);
+  else if (links.length > SCAN) nextCursor = encodeCursor(scanned[SCAN - 1]!);
   return { items, nextCursor };
 }
 
 /**
- * The discussion count of each action, as `discussionsOf` would list them for this viewer, in two queries however
- * many ids. Every requested id is in the result; one that is not public counts 0.
+ * The discussion count of each action, as `discussionsOf` would list them for this viewer: two queries (links, posts)
+ * plus one realm read per distinct realm among the posts, however many ids. Every requested id is in the result; one
+ * that is not public counts 0. Bounded by `COUNT_SCAN` (see the note there).
  */
 export async function discussionCountsOf(
   db: DiscussionsDb,

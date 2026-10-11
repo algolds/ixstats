@@ -123,6 +123,12 @@ describe("actionLinks router", () => {
     await expect(caller(null).discussionCounts(input)).rejects.toThrow();
   });
 
+  it("refuses a cursor over 128 characters", async () => {
+    await expect(
+      caller(null).discussions({ activityId: "a1", cursor: "x".repeat(129) })
+    ).rejects.toThrow();
+  });
+
   it("no longer exposes the removed backlink read, which leaked hidden posts", () => {
     // Spelled in two parts so that a repository-wide search for the removed name finds nothing.
     const removed = ["linked", "Posts"].join("");

@@ -126,38 +126,35 @@ interface LinkWhere {
   activityId: string | { in: string[] };
   postSource: string;
   activity?: { visibility: string };
+  OR?: Array<{ createdAt: { lt: Date } | Date; id?: { lt: string } }>;
 }
 /** `privateActivities` are the ids of activities whose row is not `visibility: "public"`. */
 function world(links: LinkRow[], posts: PostRow[], privateActivities: string[] = []) {
   const db = {
     postActionLink: {
-      findMany: jest.fn(
-        async (args: {
-          where: LinkWhere;
-          take: number;
-          cursor?: { id: string };
-          skip?: number;
-        }) => {
-          const { activityId, activity } = args.where;
-          let rows = links.filter(
+      findMany: jest.fn(async (args: { where: LinkWhere; take: number }) => {
+        const { activityId, activity, OR } = args.where;
+        const after = (l: LinkRow) =>
+          OR === undefined ||
+          OR.some((c) =>
+            c.createdAt instanceof Date
+              ? l.createdAt.getTime() === c.createdAt.getTime() && l.id < c.id!.lt
+              : l.createdAt.getTime() < c.createdAt.lt.getTime()
+          );
+        return links
+          .filter(
             (l) =>
               l.postSource === args.where.postSource &&
               (typeof activityId === "string"
                 ? l.activityId === activityId
                 : activityId.in.includes(l.activityId)) &&
               (activity === undefined ||
-                (activity.visibility === "public") === !privateActivities.includes(l.activityId))
-          );
-          rows = [...rows].sort(
-            (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1)
-          );
-          if (args.cursor) {
-            const at = rows.findIndex((r) => r.id === args.cursor!.id);
-            rows = at < 0 ? [] : rows.slice(at + (args.skip ?? 0));
-          }
-          return rows.slice(0, args.take);
-        }
-      ),
+                (activity.visibility === "public") === !privateActivities.includes(l.activityId)) &&
+              after(l)
+          )
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1))
+          .slice(0, args.take);
+      }),
     },
     forumPost: {
       findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
@@ -184,6 +181,11 @@ function world(links: LinkRow[], posts: PostRow[], privateActivities: string[] =
 
 const page = (db: ReturnType<typeof world>, viewer: object | null, cursor?: string) =>
   discussionsOf(db as never, viewer as never, { activityId: "a1", cursor });
+/** The opaque cursor after link `n`: its time in ms, a dot, its id. */
+const cursorOf = (n: number): string => {
+  const l = link(n, "x");
+  return `${l.createdAt.getTime()}.${l.id}`;
+};
 const ids = (out: { items: Array<{ postId: string }> }) => out.items.map((i) => i.postId);
 
 describe("discussionsOf", () => {
@@ -202,7 +204,7 @@ describe("discussionsOf", () => {
         kind: "board",
         categoryName: null,
         realmName: "Eurth",
-        author: { name: "ann", persona: false },
+        author: { name: "ann" },
         createdAt: new Date("2026-10-01T10:00:00Z"),
       },
       {
@@ -212,7 +214,7 @@ describe("discussionsOf", () => {
         kind: "thread",
         categoryName: "General",
         realmName: null,
-        author: { name: "ann", persona: false },
+        author: { name: "ann" },
         createdAt: new Date("2026-10-01T10:00:00Z"),
       },
     ]);
@@ -265,6 +267,19 @@ describe("discussionsOf", () => {
         ["p_vis", undefined],
       ]);
       expect((await page(world(links, posts), admin)).items).toHaveLength(2);
+    });
+
+    it("hidden post: a moderator of just that category (categoryIds) sees it, marked, and no other", async () => {
+      const catMod = {
+        ...member,
+        mod: { siteAdmin: false, realmIds: [], categoryIds: ["general"] },
+      };
+      const posts = [
+        post("p_gen", general, { hidden: true }),
+        post("p_hub", hub, { hidden: true }),
+      ];
+      const out = await page(world([link(1, "p_gen"), link(2, "p_hub")], posts), catMod);
+      expect(out.items.map((i) => [i.postId, i.hidden])).toEqual([["p_gen", true]]);
     });
 
     it("hidden thread: left out for a member, marked for a moderator", async () => {
@@ -378,7 +393,7 @@ describe("discussionsOf", () => {
       const first = await page(db, guest);
       expect(first.items).toHaveLength(20);
       expect(first.items[0]!.postId).toBe("p1");
-      expect(first.nextCursor).toBe("l020");
+      expect(first.nextCursor).toBe(cursorOf(20));
       const second = await page(db, guest, first.nextCursor!);
       expect(ids(second)[0]).toBe("p21");
       expect(second.items).toHaveLength(20);
@@ -398,14 +413,48 @@ describe("discussionsOf", () => {
       const db = many(150, () => ({ hidden: true }));
       const first = await page(db, guest);
       expect(first.items).toEqual([]);
-      expect(first.nextCursor).toBe("l100");
+      expect(first.nextCursor).toBe(cursorOf(100));
       const second = await page(db, guest, first.nextCursor!);
       expect(second).toEqual({ items: [], nextCursor: null });
     });
 
-    it("reads an unknown cursor as the end of the list", async () => {
-      const out = await page(many(3), guest, "l999");
-      expect(out).toEqual({ items: [], nextCursor: null });
+    it.each([
+      ["no dot", "l999"],
+      ["no time", ".l001"],
+      ["no id", "123."],
+      ["not a time", "abc.l001"],
+    ])("reads a cursor that does not parse as the end of the list: %s", async (_label, cursor) => {
+      const db = many(3);
+      expect(await page(db, guest, cursor)).toEqual({ items: [], nextCursor: null });
+      expect(db.postActionLink.findMany).not.toHaveBeenCalled();
+    });
+
+    it("continues after the cursor link even when that link has since been deleted", async () => {
+      const first = await page(many(45), guest);
+      expect(first.nextCursor).toBe(cursorOf(20));
+      // An edit removed link 20 (and link 5) between the two requests.
+      const nums = Array.from({ length: 45 }, (_, i) => i + 1).filter((n) => n !== 20 && n !== 5);
+      const after = world(
+        nums.map((n) => link(n, `p${n}`)),
+        nums.map((n) => post(`p${n}`, general))
+      );
+      const second = await page(after, guest, first.nextCursor!);
+      expect(ids(second)[0]).toBe("p21");
+      expect(second.items).toHaveLength(20);
+    });
+
+    it("breaks a tie between links of the same instant by id, so none repeats or is skipped", async () => {
+      const same = new Date("2026-10-09T00:00:00Z");
+      const nums = Array.from({ length: 30 }, (_, i) => i + 1);
+      const db = world(
+        nums.map((n) => link(n, `p${n}`, { createdAt: same })),
+        nums.map((n) => post(`p${n}`, general))
+      );
+      const first = await page(db, guest);
+      const second = await page(db, guest, first.nextCursor!);
+      const all = [...ids(first), ...ids(second)];
+      expect(all).toHaveLength(30);
+      expect(new Set(all).size).toBe(30);
     });
   });
 });
@@ -445,6 +494,36 @@ describe("discussionCountsOf", () => {
     const db = world([link(1, "p_hid")], [post("p_hid", hub, { hidden: true })]);
     expect((await counts(db, realmMod, ["a1"])).a1).toEqual({ count: 1, postIds: ["p_hid"] });
     expect((await counts(db, guest, ["a1"])).a1).toEqual({ count: 0, postIds: [] });
+  });
+
+  it("reads at most 1,000 links per call", async () => {
+    const db = world([link(1, "p1")], [post("p1", general)]);
+    await counts(db, guest, ["a1"]);
+    const [[call]] = db.postActionLink.findMany.mock.calls;
+    expect(call.take).toBe(1000);
+  });
+
+  it("counts a post in a hidden thread for a moderator only", async () => {
+    const posts = [post("p1", general, {}, { hidden: true }), post("p2", general)];
+    const links = [link(1, "p1"), link(2, "p2")];
+    expect((await counts(world(links, posts), member, ["a1"])).a1).toEqual({
+      count: 1,
+      postIds: ["p2"],
+    });
+    expect((await counts(world(links, posts), guest, ["a1"])).a1!.count).toBe(1);
+    expect((await counts(world(links, posts), admin, ["a1"])).a1).toEqual({
+      count: 2,
+      postIds: ["p1", "p2"],
+    });
+  });
+
+  it("reads each distinct realm once, however many posts sit in it", async () => {
+    const db = world(
+      [link(1, "p1"), link(2, "p2"), link(3, "p3")],
+      [post("p1", hub), post("p2", board), post("p3", oldHub)]
+    );
+    await counts(db, guest, ["a1"]);
+    expect(db.realm.findUnique).toHaveBeenCalledTimes(2);
   });
 
   it("never counts a persona's post, for any viewer", async () => {

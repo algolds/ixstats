@@ -165,13 +165,3 @@ describe("validatePostActionTokens", () => {
     });
   });
 });
-
-// Spelled in two parts so that a repository-wide search for the removed name finds nothing.
-const REMOVED = ["linked", "Posts"].join("");
-
-describe("module exports", () => {
-  it("no longer exports the removed backlink read, which leaked hidden and private posts", async () => {
-    const mod = await import("~/server/modules/action-links");
-    expect(Object.keys(mod)).not.toContain(REMOVED);
-  });
-});

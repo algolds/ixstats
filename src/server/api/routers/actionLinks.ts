@@ -11,6 +11,7 @@ import {
   protectedProcedure,
   publicProcedure,
   rateLimitedMutationProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { directiveActivityId } from "~/lib/action-links";
 import {
@@ -109,14 +110,14 @@ export const actionLinksRouter = createTRPCRouter({
     }),
 
   /** The visible posts that link an action, newest link first, 20 per page (the forum's own visibility rules). */
-  discussions: publicProcedure
-    .input(z.object({ activityId: id, cursor: id.optional() }))
+  discussions: rateLimitedPublicProcedure
+    .input(z.object({ activityId: id, cursor: z.string().min(1).max(128).optional() }))
     .query(async ({ ctx, input }) =>
       discussionsOf(ctx.db, await viewerOf(ctx.db, ctx.user), input)
     ),
 
   /** Visible discussion counts for up to 50 actions, batched. */
-  discussionCounts: publicProcedure
+  discussionCounts: rateLimitedPublicProcedure
     .input(z.object({ activityIds: z.array(id).max(50) }))
     .query(async ({ ctx, input }) =>
       discussionCountsOf(ctx.db, await viewerOf(ctx.db, ctx.user), input.activityIds)
