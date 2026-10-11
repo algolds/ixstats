@@ -173,6 +173,7 @@ const postBy = (authorUserId: string, extra: object = {}) => ({
   threadId: "t1",
   authorUserId,
   contentWikitext: null,
+  plainText: "",
   hidden: false,
   thread: {
     authorUserId: "u_p",
