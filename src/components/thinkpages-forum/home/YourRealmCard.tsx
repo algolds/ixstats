@@ -11,6 +11,7 @@ import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
 import { countLabel } from "~/lib/thinkpages-forum/unread";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName } from "../AuthorName";
+import { IconTile } from "../shell";
 
 type HubThread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
@@ -47,12 +48,9 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
         href={MINE_HREF}
         className="hover:bg-fill-4 focus-visible:outline-tint flex items-center gap-3.5 px-4 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-5 pointer-coarse:min-h-11"
       >
-        <span
-          aria-hidden
-          className="bg-tint-fill text-tint rounded-row flex size-10 shrink-0 items-center justify-center [&_svg]:size-5"
-        >
+        <IconTile size="lg" texture="paperGrain">
           <Community />
-        </span>
+        </IconTile>
         <span className="min-w-0 flex-1">
           <span className="text-title-3 flex items-center gap-2">
             <span className="min-w-0 truncate">{name}</span>
