@@ -1,10 +1,15 @@
 /**
  * The sitewide boards for the Forums home: each visible board with its thread and post counts, style, and latest
- * post (with the author's public name, the same way a thread list names its authors).
+ * post (with the author's public name, the same way a thread list names its authors), and the rail's latest activity.
  */
 import type { PrismaClient } from "@prisma/client";
-import { canSeeCategory, type ForumViewer } from "./access";
-import { latestPerCategory, postCountsPerCategory, type LatestPost } from "./board-reads";
+import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
+import {
+  latestPerCategory,
+  postCountsPerCategory,
+  railThreadWhere,
+  type LatestPost,
+} from "./board-reads";
 import { authorsOf, summarizeCategories, type AuthorsDb } from "./reads";
 
 export type BoardsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "forumPost"> &
@@ -15,6 +20,8 @@ export interface BoardAuthor {
   handle: string | null;
   /** The persona's picture for a persona, the member's own otherwise; never the player's behind a persona. */
   avatarUrl: string | null;
+  /** The member's nation flag; null for a persona (it never names the player's nation) and imported authors. */
+  flagUrl: string | null;
 }
 
 export type BoardLatest = LatestPost & { author: BoardAuthor | null };
@@ -26,12 +33,17 @@ function nameOf(
 ): BoardAuthor | null {
   const persona = latest.authorPersonaId ? authors.personas.get(latest.authorPersonaId) : undefined;
   if (persona) {
-    return { name: persona.displayName, handle: persona.username, avatarUrl: persona.avatarUrl };
+    return {
+      name: persona.displayName,
+      handle: persona.username,
+      avatarUrl: persona.avatarUrl,
+      flagUrl: null,
+    };
   }
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
-  if (user) return { name: user.name, handle: user.handle, avatarUrl: user.avatarUrl };
+  if (user) return user;
   return latest.importedAuthorName
-    ? { name: latest.importedAuthorName, handle: null, avatarUrl: null }
+    ? { name: latest.importedAuthorName, handle: null, avatarUrl: null, flagUrl: null }
     : null;
 }
 
@@ -76,4 +88,82 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       latest: last ? publicLatest(last, authors) : null,
     };
   });
+}
+
+/** One post in the home rail's Latest activity: who wrote it, in which thread and board, and whether it began it. */
+export type ActivityItem = BoardLatest & {
+  postId: string;
+  categoryName: string;
+  isFirstPost: boolean;
+};
+
+/** Activity asks for more posts than it returns, because posts in threads the viewer cannot see are dropped. */
+const ACTIVITY_OVERFETCH = 4;
+
+/**
+ * The newest visible posts across the sitewide and published realm boards, newest first: three queries (posts, the
+ * first post of each of their threads, authors). Persona posts carry no player id, as on `listBoards`.
+ */
+export async function latestActivity(
+  db: BoardsDb & Pick<PrismaClient, "realm">,
+  viewer: ForumViewer,
+  limit = 6
+): Promise<ActivityItem[]> {
+  const posts = await db.forumPost.findMany({
+    where: { hidden: false, thread: await railThreadWhere(db) },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: limit * ACTIVITY_OVERFETCH,
+    select: {
+      id: true,
+      threadId: true,
+      authorUserId: true,
+      authorPersonaId: true,
+      importedAuthorName: true,
+      createdAt: true,
+      thread: {
+        select: {
+          title: true,
+          authorUserId: true,
+          hidden: true,
+          category: {
+            select: { id: true, name: true, visibility: true, scope: true, realmId: true },
+          },
+        },
+      },
+    },
+  });
+  const visible = posts
+    .filter((p) => canSeeThread(viewer, p.thread, p.thread.category))
+    .slice(0, limit);
+  if (visible.length === 0) return [];
+  const [firsts, authors] = await Promise.all([
+    db.forumPost.findMany({
+      where: { threadId: { in: [...new Set(visible.map((p) => p.threadId))] } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      distinct: ["threadId"],
+      select: { id: true },
+    }),
+    authorsOf(
+      db,
+      visible.map((p) => p.authorUserId),
+      visible.map((p) => p.authorPersonaId)
+    ),
+  ]);
+  const firstIds = new Set(firsts.map((f) => f.id));
+  return visible.map((p) => ({
+    ...publicLatest(
+      {
+        threadId: p.threadId,
+        threadTitle: p.thread.title,
+        authorUserId: p.authorUserId,
+        authorPersonaId: p.authorPersonaId,
+        importedAuthorName: p.importedAuthorName,
+        at: p.createdAt,
+      },
+      authors
+    ),
+    postId: p.id,
+    categoryName: p.thread.category.name,
+    isFirstPost: firstIds.has(p.id),
+  }));
 }

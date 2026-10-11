@@ -12,7 +12,6 @@ import {
   getActiveSectionId,
   getApp,
   getAppForPath,
-  getTintForPath,
   getVisibleApps,
   groupSections,
   isChromelessPath,
@@ -131,29 +130,22 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("lists ThinkTanks under Home (emerald-tinted) and no longer lists ThinkPages", () => {
+  it("lists neither ThinkTanks nor ThinkPages under Home", () => {
     const home = getApp("home");
-    expect(home.sections.map((s) => s.label)).toEqual([
-      "What's new",
-      "Home",
-      "Accounts",
-      "Messages",
-      "ThinkTanks",
-    ]);
-    const thinktanks = home.sections.find((s) => s.label === "ThinkTanks");
-    expect(thinktanks).toMatchObject({ id: "thinktanks", href: "/thinktanks", tint: "thinkpages" });
-    expect(thinktanks?.match).toBeUndefined();
+    expect(home.sections.map((s) => s.label)).toEqual(["What's new", "Home", "Accounts", "Messages"]);
     expect(home.match).not.toContain("/thinkpages");
+    expect(home.match).not.toContain("/thinktanks");
   });
 
-  it("makes ThinkPages its own app with Forums, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
+  it("makes ThinkPages its own app with Forums, ThinkTanks, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
     const forum = getApp("thinkpages");
     expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
-    expect(forum.match).toEqual(["/thinkpages"]);
+    expect(forum.match).toEqual(["/thinkpages", "/thinktanks"]);
     expect(
       forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires, s.badge])
     ).toEqual([
       ["forums", "Forums", "/thinkpages", true, undefined, undefined],
+      ["thinktanks", "ThinkTanks", "/thinktanks", undefined, undefined, undefined],
       [
         "your-realm",
         "Your realm",
@@ -174,8 +166,8 @@ describe("app section map routes", () => {
       getVisibleApps({ signedIn, isAdmin: false })
         .find((app) => app.id === "thinkpages")!
         .sections.map((s) => s.label);
-    expect(labels(false)).toEqual(["Forums"]);
-    expect(labels(true)).toEqual(["Forums", "New posts", "Watched", "Stashed"]);
+    expect(labels(false)).toEqual(["Forums", "ThinkTanks"]);
+    expect(labels(true)).toEqual(["Forums", "ThinkTanks", "New posts", "Watched", "Stashed"]);
   });
 
   it.each([
@@ -191,7 +183,7 @@ describe("app section map routes", () => {
     expect(forum?.id).toBe("thinkpages");
     const active = getActiveSectionId(forum!, pathname, null);
     expect(active).toBe(sectionId);
-    expect(getTintForPath(forum, active)).toBe("thinkpages");
+    expect(forum?.tint).toBe("thinkpages");
   });
 
   it.each([
@@ -208,12 +200,10 @@ describe("app section map routes", () => {
   it.each([
     ["/thinktanks", "thinktanks"],
     ["/thinktanks/abc", "thinktanks"],
-  ])("resolves %s to Home's %s section with the thinkpages tint", (pathname, sectionId) => {
-    const home = getAppForPath(pathname);
-    expect(home?.id).toBe("home");
-    const active = getActiveSectionId(home!, pathname, null);
-    expect(active).toBe(sectionId);
-    expect(getTintForPath(home, active)).toBe("thinkpages");
+  ])("resolves %s to ThinkPages' %s section", (pathname, sectionId) => {
+    const forum = getAppForPath(pathname);
+    expect(forum?.id).toBe("thinkpages");
+    expect(getActiveSectionId(forum!, pathname, null)).toBe(sectionId);
   });
 
   it("gives /mycountry/intelligence (no row of its own) Defense's highlight in MyCountry's gold", () => {
@@ -221,7 +211,7 @@ describe("app section map routes", () => {
     expect(mycountry.id).toBe("mycountry");
     const active = getActiveSectionId(mycountry, "/mycountry/intelligence", null);
     expect(active).toBe("defense");
-    expect(getTintForPath(mycountry, active)).toBe("mycountry");
+    expect(mycountry.tint).toBe("mycountry");
   });
 
   it("highlights Home's Accounts row on the Dashboard's Accounts section", () => {
@@ -236,7 +226,7 @@ describe("app section map routes", () => {
   });
 
   it("keeps Home untinted on its own pages", () => {
-    expect(getTintForPath(getApp("home"), "messages")).toBeUndefined();
+    expect(getApp("home").tint).toBeUndefined();
   });
 });
 
@@ -260,7 +250,7 @@ describe("app section map resolvers", () => {
     ["/", "home"],
     ["/dashboard", "home"],
     ["/mycountry/intelligence", "mycountry"],
-    ["/thinktanks/abc", "home"],
+    ["/thinktanks/abc", "thinkpages"],
     ["/messages/inbox", "home"],
     ["/vault/ns-deck/foo", "vault"],
     ["/util/search", "wiki"],
@@ -330,11 +320,11 @@ describe("app section map resolvers", () => {
     expect(getActiveSectionId(settings, "/settings", null)).toBe("account");
   });
 
-  it("uses a section's tint over the app's", () => {
-    expect(getTintForPath(getApp("home"), "thinktanks")).toBe("thinkpages");
+  it("tints a page with its app's tint", () => {
+    expect(getAppForPath("/thinktanks/abc")?.tint).toBe("thinkpages");
     // Defense and Intelligence wear MyCountry's gold: the crimson intel tint is gone
-    expect(getTintForPath(getApp("mycountry"), "defense")).toBe("mycountry");
-    expect(getTintForPath(getApp("home"), "dashboard")).toBeUndefined();
+    expect(getAppForPath("/mycountry/defense")?.tint).toBe("mycountry");
+    expect(getAppForPath("/dashboard")?.tint).toBeUndefined();
   });
 
   it("keeps Maps and the full-screen map editors chromeless", () => {
@@ -445,15 +435,17 @@ describe("app visibility and the tab bar", () => {
       getVisibleApps(context)
         .find((app) => app.id === "thinkpages")
         ?.sections.map((s) => s.id);
-    expect(sections({ signedIn: false, isAdmin: false })).toEqual(["forums"]);
+    expect(sections({ signedIn: false, isAdmin: false })).toEqual(["forums", "thinktanks"]);
     expect(sections({ signedIn: true, isAdmin: false })).toEqual([
       "forums",
+      "thinktanks",
       "new-posts",
       "watched",
       "stashed",
     ]);
     expect(sections({ signedIn: true, isAdmin: false, realmMember: true })).toEqual([
       "forums",
+      "thinktanks",
       "your-realm",
       "new-posts",
       "watched",
@@ -461,6 +453,7 @@ describe("app visibility and the tab bar", () => {
     ]);
     expect(sections({ signedIn: true, isAdmin: false, forumModerator: true })).toEqual([
       "forums",
+      "thinktanks",
       "new-posts",
       "watched",
       "stashed",
@@ -468,7 +461,15 @@ describe("app visibility and the tab bar", () => {
     ]);
     expect(
       sections({ signedIn: true, isAdmin: true, realmMember: true, forumModerator: true })
-    ).toEqual(["forums", "your-realm", "new-posts", "watched", "stashed", "moderation"]);
+    ).toEqual([
+      "forums",
+      "thinktanks",
+      "your-realm",
+      "new-posts",
+      "watched",
+      "stashed",
+      "moderation",
+    ]);
   });
 
   it("keeps the shared ThinkPages object when every section is granted", () => {

@@ -135,8 +135,6 @@ interface AppSection {
   match?: string[];
   /** For query sections: also current when the page has no query (the page's default tab). */
   isDefault?: boolean;
-  /** Overrides the app tint while this section is current (e.g. ThinkPages under Home). */
-  tint?: AppTint;
   /**
    * Sub-heading the section is listed under. Consecutive sections with the same `group` form one
    * group (`groupSections`); ungrouped sections lead the list without a heading.
@@ -205,7 +203,7 @@ export const APPS: readonly AppDefinition[] = [
     href: "/dashboard",
     icon: HomeSimple,
     // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
-    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages", "/thinktanks"],
+    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages"],
     requiresAuth: true,
     inline: true,
     sections: [
@@ -226,14 +224,6 @@ export const APPS: readonly AppDefinition[] = [
         href: "/messages",
         icon: Mail,
         badge: "messages-unread",
-      },
-      // ThinkTanks is part of Home and wears the emerald section tint.
-      {
-        id: "thinktanks",
-        label: "ThinkTanks",
-        href: "/thinktanks",
-        icon: LightBulbOn,
-        tint: "thinkpages",
       },
     ],
   },
@@ -391,16 +381,17 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    // The forum, for everyone. FORUM_HOME is the prefix of every forum route (c, t, r, mod, post), so it is the
-    // whole match; signed-out visitors keep Forums only (the other sections need a sign-in, a realm or a moderator role).
+    // The forum and ThinkTanks, for everyone. FORUM_HOME is the prefix of every forum route (c, t, r, mod, post);
+    // signed-out visitors keep Forums and ThinkTanks (the others need a sign-in, a realm or a moderator role).
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
     icon: ChatBubble,
     tint: "thinkpages",
-    match: [FORUM_HOME],
+    match: [FORUM_HOME, "/thinktanks"],
     sections: [
       { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },
+      { id: "thinktanks", label: "ThinkTanks", href: "/thinktanks", icon: LightBulbOn },
       {
         id: "your-realm",
         label: "Your realm",
@@ -771,16 +762,6 @@ export function getActiveSectionId(
     if (score >= 0 && (!best || score > best.score)) best = { id: section.id, score };
   }
   return best?.id;
-}
-
-/** The `data-app` tint for this URL: the current section's override, else the app's tint. */
-export function getTintForPath(
-  app: AppDefinition | undefined,
-  activeSectionId: string | undefined
-): AppTint | undefined {
-  if (!app) return undefined;
-  const section = app.sections.find((candidate) => candidate.id === activeSectionId);
-  return section?.tint ?? app.tint;
 }
 
 export function isChromelessPath(pathname: string): boolean {

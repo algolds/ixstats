@@ -53,16 +53,21 @@ export {
   updateBoardSettings,
   type BoardWritesDb,
 } from "./board-writes";
-export { listBoards, type BoardAuthor, type BoardLatest, type BoardsDb } from "./board-list";
+export {
+  latestActivity,
+  listBoards,
+  type ActivityItem,
+  type BoardAuthor,
+  type BoardLatest,
+  type BoardsDb,
+} from "./board-list";
 export { realmBoardPreview, realmPanel, type BoardPreview } from "./board-preview";
 export {
   boardTopPosters,
-  forumStatistics,
   latestPerCategory,
   postCountsPerCategory,
   trendingThreads,
   type BoardCategory,
-  type ForumStatistics,
   type LatestPost,
   type TopPoster,
   type TrendingThread,

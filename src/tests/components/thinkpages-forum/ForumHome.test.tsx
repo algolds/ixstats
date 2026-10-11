@@ -30,7 +30,7 @@ jest.mock("~/trpc/react", () => {
       useUtils: () => ({ thinkpagesForum: { myStanding: invalidate } }),
       thinkpagesForum: {
         categories: query("categories"),
-        forumStats: query("forumStats"),
+        latestActivity: query("latestActivity"),
         trending: query("trending"),
         myStanding: query("myStanding"),
         navFlags: query("navFlags"),
@@ -40,6 +40,7 @@ jest.mock("~/trpc/react", () => {
         appeal: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
       },
       thinkpagesForumMod: { context: query("context") },
+      thinkpages: { getThinktanks: query("thinktanks") },
     },
   };
 });
@@ -95,7 +96,7 @@ function board(key: string, extra: object = {}) {
       authorPersonaId: null,
       importedAuthorName: null,
       at: new Date(),
-      author: { name: "Heku", handle: "heku" },
+      author: { name: "Heku", handle: "heku", avatarUrl: null, flagUrl: "/flags/caphiria.png" },
     },
     ...extra,
   };
@@ -123,32 +124,28 @@ afterEach(() => {
   window.matchMedia = originalMatchMedia;
 });
 
-describe("Forums home: board table", () => {
-  it("shows the unread count of a board in tint, and nothing for a board with none", () => {
+/** A board's row: the list item holding the board's own link. */
+const rowOf = (name: string) =>
+  screen.getByRole("link", { name, exact: true }).closest("li") as HTMLElement;
+
+describe("Forums home: board list", () => {
+  it("marks a board with unread threads with a tint dot and an N new badge, and nothing for a board with none", () => {
     set("categories", {
       data: [board("general", { unreadThreads: 3 }), board("rules", { unreadThreads: 0 })],
     });
     render(<ForumHome />);
-    const unread = within(screen.getByRole("row", { name: /General/ })).getByText("3 new");
-    expect(unread).toHaveClass("text-tint");
-    expect(within(screen.getByRole("row", { name: /Rules/ })).queryByText(/ new$/)).toBeNull();
+    const general = rowOf("General");
+    expect(within(general).getByText("3 new")).toHaveClass("text-tint");
+    expect(general.querySelector(".bg-tint.rounded-full")).not.toBeNull();
+    expect(within(rowOf("Rules")).queryByText(/ new$/)).toBeNull();
   });
 
-  it("lists boards under Board / Threads / Posts / Latest, each row linking to its board", () => {
+  it("lists each board with its link, description, counts and its latest thread's preview", () => {
     set("categories", { data: [board("general"), board("announcements")] });
     render(<ForumHome />);
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
-    expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Board",
-      "Threads",
-      "Posts",
-      "Latest",
-    ]);
-    const headerRow = screen.getAllByRole("columnheader")[0]!.parentElement!;
-    // Every figure names its unit, so the header row is for assistive technology at every width.
-    expect(headerRow).toHaveClass("sr-only");
-    expect(headerRow).not.toHaveClass("hidden");
-    const general = screen.getByRole("row", { name: /General/ });
+    expect(screen.queryByRole("columnheader")).toBeNull();
+    const general = rowOf("General");
     expect(within(general).getByRole("link", { name: "General" })).toHaveAttribute(
       "href",
       "/thinkpages/c/general"
@@ -156,44 +153,33 @@ describe("Forums home: board table", () => {
     expect(within(general).getByText("general talk")).toBeInTheDocument();
     expect(within(general).getByText("8")).toBeInTheDocument();
     expect(within(general).getByText("23")).toBeInTheDocument();
-    expect(within(general).getByText("Latest in general")).toBeInTheDocument();
-    expect(within(general).getByText(/Heku/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Announcements/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/c/announcements"
-    );
-  });
-
-  it("gives each row one cell per column, so counts sit under their headers", () => {
-    set("categories", { data: [board("general")] });
-    render(<ForumHome />);
-    const row = screen.getByRole("row", { name: /General/ });
-    const cells = within(row).getAllByRole("cell");
-    expect(cells).toHaveLength(4);
-    expect(within(cells[1]!).getByText("8")).toBeInTheDocument();
-    expect(within(cells[2]!).getByText("23")).toBeInTheDocument();
-    expect(within(cells[3]!).getByText("Latest in general")).toBeInTheDocument();
-    expect(within(row).getAllByRole("link")).toHaveLength(1);
+    expect(within(general).getByText("8 threads · 23 posts")).toHaveClass("md:hidden");
+    const preview = within(general).getByRole("link", { name: /Latest in general/ });
+    expect(preview).toHaveAttribute("href", "/thinkpages/t/t_general");
+    expect(preview.closest('[data-slot="card"]')).toHaveAttribute("data-variant", "well");
+    expect(within(preview).getByText(/Heku/)).toBeInTheDocument();
+    expect(preview.querySelector('img[src="/flags/caphiria.png"]')).not.toBeNull();
+    expect(rowOf("Announcements")).toBeInTheDocument();
   });
 
   it("says 0 threads, 0 posts and No threads yet for an empty board, never a dash", () => {
     set("categories", { data: [EMPTY_BOARD] });
     render(<ForumHome />);
-    const row = screen.getByRole("row", { name: /Rules/ });
-    const cells = within(row).getAllByRole("cell");
-    expect(cells[1]).toHaveTextContent("0threads");
-    expect(cells[2]).toHaveTextContent("0posts");
-    expect(within(cells[3]!).getByText("No threads yet")).toBeInTheDocument();
+    const row = rowOf("Rules");
+    expect(within(row).getByText("0 threads · 0 posts")).toBeInTheDocument();
+    expect(within(row).getByText("No threads yet")).toBeInTheDocument();
+    expect(within(row).getAllByRole("link")).toHaveLength(1);
     expect(within(row).queryByText("–")).toBeNull();
   });
 
-  it("sets each board as a rich row: a tinted icon tile, a list-size name, its description, and counts with units", () => {
+  it("sets each board as a rich row: a textured tint icon tile, a list-size name, its description, counts with units", () => {
     set("categories", { data: [board("general")] });
     render(<ForumHome />);
-    const row = screen.getByRole("row", { name: /General/ });
+    const row = rowOf("General");
     const tile = row.querySelector("span[aria-hidden]")!;
     expect(tile).toHaveClass("bg-tint-fill", "text-tint");
-    expect(within(row).getByRole("link", { name: "General" }).parentElement).toHaveClass(
+    expect(tile.querySelector(".texture-overlay.facet-texture-dots")).not.toBeNull();
+    expect(within(row).getByRole("heading", { level: 3, name: /General/ })).toHaveClass(
       "text-title-3"
     );
     expect(within(row).getByText("general talk")).toHaveClass("text-callout");
@@ -201,17 +187,18 @@ describe("Forums home: board table", () => {
     expect(within(row).getByText("posts")).toBeInTheDocument();
   });
 
-  it("names the persona, not the player, for a persona's latest post", () => {
+  it("names the persona, not the player, for a persona's latest post, and shows no flag", () => {
     const latest = {
       ...board("general").latest,
       authorUserId: null,
       authorPersonaId: "pa",
-      author: { name: "Caphiria News", handle: "caphnews" },
+      author: { name: "Caphiria News", handle: "caphnews", avatarUrl: null, flagUrl: null },
     };
     set("categories", { data: [board("general", { latest })] });
     render(<ForumHome />);
     expect(screen.getByText(/Caphiria News/)).toBeInTheDocument();
     expect(screen.queryByText(/Heku/)).toBeNull();
+    expect(rowOf("General").querySelector("img")).toBeNull();
   });
 
   it("marks staff-only boards with a Staff pill, and only those", () => {
@@ -220,18 +207,15 @@ describe("Forums home: board table", () => {
     });
     render(<ForumHome />);
     const pill = { selector: '[data-slot="badge"]' };
-    expect(
-      within(screen.getByRole("row", { name: /Staff/ })).getByText("Staff", pill)
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByRole("row", { name: /General/ })).queryByText("Staff", pill)
-    ).toBeNull();
+    expect(within(rowOf("Staff")).getByText("Staff", pill)).toBeInTheDocument();
+    expect(within(rowOf("General")).queryByText("Staff", pill)).toBeNull();
   });
 
-  it("says there are no boards when none is visible", () => {
+  it("says there are no boards when none is visible, over a textured pane", () => {
     set("categories", { data: [] });
-    render(<ForumHome />);
+    const { container } = render(<ForumHome />);
     expect(screen.getByText("No boards yet")).toBeInTheDocument();
+    expect(container.querySelector(".facet-texture-grid")).not.toBeNull();
   });
 
   it("offers a retry, not 'No boards yet', when the boards fail to load", () => {
@@ -254,14 +238,14 @@ describe("Forums home: board table", () => {
       error: { data: { code: "INTERNAL_SERVER_ERROR" } },
     });
     render(<ForumHome />);
-    expect(screen.getByRole("link", { name: /General/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "General" })).toBeInTheDocument();
     expect(screen.queryByText("Could not load this page")).toBeNull();
   });
 
   it("shows a skeleton while the boards load", () => {
     set("categories", { isLoading: true });
     render(<ForumHome />);
-    expect(screen.queryByRole("columnheader")).toBeNull();
+    expect(screen.queryByRole("link", { name: "General" })).toBeNull();
   });
 });
 
@@ -417,15 +401,54 @@ describe("Forums home: rail", () => {
     set("categories", { data: [board("general")] });
   });
 
-  it("shows Trending threads and Forum statistics", () => {
+  it("shows Latest activity: who posted, started or replied in which thread, linking to the post", () => {
+    set("latestActivity", {
+      data: [
+        {
+          postId: "p2",
+          threadId: "t1",
+          threadTitle: "Lore Lab",
+          categoryName: "General",
+          isFirstPost: false,
+          at: new Date(),
+          authorUserId: "u1",
+          authorPersonaId: null,
+          importedAuthorName: null,
+          author: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: "/flags/kir.png" },
+        },
+        {
+          postId: "p1",
+          threadId: "t2",
+          threadTitle: "New realm",
+          categoryName: "Hub",
+          isFirstPost: true,
+          at: new Date(),
+          authorUserId: null,
+          authorPersonaId: "pa",
+          importedAuthorName: null,
+          author: { name: "Aria Vance", handle: "aria", avatarUrl: null, flagUrl: null },
+        },
+      ],
+    });
+    render(<ForumHome />);
+    const panel = screen.getByText("Latest activity").closest('[data-slot="card"]') as HTMLElement;
+    const reply = within(panel).getByRole("link", { name: /Kir replied in Lore Lab/ });
+    expect(reply).toHaveAttribute("href", "/thinkpages/post/p2");
+    expect(reply.querySelector('img[src="/flags/kir.png"]')).not.toBeNull();
+    expect(
+      within(panel).getByRole("link", { name: /Aria Vance started New realm/ })
+    ).toBeInTheDocument();
+    expect(within(panel).getByText(/^Hub · /)).toBeInTheDocument();
+  });
+
+  it("shows Trending threads, ranked, and hides the panel when nothing is active", () => {
     set("trending", {
       data: [
         { threadId: "t1", title: "Realm Board archive", categoryName: "Hub", repliesToday: 4 },
         { threadId: "t2", title: "Lore Lab", categoryName: "General", repliesToday: 1 },
       ],
     });
-    set("forumStats", { data: { threads: 48, posts: 1730, members: 31 } });
-    render(<ForumHome />);
+    const { unmount } = render(<ForumHome />);
     const trending = screen
       .getByText("Trending threads")
       .closest('[data-slot="card"]') as HTMLElement;
@@ -435,19 +458,123 @@ describe("Forums home: rail", () => {
     );
     expect(within(trending).getByText("Hub · 4 replies today")).toBeInTheDocument();
     expect(within(trending).getByText("General · 1 reply today")).toBeInTheDocument();
+    unmount();
 
-    const stats = screen.getByText("Forum statistics").closest('[data-slot="card"]') as HTMLElement;
-    expect(within(stats).getByText("48")).toHaveClass("text-title-1", "text-tint", "tabular-nums");
-    expect(within(stats).getByText("1,730")).toBeInTheDocument();
-    expect(within(stats).getByText("Members")).toBeInTheDocument();
-  });
-
-  it("hides an empty Trending panel but keeps the statistics", () => {
     set("trending", { data: [] });
-    set("forumStats", { data: { threads: 1, posts: 2, members: 3 } });
     render(<ForumHome />);
     expect(screen.queryByText("Trending threads")).toBeNull();
-    expect(screen.getByText("Forum statistics")).toBeInTheDocument();
+  });
+
+  it("no longer shows Forum statistics", () => {
+    set("trending", {
+      data: [{ threadId: "t1", title: "A", categoryName: "Hub", repliesToday: 1 }],
+    });
+    render(<ForumHome />);
+    expect(screen.queryByText("Forum statistics")).toBeNull();
+  });
+
+  it("lists up to three open realm adverts in Find a Realm, leaving out locked and closed ones", () => {
+    const advert = (id: string, realmName: string, extra: object = {}) => ({
+      id,
+      title: `${realmName} is recruiting`,
+      locked: false,
+      advert: { realmSlug: id, realmName, emblemUrl: null, thumbnail: null, claimsOpen: true },
+      ...extra,
+    });
+    set("category", {
+      data: {
+        threads: [
+          advert("a1", "Eurth"),
+          advert("a2", "Locked Realm", { locked: true }),
+          advert("a3", "Closed Realm", {
+            advert: {
+              realmSlug: "a3",
+              realmName: "Closed Realm",
+              emblemUrl: null,
+              thumbnail: null,
+              claimsOpen: false,
+            },
+          }),
+          { id: "plain", title: "An old thread", locked: false, advert: null },
+          advert("a4", "Ixnay"),
+          advert("a5", "Urcea"),
+          advert("a6", "Fourth"),
+        ],
+        authors: { users: {}, personas: {} },
+      },
+    });
+    render(<ForumHome />);
+    const panel = screen.getByText("Find a Realm").closest('[data-slot="card"]') as HTMLElement;
+    expect(within(panel).getByRole("link", { name: /Eurth/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/a1"
+    );
+    expect(within(panel).queryByText("Locked Realm")).toBeNull();
+    expect(within(panel).queryByText("Closed Realm")).toBeNull();
+    expect(within(panel).queryByText("An old thread")).toBeNull();
+    expect(within(panel).queryByText("Fourth")).toBeNull();
+    expect(within(panel).getByRole("link", { name: /All realms recruiting/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/c/find-a-realm"
+    );
+  });
+
+  it("lists ThinkTanks, most recently active first, with a way to all of them", () => {
+    const tank = (id: string, name: string, lastActivity: Date) => ({
+      id,
+      name,
+      avatar: null,
+      lastActivity,
+      _count: { members: 3 },
+    });
+    set("thinktanks", {
+      data: [
+        tank("g1", "Old Tank", new Date("2026-01-01T00:00:00Z")),
+        tank("g2", "Busy Tank", new Date()),
+      ],
+    });
+    render(<ForumHome />);
+    const panel = screen
+      .getByRole("heading", { name: "ThinkTanks" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    const links = within(panel).getAllByRole("link");
+    expect(links[0]).toHaveAttribute("href", "/thinktanks/g2");
+    expect(links[1]).toHaveAttribute("href", "/thinktanks/g1");
+    expect(within(panel).getAllByText(/^3 members · /)).toHaveLength(2);
+    expect(within(panel).getByRole("link", { name: /All ThinkTanks/ })).toHaveAttribute(
+      "href",
+      "/thinktanks"
+    );
+  });
+
+  it("lists only the member's own as Your ThinkTanks when they belong to some", () => {
+    auth.isSignedIn = true;
+    set("thinktanks", {
+      data: [
+        {
+          id: "g1",
+          name: "Mine",
+          avatar: null,
+          lastActivity: new Date("2026-01-01T00:00:00Z"),
+          isMember: true,
+          _count: { members: 1 },
+        },
+        {
+          id: "g2",
+          name: "Not mine",
+          avatar: null,
+          lastActivity: new Date(),
+          isMember: false,
+          _count: { members: 9 },
+        },
+      ],
+    });
+    render(<ForumHome />);
+    const panel = screen
+      .getByRole("heading", { name: "Your ThinkTanks" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(within(panel).getByText(/^1 member · /)).toBeInTheDocument();
+    expect(within(panel).queryByText("Not mine")).toBeNull();
   });
 
   it("renders no rail, and no Info button, when no panel has content", () => {

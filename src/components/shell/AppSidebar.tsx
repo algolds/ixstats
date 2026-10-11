@@ -31,7 +31,6 @@ import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
   getVisibleAppForPath,
-  getTintForPath,
   type AppDefinition,
   type NavAction,
   type NavBadges,
@@ -188,14 +187,14 @@ function RailInlineSections({
           key={s.id}
           href={s.href}
           label={count > 0 ? `${s.label}, ${count} unread` : s.label}
-          tint={s.tint ?? app.tint}
+          tint={app.tint}
           current={s.id === activeSectionId}
         >
           <Icon aria-hidden className="size-5" />
           {count > 0 ? (
             <span
               aria-hidden
-              className="bg-tint text-caption ring-background absolute -top-0.5 -right-0.5 min-w-4 rounded-full px-1 text-center leading-4 text-on-tint font-medium tabular-nums ring-2"
+              className="bg-tint text-caption ring-background text-on-tint absolute -top-0.5 -right-0.5 min-w-4 rounded-full px-1 text-center leading-4 font-medium tabular-nums ring-2"
             >
               {count > 99 ? "99+" : count}
             </span>
@@ -296,7 +295,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const current = getVisibleAppForPath(pathname, apps);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
-  const tint = getTintForPath(current, activeSectionId);
+  const tint = current?.tint;
   const isCollapsed = collapsed ?? false;
   const mainApps = apps.filter((app) => app.placement !== "footer");
   const footerApps = apps.filter((app) => app.placement === "footer");

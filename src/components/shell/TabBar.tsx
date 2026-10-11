@@ -29,9 +29,7 @@ import { springSnappy } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { SourceList } from "./SourceList";
 import {
-  getActiveSectionId,
   getVisibleAppForPath,
-  getTintForPath,
   splitTabBarApps,
   type AppDefinition,
   type NavAction,
@@ -96,8 +94,7 @@ export function TabBar({
   const [moreOpen, setMoreOpen] = React.useState(false);
   const { primary } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
   const current = getVisibleAppForPath(pathname, apps);
-  const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
-  const tint = getTintForPath(current, activeSectionId);
+  const tint = current?.tint;
   const currentIsPrimary = primary.some((app) => app.id === current?.id);
   const close = () => setMoreOpen(false);
 

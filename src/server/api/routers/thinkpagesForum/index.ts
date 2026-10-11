@@ -33,12 +33,12 @@ import {
   fileReport,
   firstPostIdOf,
   forumNavFlags,
-  forumStatistics,
   getCategoryThreads,
   getRealmSection,
   getThreadPosts,
   isThreadStashed,
   isWatching,
+  latestActivity,
   listBoards,
   listForumRealms,
   listStashedThreads,
@@ -130,8 +130,12 @@ const forumRouter = createTRPCRouter({
     return withUnreadCounts(ctx.db, viewer, await listBoards(ctx.db, viewer));
   }),
 
-  /** Rail: threads, posts and member authors over public content (cached five minutes). */
-  forumStats: publicProcedure.query(({ ctx }) => forumStatistics(ctx.db)),
+  /** Rail: the newest posts across the boards the viewer may see, with their authors' display data. */
+  latestActivity: publicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(10).default(6) }).optional())
+    .query(async ({ ctx, input }) =>
+      latestActivity(ctx.db, await viewerOf(ctx.db, ctx.user), input?.limit ?? 6)
+    ),
 
   /** Rail: the most active threads of the last 24 hours that the viewer may see. */
   trending: publicProcedure

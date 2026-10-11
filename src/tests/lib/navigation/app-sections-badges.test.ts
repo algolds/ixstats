@@ -1,7 +1,6 @@
 import {
   getActiveSectionId,
   getAppForPath,
-  getTintForPath,
   getVisibleApps,
   splitTabBarApps,
 } from "~/lib/navigation/app-sections";
@@ -63,13 +62,12 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists a conditional What's new above Dashboard, Accounts, Messages and ThinkTanks", () => {
+  it("Home lists a conditional What's new above Dashboard, Accounts and Messages", () => {
     expect(app("home").sections.map((s) => s.id)).toEqual([
       "whats-new",
       "dashboard",
       "accounts",
       "messages",
-      "thinktanks",
     ]);
     expect(app("home").sections.find((s) => s.id === "messages")).toMatchObject({
       href: "/messages",
@@ -107,7 +105,6 @@ describe("Home, Messages, Sports and Help in the map", () => {
       expect(section).not.toHaveProperty("tint");
     }
     expect(getAppForPath("/myclub/2")?.id).toBe("labs");
-    expect(getTintForPath(labs, getActiveSectionId(labs, "/myleague", null))).toBe("labs");
     expect(splitTabBarApps(apps).more.concat(splitTabBarApps(apps).primary)).not.toContainEqual(
       expect.objectContaining({ id: "sports" })
     );

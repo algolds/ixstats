@@ -1,6 +1,6 @@
 /**
- * Reads behind the Forums home and its rail: latest post and post count per board, forum statistics, trending
- * threads and a board's top posters. Each is a fixed number of queries however many boards there are. They take the
+ * Reads behind the Forums home and its rail: latest post and post count per board, trending threads and a board's
+ * top posters. Each is a fixed number of queries however many boards there are. They take the
  * categories (placed rows, so no lookup per board) and apply the same rules as `summarizeCategories`: a category the
  * viewer cannot see is skipped, hidden threads and posts stay in only for the category's moderators, and Reports
  * shows a member only their own threads. Archived threads count in totals but are not "latest" or trending.
@@ -10,7 +10,7 @@ import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import { advertGate } from "./advert-access";
 import { canModerateCategory } from "./mod-scope";
-import { publicThreadWhere, publishedRealmIds } from "./public-threads";
+import { publishedRealmIds } from "./public-threads";
 import { hiddenFilter, ownThreadsWhere } from "./reads";
 
 /** A category as the reads need it: its place and visibility, which decide what the viewer may see in it. */
@@ -38,12 +38,6 @@ export interface TrendingThread {
   repliesToday: number;
 }
 
-export interface ForumStatistics {
-  threads: number;
-  posts: number;
-  members: number;
-}
-
 export interface TopPoster {
   authorUserId: string;
   postCount: number;
@@ -52,7 +46,6 @@ export interface TopPoster {
 type ThreadsDb = Pick<PrismaClient, "forumThread">;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const STATS_TTL_MS = 5 * 60 * 1000;
 /** Trending asks for more than it returns, because threads the viewer cannot see are dropped afterwards. */
 const TRENDING_OVERFETCH = 4;
 
@@ -144,30 +137,22 @@ export async function postCountsPerCategory(
   return new Map(rows.map((r) => [r.categoryId, r._sum.postCount ?? 0]));
 }
 
-let statistics: { at: number; value: ForumStatistics } | null = null;
-
 /**
- * Threads, posts and distinct member authors over public content only (the same set for every viewer, so one
- * per-process cache entry serves them all), cached for five minutes. `now` is injectable for tests.
+ * The threads whose posts the home's rail lists to anyone (Trending, Latest activity): visible and unarchived, not an
+ * advert of a realm the viewer cannot see, and in a sitewide board or a published realm's, never a realm board. Each
+ * row still goes through `canSeeThread`, which drops staff boards and other members' reports.
  */
-export async function forumStatistics(
-  db: Pick<PrismaClient, "forumThread" | "forumPost" | "realm">,
-  now: number = Date.now()
-): Promise<ForumStatistics> {
-  if (statistics && now - statistics.at < STATS_TTL_MS) return statistics.value;
-  const thread = await publicThreadWhere(db);
-  const visiblePost = { hidden: false, thread };
-  const [threads, posts, authors] = await Promise.all([
-    db.forumThread.count({ where: thread }),
-    db.forumPost.count({ where: visiblePost }),
-    db.forumPost.groupBy({
-      by: ["authorUserId"],
-      where: { ...visiblePost, authorUserId: { not: null } },
-    }),
-  ]);
-  const value = { threads, posts, members: authors.length };
-  statistics = { at: now, value };
-  return value;
+export async function railThreadWhere(db: Pick<PrismaClient, "realm">) {
+  const realmIds = await publishedRealmIds(db);
+  return {
+    hidden: false,
+    archived: false,
+    ...advertGate(null),
+    category: {
+      ...notBoardCategory(),
+      OR: [{ scope: "site" }, { scope: "realm", realmId: { in: realmIds } }],
+    },
+  } satisfies Prisma.ForumThreadWhereInput;
 }
 
 /** Threads with the most posts in the last 24 hours that the viewer may see, most active first. */
@@ -177,21 +162,12 @@ export async function trendingThreads(
   limit = 5,
   now: Date = new Date()
 ): Promise<TrendingThread[]> {
-  const realmIds = await publishedRealmIds(db);
   const active = await db.forumPost.groupBy({
     by: ["threadId"],
     where: {
       createdAt: { gte: new Date(now.getTime() - DAY_MS) },
       hidden: false,
-      thread: {
-        hidden: false,
-        archived: false,
-        ...advertGate(null),
-        category: {
-          ...notBoardCategory(),
-          OR: [{ scope: "site" }, { scope: "realm", realmId: { in: realmIds } }],
-        },
-      },
+      thread: await railThreadWhere(db),
     },
     _count: { threadId: true },
     orderBy: { _count: { threadId: "desc" } },

@@ -127,8 +127,8 @@ describe("SourceList", () => {
     expect(within(nav).queryByRole("button", { name: "Expand Home" })).toBeNull();
     expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute("href", "/dashboard");
     expect(within(nav).getByRole("link", { name: "Messages" })).toBeVisible();
-    expect(within(nav).getByRole("link", { name: "ThinkTanks" })).toBeVisible();
-    // ThinkPages is an app of its own (expandable), no longer one of Home's rows.
+    // ThinkPages (with ThinkTanks) is an app of its own (expandable), not one of Home's rows.
+    expect(within(nav).queryByRole("link", { name: "ThinkTanks" })).toBeNull();
     expect(within(nav).getByRole("button", { name: "Expand ThinkPages" })).toBeInTheDocument();
   });
 
@@ -358,27 +358,22 @@ describe("SourceList external sections", () => {
   });
 });
 
-describe("SourceList section tint", () => {
+describe("SourceList ThinkTanks", () => {
   afterEach(cleanup);
 
-  it("scopes a section's own tint on its row on /thinktanks, so Home's tint does not recolour ThinkTanks", () => {
+  it("marks ThinkTanks current under ThinkPages on /thinktanks", () => {
     const { nav } = setup("/thinktanks");
-    const row = within(nav).getByRole("link", { name: "ThinkTanks" });
-    expect(row).toHaveAttribute("aria-current", "page");
-    expect(row.closest("li")).toHaveAttribute("data-app", "thinkpages");
+    expect(within(nav).getByRole("link", { name: "ThinkTanks" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
   });
 
-  it("no longer marks ThinkTanks current on the forum home", () => {
+  it("does not mark ThinkTanks current on the forum home", () => {
     const { nav } = setup("/thinkpages");
     expect(within(nav).getByRole("link", { name: "ThinkTanks" })).not.toHaveAttribute(
       "aria-current"
     );
-  });
-
-  it("leaves rows without a section tint to inherit the app's (MyLeague wears Labs')", () => {
-    const { nav } = setup("/myleague");
-    const myleague = within(nav).getByRole("link", { name: "MyLeague" }).closest("li");
-    expect(myleague).not.toHaveAttribute("data-app");
   });
 });
 

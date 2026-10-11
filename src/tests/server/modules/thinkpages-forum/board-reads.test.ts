@@ -3,13 +3,12 @@ import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { threadOrderBy } from "~/lib/thinkpages-forum/thread-sort";
 import {
   boardTopPosters,
-  forumStatistics,
   latestPerCategory,
   postCountsPerCategory,
   trendingThreads,
 } from "~/server/modules/thinkpages-forum/board-reads";
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
-import { listBoards } from "~/server/modules/thinkpages-forum/board-list";
+import { latestActivity, listBoards } from "~/server/modules/thinkpages-forum/board-list";
 
 const admin = {
   id: "u_a",
@@ -193,42 +192,6 @@ describe("postCountsPerCategory", () => {
       { categoryId: byKey("rules").id, hidden: false, ...advertGate(member) },
     ]);
     expect(args.where).not.toHaveProperty("archived");
-  });
-});
-
-describe("forumStatistics", () => {
-  const realmDb = { findMany: jest.fn(async () => []) };
-  const statsDb = (threads: number, posts: number, members: string[]) => ({
-    realm: realmDb,
-    forumThread: { count: jest.fn(async (_args: object) => threads) },
-    forumPost: {
-      count: jest.fn(async (_args: object) => posts),
-      groupBy: jest.fn(async (_args: object) => members.map((authorUserId) => ({ authorUserId }))),
-    },
-  });
-  const MIN = 60_000;
-
-  it("counts threads, posts and distinct member authors over public content, and caches for five minutes", async () => {
-    const t0 = Date.UTC(2026, 9, 9, 12);
-    const db = statsDb(10, 55, ["a", "b", "c"]);
-    expect(await forumStatistics(db as never, t0)).toEqual({ threads: 10, posts: 55, members: 3 });
-    const where = argsOf(db.forumThread.count).where;
-    expect(where).toMatchObject({ hidden: false });
-    expect(JSON.stringify(where)).toContain('"public"');
-    expect(argsOf(db.forumPost.groupBy)).toMatchObject({ by: ["authorUserId"] });
-
-    const later = statsDb(99, 99, []);
-    expect(await forumStatistics(later as never, t0 + 4 * MIN)).toEqual({
-      threads: 10,
-      posts: 55,
-      members: 3,
-    });
-    expect(later.forumThread.count).not.toHaveBeenCalled();
-    expect(await forumStatistics(later as never, t0 + 6 * MIN)).toEqual({
-      threads: 99,
-      posts: 99,
-      members: 0,
-    });
   });
 });
 
@@ -433,7 +396,7 @@ describe("listBoards", () => {
       authorPersonaId: null,
       importedAuthorName: null,
       at: T2,
-      author: { name: "heku", handle: "heku", avatarUrl: null },
+      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
     });
     expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
     expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
@@ -482,5 +445,93 @@ describe("listBoards", () => {
       author: { name: "Caphiria News", handle: "caphnews", avatarUrl: "/p/news.png" },
     });
     expect(JSON.stringify(row)).not.toContain("u_x");
+  });
+});
+
+describe("latestActivity", () => {
+  const T0 = new Date("2026-10-09T07:00:00Z");
+  const post = (id: string, threadId: string, category: object, at: Date, extra: object = {}) => ({
+    id,
+    threadId,
+    authorUserId: "u_x",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    createdAt: at,
+    thread: { title: `Thread ${threadId}`, authorUserId: "u_starter", hidden: false, category },
+    ...extra,
+  });
+  function activityDb(posts: object[], firstIds: string[]) {
+    const findMany = jest.fn(async (args: { distinct?: string[] }) =>
+      args.distinct ? firstIds.map((id) => ({ id })) : posts
+    );
+    return {
+      realm: { findMany: jest.fn(async () => [{ id: "r1", status: "active" }]) },
+      forumPost: { findMany },
+      user: {
+        findMany: jest.fn(async (_args: object) => [
+          { id: "u_x", handle: "heku", wikiUsername: null, country: null },
+        ]),
+      },
+      thinkpagesAccount: {
+        findMany: jest.fn(async (_args: object) => [
+          { id: "pa_1", displayName: "Caphiria News", username: "caphnews", profileImageUrl: null },
+        ]),
+      },
+    };
+  }
+
+  it("lists the newest visible posts, marks a thread's first post and names the board", async () => {
+    const db = activityDb(
+      [post("p_3", "t_g", general, T2), post("p_1", "t_new", general, T1)],
+      ["p_0", "p_1"]
+    );
+    const out = await latestActivity(db as never, member, 6);
+    expect(out).toEqual([
+      expect.objectContaining({ postId: "p_3", threadId: "t_g", isFirstPost: false, at: T2 }),
+      expect.objectContaining({
+        postId: "p_1",
+        threadTitle: "Thread t_new",
+        categoryName: "General",
+        isFirstPost: true,
+        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
+      }),
+    ]);
+    const args = argsOf(db.forumPost.findMany);
+    expect(args.orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+    expect(args.where).toMatchObject({ hidden: false, thread: { hidden: false, archived: false } });
+  });
+
+  it("only reads sitewide boards and published realms, never a realm board", async () => {
+    const db = activityDb([], []);
+    await latestActivity(db as never, null, 6);
+    expect((argsOf(db.forumPost.findMany).where.thread as { category: object }).category).toEqual({
+      style: { not: "board" },
+      NOT: { scope: "realm", key: "board" },
+      OR: [{ scope: "site" }, { scope: "realm", realmId: { in: expect.arrayContaining(["r1"]) } }],
+    });
+  });
+
+  it("drops staff boards and other members' reports, then applies the limit", async () => {
+    const db = activityDb(
+      [
+        post("p_s", "t_s", staff, T2),
+        post("p_r", "t_r", reports, T2),
+        post("p_a", "t_a", general, T1),
+        post("p_b", "t_b", general, T0),
+      ],
+      []
+    );
+    const out = await latestActivity(db as never, member, 1);
+    expect(out.map((i) => i.postId)).toEqual(["p_a"]);
+  });
+
+  it("names the persona and never carries the player's id behind it", async () => {
+    const db = activityDb([post("p_p", "t_g", general, T2, { authorPersonaId: "pa_1" })], []);
+    const [item] = await latestActivity(db as never, null, 6);
+    expect(item).toMatchObject({
+      authorUserId: null,
+      author: { name: "Caphiria News", handle: "caphnews", flagUrl: null },
+    });
+    expect(JSON.stringify(item)).not.toContain("u_x");
   });
 });

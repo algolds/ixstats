@@ -36,6 +36,7 @@ jest.mock("~/trpc/react", () => {
       // The persona's hover card loads its profile only when opened.
       thinkpages: {
         getAccountProfile: { useQuery: () => ({ data: undefined, isLoading: false }) },
+        getThinktanks: query("thinktanks"),
       },
       useUtils: () => ({
         thinkpagesForum: {
@@ -54,7 +55,7 @@ jest.mock("~/trpc/react", () => {
       thinkpagesForum: {
         categories: query("categories"),
         realms: query("realms"),
-        forumStats: query("forumStats"),
+        latestActivity: query("latestActivity"),
         trending: query("trending"),
         navFlags: query("navFlags"),
         navCounts: query("navCounts"),

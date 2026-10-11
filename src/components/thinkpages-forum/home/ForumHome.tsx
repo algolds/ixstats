@@ -2,26 +2,30 @@
 
 import Link from "next/link";
 import { ShieldCheck } from "iconoir-react";
+import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useUser } from "~/context/auth-context";
 import { isArchiveCategory } from "~/lib/thinkpages-forum/categories";
 import { modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
 import { ForumLoadError } from "../ForumPageState";
-import { ForumPage } from "../shell";
-import { hasStanding, StandingPanel } from "../StandingPanel";
-import { BoardTable } from "./BoardTable";
-import { StatsPanel, TrendingPanel } from "./HomeRail";
+import { ForumPage, RISE_ITEM, RISE_LIST } from "../shell";
+import { StandingPanel } from "../StandingPanel";
+import { BoardList } from "./BoardList";
+import { FindARealmPanel, LatestActivityPanel, ThinkTanksPanel, TrendingPanel } from "./HomeRail";
+import { useHomeRail } from "./useHomeRail";
 import { YourRealmCard } from "./YourRealmCard";
 
 const TITLE = "ThinkPages";
 
 /**
- * The Forums home: Your realm, the sitewide boards as one table, the old forum's archive (collapsed), and a rail of
- * Trending threads, Forum statistics and the member's own standing. The rail is only passed when a panel has content.
+ * The Forums home: Your realm, the sitewide boards with their latest threads, the old forum's archive (collapsed), and
+ * a rail of Latest activity, Trending threads, Find a Realm, ThinkTanks and the member's own standing. The rail is
+ * only passed when a panel has content; its panels rise in one after another.
  */
 export function ForumHome() {
   const { isSignedIn } = useUser();
@@ -30,11 +34,7 @@ export function ForumHome() {
   const { data: moderates } = api.thinkpagesForumMod.context.useQuery(undefined, {
     enabled: signedIn,
   });
-  const { data: trending } = api.thinkpagesForum.trending.useQuery();
-  const { data: stats } = api.thinkpagesForum.forumStats.useQuery();
-  const { data: standing } = api.thinkpagesForum.myStanding.useQuery(undefined, {
-    enabled: signedIn,
-  });
+  const rail = useHomeRail(signedIn);
 
   const regular = categories?.filter((c) => !isArchiveCategory(c.key)) ?? [];
   const archived = categories?.filter((c) => isArchiveCategory(c.key)) ?? [];
@@ -43,9 +43,19 @@ export function ForumHome() {
     signedIn &&
     !!moderates &&
     (moderates.isSiteAdmin || moderates.realms.length > 0 || moderates.categories.length > 0);
-  const activeThreads = trending && trending.length > 0 ? trending : undefined;
-  const ownStanding = signedIn && hasStanding(standing) ? standing : undefined;
-  const hasRail = !!activeThreads || !!stats || !!ownStanding;
+  const panels = [
+    rail.activity ? <LatestActivityPanel key="activity" items={rail.activity} /> : null,
+    rail.trending ? <TrendingPanel key="trending" threads={rail.trending} /> : null,
+    rail.adverts ? <FindARealmPanel key="adverts" adverts={rail.adverts} /> : null,
+    rail.thinktanks ? (
+      <ThinkTanksPanel
+        key="thinktanks"
+        thinktanks={rail.thinktanks}
+        joined={rail.thinktanksJoined}
+      />
+    ) : null,
+    rail.standing ? <StandingPanel key="standing" standing={rail.standing} /> : null,
+  ].filter((panel) => panel !== null);
 
   // A failed query is not "no boards": say so and offer a retry (a refetch that fails over cached boards keeps them).
   if (!categories && error) {
@@ -74,12 +84,14 @@ export function ForumHome() {
       }
       openRailOnHash="#standing"
       rail={
-        hasRail ? (
-          <>
-            {activeThreads ? <TrendingPanel threads={activeThreads} /> : null}
-            {stats ? <StatsPanel stats={stats} /> : null}
-            {ownStanding ? <StandingPanel standing={ownStanding} /> : null}
-          </>
+        panels.length > 0 ? (
+          <motion.div initial="hidden" animate="show" variants={RISE_LIST} className="space-y-4">
+            {panels.map((panel) => (
+              <motion.div key={panel.key} variants={RISE_ITEM}>
+                {panel}
+              </motion.div>
+            ))}
+          </motion.div>
         ) : undefined
       }
     >
@@ -88,14 +100,15 @@ export function ForumHome() {
         <Skeleton className="rounded-card h-64 w-full" />
       ) : (
         <>
-          {regular.length > 0 ? <BoardTable boards={regular} title="Sitewide" /> : null}
+          {regular.length > 0 ? <BoardList boards={regular} title="Sitewide" /> : null}
           {noBoards ? (
-            <Card content="data">
+            <Card content="data" className="overflow-hidden">
+              <TextureOverlay texture="grid" className="[--facet-texture-color:var(--tint)]" />
               <EmptyState compact title="No boards yet" />
             </Card>
           ) : null}
           {archived.length > 0 ? (
-            <BoardTable boards={archived} title="From the old forum" collapsible />
+            <BoardList boards={archived} title="From the old forum" collapsible />
           ) : null}
         </>
       )}
