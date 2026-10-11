@@ -234,7 +234,6 @@ const forumRouter = createTRPCRouter({
       input.threadId,
       input.page
     ).catch(mapError);
-    const reacted = await withReactions(ctx.db, viewer, result.posts);
     // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
     // realm the read already loaded (N1).
     const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
@@ -246,7 +245,9 @@ const forumRouter = createTRPCRouter({
     const editable =
       writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
     const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
-    const [roles, { top: participants, total: participantCount }] = await Promise.all([
+    // The reactions depend only on the viewer and the page's posts, so they load alongside the roles and participants.
+    const [reacted, roles, { top: participants, total: participantCount }] = await Promise.all([
+      withReactions(ctx.db, viewer, result.posts),
       roleContextOf(ctx.db, result.thread, result.category, result.posts),
       threadParticipants(ctx.db, viewer, result.category, input.threadId),
     ]);
