@@ -204,6 +204,27 @@ describe("moveThread", () => {
     expect(store.state.links).toEqual(seed().links);
   });
 
+  it("frees the realm's advert slot when an advert moves out of Find a Realm, and leaves other moves alone", async () => {
+    const base = seed();
+    const store = forumStore({
+      ...base,
+      threads: [
+        ...base.threads,
+        thread("t_ad", "cat_find", { advertRealmId: "r_eurth" }),
+        thread("t_ad2", "cat_find", { advertRealmId: "r_aurora" }),
+      ],
+    });
+    await moveThread(store.db as never, admin, { threadId: "t_ad", to: { key: "general" } });
+    expect(threadIn(store, "t_ad").categoryId).toBe("cat_general");
+    expect(threadIn(store, "t_ad").advertRealmId).toBeNull();
+    expect(threadIn(store, "t_ad2").advertRealmId).toBe("r_aurora");
+    await moveThread(store.db as never, admin, {
+      threadId: "t_general",
+      to: { key: "side-games" },
+    });
+    expect(threadIn(store, "t_general")).not.toHaveProperty("advertRealmId");
+  });
+
   it("moving Eurth's thread into Aurora's Hub by Eurth's moderator is FORBIDDEN", async () => {
     const store = forumStore(seed());
     await expect(
@@ -550,7 +571,8 @@ describe("moveDestinations", () => {
           realmId: "r_eurth",
           visibility: "public",
           id: { not: "r_eurth_hub" },
-          style: { not: "board" }, NOT: { scope: "realm", key: "board" },
+          style: { not: "board" },
+          NOT: { scope: "realm", key: "board" },
         },
         orderBy: { order: "asc" },
       })
@@ -601,7 +623,10 @@ describe("the realm board thread", () => {
   it("refuses to move the board thread to another category", async () => {
     const store = boardStore();
     await expect(
-      moveThread(store.db as never, admin, { threadId: "t_board", to: { key: "hub", realm: "eurth" } })
+      moveThread(store.db as never, admin, {
+        threadId: "t_board",
+        to: { key: "hub", realm: "eurth" },
+      })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(threadIn(store, "t_board").categoryId).toBe("r_eurth_board");
   });

@@ -3,6 +3,7 @@
  * before anything is written, syncing the links once the post exists, and the story-chain lock.
  */
 import type { PrismaClient } from "@prisma/client";
+import { parseActionTokens } from "~/lib/action-links";
 import {
   ActionLinkError,
   syncPostActionLinks,
@@ -47,6 +48,46 @@ export function syncLinks(
       body: plainText,
     })
   );
+}
+
+/**
+ * The link check of an edit. The author's tokens must be their own nation's actions (`validateLinks`); a manager editing
+ * another member's advert post (R14, as `modEditPost`) may keep or remove tokens but never add one, since links belong
+ * to the author's nation.
+ */
+export async function validateEditLinks(
+  db: WritesDb,
+  actor: ForumActor,
+  post: { authorUserId: string | null; plainText: string },
+  plainText: string
+): Promise<void> {
+  if (post.authorUserId === actor.id) {
+    await validateLinks(db, actor, plainText);
+    return;
+  }
+  const before = new Set(parseActionTokens(post.plainText));
+  if (parseActionTokens(plainText).some((id) => !before.has(id)))
+    throw new ForumError("BAD_REQUEST", "A manager edit can't add action links.");
+}
+
+/** Syncs the author's links after an edit; a manager's edit only drops the links whose token it removed. */
+export async function syncEditLinks(
+  db: WritesDb,
+  actor: ForumActor,
+  post: { id: string; authorUserId: string | null },
+  plainText: string
+): Promise<void> {
+  if (post.authorUserId === actor.id) {
+    await syncLinks(db, actor, post.id, plainText);
+    return;
+  }
+  await db.postActionLink.deleteMany({
+    where: {
+      postSource: "native",
+      postRef: post.id,
+      activityId: { notIn: parseActionTokens(plainText) },
+    },
+  });
 }
 
 /** P6 (M17): a post linked into a submitted or approved story chain no longer changes, by its author or a moderator. */

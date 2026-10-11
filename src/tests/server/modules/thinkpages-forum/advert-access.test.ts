@@ -5,7 +5,8 @@ import {
   advertHiddenFrom,
   advertRealmHiddenFrom,
   advertRowOf,
-  canEditAdvertPost,
+  assertAdvertsOnly,
+  canEditPost,
   canManageAdvert,
 } from "~/server/modules/thinkpages-forum/advert-access";
 import { canSeeRealm } from "~/server/modules/thinkpages-forum/realm-access";
@@ -265,14 +266,25 @@ describe("canManageAdvert", () => {
   });
 });
 
-describe("canEditAdvertPost", () => {
-  const first = { id: "p_first", threadId: "t_ad" };
-  const second = { id: "p_second", threadId: "t_ad" };
+describe("canEditPost", () => {
+  const post = (id: string, authorUserId: string | null) => ({
+    id,
+    threadId: "t_ad",
+    authorUserId,
+  });
+  const first = (authorUserId: string | null) => post("p_first", authorUserId);
+  const second = (authorUserId: string | null) => post("p_second", authorUserId);
+  const officerActor = officer;
 
-  it("lets a manager edit the first post and no other", async () => {
+  it("lets a manager edit the first post, whoever wrote it, and no reply but their own", async () => {
     const db = officerDb();
-    await expect(canEditAdvertPost(db as never, officer, first, realm)).resolves.toBe(true);
-    await expect(canEditAdvertPost(db as never, officer, second, realm)).resolves.toBe(false);
+    await expect(canEditPost(db as never, officerActor, first("u_other"), realm)).resolves.toBe(
+      true
+    );
+    await expect(canEditPost(db as never, officerActor, second("u_other"), realm)).resolves.toBe(
+      false
+    );
+    await expect(canEditPost(db as never, officerActor, second("u_o"), realm)).resolves.toBe(true);
     expect(db.forumPost.findFirst).toHaveBeenCalledWith({
       where: { threadId: "t_ad" },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
@@ -280,11 +292,33 @@ describe("canEditAdvertPost", () => {
     });
   });
 
-  it("is false for someone who does not manage the advert, and for a thread that is no advert", async () => {
+  it("does not let authorship alone edit the first post once the author lost the power", async () => {
     const db = officerDb();
-    await expect(canEditAdvertPost(db as never, boardOnly, first, realm)).resolves.toBe(false);
-    await expect(canEditAdvertPost(db as never, officer, first, null)).resolves.toBe(false);
-    await expect(canEditAdvertPost(db as never, officer, first, undefined)).resolves.toBe(false);
+    const exOfficer = { ...boardOnly, id: "u_board" };
+    await expect(canEditPost(db as never, exOfficer, first("u_board"), realm)).resolves.toBe(false);
+    await expect(canEditPost(db as never, exOfficer, second("u_board"), realm)).resolves.toBe(true);
+  });
+
+  it("is the author's alone in a thread that is no advert, with no first-post read", async () => {
+    const db = officerDb();
+    await expect(canEditPost(db as never, officerActor, first("u_o"), null)).resolves.toBe(true);
+    await expect(canEditPost(db as never, officerActor, first("u_x"), undefined)).resolves.toBe(
+      false
+    );
+    expect(db.forumPost.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("assertAdvertsOnly", () => {
+  const find = { key: "find-a-realm", scope: "site" };
+
+  it("refuses a thread in Find a Realm that names no realm, and nothing else", () => {
+    expect(() => assertAdvertsOnly(find, undefined)).toThrow(/adverts only/i);
+    expect(() => assertAdvertsOnly(find, "r_eurth")).not.toThrow();
+    expect(() => assertAdvertsOnly({ key: "general", scope: "site" }, undefined)).not.toThrow();
+    expect(() =>
+      assertAdvertsOnly({ key: "find-a-realm", scope: "realm" }, undefined)
+    ).not.toThrow();
   });
 });
 

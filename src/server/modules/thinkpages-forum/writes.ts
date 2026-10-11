@@ -19,7 +19,8 @@ import {
   advertClosed,
   advertRealmHiddenFrom,
   ADVERT_REALM_SELECT,
-  canEditAdvertPost,
+  assertAdvertsOnly,
+  canEditPost,
 } from "./advert-access";
 import { ForumError } from "./errors";
 import { withMentionLinks } from "./mention-links";
@@ -37,7 +38,13 @@ import {
   type PostInput,
   type PreparedBody,
 } from "./writes-body";
-import { inLockedChain, syncLinks, validateLinks } from "./writes-links";
+import {
+  inLockedChain,
+  syncEditLinks,
+  syncLinks,
+  validateEditLinks,
+  validateLinks,
+} from "./writes-links";
 
 export { MAX_POST_HTML, prepareBody, type PostInput, type PreparedBody };
 export { inLockedChain, syncLinks, validateLinks };
@@ -115,10 +122,15 @@ export async function resolvePersona(
   return persona.id;
 }
 
+/**
+ * Starts a thread. Find a Realm takes adverts only: a thread there is refused unless the caller (`createAdvert`) names
+ * the realm it advertises, stored as `advertRealmId` (unique, so a realm has one advert).
+ */
 export async function createThread(
   db: WritesDb,
   actor: ForumActor,
-  input: PostInput & { categoryKey: string; realm?: string | null; title: string }
+  input: PostInput & { categoryKey: string; realm?: string | null; title: string },
+  options: { advertRealmId?: string } = {}
 ): Promise<{
   threadId: string;
   postId: string;
@@ -130,6 +142,7 @@ export async function createThread(
     key: input.categoryKey,
     realm: input.realm,
   });
+  assertAdvertsOnly(category, options.advertRealmId);
   await assertCanPost(db, actor, category, realm, "You cannot start threads here.");
   const author = {
     authorUserId: actor.id,
@@ -141,7 +154,14 @@ export async function createThread(
   const now = new Date();
   const { threadId, postId } = await db.$transaction(async (tx) => {
     const thread = await tx.forumThread.create({
-      data: { categoryId: category.id, title, ...author, postCount: 1, lastPostAt: now },
+      data: {
+        categoryId: category.id,
+        title,
+        ...author,
+        advertRealmId: options.advertRealmId,
+        postCount: 1,
+        lastPostAt: now,
+      },
     });
     const post = await tx.forumPost.create({
       data: { threadId: thread.id, ...author, ...postColumns(body), createdAt: now },
@@ -230,6 +250,7 @@ export async function editPost(
       threadId: true,
       authorUserId: true,
       hidden: true,
+      plainText: true,
       contentWikitext: true,
       thread: {
         select: {
@@ -266,10 +287,7 @@ export async function editPost(
   }
   const { category } = post.thread;
   const realm = await realmOfThread(db, actor, category, "Post");
-  if (
-    post.authorUserId !== actor.id &&
-    !(await canEditAdvertPost(db, actor, post, post.thread.advertRealm))
-  )
+  if (!(await canEditPost(db, actor, post, post.thread.advertRealm)))
     throw new ForumError("FORBIDDEN", "Only the author can edit this post.");
   if (post.thread.locked || post.thread.archived || advertClosed(post.thread.advertRealm))
     throw new ForumError("CONFLICT", "This thread is closed to edits.");
@@ -279,7 +297,7 @@ export async function editPost(
   if (await inLockedChain(db, post.id))
     throw new ForumError("CONFLICT", "This post is part of a submitted story chain");
   const body = await withMentionLinks(db, await bodyFromInput(input, post.threadId, actor.id));
-  await validateLinks(db, actor, body.plainText);
+  await validateEditLinks(db, actor, post, body.plainText);
   const written = await db.$transaction(async (tx) => {
     const { count } = await tx.forumPost.updateMany({
       where: { id: post.id, editedAt: input.editedAt },
@@ -290,6 +308,6 @@ export async function editPost(
     return true;
   });
   if (!written) throw new ForumError("CONFLICT", EDITED_MEANWHILE);
-  await syncLinks(db, actor, post.id, body.plainText);
+  await syncEditLinks(db, actor, post, body.plainText);
   return { formatting: formattingOf(body) };
 }

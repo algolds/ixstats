@@ -149,7 +149,10 @@ function writeDb(opts: Opts = {}) {
           .map((a) => ({ id: a.id }))
       ),
     },
-    postActionLink: { count: jest.fn(async () => opts.chainedLinks ?? 0) },
+    postActionLink: {
+      count: jest.fn(async () => opts.chainedLinks ?? 0),
+      deleteMany: jest.fn(async (_args?: object) => ({ count: 0 })),
+    },
     $transaction: jest.fn(async (fn: (t: typeof tx) => Promise<object>) => fn(tx)),
   };
   return { db, tx };
@@ -203,7 +206,10 @@ describe("createThread", () => {
     const linkSyncStarted = db.$transaction.mock.invocationCallOrder[1]!;
     expect(tx.forumThread.create.mock.invocationCallOrder[0]).toBeLessThan(linkSyncStarted);
     expect(tx.forumPost.create.mock.invocationCallOrder[0]).toBeLessThan(linkSyncStarted);
-    const threadData = tx.forumThread.create.mock.calls[0]![0].data as { lastPostAt: Date };
+    const threadData = tx.forumThread.create.mock.calls[0]![0].data as {
+      lastPostAt: Date;
+      advertRealmId?: string;
+    };
     expect(threadData).toMatchObject({
       categoryId: "cat_general",
       title: "Hello there",
@@ -211,6 +217,7 @@ describe("createThread", () => {
       authorPersonaId: null,
       postCount: 1,
     });
+    expect(threadData.advertRealmId).toBeUndefined();
     expect(threadData.lastPostAt).toBeInstanceOf(Date);
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
       threadId: "t_new",
@@ -991,7 +998,7 @@ describe("forum bans on every write", () => {
       message: banNotice(ban as never),
     });
     await expect(
-      createThread(db as never, user, { ...NEW_THREAD, categoryKey: "find-a-realm" })
+      createThread(db as never, user, { ...NEW_THREAD, categoryKey: "side-games" })
     ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done", reward: null });
     const change = writeDb({ post: postBy("u_p"), bans: [ban] });
     await expect(editPost(change.db as never, user, edit)).rejects.toMatchObject({
@@ -1364,5 +1371,226 @@ describe("mention links at save", () => {
       db,
       expect.objectContaining({ contentHtml: "<p>@kir</p>" })
     );
+  });
+});
+
+describe("Find a Realm adverts", () => {
+  const look = { thumbnail: null, emblemUrl: null };
+  const EURTH = {
+    id: "r_eurth",
+    slug: "eurth",
+    name: "Eurth",
+    status: "active",
+    ownerId: "founder",
+    ...look,
+  };
+  const adOfficer = {
+    id: "u_off",
+    clerkUserId: "officer",
+    countryId: "c1",
+    role: { name: "user", level: 100 },
+  };
+  const adFounder = {
+    id: "u_founder",
+    clerkUserId: "founder",
+    countryId: "c1",
+    role: { name: "user", level: 100 },
+  };
+  const FIND = {
+    id: "cat_find-a-realm",
+    key: "find-a-realm",
+    style: "ooc",
+    scope: "site",
+    realmId: null,
+    visibility: "public",
+    postRole: "any",
+  };
+  const advertThread = (advertRealm: object | null, extra: object = {}) => ({
+    ...threadIn("find-a-realm"),
+    authorUserId: "u_founder",
+    advertRealm,
+    ...extra,
+  });
+  const advertPost = (advertRealm: object, authorUserId = "u_founder", thread: object = {}) =>
+    postBy(authorUserId, {
+      plainText: "Join us",
+      thread: {
+        authorUserId: "u_founder",
+        hidden: false,
+        locked: false,
+        archived: false,
+        category: FIND,
+        advertRealm,
+        ...thread,
+      },
+    });
+  const edit = { postId: "p1", html: "<p>Updated advert</p>", editedAt: null };
+
+  /** The fake's officer table grants `powers` to the officer actor, and the first post of the thread is `first`. */
+  function asOfficer(db: ReturnType<typeof writeDb>["db"], first: string, powers = ["appearance"]) {
+    db.realmOfficer.findMany.mockImplementation(async ({ where }: { where: { userId: string } }) =>
+      where.userId === "officer" ? [{ userId: "officer", powers }] : []
+    );
+    Object.assign(db.forumPost, { findFirst: jest.fn(async () => ({ id: first })) });
+  }
+  const advertEdit = (
+    post: object,
+    actor: object,
+    opts: { first?: string; powers?: string[]; activities?: Opts["activities"] } = {}
+  ) => {
+    const made = writeDb({ post, activities: opts.activities });
+    asOfficer(made.db, opts.first ?? "p1", opts.powers);
+    return {
+      ...made,
+      run: (input: object = edit) => editPost(made.db as never, actor as never, input as never),
+    };
+  };
+
+  it("refuses a new thread in Find a Realm that is not an advert, for members and admins alike", async () => {
+    const { db, tx } = writeDb();
+    const input = { ...NEW_THREAD, categoryKey: "find-a-realm" };
+    await expect(createThread(db as never, user, input)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringMatching(/adverts only/i),
+    });
+    await expect(createThread(db as never, admin, input)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(tx.forumThread.create).not.toHaveBeenCalled();
+  });
+
+  it("creates the advert with the realm id when the advert option is given, and still returns the reward", async () => {
+    const { db, tx } = writeDb();
+    await expect(
+      createThread(
+        db as never,
+        user,
+        { ...NEW_THREAD, categoryKey: "find-a-realm" },
+        { advertRealmId: "r_eurth" }
+      )
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done", reward: null });
+    expect(tx.forumThread.create.mock.calls[0]![0].data).toMatchObject({
+      categoryId: "cat_find-a-realm",
+      advertRealmId: "r_eurth",
+      postCount: 1,
+    });
+  });
+
+  it("still lets anyone signed in reply to an advert and to an imported thread there", async () => {
+    for (const thread of [advertThread(EURTH), threadIn("find-a-realm")]) {
+      const { db } = writeDb({ thread });
+      await expect(
+        replyToThread(db as never, user, { threadId: "t1", html: "<p>Is it open?</p>" })
+      ).resolves.toMatchObject({ postId: "p_new", formatting: "done" });
+    }
+  });
+
+  it("closes an archived realm's advert to replies", async () => {
+    const { db } = writeDb({ thread: advertThread({ ...EURTH, status: "archived" }) });
+    await expect(
+      replyToThread(db as never, user, { threadId: "t1", html: "<p>Hello</p>" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("lets an officer with the appearance power edit the advert's first post, though they did not write it", async () => {
+    const { run, db } = advertEdit(advertPost(EURTH), adOfficer);
+    await expect(run()).resolves.toEqual({ formatting: "done" });
+    expect(db.forumPost.updateMany).toHaveBeenCalled();
+  });
+
+  it("does not let that officer edit a reply in the advert, or an officer without the power edit the first post", async () => {
+    await expect(
+      advertEdit(advertPost(EURTH), adOfficer, { first: "p_first" }).run()
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "Only the author can edit this post.",
+    });
+    await expect(
+      advertEdit(advertPost(EURTH), adOfficer, { powers: ["board"] }).run()
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(advertEdit(advertPost(EURTH), user).run()).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+
+  it("does not let an officer who lost the power edit the first post they wrote (authorship is not enough)", async () => {
+    const post = advertPost(EURTH, "u_off");
+    await expect(advertEdit(post, adOfficer, { powers: ["board"] }).run()).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    const kept = advertEdit(post, adOfficer);
+    await expect(kept.run()).resolves.toEqual({ formatting: "done" });
+    // Their own reply stays theirs to edit whatever their power.
+    const reply = advertEdit(advertPost(EURTH, "u_off"), adOfficer, {
+      first: "p_first",
+      powers: ["board"],
+    });
+    await expect(reply.run()).resolves.toEqual({ formatting: "done" });
+  });
+
+  it("does not let an officer edit an advert that is locked or whose realm is archived", async () => {
+    const locked = advertPost(EURTH, "u_founder", { locked: true });
+    await expect(advertEdit(locked, adOfficer).run()).rejects.toMatchObject({ code: "CONFLICT" });
+    const archived = advertPost({ ...EURTH, status: "archived" });
+    await expect(advertEdit(archived, adOfficer).run()).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("applies the ban check to a manager's edit", async () => {
+    const made = writeDb({
+      post: advertPost(EURTH),
+      bans: [banRow({ userId: "u_off", scope: "site", reason: "Abuse" })],
+    });
+    asOfficer(made.db, "p1");
+    await expect(editPost(made.db as never, adOfficer, edit)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(made.db.forumPost.updateMany).not.toHaveBeenCalled();
+  });
+
+  describe("a manager editing another member's advert post (action links)", () => {
+    const linked = { ...advertPost(EURTH), plainText: "Join us [ixaction=a1] [ixaction=a2]" };
+
+    it("may keep or remove the author's action links, validating none against their own nation", async () => {
+      const kept = advertEdit(linked, adOfficer);
+      await expect(
+        kept.run({ ...edit, html: "<p>Join [ixaction=a1] [ixaction=a2]</p>" })
+      ).resolves.toEqual({ formatting: "done" });
+      expect(kept.db.forumPost.updateMany.mock.calls[0]![0].data.plainText).toBe(
+        "Join [ixaction=a1] [ixaction=a2]"
+      );
+      expect(kept.db.postActionLink.deleteMany).toHaveBeenLastCalledWith({
+        where: { postSource: "native", postRef: "p1", activityId: { notIn: ["a1", "a2"] } },
+      });
+      expect(kept.tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+      const removed = advertEdit(linked, adOfficer);
+      await removed.run({ ...edit, html: "<p>Join [ixaction=a2]</p>" });
+      expect(removed.db.postActionLink.deleteMany).toHaveBeenLastCalledWith({
+        where: { postSource: "native", postRef: "p1", activityId: { notIn: ["a2"] } },
+      });
+      const none = advertEdit(linked, adOfficer);
+      await none.run();
+      expect(none.db.postActionLink.deleteMany).toHaveBeenLastCalledWith({
+        where: { postSource: "native", postRef: "p1", activityId: { notIn: [] } },
+      });
+    });
+
+    it("may not add one, even one of their own nation's actions", async () => {
+      const added = advertEdit(linked, adOfficer, {
+        activities: [{ id: "a3", countryId: "c1", visibility: "public" }],
+      });
+      await expect(
+        added.run({ ...edit, html: "<p>Join [ixaction=a1] [ixaction=a3]</p>" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(added.db.forumPost.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("leaves the author's own edit as it was: their nation's actions are validated and synced", async () => {
+      const own = advertEdit(advertPost(EURTH, "u_founder"), adFounder, {
+        activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
+      });
+      await own.run({ ...edit, html: "<p>Join [ixaction=a1]</p>" });
+      expect(own.tx.postActionLink.createManyAndReturn).toHaveBeenCalled();
+      expect(own.db.postActionLink.deleteMany).not.toHaveBeenCalled();
+    });
   });
 });

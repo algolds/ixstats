@@ -76,7 +76,12 @@ export async function contentModerator(
 export async function loadThread(db: Pick<ContentDb, "forumThread">, threadId: string) {
   const thread = await db.forumThread.findUnique({
     where: { id: threadId },
-    select: { id: true, authorUserId: true, category: { select: CATEGORY_SELECT } },
+    select: {
+      id: true,
+      authorUserId: true,
+      advertRealmId: true,
+      category: { select: CATEGORY_SELECT },
+    },
   });
   if (!thread) throw new ForumError("NOT_FOUND", "Thread not found.");
   return thread;

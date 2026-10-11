@@ -8,8 +8,10 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
+import { ADVERT_ONLY_NOTICE, isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import { hasRealmPower, isRealmOpen, isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
+import { ForumError } from "./errors";
 import {
   canSeeRealm,
   isArchived,
@@ -98,20 +100,34 @@ export async function canManageAdvert(
   return hasRealmPower(actor, realm, officers, "appearance");
 }
 
-/** An advert's first post may be edited by whoever manages the advert, not only by its author. */
-export async function canEditAdvertPost(
+/** Find a Realm takes adverts only: a thread started there must name the realm it advertises (`createAdvert` does). */
+export function assertAdvertsOnly(
+  category: { key: string; scope?: string },
+  advertRealmId: string | undefined
+): void {
+  if (advertRealmId === undefined && isAdvertCategory(category))
+    throw new ForumError("FORBIDDEN", ADVERT_ONLY_NOTICE);
+}
+
+/**
+ * Whether the actor may edit the post as its author. An advert's first post belongs to whoever manages the advert
+ * today, whoever wrote it: authorship alone no longer edits it, so an officer who lost the appearance power cannot.
+ * The advert's replies, and every other thread's posts, are their authors'.
+ */
+export async function canEditPost(
   db: AdvertAccessDb & Pick<PrismaClient, "forumPost">,
-  actor: ForumViewer,
-  post: { id: string; threadId: string },
+  actor: NonNullable<ForumViewer>,
+  post: { id: string; threadId: string; authorUserId: string | null },
   advertRealm: ForumRealm | null | undefined
 ): Promise<boolean> {
-  if (!advertRealm || !(await canManageAdvert(db, actor, advertRealm))) return false;
+  const own = post.authorUserId === actor.id;
+  if (!advertRealm) return own;
   const first = await db.forumPost.findFirst({
     where: { threadId: post.threadId },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     select: { id: true },
   });
-  return first?.id === post.id;
+  return first?.id === post.id ? canManageAdvert(db, actor, advertRealm) : own;
 }
 
 /** What a board row shows about its advert: the realm's mark and whether it is open to join. Never the founder. */

@@ -6,6 +6,7 @@
  * archived-realm check (T0-6); nothing here deletes a thread or post (T0-7). A thread's `postCount` and `lastPostAt`
  * count its visible posts only, as members see them; moderators see hidden posts badged but not counted.
  */
+import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import { isBoardCategory, notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import type { ForumViewer } from "./access";
 import { ForumError } from "./errors";
@@ -134,7 +135,8 @@ export async function moveThread(
   await db.$transaction(async (tx) => {
     const { count } = await tx.forumThread.updateMany({
       where: { id: thread.id, categoryId: from.id },
-      data: { categoryId: to.id },
+      // An advert moved out of Find a Realm is an ordinary thread: the realm's advert slot is free again.
+      data: { categoryId: to.id, ...(isAdvertCategory(from) ? { advertRealmId: null } : {}) },
     });
     if (count === 0) throw new ForumError("CONFLICT", "This thread has moved since you opened it.");
     const posts = await tx.forumPost.findMany({

@@ -307,7 +307,7 @@ describe("writes that find a thread by id", () => {
     ).rejects.toMatchObject({ code: "CONFLICT", message: "This thread is closed to replies." });
   });
 
-  const editDb = (advertRealm: object) => ({
+  const editDb = (advertRealm: object, authorUserId = "u_m") => ({
     forumBan: forumBanFake([]),
     realm: { findUnique: jest.fn(async () => null) },
     realmOfficer: { findMany: jest.fn(async () => []) },
@@ -315,7 +315,7 @@ describe("writes that find a thread by id", () => {
       findUnique: jest.fn(async () => ({
         id: "p1",
         threadId: "t_ad",
-        authorUserId: "u_m",
+        authorUserId,
         hidden: false,
         contentWikitext: null,
         thread: {
@@ -338,8 +338,8 @@ describe("writes that find a thread by id", () => {
     });
   });
 
-  it("closes edits of an archived realm's advert", async () => {
-    await expect(editPost(editDb(ARCHIVED) as never, member, edit)).rejects.toMatchObject({
+  it("closes edits of an archived realm's advert, even to the founder who manages it", async () => {
+    await expect(editPost(editDb(ARCHIVED, "u_f") as never, founder, edit)).rejects.toMatchObject({
       code: "CONFLICT",
       message: "This thread is closed to edits.",
     });
