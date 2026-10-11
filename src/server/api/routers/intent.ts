@@ -340,12 +340,17 @@ export const intentRouter = createTRPCRouter({
         }
       }
 
-      const updated = await ctx.db.intent.update({
-        where: { id: input.id },
-        data: { status: input.status },
-      });
-
-      if (input.status === "abandoned") await withdrawDirectiveActivity(ctx.db, input.id);
+      // Abandoning and withdrawing the directive's public row are one write: the directive can never be
+      // abandoned while its row stays public. No row (an older directive, a failed declare) is not an error.
+      const data = { status: input.status };
+      const updated =
+        input.status === "abandoned"
+          ? await ctx.db.$transaction(async (tx) => {
+              const row = await tx.intent.update({ where: { id: input.id }, data });
+              await withdrawDirectiveActivity(tx, input.id);
+              return row;
+            })
+          : await ctx.db.intent.update({ where: { id: input.id }, data });
 
       if (input.status === "completed") {
         try {

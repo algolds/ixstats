@@ -111,11 +111,15 @@ describe("withdrawDirectiveActivity", () => {
     });
   });
 
-  it("never throws", async () => {
-    const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
+  it("propagates a failure so the abandoning transaction rolls back", async () => {
     const db = fakeDb();
     db.activityFeed.updateMany.mockRejectedValueOnce(new Error("db down"));
+    await expect(withdrawDirectiveActivity(db as never, "int1")).rejects.toThrow("db down");
+  });
+
+  it("is not an error when the directive has no row", async () => {
+    const db = fakeDb();
+    db.activityFeed.updateMany.mockResolvedValueOnce({ count: 0 });
     await expect(withdrawDirectiveActivity(db as never, "int1")).resolves.toBeUndefined();
-    log.mockRestore();
   });
 });

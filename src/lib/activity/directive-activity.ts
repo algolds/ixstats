@@ -54,17 +54,17 @@ export async function declareDirectiveActivity(
   }
 }
 
-/** An abandoned directive leaves the public record, so its row leaves with it: cards for it read "Unverified action". */
+/**
+ * An abandoned directive leaves the public record, so its row leaves with it: cards for it read "Unverified action".
+ * Throws on a failure, so the caller runs it inside the transaction that abandons the directive: a directive is never
+ * abandoned while its row stays public. A directive without a row (an older one, a failed declare) updates nothing.
+ */
 export async function withdrawDirectiveActivity(
   db: DirectiveActivityDb,
   intentId: string
 ): Promise<void> {
-  try {
-    await db.activityFeed.updateMany({
-      where: { id: directiveActivityId(intentId) },
-      data: { visibility: "private" },
-    });
-  } catch (error) {
-    console.error("[Activity] Failed to withdraw the directive activity:", error);
-  }
+  await db.activityFeed.updateMany({
+    where: { id: directiveActivityId(intentId) },
+    data: { visibility: "private" },
+  });
 }

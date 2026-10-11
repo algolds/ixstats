@@ -1,4 +1,4 @@
-import type { PrismaClient, Priority } from "@prisma/client";
+import type { ActivityFeed, PrismaClient, Priority } from "@prisma/client";
 import { db } from "~/server/db";
 
 /** Metadata values are the scalars the feed stores as JSON. */
@@ -33,7 +33,7 @@ export function recordActivity({
   id,
   client,
   ...rest
-}: ActivityRecord) {
+}: ActivityRecord): Promise<ActivityFeed> {
   return (client ?? db).activityFeed.create({
     data: {
       category: "game",

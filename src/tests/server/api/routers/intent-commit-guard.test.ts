@@ -67,6 +67,8 @@ function makeDb(seed: IntentRow[]) {
     Object.entries(where).every(([k, v]) => row[k] === v);
 
   const db = {
+    // The interactive transaction runs on the same in-memory tables.
+    $transaction: jest.fn(async (run: (tx: object) => Promise<object>) => run(db)),
     rows,
     intent: {
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
