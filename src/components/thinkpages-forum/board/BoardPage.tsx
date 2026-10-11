@@ -1,29 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { EditPencil } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { EmptyState } from "~/components/ui/empty-state";
-import { useUser } from "~/context/auth-context";
-import { useNotify } from "~/hooks/useNotify";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
-import { categoryHref, FORUM_HOME, hubHref, newThreadHref } from "~/lib/thinkpages-forum/links";
+import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
+import { categoryHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { sortHref, type ThreadSort } from "~/lib/thinkpages-forum/thread-sort";
 import { api } from "~/trpc/react";
 import { ForumNotice } from "../BanNotice";
-import { ForumBreadcrumbs, forumTrail } from "../ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
-import { RealmSwitcher } from "../RealmSwitcher";
-import { useReadStateRefresh } from "../useReadStateRefresh";
 import { ForumPage } from "../shell";
 import { AboutPanel, TopPostersPanel } from "./BoardRail";
-import { SortMenu } from "./SortMenu";
-import { ThreadTable } from "./ThreadTable";
+import {
+  AdvertNotice,
+  BoardActions,
+  boardBack,
+  BoardThreads,
+  BoardTrail,
+  realmOptionsFor,
+} from "./BoardParts";
+import { useBoardUnread, useMarkBoardRead } from "./useBoardState";
 
 interface BoardPageProps {
   categoryKey: string;
@@ -47,32 +43,8 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
   const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
   const redirecting = useLastPageRedirect(sortedPath, page, data?.total, totalPages);
   usePageTitle({ title: data?.category.name ?? "ThinkPages" });
-  const { isSignedIn } = useUser();
-  // The board's own unread count (the list below shows one page): the home's or the realm's board row.
-  const sitewideBoards = api.thinkpagesForum.categories.useQuery(undefined, {
-    enabled: !!isSignedIn && !realm,
-  });
-  const realmBoards = api.thinkpagesForum.realmSection.useQuery(
-    { realm: realm ?? "" },
-    { enabled: !!isSignedIn && !!realm }
-  );
-  const unreadThreads = (realm ? realmBoards.data?.categories : sitewideBoards.data)?.find(
-    (b) => b.key === categoryKey
-  )?.unreadThreads;
-  const notify = useNotify();
-  const refreshReadState = useReadStateRefresh();
-  const { mutateAsync: markRead, isPending: marking } =
-    api.thinkpagesForum.markCategoryRead.useMutation();
-  const markBoardRead = async () => {
-    try {
-      await markRead({ key: categoryKey, realm });
-    } catch (e) {
-      notify.error("Could not mark the board read", e instanceof Error ? e.message : undefined);
-      return;
-    }
-    // The mark is saved; a failed refresh of the lists is not an error to report.
-    await refreshReadState().catch(() => undefined);
-  };
+  const unreadThreads = useBoardUnread(categoryKey, realm);
+  const { markBoardRead, marking } = useMarkBoardRead(categoryKey, realm);
 
   if (isLoading || redirecting) return <ForumPageSkeleton />;
 
@@ -88,63 +60,26 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
   }
 
   const { category } = data;
-  const newThread = data.canStart ? (
-    <Button asChild size="sm">
-      <Link href={newThreadHref(category)}>
-        <EditPencil aria-hidden />
-        New thread
-      </Link>
-    </Button>
-  ) : null;
-  // A realm opened by URL may be unlisted (D14); keep it selectable so the trigger shows its name.
-  const listed = realms.data?.realms.find((r) => r.slug === realm);
-  const realmOptions =
-    realm && realms.data
-      ? listed
-        ? realms.data.realms
-        : [{ slug: realm, name: category.realm?.name ?? realm }, ...realms.data.realms]
-      : undefined;
-  // The trail scrolls away with the header; the compact bar keeps this way up: the realm's Hub, or the home
-  // (from a sitewide board, and from a Hub, which is the top of its realm).
-  const back =
-    category.realm && category.key !== REALM_HUB_KEY
-      ? { href: hubHref(category.realm.slug), label: category.realm.name }
-      : { href: FORUM_HOME, label: "ThinkPages" };
+  const adverts = isAdvertCategory(category);
   const hrefFor = (n: number) => pageHref(sortedPath, n);
 
   return (
     <ForumPage
       title={category.name}
-      breadcrumbs={
-        <>
-          {/* Above a realm's board the trail has somewhere to go; a sitewide board's only step is the back link. */}
-          {category.realm ? <ForumBreadcrumbs items={forumTrail(category.realm)} /> : null}
-          {category.description ? <p>{category.description}</p> : null}
-          <p className="text-footnote text-label-tertiary mt-1 flex items-center gap-2 tabular-nums">
-            {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
-            {data.total === 1 ? "1 thread" : `${data.total} threads`}
-          </p>
-        </>
-      }
-      back={back}
+      breadcrumbs={<BoardTrail data={data} />}
+      back={boardBack(category)}
       wideActions={
-        <>
-          {realm && realmOptions ? <RealmSwitcher realms={realmOptions} value={realm} /> : null}
-          <SortMenu basePath={boardPath} sort={sort} />
-          {isSignedIn ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-label-secondary pointer-coarse:min-h-11"
-              // Unknown (the count has not loaded) leaves it enabled.
-              disabled={marking || unreadThreads === 0}
-              onClick={() => void markBoardRead()}
-            >
-              Mark board read
-            </Button>
-          ) : null}
-          {newThread}
-        </>
+        <BoardActions
+          data={data}
+          adverts={adverts}
+          boardPath={boardPath}
+          sort={sort}
+          realm={realm}
+          realmOptions={realmOptionsFor(realm, realms.data?.realms, category)}
+          unreadThreads={unreadThreads}
+          marking={marking}
+          onMarkRead={() => void markBoardRead()}
+        />
       }
       rail={
         <>
@@ -156,24 +91,9 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
       {!data.canStart && data.notice ? (
         <ForumNotice notice={data.notice} banned={data.banned} />
       ) : null}
+      {adverts ? <AdvertNotice /> : null}
       <Pagination page={page} last={totalPages} hrefFor={hrefFor} />
-      <Card content="data" className="overflow-hidden py-1">
-        {data.threads.length > 0 ? (
-          <ThreadTable
-            threads={data.threads}
-            authors={data.authors}
-            basePath={boardPath}
-            sort={sort}
-          />
-        ) : (
-          <EmptyState
-            compact
-            title="No threads yet"
-            message="Be the first to post"
-            action={newThread}
-          />
-        )}
-      </Card>
+      <BoardThreads data={data} adverts={adverts} boardPath={boardPath} sort={sort} />
       <Pagination page={page} last={totalPages} hrefFor={hrefFor} />
     </ForumPage>
   );

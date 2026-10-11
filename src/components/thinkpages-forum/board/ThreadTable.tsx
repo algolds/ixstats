@@ -10,6 +10,7 @@ import { pageWindow } from "~/lib/thinkpages-forum/pagination";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { sortHref, type ThreadSort } from "~/lib/thinkpages-forum/thread-sort";
 import { cn } from "~/lib/utils/cn";
+import { AdvertMark } from "../advert/AdvertMark";
 import { AuthorFlag, resolveAuthor } from "../AuthorMark";
 import { AuthorName, type ForumAuthors } from "../AuthorName";
 import { ForumAvatar } from "../ForumAvatar";
@@ -161,6 +162,35 @@ function LastPost({ thread, authors }: { thread: Thread; authors: ForumAuthors }
   );
 }
 
+/** The row's mark: an advert shows its realm's emblem, thumbnail or mark; any other thread its author's avatar. */
+function RowAvatar({
+  thread,
+  author,
+}: {
+  thread: Thread;
+  author: ReturnType<typeof resolveAuthor>;
+}) {
+  return thread.advert ? (
+    <AdvertMark advert={thread.advert} />
+  ) : (
+    <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" />
+  );
+}
+
+/** The pills after the title: Hidden (moderators), Imported, and Open to join on an advert whose realm takes claims. */
+function RowBadges({ thread }: { thread: Thread }) {
+  return (
+    <>
+      {/* Moderators only: members never receive hidden threads. */}
+      {thread.hidden ? <Badge variant="warning">Hidden</Badge> : null}
+      {typeof thread.xenforoThreadId === "number" ? (
+        <Badge variant="outline">Imported</Badge>
+      ) : null}
+      {thread.advert?.claimsOpen ? <Badge variant="success">Open to join</Badge> : null}
+    </>
+  );
+}
+
 interface ThreadRowProps {
   thread: Thread;
   authors: ForumAuthors;
@@ -187,7 +217,7 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
       )}
     >
       <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3.5 md:col-span-1">
-        <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" />
+        <RowAvatar thread={thread} author={author} />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             {unread ? (
@@ -211,11 +241,7 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
             >
               {thread.title}
             </Link>
-            {/* Moderators only: members never receive hidden threads. */}
-            {thread.hidden ? <Badge variant="warning">Hidden</Badge> : null}
-            {typeof thread.xenforoThreadId === "number" ? (
-              <Badge variant="outline">Imported</Badge>
-            ) : null}
+            <RowBadges thread={thread} />
             {last > 1 || action ? (
               <span className="ml-auto flex shrink-0 items-center gap-2">
                 {last > 1 ? (

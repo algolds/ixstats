@@ -66,6 +66,10 @@ jest.mock("next/navigation", () => {
   return { router, useRouter: () => router, usePathname: () => "/thinkpages/c/general" };
 });
 
+jest.mock("~/components/thinkpages-forum/advert/AdvertBoardAction", () => ({
+  AdvertBoardAction: () => <button type="button">Advertise stub</button>,
+}));
+
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 
 jest.mock("~/context/auth-context", () => {
@@ -407,5 +411,39 @@ describe("BoardPage read state", () => {
     auth.isSignedIn = false;
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByRole("button", { name: "Mark board read" })).toBeNull();
+  });
+});
+
+describe("BoardPage in Find a Realm", () => {
+  const find = { key: "find-a-realm", name: "Find a Realm", scope: "site" };
+
+  it("replaces New thread with the advert action and says who posts adverts", () => {
+    set("category", { data: board({ category: find, threads: [], canStart: false }) });
+    render(<BoardPage categoryKey="find-a-realm" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Advertise stub" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
+    expect(screen.getByText(/founder and officers post its advert/i)).toBeInTheDocument();
+  });
+
+  it("names adverts in the empty state", () => {
+    set("category", { data: board({ category: find, threads: [], canStart: false }) });
+    render(<BoardPage categoryKey="find-a-realm" page={1} sort="latest" />);
+    expect(screen.getByText("Realm adverts will appear here")).toBeInTheDocument();
+    expect(screen.queryByText("Be the first to post")).toBeNull();
+  });
+
+  it("leaves every other board as it was", () => {
+    set("category", { data: board() });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.queryByRole("button", { name: "Advertise stub" })).toBeNull();
+    expect(screen.queryByText(/post its advert/i)).toBeNull();
+    expect(screen.getByRole("link", { name: /New thread/ })).toBeInTheDocument();
+  });
+
+  it("does not treat a realm's board with that key as Find a Realm", () => {
+    set("category", { data: board({ category: { key: "find-a-realm", scope: "realm" } }) });
+    render(<BoardPage categoryKey="find-a-realm" realm="eurth" page={1} sort="latest" />);
+    expect(screen.queryByRole("button", { name: "Advertise stub" })).toBeNull();
+    expect(screen.queryByText(/post its advert/i)).toBeNull();
   });
 });
