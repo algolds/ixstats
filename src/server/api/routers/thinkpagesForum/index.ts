@@ -250,7 +250,13 @@ const forumRouter = createTRPCRouter({
     const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
     // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
     // An advert: the realm, whether the viewer manages it, and whether its realm is archived (closed to writes).
-    const advert = advertRealm ? await advertViewOf(ctx.db, viewer, advertRealm) : null;
+    const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
+    const advert = advertRealm
+      ? await advertViewOf(ctx.db, viewer, advertRealm, {
+          banned: access.ban !== null,
+          moderable: moderator?.of(result.thread.authorUserId).moderable === true,
+        })
+      : null;
     const closed = advert?.closed === true;
     // The advert's first post is the thread's first, hidden or not (the notion `canEditPost` uses), not page 1's first row.
     const advertFirst = advert ? await firstPostIdOf(ctx.db, input.threadId) : null;
@@ -264,7 +270,6 @@ const forumRouter = createTRPCRouter({
     // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
     const editable =
       writable && (result.category.scope !== "realm" ? access.ban === null : canReply);
-    const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
     // The reactions depend only on the viewer and the page's posts, so they load alongside the roles and participants.
     const [reacted, roles, { top: participants, total: participantCount }] = await Promise.all([
       withReactions(ctx.db, viewer, result.posts),

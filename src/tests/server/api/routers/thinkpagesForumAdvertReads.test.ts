@@ -9,7 +9,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { forumBanFake } from "~/tests/helpers/forum-ban-fake";
+import { banRow, forumBanFake } from "~/tests/helpers/forum-ban-fake";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const caller = (user: object | null, db: object) =>
@@ -166,6 +166,8 @@ describe("an advert on the thread page", () => {
       realmName: "Eurth",
       canManage: false,
       closed: false,
+      canLock: false,
+      canUnlock: false,
     });
     expect(out).not.toHaveProperty("advertRealm");
     expect(JSON.stringify(out)).not.toContain("ownerId");
@@ -242,6 +244,49 @@ describe("an advert on the thread page", () => {
   it("has no advert for an ordinary thread", async () => {
     const out = await caller(member, advertDb(null as never)).thread({ threadId: "t_ad", page: 1 });
     expect(out.advert).toBeNull();
+  });
+});
+
+describe("who may lock or unlock an advert, as the thread page is told", () => {
+  const rights = async (viewer: object, db: object) =>
+    (await caller(viewer, db).thread({ threadId: "t_ad", page: 1 })).advert;
+
+  it("lets a manager lock it and nobody who only reads it", async () => {
+    const grants = [{ userId: "officer", powers: ["appearance"] }];
+    expect(await rights(founder, advertDb(ACTIVE))).toMatchObject({
+      canLock: true,
+      canUnlock: false,
+    });
+    expect(await rights(officer, advertDb(ACTIVE, grants))).toMatchObject({ canLock: true });
+    expect(await rights(officer, advertDb(ACTIVE))).toMatchObject({ canLock: false });
+    expect(await rights(member, advertDb(ACTIVE))).toMatchObject({
+      canLock: false,
+      canUnlock: false,
+    });
+  });
+
+  it("lets a moderator unlock it, as the admin-content rule allows", async () => {
+    expect(await rights(admin, advertDb(ACTIVE))).toMatchObject({ canUnlock: true });
+  });
+
+  it("offers neither on an archived realm's advert, which stays locked", async () => {
+    expect(await rights(founder, advertDb(ARCHIVED))).toMatchObject({
+      closed: true,
+      canLock: false,
+      canUnlock: false,
+    });
+    expect(await rights(admin, advertDb(ARCHIVED))).toMatchObject({
+      canLock: false,
+      canUnlock: false,
+    });
+  });
+
+  it("offers neither to a viewer banned from the board, as the lock would refuse them", async () => {
+    const banned = {
+      ...advertDb(ACTIVE),
+      forumBan: forumBanFake([banRow({ userId: "u_f", scope: "site" })]),
+    };
+    expect(await rights(founder, banned)).toMatchObject({ canLock: false, canUnlock: false });
   });
 });
 

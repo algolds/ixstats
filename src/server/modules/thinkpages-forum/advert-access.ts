@@ -159,16 +159,42 @@ export function advertRowOf(realm: AdvertRealm | null | undefined): AdvertRow | 
   };
 }
 
-/** What the thread page needs about its advert: the realm, whether the viewer manages it, and whether it is closed. */
+/** What the viewer's standing in the thread's category adds to the lock rights: a ban and the admin-content rule. */
+export interface AdvertStanding {
+  /** The viewer is banned from the category (`assertNotBanned` refuses the lock for them). */
+  banned: boolean;
+  /** The viewer moderates the category and the advert's author is theirs to moderate (`mayModerateAuthor`). */
+  moderable: boolean;
+}
+
+/**
+ * What the thread page needs about its advert: the realm, whether the viewer manages it, whether it is closed, and
+ * whether the lock may be set (`canLock`: a manager) or cleared (`canUnlock`: a moderator who passes the admin-content
+ * rule). The server decides here what `setAdvertLocked` would allow, so the page offers nothing it would refuse. An
+ * archived realm's advert stays locked, and a banned viewer cannot change the lock.
+ */
 export async function advertViewOf(
   db: AdvertAccessDb,
   viewer: ForumViewer,
-  realm: AdvertRealm
-): Promise<{ realmSlug: string; realmName: string; canManage: boolean; closed: boolean }> {
+  realm: AdvertRealm,
+  standing: AdvertStanding
+): Promise<{
+  realmSlug: string;
+  realmName: string;
+  canManage: boolean;
+  closed: boolean;
+  canLock: boolean;
+  canUnlock: boolean;
+}> {
+  const canManage = await canManageAdvert(db, viewer, realm);
+  const closed = advertClosed(realm);
+  const open = !closed && !standing.banned;
   return {
     realmSlug: realm.slug,
     realmName: realm.name,
-    canManage: await canManageAdvert(db, viewer, realm),
-    closed: advertClosed(realm),
+    canManage,
+    closed,
+    canLock: open && canManage,
+    canUnlock: open && standing.moderable,
   };
 }
