@@ -7,6 +7,7 @@ jest.mock("~/server/modules/identity/identity.invites", () => ({
   resolveRealmInviter: jest.fn().mockResolvedValue({ handle: "ambassador", displayName: "Amb" }),
 }));
 
+import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { Prisma } from "@prisma/client";
 import { realmsRouter } from "~/server/api/routers/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -534,6 +535,16 @@ describe("realms.adminCreateRealm", () => {
         status: "active",
       },
     });
+  });
+
+  it("refuses the slug mine, which is the forum's Your realm route", async () => {
+    const create = jest.fn();
+    await expect(
+      adminCaller(create).adminCreateRealm({ slug: "mine", name: "Mine", visibility: "public" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(create).not.toHaveBeenCalled();
+    expect(REALM_SLUG_PATTERN.test("mine")).toBe(false);
+    expect(REALM_SLUG_PATTERN.test("mine-2")).toBe(true);
   });
 
   it("seeds the new realm's forum categories", async () => {
