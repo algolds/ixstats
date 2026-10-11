@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
-import { latestPublicThreads } from "~/server/modules/thinkpages-forum";
+import { latestPublicThreadPreviews } from "~/server/modules/thinkpages-forum";
 import { globalCache } from "~/lib/cache";
 import { hiddenThinkpagesAccountIds } from "~/server/shared/user-blocks";
 import { formatPollForClient } from "~/server/shared/thinkpages-post-utils";
@@ -258,21 +258,27 @@ async function wikiChangeItems() {
   });
 }
 
-/** The newest native forum threads anyone may read (phase 4b; replaces the XenForo feed). */
+/** The newest native forum threads anyone may read (phase 4b; replaces the XenForo feed), each with its post preview. */
 async function forumActivityItems(db: PrismaClient) {
-  const threads = await latestPublicThreads(db, 20);
-  return threads.map((thread) => ({
+  const threads = await latestPublicThreadPreviews(db, 20);
+  return threads.map(({ preview, postedAt, ...thread }) => ({
     id: `forum-thread-${thread.id}`,
     type: "social",
     category: "social",
     source: "forum",
-    user: { id: `forum-author-${thread.author}`, name: thread.author, countryFlag: null },
+    user: {
+      id: `forum-author-${preview.author.name}`,
+      name: preview.author.name,
+      avatarUrl: preview.author.avatarUrl,
+      flagUrl: preview.author.flagUrl,
+    },
     content: {
       title:
         thread.replyCount === 0
           ? `New forum thread: ${thread.title}`
           : `Forum reply in: ${thread.title}`,
-      description: `${thread.author} posted in ${thread.categoryName}`,
+      // The excerpt, so a member's muted words match it too; the old line when the post has no text.
+      description: preview.excerpt || `${preview.author.name} posted in ${preview.board.name}`,
       metadata: {
         source: "forum",
         forumName: thread.categoryName,
@@ -280,8 +286,10 @@ async function forumActivityItems(db: PrismaClient) {
         forumUrl: thread.href,
       },
     },
+    forum: preview,
     engagement: { ...NO_ENGAGEMENT, comments: thread.replyCount },
-    timestamp: thread.lastPostAt,
+    // The previewed post's own time, not the thread's `lastPostAt` (a hidden newest post leaves an older one shown).
+    timestamp: postedAt ?? thread.lastPostAt,
     priority: "low",
     visibility: "public",
     relatedCountries: [],

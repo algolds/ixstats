@@ -212,6 +212,7 @@ export {
   type PublicForumThread,
   type PublicThreadsDb,
 } from "./public-threads";
+export { latestPublicThreadPreviews } from "./thread-preview";
 export {
   authorsOf,
   getCategoryThreads,

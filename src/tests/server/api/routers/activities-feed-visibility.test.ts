@@ -14,7 +14,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getRecentChanges: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("~/server/modules/thinkpages-forum", () => ({
-  latestPublicThreads: jest.fn().mockResolvedValue([]),
+  latestPublicThreadPreviews: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("~/server/db", () => ({ db: {} }));
 

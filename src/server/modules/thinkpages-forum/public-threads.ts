@@ -26,6 +26,15 @@ export interface PublicForumThread {
   href: string;
 }
 
+/** Where a listed thread sits: the category it is in, as a preview needs it. */
+export interface PublicThreadPlacement {
+  key: string;
+  name: string;
+  scope: string;
+  realmId: string | null;
+  style: string;
+}
+
 const EXCERPT_LENGTH = 200;
 
 const THREAD_SELECT = {
@@ -37,7 +46,7 @@ const THREAD_SELECT = {
   postCount: true,
   createdAt: true,
   lastPostAt: true,
-  category: { select: { name: true } },
+  category: { select: { key: true, name: true, scope: true, realmId: true, style: true } },
 } as const;
 
 interface ThreadRow {
@@ -49,7 +58,7 @@ interface ThreadRow {
   postCount: number;
   createdAt: Date;
   lastPostAt: Date;
-  category: { name: string };
+  category: PublicThreadPlacement;
 }
 
 /** Ids of the published realms (IxWorld always, with or without its row). */
@@ -101,18 +110,31 @@ async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<Publ
   });
 }
 
-/** The newest public threads by last activity. */
-export async function latestPublicThreads(
-  db: PublicThreadsDb,
-  limit: number
-): Promise<PublicForumThread[]> {
-  const rows = await db.forumThread.findMany({
+async function latestRows(db: PublicThreadsDb, limit: number): Promise<ThreadRow[]> {
+  return db.forumThread.findMany({
     where: await publicThreadWhere(db),
     orderBy: { lastPostAt: "desc" },
     take: limit,
     select: THREAD_SELECT,
   });
-  return withAuthors(db, rows);
+}
+
+/** The newest public threads by last activity. */
+export async function latestPublicThreads(
+  db: PublicThreadsDb,
+  limit: number
+): Promise<PublicForumThread[]> {
+  return withAuthors(db, await latestRows(db, limit));
+}
+
+/** `latestPublicThreads`, each with the category it sits in (the same single query), for post previews. */
+export async function latestPublicThreadsPlaced(
+  db: PublicThreadsDb,
+  limit: number
+): Promise<Array<PublicForumThread & { placement: PublicThreadPlacement }>> {
+  const rows = await latestRows(db, limit);
+  const threads = await withAuthors(db, rows);
+  return threads.map((thread, index) => ({ ...thread, placement: rows[index]!.category }));
 }
 
 /** An imported thread by its old XenForo id, when anyone may read it; its first post's text is the excerpt. */

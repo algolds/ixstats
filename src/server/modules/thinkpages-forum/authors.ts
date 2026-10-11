@@ -2,6 +2,7 @@
  * Author display data for a page of rows (reads.ts re-exports it, so call sites do not change).
  */
 import type { PrismaClient } from "@prisma/client";
+import type { PreviewAuthor } from "~/lib/thinkpages-forum/preview";
 import { personalAvatars } from "./personal-avatars";
 
 export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
@@ -76,5 +77,43 @@ export async function authorsOf(
         { displayName: p.displayName, username: p.username, avatarUrl: p.profileImageUrl },
       ])
     ),
+  };
+}
+
+export type AuthorMaps = Awaited<ReturnType<typeof authorsOf>>;
+
+/**
+ * An author as a preview outside the forum may show them, and the one place that rule lives (the Home feed card and
+ * the realm board preview both use it). A persona is its name and picture only: no flag, and the row's user id is
+ * never read, so the player cannot appear for any viewer. A member is their public name, picture and flag; imported
+ * content its XenForo name; else `fallback`.
+ */
+export function previewAuthorOf(
+  row: {
+    authorUserId: string | null;
+    authorPersonaId: string | null;
+    importedAuthorName: string | null;
+  },
+  maps: AuthorMaps,
+  fallback: string
+): PreviewAuthor {
+  if (row.authorPersonaId) {
+    const persona = maps.personas.get(row.authorPersonaId);
+    return {
+      name: persona?.displayName ?? "Persona",
+      avatarUrl: persona?.avatarUrl ?? null,
+      flagUrl: null,
+      persona: true,
+    };
+  }
+  const user = row.authorUserId ? maps.users.get(row.authorUserId) : undefined;
+  if (user) {
+    return { name: user.name, avatarUrl: user.avatarUrl, flagUrl: user.flagUrl, persona: false };
+  }
+  return {
+    name: row.importedAuthorName ?? fallback,
+    avatarUrl: null,
+    flagUrl: null,
+    persona: false,
   };
 }

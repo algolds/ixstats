@@ -1,3 +1,5 @@
+import type { ForumFeedPreview } from "~/lib/thinkpages-forum/preview";
+
 type DashboardFeedSource = "activity" | "thinkpages" | "wiki" | "forum";
 
 interface FeedUser {
@@ -58,10 +60,11 @@ interface WikiFeedItem extends BaseFeedItem {
 interface ForumFeedItem extends BaseFeedItem {
   source: "forum";
   content?: ActivityContent;
+  /** The post this item refers to; absent on an older cached item, which renders as a plain activity card. */
+  forum?: ForumFeedPreview;
 }
 
-type UnifiedFeedItemType =
-  ActivityFeedItem | ThinkpagesFeedItem | WikiFeedItem | ForumFeedItem;
+type UnifiedFeedItemType = ActivityFeedItem | ThinkpagesFeedItem | WikiFeedItem | ForumFeedItem;
 
 interface GroupedActivityItem extends BaseFeedItem {
   source: "activity";
