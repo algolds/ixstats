@@ -26,6 +26,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { STATUS_TEXT } from "./status-tone";
 import { SheetSection } from "./SheetSection";
+import { IntentDiscussions } from "./IntentDiscussions";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { Card } from "~/components/ui/card";
 
@@ -498,6 +499,10 @@ export function IntentDetail({
           <p className="text-label-secondary text-footnote leading-relaxed">{intent.summary}</p>
         </SheetSection>
       )}
+
+      {directive.data?.activityId ? (
+        <IntentDiscussions activityId={directive.data.activityId} />
+      ) : null}
 
       <ResistanceProgress linked={linked.data} />
       <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
