@@ -121,7 +121,8 @@ type FeedInput = z.infer<typeof activityFilterSchema>;
 
 /** ActivityFeed rows as feed items, with their users and countries batch-loaded (no N+1). */
 async function activityRowItems(db: PrismaClient, input: FeedInput, mergeCap: number) {
-  const where: Prisma.ActivityFeedWhereInput = {};
+  // Public rows only: an abandoned directive's row turns private and leaves every surface.
+  const where: Prisma.ActivityFeedWhereInput = { visibility: "public" };
   // Rows are stored with type "achievement"; the filter is named "achievements".
   if (input.filter !== "all" && input.filter !== "community")
     where.type = input.filter === "achievements" ? "achievement" : input.filter;
