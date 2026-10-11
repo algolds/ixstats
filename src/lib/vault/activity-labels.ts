@@ -26,6 +26,7 @@ const LABELS: Record<string, string> = {
   card_sale_buyout: "Card sold by buyout",
   card_purchase_buyout: "Card bought by buyout",
   auction_bid_reserve: "Auction bid reserved",
+  forum_action: "Action posted in the forum",
 };
 
 export function activitySourceLabel(key: string): string {

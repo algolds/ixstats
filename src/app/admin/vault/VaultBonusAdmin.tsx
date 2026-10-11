@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
+  ChatBubble,
   Gift,
   Refresh as RefreshCw,
   FloppyDisk as Save,
@@ -23,6 +24,8 @@ interface BonusField {
   key: string;
   label: string;
   hint?: string;
+  /** The suffix shown inside the input; "Credits" when absent. */
+  unit?: string;
   icon?: React.ComponentType<{ className?: string }>;
 }
 
@@ -90,6 +93,25 @@ const GROUPS: BonusGroup[] = [
         key: "loreward",
         label: "Per-Win Payout",
         hint: "Granted to winners of mapped wiki lore challenges",
+      },
+    ],
+  },
+  {
+    title: "Forum actions",
+    description: "Paid once per action, the first time a forum post links it",
+    icon: ChatBubble,
+    accentColor: "text-orange",
+    fields: [
+      {
+        key: "forumActionReward",
+        label: "Reward per action",
+        hint: "Credits for the first post that links an action",
+      },
+      {
+        key: "forumActionDailyCap",
+        label: "Rewarded actions per day",
+        hint: "Per country, per UTC day (0 turns the reward off)",
+        unit: "per day",
       },
     ],
   },
@@ -188,10 +210,11 @@ export function VaultBonusAdmin() {
                           setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
                         }
                         placeholder="0"
+                        aria-label={field.label}
                         className="w-full font-mono"
                       />
                       <span className="text-label-secondary text-eyebrow absolute top-1/2 right-3 -translate-y-1/2 tabular-nums">
-                        Credits
+                        {field.unit ?? "Credits"}
                       </span>
                     </div>
                   </div>

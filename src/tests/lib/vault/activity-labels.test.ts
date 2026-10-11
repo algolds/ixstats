@@ -10,6 +10,7 @@ describe("activitySourceLabel", () => {
     ["DAILY_LOGIN_CREDITS", "Daily reward"],
     ["P2P_TRADE", "Player trade"],
     ["auction_bid_reserve", "Auction bid reserved"],
+    ["forum_action", "Action posted in the forum"],
     ["exploit_correction:repeat_one_time_bonus", "Balance correction"],
   ])("maps %s to %s", (source, label) => {
     expect(activitySourceLabel(source)).toBe(label);

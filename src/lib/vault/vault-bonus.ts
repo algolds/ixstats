@@ -29,6 +29,10 @@ export interface VaultBonusConfig {
   achievementEpic: number;
   achievementLegendary: number;
   loreward: number;
+  /** Forum: credits for the first post that links an action (once per action ever). */
+  forumActionReward: number;
+  /** Forum: rewarded actions per country per UTC day. */
+  forumActionDailyCap: number;
 }
 
 export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
@@ -43,6 +47,8 @@ export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
   achievementEpic: 1000,
   achievementLegendary: 2500,
   loreward: 2500,
+  forumActionReward: 5,
+  forumActionDailyCap: 3,
 };
 
 const KEY = {
@@ -57,12 +63,16 @@ const KEY = {
   achievementEpic: "vault_bonus_achievement_epic",
   achievementLegendary: "vault_bonus_achievement_legendary",
   loreward: "vault_bonus_loreward",
+  forumActionReward: "vault_bonus_forum_action_reward",
+  forumActionDailyCap: "vault_bonus_forum_action_daily_cap",
 } as const satisfies Record<keyof VaultBonusConfig, string>;
 
 let cache: { value: VaultBonusConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
-export async function getBonusConfig(db: PrismaClient): Promise<VaultBonusConfig> {
+export async function getBonusConfig(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<VaultBonusConfig> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
 
@@ -86,7 +96,7 @@ export async function getBonusConfig(db: PrismaClient): Promise<VaultBonusConfig
 }
 
 export async function setBonusConfig(
-  db: PrismaClient,
+  db: Pick<PrismaClient, "systemConfig">,
   field: keyof VaultBonusConfig,
   value: number
 ): Promise<void> {
