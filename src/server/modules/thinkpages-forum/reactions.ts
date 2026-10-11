@@ -16,7 +16,7 @@ import {
   type ReactionCounts,
 } from "~/lib/thinkpages-forum/reactions";
 import type { ForumViewer } from "./access";
-import { ForumError, isUniqueViolation } from "./errors";
+import { ForumError, isMissingRecord, isUniqueViolation } from "./errors";
 import { loadReactablePost, loadReadablePost, type ReactionTargetDb } from "./reaction-target";
 import { authorsOf, type AuthorsDb, type ForumUserAuthor } from "./reads";
 
@@ -78,6 +78,7 @@ async function writeReaction(
     if (isUniqueViolation(error)) {
       throw new ForumError("CONFLICT", "Your reaction changed at the same moment. Try again.");
     }
+    if (isMissingRecord(error)) throw new ForumError("NOT_FOUND", "Post not found.");
     throw error;
   }
 }
@@ -93,13 +94,23 @@ export async function reactToPost(
   return writeReaction(db, actor.id, input.postId, input.type, board);
 }
 
-/** Takes the member's reaction back. Needs only that they can read the post, so a closed thread cannot trap it. */
+/**
+ * Takes the member's reaction back. Needs only that they can read the post, so a closed thread cannot trap it. With
+ * no reaction to take back it answers with the current counts and writes nothing.
+ */
 export async function unreactToPost(
   db: ReactionsDb,
   actor: NonNullable<ForumViewer>,
   input: { postId: string }
 ): Promise<ReactionChange> {
-  const { board } = await loadReadablePost(db, actor, input.postId);
+  const { post, board } = await loadReadablePost(db, actor, input.postId);
+  const existing = await db.forumPostReaction.findUnique({
+    where: { postId_userId: { postId: post.id, userId: actor.id } },
+    select: { id: true },
+  });
+  if (!existing) {
+    return { counts: readReactionCounts(post.reactionCounts), mine: null, created: false, board };
+  }
   return writeReaction(db, actor.id, input.postId, null, board);
 }
 

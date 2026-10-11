@@ -164,6 +164,29 @@ describe("loadReactablePost", () => {
     });
   });
 
+  it("checks the archived realm before the hidden post, so a moderator is told the realm is archived", async () => {
+    const store = reactionStore();
+    store.state.posts.push(
+      boardPost("p_old_hidden", 1, { threadId: "t_old", authorUserId: "u_member2", hidden: true })
+    );
+    await expect(reactable(member, "p_old_hidden", store)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(reactable(admin, "p_old_hidden", store)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringMatching(/archived/i),
+    });
+  });
+
+  it("refuses a member banned from the board's category, while the hub stays open to them", async () => {
+    const store = reactionStore();
+    store.state.bans.push(
+      ban({ userId: "u_member", scope: "category", scopeId: "cat_r_eurth_board" })
+    );
+    await expect(reactable(member, "b1", store)).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(await reactable(member, "p_hub", store)).toMatchObject({ board: false });
+  });
+
   it("finds nothing in a realm hidden from the viewer, and for an unknown post", async () => {
     await expect(reactable(member, "p_draft")).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(reactable(member, "b_draft")).rejects.toMatchObject({ code: "NOT_FOUND" });

@@ -19,3 +19,11 @@ export class ForumError extends Error {
 export function isUniqueViolation<E>(error: E): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
+
+/** A row deleted under a write (Prisma P2025, or P2003 for an insert whose parent is gone), for mapping to NOT_FOUND. */
+export function isMissingRecord<E>(error: E): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2025" || error.code === "P2003")
+  );
+}

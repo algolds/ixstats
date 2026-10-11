@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { Prisma } from "@prisma/client";
 import {
   listReactors,
   reactToPost,
@@ -107,17 +108,17 @@ describe("reactToPost", () => {
   it("writes nothing when the post cannot take a reaction", async () => {
     const store = reactionStore();
     store.state.bans.push(ban({ userId: "u_banned", scope: "realm", scopeId: "r_eurth" }));
-    for (const [viewer, id] of [
-      [member, "p_mine"],
-      [member, "p_hidden"],
-      [member, "p_locked"],
-      [member, "b_continued"],
-      [member, "p_draft"],
-      [member, "p_old"],
-      [admin, "b_old"],
-      [banned, "p_hub"],
+    for (const [viewer, id, code] of [
+      [member, "p_mine", "FORBIDDEN"],
+      [member, "p_hidden", "NOT_FOUND"],
+      [member, "p_locked", "CONFLICT"],
+      [member, "b_continued", "CONFLICT"],
+      [member, "p_draft", "NOT_FOUND"],
+      [member, "p_old", "CONFLICT"],
+      [admin, "b_old", "CONFLICT"],
+      [banned, "p_hub", "FORBIDDEN"],
     ] as const) {
-      await expect(react(store, viewer, id, "like")).rejects.toBeDefined();
+      await expect(react(store, viewer, id, "like")).rejects.toMatchObject({ code });
     }
     expect(store.reactions).toHaveLength(0);
     expect(store.db.$transaction).not.toHaveBeenCalled();
@@ -145,6 +146,31 @@ describe("reactToPost", () => {
     const store = reactionStore();
     store.reactionDb.create.mockRejectedValueOnce(new Error("connection lost"));
     await expect(react(store, member, "p_hub", "like")).rejects.toThrow("connection lost");
+  });
+
+  it("answers NOT_FOUND when the post is deleted between the checks and the write", async () => {
+    const lostUpdate = reactionStore();
+    lostUpdate.tx.forumPost.update.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Record to update not found.", {
+        code: "P2025",
+        clientVersion: "test",
+      })
+    );
+    await expect(react(lostUpdate, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(countsOf(lostUpdate, "p_hub")).toEqual({});
+
+    const lostParent = reactionStore();
+    lostParent.reactionDb.create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Foreign key constraint failed.", {
+        code: "P2003",
+        clientVersion: "test",
+      })
+    );
+    await expect(react(lostParent, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 
   it("lets an admin react to a persona post without learning or leaking the player", async () => {
@@ -190,6 +216,39 @@ describe("unreactToPost", () => {
     );
     store.state.bans.push(ban({ userId: "u_member", scope: "site" }));
     expect(await unreact(store, member, "p_hub")).toMatchObject({ counts: {}, mine: null });
+  });
+
+  it("still works after the realm archives", async () => {
+    const store = reactionStore();
+    await react(store, member, "p_hub", "like");
+    await react(store, visitor, "p_hub", "fire");
+    Object.assign(
+      store.state.realms.find((r) => r.id === "r_eurth")!,
+      { status: "archived" }
+    );
+    await expect(react(store, member, "p_hub", "fire")).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(await unreact(store, member, "p_hub")).toMatchObject({
+      counts: { fire: 1 },
+      mine: null,
+    });
+  });
+
+  it("answers with the current counts and writes nothing when there is no reaction to take back", async () => {
+    const store = reactionStore();
+    await react(store, visitor, "b1", "fire");
+    store.db.$transaction.mockClear();
+    store.reactionDb.delete.mockClear();
+    store.db.forumPost.update.mockClear();
+    expect(await unreact(store, member, "b1")).toEqual({
+      counts: { fire: 1 },
+      mine: null,
+      created: false,
+      board: true,
+    });
+    expect(store.db.$transaction).not.toHaveBeenCalled();
+    expect(store.reactionDb.delete).not.toHaveBeenCalled();
+    expect(store.db.forumPost.update).not.toHaveBeenCalled();
+    expect(store.reactions).toHaveLength(1);
   });
 
   it("finds nothing for a post the member cannot read", async () => {
