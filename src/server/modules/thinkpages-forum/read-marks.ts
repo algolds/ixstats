@@ -4,7 +4,7 @@
  * forward. The thread mark reads the newest visible post of the page the member is shown from the database, never from
  * the client, and never past the thread's last post.
  */
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import type { ForumViewer } from "./access";
 import { boardThreadOf } from "./board-thread";
@@ -22,7 +22,7 @@ import { readerFloor, unreadIdsOf, type UnreadDb } from "./unread";
 
 export type ReadMarksDb = ReadsDb &
   UnreadDb &
-  Pick<PrismaClient, "forumThreadWatch" | "$transaction">;
+  Pick<PrismaClient, "forumThreadWatch" | "$executeRaw">;
 
 /** Threads of one board read per round of "Mark board read". */
 export const MARK_CATEGORY_CHUNK = 500;
@@ -39,7 +39,10 @@ async function advanceRead(
   threadId: string,
   readAt: Date
 ): Promise<void> {
-  await db.forumThreadRead.createMany({ data: [{ userId, threadId, readAt }], skipDuplicates: true });
+  await db.forumThreadRead.createMany({
+    data: [{ userId, threadId, readAt }],
+    skipDuplicates: true,
+  });
   await db.forumThreadRead.updateMany({
     where: { userId, threadId, readAt: { lt: readAt } },
     data: { readAt },
@@ -111,8 +114,8 @@ export async function markCategoryRead(
 }
 
 /**
- * Marks the unread ones of `threads` read up to their last post, in one transaction; how many. A read time only moves
- * forward: rows are created if missing, then bumped only where older, so a concurrent advance is never lowered.
+ * Marks the unread ones of `threads` read up to their last post, in one statement; how many. The upsert only moves a
+ * read time forward (`WHERE` on the conflict), so a concurrent advance after the unread check is never lowered.
  */
 async function markUnreadOf(
   db: ReadMarksDb,
@@ -123,18 +126,12 @@ async function markUnreadOf(
   const unread = await unreadIdsOf(db, userId, threads, floor);
   const rows = threads.filter((thread) => unread.has(thread.id));
   if (rows.length === 0) return 0;
-  await db.$transaction([
-    db.forumThreadRead.createMany({
-      data: rows.map((thread) => ({ userId, threadId: thread.id, readAt: thread.lastPostAt })),
-      skipDuplicates: true,
-    }),
-    ...rows.map((thread) =>
-      db.forumThreadRead.updateMany({
-        where: { userId, threadId: thread.id, readAt: { lt: thread.lastPostAt } },
-        data: { readAt: thread.lastPostAt },
-      })
-    ),
-  ]);
+  const values = rows.map((thread) => Prisma.sql`(${userId}, ${thread.id}, ${thread.lastPostAt})`);
+  await db.$executeRaw(Prisma.sql`
+    INSERT INTO forum_thread_reads ("userId", "threadId", "readAt")
+    VALUES ${Prisma.join(values)}
+    ON CONFLICT ("userId", "threadId") DO UPDATE SET "readAt" = EXCLUDED."readAt"
+    WHERE forum_thread_reads."readAt" < EXCLUDED."readAt"`);
   return rows.length;
 }
 
