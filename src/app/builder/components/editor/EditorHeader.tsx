@@ -7,7 +7,6 @@ import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { BuilderSection } from "../../lib/builder-theme";
 import type { BuilderAlertResult } from "../../lib/builder-alerts";
@@ -15,7 +14,7 @@ import type { EditorSection } from "../../lib/edit-changes";
 import { BuilderModeToggle } from "../BuilderModeToggle";
 import { useBuilderGuide } from "../builder-guide-context";
 import { EDITOR_NAV, describeSaveStatus, type EditorSaveStatus } from "./editor-sections";
-import { Card } from "~/components/ui/card";
+import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 
 interface EditorHeaderProps {
   countryName: string;
@@ -33,7 +32,7 @@ function CountryFlag({ url, name }: { url?: string | null; name: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = src && failedSrc !== src;
   return (
-    <div className="border-separator bg-fill-3 rounded-control flex h-10 w-14 shrink-0 items-center justify-center overflow-hidden border sm:h-12 sm:w-[72px]">
+    <div className="border-separator bg-fill-3 flex h-6 w-9 shrink-0 items-center justify-center overflow-hidden rounded-sm border">
       {showImage ? (
         <img
           src={src}
@@ -42,16 +41,25 @@ function CountryFlag({ url, name }: { url?: string | null; name: string }) {
           onError={() => setFailedSrc(src)}
         />
       ) : (
-        <WhiteFlag aria-hidden="true" className="text-label-secondary h-5 w-5" />
+        <WhiteFlag aria-hidden="true" className="text-label-secondary h-4 w-4" />
       )}
     </div>
   );
 }
 
+function sectionStatus(changes: number, errors: number): string {
+  return [
+    changes > 0 ? `${changes} ${changes === 1 ? "change" : "changes"}` : null,
+    errors > 0 ? `${errors} ${errors === 1 ? "issue" : "issues"} to fix` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
 /**
- * The country editor's header: a way back to MyCountry, the country being
- * edited, and navigation that jumps straight to any section, each showing how
- * many of its fields changed and whether it has problems to fix.
+ * The country editor's toolbar: a way back to MyCountry, the country being edited with its save status, and
+ * tabs that jump straight to any section, each showing how many of its fields changed and whether it has
+ * problems to fix. One compact sticky row (two on phones) so the page is left to the editor's controls.
  */
 export const EditorHeader = React.memo(function EditorHeader({
   countryName,
@@ -67,41 +75,20 @@ export const EditorHeader = React.memo(function EditorHeader({
   const displayName = countryName.trim() || "Your country";
 
   return (
-    <header className="mx-auto w-full max-w-6xl px-4 pb-4">
-      <Card className="rounded-card flex flex-col gap-4 p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button asChild variant="ghost" size="sm" className="text-body -ml-2 gap-1">
-            <Link href="/mycountry">
+    <header className="z-sticky sticky top-(--shell-top-offset) mx-auto w-full max-w-6xl px-4 pb-3">
+      <FacetMaterial className="flex flex-wrap items-center gap-x-3 gap-y-2 px-2 py-2 md:flex-nowrap">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
+          <Button asChild variant="ghost" size="icon" className="shrink-0">
+            <Link href="/mycountry" aria-label="Back to MyCountry">
               <NavArrowLeft aria-hidden="true" className="h-4 w-4" />
-              MyCountry
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <BuilderModeToggle />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                soundEffects.press();
-                openGuide({ tab: "milestones", section: activeSection });
-              }}
-            >
-              <OpenBook aria-hidden="true" className="h-4 w-4" />
-              <span className="hidden sm:inline">Guide</span>
-              <span className="sr-only sm:hidden">Open the guide</span>
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex min-w-0 items-center gap-4">
           <CountryFlag url={flagUrl} name={displayName} />
           <div className="min-w-0">
-            <Eyebrow className="block">Country editor</Eyebrow>
-            <h1 className="text-label text-title-2 sm:text-title-1 truncate">{displayName}</h1>
+            <h1 className="text-label text-headline truncate">{displayName}</h1>
             <p
               className={cn(
-                "text-body",
+                "text-caption truncate",
                 saveStatus === "error" ? "text-destructive" : "text-label-secondary"
               )}
             >
@@ -110,71 +97,78 @@ export const EditorHeader = React.memo(function EditorHeader({
           </div>
         </div>
 
-        <nav aria-label="Editor sections">
-          <ul className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="flex shrink-0 items-center gap-2 md:order-last">
+          <BuilderModeToggle />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              soundEffects.press();
+              openGuide({ tab: "milestones", section: activeSection });
+            }}
+          >
+            <OpenBook aria-hidden="true" className="h-4 w-4" />
+            <span className="hidden lg:inline">Guide</span>
+            <span className="sr-only lg:hidden">Open the guide</span>
+          </Button>
+        </div>
+
+        <nav
+          aria-label="Editor sections"
+          className="order-last w-full min-w-0 overflow-x-auto md:order-none md:flex md:w-auto md:flex-1 md:justify-center"
+          style={{ scrollbarWidth: "none" }}
+        >
+          <ul className="flex items-center gap-1">
             {EDITOR_NAV.map((item) => {
               const isActive = item.section === activeSection;
               const changes = item.changeSection ? changeCounts[item.changeSection] : 0;
-              const counts = alertResult?.sectionCounts[item.section];
-              const errors = counts?.error ?? 0;
+              const errors = alertResult?.sectionCounts[item.section]?.error ?? 0;
+              const status = sectionStatus(changes, errors);
               const Icon = item.icon;
-              const status = [
-                changes > 0 ? `${changes} ${changes === 1 ? "change" : "changes"}` : null,
-                errors > 0 ? `${errors} ${errors === 1 ? "issue" : "issues"} to fix` : null,
-              ]
-                .filter(Boolean)
-                .join(", ");
 
               return (
-                <li key={item.section}>
+                <li key={item.section} className="shrink-0">
                   <button
                     type="button"
                     onClick={() => onNavigate(item.section)}
                     aria-current={isActive ? "page" : undefined}
+                    title={item.description}
                     data-cuelume-press="tick"
                     data-cuelume-hover="tick"
                     className={cn(
-                      "rounded-row flex h-full min-h-11 w-full items-start gap-3 border p-3 text-left transition-[background-color,border-color,transform] duration-150 active:scale-[0.98]",
+                      "text-subhead flex h-9 items-center gap-2 rounded-full border px-3 whitespace-nowrap transition-colors duration-150",
                       "focus-visible:ring-tint focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                       isActive
-                        ? "border-tint/50 bg-tint-fill"
-                        : "border-separator bg-surface hover:bg-fill-3"
+                        ? "border-tint/50 bg-tint-fill text-label font-semibold"
+                        : "text-label-secondary hover:bg-fill-3 hover:text-label border-transparent"
                     )}
                   >
                     <Icon
                       aria-hidden="true"
-                      className={cn(
-                        "mt-0.5 h-5 w-5 shrink-0",
-                        isActive ? "text-tint" : "text-label-secondary"
-                      )}
+                      className={cn("h-4 w-4 shrink-0", isActive && "text-tint")}
                     />
-                    <span className="min-w-0 flex-1">
-                      <span className="text-label text-headline flex items-center gap-2">
-                        {item.label}
-                        {status && <span className="sr-only">({status})</span>}
-                      </span>
-                      <span className="text-label-secondary text-footnote hidden sm:block">
-                        {item.description}
-                      </span>
-                    </span>
-                    <span aria-hidden="true" className="flex shrink-0 items-center gap-1">
-                      {errors > 0 && <WarningCircle className="text-destructive h-4 w-4" />}
-                      {changes > 0 && (
-                        <Badge
-                          variant="outline"
-                          className="border-tint/40 bg-tint-fill tabular-nums"
-                        >
-                          {changes}
-                        </Badge>
-                      )}
-                    </span>
+                    {item.label}
+                    {status && <span className="sr-only">({status})</span>}
+                    {errors > 0 && (
+                      <WarningCircle aria-hidden="true" className="text-destructive h-3.5 w-3.5" />
+                    )}
+                    {changes > 0 && (
+                      <Badge
+                        aria-hidden="true"
+                        variant="outline"
+                        className="border-tint/40 bg-tint-fill px-1 py-0 tabular-nums"
+                      >
+                        {changes}
+                      </Badge>
+                    )}
                   </button>
                 </li>
               );
             })}
           </ul>
         </nav>
-      </Card>
+      </FacetMaterial>
     </header>
   );
 });

@@ -12,6 +12,7 @@ import { withVia } from "~/lib/realms/realm-invite";
 import { useInviteVia } from "~/components/realms/use-invite-via";
 import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { ClaimStatusBadge, type MyClaim } from "./MyClaims";
+import { ClaimConsent, consentInput, NO_CONSENT } from "~/components/realms/ClaimConsent";
 
 interface NationPageItem {
   title: string;
@@ -38,6 +39,7 @@ export function ClaimableNations({
   const via = useInviteVia();
   const [submitted, setSubmitted] = useState<ReadonlySet<string>>(new Set());
   const [acceptedRules, setAcceptedRules] = useState(false);
+  const [consent, setConsent] = useState(NO_CONSENT);
   const needsRules = !!rules && !acceptedRules;
   const { data: myClaims } = api.realms.myClaims.useQuery({ realmSlug }, { enabled: !!isSignedIn });
   // Newest first: the first claim per page is the one that counts (a rejected claim can be filed again).
@@ -81,6 +83,11 @@ export function ClaimableNations({
           </>
         )}
       </p>
+      {isSignedIn && (
+        <div className="mb-3">
+          <ClaimConsent value={consent} onChange={setConsent} />
+        </div>
+      )}
       {isSignedIn && rules && (
         <div className="bg-fill-4 rounded-row mb-3 flex flex-col gap-2 p-3">
           <p className="text-label text-footnote font-medium">
@@ -125,11 +132,12 @@ export function ClaimableNations({
                     variant="outline"
                     className="ml-auto"
                     aria-label={`Claim ${page.title}`}
-                    disabled={claim.isPending || isPending || needsRules}
+                    disabled={claim.isPending || isPending || needsRules || !consent.accepted}
                     onClick={() =>
                       claim.mutate({
                         realmSlug,
                         title: page.title,
+                        consent: consentInput(consent),
                         ...(rules && { acceptedRules }),
                         ...(via && { via }),
                       })

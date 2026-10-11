@@ -19,6 +19,7 @@ import {
   REALM_TAGS,
 } from "~/lib/realms/realm-region";
 import { InWorldDateSchema, RealmLinksSchema } from "~/lib/realms/realm-community";
+import { INACTIVITY_MAX_DAYS, INACTIVITY_MIN_DAYS } from "~/lib/realms/realm-content";
 import { globalCache } from "~/lib/cache";
 import {
   getRealmHappenings,
@@ -39,6 +40,7 @@ import {
   updateRealmAppearance,
   updateRealmFactbook,
   updateRealmInWorldDate,
+  updateRealmInactivity,
   updateRealmLinks,
   updateRealmOfficer,
   updateRealmRules,
@@ -142,6 +144,27 @@ export const realmRegionRouter = createTRPCRouter({
     .input(z.object({ slug, inWorldDate: InWorldDateSchema.nullable() }))
     .mutation(({ ctx, input }) =>
       updateRealmInWorldDate(ctx.db, ctx.user, input).catch(regionError)
+    ),
+
+  /**
+   * Founder: when an inactive nation is released (ToS §2.8), in days (`null`: never), and whether the realm keeps
+   * it for its former holder during the reclaim window.
+   */
+  updateInactivity: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        slug,
+        inactivityDays: z
+          .number()
+          .int()
+          .min(INACTIVITY_MIN_DAYS)
+          .max(INACTIVITY_MAX_DAYS)
+          .nullable(),
+        reclaimWindowExclusive: z.boolean(),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      updateRealmInactivity(ctx.db, ctx.user, input).catch(regionError)
     ),
 
   /** Founder: nation owners of the realm who could be appointed. */

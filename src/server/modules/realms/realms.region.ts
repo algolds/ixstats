@@ -4,7 +4,7 @@
  * forum threads and happenings — and the staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
-import { UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
+import { UNPUBLISHED_REALM_STATUSES, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
@@ -19,6 +19,7 @@ import {
 } from "./realms.access";
 import { forumPreview } from "./realms.forum-preview";
 import { realmInWorldDate } from "./realms.settings";
+import { realmInactivityDays, realmReclaimWindowExclusive } from "~/lib/realms/realm-content";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
 
@@ -47,7 +48,10 @@ export async function loadRegionRealm(
   slug: string,
   actor: RealmActor | null
 ) {
-  const realm = await db.realm.findUnique({ where: { slug }, select: STAFF_REALM_SELECT });
+  const realm = await db.realm.findUnique({
+    where: realmSlugWhere(slug),
+    select: STAFF_REALM_SELECT,
+  });
   if (!realm) throw new RealmRegionError("NOT_FOUND", "Realm not found");
   if (!isRealmPublished(realm.id, realm.status) && !(actor && canModerateRealm(actor, realm)))
     throw new RealmRegionError("NOT_FOUND", "Realm not found");
@@ -186,7 +190,7 @@ function rulesSummary(html: string): string {
 /** Everything the realm page's front page and header need, in one call. */
 export async function getRealmOverview(db: OverviewDb, slug: string, viewer: RealmActor | null) {
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: {
       id: true,
       slug: true,
@@ -570,6 +574,12 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       : null,
     links: can("appearance") ? parseRealmLinks(realm.communityLinks) : null,
     inWorldDate: can("appearance") ? { value: realmInWorldDate(realm.settings) } : null,
+    inactivity: isFounder
+      ? {
+          days: realmInactivityDays(staff.id, realm.settings),
+          exclusiveWindow: realmReclaimWindowExclusive(realm.settings),
+        }
+      : null,
     officers: officers.map((o) => ({
       userId: o.userId,
       title: o.title,

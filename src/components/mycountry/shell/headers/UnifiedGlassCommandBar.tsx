@@ -63,12 +63,20 @@ export function UnifiedGlassCommandBar({
   const name = country?.name ?? "MyCountry";
   const motto = str(country?.nationalIdentity?.motto);
   const governmentType = str(country?.governmentType);
-  const realm = country?.realm ? { name: country.realm.name, slug: country.realm.slug } : null;
+  const realm = country?.realm
+    ? {
+        name: country.realm.name,
+        slug: country.realm.slug,
+        logoUrl: country.realm.emblemUrl ?? country.realm.thumbnail,
+      }
+    : null;
   const owner = country?.owner;
   const sovereign = owner
     ? {
         username: str(owner.forumUsername) ?? str(owner.wikiUsername),
         roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
+        avatarUrl: owner.avatarUrl,
+        role: owner.clerkRole ?? str(owner.role?.name),
       }
     : null;
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);

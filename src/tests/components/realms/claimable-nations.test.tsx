@@ -68,6 +68,9 @@ function renderList() {
   return render(<ClaimableNations realmSlug="eurth" pages={pages} />);
 }
 
+/** Tick the realm content consent (ToS §2.6) every claim needs. */
+const agree = () => fireEvent.click(screen.getByRole("checkbox", { name: /my own work/ }));
+
 describe("ClaimableNations", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -88,10 +91,31 @@ describe("ClaimableNations", () => {
     );
   });
 
+  it("waits for the realm content consent and sends who gave permission", () => {
+    renderList();
+    const claim = screen.getByRole("button", { name: "Claim Aurelia" });
+    expect(claim).toBeDisabled();
+    agree();
+    fireEvent.change(screen.getByRole("textbox", { name: "Who gave permission" }), {
+      target: { value: " Kir " },
+    });
+    fireEvent.click(claim);
+    expect(mockMutate).toHaveBeenCalledWith({
+      realmSlug: "eurth",
+      title: "Aurelia",
+      consent: { accepted: true, permissionNote: "Kir" },
+    });
+  });
+
   it("claims the page by realm slug and title", () => {
     renderList();
+    agree();
     fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockMutate).toHaveBeenCalledWith({ realmSlug: "eurth", title: "Aurelia" });
+    expect(mockMutate).toHaveBeenCalledWith({
+      realmSlug: "eurth",
+      title: "Aurelia",
+      consent: { accepted: true },
+    });
   });
 
   it("a pending claim says a moderator will review it and how to be approved instantly", () => {
@@ -99,6 +123,7 @@ describe("ClaimableNations", () => {
       options.onSuccess?.({ claimId: "cl1", status: "pending", autoApproved: false }, input)
     );
     renderList();
+    agree();
     fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
     expect(mockNotify.info).toHaveBeenCalledWith(
       "Claim submitted",
@@ -116,6 +141,7 @@ describe("ClaimableNations", () => {
       options.onSuccess?.({ claimId: "cl1", status: "approved", autoApproved: true }, input)
     );
     renderList();
+    agree();
     fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
     expect(mockNotify.success).toHaveBeenCalledWith("Aurelia is yours", expect.any(String));
     expect(mockInvalidate).toHaveBeenCalledWith({ slug: "eurth" });
@@ -126,6 +152,7 @@ describe("ClaimableNations", () => {
       options.onError?.({ message: "This nation already belongs to another player" })
     );
     renderList();
+    agree();
     fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
     expect(mockNotify.error).toHaveBeenCalledWith(
       "Claim failed",
@@ -149,11 +176,14 @@ describe("ClaimableNations", () => {
     const claim = screen.getByRole("button", { name: "Claim Aurelia" });
     expect(claim).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox", { name: "I have read the realm's rules" }));
+    expect(claim).toBeDisabled();
+    agree();
     expect(claim).toBeEnabled();
     fireEvent.click(claim);
     expect(mockMutate).toHaveBeenCalledWith({
       realmSlug: "eurth",
       title: "Aurelia",
+      consent: { accepted: true },
       acceptedRules: true,
     });
   });
@@ -172,10 +202,12 @@ describe("ClaimableNations", () => {
   it("an invite link's via rides along with the claim", () => {
     mockSearch = "via=ambassador";
     renderList();
+    agree();
     fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
     expect(mockMutate).toHaveBeenCalledWith({
       realmSlug: "eurth",
       title: "Aurelia",
+      consent: { accepted: true },
       via: "ambassador",
     });
   });

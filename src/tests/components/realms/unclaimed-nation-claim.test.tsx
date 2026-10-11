@@ -61,8 +61,11 @@ describe("ClaimNationButton", () => {
   it("claims the existing country through the claim flow after confirming", () => {
     render(<ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" label="Claim this nation" />);
     fireEvent.click(screen.getByRole("button", { name: "Claim this nation" }));
-    fireEvent.click(screen.getByRole("button", { name: "Claim Tavok" }));
-    expect(mockMutate).toHaveBeenCalledWith({ countryId: "c1" });
+    const confirm = screen.getByRole("button", { name: "Claim Tavok" });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Tavok's wiki pages, flag/ }));
+    fireEvent.click(confirm);
+    expect(mockMutate).toHaveBeenCalledWith({ countryId: "c1", consent: { accepted: true } });
   });
 
   it("waits for the realm's rules to be accepted when the realm has rules", () => {
@@ -71,9 +74,15 @@ describe("ClaimNationButton", () => {
     fireEvent.click(screen.getByRole("button", { name: "Claim" }));
     const confirm = screen.getByRole("button", { name: "Claim Tavok" });
     expect(confirm).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Tavok's wiki pages, flag/ }));
+    expect(confirm).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "I have read the realm's rules" }));
     fireEvent.click(confirm);
-    expect(mockMutate).toHaveBeenCalledWith({ countryId: "c1", acceptedRules: true });
+    expect(mockMutate).toHaveBeenCalledWith({
+      countryId: "c1",
+      consent: { accepted: true },
+      acceptedRules: true,
+    });
   });
 });
 

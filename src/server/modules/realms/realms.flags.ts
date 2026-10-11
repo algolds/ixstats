@@ -15,7 +15,7 @@
  * build's copy (`.next/standalone/public`, copied by scripts/post-build.sh), so new files are copied there too.
  */
 import type { PrismaClient } from "@prisma/client";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { invalidateCache } from "~/lib/cache";
@@ -221,4 +221,35 @@ export async function localizeRealmFlags(
     await invalidateCache(["countries.", "geoCore."]);
   }
   return report;
+}
+
+/**
+ * Delete local flag and arms images a purged material hold named (ToS §2.7): each `/flags/<file>` no country still
+ * shows (a later holder's localized image can reuse the name), from `public/flags/`, the standalone build's copy,
+ * and the metadata index. Wiki URLs are not ours to delete and are skipped. Returns how many files were removed.
+ */
+export async function deleteLocalFlagImages(
+  db: FlagsDb,
+  images: readonly (string | null)[]
+): Promise<number> {
+  const local = images.filter((image): image is string => !!image?.startsWith(LOCAL_FLAG_PREFIX));
+  if (local.length === 0) return 0;
+  const stillShown = await db.country.findMany({
+    where: { OR: [{ flag: { in: local } }, { coatOfArms: { in: local } }] },
+    select: { flag: true, coatOfArms: true },
+  });
+  const shown = new Set(stillShown.flatMap((c) => [c.flag, c.coatOfArms]));
+  const fileNames = local
+    .filter((image) => !shown.has(image))
+    .map((image) => path.basename(image.slice(LOCAL_FLAG_PREFIX.length)));
+  if (fileNames.length === 0) return 0;
+  const standaloneDir = path.join(process.cwd(), ".next", "standalone", "public", "flags");
+  for (const fileName of fileNames) {
+    await rm(path.join(flagsDir(), fileName), { force: true });
+    await rm(path.join(standaloneDir, fileName), { force: true });
+  }
+  const metadata = await loadMetadata();
+  for (const fileName of fileNames) delete metadata.flags[fileName.replace(/\.[^.]+$/, "")];
+  await saveMetadata(metadata);
+  return fileNames.length;
 }

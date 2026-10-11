@@ -1,19 +1,3 @@
-import type { GovernmentType } from "~/types/government";
-
-export const governmentTypes: GovernmentType[] = [
-  "Constitutional Monarchy",
-  "Federal Republic",
-  "Parliamentary Democracy",
-  "Presidential Republic",
-  "Federal Constitutional Republic",
-  "Unitary State",
-  "Federation",
-  "Confederation",
-  "Empire",
-  "City-State",
-  "Other",
-];
-
 export const validStances = [
   "Balanced Budget Directive",
   "Deficit Spending Strategy",

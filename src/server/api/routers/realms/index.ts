@@ -43,6 +43,7 @@ import { realmMapRouter } from "./map";
 import { realmMapPipelineRouter } from "./map-pipeline";
 import { realmWikiRouter } from "./wiki";
 import { realmNationDefaultsRouter } from "./nation-defaults";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
 async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): Promise<void> {
@@ -102,7 +103,17 @@ const CLAIM_ERROR_CODES = {
   REALM_CLOSED: "FORBIDDEN",
   SLUG_CONFLICT: "CONFLICT",
   RULES_NOT_ACCEPTED: "PRECONDITION_FAILED",
+  RECLAIM_WINDOW: "CONFLICT",
 } as const;
+
+/**
+ * The realm content terms consent (ToS §2.6) every claim carries: the claimant ticked that the nation's material
+ * is theirs or that they have permission; `permissionNote` says who gave it.
+ */
+const claimConsent = z.object({
+  accepted: z.literal(true),
+  permissionNote: z.string().trim().max(500).optional(),
+});
 
 function claimError(error: Error): never {
   if (error instanceof ClaimError)
@@ -135,6 +146,7 @@ export const realmsRouter = createTRPCRouter({
         countryId: z.string().min(1),
         acceptedRules: z.boolean().optional(),
         via: inviteVia,
+        consent: claimConsent,
       })
     )
     .mutation(({ ctx, input }) =>
@@ -142,6 +154,7 @@ export const realmsRouter = createTRPCRouter({
         .claimCountry(ctx.user, input.countryId, {
           acceptedRules: input.acceptedRules,
           via: input.via,
+          consent: input.consent,
         })
         .catch(claimError)
     ),
@@ -154,11 +167,12 @@ export const realmsRouter = createTRPCRouter({
         title: z.string().trim().min(1).max(255),
         acceptedRules: z.boolean().optional(),
         via: inviteVia,
+        consent: claimConsent,
       })
     )
     .mutation(async ({ ctx, input }) => {
       const realm = await ctx.db.realm.findUnique({
-        where: { slug: input.realmSlug },
+        where: realmSlugWhere(input.realmSlug),
         select: { id: true },
       });
       if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
@@ -166,6 +180,7 @@ export const realmsRouter = createTRPCRouter({
         .claimNationPage(ctx.user, realm.id, input.title, {
           acceptedRules: input.acceptedRules,
           via: input.via,
+          consent: input.consent,
         })
         .catch(claimError);
     }),
@@ -262,7 +277,9 @@ export const realmsRouter = createTRPCRouter({
   adminCreateRealm: adminProcedure
     .input(
       z.object({
-        slug: z.string().regex(REALM_SLUG_PATTERN, "2–40 lower-case letters, digits or hyphens (not mine)"),
+        slug: z
+          .string()
+          .regex(REALM_SLUG_PATTERN, "2–40 lower-case letters, digits or hyphens (not mine)"),
         name: z.string().trim().min(1).max(100),
         description: z.string().max(1000).optional(),
         visibility: z.enum(["public", "unlisted"]),
@@ -323,7 +340,9 @@ export const realmsRouter = createTRPCRouter({
   nationDefaults: realmNationDefaultsRouter,
 
   /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
-  directory: rateLimitedPublicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
+  directory: rateLimitedPublicProcedure.query(({ ctx }) =>
+    listRealmDirectory(ctx.db, ctx.user?.id ?? null)
+  ),
 
   /** Nation search on /realms: countries and claimable nation pages in the realms the directory lists. */
   searchNations: rateLimitedPublicProcedure

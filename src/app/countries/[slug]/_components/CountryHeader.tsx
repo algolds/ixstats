@@ -47,13 +47,23 @@ export function CountryHeader() {
         { label: "Anthem", value: str(identity?.nationalAnthem) },
         { label: "Demonym", value: str(identity?.demonym) },
       ]}
-      realm={c.realm ? { name: String(c.realm.name), slug: String(c.realm.slug) } : null}
+      realm={
+        c.realm
+          ? {
+              name: String(c.realm.name),
+              slug: String(c.realm.slug),
+              logoUrl: str(c.realm.emblemUrl) ?? str(c.realm.thumbnail),
+            }
+          : null
+      }
       sovereign={
         c.owner
           ? {
               username:
                 str(c.owner.handle) ?? str(c.owner.forumUsername) ?? str(c.owner.wikiUsername),
               roleName: str(c.owner.role?.displayName) ?? str(c.owner.role?.name),
+              avatarUrl: str(c.owner.avatarUrl),
+              role: str(c.owner.clerkRole) ?? str(c.owner.role?.name),
             }
           : null
       }

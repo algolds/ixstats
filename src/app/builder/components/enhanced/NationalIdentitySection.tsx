@@ -43,17 +43,12 @@ export function NationalIdentitySection({
     setShowCoatOfArmsImageModal,
     selectedGovernmentType,
     setSelectedGovernmentType,
-    customOfficialName,
-    setCustomOfficialName,
-    isEditingCustomName,
-    setIsEditingCustomName,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,
     foundationCountryName,
     flag,
     handleColorsExtracted,
     customGovernmentTypes,
-    upsertCustomGovernmentType,
     identity,
     handleIdentityChange,
     handleFlagUrlChange,
@@ -90,21 +85,6 @@ export function NationalIdentitySection({
       });
     },
     [setSelectedGovernmentType, handleIdentityChange, setBuilderState]
-  );
-
-  const handleCustomOfficialNameFocus = useCallback(() => {
-    setIsEditingCustomName(true);
-  }, [setIsEditingCustomName]);
-
-  const handleCustomOfficialNameBlur = useCallback(
-    (value: string) => {
-      setIsEditingCustomName(false);
-      handleIdentityChange("officialName", value);
-      if (value.trim()) {
-        upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
-      }
-    },
-    [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]
   );
 
   // Tab configuration from global builder state
@@ -177,12 +157,7 @@ export function NationalIdentitySection({
               onGovernmentStructureChange={handleGovernmentStructureChange}
               onIdentityChange={handleIdentityChange}
               selectedGovernmentType={selectedGovernmentType}
-              customOfficialName={customOfficialName}
-              isEditingCustomName={isEditingCustomName}
               onGovernmentTypeChange={handleGovernmentTypeChange}
-              onCustomOfficialNameChange={setCustomOfficialName}
-              onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
-              onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
               setShouldFetchCustomTypes={setShouldFetchCustomTypes}
               customGovernmentTypes={customGovernmentTypes}
               onFieldSave={handleFieldValueSave}

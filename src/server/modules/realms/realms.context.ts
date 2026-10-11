@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { DEFAULT_REALM_ID, isIxnaySlug } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, isIxnaySlug, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { isRealmHiddenFrom, type RealmActor } from "./realms.access";
 
 export { DEFAULT_REALM_ID };
@@ -14,7 +14,7 @@ export async function findRealmIdBySlug(
   viewer?: RealmActor | null
 ): Promise<string | null> {
   const realm = await db.realm.findUnique({
-    where: { slug: realmSlug },
+    where: realmSlugWhere(realmSlug),
     select: { id: true, status: true, ownerId: true },
   });
   if (realm) return isRealmHiddenFrom(viewer, realm) ? null : realm.id;

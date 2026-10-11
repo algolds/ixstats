@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
 import { rateLimiter } from "~/lib/cache";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { requireAdminSession } from "~/server/shared/route-auth";
 
 /** Maputnik loads every source of a style at once; this leaves room for several reloads a minute. */
@@ -214,7 +214,7 @@ const OVERLAY_ALIASES = new Map(
 async function requestedRealmId(request: NextRequest): Promise<string | null> {
   const slug = request.nextUrl.searchParams.get("realm");
   if (!slug) return DEFAULT_REALM_ID;
-  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true } });
+  const realm = await db.realm.findUnique({ where: realmSlugWhere(slug), select: { id: true } });
   return realm?.id ?? null;
 }
 

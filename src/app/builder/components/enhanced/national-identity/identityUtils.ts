@@ -68,6 +68,53 @@ export function formatCeremonialName(countryName: string, governmentType: string
   return trimmedName;
 }
 
+/** The government's default name, e.g. "Eldoria" -> "Government of Eldoria". */
+export function autoGovernmentName(countryName: string): string {
+  const name = countryName.trim();
+  return name ? `Government of ${name}` : "";
+}
+
+/** Whether a derived field still holds its automatic value; empty counts as automatic. */
+export function isAutoValue(value: string | null | undefined, autoValue: string): boolean {
+  const trimmed = (value ?? "").trim();
+  return !trimmed || trimmed === autoValue.trim();
+}
+
+/** What a derived field stores from its input: what was typed, else the automatic value. */
+export function typedOrAuto(typed: string, autoValue: string): string {
+  return typed.trim() ? typed : autoValue;
+}
+
+/** Suggestions for the free-text form of government: short forms first, then constitutional systems. */
+export const GOVERNMENT_FORM_SUGGESTIONS: readonly string[] = [
+  "Republic",
+  "Kingdom",
+  "Empire",
+  "Federation",
+  "Commonwealth",
+  "Principality",
+  "Duchy",
+  "Emirate",
+  "Sultanate",
+  "Union",
+  "Confederacy",
+  "Dominion",
+  "Free State",
+  "City-State",
+  "Holy State",
+  "Protectorate",
+  "Democratic Republic",
+  "Socialist Republic",
+  "People's Republic",
+  "Federal Republic",
+  "Presidential Republic",
+  "Federal Constitutional Republic",
+  "Constitutional Monarchy",
+  "Parliamentary Democracy",
+  "Unitary State",
+  "Confederation",
+];
+
 /**
  * Quick currency reference definitions for UI badges and lookups.
  */

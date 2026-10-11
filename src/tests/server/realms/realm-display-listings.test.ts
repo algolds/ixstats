@@ -66,7 +66,7 @@ describe("countries.getAll (the /countries directory) is realm-scoped", () => {
     });
 
     expect(db.realm.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { slug: "ixnay" } })
+      expect.objectContaining({ where: { id: DEFAULT_REALM_ID } })
     );
     expect(db.country.findMany.mock.calls[0][0].where).toMatchObject({ realmId: DEFAULT_REALM_ID });
   });

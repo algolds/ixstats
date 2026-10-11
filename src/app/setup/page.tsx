@@ -27,6 +27,7 @@ import {
 } from "iconoir-react";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
+import { ClaimConsent, consentInput, NO_CONSENT } from "~/components/realms/ClaimConsent";
 import { Badge } from "~/components/ui/badge";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SearchField } from "~/components/ui/search-field";
@@ -119,6 +120,7 @@ export default function SetupPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLinking, setIsLinking] = useState(false);
   const [claimPending, setClaimPending] = useState(false);
+  const [consent, setConsent] = useState(NO_CONSENT);
   // oxlint-disable-next-line eslint/no-unused-vars
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,7 +169,10 @@ export default function SetupPage() {
     setIsLinking(true);
     setError(null);
     try {
-      const result = await claimCountryMutation.mutateAsync({ countryId: selectedCountryId });
+      const result = await claimCountryMutation.mutateAsync({
+        countryId: selectedCountryId,
+        consent: consentInput(consent),
+      });
       if (result.status === "pending") {
         setClaimPending(true);
         return;
@@ -438,10 +443,17 @@ export default function SetupPage() {
                         )}
 
                         {selectedCountryId && !claimPending && (
-                          <div className="border-separator border-t pt-6">
+                          <div className="border-separator flex flex-col gap-4 border-t pt-6">
+                            <ClaimConsent
+                              nationName={
+                                countries?.countries.find((c) => c.id === selectedCountryId)?.name
+                              }
+                              value={consent}
+                              onChange={setConsent}
+                            />
                             <Button
                               onClick={handleLinkCountry}
-                              disabled={isLinking}
+                              disabled={isLinking || !consent.accepted}
                               aria-busy={isLinking}
                               className="w-full"
                               size="lg"

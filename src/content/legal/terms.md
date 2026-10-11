@@ -2,7 +2,7 @@
 title: Terms of Service
 description: These Terms of Service constitute a legally binding agreement governing your access to and use of the IxStates platform and all services operated by Alpaia Holdings.
 badge: Legal Terms
-lastUpdated: August 24, 2026
+lastUpdated: October 11, 2026
 version: 1.4.0 "Lobster Crosby"
 contact: admin@ixwiki.com
 ---
@@ -39,7 +39,7 @@ IxStates permits a user to operate multiple in-game fictional personas, cabinet 
 
 ## 2. Intellectual Property & Computational Outputs {#intellectual-property}
 
-> **Plain English Summary:** You retain copyright in your original stories, characters, and custom flag art. However, to prevent the shared world from breaking when players depart, you grant Alpaia Holdings a permanent license to keep generated simulation state, procedural maps, and economic ledgers running in the shared world. Public wiki lore is governed by CC BY-SA 4.0 only where explicitly designated.
+> **Plain English Summary:** You retain copyright in your original stories, characters, and custom flag art. However, to prevent the shared world from breaking when players depart, you grant Alpaia Holdings a permanent license to keep generated simulation state, procedural maps, and economic ledgers running in the shared world. Public wiki lore is governed by CC BY-SA 4.0 only where explicitly designated. Content brought in from other wikis stays its author's. Claiming a nation lets us use its material in the realm while you hold it, and we remove it when you leave or stop playing.
 
 ### 2.1 Creator-Owned Original Content
 
@@ -61,13 +61,96 @@ The Services utilize algorithmic generators, procedural models, and econometric 
 
 Content within IxWiki, WikiOS, or community knowledge repositories that is **expressly designated** under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) is governed by the terms of that license. The mere existence of a public page does not automatically place every element under CC BY-SA 4.0 unless expressly designated.
 
+### 2.5 Imported Content
+
+"**Imported Content**" means material that originates outside the Services and is brought into them, by us or at
+a user's direction, including through realm source syncs, wiki imports, map pipelines, file imports, and embedded
+third-party media. Examples include wiki articles, flags, coats of arms, maps and map overlays, and nation data
+hosted on other wikis or repositories.
+
+(a) **Ownership stays with the author.** Bringing material into the Services does not transfer ownership of it to
+Alpaia Holdings, to any realm, or to the person who imported it.
+
+(b) **Upstream terms apply.** Imported Content remains subject to the licence or permission under which it was
+obtained ("**Upstream Terms**"). Where available, we record each item's source, author, and Upstream Terms, and we
+display the attribution the Upstream Terms require.
+
+(c) **Restricted licences.** Where Upstream Terms prohibit commercial use or adaptation, we will not display that
+content in a paid realm, or adapt it, without the author's written permission.
+
+(d) **Factual data.** To the extent permitted by applicable law, names, figures (such as population, economic
+output, and land area), dates, and links are treated as factual data and may be imported and displayed without a
+grant from the author.
+
+(e) **Responsibility for imports.** Anyone who configures or runs an import, including a realm operator,
+represents that they hold or have obtained the rights the import requires. Section 5.4 applies to Imported
+Content they bring in as it does to User Content.
+
+(f) **Removal on request.** The author of Imported Content may ask us to remove it by writing to
+[admin@ixwiki.com](mailto:admin@ixwiki.com) or using the report option on the content. We will remove it, or
+explain why we believe we hold the rights to keep it, within fourteen (14) days. No formal notice is required.
+Section 6.2 remains available for copyright complaints.
+
+### 2.6 Nation Claims and the Realm Content Licence
+
+When you claim a nation in a realm, you confirm that you are the author of that nation's existing material,
+including its wiki pages, flag, coat of arms, maps, and other creative works associated with it ("**Nation
+Material**"), or that its author has permitted you to bring it into the Services.
+
+You keep all ownership of Nation Material. For as long as you hold the nation, you grant Alpaia Holdings and the
+realm a non-exclusive, worldwide, royalty-free licence to:
+
+1. host, copy, and display Nation Material within the Services;
+2. adapt it as needed to run the Services, such as reformatting text, resizing or converting images, placing it on
+   maps, and reading figures from it into the simulation;
+3. store it, without displaying it, during a reclaim window under Section 2.8; and
+4. show it in screenshots of the realm used to present IxStates, only if you opt in to this in your settings.
+
+Alpaia Holdings does not acquire ownership of anything adapted from Nation Material. Adaptations are used only
+within the realm and are removed with the Nation Material. We do not sell Nation Material, license it to anyone
+else, or use it to train machine learning or artificial intelligence models.
+
+### 2.7 Leaving a Realm
+
+When you release a nation, when it is reassigned under the realm's rules, when you close your account, when a
+reclaim window under Section 2.8 ends, or when the author of Nation Material asks under Section 2.5(f), we remove the Nation Material from the Services within
+thirty (30) days, apart from routine backups, which expire on their normal schedule.
+
+We keep the "**Shared Record**": the nation's name, its simulation figures and history, and the events, treaties,
+and posts by other users that involve it, so that other users' stories remain coherent. The Shared Record does
+not include Nation Material other than the nation's name. This is the continuity described in Section 2.3.
+
+### 2.8 Inactive Nations
+
+A nation is **inactive** when its holder has not signed in to the Services or acted for the nation for ninety (90)
+days, or for the period set in the realm's rules, which may be no shorter than thirty (30) days and no longer than
+three hundred sixty-five (365) days. A realm's rules may also turn inactivity release off.
+
+(a) **Notice.** At least fourteen (14) days before an inactive nation is released, we notify its holder in the
+Services and by the email address on their account. Signing in or acting for the nation before the release date
+cancels it.
+
+(b) **Release.** On release, the nation becomes unclaimed. Its Nation Material is hidden from display at once, and
+the Shared Record stays as described in Section 2.7.
+
+(c) **Reclaim window.** For one hundred eighty (180) days after release, the former holder may reclaim the nation
+and its Nation Material is restored. The realm's rules decide whether others may claim the nation during this
+window. A new holder never receives the former holder's Nation Material, and the former holder's right to restore
+it ends when someone else's claim is approved.
+
+(d) **End of the window.** When the window ends, or when another claim is approved, the Nation Material is removed
+under Section 2.7. A removal request under Section 2.5(f) ends the window at any time.
+
+(e) **Inactivity is not consent.** We do not treat inactivity as permission to keep, reuse, or reassign Nation
+Material.
+
 ## 3. Third-Party Integrations & API Standards {#third-party-services}
 
 > **Plain English Summary:** IxStates is an independent community project and is not owned or operated by NationStates, Discord, XenForo, or Clerk. We strictly honor NationStates API rate limits and proxy rules.
 
 ### 3.1 Independent Community Project Status
 
-IxStates is an independent hobbyist project operated by Alpaia Holdings and is **not affiliated with, endorsed by, sponsored by, or operated by NationStates, NationStates LLC, Discord Inc., XenForo Ltd., or Clerk Inc.**
+IxStates is an independent project operated by Alpaia Holdings and is **not affiliated with, endorsed by, sponsored by, or operated by NationStates, NationStates LLC, Discord Inc., XenForo Ltd., or Clerk Inc.**
 
 ### 3.2 NationStates Integration & API Compliance
 

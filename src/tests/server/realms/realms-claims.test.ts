@@ -107,6 +107,7 @@ function setup() {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
+    nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),
       findUnique: jest.fn(),
@@ -1372,5 +1373,77 @@ describe("a claimed nation page prefills its new country (AT-3)", () => {
     const service = createClaimsService(db, { ...deps, fetchNationPrefill });
     await service.claimCountry(actor, "c1");
     expect(fetchNationPrefill).not.toHaveBeenCalled();
+  });
+});
+
+describe("claims on a released nation's held material (ToS §2.7, §2.8)", () => {
+  const future = new Date(Date.now() + 86_400_000);
+  const hold = (over: Record<string, unknown> = {}) => ({
+    countryId: "c1",
+    formerOwnerUserId: "u1",
+    reason: "inactive",
+    flag: "/flags/eurth--aurelia.png",
+    coatOfArms: null,
+    purgeAfter: future,
+    ...over,
+  });
+  function heldSetup(held: ReturnType<typeof hold>, settings: unknown = null) {
+    const t = setup();
+    t.db.country.findUnique.mockResolvedValue({ ...country, realm: { settings } });
+    t.db.country.update = jest.fn().mockResolvedValue({});
+    t.db.nationMaterialHold = {
+      findUnique: jest.fn().mockResolvedValue(held),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+    };
+    return t;
+  }
+
+  it("approves the former holder within the window without review and restores the flag and arms", async () => {
+    const { db, deps, claims } = heldSetup(hold());
+    deps.fetchPageCreator.mockResolvedValue("Someone Else");
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({
+      status: "approved",
+      autoApproved: true,
+    });
+    expect(deps.fetchPageCreator).not.toHaveBeenCalled();
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { flag: "/flags/eurth--aurelia.png", coatOfArms: null },
+    });
+    expect(db.nationMaterialHold.delete).toHaveBeenCalledWith({ where: { countryId: "c1" } });
+  });
+
+  it("ends the window when another player's claim is approved: the material is purged, never handed over", async () => {
+    const { db, claims } = heldSetup(hold({ formerOwnerUserId: "u9" }));
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
+    expect(db.nationMaterialHold.update).toHaveBeenCalledWith({
+      where: { countryId: "c1" },
+      data: { purgeAfter: expect.any(Date) },
+    });
+    expect(db.nationMaterialHold.delete).not.toHaveBeenCalled();
+  });
+
+  it("refuses others while a realm keeps an inactive nation for its former holder", async () => {
+    const { db, claims } = heldSetup(hold({ formerOwnerUserId: "u9" }), {
+      reclaimWindowExclusive: true,
+    });
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
+      code: "RECLAIM_WINDOW",
+    });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+  });
+
+  it("does not keep a nation its player released themselves, even in a realm that keeps inactive ones", async () => {
+    const { claims } = heldSetup(hold({ formerOwnerUserId: "u9", reason: "released" }), {
+      reclaimWindowExclusive: true,
+    });
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
+  });
+
+  it("after the window the former holder is reviewed like anyone", async () => {
+    const { deps, claims } = heldSetup(hold({ purgeAfter: new Date(Date.now() - 1000) }));
+    deps.fetchPageCreator.mockResolvedValue("Someone Else");
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
   });
 });

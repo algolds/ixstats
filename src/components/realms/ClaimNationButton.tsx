@@ -8,6 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useInviteVia } from "./use-invite-via";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { ClaimConsent, consentInput, NO_CONSENT } from "./ClaimConsent";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -21,8 +22,9 @@ import {
 /**
  * "Claim this nation" for an unclaimed nation of a realm (one its source sync created, or one released by its
  * player): the existing claim flow (`realms.claimCountry`). The verified creator of the nation's wiki page is
- * approved at once; anyone else waits for the realm's moderators. When the realm has rules, the claim waits
- * for "I have read the realm's rules", as on the claimable pages list. Renders nothing for signed-out viewers.
+ * approved at once; anyone else waits for the realm's moderators. The claim waits for the realm content consent
+ * and, when the realm has rules, for "I have read the realm's rules", as on the claimable pages list. Renders
+ * nothing for signed-out viewers.
  */
 export function ClaimNationButton({
   realmSlug,
@@ -44,6 +46,7 @@ export function ClaimNationButton({
   const via = useInviteVia();
   const [open, setOpen] = useState(false);
   const [acceptedRules, setAcceptedRules] = useState(false);
+  const [consent, setConsent] = useState(NO_CONSENT);
   const { data: overview, isLoading: rulesLoading } = api.realms.region.overview.useQuery(
     { slug: realmSlug },
     { enabled: open }
@@ -79,7 +82,10 @@ export function ClaimNationButton({
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
-          if (!next) setAcceptedRules(false);
+          if (!next) {
+            setAcceptedRules(false);
+            setConsent(NO_CONSENT);
+          }
         }}
       >
         <AlertDialogContent className="sm:max-w-md">
@@ -90,6 +96,7 @@ export function ClaimNationButton({
               once. Otherwise the realm&apos;s moderators review your claim.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <ClaimConsent nationName={countryName} value={consent} onChange={setConsent} />
           {rules && (
             <div className="bg-fill-4 rounded-row flex flex-col gap-2 p-3">
               <Link
@@ -111,9 +118,16 @@ export function ClaimNationButton({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
               // The rules arrive with the overview: until then a claim would be refused for want of them.
-              disabled={claim.isPending || rulesLoading || (!!rules && !acceptedRules)}
+              disabled={
+                claim.isPending || rulesLoading || (!!rules && !acceptedRules) || !consent.accepted
+              }
               onClick={() =>
-                claim.mutate({ countryId, ...(rules && { acceptedRules }), ...(via && { via }) })
+                claim.mutate({
+                  countryId,
+                  consent: consentInput(consent),
+                  ...(rules && { acceptedRules }),
+                  ...(via && { via }),
+                })
               }
             >
               Claim {countryName}

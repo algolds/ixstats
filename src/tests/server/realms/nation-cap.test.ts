@@ -152,6 +152,7 @@ describe("the tier cap is enforced by assignNation and claims", () => {
         count: jest.fn().mockResolvedValue(1),
       },
       user: { findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }) },
+      nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
       realmClaim: { findFirst: jest.fn(), create: jest.fn() },
     };
     const claims = createClaimsService(db, {

@@ -17,12 +17,21 @@ import { sanitizeRealmContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
-import { withInWorldDate } from "./realms.settings";
+import { withInactivity, withInWorldDate } from "./realms.settings";
+import { holdNationMaterial } from "./realms.material";
 import { invalidateCache } from "~/lib/cache";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type ActionDb = Pick<
   PrismaClient,
-  "realm" | "realmOfficer" | "realmEmbassy" | "poll" | "country" | "user" | "$transaction"
+  | "realm"
+  | "realmOfficer"
+  | "realmEmbassy"
+  | "poll"
+  | "country"
+  | "user"
+  | "nationMaterialHold"
+  | "$transaction"
 >;
 
 export async function updateRealmAppearance(
@@ -136,6 +145,29 @@ export async function updateRealmInWorldDate(
   return { success: true };
 }
 
+/**
+ * Founder: the realm's inactivity rules (ToS §2.8, the Realm Agreement's inactivity period). The router bounds the
+ * days; the notice, reclaim window and removal deadlines are fixed.
+ */
+export async function updateRealmInactivity(
+  db: ActionDb,
+  actor: RealmActor,
+  input: { slug: string; inactivityDays: number | null; reclaimWindowExclusive: boolean }
+) {
+  const realm = await requireRealmStaff(db, actor, input.slug, "founder");
+  const stored = await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } });
+  await db.realm.update({
+    where: { id: realm.id },
+    data: {
+      settings: withInactivity(stored?.settings, {
+        inactivityDays: input.inactivityDays,
+        reclaimWindowExclusive: input.reclaimWindowExclusive,
+      }),
+    },
+  });
+  return { success: true };
+}
+
 /** Players the founder may appoint: owners of a nation in the realm, matched by nation or name. */
 export async function listOfficerCandidates(
   db: ActionDb,
@@ -237,7 +269,7 @@ export async function removeRealmOfficer(
 ) {
   const resigning = input.userId === actor.clerkUserId;
   const realm = resigning
-    ? await db.realm.findUnique({ where: { slug: input.slug }, select: { id: true } })
+    ? await db.realm.findUnique({ where: realmSlugWhere(input.slug), select: { id: true } })
     : await requireRealmStaff(db, actor, input.slug, "founder");
   if (!realm) throw new RealmRegionError("NOT_FOUND", "Realm not found");
   const { count } = await db.realmOfficer.deleteMany({
@@ -258,7 +290,7 @@ export async function proposeRealmEmbassy(
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "diplomacy");
   const target = await db.realm.findUnique({
-    where: { slug: input.targetSlug },
+    where: realmSlugWhere(input.targetSlug),
     select: { id: true, status: true },
   });
   if (!target || !isRealmPublished(target.id, target.status) || target.status === "archived")
@@ -391,8 +423,8 @@ export async function closeRealmPoll(
 
 /**
  * A player leaves a realm with one of their nations: it is released (unclaimed) and stops being their active
- * nation; a board restriction on it still binds them. Officers who no longer own a nation in the realm lose
- * their post.
+ * nation; a board restriction on it still binds them. Its flag and arms are held hidden for 30 days, restorable
+ * by the player's own claim (ToS §2.7). Officers who no longer own a nation in the realm lose their post.
  */
 export async function abandonNation(
   db: ActionDb,
@@ -411,6 +443,11 @@ export async function abandonNation(
   await db.$transaction(async (tx) => {
     // A board restriction on the nation stays: it keeps binding this player, never its next claimant
     // (restrictionHolders in realm-board.ts).
+    await holdNationMaterial(tx, {
+      countryId: nation.id,
+      formerOwnerUserId: actor.id,
+      reason: "released",
+    });
     await releaseNation(tx, nation.id);
     await dropOfficerPostWithoutNation(tx, nation.realmId, actor);
   });

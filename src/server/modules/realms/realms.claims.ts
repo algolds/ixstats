@@ -8,7 +8,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 import { parsePrismaError } from "~/lib/prisma-error";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { generateSlug } from "~/lib/utils/slug-utils";
 import {
   isProofSource,
@@ -35,6 +35,11 @@ import { assignNation, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import type { NationPagePrefill } from "./realms.prefill";
 import { realmNationDefaults } from "./realms.settings";
+import { holdStanding, settleMaterialHold } from "./realms.material";
+import {
+  REALM_CONTENT_TERMS_VERSION,
+  realmReclaimWindowExclusive,
+} from "~/lib/realms/realm-content";
 
 type ClaimErrorCode =
   | "NOT_FOUND"
@@ -45,7 +50,8 @@ type ClaimErrorCode =
   | "REASON_REQUIRED"
   | "REALM_CLOSED"
   | "SLUG_CONFLICT"
-  | "RULES_NOT_ACCEPTED";
+  | "RULES_NOT_ACCEPTED"
+  | "RECLAIM_WINDOW";
 
 export class ClaimError extends Error {
   constructor(
@@ -94,11 +100,17 @@ interface ClaimsDeps {
 
 type ClaimsDb = Pick<
   PrismaClient,
-  "country" | "user" | "wikiAccountLink" | "realmClaim" | "realmPage" | "$transaction"
+  | "country"
+  | "user"
+  | "wikiAccountLink"
+  | "realmClaim"
+  | "realmPage"
+  | "nationMaterialHold"
+  | "$transaction"
 >;
 type ClaimsTx = Pick<
   Prisma.TransactionClient,
-  "country" | "user" | "realmClaim" | "mapLayer" | "nationalIdentity"
+  "country" | "user" | "realmClaim" | "mapLayer" | "nationalIdentity" | "nationMaterialHold"
 >;
 
 /** A nation page of a realm's lore index — the claimable unit before its Country exists. */
@@ -141,6 +153,10 @@ interface FiledClaim {
   rulesAcceptedAt?: Date;
   /** Who invited the claimant (`/r/{slug}?via=`), when the invite held up. */
   invitedByUserId?: string;
+  consentVersion?: string;
+  consentAt?: Date;
+  consentBasis?: "author" | "permission";
+  permissionNote?: string;
 }
 
 const AUTO_REVIEWER = "system:auto";
@@ -169,6 +185,23 @@ export interface ClaimOptions {
   acceptedRules?: boolean;
   /** The inviter's handle from `/r/{slug}?via=`; one that does not hold up is ignored, never an error. */
   via?: string;
+  /**
+   * The realm content terms (ToS §2.6): the claimant confirmed the nation's material is theirs, or, with a
+   * `permissionNote` naming who allowed it, someone else's they may bring. The router requires it.
+   */
+  consent?: { permissionNote?: string };
+}
+
+/** What a claim records of its consent; nothing when the caller passed none. */
+function consentRecord(options: ClaimOptions): Partial<FiledClaim> {
+  if (!options.consent) return {};
+  const note = options.consent.permissionNote?.trim();
+  return {
+    consentVersion: REALM_CONTENT_TERMS_VERSION,
+    consentAt: new Date(),
+    consentBasis: note ? "permission" : "author",
+    ...(note && { permissionNote: note }),
+  };
 }
 
 /**
@@ -339,6 +372,8 @@ async function handOver(
 ): Promise<HandOver> {
   if (target.kind === "country") {
     await assignNation(tx, { userId: claim.userId, countryId: target.countryId });
+    // Before the prefill: a former holder's restored flag is not overwritten by the wiki's.
+    await settleMaterialHold(tx, target.countryId, claim.userId);
     await fillEmptyFromPrefill(tx, target.countryId, prefill);
     const rivals = await rejectRivals(tx, {
       countryId: target.countryId,
@@ -352,7 +387,10 @@ async function handOver(
   const unclaimed = await findUnclaimedNation(tx, page);
   const country = unclaimed ?? (await createNationCountry(tx, page, prefill));
   await assignNation(tx, { userId: claim.userId, countryId: country.id });
-  if (unclaimed) await fillEmptyFromPrefill(tx, country.id, prefill);
+  if (unclaimed) {
+    await settleMaterialHold(tx, country.id, claim.userId);
+    await fillEmptyFromPrefill(tx, country.id, prefill);
+  }
   if (!unclaimed || !(await hasMapRegion(tx, country.id)))
     await takeMapRegion(tx, country.id, page);
   await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
@@ -544,8 +582,18 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     assertRealmOpen(country.realmId, country.realm?.status);
     if (country.ownerUserId)
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
+    const standing = await holdStanding(db, {
+      countryId,
+      userId: actor.id,
+      exclusiveWindow: realmReclaimWindowExclusive(country.realm?.settings),
+    });
+    if (standing.reservedForOther)
+      throw new ClaimError(
+        "RECLAIM_WINDOW",
+        "This nation is kept for its former player while they can still reclaim it"
+      );
     await assertUnderCap(actor, country.realmId, country.realm?.settings);
-    return country;
+    return { ...country, formerHolder: standing.formerHolder };
   }
 
   /**
@@ -654,7 +702,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     return fileClaim(
       actor,
       {
-        filed: { realmId: country.realmId, userId: actor.id, countryId, ...accepted },
+        filed: {
+          realmId: country.realmId,
+          userId: actor.id,
+          countryId,
+          ...accepted,
+          ...consentRecord(options),
+        },
         via: options.via,
       },
       { countryId },
@@ -665,7 +719,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         realmSlug: country.realm?.slug ?? null,
         wikiPage: existingNationPage(country),
       },
-      await isVerifiedCreator(actor.id, country)
+      // ToS §2.7, §2.8(c): a nation's former holder takes it back within the hold's window without review.
+      country.formerHolder || (await isVerifiedCreator(actor.id, country))
     );
   }
 
@@ -728,6 +783,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
           wikiSource: page.wikiSource,
           wikiPageTitle: title,
           ...accepted,
+          ...consentRecord(options),
         },
         via: options.via,
       },
@@ -879,7 +935,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
    */
   async function myClaims(actor: RealmActor, realmSlug?: string) {
     return db.realmClaim.findMany({
-      where: { userId: actor.id, ...(realmSlug && { realm: { slug: realmSlug } }) },
+      where: { userId: actor.id, ...(realmSlug && { realm: realmSlugWhere(realmSlug) }) },
       orderBy: { createdAt: "desc" },
       take: 100,
       select: {

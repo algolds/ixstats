@@ -64,3 +64,14 @@ export function withNationDefaults(
   const { nationDefaults: _previous, ...rest } = storedSettings(settings);
   return table ? { ...rest, nationDefaults: table } : rest;
 }
+
+/**
+ * `Realm.settings` with the inactivity rules (ToS §2.8) set: `inactivityDays` (null turns release off) and whether
+ * an inactive nation is kept for its former holder during the reclaim window. Other keys are kept.
+ */
+export function withInactivity(
+  settings: Prisma.JsonValue | null | undefined,
+  input: { inactivityDays: number | null; reclaimWindowExclusive: boolean }
+): Prisma.JsonObject {
+  return { ...storedSettings(settings), ...input };
+}

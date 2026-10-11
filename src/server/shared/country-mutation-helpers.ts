@@ -369,6 +369,8 @@ export async function syncGovernmentStructure(
   govInput: any
 ): Promise<void> {
   if (!govInput) return;
+  // The editor sends the fields nested under `structure`; other callers send them flat.
+  const fields = { ...govInput, ...(govInput.structure ?? {}) };
 
   const existingGovStruct = await tx.governmentStructure.findUnique({ where: { countryId } });
   if (existingGovStruct) {
@@ -379,18 +381,18 @@ export async function syncGovernmentStructure(
 
   const govStructure = await tx.governmentStructure.upsert(
     upsertByCountry(countryId, {
-      ...pick(govInput, [
+      ...pick(fields, [
         "headOfState",
         "headOfGovernment",
         "legislatureName",
         "executiveName",
         "judicialName",
       ]),
-      governmentName: govInput.governmentName || `Government of ${countryName}`,
-      governmentType: govInput.governmentType || "Federal Republic",
-      totalBudget: govInput.totalBudget || 0,
-      fiscalYear: govInput.fiscalYear || "Calendar Year",
-      budgetCurrency: govInput.budgetCurrency || "USD",
+      governmentName: fields.governmentName || `Government of ${countryName}`,
+      governmentType: fields.governmentType || "Federal Republic",
+      totalBudget: fields.totalBudget || 0,
+      fiscalYear: fields.fiscalYear || "Calendar Year",
+      budgetCurrency: fields.budgetCurrency || "USD",
     })
   );
   const governmentStructureId = govStructure.id;

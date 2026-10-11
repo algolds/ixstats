@@ -7,6 +7,10 @@ import {
   deriveIsoCode,
   deriveInternetTld,
   deriveCallingCode,
+  autoGovernmentName,
+  isAutoValue,
+  typedOrAuto,
+  GOVERNMENT_FORM_SUGGESTIONS,
 } from "../components/enhanced/national-identity/identityUtils";
 
 describe("identityUtils", () => {
@@ -129,5 +133,36 @@ describe("identityUtils", () => {
       expect(deriveCallingCode("   ")).toBe("");
     });
   });
-});
 
+  describe("autoGovernmentName", () => {
+    it("names the government after the country", () => {
+      expect(autoGovernmentName(" Eldoria ")).toBe("Government of Eldoria");
+      expect(autoGovernmentName("")).toBe("");
+    });
+  });
+
+  describe("auto or typed", () => {
+    it("counts an empty value or one equal to the automatic value as automatic", () => {
+      expect(isAutoValue("", "The Republic of Eldoria")).toBe(true);
+      expect(isAutoValue(undefined, "The Republic of Eldoria")).toBe(true);
+      expect(isAutoValue("The Republic of Eldoria ", "The Republic of Eldoria")).toBe(true);
+      expect(isAutoValue("The Free Realm of Eldoria", "The Republic of Eldoria")).toBe(false);
+    });
+
+    it("stores what was typed, else the automatic value", () => {
+      expect(typedOrAuto("The Free Realm", "The Republic of Eldoria")).toBe("The Free Realm");
+      expect(typedOrAuto("  ", "The Republic of Eldoria")).toBe("The Republic of Eldoria");
+    });
+  });
+
+  describe("GOVERNMENT_FORM_SUGGESTIONS", () => {
+    it("offers both short forms and constitutional systems once each, without placeholders", () => {
+      expect(GOVERNMENT_FORM_SUGGESTIONS).toEqual(
+        expect.arrayContaining(["Republic", "Kingdom", "Federal Republic", "Constitutional Monarchy"])
+      );
+      expect(new Set(GOVERNMENT_FORM_SUGGESTIONS).size).toBe(GOVERNMENT_FORM_SUGGESTIONS.length);
+      expect(GOVERNMENT_FORM_SUGGESTIONS).not.toContain("custom");
+      expect(GOVERNMENT_FORM_SUGGESTIONS).not.toContain("Other");
+    });
+  });
+});

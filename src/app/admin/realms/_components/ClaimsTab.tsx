@@ -119,6 +119,11 @@ export function ClaimsTab({
                 {new Date(claim.createdAt).toLocaleDateString()}
                 <PageHistoryLink claim={claim} />
               </p>
+              {claim.permissionNote && (
+                <p className="text-label-secondary text-footnote">
+                  Permission from: <span className="text-label">{claim.permissionNote}</span>
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Input

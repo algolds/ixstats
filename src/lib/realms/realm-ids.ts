@@ -28,6 +28,11 @@ export function isIxnaySlug(slug: string): boolean {
   return IXNAY_SLUGS.has(slug);
 }
 
+/** The `where` that finds a realm by slug: Ixnay's slugs find its row by id, whatever slug the row still carries. */
+export function realmSlugWhere(slug: string): { id: string } | { slug: string } {
+  return isIxnaySlug(slug) ? { id: DEFAULT_REALM_ID } : { slug };
+}
+
 /**
  * Whether a page shows Ixnay: the `?realm=` slug names it, or no slug is given and the viewer's active
  * nation is in Ixnay (or they have none). Mirrors resolveViewerRealmId (decision 4).

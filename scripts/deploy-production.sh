@@ -169,6 +169,9 @@ bun run db:push:force
 # Check if sync was successful
 if [ $? -eq 0 ]; then
     echo "✅ Database sync completed successfully"
+    # db push never runs migration SQL; this data rename is idempotent (IxWorld realm → Ixnay).
+    # ponytail: one-off line; drop it once prod's realm row reads Ixnay.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261019120000_rename_ixworld_realm_ixnay/migration.sql || exit 1
 else
     echo "❌ Database sync failed"
     exit 1

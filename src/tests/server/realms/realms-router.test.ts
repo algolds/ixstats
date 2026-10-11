@@ -13,6 +13,9 @@ import { realmsRouter } from "~/server/api/routers/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { resolveRealmInviter } from "~/server/modules/identity/identity.invites";
 
+/** The realm content terms consent every claim carries (ToS §2.6). */
+const consent = { accepted: true as const };
+
 function caller(
   findUnique: jest.Mock,
   realmPage = { findFirst: jest.fn().mockResolvedValue(null) },
@@ -282,6 +285,7 @@ describe("realms.claimNationPage", () => {
       },
       user: { findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }) },
       wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+      nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
       realmClaim: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockImplementation(({ data }) => Promise.resolve({ id: "cl1", ...data })),
@@ -302,7 +306,7 @@ describe("realms.claimNationPage", () => {
   it("claims the realm's nation page by realm slug; without a verified wiki account it is pending", async () => {
     const db = claimDb();
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+      claimCaller(db).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
     ).resolves.toEqual({ claimId: "cl1", status: "pending", autoApproved: false });
     expect(db.realm.findUnique).toHaveBeenCalledWith({
       where: { slug: "eurth" },
@@ -319,14 +323,40 @@ describe("realms.claimNationPage", () => {
         wikiPageTitle: "Aurelia",
         countryId: null,
         status: "pending",
+        consentVersion: "realm-content-1",
+        consentAt: expect.any(Date),
+        consentBasis: "author",
       },
+    });
+  });
+
+  it("refuses a claim without the realm content consent", async () => {
+    const db = claimDb();
+    await expect(
+      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" } as never)
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+  });
+
+  it("records who gave permission when the material is someone else's", async () => {
+    const db = claimDb();
+    await claimCaller(db).claimNationPage({
+      consent: { accepted: true, permissionNote: "  Kir, on the Eurth Discord  " },
+      realmSlug: "eurth",
+      title: "Aurelia",
+    });
+    expect(db.realmClaim.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        consentBasis: "permission",
+        permissionNote: "Kir, on the Eurth Discord",
+      }),
     });
   });
 
   it("an unknown realm is NOT_FOUND", async () => {
     const db = claimDb(null);
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "nowhere", title: "Aurelia" })
+      claimCaller(db).claimNationPage({ consent, realmSlug: "nowhere", title: "Aurelia" })
     ).rejects.toMatchObject({ code: "NOT_FOUND", message: "Realm not found" });
     expect(db.realmPage.findFirst).not.toHaveBeenCalled();
   });
@@ -335,13 +365,13 @@ describe("realms.claimNationPage", () => {
     const missing = claimDb();
     missing.realmPage.findFirst.mockResolvedValue(null);
     await expect(
-      claimCaller(missing).claimNationPage({ realmSlug: "eurth", title: "Nowhere" })
+      claimCaller(missing).claimNationPage({ consent, realmSlug: "eurth", title: "Nowhere" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     const taken = claimDb();
     taken.country.findFirst.mockResolvedValue({ id: "c1" });
     await expect(
-      claimCaller(taken).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+      claimCaller(taken).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
@@ -351,7 +381,7 @@ describe("realms.claimNationPage", () => {
       where.name === "Aurelia" ? null : { id: "c1", name: "New Aurelia", ownerUserId: "u9" }
     );
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+      claimCaller(db).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
@@ -359,7 +389,7 @@ describe("realms.claimNationPage", () => {
   it("requires sign-in", async () => {
     const db = claimDb();
     await expect(
-      claimCaller(db, false).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+      claimCaller(db, false).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
     ).rejects.toThrow("Authentication required");
     expect(db.realm.findUnique).not.toHaveBeenCalled();
   });
@@ -377,13 +407,14 @@ describe("realms.claimNationPage", () => {
   it("refuses a claim in a realm with rules until the player accepts them", async () => {
     const db = rulesDb();
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia" })
+      claimCaller(db).claimNationPage({ consent, realmSlug: "eurth", title: "Aurelia" })
     ).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
       message: expect.stringMatching(/rules/),
     });
     await expect(
       claimCaller(db).claimNationPage({
+        consent,
         realmSlug: "eurth",
         title: "Aurelia",
         acceptedRules: false,
@@ -396,7 +427,12 @@ describe("realms.claimNationPage", () => {
   it("files the claim once the rules are accepted, recording when", async () => {
     const db = rulesDb();
     await expect(
-      claimCaller(db).claimNationPage({ realmSlug: "eurth", title: "Aurelia", acceptedRules: true })
+      claimCaller(db).claimNationPage({
+        consent,
+        realmSlug: "eurth",
+        title: "Aurelia",
+        acceptedRules: true,
+      })
     ).resolves.toMatchObject({ status: "pending" });
     const data = db.realmClaim.create.mock.calls[0][0].data;
     expect(data.rulesAcceptedAt).toBeInstanceOf(Date);
@@ -424,6 +460,7 @@ describe("realm invites through the router", () => {
       },
       user: { findUnique: jest.fn().mockResolvedValue({ membershipTier: "basic" }) },
       wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+      nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
       realmClaim: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(({ data }: { data: object }) => Promise.resolve({ id: "cl1", ...data })),
@@ -444,6 +481,7 @@ describe("realm invites through the router", () => {
   it("a claim by invite link records its inviter", async () => {
     const db = inviteDb();
     await inviteCaller(db).claimNationPage({
+      consent,
       realmSlug: "eurth",
       title: "Aurelia",
       via: "ambassador",
@@ -457,6 +495,7 @@ describe("realm invites through the router", () => {
     const db = inviteDb();
     await expect(
       inviteCaller(db).claimNationPage({
+        consent,
         realmSlug: "eurth",
         title: "Aurelia",
         via: "x".repeat(300),

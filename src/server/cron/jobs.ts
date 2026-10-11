@@ -209,7 +209,8 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     timeoutMs: 110_000,
     modulePath: "~/server/modules/thinkpages-forum/render-stale",
     exportName: "renderStaleForumPosts",
-    load: async () => (await import("~/server/modules/thinkpages-forum/render-stale")).renderStaleForumPosts,
+    load: async () =>
+      (await import("~/server/modules/thinkpages-forum/render-stale")).renderStaleForumPosts,
   },
   {
     // Once per new IxTime year, remind each owned country to set that year's budget (MC-1).
@@ -267,7 +268,8 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     timeoutMs: 5 * MINUTE,
     modulePath: "~/server/modules/action-links/wiki-sync",
     exportName: "syncPendingChainWikis",
-    load: async () => (await import("~/server/modules/action-links/wiki-sync")).syncPendingChainWikis,
+    load: async () =>
+      (await import("~/server/modules/action-links/wiki-sync")).syncPendingChainWikis,
   },
   {
     // Evaluates achievements (account-level and active-country) for users seen recently.
@@ -328,6 +330,22 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
         import("~/server/db"),
       ]);
       return () => runDueSourceSyncs(db, LIVE_RUN_DEPS);
+    },
+  },
+  {
+    // Realm content terms (ToS §2.7, §2.8): warns and releases inactive realm nations, purges due material holds.
+    name: "realm-inactivity",
+    defaultSchedule: "23 4 * * *",
+    lockName: "realm-inactivity",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/modules/realms/realms.inactivity",
+    exportName: "liveRealmInactivity",
+    load: async () => {
+      const [{ liveRealmInactivity }, { db }] = await Promise.all([
+        import("~/server/modules/realms/realms.inactivity"),
+        import("~/server/db"),
+      ]);
+      return () => liveRealmInactivity(db);
     },
   },
   {

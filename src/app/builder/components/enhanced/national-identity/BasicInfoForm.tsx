@@ -2,18 +2,16 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Globe,
   Crown,
   Building,
   MapPin,
   Group as Users,
   Link as Link2,
   LinkSlash as Link2Off,
-  EditPencil as Edit3,
-  Lock,
 } from "iconoir-react";
-import { GlassSelectBox } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
@@ -31,7 +29,14 @@ import type { GovernmentBuilderState, GovernmentStructureInput } from "~/types/g
 import { GovernmentStructureForm } from "~/components/mycountry/domains/government/atoms/GovernmentStructureForm";
 import { TemplateFieldIndicator } from "../../../primitives/TemplateFieldIndicator";
 import { AdvancedFieldsDisclosure } from "../../../primitives/AdvancedFieldsDisclosure";
-import { deriveDemonym, formatCeremonialName } from "./identityUtils";
+import {
+  autoGovernmentName,
+  deriveDemonym,
+  formatCeremonialName,
+  GOVERNMENT_FORM_SUGGESTIONS,
+  isAutoValue,
+  typedOrAuto,
+} from "./identityUtils";
 import { Card, CardContent } from "~/components/ui/card";
 
 interface BasicInfoFormProps {
@@ -43,12 +48,7 @@ interface BasicInfoFormProps {
     value?: NationalIdentityData[K]
   ) => void;
   selectedGovernmentType: string;
-  customOfficialName: string;
-  isEditingCustomName?: boolean;
   onGovernmentTypeChange: (value: string) => void;
-  onCustomOfficialNameChange: (value: string) => void;
-  onCustomOfficialNameFocus?: () => void;
-  onCustomOfficialNameBlur?: (value: string) => void;
   setShouldFetchCustomTypes?: (should: boolean) => void;
   customGovernmentTypes?: Array<{ id: string; customTypeName: string }>;
   onFieldSave?: (fieldName: string, value: string) => void;
@@ -77,41 +77,64 @@ interface BasicInfoFormProps {
   countryId?: string;
 }
 
-const GOVERNMENT_TYPES = [
-  { value: "Republic", label: "Republic", prefix: "The Republic of" },
-  { value: "Kingdom", label: "Kingdom", prefix: "The Kingdom of" },
-  { value: "Federation", label: "Federation", prefix: "The Federation of" },
-  { value: "Commonwealth", label: "Commonwealth", prefix: "The Commonwealth of" },
-  { value: "Emirate", label: "Emirate", prefix: "The Emirate of" },
-  { value: "Principality", label: "Principality", prefix: "The Principality of" },
-  { value: "Holy State", label: "Holy State", prefix: "The Holy State of" },
-  { value: "Union", label: "Union", prefix: "The Union of" },
-  { value: "Empire", label: "Empire", prefix: "The Empire of" },
-  { value: "Sultanate", label: "Sultanate", prefix: "The Sultanate of" },
-  { value: "Duchy", label: "Duchy", prefix: "The Duchy of" },
-  { value: "Confederacy", label: "Confederacy", prefix: "The Confederacy of" },
-  { value: "Alliance", label: "Alliance", prefix: "The Alliance of" },
-  { value: "Coalition", label: "Coalition", prefix: "The Coalition of" },
-  { value: "Dominion", label: "Dominion", prefix: "The Dominion of" },
-  { value: "Territories", label: "Territories", prefix: "The Territories of" },
-  { value: "Protectorate", label: "Protectorate", prefix: "The Protectorate of" },
-  { value: "Mandate", label: "Mandate", prefix: "The Mandate of" },
-  { value: "City-State", label: "City-State", prefix: "The City-State of" },
-  { value: "Free State", label: "Free State", prefix: "The Free State of" },
-  { value: "Socialist Republic", label: "Socialist Republic", prefix: "The Socialist Republic of" },
-  {
-    value: "Democratic Republic",
-    label: "Democratic Republic",
-    prefix: "The Democratic Republic of",
-  },
-  { value: "People's Republic", label: "People's Republic", prefix: "The People's Republic of" },
-  { value: "Autonomous Region", label: "Autonomous Region", prefix: "The Autonomous Region of" },
-  { value: "Sovereign State", label: "Sovereign State", prefix: "The Sovereign State of" },
-  { value: "Nation", label: "Nation", prefix: "The Nation of" },
-  { value: "Country", label: "Country", prefix: "The Country of" },
-  { value: "State", label: "State", prefix: "The State of" },
-  { value: "custom", label: "Custom", prefix: "" },
-];
+/**
+ * A name input. A derived name (`autoValue`) shows its automatic value as the placeholder and stays automatic
+ * while empty, so there is no toggle: type to override, clear to go back.
+ */
+function NameField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  autoValue,
+  required,
+  list,
+  extra,
+  wide,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoValue?: string;
+  required?: boolean;
+  list?: string;
+  extra?: React.ReactNode;
+  /** Spans both columns; for long derived names. */
+  wide?: boolean;
+}) {
+  const isDerived = autoValue !== undefined;
+  const shown = isDerived && isAutoValue(value, autoValue) ? "" : value;
+  return (
+    <div className={cn("space-y-2", wide && "sm:col-span-2")}>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-label text-body font-medium whitespace-nowrap">
+          {label}
+          {required && (
+            <span aria-hidden="true" className="bg-tint ml-2 inline-block h-1.5 w-1.5 rounded-full" />
+          )}
+        </Label>
+        {extra}
+      </div>
+      <Input
+        id={id}
+        list={list}
+        value={shown}
+        required={required}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={(isDerived && autoValue) || placeholder}
+        aria-describedby={isDerived ? `${id}-hint` : undefined}
+      />
+      {isDerived && (
+        <p id={`${id}-hint`} className="text-label-secondary text-footnote">
+          {shown ? "Clear to use the automatic name." : "Automatic. Type to set your own."}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export const BasicInfoForm = React.memo(
   function BasicInfoForm({
@@ -120,11 +143,7 @@ export const BasicInfoForm = React.memo(
     onGovernmentStructureChange,
     onIdentityChange,
     selectedGovernmentType,
-    customOfficialName,
     onGovernmentTypeChange,
-    onCustomOfficialNameChange,
-    onCustomOfficialNameFocus,
-    onCustomOfficialNameBlur,
     setShouldFetchCustomTypes,
     customGovernmentTypes,
     onFieldSave,
@@ -137,13 +156,6 @@ export const BasicInfoForm = React.memo(
     countryId,
   }: BasicInfoFormProps) {
     const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
-
-    // Smart auto vs custom ceremonial name tracking
-    const [isCustomOfficialName, setIsCustomOfficialName] = useState(() => {
-      if (!identity.officialName) return false;
-      const expected = formatCeremonialName(identity.countryName || "", selectedGovernmentType);
-      return identity.officialName.trim() !== expected.trim();
-    });
 
     const upsertCityMutation = api.countryGeo.upsertCity.useMutation({
       onSuccess: (city) => {
@@ -177,94 +189,88 @@ export const BasicInfoForm = React.memo(
       setShouldFetchCustomTypes?.(true);
     }, [setShouldFetchCustomTypes]);
 
-    // Map government types for GlassSelectBox
-    const govtOptions = useMemo(() => {
-      const standard = GOVERNMENT_TYPES.map((type) => ({
-        value: type.value,
-        label: type.label,
-        description: type.prefix || undefined,
-      }));
-      const custom =
-        customGovernmentTypes?.map((type) => ({
-          value: type.customTypeName,
-          label: type.customTypeName,
-          description: "Custom government type",
-        })) || [];
-      return [...standard, ...custom];
-    }, [customGovernmentTypes]);
+    const handleStructureUpdate = useCallback(
+      (structure: GovernmentStructureInput) => {
+        onGovernmentStructureChange({
+          structure,
+          departments: governmentStructure?.departments ?? [],
+          budgetAllocations: governmentStructure?.budgetAllocations ?? [],
+          revenueSources: governmentStructure?.revenueSources ?? [],
+          selectedComponents: governmentStructure?.selectedComponents ?? [],
+          isValid: governmentStructure?.isValid ?? true,
+          errors: governmentStructure?.errors ?? {},
+          atomicComponentCosts: governmentStructure?.atomicComponentCosts,
+        });
+      },
+      [governmentStructure, onGovernmentStructureChange]
+    );
 
-    // Country name handler with auto-demonym and auto-official name synthesis
+    // The form of government is free text; these are suggestions, the user's own earlier types included.
+    const governmentFormSuggestions = useMemo(
+      () => [
+        ...new Set([
+          ...GOVERNMENT_FORM_SUGGESTIONS,
+          ...(customGovernmentTypes?.map((type) => type.customTypeName) ?? []),
+        ]),
+      ],
+      [customGovernmentTypes]
+    );
+
+    const countryName = identity.countryName || "";
+    const autoOfficialName = formatCeremonialName(countryName, selectedGovernmentType);
+    const structure = governmentStructure?.structure;
+    const autoGovName = autoGovernmentName(countryName);
+
+    // Country name: derived names that are still automatic (demonym, official name, government name) follow it.
     const handleCountryNameChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const nextName = event.target.value;
+      (nextName: string) => {
         const updates: Partial<NationalIdentityData> = { countryName: nextName };
-
-        // If demonym is empty or default, auto-derive
-        if (!identity.demonym || identity.demonym === deriveDemonym(identity.countryName || "")) {
+        if (isAutoValue(identity.demonym, deriveDemonym(countryName))) {
           updates.demonym = deriveDemonym(nextName);
         }
-
-        // If official name is in auto mode, synthesize live
-        if (!isCustomOfficialName) {
-          const autoName = formatCeremonialName(nextName, selectedGovernmentType);
-          updates.officialName = autoName;
-          onCustomOfficialNameChange(autoName);
+        if (isAutoValue(identity.officialName, autoOfficialName)) {
+          updates.officialName = formatCeremonialName(nextName, selectedGovernmentType);
         }
-
         onIdentityChange(updates);
+        if (structure && isAutoValue(structure.governmentName, autoGovName)) {
+          handleStructureUpdate({ ...structure, governmentName: autoGovernmentName(nextName) });
+        }
       },
       [
-        identity.countryName,
+        countryName,
         identity.demonym,
-        isCustomOfficialName,
+        identity.officialName,
+        autoOfficialName,
+        autoGovName,
+        structure,
         selectedGovernmentType,
         onIdentityChange,
-        onCustomOfficialNameChange,
+        handleStructureUpdate,
       ]
     );
 
-    // Government type change handler
-    const handleGovTypeChange = useCallback(
-      (val: string) => {
-        onGovernmentTypeChange(val);
-        if (!isCustomOfficialName) {
-          const autoName = formatCeremonialName(identity.countryName || "", val);
-          onIdentityChange("officialName", autoName);
-          onCustomOfficialNameChange(autoName);
+    // Form of government: the official name follows it while automatic.
+    const handleGovFormChange = useCallback(
+      (nextForm: string) => {
+        onGovernmentTypeChange(nextForm);
+        if (isAutoValue(identity.officialName, autoOfficialName)) {
+          onIdentityChange("officialName", formatCeremonialName(countryName, nextForm));
         }
       },
-      [
-        identity.countryName,
-        isCustomOfficialName,
-        onGovernmentTypeChange,
-        onIdentityChange,
-        onCustomOfficialNameChange,
-      ]
+      [countryName, identity.officialName, autoOfficialName, onGovernmentTypeChange, onIdentityChange]
     );
 
     const handleOfficialNameChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        onIdentityChange("officialName", event.target.value);
-      },
-      [onIdentityChange]
+      (typed: string) => onIdentityChange("officialName", typedOrAuto(typed, autoOfficialName)),
+      [autoOfficialName, onIdentityChange]
     );
 
-    const toggleCustomOfficialName = useCallback(() => {
-      soundEffects.toggle();
-      const next = !isCustomOfficialName;
-      setIsCustomOfficialName(next);
-      if (!next) {
-        const autoName = formatCeremonialName(identity.countryName || "", selectedGovernmentType);
-        onIdentityChange("officialName", autoName);
-        onCustomOfficialNameChange(autoName);
-      }
-    }, [
-      isCustomOfficialName,
-      identity.countryName,
-      selectedGovernmentType,
-      onIdentityChange,
-      onCustomOfficialNameChange,
-    ]);
+    const handleGovNameChange = useCallback(
+      (typed: string) => {
+        if (structure) handleStructureUpdate({ ...structure, governmentName: typedOrAuto(typed, autoGovName) });
+      },
+      [structure, autoGovName, handleStructureUpdate]
+    );
 
     const [isLargestLocked, setIsLargestLocked] = useState(() => {
       return identity.capitalCity === identity.largestCity && !!identity.capitalCity;
@@ -321,25 +327,6 @@ export const BasicInfoForm = React.memo(
 
     const isEditMode = mode === "edit";
 
-    const handleStructureUpdate = useCallback(
-      (structure: GovernmentStructureInput) => {
-        onGovernmentStructureChange({
-          structure,
-          departments: governmentStructure?.departments ?? [],
-          budgetAllocations: governmentStructure?.budgetAllocations ?? [],
-          revenueSources: governmentStructure?.revenueSources ?? [],
-          selectedComponents: governmentStructure?.selectedComponents ?? [],
-          isValid: governmentStructure?.isValid ?? true,
-          errors: governmentStructure?.errors ?? {},
-          atomicComponentCosts: governmentStructure?.atomicComponentCosts,
-        });
-      },
-      [governmentStructure, onGovernmentStructureChange]
-    );
-
-    const displayedCeremonialName =
-      identity.officialName ||
-      formatCeremonialName(identity.countryName || "", selectedGovernmentType);
 
     return (
       <div className="space-y-6">
@@ -352,112 +339,55 @@ export const BasicInfoForm = React.memo(
               </h3>
             </div>
             <CardContent className="space-y-4 p-6">
-              {/* 1. Country Name (Primary Sovereign Form) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-label text-body flex items-center gap-2 font-medium">
-                    <Globe className="text-label-secondary h-4 w-4" />
-                    <span>Country name</span>
-                    <span
-                      className="bg-tint inline-block h-1.5 w-1.5 rounded-full"
-                      title="Required primary field"
-                    />
-                  </label>
-                  {Boolean(
-                    foundationCountry?.name && identity.countryName === foundationCountry.name
-                  ) && <TemplateFieldIndicator />}
-                </div>
-                <p className="text-label-secondary text-footnote leading-tight">
-                  Short form name of your sovereign nation
-                </p>
-                <Input
-                  value={identity.countryName ?? ""}
+              {/* Names: what the country is called and how it is governed, with derived names that follow them */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <NameField
+                  id="identity-country-name"
+                  label="Country name"
+                  required
+                  value={countryName}
                   onChange={handleCountryNameChange}
-                  placeholder="e.g. Eldoria, Vesperia, Solaria"
-                  className="font-medium"
+                  placeholder="e.g. Eldoria"
+                  extra={
+                    Boolean(foundationCountry?.name && countryName === foundationCountry.name) && (
+                      <TemplateFieldIndicator />
+                    )
+                  }
                 />
-              </div>
-
-              {/* 2. Unified Constitutional Governance (Government Type + Ceremonial Official Name) */}
-              <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-label text-caption flex items-center gap-2 font-semibold">
-                    <Crown className="text-tint h-3.5 w-3.5" />
-                    <span>Constitutional form & ceremonial title</span>
-                  </label>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={isCustomOfficialName ? "secondary" : "ghost"}
-                    onClick={toggleCustomOfficialName}
-                  >
-                    {isCustomOfficialName ? (
-                      <>
-                        <Lock aria-hidden />
-                        <span>Reset to auto</span>
-                      </>
-                    ) : (
-                      <>
-                        <Edit3 aria-hidden />
-                        <span>Customize title</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <span className="text-label-secondary text-caption block">Government type</span>
-                    <GlassSelectBox
-                      label=""
-                      icon={Crown}
-                      value={selectedGovernmentType}
-                      onChange={handleGovTypeChange}
-                      options={govtOptions}
-                      placeholder="Select government type"
-                      sectionId="symbols"
-                      theme="default"
-                      size="sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-label-secondary text-caption block">
-                      Ceremonial official name
-                    </span>
-                    {isCustomOfficialName ? (
-                      <Input
-                        value={identity.officialName ?? ""}
-                        onChange={handleOfficialNameChange}
-                        placeholder="The Republic of..."
-                        className="text-caption h-9"
-                      />
-                    ) : (
-                      <div
-                        className="rounded-control border-separator bg-fill-4 text-caption text-label/90 flex h-9 items-center border px-3 select-none"
-                        title="Auto-formatted based on country name and government type"
-                      >
-                        <span className="truncate">{displayedCeremonialName}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {selectedGovernmentType === "custom" && (
-                  <div className="pt-1">
-                    <Input
-                      value={customOfficialName}
-                      onFocus={onCustomOfficialNameFocus}
-                      onChange={(e) => onCustomOfficialNameChange(e.target.value)}
-                      onBlur={(e) => onCustomOfficialNameBlur?.(e.target.value)}
-                      placeholder="Enter custom official name..."
-                      className="text-footnote h-9"
-                    />
-                  </div>
+                <NameField
+                  id="identity-government-form"
+                  label="Form of government"
+                  list="identity-government-forms"
+                  value={selectedGovernmentType}
+                  onChange={handleGovFormChange}
+                  placeholder="e.g. Republic, Kingdom, Federal Republic"
+                />
+                <datalist id="identity-government-forms">
+                  {governmentFormSuggestions.map((form) => (
+                    <option key={form} value={form} />
+                  ))}
+                </datalist>
+                <NameField
+                  id="identity-official-name"
+                  label="Official name"
+                  value={identity.officialName ?? ""}
+                  onChange={handleOfficialNameChange}
+                  autoValue={autoOfficialName}
+                  wide
+                />
+                {structure && (
+                  <NameField
+                    id="identity-government-name"
+                    label="Government name"
+                    value={structure.governmentName ?? ""}
+                    onChange={handleGovNameChange}
+                    autoValue={autoGovName}
+                    wide
+                  />
                 )}
               </div>
 
-              {/* 3. Civic Geography & Demonym */}
+              {/* Civic geography & demonym */}
               <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
                 <div className="flex items-center justify-between">
                   <label className="text-label text-caption flex items-center gap-2 font-semibold">
@@ -596,7 +526,6 @@ export const BasicInfoForm = React.memo(
                   }}
                   hideBudgetConfig={true}
                   noWrapper={true}
-                  hideGovernmentType={true}
                 />
               </CardContent>
             </Card>
@@ -629,8 +558,7 @@ export const BasicInfoForm = React.memo(
       prevProps.identity.largestCity === nextProps.identity.largestCity &&
       prevProps.identity.demonym === nextProps.identity.demonym &&
       prevProps.selectedGovernmentType === nextProps.selectedGovernmentType &&
-      prevProps.customOfficialName === nextProps.customOfficialName &&
-      prevProps.isEditingCustomName === nextProps.isEditingCustomName &&
+      prevProps.customGovernmentTypes === nextProps.customGovernmentTypes &&
       prevProps.flagUrl === nextProps.flagUrl &&
       prevProps.coatOfArmsUrl === nextProps.coatOfArmsUrl &&
       prevProps.foundationCountry?.name === nextProps.foundationCountry?.name &&

@@ -805,6 +805,10 @@ model RealmClaim {
   rejectionReason   String?
   rulesAcceptedAt   DateTime? // when the claimant confirmed reading the realm's rules (null: it had none)
   invitedByUserId   String? // User.id of the member who invited the claimant; plain column, no relation
+  consentVersion    String? // the realm content terms version the claimant agreed to (ToS §2.6); null before them
+  consentAt         DateTime?
+  consentBasis      String? // author | permission
+  permissionNote    String? // who gave the claimant permission, for the reviewing moderators
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -813,6 +817,22 @@ model RealmClaim {
   @@index([countryId])
   @@index([invitedByUserId])
   @@map("realm_claims")
+}
+
+/// A released nation's material (ToS §2.7, §2.8): its flag and arms, hidden from display. The former holder's
+/// reclaim restores them until `purgeAfter`; then the realm-inactivity job deletes the row and any local files.
+model NationMaterialHold {
+  countryId         String   @id
+  country           Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  formerOwnerUserId String // User.id; plain column, no relation
+  reason            String // released | inactive
+  flag              String?
+  coatOfArms        String?
+  heldAt            DateTime @default(now())
+  purgeAfter        DateTime
+
+  @@index([purgeAfter])
+  @@map("nation_material_holds")
 }
 
 /// A realm officer appointed by its founder: a custom title and a set of powers

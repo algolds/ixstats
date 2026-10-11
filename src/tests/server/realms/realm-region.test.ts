@@ -509,6 +509,33 @@ describe("leaving a realm", () => {
     });
   });
 
+  it("holds the nation's flag and arms for 30 days, restorable by the player (ToS §2.7)", async () => {
+    const db = makeDb();
+    db.country.findUnique.mockResolvedValue({
+      id: "c5",
+      name: "Aurelia",
+      realmId: "eurth",
+      ownerUserId: `db_${OFFICER}`,
+      flag: "/flags/eurth--aurelia.png",
+      coatOfArms: null,
+    });
+    await callerAs(OFFICER, db).region.abandonNation({ countryId: "c5", confirmName: "Aurelia" });
+    expect(db.nationMaterialHold.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          countryId: "c5",
+          formerOwnerUserId: `db_${OFFICER}`,
+          reason: "released",
+          flag: "/flags/eurth--aurelia.png",
+        }),
+      })
+    );
+    expect(db.country.update).toHaveBeenCalledWith({
+      where: { id: "c5" },
+      data: { flag: null, coatOfArms: null, inactivityNoticeAt: null },
+    });
+  });
+
   it("needs the nation's name typed and the caller to own it", async () => {
     const db = makeDb();
     db.country.findUnique.mockResolvedValue({
@@ -928,5 +955,60 @@ describe("deleting a realm (AT-8)", () => {
     expect(db.forumCategory.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
       db.realm.delete.mock.invocationCallOrder[0]!
     );
+  });
+});
+
+describe("inactivity rules (ToS §2.8)", () => {
+  it("shows the founder the realm's rules, defaulting to 90 days, and nobody else", async () => {
+    const db = makeDb();
+    db.realm.findUniqueOrThrow.mockResolvedValue({
+      description: null,
+      bannerUrl: null,
+      thumbnail: null,
+      emblemUrl: null,
+      tags: [],
+      communityLinks: null,
+      settings: { reclaimWindowExclusive: true },
+    });
+    const founder = await callerAs(FOUNDER, db).region.manage({ slug: "eurth" });
+    expect(founder.inactivity).toEqual({ days: 90, exclusiveWindow: true });
+    const officer = await callerAs(OFFICER, db).region.manage({ slug: "eurth" });
+    expect(officer.inactivity).toBeNull();
+  });
+
+  it("lets only the founder set them, keeping the realm's other settings", async () => {
+    const db = makeDb(realmRow({ settings: { maxNationsPerUser: 2 } }));
+    db.realm.findUnique.mockImplementation(async ({ where, select }: any) =>
+      select?.settings && where.id
+        ? { settings: { maxNationsPerUser: 2 } }
+        : where.slug === "eurth" || where.id === "eurth"
+          ? realmRow()
+          : null
+    );
+    await callerAs(FOUNDER, db).region.updateInactivity({
+      slug: "eurth",
+      inactivityDays: 60,
+      reclaimWindowExclusive: false,
+    });
+    expect(db.realm.update).toHaveBeenCalledWith({
+      where: { id: "eurth" },
+      data: {
+        settings: { maxNationsPerUser: 2, inactivityDays: 60, reclaimWindowExclusive: false },
+      },
+    });
+    await expect(
+      callerAs(OFFICER, db).region.updateInactivity({
+        slug: "eurth",
+        inactivityDays: null,
+        reclaimWindowExclusive: false,
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      callerAs(FOUNDER, db).region.updateInactivity({
+        slug: "eurth",
+        inactivityDays: 10,
+        reclaimWindowExclusive: false,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

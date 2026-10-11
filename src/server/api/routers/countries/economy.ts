@@ -27,6 +27,7 @@ import {
   hasCountryWriteAccess,
 } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
+import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
 
 const HEAVY_COUNTRY_GEO_OMIT = { geometry: true, centroid: true, boundingBox: true } as const;
 
@@ -46,7 +47,8 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const LEAN_INCLUDE = {
   storytellerEffects: { where: { isActive: true }, orderBy: { ixTimeTimestamp: "desc" } },
   owner: { select: SOVEREIGN_OWNER_SELECT },
-  realm: { select: { id: true, name: true, slug: true, status: true } },
+  // emblemUrl/thumbnail: the realm logo on MyCountry's identity pill.
+  realm: { select: { id: true, name: true, slug: true, status: true, emblemUrl: true, thumbnail: true } },
 } satisfies Prisma.CountryInclude;
 
 const ECONOMIC_INCLUDE = {
@@ -255,9 +257,15 @@ export const economyProcedures = {
           }
         : null;
 
+      // The sovereign's Clerk picture and role: the identity pills' avatar and outline, wherever they show.
+      const clerkProfile = await clerkPublicProfile(rawUser?.clerkUserId);
+
       const { newStats } = result;
       const response = {
         ...country,
+        owner: rawUser
+          ? { ...rawUser, avatarUrl: clerkProfile.imageUrl, clerkRole: clerkProfile.role }
+          : null,
         sovereignUser,
         currentPopulation: newStats.currentPopulation,
         currentGdpPerCapita: newStats.currentGdpPerCapita,

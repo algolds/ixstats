@@ -10,6 +10,7 @@ import { realmCountsLine } from "~/lib/realms/realm-region";
 import { NOINDEX, SITE_NAME, socialMetadata } from "~/lib/site-metadata";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import { isRealmOpen, isRealmPublished } from "./realms.access";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 /** What the realm page's metadata is built from. */
 export interface RealmMetadataSource {
@@ -36,7 +37,7 @@ export async function loadRealmMetadataSource(
   slug: string
 ): Promise<RealmMetadataSource | null> {
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: {
       id: true,
       name: true,

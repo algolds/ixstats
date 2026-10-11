@@ -47,6 +47,7 @@ import {
 } from "~/lib/realms/sources/wiki-file-original";
 import { SOURCE_PRESETS } from "~/lib/realms/sources/presets";
 import { canModerateRealm, type RealmActor } from "./realms.access";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type WikiErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "BAD_GATEWAY" | "CONFLICT";
 
@@ -80,7 +81,7 @@ interface WikiRealm {
 
 async function loadWikiRealm(db: Pick<PrismaClient, "realm">, actor: RealmActor, slug: string): Promise<WikiRealm> {
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: { id: true, slug: true, name: true, ownerId: true, status: true, settings: true },
   });
   if (!realm) throw new RealmWikiError("NOT_FOUND", "Realm not found");

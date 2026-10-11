@@ -32,8 +32,6 @@ export function useNationalIdentityState(
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
   const [selectedGovernmentType, setSelectedGovernmentType] = useState("Republic");
-  const [customOfficialName, setCustomOfficialName] = useState("");
-  const [isEditingCustomName, setIsEditingCustomName] = useState(false);
   const [shouldFetchCustomTypes, setShouldFetchCustomTypes] = useState(false);
   const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(
     referenceCountry?.coatOfArms || referenceCountry?.coatOfArmsUrl || undefined
@@ -53,7 +51,6 @@ export function useNationalIdentityState(
       staleTime: 5 * 60 * 1000,
     }
   );
-  const upsertCustomGovernmentType = api.customTypes.upsertCustomGovernmentType.useMutation();
   const upsertFieldValue = api.customTypes.upsertFieldValue.useMutation();
 
   // Fetch wiki images (runs on backend via tRPC, avoiding client-side CORS/Failed to fetch issues)
@@ -139,10 +136,7 @@ export function useNationalIdentityState(
     if (inputs.nationalIdentity?.governmentType) {
       setSelectedGovernmentType(inputs.nationalIdentity.governmentType);
     }
-    if (inputs.nationalIdentity?.officialName && !isEditingCustomName) {
-      setCustomOfficialName(inputs.nationalIdentity.officialName);
-    }
-  }, [inputs.nationalIdentity, isEditingCustomName]);
+  }, [inputs.nationalIdentity]);
 
   // Event handlers - use refs to prevent recreation when inputs change
   const handleIdentityChange = useCallback(
@@ -271,10 +265,6 @@ export function useNationalIdentityState(
     setShowCoatOfArmsImageModal,
     selectedGovernmentType,
     setSelectedGovernmentType,
-    customOfficialName,
-    setCustomOfficialName,
-    isEditingCustomName,
-    setIsEditingCustomName,
     shouldFetchCustomTypes,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,
@@ -283,7 +273,6 @@ export function useNationalIdentityState(
     flag,
     handleColorsExtracted,
     customGovernmentTypes,
-    upsertCustomGovernmentType,
     identity,
     // Handlers
     handleIdentityChange,

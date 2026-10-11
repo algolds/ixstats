@@ -275,7 +275,11 @@ function buildIdentity(
     region: str(c.region),
     realm:
       str(realm?.name) && str(realm?.slug)
-        ? { name: String(realm.name), slug: String(realm.slug) }
+        ? {
+            name: String(realm.name),
+            slug: String(realm.slug),
+            logoUrl: firstStr(realm.emblemUrl, realm.thumbnail),
+          }
         : null,
     flagUrl,
     coatOfArmsUrl:
@@ -284,6 +288,8 @@ function buildIdentity(
       ? {
           username: firstStr(owner.handle, owner.forumUsername, owner.wikiUsername),
           roleName: firstStr(owner.role?.displayName, owner.role?.name),
+          avatarUrl: str(owner.avatarUrl),
+          role: firstStr(owner.clerkRole, owner.role?.name),
         }
       : null,
     claim: claimableNation(c),

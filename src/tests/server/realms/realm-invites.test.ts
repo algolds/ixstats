@@ -64,6 +64,7 @@ function setup(holdings: Record<string, string[]> = { [INVITER]: [DEFAULT_REALM_
     },
     // No verified wiki account: claims wait for review unless a test says otherwise.
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),
       findUnique: jest.fn(),

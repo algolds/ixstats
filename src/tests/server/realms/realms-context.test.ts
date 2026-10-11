@@ -9,6 +9,11 @@ describe("resolveViewerRealmId", () => {
       resolveViewerRealmId(db({ id: "r_eurth" }), { realmSlug: "eurth", activeRealmId: "default" })
     ).resolves.toBe("r_eurth");
   });
+  it("finds Ixnay's row by id for its slugs, so a row still slugged ixworld resolves", async () => {
+    const d = db({ id: "default", status: "active", ownerId: "system" });
+    await expect(resolveViewerRealmId(d, { realmSlug: "ixnay" })).resolves.toBe(DEFAULT_REALM_ID);
+    expect(d.realm.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "default" } }));
+  });
   it("falls back to Ixnay for an unknown slug", async () => {
     await expect(resolveViewerRealmId(db(null), { realmSlug: "nope" })).resolves.toBe(
       DEFAULT_REALM_ID

@@ -7,12 +7,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { canModerateRealm, isRealmOpen, isRealmPublished, type RealmActor } from "./realms.access";
 import { nationPageTaken } from "./realms.handover";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type HubDb = Pick<PrismaClient, "realm" | "realmPage">;
 
 export async function getRealmHub(db: HubDb, slug: string, viewer: RealmActor | null) {
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: {
       id: true,
       slug: true,

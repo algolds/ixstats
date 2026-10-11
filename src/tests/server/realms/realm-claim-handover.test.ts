@@ -59,6 +59,7 @@ function setup() {
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue({ username: "Kir" }) },
+    nationMaterialHold: { findUnique: jest.fn().mockResolvedValue(null) },
     realmClaim: {
       findFirst: jest.fn().mockResolvedValue(null),
       findUnique: jest.fn(),

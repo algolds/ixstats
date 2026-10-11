@@ -15,6 +15,7 @@ import { FactbookSection } from "../../_components/manage/FactbookSection";
 import { ForumModerationSection } from "../../_components/manage/ForumModerationSection";
 import { HandOverSection } from "../../_components/manage/HandOverSection";
 import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
+import { InactivitySection } from "../../_components/manage/InactivitySection";
 import { LinksSection } from "../../_components/manage/LinksSection";
 import { MapSection } from "../../_components/manage/MapSection";
 import { MapImportSection } from "../../_components/manage/MapImportSection";
@@ -57,6 +58,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     can("appearance") && { id: "advert", label: "Advert" },
     { id: "officers", label: "Officers" },
     can("claims") && { id: "claims", label: "Claims" },
+    manage.inactivity && !manage.archived && { id: "inactivity", label: "Inactive nations" },
     can("diplomacy") && { id: "embassies", label: "Embassies" },
     can("diplomacy") && { id: "polls", label: "Poll" },
     can("board") && { id: "board", label: "Forum moderation" },
@@ -112,6 +114,9 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           >
             <ClaimsTab realmId={manage.realm.id} canApproveOwn={manage.isFounder} />
           </ManageSection>
+        )}
+        {manage.inactivity && !manage.archived && (
+          <InactivitySection slug={slug} inactivity={manage.inactivity} />
         )}
         {can("diplomacy") && <EmbassiesSection slug={slug} manage={manage} />}
         {can("diplomacy") && <PollsSection slug={slug} manage={manage} />}

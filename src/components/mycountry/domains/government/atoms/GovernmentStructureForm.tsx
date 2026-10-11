@@ -20,7 +20,6 @@ interface GovernmentStructureFormProps {
   hideBudgetConfig?: boolean;
   showOnlyBudgetConfig?: boolean;
   noWrapper?: boolean;
-  hideGovernmentType?: boolean;
 }
 
 export function GovernmentStructureForm({
@@ -31,7 +30,6 @@ export function GovernmentStructureForm({
   hideBudgetConfig = false,
   showOnlyBudgetConfig = false,
   noWrapper = false,
-  hideGovernmentType = false,
 }: GovernmentStructureFormProps) {
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -64,7 +62,6 @@ export function GovernmentStructureForm({
         data={data}
         onChange={handleFieldChange}
         isReadOnly={isReadOnly}
-        hideGovernmentType={hideGovernmentType}
       />
 
       {!hideBudgetConfig && (

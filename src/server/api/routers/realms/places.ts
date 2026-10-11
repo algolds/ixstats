@@ -15,6 +15,7 @@ import {
   getRealmBoardAccess,
   syncRealmBoardMembers,
 } from "~/server/shared/realm-board";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 /** How far back "forum activity" in the directory looks. */
 const FORUM_ACTIVITY_WINDOW_DAYS = 7;
@@ -281,7 +282,7 @@ export async function searchDirectoryNations(db: PrismaClient, query: string) {
 export async function openRealmBoard(db: PrismaClient, slug: string, viewer: RealmActor | null) {
   const clerkUserId = viewer?.clerkUserId ?? null;
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: { id: true, slug: true, name: true, ownerId: true, status: true },
   });
   if (!realm || isRealmHiddenFrom(viewer, realm))

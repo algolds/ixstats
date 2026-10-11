@@ -50,6 +50,7 @@ import { canModerateRealm, type RealmActor } from "./realms.access";
 import { fetchNationPagePrefill } from "./realms.prefill";
 import { applySyncPlan, type ApplyDeps } from "./realms.source-apply";
 import { realmNationDefaults } from "./realms.settings";
+import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type SyncErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT";
 
@@ -115,7 +116,7 @@ export async function loadManagedRealm(
   { allowArchived = false }: { allowArchived?: boolean } = {}
 ): Promise<RealmRef> {
   const realm = await db.realm.findUnique({
-    where: { slug },
+    where: realmSlugWhere(slug),
     select: { id: true, slug: true, name: true, ownerId: true, status: true },
   });
   if (!realm) throw new SourceSyncError("NOT_FOUND", "Realm not found");
@@ -381,6 +382,7 @@ export async function buildSyncPlan(
         continent: true,
         wikiSource: true,
         flag: true,
+        materialHold: { select: { countryId: true } },
         nationalIdentity: { select: { capitalCity: true, officialName: true } },
       },
     }),
@@ -411,11 +413,12 @@ export async function buildSyncPlan(
   const redirects = await linkRedirects(snapshot, wikiSource, resolveRedirects);
   const plan = planSourceSync({
     snapshot,
-    countries: countries.map(({ nationalIdentity, flag, ...c }) => ({
+    countries: countries.map(({ nationalIdentity, flag, materialHold, ...c }) => ({
       ...c,
       capital: nationalIdentity?.capitalCity ?? null,
       officialName: nationalIdentity?.officialName ?? null,
-      infoboxEmpty: infoboxNeedsRead({ flag }),
+      // A released nation's flag is held for its former player (ToS §2.7): the wiki's must not take its place.
+      infoboxEmpty: !materialHold && infoboxNeedsRead({ flag }),
     })),
     rosterPages: pages.filter((p) => p.kind === "nation"),
     realmPageTitles: pages.filter((p) => p.wikiSource === wikiSource).map((p) => p.title),
@@ -705,7 +708,7 @@ export async function realmMapAttribution(
   db: Pick<PrismaClient, "realm" | "realmSourceSync">,
   slug: string
 ) {
-  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true } });
+  const realm = await db.realm.findUnique({ where: realmSlugWhere(slug), select: { id: true } });
   if (!realm) return null;
   const row = await db.realmSourceSync.findUnique({
     where: { realmId: realm.id },

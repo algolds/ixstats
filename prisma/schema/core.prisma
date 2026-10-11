@@ -186,6 +186,9 @@ model Country {
   nameBankEntries             NameBank[]                    @relation("CountryNameBank")
   languagePacks               LanguagePack[]                @relation("CountryLanguagePacks")
   ownerUserId                 String?
+  /// When the inactivity notice went to the owner (ToS §2.8); cleared when they return or the nation is released.
+  inactivityNoticeAt          DateTime?
+  materialHold                NationMaterialHold?
   owner                       User?                         @relation("CountryOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   realmClaims                 RealmClaim[]
   /// The nation's key in its realm's outside source (RealmSourceSync), e.g. a community map's nation id

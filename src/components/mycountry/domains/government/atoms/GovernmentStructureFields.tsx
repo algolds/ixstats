@@ -15,13 +15,11 @@ import {
 import { cn } from "~/lib/utils";
 import { AdvancedFieldsDisclosure } from "~/app/builder/primitives/AdvancedFieldsDisclosure";
 import type { GovernmentStructureInput } from "~/types/government";
-import { governmentTypes } from "./governmentStructureConstants";
 
 interface GovernmentStructureFieldsProps {
   data: GovernmentStructureInput;
   onChange: (field: keyof GovernmentStructureInput, value: string) => void;
   isReadOnly?: boolean;
-  hideGovernmentType?: boolean;
 }
 
 const LABEL_CLASS = "text-label-secondary text-body font-medium";
@@ -38,8 +36,6 @@ function TextField({
   placeholder,
   onChange,
   disabled,
-  className,
-  list,
 }: {
   id: string;
   label: string;
@@ -48,8 +44,6 @@ function TextField({
   placeholder: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  className?: string;
-  list?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -59,12 +53,10 @@ function TextField({
       </Label>
       <Input
         id={id}
-        list={list}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={className}
       />
     </div>
   );
@@ -100,7 +92,6 @@ export function GovernmentStructureFields({
   data,
   onChange,
   isReadOnly = false,
-  hideGovernmentType = false,
 }: GovernmentStructureFieldsProps) {
   const [isGovHeadLocked, setIsGovHeadLocked] = useState(
     () => data.headOfState === data.headOfGovernment && !!data.headOfState
@@ -116,45 +107,9 @@ export function GovernmentStructureFields({
     if (isGovHeadLocked) onChange("headOfGovernment", value);
   };
 
-  const nameField = (
-    <TextField
-      id="governmentName"
-      label="Government name"
-      value={data.governmentName}
-      placeholder="e.g., Imperial Government of Caphiria"
-      onChange={(v) => onChange("governmentName", v)}
-      disabled={isReadOnly}
-      className="w-full"
-    />
-  );
-
+  // The government's name and form are edited with the country's names (BasicInfoForm).
   return (
     <>
-      {hideGovernmentType ? (
-        nameField
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {nameField}
-          <div>
-            <TextField
-              id="governmentType"
-              label="Government type"
-              list="governmentTypeSuggestions"
-              value={data.governmentType}
-              placeholder="e.g., Unitary Quaternalist Republic"
-              onChange={(v) => onChange("governmentType", v)}
-              disabled={isReadOnly}
-              className="w-full"
-            />
-            <datalist id="governmentTypeSuggestions">
-              {governmentTypes.map((type) => (
-                <option key={type} value={type} />
-              ))}
-            </datalist>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -186,7 +141,7 @@ export function GovernmentStructureFields({
             id="headOfState"
             value={data.headOfState || ""}
             onChange={(e) => handleHeadOfStateChange(e.target.value)}
-            placeholder="e.g., Emperor, President"
+            placeholder="Title, e.g. Emperor, President"
             disabled={isReadOnly}
           />
         </div>
@@ -198,7 +153,7 @@ export function GovernmentStructureFields({
           value={isGovHeadLocked ? data.headOfState || "" : data.headOfGovernment || ""}
           onChange={(v) => onChange("headOfGovernment", v)}
           placeholder={
-            isGovHeadLocked ? "Same as Head of State" : "e.g., Prime Minister, Chancellor"
+            isGovHeadLocked ? "Same as Head of State" : "Title, e.g. Prime Minister, Chancellor"
           }
           disabled={isReadOnly || isGovHeadLocked}
         />
