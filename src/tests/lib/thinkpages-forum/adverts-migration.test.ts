@@ -47,9 +47,7 @@ describe("realm adverts migration", () => {
     expect(
       statements.match(/ALTER TABLE "[a-z_]+" (?!ADD COLUMN IF NOT EXISTS|ADD CONSTRAINT)/g) ?? []
     ).toEqual([]);
-    expect(statements).not.toMatch(
-      /\b(?:DROP|TRUNCATE|INSERT)\b|(?<!ON )\b(?:UPDATE|DELETE)\b/
-    );
+    expect(statements).not.toMatch(/\b(?:DROP|TRUNCATE|INSERT)\b|(?<!ON )\b(?:UPDATE|DELETE)\b/);
   });
 
   it("matches the Prisma schema", () => {

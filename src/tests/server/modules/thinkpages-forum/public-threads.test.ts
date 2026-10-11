@@ -62,7 +62,8 @@ const PUBLIC_WHERE = {
   ...advertGate(null),
   category: {
     visibility: { in: ["public"] },
-    style: { not: "board" }, NOT: { scope: "realm", key: "board" },
+    style: { not: "board" },
+    NOT: { scope: "realm", key: "board" },
     OR: [{ scope: "site" }, { scope: "realm", realmId: { in: ["default", "r_active", "r_old"] } }],
   },
 };
