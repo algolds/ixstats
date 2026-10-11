@@ -1,5 +1,5 @@
-import { renderHook } from "@testing-library/react";
-import { createEditor } from "slate";
+import { act, renderHook } from "@testing-library/react";
+import { createEditor, Node as SlateNode, type Editor } from "slate";
 
 const mockCreateEditor = jest.fn();
 const mockAccountsQuery = jest.fn((_input?: object, _options?: { enabled?: boolean }) => ({
@@ -98,5 +98,83 @@ describe("useGlassPlateEditor mentionSource", () => {
     expect(result.current.mentionResults.map((r) => r.type)).toEqual(["user"]);
     const { result: own } = setup();
     expect(own.current.mentionResults.map((r) => r.type)).toEqual(["user", "league", "wiki"]);
+  });
+});
+
+type Source = NonNullable<Parameters<typeof useGlassPlateEditor>[0]["mentionSource"]>;
+const names = ["kia", "kim", "kira", "kit", "kito", "kiwi"];
+const sourceOf = (picked: readonly string[]): Source => ({
+  items: picked.map((name) => ({ kind: "user" as const, name, label: name, avatarUrl: null })),
+  isLoading: false,
+  onQueryChange: jest.fn(),
+});
+
+function menuSetup(initial: Source) {
+  const editor = createEditor();
+  editor.children = [{ type: "p", children: [{ text: "" }] }] as never;
+  Object.assign(editor, {
+    tf: { setValue: jest.fn() },
+    isInline: () => false,
+    isVoid: () => false,
+  });
+  mockCreateEditor.mockReturnValue(editor);
+  const view = renderHook(
+    ({ mentionSource }: { mentionSource: Source }) => useGlassPlateEditor({ mentionSource }),
+    { initialProps: { mentionSource: initial } }
+  );
+  return { editor, view };
+}
+
+function typeAt(editor: Editor, view: ReturnType<typeof menuSetup>["view"], text: string) {
+  editor.children = [{ type: "p", children: [{ text }] }] as never;
+  editor.selection = {
+    anchor: { path: [0, 0], offset: text.length },
+    focus: { path: [0, 0], offset: text.length },
+  };
+  act(() => view.result.current.handleEditorChange({ value: editor.children }));
+}
+
+const press = (view: ReturnType<typeof menuSetup>["view"], key: string) =>
+  act(() => view.result.current.handleKeyDown({ key, preventDefault: jest.fn() } as never));
+
+describe("useGlassPlateEditor @ menu selection", () => {
+  const getSelection = jest.spyOn(window, "getSelection");
+  beforeEach(() => {
+    getSelection.mockReturnValue({
+      rangeCount: 1,
+      getRangeAt: () => ({ getBoundingClientRect: () => ({ bottom: 10, left: 5 }) }),
+    } as never);
+  });
+  afterAll(() => getSelection.mockRestore());
+
+  it("highlights the first row again when the typed name narrows the list, so Enter picks it", () => {
+    const { editor, view } = menuSetup(sourceOf(names));
+    typeAt(editor, view, "@ki");
+    for (let i = 0; i < 4; i += 1) press(view, "ArrowDown");
+    expect(view.result.current.mentionSelectedIndex).toBe(4);
+    view.rerender({ mentionSource: sourceOf(["kir", "kira"]) });
+    typeAt(editor, view, "@kir");
+    expect(view.result.current.mentionSelectedIndex).toBe(0);
+    press(view, "Enter");
+    expect(SlateNode.string(editor)).toBe("@kir ");
+  });
+
+  it("picks the last row when the list shrinks under a stale index before the query changes", () => {
+    const { editor, view } = menuSetup(sourceOf(names));
+    typeAt(editor, view, "@ki");
+    for (let i = 0; i < 4; i += 1) press(view, "ArrowDown");
+    view.rerender({ mentionSource: sourceOf(["kir", "kira"]) });
+    press(view, "Tab");
+    expect(SlateNode.string(editor)).toBe("@kira ");
+  });
+
+  it("opens the next menu on its first row after a pick", () => {
+    const { editor, view } = menuSetup(sourceOf(names));
+    typeAt(editor, view, "@ki");
+    for (let i = 0; i < 3; i += 1) press(view, "ArrowDown");
+    press(view, "Enter");
+    expect(view.result.current.mentionSelectedIndex).toBe(0);
+    typeAt(editor, view, "@ki");
+    expect(view.result.current.mentionSelectedIndex).toBe(0);
   });
 });

@@ -138,6 +138,10 @@ export function useGlassPlateEditor({
   useEffect(() => {
     onMentionQueryChange?.(mentionQuery);
   }, [mentionQuery, onMentionQueryChange]);
+  // A new query is a new list: start on its first row.
+  useEffect(() => {
+    setMentionSelectedIndex(0);
+  }, [mentionQuery]);
 
   const wikiSearchForMention = api.wikios.search.useQuery(
     { query: mentionQuery, limit: 3, wikiSource: "all" },
@@ -384,6 +388,7 @@ export function useGlassPlateEditor({
       setMentionCoords(null);
       setMentionRange(null);
       setMentionQuery("");
+      setMentionSelectedIndex(0);
       ReactEditor.focus(editor as any);
     },
     [editor, mentionRange, mentionResults]
@@ -407,7 +412,7 @@ export function useGlassPlateEditor({
         }
         if (e.key === "Enter" || e.key === "Tab") {
           e.preventDefault();
-          handleSelectMention(mentionSelectedIndex);
+          handleSelectMention(Math.min(mentionSelectedIndex, mentionResults.length - 1));
           return;
         }
         if (e.key === "Escape") {
