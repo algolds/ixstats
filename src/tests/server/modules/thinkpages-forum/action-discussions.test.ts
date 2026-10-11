@@ -420,9 +420,14 @@ describe("discussionsOf", () => {
 
     it.each([
       ["no dot", "l999"],
+      ["no dot, digits", "123"],
       ["no time", ".l001"],
       ["no id", "123."],
       ["not a time", "abc.l001"],
+      ["exponent time", "1e3.l001"],
+      ["padded time", " 12 .l001"],
+      ["hex time", "0x10.l001"],
+      ["signed time", "-5.l001"],
     ])("reads a cursor that does not parse as the end of the list: %s", async (_label, cursor) => {
       const db = many(3);
       expect(await page(db, guest, cursor)).toEqual({ items: [], nextCursor: null });

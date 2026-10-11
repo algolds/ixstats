@@ -63,9 +63,10 @@ const encodeCursor = (link: { createdAt: Date; id: string }): string =>
 
 function decodeCursor(cursor: string): { createdAt: Date; id: string } | null {
   const dot = cursor.indexOf(".");
-  const time = Number(cursor.slice(0, dot));
+  const digits = cursor.slice(0, dot);
+  const time = Number(digits);
   const id = cursor.slice(dot + 1);
-  if (dot < 1 || id === "" || !Number.isSafeInteger(time)) return null;
+  if (dot < 1 || !/^\d+$/.test(digits) || id === "" || !Number.isSafeInteger(time)) return null;
   const createdAt = new Date(time);
   return Number.isNaN(createdAt.getTime()) ? null : { createdAt, id };
 }
