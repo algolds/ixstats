@@ -5,7 +5,12 @@ jest.mock("~/server/modules/thinkpages-forum/render", () => ({
   renderViaWiki: jest.fn(),
 }));
 import { renderViaWiki } from "~/server/modules/thinkpages-forum/render";
-import { rerenderPosts, staleForumPostIds } from "~/server/modules/thinkpages-forum/render-stale";
+import {
+  nextStaleBatch,
+  rerenderPosts,
+  resetRenderFailuresForTests,
+  staleForumPostIds,
+} from "~/server/modules/thinkpages-forum/render-stale";
 
 const rerender = jest.mocked(renderViaWiki);
 
@@ -52,7 +57,10 @@ function fakeDb(posts: Row[], editedTo?: string) {
   return { db, updates, templateWrites };
 }
 
-beforeEach(() => rerender.mockReset());
+beforeEach(() => {
+  rerender.mockReset();
+  resetRenderFailuresForTests();
+});
 
 it("re-renders stale posts and replaces their templates", async () => {
   rerender.mockResolvedValue({
@@ -167,4 +175,65 @@ it("does not keep a mention link the render carried: only the ones it makes itse
   expect(updates[0]?.contentHtml).toBe(
     '<p>@victim <a class="forum-mention" href="/id/kir">@kir</a></p>'
   );
+});
+
+describe("a post whose render keeps failing", () => {
+  const BROKEN = Array.from({ length: 12 }, (_, i) => `broken${i}`);
+  const posts: Row[] = [...BROKEN, "fine"].map((id) => ({
+    id,
+    threadId: "t1",
+    contentWikitext: id,
+  }));
+  /** The stale query's order: posts that never rendered come first, and LIMIT cuts the list there. */
+  const queue = (rows: Row[]) => ({
+    $queryRaw: jest.fn(async (_s: TemplateStringsArray, ...values: Array<string | number>) =>
+      rows.slice(0, Number(values[values.length - 1])).map(({ id }) => ({ id }))
+    ),
+  });
+  const run = async (rows: Row[]) => {
+    const { db, updates } = fakeDb(rows);
+    const ids = await nextStaleBatch(queue(rows) as never);
+    db.forumPost.findMany.mockImplementation(async () => rows.filter((p) => ids.includes(p.id)));
+    const result = await rerenderPosts(db as never, ids);
+    return { ids, result, updates };
+  };
+  const mediaWiki = (broken: boolean) =>
+    rerender.mockImplementation(async (source: string) =>
+      broken && source.startsWith("broken")
+        ? null
+        : {
+            contentHtml: "<p>ok</p>",
+            plainText: "ok",
+            rendererVersion: "forum-1:v",
+            renderedAt: new Date(),
+            templates: [],
+          }
+    );
+
+  it("goes to the back of the queue, so a renderable post behind it is reached on the next run", async () => {
+    mediaWiki(true);
+    const first = await run(posts);
+    expect(first.ids).toEqual(BROKEN.slice(0, 10));
+    expect(first.result).toEqual({ rendered: 0, failed: 10 });
+    const second = await run(posts);
+    expect(second.ids).toEqual([...BROKEN.slice(10), "fine"]);
+    expect(second.updates.map((u) => u.id)).toEqual(["fine"]);
+    expect(second.result).toEqual({ rendered: 1, failed: 2 });
+  });
+
+  it("is tried again once the wait is over, and forgotten once it renders", async () => {
+    mediaWiki(true);
+    jest.useFakeTimers();
+    try {
+      await run(posts);
+      await run(posts);
+      jest.advanceTimersByTime(60 * 60_000);
+      mediaWiki(false);
+      const again = await run(posts);
+      expect(again.ids).toEqual(BROKEN.slice(0, 10));
+      expect(again.result).toEqual({ rendered: 10, failed: 0 });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

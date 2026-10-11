@@ -5,6 +5,7 @@ import {
   admin,
   boardPost,
   boardStore,
+  countries,
   founder,
   member,
   officer,
@@ -133,6 +134,45 @@ describe("getBoard", () => {
       expect(out.messages.find((m) => m.id === "p5")).toMatchObject({ hidden: true });
       expect(out.messages.find((m) => m.id === "p1")).toMatchObject({ hidden: false });
     }
+  });
+
+  it("reads the visitors' realms in one query, however many realms they come from", async () => {
+    const nation = (id: string, ownerUserId: string, realmId: string) => ({
+      id,
+      ownerUserId,
+      realmId,
+      currentTotalGdp: 1,
+    });
+    const store = boardStore(
+      seed({
+        posts: [
+          boardPost("v1", 1, { authorUserId: "u_visitor" }),
+          boardPost("v2", 2, { authorUserId: "u_plain" }),
+          boardPost("v3", 3, { authorUserId: "u_claims" }),
+        ] as never,
+      }),
+      {
+        countries: [
+          ...countries,
+          nation("c_old", "u_plain", "r_old"),
+          nation("c_draft", "u_claims", "r_draft"),
+        ],
+      }
+    );
+    const findUnique = jest.spyOn(store.db.realm, "findUnique");
+    const findMany = jest.spyOn(store.db.realm, "findMany");
+    const { messages: out } = await board(member, {}, "eurth", store);
+    const byId = Object.fromEntries(out.map((m) => [m.id, m.visitorRealm]));
+    // A hidden (draft) realm gives no label.
+    expect(byId).toEqual({
+      v1: { slug: "aurora", name: "Aurora" },
+      v2: { slug: "old", name: "Old" },
+      v3: null,
+    });
+    const reads = [...findUnique.mock.calls, ...findMany.mock.calls].filter(([args]) =>
+      /r_(aurora|old|draft)/.test(JSON.stringify(args))
+    );
+    expect(reads).toHaveLength(1);
   });
 
   it("labels visitors with their own realm, and nobody else", async () => {

@@ -36,7 +36,9 @@ import {
   MAX_POST_HTML,
   prepareBody,
   resolvePersona,
+  syncEditLinks,
   syncLinks,
+  validateEditLinks,
   validateLinks,
   type ForumActor,
   type WritesDb,
@@ -83,6 +85,7 @@ async function assertReplyTarget(
  * Slow mode (spec section 2): members post at most once per `slowModeSeconds` on a realm's board; moderators are
  * exempt. The wait comes from the actor's latest message in the board thread (a persona's counts, and so does the placeholder
  * a continued message leaves behind, which keeps the message's author and time), so it is exact, refused attempts never extend it, and it holds without the rate limiter.
+ * `postBoardMessage` runs it again inside the insert transaction, under a per-(thread, member) advisory lock.
  */
 async function enforceSlowMode(
   db: Pick<PrismaClient, "forumPost">,
@@ -137,9 +140,13 @@ export async function postBoardMessage(
   const body = await withMentionLinks(db, boardBody(input.html));
   if (input.replyToPostId) await assertReplyTarget(db, place.threadId, input.replyToPostId);
   await validateLinks(db, actor, body.plainText);
+  // A quick refusal before the lock; the check that counts runs again under it.
   await enforceSlowMode(db, actor, place.threadId, settings, access);
-  const now = new Date();
   const postId = await db.$transaction(async (tx) => {
+    // One post at a time per member and board, so parallel posts cannot all pass the slow-mode check.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`board-post:${place.threadId}:${actor.id}`}))`;
+    await enforceSlowMode(tx, actor, place.threadId, settings, access);
+    const now = new Date();
     const post = await tx.forumPost.create({
       data: {
         threadId: place.threadId,
@@ -179,6 +186,7 @@ export async function editBoardMessage(
     select: {
       id: true,
       authorUserId: true,
+      plainText: true,
       hidden: true,
       editedAt: true,
       createdAt: true,
@@ -211,7 +219,7 @@ export async function editBoardMessage(
     throw new ForumError("CONFLICT", "This message is part of a submitted story chain");
   }
   const body = await withMentionLinks(db, boardBody(input.html));
-  await validateLinks(db, actor, body.plainText);
+  await validateEditLinks(db, actor, post, body.plainText);
   const { count } = await db.forumPost.updateMany({
     where: { id: post.id, editedAt: post.editedAt },
     data: { contentHtml: body.contentHtml, plainText: body.plainText, editedAt: new Date() },
@@ -222,7 +230,7 @@ export async function editBoardMessage(
       "This message changed since you opened it. Reload to see the latest version."
     );
   }
-  await syncLinks(db, actor, post.id, body.plainText);
+  await syncEditLinks(db, actor, post, body.plainText);
   return storedBoardMessage(db, actor, place, post.id);
 }
 

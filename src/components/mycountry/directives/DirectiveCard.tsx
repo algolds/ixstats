@@ -402,6 +402,7 @@ export function DirectiveCard({
     onSuccess: (_res, vars) => {
       void utils.intent.getTree.invalidate();
       void utils.intent.getStatus.invalidate();
+      void utils.actionLinks.directiveActivity.invalidate({ intentId: vars.id });
       void utils.policies.getPolicyReconContext.invalidate();
       if (vars.status === "completed") {
         notify.success("Directive completed", "A summary post draft is ready for you.");

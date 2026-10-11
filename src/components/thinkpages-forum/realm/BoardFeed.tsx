@@ -14,6 +14,7 @@ import { api } from "~/trpc/react";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { BoardMessage } from "./BoardMessage";
 import type { BoardAccess, BoardData, BoardMessageData, BoardRealm } from "./types";
+import type { MessageSeek } from "./useScrollToMessageHash";
 
 /** What every message of the feed needs besides itself. */
 interface MessageContext {
@@ -29,11 +30,16 @@ interface MessageContext {
 
 interface FeedContext {
   message: MessageContext;
+  /** The message a link points at, which the pages look for. */
+  seek: MessageSeek | null;
   /** An earlier page is loading: the feed is busy. */
   setLoadingMore: (loading: boolean) => void;
 }
 
 const NOTHING_SHOWN: ReadonlySet<string> = new Set();
+
+/** Earlier pages a link's search loads (50 messages each) before it leaves the rest to the reader. */
+const MAX_SEEK_PAGES = 10;
 
 const DIVIDER = "border-separator border-t";
 /** The compact header bar's height when it cannot be measured. */
@@ -59,11 +65,27 @@ interface SectionProps {
   first: boolean;
   /** Messages the pages before this one already show: a moved cursor can return them again, and they show once. */
   exclude: ReadonlySet<string>;
+  /** How many pages back this one is: 0 for the newest. */
+  depth: number;
   context: FeedContext;
 }
 
-/** One page of messages with its action cards, then the way to the page before it. */
-function Section({ messages, cursor, hasMore, first, exclude, context }: SectionProps) {
+/** The one line a search for a linked message ends in when it did not find it. */
+function NotFound({ everythingLoaded }: { everythingLoaded: boolean }) {
+  return (
+    <p role="status" className={cn(DIVIDER, "text-footnote text-label-secondary px-5 py-3")}>
+      {everythingLoaded
+        ? "That message is no longer on this board."
+        : "That message is older than what is loaded."}
+    </p>
+  );
+}
+
+/**
+ * One page of messages with its action cards, then the way to the page before it. While a linked message is not on
+ * screen the page before opens by itself, up to `MAX_SEEK_PAGES` back; the page that has the message tells the link.
+ */
+function Section({ messages, cursor, hasMore, first, exclude, depth, context }: SectionProps) {
   const visible = useMemo(
     () => (exclude.size === 0 ? messages : messages.filter((m) => !exclude.has(m.id))),
     [messages, exclude]
@@ -71,6 +93,17 @@ function Section({ messages, cursor, hasMore, first, exclude, context }: Section
   const { cards, ready, errored } = useThreadActionCards(visible);
   const actionIds = useMemo(() => actionIdsOf(visible), [visible]);
   const [more, setMore] = useState(false);
+  const { seek } = context;
+  const target = seek?.postId;
+  const hasTarget = target !== undefined && visible.some((m) => m.id === target);
+  const found = target !== undefined && (hasTarget || exclude.has(target));
+  const seeking = target !== undefined && !found;
+  const canGoBack = hasMore && !!cursor;
+  const searching = seeking && canGoBack && depth < MAX_SEEK_PAGES;
+  const onFound = seek?.found;
+  useEffect(() => {
+    if (hasTarget) onFound?.();
+  }, [hasTarget, onFound]);
   const shown = useMemo(
     () => new Set([...exclude, ...messages.map((m) => m.id)]),
     [exclude, messages]
@@ -88,9 +121,10 @@ function Section({ messages, cursor, hasMore, first, exclude, context }: Section
           className={cn((!first || index > 0) && DIVIDER)}
         />
       ))}
-      {hasMore && cursor ? (
-        more ? (
-          <EarlierPage before={cursor} exclude={shown} context={context} />
+      {seeking && !searching && !more ? <NotFound everythingLoaded={!canGoBack} /> : null}
+      {canGoBack ? (
+        more || searching ? (
+          <EarlierPage before={cursor} exclude={shown} depth={depth + 1} context={context} />
         ) : (
           <div className={cn(DIVIDER, "flex items-center justify-center px-5 py-3")}>
             <Button
@@ -112,10 +146,12 @@ function Section({ messages, cursor, hasMore, first, exclude, context }: Section
 function EarlierPage({
   before,
   exclude,
+  depth,
   context,
 }: {
   before: string;
   exclude: ReadonlySet<string>;
+  depth: number;
   context: FeedContext;
 }) {
   const { data, isLoading, isError, refetch } = api.thinkpagesForum.getBoard.useQuery(
@@ -137,6 +173,7 @@ function EarlierPage({
         hasMore={data.hasMore}
         first={false}
         exclude={exclude}
+        depth={depth}
         context={context}
       />
     );
@@ -212,6 +249,8 @@ interface BoardFeedProps {
   paused: boolean;
   signedIn: boolean;
   tools: ModeratorTools | null;
+  /** The message a link points at: the feed pages back until it has it, then tells the link. */
+  seek?: MessageSeek | null;
   /** Bumped when the reader posts: show the newest messages and bring the top into view. */
   showLatest: number;
   onReply: (message: BoardMessageData) => void;
@@ -237,6 +276,7 @@ export function BoardFeed({
   paused,
   signedIn,
   tools,
+  seek = null,
   showLatest,
   onReply,
   onQuote,
@@ -285,6 +325,7 @@ export function BoardFeed({
       onQuote,
       onChanged,
     },
+    seek,
     setLoadingMore,
   };
   const typingText = typingLine(typing);
@@ -352,6 +393,7 @@ export function BoardFeed({
               hasMore={data.hasMore}
               first
               exclude={NOTHING_SHOWN}
+              depth={0}
               context={context}
             />
           </div>

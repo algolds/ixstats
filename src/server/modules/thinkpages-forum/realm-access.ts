@@ -87,6 +87,21 @@ export function loadForumRealm(db: RealmDb, ref: RealmRef): Promise<ForumRealm |
   );
 }
 
+/** `loadForumRealm` for many ids in one read: the realms found by id (IxWorld synthesized when it has no row). */
+export async function loadForumRealms(
+  db: RealmDb,
+  ids: readonly string[]
+): Promise<Map<string, ForumRealm>> {
+  const rows = ids.length
+    ? await db.realm.findMany({ where: { id: { in: [...ids] } }, select: REALM_SELECT })
+    : [];
+  const found = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
+  if (ids.includes(DEFAULT_REALM_ID) && !found.has(DEFAULT_REALM_ID)) {
+    found.set(DEFAULT_REALM_ID, IXWORLD_REALM);
+  }
+  return found;
+}
+
 /** A realm with the images that stand in for its icon (the emblem, else the thumbnail), as a preview draws it. */
 export interface ForumRealmLook extends ForumRealm {
   emblemUrl: string | null;

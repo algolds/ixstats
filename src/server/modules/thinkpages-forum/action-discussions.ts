@@ -50,12 +50,14 @@ export interface DiscussionCount {
 const PAGE_SIZE = 20;
 /** Links read per call; hidden ones do not take page slots, so one call may scan past 20. */
 const SCAN = 100;
-// ponytail: one bound for the whole counts call. It reads at most this many links, newest first, across ALL requested
-// ids, then drops the ones this viewer cannot see. So one busy action (a country may link its own action any number of
-// times) or many persona and hidden links can use the budget up and push the other cards, or the older links of the
-// same card, to a count of 0 or too low. A 50-card page of ordinary traffic stays far below it. Upgrade path: a bounded
-// scan per id (one take per activity), so a busy action can only shortchange itself.
+/**
+ * Links read by the first, shared counts query (newest first, across ALL requested ids). When that query is cut off, a
+ * busy action may have used it all, so every id with fewer than `COUNT_SCAN_PER_ID` links in it is read again on its
+ * own: each id is therefore counted from at least its own newest `COUNT_SCAN_PER_ID` links (a busy action can only
+ * shortchange itself). An ordinary page of cards never reaches the cut-off and costs the one query.
+ */
 const COUNT_SCAN = 1000;
+const COUNT_SCAN_PER_ID = 200;
 const LONE_IDS = 2;
 
 /** The cursor names the last link used by its time and id, so it still works after that link row is deleted. */
@@ -240,10 +242,32 @@ export async function discussionsOf(
   return { items, nextCursor };
 }
 
+type CountedLink = { activityId: string; postRef: string };
+
+/** The newest links of the given ids, per `COUNT_SCAN` and `COUNT_SCAN_PER_ID`. */
+async function countedLinks(db: DiscussionsDb, ids: string[]): Promise<CountedLink[]> {
+  const read = (activityId: string | { in: string[] }, take: number) =>
+    db.postActionLink.findMany({
+      where: { activityId, postSource: "native", activity: PUBLIC_ACTIVITY },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take,
+      select: { activityId: true, postRef: true },
+    });
+  const links = await read({ in: ids }, COUNT_SCAN);
+  if (links.length < COUNT_SCAN) return links;
+  const seenPerId = new Map<string, number>();
+  for (const l of links) seenPerId.set(l.activityId, (seenPerId.get(l.activityId) ?? 0) + 1);
+  const starved = ids.filter((id) => (seenPerId.get(id) ?? 0) < COUNT_SCAN_PER_ID);
+  const own = await Promise.all(starved.map((id) => read(id, COUNT_SCAN_PER_ID)));
+  const reread = new Set(starved);
+  return [...links.filter((l) => !reread.has(l.activityId)), ...own.flat()];
+}
+
 /**
  * The discussion count of each action, as `discussionsOf` would list them for this viewer: two queries (links, posts)
- * plus one realm read per distinct realm among the posts, however many ids. Every requested id is in the result; one
- * that is not public counts 0. Bounded by `COUNT_SCAN` (see the note there).
+ * plus one realm read per distinct realm among the posts, however many ids (when the shared links read is cut off, each
+ * starved id is read again on its own). Every requested id is in the result; one
+ * that is not public counts 0. Bounded per id by `COUNT_SCAN_PER_ID` (see the note there).
  */
 export async function discussionCountsOf(
   db: DiscussionsDb,
@@ -253,12 +277,7 @@ export async function discussionCountsOf(
   const ids = [...new Set(activityIds)];
   const counts = new Map<string, DiscussionCount>(ids.map((id) => [id, { count: 0, postIds: [] }]));
   if (ids.length === 0) return Object.fromEntries(counts);
-  const links = await db.postActionLink.findMany({
-    where: { activityId: { in: ids }, postSource: "native", activity: PUBLIC_ACTIVITY },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: COUNT_SCAN,
-    select: { activityId: true, postRef: true },
-  });
+  const links = await countedLinks(db, ids);
   const seen = await visiblePosts(
     db,
     viewer,

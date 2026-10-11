@@ -3,6 +3,7 @@
  * server modules, so `initializeWebSocketServer` hands it these two checks.
  */
 import type { PrismaClient } from "@prisma/client";
+import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import { boardAccessFor, type BoardAccessDb } from "./board-access";
 import { loadBoard, type BoardReadsDb } from "./board";
 import { forumActorOf, forumMemberOf } from "./forum-viewer";
@@ -52,7 +53,12 @@ export async function boardTypingName(
 ): Promise<string | null> {
   if (personaId) {
     const persona = await db.thinkpagesAccount.findFirst({
-      where: { id: personaId, clerkUserId, isActive: true },
+      where: {
+        id: personaId,
+        clerkUserId,
+        isActive: true,
+        accountType: { not: PERSONAL_ACCOUNT_TYPE },
+      },
       select: { displayName: true },
     });
     return persona?.displayName ?? null;

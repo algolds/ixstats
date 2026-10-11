@@ -4,7 +4,8 @@
  * first post the realm's founder and officers with the appearance power own (advert-access.ts). IxWorld, which has no
  * realm row to carry one, cannot have an advert.
  */
-import { Prisma, type PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { DEFAULT_REALM_ID, UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import {
   ADVERT_ARCHIVED_NOTICE,
@@ -103,11 +104,7 @@ function existsError(thread: AdvertThread): ForumError {
 
 /** The unique index on `advertRealmId` lost to a concurrent creation (not any other unique violation after commit). */
 function lostAdvertRace<E>(error: E): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002" &&
-    String(error.meta?.target ?? "").includes("advertRealmId")
-  );
+  return isUniqueViolation(error, "advertRealmId");
 }
 
 /**

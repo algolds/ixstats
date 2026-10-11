@@ -58,14 +58,15 @@ export function myChains(db: ChainsDb, countryId: string) {
 export async function addPostToChain(db: ChainsDb, input: PostInChain): Promise<void> {
   const { countryId, storylineId, postSource, postRef } = input;
   await requireOpenChain(db, countryId, storylineId);
-  const post = { postSource, postRef, countryId };
+  // Only links to a public action count: one withdrawn since (an abandoned directive) must not reach the wiki.
+  const post = { postSource, postRef, countryId, activity: { visibility: "public" } };
   // Only unchained links or this chain's own may move; a link in another chain stays put (that chain may be locked).
   const movable = { ...post, OR: [{ storylineId: null }, { storylineId }] };
   if ((await db.postActionLink.count({ where: movable })) === 0) {
     if ((await db.postActionLink.count({ where: post })) > 0) {
       throw new ActionLinkError("CONFLICT", "That post is already in another story chain");
     }
-    throw new ActionLinkError("NOT_FOUND", "That post links none of your nation's actions");
+    throw new ActionLinkError("NOT_FOUND", "That post links none of your nation's public actions");
   }
   const last = await db.postActionLink.aggregate({ where: { storylineId }, _max: { chainOrder: true } });
   await db.postActionLink.updateMany({

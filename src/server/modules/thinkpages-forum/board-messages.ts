@@ -11,7 +11,7 @@ import { readReactionCounts, type ReactionCounts } from "~/lib/thinkpages-forum/
 import { canSeeThread, type ForumViewer } from "./access";
 import { authorModeration, type AuthorModerationOf } from "./mod-authors";
 import { myReactionsOf } from "./reaction-attach";
-import { canSeeRealm, loadForumRealm, type ForumRealm } from "./realm-access";
+import { canSeeRealm, loadForumRealms, type ForumRealm } from "./realm-access";
 import { authorsOf, type AuthorsDb } from "./reads";
 import { roleContextOf, roleOf, type PostRole } from "./thread-extras";
 
@@ -156,13 +156,13 @@ async function visitorRealms(
     if (user.clerkUserId === realm.ownerId || owned.some((n) => n.realmId === realm.id)) continue;
     primaryRealmId.set(user.id, primaryNationOf(owned, user.countryId)?.realmId ?? null);
   }
-  const labels = new Map<string, { slug: string; name: string } | null>();
-  for (const id of new Set(primaryRealmId.values())) {
-    const own = id ? await loadForumRealm(db, { id }) : null;
-    labels.set(id ?? "", own && canSeeRealm(null, own) ? { slug: own.slug, name: own.name } : null);
+  // One read for every realm the visitors come from, however many there are.
+  const realmIds = [...new Set(primaryRealmId.values())].filter((id): id is string => id !== null);
+  const realms = await loadForumRealms(db, realmIds);
+  for (const [userId, realmId] of primaryRealmId) {
+    const own = realmId ? realms.get(realmId) : undefined;
+    visitors.set(userId, own && canSeeRealm(null, own) ? { slug: own.slug, name: own.name } : null);
   }
-  for (const [userId, realmId] of primaryRealmId)
-    visitors.set(userId, labels.get(realmId ?? "") ?? null);
   return visitors;
 }
 

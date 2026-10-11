@@ -13,6 +13,7 @@ jest.mock("~/trpc/react", () => {
       thinkpagesForum: {
         thread: { key: "thread" },
         getBoard: { key: "getBoard" },
+        reactors: { key: "reactors" },
         react: mutation("react"),
         unreact: mutation("unreact"),
       },
@@ -21,7 +22,10 @@ jest.mock("~/trpc/react", () => {
 });
 // The real getQueryKey needs a live tRPC proxy; this stand-in keeps the same `[[router, procedure]]` prefix shape.
 jest.mock("@trpc/react-query", () => ({
-  getQueryKey: (procedure: { key: string }) => [["thinkpagesForum", procedure.key]],
+  getQueryKey: (procedure: { key: string }, input?: object) =>
+    input
+      ? [["thinkpagesForum", procedure.key], { input, type: "query" }]
+      : [["thinkpagesForum", procedure.key]],
 }));
 jest.mock("~/hooks/useNotify", () => {
   const notify = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
@@ -128,8 +132,32 @@ describe("useForumReaction", () => {
     await act(async () => {
       await result.current.set("fire");
     });
-    expect(invalidate).toHaveBeenCalledTimes(1);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: THREAD, exact: true });
+    expect(invalidate).toHaveBeenCalledTimes(2);
+  });
+
+  it("marks the post's reactor lists stale once settled, so the dialog does not show the old list", async () => {
+    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
+    const invalidate = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
+    await act(async () => {
+      await result.current.set("fire");
+    });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: [["thinkpagesForum", "reactors"], { input: { postId: "p1" }, type: "query" }],
+    });
+  });
+
+  it("marks the post's reactor lists stale even when the reaction fails", async () => {
+    mutations.react!.mockRejectedValue(new Error("Slow down"));
+    const invalidate = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
+    await act(async () => {
+      await result.current.set("fire");
+    });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: [["thinkpagesForum", "reactors"], { input: { postId: "p1" }, type: "query" }],
+    });
   });
 
   it("puts only that post back when the reaction fails, keeping changes made elsewhere meanwhile", async () => {

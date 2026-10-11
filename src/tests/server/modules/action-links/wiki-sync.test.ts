@@ -30,7 +30,7 @@ const CHAIN = {
   reviewedAt: new Date("2026-10-07T00:00:00Z"),
   country: { name: "Aurelia" },
   actionLinks: [
-    { postSource: "native", postRef: "p1", activity: { title: "Signed", type: "diplomatic", createdAt: new Date(0) } },
+    { postSource: "native", postRef: "p1", activity: { title: "Signed", type: "diplomatic", createdAt: new Date(0), visibility: "public" } },
   ],
 };
 
@@ -53,6 +53,33 @@ describe("appendChainToWiki", () => {
     expect(save.wikitext.startsWith(`Intro.\n\n${MARKER}\n== Story chain: Pact ==`)).toBe(true);
     expect(save.wikitext).toContain("https://wiki.test");
     expect(save.wikitext).toContain("/thinkpages/post/p1 Signed]");
+    expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
+  });
+
+  it("leaves out an action that is no longer public, such as an abandoned directive", async () => {
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    const withdrawn = {
+      postSource: "native",
+      postRef: "p2",
+      activity: { title: "Secret overhaul", type: "policy", createdAt: new Date(0), visibility: "private" },
+    };
+    await appendChainToWiki(db({ ...CHAIN, actionLinks: [...CHAIN.actionLinks, withdrawn] }) as never, "s1");
+    const { wikitext } = jest.mocked(commitWikitextSave).mock.calls[0]![1];
+    expect(wikitext).toContain("Signed]");
+    expect(wikitext).not.toContain("Secret overhaul");
+    expect(wikitext).not.toContain("/thinkpages/post/p2");
+  });
+
+  it("writes no section when every action of the chain is withdrawn, and marks it synced", async () => {
+    const withdrawn = {
+      postSource: "native",
+      postRef: "p2",
+      activity: { title: "Secret overhaul", type: "policy", createdAt: new Date(0), visibility: "private" },
+    };
+    const d = db({ ...CHAIN, actionLinks: [withdrawn] });
+    await expect(appendChainToWiki(d as never, "s1")).resolves.toBe(true);
+    expect(commitWikitextSave).not.toHaveBeenCalled();
+    expect(ArticleRepository.findBySlug).not.toHaveBeenCalled();
     expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
   });
 

@@ -258,7 +258,7 @@ export const realmsRouter = createTRPCRouter({
   adminCreateRealm: adminProcedure
     .input(
       z.object({
-        slug: z.string().regex(REALM_SLUG_PATTERN, "2–40 lower-case letters, digits or hyphens"),
+        slug: z.string().regex(REALM_SLUG_PATTERN, "2–40 lower-case letters, digits or hyphens (not mine)"),
         name: z.string().trim().min(1).max(100),
         description: z.string().max(1000).optional(),
         visibility: z.enum(["public", "unlisted"]),

@@ -21,6 +21,7 @@ import { loadForumRealm } from "./realm-access";
 export type ReactionNoticeDb = Pick<
   PrismaClient,
   | "forumPost"
+  | "forumPostReaction"
   | "user"
   | "realm"
   | "realmOfficer"
@@ -97,6 +98,12 @@ async function notify(
   if ((await readableUsers(db, place, [owner])).length === 0) return;
   const blocking = await recipientsBlockingSender(db, actor.clerkUserId, [owner.clerkUserId]);
   if (blocking.length > 0) return;
+  // The hook runs after the response: a reaction taken back meanwhile tells nobody.
+  const stillReacting = await db.forumPostReaction.findUnique({
+    where: { postId_userId: { postId: post.id, userId: actor.id } },
+    select: { id: true },
+  });
+  if (!stillReacting) return;
   // Both ids come from the database rows (post.id, actor.id), never from raw input.
   const reactionKey = `${post.id}:${actor.id}`;
   if (await alreadyTold(db, owner.clerkUserId, reactionKey)) return;

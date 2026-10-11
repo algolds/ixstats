@@ -981,7 +981,7 @@ describe("thinkpagesForum router", () => {
     expect(out).toEqual([rawPersona]);
     expect(db.thinkpagesAccount.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { clerkUserId: "clerk_1", isActive: true },
+        where: { clerkUserId: "clerk_1", isActive: true, accountType: { not: "personal" } },
         select: { id: true, displayName: true, username: true },
       })
     );

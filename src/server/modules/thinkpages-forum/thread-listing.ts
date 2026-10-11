@@ -5,25 +5,15 @@
  * dropped again here. A persona thread is named by the persona only, never the player.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import {
-  isBoardCategory,
-  notBoardCategory,
-  visibleForumVisibilities,
-} from "~/lib/thinkpages-forum/categories";
+import { notBoardCategory, visibleForumVisibilities } from "~/lib/thinkpages-forum/categories";
 import { UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import { THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
 import { DEFAULT_REALM_ID, isSiteAdmin } from "~/server/modules/realms";
-import { canSeeThread, type ForumViewer } from "./access";
-import {
-  advertGate,
-  advertRealmHiddenFrom,
-  advertRowOf,
-  ADVERT_REALM_SELECT,
-  type AdvertRow,
-} from "./advert-access";
-import type { ForumRealm } from "./realm-access";
-import { visibleRealmOf, type ReadsDb } from "./reads";
+import type { ForumViewer } from "./access";
+import { advertGate, advertRowOf, type AdvertRow } from "./advert-access";
+import type { ReadsDb } from "./reads";
+import { candidateSelect, readable, type Candidate, type Placed } from "./thread-candidates";
 import { threadLastPosters, type ThreadLastPoster } from "./thread-extras";
 import { readerFloor, type UnreadDb } from "./unread";
 
@@ -63,65 +53,11 @@ export interface ThreadListing {
   total: number;
 }
 
-const candidateSelect = (userId: string) =>
-  ({
-    id: true,
-    title: true,
-    authorUserId: true,
-    authorPersonaId: true,
-    importedAuthorName: true,
-    xenforoThreadId: true,
-    pinned: true,
-    locked: true,
-    hidden: true,
-    postCount: true,
-    lastPostAt: true,
-    category: {
-      select: {
-        id: true,
-        key: true,
-        name: true,
-        style: true,
-        scope: true,
-        realmId: true,
-        visibility: true,
-      },
-    },
-    advertRealm: { select: ADVERT_REALM_SELECT },
-    reads: { where: { userId }, select: { readAt: true } },
-  }) as const satisfies Prisma.ForumThreadSelect;
-
-type Candidate = Prisma.ForumThreadGetPayload<{ select: ReturnType<typeof candidateSelect> }>;
-interface Placed {
-  row: Candidate;
-  realm: ForumRealm | null;
-}
-
 /** Hidden last posts never show in a list, whoever asks: the listing reads as a member. */
 const LISTING_VIEW = { id: "", scope: "site", realmId: null, visibility: "public" } as const;
 
 const unreadOf = (row: Candidate, floor: Date): boolean =>
   isUnread(row.lastPostAt, row.reads[0]?.readAt, floor);
-
-/** What the member may read: not the board, not hidden, the thread rule, and a realm that is visible to them. */
-async function readable(
-  db: ReadsDb,
-  viewer: NonNullable<ForumViewer>,
-  rows: readonly Candidate[]
-): Promise<Placed[]> {
-  const realms = new Map<string, ForumRealm | null | undefined>();
-  const placed: Placed[] = [];
-  for (const row of rows) {
-    const { category } = row;
-    if (isBoardCategory(category) || row.hidden || !canSeeThread(viewer, row, category)) continue;
-    if (advertRealmHiddenFrom(viewer, row.advertRealm)) continue;
-    const key = category.realmId ?? "";
-    if (!realms.has(key)) realms.set(key, await visibleRealmOf(db, viewer, category));
-    const realm = realms.get(key);
-    if (realm !== undefined) placed.push({ row, realm });
-  }
-  return placed;
-}
 
 async function shape(
   db: ReadsDb,

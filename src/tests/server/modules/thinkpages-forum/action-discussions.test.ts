@@ -508,6 +508,33 @@ describe("discussionCountsOf", () => {
     expect(call.take).toBe(1000);
   });
 
+  it("bounds the scan per action: one busy action cannot zero the counts of the others", async () => {
+    const busy = Array.from({ length: 1000 }, (_, i) => link(i + 1, `pb${i}`));
+    const posts = busy.map((l) => post(l.postRef, general));
+    const older = link(5000, "p_b", { activityId: "a2" });
+    const db = world([...busy, older], [...posts, post("p_b", general)]);
+    const out = await counts(db, guest, ["a1", "a2", "a3"]);
+    expect(out.a2).toEqual({ count: 1, postIds: ["p_b"] });
+    expect(out.a1!.count).toBe(1000);
+    expect(out.a3).toEqual({ count: 0, postIds: [] });
+  });
+
+  it("reads again only the actions the shared read starved, each bounded to its own newest 200", async () => {
+    const busy = Array.from({ length: 1000 }, (_, i) => link(i + 1, `pb${i}`));
+    const db = world(
+      [...busy, link(5000, "p_b", { activityId: "a2" })],
+      [...busy.map((l) => post(l.postRef, general)), post("p_b", general)]
+    );
+    await counts(db, guest, ["a1", "a2"]);
+    const takes = db.postActionLink.findMany.mock.calls.map(
+      ([args]) => [args.where.activityId, args.take] as const
+    );
+    expect(takes).toEqual([
+      [{ in: ["a1", "a2"] }, 1000],
+      ["a2", 200],
+    ]);
+  });
+
   it("counts a post in a hidden thread for a moderator only", async () => {
     const posts = [post("p1", general, {}, { hidden: true }), post("p2", general)];
     const links = [link(1, "p1"), link(2, "p2")];

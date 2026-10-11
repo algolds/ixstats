@@ -5,6 +5,7 @@ jest.mock("~/server/modules/thinkpages-forum/writes", () => ({
 }));
 
 import { Prisma } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
 import {
   ADVERT_HIDDEN_NOTICE,
   ADVERT_POWER_NOTICE,
@@ -225,6 +226,30 @@ describe("createAdvert", () => {
       where: { advertRealmId: "r_eurth" },
       select: { id: true, hidden: true },
     });
+  });
+
+  it("maps the same lost race when the app's db client wraps it as a ConflictError", async () => {
+    const db = advertDb();
+    db.forumThread.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "t_race", hidden: false } as never);
+    jest
+      .mocked(createThread)
+      .mockRejectedValue(
+        new ConflictError("Unique constraint violation on ForumThread (advertRealmId)")
+      );
+    await expect(createAdvert(db as never, founder, NEW)).rejects.toMatchObject({
+      code: "CONFLICT",
+      context: { threadId: "t_race" },
+    });
+  });
+
+  it("does not report another wrapped unique violation as an existing advert", async () => {
+    const other = new ConflictError("Unique constraint violation on ForumThread (activityId)");
+    const db = advertDb();
+    jest.mocked(createThread).mockRejectedValue(other);
+    await expect(createAdvert(db as never, founder, NEW)).rejects.toBe(other);
+    expect(db.forumThread.findUnique).toHaveBeenCalledTimes(1);
   });
 
   it("does not report another unique violation as an existing advert", async () => {

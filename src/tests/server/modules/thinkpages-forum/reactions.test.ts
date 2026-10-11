@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { Prisma } from "@prisma/client";
+import { ConflictError, InternalError, NotFoundError, ValidationError } from "~/lib/app-error";
 import {
   listReactors,
   reactToPost,
@@ -142,6 +143,17 @@ describe("reactToPost", () => {
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
   });
 
+  it("answers CONFLICT when the app's db client wraps the unique violation as a ConflictError", async () => {
+    const store = reactionStore();
+    store.reactionDb.create.mockRejectedValueOnce(
+      new ConflictError("Unique constraint violation on ForumPostReaction (postId)")
+    );
+    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Your reaction changed at the same moment. Try again.",
+    });
+  });
+
   it("answers CONFLICT when the transaction runs past its timeout, and says to try again", async () => {
     const store = reactionStore();
     store.db.$transaction.mockRejectedValueOnce(
@@ -157,10 +169,56 @@ describe("reactToPost", () => {
     expect(store.reactions).toHaveLength(0);
   });
 
+  it("answers CONFLICT for a timed-out transaction the app's db client wraps as an InternalError", async () => {
+    const store = reactionStore();
+    store.tx.forumPost.update.mockRejectedValueOnce(
+      new InternalError(
+        "Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."
+      )
+    );
+    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Your reaction changed at the same moment. Try again.",
+    });
+    const other = reactionStore();
+    const unrelated = new InternalError("Database connection timeout");
+    other.tx.forumPost.update.mockRejectedValueOnce(unrelated);
+    await expect(react(other, member, "p_hub", "like")).rejects.toBe(unrelated);
+  });
+
   it("does not turn another database failure into a CONFLICT", async () => {
     const store = reactionStore();
     store.reactionDb.create.mockRejectedValueOnce(new Error("connection lost"));
     await expect(react(store, member, "p_hub", "like")).rejects.toThrow("connection lost");
+  });
+
+  it("answers NOT_FOUND for the same lost post when the app's db client wraps the failure", async () => {
+    const lostUpdate = reactionStore();
+    lostUpdate.tx.forumPost.update.mockRejectedValueOnce(
+      new NotFoundError("ForumPost", undefined, { prismaError: "Record to update not found." })
+    );
+    await expect(react(lostUpdate, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      message: "Post not found.",
+    });
+    const lostParent = reactionStore();
+    lostParent.reactionDb.create.mockRejectedValueOnce(
+      new ValidationError("Foreign key constraint failed on ForumPostReaction (postId)")
+    );
+    await expect(react(lostParent, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("does not take an unrelated ValidationError or NotFoundError for a lost post", async () => {
+    const store = reactionStore();
+    const unrelated = new ValidationError("Reaction type is not allowed");
+    store.reactionDb.create.mockRejectedValueOnce(unrelated);
+    await expect(react(store, member, "p_hub", "like")).rejects.toBe(unrelated);
+    const other = reactionStore();
+    const missing = new NotFoundError("Post");
+    other.reactionDb.create.mockRejectedValueOnce(missing);
+    await expect(react(other, member, "p_hub", "like")).rejects.toBe(missing);
   });
 
   it("answers NOT_FOUND when the post is deleted between the checks and the write", async () => {

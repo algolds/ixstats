@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { describe, it, expect } from "@jest/globals";
+import { ConflictError } from "~/lib/app-error";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 
 type StashDb = Parameters<typeof getOrCreateDefaultStash>[0];
@@ -13,6 +14,18 @@ const uniqueViolation = () =>
   Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
 
 describe("getOrCreateDefaultStash", () => {
+  it("treats the app db client's wrapped ConflictError as the same concurrent first stash", async () => {
+    const { stash, db } = makeDb();
+    stash.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "winner", name: "My Stash", isDefault: true });
+    stash.create.mockRejectedValue(new ConflictError("Unique constraint violation on Stash"));
+
+    const result = await getOrCreateDefaultStash(db, ["u1"], "u1");
+
+    expect(result.id).toBe("winner");
+  });
+
   it("returns the existing default stash without creating one", async () => {
     const { stash, db } = makeDb();
     stash.findFirst.mockResolvedValue({ id: "s1", isDefault: true });

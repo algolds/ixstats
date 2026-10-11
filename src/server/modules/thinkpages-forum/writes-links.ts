@@ -27,10 +27,11 @@ async function asForumRefusal<T>(call: () => Promise<T>): Promise<T> {
 export function validateLinks(
   db: WritesDb,
   actor: ForumActor,
-  plainText: string
+  plainText: string,
+  keep?: readonly string[]
 ): Promise<string[]> {
   return asForumRefusal(() =>
-    validatePostActionTokens(db, { countryId: actor.countryId, body: plainText })
+    validatePostActionTokens(db, { countryId: actor.countryId, body: plainText, keep })
   );
 }
 
@@ -38,7 +39,8 @@ export function syncLinks(
   db: WritesDb,
   actor: ForumActor,
   postId: string,
-  plainText: string
+  plainText: string,
+  keep?: readonly string[]
 ): Promise<{ created: string[] }> {
   return asForumRefusal(() =>
     syncPostActionLinks(db, {
@@ -46,12 +48,14 @@ export function syncLinks(
       postRef: postId,
       countryId: actor.countryId,
       body: plainText,
+      keep,
     })
   );
 }
 
 /**
- * The link check of an edit. The author's tokens must be their own nation's actions (`validateLinks`); a manager editing
+ * The link check of an edit. The author's NEW tokens must be their own nation's public actions (`validateLinks`); tokens
+ * the post already carried are not checked again (the action may have been withdrawn since). A manager editing
  * another member's advert post (R14, as `modEditPost`) may keep or remove tokens but never add one, since links belong
  * to the author's nation.
  */
@@ -62,7 +66,7 @@ export async function validateEditLinks(
   plainText: string
 ): Promise<void> {
   if (post.authorUserId === actor.id) {
-    await validateLinks(db, actor, plainText);
+    await validateLinks(db, actor, plainText, parseActionTokens(post.plainText));
     return;
   }
   const before = new Set(parseActionTokens(post.plainText));
@@ -74,11 +78,11 @@ export async function validateEditLinks(
 export async function syncEditLinks(
   db: WritesDb,
   actor: ForumActor,
-  post: { id: string; authorUserId: string | null },
+  post: { id: string; authorUserId: string | null; plainText: string },
   plainText: string
 ): Promise<void> {
   if (post.authorUserId === actor.id) {
-    await syncLinks(db, actor, post.id, plainText);
+    await syncLinks(db, actor, post.id, plainText, parseActionTokens(post.plainText));
     return;
   }
   await db.postActionLink.deleteMany({

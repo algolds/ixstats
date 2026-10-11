@@ -12,7 +12,15 @@ import {
   canJoinRealmBoard,
   canTypeOnBoard,
 } from "~/server/modules/thinkpages-forum/board-socket";
-import { at, ban, boardPost, boardStore, seed, users } from "~/tests/helpers/forum-board-fake";
+import {
+  at,
+  ban,
+  boardPost,
+  boardStore,
+  personas,
+  seed,
+  users,
+} from "~/tests/helpers/forum-board-fake";
 
 const broadcaster = () => ({ broadcastBoard: jest.fn<void, [BoardLiveEvent]>() });
 
@@ -317,6 +325,22 @@ describe("boardTypingName", () => {
 
   it("names the persona, not the player, for the player's own persona", async () => {
     await expect(boardTypingName(db(), "clerk_u_member", "pa_news")).resolves.toBe("Eurth Daily");
+  });
+
+  it("gives no name for the personal account named as a persona", async () => {
+    const store = boardStore(seed(), {
+      personas: [
+        ...personas,
+        {
+          id: "pa_me",
+          clerkUserId: "clerk_u_member",
+          isActive: true,
+          accountType: "personal",
+          displayName: "Me",
+        },
+      ],
+    });
+    await expect(boardTypingName(store.db as never, "clerk_u_member", "pa_me")).resolves.toBeNull();
   });
 
   it("drops a persona that is not the user's own, or an unknown user", async () => {

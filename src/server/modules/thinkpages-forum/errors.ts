@@ -1,4 +1,6 @@
 import { Prisma } from "@prisma/client";
+import { InternalError } from "~/lib/app-error";
+import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 
 export type ForumErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
@@ -19,23 +21,15 @@ export class ForumError extends Error {
   }
 }
 
-/** A unique constraint lost to a concurrent insert (Prisma P2002), for mapping to CONFLICT. */
-export function isUniqueViolation<E>(error: E): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
+export { isMissingRecord, isUniqueViolation };
 
 /**
  * An interactive transaction that ran past its timeout or was closed under the write (Prisma P2028), for mapping to
- * CONFLICT: the write did not happen, and a retry may succeed.
+ * CONFLICT: the write did not happen, and a retry may succeed. Either the raw Prisma error from a bare client, or the
+ * `InternalError` that `~/server/db` wraps it into (P2028 has no mapping of its own there, so the Prisma message
+ * "Transaction API error: ..." rides on it).
  */
 export function isTransactionTimeout<E>(error: E): boolean {
+  if (error instanceof InternalError) return error.message.includes("Transaction API error");
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028";
-}
-
-/** A row deleted under a write (Prisma P2025, or P2003 for an insert whose parent is gone), for mapping to NOT_FOUND. */
-export function isMissingRecord<E>(error: E): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === "P2025" || error.code === "P2003")
-  );
 }

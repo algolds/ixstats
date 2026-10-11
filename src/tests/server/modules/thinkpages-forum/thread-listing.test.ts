@@ -62,7 +62,11 @@ function listDb(threads: object[], watched: object[] = [], posts: object[] = [])
     },
     forumPost: { findMany: jest.fn(async () => posts) },
     realm: {
-      findMany: jest.fn(async (_args?: object) => [{ id: "r_draft" }]),
+      // The realms of the listed threads come by id; the other read lists the unpublished ones.
+      findMany: jest.fn(async (args?: { where?: { id?: { in?: string[] } } }) => {
+        const wanted = args?.where?.id?.in;
+        return wanted ? [EURTH, DRAFT].filter((r) => wanted.includes(r.id)) : [{ id: "r_draft" }];
+      }),
       findUnique: jest.fn(async ({ where }: { where: { id?: string } }) =>
         where.id === "r_eurth" ? EURTH : where.id === "r_draft" ? DRAFT : null
       ),
@@ -181,6 +185,31 @@ describe("listNewPosts", () => {
       slug: "eurth",
       name: "Eurth",
     });
+  });
+
+  it("loads the realms of the listed threads in one read, not one per realm", async () => {
+    const ids = ["r_eurth", "r_a", "r_b", "r_c", "r_d"];
+    const db = listDb(
+      ids.map((realmId) =>
+        row(`t_${realmId}`, {}, category({ id: `cat_${realmId}`, scope: "realm", realmId }))
+      )
+    );
+    await listNewPosts(db as never, member, 1);
+    const byId = db.realm.findMany.mock.calls.filter(
+      ([args]) => (args as { where?: { id?: { in?: string[] } } }).where?.id?.in
+    );
+    expect(byId).toHaveLength(1);
+    expect((byId[0]![0] as { where: { id: { in: string[] } } }).where.id.in.sort()).toEqual(
+      [...ids].sort()
+    );
+    expect(db.realm.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("reads no realms when no listed thread is in one", async () => {
+    const db = listDb([row("t1")]);
+    await listNewPosts(db as never, member, 1);
+    expect(db.realm.findMany).toHaveBeenCalledTimes(1);
+    expect(db.realm.findUnique).not.toHaveBeenCalled();
   });
 
   it("pages by 25 and counts them all", async () => {
