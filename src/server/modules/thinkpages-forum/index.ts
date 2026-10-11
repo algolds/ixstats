@@ -1,4 +1,12 @@
 export {
+  discussionCountsOf,
+  discussionsOf,
+  type DiscussionCount,
+  type DiscussionItem,
+  type DiscussionPage,
+  type DiscussionsDb,
+} from "./action-discussions";
+export {
   afterBoardMessage,
   afterEdit,
   afterReaction,
