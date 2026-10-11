@@ -152,7 +152,7 @@ async function deliver(
   const told = new Set<string>();
   if (intents.size === 0) return told;
   const users = await db.user.findMany({
-    where: { id: { in: [...intents.keys()] } },
+    where: { id: { in: [...intents.keys()] }, isActive: true },
     select: RECIPIENT_SELECT,
   });
   const readable = await readableUsers(db, context.place, users);

@@ -50,7 +50,12 @@ interface Claim {
   where: WatchWhere;
   data: { notifiedAt: Date | null };
 }
-function watchDb(opts: { pages: string[][]; claimCount?: number; owned?: string[] }) {
+function watchDb(opts: {
+  pages: string[][];
+  claimCount?: number;
+  owned?: string[];
+  inactive?: string[];
+}) {
   const pages = [...opts.pages];
   const everyone = opts.pages.flat().map((id) => watcher(Number(id.slice(3))));
   return {
@@ -65,8 +70,11 @@ function watchDb(opts: { pages: string[][]; claimCount?: number; owned?: string[
       })),
     },
     user: {
-      findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
-        everyone.filter((u) => where.id.in.includes(u.id))
+      findMany: jest.fn(
+        async ({ where }: { where: { id: { in: string[] }; isActive?: boolean } }) =>
+          everyone.filter(
+            (u) => where.id.in.includes(u.id) && (!where.isActive || !opts.inactive?.includes(u.id))
+          )
       ),
     },
     realm: { findMany: jest.fn(async () => []) },
@@ -120,6 +128,16 @@ describe("notifyWatchers", () => {
         metadata: { kind: "watch", postId: "p1", threadId: "t1" },
       },
     ]);
+  });
+
+  it("never claims or tells an inactive watcher", async () => {
+    const db = watchDb({ pages: [["u_w1", "u_w2"]], inactive: ["u_w2"] });
+    await expect(notifyWatchers(db as never, input())).resolves.toBe(1);
+    expect(db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ isActive: true }) })
+    );
+    expect(db.forumThreadWatch.updateMany.mock.calls[0]![0].where.userId).toEqual({ in: ["u_w1"] });
+    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w1"]);
   });
 
   it("tells only the watchers whose claim this reply won when a second reply raced", async () => {

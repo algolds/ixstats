@@ -33,11 +33,15 @@ const person = (id: string, handle: string) => ({
   countryId: null,
   role,
 });
-const PEOPLE = [
+interface Person extends ReturnType<typeof person> {
+  isActive?: boolean;
+}
+const PEOPLE: Person[] = [
   person("u_actor", "actorhandle"),
   person("u_kir", "kir"),
   person("u_bob", "bob"),
   person("u_owner", "owner"),
+  { ...person("u_gone", "gone"), isActive: false },
 ];
 const link = (name: string) => `<a class="forum-mention" href="/id/${name}">@${name}</a>`;
 const general = {
@@ -63,6 +67,7 @@ interface Where {
   handle?: { in: string[] };
   OR?: [{ id: { in: string[] } }, { clerkUserId: { in: string[] } }];
   id?: { in: string[] };
+  isActive?: boolean;
 }
 interface StoredPost {
   id: string;
@@ -146,7 +151,9 @@ function build(setup: Setup = {}) {
             (p) => byId.id.in.includes(p.id) || byClerk.clerkUserId.in.includes(p.clerkUserId)
           );
         }
-        return PEOPLE.filter((p) => where.id!.in.includes(p.id));
+        return PEOPLE.filter(
+          (p) => where.id!.in.includes(p.id) && (!where.isActive || p.isActive !== false)
+        );
       }),
       findUnique: jest.fn(async () => ({ handle: "actorhandle", wikiUsername: null })),
     },
@@ -218,6 +225,14 @@ describe("mentions", () => {
       title: "actorhandle mentioned you in Trade talks",
     });
     expect(only!.title).not.toContain("owner");
+  });
+
+  it("never tells an inactive member", async () => {
+    const { db } = await run({ html: `<p>${link("gone")} and ${link("kir")}</p>` });
+    expect(notices().map((n) => n.clerkUserId)).toEqual(["clerk_kir"]);
+    expect(db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ isActive: true }) })
+    );
   });
 
   it("does not tell the author about a mention of themselves", async () => {

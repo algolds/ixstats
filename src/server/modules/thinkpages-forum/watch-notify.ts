@@ -57,7 +57,7 @@ async function notifyChunk(
   userIds: string[]
 ): Promise<number> {
   const users = await db.user.findMany({
-    where: { id: { in: userIds } },
+    where: { id: { in: userIds }, isActive: true },
     select: RECIPIENT_SELECT,
   });
   const readable = await readableUsers(db, input.place, users);
