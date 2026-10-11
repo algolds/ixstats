@@ -27,13 +27,28 @@ jest.mock("~/trpc/react", () => {
     },
   };
 });
-jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
-  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useDiscussionCount: () => undefined,
-}));
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => {
+  const provided = jest.fn();
+  return {
+    provided,
+    DiscussionCountsProvider: ({
+      activityIds,
+      children,
+    }: {
+      activityIds: string[];
+      children: React.ReactNode;
+    }) => {
+      provided(activityIds);
+      return <>{children}</>;
+    },
+    useDiscussionCount: () => undefined,
+  };
+});
 jest.mock("~/hooks/useThreadActionCards", () => ({
+  ...jest.requireActual<typeof import("~/hooks/useThreadActionCards")>(
+    "~/hooks/useThreadActionCards"
+  ),
   useThreadActionCards: () => ({ cards: new Map(), ready: true, errored: false }),
-  actionIdsOf: () => [],
 }));
 jest.mock("~/components/thinkpages-forum/realm/BoardMessage", () => ({
   BoardMessage: ({
@@ -54,6 +69,9 @@ jest.mock("~/components/thinkpages-forum/realm/BoardMessage", () => ({
 
 import { BoardFeed } from "~/components/thinkpages-forum/realm/BoardFeed";
 
+const { provided } = jest.requireMock<{ provided: jest.Mock }>(
+  "~/components/action-links/DiscussionCountsProvider"
+);
 const { pages, asked } = jest.requireMock<{
   pages: Record<string, QueryResult>;
   asked: Array<{ realm: string; before?: string }>;
@@ -143,6 +161,22 @@ describe("BoardFeed", () => {
     render(<BoardFeed {...feedProps()} />);
     expect(order()).toEqual(["p3", "p2", "p1"]);
     expect(screen.getByRole("heading", { level: 2, name: "Realm board" })).toBeInTheDocument();
+  });
+
+  it("asks for the Discussed in counts of the actions on screen, once for the page", () => {
+    provided.mockClear();
+    render(
+      <BoardFeed
+        {...feedProps(
+          boardData([
+            msg("p3", "[ixaction=a3]"),
+            msg("p2", "no action"),
+            msg("p1", "[ixaction=a1]"),
+          ])
+        )}
+      />
+    );
+    expect(provided).toHaveBeenLastCalledWith(["a3", "a1"]);
   });
 
   it("invites the first message on an empty board, with a way to the composer", () => {

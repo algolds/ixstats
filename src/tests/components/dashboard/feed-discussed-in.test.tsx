@@ -36,7 +36,11 @@ jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
 jest.mock("~/components/thinkpages/ThinkpagesPost", () => ({ ThinkpagesPost: () => null }));
 jest.mock("~/trpc/react", () => ({ api: {} }));
 
-import { FeedList } from "~/components/dashboard/sections/UnifiedFeedContent";
+import {
+  FeedList,
+  groupRepeatedActivities,
+  type FeedHandlers,
+} from "~/components/dashboard/sections/UnifiedFeedContent";
 import { UnifiedFeedItem, getActivityLabel } from "~/components/dashboard/sections/UnifiedFeedItem";
 
 const activity = (id: string, extra: object = {}) => ({
@@ -83,7 +87,20 @@ describe("UnifiedFeedItem discussed-in badge", () => {
 });
 
 describe("FeedList counts", () => {
-  const handlers = {} as never;
+  const handlers: FeedHandlers = {
+    currentUserAccountId: "u1",
+    accounts: [],
+    countryId: "c1",
+    isOwner: false,
+    onAccountSelectAction: jest.fn(),
+    onAccountSettingsAction: jest.fn(),
+    onCreateAccountAction: jest.fn(),
+    onLikeAction: jest.fn(),
+    onRepostAction: jest.fn(),
+    onReactionAction: jest.fn(),
+    onReplyAction: jest.fn(),
+    onShareAction: jest.fn(),
+  };
 
   it("asks for the counts of the plain activity rows only", () => {
     captured.mockClear();
@@ -100,5 +117,25 @@ describe("FeedList counts", () => {
       />
     );
     expect(captured).toHaveBeenLastCalledWith(["a1", "a2"]);
+  });
+});
+
+describe("groupRepeatedActivities", () => {
+  const row = (id: string, type: string) =>
+    activity(id, { type, category: "government", user: { name: "Testland" } });
+
+  it("groups repeated updates of a country but keeps every directive on its own row", () => {
+    const grouped = groupRepeatedActivities([
+      row("d1", "directive"),
+      row("d2", "directive"),
+      row("e1", "economic"),
+      row("e2", "economic"),
+    ]);
+    expect(grouped.map((a) => a.id)).toEqual([
+      "d1",
+      "d2",
+      expect.stringContaining("activity-grouped-"),
+    ]);
+    expect(grouped.map((a) => a._grouped === true)).toEqual([false, false, true]);
   });
 });

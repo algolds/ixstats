@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { placeLine } from "~/lib/discussed-in";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -41,28 +42,48 @@ function Row({ item }: { item: Item }) {
 export function DiscussionList({
   activityId,
   excludePostId,
+  id,
 }: {
   activityId: string;
   excludePostId?: string;
+  /** The list's element id, for a control that `aria-controls` it. */
+  id?: string;
 }) {
   const query = api.actionLinks.discussions.useInfiniteQuery(
     { activityId },
     { getNextPageParam: (last) => last.nextCursor ?? undefined, staleTime: 30_000 }
   );
-  if (query.isLoading) return <Skeleton aria-busy="true" className="h-12 w-full" />;
+  if (query.isLoading) return <Skeleton id={id} aria-busy="true" className="h-12 w-full" />;
   if (query.isError) {
-    return <p className="text-label-secondary text-footnote">Could not load the discussions.</p>;
+    return (
+      <div id={id} className="flex flex-col items-start gap-1">
+        <p className="text-label-secondary text-footnote">Could not load the discussions.</p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="pointer-coarse:min-h-11"
+          onClick={() => void query.refetch()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
   }
   const items = (query.data?.pages.flatMap((page) => page.items) ?? []).filter(
     (item) => item.postId !== excludePostId
   );
   return (
-    <div className="flex flex-col gap-1">
-      <ul className="divide-separator divide-y">
-        {items.map((item) => (
-          <Row key={item.postId} item={item} />
-        ))}
-      </ul>
+    <div id={id} className="flex flex-col gap-1">
+      {items.length === 0 && !query.hasNextPage ? (
+        <EmptyState compact title="No discussions to show" />
+      ) : (
+        <ul className="divide-separator divide-y">
+          {items.map((item) => (
+            <Row key={item.postId} item={item} />
+          ))}
+        </ul>
+      )}
       {query.hasNextPage ? (
         <Button
           type="button"

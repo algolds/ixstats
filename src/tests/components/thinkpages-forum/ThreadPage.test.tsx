@@ -8,6 +8,7 @@ interface QueryResult {
 }
 
 interface MockApi {
+  cards: object[];
   results: Record<string, QueryResult>;
   mutations: Record<string, jest.Mock>;
 }
@@ -22,9 +23,12 @@ jest.mock("~/trpc/react", () => {
     useMutation: () => ({ mutateAsync: mutations[name], mutate: jest.fn(), isPending: false }),
   });
   const invalidate = () => Promise.resolve();
+  // Cards the action-card batches answer with (none unless a test sets some).
+  const cards: object[] = [];
   return {
     results,
     mutations,
+    cards,
     api: {
       useUtils: () => ({
         thinkpagesForum: {
@@ -60,7 +64,9 @@ jest.mock("~/trpc/react", () => {
         editPost: mutation("modEditPost"),
       },
       useQueries: (_queries: unknown, opts: { combine: (results: never[]) => unknown }) =>
-        opts.combine([]),
+        opts.combine(
+          cards.length ? [{ data: cards, isSuccess: true, isError: false } as never] : []
+        ),
     },
   };
 });
@@ -83,9 +89,27 @@ jest.mock("~/components/thinkpages-forum/reactions", () => ({
     />
   ),
 }));
-jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
-  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useDiscussionCount: () => undefined,
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => {
+  const provided = jest.fn();
+  return {
+    provided,
+    DiscussionCountsProvider: ({
+      activityIds,
+      children,
+    }: {
+      activityIds: string[];
+      children: React.ReactNode;
+    }) => {
+      provided(activityIds);
+      return <>{children}</>;
+    },
+    useDiscussionCount: () => undefined,
+  };
+});
+jest.mock("~/components/action-links/DiscussedIn", () => ({
+  DiscussedInBadge: ({ excludePostId }: { excludePostId?: string }) => (
+    <span data-testid="discussed-in">{excludePostId ?? "none"}</span>
+  ),
 }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/context/auth-context", () => {
@@ -138,7 +162,10 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
 
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 
-const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations, cards } = jest.requireMock<MockApi>("~/trpc/react");
+const { provided } = jest.requireMock<{ provided: jest.Mock }>(
+  "~/components/action-links/DiscussionCountsProvider"
+);
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
 const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.Mock } }>(
   "~/hooks/useNotify"
@@ -245,6 +272,7 @@ function set(data: object | undefined) {
 beforeEach(() => {
   jest.clearAllMocks();
   for (const key of Object.keys(results)) delete results[key];
+  cards.length = 0;
   auth.isSignedIn = true;
   installViewport(false);
   mutations.markThreadRead = jest.fn().mockResolvedValue({ readAt: null });
@@ -398,6 +426,44 @@ describe("the thread page", () => {
       .filter((link) => !trail.contains(link));
     expect(back).toHaveLength(1);
     expect(back[0]).toHaveAttribute("href", "/thinkpages/r/ixworld/hub");
+  });
+});
+
+describe("Discussed in", () => {
+  const withTokens = () =>
+    threadData({
+      posts: [
+        post({ id: "p1", contentHtml: "<p>[ixaction=a1] and [ixaction=a2]</p>" }),
+        post({
+          id: "p2",
+          authorUserId: null,
+          authorPersonaId: "pa",
+          number: 2,
+          contentHtml: "<p>[ixaction=a1]</p>",
+        }),
+      ],
+    });
+
+  it("asks for the counts of the actions shown on the page, once for all posts", () => {
+    set(withTokens());
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(provided).toHaveBeenLastCalledWith(["a1", "a2"]);
+  });
+
+  it("leaves a post out of its own cards' count, except a persona's post, which is never counted", () => {
+    set(withTokens());
+    cards.push({
+      id: "a1",
+      title: "Treaty",
+      type: "diplomatic",
+      createdAt: new Date(0),
+      country: null,
+    });
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    const badgeIn = (id: string) =>
+      within(container.querySelector<HTMLElement>(`#post-${id}`)!).getByTestId("discussed-in");
+    expect(badgeIn("p1")).toHaveTextContent("p1");
+    expect(badgeIn("p2")).toHaveTextContent("none");
   });
 });
 

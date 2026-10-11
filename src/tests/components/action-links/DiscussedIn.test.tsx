@@ -1,4 +1,5 @@
 import React from "react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 const counts = jest.fn();
@@ -35,6 +36,7 @@ function pages(items: object[], hasNextPage = false) {
     hasNextPage,
     isFetchingNextPage: false,
     fetchNextPage: jest.fn(),
+    refetch: jest.fn(),
   };
 }
 
@@ -68,6 +70,15 @@ describe("DiscussionCountsProvider", () => {
     expect(input.activityIds).toEqual(shown.slice(0, 50).sort());
     expect(input.activityIds).not.toContain("a09");
     expect(options).toMatchObject({ enabled: true });
+  });
+
+  it("keeps the last counts on screen while a new id set loads", () => {
+    counts.mockReturnValue({ data: {} });
+    render(<DiscussionCountsProvider activityIds={["a1"]}>{null}</DiscussionCountsProvider>);
+    const [[, options]] = counts.mock.calls as never as [
+      [object, { placeholderData: typeof keepPreviousData }],
+    ];
+    expect(options.placeholderData).toBe(keepPreviousData);
   });
 
   it("asks for nothing when there are no ids", () => {
@@ -149,11 +160,42 @@ describe("DiscussedInBadge", () => {
     expect(options.getNextPageParam({ items: [item("p1")], nextCursor: null })).toBeUndefined();
   });
 
-  it("says when the list cannot load", () => {
-    list.mockReturnValue({ ...pages([]), data: undefined, isError: true });
+  it("says when the list cannot load, and tries again on request", () => {
+    const failed = { ...pages([]), data: undefined, isError: true };
+    list.mockReturnValue(failed);
     badge({ count: 3, postIds: ["p1", "p2"] });
     fireEvent.click(screen.getByRole("button", { name: "Discussed in 3 posts" }));
     expect(screen.getByText("Could not load the discussions.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(failed.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("says so when the opened list has nothing to show", () => {
+    list.mockReturnValue(pages([]));
+    badge({ count: 3, postIds: ["p1", "p2"] });
+    fireEvent.click(screen.getByRole("button", { name: "Discussed in 3 posts" }));
+    expect(screen.getByText("No discussions to show")).toBeInTheDocument();
+  });
+
+  it("offers more, not the empty note, when a short page still has a next one", () => {
+    list.mockReturnValue(pages([], true));
+    badge({ count: 25, postIds: ["p1", "p2"] });
+    fireEvent.click(screen.getByRole("button", { name: "Discussed in 25 posts" }));
+    expect(screen.queryByText("No discussions to show")).toBeNull();
+    expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
+  });
+
+  it("points the expander at the list it opens", () => {
+    list.mockReturnValue(pages([item("p1")]));
+    const { container } = badge({ count: 3, postIds: ["p1", "p2"] });
+    const expander = screen.getByRole("button", { name: "Discussed in 3 posts" });
+    expect(expander).not.toHaveAttribute("aria-controls");
+    fireEvent.click(expander);
+    const id = expander.getAttribute("aria-controls");
+    expect(id).toBeTruthy();
+    expect(container.querySelector(`[id="${id}"]`)).toContainElement(
+      screen.getByRole("link", { name: /Thread p1/ })
+    );
   });
 
   describe("inside a post that shows the action", () => {
@@ -169,6 +211,13 @@ describe("DiscussedInBadge", () => {
         "href",
         "/thinkpages/post/p2"
       );
+    });
+
+    it("takes this post off the count when more posts exist than are listed", () => {
+      badge({ count: 3, postIds: ["p1", "p2"] }, { excludePostId: "p9" });
+      expect(
+        screen.getByRole("button", { name: "Also discussed in 2 other posts" })
+      ).toBeInTheDocument();
     });
 
     it("lists the others without this post", () => {

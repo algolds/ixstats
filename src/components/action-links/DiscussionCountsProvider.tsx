@@ -1,5 +1,6 @@
 "use client";
 
+import { keepPreviousData } from "@tanstack/react-query";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { DiscussionTally } from "~/lib/discussed-in";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -31,7 +32,13 @@ export function DiscussionCountsProvider({
   );
   const { data } = api.actionLinks.discussionCounts.useQuery(
     { activityIds: ids },
-    { enabled: ids.length > 0, staleTime: 60_000, refetchOnWindowFocus: false }
+    {
+      enabled: ids.length > 0,
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+      // Counts are keyed by id: while a new id set loads, the last answer still reads right for the ids it has.
+      placeholderData: keepPreviousData,
+    }
   );
   return <CountsContext.Provider value={data ?? NONE}>{children}</CountsContext.Provider>;
 }

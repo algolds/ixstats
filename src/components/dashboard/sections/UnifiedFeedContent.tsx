@@ -71,11 +71,17 @@ const userKey = (a: any) =>
   a.user?.countryName ?? a.user?.countryId ?? a.user?.name ?? a.user?.id ?? "";
 const timeOf = (a: any) => new Date(a.timestamp).getTime();
 
-/** Only `source: "activity"` groups (not wiki, thinkpages, forum). */
-function groupRepeatedActivities(activities: any[]): any[] {
+/** A directive is declared on purpose and can be discussed in the forum: it keeps its own row. */
+const isDirective = (a: any) => a.type === "directive";
+
+/** Only `source: "activity"` groups (not wiki, thinkpages, forum), and never a directive. */
+export function groupRepeatedActivities(activities: any[]): any[] {
   return groupRuns(
     activities,
-    (a) => (a.source === "activity" ? `${userKey(a)}\0${getActivityLabel(a).label}` : null),
+    (a) =>
+      a.source === "activity" && !isDirective(a)
+        ? `${userKey(a)}\0${getActivityLabel(a).label}`
+        : null,
     (group, i) => {
       const [first] = group;
       const label = getActivityLabel(first).label;

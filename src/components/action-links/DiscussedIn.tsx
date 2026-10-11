@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { discussedLabel, othersOf } from "~/lib/discussed-in";
 import { postHref } from "~/lib/thinkpages-forum/links";
@@ -25,6 +25,7 @@ export function DiscussedInBadge({
 }) {
   const tally = useDiscussionCount(activityId);
   const [open, setOpen] = useState(false);
+  const listId = useId();
   if (!tally) return null;
   const rest = othersOf(tally, excludePostId);
   if (rest.count <= 0) return null;
@@ -50,12 +51,15 @@ export function DiscussedInBadge({
         variant="ghost"
         size="sm"
         aria-expanded={open}
+        aria-controls={open ? listId : undefined}
         className="text-tint self-start pointer-coarse:min-h-11"
         onClick={() => setOpen((value) => !value)}
       >
         {label}
       </Button>
-      {open ? <DiscussionList activityId={activityId} excludePostId={excludePostId} /> : null}
+      {open ? (
+        <DiscussionList id={listId} activityId={activityId} excludePostId={excludePostId} />
+      ) : null}
     </div>
   );
 }
