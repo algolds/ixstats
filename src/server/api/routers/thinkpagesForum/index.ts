@@ -64,6 +64,7 @@ import {
 } from "~/server/modules/thinkpages-forum";
 import { thinkpagesForumBoardRouter } from "./board";
 import { thinkpagesForumEngagementRouter } from "./engagement";
+import { thinkpagesForumReactionsRouter } from "./reactions";
 import {
   actorOf,
   authorMaps,
@@ -418,9 +419,13 @@ const forumRouter = createTRPCRouter({
     .mutation(({ ctx, input }) => fileAppeal(ctx.db, memberOf(ctx.user), input).catch(mapError)),
 });
 
-/** The forum procedures plus the realm board's (./board.ts) and the engagement procedures (./engagement.ts). */
+/**
+ * The forum procedures plus the realm board's (./board.ts), the engagement procedures (./engagement.ts) and the
+ * reactions (./reactions.ts).
+ */
 export const thinkpagesForumRouter = mergeRouters(
   forumRouter,
   thinkpagesForumBoardRouter,
-  thinkpagesForumEngagementRouter
+  thinkpagesForumEngagementRouter,
+  thinkpagesForumReactionsRouter
 );

@@ -10,6 +10,7 @@ jest.mock("~/server/modules/thinkpages-forum/after-write", () => ({
   afterReply: jest.fn(async () => undefined),
   afterEdit: jest.fn(async () => undefined),
   afterBoardMessage: jest.fn(async () => undefined),
+  afterReaction: jest.fn(async () => undefined),
 }));
 
 import { createCallerFactory, t } from "~/server/api/trpc/init";
