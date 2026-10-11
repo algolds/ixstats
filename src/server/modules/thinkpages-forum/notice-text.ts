@@ -1,7 +1,8 @@
 /**
  * The words and shape of a forum notice, shared by the post notices (`post-notify.ts`: mention, quote, board reply) and
- * the watcher notice (`watch-notify.ts`), so a title is clipped and a link made in one place. The name is the post's
- * displayed author: a persona's name for a persona post, never the player's.
+ * the watcher notice (`watch-notify.ts`), so a title is clipped and a link made in one place. For a reaction notice
+ * the name is the reactor's (`reaction-notify.ts`); for every other kind it is the post's displayed author: a persona's
+ * name for a persona post, never the player's.
  */
 import type { PrismaClient } from "@prisma/client";
 import { postHref } from "~/lib/thinkpages-forum/links";
@@ -18,7 +19,10 @@ export interface NoticeSubject {
   postId: string;
   threadId: string;
   threadTitle: string;
-  /** The post author's displayed name: the persona's, else the handle. */
+  /**
+   * For a reaction notice, the reactor's name (the handle, never a persona). For every other kind, the post author's
+   * displayed name: the persona's, else the handle.
+   */
   name: string;
   excerpt: string;
   /** The realm the post is in, for the board's wording. */
