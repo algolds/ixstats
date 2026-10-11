@@ -234,7 +234,7 @@ describe("realms landing sections", () => {
     expect(screen.getByText("feed for all")).toBeTruthy();
   });
 
-  it("reports each realm's forum activity and links to its Hub", () => {
+  it("reports each realm's forum activity and links to its Hub and its board", () => {
     const lastPostAt = new Date("2026-09-29T12:00:00Z");
     queries["realms.directory"] = [
       { ...EURTH, board: { recentPosts: 5, lastPostAt } },
@@ -250,6 +250,45 @@ describe("realms landing sections", () => {
       "/thinkpages/r/eurth/hub",
       "/thinkpages/r/quiet/hub",
     ]);
-    expect(within(browse).queryByRole("link", { name: "Board" })).toBeNull();
+    const boardLinks = within(browse).getAllByRole("link", { name: "Board" });
+    expect(boardLinks.map((l) => l.getAttribute("href"))).toEqual([
+      "/thinkpages/r/eurth",
+      "/thinkpages/r/quiet",
+    ]);
+  });
+
+  it("shows the board-week figure on a realm card and a Board link on each Open to join row", () => {
+    queries["realms.directory"] = [{ ...EURTH, boardMessagesThisWeek: 9 }, QUIET];
+    render(<RealmsLandingPage />);
+    const browse = screen.getByRole("region", { name: /Browse all realms/ });
+    expect(within(browse).getByText("9 board messages this week")).toBeTruthy();
+    const open = screen.getByRole("region", { name: "Open to join" });
+    expect(
+      within(open).getByRole("link", { name: "Open the board of Eurth" }).getAttribute("href")
+    ).toBe("/thinkpages/r/eurth");
+  });
+
+  it("links each of Your realms to its board", () => {
+    auth = { isLoaded: true, isSignedIn: true };
+    queries["realms.myNations"] = {
+      activeCountryId: null,
+      dividendCountryId: null,
+      realms: [
+        {
+          id: "eurth",
+          slug: "eurth",
+          name: "Eurth",
+          nations: [{ id: "c1", name: "Aurelia", slug: "aurelia", flag: null }],
+        },
+      ],
+    };
+    render(<RealmsLandingPage />);
+    const yours = screen.getByRole("region", { name: /Your realms/ });
+    expect(within(yours).getByRole("link", { name: "Board" }).getAttribute("href")).toBe(
+      "/thinkpages/r/eurth"
+    );
+    expect(within(yours).getByRole("link", { name: "Forum" }).getAttribute("href")).toBe(
+      "/thinkpages/r/eurth/hub"
+    );
   });
 });

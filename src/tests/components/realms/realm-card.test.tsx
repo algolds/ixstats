@@ -62,6 +62,34 @@ describe("the directory realm card", () => {
     );
   });
 
+  it("links to the live board before the forum", () => {
+    renderCard();
+    const links = screen.getAllByRole("link").map((l) => l.getAttribute("href"));
+    expect(screen.getByRole("link", { name: "Board" })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth"
+    );
+    expect(links.indexOf("/thinkpages/r/eurth")).toBeLessThan(
+      links.indexOf("/thinkpages/r/eurth/hub")
+    );
+  });
+
+  it("states the board's week as its own line, only when there were messages", () => {
+    const { container } = renderCard({ boardMessagesThisWeek: 3 });
+    const lines = [...container.querySelectorAll("p")].map((p) => p.textContent);
+    expect(lines).toContain("3 board messages this week");
+    expect(container.textContent).toContain("5 posts this week");
+    expect(renderCard({ boardMessagesThisWeek: 1 }).container.textContent).toContain(
+      "1 board message this week"
+    );
+    expect(renderCard({ boardMessagesThisWeek: 0 }).container.textContent).not.toContain(
+      "board message"
+    );
+    expect(renderCard({ boardMessagesThisWeek: undefined }).container.textContent).not.toContain(
+      "board message"
+    );
+  });
+
   it("leaves out what the realm lacks: banner image, description, tags, thumbnail", () => {
     const { container } = renderCard({ bannerUrl: null, description: null, tags: [] });
     expect(container.querySelector("img")).toBeNull();

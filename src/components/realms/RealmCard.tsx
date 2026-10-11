@@ -5,7 +5,7 @@ import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "~/app/realms/_components/realm-directory";
 import { Badge } from "~/components/ui/badge";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref } from "~/lib/thinkpages-forum/links";
+import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { RealmAdvertCard, type AdvertOverview } from "./RealmAdvertCard";
 
 function boardActivity(board: DirectoryRealm["board"]): string {
@@ -58,7 +58,18 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
           </ul>
         )}
         <p className="text-label-secondary text-footnote">{boardActivity(realm.board)}</p>
+        {realm.boardMessagesThisWeek > 0 && (
+          <p className="text-label-secondary text-footnote">
+            {plural(realm.boardMessagesThisWeek, "board message")} this week
+          </p>
+        )}
         <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
+          <Link
+            href={realmBoardHref(realm.slug)}
+            className="text-label hover:underline pointer-coarse:min-h-11"
+          >
+            Board
+          </Link>
           <Link href={hubHref(realm.slug)} className="text-label hover:underline">
             Forum
           </Link>

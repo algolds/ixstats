@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { RouterOutputs } from "~/trpc/react";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref } from "~/lib/thinkpages-forum/links";
+import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { PlayAsNation } from "~/app/r/[realm]/_components/PlayAsNation";
 import { RealmAvatar } from "./RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "./realm-directory";
@@ -72,6 +72,12 @@ function YourRealmCard({
         </ul>
         {realm.slug && (
           <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
+            <Link
+              href={realmBoardHref(realm.slug)}
+              className="text-label hover:underline pointer-coarse:min-h-11"
+            >
+              Board
+            </Link>
             <Link href={hubHref(realm.slug)} className="text-label hover:underline">
               Forum
             </Link>

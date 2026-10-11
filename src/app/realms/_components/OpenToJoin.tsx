@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
+import { realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { RealmAvatar } from "./RealmAvatar";
 import { openToJoinCount, plural, realmHref, type DirectoryRealm } from "./realm-directory";
 
@@ -59,13 +60,22 @@ export function OpenToJoin({ realms }: { realms: DirectoryRealm[] }) {
                   {atCap ? "You hold the most nations allowed here" : openDetail(realm)}
                 </p>
               </div>
-              <Link
-                href={realmHref(realm.slug, "nations")}
-                className="text-tint text-footnote shrink-0 underline-offset-4 hover:underline"
-                aria-label={`See the nations of ${realm.name}`}
-              >
-                See nations
-              </Link>
+              <div className="flex shrink-0 items-center gap-3">
+                <Link
+                  href={realmBoardHref(realm.slug)}
+                  className="text-tint text-footnote underline-offset-4 hover:underline pointer-coarse:min-h-11"
+                  aria-label={`Open the board of ${realm.name}`}
+                >
+                  Board
+                </Link>
+                <Link
+                  href={realmHref(realm.slug, "nations")}
+                  className="text-tint text-footnote underline-offset-4 hover:underline"
+                  aria-label={`See the nations of ${realm.name}`}
+                >
+                  See nations
+                </Link>
+              </div>
             </li>
           );
         })}
