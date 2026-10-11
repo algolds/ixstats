@@ -547,16 +547,34 @@ describe("Forums home: rail", () => {
     );
   });
 
-  it("calls them Your ThinkTanks for a signed-in member who belongs to some", () => {
+  it("lists only the member's own as Your ThinkTanks when they belong to some", () => {
     auth.isSignedIn = true;
     set("thinktanks", {
       data: [
-        { id: "g1", name: "Mine", avatar: null, lastActivity: new Date(), _count: { members: 1 } },
+        {
+          id: "g1",
+          name: "Mine",
+          avatar: null,
+          lastActivity: new Date("2026-01-01T00:00:00Z"),
+          isMember: true,
+          _count: { members: 1 },
+        },
+        {
+          id: "g2",
+          name: "Not mine",
+          avatar: null,
+          lastActivity: new Date(),
+          isMember: false,
+          _count: { members: 9 },
+        },
       ],
     });
     render(<ForumHome />);
-    expect(screen.getByRole("heading", { name: "Your ThinkTanks" })).toBeInTheDocument();
-    expect(screen.getByText(/^1 member · /)).toBeInTheDocument();
+    const panel = screen
+      .getByRole("heading", { name: "Your ThinkTanks" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(within(panel).getByText(/^1 member · /)).toBeInTheDocument();
+    expect(within(panel).queryByText("Not mine")).toBeNull();
   });
 
   it("renders no rail, and no Info button, when no panel has content", () => {

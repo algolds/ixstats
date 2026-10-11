@@ -26,15 +26,8 @@ export function useHomeRail(signedIn: boolean) {
     page: 1,
     sort: "latest",
   });
-  const { data: joined } = api.thinkpages.getThinktanks.useQuery(
-    { type: "joined" },
-    { enabled: signedIn }
-  );
-  const fallBack = !signedIn || (joined !== undefined && joined.length === 0);
-  const { data: all } = api.thinkpages.getThinktanks.useQuery(
-    { type: "all" },
-    { enabled: fallBack }
-  );
+  // `all` is the list the ThinkTanks page shows (realm boards left out); `isMember` marks the viewer's own.
+  const { data: thinktanks } = api.thinkpages.getThinktanks.useQuery({ type: "all" });
   const { data: standing } = api.thinkpagesForum.myStanding.useQuery(undefined, {
     enabled: signedIn,
   });
@@ -42,14 +35,18 @@ export function useHomeRail(signedIn: boolean) {
   const adverts = realmAds?.threads
     .filter((t) => t.advert?.claimsOpen && !t.locked)
     .slice(0, ADVERTS_SHOWN);
-  const tanks = [...((fallBack ? all : joined) ?? [])].sort(newestFirst).slice(0, THINKTANKS_SHOWN);
+  const own = thinktanks?.filter((t) => t.isMember) ?? [];
+  const joined = signedIn && own.length > 0;
+  const tanks = [...(joined ? own : (thinktanks ?? []))]
+    .sort(newestFirst)
+    .slice(0, THINKTANKS_SHOWN);
 
   return {
     activity: nonEmpty(activity),
     trending: nonEmpty(trending),
     adverts: nonEmpty(adverts),
     thinktanks: nonEmpty(tanks),
-    thinktanksJoined: !fallBack,
+    thinktanksJoined: joined,
     standing: signedIn && hasStanding(standing) ? standing : undefined,
   };
 }
