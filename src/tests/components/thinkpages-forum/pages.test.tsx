@@ -540,6 +540,27 @@ describe("thread view", () => {
       personaId: null,
     });
   });
+
+  it("hands the reply's reward back to the composer", async () => {
+    set("thread", { data: threadData() });
+    mutations.reply = jest.fn(() =>
+      Promise.resolve({ postId: "p9", formatting: "done", reward: { amount: 7 } })
+    );
+    render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
+    expect(await screen.findByTestId("stub-reward")).toHaveTextContent("7");
+  });
+
+  it("hands back no reward when the reply earned none", async () => {
+    set("thread", { data: threadData() });
+    mutations.reply = jest.fn(() =>
+      Promise.resolve({ postId: "p9", formatting: "done", reward: null })
+    );
+    render(<ThreadPage threadId="t1" page={1} />);
+    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
+    await waitFor(() => expect(router.push).toHaveBeenCalled());
+    expect(screen.queryByTestId("stub-reward")).toBeNull();
+  });
 });
 
 describe("load failures and out-of-range pages", () => {

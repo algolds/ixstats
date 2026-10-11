@@ -318,6 +318,17 @@ describe("CanvasComposer", () => {
     expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
   });
 
+  it("shows the amount the server reported, not a fixed one", async () => {
+    const onSubmit = jest.fn(async () => ({
+      formatting: "done" as const,
+      reward: { amount: 2.5 },
+    }));
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("We act");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    expect(await screen.findByText("+2.5 IxC for posting your action")).toBeInTheDocument();
+  });
+
   it("keeps the reward line when the composer clears itself after the post", async () => {
     const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: { amount: 5 } }));
     render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
@@ -351,6 +362,16 @@ describe("CanvasComposer", () => {
       );
       expect(insert).toHaveBeenCalledTimes(1);
       expect(window.location.search).toBe("");
+    });
+
+    it("does not insert again when the composer remounts after the prefill", async () => {
+      window.history.replaceState(null, "", "/thinkpages/c/general/new?attach=dir-abc");
+      const first = render(<CanvasComposer mode="thread" onSubmit={jest.fn()} />);
+      await waitFor(() => expect(window.location.search).toBe(""));
+      first.unmount();
+      render(<CanvasComposer mode="thread" onSubmit={jest.fn()} />);
+      await act(async () => undefined);
+      expect(insert).toHaveBeenCalledTimes(1);
     });
 
     it("leaves a reply and an edit alone", () => {

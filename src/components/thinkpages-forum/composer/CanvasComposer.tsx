@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { TSlateEditor } from "platejs";
 import { ActionPicker } from "~/components/action-links";
@@ -14,13 +14,16 @@ import { Skeleton } from "~/components/ui/skeleton";
 import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
 import type { ForumReward } from "~/lib/action-rewards";
 import { cn } from "~/lib/utils/cn";
-import { api } from "~/trpc/react";
-import { PostBody } from "../thread/PostBody";
 import type { PostStyle } from "../thread/types";
-import { appendQuote, insertAtCaret } from "./canvas-ops";
+import { insertAtCaret } from "./canvas-ops";
 import { PersonaSelect, type PersonaOption } from "./PersonaSelect";
 import type { QuoteRequest } from "./QuoteInsert";
-import { RewardSignal, useRewardLine } from "./RewardSignal";
+import { CanvasPreviewPane } from "./CanvasPreviewPane";
+import { FORMATTING_LATER } from "./canvas-copy";
+import { RewardSignal } from "./RewardSignal";
+import { useCanvasPreview } from "./useCanvasPreview";
+import { useCanvasQuote } from "./useCanvasQuote";
+import { useCanvasSend } from "./useCanvasSend";
 
 // The Canvas editor, hosted bare: its toolbar, slash menu and modals, without the page title bar or save menu.
 const WikiVisualEditor = dynamic(
@@ -29,19 +32,10 @@ const WikiVisualEditor = dynamic(
 );
 
 const NOOP = () => undefined;
-const FORMATTING_LATER = "Formatting will finish shortly";
 const VIEWS = [
   { value: "write", label: "Write" },
   { value: "preview", label: "Preview" },
 ] as const;
-
-type View = (typeof VIEWS)[number]["value"];
-type Phase =
-  { kind: "idle" } | { kind: "sending" } | { kind: "pending" } | { kind: "error"; message: string };
-type Preview =
-  | { kind: "loading" }
-  | { kind: "ready"; html: string; pending: boolean }
-  | { kind: "error"; message: string };
 
 const SUBMIT_LABEL = { reply: "Reply", thread: "Post thread", edit: "Save" } as const;
 
@@ -97,7 +91,6 @@ export function CanvasComposer({
   fill = false,
   className,
 }: CanvasComposerProps) {
-  const [view, setView] = useState<View>("write");
   const [seed, setSeed] = useState(initialWikitext);
   const [editorKey, setEditorKey] = useState(0);
   const [doc, setDoc] = useState<WikitextSerializeResult>({
@@ -107,57 +100,46 @@ export function CanvasComposer({
   });
   const [title, setTitle] = useState("");
   const [personaId, setPersonaId] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>({ kind: "idle" });
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const earned = useRewardLine();
-  const { mutateAsync: previewPost } = api.thinkpagesForum.previewPost.useMutation();
+  const { view, preview, changeView } = useCanvasPreview(doc.wikitext, threadId);
 
   const editorRef = useRef<TSlateEditor | null>(null);
   // The last wikitext the editor reported: a Signal about the previous save goes when the content differs from it.
   const lastTextRef = useRef(initialWikitext);
-  const quotedRef = useRef<QuoteRequest | null>(null);
-  const onQuoteInsertedRef = useRef(onQuoteInserted);
-  onQuoteInsertedRef.current = onQuoteInserted;
   const onWikitextChangeRef = useRef(onWikitextChange);
   onWikitextChangeRef.current = onWikitextChange;
+
+  const save = useCallback(
+    () => onSubmit(doc.wikitext, { personaId, title: title.trim() }),
+    [onSubmit, doc.wikitext, personaId, title]
+  );
+  // A posted reply or thread starts the next one blank (its report of "" is not an edit).
+  const startBlank = useCallback(() => {
+    lastTextRef.current = "";
+    setSeed("");
+    setDoc({ wikitext: "", complete: true, notices: [] });
+    onWikitextChangeRef.current?.("");
+    setTitle("");
+    setEditorKey((k) => k + 1);
+  }, []);
+  const { phase, reward, settle, send } = useCanvasSend(save, mode !== "edit", startBlank);
 
   const sending = phase.kind === "sending";
   const hasText = doc.wikitext.trim().length > 0;
   const canSubmit =
     hasText && doc.complete && !sending && (mode !== "thread" || title.trim().length > 0);
 
-  const applyQuote = useCallback((quote: QuoteRequest) => {
-    if (!editorRef.current || quotedRef.current === quote) return;
-    quotedRef.current = quote;
-    appendQuote(editorRef.current, quote);
-    onQuoteInsertedRef.current?.();
-  }, []);
+  const handleEditorReady = useCanvasQuote(editorRef, quoteRequest, onQuoteInserted);
 
-  // The quote may arrive before the editor has loaded (a phone sheet that has just opened): it waits for it.
-  const handleEditorReady = useCallback(
-    (editor: TSlateEditor) => {
-      editorRef.current = editor;
-      if (quoteRequest) applyQuote(quoteRequest);
-    },
-    [quoteRequest, applyQuote]
-  );
-  useEffect(() => {
-    if (quoteRequest) applyQuote(quoteRequest);
-  }, [quoteRequest, applyQuote]);
-
-  const { clear: clearReward, show: showReward } = earned;
   const handleSerialized = useCallback(
     (next: WikitextSerializeResult) => {
       setDoc(next);
       if (next.wikitext !== lastTextRef.current) {
         lastTextRef.current = next.wikitext;
-        clearReward();
-        // An edit makes the last save's outcome (a refusal, "formatting", a reward) stale.
-        setPhase((current) => (current.kind === "sending" ? current : { kind: "idle" }));
+        settle();
       }
       onWikitextChangeRef.current?.(next.wikitext);
     },
-    [clearReward]
+    [settle]
   );
 
   const attach = useCallback((token: string) => {
@@ -176,48 +158,9 @@ export function CanvasComposer({
       : null
   );
 
-  const changeView = useCallback(
-    async (next: View) => {
-      setView(next);
-      if (next !== "preview") return;
-      setPreview({ kind: "loading" });
-      try {
-        const out = await previewPost({ wikitext: doc.wikitext, threadId });
-        setPreview({ kind: "ready", html: out.html, pending: out.pending });
-      } catch (e) {
-        setPreview({
-          kind: "error",
-          message: e instanceof Error ? e.message : "Could not preview",
-        });
-      }
-    },
-    [previewPost, doc.wikitext, threadId]
-  );
-
-  const submit = useCallback(async () => {
-    if (!canSubmit) return;
-    setPhase({ kind: "sending" });
-    clearReward();
-    try {
-      const { formatting, reward } = await onSubmit(doc.wikitext, {
-        personaId,
-        title: title.trim(),
-      });
-      setPhase(formatting === "pending" ? { kind: "pending" } : { kind: "idle" });
-      showReward(reward);
-      if (mode !== "edit") {
-        // A posted reply or thread starts the next one blank (its report of "" is not an edit).
-        lastTextRef.current = "";
-        setSeed("");
-        setDoc({ wikitext: "", complete: true, notices: [] });
-        onWikitextChangeRef.current?.("");
-        setTitle("");
-        setEditorKey((k) => k + 1);
-      }
-    } catch (e) {
-      setPhase({ kind: "error", message: e instanceof Error ? e.message : "Could not post" });
-    }
-  }, [canSubmit, onSubmit, doc.wikitext, personaId, title, mode, clearReward, showReward]);
+  const submit = () => {
+    if (canSubmit) void send();
+  };
 
   return (
     <Card
@@ -273,24 +216,7 @@ export function CanvasComposer({
         />
       </div>
 
-      {view === "preview" ? (
-        <div aria-live="polite" className="min-h-24 px-1">
-          {preview?.kind === "ready" ? (
-            <>
-              {preview.pending ? (
-                <Signal tone="info" title={FORMATTING_LATER} className="mb-3">
-                  The wiki is busy, so this preview is approximate.
-                </Signal>
-              ) : null}
-              <PostBody html={preview.html} style={postStyle} />
-            </>
-          ) : null}
-          {preview?.kind === "error" ? <Signal tone="destructive" title={preview.message} /> : null}
-          {preview?.kind === "loading" ? (
-            <Skeleton aria-busy="true" className="h-24 w-full" />
-          ) : null}
-        </div>
-      ) : null}
+      {view === "preview" ? <CanvasPreviewPane preview={preview} postStyle={postStyle} /> : null}
 
       {!doc.complete ? (
         <Signal tone="warning" title="Part of this post cannot be saved yet">
@@ -299,7 +225,7 @@ export function CanvasComposer({
       ) : null}
       {phase.kind === "error" ? <Signal tone="destructive" title={phase.message} /> : null}
       {phase.kind === "pending" ? <Signal tone="info" title={FORMATTING_LATER} /> : null}
-      <RewardSignal reward={earned.reward} />
+      <RewardSignal reward={reward} />
 
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         {personas.length > 0 && mode !== "edit" ? (
@@ -317,7 +243,7 @@ export function CanvasComposer({
           type="button"
           size="sm"
           className="pointer-coarse:min-h-11"
-          onClick={() => void submit()}
+          onClick={submit}
           disabled={!canSubmit}
         >
           {SUBMIT_LABEL[mode]}
