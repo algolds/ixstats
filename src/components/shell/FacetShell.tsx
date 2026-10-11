@@ -8,7 +8,7 @@
  * full-screen map editors) get no sidebar or tab bar.
  */
 
-import { Suspense, useMemo, type ReactNode } from "react";
+import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useUser } from "~/context/auth-context";
@@ -21,7 +21,6 @@ import {
   isChromelessPath,
   type NavAction,
   type NavigationVisibilitySettings,
-  type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
@@ -35,26 +34,12 @@ import { realmMarkSrc, withRealmMark } from "./realm-nav-icon";
 import { useForumNavFlags } from "./use-forum-nav-flags";
 import { useNavBadges } from "./use-nav-badges";
 
-function WithSearchParams({ render }: { render: (params: SearchParamsLike | null) => ReactNode }) {
-  const params = useSearchParams();
-  return <>{render(params)}</>;
-}
-
-/** Query-aware render with a query-less fallback, so the shell never blocks prerendering. */
-function SearchParamsBoundary({
-  render,
-}: {
-  render: (params: SearchParamsLike | null) => ReactNode;
-}) {
-  return (
-    <Suspense fallback={render(null)}>
-      <WithSearchParams render={render} />
-    </Suspense>
-  );
-}
-
 export function FacetShell() {
   const pathname = stripBasePath(usePathname() || "/");
+  // No Suspense around this: a boundary hydrates in a later pass, by which time Clerk and the nav
+  // queries may have loaded, so it would hydrate signed-in over signed-out server HTML. The root
+  // layout reads headers(), so every route is dynamic and useSearchParams never blocks prerendering.
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const isAdmin = useHasRoleLevel(10);
   // A `labs.access` grant (or a dev build) shows Labs despite `showLabsTab`.
@@ -109,36 +94,32 @@ export function FacetShell() {
   return (
     <>
       {!isChromelessPath(pathname) && (
-        <SearchParamsBoundary
-          render={(searchParams) => (
-            <>
-              <AppSidebar
-                pathname={pathname}
-                searchParams={searchParams}
-                apps={apps}
-                collapsed={collapsed}
-                onCollapsedChange={setCollapsed}
-                expanded={expanded}
-                onToggle={toggle}
-                badges={badges}
-                onAction={onAction}
-                signedIn={signedIn}
-                vaultCard={vaultVisible ? <SidebarVaultCard /> : undefined}
-                account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
-              />
-              <TabBar
-                pathname={pathname}
-                searchParams={searchParams}
-                apps={apps}
-                expanded={expanded}
-                onToggle={toggle}
-                badges={badges}
-                onAction={onAction}
-                account={<AccountMenu layout="sheet" />}
-              />
-            </>
-          )}
-        />
+        <>
+          <AppSidebar
+            pathname={pathname}
+            searchParams={searchParams}
+            apps={apps}
+            collapsed={collapsed}
+            onCollapsedChange={setCollapsed}
+            expanded={expanded}
+            onToggle={toggle}
+            badges={badges}
+            onAction={onAction}
+            signedIn={signedIn}
+            vaultCard={vaultVisible ? <SidebarVaultCard /> : undefined}
+            account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
+          />
+          <TabBar
+            pathname={pathname}
+            searchParams={searchParams}
+            apps={apps}
+            expanded={expanded}
+            onToggle={toggle}
+            badges={badges}
+            onAction={onAction}
+            account={<AccountMenu layout="sheet" />}
+          />
+        </>
       )}
       <ShellHalo />
     </>
