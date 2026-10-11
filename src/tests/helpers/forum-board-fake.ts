@@ -4,6 +4,7 @@
  * a visitor, a persona and nations. Built on `forumStore`, adding nations (`country`), personas
  * (`thinkpagesAccount`), `orderBy` for post lists and a `groupBy` over nations.
  */
+import { Prisma } from "@prisma/client";
 import { banRow, type BanRow } from "~/tests/helpers/forum-ban-fake";
 import { forumStore, matches, type Row, type StoreState } from "~/tests/helpers/forum-store-fake";
 
@@ -228,6 +229,70 @@ function sorted(rows: Row[], orderBy?: Order): Row[] {
   });
 }
 
+type ReactionPair = { postId: string; userId: string };
+
+/** The error Prisma raises when the (post, user) unique key is violated. */
+const duplicateReaction = () =>
+  new Prisma.PrismaClientKnownRequestError(
+    "Unique constraint failed on the fields: (`postId`,`userId`)",
+    {
+      code: "P2002",
+      clientVersion: "test",
+    }
+  );
+
+/** An in-memory `forumPostReaction`: one row per (post, user), as the table's unique key enforces. */
+function reactionDelegate(rows: Row[]) {
+  const matching = (where?: Row) => rows.filter((row) => matches(row, where));
+  let created = 0;
+  return {
+    findUnique: jest.fn(async ({ where }: { where: Row }) => {
+      const pair = where.postId_userId as ReactionPair | undefined;
+      const hit = pair
+        ? rows.find((row) => row.postId === pair.postId && row.userId === pair.userId)
+        : rows.find((row) => matches(row, where));
+      return hit ? { ...hit } : null;
+    }),
+    findMany: jest.fn(async ({ where, orderBy, take }: ListArgs = {}) =>
+      sorted(matching(where), orderBy)
+        .slice(0, take)
+        .map((row) => ({ ...row }))
+    ),
+    create: jest.fn(async ({ data }: { data: Row }) => {
+      if (rows.some((row) => row.postId === data.postId && row.userId === data.userId)) {
+        throw duplicateReaction();
+      }
+      created += 1;
+      const row: Row = {
+        id: `rx_${created}`,
+        createdAt: new Date(Date.UTC(2026, 9, 10, 13, 0, created)),
+        ...data,
+      };
+      rows.push(row);
+      return { ...row };
+    }),
+    update: jest.fn(async ({ where, data }: { where: Row; data: Row }) => {
+      const hit = rows.find((row) => row.id === where.id);
+      if (!hit) throw new Error("Record to update not found.");
+      Object.assign(hit, data);
+      return { ...hit };
+    }),
+    delete: jest.fn(async ({ where }: { where: Row }) => {
+      const at = rows.findIndex((row) => row.id === where.id);
+      if (at < 0) throw new Error("Record to delete does not exist.");
+      return rows.splice(at, 1)[0]!;
+    }),
+    groupBy: jest.fn(async ({ where }: ListArgs = {}) => {
+      const counts = new Map<string, number>();
+      for (const row of matching(where)) {
+        const type = String(row.type);
+        counts.set(type, (counts.get(type) ?? 0) + 1);
+      }
+      return [...counts].map(([type, count]) => ({ type, _count: { _all: count } }));
+    }),
+  };
+}
+
 /** The forum store plus nations, personas and ordered post reads. */
 export function boardStore(
   stateSeed: Partial<StoreState> = seed(),
@@ -236,6 +301,8 @@ export function boardStore(
   const store = forumStore(stateSeed);
   const nations = extra.countries ?? countries;
   const accounts = extra.personas ?? personas;
+  const reactions: Row[] = [];
+  const reactionDb = reactionDelegate(reactions);
   const patch = <T extends object>(client: T): T => {
     const target = client as Record<string, unknown>;
     target.country = {
@@ -260,6 +327,7 @@ export function boardStore(
         async ({ where }: ListArgs = {}) => accounts.find((a) => matches(a, where)) ?? null
       ),
     };
+    target.forumPostReaction = reactionDb;
     const posts = target.forumPost as {
       findMany: unknown;
       create: (args: { data: Row }) => unknown;
@@ -307,7 +375,7 @@ export function boardStore(
   };
   patch(store.db);
   patch(store.tx);
-  return store;
+  return { ...store, reactions, reactionDb };
 }
 
 export type BoardStore = ReturnType<typeof boardStore>;

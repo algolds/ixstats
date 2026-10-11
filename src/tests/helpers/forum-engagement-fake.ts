@@ -26,5 +26,10 @@ export function engagementTables() {
       findMany: jest.fn(async (_args?: object): Promise<Array<{ userId: string }>> => []),
       createMany: jest.fn(async (_args?: object) => ({ count: 0 })),
     },
+    forumPostReaction: {
+      findMany: jest.fn(
+        async (_args?: object): Promise<Array<{ postId: string; type: string }>> => []
+      ),
+    },
   };
 }
