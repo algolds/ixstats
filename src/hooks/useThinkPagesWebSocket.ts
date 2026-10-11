@@ -13,6 +13,10 @@ import type {
 
 const isServer = typeof window === "undefined";
 
+/** Waits between reconnection attempts grow from the first to the cap, for as long as the page stays open. */
+const RECONNECT_DELAY_MS = 2_000;
+const RECONNECT_DELAY_MAX_MS = 30_000;
+
 // Initial state factory
 const createInitialState = (accountId?: string): ThinkPagesClientState => ({
   connected: false,
@@ -49,7 +53,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
-  const maxRetries = 3;
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // No-op function for SSR
   const noOp = useCallback(() => {}, []);
@@ -67,6 +71,21 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
       setClientState((prev) => ({ ...prev, presenceStatus: status }));
     }
+  }, []);
+
+  /**
+   * socket.io retries a lost transport by itself, but not a connection the server refused or closed (`active` is
+   * false then): those are connected again here, after the same growing, capped wait.
+   */
+  const retryIfStopped = useCallback((stopped: Socket) => {
+    // A socket this hook closed itself (unmount, or another connect) is not retried.
+    if (socket.current !== stopped || stopped.active || retryTimer.current) return;
+    const wait = Math.min(RECONNECT_DELAY_MS * 2 ** retryCount.current, RECONNECT_DELAY_MAX_MS);
+    retryCount.current += 1;
+    retryTimer.current = setTimeout(() => {
+      retryTimer.current = null;
+      if (socket.current === stopped) stopped.connect();
+    }, wait);
   }, []);
 
   const connect = useCallback(() => {
@@ -89,12 +108,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     // A Clerk session token is required unless the caller reads public realm boards signed out
     if (!getTokenRef.current && !optionsRef.current.anonymous) return;
 
-    // Stop retrying after max attempts
-    if (retryCount.current >= maxRetries) {
-      console.warn("WebSocket: Max retry attempts reached, disabling real-time features");
-      return;
-    }
-
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
     const protocol = window.location.protocol === "https:" ? "https" : "http";
     const host = window.location.host;
@@ -108,8 +121,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     socket.current = io(url, {
       path: "/ws/thinkpages",
       transports: ["websocket", "polling"],
-      reconnectionAttempts: maxRetries,
-      reconnectionDelay: 2000,
+      // Keep trying for as long as the page is open: live updates come back whenever the network does.
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: RECONNECT_DELAY_MS,
+      reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
       // Callback form: re-invoked on every (re)connect so each handshake gets a fresh token
       auth: (cb) => {
         const pending: Promise<string | null> = getTokenRef.current?.() ?? Promise.resolve(null);
@@ -126,6 +141,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       },
     });
 
+    const opened = socket.current;
     socket.current.on("connect", () => {
       retryCount.current = 0;
       setClientState((prev) => ({ ...prev, connected: true }));
@@ -199,6 +215,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     socket.current.on("disconnect", () => {
       setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
       optionsRef.current.onDisconnect?.();
+      retryIfStopped(opened);
     });
 
     socket.current.on("connect_error", (error) => {
@@ -207,8 +224,9 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
         error
       );
       optionsRef.current.onError?.(error);
+      retryIfStopped(opened);
     });
-  }, [updatePresence]);
+  }, [updatePresence, retryIfStopped]);
 
   const disconnect = useCallback(() => {
     if (isServer) return;
@@ -218,10 +236,13 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
     updatePresence("offline");
 
-    if (socket.current) {
-      socket.current.disconnect();
-      socket.current = null;
-    }
+    if (retryTimer.current) clearTimeout(retryTimer.current);
+    retryTimer.current = null;
+    retryCount.current = 0;
+
+    const closing = socket.current;
+    socket.current = null;
+    closing?.disconnect();
   }, [updatePresence]);
   const sendTypingIndicator = useCallback(
     (conversationId?: string, groupId?: string, isTyping = true) => {
