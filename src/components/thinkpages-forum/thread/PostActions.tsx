@@ -20,6 +20,7 @@ import {
   type ModeratorDialogName,
   type ModeratorTools,
 } from "../ModeratorMenu";
+import { ReactionBar } from "../reactions";
 import { ReportDialog } from "../ReportDialog";
 import type { ForumPost } from "./types";
 
@@ -27,6 +28,8 @@ interface PostActionsProps {
   post: ForumPost;
   /** The viewer may reply here: Reply and Quote are offered. */
   canReply: boolean;
+  /** The viewer may react to this post: the reaction bar offers its React button. */
+  canReact: boolean;
   /** Takes the reader to the composer. */
   onReply: () => void;
   /** Quotes the post in the composer. */
@@ -57,6 +60,7 @@ const permalinkOf = (postId: string) => `${window.location.origin}${createUrl(po
 export function PostActions({
   post,
   canReply,
+  canReact,
   onReply,
   onQuote,
   canEdit,
@@ -81,6 +85,12 @@ export function PostActions({
 
   return (
     <div className="flex flex-wrap items-center gap-1">
+      <ReactionBar
+        postId={post.id}
+        counts={post.reactions}
+        mine={post.myReaction}
+        canReact={canReact}
+      />
       {canReply ? (
         <>
           <Button variant="ghost" size="sm" className={ACTION} onClick={onReply}>

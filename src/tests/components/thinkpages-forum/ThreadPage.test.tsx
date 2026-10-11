@@ -74,6 +74,15 @@ jest.mock("next/navigation", () => {
     useSearchParams: () => new URLSearchParams(),
   };
 });
+jest.mock("~/components/thinkpages-forum/reactions", () => ({
+  ReactionBar: (props: { postId: string; mine: string | null; canReact: boolean }) => (
+    <div
+      data-testid="reaction-bar"
+      data-mine={props.mine ?? ""}
+      data-can-react={String(props.canReact)}
+    />
+  ),
+}));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/context/auth-context", () => {
   const auth = { isSignedIn: true };
@@ -164,6 +173,8 @@ function post(over: object = {}) {
     role: "starter" as "staff" | "officer" | "starter" | null,
     byViewer: false,
     isOwn: false,
+    reactions: {} as Record<string, number>,
+    myReaction: null as string | null,
     ...over,
   };
 }
@@ -172,6 +183,7 @@ interface Overrides {
   style?: "ic" | "ooc";
   locked?: boolean;
   canReply?: boolean;
+  canReact?: boolean;
   notice?: string | null;
   posts?: object[];
   total?: number;
@@ -213,6 +225,7 @@ function threadData(o: Overrides = {}) {
     participants: o.participants ?? [],
     participantCount: o.participantCount ?? 0,
     canReply: o.canReply ?? true,
+    canReact: o.canReact ?? true,
     canModerate: false,
     viewerIsAuthor: false,
     notice: o.notice ?? null,
@@ -611,5 +624,40 @@ describe("read state and watching on the thread page", () => {
     render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByText("You're watching this thread.")).toBeNull();
     expect(screen.getByRole("button", { name: "Watch thread" })).toHaveTextContent("Watch");
+  });
+});
+
+describe("reactions", () => {
+  const barOf = (container: HTMLElement, id: string) =>
+    container.querySelector(`#post-${id} [data-testid='reaction-bar']`)!;
+
+  it("mounts a reaction bar in each post, offered on other members' visible posts only", () => {
+    set(
+      threadData({
+        posts: [
+          post({ isOwn: true, byViewer: true }),
+          post({
+            id: "p2",
+            authorUserId: "u2",
+            number: 2,
+            reactions: { fire: 2 },
+            myReaction: "fire",
+          }),
+          post({ id: "p3", authorUserId: "u2", number: 3, hidden: true }),
+        ],
+      })
+    );
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(barOf(container, "p1")).toHaveAttribute("data-can-react", "false");
+    expect(barOf(container, "p2")).toHaveAttribute("data-can-react", "true");
+    expect(barOf(container, "p2")).toHaveAttribute("data-mine", "fire");
+    expect(barOf(container, "p3")).toHaveAttribute("data-can-react", "false");
+  });
+
+  it("offers reacting nowhere when the thread does not (signed out, closed or banned)", () => {
+    set(threadData({ canReact: false }));
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    expect(barOf(container, "p1")).toHaveAttribute("data-can-react", "false");
+    expect(barOf(container, "p2")).toHaveAttribute("data-can-react", "false");
   });
 });

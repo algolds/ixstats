@@ -247,6 +247,7 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
             cardsReady={ready}
             cardsErrored={errored}
             canReply={data.canReply}
+            canReact={data.canReact}
             onReply={startReply}
             onQuote={startQuote}
             open={!thread.locked && !thread.archived}

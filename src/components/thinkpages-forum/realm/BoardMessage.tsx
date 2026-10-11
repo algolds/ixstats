@@ -12,6 +12,8 @@ import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
 import { ForumAvatar } from "../ForumAvatar";
 import type { ModeratorTools } from "../ModeratorMenu";
+import { ReactionBar } from "../reactions";
+import { canReactToMessage } from "../reactions/can-react";
 import { PostBody } from "../thread/PostBody";
 import type { PostStyle } from "../thread/types";
 import { MessageEditor } from "./MessageEditor";
@@ -178,6 +180,12 @@ export const BoardMessage = memo(function BoardMessage({
           {continued ? <ContinuedLine continued={continued} /> : null}
           {placeholder ? null : (
             <div className="flex flex-wrap items-center gap-1">
+              <ReactionBar
+                postId={message.id}
+                counts={message.reactions}
+                mine={message.myReaction}
+                canReact={canReactToMessage(access, message)}
+              />
               {access.canPost ? (
                 <>
                   <Button

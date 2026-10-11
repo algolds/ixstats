@@ -9,6 +9,7 @@ import type { ForumAuthors } from "../AuthorName";
 import { CanvasComposer, htmlToQuoteText, type QuoteRequest } from "../composer";
 import { ForumComposer } from "../ForumComposer";
 import type { ModeratorTools } from "../ModeratorMenu";
+import { canReactToPost } from "../reactions/can-react";
 import { PostActions } from "./PostActions";
 import { PostBody } from "./PostBody";
 import { PostHeader } from "./PostHeader";
@@ -25,6 +26,8 @@ interface PostCardProps {
   cardsErrored: boolean;
   /** The viewer may reply here: Reply and Quote are offered. */
   canReply: boolean;
+  /** The thread lets the viewer react; narrowed here to other members' visible posts. */
+  canReact: boolean;
   onReply: () => void;
   onQuote: (quote: QuoteRequest) => void;
   /** The thread takes edits and replies: not locked or archived. */
@@ -140,6 +143,7 @@ export const PostCard = memo(function PostCard({
   cardsReady,
   cardsErrored,
   canReply,
+  canReact,
   onReply,
   onQuote,
   open,
@@ -208,6 +212,7 @@ export const PostCard = memo(function PostCard({
           <PostActions
             post={post}
             canReply={canReply}
+            canReact={canReactToPost(canReact, post)}
             onReply={onReply}
             onQuote={quote}
             // Authors edit their own post while the thread is open; any other member may report it.

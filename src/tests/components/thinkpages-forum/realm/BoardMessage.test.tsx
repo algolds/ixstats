@@ -94,6 +94,17 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
   DropdownMenuSeparator: () => <hr />,
 }));
 
+jest.mock("~/components/thinkpages-forum/reactions", () => ({
+  ReactionBar: (props: { postId: string; mine: string | null; canReact: boolean }) => (
+    <div
+      data-testid="reaction-bar"
+      data-post={props.postId}
+      data-mine={props.mine ?? ""}
+      data-can-react={String(props.canReact)}
+    />
+  ),
+}));
+
 import { BoardMessage } from "~/components/thinkpages-forum/realm/BoardMessage";
 
 const { mutations } = jest.requireMock<{ mutations: Record<string, jest.Mock> }>("~/trpc/react");
@@ -467,5 +478,42 @@ describe("BoardMessage moderation", () => {
     await waitFor(() =>
       expect(tools.saveEdit).toHaveBeenCalledWith("p1", "<p>Better</p>", "Off topic")
     );
+  });
+});
+
+describe("BoardMessage reactions", () => {
+  const bar = () => screen.getByTestId("reaction-bar");
+
+  it("mounts the reaction bar before Reply with the message's reactions", () => {
+    renderMessage({
+      message: boardMessage({ id: "p3", reactions: { fire: 2 }, myReaction: "fire" }),
+    });
+    expect(bar()).toHaveAttribute("data-post", "p3");
+    expect(bar()).toHaveAttribute("data-mine", "fire");
+    const reply = screen.getByRole("button", { name: "Reply" });
+    expect(bar().compareDocumentPosition(reply) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("offers reacting to a member who may post on another member's message", () => {
+    renderMessage();
+    expect(bar()).toHaveAttribute("data-can-react", "true");
+  });
+
+  it("offers no reacting on your own message, a hidden message, or to a reader who cannot post", () => {
+    const { unmount } = renderMessage({ message: boardMessage({ byViewer: true }) });
+    expect(bar()).toHaveAttribute("data-can-react", "false");
+    unmount();
+    const hidden = renderMessage({ message: boardMessage({ hidden: true }) });
+    expect(bar()).toHaveAttribute("data-can-react", "false");
+    hidden.unmount();
+    renderMessage({ access: boardAccess({ canPost: false, reason: "sign_in" }), signedIn: false });
+    expect(bar()).toHaveAttribute("data-can-react", "false");
+  });
+
+  it("has no reaction bar on a message that continued in a thread", () => {
+    renderMessage({
+      message: boardMessage({ continued: { threadId: "t1", title: "Trade", replies: 2 } }),
+    });
+    expect(screen.queryByTestId("reaction-bar")).toBeNull();
   });
 });
