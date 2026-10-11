@@ -26,7 +26,7 @@ function mentionStore(known: MentionRow[] = []) {
   const store = forumStore({
     ...seed(),
     users: [
-      ...seed().users,
+      ...seed().users.filter((u) => u.id !== "u_m"),
       {
         id: "u_k",
         clerkUserId: "clerk_k",
@@ -41,7 +41,7 @@ function mentionStore(known: MentionRow[] = []) {
         isActive: true,
         role: { name: "user", level: 100 },
       },
-    ].filter((u, i, all) => all.findLastIndex((o) => o.id === u.id) === i),
+    ],
   });
   const rows = [...known];
   const forumPostMention = {
