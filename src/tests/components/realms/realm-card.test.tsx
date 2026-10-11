@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, within } from "@testing-library/react";
 
-import { RealmCard } from "~/app/realms/_components/BrowseRealms";
+import { RealmCard } from "~/components/realms/RealmCard";
 
 const LAST = new Date("2026-10-01T00:00:00Z");
 const REALM = {
