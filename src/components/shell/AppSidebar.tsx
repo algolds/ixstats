@@ -31,7 +31,6 @@ import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
   getVisibleAppForPath,
-  getTintForPath,
   type AppDefinition,
   type NavAction,
   type NavBadges,
@@ -296,7 +295,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const current = getVisibleAppForPath(pathname, apps);
   const activeSectionId = current ? getActiveSectionId(current, pathname, searchParams) : undefined;
-  const tint = getTintForPath(current, activeSectionId);
+  const tint = current?.tint;
   const isCollapsed = collapsed ?? false;
   const mainApps = apps.filter((app) => app.placement !== "footer");
   const footerApps = apps.filter((app) => app.placement === "footer");

@@ -133,8 +133,8 @@ describe("AppSidebar", () => {
       );
       const messages = within(rail()).getByRole("link", { name: "Messages, 3 unread" });
       expect(messages).toHaveTextContent("3");
-      expect(within(rail()).getByRole("link", { name: "ThinkTanks" })).toBeInTheDocument();
-      // ThinkPages is an app of its own now, not one of Home's rail links.
+      // ThinkPages (with ThinkTanks) is an app of its own now, not one of Home's rail links.
+      expect(within(rail()).queryByRole("link", { name: "ThinkTanks" })).toBeNull();
       expect(within(rail()).queryByRole("link", { name: "ThinkPages" })).toBeNull();
       expect(within(rail()).getByRole("button", { name: "ThinkPages" })).toBeInTheDocument();
       expect(within(rail()).queryByRole("link", { name: "What's new" })).toBeNull();

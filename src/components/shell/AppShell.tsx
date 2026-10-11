@@ -11,12 +11,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { stripBasePath } from "~/lib/base-path";
-import {
-  getActiveSectionId,
-  getAppForPath,
-  getTintForPath,
-  isChromelessPath,
-} from "~/lib/navigation/app-sections";
+import { getAppForPath, isChromelessPath } from "~/lib/navigation/app-sections";
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { DailyRewardProvider } from "~/components/vault/DailyRewardProvider";
@@ -32,8 +27,7 @@ export function AppShell({ beforeMain, children }: AppShellProps) {
   const pathname = stripBasePath(usePathname() || "/");
   const chromeless = isChromelessPath(pathname);
   const app = getAppForPath(pathname);
-  // The active section, so a section's tint override (MyLeague and MyClub inside Labs) paints the canvas.
-  const tint = getTintForPath(app, app && getActiveSectionId(app, pathname, null));
+  const tint = app?.tint;
   return (
     <DailyRewardProvider autoOpen={!chromeless}>
       <div
