@@ -185,8 +185,8 @@ describe("realm board exclusions", () => {
       },
       country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
       realmPage: { findMany: jest.fn(async () => []) },
-      forumPost: { count: postCount },
-      forumThread: { findFirst: threadFirst },
+      forumPost: { count: postCount, groupBy: jest.fn(async () => []) },
+      forumThread: { findFirst: threadFirst, findMany: jest.fn(async () => []) },
     };
     await listRealmDirectory(db as never, null);
     const inSection = (argsOf(postCount as never).where as { thread: { category: object } }).thread;
@@ -196,8 +196,9 @@ describe("realm board exclusions", () => {
     );
   });
 
-  it("the directory's board-week figure is separate: the forum count keeps excluding the board and is issued first", async () => {
+  it("the directory's board-week figure is separate: the forum count keeps excluding the board, the board is read in its own batch", async () => {
     const postCount = jest.fn(async (_args: object) => 0);
+    const threadMany = jest.fn(async (_args: object) => []);
     const db = {
       realm: {
         findMany: jest.fn(async () => [
@@ -218,22 +219,23 @@ describe("realm board exclusions", () => {
       },
       country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
       realmPage: { findMany: jest.fn(async () => []) },
-      forumPost: { count: postCount },
-      forumThread: { findFirst: jest.fn(async () => null) },
+      forumPost: { count: postCount, groupBy: jest.fn(async () => []) },
+      forumThread: { findFirst: jest.fn(async () => null), findMany: threadMany },
     };
     await listRealmDirectory(db as never, null);
-    expect(postCount).toHaveBeenCalledTimes(2);
-    const [forumCount, boardCount] = postCount.mock.calls.map(
-      ([args]) =>
-        (args as { where: { thread: { category: Record<string, object | string> } } }).where.thread
-          .category
-    );
+    expect(postCount).toHaveBeenCalledTimes(1);
+    const forumCount = (
+      argsOf(postCount as never).where as { thread: { category: Record<string, object | string> } }
+    ).thread.category;
     expect(forumCount).toMatchObject(NOT_BOARD);
-    expect(forumCount!.OR).toBeUndefined();
-    expect(boardCount).toMatchObject({
+    expect(forumCount.OR).toBeUndefined();
+    const boardCategory = (
+      argsOf(threadMany as never).where as { category: Record<string, object | string> }
+    ).category;
+    expect(boardCategory).toMatchObject({
       OR: [{ style: "board" }, { scope: "realm", key: "board" }],
     });
-    expect(boardCount!.style).toBeUndefined();
+    expect(boardCategory.style).toBeUndefined();
   });
 
   it("a moderator is never offered the board as a place to move a thread", async () => {

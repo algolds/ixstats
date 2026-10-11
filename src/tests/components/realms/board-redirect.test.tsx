@@ -18,4 +18,9 @@ describe("/r/[realm]/board", () => {
     await RealmBoardPage({ params: Promise.resolve({ realm: "a/b c" }) });
     expect(redirect).toHaveBeenCalledWith("/thinkpages/r/a%2Fb%20c");
   });
+
+  it.each(["ixworld", "default"])("sends %s to IxWorld's canonical slug", async (realm) => {
+    await RealmBoardPage({ params: Promise.resolve({ realm }) });
+    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/ixworld");
+  });
 });

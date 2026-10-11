@@ -67,21 +67,46 @@ async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
 }
 
 /**
- * Messages on the realm's live board since `since`: the directory's own "board messages this week" figure. It is
- * never added to `forumActivity`'s post count (the board stays out of every forum count): public board category, not
- * hidden, and not the placeholder line of a message that was continued in a thread.
+ * Messages on the realms' live boards since `since`: the directory's own "board messages this week" figure, batched
+ * for the whole directory in two queries however many realms there are (the realms' public board threads, then one
+ * grouped count of their messages). It is never added to `forumActivity`'s post count (the board stays out of every
+ * forum count): public board category, thread not hidden, messages not hidden and not the placeholder line of a
+ * message that was continued in a thread.
  */
-async function boardMessages(db: PrismaClient, realmId: string, since: Date): Promise<number> {
-  return db.forumPost.count({
+async function boardMessagesByRealm(
+  db: PrismaClient,
+  realmIds: string[],
+  since: Date
+): Promise<Map<string, number>> {
+  const threads = await db.forumThread.findMany({
     where: {
-      ...PREVIEWED_BOARD_MESSAGES,
-      createdAt: { gte: since },
-      thread: {
-        hidden: false,
-        category: { scope: "realm", realmId, visibility: "public", ...onlyBoardCategory() },
+      hidden: false,
+      category: {
+        scope: "realm",
+        realmId: { in: realmIds },
+        visibility: "public",
+        ...onlyBoardCategory(),
       },
     },
+    select: { id: true, category: { select: { realmId: true } } },
   });
+  const realmOfThread = new Map(threads.map((thread) => [thread.id, thread.category.realmId]));
+  const counts = new Map<string, number>();
+  if (realmOfThread.size === 0) return counts;
+  const rows = await db.forumPost.groupBy({
+    by: ["threadId"],
+    where: {
+      threadId: { in: [...realmOfThread.keys()] },
+      ...PREVIEWED_BOARD_MESSAGES,
+      createdAt: { gte: since },
+    },
+    _count: { _all: true },
+  });
+  for (const row of rows) {
+    const realmId = realmOfThread.get(row.threadId);
+    if (realmId) counts.set(realmId, (counts.get(realmId) ?? 0) + row._count._all);
+  }
+  return counts;
 }
 
 /** Open realms with their nation counts, forum activity and the viewer's own holdings. */
@@ -134,29 +159,25 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const unclaimedBy = countBy(unclaimed);
   const mineBy = countBy(mine);
 
-  return Promise.all(
-    realms.map(async ({ settings, _count, foundedAt, createdAt, ...realm }) => {
-      // The forum count is issued first (and keeps the board out); the board figure is separate.
-      const [board, boardMessagesThisWeek] = await Promise.all([
-        forumActivity(db, realm.id, since),
-        boardMessages(db, realm.id, since),
-      ]);
-      return {
-        ...realm,
-        foundedAt: foundedAt ?? createdAt,
-        nationCount: _count.countries,
-        openNationCount: unclaimedBy.get(realm.id) ?? 0,
-        /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
-        openNationPageCount: claimablePages.get(realm.id) ?? 0,
-        myNationCount: mineBy.get(realm.id) ?? 0,
-        maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
-        /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
-        board,
-        /** Board messages in the last week: its own figure, never added to `board.recentPosts`. */
-        boardMessagesThisWeek,
-      };
-    })
-  );
+  // The board-week figure is batched for every realm (two queries); the per-realm forum counts still exclude the board.
+  const [boardWeek, boards] = await Promise.all([
+    boardMessagesByRealm(db, realmIds, since),
+    Promise.all(realms.map((realm) => forumActivity(db, realm.id, since))),
+  ]);
+  return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }, index) => ({
+    ...realm,
+    foundedAt: foundedAt ?? createdAt,
+    nationCount: _count.countries,
+    openNationCount: unclaimedBy.get(realm.id) ?? 0,
+    /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
+    openNationPageCount: claimablePages.get(realm.id) ?? 0,
+    myNationCount: mineBy.get(realm.id) ?? 0,
+    maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
+    /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
+    board: boards[index]!,
+    /** Board messages in the last week: its own figure, never added to `board.recentPosts`. */
+    boardMessagesThisWeek: boardWeek.get(realm.id) ?? 0,
+  }));
 }
 
 /**

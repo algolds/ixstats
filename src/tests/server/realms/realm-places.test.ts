@@ -222,6 +222,7 @@ describe("realms.directory", () => {
     db.forumThread.findFirst.mockImplementation(async ({ where }: any) =>
       where.category.realmId === "eurth" ? { lastPostAt } : null
     );
+    db.forumThread.findMany.mockResolvedValue([]);
 
     const rows = await callerAs(OWNER, db).directory();
 
@@ -277,7 +278,81 @@ describe("realms.directory", () => {
     expect(rows[0]).not.toHaveProperty("settings");
   });
 
-  it("counts board messages as their own figure, never as forum posts", async () => {
+  it("counts board messages as their own figure, in two queries however many realms there are", async () => {
+    const db = makeDb({ boardExists: true });
+    const row = (id: string) => ({
+      id,
+      slug: id,
+      name: id,
+      description: null,
+      thumbnail: null,
+      settings: null,
+      _count: { countries: 1 },
+    });
+    db.realm.findMany.mockResolvedValue([row("eurth"), row("quiet"), row("empty")]);
+    db.country.groupBy.mockResolvedValue([]);
+    db.forumPost.count.mockResolvedValue(5);
+    db.forumThread.findFirst.mockResolvedValue(null);
+    db.forumThread.findMany.mockResolvedValue([
+      { id: "t_eurth", category: { realmId: "eurth" } },
+      { id: "t_quiet", category: { realmId: "quiet" } },
+    ]);
+    db.forumPost.groupBy.mockResolvedValue([
+      { threadId: "t_eurth", _count: { _all: 7 } },
+      { threadId: "t_quiet", _count: { _all: 2 } },
+    ]);
+
+    const rows = await callerAs(OWNER, db).directory();
+
+    expect(rows.map((r) => [r.id, r.board.recentPosts, r.boardMessagesThisWeek])).toEqual([
+      ["eurth", 5, 7],
+      ["quiet", 5, 2],
+      ["empty", 5, 0],
+    ]);
+    // Board-week figure: one thread lookup and one grouped count for the whole directory.
+    expect(db.forumThread.findMany).toHaveBeenCalledTimes(1);
+    expect(db.forumPost.groupBy).toHaveBeenCalledTimes(1);
+    // The per-realm forum counts are unchanged: one per realm, none selecting the board.
+    const counts = db.forumPost.count.mock.calls.map(
+      ([args]: [{ where: { thread: { category: Record<string, object | string> } } }]) =>
+        args.where.thread.category
+    );
+    expect(counts).toHaveLength(3);
+    for (const category of counts) {
+      expect(category).toMatchObject({
+        style: { not: "board" },
+        NOT: { scope: "realm", key: "board" },
+      });
+      expect(category.OR).toBeUndefined();
+    }
+    const [[threadQuery]] = db.forumThread.findMany.mock.calls as [
+      [{ where: { hidden: boolean; category: Record<string, object | string> } }],
+    ];
+    expect(threadQuery.where).toMatchObject({
+      hidden: false,
+      category: {
+        scope: "realm",
+        realmId: { in: ["eurth", "quiet", "empty"] },
+        visibility: "public",
+        OR: [{ style: "board" }, { scope: "realm", key: "board" }],
+      },
+    });
+    expect(threadQuery.where.category.style).toBeUndefined();
+    const [[groupQuery]] = db.forumPost.groupBy.mock.calls as [
+      [{ by: string[]; where: { createdAt: { gte: Date } } }],
+    ];
+    expect(groupQuery).toMatchObject({
+      by: ["threadId"],
+      where: {
+        threadId: { in: ["t_eurth", "t_quiet"] },
+        hidden: false,
+        continuedThreadId: null,
+      },
+    });
+    expect(groupQuery.where.createdAt.gte).toBeInstanceOf(Date);
+  });
+
+  it("skips the grouped count when no realm has a board thread", async () => {
     const db = makeDb({ boardExists: true });
     db.realm.findMany.mockResolvedValue([
       {
@@ -287,52 +362,17 @@ describe("realms.directory", () => {
         description: null,
         thumbnail: null,
         settings: null,
-        _count: { countries: 4 },
+        _count: { countries: 1 },
       },
     ]);
     db.country.groupBy.mockResolvedValue([]);
-    db.forumPost.count.mockImplementation(
-      async ({ where }: { where: { thread: { category: { OR?: object[] } } } }) =>
-        where.thread.category.OR ? 7 : 5
-    );
+    db.forumPost.count.mockResolvedValue(0);
     db.forumThread.findFirst.mockResolvedValue(null);
+    db.forumThread.findMany.mockResolvedValue([]);
 
     const [row] = await callerAs(OWNER, db).directory();
 
-    expect(row).toMatchObject({
-      board: { recentPosts: 5, lastPostAt: null },
-      boardMessagesThisWeek: 7,
-    });
-    const counts = db.forumPost.count.mock.calls.map(
-      ([args]: [
-        {
-          where: {
-            createdAt: { gte: Date };
-            thread: { category: Record<string, object | string> };
-          };
-        },
-      ]) => args.where
-    );
-    // The forum count is issued first and keeps the board out; the board figure selects only the board.
-    expect(counts[0]!.thread.category).toMatchObject({
-      style: { not: "board" },
-      NOT: { scope: "realm", key: "board" },
-    });
-    expect(counts[0]!.thread.category.OR).toBeUndefined();
-    expect(counts[1]).toMatchObject({
-      hidden: false,
-      continuedThreadId: null,
-      thread: {
-        hidden: false,
-        category: {
-          scope: "realm",
-          realmId: "eurth",
-          visibility: "public",
-          OR: [{ style: "board" }, { scope: "realm", key: "board" }],
-        },
-      },
-    });
-    expect(counts[1]!.createdAt.gte).toBeInstanceOf(Date);
-    expect(counts[1]!.thread.category.style).toBeUndefined();
+    expect(row).toMatchObject({ boardMessagesThisWeek: 0 });
+    expect(db.forumPost.groupBy).not.toHaveBeenCalled();
   });
 });
