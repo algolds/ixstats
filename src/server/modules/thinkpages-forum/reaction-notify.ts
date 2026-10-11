@@ -49,7 +49,12 @@ const POST_SELECT = {
   },
 } as const satisfies Prisma.ForumPostSelect;
 
-/** Whether the owner already has a forum notice for this reactor and post. */
+const DEDUPE_WINDOW_MS = 180 * 24 * 60 * 60 * 1000;
+
+/**
+ * Whether the owner already has a forum notice for this reactor and post, sent in the last 180 days. The key is built
+ * from database ids only (post.id, actor.id), never from raw input, so the LIKE match cannot be steered by a caller.
+ */
 async function alreadyTold(
   db: ReactionNoticeDb,
   ownerClerkId: string,
@@ -60,6 +65,7 @@ async function alreadyTold(
       userId: ownerClerkId,
       source: FORUM_NOTICE_SOURCE,
       metadata: { contains: `"reactionKey":"${key}"` },
+      createdAt: { gte: new Date(Date.now() - DEDUPE_WINDOW_MS) },
     },
     select: { id: true },
   });
@@ -90,6 +96,7 @@ async function notify(
   if ((await readableUsers(db, place, [owner])).length === 0) return;
   const blocking = await recipientsBlockingSender(db, actor.clerkUserId, [owner.clerkUserId]);
   if (blocking.length > 0) return;
+  // Both ids come from the database rows (post.id, actor.id), never from raw input.
   const reactionKey = `${post.id}:${actor.id}`;
   if (await alreadyTold(db, owner.clerkUserId, reactionKey)) return;
   // The reactor is named by their own handle; the post's persona, if any, is never read.

@@ -98,6 +98,7 @@ describe("notifyReaction", () => {
         userId: "clerk_u_member2",
         source: "thinkpages-forum",
         metadata: { contains: '"reactionKey":"p_hub:u_member"' },
+        createdAt: { gte: expect.any(Date) },
       },
       select: { id: true },
     });
@@ -182,6 +183,26 @@ describe("notifyReaction", () => {
     await notifyReaction(db, reactor, { postId: "p_hub" });
     expect(sent).toHaveBeenCalledTimes(1);
     expect(stored).toHaveLength(1);
+  });
+
+  it("looks for an earlier notice only in the last 180 days", async () => {
+    const { db, notification } = setup();
+    const now = Date.UTC(2026, 9, 10, 12);
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(now);
+    try {
+      await notifyReaction(db, reactor, { postId: "p_hub" });
+    } finally {
+      nowSpy.mockRestore();
+    }
+    expect(notification.findFirst).toHaveBeenCalledWith({
+      where: {
+        userId: "clerk_u_member2",
+        source: "thinkpages-forum",
+        metadata: { contains: '"reactionKey":"p_hub:u_member"' },
+        createdAt: { gte: new Date(now - 180 * 24 * 60 * 60 * 1000) },
+      },
+      select: { id: true },
+    });
   });
 
   it("tells the owner again for another reactor, and about another post by the same reactor", async () => {
