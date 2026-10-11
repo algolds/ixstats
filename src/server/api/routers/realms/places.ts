@@ -2,7 +2,7 @@
  * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section
  * (the board page redirects to the live board in the forum).
  */
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
@@ -50,8 +50,8 @@ type ForumActivity = { recentPosts: number; lastPostAt: Date | null };
 
 /**
  * Activity in the realms' forum sections since `since`: posts made and the latest thread activity, for every realm in
- * three queries however many there are (the sections' categories, the latest thread per category, the threads that had
- * posts in the window with their counts). Public categories only (the directory is open to everyone) and nothing
+ * three queries however many there are (the sections' categories, the latest thread per category, one grouped count
+ * of the window's posts per category). Public categories only (the directory is open to everyone) and nothing
  * hidden; an archived thread is never the latest (U12). A realm with no section reads as no posts and no activity.
  */
 async function forumActivityByRealm(
@@ -74,26 +74,29 @@ async function forumActivityByRealm(
   const realmOf = new Map(categories.map((category) => [category.id, category.realmId]));
   if (realmOf.size === 0) return activity;
   const categoryIds = [...realmOf.keys()];
-  const inWindow = { hidden: false, createdAt: { gte: since } };
   const [latest, active] = await Promise.all([
     db.forumThread.groupBy({
       by: ["categoryId"],
       where: { categoryId: { in: categoryIds }, hidden: false, archived: false },
       _max: { lastPostAt: true },
     }),
-    db.forumThread.findMany({
-      where: { categoryId: { in: categoryIds }, hidden: false, posts: { some: inWindow } },
-      select: { categoryId: true, _count: { select: { posts: { where: inWindow } } } },
-    }),
+    // Counted in the database, one row per section however many threads were active.
+    db.$queryRaw<Array<{ categoryId: string; posts: number }>>`
+      SELECT t."categoryId", COUNT(*)::int AS posts
+      FROM forum_posts p
+      JOIN forum_threads t ON t.id = p."threadId"
+      WHERE t."categoryId" IN (${Prisma.join(categoryIds)})
+        AND t.hidden = false AND p.hidden = false AND p."createdAt" >= ${since}
+      GROUP BY t."categoryId"`,
   ]);
   for (const row of latest) {
     const entry = activity.get(realmOf.get(row.categoryId) ?? "");
     const at = row._max.lastPostAt;
     if (entry && at && (!entry.lastPostAt || at > entry.lastPostAt)) entry.lastPostAt = at;
   }
-  for (const thread of active) {
-    const entry = activity.get(realmOf.get(thread.categoryId) ?? "");
-    if (entry) entry.recentPosts += thread._count.posts;
+  for (const section of active) {
+    const entry = activity.get(realmOf.get(section.categoryId) ?? "");
+    if (entry) entry.recentPosts += section.posts;
   }
   return activity;
 }

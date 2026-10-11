@@ -20,7 +20,7 @@ const OUTSIDER = "clerk_outsider";
 
 /** A realm "eurth" whose board exists when `boardExists`; OWNER owns nation c1 there. */
 function makeDb({ boardExists }: { boardExists: boolean }): Db {
-  const db = createMockPrisma();
+  const db = createMockPrisma({ $queryRaw: jest.fn(async () => []) });
   let board = boardExists ? { realmId: "eurth", groupId: "board1" } : null;
   db.realm.findUnique.mockImplementation(async ({ where }: any) =>
     where.slug === "eurth" || where.id === "eurth"
@@ -218,9 +218,7 @@ describe("realms.directory", () => {
     );
     db.forumCategory.findMany.mockResolvedValue([{ id: "cat_eurth", realmId: "eurth" }]);
     db.forumThread.groupBy.mockResolvedValue([{ categoryId: "cat_eurth", _max: { lastPostAt } }]);
-    db.forumThread.findMany.mockImplementation(async ({ where }: any) =>
-      "posts" in where ? [{ categoryId: "cat_eurth", _count: { posts: 5 } }] : []
-    );
+    db.$queryRaw.mockResolvedValue([{ categoryId: "cat_eurth", posts: 5 }]);
 
     const rows = await callerAs(OWNER, db).directory();
 
@@ -240,15 +238,14 @@ describe("realms.directory", () => {
       where: { categoryId: { in: ["cat_eurth"] }, hidden: false, archived: false },
       _max: { lastPostAt: true },
     });
-    const activeThreads = db.forumThread.findMany.mock.calls
-      .map(([args]: [any]) => args)
-      .find((args: any) => "posts" in args.where);
-    expect(activeThreads.where).toMatchObject({
-      categoryId: { in: ["cat_eurth"] },
-      hidden: false,
-      posts: { some: { hidden: false } },
-    });
-    expect(activeThreads.where.posts.some.createdAt.gte).toBeInstanceOf(Date);
+    // The week's posts: one grouped count over the sections, hidden threads and posts left out.
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const [strings, categoryList, since] = db.$queryRaw.mock.calls[0]!;
+    const sql = strings.join("?");
+    expect(sql).toMatch(/GROUP BY t\."categoryId"/);
+    expect(sql).toMatch(/t\.hidden = false AND p\.hidden = false/);
+    expect(categoryList.values).toEqual(["cat_eurth"]);
+    expect(since).toBeInstanceOf(Date);
     expect(rows).toEqual([
       expect.objectContaining({
         id: "eurth",
@@ -288,14 +285,13 @@ describe("realms.directory", () => {
       ["eurth", "quiet", "empty"].map((realmId) => ({ id: `cat_${realmId}`, realmId }))
     );
     db.forumThread.groupBy.mockResolvedValue([]);
-    db.forumThread.findMany.mockImplementation(async ({ where }: any) =>
-      "posts" in where
-        ? ["eurth", "quiet", "empty"].map((r) => ({ categoryId: `cat_${r}`, _count: { posts: 5 } }))
-        : [
-            { id: "t_eurth", category: { realmId: "eurth" } },
-            { id: "t_quiet", category: { realmId: "quiet" } },
-          ]
+    db.$queryRaw.mockResolvedValue(
+      ["eurth", "quiet", "empty"].map((r) => ({ categoryId: `cat_${r}`, posts: 5 }))
     );
+    db.forumThread.findMany.mockResolvedValue([
+      { id: "t_eurth", category: { realmId: "eurth" } },
+      { id: "t_quiet", category: { realmId: "quiet" } },
+    ]);
     db.forumPost.groupBy.mockResolvedValue([
       { threadId: "t_eurth", _count: { _all: 7 } },
       { threadId: "t_quiet", _count: { _all: 2 } },
@@ -317,7 +313,8 @@ describe("realms.directory", () => {
     // The forum counts are batched too: the same three forum-activity queries however many realms there are.
     expect(db.forumCategory.findMany).toHaveBeenCalledTimes(1);
     expect(db.forumThread.groupBy).toHaveBeenCalledTimes(1);
-    expect(db.forumThread.findMany).toHaveBeenCalledTimes(2);
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(db.forumThread.findMany).toHaveBeenCalledTimes(1);
     expect(db.forumCategory.findMany.mock.calls[0]![0].where).toMatchObject({
       style: { not: "board" },
       NOT: { scope: "realm", key: "board" },

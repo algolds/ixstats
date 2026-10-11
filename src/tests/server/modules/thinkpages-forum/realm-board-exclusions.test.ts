@@ -191,6 +191,9 @@ describe("realm board exclusions", () => {
       findMany: jest.fn(async (_args: object) => []),
       groupBy: jest.fn(async (_args: object) => []),
     },
+    $queryRaw: jest.fn(
+      async (_sql: TemplateStringsArray, ..._values: unknown[]): Promise<object[]> => []
+    ),
   });
   const forumQueries = (db: ReturnType<typeof directoryDb>) =>
     [
@@ -198,6 +201,7 @@ describe("realm board exclusions", () => {
       db.forumPost.groupBy,
       db.forumThread.findMany,
       db.forumThread.groupBy,
+      db.$queryRaw,
     ]
       .map((fn) => fn.mock.calls.length)
       .reduce((a, b) => a + b, 0);
@@ -247,21 +251,25 @@ describe("realm board exclusions", () => {
       { categoryId: "c1", _max: { lastPostAt: early } },
       { categoryId: "c2", _max: { lastPostAt: late } },
     ] as never);
-    db.forumThread.findMany.mockImplementation(async (args: object) =>
-      "posts" in (args as { where: object }).where
-        ? ([
-            { categoryId: "c1", _count: { posts: 2 } },
-            { categoryId: "c2", _count: { posts: 3 } },
-            { categoryId: "c3", _count: { posts: 1 } },
-          ] as never)
-        : []
-    );
+    // One grouped row per section, not one per active thread.
+    db.$queryRaw.mockResolvedValue([
+      { categoryId: "c1", posts: 2 },
+      { categoryId: "c2", posts: 3 },
+      { categoryId: "c3", posts: 1 },
+    ]);
     const out = await listRealmDirectory(db as never, null);
     expect(out.map((r) => r.board)).toEqual([
       { recentPosts: 5, lastPostAt: late },
       { recentPosts: 1, lastPostAt: null },
       { recentPosts: 0, lastPostAt: null },
     ]);
+    // The count is grouped in the database, over the non-board sections only, hidden posts and threads left out.
+    const [strings, ...values] = db.$queryRaw.mock.calls[0]!;
+    const sql = strings.join("?");
+    expect(sql).toMatch(/GROUP BY t\."categoryId"/i);
+    expect(sql).toMatch(/t\.hidden = false/);
+    expect(sql).toMatch(/p\.hidden = false/);
+    expect(values[0]).toMatchObject({ values: ["c1", "c2", "c3"] });
   });
 
   it("a moderator is never offered the board as a place to move a thread", async () => {
