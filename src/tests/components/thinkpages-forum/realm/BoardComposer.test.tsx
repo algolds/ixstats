@@ -711,14 +711,14 @@ describe("BoardComposer rewards and prefill", () => {
 
   it("counts a change after an insert as done when the editor rewrote the token", async () => {
     echo.inserts = true;
-    echo.normalise = (text) => text.replace("[", "\\[");
+    // The reported text no longer holds the token verbatim, so only the "text changed since an insert" rule can end it.
+    echo.normalise = (text) => text.replace("[ixaction", "[ ixaction");
     window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
     renderComposer();
     await waitFor(() => expect(window.location.search).toBe(""));
     await act(async () => undefined);
-    expect(screen.getByTestId("editor")).toHaveValue("\\[ixaction=dir-abc]");
-    expect(editorInsert.mock.calls.length).toBeGreaterThanOrEqual(1);
-    expect(editorInsert.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(screen.getByTestId("editor")).toHaveValue("[ ixaction=dir-abc]");
+    expect(editorInsert).toHaveBeenCalledTimes(1);
   });
 
   it("inserts exactly once when the editor reports the change in a microtask", async () => {
