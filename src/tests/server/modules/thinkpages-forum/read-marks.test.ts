@@ -7,6 +7,7 @@ import {
   markRealmBoardRead,
   markThreadRead,
 } from "~/server/modules/thinkpages-forum/read-marks";
+import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const DAY = 86_400_000;
@@ -207,12 +208,37 @@ describe("markCategoryRead", () => {
     ];
     expect(call).toEqual(
       expect.objectContaining({
-        where: { categoryId: "cat_general", hidden: false, lastPostAt: { gt: expect.any(Date) } },
+        where: {
+          categoryId: "cat_general",
+          hidden: false,
+          lastPostAt: { gt: expect.any(Date) },
+          AND: [advertGate(member)],
+        },
       })
     );
     const age = Date.now() - call.where.lastPostAt.gt.getTime();
     expect(age).toBeGreaterThan(29.9 * DAY);
     expect(age).toBeLessThan(30.1 * DAY);
+  });
+
+  it("leaves a hidden realm's adverts out of what it marks and counts, on every chunk", async () => {
+    const find = { ...general, id: "cat_find", key: "find-a-realm", name: "Find a Realm" };
+    const db = markDb(null);
+    db.forumCategory.findFirst.mockResolvedValue(find as never);
+    db.forumThread.findMany
+      .mockResolvedValueOnce(
+        Array.from({ length: 500 }, (_, i) => ({ id: `t${i}`, lastPostAt: ago(1) })) as never
+      )
+      .mockResolvedValueOnce([] as never);
+    await markCategoryRead(db as never, member, { key: "find-a-realm" });
+    const [[first], [second]] = db.forumThread.findMany.mock.calls as never as [
+      [{ where: { AND: object[] } }],
+      [{ where: { AND: object[] } }],
+    ];
+    const gate = advertGate(member);
+    expect(first.where.AND).toEqual([gate]);
+    expect(second.where.AND[0]).toEqual(gate);
+    expect(JSON.stringify(gate)).toContain('"notIn":["draft","generating"]');
   });
 
   it("marks only a member's own threads in a Reports category, all of them for a moderator", async () => {
@@ -266,7 +292,9 @@ describe("markCategoryRead", () => {
       2,
       expect.objectContaining({
         where: expect.objectContaining({
+          // The advert gate stays beside the cursor: neither replaces the other.
           AND: [
+            advertGate(member),
             {
               OR: [
                 { lastPostAt: { lt: last.lastPostAt } },

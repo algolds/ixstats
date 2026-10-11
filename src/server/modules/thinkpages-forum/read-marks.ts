@@ -7,6 +7,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import type { ForumViewer } from "./access";
+import { advertGate } from "./advert-access";
 import { boardThreadOf } from "./board-thread";
 import { ForumError } from "./errors";
 import { canSeeRealm, loadForumRealm } from "./realm-access";
@@ -91,16 +92,20 @@ export async function markCategoryRead(
         hidden: false,
         lastPostAt: { gt: floor },
         ...ownThreadsWhere(viewer, category),
-        ...(cursor && {
-          AND: [
-            {
-              OR: [
-                { lastPostAt: { lt: cursor.lastPostAt } },
-                { lastPostAt: cursor.lastPostAt, id: { lt: cursor.id } },
-              ],
-            },
-          ],
-        }),
+        // The advert gate and the keyset cursor are both `AND` parts: a spread would let one replace the other.
+        AND: [
+          advertGate(viewer),
+          ...(cursor
+            ? [
+                {
+                  OR: [
+                    { lastPostAt: { lt: cursor.lastPostAt } },
+                    { lastPostAt: cursor.lastPostAt, id: { lt: cursor.id } },
+                  ],
+                },
+              ]
+            : []),
+        ],
       },
       orderBy: [{ lastPostAt: "desc" }, { id: "desc" }],
       take: MARK_CATEGORY_CHUNK,

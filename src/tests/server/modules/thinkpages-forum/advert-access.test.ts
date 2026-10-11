@@ -8,6 +8,7 @@ import {
   canEditAdvertPost,
   canManageAdvert,
 } from "~/server/modules/thinkpages-forum/advert-access";
+import { canSeeRealm } from "~/server/modules/thinkpages-forum/realm-access";
 
 const admin = {
   id: "u_a",
@@ -94,6 +95,54 @@ describe("advertGate", () => {
         },
       ],
     });
+  });
+});
+
+/** Evaluates the one `advertGate` shape over a thread row, so the list gate can be held against the row check. */
+interface GateRow {
+  advertRealmId: string | null;
+  advertRealm: { status: string; ownerId: string } | null;
+}
+interface GateClause {
+  advertRealmId?: string | null;
+  advertRealm?: { status?: { notIn: string[] }; ownerId?: string };
+}
+function passesGate(gate: ReturnType<typeof advertGate>, row: GateRow): boolean {
+  const parts = (gate.AND ?? []) as never as Array<{ OR: GateClause[] }>;
+  return parts.every(({ OR }) =>
+    OR.some((clause) => {
+      if (clause.advertRealmId !== undefined) return row.advertRealmId === clause.advertRealmId;
+      const cond = clause.advertRealm!;
+      if (!row.advertRealm) return false;
+      if (cond.status) return !cond.status.notIn.includes(row.advertRealm.status);
+      return row.advertRealm.ownerId === cond.ownerId;
+    })
+  );
+}
+
+describe("advertGate agrees with canSeeRealm", () => {
+  const viewers = { anonymous: null, member, officer, founder, admin };
+  const statuses = ["draft", "generating", "active", "archived"];
+
+  for (const status of statuses) {
+    for (const [name, viewer] of Object.entries(viewers)) {
+      it(`for a ${status} realm and ${name}`, () => {
+        const realmRow = { ...realm, status };
+        const row = {
+          advertRealmId: realm.id,
+          advertRealm: { status, ownerId: realm.ownerId },
+        };
+        const visible = canSeeRealm(viewer, realmRow);
+        expect(passesGate(advertGate(viewer), row)).toBe(visible);
+        expect(advertRealmHiddenFrom(viewer, realmRow)).toBe(!visible);
+      });
+    }
+  }
+
+  it("lets every viewer see an ordinary thread", () => {
+    for (const viewer of Object.values(viewers)) {
+      expect(passesGate(advertGate(viewer), { advertRealmId: null, advertRealm: null })).toBe(true);
+    }
   });
 });
 

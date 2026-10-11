@@ -4,6 +4,7 @@ import {
   listWatched,
   unreadWatchedCount,
 } from "~/server/modules/thinkpages-forum/thread-listing";
+import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const DAY = 86_400_000;
@@ -92,6 +93,8 @@ describe("listNewPosts", () => {
       [{ where: Record<string, object>; take: number }],
     ];
     expect(query.where.hidden).toBe(false);
+    // The row cap is spent on adverts the member may see only.
+    expect(query.where).toMatchObject(advertGate(member));
     expect(query.take).toBe(1000);
     expect(query.where.category).toEqual({
       style: { not: "board" },
@@ -290,6 +293,7 @@ describe("listWatched", () => {
       userId: "u1",
       thread: {
         hidden: false,
+        ...advertGate(member),
         OR: [{ category: { visibility: { not: "reporter_staff" } } }, { authorUserId: "u1" }],
         category: {
           style: { not: "board" },

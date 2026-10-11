@@ -1,5 +1,5 @@
 import { isSystemOwner } from "~/lib/auth";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, isUnpublishedStatus } from "~/lib/realms/realm-ids";
 import { REALM_POWERS, type RealmPower } from "~/lib/realms/realm-region";
 
 // ponytail: mirrors adminMiddleware's rule (owner/admin/staff or level ≤ 20); share it if a third caller appears.
@@ -77,7 +77,7 @@ export function isRealmHiddenFrom(
   viewer: RealmActor | null | undefined,
   realm: { status?: string | null; ownerId?: string | null }
 ): boolean {
-  const unpublished = realm.status === "draft" || realm.status === "generating";
+  const unpublished = isUnpublishedStatus(realm.status);
   return unpublished && !(viewer && canModerateRealm(viewer, { ownerId: realm.ownerId ?? "" }));
 }
 

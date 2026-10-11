@@ -10,11 +10,13 @@ import {
   notBoardCategory,
   visibleForumVisibilities,
 } from "~/lib/thinkpages-forum/categories";
+import { UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import { THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
 import { DEFAULT_REALM_ID, isSiteAdmin } from "~/server/modules/realms";
 import { canSeeThread, type ForumViewer } from "./access";
 import {
+  advertGate,
   advertRealmHiddenFrom,
   advertRowOf,
   ADVERT_REALM_SELECT,
@@ -174,7 +176,7 @@ async function readableRules(
   const { mod } = viewer;
   const unpublished = await db.realm.findMany({
     where: {
-      status: { in: ["draft", "generating"] },
+      status: { in: [...UNPUBLISHED_REALM_STATUSES] },
       id: { not: DEFAULT_REALM_ID },
       ownerId: { not: viewer.clerkUserId },
     },
@@ -206,6 +208,7 @@ export async function listNewPosts(
     where: {
       hidden: false,
       lastPostAt: { gt: floor },
+      ...advertGate(viewer),
       ...(rules.threadOr.length ? { OR: rules.threadOr } : {}),
       category: {
         ...notBoardCategory(),
@@ -243,6 +246,7 @@ async function watchedRows(
       userId: viewer.id,
       thread: {
         hidden: false,
+        ...advertGate(viewer),
         ...(rules.threadOr.length ? { OR: rules.threadOr } : {}),
         category: {
           ...notBoardCategory(),

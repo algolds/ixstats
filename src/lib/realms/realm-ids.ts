@@ -3,6 +3,14 @@ import { z } from "zod";
 /** IxWorld — tenant 0. Client-safe; `~/server/modules/realms` re-exports it for the server. */
 export const DEFAULT_REALM_ID = "default";
 
+/** `Realm.status` values nobody but the realm's staff can see (unpublished). One rule for every reader and list. */
+export const UNPUBLISHED_REALM_STATUSES = ["draft", "generating"] as const;
+
+/** Whether a realm status is unpublished (draft or generating). */
+export function isUnpublishedStatus(status: string | null | undefined): boolean {
+  return UNPUBLISHED_REALM_STATUSES.some((unpublished) => unpublished === status);
+}
+
 /** `realm: ALL_REALMS` asks a realm-scoped listing for every realm; the server grants it to site admins only (ruling E-o). */
 export const ALL_REALMS = "*";
 

@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { forumNavCounts } from "~/server/modules/thinkpages-forum/nav-counts";
+import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
 const DAY = 86_400_000;
@@ -60,6 +61,40 @@ function navDb(
     },
   };
 }
+
+describe("forumNavCounts and adverts", () => {
+  const DRAFT = { ...EURTH, id: "r_draft", status: "draft" };
+  const look = { thumbnail: null, emblemUrl: null };
+  const advertWatch = (id: string, advertRealm: object) => ({
+    thread: { ...watched(id), advertRealm },
+  });
+
+  it("leaves a hidden realm's advert out of the Watched badge, and asks the query for visible ones only", async () => {
+    const db = navDb({ watches: 0 });
+    db.forumThreadWatch.findMany.mockResolvedValue([
+      advertWatch("hidden_ad", { ...DRAFT, ...look }),
+      advertWatch("shown_ad", { ...EURTH, ...look }),
+      { thread: watched("plain") },
+    ] as never);
+    await expect(forumNavCounts(db as never, member)).resolves.toEqual({
+      watchedUnread: 2,
+      realmBoardNew: 0,
+    });
+    const [[query]] = db.forumThreadWatch.findMany.mock.calls as never as [
+      [{ where: { thread: object } }],
+    ];
+    expect(query.where.thread).toMatchObject(advertGate(member));
+  });
+
+  it("counts a draft realm's advert for its founder", async () => {
+    const db = navDb({ watches: 0 });
+    db.forumThreadWatch.findMany.mockResolvedValue([
+      advertWatch("own_ad", { ...DRAFT, ...look }),
+    ] as never);
+    const founder = { ...member, id: "u_f", clerkUserId: "founder" };
+    await expect(forumNavCounts(db as never, founder)).resolves.toMatchObject({ watchedUnread: 1 });
+  });
+});
 
 describe("forumNavCounts", () => {
   it("counts unread watched threads, and gives a member with no realm no board count", async () => {

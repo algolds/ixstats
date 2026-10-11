@@ -7,8 +7,7 @@
  * permalink rules and hold only the thread row ask `advertHiddenFrom`, which loads the realm itself.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { UNPUBLISHED_REALM_STATUSES } from "~/lib/thinkpages-forum/adverts";
+import { DEFAULT_REALM_ID, UNPUBLISHED_REALM_STATUSES } from "~/lib/realms/realm-ids";
 import { hasRealmPower, isRealmOpen, isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
 import {
@@ -63,8 +62,15 @@ export async function advertHiddenFrom(
   viewer: ForumViewer,
   thread: { advertRealmId?: string | null }
 ): Promise<boolean> {
-  if (!thread.advertRealmId) return false;
-  return advertRealmHiddenFrom(viewer, await loadForumRealm(db, { id: thread.advertRealmId }));
+  return advertRealmHiddenFrom(viewer, await advertRealmOf(db, thread));
+}
+
+/** The realm the thread advertises (null for any other thread), for readers that test many viewers against one thread. */
+export async function advertRealmOf(
+  db: RealmDb,
+  thread: { advertRealmId?: string | null }
+): Promise<ForumRealm | null> {
+  return thread.advertRealmId ? loadForumRealm(db, { id: thread.advertRealmId }) : null;
 }
 
 /** An archived realm's advert reads and acts as locked. */
