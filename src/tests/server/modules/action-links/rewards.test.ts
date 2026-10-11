@@ -120,6 +120,7 @@ const config = (
  */
 function world(initial: Partial<State> = {}) {
   const state: State = { activities: [], links: [], rewards: [], keys: [], ...initial };
+  tables = state;
   const calls: string[] = [];
   const read = <T>(rows: T[]): T[] => {
     calls.push("read");
@@ -215,14 +216,20 @@ const grant = (w: World, ids: string[], extra: Partial<typeof INPUT> = {}) =>
 const posted = (ids: string[], extra: Partial<State> = {}) =>
   world({ activities: ids.map((id) => action(id)), links: ids.map((id) => link(id)), ...extra });
 
+/** The tables of the world under test, which the ledger fake writes its idempotency keys into. */
+let tables: State | null = null;
 const earn = jest.mocked(vaultService.earnCreditsTx);
+/** Like the ledger: a credit leaves a row carrying its idempotency key, which a rolled-back transaction takes with it. */
+const credit = async (_tx: object, input: { amount: number; idempotencyKey?: string }) => {
+  if (input.idempotencyKey) tables?.keys.push(input.idempotencyKey);
+  return { newBalance: 100, amount: input.amount };
+};
 const bonus = jest.mocked(getBonusConfig);
 
 beforeEach(() => {
   jest.resetAllMocks();
   bonus.mockResolvedValue({ ...config() } as never);
-  // Like the ledger: a credit leaves a row carrying its idempotency key.
-  earn.mockImplementation(async (_tx, input) => ({ newBalance: 100, amount: input.amount }));
+  earn.mockImplementation(credit);
 });
 
 describe("grantActionLinkRewards", () => {
@@ -312,11 +319,15 @@ describe("grantActionLinkRewards", () => {
     });
 
     it("rolls everything back when the reward row turns out to exist already (the primary key backstop)", async () => {
-      const w = posted(["a1"]);
+      const old = reward("a1", { createdAt: new Date(0) });
+      const w = posted(["a1"], { rewards: [old] });
       w.tx.forumActionReward.findMany.mockResolvedValueOnce([]);
-      w.state.rewards.push(reward("a1", { createdAt: new Date(0) }));
       const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
       await expect(grant(w, ["a1"])).resolves.toBe(0);
+      expect(earn).toHaveBeenCalledTimes(1);
+      // The credit was rolled back with the transaction, and the rewards table is as it was.
+      expect(w.state.keys).toEqual([]);
+      expect(w.state.rewards).toEqual([old]);
       expect(log).not.toHaveBeenCalled();
       log.mockRestore();
     });
@@ -502,21 +513,40 @@ describe("grantActionLinkRewards", () => {
     });
 
     it("reports nothing paid when the transaction turns out to be dead after a refusal", async () => {
-      earn.mockResolvedValueOnce({ newBalance: 100, amount: 5 });
+      earn.mockImplementationOnce(credit);
       earn.mockRejectedValueOnce(new LedgerError("DAILY_CAP_REACHED", "cap"));
       const w = posted(["a1", "a2"]);
       w.tx.$executeRaw.mockResolvedValueOnce(1).mockRejectedValueOnce(new Error("aborted"));
       const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
       await expect(grant(w, ["a1", "a2"])).resolves.toBe(0);
       expect(w.state.rewards).toHaveLength(0);
+      expect(w.state.keys).toEqual([]);
       log.mockRestore();
     });
 
-    it("pays nothing when the ledger credits nothing", async () => {
-      earn.mockResolvedValueOnce({ newBalance: 100, amount: 0 });
+    it("probes the transaction after a refusal even when nothing was paid before it", async () => {
+      earn.mockRejectedValueOnce(new LedgerError("DAILY_CAP_REACHED", "cap"));
+      const w = posted(["a1"]);
+      w.tx.$executeRaw.mockResolvedValueOnce(1).mockRejectedValueOnce(new Error("aborted"));
+      const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
+      await expect(grant(w, ["a1"])).resolves.toBe(0);
+      expect(w.tx.$executeRaw).toHaveBeenCalledTimes(2);
+      expect(log).toHaveBeenCalled();
+      log.mockRestore();
+    });
+
+    it("rolls the ledger row back when the ledger credits nothing, so no credit row outlives a missing reward row", async () => {
+      earn.mockImplementationOnce(async (_tx, input) => {
+        tables?.keys.push(input.idempotencyKey ?? "");
+        return { newBalance: 100, amount: 0 };
+      });
+      const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
       const w = posted(["a1"]);
       await expect(grant(w, ["a1"])).resolves.toBe(0);
       expect(w.state.rewards).toHaveLength(0);
+      expect(w.state.keys).toEqual([]);
+      expect(log).toHaveBeenCalled();
+      log.mockRestore();
     });
   });
 

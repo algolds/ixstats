@@ -34,4 +34,24 @@ describe("postBoardMessage reward", () => {
     });
     expect(out.reward).toBeNull();
   });
+
+  it("reads the stored message before it pays, so a failing read cannot follow a paid reward", async () => {
+    const store = boardStore();
+    const order: string[] = [];
+    const find = store.db.forumPost.findUnique;
+    store.db.forumPost.findUnique = ((args: Parameters<typeof find>[0]) => {
+      order.push("read");
+      return find(args);
+    }) as typeof find;
+    jest.mocked(rewardNewLinks).mockImplementationOnce(async () => {
+      order.push("reward");
+      return { amount: 5 };
+    });
+    await postBoardMessage(store.db as never, member as never, {
+      realm: "eurth",
+      html: "<p>see [ixaction=a1]</p>",
+    });
+    expect(order.at(-1)).toBe("reward");
+    expect(order.filter((step) => step === "reward")).toHaveLength(1);
+  });
 });

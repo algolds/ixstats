@@ -108,11 +108,15 @@ async function payOne(
     });
     paid = earned.amount;
   } catch (error) {
-    // The ledger checks its switches and caps before it writes anything, so a refusal leaves the transaction usable.
+    // A refusal is expected, and the ledger raises it before it writes anything. The one exception is the daily cap
+    // check, which swallows a SQL error and then refuses, leaving the statement aborted: the caller's liveness probe
+    // (payInLock) after every refusal covers that path.
     if (error instanceof LedgerError) return null;
     throw error;
   }
-  if (paid <= 0) return null;
+  // The ledger credits a positive amount or throws. Were that ever false, throwing rolls the transaction back, so a
+  // zero-credit ledger row can never outlive the missing reward row.
+  if (paid <= 0) throw new Error(`Ledger credited ${paid} for action ${activityId}`);
   await tx.forumActionReward.create({
     data: { activityId, countryId, userId, amount: paid, createdAt: now },
   });
@@ -135,8 +139,9 @@ async function payInLock(tx: Tx, input: RewardInput, rule: Rule, now: Date): Pro
     const paid = await payOne(tx, input, activityId, rule, now);
     if (paid === null) {
       // A refusal ends the run (the switch, maintenance or the social cap holds for the rest too). One more statement
-      // proves the transaction is still alive, so credits paid before it are never reported from a rolled-back one.
-      if (total > 0) await tx.$executeRaw`SELECT 1`;
+      // proves the transaction is still alive: if the refusal followed a swallowed SQL error the probe throws, the
+      // whole transaction rolls back and the result is 0, so credits are never reported from a rolled-back one.
+      await tx.$executeRaw`SELECT 1`;
       break;
     }
     total += paid;

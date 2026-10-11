@@ -7,7 +7,7 @@ import { grantActionLinkRewards } from "~/server/modules/action-links";
 import { rewardNewLinks } from "~/server/modules/thinkpages-forum/action-reward";
 
 const grant = jest.mocked(grantActionLinkRewards);
-const actor = { id: "u1", countryId: "c1" };
+const actor: { id: string; countryId: string | null } = { id: "u1", countryId: "c1" };
 
 const SITE_GENERAL = {
   id: "cat_general",

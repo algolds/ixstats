@@ -158,8 +158,10 @@ export async function postBoardMessage(
     return post.id;
   });
   const { created } = await syncLinks(db, actor, postId, body.plainText);
+  // Read the message first: a failing read must not come after a reward that was already paid.
+  const message = await storedBoardMessage(db, actor, place, postId);
   const reward = await rewardNewLinks(db, actor, postId, created);
-  return { message: await storedBoardMessage(db, actor, place, postId), reward };
+  return { message, reward };
 }
 
 /**
