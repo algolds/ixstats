@@ -130,22 +130,23 @@ describe("app section map routes", () => {
     ]);
   });
 
-  it("lists neither ThinkTanks nor ThinkPages under Home", () => {
+  it("lists neither ThinkTanks, Accounts nor ThinkPages under Home", () => {
     const home = getApp("home");
-    expect(home.sections.map((s) => s.label)).toEqual(["What's new", "Home", "Accounts", "Messages"]);
+    expect(home.sections.map((s) => s.label)).toEqual(["What's new", "Home", "Messages"]);
     expect(home.match).not.toContain("/thinkpages");
     expect(home.match).not.toContain("/thinktanks");
   });
 
-  it("makes ThinkPages its own app with Forums, ThinkTanks, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
+  it("makes ThinkPages its own app with Forums, ThinkTanks, Accounts, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
     const forum = getApp("thinkpages");
     expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
-    expect(forum.match).toEqual(["/thinkpages", "/thinktanks"]);
+    expect(forum.match).toEqual(["/thinkpages", "/thinktanks", "/dashboard/accounts"]);
     expect(
       forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires, s.badge])
     ).toEqual([
       ["forums", "Forums", "/thinkpages", true, undefined, undefined],
       ["thinktanks", "ThinkTanks", "/thinktanks", undefined, undefined, undefined],
+      ["accounts", "Accounts", "/dashboard/accounts", undefined, "signed-in", undefined],
       [
         "your-realm",
         "Your realm",
@@ -167,7 +168,14 @@ describe("app section map routes", () => {
         .find((app) => app.id === "thinkpages")!
         .sections.map((s) => s.label);
     expect(labels(false)).toEqual(["Forums", "ThinkTanks"]);
-    expect(labels(true)).toEqual(["Forums", "ThinkTanks", "New posts", "Watched", "Stashed"]);
+    expect(labels(true)).toEqual([
+      "Forums",
+      "ThinkTanks",
+      "Accounts",
+      "New posts",
+      "Watched",
+      "Stashed",
+    ]);
   });
 
   it.each([
@@ -214,12 +222,14 @@ describe("app section map routes", () => {
     expect(mycountry.tint).toBe("mycountry");
   });
 
-  it("highlights Home's Accounts row on the Dashboard's Accounts section", () => {
-    const home = getAppForPath("/dashboard/accounts")!;
+  it("puts the Dashboard's Accounts section under ThinkPages, and keeps the Dashboard itself in Home", () => {
+    const forum = getAppForPath("/dashboard/accounts")!;
+    expect(forum.id).toBe("thinkpages");
+    expect(getActiveSectionId(forum, "/dashboard/accounts", null)).toBe("accounts");
+    const home = getAppForPath("/dashboard")!;
     expect(home.id).toBe("home");
-    expect(getActiveSectionId(home, "/dashboard/accounts", null)).toBe("accounts");
     expect(getActiveSectionId(home, "/dashboard", null)).toBe("dashboard");
-    expect(home.sections.find((s) => s.id === "accounts")).toMatchObject({
+    expect(forum.sections.find((s) => s.id === "accounts")).toMatchObject({
       label: "Accounts",
       href: "/dashboard/accounts",
     });
@@ -439,6 +449,7 @@ describe("app visibility and the tab bar", () => {
     expect(sections({ signedIn: true, isAdmin: false })).toEqual([
       "forums",
       "thinktanks",
+      "accounts",
       "new-posts",
       "watched",
       "stashed",
@@ -446,6 +457,7 @@ describe("app visibility and the tab bar", () => {
     expect(sections({ signedIn: true, isAdmin: false, realmMember: true })).toEqual([
       "forums",
       "thinktanks",
+      "accounts",
       "your-realm",
       "new-posts",
       "watched",
@@ -454,6 +466,7 @@ describe("app visibility and the tab bar", () => {
     expect(sections({ signedIn: true, isAdmin: false, forumModerator: true })).toEqual([
       "forums",
       "thinktanks",
+      "accounts",
       "new-posts",
       "watched",
       "stashed",
@@ -464,6 +477,7 @@ describe("app visibility and the tab bar", () => {
     ).toEqual([
       "forums",
       "thinktanks",
+      "accounts",
       "your-realm",
       "new-posts",
       "watched",

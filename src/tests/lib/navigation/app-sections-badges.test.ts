@@ -62,13 +62,8 @@ describe("section map badges", () => {
 });
 
 describe("Home, Messages, Sports and Help in the map", () => {
-  it("Home lists a conditional What's new above Dashboard, Accounts and Messages", () => {
-    expect(app("home").sections.map((s) => s.id)).toEqual([
-      "whats-new",
-      "dashboard",
-      "accounts",
-      "messages",
-    ]);
+  it("Home lists a conditional What's new above Dashboard and Messages", () => {
+    expect(app("home").sections.map((s) => s.id)).toEqual(["whats-new", "dashboard", "messages"]);
     expect(app("home").sections.find((s) => s.id === "messages")).toMatchObject({
       href: "/messages",
       badge: "messages-unread",

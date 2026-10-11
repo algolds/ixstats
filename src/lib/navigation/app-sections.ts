@@ -217,7 +217,6 @@ export const APPS: readonly AppDefinition[] = [
         conditional: true,
       },
       { id: "dashboard", label: "Home", href: "/dashboard", icon: HomeSimple },
-      { id: "accounts", label: "Accounts", href: "/dashboard/accounts", icon: Group },
       {
         id: "messages",
         label: "Messages",
@@ -381,17 +380,25 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    // The forum and ThinkTanks, for everyone. FORUM_HOME is the prefix of every forum route (c, t, r, mod, post);
-    // signed-out visitors keep Forums and ThinkTanks (the others need a sign-in, a realm or a moderator role).
+    // The forum, ThinkTanks and the member's ThinkPages accounts. FORUM_HOME is the prefix of every forum route (c, t,
+    // r, mod, post); signed-out visitors keep Forums and ThinkTanks (the others need a sign-in, a realm or a moderator
+    // role). /dashboard/accounts outranks Home's /dashboard because the longest prefix wins.
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
     icon: ChatBubble,
     tint: "thinkpages",
-    match: [FORUM_HOME, "/thinktanks"],
+    match: [FORUM_HOME, "/thinktanks", "/dashboard/accounts"],
     sections: [
       { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },
       { id: "thinktanks", label: "ThinkTanks", href: "/thinktanks", icon: LightBulbOn },
+      {
+        id: "accounts",
+        label: "Accounts",
+        href: "/dashboard/accounts",
+        icon: Group,
+        requires: "signed-in",
+      },
       {
         id: "your-realm",
         label: "Your realm",
