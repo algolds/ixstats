@@ -72,7 +72,7 @@ const userKey = (a: any) =>
 const timeOf = (a: any) => new Date(a.timestamp).getTime();
 
 /** A directive is declared on purpose and can be discussed in the forum: it keeps its own row. */
-const isDirective = (a: any) => a.type === "directive";
+const isDirective = (a: { type?: string }): boolean => a.type === "directive";
 
 /** Only `source: "activity"` groups (not wiki, thinkpages, forum), and never a directive. */
 export function groupRepeatedActivities(activities: any[]): any[] {
