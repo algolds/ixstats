@@ -11,7 +11,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { canSeeThread, type ForumViewer } from "./access";
-import { advertHiddenFrom } from "./advert-access";
+import { advertClosed, advertRealmHiddenFrom, advertRealmOf } from "./advert-access";
 import { boardAccessFor, type BoardAccessDb } from "./board-access";
 import { ForumError } from "./errors";
 import { postingBan } from "./mod-bans";
@@ -51,6 +51,8 @@ export interface ReactionTarget {
   category: ReactionTargetPost["thread"]["category"];
   /** The category's realm; null in the sitewide section. */
   realm: ForumRealm | null;
+  /** The realm the thread advertises (null for any other thread): an archived one closes the thread to reactions. */
+  advertRealm: ForumRealm | null;
   /** A message on a realm's live board, not a thread post. */
   board: boolean;
 }
@@ -79,8 +81,10 @@ export async function loadReadablePost(
   if (!canSeeThread(viewer, post.thread, category)) throw notFound();
   if (post.hidden && !canModerateCategory(viewer, category)) throw notFound();
   const realm = await visibleRealmOf(db, viewer, category);
-  if (realm === undefined || (await advertHiddenFrom(db, viewer, post.thread))) throw notFound();
-  return { post, category, realm, board: isBoardCategory(category) };
+  if (realm === undefined) throw notFound();
+  const advertRealm = await advertRealmOf(db, post.thread);
+  if (advertRealmHiddenFrom(viewer, advertRealm)) throw notFound();
+  return { post, category, realm, advertRealm, board: isBoardCategory(category) };
 }
 
 async function assertCanReactInThread(
@@ -119,9 +123,10 @@ export async function loadReactablePost(
   postId: string
 ): Promise<ReactionTarget> {
   const target = await loadReadablePost(db, viewer, postId);
-  const { post, realm } = target;
-  // First, and for site admins too (who pass `boardAccessFor` in an archived realm): an archived realm no longer changes.
-  if (realm && isArchived(realm)) {
+  const { post, realm, advertRealm } = target;
+  // First, and for site admins too (who pass `boardAccessFor` in an archived realm): an archived realm no longer changes,
+  // nor does its advert.
+  if ((realm && isArchived(realm)) || advertClosed(advertRealm)) {
     throw new ForumError(
       "CONFLICT",
       "This realm is archived: its forum can be read but no longer changes."
@@ -149,8 +154,10 @@ export function threadReactable(
   viewer: ForumViewer,
   thread: { locked: boolean; archived: boolean; hidden: boolean },
   banned: boolean,
-  realm: ForumRealm | null
+  realm: ForumRealm | null,
+  closed = false
 ): boolean {
-  if (viewer === null || banned || thread.locked || thread.archived || thread.hidden) return false;
+  if (viewer === null || banned || closed) return false;
+  if (thread.locked || thread.archived || thread.hidden) return false;
   return realm === null || !isArchived(realm);
 }

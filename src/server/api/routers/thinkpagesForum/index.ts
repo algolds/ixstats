@@ -7,6 +7,7 @@
  * Moderator actions live in `thinkpagesForumMod` (./mod.ts).
  */
 import { z } from "zod";
+import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import { postNumberOf } from "~/lib/thinkpages-forum/numbers";
 import { THREAD_SORTS } from "~/lib/thinkpages-forum/thread-sort";
 import { MAX_POST_WIKITEXT } from "~/lib/thinkpages-forum/wikitext-guards";
@@ -66,6 +67,7 @@ import {
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
+import { thinkpagesForumAdvertsRouter } from "./adverts";
 import { thinkpagesForumBoardRouter } from "./board";
 import { thinkpagesForumEngagementRouter } from "./engagement";
 import { thinkpagesForumReactionsRouter } from "./reactions";
@@ -220,7 +222,11 @@ const forumRouter = createTRPCRouter({
             result.canModerate
           )
         ),
-        canStart: canStartThread(viewer, result.category) && access.canPost,
+        // Find a Realm takes adverts only (writes.ts); its "Advertise your realm" action is the board page's own.
+        canStart:
+          canStartThread(viewer, result.category) &&
+          access.canPost &&
+          !isAdvertCategory(result.category),
         notice: access.notice,
         banned: access.ban !== null,
         authors: await authorMaps(ctx.db, [
@@ -242,8 +248,15 @@ const forumRouter = createTRPCRouter({
     // realm the read already loaded (N1).
     const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
     // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
+    // An advert: the realm, whether the viewer manages it, and whether its realm is archived (closed to writes).
+    const advert = advertRealm ? await advertViewOf(ctx.db, viewer, advertRealm) : null;
+    const closed = advert?.closed === true;
     const writable =
-      viewer !== null && !result.thread.locked && !result.thread.archived && !result.thread.hidden;
+      viewer !== null &&
+      !result.thread.locked &&
+      !result.thread.archived &&
+      !result.thread.hidden &&
+      !closed;
     const canReply = writable && access.canPost;
     // Sitewide the author edits unless banned (T0-17); in a realm section only while they may post there (D13).
     const editable =
@@ -257,18 +270,25 @@ const forumRouter = createTRPCRouter({
     ]);
     return {
       ...result,
-      thread: maskPersona(result.thread, result.canModerate),
+      // An archived realm's advert reads as locked (the row itself is untouched, so unarchiving reopens it).
+      thread: maskPersona(
+        { ...result.thread, locked: result.thread.locked || closed },
+        result.canModerate
+      ),
       // Moderators of the category get the Hidden badge and what they may do to each post; members never receive
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
       // An imported post without an IxStats author (null, phase 4) is never the viewer's. A Canvas post's wikitext
       // (what its editor opens) goes only to the author who may edit it now, never to another reader or a moderator.
       posts: reacted.map(({ hidden, contentWikitext, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
-        const isOwn = byViewer && editable && !hidden;
+        const number = postNumberOf(input.page, index);
+        // An advert's first post is edited by whoever manages the advert, not by its author as such (writes.ts).
+        const mayEdit = advert && number === 1 ? advert.canManage : byViewer;
+        const isOwn = mayEdit && editable && !hidden;
         return maskPersona(
           {
             ...post,
-            number: postNumberOf(input.page, index),
+            number,
             role: roleOf(post, roles),
             ...(moderator ? { hidden, ...moderator.of(post.authorUserId) } : {}),
             ...(isOwn && contentWikitext !== null ? { contentWikitext } : {}),
@@ -281,8 +301,8 @@ const forumRouter = createTRPCRouter({
       viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
       watching: viewer ? await isWatching(ctx.db, viewer.id, input.threadId) : false,
       canReply,
-      canReact: threadReactable(viewer, result.thread, access.ban !== null, forumRealm),
-      advert: advertRealm ? await advertViewOf(ctx.db, viewer, advertRealm) : null,
+      canReact: threadReactable(viewer, result.thread, access.ban !== null, forumRealm, closed),
+      advert,
       notice: access.notice,
       banned: access.ban !== null,
       // The thread bar's actions (lock, pin, hide, archive, move): a site admin's thread is site admins' only.
@@ -430,12 +450,13 @@ const forumRouter = createTRPCRouter({
 });
 
 /**
- * The forum procedures plus the realm board's (./board.ts), the engagement procedures (./engagement.ts) and the
- * reactions (./reactions.ts).
+ * The forum procedures plus the realm board's (./board.ts), the engagement procedures (./engagement.ts), the
+ * reactions (./reactions.ts) and the Find a Realm adverts (./adverts.ts).
  */
 export const thinkpagesForumRouter = mergeRouters(
   forumRouter,
   thinkpagesForumBoardRouter,
   thinkpagesForumEngagementRouter,
-  thinkpagesForumReactionsRouter
+  thinkpagesForumReactionsRouter,
+  thinkpagesForumAdvertsRouter
 );

@@ -29,17 +29,25 @@ export const categoryKey = z.string().regex(/^[a-z0-9-]{2,40}$/);
 export const realm = z.string().min(1).max(100);
 
 /**
- * ForumError 1:1 to TRPCError. A rate-limit wait travels as structured error data: the cause is an AppError, which the
- * tRPC error formatter publishes as `data.context` (`{ retryAfterSeconds }`).
+ * ForumError 1:1 to TRPCError. A rate-limit wait and a refusal's `context` (the advert CONFLICT names the existing
+ * thread) travel as structured error data: the cause is an AppError, which the tRPC error formatter publishes as
+ * `data.context`.
  */
 export function mapError(error: Error): never {
   if (error instanceof ForumError) {
-    const cause =
-      error.retryAfterSeconds === undefined
+    const context =
+      error.context ??
+      (error.retryAfterSeconds === undefined
         ? undefined
-        : new AppError("RATE_LIMITED", error.message, {
-            retryAfterSeconds: error.retryAfterSeconds,
-          });
+        : { retryAfterSeconds: error.retryAfterSeconds });
+    const cause =
+      context === undefined
+        ? undefined
+        : new AppError(
+            error.code === "TOO_MANY_REQUESTS" ? "RATE_LIMITED" : error.code,
+            error.message,
+            context
+          );
     throw new TRPCError({ code: error.code, message: error.message, cause });
   }
   throw error;

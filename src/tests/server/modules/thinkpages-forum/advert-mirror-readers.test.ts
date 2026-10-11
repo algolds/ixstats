@@ -19,7 +19,11 @@ import {
   readableUsers,
   type NoticePlace,
 } from "~/server/modules/thinkpages-forum/notice-recipients";
-import { loadReadablePost } from "~/server/modules/thinkpages-forum/reaction-target";
+import {
+  loadReactablePost,
+  loadReadablePost,
+  threadReactable,
+} from "~/server/modules/thinkpages-forum/reaction-target";
 
 const grant = jest.mocked(grantActionLinkRewards);
 
@@ -41,7 +45,8 @@ const ACTIVE = {
   ownerId: "founder",
 };
 const DRAFT = { id: "r_draft", slug: "draft", name: "Draft", status: "draft", ownerId: "founder" };
-const realms = [ACTIVE, DRAFT];
+const ARCHIVED = { ...ACTIVE, id: "r_old", slug: "old", status: "archived" };
+const realms = [ACTIVE, DRAFT, ARCHIVED];
 const realmTable = () => ({
   findUnique: jest.fn(
     async ({ where }: { where: { id?: string; slug?: string } }) =>
@@ -181,6 +186,55 @@ describe("the reaction target (loadReadablePost)", () => {
     await expect(loadReadablePost(db(null) as never, member, "p1")).resolves.toMatchObject({
       post: { id: "p1" },
     });
+  });
+});
+
+describe("reacting to an archived realm's advert", () => {
+  const db = (advertRealmId: string | null) => ({
+    forumPost: {
+      findUnique: jest.fn(async () => ({
+        id: "p1",
+        threadId: "t_ad",
+        authorUserId: "u_f",
+        authorPersonaId: null,
+        hidden: false,
+        continuedThreadId: null,
+        reactionCounts: {},
+        thread: {
+          title: "Join",
+          authorUserId: "u_f",
+          hidden: false,
+          locked: false,
+          archived: false,
+          advertRealmId,
+          category: SITE,
+        },
+      })),
+    },
+    realm: realmTable(),
+    forumBan: { findMany: jest.fn(async () => []) },
+  });
+
+  it("takes no reaction, from a member or a site admin, while an open realm's advert does", async () => {
+    for (const viewer of [member, admin]) {
+      await expect(loadReactablePost(db("r_old") as never, viewer, "p1")).rejects.toMatchObject({
+        code: "CONFLICT",
+        message: expect.stringMatching(/archived/i),
+      });
+    }
+    await expect(loadReactablePost(db("r_eurth") as never, member, "p1")).resolves.toMatchObject({
+      post: { id: "p1" },
+    });
+    await expect(loadReactablePost(db(null) as never, member, "p1")).resolves.toMatchObject({
+      post: { id: "p1" },
+    });
+  });
+
+  it("offers no reaction on the thread read when the advert is closed", () => {
+    const open = { locked: false, archived: false, hidden: false };
+    expect(threadReactable(member, open, false, null, true)).toBe(false);
+    expect(threadReactable(member, open, false, null, false)).toBe(true);
+    expect(threadReactable(member, open, false, null)).toBe(true);
   });
 });
 
