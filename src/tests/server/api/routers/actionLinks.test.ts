@@ -62,6 +62,29 @@ describe("actionLinks router", () => {
     });
   });
 
+  it("lists the caller's recent pickable actions, 10 with no search and 30 with one", async () => {
+    const findMany = jest.fn(async () => []);
+    await caller(owner, { activityFeed: { findMany } }).myActivities({});
+    expect(findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        take: 10,
+        where: expect.objectContaining({ countryId: "c1", visibility: "public" }),
+      })
+    );
+    await caller(owner, { activityFeed: { findMany } }).myActivities({ search: "jobs" });
+    expect(findMany).toHaveBeenLastCalledWith(expect.objectContaining({ take: 30 }));
+  });
+
+  it("reads a blank search as no search", async () => {
+    const findMany = jest.fn(async () => []);
+    await caller(owner, { activityFeed: { findMany } }).myActivities({ search: "   " });
+    expect(findMany).toHaveBeenLastCalledWith(expect.objectContaining({ take: 10 }));
+  });
+
+  it("gives a caller without a country no actions to pick", async () => {
+    await expect(caller(noCountry).myActivities({})).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("serves activity cards for public activities only", async () => {
     const findMany = jest.fn(async () => []);
     const country = { findMany: jest.fn(async () => []) };

@@ -1,5 +1,12 @@
 /** @jest-environment node */
 import {
+  NON_ACTION_EVENT_TYPES,
+  NON_ACTION_TITLES,
+  RECENT_ACTIONS,
+  SEARCH_ACTIONS,
+  actionToken,
+  actionTypeLabel,
+  isActivityId,
   parseTextActionTokens,
   chainWikiSection,
   MAX_ACTIONS_PER_POST,
@@ -258,5 +265,44 @@ describe("directiveActivityId", () => {
     const id = directiveActivityId("cm9x2k4f10000abcd1234efgh");
     expect(id.length).toBeLessThanOrEqual(64);
     expect(parseActionTokens(`[ixaction=${id}]`)).toEqual([id]);
+  });
+});
+
+describe("picker constants and ids", () => {
+  it("denies the rows that are not actions a player takes", () => {
+    expect(NON_ACTION_TITLES).toEqual([
+      "Names Generated in Onoma Lab",
+      "Naming Dictionary Shared",
+      "New Nation Founded",
+      "Leadership Established",
+    ]);
+    expect(NON_ACTION_EVENT_TYPES).toEqual(["economic_tier_change", "achievement_unlocked"]);
+  });
+
+  it("lists 10 recent actions and up to 30 matches", () => {
+    expect([RECENT_ACTIONS, SEARCH_ACTIONS]).toEqual([10, 30]);
+  });
+
+  it("labels each feed type, with a neutral fallback", () => {
+    expect(actionTypeLabel("directive")).toBe("Directive");
+    expect(actionTypeLabel("diplomatic")).toBe("Diplomacy");
+    expect(actionTypeLabel("something-new")).toBe("Action");
+  });
+
+  it.each([
+    ["dir-abc_1", true],
+    ["a".repeat(64), true],
+    ["a".repeat(65), false],
+    ["", false],
+    ["has space", false],
+    ["<script>", false],
+    ["a]b", false],
+  ])("isActivityId(%j) is %s", (value, expected) => {
+    expect(isActivityId(value)).toBe(expected);
+  });
+
+  it("builds the token the parser reads back", () => {
+    expect(actionToken("dir-abc")).toBe("[ixaction=dir-abc]");
+    expect(parseActionTokens(actionToken("dir-abc"))).toEqual(["dir-abc"]);
   });
 });

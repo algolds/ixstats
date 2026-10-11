@@ -67,6 +67,23 @@ export function newThreadHref(category: CategoryPlace): string {
   return `${categoryHref(category)}/new`;
 }
 
+/** The query parameter that carries an activity id into a composer, which inserts its action token once. */
+export const ATTACH_PARAM = "attach";
+
+function withAttach(path: string, activityId: string): string {
+  return `${path}?${ATTACH_PARAM}=${seg(activityId)}`;
+}
+
+/** A realm's landing page, its board composer prefilled with an action. */
+export function realmBoardAttachHref(realmSlug: string, activityId: string): string {
+  return withAttach(realmHref(realmSlug), activityId);
+}
+
+/** A category's new-thread form, prefilled with an action. */
+export function newThreadAttachHref(category: CategoryPlace, activityId: string): string {
+  return withAttach(newThreadHref(category), activityId);
+}
+
 export function threadHref(threadId: string): string {
   return `/thinkpages/t/${seg(threadId)}`;
 }

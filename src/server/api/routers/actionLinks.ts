@@ -20,6 +20,7 @@ import {
   appendChainToWiki,
   createChain,
   myChains,
+  pickableActivities,
   removePostFromChain,
   reviewChain,
   reviewQueue,
@@ -63,18 +64,7 @@ export const actionLinksRouter = createTRPCRouter({
   myActivities: protectedProcedure
     .input(z.object({ search: z.string().trim().max(100).optional() }))
     .query(({ ctx, input }) =>
-      ctx.db.activityFeed.findMany({
-        where: {
-          countryId: requireCountry(ctx.user),
-          visibility: "public",
-          ...(input.search
-            ? { title: { contains: input.search, mode: "insensitive" as const } }
-            : {}),
-        },
-        orderBy: { createdAt: "desc" },
-        take: 30,
-        select: { id: true, title: true, type: true, createdAt: true },
-      })
+      pickableActivities(ctx.db, requireCountry(ctx.user), input.search || undefined)
     ),
 
   activityCards: publicProcedure

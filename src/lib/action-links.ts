@@ -35,7 +35,36 @@ export const NON_ACTION_TITLES = [
 ] as const;
 export const NON_ACTION_EVENT_TYPES = ["economic_tier_change", "achievement_unlocked"] as const;
 
+/** Rows the picker lists before the player types, and for a search. */
+export const RECENT_ACTIONS = 10;
+export const SEARCH_ACTIONS = 30;
+
+const TYPE_LABEL: Record<string, string> = {
+  directive: "Directive",
+  diplomatic: "Diplomacy",
+  economic: "Economy",
+  achievement: "Achievement",
+  social: "Social",
+  meta: "Platform",
+};
+
+/** The picker's name for an ActivityFeed `type`. */
+export function actionTypeLabel(type: string): string {
+  return TYPE_LABEL[type] ?? "Action";
+}
+
 const TOKEN = /\[ixaction=([A-Za-z0-9_-]{1,64})\]/g;
+const ACTIVITY_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+/** Whether `value` can be the id inside an `[ixaction=<id>]` token. */
+export function isActivityId(value: string): boolean {
+  return ACTIVITY_ID.test(value);
+}
+
+/** The token that embeds `activityId` in a post. */
+export function actionToken(activityId: string): string {
+  return `[ixaction=${activityId}]`;
+}
 
 /** Distinct activity ids embedded in `body`, in first-seen order. Callers enforce MAX_ACTIONS_PER_POST. */
 export function parseActionTokens(body: string): string[] {

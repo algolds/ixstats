@@ -2,6 +2,7 @@ import type { RewardDb, RewardInput } from "./rewards";
 
 export { ActionLinkError, type ActionLinkErrorCode } from "./errors";
 export {
+  pickableActivities,
   pickableActivityWhere,
   syncPostActionLinks,
   validatePostActionTokens,

@@ -8,6 +8,8 @@ import {
   MAX_ACTIONS_PER_POST,
   NON_ACTION_EVENT_TYPES,
   NON_ACTION_TITLES,
+  RECENT_ACTIONS,
+  SEARCH_ACTIONS,
   parseActionTokens,
   type PostSource,
 } from "~/lib/action-links";
@@ -76,17 +78,37 @@ export async function syncPostActionLinks(
 
 /**
  * The nation's public rows that count as actions a player took: not the generators' fixed-title rows and not the
- * denylisted event types. The reward transaction applies it too, so a denylisted row never pays. The event-type clauses
- * keep rows with no metadata (a bare NOT would drop them: NULL is neither true nor false), and the title clause is on a
- * column that is never null.
+ * denylisted event types. The reward transaction applies it too (without a search), so a denylisted row never pays. The
+ * event-type clauses keep rows with no metadata (a bare NOT would drop them: NULL is neither true nor false), and the
+ * title clause is on a column that is never null, so a player with hundreds of Onoma rows still sees their real actions.
  */
-export function pickableActivityWhere(countryId: string): Prisma.ActivityFeedWhereInput {
+export function pickableActivityWhere(
+  countryId: string,
+  search?: string
+): Prisma.ActivityFeedWhereInput {
   return {
     countryId,
     visibility: "public",
-    title: { notIn: [...NON_ACTION_TITLES] },
+    title: {
+      notIn: [...NON_ACTION_TITLES],
+      ...(search ? { contains: search, mode: "insensitive" as const } : {}),
+    },
     AND: NON_ACTION_EVENT_TYPES.map((eventType) => ({
       OR: [{ metadata: null }, { NOT: { metadata: { contains: `"eventType":"${eventType}"` } } }],
     })),
   };
+}
+
+/** The newest pickable rows: the last 10 with no search, up to 30 matches for one. */
+export function pickableActivities(
+  db: Pick<PrismaClient, "activityFeed">,
+  countryId: string,
+  search?: string
+) {
+  return db.activityFeed.findMany({
+    where: pickableActivityWhere(countryId, search),
+    orderBy: { createdAt: "desc" },
+    take: search ? SEARCH_ACTIONS : RECENT_ACTIONS,
+    select: { id: true, title: true, type: true, createdAt: true },
+  });
 }

@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import {
+  ATTACH_PARAM,
   FORUM_HOME,
   categoryHref,
   claimNationHref,
@@ -9,9 +10,11 @@ import {
   isForumPath,
   modHref,
   NEW_POSTS_HREF,
+  newThreadAttachHref,
   newThreadHref,
   personaProfileHref,
   postHref,
+  realmBoardAttachHref,
   realmBoardHref,
   realmHref,
   STANDING_HREF,
@@ -99,5 +102,25 @@ describe("isForumPath", () => {
     expect(isForumPath("/thinkpages-old")).toBe(false);
     expect(isForumPath("/dashboard")).toBe(false);
     expect(isForumPath("/")).toBe(false);
+  });
+});
+
+describe("attach links", () => {
+  it("opens a realm's board with the composer prefilled", () => {
+    expect(ATTACH_PARAM).toBe("attach");
+    expect(realmBoardAttachHref("eurth", "dir-abc")).toBe("/thinkpages/r/eurth?attach=dir-abc");
+  });
+
+  it("opens a category's new-thread form with the composer prefilled", () => {
+    expect(newThreadAttachHref({ key: "hub", realm: { slug: "eurth" } }, "dir-abc")).toBe(
+      "/thinkpages/r/eurth/hub/new?attach=dir-abc"
+    );
+    expect(newThreadAttachHref({ key: "general" }, "a1")).toBe(
+      "/thinkpages/c/general/new?attach=a1"
+    );
+  });
+
+  it("encodes the slug and the id, so neither can add a parameter", () => {
+    expect(realmBoardAttachHref("a b", "x&y=1")).toBe("/thinkpages/r/a%20b?attach=x%26y%3D1");
   });
 });
