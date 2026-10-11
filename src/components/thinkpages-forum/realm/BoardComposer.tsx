@@ -12,7 +12,6 @@ import {
 import dynamic from "next/dynamic";
 import { Reply, Xmark } from "iconoir-react";
 import { ActionPicker } from "~/components/action-links";
-import { useAttachPrefill } from "~/components/action-links/useAttachPrefill";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -24,14 +23,17 @@ import { BOARD_MESSAGE_MAX, BOARD_TOO_LONG, slowModeNotice } from "~/lib/thinkpa
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { cn } from "~/lib/utils/cn";
 import { BanNotice, NoticeText } from "../BanNotice";
-import { useMyPersonas } from "../composer/PersonaSelect";
+import { useMyPersonas, type PersonaOption } from "../composer/PersonaSelect";
 import { PostingAs } from "../composer/PostingAs";
-import { RewardSignal, useRewardLine } from "../composer/RewardSignal";
+import { RewardSignal } from "../composer/RewardSignal";
 import { useMentionSource } from "../composer/useMentionSource";
 import { BottomDock } from "../shell";
 import type { BoardAccess, BoardQuote, ReplyTarget } from "./types";
+import { useBoardPost } from "./useBoardPost";
+import { useBoardPrefill } from "./useBoardPrefill";
 import { useDockCollapse } from "./useDockCollapse";
-import { retryAfterSecondsOf, useSlowMode } from "./useSlowMode";
+import { useQuoteInsert } from "./useQuoteInsert";
+import { useSlowMode } from "./useSlowMode";
 
 const GlassPlateEditor = dynamic(
   () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
@@ -90,6 +92,99 @@ function CannotPost({ access }: { access: BoardAccess }) {
   );
 }
 
+/** The editor's least height: one line when folded, a little taller in the dock than in the page. */
+function editorMinHeight(collapsed: boolean, docked: boolean): number {
+  if (collapsed) return COLLAPSED_EDITOR_HEIGHT;
+  return docked ? 40 : 64;
+}
+
+/** The card's look: a pane in the page and a well in the dock; a folded dock lays out as one line. */
+function cardLook(docked: boolean, collapsed: boolean) {
+  return {
+    variant: docked ? ("well" as const) : ("pane" as const),
+    padding: docked ? ("sm" as const) : ("md" as const),
+    "data-collapsed": collapsed ? "" : undefined,
+    className: cn("group flex cursor-text gap-2", collapsed ? "items-center" : "flex-col"),
+  };
+}
+
+function ReplyBanner({ authorName, onClear }: { authorName: string; onClear: () => void }) {
+  return (
+    <div className="text-footnote text-label-secondary flex items-center gap-2">
+      <Reply aria-hidden className="size-3.5 shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{`Replying to ${authorName}`}</span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Cancel reply"
+        className="pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+        onClick={onClear}
+      >
+        <Xmark aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+interface ComposerFooterProps {
+  collapsed: boolean;
+  pending: boolean;
+  canSubmit: boolean;
+  count: number;
+  tooLong: boolean;
+  slowRemaining: number;
+  personas: readonly PersonaOption[];
+  personaId: string | null;
+  onPersona: (personaId: string | null) => void;
+  onAttach: (token: string) => void;
+  onPost: () => void;
+}
+
+/** Attach action, Posting as, the slow-mode notice, the counter and Post; folded away to Post alone in the dock. */
+function ComposerFooter({
+  collapsed,
+  pending,
+  canSubmit,
+  count,
+  tooLong,
+  slowRemaining,
+  personas,
+  personaId,
+  onPersona,
+  onAttach,
+  onPost,
+}: ComposerFooterProps) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-3 gap-y-2",
+        collapsed ? "contents" : "border-separator border-t pt-2"
+      )}
+    >
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 group-data-[collapsed]:hidden">
+        <ActionPicker onPick={onAttach} />
+        <PostingAs personas={personas} value={personaId} onChange={onPersona} disabled={pending} />
+      </div>
+      {slowRemaining > 0 ? (
+        <span className="text-footnote text-label-secondary tabular-nums group-data-[collapsed]:hidden">
+          {slowModeNotice(slowRemaining)}
+        </span>
+      ) : null}
+      <span
+        className={cn(
+          "text-caption tabular-nums group-data-[collapsed]:hidden",
+          tooLong ? "text-destructive-ink" : "text-label-tertiary"
+        )}
+      >
+        {`${count.toLocaleString("en-US")} / ${BOARD_MESSAGE_MAX.toLocaleString("en-US")}`}
+      </span>
+      <Button type="button" size="sm" onClick={onPost} disabled={!canSubmit}>
+        Post
+      </Button>
+    </div>
+  );
+}
+
 function PostingComposer({
   realmName,
   access,
@@ -109,22 +204,10 @@ function PostingComposer({
   // The editor's text as its last onChange reported it: the prefill is done only once the token shows up here.
   const plainRef = useRef("");
   const [personaId, setPersonaId] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { reward, show: showReward, clear: clearReward } = useRewardLine();
   const personas = useMyPersonas(true);
   const mentions = useMentionSource();
   const slow = useSlowMode();
-  const handledQuote = useRef<number | null>(null);
-  const refocus = useRef(false);
   useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focusEnd() }), []);
-
-  // The editor is read-only while a post is sent, which drops its focus: take it back once it is writable again.
-  useEffect(() => {
-    if (pending || !refocus.current) return;
-    refocus.current = false;
-    editorRef.current?.focusEnd();
-  }, [pending]);
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -142,22 +225,9 @@ function PostingComposer({
     requestAnimationFrame(() => editorRef.current?.focusEnd());
   }, []);
 
-  // A share from MyCountry opens the board with its action already in the editor. The editor loads on demand and an
-  // insert into one that has no selection yet does nothing, so success is the token appearing in its reported text
-  // (until then each frame selects the end and inserts again).
-  useAttachPrefill((token) => {
-    if (!editorRef.current) return false;
-    if (plainRef.current.includes(token)) return true;
-    insertText(token);
-    return false;
-  });
+  useBoardPrefill(editorRef, plainRef, insertText);
 
-  useEffect(() => {
-    if (!quote || handledQuote.current === quote.key) return;
-    handledQuote.current = quote.key;
-    insertText(quote.text);
-    onQuoteInserted();
-  }, [quote, insertText, onQuoteInserted]);
+  useQuoteInsert(quote, insertText, onQuoteInserted);
 
   const replyingTo = replyTo?.postId ?? null;
   useEffect(() => {
@@ -168,6 +238,18 @@ function PostingComposer({
   const tooLong = count > BOARD_MESSAGE_MAX;
   // An image counts as content, as it does on the server (prepareBody).
   const hasBody = plain.trim().length > 0 || hasImageSrc(html, getBasePath());
+  const resetDraft = useCallback(() => {
+    setHtml("");
+    setPlain("");
+    onClearReply();
+  }, [onClearReply]);
+  const { pending, error, reward, clearReward, send } = useBoardPost({
+    editorRef,
+    onSubmit,
+    onPosted: resetDraft,
+    slowSeconds: access.isModerator ? 0 : slowModeSeconds,
+    startSlow: slow.start,
+  });
   const canSubmit = hasBody && !tooLong && !pending && slow.remaining === 0;
   const { collapsed, surface } = useDockCollapse(
     docked,
@@ -175,55 +257,19 @@ function PostingComposer({
     pending || replyTo !== null || error !== null || reward !== null
   );
 
-  const submit = async () => {
-    if (!canSubmit) return;
-    setPending(true);
-    setError(null);
-    clearReward();
-    try {
-      const posted = await onSubmit({ html, personaId, replyToPostId: replyingTo });
-      showReward(posted.reward);
-      editorRef.current?.clear();
-      setHtml("");
-      setPlain("");
-      onClearReply();
-      if (!access.isModerator && slowModeSeconds > 0) slow.start(slowModeSeconds);
-    } catch (e) {
-      const wait = e instanceof Error ? retryAfterSecondsOf(e) : null;
-      if (wait) slow.start(wait);
-      else setError(e instanceof Error ? e.message : "Could not post");
-    } finally {
-      refocus.current = true;
-      setPending(false);
-    }
+  const submit = () => {
+    if (canSubmit) void send({ html, personaId, replyToPostId: replyingTo });
   };
 
   return (
     <Card
-      variant={docked ? "well" : "pane"}
-      padding={docked ? "sm" : "md"}
+      {...cardLook(docked, collapsed)}
       content="input"
       data-slot="board-composer"
-      data-collapsed={collapsed ? "" : undefined}
-      className={cn("group flex cursor-text gap-2", collapsed ? "items-center" : "flex-col")}
       onMouseDown={focusEditor}
       {...surface}
     >
-      {replyTo ? (
-        <div className="text-footnote text-label-secondary flex items-center gap-2">
-          <Reply aria-hidden className="size-3.5 shrink-0" />
-          <span className="min-w-0 flex-1 truncate">{`Replying to ${replyTo.authorName}`}</span>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Cancel reply"
-            className="pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-            onClick={onClearReply}
-          >
-            <Xmark aria-hidden />
-          </Button>
-        </div>
-      ) : null}
+      {replyTo ? <ReplyBanner authorName={replyTo.authorName} onClear={onClearReply} /> : null}
 
       {/* The editor is always here: folding the dock only hides what surrounds it, so a draft is never remounted. */}
       <div className={cn("min-w-0", collapsed && "flex-1")}>
@@ -242,7 +288,7 @@ function PostingComposer({
           mentionSource={mentions}
           disabled={pending}
           hideToolbar={collapsed}
-          minHeight={collapsed ? COLLAPSED_EDITOR_HEIGHT : docked ? 40 : 64}
+          minHeight={editorMinHeight(collapsed, docked)}
           maxHeight={docked ? DOCKED_EDITOR_MAX_HEIGHT : 240}
           className="border-transparent bg-transparent shadow-none"
         />
@@ -252,38 +298,19 @@ function PostingComposer({
       <RewardSignal reward={reward} />
       {tooLong ? <p className="text-footnote text-label-secondary">{BOARD_TOO_LONG}</p> : null}
 
-      <div
-        className={cn(
-          "flex flex-wrap items-center gap-x-3 gap-y-2",
-          collapsed ? "contents" : "border-separator border-t pt-2"
-        )}
-      >
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 group-data-[collapsed]:hidden">
-          <ActionPicker onPick={insertText} />
-          <PostingAs
-            personas={personas}
-            value={personaId}
-            onChange={setPersonaId}
-            disabled={pending}
-          />
-        </div>
-        {slow.remaining > 0 ? (
-          <span className="text-footnote text-label-secondary tabular-nums group-data-[collapsed]:hidden">
-            {slowModeNotice(slow.remaining)}
-          </span>
-        ) : null}
-        <span
-          className={cn(
-            "text-caption tabular-nums group-data-[collapsed]:hidden",
-            tooLong ? "text-destructive-ink" : "text-label-tertiary"
-          )}
-        >
-          {`${count.toLocaleString("en-US")} / ${BOARD_MESSAGE_MAX.toLocaleString("en-US")}`}
-        </span>
-        <Button type="button" size="sm" onClick={() => void submit()} disabled={!canSubmit}>
-          Post
-        </Button>
-      </div>
+      <ComposerFooter
+        collapsed={collapsed}
+        pending={pending}
+        canSubmit={canSubmit}
+        count={count}
+        tooLong={tooLong}
+        slowRemaining={slow.remaining}
+        personas={personas}
+        personaId={personaId}
+        onPersona={setPersonaId}
+        onAttach={insertText}
+        onPost={submit}
+      />
     </Card>
   );
 }

@@ -14,10 +14,10 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { ActionPicker } from "~/components/action-links/ActionPicker";
-import { IxTime } from "~/lib/ixtime";
 
 const created = new Date("2026-10-01T00:00:00Z");
-const when = IxTime.formatIxTime(IxTime.convertToIxTime(created.getTime()));
+// IxTime runs at twice real time from its epoch: 2026-10-01 reads as this in-world date.
+const when = "Monday, May 12, 2042 (ILT)";
 const rows = [
   { id: "dir-1", title: "Create jobs", type: "directive", createdAt: created },
   { id: "a2", title: "Embassy opened", type: "diplomatic", createdAt: created },

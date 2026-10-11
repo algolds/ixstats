@@ -6,8 +6,14 @@ const editorFocusEnd = jest.fn();
 const editorInsert = jest.fn();
 const editorClear = jest.fn();
 // When set, the stand-in editor takes inserted text and reports it through onChange, as the real one does once it has a
-// selection; `ignoredInserts` first inserts do nothing, as the real one's do without a selection.
-const echo = { inserts: false, ignoredInserts: 0 };
+// selection; `ignoredInserts` first inserts do nothing, as the real one's do without a selection; `defer` reports the
+// change in a microtask rather than inside the call; `normalise` rewrites what the editor takes.
+const echo = {
+  inserts: false,
+  ignoredInserts: 0,
+  defer: false,
+  normalise: (text: string) => text,
+};
 
 interface MockEditorProps {
   onFocus?: () => void;
@@ -55,8 +61,11 @@ jest.mock(
               echo.ignoredInserts -= 1;
               return;
             }
-            textarea.current.value += text;
-            reportRef.current?.(`<p>${textarea.current.value}</p>`, textarea.current.value, "");
+            const field = textarea.current;
+            field.value += echo.normalise(text);
+            const report = () => reportRef.current?.(`<p>${field.value}</p>`, field.value, "");
+            if (echo.defer) queueMicrotask(report);
+            else report();
           },
           clear: editorClear,
         }),
@@ -169,6 +178,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   echo.inserts = false;
   echo.ignoredInserts = 0;
+  echo.defer = false;
+  echo.normalise = (text) => text;
   trpc.state.personas = PERSONAS;
 });
 
@@ -627,6 +638,13 @@ describe("BoardComposer rewards and prefill", () => {
     expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
   });
 
+  it("shows the amount the server reported, not a fixed one", async () => {
+    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 2.5 } }) });
+    type("We act");
+    fireEvent.click(post());
+    expect(await screen.findByText("+2.5 IxC for posting your action")).toBeInTheDocument();
+  });
+
   it("keeps the reward line when the editor clears itself after the post", async () => {
     renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 5 } }) });
     type("We act");
@@ -687,6 +705,56 @@ describe("BoardComposer rewards and prefill", () => {
     fireEvent.click(post());
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     type("");
+    await act(async () => undefined);
+    expect(editorInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts a change after an insert as done when the editor rewrote the token", async () => {
+    echo.inserts = true;
+    echo.normalise = (text) => text.replace("[", "\\[");
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+    renderComposer();
+    await waitFor(() => expect(window.location.search).toBe(""));
+    await act(async () => undefined);
+    expect(screen.getByTestId("editor")).toHaveValue("\\[ixaction=dir-abc]");
+    expect(editorInsert.mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(editorInsert.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  it("inserts exactly once when the editor reports the change in a microtask", async () => {
+    echo.inserts = true;
+    echo.defer = true;
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+    renderComposer();
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(editorInsert).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("editor")).toHaveValue("[ixaction=dir-abc]");
+  });
+
+  it("stops after two inserts into an editor that never reports a change", () => {
+    jest.useFakeTimers();
+    try {
+      echo.inserts = true;
+      echo.ignoredInserts = 1000;
+      window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+      renderComposer();
+      act(() => {
+        jest.advanceTimersByTime(16 * 150);
+      });
+      expect(editorInsert).toHaveBeenCalledTimes(2);
+      expect(window.location.search).toBe("?attach=dir-abc");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("does not insert again when the composer remounts after the prefill succeeded", async () => {
+    echo.inserts = true;
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+    const first = renderComposer();
+    await waitFor(() => expect(window.location.search).toBe(""));
+    first.unmount();
+    renderComposer();
     await act(async () => undefined);
     expect(editorInsert).toHaveBeenCalledTimes(1);
   });
