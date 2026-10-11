@@ -56,3 +56,6 @@ BEGIN
       FOREIGN KEY ("postId") REFERENCES "forum_posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;
+
+-- "Anything new since": the unread and nav counts scan threads by their last post across boards.
+CREATE INDEX IF NOT EXISTS "forum_threads_lastPostAt_idx" ON "forum_threads"("lastPostAt");

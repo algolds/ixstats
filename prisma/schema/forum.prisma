@@ -67,6 +67,7 @@ model ForumThread {
 
   @@index([categoryId, pinned, lastPostAt])
   @@index([xenforoUserId])
+  @@index([lastPostAt])
   @@map("forum_threads")
 }
 

@@ -26,7 +26,9 @@ describe("forum engagement migration", () => {
       .filter((d) => /^\d{14}_/.test(d))
       .sort();
     expect(dirs.indexOf("20261014120000_thinkpages_realm_board")).toBeGreaterThan(-1);
-    expect(dirs.indexOf(DIR)).toBeGreaterThan(dirs.indexOf("20261014120000_thinkpages_realm_board"));
+    expect(dirs.indexOf(DIR)).toBeGreaterThan(
+      dirs.indexOf("20261014120000_thinkpages_realm_board")
+    );
   });
 
   it("creates the four tables and their indexes only when they are missing", () => {
@@ -54,5 +56,13 @@ describe("forum engagement migration", () => {
       const body = schema.match(new RegExp(`model ${model} \\{([^}]*)\\}`))?.[1] ?? "";
       expect(body).toContain(`@@map("${table}")`);
     }
+  });
+
+  it("indexes the thread last-post time in the schema and, idempotently, in the migration", () => {
+    const body = schema.match(/model ForumThread \{([^}]*)\}/)?.[1] ?? "";
+    expect(body).toContain("@@index([lastPostAt])");
+    expect(statements).toContain(
+      'CREATE INDEX IF NOT EXISTS "forum_threads_lastPostAt_idx" ON "forum_threads"("lastPostAt")'
+    );
   });
 });
