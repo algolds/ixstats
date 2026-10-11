@@ -17,7 +17,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -90,9 +89,7 @@ function TapButton({ className, ...props }: React.ComponentProps<typeof Button>)
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h4 className="mb-2">
-        <Eyebrow>{title}</Eyebrow>
-      </h4>
+      <h4 className="text-label text-headline mb-2">{title}</h4>
       {children}
     </section>
   );
@@ -248,7 +245,7 @@ function DirectiveDetails({
             {changes.map((c, i) => (
               <li key={i} className="text-body">
                 <span className="text-label first-letter:uppercase">{c.label}</span>
-                {c.detail && <span className="text-label-secondary"> — {c.detail}</span>}
+                {c.detail && <span className="text-label-secondary"> · {c.detail}</span>}
               </li>
             ))}
           </ul>
@@ -366,10 +363,7 @@ function DirectiveActions({
   );
 }
 
-/**
- * One directive: status, progress and actions up front; recorded effects on expand.
- * A depth-3 Facet row (solid: it sits inside the workspace's glass shell).
- */
+/** One directive: status, progress and actions up front; recorded effects on expand. */
 export function DirectiveCard({
   intent,
   parentGoal,
@@ -415,12 +409,11 @@ export function DirectiveCard({
   const setStatus = (status: "completed" | "abandoned") => update.mutate({ id: intent.id, status });
 
   return (
-    <Card className="rounded-card">
+    <Card>
       <article>
         <div className="space-y-4 p-4 sm:p-5">
           <div className="text-footnote flex flex-wrap items-center gap-x-3 gap-y-1">
             <Badge variant="outline" className={tone.badge} title={phase.hint}>
-              <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} aria-hidden />
               {phase.label}
             </Badge>
             {[

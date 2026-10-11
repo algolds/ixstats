@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
-import { TONE_CLASSES } from "./directive-model";
+import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
 
 interface DirectiveStatusStripProps {
@@ -31,18 +31,11 @@ function Tile({
   onClick?: () => void;
 }) {
   const body = (
-    <>
-      <span className="text-stat-label text-label-secondary block">{label}</span>
-      <span
-        className={cn(
-          "text-label text-title-1 mt-1 block leading-8 tabular-nums",
-          tone && TONE_CLASSES[tone].text
-        )}
-      >
-        {value}
-      </span>
-      <span className="text-label-secondary text-footnote mt-0.5 block font-normal">{detail}</span>
-    </>
+    <Stat
+      label={label}
+      value={tone ? <span className="text-destructive">{value}</span> : value}
+      hint={detail}
+    />
   );
   const cls = "block w-full px-4 py-3 text-left sm:px-5 sm:py-4";
   return onClick ? (
@@ -60,7 +53,6 @@ function Tile({
 
 /**
  * The three numbers that gate a new directive: weekly slots, CivCap, and what is in force.
- * A depth-2 Facet card (solid: it sits inside the workspace's glass shell).
  */
 export function DirectiveStatusStrip({
   countryId,
@@ -80,7 +72,7 @@ export function DirectiveStatusStrip({
   const civCapKnown = !!cc && Number.isFinite(cc.capacity) && cc.capacity > 0;
 
   return (
-    <Card className="divide-separator rounded-card grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <Card className="divide-separator grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <Tile
         label="Weekly slots"
         value={
@@ -89,7 +81,7 @@ export function DirectiveStatusStrip({
           ) : status.data ? (
             `${slotsLeft} of ${status.data.cap}`
           ) : (
-            "—"
+            "–"
           )
         }
         detail={
@@ -113,7 +105,7 @@ export function DirectiveStatusStrip({
           ) : civCapKnown ? (
             Math.round(cc.available)
           ) : (
-            "—"
+            "–"
           )
         }
         detail={

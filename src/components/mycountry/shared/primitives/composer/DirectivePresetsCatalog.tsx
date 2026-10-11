@@ -13,7 +13,6 @@ import {
   Train,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Toggle } from "~/components/ui/toggle";
 import {
   DIRECTIVE_DOMAINS,
@@ -100,10 +99,10 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               size="sm"
               pressed={domain === d}
               onPressedChange={() => setDomain(d)}
-              className="text-caption shrink-0 gap-2 rounded-full px-3 font-semibold max-sm:h-11"
+              className="shrink-0 gap-2 rounded-full px-3 max-sm:h-11"
             >
               <span>{d}</span>
-              <span className="tabular-nums opacity-60">{count}</span>
+              <span className="text-label-secondary tabular-nums">{count}</span>
             </Toggle>
           );
         })}
@@ -124,9 +123,9 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
             const Icon = DOMAIN_ICONS[d];
             return (
               <section key={d} aria-label={`${d} presets`} className="space-y-2">
-                <h4 className="flex items-center gap-2 px-1">
-                  <Icon className="text-label-secondary h-3.5 w-3.5" aria-hidden />
-                  <Eyebrow>{d}</Eyebrow>
+                <h4 className="text-label text-subhead flex items-center gap-2 px-1 font-semibold">
+                  <Icon className="text-tint h-4 w-4" aria-hidden />
+                  {d}
                 </h4>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {presets.map((p) => (
@@ -134,9 +133,8 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                       <Button
                         variant="outline"
                         onClick={() => onSelectGoal(p.label)}
-                        className="rounded-row hover:border-yellow/40 h-full min-h-11 w-full justify-start gap-3 px-3 py-3 text-left whitespace-normal"
+                        className="rounded-row h-full min-h-11 w-full justify-start gap-3 px-3 py-3 text-left whitespace-normal"
                       >
-                        <Icon className="text-label-secondary" aria-hidden />
                         <span className="text-label text-body min-w-0 flex-1 leading-snug font-medium">
                           {p.label}
                         </span>

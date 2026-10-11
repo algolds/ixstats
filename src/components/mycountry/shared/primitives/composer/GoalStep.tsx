@@ -74,7 +74,7 @@ export function GoalStep({
               autoComplete="off"
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Search presets or type a goal, e.g. “cut youth unemployment”"
-              className="rounded-row focus-visible:border-yellow/60 focus-visible:ring-yellow/30 h-11 pr-11 pl-9"
+              className="rounded-row h-11 pr-11 pl-9"
             />
             {query && (
               <Button

@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Archive, KeyCommand, Page, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Toggle } from "~/components/ui/toggle";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
 import { useCountryData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
@@ -25,10 +25,10 @@ type DirectivesView = "new" | "active" | "history";
 type HistoryFilter = "all" | "completed" | "abandoned";
 
 const HISTORY_PAGE = 20;
-const HISTORY_FILTERS: ReadonlyArray<{ id: HistoryFilter; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "completed", label: "Completed" },
-  { id: "abandoned", label: "Abandoned" },
+const HISTORY_FILTERS: ReadonlyArray<{ value: HistoryFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "completed", label: "Completed" },
+  { value: "abandoned", label: "Abandoned" },
 ];
 
 interface DirectivesWorkspaceProps {
@@ -41,23 +41,11 @@ interface DirectivesWorkspaceProps {
   onOpenIssue?: (issueId: string) => void;
 }
 
-function EmptyState({
-  icon: Icon,
-  title,
-  body,
-  action,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
-  action?: React.ReactNode;
-}) {
+/** An empty or error view, on its own pane. */
+function EmptyPane(props: React.ComponentProps<typeof EmptyState>) {
   return (
-    <Card className="rounded-card flex flex-col items-center px-6 py-12 text-center">
-      <Icon className="text-label-secondary h-6 w-6" aria-hidden />
-      <p className="text-label text-title-3 mt-4">{title}</p>
-      <p className="text-label-secondary text-body mt-1 max-w-sm">{body}</p>
-      {action && <div className="mt-6">{action}</div>}
+    <Card>
+      <EmptyState {...props} />
     </Card>
   );
 }
@@ -75,10 +63,10 @@ function QueryGuard({
   if (tree.isLoading) return <ListSkeleton />;
   if (tree.error) {
     return (
-      <EmptyState
-        icon={Archive}
+      <EmptyPane
+        icon={<Archive />}
         title={errorTitle}
-        body={tree.error.message}
+        message={tree.error.message}
         action={
           <Button variant="outline" className="max-sm:h-11" onClick={() => void tree.refetch()}>
             Try again
@@ -108,12 +96,13 @@ function DirectivesHeader({
   onDraftPolicy: () => void;
 }) {
   return (
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-label text-title-1 leading-8">Directives</h2>
-        <p className="text-label-secondary text-body mt-1 max-w-2xl">
-          Set a national goal, choose how hard to push, and track what it changes. Each directive
-          uses a weekly slot and holds CivCap while it executes.
+        <h2 id="directives-title" className="text-label text-title-2">
+          Directives
+        </h2>
+        <p className="text-label-secondary text-callout mt-1 max-w-2xl">
+          Each directive uses a weekly slot and holds CivCap while it executes.
         </p>
       </div>
       {!readOnly && (
@@ -130,12 +119,10 @@ function DirectivesHeader({
 }
 
 /**
- * The Directives page (`/mycountry/executive`): status up top, then three views —
- * declare a new directive, track the ones in force, and review past directives and outcomes.
+ * The Directives page (`/mycountry/executive`): status up top, then three views: declare a new
+ * directive, track the ones in force, and review past directives and outcomes.
  *
- * Facet depth: the workspace is the one glass shell (depth 1); the cards inside it (status
- * strip, composer steps) are depth 2 and the directive rows / approach options depth 3, all
- * `surface="solid"` so blur never stacks.
+ * The page sits on the canvas; the status strip, composer steps and directives are panes.
  */
 export function DirectivesWorkspace({
   countryId,
@@ -195,32 +182,11 @@ export function DirectivesWorkspace({
     setView("new");
   };
 
-  const tabsId = useId();
-  const tabId = (v: DirectivesView) => `${tabsId}-tab-${v}`;
-  const panelId = (v: DirectivesView) => `${tabsId}-panel-${v}`;
-
   const views: { id: DirectivesView; label: string; count?: number }[] = [
-    { id: "new", label: "Declare Directive" },
+    { id: "new", label: "Declare" },
     { id: "active", label: "In force", count: tree.data ? active.length : undefined },
     { id: "history", label: "History", count: tree.data ? history.length : undefined },
   ];
-
-  // Roving focus for the view tabs (the Tabs primitive leaves arrow keys to its caller).
-  const onTabKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const index = views.findIndex((v) => v.id === view);
-    const count = views.length;
-    const next = {
-      ArrowRight: (index + 1) % count,
-      ArrowLeft: (index + count - 1) % count,
-      Home: 0,
-      End: count - 1,
-    }[e.key];
-    if (next === undefined) return;
-    e.preventDefault();
-    const id = views[next]!.id;
-    setView(id);
-    document.getElementById(tabId(id))?.focus();
-  };
 
   const cardProps = {
     nowIxTime,
@@ -230,7 +196,7 @@ export function DirectivesWorkspace({
   };
 
   return (
-    <Card className="rounded-card space-y-6 p-4 sm:p-6">
+    <section aria-labelledby="directives-title" className="space-y-6">
       <DirectivesHeader readOnly={readOnly} onDraftPolicy={() => setShowPolicySheet(true)} />
 
       <DirectiveStatusStrip
@@ -243,36 +209,31 @@ export function DirectivesWorkspace({
 
       <Tabs value={view} onValueChange={(v) => setView(v as DirectivesView)} className="space-y-6">
         <TabsList
-          role="tablist"
           aria-label="Directive views"
-          onKeyDown={onTabKeyDown}
           className="bg-fill-3 w-full rounded-full p-1 sm:w-fit"
         >
           {views.map((v) => (
             <TabsTrigger
               key={v.id}
               value={v.id}
-              role="tab"
-              id={tabId(v.id)}
-              aria-controls={panelId(v.id)}
-              className="h-11 flex-1 gap-2 px-3 sm:h-9 sm:flex-none sm:px-4"
+              className="h-11 flex-1 px-3 sm:h-9 sm:flex-none sm:px-4"
             >
               {v.label}
               {v.count != null && v.count > 0 && (
-                <Badge variant="default" className="rounded-full px-2 tabular-nums">
+                <span className="facet-gold text-caption rounded-full px-2 tabular-nums">
                   {v.count}
-                </Badge>
+                </span>
               )}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="new" role="tabpanel" id={panelId("new")} aria-labelledby={tabId("new")}>
+        <TabsContent value="new">
           {readOnly ? (
-            <EmptyState
-              icon={KeyCommand}
+            <EmptyPane
+              icon={<KeyCommand />}
               title="Viewing another nation"
-              body="Directives can only be declared for a nation you play. Its directives in force and history are still visible."
+              message="Directives can only be declared for a nation you play. Its directives in force and history are still visible."
             />
           ) : (
             <IntentComposer
@@ -287,18 +248,13 @@ export function DirectivesWorkspace({
           )}
         </TabsContent>
 
-        <TabsContent
-          value="active"
-          role="tabpanel"
-          id={panelId("active")}
-          aria-labelledby={tabId("active")}
-        >
+        <TabsContent value="active">
           <QueryGuard tree={tree} errorTitle="Directives could not be loaded">
             {active.length === 0 ? (
-              <EmptyState
-                icon={KeyCommand}
+              <EmptyPane
+                icon={<KeyCommand />}
                 title="No directives in force"
-                body="Declare a Directive to start moving your nation."
+                message="Declare a Directive to start moving your nation."
                 action={
                   !readOnly && (
                     <Button className="max-sm:h-11" onClick={() => setView("new")}>
@@ -323,38 +279,26 @@ export function DirectivesWorkspace({
           </QueryGuard>
         </TabsContent>
 
-        <TabsContent
-          value="history"
-          role="tabpanel"
-          id={panelId("history")}
-          aria-labelledby={tabId("history")}
-        >
+        <TabsContent value="history">
           <QueryGuard tree={tree} errorTitle="History could not be loaded">
             {history.length === 0 ? (
-              <EmptyState
-                icon={Archive}
+              <EmptyPane
+                icon={<Archive />}
                 title="No past directives yet"
-                body="Directives you complete or abandon are listed here with the effects they recorded."
+                message="Directives you complete or abandon are listed here with the effects they recorded."
               />
             ) : (
               <div className="space-y-4">
-                <div role="group" aria-label="Filter history" className="flex flex-wrap gap-2">
-                  {HISTORY_FILTERS.map((f) => (
-                    <Toggle
-                      key={f.id}
-                      variant="outline"
-                      size="sm"
-                      pressed={historyFilter === f.id}
-                      onPressedChange={() => {
-                        setHistoryFilter(f.id);
-                        setHistoryLimit(HISTORY_PAGE);
-                      }}
-                      className="rounded-full px-3 max-sm:h-11"
-                    >
-                      {f.label}
-                    </Toggle>
-                  ))}
-                </div>
+                <SegmentedControl
+                  aria-label="Filter history"
+                  size="sm"
+                  value={historyFilter}
+                  onValueChange={(f) => {
+                    setHistoryFilter(f);
+                    setHistoryLimit(HISTORY_PAGE);
+                  }}
+                  options={HISTORY_FILTERS}
+                />
                 {filteredHistory.length === 0 ? (
                   <p className="text-label-secondary text-body px-1">
                     No {historyFilter} directives.
@@ -396,6 +340,6 @@ export function DirectivesWorkspace({
           countryId={countryId}
         />
       )}
-    </Card>
+    </section>
   );
 }

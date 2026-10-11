@@ -206,7 +206,7 @@ export function directiveTimeline(
 
 /** An IxTime timestamp as a short in-game date, e.g. "Mar 4, 2041". */
 export function formatIxDate(ixTime: number): string {
-  if (!Number.isFinite(ixTime)) return "—";
+  if (!Number.isFinite(ixTime)) return "–";
   return new Date(ixTime).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",

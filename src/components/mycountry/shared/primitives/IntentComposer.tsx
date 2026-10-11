@@ -73,7 +73,7 @@ function SuggestErrorStep({
 }) {
   return (
     <StepSection step={2} title="Choose an approach">
-      <Alert variant="destructive" className="border-destructive/30">
+      <Alert variant="destructive">
         <WarningCircle aria-hidden />
         <AlertDescription className="gap-2">
           <p>{message}</p>
@@ -316,7 +316,7 @@ export const IntentComposer = React.memo(function IntentComposer({
           >
             <DeclarePanel
               goal={goal}
-              approachLabel={activePackage ? tierMeta(activePackage.tier).label : "—"}
+              approachLabel={activePackage ? tierMeta(activePackage.tier).label : "–"}
               civCapCost={activePackage?.civCapCost ?? null}
               civCap={civCapQuery.isLoading ? undefined : (civCapQuery.data ?? null)}
               slots={statusQuery.data}

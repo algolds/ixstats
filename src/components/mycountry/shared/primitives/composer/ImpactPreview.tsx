@@ -3,7 +3,6 @@
 import React from "react";
 import { City, Coins, Journal, Page, WarningTriangle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { EffectList } from "~/components/mycountry/directives/EffectList";
 import {
@@ -28,14 +27,10 @@ interface ImpactPreviewProps {
 }
 
 function SubHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="mb-2">
-      <Eyebrow>{children}</Eyebrow>
-    </h4>
-  );
+  return <h4 className="text-label text-headline mb-2">{children}</h4>;
 }
 
-/** Step 3: what the chosen approach does — levers, projected stat effects, stakeholders. */
+/** Step 3: what the chosen approach does: levers, projected stat effects, stakeholders. */
 export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
   const effects = pkg.consequences.map((c, i) => consequenceToEffect(c, `${c.targetField}-${i}`));
   if (pkg.gdpLevelShift > 0) effects.push(gdpShiftToEffect(pkg.gdpLevelShift, pkg.gdpEffectYears));
@@ -109,7 +104,7 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
           </dl>
         </Card>
         {tierMaySpawnResistance(pkg.tier) && (
-          <Alert role="note" className="border-yellow/30 text-yellow mt-3">
+          <Alert role="note" variant="warning" className="mt-3">
             <WarningTriangle aria-hidden />
             <AlertDescription className="text-footnote">
               May stir up a resistance issue. You will need to resolve it before you can mark this

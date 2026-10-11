@@ -64,7 +64,7 @@ function blockedReasonOf(
 }
 
 /**
- * Step 4: the confirmation card — what it costs, what is left, and the Declare button (the
+ * Step 4: the confirmation card: what it costs, what is left, and the Declare button (the
  * page's one gold primary action).
  */
 export function DeclarePanel({
@@ -96,12 +96,12 @@ export function DeclarePanel({
           <span className="line-clamp-3">{goal}</span>
         </Row>
         <Row label="Approach">{approachLabel}</Row>
-        <Row label="CivCap">{civCapCost == null ? "—" : `${cost} held for one IxTime week`}</Row>
+        <Row label="CivCap">{civCapCost == null ? "–" : `${cost} held for one IxTime week`}</Row>
         <Row label="Available after">
           {civCap === undefined ? (
             <Skeleton className="ml-auto h-4 w-20" />
           ) : availableAfter == null ? (
-            "—"
+            "–"
           ) : (
             <span className={cn("tabular-nums", goesOver && TONE_CLASSES.negative.text)}>
               {Math.round(available ?? 0)} → {availableAfter}
@@ -116,7 +116,7 @@ export function DeclarePanel({
       {followUpOf && <FollowUpChip goal={followUpOf.goal} onClear={onClearFollowUp} />}
 
       {goesOver && !blockedReason && (
-        <Alert role="note" className="border-yellow/30 text-yellow">
+        <Alert role="note" variant="warning">
           <WarningTriangle aria-hidden />
           <AlertDescription className="text-footnote">
             This puts you over civil-service capacity. You can still declare it, but recon and
@@ -126,7 +126,7 @@ export function DeclarePanel({
       )}
 
       {error && (
-        <Alert variant="destructive" className="border-destructive/30">
+        <Alert variant="destructive">
           <WarningCircle aria-hidden />
           <AlertDescription className="text-footnote">{error}</AlertDescription>
         </Alert>
