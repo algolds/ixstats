@@ -71,7 +71,7 @@ export const activitiesFeedPersonalRouter = createTRPCRouter({
           // Fetch ActivityFeed entries from followed countries
           const activityFeedEntries = followedIds.length
             ? await ctx.db.activityFeed.findMany({
-                where: { countryId: { in: followedIds } },
+                where: { countryId: { in: followedIds }, visibility: "public" },
                 orderBy: { createdAt: "desc" },
                 take: input.limit,
                 include: { poll: POLL_INCLUDE },
