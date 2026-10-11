@@ -260,3 +260,25 @@ export {
   type PostInput,
   type WritesDb,
 } from "./writes";
+export {
+  listReactors,
+  reactToPost,
+  unreactToPost,
+  type Reactor,
+  type ReactorGroup,
+  type ReactionChange,
+  type ReactionsDb,
+} from "./reactions";
+export {
+  loadReactablePost,
+  loadReadablePost,
+  threadReactable,
+  type ReactionTarget,
+  type ReactionTargetDb,
+} from "./reaction-target";
+export {
+  myReactionsOf,
+  withReactions,
+  type ReactionFields,
+  type ReactionReadDb,
+} from "./reaction-attach";
