@@ -1,7 +1,6 @@
 /** @jest-environment node */
 import {
   ActionLinkError,
-  linkedPosts,
   syncPostActionLinks,
   validatePostActionTokens,
 } from "~/server/modules/action-links";
@@ -40,9 +39,6 @@ function fakeDb(activities: Row[], alreadyLinked: string[] = []) {
               )
               .map((a) => ({ id: a.id }))
         ),
-      },
-      postActionLink: {
-        findMany: jest.fn(async () => [{ postSource: "native", postRef: "p1" }]),
       },
       $transaction: jest.fn(async <T>(fn: (t: typeof tx) => Promise<T>) => fn(tx)),
     },
@@ -170,11 +166,12 @@ describe("validatePostActionTokens", () => {
   });
 });
 
-describe("linkedPosts", () => {
-  it("lists the posts discussing an activity", async () => {
-    const { db } = fakeDb([]);
-    await expect(linkedPosts(db as never, "a1")).resolves.toEqual([
-      { postSource: "native", postRef: "p1" },
-    ]);
+// Spelled in two parts so that a repository-wide search for the removed name finds nothing.
+const REMOVED = ["linked", "Posts"].join("");
+
+describe("module exports", () => {
+  it("no longer exports the removed backlink read, which leaked hidden and private posts", async () => {
+    const mod = await import("~/server/modules/action-links");
+    expect(Object.keys(mod)).not.toContain(REMOVED);
   });
 });

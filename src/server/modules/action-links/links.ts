@@ -74,15 +74,6 @@ export async function syncPostActionLinks(
   });
 }
 
-/** The posts that link an activity ("discussed in N posts"). */
-export function linkedPosts(db: Pick<PrismaClient, "postActionLink">, activityId: string) {
-  return db.postActionLink.findMany({
-    where: { activityId },
-    select: { postSource: true, postRef: true },
-    orderBy: { createdAt: "asc" },
-  });
-}
-
 /**
  * The nation's public rows that count as actions a player took: not the generators' fixed-title rows and not the
  * denylisted event types. The reward transaction applies it too, so a denylisted row never pays. The event-type clauses

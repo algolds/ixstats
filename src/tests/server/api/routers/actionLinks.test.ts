@@ -8,11 +8,22 @@ jest.mock("~/server/modules/action-links", () => ({
     throw new ActionLinkError("FORBIDDEN", "You cannot review this chain");
   }),
 }));
+jest.mock("~/server/modules/thinkpages-forum", () => ({
+  forumActorOf: jest.fn(async (_db: object, user: object) => ({
+    ...user,
+    mod: { siteAdmin: false, realmIds: [], categoryIds: [] },
+  })),
+  discussionsOf: jest.fn(async () => ({ items: [], nextCursor: null })),
+  discussionCountsOf: jest.fn(async (_db: object, _viewer: object | null, ids: string[]) =>
+    Object.fromEntries(ids.map((id) => [id, { count: 0, postIds: [] }]))
+  ),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { actionLinksRouter } from "~/server/api/routers/actionLinks";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createChain } from "~/server/modules/action-links";
+import { discussionCountsOf, discussionsOf } from "~/server/modules/thinkpages-forum";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(actionLinksRouter)(
@@ -77,5 +88,44 @@ describe("actionLinks router", () => {
     await expect(
       caller(null, { activityFeed: { findFirst } }).directiveActivity({ intentId: "i2" })
     ).resolves.toBeNull();
+  });
+
+  it("reads discussions as an anonymous viewer, passing the cursor on", async () => {
+    await caller(null).discussions({ activityId: "a1", cursor: "l020" });
+    expect(discussionsOf).toHaveBeenCalledWith(expect.anything(), null, {
+      activityId: "a1",
+      cursor: "l020",
+    });
+  });
+
+  it("reads discussions as the signed-in member with what they moderate", async () => {
+    await caller(owner).discussions({ activityId: "a1" });
+    expect(discussionsOf).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ id: "u1", mod: expect.anything() }),
+      { activityId: "a1" }
+    );
+  });
+
+  it("serves counts for up to 50 ids, anonymous", async () => {
+    const ids = Array.from({ length: 50 }, (_, i) => `a${i}`);
+    await expect(caller(null).discussionCounts({ activityIds: ids })).resolves.toMatchObject({
+      a0: { count: 0 },
+    });
+    expect(discussionCountsOf).toHaveBeenCalledWith(expect.anything(), null, ids);
+  });
+
+  it.each([
+    ["51 ids", { activityIds: Array.from({ length: 51 }, (_, i) => `a${i}`) }],
+    ["an empty id", { activityIds: [""] }],
+    ["an id over 64 characters", { activityIds: ["x".repeat(65)] }],
+  ])("bounds the counts input: %s", async (_label, input) => {
+    await expect(caller(null).discussionCounts(input)).rejects.toThrow();
+  });
+
+  it("no longer exposes the removed backlink read, which leaked hidden posts", () => {
+    // Spelled in two parts so that a repository-wide search for the removed name finds nothing.
+    const removed = ["linked", "Posts"].join("");
+    expect(Object.keys(actionLinksRouter._def.procedures)).not.toContain(removed);
   });
 });

@@ -2,6 +2,7 @@
  * Action-linked posts and story chains (docs/superpowers/specs/2026-10-07-action-linked-posts-design.md).
  * Thin: validates, binds the caller's country, calls ~/server/modules/action-links, maps ActionLinkError.
  * Post link sync is not exposed here: the forum's post writer calls syncPostActionLinks on save.
+ * Backlinks (`discussions`, `discussionCounts`) read through the forum module's visibility rules.
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -17,13 +18,20 @@ import {
   addPostToChain,
   appendChainToWiki,
   createChain,
-  linkedPosts,
   myChains,
   removePostFromChain,
   reviewChain,
   reviewQueue,
   submitChain,
 } from "~/server/modules/action-links";
+import {
+  discussionCountsOf,
+  discussionsOf,
+  forumActorOf,
+  type ForumUserSource,
+  type ForumViewer,
+  type ScopeDb,
+} from "~/server/modules/thinkpages-forum";
 
 function mapError(error: Error): never {
   if (error instanceof ActionLinkError)
@@ -35,6 +43,11 @@ function requireCountry(user: { countryId?: string | null } | null | undefined):
   if (!user?.countryId)
     throw new TRPCError({ code: "FORBIDDEN", message: "Story chains belong to a nation" });
   return user.countryId;
+}
+
+/** The signed-in user as the forum's viewer (with what they moderate); null for a visitor. */
+function viewerOf(db: ScopeDb, user: ForumUserSource | null | undefined): Promise<ForumViewer> {
+  return user ? forumActorOf(db, user) : Promise.resolve(null);
 }
 
 const id = z.string().min(1).max(64);
@@ -95,9 +108,19 @@ export const actionLinksRouter = createTRPCRouter({
       return row ? { activityId: row.id } : null;
     }),
 
-  linkedPosts: publicProcedure
-    .input(z.object({ activityId: id }))
-    .query(({ ctx, input }) => linkedPosts(ctx.db, input.activityId)),
+  /** The visible posts that link an action, newest link first, 20 per page (the forum's own visibility rules). */
+  discussions: publicProcedure
+    .input(z.object({ activityId: id, cursor: id.optional() }))
+    .query(async ({ ctx, input }) =>
+      discussionsOf(ctx.db, await viewerOf(ctx.db, ctx.user), input)
+    ),
+
+  /** Visible discussion counts for up to 50 actions, batched. */
+  discussionCounts: publicProcedure
+    .input(z.object({ activityIds: z.array(id).max(50) }))
+    .query(async ({ ctx, input }) =>
+      discussionCountsOf(ctx.db, await viewerOf(ctx.db, ctx.user), input.activityIds)
+    ),
 
   myChains: protectedProcedure.query(({ ctx }) => myChains(ctx.db, requireCountry(ctx.user))),
 
