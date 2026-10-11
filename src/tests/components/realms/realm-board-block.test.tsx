@@ -4,14 +4,24 @@ import type { RouterOutputs } from "~/trpc/react";
 
 type Preview = RouterOutputs["thinkpagesForum"]["realmBoardPreview"];
 
-const state: { data: Preview | undefined; loading: boolean; input: { slug: string } | undefined } =
-  { data: undefined, loading: false, input: undefined };
+interface QueryOptions {
+  staleTime: number;
+  refetchOnWindowFocus: boolean;
+  retry: boolean;
+}
+const state: {
+  data: Preview | undefined;
+  loading: boolean;
+  input: { slug: string } | undefined;
+  options: QueryOptions | undefined;
+} = { data: undefined, loading: false, input: undefined, options: undefined };
 jest.mock("~/trpc/react", () => ({
   api: {
     thinkpagesForum: {
       realmBoardPreview: {
-        useQuery: (input: { slug: string }) => {
+        useQuery: (input: { slug: string }, options: QueryOptions) => {
           state.input = input;
+          state.options = options;
           return { data: state.data, isLoading: state.loading };
         },
       },
@@ -43,6 +53,29 @@ describe("RealmBoardBlock", () => {
     state.data = preview([]);
     render(<RealmBoardBlock slug="eurth" />);
     expect(state.input).toEqual({ slug: "eurth" });
+  });
+
+  it("does not retry a failed read", () => {
+    state.data = preview([]);
+    render(<RealmBoardBlock slug="eurth" />);
+    expect(state.options).toMatchObject({ retry: false });
+  });
+
+  it("makes the link a touch target on coarse pointers", () => {
+    state.data = preview([]);
+    render(<RealmBoardBlock slug="eurth" />);
+    expect(screen.getByRole("link", { name: "Open the board" })).toHaveClass(
+      "pointer-coarse:min-h-11"
+    );
+  });
+
+  it("names the realm unless asked not to", () => {
+    state.data = preview([]);
+    const shown = render(<RealmBoardBlock slug="eurth" />);
+    expect(shown.getByText("Eurth")).toBeInTheDocument();
+    shown.unmount();
+    const hidden = render(<RealmBoardBlock slug="eurth" showRealm={false} />);
+    expect(hidden.queryByText("Eurth")).toBeNull();
   });
 
   it("lists the latest messages under On the board, with a link to open it", () => {
@@ -90,10 +123,15 @@ describe("RealmBoardBlock", () => {
     expect(screen.queryByRole("heading")).toBeNull();
   });
 
-  it("frames itself when asked and takes a class otherwise", () => {
+  it("frames itself as an entity Card when asked and takes a class otherwise", () => {
     state.data = preview([]);
-    const framed = render(<RealmBoardBlock slug="eurth" framed />);
-    expect(framed.container.firstChild).toHaveClass("border-separator", "rounded-card", "border");
+    const framed = render(<RealmBoardBlock slug="eurth" framed className="mt-2" />);
+    expect(framed.container.firstChild).toHaveAttribute("data-content", "entity");
+    expect(framed.container.firstChild).toHaveClass("mt-2");
+    framed.unmount();
+    const bare = render(<RealmBoardBlock slug="eurth" />);
+    expect(bare.container.firstChild).not.toHaveAttribute("data-content");
+    bare.unmount();
     const plain = render(<RealmBoardBlock slug="eurth" className="mb-5" />);
     expect(plain.container.firstChild).toHaveClass("mb-5");
   });

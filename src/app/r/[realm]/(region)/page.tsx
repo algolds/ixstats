@@ -169,7 +169,11 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
             </Link>
           }
         >
-          <RealmBoardBlock slug={realm.slug} className="border-separator mb-5 border-b pb-5" />
+          <RealmBoardBlock
+            slug={realm.slug}
+            showRealm={false}
+            className="border-separator mb-5 border-b pb-5"
+          />
           {forum.threads.length === 0 ? (
             <p className="text-label-secondary text-body">
               {viewer.ownedNations.length > 0
