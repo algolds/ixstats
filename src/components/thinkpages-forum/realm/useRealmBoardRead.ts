@@ -6,6 +6,8 @@ import { api } from "~/trpc/react";
 /** The board is marked read at most this often: live messages arrive continuously. */
 export const BOARD_READ_INTERVAL_MS = 10_000;
 
+const isTabVisible = (): boolean => document.visibilityState === "visible";
+
 interface RealmBoardRead {
   /** The reader is at the top of the feed, in view of this newest message. */
   markSeen: (newestMessageId: string) => void;
@@ -19,6 +21,8 @@ interface RealmBoardRead {
  * at least `BOARD_READ_INTERVAL_MS` apart: a newer message seen inside that window is marked when it ends, so the last
  * one seen is not lost, unless the reader has left the top by then (the next arrival at the top marks it). After a
  * mark, the sidebar counts are refreshed. Switching realm starts over: nothing marked or waiting carries across.
+ * A tab nobody is looking at marks nothing: the newest message seen while it was hidden is marked when it is shown
+ * again, if the reader is still at the top.
  */
 export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRead {
   const utils = api.useUtils();
@@ -27,6 +31,8 @@ export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRe
   const lastMarkAt = useRef<number | null>(null);
   const atTop = useRef(true);
   const waiting = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  /** The newest message the feed showed while the tab was hidden: not yet seen by anyone. */
+  const unseen = useRef<string | null>(null);
 
   const mark = useCallback(
     (newestId: string) => {
@@ -48,6 +54,10 @@ export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRe
     (newestId: string) => {
       atTop.current = true;
       if (!signedIn || lastMarked.current === newestId) return;
+      if (!isTabVisible()) {
+        unseen.current = newestId;
+        return;
+      }
       if (waiting.current) {
         // A mark is already waiting out the interval; it will carry the newest message.
         waiting.current.id = newestId;
@@ -62,7 +72,9 @@ export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRe
         id: newestId,
         timer: setTimeout(() => {
           waiting.current = null;
-          if (atTop.current && lastMarked.current !== pending.id) mark(pending.id);
+          if (!atTop.current || lastMarked.current === pending.id) return;
+          if (isTabVisible()) mark(pending.id);
+          else unseen.current = pending.id;
         }, BOARD_READ_INTERVAL_MS - elapsed),
       };
       waiting.current = pending;
@@ -72,7 +84,19 @@ export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRe
 
   const leaveTop = useCallback(() => {
     atTop.current = false;
+    unseen.current = null;
   }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      const id = unseen.current;
+      if (id === null || !atTop.current || !isTabVisible()) return;
+      unseen.current = null;
+      markSeen(id);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [markSeen]);
 
   useEffect(
     () => () => {
@@ -81,6 +105,7 @@ export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRe
       waiting.current = null;
       lastMarked.current = null;
       lastMarkAt.current = null;
+      unseen.current = null;
       atTop.current = true;
     },
     [slug]
