@@ -26,7 +26,7 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 
-import { useThreadActionCards } from "~/hooks/useThreadActionCards";
+import { actionIdsOf, useThreadActionCards } from "~/hooks/useThreadActionCards";
 
 function card(id: string, title: string): ActionCardData {
   return { id, title, type: "diplomatic", createdAt: new Date(0), country: null };
@@ -106,5 +106,21 @@ describe("useThreadActionCards", () => {
       ready: false,
       errored: true,
     });
+  });
+});
+
+describe("actionIdsOf", () => {
+  it("lists the distinct ids that render, in first-seen order, and skips tokens inside attributes", () => {
+    expect(
+      actionIdsOf([
+        { contentHtml: "<p>[ixaction=b] [ixaction=a]</p>" },
+        { contentHtml: '<p title="[ixaction=z]">x [ixaction=b]</p>' },
+      ])
+    ).toEqual(["b", "a"]);
+  });
+
+  it("is empty for posts without tokens", () => {
+    expect(actionIdsOf([{ contentHtml: "<p>none</p>" }])).toEqual([]);
+    expect(actionIdsOf([])).toEqual([]);
   });
 });

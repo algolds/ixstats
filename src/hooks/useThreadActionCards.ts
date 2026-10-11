@@ -26,6 +26,11 @@ function chunked(ids: readonly string[]): string[][] {
   return chunks;
 }
 
+/** The distinct activity ids in the text of `posts` (the tokens that render as cards), in first-seen order. */
+export function actionIdsOf(posts: ReadonlyArray<{ contentHtml: string }>): string[] {
+  return [...new Set(posts.flatMap((p) => parseTextActionTokens(p.contentHtml)))];
+}
+
 /** The batches' cards in one Map; ready when every batch succeeded (none asked is ready too). */
 function combineCards(results: readonly CardsResult[]): ThreadActionCards {
   return {
@@ -42,10 +47,7 @@ function combineCards(results: readonly CardsResult[]): ThreadActionCards {
 export function useThreadActionCards(
   posts: ReadonlyArray<{ contentHtml: string }>
 ): ThreadActionCards {
-  const chunks = useMemo(
-    () => chunked([...new Set(posts.flatMap((p) => parseTextActionTokens(p.contentHtml)))]),
-    [posts]
-  );
+  const chunks = useMemo(() => chunked(actionIdsOf(posts)), [posts]);
   return api.useQueries((t) => chunks.map((ids) => t.actionLinks.activityCards({ ids })), {
     combine: combineCards,
   });

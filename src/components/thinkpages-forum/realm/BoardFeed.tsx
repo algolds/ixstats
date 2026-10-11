@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { ChatBubble, EditPencil } from "iconoir-react";
+import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
-import { useThreadActionCards } from "~/hooks/useThreadActionCards";
+import { actionIdsOf, useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
 import type { ModeratorTools } from "../ModeratorMenu";
@@ -68,13 +69,14 @@ function Section({ messages, cursor, hasMore, first, exclude, context }: Section
     [messages, exclude]
   );
   const { cards, ready, errored } = useThreadActionCards(visible);
+  const actionIds = useMemo(() => actionIdsOf(visible), [visible]);
   const [more, setMore] = useState(false);
   const shown = useMemo(
     () => new Set([...exclude, ...messages.map((m) => m.id)]),
     [exclude, messages]
   );
   return (
-    <>
+    <DiscussionCountsProvider activityIds={actionIds}>
       {visible.map((message, index) => (
         <BoardMessage
           key={message.id}
@@ -102,7 +104,7 @@ function Section({ messages, cursor, hasMore, first, exclude, context }: Section
           </div>
         )
       ) : null}
-    </>
+    </DiscussionCountsProvider>
   );
 }
 

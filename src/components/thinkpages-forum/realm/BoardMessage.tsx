@@ -7,6 +7,7 @@ import type { ActionCardData } from "~/components/action-links";
 import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { countedPostId } from "~/lib/discussed-in";
 import { timeAgo } from "~/lib/format/compact";
 import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
@@ -178,6 +179,7 @@ export const BoardMessage = memo(function BoardMessage({
               cards={cards}
               cardsReady={cardsReady}
               cardsErrored={cardsErrored}
+              postId={countedPostId({ id: message.id, persona: author.persona })}
             />
           )}
           {continued ? <ContinuedLine continued={continued} /> : null}

@@ -76,9 +76,14 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
   usePathname: () => "/thinkpages/t/t1",
 }));
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
+  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useDiscussionCount: () => undefined,
+}));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/hooks/useThreadActionCards", () => ({
   useThreadActionCards: () => ({ cards: new Map(), ready: true, errored: false }),
+  actionIdsOf: () => [],
 }));
 jest.mock("~/context/auth-context", () => {
   const auth = { isSignedIn: true };

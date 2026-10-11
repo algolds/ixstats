@@ -105,6 +105,12 @@ jest.mock("~/components/thinkpages-forum/reactions", () => ({
   ),
 }));
 
+jest.mock("~/components/action-links/DiscussedIn", () => ({
+  DiscussedInBadge: ({ excludePostId }: { excludePostId?: string }) => (
+    <span data-testid="discussed-in">{excludePostId ?? "none"}</span>
+  ),
+}));
+
 import { BoardMessage } from "~/components/thinkpages-forum/realm/BoardMessage";
 
 const { mutations } = jest.requireMock<{ mutations: Record<string, jest.Mock> }>("~/trpc/react");
@@ -135,6 +141,35 @@ function renderMessage(props: Partial<Props> = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   for (const key of Object.keys(mutations)) delete mutations[key];
+});
+
+describe("BoardMessage discussed-in badge", () => {
+  const card: ActionCardData = {
+    id: "a1",
+    title: "Signed treaty",
+    type: "diplomatic",
+    createdAt: new Date(0),
+    country: null,
+  };
+  const withCard = (message: Props["message"]) =>
+    renderMessage({ message, cards: new Map([["a1", card]]) });
+
+  it("leaves this message out of the count of an action it shows", () => {
+    withCard(boardMessage({ id: "p4", contentHtml: "<p>[ixaction=a1]</p>" }));
+    expect(screen.getByTestId("discussed-in")).toHaveTextContent("p4");
+  });
+
+  it("leaves nothing out for a persona's message, which the server never counts", () => {
+    const base = boardMessage();
+    withCard(
+      boardMessage({
+        id: "p5",
+        contentHtml: "<p>[ixaction=a1]</p>",
+        author: { ...base.author, persona: true },
+      })
+    );
+    expect(screen.getByTestId("discussed-in")).toHaveTextContent("none");
+  });
 });
 
 describe("BoardMessage header", () => {

@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import type { ActionCardData } from "~/components/action-links";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { countedPostId } from "~/lib/discussed-in";
 import { cn } from "~/lib/utils/cn";
 import type { ForumAuthors } from "../AuthorName";
 import { CanvasComposer, htmlToQuoteText, type QuoteRequest } from "../composer";
@@ -208,6 +209,7 @@ export const PostCard = memo(function PostCard({
             cards={cards}
             cardsReady={cardsReady}
             cardsErrored={cardsErrored}
+            postId={countedPostId({ id: post.id, persona: !!post.authorPersonaId })}
           />
           <PostActions
             post={post}

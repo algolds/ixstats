@@ -83,6 +83,10 @@ jest.mock("~/components/thinkpages-forum/reactions", () => ({
     />
   ),
 }));
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
+  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useDiscussionCount: () => undefined,
+}));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/context/auth-context", () => {
   const auth = { isSignedIn: true };

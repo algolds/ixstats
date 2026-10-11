@@ -2,6 +2,7 @@
 
 import { memo, useMemo, useRef } from "react";
 import { ActionCardView, type ActionCardData } from "~/components/action-links";
+import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
 import { POST_IMAGE_CLASSES } from "~/components/shared/editor/postImageClasses";
 import { Skeleton } from "~/components/ui/skeleton";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -26,6 +27,8 @@ interface PostBodyProps {
   cardsReady?: boolean;
   /** The batch request failed; show "Action unavailable" instead of a verification result. */
   cardsErrored?: boolean;
+  /** The forum post this body belongs to: its action cards' "Discussed in" count leaves it out. */
+  postId?: string;
 }
 
 function ActionSlot({
@@ -33,15 +36,24 @@ function ActionSlot({
   cards,
   ready,
   errored,
+  postId,
 }: {
   id: string;
   cards: ReadonlyMap<string, ActionCardData>;
   ready: boolean;
   errored: boolean;
+  postId?: string;
 }) {
-  if (errored) return <span className="text-footnote text-label-secondary">Action unavailable</span>;
+  if (errored)
+    return <span className="text-footnote text-label-secondary">Action unavailable</span>;
   if (!ready) return <Skeleton aria-busy="true" className="h-14 w-full" />;
-  return <ActionCardView card={cards.get(id) ?? null} />;
+  const card = cards.get(id) ?? null;
+  return (
+    <>
+      <ActionCardView card={card} />
+      {card ? <DiscussedInBadge activityId={id} excludePostId={postId} className="mt-1" /> : null}
+    </>
+  );
 }
 
 /**
@@ -55,6 +67,7 @@ export const PostBody = memo(function PostBody({
   cards = NO_CARDS,
   cardsReady = true,
   cardsErrored = false,
+  postId,
 }: PostBodyProps) {
   const root = useRef<HTMLDivElement>(null);
   // Stored HTML is root-relative (uploads, imported attachments); the base path is added here, once.
@@ -78,7 +91,13 @@ export const PostBody = memo(function PostBody({
           <WikiHtmlContent key={i} html={segment.text} />
         ) : (
           <div key={i} className="my-2">
-            <ActionSlot id={segment.id} cards={cards} ready={cardsReady} errored={cardsErrored} />
+            <ActionSlot
+              id={segment.id}
+              cards={cards}
+              ready={cardsReady}
+              errored={cardsErrored}
+              postId={postId}
+            />
           </div>
         )
       )}

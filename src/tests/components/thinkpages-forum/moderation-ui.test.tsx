@@ -100,6 +100,10 @@ jest.mock("next/navigation", () => {
 });
 
 jest.mock("~/components/thinkpages-forum/reactions", () => ({ ReactionBar: () => null }));
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
+  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useDiscussionCount: () => undefined,
+}));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 
 jest.mock("~/context/auth-context", () => {

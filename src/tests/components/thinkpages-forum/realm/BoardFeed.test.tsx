@@ -27,8 +27,13 @@ jest.mock("~/trpc/react", () => {
     },
   };
 });
+jest.mock("~/components/action-links/DiscussionCountsProvider", () => ({
+  DiscussionCountsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useDiscussionCount: () => undefined,
+}));
 jest.mock("~/hooks/useThreadActionCards", () => ({
   useThreadActionCards: () => ({ cards: new Map(), ready: true, errored: false }),
+  actionIdsOf: () => [],
 }));
 jest.mock("~/components/thinkpages-forum/realm/BoardMessage", () => ({
   BoardMessage: ({

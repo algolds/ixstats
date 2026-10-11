@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, EyeClosed } from "iconoir-react";
+import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { Signal } from "~/components/ui/signal";
@@ -10,7 +11,7 @@ import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useScrollToPostHash } from "~/hooks/useScrollToPostHash";
-import { useThreadActionCards } from "~/hooks/useThreadActionCards";
+import { actionIdsOf, useThreadActionCards } from "~/hooks/useThreadActionCards";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { pageCount, POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { cn } from "~/lib/utils/cn";
@@ -109,6 +110,7 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
   const redirecting = useLastPageRedirect(basePath, page, data?.total, totalPages);
   const posts = data?.posts ?? NO_POSTS;
   const { cards, ready, errored } = useThreadActionCards(posts);
+  const actionIds = useMemo(() => actionIdsOf(posts), [posts]);
   useScrollToPostHash(posts, threadId, page);
   useMarkThreadRead({ threadId, page, signedIn: !!isSignedIn, newestPostId: posts.at(-1)?.id });
   usePageTitle({ title: data?.thread.title ?? "ThinkPages" });
@@ -235,30 +237,32 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
           Imported from the old forum.
         </p>
       ) : null}
-      <Card content="feed" className="overflow-hidden">
-        {posts.map((post, index) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            authors={data.authors}
-            style={style}
-            className={cn(index > 0 && "border-separator border-t")}
-            cards={cards}
-            cardsReady={ready}
-            cardsErrored={errored}
-            canReply={data.canReply}
-            canReact={data.canReact}
-            onReply={startReply}
-            onQuote={startQuote}
-            open={!thread.locked && !thread.archived}
-            signedIn={!!isSignedIn}
-            onEdit={edit}
-            canModerate={data.canModerate}
-            tools={tools}
-          />
-        ))}
-        <FeedFooter data={data} page={page} totalPages={totalPages} basePath={basePath} />
-      </Card>
+      <DiscussionCountsProvider activityIds={actionIds}>
+        <Card content="feed" className="overflow-hidden">
+          {posts.map((post, index) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              authors={data.authors}
+              style={style}
+              className={cn(index > 0 && "border-separator border-t")}
+              cards={cards}
+              cardsReady={ready}
+              cardsErrored={errored}
+              canReply={data.canReply}
+              canReact={data.canReact}
+              onReply={startReply}
+              onQuote={startQuote}
+              open={!thread.locked && !thread.archived}
+              signedIn={!!isSignedIn}
+              onEdit={edit}
+              canModerate={data.canModerate}
+              tools={tools}
+            />
+          ))}
+          <FeedFooter data={data} page={page} totalPages={totalPages} basePath={basePath} />
+        </Card>
+      </DiscussionCountsProvider>
       {data.canReply ? (
         <ReplyComposer
           icAllowed={category.icAllowed}
