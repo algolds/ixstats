@@ -95,7 +95,7 @@ export async function loadForumRealms(
   const rows = ids.length
     ? await db.realm.findMany({ where: { id: { in: [...ids] } }, select: REALM_SELECT })
     : [];
-  const found = new Map(rows.map((row) => [row.id, canonicalRealm(row)]));
+  const found = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
   if (ids.includes(DEFAULT_REALM_ID) && !found.has(DEFAULT_REALM_ID)) {
     found.set(DEFAULT_REALM_ID, IXWORLD_REALM);
   }

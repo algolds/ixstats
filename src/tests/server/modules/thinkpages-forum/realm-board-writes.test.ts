@@ -31,6 +31,7 @@ import {
   threadIn,
   visitor,
 } from "~/tests/helpers/forum-board-fake";
+import type { Value } from "~/tests/helpers/forum-store-fake";
 
 const post = async (store: ReturnType<typeof boardStore>, who: object, input: object) =>
   (
@@ -251,7 +252,7 @@ describe("postBoardMessage", () => {
       const held = new AsyncLocalStorage<Array<() => void>>();
       const queues = new Map<string, Promise<void>>();
       const { db, tx } = store;
-      tx.$executeRaw = jest.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
+      tx.$executeRaw = jest.fn(async (strings: TemplateStringsArray, ...values: Value[]) => {
         if (!strings.join("?").includes("pg_advisory_xact_lock")) return 1;
         const key = String(values[0]);
         const before = queues.get(key) ?? Promise.resolve();
