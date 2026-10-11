@@ -14,6 +14,58 @@ Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 
 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`)
 reads 1.4.1 (the realms audit below); RC2 is not cut yet.
 
+### 💬 ThinkPages Becomes the IxStates Forum (2026-10-07 → 10-11)
+
+ThinkPages replaces the XenForo forum: a native sitewide forum plus a NationStates-style regional message board
+(RMB) per realm, tied to the game (plan on the board, act in MyCountry, flavour the result back in the forum).
+No version moves in this block.
+
+- **Replacing XenForo (PRs #64–#72):** native sitewide forum and composer at `/thinkpages`, realm sections and the
+  Realm Board migration, moderation (hide, warn, ban, mod log), the XenForo import tooling, the ThinkPages name freed
+  for the forum (personas live on the Dashboard), and the XenForo bridge deleted. Action-linked posts and story
+  chains (PR #61) are the shared module the forum attaches actions through.
+- **Forum redesign:** the forum uses Home's frame (main column plus the Facet Inspector rail). Forums home and board
+  pages are sortable data tables with last-post info, pinned groups and windowed pagination. Posts use a header
+  postbit (avatar, handle, country flag, role), permalinks, post numbers and quotes. Thread posts are written in the
+  WikiOS Canvas editor; wikitext is canonical and rendered at save through the WikiOS parse pipeline, with a cron
+  that re-renders stale posts. IC boards read as WikiOS articles, and imported XenForo wiki BBCode and quotes render
+  again. The phone layout has board chips and rail panels in a sheet.
+- **Live realm board:** each realm page is its board, with messages delivered in real time (Socket.IO) and typing
+  indicators. Visitors from other realms can post (marked "Visitor") unless officers turn them off. Boards have
+  slow mode, the thread moderation tools, quoted replies, and "Continued in a thread".
+- **Unread, watch and notifications:** unread threads are bold, with jump-to-unread, Mark board read and Mark all
+  read (threads older than 30 days never count). Starting or replying to a thread watches it. The sidebar gains
+  New posts, Watched and Stashed with badges. The IxStates bell receives watched replies, @mentions, quotes and
+  board replies, once per post per person. `@handle` autocompletes in the light composer and links to the profile.
+  Persona posts never reveal their player in any of these, and the realm board stays out of every forum list and count.
+- **Reactions:** the Dashboard reaction set on forum posts and board messages, with live counts and a deduplicated
+  bell notice.
+- **Actions in the forum:** any composer can attach a MyCountry action (directives included). MyCountry gains
+  Share to realm, and actions show where they are "Discussed in". The first public post of an action earns a small
+  credit reward (default 5 credits, at most 3 rewarded actions per country per day, set in Admin > Vault > Forum
+  actions). Persona posts are not listed in "Discussed in".
+- **Find a Realm adverts:** one advert thread per realm, created and managed by officers with the `appearance`
+  power and headed by a live realm card with Join. The realm's Manage page has an Advert row. Adverts of draft,
+  hidden or deleted realms are hidden, and an archived realm's advert is locked.
+- **Across IxStates:** Home feed items for forum threads are real post previews. Home's rail has a Your realm panel
+  (new board messages and the latest three). The Realms directory, realm cards and the realm overview link to the
+  realm's board, and `/r/<realm>/board` opens the live board. On phones, Home's feed tabs scroll instead of
+  overflowing.
+- **Final audit (2026-10-11):** slow mode holds against parallel posts (per-member advisory lock); a link to an
+  old board message pages back to it or says it is older than what is loaded; live board updates reconnect after a
+  dropped connection instead of staying paused; a background tab no longer marks the board read; the Posting as
+  list no longer offers your personal account; a Canvas post whose render shows other action links than its text is
+  refused; the realm slug `mine` is reserved; a watcher who blocks one author still hears about other replies;
+  reaction notices skip reactions already taken back and the reactors list refreshes; the @ menu always picks a
+  highlighted name; editing a post keeps action links whose directive was later withdrawn; a story chain never
+  publishes a withdrawn directive to the wiki; lost unique-key races and records deleted mid-write are recognised
+  through the app's db client (adverts, reactions, rewards); Discussed in counts stay right beside a busy action;
+  realm visitor lookups, the unread badge and the realm directory's forum figures load in constant queries.
+- **Production steps:** apply the pending migrations in order, through `20261018120000_thinkpages_realm_adverts`
+  (the forum adds `20261010120000` → `20261018120000`), run `db:generate`, then restart the web app and `ixstats-ws`
+  together. Existing posts re-render for mention links at about 300 an hour. Credit rewards are live from deploy;
+  to stage them, set the reward or cap to 0 first.
+
 ### 🏛️ Realms Audit and Eurth Onboarding (2026-10-07) — platform 1.4.1
 
 - **Platform 1.4.0 → 1.4.1** (`VERSIONS.platform.patch`): fixes and page work, no capability integer moves.
