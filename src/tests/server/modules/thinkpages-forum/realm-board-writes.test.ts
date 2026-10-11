@@ -24,6 +24,7 @@ import {
   member,
   member2,
   officer,
+  personas,
   plain,
   postIn,
   seed,
@@ -394,6 +395,27 @@ describe("postBoardMessage", () => {
         author: { name: "Aurora Wire", persona: true, flagUrl: null },
       });
       expect(JSON.stringify(message)).not.toMatch(/u_visitor/);
+    });
+
+    it("refuses the member's own personal account, which is the player and not a persona", async () => {
+      const store = boardStore(seed(), {
+        personas: [
+          ...personas,
+          {
+            id: "pa_me",
+            clerkUserId: "clerk_u_member",
+            isActive: true,
+            accountType: "personal",
+            displayName: "Me",
+            username: "me",
+            profileImageUrl: null,
+          },
+        ],
+      });
+      await expect(post(store, member, { personaId: "pa_me" })).rejects.toMatchObject({
+        code: "FORBIDDEN",
+      });
+      expect(posts(store)).toBe(0);
     });
 
     it("refuses someone else's persona", async () => {

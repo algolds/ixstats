@@ -68,6 +68,7 @@ import {
   type ContentDb,
   type ForumViewer,
 } from "~/server/modules/thinkpages-forum";
+import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import { thinkpagesForumAdvertsRouter } from "./adverts";
 import { thinkpagesForumBoardRouter } from "./board";
 import { thinkpagesForumEngagementRouter } from "./engagement";
@@ -337,7 +338,11 @@ const forumRouter = createTRPCRouter({
 
   myPersonas: protectedProcedure.query(({ ctx }) =>
     ctx.db.thinkpagesAccount.findMany({
-      where: { clerkUserId: ctx.user.clerkUserId, isActive: true },
+      where: {
+        clerkUserId: ctx.user.clerkUserId,
+        isActive: true,
+        accountType: { not: PERSONAL_ACCOUNT_TYPE },
+      },
       orderBy: { displayName: "asc" },
       select: { id: true, displayName: true, username: true },
     })

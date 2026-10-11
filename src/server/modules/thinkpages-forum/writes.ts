@@ -22,6 +22,7 @@ import {
   assertAdvertsOnly,
   canEditPost,
 } from "./advert-access";
+import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import { ForumError } from "./errors";
 import { withMentionLinks } from "./mention-links";
 import { assertNotBanned } from "./mod-bans";
@@ -114,7 +115,13 @@ export async function resolvePersona(
   if (!category.icAllowed)
     throw new ForumError("FORBIDDEN", "This category does not allow in-character posts.");
   const persona = await db.thinkpagesAccount.findFirst({
-    where: { id: personaId, clerkUserId: actor.clerkUserId, isActive: true },
+    where: {
+      id: personaId,
+      clerkUserId: actor.clerkUserId,
+      isActive: true,
+      // The personal account is the player themselves, never a persona.
+      accountType: { not: PERSONAL_ACCOUNT_TYPE },
+    },
     select: { id: true },
   });
   if (!persona)
