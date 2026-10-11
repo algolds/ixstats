@@ -57,7 +57,7 @@ function patchAll(queryClient: QueryClient, postId: string, reduce: Reduce): voi
  * in-flight reads of the pages holding the post are cancelled, every cached page holding the post shows the change at
  * once, and the server's counts replace it when it answers. A failure puts that post back as it was and says so. One
  * request at a time: a call while one is in flight is ignored. Once settled, the pages holding the post are marked
- * stale so they refetch the truth.
+ * stale so they refetch the truth, as are the post's reactor lists.
  */
 export function useForumReaction(postId: string) {
   const queryClient = useQueryClient();
@@ -94,6 +94,10 @@ export function useForumReaction(postId: string) {
         for (const { key } of holders(queryClient, postId)) {
           void queryClient.invalidateQueries({ queryKey: key, exact: true });
         }
+        // The reactors dialog reads this post's lists (any type) from the cache; they now omit or include the viewer.
+        void queryClient.invalidateQueries({
+          queryKey: getQueryKey(api.thinkpagesForum.reactors, { postId }, "query"),
+        });
         busy.current = false;
         setPending(false);
       }
