@@ -11,12 +11,13 @@ function AdvertCardSkeleton() {
 }
 
 /**
- * The realm's live card, read from `realms.region.overview` (never a stored snapshot). It mounts nothing while the read
- * is loading or when the realm is hidden from the viewer (the thread itself is already hidden then). It joins no
- * presence room, so it shows no online figure.
+ * The realm's live card, read from `realms.region.overview` (never a stored snapshot). It holds the card's place with
+ * the skeleton while the read loads, and mounts nothing when the realm is hidden from the viewer (the thread itself is
+ * already hidden then). It joins no presence room, so it shows no online figure.
  */
 function AdvertCardBody({ realmSlug }: { realmSlug: string }) {
-  const { data: overview } = api.realms.region.overview.useQuery({ slug: realmSlug });
+  const { data: overview, isLoading } = api.realms.region.overview.useQuery({ slug: realmSlug });
+  if (isLoading) return <AdvertCardSkeleton />;
   if (!overview) return null;
   return <RealmCard variant="advert" overview={overview} />;
 }

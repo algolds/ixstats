@@ -36,23 +36,32 @@ function membersOf(overview: Overview | null | undefined): Member[] {
   ];
 }
 
-/** One public realm role: the player's avatar and nation flag, their name (a Passport link when they have a handle) and role. */
+/**
+ * One public realm role: the player's avatar and nation flag, their handle (a Passport link; the display name when they
+ * have none yet), the nation's name beneath it, and the role.
+ */
 function MemberRow({ member }: { member: Member }) {
   const flag = member.nation?.flag ? assetUrl(member.nation.flag) : null;
+  const primary = member.handle ? `@${member.handle}` : member.name;
   return (
     <li className="flex items-center gap-3 px-2 py-2 pointer-coarse:min-h-11">
       <span className="inline-flex shrink-0 items-center gap-1.5">
         <ForumAvatar name={member.name} size="xs" />
         {flag ? <AuthorFlag url={flag} /> : null}
       </span>
-      <span className="text-callout min-w-0 flex-1 truncate">
-        {member.handle ? (
-          <Link href={handleProfileHref(member.handle)} className="hover:underline">
-            {member.name}
-          </Link>
-        ) : (
-          member.name
-        )}
+      <span className="text-callout flex min-w-0 flex-1 flex-col">
+        <span className="truncate">
+          {member.handle ? (
+            <Link href={handleProfileHref(member.handle)} className="hover:underline">
+              {primary}
+            </Link>
+          ) : (
+            primary
+          )}
+        </span>
+        {member.handle && member.nation ? (
+          <span className="text-footnote text-label-secondary truncate">{member.nation.name}</span>
+        ) : null}
       </span>
       <span className="text-callout text-label-secondary truncate">{member.role}</span>
     </li>

@@ -61,9 +61,9 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
 }));
 
 jest.mock("~/components/thinkpages-forum/advert", () => ({
-  AdvertLockButton: ({ locked, iconOnly }: { locked: boolean; iconOnly?: boolean }) => (
+  AdvertLockButton: ({ iconOnly }: { iconOnly?: boolean }) => (
     <button type="button" data-icon-only={String(!!iconOnly)}>
-      {locked ? "Unlock advert" : "Lock advert"}
+      Lock advert
     </button>
   ),
 }));
@@ -264,13 +264,12 @@ describe("the advert lock", () => {
     canManage: true,
     closed: false,
     canLock: true,
-    canUnlock: false,
     ...over,
   });
   const reader = { canModerate: false, moderable: false };
   const lockedThread = { id: "t1", locked: true, pinned: false, hidden: false, archived: false };
 
-  it("offers Lock to a manager who is not moderating, as an icon in a compact header", () => {
+  it("offers Lock when the server says the viewer may, as an icon in a compact header", () => {
     render(
       <ThreadActions
         data={data({ ...reader, advert: advert() })}
@@ -285,33 +284,25 @@ describe("the advert lock", () => {
     );
   });
 
-  it("says Unlock when the server lets this viewer unlock a locked advert", () => {
+  it("gives a wide header the labelled button", () => {
     render(
       <ThreadActions
-        data={data({
-          ...reader,
-          thread: lockedThread,
-          advert: advert({ canLock: false, canUnlock: true }),
-        })}
+        data={data({ ...reader, advert: advert() })}
         signedIn
         compact={false}
         refresh={refresh}
       />
     );
-    expect(screen.getByRole("button", { name: "Unlock advert" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Lock advert" })).toHaveAttribute(
       "data-icon-only",
       "false"
     );
   });
 
-  it("does not offer Unlock to the manager who may only lock, nor Lock to a moderator who may only unlock", () => {
-    const manager = data({ ...reader, thread: lockedThread, advert: advert() });
-    const { unmount } = render(<ThreadActions data={manager} signedIn compact refresh={refresh} />);
-    expect(screen.queryByRole("button", { name: /advert/i })).toBeNull();
-    unmount();
+  it("offers nothing on a locked advert: unlocking is the thread bar's", () => {
     render(
       <ThreadActions
-        data={data({ ...reader, advert: advert({ canLock: false, canUnlock: true }) })}
+        data={data({ ...reader, thread: lockedThread, advert: advert() })}
         signedIn
         compact
         refresh={refresh}
@@ -325,7 +316,7 @@ describe("the advert lock", () => {
     expect(screen.queryByRole("button", { name: /advert/i })).toBeNull();
   });
 
-  it("is not offered to a reader, on an archived realm's advert, or on an ordinary thread", () => {
+  it("is not offered unless the server allows it, nor on an ordinary thread", () => {
     for (const over of [
       { advert: advert({ canManage: false, canLock: false }) },
       { advert: advert({ closed: true, canLock: false }) },

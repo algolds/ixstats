@@ -248,18 +248,19 @@ const forumRouter = createTRPCRouter({
     // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
     // realm the read already loaded (N1).
     const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
-    // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
-    // An advert: the realm, whether the viewer manages it, and whether its realm is archived (closed to writes).
     const moderator = result.canModerate ? await moderatorView(ctx.db, viewer, result) : null;
+    // An advert: the realm, whether the viewer manages it, whether they may lock it, and whether its realm is archived
+    // (closed to writes).
     const advert = advertRealm
       ? await advertViewOf(ctx.db, viewer, advertRealm, {
           banned: access.ban !== null,
-          moderable: moderator?.of(result.thread.authorUserId).moderable === true,
+          hidden: result.thread.hidden,
         })
       : null;
     const closed = advert?.closed === true;
     // The advert's first post is the thread's first, hidden or not (the notion `canEditPost` uses), not page 1's first row.
     const advertFirst = advert ? await firstPostIdOf(ctx.db, input.threadId) : null;
+    // Hidden content stays readable to moderators but refuses writes (writes.ts), so it offers neither reply nor Edit.
     const writable =
       viewer !== null &&
       !result.thread.locked &&

@@ -54,7 +54,12 @@ const overview = (over: object = {}) => ({
   founder: {
     name: "Aria Vance",
     handle: "aria",
-    nation: { id: "n1", name: "Aria Vance", slug: "arland", flag: "https://img.example/flag.png" },
+    nation: {
+      id: "nation_secret_1",
+      name: "Arland",
+      slug: "arland",
+      flag: "https://img.example/flag.png",
+    },
   },
   officers: [
     { title: "Chancellor", powers: ["appearance"], name: "Kir", handle: "kir", nation: null },
@@ -79,29 +84,32 @@ describe("AdvertCard", () => {
     expect(card).not.toHaveTextContent("online");
   });
 
-  it("mounts nothing while loading and nothing when the realm is hidden from the viewer", () => {
+  it("holds the card's place with a skeleton while the overview loads, then nothing for a hidden realm", () => {
     mockQueries.overview = { isLoading: true };
     const loading = render(<AdvertCard realmSlug="eurth" />);
+    expect(loading.container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
     expect(screen.queryByRole("region")).toBeNull();
     loading.unmount();
     mockQueries.overview = { data: null };
-    render(<AdvertCard realmSlug="eurth" />);
+    const hidden = render(<AdvertCard realmSlug="eurth" />);
+    expect(hidden.container.querySelector('[data-slot="skeleton"]')).toBeNull();
     expect(screen.queryByRole("region")).toBeNull();
   });
 });
 
 describe("AdvertRailPanel", () => {
-  it("names the realm, lists its founder and officers with their roles, and links the realm", () => {
+  it("names the realm and lists its founder and officers by handle, with their roles and nations", () => {
     mockQueries.overview = { data: overview() };
     render(<AdvertRailPanel realmSlug="eurth" realmName="Eurth" />);
     const panel = within(
       screen
         .getByRole("heading", { name: "About Eurth" })
-        .closest("div[data-slot='card']")! as HTMLElement
+        .closest<HTMLElement>("[data-slot='card']")!
     );
-    expect(panel.getByRole("link", { name: "Aria Vance" })).toHaveAttribute("href", "/id/aria");
+    expect(panel.getByRole("link", { name: "@aria" })).toHaveAttribute("href", "/id/aria");
     expect(panel.getByText("Founder")).toBeInTheDocument();
-    expect(panel.getByRole("link", { name: "Kir" })).toHaveAttribute("href", "/id/kir");
+    expect(panel.getByText("Arland")).toBeInTheDocument();
+    expect(panel.getByRole("link", { name: "@kir" })).toHaveAttribute("href", "/id/kir");
     expect(panel.getByText("Chancellor")).toBeInTheDocument();
     expect(panel.getByText("Unknown user")).toBeInTheDocument();
     expect(panel.queryByRole("link", { name: "Unknown user" })).toBeNull();
@@ -109,6 +117,14 @@ describe("AdvertRailPanel", () => {
       "href",
       "/r/eurth"
     );
+  });
+
+  it("carries no nation id, officer powers or user id in the markup", () => {
+    mockQueries.overview = { data: overview() };
+    const { container } = render(<AdvertRailPanel realmSlug="eurth" realmName="Eurth" />);
+    expect(container.innerHTML).not.toContain("nation_secret_1");
+    expect(container.innerHTML).not.toContain("appearance");
+    expect(container.innerHTML).not.toMatch(/\bu_|clerk_/);
   });
 
   it("shows each person's avatar, and their nation's flag when they hold one", () => {
@@ -134,19 +150,14 @@ describe("AdvertRailPanel", () => {
 });
 
 describe("AdvertLockButton", () => {
-  it("offers Lock on an open advert and Unlock on a locked one", () => {
-    const open = render(<AdvertLockButton threadId="t_ad" locked={false} />);
+  it("offers Lock with a visible label", () => {
+    render(<AdvertLockButton threadId="t_ad" />);
     expect(screen.getByRole("button", { name: "Lock advert" })).toHaveTextContent("Lock advert");
-    open.unmount();
-    render(<AdvertLockButton threadId="t_ad" locked />);
-    expect(screen.getByRole("button", { name: "Unlock advert" })).toHaveTextContent(
-      "Unlock advert"
-    );
   });
 
-  it("toggles through the server, then refreshes the thread and the board", async () => {
+  it("locks through the server, then refreshes the thread and the board", async () => {
     mockLock.mockResolvedValue({ locked: true });
-    render(<AdvertLockButton threadId="t_ad" locked={false} />);
+    render(<AdvertLockButton threadId="t_ad" />);
     fireEvent.click(screen.getByRole("button", { name: "Lock advert" }));
     await waitFor(() => expect(mockLock).toHaveBeenCalledWith({ threadId: "t_ad", locked: true }));
     await waitFor(() => expect(mockInvalidate).toHaveBeenCalledWith({ threadId: "t_ad" }));
@@ -155,11 +166,11 @@ describe("AdvertLockButton", () => {
 
   it("reports a refusal and leaves the page as it was", async () => {
     mockLock.mockRejectedValue(new Error("Only the realm's founder can."));
-    render(<AdvertLockButton threadId="t_ad" locked />);
-    fireEvent.click(screen.getByRole("button", { name: "Unlock advert" }));
+    render(<AdvertLockButton threadId="t_ad" />);
+    fireEvent.click(screen.getByRole("button", { name: "Lock advert" }));
     await waitFor(() =>
       expect(mockNotify.error).toHaveBeenCalledWith(
-        "Could not unlock the advert",
+        "Could not lock the advert",
         "Only the realm's founder can."
       )
     );
@@ -167,14 +178,14 @@ describe("AdvertLockButton", () => {
   });
 
   it("is an icon button with the same accessible name and no visible text in a compact header", () => {
-    render(<AdvertLockButton threadId="t_ad" locked={false} iconOnly />);
+    render(<AdvertLockButton threadId="t_ad" iconOnly />);
     const button = screen.getByRole("button", { name: "Lock advert" });
     expect(button.textContent).toBe("");
     expect(button.querySelector("svg")).not.toBeNull();
   });
 
   it("keeps a touch-sized target", () => {
-    render(<AdvertLockButton threadId="t_ad" locked={false} />);
+    render(<AdvertLockButton threadId="t_ad" />);
     expect(screen.getByRole("button", { name: "Lock advert" }).className).toContain(
       "pointer-coarse:min-h-11"
     );

@@ -447,7 +447,6 @@ const advertOf = (over: object = {}) => ({
   canManage: false,
   closed: false,
   canLock: false,
-  canUnlock: false,
   ...over,
 });
 
@@ -481,16 +480,35 @@ describe("a Find a Realm advert thread", () => {
     expect(screen.getByText("This thread is locked.")).toBeInTheDocument();
   });
 
-  it("keeps the hidden and imported notices", () => {
-    const base = threadData();
+  it("shows the notices in order: hidden, imported, archived, then the card, all before the feed", () => {
+    const base = threadData({ locked: true, canReply: false });
     set({
       ...base,
       thread: { ...base.thread, hidden: true, xenforoThreadId: 12 },
-      advert: advertOf(),
+      advert: advertOf({ closed: true }),
     });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("This thread is hidden from members.")).toBeInTheDocument();
-    expect(screen.getByText("Imported from the old forum.")).toBeInTheDocument();
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    const feed = container.querySelector('[data-content="feed"]')!;
+    const ordered = [
+      screen.getByText("This thread is hidden from members."),
+      screen.getByText("Imported from the old forum."),
+      screen.getByText(/Realm archived/),
+      screen.getByTestId("advert-card"),
+      feed,
+    ];
+    ordered.slice(1).forEach((node, index) => {
+      expect(
+        ordered[index]!.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+  });
+
+  it("keeps the realm card outside the feed pane, so glass never sits on glass", () => {
+    set({ ...threadData(), advert: advertOf() });
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    const feed = container.querySelector('[data-content="feed"]')!;
+    expect(feed).not.toContainElement(screen.getByTestId("advert-card"));
+    expect(screen.getByTestId("advert-card").closest('[data-slot="card"]')).toBeNull();
   });
 });
 

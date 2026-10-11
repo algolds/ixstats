@@ -167,7 +167,6 @@ describe("an advert on the thread page", () => {
       canManage: false,
       closed: false,
       canLock: false,
-      canUnlock: false,
     });
     expect(out).not.toHaveProperty("advertRealm");
     expect(JSON.stringify(out)).not.toContain("ownerId");
@@ -247,46 +246,69 @@ describe("an advert on the thread page", () => {
   });
 });
 
-describe("who may lock or unlock an advert, as the thread page is told", () => {
+describe("who may lock an advert, as the thread page is told", () => {
   const rights = async (viewer: object, db: object) =>
     (await caller(viewer, db).thread({ threadId: "t_ad", page: 1 })).advert;
+  const grants = [{ userId: "officer", powers: ["appearance"] }];
+  const bannedFrom = (db: object, userId: string) => ({
+    ...db,
+    forumBan: forumBanFake([banRow({ userId, scope: "site" })]),
+  });
+  /** The viewer also moderates the Find a Realm category. */
+  const moderating = (db: object) => ({
+    ...db,
+    forumCategoryModerator: { findMany: jest.fn(async () => [{ categoryId: "cat_find" }]) },
+  });
+  const hidden = (db: ReturnType<typeof advertDb>) => ({
+    ...db,
+    forumThread: {
+      ...db.forumThread,
+      findUnique: jest.fn(async () => ({
+        ...(await db.forumThread.findUnique()),
+        hidden: true,
+      })),
+    },
+  });
 
   it("lets a manager lock it and nobody who only reads it", async () => {
-    const grants = [{ userId: "officer", powers: ["appearance"] }];
-    expect(await rights(founder, advertDb(ACTIVE))).toMatchObject({
-      canLock: true,
-      canUnlock: false,
-    });
+    expect(await rights(founder, advertDb(ACTIVE))).toMatchObject({ canLock: true });
     expect(await rights(officer, advertDb(ACTIVE, grants))).toMatchObject({ canLock: true });
     expect(await rights(officer, advertDb(ACTIVE))).toMatchObject({ canLock: false });
-    expect(await rights(member, advertDb(ACTIVE))).toMatchObject({
-      canLock: false,
-      canUnlock: false,
+    expect(await rights(member, advertDb(ACTIVE))).toMatchObject({ canLock: false });
+  });
+
+  it("does not offer an unlock flag: unlocking is the moderator's, in the thread bar", async () => {
+    expect(await rights(admin, advertDb(ACTIVE))).not.toHaveProperty("canUnlock");
+  });
+
+  it("offers it to a manager who is also a moderator of the category", async () => {
+    expect(await rights(officer, moderating(advertDb(ACTIVE, grants)))).toMatchObject({
+      canManage: true,
+      canLock: true,
     });
   });
 
-  it("lets a moderator unlock it, as the admin-content rule allows", async () => {
-    expect(await rights(admin, advertDb(ACTIVE))).toMatchObject({ canUnlock: true });
+  it("offers nothing on a hidden advert, which setAdvertLocked answers as not found", async () => {
+    const db = moderating(hidden(advertDb(ACTIVE, grants)));
+    expect(await rights(officer, db)).toMatchObject({ canManage: true, canLock: false });
+    expect(await rights(admin, hidden(advertDb(ACTIVE)))).toMatchObject({ canLock: false });
   });
 
-  it("offers neither on an archived realm's advert, which stays locked", async () => {
+  it("offers nothing on an archived realm's advert, which stays locked", async () => {
     expect(await rights(founder, advertDb(ARCHIVED))).toMatchObject({
       closed: true,
       canLock: false,
-      canUnlock: false,
     });
-    expect(await rights(admin, advertDb(ARCHIVED))).toMatchObject({
-      canLock: false,
-      canUnlock: false,
-    });
+    expect(await rights(admin, advertDb(ARCHIVED))).toMatchObject({ canLock: false });
   });
 
-  it("offers neither to a viewer banned from the board, as the lock would refuse them", async () => {
-    const banned = {
-      ...advertDb(ACTIVE),
-      forumBan: forumBanFake([banRow({ userId: "u_f", scope: "site" })]),
-    };
-    expect(await rights(founder, banned)).toMatchObject({ canLock: false, canUnlock: false });
+  it("offers nothing to a viewer banned from the board, founder or appearance officer", async () => {
+    expect(await rights(founder, bannedFrom(advertDb(ACTIVE), "u_f"))).toMatchObject({
+      canLock: false,
+    });
+    expect(
+      await rights(officer, bannedFrom(moderating(advertDb(ACTIVE, grants)), "u_off"))
+    ).toMatchObject({ canManage: true, canLock: false });
   });
 });
 
