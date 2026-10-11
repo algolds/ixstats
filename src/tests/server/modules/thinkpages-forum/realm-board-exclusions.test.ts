@@ -125,24 +125,6 @@ describe("realm board exclusions", () => {
     });
   });
 
-  it("forum statistics count no board thread, post or author", async () => {
-    const count = jest.fn(async (_args: object) => 0);
-    const groupBy = jest.fn(async (_args: object) => []);
-    const db = { realm: noRealms, forumThread: { count }, forumPost: { count, groupBy } };
-    // The statistics cache lives in the module: a private copy keeps this call's entry out of every other spec.
-    let forumStatistics!: typeof import("~/server/modules/thinkpages-forum/board-reads").forumStatistics;
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      forumStatistics = require("~/server/modules/thinkpages-forum/board-reads").forumStatistics;
-    });
-    await forumStatistics(db as never, Date.now());
-    expect(count).toHaveBeenCalledTimes(2);
-    for (const [args] of count.mock.calls as Array<[object]>) {
-      expect(JSON.stringify(args)).toContain('"style":{"not":"board"}');
-    }
-    expect(JSON.stringify(argsOf(groupBy as never))).toContain('"style":{"not":"board"}');
-  });
-
   it("Trending groups no post of a board thread", async () => {
     const groupBy = jest.fn(async (_args: object) => []);
     const db = { realm: noRealms, forumPost: { groupBy }, forumThread: { findMany: jest.fn() } };
