@@ -7,8 +7,10 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { BOARD_EDIT_WINDOW_MS, boardExcerpt } from "~/lib/thinkpages-forum/board";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
+import { readReactionCounts, type ReactionCounts } from "~/lib/thinkpages-forum/reactions";
 import { canSeeThread, type ForumViewer } from "./access";
 import { authorModeration, type AuthorModerationOf } from "./mod-authors";
+import { myReactionsOf } from "./reaction-attach";
 import { canSeeRealm, loadForumRealm, type ForumRealm } from "./realm-access";
 import { authorsOf, type AuthorsDb } from "./reads";
 import { roleContextOf, roleOf, type PostRole } from "./thread-extras";
@@ -16,7 +18,13 @@ import { roleContextOf, roleOf, type PostRole } from "./thread-extras";
 export type BoardMessageDb = AuthorsDb &
   Pick<
     PrismaClient,
-    "forumPost" | "forumThread" | "country" | "realm" | "realmOfficer" | "forumCategoryModerator"
+    | "forumPost"
+    | "forumThread"
+    | "forumPostReaction"
+    | "country"
+    | "realm"
+    | "realmOfficer"
+    | "forumCategoryModerator"
   >;
 
 /** What the board shows of an author: the persona, else the player, else the imported name. */
@@ -48,6 +56,10 @@ export interface BoardMessage {
   moderable?: boolean;
   /** Present for moderators only: the viewer may warn or ban its author. Never on the wire. */
   sanctionable?: boolean;
+  /** The message's `{type: count}` reactions. */
+  reactions: ReactionCounts;
+  /** The viewer's own reaction type; null for a signed-out viewer. Never sent over the live socket. */
+  myReaction: string | null;
   byViewer: boolean;
   /** The viewer wrote it and it is within the edit window (the server asks again on edit). */
   canEdit: boolean;
@@ -70,6 +82,7 @@ export const BOARD_POST_SELECT = {
   hidden: true,
   replyToPostId: true,
   continuedThreadId: true,
+  reactionCounts: true,
 } as const satisfies Prisma.ForumPostSelect;
 
 export type BoardRow = Prisma.ForumPostGetPayload<{ select: typeof BOARD_POST_SELECT }>;
@@ -238,6 +251,7 @@ function messageOf(
     role: PostRole | null;
     visitor: { slug: string; name: string } | null | undefined;
     moderation: AuthorModerationOf | null;
+    myReaction: string | null;
   },
   now: number
 ): BoardMessage {
@@ -258,6 +272,8 @@ function messageOf(
     editedAt: row.editedAt,
     ...(place.canModerate ? { hidden: row.hidden } : {}),
     ...(extras.moderation ? extras.moderation(row.authorUserId, place.category) : {}),
+    reactions: readReactionCounts(row.reactionCounts),
+    myReaction: extras.myReaction,
     byViewer,
     canEdit:
       byViewer &&
@@ -277,9 +293,14 @@ export async function shapeBoardMessages(
   rows: readonly BoardRow[]
 ): Promise<BoardMessage[]> {
   if (rows.length === 0) return [];
-  const [look, roles] = await Promise.all([
+  const [look, roles, mine] = await Promise.all([
     lookups(db, viewer, place, rows),
     roleContextOf(db, { authorUserId: null, authorPersonaId: null }, place.category, rows),
+    myReactionsOf(
+      db,
+      viewer,
+      rows.map((row) => row.id)
+    ),
   ]);
   const staffed = new Set([...roles.staffUserIds, ...roles.officerUserIds]);
   const visitors = await visitorRealms(
@@ -309,6 +330,7 @@ export async function shapeBoardMessages(
             ? visitors.get(row.authorUserId)
             : undefined,
         moderation,
+        myReaction: mine.get(row.id) ?? null,
       },
       now
     )

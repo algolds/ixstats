@@ -3,6 +3,7 @@ import {
   BOARD_POLL_MS,
   BOARD_TYPING_EXPIRY_MS,
   boardLiveEventSchema,
+  boardLiveMessageSchema,
   boardRefetchInterval,
   boardRoomOf,
   removeBoardMessage,
@@ -21,6 +22,7 @@ const live = (id: string, createdAt = "2026-10-10T12:00:00.000Z"): BoardLiveMess
   isVisitor: false,
   visitorRealm: null,
   contentHtml: "<p>hi</p>",
+  reactions: {},
   createdAt,
   editedAt: null,
   replyTo: null,
@@ -134,5 +136,41 @@ describe("removeBoardMessage", () => {
     const list = [item("p2", 2), item("p1", 1)];
     expect(removeBoardMessage(list, "p2").map((m) => m.id)).toEqual(["p1"]);
     expect(removeBoardMessage(list, "nope")).toBe(list);
+  });
+});
+
+describe("boardLiveMessageSchema reactions", () => {
+  const message = {
+    id: "p1",
+    authorUserId: null,
+    authorPersonaId: null,
+    importedAuthorName: null,
+    author: { name: "kir", handle: "kir", avatarUrl: null, flagUrl: null, persona: false },
+    role: null,
+    isVisitor: false,
+    visitorRealm: null,
+    contentHtml: "<p>hi</p>",
+    createdAt: "2026-10-10T12:00:00.000Z",
+    editedAt: null,
+    replyTo: null,
+    continued: null,
+  };
+
+  it("defaults to no reactions, so an older server's event still parses", () => {
+    expect(boardLiveMessageSchema.parse(message).reactions).toEqual({});
+  });
+
+  it("carries the counts and rejects a count that is not a number", () => {
+    expect(boardLiveMessageSchema.parse({ ...message, reactions: { like: 2 } }).reactions).toEqual({
+      like: 2,
+    });
+    expect(boardLiveMessageSchema.safeParse({ ...message, reactions: { like: "2" } }).success).toBe(
+      false
+    );
+  });
+
+  it("drops a viewer's own reaction if one is sent", () => {
+    const parsed = boardLiveMessageSchema.parse({ ...message, myReaction: "like" });
+    expect(parsed).not.toHaveProperty("myReaction");
   });
 });

@@ -52,6 +52,7 @@ const live = (
   isVisitor: false,
   visitorRealm: null,
   contentHtml: `<p>${id}</p>`,
+  reactions: {},
   createdAt: new Date(Date.UTC(2026, 9, 10, 12, minute)).toISOString(),
   editedAt: null,
   replyTo: null,
@@ -65,6 +66,7 @@ const stored = (id: string, minute: number, extra: object = {}) => ({
   editedAt: null,
   byViewer: false,
   canEdit: false,
+  myReaction: null,
   ...extra,
 });
 
@@ -395,6 +397,40 @@ describe("useRealmBoardLive cache merge", () => {
     expect(() =>
       send({ type: "board:message", realmId: "r_eurth", message: live("p1", 1) })
     ).not.toThrow();
+  });
+});
+
+describe("useRealmBoardLive reactions", () => {
+  it("takes a live message's counts and keeps the viewer's own reaction from the cached copy", () => {
+    client.setQueryData(
+      FIRST,
+      page([stored("p1", 1, { reactions: { like: 1 }, myReaction: "like" })])
+    );
+    mount(true);
+    send({
+      type: "board:updated",
+      realmId: "r_eurth",
+      change: { type: "updated", message: live("p1", 1, { reactions: { like: 2, fire: 1 } }) },
+    });
+    expect(client.getQueryData<Page>(FIRST)!.messages[0]).toMatchObject({
+      reactions: { like: 2, fire: 1 },
+      myReaction: "like",
+    });
+  });
+
+  it("gives a message first seen on the wire no reaction of the viewer's", () => {
+    client.setQueryData(FIRST, page([stored("p1", 1)]));
+    mount(true);
+    send({
+      type: "board:message",
+      realmId: "r_eurth",
+      message: live("p2", 2, { reactions: { fire: 3 } }),
+    });
+    expect(client.getQueryData<Page>(FIRST)!.messages[0]).toMatchObject({
+      id: "p2",
+      reactions: { fire: 3 },
+      myReaction: null,
+    });
   });
 });
 

@@ -44,6 +44,8 @@ export const boardLiveMessageSchema = z.object({
   isVisitor: z.boolean(),
   visitorRealm: realmRefSchema.nullable(),
   contentHtml: z.string(),
+  /** The message's `{type: count}`; the viewer's own reaction never goes on the wire. */
+  reactions: z.record(z.string(), z.number()).default({}),
   /** ISO time. */
   createdAt: z.string(),
   editedAt: z.string().nullable(),

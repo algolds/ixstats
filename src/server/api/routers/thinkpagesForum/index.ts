@@ -54,9 +54,11 @@ import {
   TITLE_MAX,
   threadLastPosters,
   threadParticipants,
+  threadReactable,
   TITLE_MIN,
   trendingThreads,
   unstashThread,
+  withReactions,
   withUnreadCounts,
   type AuthorModerationDb,
   type ContentDb,
@@ -232,6 +234,7 @@ const forumRouter = createTRPCRouter({
       input.threadId,
       input.page
     ).catch(mapError);
+    const reacted = await withReactions(ctx.db, viewer, result.posts);
     // The single posting-access entry (T0-2): reply, Edit, the notice and the ban flag all come from it, with the
     // realm the read already loaded (N1).
     const access = await postingAccessFor(ctx.db, viewer, result.category, forumRealm);
@@ -254,7 +257,7 @@ const forumRouter = createTRPCRouter({
       // hidden posts (T0-19). `byViewer` is authorship (no Report on your own post); `isOwn` is "may edit it now".
       // An imported post without an IxStats author (null, phase 4) is never the viewer's. A Canvas post's wikitext
       // (what its editor opens) goes only to the author who may edit it now, never to another reader or a moderator.
-      posts: result.posts.map(({ hidden, contentWikitext, ...post }, index) => {
+      posts: reacted.map(({ hidden, contentWikitext, ...post }, index) => {
         const byViewer = viewer !== null && post.authorUserId === viewer.id;
         const isOwn = byViewer && editable && !hidden;
         return maskPersona(
@@ -273,6 +276,7 @@ const forumRouter = createTRPCRouter({
       viewerIsAuthor: viewer !== null && result.thread.authorUserId === viewer.id,
       watching: viewer ? await isWatching(ctx.db, viewer.id, input.threadId) : false,
       canReply,
+      canReact: threadReactable(viewer, result.thread, access.ban !== null, forumRealm),
       notice: access.notice,
       banned: access.ban !== null,
       // The thread bar's actions (lock, pin, hide, archive, move): a site admin's thread is site admins' only.

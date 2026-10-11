@@ -260,6 +260,7 @@ describe("ThinkPagesWebSocketServer anonymous readers", () => {
         isVisitor: false,
         visitorRealm: null,
         contentHtml: "<p>hi</p>",
+        reactions: {},
         createdAt: "2026-10-10T12:00:00.000Z",
         editedAt: null,
         replyTo: null,

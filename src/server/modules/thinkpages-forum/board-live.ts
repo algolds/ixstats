@@ -2,9 +2,9 @@
  * Live delivery of a realm board (docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md, section 2).
  * Every board write publishes what the room's readers need through the ThinkPages broadcaster: in-process, or over
  * Redis to `ixstats-ws`. A payload is the public shape of the message: viewer-independent (no `byViewer`, `canEdit`,
- * `hidden`) and persona-safe (no player id on a persona's message, none of the player's own flag, name or role). A
- * hidden message is never sent: hiding it is a removal. Moderator-only data is never broadcast; moderators refresh
- * their copy through the query. Publishing never fails the write that caused it.
+ * `hidden`, `myReaction`) and persona-safe (no player id on a persona's message, none of the player's own flag, name
+ * or role). A hidden message is never sent: hiding it is a removal. Moderator-only data is never broadcast;
+ * moderators refresh their copy through the query. Publishing never fails the write that caused it.
  */
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import type {
@@ -55,6 +55,7 @@ export function boardMessagePayload(message: BoardMessage): BoardLiveChange {
       ? { slug: message.visitorRealm.slug, name: message.visitorRealm.name }
       : null,
     contentHtml: message.contentHtml,
+    reactions: message.reactions,
     createdAt: message.createdAt.toISOString(),
     editedAt: message.editedAt?.toISOString() ?? null,
     replyTo: message.replyTo

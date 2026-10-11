@@ -619,6 +619,74 @@ describe("thinkpagesForum router", () => {
     expect(JSON.stringify(out)).not.toContain("disc#2");
   });
 
+  describe("thread page reactions", () => {
+    const reacted = (id: string, reactionCounts: object | string) => ({
+      id,
+      authorUserId: "u2",
+      authorPersonaId: null,
+      importedAuthorName: null,
+      contentHtml: `<p>${id}</p>`,
+      editedAt: null,
+      createdAt: when,
+      reactionCounts,
+    });
+    function reactedDb(thread: object = {}, bans: BanRow[] = []) {
+      const db = forumDb(thread, bans);
+      db.forumPost.findMany.mockResolvedValue([
+        reacted("p1", { fire: 2, like: 1 }),
+        reacted("p2", {}),
+      ] as never);
+      return db;
+    }
+
+    it("gives each post its counts and the reader's own reaction from one batched query", async () => {
+      const db = reactedDb();
+      db.forumPostReaction.findMany.mockResolvedValue([{ postId: "p1", type: "fire" }]);
+      const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
+      expect(out.posts.map((p) => p.reactions)).toEqual([{ fire: 2, like: 1 }, {}]);
+      expect(out.posts.map((p) => p.myReaction)).toEqual(["fire", null]);
+      expect(db.forumPostReaction.findMany).toHaveBeenCalledTimes(1);
+      expect(db.forumPostReaction.findMany).toHaveBeenCalledWith({
+        where: { userId: "u1", postId: { in: ["p1", "p2"] } },
+        select: { postId: true, type: true },
+      });
+      expect(JSON.stringify(out)).not.toContain("reactionCounts");
+    });
+
+    it("gives a signed-out reader the counts, no reaction of their own and no reacting, without a query", async () => {
+      const db = reactedDb();
+      const out = await caller(null, db).thread({ threadId: "t1", page: 1 });
+      expect(out.posts.map((p) => p.reactions)).toEqual([{ fire: 2, like: 1 }, {}]);
+      expect(out.posts.map((p) => p.myReaction)).toEqual([null, null]);
+      expect(out.canReact).toBe(false);
+      expect(db.forumPostReaction.findMany).not.toHaveBeenCalled();
+    });
+
+    it("offers reacting on an open thread, and not on a closed one or to a banned member", async () => {
+      expect((await caller(member, reactedDb()).thread({ threadId: "t1", page: 1 })).canReact).toBe(
+        true
+      );
+      for (const closed of [{ locked: true }, { archived: true }]) {
+        const out = await caller(member, reactedDb(closed)).thread({ threadId: "t1", page: 1 });
+        expect(out.canReact).toBe(false);
+      }
+      const banned = reactedDb({}, [banRow({ userId: "u1", scope: "site" })]);
+      expect((await caller(member, banned).thread({ threadId: "t1", page: 1 })).canReact).toBe(
+        false
+      );
+    });
+
+    it("reads a corrupt counts column as no reactions", async () => {
+      const db = forumDb();
+      db.forumPost.findMany.mockResolvedValue([
+        reacted("p1", "garbage"),
+        reacted("p2", [1]),
+      ] as never);
+      const out = await caller(member, db).thread({ threadId: "t1", page: 1 });
+      expect(out.posts.map((p) => p.reactions)).toEqual([{}, {}]);
+    });
+  });
+
   describe("thread page authors, numbers, roles and participants", () => {
     const post = (id: string, authorUserId: string | null, authorPersonaId: string | null) => ({
       id,

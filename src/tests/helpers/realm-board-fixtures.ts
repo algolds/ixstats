@@ -32,6 +32,8 @@ export function boardMessage(overrides: Partial<FixtureMessage> = {}): FixtureMe
     canEdit: false,
     replyTo: null,
     continued: null,
+    reactions: {},
+    myReaction: null,
     ...overrides,
   };
 }
