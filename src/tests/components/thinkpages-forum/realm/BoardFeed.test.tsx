@@ -413,6 +413,63 @@ describe("BoardFeed", () => {
     });
   });
 
+  describe("seeking a linked message", () => {
+    const seekTo = (postId: string) => ({ postId, found: jest.fn() });
+
+    it("pages back by itself until the message is on screen, then stops", () => {
+      pages.p1 = { data: boardData([msg("o2"), msg("o1")], { hasMore: true }) };
+      pages.o1 = { data: boardData([msg("n2"), msg("n1")], { hasMore: true }) };
+      pages.n1 = { data: boardData([msg("z1")]) };
+      const seek = seekTo("n2");
+      render(
+        <BoardFeed
+          {...feedProps(boardData([msg("p3"), msg("p2"), msg("p1")], { hasMore: true }), { seek })}
+        />
+      );
+      expect(order()).toEqual(["p3", "p2", "p1", "o2", "o1", "n2", "n1"]);
+      expect(asked).toContainEqual({ realm: "eurth", before: "o1" });
+      expect(asked.some((a) => a.before === "n1")).toBe(false);
+      expect(seek.found).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText(/older than what is loaded/)).toBeNull();
+      // The pages already loaded stay, and the next one waits for the reader.
+      expect(screen.getByRole("button", { name: "Load earlier messages" })).toBeInTheDocument();
+    });
+
+    it("finds a message that is already on the first page without paging", () => {
+      const seek = seekTo("p2");
+      render(
+        <BoardFeed {...feedProps(boardData([msg("p3"), msg("p2")], { hasMore: true }), { seek })} />
+      );
+      expect(seek.found).toHaveBeenCalledTimes(1);
+      expect(asked.some((a) => a.before)).toBe(false);
+    });
+
+    it("gives up after ten pages and says the message is older than what is loaded", () => {
+      for (let i = 0; i < 12; i++) {
+        pages[`m${i}`] = { data: boardData([msg(`m${i + 1}`)], { hasMore: true }) };
+      }
+      const seek = seekTo("never");
+      render(<BoardFeed {...feedProps(boardData([msg("m0")], { hasMore: true }), { seek })} />);
+      expect(asked.filter((a) => a.before)).toHaveLength(10);
+      expect(screen.getAllByText("That message is older than what is loaded.")).toHaveLength(1);
+      expect(seek.found).not.toHaveBeenCalled();
+      // The reader can go on looking by hand.
+      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+      expect(asked.filter((a) => a.before)).toHaveLength(11);
+    });
+
+    it("says so when the whole board is loaded and the message is not on it", () => {
+      render(<BoardFeed {...feedProps(undefined, { seek: seekTo("gone") })} />);
+      expect(screen.getByText("That message is no longer on this board.")).toBeInTheDocument();
+    });
+
+    it("looks for nothing without a link", () => {
+      render(<BoardFeed {...feedProps(boardData([msg("p1")], { hasMore: true }))} />);
+      expect(asked.some((a) => a.before)).toBe(false);
+      expect(screen.queryByText(/That message/)).toBeNull();
+    });
+  });
+
   it("reports the newest message as seen while at the top, and a newer one once the reader is back at the top", () => {
     const onSeen = jest.fn();
     const onAway = jest.fn();

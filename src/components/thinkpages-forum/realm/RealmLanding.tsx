@@ -96,7 +96,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
     canManageSettings: access.canManageSettings && realm.hasRow,
   };
   usePageTitle({ title: realm.name });
-  useScrollToMessageHash(data.messages.length);
+  const seek = useScrollToMessageHash();
 
   const composer = useRef<BoardComposerHandle>(null);
   const startConversation = useCallback(() => composer.current?.focus(), []);
@@ -185,6 +185,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         paused={live.paused}
         signedIn={!!isSignedIn}
         tools={tools}
+        seek={seek}
         showLatest={showLatest}
         onReply={startReply}
         onQuote={startQuote}
