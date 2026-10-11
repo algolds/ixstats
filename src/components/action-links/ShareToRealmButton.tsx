@@ -32,7 +32,7 @@ export function ShareToRealmButton({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" size="sm" className={cn("h-11 sm:h-8", className)}>
+        <Button type="button" variant="outline" size="sm" className={cn("h-11 sm:h-8", className)}>
           <ChatBubble aria-hidden="true" />
           Discuss in the forum
         </Button>
