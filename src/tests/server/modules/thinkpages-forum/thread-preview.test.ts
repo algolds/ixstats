@@ -102,6 +102,13 @@ const USERS = [
     country: { name: "Eurth", flag: "https://flags.example/eurth.png" },
   },
   {
+    id: "u2",
+    handle: "bob",
+    wikiUsername: null,
+    clerkUserId: "clerk_u2",
+    country: null,
+  },
+  {
     id: "u_secret",
     handle: "secretplayer",
     wikiUsername: null,
@@ -235,6 +242,23 @@ describe("latestPublicThreadPreviews", () => {
       where: { threadId: { in: ["t1"] }, hidden: false },
       distinct: ["threadId"],
       orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+    });
+  });
+
+  it("calls a lone visible reply a reply when the opening post is hidden", async () => {
+    const fake = fakeDb({
+      listing: [listed("t3", 1)],
+      posts: [
+        post("p1", "t3", { hidden: true, plainText: "Hidden opening post", createdAt: EARLIER }),
+        post("p2", "t3", { authorUserId: "u2", plainText: "A reply by someone else" }),
+      ],
+    });
+    const [out] = await latestPublicThreadPreviews(fake.db, 20);
+    expect(out!.preview).toMatchObject({
+      kind: "reply",
+      excerpt: "A reply by someone else",
+      author: { name: "bob" },
+      replyCount: 0,
     });
   });
 

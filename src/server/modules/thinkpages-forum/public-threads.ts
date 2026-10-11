@@ -142,31 +142,31 @@ async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<Publ
   });
 }
 
-/** The newest public threads by last activity. */
-export async function latestPublicThreads(
-  db: PublicThreadsDb,
-  limit: number
-): Promise<PublicForumThread[]> {
-  const rows = await db.forumThread.findMany({
-    where: await publicThreadWhere(db),
-    orderBy: { lastPostAt: "desc" },
-    take: limit,
-    select: THREAD_SELECT,
-  });
-  return withAuthors(db, rows);
+/** Who wrote a thread or post, as an opaque token two rows can be compared by (a persona, a member, else an imported name). */
+export function authorRef(row: {
+  authorUserId: string | null;
+  authorPersonaId: string | null;
+  importedAuthorName: string | null;
+}): string {
+  if (row.authorPersonaId) return `persona:${row.authorPersonaId}`;
+  return row.authorUserId ? `user:${row.authorUserId}` : `imported:${row.importedAuthorName ?? ""}`;
 }
 
-/** A listed thread with the category it sits in and whether a persona wrote it (never which one, or its player). */
+/**
+ * A listed thread with the category it sits in, whether a persona wrote it (never which one, or its player) and
+ * `starter`, the opaque `authorRef` of its author. `starter` is for comparison inside the module, never for output.
+ */
 export type PlacedThread = PublicForumThread & {
   placement: PublicThreadPlacement;
   persona: boolean;
+  starter: string;
 };
 
 /**
- * `latestPublicThreads` for post previews: the same query and the same where, each thread with its category, and
- * the published realms the same realm read gave (so a preview needs no second realm query).
+ * The newest public threads by last activity, each with its category, and the published realms the same realm read
+ * gave (so a preview needs no second realm query). Trending reads `threads` alone.
  */
-export async function latestPublicThreadsPlaced(
+export async function latestPublicThreads(
   db: PublicThreadsDb,
   limit: number
 ): Promise<{ threads: PlacedThread[]; realms: PublishedRealm[] }> {
@@ -183,6 +183,7 @@ export async function latestPublicThreadsPlaced(
       ...thread,
       placement: rows[index]!.category,
       persona: Boolean(rows[index]!.authorPersonaId),
+      starter: authorRef(rows[index]!),
     })),
     realms,
   };

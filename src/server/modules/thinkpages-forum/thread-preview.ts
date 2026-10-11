@@ -1,9 +1,9 @@
 /**
- * The Home feed's forum items as post previews (sub-project 7): for each public thread `latestPublicThreadsPlaced`
+ * The Home feed's forum items as post previews (sub-project 7): for each public thread `latestPublicThreads`
  * lists, the post the item refers to (a thread nobody answered: its first visible post; otherwise its newest visible
  * post), its persona-safe author, the board and realm it sits in, and the post's reaction total. Reads only the
  * listed threads, so the realm board (which `publicThreadWhere` leaves out) can never be previewed, and only visible
- * posts. The listing itself is `latestPublicThreads`' query: Trending reads that one, untouched.
+ * posts. The listing is `latestPublicThreads`' query, which Trending reads too.
  *
  * Queries for N listed threads: the listing with its authors and the published realms (the one realm read), one
  * `findMany` for the unanswered threads' first posts (one per thread, even if a post count is stale), one for the
@@ -11,7 +11,7 @@
  * an answered thread whose newest post is hidden.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { categoryHref, postHref } from "~/lib/thinkpages-forum/links";
 import {
   FEED_EXCERPT_MAX,
@@ -20,8 +20,10 @@ import {
 } from "~/lib/thinkpages-forum/preview";
 import { readReactionCounts, reactionTotal } from "~/lib/thinkpages-forum/reactions";
 import { authorsOf, previewAuthorOf, type AuthorMaps } from "./authors";
+import { IXWORLD_REALM } from "./realm-access";
 import {
-  latestPublicThreadsPlaced,
+  authorRef,
+  latestPublicThreads,
   type PlacedThread,
   type PublicForumThread,
   type PublishedRealm,
@@ -108,7 +110,7 @@ function realmsById(published: readonly PublishedRealm[]): Map<string, ForumFeed
   for (const { id, slug, name, emblemUrl, thumbnail } of published) {
     // IxWorld always goes by its `ixworld` slug, even when its row carries the legacy slug "default".
     out.set(id, {
-      slug: id === DEFAULT_REALM_ID ? IXWORLD_SLUG : slug,
+      slug: id === DEFAULT_REALM_ID ? IXWORLD_REALM.slug : slug,
       name,
       emblemUrl,
       thumbnail,
@@ -116,13 +118,18 @@ function realmsById(published: readonly PublishedRealm[]): Map<string, ForumFeed
   }
   if (!out.has(DEFAULT_REALM_ID)) {
     out.set(DEFAULT_REALM_ID, {
-      slug: IXWORLD_SLUG,
-      name: "IxWorld",
+      slug: IXWORLD_REALM.slug,
+      name: IXWORLD_REALM.name,
       emblemUrl: null,
       thumbnail: null,
     });
   }
   return out;
+}
+
+/** A preview says "started a thread" for an unanswered thread's first post by the thread's own author; any other post is a reply. */
+function startsThread(thread: PlacedThread, post: PostRow | undefined): boolean {
+  return thread.replyCount === 0 && (!post || authorRef(post) === thread.starter);
 }
 
 function previewOf(
@@ -146,7 +153,7 @@ function previewOf(
     title: thread.title,
     threadHref: thread.href,
     postHref: post ? postHref(post.id) : thread.href,
-    kind: thread.replyCount === 0 ? "thread" : "reply",
+    kind: startsThread(thread, post) ? "thread" : "reply",
     excerpt: post ? previewExcerpt(post.plainText, FEED_EXCERPT_MAX) : "",
     author: post
       ? previewAuthorOf(post, authors, thread.author)
@@ -175,11 +182,11 @@ export async function withThreadPreviews(
     shown.map((p) => p.authorPersonaId)
   );
   const realms = realmsById(published);
-  return threads.map(({ placement, persona, ...thread }) => {
+  return threads.map(({ placement, persona, starter, ...thread }) => {
     const post = posts.get(thread.id);
     return {
       ...thread,
-      preview: previewOf({ ...thread, placement, persona }, post, authors, realms),
+      preview: previewOf({ ...thread, placement, persona, starter }, post, authors, realms),
       postedAt: post?.createdAt ?? null,
     };
   });
@@ -190,6 +197,6 @@ export async function latestPublicThreadPreviews(
   db: ThreadPreviewDb,
   limit: number
 ): Promise<PreviewedThread[]> {
-  const { threads, realms } = await latestPublicThreadsPlaced(db, limit);
+  const { threads, realms } = await latestPublicThreads(db, limit);
   return withThreadPreviews(db, threads, realms);
 }

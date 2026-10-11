@@ -71,7 +71,7 @@ const PUBLIC_WHERE = {
 describe("latestPublicThreads", () => {
   it("lists the newest visible threads in public categories of the site and published realms", async () => {
     const { db, findMany } = fakeDb([THREAD]);
-    const threads = await latestPublicThreads(db, 20);
+    const { threads } = await latestPublicThreads(db, 20);
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: PUBLIC_WHERE,
@@ -89,6 +89,9 @@ describe("latestPublicThreads", () => {
         createdAt: NOW,
         lastPostAt: NOW,
         href: "/thinkpages/t/t1",
+        placement: { name: "General" },
+        persona: false,
+        starter: "user:u1",
       },
     ]);
   });
@@ -99,7 +102,7 @@ describe("latestPublicThreads", () => {
       { ...THREAD, id: "t3", authorUserId: null, importedAuthorName: "OldTimer" },
       { ...THREAD, id: "t4", authorUserId: null, importedAuthorName: null, postCount: 0 },
     ]);
-    const threads = await latestPublicThreads(db, 5);
+    const { threads } = await latestPublicThreads(db, 5);
     expect(threads.map((t) => t.author)).toEqual(["Herald", "OldTimer", "Member"]);
     expect(threads[2]!.replyCount).toBe(0);
   });

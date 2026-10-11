@@ -137,7 +137,7 @@ async function thinkpagesItems(db: PrismaClient): Promise<TrendingItem[]> {
 
 /** Native forum threads anyone may read (phase 4b), scored by replies with time decay. */
 async function forumItems(db: PrismaClient, now: number): Promise<TrendingItem[]> {
-  const threads = await latestPublicThreads(db, 25);
+  const { threads } = await latestPublicThreads(db, 25);
   return threads.map((thread): TrendingItem => ({
     id: `forum-${thread.id}`,
     title: thread.title,

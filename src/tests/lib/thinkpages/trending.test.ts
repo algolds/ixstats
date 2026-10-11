@@ -15,7 +15,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getRecentChanges: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("~/server/modules/thinkpages-forum", () => ({
-  latestPublicThreads: jest.fn().mockResolvedValue([]),
+  latestPublicThreads: jest.fn().mockResolvedValue({ threads: [], realms: [] }),
 }));
 
 import { describe, it, expect } from "@jest/globals";
@@ -396,18 +396,30 @@ describe("activities.getUnifiedTrending forum source (phase 4b)", () => {
   it("lists native public threads, scored by replies, linking to the thread", async () => {
     const db: any = createMockPrisma();
     const lastPostAt = new Date();
-    jest.mocked(latestPublicThreads).mockResolvedValueOnce([
-      {
-        id: "t1",
-        title: "Old forum favourites",
-        author: "jane",
-        categoryName: "General",
-        replyCount: 4,
-        createdAt: lastPostAt,
-        lastPostAt,
-        href: "/thinkpages/t/t1",
-      },
-    ]);
+    jest.mocked(latestPublicThreads).mockResolvedValueOnce({
+      threads: [
+        {
+          id: "t1",
+          title: "Old forum favourites",
+          author: "jane",
+          categoryName: "General",
+          replyCount: 4,
+          createdAt: lastPostAt,
+          lastPostAt,
+          href: "/thinkpages/t/t1",
+          placement: {
+            key: "general",
+            name: "General",
+            scope: "site",
+            realmId: null,
+            style: "ooc",
+          },
+          persona: false,
+          starter: "user:u1",
+        },
+      ],
+      realms: [],
+    });
     const caller = createCallerFactory(activitiesTrendingRouter)(
       createMockRouterContext({ db }) as never
     );
