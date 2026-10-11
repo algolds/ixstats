@@ -26,6 +26,8 @@ export interface AdvertRealmChoice {
   slug: string;
   name: string;
   advertThreadId: string | null;
+  /** A moderator hid the realm's advert: there is no thread to open, and no new one can be started. */
+  hiddenByModerator: boolean;
 }
 
 /** The thread id a manager may open: a moderator-hidden advert is no thread to them, so it reads as none. */
@@ -60,6 +62,7 @@ export async function advertRealmsOf(
     slug: row.slug,
     name: row.name,
     advertThreadId: openableId(row.advertThread),
+    hiddenByModerator: row.advertThread?.hidden === true,
   }));
 }
 

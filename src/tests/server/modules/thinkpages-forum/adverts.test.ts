@@ -254,8 +254,8 @@ describe("advertRealmsOf", () => {
       { slug: "zeta", name: "Zeta", advertThread: null },
     ]);
     await expect(advertRealmsOf(db as never, officer)).resolves.toEqual([
-      { slug: "eurth", name: "Eurth", advertThreadId: "t_ad" },
-      { slug: "zeta", name: "Zeta", advertThreadId: null },
+      { slug: "eurth", name: "Eurth", advertThreadId: "t_ad", hiddenByModerator: false },
+      { slug: "zeta", name: "Zeta", advertThreadId: null, hiddenByModerator: false },
     ]);
     expect(db.realm.findMany).toHaveBeenCalledWith({
       where: {
@@ -274,13 +274,13 @@ describe("advertRealmsOf", () => {
     });
   });
 
-  it("offers no thread to open for an advert a moderator hid", async () => {
+  it("offers no thread to open for an advert a moderator hid, and says it was hidden", async () => {
     const db = advertDb();
     db.realm.findMany.mockResolvedValue([
       { slug: "eurth", name: "Eurth", advertThread: { id: "t_ad", hidden: true } },
     ]);
     await expect(advertRealmsOf(db as never, founder)).resolves.toEqual([
-      { slug: "eurth", name: "Eurth", advertThreadId: null },
+      { slug: "eurth", name: "Eurth", advertThreadId: null, hiddenByModerator: true },
     ]);
   });
 });

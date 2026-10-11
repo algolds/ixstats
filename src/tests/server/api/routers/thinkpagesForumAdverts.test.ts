@@ -131,7 +131,9 @@ describe("thinkpagesForum.createAdvert", () => {
 
 describe("thinkpagesForum adverts reads and lock", () => {
   it("lists the realms the caller may advertise", async () => {
-    const realms = [{ slug: "eurth", name: "Eurth", advertThreadId: null }];
+    const realms = [
+      { slug: "eurth", name: "Eurth", advertThreadId: null, hiddenByModerator: false },
+    ];
     jest.mocked(advertRealmsOf).mockResolvedValue(realms);
     await expect(caller(member).myAdvertRealms()).resolves.toEqual({ realms });
     await expect(caller(null).myAdvertRealms()).rejects.toMatchObject({
