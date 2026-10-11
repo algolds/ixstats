@@ -5,8 +5,9 @@
  * claimed. Per chunk of watchers the rows of everyone who can read the thread are claimed with one `updateMany` (only
  * those still un-notified), so two replies arriving together tell each watcher once, and the claimed rows are the ones
  * notified. Watchers already told about this post (`handled`) are claimed but not told twice; those who block the
- * author are claimed and not told. If the notices cannot be written, only the claims of the watchers who were to be
- * told are given back: the others were settled by the claim. Watchers who cannot read the thread are left alone. The
+ * author are left unclaimed, so they are still told about the next reply from anyone else. If the notices cannot be
+ * written, only the claims of the watchers who were to be told are given back: the others were settled by the claim.
+ * Watchers who cannot read the thread are left alone. The
  * author is never a recipient.
  */
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
@@ -69,7 +70,12 @@ async function notifyChunk(
       readable.map((u) => u.clerkUserId)
     )
   );
-  const claimIds = readable.map((user) => user.id);
+  // Only watchers who can be told (or were told by a mention, quote or reply) spend their once-token: a watcher
+  // blocking the author keeps it for the next reply from anyone else.
+  const claimIds = readable
+    .filter((user) => !blocking.has(user.clerkUserId))
+    .map((user) => user.id);
+  if (claimIds.length === 0) return 0;
   const stamp = nextClaimStamp();
   const claim = await db.forumThreadWatch.updateMany({
     where: { threadId: input.threadId, userId: { in: claimIds }, notifiedAt: null },
@@ -80,9 +86,7 @@ async function notifyChunk(
     claim.count === claimIds.length
       ? new Set(claimIds)
       : await ownedBy(db, input.threadId, claimIds, stamp);
-  const recipients = readable.filter(
-    (user) => owned.has(user.id) && !blocking.has(user.clerkUserId) && !input.handled.has(user.id)
-  );
+  const recipients = readable.filter((user) => owned.has(user.id) && !input.handled.has(user.id));
   const subject = {
     postId: input.postId,
     threadId: input.threadId,

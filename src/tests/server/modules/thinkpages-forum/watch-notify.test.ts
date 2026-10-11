@@ -105,7 +105,7 @@ describe("notifyWatchers", () => {
     expect(sent).not.toHaveBeenCalled();
   });
 
-  it("claims every watcher who can read the thread, and tells those not already told or blocking the author", async () => {
+  it("claims the watchers who can be told or were already told, and leaves one who blocks the author unclaimed", async () => {
     blocking.mockResolvedValue(["clerk_w3"]);
     const db = watchDb({ pages: [["u_w1", "u_w2", "u_w3"]] });
     await expect(notifyWatchers(db as never, input({ handled: new Set(["u_w2"]) }))).resolves.toBe(
@@ -114,7 +114,7 @@ describe("notifyWatchers", () => {
     const claim = db.forumThreadWatch.updateMany.mock.calls[0]![0];
     expect(claim.where).toEqual({
       threadId: "t1",
-      userId: { in: ["u_w1", "u_w2", "u_w3"] },
+      userId: { in: ["u_w1", "u_w2"] },
       notifiedAt: null,
     });
     expect(claim.data.notifiedAt).toBeInstanceOf(Date);
@@ -165,8 +165,45 @@ describe("notifyWatchers", () => {
       0
     );
     const [claim, release] = db.forumThreadWatch.updateMany.mock.calls.map(([args]) => args);
-    expect(claim!.where.userId.in).toEqual(["u_w1", "u_w2", "u_w3"]);
+    expect(claim!.where.userId.in).toEqual(["u_w1", "u_w2"]);
     expect(release!.where.userId.in).toEqual(["u_w1"]);
+  });
+
+  it("claims nothing when every watcher who can read the thread blocks the author", async () => {
+    blocking.mockResolvedValue(["clerk_w1"]);
+    const db = watchDb({ pages: [["u_w1"]] });
+    await expect(notifyWatchers(db as never, input())).resolves.toBe(0);
+    expect(db.forumThreadWatch.updateMany).not.toHaveBeenCalled();
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("tells a watcher who blocks one author about the next reply from someone else", async () => {
+    const notified = new Map<string, Date | null>([
+      ["u_w1", null],
+      ["u_w2", null],
+    ]);
+    const db = watchDb({ pages: [["u_w1", "u_w2"]] });
+    db.forumThreadWatch.findMany.mockImplementation(async ({ where }: { where: WatchWhere }) =>
+      [...notified]
+        .filter(([, at]) => (where.notifiedAt === null ? at === null : at === where.notifiedAt))
+        .map(([userId]) => ({ userId }))
+    );
+    db.forumThreadWatch.updateMany.mockImplementation(async ({ where, data }: Claim) => {
+      let count = 0;
+      for (const id of where.userId.in!) {
+        if (notified.get(id) === null) {
+          notified.set(id, data.notifiedAt);
+          count += 1;
+        }
+      }
+      return { count };
+    });
+    blocking.mockResolvedValueOnce(["clerk_w2"]);
+    await expect(notifyWatchers(db as never, input({ actorId: "u_b" }))).resolves.toBe(1);
+    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w1"]);
+    sent.mockClear();
+    await expect(notifyWatchers(db as never, input({ actorId: "u_c" }))).resolves.toBe(1);
+    expect(sent.mock.calls[0]![0].map((n) => n.clerkUserId)).toEqual(["clerk_w2"]);
   });
 
   it("gives nothing back when every claimed watcher was settled by the claim", async () => {
