@@ -8,7 +8,7 @@ const schema = readFileSync("prisma/schema/forum.prisma", "utf8");
 const count = (text: string, pattern: RegExp): number => text.match(pattern)?.length ?? 0;
 /** One model's body in the Prisma schema. */
 const modelBody = (name: string): string =>
-  schema.match(new RegExp(`model ${name} \\{([^}]*)\\}`))?.[1] ?? "";
+  schema.match(new RegExp(`model ${name} \\{([\\s\\S]*?)\\n\\}`))?.[1] ?? "";
 
 describe("forum import migration (phase 4)", () => {
   it("sorts after the phase 3 moderation and uploaded-assets migrations", () => {
