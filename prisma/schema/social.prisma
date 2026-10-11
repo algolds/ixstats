@@ -476,6 +476,7 @@ model ActivityFeed {
   activityLikes    ActivityLike[]
   activityShares   ActivityShare[]
   postActionLinks  PostActionLink[]
+  forumActionReward ForumActionReward?
   pollId           String?
   poll             Poll?             @relation(fields: [pollId], references: [id], onDelete: Cascade)
 

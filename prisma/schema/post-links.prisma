@@ -18,3 +18,19 @@ model PostActionLink {
   @@index([postSource, postRef])
   @@map("post_action_links")
 }
+
+/// The forum's credit reward for an action (action-links/rewards.ts): written when the first post links the activity,
+/// and kept when that post is edited or its links are replaced, so an action pays once ever and the per-country daily
+/// cap counts these rows by createdAt. Kept apart from PostActionLink because a link row is deleted on every edit.
+model ForumActionReward {
+  activityId String       @id
+  activity   ActivityFeed @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  countryId  String
+  userId     String
+  /// Credits paid (the vault ledger's credit type).
+  amount     Float
+  createdAt  DateTime     @default(now())
+
+  @@index([countryId, createdAt])
+  @@map("forum_action_rewards")
+}
