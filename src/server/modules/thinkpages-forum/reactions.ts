@@ -16,7 +16,7 @@ import {
   type ReactionCounts,
 } from "~/lib/thinkpages-forum/reactions";
 import type { ForumViewer } from "./access";
-import { ForumError, isMissingRecord, isUniqueViolation } from "./errors";
+import { ForumError, isMissingRecord, isTransactionTimeout, isUniqueViolation } from "./errors";
 import { loadReactablePost, loadReadablePost, type ReactionTargetDb } from "./reaction-target";
 import { authorsOf, type AuthorsDb, type ForumUserAuthor } from "./reads";
 
@@ -75,7 +75,7 @@ async function writeReaction(
       return { counts, mine: type, created, board };
     });
   } catch (error) {
-    if (isUniqueViolation(error)) {
+    if (isUniqueViolation(error) || isTransactionTimeout(error)) {
       throw new ForumError("CONFLICT", "Your reaction changed at the same moment. Try again.");
     }
     if (isMissingRecord(error)) throw new ForumError("NOT_FOUND", "Post not found.");

@@ -20,6 +20,14 @@ export function isUniqueViolation<E>(error: E): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
+/**
+ * An interactive transaction that ran past its timeout or was closed under the write (Prisma P2028), for mapping to
+ * CONFLICT: the write did not happen, and a retry may succeed.
+ */
+export function isTransactionTimeout<E>(error: E): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028";
+}
+
 /** A row deleted under a write (Prisma P2025, or P2003 for an insert whose parent is gone), for mapping to NOT_FOUND. */
 export function isMissingRecord<E>(error: E): boolean {
   return (

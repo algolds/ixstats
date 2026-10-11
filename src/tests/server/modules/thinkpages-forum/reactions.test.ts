@@ -142,6 +142,21 @@ describe("reactToPost", () => {
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
   });
 
+  it("answers CONFLICT when the transaction runs past its timeout, and says to try again", async () => {
+    const store = reactionStore();
+    store.db.$transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError("Transaction API error: timed out", {
+        code: "P2028",
+        clientVersion: "test",
+      })
+    );
+    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Your reaction changed at the same moment. Try again.",
+    });
+    expect(store.reactions).toHaveLength(0);
+  });
+
   it("does not turn another database failure into a CONFLICT", async () => {
     const store = reactionStore();
     store.reactionDb.create.mockRejectedValueOnce(new Error("connection lost"));
