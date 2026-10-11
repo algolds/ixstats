@@ -93,7 +93,7 @@ export function prismaErrorToAppError(error: unknown): never {
  * operation's failure into. `field` narrows it to a violation that names that column (the raw `meta.target`, or the
  * column in the wrapped message).
  */
-export function isUniqueViolation(error: unknown, field?: string): boolean {
+export function isUniqueViolation<E>(error: E, field?: string): boolean {
   if (error instanceof ConflictError) return field === undefined || error.message.includes(field);
   if (!(error instanceof Error) || !("code" in error) || error.code !== "P2002") return false;
   const meta = "meta" in error && typeof error.meta === "object" ? error.meta : null;
@@ -107,7 +107,7 @@ export function isUniqueViolation(error: unknown, field?: string): boolean {
  * message in its context, a `ValidationError` for the foreign key). A `NotFoundError` or `ValidationError` raised by
  * application code is not taken for one.
  */
-export function isMissingRecord(error: unknown): boolean {
+export function isMissingRecord<E>(error: E): boolean {
   if (error instanceof NotFoundError) return typeof error.context?.prismaError === "string";
   if (error instanceof ValidationError) return error.message.startsWith(FOREIGN_KEY_PREFIX);
   return (
