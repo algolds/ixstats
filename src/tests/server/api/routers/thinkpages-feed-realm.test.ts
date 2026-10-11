@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The ThinkPages feed's realm filter: public posts by personas of the realm's nations, plus the posts
- * on the realm's board (ThinkTank posts). Without a realm the feed is unchanged (all realms).
+ * The ThinkPages feed's realm filter: public posts by personas of the realm's nations. The realm's board is read by
+ * the feed's board block (native forum messages), not here. Without a realm the feed is unchanged (all realms).
  */
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/cache", () => ({
@@ -36,25 +36,20 @@ describe("thinkpages.getFeed realm filter", () => {
     expect(db.realmBoard.findUnique).not.toHaveBeenCalled();
   });
 
-  it("shows the realm's nations' public posts and its board's posts", async () => {
+  it("shows the realm's nations' public posts and never reads the old board chat", async () => {
     const db = createMockPrisma();
     db.realmBoard.findUnique.mockResolvedValue({ groupId: "board1" });
     await caller(db).getFeed({ realmId: "eurth" });
 
-    expect(db.realmBoard.findUnique.mock.calls[0]![0].where).toEqual({ realmId: "eurth" });
+    expect(db.realmBoard.findUnique).not.toHaveBeenCalled();
     expect(feedWhere(db)).toEqual({
-      AND: [
-        {
-          OR: [
-            { visibility: "public", account: { country: { realmId: "eurth" } } },
-            { visibility: "thinktank", hashtags: { contains: '"group:board1"' } },
-          ],
-        },
-      ],
+      AND: [{ visibility: "public", account: { country: { realmId: "eurth" } } }],
     });
+    expect(JSON.stringify(feedWhere(db))).not.toContain("thinktank");
+    expect(JSON.stringify(feedWhere(db))).not.toContain("group:");
   });
 
-  it("shows only the nations' posts while the realm has no board", async () => {
+  it("shows the same nations' posts whether or not the realm has an old board", async () => {
     const db = createMockPrisma();
     await caller(db).getFeed({ realmId: "eurth" });
     expect(feedWhere(db)).toEqual({

@@ -1,25 +1,11 @@
 /**
- * The realm filter of the ThinkPages feed: public posts by personas whose nation is in the realm, plus
- * the posts on the realm's board (ThinkTank posts, readable by anyone — see thinktanks/realm-board.ts).
+ * The realm filter of the ThinkPages feed: public posts by personas whose nation is in the realm. The realm's board
+ * is no longer read here: its messages are native forum posts, shown by the feed's board block (RealmFeed ->
+ * RealmBoardBlock), and the old ThinkTank board chat stays in its tables until the owner has run the history import
+ * on production (its removal is a later, owner-gated cleanup).
  */
-import type { Prisma, PrismaClient } from "@prisma/client";
-import { groupPostTag, REALM_BOARD_PUBLIC_READ } from "./thinktanks/realm-board";
+import type { Prisma } from "@prisma/client";
 
-export async function realmFeedWhere(
-  db: Pick<PrismaClient, "realmBoard">,
-  realmId: string
-): Promise<Prisma.ThinkpagesPostWhereInput> {
-  const byNation: Prisma.ThinkpagesPostWhereInput = {
-    visibility: "public",
-    account: { country: { realmId } },
-  };
-  if (!REALM_BOARD_PUBLIC_READ) return byNation;
-  const board = await db.realmBoard.findUnique({ where: { realmId }, select: { groupId: true } });
-  if (!board) return byNation;
-  return {
-    OR: [
-      byNation,
-      { visibility: "thinktank", hashtags: { contains: `"${groupPostTag(board.groupId)}"` } },
-    ],
-  };
+export function realmFeedWhere(realmId: string): Prisma.ThinkpagesPostWhereInput {
+  return { visibility: "public", account: { country: { realmId } } };
 }

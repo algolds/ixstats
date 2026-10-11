@@ -70,7 +70,7 @@ export function feedOrderBy(
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
-  realmId: z.string().max(100).optional(), // Feed filtered by realm (its nations' posts + its board); omitted = all realms
+  realmId: z.string().max(100).optional(), // Feed filtered by realm (its nations' posts; the board is shown by the feed's board block); omitted = all realms
   hashtag: z.string().optional(),
   filter: z.enum(["recent", "trending", "hot"]).default("recent"),
   limit: z.number().min(1).max(50).default(20),
@@ -144,9 +144,9 @@ export const thinkpagesFeedRouter = createTRPCRouter({
       }
 
       if (input.realmId) {
-        // Realm board posts are "thinktank" posts, so the realm clause carries its own visibility.
+        // The realm clause carries its own visibility.
         delete whereClause.visibility;
-        whereClause.AND = [await realmFeedWhere(db, input.realmId)];
+        whereClause.AND = [realmFeedWhere(input.realmId)];
       }
 
       if (mutedWords.length) {
