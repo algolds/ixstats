@@ -141,9 +141,10 @@ describe("ReactionBar many reaction types", () => {
     bar({ canReact: false, counts: many() });
     expect(screen.getAllByRole("button", { name: /see who reacted/ })).toHaveLength(12);
     expect(screen.queryByRole("button", { name: /emo12/ })).toBeNull();
-    const note = screen.getByRole("img", { name: "2 more reaction types" });
-    expect(note).toHaveTextContent("+2 more");
+    const note = screen.getByText("+2 more");
+    expect(note).toBeVisible();
     expect(note.closest("button")).toBeNull();
+    expect(screen.getByText("2 more reaction types")).toHaveClass("sr-only");
   });
 
   it("always gives the viewer's own reaction a pill, in place of the twelfth", () => {
@@ -152,7 +153,7 @@ describe("ReactionBar many reaction types", () => {
     expect(pills).toHaveLength(12);
     expect(pills[11]).toHaveAttribute("aria-label", "7 :emo13:, yours included, see who reacted");
     expect(screen.queryByRole("button", { name: /:emo11:/ })).toBeNull();
-    expect(screen.getByRole("img", { name: "2 more reaction types" })).toBeInTheDocument();
+    expect(screen.getByText("+2 more")).toBeInTheDocument();
   });
 });
 

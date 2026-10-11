@@ -61,12 +61,9 @@ export function ForumReactionPills({ counts, mine, emojis, onOpen }: ForumReacti
         );
       })}
       {hidden > 0 ? (
-        <span
-          role="img"
-          aria-label={`${hidden} more reaction types`}
-          className="text-footnote text-label-secondary tabular-nums"
-        >
-          +{hidden} more
+        <span className="text-footnote text-label-secondary tabular-nums">
+          <span aria-hidden>+{hidden} more</span>
+          <span className="sr-only">{hidden} more reaction types</span>
         </span>
       ) : null}
     </>

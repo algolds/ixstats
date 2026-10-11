@@ -11,11 +11,11 @@ import {
 } from "~/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { reactionLabel } from "~/lib/thinkpages-forum/reactions";
-import { api } from "~/trpc/react";
 import { isDiscordReaction, ReactionGlyph, type EmojiList } from "./ReactionGlyph";
 import { ReactorList, type ReactorGroup } from "./ReactorList";
 import { ALL_REACTIONS } from "./reactors-tabs";
 import { useReactionEmojis } from "./useReactionEmojis";
+import { useReactorGroups } from "./useReactorGroups";
 
 interface ReactorsDialogProps {
   postId: string;
@@ -67,8 +67,7 @@ function ReactorTabs({ groups, active, emojis, onChange }: TabsProps) {
  */
 export function ReactorsDialog({ postId, type, onClose }: ReactorsDialogProps) {
   const [tab, setTab] = useState(type);
-  const { data, isLoading, isError, refetch } = api.thinkpagesForum.reactors.useQuery({ postId });
-  const groups = data?.groups ?? [];
+  const { groups, isLoading, isError, refetch } = useReactorGroups(postId, type);
   const emojis = useReactionEmojis(groups.some((group) => isDiscordReaction(group.type)));
   const active = groups.some((group) => group.type === tab) ? tab : ALL_REACTIONS;
   const shown = active === ALL_REACTIONS ? groups : groups.filter((group) => group.type === active);

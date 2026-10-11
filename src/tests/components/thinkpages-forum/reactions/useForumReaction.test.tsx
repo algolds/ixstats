@@ -20,7 +20,6 @@ jest.mock("~/trpc/react", () => {
   };
 });
 // The real getQueryKey needs a live tRPC proxy; this stand-in keeps the same `[[router, procedure]]` prefix shape.
-// The real getQueryKey needs a live tRPC proxy; this stand-in keeps the same `[[router, procedure]]` prefix shape.
 jest.mock("@trpc/react-query", () => ({
   getQueryKey: (procedure: { key: string }) => [["thinkpagesForum", procedure.key]],
 }));

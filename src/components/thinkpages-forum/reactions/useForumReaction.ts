@@ -53,10 +53,11 @@ function patchAll(queryClient: QueryClient, postId: string, reduce: Reduce): voi
 }
 
 /**
- * Sets or clears the viewer's reaction to one post (`null` clears) with an optimistic update (spec section 4): in-flight
- * reads of the pages holding the post are cancelled, every cached page holding the post shows the change at once, and the server's counts replace it
- * when it answers. A failure puts that post back as it was and says so. One request at a time: a call while one is in
- * flight is ignored. Once settled, the pages holding the post are marked stale so they refetch the truth.
+ * Sets or clears the viewer's reaction to one post (`null` clears) with an optimistic update (spec section 4):
+ * in-flight reads of the pages holding the post are cancelled, every cached page holding the post shows the change at
+ * once, and the server's counts replace it when it answers. A failure puts that post back as it was and says so. One
+ * request at a time: a call while one is in flight is ignored. Once settled, the pages holding the post are marked
+ * stale so they refetch the truth.
  */
 export function useForumReaction(postId: string) {
   const queryClient = useQueryClient();

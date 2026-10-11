@@ -10,6 +10,8 @@ type Reactor = {
 };
 type Group = { type: string; count: number; reactors: Reactor[] };
 const mockEmojiOptions = jest.fn();
+const mockReactorsCalls = jest.fn();
+const mockExtra: { data: { groups: Group[] } | undefined } = { data: undefined };
 const mockState: {
   data: { groups: Group[] } | undefined;
   isLoading: boolean;
@@ -27,7 +29,14 @@ jest.mock("~/trpc/react", () => ({
         },
       },
     },
-    thinkpagesForum: { reactors: { useQuery: () => mockState } },
+    thinkpagesForum: {
+      reactors: {
+        useQuery: (input: { postId: string; type?: string }, options?: { enabled?: boolean }) => {
+          mockReactorsCalls(input, options);
+          return input.type === undefined ? mockState : mockExtra;
+        },
+      },
+    },
   },
 }));
 
@@ -53,6 +62,8 @@ beforeEach(() => {
   });
   mockState.refetch.mockClear();
   mockEmojiOptions.mockClear();
+  mockReactorsCalls.mockClear();
+  mockExtra.data = undefined;
 });
 
 const open = (type = "all", onClose = jest.fn()) => {
@@ -122,6 +133,32 @@ describe("ReactorsDialog", () => {
     mockState.data = data({ type: "discord:pog", count: 1, reactors: [person("bo")] });
     render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
     expect(mockEmojiOptions).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: true }));
+  });
+
+  it("fetches a type outside the listed groups and shows it on its own tab", () => {
+    mockExtra.data = data({ type: "angry", count: 1, reactors: [person("zed")] });
+    open("angry");
+    expect(mockReactorsCalls).toHaveBeenCalledWith(
+      { postId: "p1", type: "angry" },
+      expect.objectContaining({ enabled: true })
+    );
+    expect(screen.getByRole("radio", { name: "angry, 1" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("zed")).toBeInTheDocument();
+    expect(screen.queryByText("kir")).toBeNull();
+  });
+
+  it("does not fetch the extra type when the type is listed or the tab is All", () => {
+    const { unmount } = render(<ReactorsDialog postId="p1" type="fire" onClose={jest.fn()} />);
+    expect(mockReactorsCalls).not.toHaveBeenCalledWith(
+      { postId: "p1", type: "fire" },
+      expect.objectContaining({ enabled: true })
+    );
+    unmount();
+    render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
+    expect(mockReactorsCalls).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ enabled: true })
+    );
   });
 
   it("announces loading as a status", () => {
