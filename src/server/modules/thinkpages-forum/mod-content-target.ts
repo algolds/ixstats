@@ -20,6 +20,8 @@ export type ContentDb = Pick<
   | "forumModLog"
   | "realm"
   | "user"
+  | "thinkpagesAccount"
+  | "forumPostMention"
   | "$transaction"
   | "$executeRaw"
 >;

@@ -12,7 +12,55 @@ import {
 } from "~/tests/helpers/forum-mod-fixtures";
 import { forumStore } from "~/tests/helpers/forum-store-fake";
 
+const mockSendNotices = jest.fn();
+jest.mock("~/server/modules/thinkpages-forum/forum-notices", () => ({
+  sendForumNotices: (...args: object[]) => mockSendNotices(...args),
+}));
+
+interface MentionRow {
+  postId: string;
+  userId: string;
+}
+/** A store whose members can be mentioned, with a mention table both the client and the transaction share. */
+function mentionStore(known: MentionRow[] = []) {
+  const store = forumStore({
+    ...seed(),
+    users: [
+      ...seed().users,
+      {
+        id: "u_k",
+        clerkUserId: "clerk_k",
+        handle: "kirsten",
+        isActive: true,
+        role: { name: "user", level: 100 },
+      },
+      {
+        id: "u_m",
+        clerkUserId: "member",
+        handle: "member",
+        isActive: true,
+        role: { name: "user", level: 100 },
+      },
+    ].filter((u, i, all) => all.findLastIndex((o) => o.id === u.id) === i),
+  });
+  const rows = [...known];
+  const forumPostMention = {
+    findMany: jest.fn(async (args: { where: { postId: string; userId: { in: string[] } } }) =>
+      rows.filter((r) => r.postId === args.where.postId && args.where.userId.in.includes(r.userId))
+    ),
+    createMany: jest.fn(async (args: { data: MentionRow[] }) => {
+      rows.push(...args.data);
+      return { count: args.data.length };
+    }),
+  };
+  Object.assign(store.db, { forumPostMention });
+  Object.assign(store.tx, { forumPostMention });
+  return { store, rows, forumPostMention };
+}
+
 describe("modEditPost", () => {
+  beforeEach(() => mockSendNotices.mockClear());
+
   it("replaces the body, marks it edited and logs the previous text", async () => {
     const store = forumStore(seed());
     await modEditPost(store.db as never, eurthMod, {
@@ -233,5 +281,47 @@ describe("modEditPost", () => {
       note: "x",
     });
     expect(postIn(store, "p_a2").plainText).toBe("Tidied");
+  });
+
+  describe("mentions", () => {
+    it("records a silent mention row for each member the edit links, never the author, and tells nobody", async () => {
+      const { store, rows } = mentionStore();
+      await modEditPost(store.db as never, eurthMod, {
+        postId: "p_e2",
+        html: "<p>cc @kirsten and @member</p>",
+        note: "x",
+      });
+      expect(postIn(store, "p_e2").contentHtml).toContain('href="/id/kirsten"');
+      expect(rows).toEqual([{ postId: "p_e2", userId: "u_k" }]);
+      expect(mockSendNotices).not.toHaveBeenCalled();
+    });
+
+    it("records a member the post already mentioned only once", async () => {
+      const { store, rows, forumPostMention } = mentionStore([{ postId: "p_e2", userId: "u_k" }]);
+      await modEditPost(store.db as never, eurthMod, {
+        postId: "p_e2",
+        html: "<p>cc @kirsten</p>",
+        note: "x",
+      });
+      expect(forumPostMention.createMany).not.toHaveBeenCalled();
+      expect(rows).toHaveLength(1);
+    });
+
+    it("writes the rows with the edit: a lost race records none", async () => {
+      const { store, rows } = mentionStore();
+      const run = store.db.$transaction.getMockImplementation()!;
+      store.db.$transaction.mockImplementationOnce(async (fn) => {
+        Object.assign(postIn(store, "p_e2"), { editedAt: at(9) });
+        return run(fn);
+      });
+      await expect(
+        modEditPost(store.db as never, eurthMod, {
+          postId: "p_e2",
+          html: "<p>cc @kirsten</p>",
+          note: "x",
+        })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(rows).toEqual([]);
+    });
   });
 });

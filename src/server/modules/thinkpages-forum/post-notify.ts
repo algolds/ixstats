@@ -9,14 +9,12 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { boardExcerpt } from "~/lib/thinkpages-forum/board";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
-import { MENTION_MAX_PER_POST } from "~/lib/thinkpages-forum/mentions";
 import { quotedPostIds } from "~/lib/thinkpages-forum/post-html";
 import { postSummary } from "~/lib/thinkpages-forum/post-summary";
 import { recipientsRefusing } from "~/server/shared/privacy-permissions";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import { sendForumNotices } from "./forum-notices";
-import { mentionAnchorNames } from "./mention-html";
-import { resolveMentionNames } from "./mention-links";
+import { mentionedMemberIds, recordMentions } from "./mention-rows";
 import { readableUsers, RECIPIENT_SELECT, type NoticePlace } from "./notice-recipients";
 import { noticeFor, type NoticeKind, type NoticeSubject } from "./notice-text";
 import { loadForumRealm } from "./realm-access";
@@ -99,32 +97,8 @@ async function addMentions(
   actor: NoticeActor,
   intents: Intents
 ): Promise<void> {
-  const names = mentionAnchorNames(post.contentHtml).slice(0, MENTION_MAX_PER_POST);
-  if (names.length === 0) return;
-  const targets = [...(await resolveMentionNames(db, names)).values()];
-  const owners = await db.user.findMany({
-    where: {
-      OR: [
-        { id: { in: targets.flatMap((t) => t.userId ?? []) } },
-        { clerkUserId: { in: targets.flatMap((t) => t.ownerClerkId ?? []) } },
-      ],
-    },
-    select: { id: true },
-  });
-  const ids = [...new Set(owners.map((owner) => owner.id))].filter((id) => id !== actor.id);
-  if (ids.length === 0) return;
-  const known = await db.forumPostMention.findMany({
-    where: { postId: post.id, userId: { in: ids } },
-    select: { userId: true },
-  });
-  const seen = new Set(known.map((row) => row.userId));
-  const fresh = ids.filter((id) => !seen.has(id));
-  if (fresh.length === 0) return;
-  await db.forumPostMention.createMany({
-    data: fresh.map((userId) => ({ postId: post.id, userId })),
-    skipDuplicates: true,
-  });
-  for (const userId of fresh) raise(intents, userId, "mention");
+  const ids = await mentionedMemberIds(db, post.contentHtml, actor.id);
+  for (const userId of await recordMentions(db, post.id, ids)) raise(intents, userId, "mention");
 }
 
 /** The authors of the posts this one quotes: same thread, visible, with an author (a persona post's is its player). */
