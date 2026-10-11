@@ -8,6 +8,7 @@ import {
   postCountsPerCategory,
   trendingThreads,
 } from "~/server/modules/thinkpages-forum/board-reads";
+import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { listBoards } from "~/server/modules/thinkpages-forum/board-list";
 
 const admin = {
@@ -120,14 +121,16 @@ describe("latestPerCategory", () => {
     const forMember = latestDb();
     await latestPerCategory(forMember as never, member, [general]);
     expect(argsOf(forMember.forumThread.findMany).where.OR).toEqual([
-      { categoryId: general.id, hidden: false },
+      { categoryId: general.id, hidden: false, ...advertGate(member) },
     ]);
     const forAdmin = latestDb();
     await latestPerCategory(forAdmin as never, admin, [general]);
     expect(argsOf(forAdmin.forumThread.findMany).where.OR).toEqual([{ categoryId: general.id }]);
     const forMod = latestDb();
     await latestPerCategory(forMod as never, moderator, [general]);
-    expect(argsOf(forMod.forumThread.findMany).where.OR).toEqual([{ categoryId: general.id }]);
+    expect(argsOf(forMod.forumThread.findMany).where.OR).toEqual([
+      { categoryId: general.id, ...advertGate(moderator) },
+    ]);
   });
 
   it("ignores hidden posts for members but not in a thread the viewer moderates", async () => {
@@ -149,7 +152,7 @@ describe("latestPerCategory", () => {
     const db = latestDb();
     await latestPerCategory(db as never, member, [reports]);
     expect(argsOf(db.forumThread.findMany).where.OR).toEqual([
-      { categoryId: reports.id, hidden: false, authorUserId: member.id },
+      { categoryId: reports.id, hidden: false, authorUserId: member.id, ...advertGate(member) },
     ]);
   });
 
@@ -186,8 +189,8 @@ describe("postCountsPerCategory", () => {
     const args = argsOf(groupBy);
     expect(args).toMatchObject({ by: ["categoryId"], _sum: { postCount: true } });
     expect(args.where.OR).toEqual([
-      { categoryId: general.id, hidden: false },
-      { categoryId: byKey("rules").id, hidden: false },
+      { categoryId: general.id, hidden: false, ...advertGate(member) },
+      { categoryId: byKey("rules").id, hidden: false, ...advertGate(member) },
     ]);
     expect(args.where).not.toHaveProperty("archived");
   });

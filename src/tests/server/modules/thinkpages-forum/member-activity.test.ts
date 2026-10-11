@@ -18,8 +18,11 @@ function matches(row: Rec, where: Rec): boolean {
   return Object.entries(where).every(([key, cond]) => {
     if (key === "OR") return (cond as Rec[]).some((alt) => matches(row, alt));
     if (key === "NOT") return !matches(row, cond as Rec);
+    if (key === "AND") return (cond as Rec[]).every((part) => matches(row, part));
     const value = row[key];
-    if (cond === null || typeof cond !== "object" || Array.isArray(cond)) return value === cond;
+    // A fixture without the column reads as null: these rows are no adverts.
+    if (cond === null || typeof cond !== "object" || Array.isArray(cond))
+      return (value ?? null) === cond;
     const c = cond as Rec;
     if ("in" in c) return (c.in as Value[]).includes(value as Value);
     if ("not" in c) return value !== c.not;

@@ -12,6 +12,10 @@ import {
   resolvePostLocation,
   THREADS_PER_PAGE,
 } from "~/server/modules/thinkpages-forum";
+import {
+  advertGate,
+  ADVERT_REALM_SELECT,
+} from "~/server/modules/thinkpages-forum/advert-access";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
 
 const admin = { id: "u_a", clerkUserId: "admin", countryId: null, role: { name: "admin", level: 10 } };
@@ -195,7 +199,7 @@ describe("getCategoryThreads", () => {
     expect(out.threads).toEqual([{ id: "t1", title: "Hello" }]);
     expect(db.forumThread.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { categoryId: "cat_general", hidden: false },
+        where: { categoryId: "cat_general", hidden: false, ...advertGate(user) },
         // N4: the id breaks a tie in lastPostAt, so no thread swaps across a page boundary.
         orderBy: [{ pinned: "desc" }, { lastPostAt: "desc" }, { id: "desc" }],
         skip: 0,
@@ -238,7 +242,11 @@ describe("getCategoryThreads in a realm", () => {
     const out = await getCategoryThreads(db as never, user, { key: "hub", realm: "eurth" }, 1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledTimes(1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledWith({ where: { scope: "realm", realmId: "r_eurth", key: "hub" } });
-    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub", hidden: false });
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({
+      categoryId: "cat_eurth_hub",
+      hidden: false,
+      ...advertGate(user),
+    });
     expect(out.category).toMatchObject({
       key: "hub",
       scope: "realm",
@@ -251,7 +259,11 @@ describe("getCategoryThreads in a realm", () => {
     const db = readDb();
     await getCategoryThreads(db as never, user, { key: "hub", realm: "b" }, 1);
     expect(db.forumCategory.findFirst).toHaveBeenCalledWith({ where: { scope: "realm", realmId: "r_b", key: "hub" } });
-    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_b_hub", hidden: false });
+    expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual({
+      categoryId: "cat_b_hub",
+      hidden: false,
+      ...advertGate(user),
+    });
   });
 
   it("gives site scope a null realm and never reads a realm row for it", async () => {
@@ -403,6 +415,7 @@ describe("resolvePostLocation", () => {
     expect(db.forumPost.findUnique.mock.calls[0][0].select.thread.select).toEqual({
       authorUserId: true,
       hidden: true,
+      advertRealm: { select: ADVERT_REALM_SELECT },
       category: {
         select: { id: true, key: true, style: true, visibility: true, scope: true, realmId: true },
       },
@@ -497,12 +510,17 @@ describe("moderator-aware reads (M9) and Reports (M8)", () => {
   it("shows a realm moderator hidden threads in their realm's Hub, not in General, with canModerate and category.id", async () => {
     const hubDb = readDb();
     const hub = await getCategoryThreads(hubDb as never, realmMod, { key: "hub", realm: "eurth" }, 1);
-    expect(hubDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub" });
-    expect(hubDb.forumThread.count.mock.calls[0][0].where).toEqual({ categoryId: "cat_eurth_hub" });
+    const hubWhere = { categoryId: "cat_eurth_hub", ...advertGate(realmMod) };
+    expect(hubDb.forumThread.findMany.mock.calls[0][0].where).toEqual(hubWhere);
+    expect(hubDb.forumThread.count.mock.calls[0][0].where).toEqual(hubWhere);
     expect(hub).toMatchObject({ canModerate: true, category: { id: "cat_eurth_hub" } });
     const generalDb = readDb();
     const site = await getCategoryThreads(generalDb as never, realmMod, { key: "general" }, 1);
-    expect(generalDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_general", hidden: false });
+    expect(generalDb.forumThread.findMany.mock.calls[0][0].where).toEqual({
+      categoryId: "cat_general",
+      hidden: false,
+      ...advertGate(realmMod),
+    });
     expect(site).toMatchObject({ canModerate: false, category: { id: "cat_general" } });
     const member = await getCategoryThreads(readDb() as never, user, { key: "hub", realm: "eurth" }, 1);
     expect(member.canModerate).toBe(false);
@@ -511,7 +529,12 @@ describe("moderator-aware reads (M9) and Reports (M8)", () => {
   it("lists only the member's own Reports threads, and all of them for an admin or the category's moderator", async () => {
     const db = readDb();
     await getCategoryThreads(db as never, user, { key: "reports" }, 1);
-    const own = { categoryId: "cat_reports", hidden: false, authorUserId: "u_p" };
+    const own = {
+      categoryId: "cat_reports",
+      hidden: false,
+      authorUserId: "u_p",
+      ...advertGate(user),
+    };
     expect(db.forumThread.findMany.mock.calls[0][0].where).toEqual(own);
     expect(db.forumThread.count.mock.calls[0][0].where).toEqual(own);
     const adminDb = readDb();
@@ -519,7 +542,10 @@ describe("moderator-aware reads (M9) and Reports (M8)", () => {
     expect(adminDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_reports" });
     const modDb = readDb();
     await getCategoryThreads(modDb as never, categoryMod, { key: "reports" }, 1);
-    expect(modDb.forumThread.findMany.mock.calls[0][0].where).toEqual({ categoryId: "cat_reports" });
+    expect(modDb.forumThread.findMany.mock.calls[0][0].where).toEqual({
+      categoryId: "cat_reports",
+      ...advertGate(categoryMod),
+    });
   });
 
   it("gives a member NOT_FOUND for another member's Reports thread, and reads their own", async () => {

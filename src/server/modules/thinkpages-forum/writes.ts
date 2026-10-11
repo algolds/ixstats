@@ -12,14 +12,15 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ForumReward } from "~/lib/action-rewards";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
-import {
-  ActionLinkError,
-  syncPostActionLinks,
-  validatePostActionTokens,
-} from "~/server/modules/action-links";
 import type { RealmActor } from "~/server/modules/realms";
 import { canSeeThread } from "./access";
 import { rewardNewLinks } from "./action-reward";
+import {
+  advertClosed,
+  advertRealmHiddenFrom,
+  ADVERT_REALM_SELECT,
+  canEditAdvertPost,
+} from "./advert-access";
 import { ForumError } from "./errors";
 import { withMentionLinks } from "./mention-links";
 import { assertNotBanned } from "./mod-bans";
@@ -36,8 +37,10 @@ import {
   type PostInput,
   type PreparedBody,
 } from "./writes-body";
+import { inLockedChain, syncLinks, validateLinks } from "./writes-links";
 
 export { MAX_POST_HTML, prepareBody, type PostInput, type PreparedBody };
+export { inLockedChain, syncLinks, validateLinks };
 export const TITLE_MIN = 3;
 export const TITLE_MAX = 200;
 
@@ -60,7 +63,6 @@ export type WritesDb = Pick<
   | "$transaction"
 >;
 
-const LOCKED_CHAIN_STATUSES = ["submitted", "approved"];
 const TEAM_ONLY = "Only the team can post in this category.";
 
 export function prepareTitle(raw: string): string {
@@ -69,57 +71,6 @@ export function prepareTitle(raw: string): string {
     throw new ForumError("BAD_REQUEST", `A title is ${TITLE_MIN} to ${TITLE_MAX} characters.`);
   }
   return title;
-}
-
-/** Runs an action-links call, turning its refusals into the forum's own. */
-async function asForumRefusal<T>(call: () => Promise<T>): Promise<T> {
-  try {
-    return await call();
-  } catch (error) {
-    if (error instanceof ActionLinkError) throw new ForumError(error.code, error.message);
-    throw error;
-  }
-}
-
-export function validateLinks(
-  db: WritesDb,
-  actor: ForumActor,
-  plainText: string
-): Promise<string[]> {
-  return asForumRefusal(() =>
-    validatePostActionTokens(db, { countryId: actor.countryId, body: plainText })
-  );
-}
-
-export function syncLinks(
-  db: WritesDb,
-  actor: ForumActor,
-  postId: string,
-  plainText: string
-): Promise<{ created: string[] }> {
-  return asForumRefusal(() =>
-    syncPostActionLinks(db, {
-      postSource: "native",
-      postRef: postId,
-      countryId: actor.countryId,
-      body: plainText,
-    })
-  );
-}
-
-/** P6 (M17): a post linked into a submitted or approved story chain no longer changes, by its author or a moderator. */
-export async function inLockedChain(
-  db: Pick<PrismaClient, "postActionLink">,
-  postId: string
-): Promise<boolean> {
-  const chained = await db.postActionLink.count({
-    where: {
-      postSource: "native",
-      postRef: postId,
-      storyline: { status: { in: LOCKED_CHAIN_STATUSES } },
-    },
-  });
-  return chained > 0;
 }
 
 /** Refuses unless the actor may post in `category`, with the realm's notice when it has one, else `refusal`. */
@@ -210,20 +161,21 @@ export async function replyToThread(
 ): Promise<{ postId: string; formatting: Formatting; reward: ForumReward | null }> {
   const thread = await db.forumThread.findUnique({
     where: { id: input.threadId },
-    include: { category: true },
+    include: { category: true, advertRealm: { select: ADVERT_REALM_SELECT } },
   });
-  // The realm board takes messages through postBoardMessage only.
+  // The realm board takes messages through postBoardMessage only; an advert of a hidden realm does not exist.
   if (
     !thread ||
     thread.hidden ||
     isBoardCategory(thread.category) ||
-    !canSeeThread(actor, thread, thread.category)
+    !canSeeThread(actor, thread, thread.category) ||
+    advertRealmHiddenFrom(actor, thread.advertRealm)
   ) {
     throw new ForumError("NOT_FOUND", "Thread not found.");
   }
   const realm = await realmOfThread(db, actor, thread.category, "Thread");
   await assertCanPost(db, actor, thread.category, realm, TEAM_ONLY);
-  if (thread.locked || thread.archived)
+  if (thread.locked || thread.archived || advertClosed(thread.advertRealm))
     throw new ForumError("CONFLICT", "This thread is closed to replies.");
   const author = {
     authorUserId: actor.id,
@@ -285,6 +237,7 @@ export async function editPost(
           hidden: true,
           locked: true,
           archived: true,
+          advertRealm: { select: ADVERT_REALM_SELECT },
           category: {
             select: {
               id: true,
@@ -306,15 +259,19 @@ export async function editPost(
     post.hidden ||
     post.thread.hidden ||
     isBoardCategory(post.thread.category) ||
-    !canSeeThread(actor, post.thread, post.thread.category)
+    !canSeeThread(actor, post.thread, post.thread.category) ||
+    advertRealmHiddenFrom(actor, post.thread.advertRealm)
   ) {
     throw new ForumError("NOT_FOUND", "Post not found.");
   }
   const { category } = post.thread;
   const realm = await realmOfThread(db, actor, category, "Post");
-  if (post.authorUserId !== actor.id)
+  if (
+    post.authorUserId !== actor.id &&
+    !(await canEditAdvertPost(db, actor, post, post.thread.advertRealm))
+  )
     throw new ForumError("FORBIDDEN", "Only the author can edit this post.");
-  if (post.thread.locked || post.thread.archived)
+  if (post.thread.locked || post.thread.archived || advertClosed(post.thread.advertRealm))
     throw new ForumError("CONFLICT", "This thread is closed to edits.");
   if (realm) await assertCanPost(db, actor, category, realm, TEAM_ONLY);
   else await assertNotBanned(db, actor, category);

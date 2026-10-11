@@ -227,6 +227,38 @@ describe("listNewPosts", () => {
   });
 });
 
+describe("adverts in the lists", () => {
+  const find = category({ id: "cat_find", key: "find-a-realm" });
+  const look = { thumbnail: "/t.png", emblemUrl: "/e.png" };
+  const threads = () => [
+    row("hidden_ad", { advertRealm: { ...DRAFT, ...look } }, find),
+    row("shown_ad", { advertRealm: { ...EURTH, ...look } }, find),
+    row("plain"),
+  ];
+
+  it("drops a hidden realm's advert from New posts and carries the advert fields of a shown one", async () => {
+    const out = await listNewPosts(listDb(threads()) as never, member, 1);
+    expect(out.threads.map((t) => t.id).sort()).toEqual(["plain", "shown_ad"]);
+    expect(out.threads.find((t) => t.id === "shown_ad")!.advert).toEqual({
+      realmSlug: "eurth",
+      realmName: "Eurth",
+      emblemUrl: "/e.png",
+      thumbnail: "/t.png",
+      claimsOpen: true,
+    });
+    expect(out.threads.find((t) => t.id === "plain")!.advert).toBeNull();
+  });
+
+  it("drops a hidden realm's advert from Watched, and its founder still reads it", async () => {
+    const watched = listDb([], threads());
+    const out = await listWatched(watched as never, member, 1);
+    expect(out.threads.map((t) => t.id).sort()).toEqual(["plain", "shown_ad"]);
+    const founder = { ...member, id: "u_founder", clerkUserId: "founder" };
+    const own = await listWatched(listDb([], threads()) as never, founder, 1);
+    expect(own.threads.map((t) => t.id).sort()).toEqual(["hidden_ad", "plain", "shown_ad"]);
+  });
+});
+
 describe("listWatched", () => {
   it("lists unread watched threads first, then by last post, dropping hidden ones", async () => {
     const seen = ago(2);

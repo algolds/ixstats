@@ -8,6 +8,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
+import { advertGate } from "./advert-access";
 import { canModerateCategory } from "./mod-scope";
 import { publicThreadWhere, publishedRealmIds } from "./public-threads";
 import { hiddenFilter, ownThreadsWhere } from "./reads";
@@ -70,6 +71,7 @@ function threadsWhere(
       categoryId: c.id,
       ...hiddenFilter(viewer, c),
       ...ownThreadsWhere(viewer, c),
+      ...advertGate(viewer),
     })),
   };
 }
@@ -184,6 +186,7 @@ export async function trendingThreads(
       thread: {
         hidden: false,
         archived: false,
+        ...advertGate(null),
         category: {
           ...notBoardCategory(),
           OR: [{ scope: "site" }, { scope: "realm", realmId: { in: realmIds } }],
@@ -243,6 +246,7 @@ export async function boardTopPosters(
         categoryId: category.id,
         ...hiddenFilter(viewer, category),
         ...ownThreadsWhere(viewer, category),
+        ...advertGate(viewer),
       },
     },
     _count: { authorUserId: true },

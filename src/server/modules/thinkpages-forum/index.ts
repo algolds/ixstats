@@ -1,3 +1,4 @@
+export * from "./advert-access";
 export {
   discussionCountsOf,
   discussionsOf,

@@ -7,6 +7,7 @@ import type { PrismaClient } from "@prisma/client";
 import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
+import { advertRealmHiddenFrom, ADVERT_REALM_SELECT } from "./advert-access";
 import { ownThreadsWhere } from "./reads";
 import { readerFloor, unreadIdsOf, type UnreadDb } from "./unread";
 
@@ -53,10 +54,12 @@ async function unreadCountsByCategory(
     select: {
       categoryId: true,
       lastPostAt: true,
+      advertRealm: { select: ADVERT_REALM_SELECT },
       reads: { where: { userId: viewer.id }, select: { readAt: true } },
     },
   });
   for (const thread of threads) {
+    if (advertRealmHiddenFrom(viewer, thread.advertRealm)) continue;
     if (isUnread(thread.lastPostAt, thread.reads[0]?.readAt, floor)) {
       counts.set(thread.categoryId, (counts.get(thread.categoryId) ?? 0) + 1);
     }

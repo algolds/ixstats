@@ -2,6 +2,7 @@
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { canSeeThread, type ForumViewer } from "./access";
+import { advertRealmHiddenFrom, ADVERT_REALM_SELECT } from "./advert-access";
 import { canModerateCategory } from "./mod-scope";
 import { hiddenFilter, visibleRealmOf, type ReadsDb } from "./reads";
 
@@ -22,6 +23,7 @@ export async function resolvePostLocation(
         select: {
           authorUserId: true,
           hidden: true,
+          advertRealm: { select: ADVERT_REALM_SELECT },
           category: {
             select: {
               id: true,
@@ -42,6 +44,7 @@ export async function resolvePostLocation(
   if (isBoardCategory(category) || !canSeeThread(viewer, post.thread, category)) return null;
   if (post.hidden && !canModerateCategory(viewer, category)) return null;
   if ((await visibleRealmOf(db, viewer, category)) === undefined) return null;
+  if (advertRealmHiddenFrom(viewer, post.thread.advertRealm)) return null;
   const before = await db.forumPost.count({
     where: {
       threadId: post.threadId,

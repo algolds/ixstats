@@ -14,6 +14,12 @@ import { THREADS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { isUnread } from "~/lib/thinkpages-forum/unread";
 import { DEFAULT_REALM_ID, isSiteAdmin } from "~/server/modules/realms";
 import { canSeeThread, type ForumViewer } from "./access";
+import {
+  advertRealmHiddenFrom,
+  advertRowOf,
+  ADVERT_REALM_SELECT,
+  type AdvertRow,
+} from "./advert-access";
 import type { ForumRealm } from "./realm-access";
 import { visibleRealmOf, type ReadsDb } from "./reads";
 import { threadLastPosters, type ThreadLastPoster } from "./thread-extras";
@@ -46,6 +52,8 @@ export interface ListedThread {
   unread: boolean;
   board: { key: string; name: string; realm: { slug: string; name: string } | null };
   lastPoster: ThreadLastPoster | null;
+  /** The realm this thread advertises (Find a Realm), else null. */
+  advert: AdvertRow | null;
 }
 
 export interface ThreadListing {
@@ -77,6 +85,7 @@ const candidateSelect = (userId: string) =>
         visibility: true,
       },
     },
+    advertRealm: { select: ADVERT_REALM_SELECT },
     reads: { where: { userId }, select: { readAt: true } },
   }) as const satisfies Prisma.ForumThreadSelect;
 
@@ -103,6 +112,7 @@ async function readable(
   for (const row of rows) {
     const { category } = row;
     if (isBoardCategory(category) || row.hidden || !canSeeThread(viewer, row, category)) continue;
+    if (advertRealmHiddenFrom(viewer, row.advertRealm)) continue;
     const key = category.realmId ?? "";
     if (!realms.has(key)) realms.set(key, await visibleRealmOf(db, viewer, category));
     const realm = realms.get(key);
@@ -141,6 +151,7 @@ async function shape(
       realm: realm ? { slug: realm.slug, name: realm.name } : null,
     },
     lastPoster: posters.get(row.id) ?? null,
+    advert: advertRowOf(row.advertRealm),
   }));
 }
 

@@ -14,6 +14,7 @@ import { NATIVE_THREAD_PREFIX } from "~/lib/wiki-os/stash-content-type";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 import { canSeeThread, type ForumViewer } from "./access";
+import { advertRealmHiddenFrom, ADVERT_REALM_SELECT } from "./advert-access";
 import { ForumError } from "./errors";
 import { forumActorOf, type ForumUserSource } from "./forum-viewer";
 import type { ScopeDb } from "./mod-scope";
@@ -138,11 +139,19 @@ export async function readableThreadTitles(
   if (threadIds.length === 0) return titles;
   const rows = await db.forumThread.findMany({
     where: { id: { in: [...threadIds] } },
-    select: { id: true, title: true, authorUserId: true, hidden: true, category: true },
+    select: {
+      id: true,
+      title: true,
+      authorUserId: true,
+      hidden: true,
+      category: true,
+      advertRealm: { select: ADVERT_REALM_SELECT },
+    },
   });
   const realmVisible = new Map<string | null, boolean>();
   for (const row of rows) {
-    if (!canSeeThread(viewer, row, row.category)) continue;
+    if (!canSeeThread(viewer, row, row.category) || advertRealmHiddenFrom(viewer, row.advertRealm))
+      continue;
     const realmId = row.category.realmId;
     if (!realmVisible.has(realmId)) {
       realmVisible.set(realmId, (await visibleRealmOf(db, viewer, row.category)) !== undefined);

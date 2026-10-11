@@ -9,6 +9,7 @@ import {
   latestPublicThreads,
   publicThreadByXenforoId,
 } from "~/server/modules/thinkpages-forum/public-threads";
+import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 
 const NOW = new Date("2026-10-09T12:00:00Z");
 
@@ -58,6 +59,7 @@ function fakeDb(threads: object[], firstPost: object | null = null) {
 
 const PUBLIC_WHERE = {
   hidden: false,
+  ...advertGate(null),
   category: {
     visibility: { in: ["public"] },
     style: { not: "board" }, NOT: { scope: "realm", key: "board" },

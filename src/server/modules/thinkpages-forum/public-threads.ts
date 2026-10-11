@@ -9,6 +9,7 @@ import { categoryVisibilityWhere, notBoardCategory } from "~/lib/thinkpages-foru
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { isRealmPublished } from "~/server/modules/realms";
+import { advertGate } from "./advert-access";
 import { authorsOf, type AuthorsDb } from "./reads";
 
 export type PublicThreadsDb = Pick<PrismaClient, "forumThread" | "forumPost" | "realm"> & AuthorsDb;
@@ -65,6 +66,7 @@ export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promis
 export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
   return {
     hidden: false,
+    ...advertGate(null),
     category: {
       ...categoryVisibilityWhere({ signedIn: false, siteAdmin: false }),
       // The realm board's messages are not threads or posts anywhere outside the board.
