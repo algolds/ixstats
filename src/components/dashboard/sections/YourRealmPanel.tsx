@@ -5,7 +5,6 @@ import { useUser } from "~/context/auth-context";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
 import { BoardPreviewList } from "~/components/thinkpages-forum/realm/BoardPreviewList";
 import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { countLabel } from "~/lib/thinkpages-forum/unread";
@@ -16,8 +15,8 @@ const LINK = cn(buttonVariants({ variant: "secondary", size: "sm" }), "pointer-c
 
 /**
  * Home's "Your realm": the realm of the signed-in viewer's current country, how many board messages are new to them
- * (sub-project 3's `navCounts`, the query the sidebar already polls) and the board's latest three. Nothing for a
- * viewer without a realm. Refreshes once a minute at most; there is no socket here.
+ * (sub-project 3's `navCounts`, the query the sidebar already polls) and the board's latest three. Nothing while it loads
+ * and nothing for a viewer without a realm (so the rail never shifts). Refreshes once a minute at most; there is no socket here.
  */
 export function YourRealmPanel() {
   const { isSignedIn } = useUser();
@@ -32,7 +31,6 @@ export function YourRealmPanel() {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-  if (panel.isLoading) return <Skeleton className="rounded-card h-40" />;
   if (!panel.data) return null;
   const { realm, messages } = panel.data;
   const fresh = counts.data?.realmBoardNew;

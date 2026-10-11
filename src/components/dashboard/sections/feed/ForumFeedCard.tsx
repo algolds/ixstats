@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChatBubble, Heart } from "iconoir-react";
+import { plural } from "~/app/realms/_components/realm-directory";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { Badge } from "~/components/ui/badge";
 import { buttonVariants } from "~/components/ui/button";
@@ -11,9 +12,6 @@ import { ForumAvatar } from "~/components/thinkpages-forum/ForumAvatar";
 import { timeAgo } from "~/lib/format/compact";
 import type { ForumFeedPreview } from "~/lib/thinkpages-forum/preview";
 import { cn } from "~/lib/utils";
-
-const count = (n: number, one: string, many: string) =>
-  `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
 interface ForumFeedCardProps {
   activity: { timestamp: string | Date; forum: ForumFeedPreview };
@@ -89,12 +87,12 @@ export function ForumFeedCard({ activity }: ForumFeedCardProps) {
         <div className="text-label-secondary text-footnote mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
           <span className="inline-flex items-center gap-1 tabular-nums">
             <ChatBubble aria-hidden className="size-4" />
-            {count(forum.replyCount, "reply", "replies")}
+            {plural(forum.replyCount, "reply", "replies")}
           </span>
           {forum.reactionTotal > 0 ? (
             <span className="inline-flex items-center gap-1 tabular-nums">
               <Heart aria-hidden className="size-4" />
-              {count(forum.reactionTotal, "reaction", "reactions")}
+              {plural(forum.reactionTotal, "reaction", "reactions")}
             </span>
           ) : null}
           {ic ? <Badge variant="outline">In character</Badge> : null}

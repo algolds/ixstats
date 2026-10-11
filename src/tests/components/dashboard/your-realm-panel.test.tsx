@@ -94,11 +94,10 @@ describe("YourRealmPanel", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows a skeleton while loading", () => {
+  it("renders nothing while loading, so a viewer without a realm sees no layout shift", () => {
     state.loading = true;
     const { container } = render(<YourRealmPanel />);
-    expect(container.querySelector("[data-slot='skeleton']")).not.toBeNull();
-    expect(screen.queryByRole("region")).toBeNull();
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("names the realm, counts the new messages and lists the latest three", () => {

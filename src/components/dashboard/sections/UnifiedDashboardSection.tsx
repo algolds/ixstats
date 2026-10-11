@@ -289,7 +289,8 @@ export function UnifiedDashboardSection({
                 value={activeTab}
                 onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
                 size="md"
-                className="flex-1"
+                className="min-w-0 flex-1"
+                scrollable
                 asTabs
               />
               <Button
