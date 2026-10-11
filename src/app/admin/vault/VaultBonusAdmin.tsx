@@ -13,19 +13,25 @@ import {
   Trophy,
   Trophy as Award,
 } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 
+type BonusConfig = RouterOutputs["cards"]["getBonusConfig"];
+
 interface BonusField {
-  key: string;
+  key: keyof BonusConfig;
   label: string;
   hint?: string;
   /** The suffix shown inside the input; "Credits" when absent. */
   unit?: string;
+  /** The server's upper bound; absent when the field has none. */
+  max?: number;
+  /** 1 makes the field a whole number; absent allows fractions. */
+  step?: number;
   icon?: React.ComponentType<{ className?: string }>;
 }
 
@@ -106,24 +112,34 @@ const GROUPS: BonusGroup[] = [
         key: "forumActionReward",
         label: "Reward per action",
         hint: "Credits for the first post that links an action",
+        max: 1000,
       },
       {
         key: "forumActionDailyCap",
         label: "Rewarded actions per day",
         hint: "Per country, per UTC day (0 turns the reward off)",
         unit: "per day",
+        max: 100,
+        step: 1,
       },
     ],
   },
 ];
 
+/** The typed text as the number the server accepts: whole when the field is, never past its max. */
+function fieldValue(field: BonusField, text: string): number {
+  const parsed = parseFloat(text) || 0;
+  const value = field.step === 1 ? Math.round(parsed) : parsed;
+  return Math.min(Math.max(value, 0), field.max ?? Infinity);
+}
+
 export function VaultBonusAdmin() {
   const notify = useNotify();
   const { data, isLoading, refetch } = api.cards.getBonusConfig.useQuery();
-  const [form, setForm] = useState<Record<string, number>>({});
+  const [form, setForm] = useState<Partial<BonusConfig>>({});
 
   useEffect(() => {
-    if (data) setForm(data as unknown as Record<string, number>);
+    if (data) setForm(data);
   }, [data]);
 
   const saveMutation = api.cards.setBonusConfig.useMutation({
@@ -203,11 +219,12 @@ export function VaultBonusAdmin() {
                     <div className="relative">
                       <Input
                         type="number"
-                        step="any"
+                        step={field.step ?? "any"}
                         min={0}
+                        max={field.max}
                         value={form[field.key] ?? ""}
                         onChange={(e) =>
-                          setForm((p) => ({ ...p, [field.key]: parseFloat(e.target.value) || 0 }))
+                          setForm((p) => ({ ...p, [field.key]: fieldValue(field, e.target.value) }))
                         }
                         placeholder="0"
                         aria-label={field.label}
