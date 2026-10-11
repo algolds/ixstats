@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "~/app/realms/_components/realm-directory";
 import { Badge } from "~/components/ui/badge";
 import { assetUrl } from "~/lib/base-path";

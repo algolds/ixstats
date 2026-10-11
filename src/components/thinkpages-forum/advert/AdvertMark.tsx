@@ -1,4 +1,4 @@
-import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 
 /** An advert row's mark: the realm's emblem, else its thumbnail, else the realm mark (a globe). */
 export function AdvertMark({

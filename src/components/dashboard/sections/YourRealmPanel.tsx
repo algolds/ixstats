@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useUser } from "~/context/auth-context";
-import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";

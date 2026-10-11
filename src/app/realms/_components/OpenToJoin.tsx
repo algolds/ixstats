@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { realmBoardHref } from "~/lib/thinkpages-forum/links";
-import { RealmAvatar } from "./RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { openToJoinCount, plural, realmHref, type DirectoryRealm } from "./realm-directory";
 
 /** Realms with nations waiting for a player, most open first. Empty when none is. */

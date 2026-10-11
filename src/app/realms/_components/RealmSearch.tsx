@@ -6,7 +6,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { Badge } from "~/components/ui/badge";
 import { SearchField } from "~/components/ui/search-field";
-import { RealmAvatar } from "./RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { plural, realmHref, realmMatches, type DirectoryRealm } from "./realm-directory";
 
 type NationHit = RouterOutputs["realms"]["searchNations"][number];

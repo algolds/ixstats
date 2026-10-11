@@ -5,7 +5,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import { assetUrl } from "~/lib/base-path";
 import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { PlayAsNation } from "~/app/r/[realm]/_components/PlayAsNation";
-import { RealmAvatar } from "./RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "./realm-directory";
 
 type MyRealm = RouterOutputs["realms"]["myNations"]["realms"][number];

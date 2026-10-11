@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChatBubble, Heart } from "iconoir-react";
-import { RealmAvatar } from "~/app/realms/_components/RealmAvatar";
+import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { Badge } from "~/components/ui/badge";
 import { buttonVariants } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
