@@ -6,6 +6,7 @@ import { plural, realmHref, type DirectoryRealm } from "~/app/realms/_components
 import { Badge } from "~/components/ui/badge";
 import { assetUrl } from "~/lib/base-path";
 import { hubHref } from "~/lib/thinkpages-forum/links";
+import { RealmAdvertCard, type AdvertOverview } from "./RealmAdvertCard";
 
 function boardActivity(board: DirectoryRealm["board"]): string {
   if (board.recentPosts === 0 && !board.lastPostAt) return "No posts yet";
@@ -77,9 +78,15 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
   );
 }
 
-export type RealmCardProps = { variant?: "directory"; realm: DirectoryRealm };
+export type RealmCardProps =
+  | { variant?: "directory"; realm: DirectoryRealm }
+  | { variant: "advert"; overview: AdvertOverview };
 
-/** A realm as a card: in the directory it is a list item with counts, tags, board activity and a way in. */
+/**
+ * A realm as a card. The directory variant is a list item for the realms directory; the advert variant heads a Find a
+ * Realm advert thread and is fed by `realms.region.overview` (live data, never a stored snapshot).
+ */
 export function RealmCard(props: RealmCardProps) {
+  if (props.variant === "advert") return <RealmAdvertCard overview={props.overview} />;
   return <DirectoryRealmCard realm={props.realm} />;
 }

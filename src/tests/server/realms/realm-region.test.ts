@@ -550,6 +550,17 @@ describe("overview and happenings", () => {
     return db;
   }
 
+  it("returns the realm's emblem for the advert card", async () => {
+    const db = overviewDb();
+    const row = await db.realm.findUnique({ where: { slug: "eurth" } });
+    db.realm.findUnique.mockResolvedValue({ ...row, emblemUrl: "https://img.example/emblem.png" });
+    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(overview!.realm.emblemUrl).toBe("https://img.example/emblem.png");
+    expect(db.realm.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ select: expect.objectContaining({ emblemUrl: true }) })
+    );
+  });
+
   it("shows a staff-administered realm's header, stats and factbook", async () => {
     const db = overviewDb();
     const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
