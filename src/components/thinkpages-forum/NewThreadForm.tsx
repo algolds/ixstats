@@ -11,8 +11,8 @@ import { categoryHref, FORUM_HOME, hubHref, threadHref } from "~/lib/thinkpages-
 import { api } from "~/trpc/react";
 import { BanNotice } from "./BanNotice";
 import { CanvasComposer, useMyPersonas, type CanvasSubmitMeta } from "./composer";
+import { ForumFormPage, OpenStartedLink } from "./ForumFormPage";
 import { ForumLoadError, ForumPageSkeleton } from "./ForumPageState";
-import { ForumPage } from "./shell";
 
 interface NewThreadFormProps {
   categoryKey: string;
@@ -68,14 +68,14 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   }
 
   const page = (children: ReactNode) => (
-    <ForumPage
+    <ForumFormPage
       title="New thread"
       // The back link names the board; the line under the title adds only what it does not: the realm.
       breadcrumbs={data.category.realm?.name}
       back={{ href: backHref, label: data.category.name }}
     >
-      <div className="flex max-w-3xl min-w-0 flex-col gap-4">{children}</div>
-    </ForumPage>
+      {children}
+    </ForumFormPage>
   );
 
   if (!data.canStart) {
@@ -111,11 +111,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
         postStyle={data.category.style === "ic" ? "ic" : "ooc"}
         onSubmit={submit}
       />
-      {startedId ? (
-        <Button asChild variant="secondary" className="pointer-coarse:min-h-11">
-          <Link href={threadHref(startedId)}>Open the thread</Link>
-        </Button>
-      ) : null}
+      {startedId ? <OpenStartedLink href={threadHref(startedId)} label="Open the thread" /> : null}
     </>
   );
 }
