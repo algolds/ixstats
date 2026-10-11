@@ -50,7 +50,10 @@ export function RealmFeedPanel({ realms }: { realms: DirectoryRealm[] | undefine
           </Select>
         </div>
       </div>
-      <RealmFeed realmId={selected === ALL ? null : selected} />
+      <RealmFeed
+        realmId={selected === ALL ? null : selected}
+        realmSlug={realms?.find((realm) => realm.id === selected)?.slug ?? null}
+      />
     </section>
   );
 }

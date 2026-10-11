@@ -6,11 +6,13 @@
 import React from "react";
 import type { ReactNode } from "react";
 import { act, render, screen } from "@testing-library/react";
+import type { RouterOutputs } from "~/trpc/react";
 
 let mockSearch = "";
 let mockInviter: { handle: string; displayName: string } | null = null;
 let mockInviterLoading = false;
 const queries: Record<string, unknown> = {};
+let mockBoard: RouterOutputs["thinkpagesForum"]["realmBoardPreview"] | undefined = undefined;
 
 jest.mock("next/link", () => ({
   __esModule: true,
@@ -45,6 +47,9 @@ jest.mock("~/trpc/react", () => ({
             ? { data: mockInviterLoading ? undefined : mockInviter, isLoading: mockInviterLoading }
             : { data: undefined, isLoading: false },
       },
+    },
+    thinkpagesForum: {
+      realmBoardPreview: { useQuery: () => ({ data: mockBoard, isLoading: false }) },
     },
   },
 }));
@@ -93,6 +98,7 @@ beforeEach(() => {
   mockSearch = "";
   mockInviter = null;
   mockInviterLoading = false;
+  mockBoard = undefined;
 });
 
 describe("realm Overview join section", () => {
@@ -188,5 +194,49 @@ describe("realm Overview forum section", () => {
     expect(screen.getByRole("link", { name: "Open the forum" }).getAttribute("href")).toBe(
       forumHub
     );
+  });
+
+  it("shows the board's latest messages above the Hub threads, with a link to open the board", async () => {
+    mockBoard = {
+      realm: { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null },
+      messages: [
+        {
+          id: "p2",
+          author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false },
+          excerpt: "Trade talks resume",
+          createdAt: new Date(Date.now() - 5 * 60_000),
+          href: "/thinkpages/r/eurth#post-p2",
+        },
+      ],
+    };
+    queries.overview = {
+      ...overview,
+      forum: {
+        threads: [{ id: "t1", title: "Welcome to Eurth", replies: 1, lastPostAt: new Date() }],
+      },
+    };
+    await renderOverview();
+    const board = screen.getByRole("heading", { name: "On the board" });
+    const hub = screen.getByRole("link", { name: /Welcome to Eurth/ });
+    expect(board.compareDocumentPosition(hub) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Trade talks resume/ })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth#post-p2"
+    );
+    expect(screen.getByRole("link", { name: "Open the board" })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth"
+    );
+    expect(screen.getByRole("link", { name: "Open the forum" })).toHaveAttribute(
+      "href",
+      "/thinkpages/r/eurth/hub"
+    );
+  });
+
+  it("leaves the forum section as it was when the board preview is unavailable", async () => {
+    mockBoard = null;
+    await renderOverview();
+    expect(screen.queryByRole("heading", { name: "On the board" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Latest on the forum" })).toBeTruthy();
   });
 });

@@ -12,6 +12,7 @@ import { cn } from "~/lib/utils";
 import { WIKI_SOURCES, parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { buttonVariants } from "~/components/ui/button";
 import { useRealmInviter } from "~/components/realms/use-invite-via";
+import { RealmBoardBlock } from "../_components/RealmBoardBlock";
 import { RealmInvitePanel } from "../_components/RealmInvitePanel";
 import {
   CensusPanel,
@@ -168,6 +169,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
             </Link>
           }
         >
+          <RealmBoardBlock slug={realm.slug} className="border-separator mb-5 border-b pb-5" />
           {forum.threads.length === 0 ? (
             <p className="text-label-secondary text-body">
               {viewer.ownedNations.length > 0

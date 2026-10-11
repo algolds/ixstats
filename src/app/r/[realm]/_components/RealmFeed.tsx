@@ -3,12 +3,9 @@
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
+import { RealmBoardBlock } from "./RealmBoardBlock";
 
-/**
- * The ThinkPages feed scoped to one realm (posts by its nations' personas plus its board), or to every
- * realm when `realmId` is null.
- */
-export function RealmFeed({ realmId }: { realmId: string | null }) {
+function RealmPosts({ realmId }: { realmId: string | null }) {
   const { user } = useUser();
   const { data, isLoading, error } = api.thinkpages.getFeed.useQuery(
     { realmId: realmId ?? undefined, limit: 20 },
@@ -34,6 +31,26 @@ export function RealmFeed({ realmId }: { realmId: string | null }) {
           currentUserAccountId={user?.id || "placeholder-disabled"}
         />
       ))}
+    </div>
+  );
+}
+
+/**
+ * The ThinkPages feed scoped to one realm (posts by its nations' personas), or to every realm when `realmId` is
+ * null. For one realm whose slug is known, the realm's live board (its newest native board messages) sits above the
+ * posts; the old ThinkTank board chat is no longer part of the feed.
+ */
+export function RealmFeed({
+  realmId,
+  realmSlug = null,
+}: {
+  realmId: string | null;
+  realmSlug?: string | null;
+}) {
+  return (
+    <div className="space-y-4">
+      {realmId && realmSlug ? <RealmBoardBlock slug={realmSlug} framed /> : null}
+      <RealmPosts realmId={realmId} />
     </div>
   );
 }
