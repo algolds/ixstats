@@ -11,6 +11,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
 import { canSeeThread, type ForumViewer } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { boardAccessFor, type BoardAccessDb } from "./board-access";
 import { ForumError } from "./errors";
 import { postingBan } from "./mod-bans";
@@ -35,6 +36,7 @@ const TARGET_SELECT = {
       hidden: true,
       locked: true,
       archived: true,
+      advertRealmId: true,
       category: {
         select: { id: true, key: true, style: true, scope: true, realmId: true, visibility: true },
       },
@@ -62,6 +64,7 @@ const notFound = (): ForumError => new ForumError("NOT_FOUND", "Post not found."
  * - `resolvePostLocation` (post-location.ts), the post permalink: the thread passes `canSeeThread`, a hidden post
  *   needs a moderator of its category, and the category's realm must be visible to the viewer.
  * - `loadVisibleThread` (reads.ts), the thread page: the same `canSeeThread` and realm checks on the thread itself.
+ * Both also treat the advert of a realm the viewer cannot see as not found (`advertHiddenFrom`, advert-access.ts).
  * One difference is deliberate: both of those refuse a realm board's thread, while a board message is a post that takes
  * reactions, so it is read here under the same rules and flagged `board`.
  */
@@ -76,7 +79,7 @@ export async function loadReadablePost(
   if (!canSeeThread(viewer, post.thread, category)) throw notFound();
   if (post.hidden && !canModerateCategory(viewer, category)) throw notFound();
   const realm = await visibleRealmOf(db, viewer, category);
-  if (realm === undefined) throw notFound();
+  if (realm === undefined || (await advertHiddenFrom(db, viewer, post.thread))) throw notFound();
   return { post, category, realm, board: isBoardCategory(category) };
 }
 

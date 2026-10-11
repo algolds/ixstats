@@ -5,6 +5,7 @@
  */
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeThread, type ForumViewer, type ModeratorContext } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { forumMemberOf } from "./forum-viewer";
 import { MODERATOR_POWER, type ScopeDb } from "./mod-scope";
 import { canSeeRealm, type ForumRealm } from "./realm-access";
@@ -24,7 +25,7 @@ export interface Recipient {
 }
 
 export interface NoticePlace {
-  thread: { authorUserId: string | null; hidden: boolean };
+  thread: { authorUserId: string | null; hidden: boolean; advertRealmId?: string | null };
   category: { id: string; scope: string; realmId: string | null; visibility: string };
   /** The category's realm, null in the sitewide section. */
   realm: ForumRealm | null;
@@ -89,6 +90,7 @@ export async function readableUsers<T extends Recipient>(
     const viewer: ForumViewer = mods ? { ...member, mod: mods.get(user.id) } : member;
     if (!canSeeThread(viewer, place.thread, place.category)) continue;
     if (place.realm && !canSeeRealm(viewer, place.realm)) continue;
+    if (await advertHiddenFrom(db, viewer, place.thread)) continue;
     readable.push(user);
   }
   return readable;

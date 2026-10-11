@@ -7,6 +7,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { ForumError } from "./errors";
 import { assertNotBanned } from "./mod-bans";
 import { logModAction, modNote } from "./mod-log";
@@ -59,6 +60,7 @@ interface SeenTarget {
   thread: {
     authorUserId: string | null;
     hidden: boolean;
+    advertRealmId?: string | null;
     category: { id: string; scope: string; realmId: string | null; visibility: string };
   };
 }
@@ -67,7 +69,12 @@ async function findTarget(
   db: Pick<ReportsDb, "forumThread" | "forumPost">,
   input: { targetType: ReportTargetType; targetId: string }
 ): Promise<SeenTarget | null> {
-  const threadSelect = { authorUserId: true, hidden: true, category: TARGET_CATEGORY } as const;
+  const threadSelect = {
+    authorUserId: true,
+    hidden: true,
+    advertRealmId: true,
+    category: TARGET_CATEGORY,
+  } as const;
   if (input.targetType === "thread") {
     const thread = await db.forumThread.findUnique({
       where: { id: input.targetId },
@@ -82,7 +89,7 @@ async function findTarget(
   return post && { authorUserId: post.authorUserId, postHidden: post.hidden, thread: post.thread };
 }
 
-/** The read rules: the thread, a hidden post (moderators only), and the realm (drafts hidden). */
+/** The read rules: the thread, a hidden post (moderators only), and the realm (drafts hidden, adverts of them too). */
 async function canSeeTarget(
   db: ReportsDb,
   actor: ForumActor,
@@ -91,7 +98,8 @@ async function canSeeTarget(
   const { category } = target.thread;
   if (!canSeeThread(actor, target.thread, category)) return false;
   if (target.postHidden && !canModerateCategory(actor, category)) return false;
-  return (await visibleRealmOf(db, actor, category)) !== undefined;
+  if ((await visibleRealmOf(db, actor, category)) === undefined) return false;
+  return !(await advertHiddenFrom(db, actor, target.thread));
 }
 
 const targetNotFound = (type: ReportTargetType) =>

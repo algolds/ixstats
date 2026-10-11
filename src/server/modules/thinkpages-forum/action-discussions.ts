@@ -13,6 +13,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import { canSeeThread, type ForumViewer } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { canModerateCategory } from "./mod-scope";
 import { authorsOf, visibleRealmOf, type AuthorsDb } from "./reads";
 import type { ForumRealm } from "./realm-access";
@@ -92,6 +93,7 @@ const POST_SELECT = {
       title: true,
       hidden: true,
       authorUserId: true,
+      advertRealmId: true,
       category: {
         select: {
           id: true,
@@ -124,6 +126,7 @@ interface Seen {
  * - `loadVisibleThread` (reads.ts), the thread page: the same `canSeeThread` and realm checks on the thread itself.
  * - `loadReadablePost` (reaction-target.ts): the same three checks for a thread post and for a realm board message,
  *   which `boardPostRealm` (board.ts) resolves for the board permalink by the hidden-post and realm rules alone.
+ * All of them also drop the advert of a realm the viewer cannot see (`advertHiddenFrom`, advert-access.ts).
  * Moderators keep hidden posts (the caller marks them). A persona's post is dropped for everyone (see the file head).
  */
 async function visiblePosts(
@@ -137,12 +140,14 @@ async function visiblePosts(
     where: { id: { in: [...new Set(refs)] } },
     select: POST_SELECT,
   });
-  const readable = rows.filter((row) => {
-    if (row.authorPersonaId) return false;
+  const readable: PostRow[] = [];
+  for (const row of rows) {
+    if (row.authorPersonaId) continue;
     const { category } = row.thread;
-    if (!canSeeThread(viewer, row.thread, category)) return false;
-    return !row.hidden || canModerateCategory(viewer, category);
-  });
+    if (!canSeeThread(viewer, row.thread, category)) continue;
+    if (row.hidden && !canModerateCategory(viewer, category)) continue;
+    if (!(await advertHiddenFrom(db, viewer, row.thread))) readable.push(row);
+  }
   const places = new Map(
     readable.map(({ thread: { category } }) => [
       `${category.scope}:${category.realmId ?? ""}`,

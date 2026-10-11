@@ -42,6 +42,7 @@ const POST_SELECT = {
       title: true,
       authorUserId: true,
       hidden: true,
+      advertRealmId: true,
       category: {
         select: { id: true, key: true, style: true, scope: true, realmId: true, visibility: true },
       },

@@ -2,7 +2,7 @@
  * The forum's side of the action reward (spec section 5): after a thread, a reply or a board message is saved, the
  * links that save created may pay. Only a post anyone can read pays: a signed-out reader must be able to open it
  * (`canSeeThread` and `visibleRealmOf` for no viewer, and not hidden), so a Reports thread, a staff category, a hidden
- * post and a draft realm's board never earn, and a reward cannot be farmed in a place nobody sees. The actor must have
+ * post, a draft realm's board and the advert of a draft realm never earn, and a reward cannot be farmed in a place nobody sees. The actor must have
  * a nation (the same condition a token needs). The reward is private to the posting user, a persona post included.
  * Best effort: every failure is logged and reads as no reward, so a post is never failed by its reward.
  */
@@ -10,6 +10,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { ForumReward } from "~/lib/action-rewards";
 import { grantActionLinkRewards } from "~/server/modules/action-links";
 import { canSeeThread } from "./access";
+import { advertHiddenFrom } from "./advert-access";
 import { visibleRealmOf } from "./reads";
 
 export type ActionRewardDb = Pick<
@@ -27,6 +28,7 @@ async function isPubliclyReadable(db: ActionRewardDb, postId: string): Promise<b
         select: {
           authorUserId: true,
           hidden: true,
+          advertRealmId: true,
           category: {
             select: { id: true, scope: true, realmId: true, visibility: true },
           },
@@ -37,6 +39,7 @@ async function isPubliclyReadable(db: ActionRewardDb, postId: string): Promise<b
   if (!post || post.hidden) return false;
   const { category } = post.thread;
   if (!canSeeThread(null, post.thread, category)) return false;
+  if (await advertHiddenFrom(db, null, post.thread)) return false;
   return (await visibleRealmOf(db, null, category)) !== undefined;
 }
 

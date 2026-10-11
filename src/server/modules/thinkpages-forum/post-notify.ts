@@ -60,6 +60,7 @@ const POST_SELECT = {
       title: true,
       hidden: true,
       authorUserId: true,
+      advertRealmId: true,
       category: {
         select: { id: true, key: true, style: true, scope: true, realmId: true, visibility: true },
       },
