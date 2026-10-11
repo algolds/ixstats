@@ -164,80 +164,104 @@ describe("realm board exclusions", () => {
     expect(JSON.stringify(argsOf(findFirst as never))).toContain('"style":{"not":"board"}');
   });
 
+  const directoryRealm = (n: number) => ({
+    id: `r${n}`,
+    slug: `r${n}`,
+    name: `R${n}`,
+    description: null,
+    thumbnail: null,
+    bannerUrl: null,
+    tags: [],
+    foundedAt: null,
+    createdAt: new Date(),
+    settings: null,
+    _count: { countries: 0 },
+  });
+  const directoryDb = (realmCount: number) => ({
+    realm: {
+      findMany: jest.fn(async () =>
+        Array.from({ length: realmCount }, (_, i) => directoryRealm(i + 1))
+      ),
+    },
+    country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
+    realmPage: { findMany: jest.fn(async () => []) },
+    forumCategory: { findMany: jest.fn(async (_args: object) => []) },
+    forumPost: { groupBy: jest.fn(async () => []) },
+    forumThread: {
+      findMany: jest.fn(async (_args: object) => []),
+      groupBy: jest.fn(async (_args: object) => []),
+    },
+  });
+  const forumQueries = (db: ReturnType<typeof directoryDb>) =>
+    [
+      db.forumCategory.findMany,
+      db.forumPost.groupBy,
+      db.forumThread.findMany,
+      db.forumThread.groupBy,
+    ]
+      .map((fn) => fn.mock.calls.length)
+      .reduce((a, b) => a + b, 0);
+
   it("the realm directory's forum activity counts no board message", async () => {
-    const postCount = jest.fn(async (_args: object) => 0);
-    const threadFirst = jest.fn(async (_args: object) => null);
-    const db = {
-      realm: {
-        findMany: jest.fn(async () => [
-          {
-            id: "r1",
-            slug: "r1",
-            name: "R1",
-            description: null,
-            thumbnail: null,
-            bannerUrl: null,
-            tags: [],
-            foundedAt: null,
-            createdAt: new Date(),
-            settings: null,
-            _count: { countries: 0 },
-          },
-        ]),
-      },
-      country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
-      realmPage: { findMany: jest.fn(async () => []) },
-      forumPost: { count: postCount, groupBy: jest.fn(async () => []) },
-      forumThread: { findFirst: threadFirst, findMany: jest.fn(async () => []) },
-    };
+    const db = directoryDb(1);
     await listRealmDirectory(db as never, null);
-    const inSection = (argsOf(postCount as never).where as { thread: { category: object } }).thread;
-    expect(inSection.category).toMatchObject(NOT_BOARD);
-    expect((argsOf(threadFirst as never).where as { category: object }).category).toMatchObject(
-      NOT_BOARD
-    );
+    const section = argsOf(db.forumCategory.findMany as never).where as object;
+    expect(section).toMatchObject({ scope: "realm", visibility: "public", ...NOT_BOARD });
   });
 
   it("the directory's board-week figure is separate: the forum count keeps excluding the board, the board is read in its own batch", async () => {
-    const postCount = jest.fn(async (_args: object) => 0);
-    const threadMany = jest.fn(async (_args: object) => []);
-    const db = {
-      realm: {
-        findMany: jest.fn(async () => [
-          {
-            id: "r1",
-            slug: "r1",
-            name: "R1",
-            description: null,
-            thumbnail: null,
-            bannerUrl: null,
-            tags: [],
-            foundedAt: null,
-            createdAt: new Date(),
-            settings: null,
-            _count: { countries: 0 },
-          },
-        ]),
-      },
-      country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
-      realmPage: { findMany: jest.fn(async () => []) },
-      forumPost: { count: postCount, groupBy: jest.fn(async () => []) },
-      forumThread: { findFirst: jest.fn(async () => null), findMany: threadMany },
-    };
+    const db = directoryDb(1);
     await listRealmDirectory(db as never, null);
-    expect(postCount).toHaveBeenCalledTimes(1);
-    const forumCount = (
-      argsOf(postCount as never).where as { thread: { category: Record<string, object | string> } }
-    ).thread.category;
-    expect(forumCount).toMatchObject(NOT_BOARD);
-    expect(forumCount.OR).toBeUndefined();
+    const forumSection = argsOf(db.forumCategory.findMany as never).where as Record<string, object>;
+    expect(forumSection).toMatchObject(NOT_BOARD);
+    expect(forumSection.OR).toBeUndefined();
     const boardCategory = (
-      argsOf(threadMany as never).where as { category: Record<string, object | string> }
+      argsOf(db.forumThread.findMany as never).where as {
+        category: Record<string, object | string>;
+      }
     ).category;
     expect(boardCategory).toMatchObject({
       OR: [{ style: "board" }, { scope: "realm", key: "board" }],
     });
     expect(boardCategory.style).toBeUndefined();
+  });
+
+  it("the directory reads every realm's forum activity in a fixed number of queries", async () => {
+    const few = directoryDb(2);
+    const many = directoryDb(12);
+    await listRealmDirectory(few as never, null);
+    await listRealmDirectory(many as never, null);
+    expect(forumQueries(many)).toBe(forumQueries(few));
+  });
+
+  it("the directory sums each realm's posts and picks its latest thread across its sections", async () => {
+    const db = directoryDb(3);
+    const early = new Date("2026-10-01T00:00:00Z");
+    const late = new Date("2026-10-09T00:00:00Z");
+    db.forumCategory.findMany.mockResolvedValue([
+      { id: "c1", realmId: "r1" },
+      { id: "c2", realmId: "r1" },
+      { id: "c3", realmId: "r2" },
+    ] as never);
+    db.forumThread.groupBy.mockResolvedValue([
+      { categoryId: "c1", _max: { lastPostAt: early } },
+      { categoryId: "c2", _max: { lastPostAt: late } },
+    ] as never);
+    db.forumThread.findMany.mockImplementation(async (args: object) =>
+      "posts" in (args as { where: object }).where
+        ? ([
+            { categoryId: "c1", _count: { posts: 2 } },
+            { categoryId: "c2", _count: { posts: 3 } },
+            { categoryId: "c3", _count: { posts: 1 } },
+          ] as never)
+        : []
+    );
+    const out = await listRealmDirectory(db as never, null);
+    expect(out.map((r) => r.board)).toEqual([
+      { recentPosts: 5, lastPostAt: late },
+      { recentPosts: 1, lastPostAt: null },
+      { recentPosts: 0, lastPostAt: null },
+    ]);
   });
 
   it("a moderator is never offered the board as a place to move a thread", async () => {

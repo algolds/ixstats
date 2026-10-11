@@ -46,30 +46,62 @@ async function unclaimedNationPages<P extends NationPage>(
   return pages.filter((page) => !taken(page));
 }
 
+type ForumActivity = { recentPosts: number; lastPostAt: Date | null };
+
 /**
- * Activity in a realm's forum section since `since`: posts made and the latest thread activity. Public categories
- * only (the directory is open to everyone) and nothing hidden; an archived thread is never the latest (U12).
+ * Activity in the realms' forum sections since `since`: posts made and the latest thread activity, for every realm in
+ * three queries however many there are (the sections' categories, the latest thread per category, the threads that had
+ * posts in the window with their counts). Public categories only (the directory is open to everyone) and nothing
+ * hidden; an archived thread is never the latest (U12). A realm with no section reads as no posts and no activity.
  */
-async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
-  const inSection = {
-    hidden: false,
-    category: { scope: "realm", realmId, visibility: "public", ...notBoardCategory() },
-  };
-  const [recentPosts, latest] = await Promise.all([
-    db.forumPost.count({ where: { hidden: false, createdAt: { gte: since }, thread: inSection } }),
-    db.forumThread.findFirst({
-      where: { ...inSection, archived: false },
-      orderBy: { lastPostAt: "desc" },
-      select: { lastPostAt: true },
+async function forumActivityByRealm(
+  db: PrismaClient,
+  realmIds: string[],
+  since: Date
+): Promise<Map<string, ForumActivity>> {
+  const activity = new Map<string, ForumActivity>(
+    realmIds.map((id) => [id, { recentPosts: 0, lastPostAt: null }])
+  );
+  const categories = await db.forumCategory.findMany({
+    where: {
+      scope: "realm",
+      realmId: { in: realmIds },
+      visibility: "public",
+      ...notBoardCategory(),
+    },
+    select: { id: true, realmId: true },
+  });
+  const realmOf = new Map(categories.map((category) => [category.id, category.realmId]));
+  if (realmOf.size === 0) return activity;
+  const categoryIds = [...realmOf.keys()];
+  const inWindow = { hidden: false, createdAt: { gte: since } };
+  const [latest, active] = await Promise.all([
+    db.forumThread.groupBy({
+      by: ["categoryId"],
+      where: { categoryId: { in: categoryIds }, hidden: false, archived: false },
+      _max: { lastPostAt: true },
+    }),
+    db.forumThread.findMany({
+      where: { categoryId: { in: categoryIds }, hidden: false, posts: { some: inWindow } },
+      select: { categoryId: true, _count: { select: { posts: { where: inWindow } } } },
     }),
   ]);
-  return { recentPosts, lastPostAt: latest?.lastPostAt ?? null };
+  for (const row of latest) {
+    const entry = activity.get(realmOf.get(row.categoryId) ?? "");
+    const at = row._max.lastPostAt;
+    if (entry && at && (!entry.lastPostAt || at > entry.lastPostAt)) entry.lastPostAt = at;
+  }
+  for (const thread of active) {
+    const entry = activity.get(realmOf.get(thread.categoryId) ?? "");
+    if (entry) entry.recentPosts += thread._count.posts;
+  }
+  return activity;
 }
 
 /**
  * Messages on the realms' live boards since `since`: the directory's own "board messages this week" figure, batched
  * for the whole directory in two queries however many realms there are (the realms' public board threads, then one
- * grouped count of their messages). It is never added to `forumActivity`'s post count (the board stays out of every
+ * grouped count of their messages). It is never added to `forumActivityByRealm`'s post count (the board stays out of every
  * forum count): public board category, thread not hidden, messages not hidden and not the placeholder line of a
  * message that was continued in a thread.
  */
@@ -159,12 +191,12 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const unclaimedBy = countBy(unclaimed);
   const mineBy = countBy(mine);
 
-  // The board-week figure is batched for every realm (two queries); the per-realm forum counts still exclude the board.
+  // Both figures are batched for every realm; the forum counts still exclude the board, which has its own figure.
   const [boardWeek, boards] = await Promise.all([
     boardMessagesByRealm(db, realmIds, since),
-    Promise.all(realms.map((realm) => forumActivity(db, realm.id, since))),
+    forumActivityByRealm(db, realmIds, since),
   ]);
-  return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }, index) => ({
+  return realms.map(({ settings, _count, foundedAt, createdAt, ...realm }) => ({
     ...realm,
     foundedAt: foundedAt ?? createdAt,
     nationCount: _count.countries,
@@ -174,7 +206,7 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
     myNationCount: mineBy.get(realm.id) ?? 0,
     maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
     /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
-    board: boards[index]!,
+    board: boards.get(realm.id)!,
     /** Board messages in the last week: its own figure, never added to `board.recentPosts`. */
     boardMessagesThisWeek: boardWeek.get(realm.id) ?? 0,
   }));
