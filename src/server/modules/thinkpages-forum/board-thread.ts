@@ -21,3 +21,9 @@ export async function boardThreadOf(
   });
   return thread ? { categoryId: thread.categoryId, threadId: thread.id } : null;
 }
+
+/**
+ * The board messages a preview lists and the sidebar's "new" badge counts: visible ones, and not the placeholders of
+ * messages continued into a thread. One definition, so the badge never counts what the list skips.
+ */
+export const PREVIEWED_BOARD_MESSAGES = { hidden: false, continuedThreadId: null } as const;

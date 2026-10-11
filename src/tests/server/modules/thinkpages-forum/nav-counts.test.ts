@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { forumNavCounts } from "~/server/modules/thinkpages-forum/nav-counts";
+import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum/board-thread";
 import { advertGate } from "~/server/modules/thinkpages-forum/advert-access";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
@@ -117,10 +118,22 @@ describe("forumNavCounts", () => {
       where: {
         threadId: "t_board",
         hidden: false,
+        continuedThreadId: null,
         createdAt: { gt: read },
         OR: [{ authorUserId: null }, { authorUserId: { not: "u1" } }],
       },
     });
+  });
+
+  it("counts what the Home panel's list can show: no hidden message and no continued placeholder", async () => {
+    const db = navDb({
+      nations: [{ id: "c1", realmId: "r_eurth", currentTotalGdp: 5 }],
+      boardPosts: 1,
+    });
+    await forumNavCounts(db as never, member);
+    const [[query]] = db.forumPost.count.mock.calls as never as [[{ where: object }]];
+    expect(query.where).toMatchObject(PREVIEWED_BOARD_MESSAGES);
+    expect(PREVIEWED_BOARD_MESSAGES).toEqual({ hidden: false, continuedThreadId: null });
   });
 
   it("clamps both counts at 100 for the sidebar's 99+", async () => {

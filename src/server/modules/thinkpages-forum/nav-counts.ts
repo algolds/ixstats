@@ -6,7 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { capCount, seenSince } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
-import { boardThreadOf } from "./board-thread";
+import { boardThreadOf, PREVIEWED_BOARD_MESSAGES } from "./board-thread";
 import { canSeeRealm, loadForumRealm, type RealmDb } from "./realm-access";
 import { primaryRealmIdOf } from "./realm-reads";
 import { unreadWatchedCount, type ListingDb } from "./thread-listing";
@@ -19,7 +19,10 @@ export interface NavCounts {
   realmBoardNew: number;
 }
 
-/** Messages on the viewer's realm board newer than their read mark (or the floor), not their own. */
+/**
+ * Messages on the viewer's realm board newer than their read mark (or the floor), not their own. Hidden messages and
+ * continued placeholders are not counted: the Home panel's list skips them too.
+ */
 async function realmBoardNew(
   db: NavCountsDb,
   viewer: NonNullable<ForumViewer>,
@@ -38,7 +41,7 @@ async function realmBoardNew(
   return db.forumPost.count({
     where: {
       threadId: board.threadId,
-      hidden: false,
+      ...PREVIEWED_BOARD_MESSAGES,
       createdAt: { gt: since },
       // An imported message has no author; `not` alone would drop the null rows.
       OR: [{ authorUserId: null }, { authorUserId: { not: viewer.id } }],
