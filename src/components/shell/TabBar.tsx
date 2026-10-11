@@ -66,7 +66,7 @@ function TabIndicator() {
       aria-hidden
       layoutId="tab-bar-current"
       transition={springSnappy}
-      className="bg-tint-fill rounded-row absolute inset-x-1 inset-y-1"
+      className="facet-recess rounded-row absolute inset-x-1 inset-y-1"
     />
   );
 }
