@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 interface MentionMenuPortalProps {
   coords: { top: number; left: number };
@@ -68,14 +69,29 @@ export function MentionMenuPortal({
                       : "text-neutral-700 hover:bg-neutral-500/5 dark:text-slate-300 dark:hover:bg-white/5"
                   )}
                 >
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-xs leading-none dark:border-white/5 dark:bg-white/5">
-                    {item.icon}
-                  </div>
+                  {item.avatar ? (
+                    <Avatar className="size-6">
+                      {item.avatar.url && <AvatarImage src={item.avatar.url} alt="" />}
+                      <AvatarFallback className="text-xs">
+                        {(item.title ?? item.name).replace(/^@/, "").charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    item.icon && (
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-neutral-200/50 bg-neutral-100/50 text-xs leading-none dark:border-white/5 dark:bg-white/5">
+                        {item.icon}
+                      </div>
+                    )
+                  )}
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs leading-tight font-bold">{item.name}</div>
-                    <div className="mt-0.5 truncate text-xs font-semibold text-neutral-400 dark:text-slate-500">
-                      {item.description}
+                    <div className="truncate text-xs leading-tight font-bold">
+                      {item.title ?? item.name}
                     </div>
+                    {item.description && (
+                      <div className="mt-0.5 truncate text-xs font-semibold text-neutral-400 dark:text-slate-500">
+                        {item.description}
+                      </div>
+                    )}
                   </div>
                 </button>
               );

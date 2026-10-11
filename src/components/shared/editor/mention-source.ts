@@ -32,7 +32,24 @@ export interface MentionResultItem {
   name: string;
   description: string;
   icon: string;
+  /** The menu's first line when it is not `name` (a persona's display name). */
+  title?: string;
+  /** Set for a source's rows: the menu shows this avatar, with its initial as the fallback, and no icon. */
+  avatar?: { url: string | null };
   raw: MentionSuggestion | OwnMentionAccount;
+}
+
+/** A source row's two lines: a persona leads with its display name over its `@username`; a user with nothing to add shows the name alone. */
+function suggestionLines(
+  suggestion: MentionSuggestion
+): Pick<MentionResultItem, "title" | "description"> {
+  const handle = `@${suggestion.name}`;
+  if (suggestion.kind === "persona") {
+    return suggestion.label === suggestion.name
+      ? { description: "" }
+      : { title: suggestion.label, description: handle };
+  }
+  return { description: suggestion.label === suggestion.name ? "" : suggestion.label };
 }
 
 /** The people in the @ menu: the source's suggestions, else the member's own personas that match the query. */
@@ -46,9 +63,9 @@ export function userMentionItems(
       type: "user",
       id: `${suggestion.kind}:${suggestion.name}`,
       name: `@${suggestion.name}`,
-      description:
-        suggestion.kind === "persona" ? `${suggestion.label} (persona)` : suggestion.label,
-      icon: USER_MENTION_ICON,
+      ...suggestionLines(suggestion),
+      icon: "",
+      avatar: { url: suggestion.avatarUrl },
       raw: suggestion,
     }));
   }
