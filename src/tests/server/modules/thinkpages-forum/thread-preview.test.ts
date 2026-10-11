@@ -38,6 +38,14 @@ interface FakePost {
   createdAt: Date;
   hidden: boolean;
 }
+interface ListingWhere {
+  hidden: boolean;
+  category: object;
+}
+interface PostArgs {
+  where: PostWhere;
+  distinct?: string[];
+}
 interface PostWhere {
   threadId?: string | { in: string[] };
   hidden?: boolean;
@@ -112,6 +120,7 @@ const EURTH = {
   slug: "eurth",
   name: "Eurth",
   emblemUrl: "https://img.example/e.png",
+  thumbnail: "https://img.example/e-thumb.png",
   status: "active",
 };
 
@@ -121,11 +130,17 @@ function fakeDb(opts: { listing: ListedRow[]; posts?: FakePost[]; realms?: objec
   const newestFirst = (a: FakePost, b: FakePost) =>
     b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id);
   const oldestFirst = (a: FakePost, b: FakePost) => newestFirst(b, a);
-  const threadFindMany = jest.fn(async (_args: { where: Record<string, unknown> }) => opts.listing);
-  const postFindMany = jest.fn(async (args: { where: PostWhere }) => {
+  const threadFindMany = jest.fn(async (_args: { where: ListingWhere }) => opts.listing);
+  const postFindMany = jest.fn(async (args: PostArgs) => {
     const { threadId, OR } = args.where;
     if (typeof threadId === "object") {
-      return posts.filter((p) => threadId.in.includes(p.threadId) && visible(p)).sort(oldestFirst);
+      const rows = posts
+        .filter((p) => threadId.in.includes(p.threadId) && visible(p))
+        .sort((a, b) => a.threadId.localeCompare(b.threadId) || oldestFirst(a, b));
+      // Like Prisma's `distinct: ["threadId"]`: the first row of each thread in the ordering.
+      return args.distinct?.includes("threadId")
+        ? rows.filter((p, i) => rows.findIndex((q) => q.threadId === p.threadId) === i)
+        : rows;
     }
     return posts
       .filter(
@@ -146,10 +161,8 @@ function fakeDb(opts: { listing: ListedRow[]; posts?: FakePost[]; realms?: objec
   const userFindMany = jest.fn(async (args: { where: { id: { in: string[] } } }) =>
     USERS.filter((u) => args.where.id.in.includes(u.id))
   );
-  const realmFindMany = jest.fn(async (args: { where?: { id: { in: string[] } } }) => {
-    const rows = opts.realms ?? [EURTH];
-    const ids = args.where?.id.in;
-    return ids ? rows.filter((r) => ids.includes((r as { id: string }).id)) : rows;
+  const realmFindMany = jest.fn(async (_args: { select: object }) => {
+    return opts.realms ?? [EURTH];
   });
   const db = {
     forumThread: { findMany: threadFindMany },
@@ -157,12 +170,20 @@ function fakeDb(opts: { listing: ListedRow[]; posts?: FakePost[]; realms?: objec
     realm: { findMany: realmFindMany },
     user: { findMany: userFindMany },
     thinkpagesAccount: {
-      findMany: jest.fn(async (args: { where: { id?: unknown } }) =>
+      findMany: jest.fn(async (args: { where: { id?: object } }) =>
         args.where.id ? [PERSONA] : []
       ),
     },
   };
-  return { db: db as never, threadFindMany, postFindMany, postFindFirst, userFindMany };
+  return {
+    db: db as never,
+    threadFindMany,
+    postFindMany,
+    postFindFirst,
+    userFindMany,
+    realmFindMany,
+    accountFindMany: db.thinkpagesAccount.findMany,
+  };
 }
 
 const previewsOf = async (fake: ReturnType<typeof fakeDb>) =>
@@ -171,7 +192,7 @@ const previewsOf = async (fake: ReturnType<typeof fakeDb>) =>
 describe("withThreadPreviews", () => {
   it("answers nothing without a query for no threads", async () => {
     const fake = fakeDb({ listing: [] });
-    await expect(withThreadPreviews(fake.db, [])).resolves.toEqual([]);
+    await expect(withThreadPreviews(fake.db, [], [])).resolves.toEqual([]);
     expect(fake.postFindMany).not.toHaveBeenCalled();
     expect(fake.postFindFirst).not.toHaveBeenCalled();
   });
@@ -212,7 +233,8 @@ describe("latestPublicThreadPreviews", () => {
     expect(out!.postedAt).toEqual(AT);
     expect(fake.postFindMany.mock.calls[0]![0]).toMatchObject({
       where: { threadId: { in: ["t1"] }, hidden: false },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      distinct: ["threadId"],
+      orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     });
   });
 
@@ -290,7 +312,12 @@ describe("latestPublicThreadPreviews", () => {
     }
     expect(out!.preview).toMatchObject({
       style: "ic",
-      realm: { slug: "eurth", name: "Eurth", emblemUrl: "https://img.example/e.png" },
+      realm: {
+        slug: "eurth",
+        name: "Eurth",
+        emblemUrl: "https://img.example/e.png",
+        thumbnail: "https://img.example/e-thumb.png",
+      },
       board: { name: "Character Threads", href: "/thinkpages/r/eurth/character-threads" },
       reactionTotal: 0,
     });
@@ -321,13 +348,79 @@ describe("latestPublicThreadPreviews", () => {
     expect(out!.postedAt).toBeNull();
   });
 
+  it("reports a persona thread with no visible post as a persona, by name only, never its player", async () => {
+    const fake = fakeDb({
+      listing: [listed("t6", 3, site(), { authorUserId: "u_secret", authorPersonaId: "pa1" })],
+      posts: [post("p1", "t6", { hidden: true })],
+    });
+    const [out] = await latestPublicThreadPreviews(fake.db, 20);
+    expect(out!.preview.author).toEqual({
+      name: "Herald",
+      avatarUrl: null,
+      flagUrl: null,
+      persona: true,
+    });
+    expect(out!.author).toBe("Herald");
+    const text = JSON.stringify(out);
+    for (const secret of ["u_secret", "secretplayer", "secret.png", "clerk_secret"]) {
+      expect(text).not.toContain(secret);
+    }
+    // The listing never looks the player up either.
+    const asked = fake.userFindMany.mock.calls.flatMap(([args]) => args.where.id.in);
+    expect(asked).not.toContain("u_secret");
+  });
+
+  it("previews the highest id among visible posts that share the newest time", async () => {
+    const fake = fakeDb({
+      listing: [listed("t7", 3)],
+      posts: [
+        post("pa", "t7", { plainText: "First of the tie" }),
+        post("pc", "t7", { plainText: "Last of the tie" }),
+        post("pb", "t7", { plainText: "Middle of the tie" }),
+      ],
+    });
+    const [out] = await latestPublicThreadPreviews(fake.db, 20);
+    expect(out!.preview).toMatchObject({
+      postHref: "/thinkpages/post/pc",
+      excerpt: "Last of the tie",
+    });
+    expect(fake.postFindMany.mock.calls[0]![0]).toMatchObject({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+  });
+
+  it("asks for one first post per unanswered thread, even if its post count is stale", async () => {
+    const fake = fakeDb({
+      listing: [listed("t8", 1)],
+      posts: [
+        post("p1", "t8", { plainText: "The first post" }),
+        post("p2", "t8", {
+          createdAt: new Date("2026-10-09T10:05:00Z"),
+          plainText: "A stray second",
+        }),
+      ],
+    });
+    const [out] = await latestPublicThreadPreviews(fake.db, 20);
+    expect(out!.preview.excerpt).toBe("The first post");
+    expect(fake.postFindMany.mock.calls[0]![0]).toMatchObject({
+      distinct: ["threadId"],
+      orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+    });
+    await expect(fake.postFindMany.mock.results[0]!.value).resolves.toHaveLength(1);
+  });
+
   it("names IxWorld when it has no realm row, and links the board by the canonical slug", async () => {
     const fake = fakeDb({
       listing: [listed("t4", 1, inRealm("default", "hub", "Hub", "ooc"))],
       realms: [],
     });
     const [preview] = await previewsOf(fake);
-    expect(preview!.realm).toEqual({ slug: "ixworld", name: "IxWorld", emblemUrl: null });
+    expect(preview!.realm).toEqual({
+      slug: "ixworld",
+      name: "IxWorld",
+      emblemUrl: null,
+      thumbnail: null,
+    });
     expect(preview!.board.href).toBe("/thinkpages/r/ixworld/hub");
   });
 
@@ -375,6 +468,10 @@ describe("what the preview listing reads", () => {
     expect(fake.threadFindMany).toHaveBeenCalledTimes(1);
     expect(fake.postFindMany).toHaveBeenCalledTimes(2);
     expect(fake.postFindFirst).not.toHaveBeenCalled();
+    // One realm read for the whole preview; one author read each for the listing and for the posts.
+    expect(fake.realmFindMany).toHaveBeenCalledTimes(1);
+    expect(fake.userFindMany).toHaveBeenCalledTimes(2);
+    expect(fake.accountFindMany).toHaveBeenCalledTimes(2);
   });
 
   it("skips the query for a kind of thread that is not listed", async () => {

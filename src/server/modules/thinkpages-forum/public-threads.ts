@@ -61,18 +61,41 @@ interface ThreadRow {
   category: PublicThreadPlacement;
 }
 
-/** Ids of the published realms (IxWorld always, with or without its row). */
-export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promise<string[]> {
-  const realms = await db.realm.findMany({ select: { id: true, status: true } });
-  const published = realms.filter((r) => isRealmPublished(r.id, r.status)).map((r) => r.id);
-  return [...new Set([DEFAULT_REALM_ID, ...published])];
+/** A published realm as a preview names it. */
+export interface PublishedRealm {
+  id: string;
+  slug: string;
+  name: string;
+  emblemUrl: string | null;
+  thumbnail: string | null;
 }
 
-/**
- * The `ForumThread` where clause for what anyone may read: not hidden, a public category, in the site section or
- * a published realm, and never a realm board. Shared with the passport's forum footprint (member-activity.ts).
- */
-export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
+/** The published realms' rows (one query; IxWorld may have none). */
+export async function publishedRealms(db: Pick<PrismaClient, "realm">): Promise<PublishedRealm[]> {
+  const realms = await db.realm.findMany({
+    select: { id: true, status: true, slug: true, name: true, emblemUrl: true, thumbnail: true },
+  });
+  return realms
+    .filter((r) => isRealmPublished(r.id, r.status))
+    .map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      emblemUrl: r.emblemUrl,
+      thumbnail: r.thumbnail,
+    }));
+}
+
+const withIxWorld = (realms: readonly PublishedRealm[]): string[] => [
+  ...new Set([DEFAULT_REALM_ID, ...realms.map((r) => r.id)]),
+];
+
+/** Ids of the published realms (IxWorld always, with or without its row). */
+export async function publishedRealmIds(db: Pick<PrismaClient, "realm">): Promise<string[]> {
+  return withIxWorld(await publishedRealms(db));
+}
+
+function publicThreadWhereIn(realmIds: readonly string[]) {
   return {
     hidden: false,
     ...advertGate(null),
@@ -80,15 +103,24 @@ export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
       ...categoryVisibilityWhere({ signedIn: false, siteAdmin: false }),
       // The realm board's messages are not threads or posts anywhere outside the board.
       ...notBoardCategory(),
-      OR: [{ scope: "site" }, { scope: "realm", realmId: { in: await publishedRealmIds(db) } }],
+      OR: [{ scope: "site" }, { scope: "realm", realmId: { in: [...realmIds] } }],
     },
   };
+}
+
+/**
+ * The `ForumThread` where clause for what anyone may read: not hidden, a public category, in the site section or
+ * a published realm, and never a realm board. Shared with the passport's forum footprint (member-activity.ts).
+ */
+export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
+  return publicThreadWhereIn(await publishedRealmIds(db));
 }
 
 async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<PublicForumThread[]> {
   const authors = await authorsOf(
     db,
-    rows.map((r) => r.authorUserId),
+    // A persona thread never looks up its player.
+    rows.map((r) => (r.authorPersonaId ? null : r.authorUserId)),
     rows.map((r) => r.authorPersonaId)
   );
   return rows.map((row) => {
@@ -110,31 +142,50 @@ async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<Publ
   });
 }
 
-async function latestRows(db: PublicThreadsDb, limit: number): Promise<ThreadRow[]> {
-  return db.forumThread.findMany({
-    where: await publicThreadWhere(db),
-    orderBy: { lastPostAt: "desc" },
-    take: limit,
-    select: THREAD_SELECT,
-  });
-}
-
 /** The newest public threads by last activity. */
 export async function latestPublicThreads(
   db: PublicThreadsDb,
   limit: number
 ): Promise<PublicForumThread[]> {
-  return withAuthors(db, await latestRows(db, limit));
+  const rows = await db.forumThread.findMany({
+    where: await publicThreadWhere(db),
+    orderBy: { lastPostAt: "desc" },
+    take: limit,
+    select: THREAD_SELECT,
+  });
+  return withAuthors(db, rows);
 }
 
-/** `latestPublicThreads`, each with the category it sits in (the same single query), for post previews. */
+/** A listed thread with the category it sits in and whether a persona wrote it (never which one, or its player). */
+export type PlacedThread = PublicForumThread & {
+  placement: PublicThreadPlacement;
+  persona: boolean;
+};
+
+/**
+ * `latestPublicThreads` for post previews: the same query and the same where, each thread with its category, and
+ * the published realms the same realm read gave (so a preview needs no second realm query).
+ */
 export async function latestPublicThreadsPlaced(
   db: PublicThreadsDb,
   limit: number
-): Promise<Array<PublicForumThread & { placement: PublicThreadPlacement }>> {
-  const rows = await latestRows(db, limit);
+): Promise<{ threads: PlacedThread[]; realms: PublishedRealm[] }> {
+  const realms = await publishedRealms(db);
+  const rows = await db.forumThread.findMany({
+    where: publicThreadWhereIn(withIxWorld(realms)),
+    orderBy: { lastPostAt: "desc" },
+    take: limit,
+    select: THREAD_SELECT,
+  });
   const threads = await withAuthors(db, rows);
-  return threads.map((thread, index) => ({ ...thread, placement: rows[index]!.category }));
+  return {
+    threads: threads.map((thread, index) => ({
+      ...thread,
+      placement: rows[index]!.category,
+      persona: Boolean(rows[index]!.authorPersonaId),
+    })),
+    realms,
+  };
 }
 
 /** An imported thread by its old XenForo id, when anyone may read it; its first post's text is the excerpt. */

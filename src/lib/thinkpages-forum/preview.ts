@@ -48,7 +48,8 @@ export interface ForumFeedPreview {
   excerpt: string;
   author: PreviewAuthor;
   board: { name: string; href: string };
-  realm: { slug: string; name: string; emblemUrl: string | null } | null;
+  /** `emblemUrl`, else `thumbnail`, is the realm's mark. */
+  realm: { slug: string; name: string; emblemUrl: string | null; thumbnail: string | null } | null;
   style: "ic" | "ooc";
   replyCount: number;
   reactionTotal: number;

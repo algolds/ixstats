@@ -5,9 +5,10 @@
  * listed threads, so the realm board (which `publicThreadWhere` leaves out) can never be previewed, and only visible
  * posts. The listing itself is `latestPublicThreads`' query: Trending reads that one, untouched.
  *
- * Queries for N listed threads: the listing and its authors, one `findMany` for the unanswered threads' posts, one for
- * the answered threads' newest posts, one for the post authors and one for the realms. A per-thread `findFirst`
- * happens only for an answered thread whose newest post is hidden.
+ * Queries for N listed threads: the listing with its authors and the published realms (the one realm read), one
+ * `findMany` for the unanswered threads' first posts (one per thread, even if a post count is stale), one for the
+ * answered threads' newest posts, and one authors read for the post authors. A per-thread `findFirst` happens only for
+ * an answered thread whose newest post is hidden.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, IXWORLD_SLUG } from "~/lib/realms/realm-ids";
@@ -21,13 +22,14 @@ import { readReactionCounts, reactionTotal } from "~/lib/thinkpages-forum/reacti
 import { authorsOf, previewAuthorOf, type AuthorMaps } from "./authors";
 import {
   latestPublicThreadsPlaced,
+  type PlacedThread,
   type PublicForumThread,
-  type PublicThreadPlacement,
+  type PublishedRealm,
   type PublicThreadsDb,
 } from "./public-threads";
 
 export type ThreadPreviewDb = PublicThreadsDb;
-type PlacedThread = PublicForumThread & { placement: PublicThreadPlacement };
+type ForumFeedPreviewRealm = NonNullable<ForumFeedPreview["realm"]>;
 export type PreviewedThread = PublicForumThread & {
   preview: ForumFeedPreview;
   /** When the previewed post was written; null when no post is visible. Never the thread's `lastPostAt` on an older post. */
@@ -64,7 +66,9 @@ async function previewPosts(
     unanswered.length
       ? db.forumPost.findMany({
           where: { threadId: { in: unanswered.map((t) => t.id) }, hidden: false },
-          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          // One post per thread however stale `postCount` is: the first visible one.
+          distinct: ["threadId"],
+          orderBy: [{ threadId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
           select: POST_SELECT,
         })
       : [],
@@ -98,34 +102,25 @@ async function previewPosts(
   return posts;
 }
 
-interface PreviewRealm {
-  slug: string;
-  name: string;
-  emblemUrl: string | null;
-}
-
-async function realmsOf(
-  db: Pick<PrismaClient, "realm">,
-  realmIds: readonly string[]
-): Promise<Map<string, PreviewRealm>> {
-  const wanted = [...new Set(realmIds)];
-  const out = new Map<string, PreviewRealm>();
-  if (wanted.length === 0) return out;
-  const rows = await db.realm.findMany({
-    where: { id: { in: wanted } },
-    select: { id: true, slug: true, name: true, emblemUrl: true },
-  });
-  for (const row of rows) {
+/** The realms a preview names, by id; IxWorld goes by its `ixworld` slug and may have no row of its own. */
+function realmsById(published: readonly PublishedRealm[]): Map<string, ForumFeedPreviewRealm> {
+  const out = new Map<string, ForumFeedPreviewRealm>();
+  for (const { id, slug, name, emblemUrl, thumbnail } of published) {
     // IxWorld always goes by its `ixworld` slug, even when its row carries the legacy slug "default".
-    out.set(row.id, {
-      slug: row.id === DEFAULT_REALM_ID ? IXWORLD_SLUG : row.slug,
-      name: row.name,
-      emblemUrl: row.emblemUrl,
+    out.set(id, {
+      slug: id === DEFAULT_REALM_ID ? IXWORLD_SLUG : slug,
+      name,
+      emblemUrl,
+      thumbnail,
     });
   }
-  // IxWorld may have no row of its own.
-  if (wanted.includes(DEFAULT_REALM_ID) && !out.has(DEFAULT_REALM_ID)) {
-    out.set(DEFAULT_REALM_ID, { slug: IXWORLD_SLUG, name: "IxWorld", emblemUrl: null });
+  if (!out.has(DEFAULT_REALM_ID)) {
+    out.set(DEFAULT_REALM_ID, {
+      slug: IXWORLD_SLUG,
+      name: "IxWorld",
+      emblemUrl: null,
+      thumbnail: null,
+    });
   }
   return out;
 }
@@ -134,7 +129,7 @@ function previewOf(
   thread: PlacedThread,
   post: PostRow | undefined,
   authors: AuthorMaps,
-  realms: Map<string, PreviewRealm>
+  realms: Map<string, ForumFeedPreviewRealm>
 ): ForumFeedPreview {
   const { placement } = thread;
   const realm =
@@ -155,7 +150,7 @@ function previewOf(
     excerpt: post ? previewExcerpt(post.plainText, FEED_EXCERPT_MAX) : "",
     author: post
       ? previewAuthorOf(post, authors, thread.author)
-      : { name: thread.author, avatarUrl: null, flagUrl: null, persona: false },
+      : { name: thread.author, avatarUrl: null, flagUrl: null, persona: thread.persona },
     board,
     realm,
     style: placement.style === "ic" ? "ic" : "ooc",
@@ -164,33 +159,27 @@ function previewOf(
   };
 }
 
-/** `threads` (as `latestPublicThreadsPlaced` lists them) with the preview of the post each refers to. */
+/** The listed `threads` (with the realms the listing read) with the preview of the post each refers to. */
 export async function withThreadPreviews(
   db: ThreadPreviewDb,
-  threads: readonly PlacedThread[]
+  threads: readonly PlacedThread[],
+  published: readonly PublishedRealm[]
 ): Promise<PreviewedThread[]> {
   if (threads.length === 0) return [];
   const posts = await previewPosts(db, threads);
   const shown = [...posts.values()];
-  const [authors, realms] = await Promise.all([
-    // A persona's post never looks up its player.
-    authorsOf(
-      db,
-      shown.map((p) => (p.authorPersonaId ? null : p.authorUserId)),
-      shown.map((p) => p.authorPersonaId)
-    ),
-    realmsOf(
-      db,
-      threads.flatMap((t) =>
-        t.placement.scope === "realm" && t.placement.realmId ? [t.placement.realmId] : []
-      )
-    ),
-  ]);
-  return threads.map(({ placement, ...thread }) => {
+  // A persona's post never looks up its player.
+  const authors = await authorsOf(
+    db,
+    shown.map((p) => (p.authorPersonaId ? null : p.authorUserId)),
+    shown.map((p) => p.authorPersonaId)
+  );
+  const realms = realmsById(published);
+  return threads.map(({ placement, persona, ...thread }) => {
     const post = posts.get(thread.id);
     return {
       ...thread,
-      preview: previewOf({ ...thread, placement }, post, authors, realms),
+      preview: previewOf({ ...thread, placement, persona }, post, authors, realms),
       postedAt: post?.createdAt ?? null,
     };
   });
@@ -201,5 +190,6 @@ export async function latestPublicThreadPreviews(
   db: ThreadPreviewDb,
   limit: number
 ): Promise<PreviewedThread[]> {
-  return withThreadPreviews(db, await latestPublicThreadsPlaced(db, limit));
+  const { threads, realms } = await latestPublicThreadsPlaced(db, limit);
+  return withThreadPreviews(db, threads, realms);
 }
