@@ -115,6 +115,18 @@ describe("Discussed in (visiblePosts)", () => {
     expect(await ids(admin)).toEqual(["p_active", "p_draft", "p_plain"]);
   });
 
+  it("reads an advert's realm once however many of its posts are linked", async () => {
+    const db = world();
+    db.postActionLink.findMany.mockResolvedValue([link("p_draft", 1), link("p_draft2", 2)]);
+    const posts = [post("p_draft", "r_draft"), post("p_draft2", "r_draft")];
+    db.forumPost.findMany.mockResolvedValue(posts);
+    await discussionsOf(db as never, member, { activityId: "a1" });
+    expect(db.realm.findUnique).toHaveBeenCalledTimes(1);
+    expect(db.realm.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "r_draft" } })
+    );
+  });
+
   it("counts them the same way", async () => {
     const count = async (viewer: object | null) =>
       (await discussionCountsOf(world() as never, viewer as never, ["a1"])).a1!.count;
@@ -232,6 +244,15 @@ describe("notice recipients (readableUsers)", () => {
 
   it("tells only the founder and site admins about a draft realm's advert", async () => {
     expect(await ids("r_draft")).toEqual(["u_admin", "u_founder"]);
+  });
+
+  it("reads the advert's realm once for the whole list, not once per recipient", async () => {
+    const counting = db();
+    await readableUsers(counting as never, place("r_draft"), recipients);
+    expect(counting.realm.findUnique).toHaveBeenCalledTimes(1);
+    const plain = db();
+    await readableUsers(plain as never, place(null), recipients);
+    expect(plain.realm.findUnique).not.toHaveBeenCalled();
   });
 
   it("tells everyone about a published realm's advert and an ordinary thread", async () => {

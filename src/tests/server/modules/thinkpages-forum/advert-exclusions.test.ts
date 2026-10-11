@@ -216,10 +216,10 @@ describe("single reads leave out a hidden realm's advert", () => {
   it("joins the realm row in the thread select", async () => {
     const db = threadDb(ACTIVE);
     await loadVisibleThread(db as never, member, "t_ad");
-    const select = (
-      db.forumThread.findUnique.mock.calls[0]![0] as { select: { advertRealm?: object } }
-    ).select;
-    expect(select.advertRealm).toEqual({ select: ADVERT_REALM_SELECT });
+    const [[call]] = db.forumThread.findUnique.mock.calls as never as [
+      [{ select: { advertRealm?: object } }],
+    ];
+    expect(call.select.advertRealm).toEqual({ select: ADVERT_REALM_SELECT });
   });
 
   it("resolves a post permalink to nothing for a member of a hidden realm's advert", async () => {

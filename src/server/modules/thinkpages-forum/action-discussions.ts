@@ -13,7 +13,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { postHref } from "~/lib/thinkpages-forum/links";
 import { canSeeThread, type ForumViewer } from "./access";
-import { advertHiddenFrom } from "./advert-access";
+import { advertRealmHiddenFrom, advertRealmOf } from "./advert-access";
 import { canModerateCategory } from "./mod-scope";
 import { authorsOf, visibleRealmOf, type AuthorsDb } from "./reads";
 import type { ForumRealm } from "./realm-access";
@@ -126,7 +126,7 @@ interface Seen {
  * - `loadVisibleThread` (reads.ts), the thread page: the same `canSeeThread` and realm checks on the thread itself.
  * - `loadReadablePost` (reaction-target.ts): the same three checks for a thread post and for a realm board message,
  *   which `boardPostRealm` (board.ts) resolves for the board permalink by the hidden-post and realm rules alone.
- * All of them also drop the advert of a realm the viewer cannot see (`advertHiddenFrom`, advert-access.ts).
+ * All of them also drop the advert of a realm the viewer cannot see (`advertRealmOf`, advert-access.ts).
  * Moderators keep hidden posts (the caller marks them). A persona's post is dropped for everyone (see the file head).
  */
 async function visiblePosts(
@@ -141,12 +141,18 @@ async function visiblePosts(
     select: POST_SELECT,
   });
   const readable: PostRow[] = [];
+  // An advert's realm is read once, however many posts of it are linked.
+  const advertRealms = new Map<string, Promise<ForumRealm | null>>();
   for (const row of rows) {
     if (row.authorPersonaId) continue;
     const { category } = row.thread;
     if (!canSeeThread(viewer, row.thread, category)) continue;
     if (row.hidden && !canModerateCategory(viewer, category)) continue;
-    if (!(await advertHiddenFrom(db, viewer, row.thread))) readable.push(row);
+    const advertId = row.thread.advertRealmId;
+    if (advertId && !advertRealms.has(advertId))
+      advertRealms.set(advertId, advertRealmOf(db, row.thread));
+    if (!advertRealmHiddenFrom(viewer, advertId ? await advertRealms.get(advertId) : null))
+      readable.push(row);
   }
   const places = new Map(
     readable.map(({ thread: { category } }) => [

@@ -5,7 +5,7 @@
  */
 import { isSiteAdmin } from "~/server/modules/realms";
 import { canSeeThread, type ForumViewer, type ModeratorContext } from "./access";
-import { advertHiddenFrom } from "./advert-access";
+import { advertRealmHiddenFrom, advertRealmOf } from "./advert-access";
 import { forumMemberOf } from "./forum-viewer";
 import { MODERATOR_POWER, type ScopeDb } from "./mod-scope";
 import { canSeeRealm, type ForumRealm } from "./realm-access";
@@ -85,12 +85,14 @@ export async function readableUsers<T extends Recipient>(
   const mods =
     place.category.visibility === "public" ? null : await moderatorsHere(db, place, users);
   const readable: T[] = [];
+  // One realm read for the whole list, not one per recipient.
+  const advertRealm = await advertRealmOf(db, place.thread);
   for (const user of users) {
     const member = forumMemberOf(user);
     const viewer: ForumViewer = mods ? { ...member, mod: mods.get(user.id) } : member;
     if (!canSeeThread(viewer, place.thread, place.category)) continue;
     if (place.realm && !canSeeRealm(viewer, place.realm)) continue;
-    if (await advertHiddenFrom(db, viewer, place.thread)) continue;
+    if (advertRealmHiddenFrom(viewer, advertRealm)) continue;
     readable.push(user);
   }
   return readable;
