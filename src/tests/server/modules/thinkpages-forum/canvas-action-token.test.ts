@@ -57,4 +57,17 @@ describe("a Canvas post's action tokens", () => {
     expect(parseTextActionTokens(out.contentHtml)).toEqual([DIRECTIVE, "a2"]);
     expect(parseActionTokens(out.plainText)).toEqual([DIRECTIVE, "a2"]);
   });
+
+  it("are refused when the render shows other ids than the text holds, even at the same count", () => {
+    // <includeonly> and {{{x|default}}} make the source text and the rendered page differ.
+    expect(() => assertTokensArePlainText("<p>[ixaction=theirs]</p>", "[ixaction=mine]")).toThrow(
+      /plain text/
+    );
+    expect(() =>
+      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=b] [ixaction=a]")
+    ).toThrow(/plain text/);
+    expect(() =>
+      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=b]")
+    ).not.toThrow();
+  });
 });

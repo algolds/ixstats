@@ -4,7 +4,12 @@
  * action-token check, so a token is plain text whatever the editor.
  */
 import type { PrismaClient } from "@prisma/client";
-import { countActionTokens, countTextActionTokens } from "~/lib/action-links";
+import {
+  countActionTokens,
+  countTextActionTokens,
+  parseActionTokens,
+  parseTextActionTokens,
+} from "~/lib/action-links";
 import { getBasePath } from "~/lib/base-path";
 import { guardWikitext } from "~/lib/thinkpages-forum/wikitext-guards";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
@@ -36,10 +41,20 @@ export interface StoredBody extends PreparedBody {
 /** `"pending"`: the wiki was unavailable, so the stored HTML is a fallback until the stale cron re-renders it. */
 export type Formatting = "done" | "pending";
 
-/** A token inside a tag or attribute would never render as a card and must never be cut by the renderer. */
+/**
+ * A token inside a tag or attribute would never render as a card and must never be cut by the renderer. The ids the
+ * page renders must be the ids the text holds, in order, not just as many: ownership is checked on the text, and
+ * `<includeonly>` or a template default can make a render show a different id at the same count.
+ */
 export function assertTokensArePlainText(contentHtml: string, plainText: string): void {
   const rendered = countTextActionTokens(contentHtml);
-  if (rendered !== countActionTokens(contentHtml) || rendered !== countActionTokens(plainText)) {
+  const sameIds =
+    parseTextActionTokens(contentHtml).join(" ") === parseActionTokens(plainText).join(" ");
+  if (
+    rendered !== countActionTokens(contentHtml) ||
+    rendered !== countActionTokens(plainText) ||
+    !sameIds
+  ) {
     throw new ForumError("BAD_REQUEST", "Action links must be plain text in the post body");
   }
 }
