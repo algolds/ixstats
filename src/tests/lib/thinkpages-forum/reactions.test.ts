@@ -89,6 +89,19 @@ describe("readReactionCounts", () => {
     expect(readReactionCounts('{"like":2}')).toEqual({ like: 2 });
   });
 
+  it("drops a count above the safe-integer limit", () => {
+    expect(
+      readReactionCounts({
+        like: Number.MAX_SAFE_INTEGER + 2,
+        fire: Number.MAX_SAFE_INTEGER,
+        laugh: 1,
+      })
+    ).toEqual({
+      fire: Number.MAX_SAFE_INTEGER,
+      laugh: 1,
+    });
+  });
+
   it("drops zero, negative, fractional and non-number counts and unknown types", () => {
     expect(
       readReactionCounts({
@@ -150,6 +163,15 @@ describe("applyReactionChange", () => {
   it("changes nothing when the type is the same, and never goes below zero", () => {
     expect(applyReactionChange({ like: 2 }, "like", "like")).toEqual({ like: 2 });
     expect(applyReactionChange({}, "like", null)).toEqual({});
+  });
+
+  it("never reads or writes a prototype key, as either side of the change", () => {
+    for (const key of ["constructor", "__proto__"]) {
+      expect(applyReactionChange({ like: 1 }, key, "fire")).toEqual({ like: 1, fire: 1 });
+      expect(applyReactionChange({ like: 1 }, "like", key)).toEqual({});
+      expect(applyReactionChange({}, key, key)).toEqual({});
+      expect(Object.getPrototypeOf(applyReactionChange({}, null, key))).toBe(Object.prototype);
+    }
   });
 
   it("returns a new object and leaves its input alone", () => {

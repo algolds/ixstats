@@ -63,7 +63,7 @@ const isObject = (value: CountsInput): value is { readonly [key: string]: Counts
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isCount = (count: CountsInput): count is number =>
-  typeof count === "number" && Number.isInteger(count) && count > 0;
+  typeof count === "number" && Number.isSafeInteger(count) && count > 0;
 
 /**
  * The stored counts as a clean map: only valid types with positive whole counts survive, so a corrupt column reads
@@ -97,6 +97,9 @@ export function countsFromGroups(
   return counts;
 }
 
+const countOf = (counts: ReactionCounts, type: string): number =>
+  Object.hasOwn(counts, type) ? (counts[type] ?? 0) : 0;
+
 /**
  * The counts after one member's reaction goes from `from` to `to` (null: none). A type that reaches zero is removed;
  * the same type, or nothing to remove, changes nothing. Returns a new object.
@@ -107,13 +110,15 @@ export function applyReactionChange(
   to: string | null
 ): ReactionCounts {
   const next: ReactionCounts = { ...counts };
-  if (from === to) return next;
-  if (from !== null) {
-    const left = (next[from] ?? 0) - 1;
-    if (left > 0) next[from] = left;
-    else delete next[from];
+  const before = isReactionType(from ?? "") ? from : null;
+  const after = isReactionType(to ?? "") ? to : null;
+  if (before === after) return next;
+  if (before !== null) {
+    const left = countOf(next, before) - 1;
+    if (left > 0) next[before] = left;
+    else delete next[before];
   }
-  if (to !== null) next[to] = (next[to] ?? 0) + 1;
+  if (after !== null) next[after] = countOf(next, after) + 1;
   return next;
 }
 
@@ -121,7 +126,7 @@ export function applyReactionChange(
 export function sortedReactionTypes(counts: ReactionCounts): string[] {
   return Object.entries(counts)
     .filter(([, count]) => count > 0)
-    .sort(([typeA, a], [typeB, b]) => b - a || typeA.localeCompare(typeB))
+    .sort(([typeA, a], [typeB, b]) => b - a || (typeA < typeB ? -1 : typeA > typeB ? 1 : 0))
     .map(([type]) => type);
 }
 
