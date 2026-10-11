@@ -4,6 +4,11 @@ import { render, screen, within } from "@testing-library/react";
 let mockParams = new URLSearchParams();
 jest.mock("next/navigation", () => ({ useSearchParams: () => mockParams }));
 
+const mockUseRealmBoardLive = jest.fn();
+jest.mock("~/hooks/useRealmBoardLive", () => ({
+  useRealmBoardLive: (...args: never[]) => mockUseRealmBoardLive(...args),
+}));
+
 import { RealmCard } from "~/components/realms/RealmCard";
 import { RealmAdvertCard } from "~/components/realms/RealmAdvertCard";
 
@@ -44,6 +49,7 @@ function overview(
 const renderAdvert = (data = overview()) => render(<RealmAdvertCard overview={data} />);
 
 beforeEach(() => {
+  mockUseRealmBoardLive.mockClear();
   mockParams = new URLSearchParams();
 });
 
@@ -136,6 +142,26 @@ describe("the advert variant", () => {
   it("shows no online figure: the advert does not join the board's presence room", () => {
     renderAdvert();
     expect(screen.getByRole("region")).not.toHaveTextContent("online");
+    expect(mockUseRealmBoardLive).not.toHaveBeenCalled();
+  });
+
+  it("draws no banner block for a realm without a banner", () => {
+    const withBanner = renderAdvert();
+    expect(withBanner.container.querySelector(".h-32")).not.toBeNull();
+    withBanner.unmount();
+    const without = renderAdvert(overview({ realm: { bannerUrl: null } }));
+    expect(without.container.querySelector(".h-32")).toBeNull();
+    without.rerender(<RealmAdvertCard overview={overview({ realm: { bannerUrl: "" } })} />);
+    expect(without.container.querySelector(".h-32")).toBeNull();
+  });
+
+  it("falls back to the thumbnail when the emblem is an empty string", () => {
+    const { container } = renderAdvert(
+      overview({
+        realm: { bannerUrl: null, emblemUrl: "", thumbnail: "https://img.example/thumb.png" },
+      })
+    );
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://img.example/thumb.png");
   });
 
   it("falls back from the emblem to the thumbnail to the realm mark", () => {

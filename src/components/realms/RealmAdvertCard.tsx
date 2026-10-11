@@ -86,18 +86,18 @@ export function RealmAdvertCard({ overview }: { overview: AdvertOverview }) {
       aria-label={`${realm.name} advert`}
       className="overflow-hidden"
     >
-      <div className="bg-fill-3 h-32 sm:h-40">
-        {realm.bannerUrl && (
+      {realm.bannerUrl && (
+        <div className="bg-fill-3 h-32 sm:h-40">
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
             alt=""
             className="h-full w-full object-cover"
           />
-        )}
-      </div>
+        </div>
+      )}
       <div className="flex flex-col gap-4 p-5 sm:p-6">
         <div className="flex items-center gap-4">
-          <RealmAvatar thumbnail={realm.emblemUrl ?? realm.thumbnail} className="size-14" />
+          <RealmAvatar thumbnail={realm.emblemUrl || realm.thumbnail} className="size-14" />
           <div className="min-w-0">
             <Link
               href={realmHref(realm.slug)}
