@@ -14,9 +14,10 @@ import {
   canSeeRealm,
   IXWORLD_REALM,
   loadForumRealm,
+  loadForumRealmLook,
   REALM_SELECT,
   realmPostingAccess,
-  type ForumRealm,
+  type ForumRealmLook,
   type RealmAccessDb,
   type RealmDb,
 } from "./realm-access";
@@ -84,14 +85,14 @@ export async function primaryRealmIdOf(
   return primaryNationOf(nations, viewer.countryId)?.realmId ?? null;
 }
 
-/** The realm of the viewer's primary nation. Null for anonymous, for a viewer holding no nation, and for a realm hidden from them. */
+/** The realm of the viewer's primary nation, with its images. Null for anonymous, for a viewer holding no nation, and for a realm hidden from them. */
 export async function myRealmOf(
   db: Pick<PrismaClient, "country"> & RealmDb,
   viewer: ForumViewer
-): Promise<ForumRealm | null> {
+): Promise<ForumRealmLook | null> {
   const realmId = await primaryRealmIdOf(db, viewer);
   if (!realmId) return null;
-  const realm = await loadForumRealm(db, { id: realmId });
+  const realm = await loadForumRealmLook(db, { id: realmId });
   return realm && canSeeRealm(viewer, realm) ? realm : null;
 }
 
@@ -120,21 +121,14 @@ export async function forumNavFlags(
   viewer: ForumViewer
 ): Promise<{ realmMember: boolean; forumModerator: boolean; realm: NavRealm | null }> {
   const mine = await myRealmOf(db, viewer);
-  // IxWorld may have no row (synthesized): it has no images to show.
-  const images = mine
-    ? await db.realm.findUnique({
-        where: { id: mine.id },
-        select: { emblemUrl: true, thumbnail: true },
-      })
-    : null;
   return {
     realmMember: mine !== null,
     forumModerator: isModerator(viewer),
     realm: mine && {
       slug: mine.slug,
       name: mine.name,
-      emblemUrl: images?.emblemUrl ?? null,
-      thumbnail: images?.thumbnail ?? null,
+      emblemUrl: mine.emblemUrl,
+      thumbnail: mine.thumbnail,
     },
   };
 }

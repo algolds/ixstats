@@ -17,7 +17,7 @@ import {
 import type { ForumViewer } from "./access";
 import { authorsOf, previewAuthorOf, type AuthorsDb } from "./authors";
 import { boardThreadOf, PREVIEWED_BOARD_MESSAGES } from "./board-thread";
-import { canSeeRealm, loadForumRealm, type ForumRealm } from "./realm-access";
+import { canSeeRealm, loadForumRealmLook, type ForumRealmLook } from "./realm-access";
 import { myRealmOf } from "./realm-reads";
 
 export type BoardPreviewDb = AuthorsDb &
@@ -39,18 +39,14 @@ const PREVIEW_SELECT = {
 } as const satisfies Prisma.ForumPostSelect;
 
 /** The realm's newest board messages; the caller has checked the viewer may see the realm. */
-async function previewOf(db: BoardPreviewDb, realm: ForumRealm): Promise<BoardPreview> {
-  const [board, images] = await Promise.all([
-    boardThreadOf(db, realm.id),
-    // IxWorld may have no row (synthesized): it has no images to show.
-    db.realm.findUnique({ where: { id: realm.id }, select: { emblemUrl: true, thumbnail: true } }),
-  ]);
+async function previewOf(db: BoardPreviewDb, realm: ForumRealmLook): Promise<BoardPreview> {
   const head = {
     slug: realm.slug,
     name: realm.name,
-    emblemUrl: images?.emblemUrl ?? null,
-    thumbnail: images?.thumbnail ?? null,
+    emblemUrl: realm.emblemUrl,
+    thumbnail: realm.thumbnail,
   };
+  const board = await boardThreadOf(db, realm.id);
   if (!board) return { realm: head, messages: [] };
   const rows = await db.forumPost.findMany({
     where: { threadId: board.threadId, ...PREVIEWED_BOARD_MESSAGES },
@@ -58,9 +54,10 @@ async function previewOf(db: BoardPreviewDb, realm: ForumRealm): Promise<BoardPr
     take: PANEL_MESSAGES,
     select: PREVIEW_SELECT,
   });
+  // A persona's message loads the persona only: the player's row is never read (as the board's `authorMaps`).
   const maps = await authorsOf(
     db,
-    rows.map((row) => row.authorUserId),
+    rows.map((row) => (row.authorPersonaId ? null : row.authorUserId)),
     rows.map((row) => row.authorPersonaId)
   );
   return {
@@ -90,7 +87,7 @@ export async function realmBoardPreview(
   viewer: ForumViewer,
   slug: string
 ): Promise<BoardPreview | null> {
-  const realm = await loadForumRealm(db, { slug });
+  const realm = await loadForumRealmLook(db, { slug });
   if (!realm || !canSeeRealm(viewer, realm)) return null;
   return previewOf(db, realm);
 }

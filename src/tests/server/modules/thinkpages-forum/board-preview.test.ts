@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { realmBoardPreview, realmPanel } from "~/server/modules/thinkpages-forum/board-preview";
 import {
+  admin,
   boardPost,
   boardStore,
   countries,
@@ -19,7 +20,6 @@ const posts = [
     plainText: "From Aurora",
     contentHtml: "<p>From Aurora</p>",
   }),
-  boardPost("p3", 3, { hidden: true, plainText: "Hidden one", contentHtml: "<p>Hidden one</p>" }),
   boardPost("p4", 4, {
     authorUserId: "u_member",
     authorPersonaId: "pa_news",
@@ -32,6 +32,8 @@ const posts = [
     contentHtml: "<p>Continued in a thread</p>",
   }),
   boardPost("p6", 6, { plainText: longText, contentHtml: `<p>${longText}</p>` }),
+  // Newer than every visible message: a query that forgot `hidden: false` would put it first.
+  boardPost("p8", 8, { hidden: true, plainText: "Hidden one", contentHtml: "<p>Hidden one</p>" }),
   boardPost("p7", 7, {
     plainText: "",
     contentHtml: '<p><img src="https://img.example/a.png"></p>',
@@ -92,9 +94,10 @@ describe("realmBoardPreview", () => {
     }
   });
 
-  it("keeps a persona masked for a moderator too, and hides hidden messages from them", async () => {
-    const mod = { ...member, mod: { siteAdmin: true, realmIds: ["r_eurth"], categoryIds: [] } };
-    const out = await realmBoardPreview(store().db as never, mod as never, "eurth");
+  it("keeps a persona masked for a site admin too, and hides hidden messages from them", async () => {
+    // The admin owns the persona's player account: even its owner is shown the persona only.
+    const siteAdmin = { ...member, role: admin.role };
+    const out = await realmBoardPreview(store().db as never, siteAdmin as never, "eurth");
     expect(out!.messages.map((m) => m.id)).toEqual(["p7", "p6", "p4"]);
     const persona = out!.messages.find((m) => m.id === "p4")!;
     expect(persona.author).toEqual({
@@ -125,6 +128,45 @@ describe("realmBoardPreview", () => {
       realmBoardPreview(store().db as never, member as never, "draft")
     ).resolves.toBeNull();
     await expect(realmBoardPreview(store().db as never, null, "draft")).resolves.toBeNull();
+  });
+
+  it("shows a draft realm to its founder and to a site admin, and not to a member", async () => {
+    const founder = { ...plain, id: "u_draft_founder", clerkUserId: "draft_founder" };
+    for (const viewer of [founder, admin]) {
+      const out = await realmBoardPreview(store().db as never, viewer as never, "draft");
+      expect(out).toMatchObject({ realm: { slug: "draft", name: "Draft" }, messages: [] });
+    }
+    await expect(
+      realmBoardPreview(store().db as never, member as never, "draft")
+    ).resolves.toBeNull();
+  });
+
+  it("loads no user for persona-only messages, and not a persona's player for mixed ones", async () => {
+    const personaOnly = boardStore(
+      seed({ posts: [boardPost("p1", 1, { authorPersonaId: "pa_news" })] })
+    );
+    await realmBoardPreview(personaOnly.db as never, null, "eurth");
+    expect(personaOnly.db.user.findMany).not.toHaveBeenCalled();
+
+    const mixed = boardStore(
+      seed({
+        posts: [
+          boardPost("p1", 1, { authorPersonaId: "pa_news" }),
+          boardPost("p2", 2, { authorUserId: "u_visitor" }),
+        ],
+      })
+    );
+    await realmBoardPreview(mixed.db as never, null, "eurth");
+    expect(mixed.db.user.findMany).toHaveBeenCalledTimes(1);
+    expect(mixed.db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ["u_visitor"] } } })
+    );
+  });
+
+  it("reads the realm once, with its images", async () => {
+    const s = store();
+    await realmBoardPreview(s.db as never, null, "eurth");
+    expect(s.db.realm.findUnique).toHaveBeenCalledTimes(1);
   });
 
   it("gives an empty list for a realm whose board has no messages, and does not seed one", async () => {

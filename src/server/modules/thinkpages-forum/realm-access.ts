@@ -48,7 +48,7 @@ export const REALM_SELECT = {
 } as const;
 
 /** IxWorld always goes by its `ixworld` slug, even when its row carries the legacy slug "default". */
-export function canonicalRealm(row: ForumRealm): ForumRealm {
+export function canonicalRealm<R extends ForumRealm>(row: R): R {
   return row.id === DEFAULT_REALM_ID ? { ...row, slug: IXWORLD_SLUG } : row;
 }
 
@@ -57,23 +57,54 @@ const namesIxWorld = (ref: { slug: string } | { id: string }): boolean =>
     ? ref.slug === IXWORLD_SLUG || ref.slug === DEFAULT_REALM_ID
     : ref.id === DEFAULT_REALM_ID;
 
+type RealmRef = { slug: string } | { id: string };
+type RealmWhere = { slug: string } | { id: string };
+
+/**
+ * The lookup `loadForumRealm` and `loadForumRealmLook` share: the row, else IxWorld synthesized (D8). `find` reads
+ * one realm row with whatever columns the caller selects.
+ */
+async function resolveRealm<R extends ForumRealm>(
+  find: (where: RealmWhere) => Promise<R | null>,
+  ref: RealmRef,
+  synthesized: R
+): Promise<R | null> {
+  const row = await find("slug" in ref ? { slug: ref.slug } : { id: ref.id });
+  if (row) return canonicalRealm(row);
+  if (!namesIxWorld(ref)) return null;
+  const ixworld = "slug" in ref ? await find({ id: DEFAULT_REALM_ID }) : null;
+  return ixworld ? canonicalRealm(ixworld) : synthesized;
+}
+
 /**
  * A realm by slug or id. IxWorld's slugs (`ixworld`, legacy `default`) and id resolve even without a realm row
  * (synthesized, D8); with one, it is named from the row.
  */
-export async function loadForumRealm(
-  db: RealmDb,
-  ref: { slug: string } | { id: string }
-): Promise<ForumRealm | null> {
-  const where = "slug" in ref ? { slug: ref.slug } : { id: ref.id };
-  const row = await db.realm.findUnique({ where, select: REALM_SELECT });
-  if (row) return canonicalRealm(row);
-  if (!namesIxWorld(ref)) return null;
-  const ixworld =
-    "slug" in ref
-      ? await db.realm.findUnique({ where: { id: DEFAULT_REALM_ID }, select: REALM_SELECT })
-      : null;
-  return ixworld ? canonicalRealm(ixworld) : IXWORLD_REALM;
+export function loadForumRealm(db: RealmDb, ref: RealmRef): Promise<ForumRealm | null> {
+  return resolveRealm(
+    (where) => db.realm.findUnique({ where, select: REALM_SELECT }),
+    ref,
+    IXWORLD_REALM
+  );
+}
+
+/** A realm with the images that stand in for its icon (the emblem, else the thumbnail), as a preview draws it. */
+export interface ForumRealmLook extends ForumRealm {
+  emblemUrl: string | null;
+  thumbnail: string | null;
+}
+
+/** `loadForumRealm` in one read that also brings the realm's images; IxWorld without a row has none. */
+export function loadForumRealmLook(db: RealmDb, ref: RealmRef): Promise<ForumRealmLook | null> {
+  return resolveRealm(
+    (where) =>
+      db.realm.findUnique({
+        where,
+        select: { ...REALM_SELECT, emblemUrl: true, thumbnail: true },
+      }),
+    ref,
+    { ...IXWORLD_REALM, emblemUrl: null, thumbnail: null }
+  );
 }
 
 /** Unpublished realms are their moderators' only; IxWorld, always listed in the switcher, is never hidden (U7). */

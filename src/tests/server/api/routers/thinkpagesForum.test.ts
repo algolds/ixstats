@@ -173,7 +173,15 @@ function forumDb(thread: object = {}, bans: BanRow[] = []) {
   };
 }
 
-const EURTH = { id: "r_eurth", slug: "eurth", name: "Eurth", status: "active", ownerId: "founder" };
+const EURTH = {
+  id: "r_eurth",
+  slug: "eurth",
+  name: "Eurth",
+  status: "active",
+  ownerId: "founder",
+  emblemUrl: null,
+  thumbnail: null,
+};
 const hub = {
   id: "rcat_hub",
   scope: "realm",
