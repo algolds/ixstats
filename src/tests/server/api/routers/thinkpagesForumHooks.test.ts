@@ -10,7 +10,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     createThread: jest.fn(async () => ({ threadId: "t_new", postId: "p_new", formatting: "done" })),
     replyToThread: jest.fn(async () => ({ postId: "p_reply", formatting: "done" })),
     editPost: jest.fn(async () => ({ formatting: "done" })),
-    postBoardMessage: jest.fn(async () => ({ id: "m1" })),
+    postBoardMessage: jest.fn(async () => ({ message: { id: "m1" }, reward: null })),
     editBoardMessage: jest.fn(async () => ({ id: "m1" })),
     publishBoardPost: jest.fn(async () => undefined),
     afterThreadStarted: jest.fn(async () => undefined),
@@ -30,6 +30,7 @@ import {
   afterThreadStarted,
   createThread,
   ForumError,
+  postBoardMessage,
 } from "~/server/modules/thinkpages-forum";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -81,6 +82,19 @@ describe("the write hooks", () => {
     expect(afterBoardMessage).toHaveBeenCalledWith(db, actor, "m1");
     await caller().editBoardMessage({ postId: "m1", html: "<p>Hi</p>" });
     expect(afterEdit).toHaveBeenCalledWith(db, actor, "m1");
+  });
+
+  it("returns the board message with the reward its post earned", async () => {
+    await expect(caller().postBoardMessage({ realm: "eurth", html: "<p>Hi</p>" })).resolves.toEqual(
+      { message: { id: "m1" }, reward: null }
+    );
+    jest
+      .mocked(postBoardMessage)
+      .mockResolvedValueOnce({ message: { id: "m2" } as never, reward: { amount: 5 } });
+    await expect(caller().postBoardMessage({ realm: "eurth", html: "<p>Hi</p>" })).resolves.toEqual(
+      { message: { id: "m2" }, reward: { amount: 5 } }
+    );
+    expect(afterBoardMessage).toHaveBeenLastCalledWith(db, actor, "m2");
   });
 
   it("does not wait for the hook: a hook that never settles does not hold the response", async () => {

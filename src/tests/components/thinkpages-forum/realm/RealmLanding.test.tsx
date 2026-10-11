@@ -700,7 +700,9 @@ describe("RealmLanding", () => {
 
     it("posts, puts the message at the top of the newest page, and shows it", async () => {
       const posted = boardMessage({ id: "p3", contentHtml: "hi", byViewer: true });
-      state.mutations.postBoardMessage = jest.fn().mockResolvedValue(posted);
+      state.mutations.postBoardMessage = jest
+        .fn()
+        .mockResolvedValue({ message: posted, reward: null });
       render(<RealmLanding realm="eurth" />);
       fireEvent.click(screen.getByRole("button", { name: "submit" }));
       await waitFor(() =>

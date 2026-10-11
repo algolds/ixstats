@@ -79,11 +79,12 @@ describe("thinkpagesForum board procedures", () => {
   it("posts, edits, continues and configures through the module", async () => {
     const store = withBoard();
     const c = caller(member, store.db);
-    const posted = await c.postBoardMessage({
+    const { message: posted, reward } = await c.postBoardMessage({
       realm: "eurth",
       html: "<p>Hello</p>",
       replyToPostId: "p1",
     });
+    expect(reward).toBeNull();
     expect(posted).toMatchObject({ contentHtml: "<p>Hello</p>", replyTo: { postId: "p1" } });
     const edited = await c.editBoardMessage({ postId: posted.id, html: "<p>Hello again</p>" });
     expect(edited.contentHtml).toBe("<p>Hello again</p>");
@@ -130,7 +131,7 @@ describe("thinkpagesForum board procedures", () => {
       .postBoardMessage({ realm: "eurth", html: "<p>hi</p>" })
       .catch((e: unknown) => e);
     // Moderators are exempt: this one posts. A member is refused.
-    expect(error).toMatchObject({ contentHtml: "<p>hi</p>" });
+    expect(error).toMatchObject({ message: { contentHtml: "<p>hi</p>" } });
     const refused = await caller(member, store.db)
       .postBoardMessage({ realm: "eurth", html: "<p>hi</p>" })
       .catch((e: unknown) => e);
@@ -157,7 +158,10 @@ describe("thinkpagesForum board procedures", () => {
   it("publishes a posted message, an edit and the settings to the realm's room, public shape only", async () => {
     const store = withBoard();
     const c = caller(member, store.db);
-    const posted = await c.postBoardMessage({ realm: "eurth", html: "<p>Hello</p>" });
+    const { message: posted } = await c.postBoardMessage({
+      realm: "eurth",
+      html: "<p>Hello</p>",
+    });
     await flush();
     expect(sentEvents()).toEqual([
       expect.objectContaining({
@@ -190,7 +194,10 @@ describe("thinkpagesForum board procedures", () => {
   it("publishes a continued message as a removal plus its placeholder", async () => {
     const store = withBoard();
     const c = caller(member, store.db);
-    const posted = await c.postBoardMessage({ realm: "eurth", html: "<p>Long one</p>" });
+    const { message: posted } = await c.postBoardMessage({
+      realm: "eurth",
+      html: "<p>Long one</p>",
+    });
     await flush();
     mockBroadcaster.broadcastBoard.mockClear();
     const continued = await c.continueInThread({ postId: posted.id, title: "A real thread" });
@@ -225,7 +232,7 @@ describe("thinkpagesForum board procedures", () => {
     mockBroadcaster.broadcastBoard.mockImplementationOnce(() => {
       throw new Error("redis down");
     });
-    const posted = await caller(member, store.db).postBoardMessage({
+    const { message: posted } = await caller(member, store.db).postBoardMessage({
       realm: "eurth",
       html: "<p>still posted</p>",
     });
