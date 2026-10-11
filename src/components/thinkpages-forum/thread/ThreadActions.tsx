@@ -34,6 +34,7 @@ import { FormError } from "../ReasonField";
 import { ReportDialog } from "../ReportDialog";
 import { StashThreadButton } from "../StashThreadButton";
 import type { ThreadData } from "./types";
+import { WatchThreadButton } from "./WatchThreadButton";
 
 /**
  * The widths below which the header cannot hold the whole bar beside the floating top chrome (the toolbar keeps its
@@ -229,12 +230,12 @@ interface ThreadActionsProps {
   signedIn: boolean;
   /** Refreshes the thread and the listings whose counts follow it. */
   refresh: () => Promise<void>;
-  /** A narrow header (COMPACT_QUERY): Stash and Report are icon buttons, and the "In character" badge is the
+  /** A narrow header (COMPACT_QUERY): Watch, Stash and Report are icon buttons, and the "In character" badge is the
    *  page's to show (beside the trail). */
   compact: boolean;
 }
 
-/** The thread's header actions: "In character", the moderator bar, Stash, and Report for a member. */
+/** The thread's header actions: "In character", the moderator bar, Watch, Stash, and Report for a member. */
 export function ThreadActions({ data, signedIn, refresh, compact }: ThreadActionsProps) {
   const { thread } = data;
   // A site admin's thread is site admins' to lock, pin, hide, archive or move.
@@ -247,6 +248,13 @@ export function ThreadActions({ data, signedIn, refresh, compact }: ThreadAction
           thread={thread}
           categories={data.moderatorTools?.categories ?? []}
           refresh={refresh}
+        />
+      ) : null}
+      {signedIn ? (
+        <WatchThreadButton
+          threadId={thread.id}
+          watching={data.watching === true}
+          iconOnly={compact}
         />
       ) : null}
       {signedIn ? <StashThreadButton threadId={thread.id} iconOnly={compact} /> : null}

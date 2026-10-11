@@ -32,6 +32,7 @@ import { PostCard } from "./PostCard";
 import { COMPACT_QUERY, ThreadActions } from "./ThreadActions";
 import { ThreadRail } from "./ThreadRail";
 import type { EditBody, ForumPost, ThreadData } from "./types";
+import { useMarkThreadRead } from "./useMarkThreadRead";
 
 const NO_POSTS: ForumPost[] = [];
 
@@ -109,6 +110,7 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
   const posts = data?.posts ?? NO_POSTS;
   const { cards, ready, errored } = useThreadActionCards(posts);
   useScrollToPostHash(posts, threadId, page);
+  useMarkThreadRead({ threadId, page, signedIn: !!isSignedIn, newestPostId: posts.at(-1)?.id });
   usePageTitle({ title: data?.thread.title ?? "ThinkPages" });
 
   // Phones reply from a docked bar and a sheet; wider screens from the composer under the posts.

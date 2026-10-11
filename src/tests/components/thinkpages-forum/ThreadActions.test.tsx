@@ -10,12 +10,23 @@ jest.mock("~/trpc/react", () => {
     mutations,
     api: {
       useUtils: () => ({
-        thinkpagesForum: { isThreadStashed: { invalidate: () => Promise.resolve() } },
+        thinkpagesForum: {
+          isThreadStashed: { invalidate: () => Promise.resolve() },
+          thread: { invalidate: () => Promise.resolve() },
+          newPosts: { invalidate: () => Promise.resolve() },
+          watchedThreads: { invalidate: () => Promise.resolve() },
+          navCounts: { invalidate: () => Promise.resolve() },
+          category: { invalidate: () => Promise.resolve() },
+          categories: { invalidate: () => Promise.resolve() },
+          realmSection: { invalidate: () => Promise.resolve() },
+        },
       }),
       thinkpagesForum: {
         isThreadStashed: { useQuery: () => ({ data: { stashed: false }, isLoading: false }) },
         stashThread: mutation("stashThread"),
         unstashThread: mutation("unstashThread"),
+        watchThread: mutation("watchThread"),
+        unwatchThread: mutation("unwatchThread"),
         report: mutation("report"),
       },
       thinkpagesForumMod: {
@@ -86,12 +97,34 @@ describe("ThreadActions in a compact header", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("makes Watch an icon button in a compact header, named for its state", () => {
+    const { rerender } = render(
+      <ThreadActions
+        data={data({ canModerate: false, moderable: false, watching: false })}
+        signedIn
+        compact
+        refresh={refresh}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveTextContent("");
+    rerender(
+      <ThreadActions
+        data={data({ canModerate: false, moderable: false, watching: true })}
+        signedIn
+        compact
+        refresh={refresh}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Stop watching thread" })).toHaveTextContent("");
+  });
+
   it("offers the moderator one Thread actions menu", () => {
     render(<ThreadActions data={data()} signedIn compact refresh={refresh} />);
     const buttons = screen.getAllByRole("button");
-    // Stash and the menu trigger; a moderator is not offered Report.
+    // Watch, Stash and the menu trigger; a moderator is not offered Report.
     expect(buttons.map((b) => b.getAttribute("aria-label"))).toEqual([
       "Thread actions",
+      "Watch thread",
       "Stash thread",
     ]);
     const menu = screen.getByRole("menu");
@@ -165,6 +198,37 @@ describe("ThreadActions in a wide header", () => {
     expect(screen.getByRole("button", { name: "Report thread" })).toHaveTextContent(
       "Report thread"
     );
+  });
+
+  it("offers Watch beside Stash to a signed-in reader, and no Watch to a signed-out one", () => {
+    const { rerender } = render(
+      <ThreadActions data={data({ watching: false })} signedIn refresh={refresh} compact={false} />
+    );
+    expect(screen.getByRole("button", { name: "Watch" })).toHaveAttribute("aria-pressed", "false");
+    rerender(
+      <ThreadActions data={data({ watching: true })} signedIn refresh={refresh} compact={false} />
+    );
+    expect(screen.getByRole("button", { name: "Watching" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    rerender(<ThreadActions data={data()} signedIn={false} refresh={refresh} compact={false} />);
+    expect(screen.queryByRole("button", { name: /Watch/ })).toBeNull();
+  });
+
+  it("watches and stops watching through the thread's own id", async () => {
+    mutations.watchThread = jest.fn(() => Promise.resolve({ watching: true }));
+    mutations.unwatchThread = jest.fn(() => Promise.resolve({ watching: false }));
+    const { rerender } = render(
+      <ThreadActions data={data({ watching: false })} signedIn refresh={refresh} compact={false} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Watch" }));
+    await waitFor(() => expect(mutations.watchThread).toHaveBeenCalledWith({ threadId: "t1" }));
+    rerender(
+      <ThreadActions data={data({ watching: true })} signedIn refresh={refresh} compact={false} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Watching" }));
+    await waitFor(() => expect(mutations.unwatchThread).toHaveBeenCalledWith({ threadId: "t1" }));
   });
 
   it("still gives a moderator the one Thread actions menu, never a row of buttons beside the top chrome", () => {

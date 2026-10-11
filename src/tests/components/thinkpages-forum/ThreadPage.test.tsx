@@ -33,6 +33,9 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate },
           realmSection: { invalidate },
           isThreadStashed: { invalidate },
+          newPosts: { invalidate },
+          watchedThreads: { invalidate },
+          navCounts: { invalidate },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
         },
         thinkpagesForumMod: { invalidate, context: { invalidate } },
@@ -40,6 +43,9 @@ jest.mock("~/trpc/react", () => {
       thinkpagesForum: {
         thread: query("thread"),
         isThreadStashed: query("isThreadStashed"),
+        markThreadRead: mutation("markThreadRead"),
+        watchThread: mutation("watchThread"),
+        unwatchThread: mutation("unwatchThread"),
         stashThread: mutation("stashThread"),
         unstashThread: mutation("unstashThread"),
         reply: mutation("reply"),
@@ -119,7 +125,7 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
 
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 
-const { results } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
 const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
 const { notify } = jest.requireMock<{ notify: { success: jest.Mock; error: jest.Mock } }>(
   "~/hooks/useNotify"
@@ -224,6 +230,9 @@ beforeEach(() => {
   for (const key of Object.keys(results)) delete results[key];
   auth.isSignedIn = true;
   installViewport(false);
+  mutations.markThreadRead = jest.fn().mockResolvedValue({ readAt: null });
+  mutations.watchThread = jest.fn().mockResolvedValue({ watching: true });
+  mutations.unwatchThread = jest.fn().mockResolvedValue({ watching: false });
   results.isThreadStashed = { data: { stashed: false } };
   results.context = { data: { isSiteAdmin: false, realms: [], categories: [] } };
 });
@@ -294,8 +303,8 @@ describe("the thread page", () => {
     const names = within(header)
       .getAllByRole("button")
       .map((b) => b.getAttribute("aria-label") ?? b.textContent);
-    // Info, the icon-only Stash, and the one Thread actions menu: no labelled moderator or Report buttons.
-    expect(names).toEqual(["Thread actions", "Stash thread", "Info"]);
+    // Info, the icon-only Watch and Stash, and the one Thread actions menu: no labelled moderator or Report buttons.
+    expect(names).toEqual(["Thread actions", "Watch thread", "Stash thread", "Info"]);
     expect(within(header).queryByRole("button", { name: "Lock" })).toBeNull();
   });
 
@@ -561,5 +570,46 @@ describe("the rail", () => {
     );
     render(<ThreadPage threadId="t1" page={2} />);
     expect(screen.queryByRole("heading", { name: "Related on the wiki" })).toBeNull();
+  });
+});
+
+describe("read state and watching on the thread page", () => {
+  it("marks the page read for a signed-in reader once, and again when a newer post is the last shown", async () => {
+    set(threadData());
+    const { rerender } = render(<ThreadPage threadId="t1" page={1} />);
+    await waitFor(() =>
+      expect(mutations.markThreadRead).toHaveBeenCalledWith({ threadId: "t1", page: 1 })
+    );
+    rerender(<ThreadPage threadId="t1" page={1} />);
+    expect(mutations.markThreadRead).toHaveBeenCalledTimes(1);
+    set(
+      threadData({ posts: [post(), post({ id: "p2", number: 2 }), post({ id: "p3", number: 3 })] })
+    );
+    rerender(<ThreadPage threadId="t1" page={1} />);
+    await waitFor(() => expect(mutations.markThreadRead).toHaveBeenCalledTimes(2));
+  });
+
+  it("marks nothing read for a signed-out reader", () => {
+    auth.isSignedIn = false;
+    set(threadData());
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(mutations.markThreadRead).not.toHaveBeenCalled();
+  });
+
+  it("shows the Watching panel in the rail, with an Unwatch that stops it", async () => {
+    installViewport(true);
+    set({ ...threadData(), watching: true });
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.getByText("You're watching this thread.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Unwatch" }));
+    await waitFor(() => expect(mutations.unwatchThread).toHaveBeenCalledWith({ threadId: "t1" }));
+  });
+
+  it("shows no Watching panel to a reader who does not watch", () => {
+    installViewport(true);
+    set({ ...threadData(), watching: false });
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.queryByText("You're watching this thread.")).toBeNull();
+    expect(screen.getByRole("button", { name: "Watch" })).toBeInTheDocument();
   });
 });

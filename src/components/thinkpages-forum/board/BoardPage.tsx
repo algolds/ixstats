@@ -6,6 +6,8 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { useUser } from "~/context/auth-context";
+import { useNotify } from "~/hooks/useNotify";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
 import { categoryHref, FORUM_HOME, hubHref, newThreadHref } from "~/lib/thinkpages-forum/links";
@@ -17,6 +19,7 @@ import { ForumBreadcrumbs, forumTrail } from "../ForumBreadcrumbs";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
 import { RealmSwitcher } from "../RealmSwitcher";
+import { useReadStateRefresh } from "../useReadStateRefresh";
 import { ForumPage } from "../shell";
 import { AboutPanel, TopPostersPanel } from "./BoardRail";
 import { SortMenu } from "./SortMenu";
@@ -44,6 +47,21 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
   const totalPages = pageCount(data?.total ?? 0, THREADS_PER_PAGE);
   const redirecting = useLastPageRedirect(sortedPath, page, data?.total, totalPages);
   usePageTitle({ title: data?.category.name ?? "ThinkPages" });
+  const { isSignedIn } = useUser();
+  const notify = useNotify();
+  const refreshReadState = useReadStateRefresh();
+  const { mutateAsync: markRead, isPending: marking } =
+    api.thinkpagesForum.markCategoryRead.useMutation();
+  const markBoardRead = async () => {
+    try {
+      await markRead({ key: categoryKey, realm });
+    } catch (e) {
+      notify.error("Could not mark the board read", e instanceof Error ? e.message : undefined);
+      return;
+    }
+    // The mark is saved; a failed refresh of the lists is not an error to report.
+    await refreshReadState().catch(() => undefined);
+  };
 
   if (isLoading || redirecting) return <ForumPageSkeleton />;
 
@@ -102,6 +120,17 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
         <>
           {realm && realmOptions ? <RealmSwitcher realms={realmOptions} value={realm} /> : null}
           <SortMenu basePath={boardPath} sort={sort} />
+          {isSignedIn ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-label-secondary pointer-coarse:min-h-11"
+              disabled={marking || !data.threads.some((t) => t.unread)}
+              onClick={() => void markBoardRead()}
+            >
+              Mark board read
+            </Button>
+          ) : null}
           {newThread}
         </>
       }

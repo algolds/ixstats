@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 interface QueryResult {
   data?: object | null;
@@ -10,11 +10,21 @@ interface QueryResult {
 interface MockApi {
   results: Record<string, QueryResult>;
   inputs: Record<string, unknown>;
+  mutations: Record<string, jest.Mock>;
+  invalidated: string[];
 }
 
 jest.mock("~/trpc/react", () => {
   const results: Record<string, QueryResult> = {};
   const inputs: Record<string, unknown> = {};
+  const mutations: Record<string, jest.Mock> = {};
+  const invalidated: string[] = [];
+  const invalidator = (name: string) => ({
+    invalidate: () => {
+      invalidated.push(name);
+      return Promise.resolve();
+    },
+  });
   const query = (name: string) => ({
     useQuery: (input?: unknown) => {
       inputs[name] = input;
@@ -24,8 +34,23 @@ jest.mock("~/trpc/react", () => {
   return {
     results,
     inputs,
+    mutations,
+    invalidated,
     api: {
+      useUtils: () => ({
+        thinkpagesForum: {
+          newPosts: invalidator("newPosts"),
+          watchedThreads: invalidator("watchedThreads"),
+          navCounts: invalidator("navCounts"),
+          category: invalidator("category"),
+          categories: invalidator("categories"),
+          realmSection: invalidator("realmSection"),
+        },
+      }),
       thinkpagesForum: {
+        markCategoryRead: {
+          useMutation: () => ({ mutateAsync: mutations.markCategoryRead, isPending: false }),
+        },
         category: query("category"),
         realms: query("realms"),
         boardTopPosters: query("boardTopPosters"),
@@ -40,6 +65,14 @@ jest.mock("next/navigation", () => {
 });
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
+
+jest.mock("~/context/auth-context", () => {
+  const auth = { isSignedIn: false };
+  return { auth, useUser: () => ({ user: null, isSignedIn: auth.isSignedIn }) };
+});
+
+const mockNotify = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
+jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
 
 // Radix Select and DropdownMenu open on pointer events jsdom does not model; render their items inline.
 jest.mock("~/components/ui/select", () => ({
@@ -272,5 +305,72 @@ describe("BoardPage rail", () => {
     set("boardTopPosters", { data: { posters: [], authors } });
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByText("Top posters this month")).toBeNull();
+  });
+});
+
+describe("BoardPage read state", () => {
+  const { mutations, invalidated } = jest.requireMock<MockApi>("~/trpc/react");
+  const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
+
+  beforeEach(() => {
+    invalidated.length = 0;
+    auth.isSignedIn = true;
+    mutations.markCategoryRead = jest.fn().mockResolvedValue({ marked: 1 });
+  });
+  afterEach(() => {
+    auth.isSignedIn = false;
+  });
+
+  it("shows an unread thread in bold and offers Mark board read, which marks the board and refreshes", async () => {
+    set("category", {
+      data: board({ threads: [{ ...thread("t1"), unread: true }, thread("t2")] }),
+    });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("font-bold");
+    fireEvent.click(screen.getByRole("button", { name: "Mark board read" }));
+    await waitFor(() =>
+      expect(mutations.markCategoryRead).toHaveBeenCalledWith({ key: "general", realm: undefined })
+    );
+    await waitFor(() =>
+      expect(invalidated).toEqual(expect.arrayContaining(["category", "categories", "navCounts"]))
+    );
+  });
+
+  it("marks a realm board by its realm", async () => {
+    set("category", {
+      data: board({
+        category: { key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
+        threads: [{ ...thread("t1"), unread: true }],
+      }),
+    });
+    render(<BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mark board read" }));
+    await waitFor(() =>
+      expect(mutations.markCategoryRead).toHaveBeenCalledWith({ key: "hub", realm: "eurth" })
+    );
+  });
+
+  it("reports a refusal and refreshes nothing", async () => {
+    mutations.markCategoryRead = jest.fn().mockRejectedValue(new Error("Category not found."));
+    set("category", { data: board({ threads: [{ ...thread("t1"), unread: true }] }) });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    fireEvent.click(screen.getByRole("button", { name: "Mark board read" }));
+    await waitFor(() =>
+      expect(mockNotify.error).toHaveBeenCalledWith(
+        "Could not mark the board read",
+        "Category not found."
+      )
+    );
+    expect(invalidated).toEqual([]);
+  });
+
+  it("disables Mark board read when nothing is unread, and shows it to nobody signed out", () => {
+    set("category", { data: board() });
+    const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Mark board read" })).toBeDisabled();
+    unmount();
+    auth.isSignedIn = false;
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.queryByRole("button", { name: "Mark board read" })).toBeNull();
   });
 });

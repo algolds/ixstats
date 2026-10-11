@@ -11,6 +11,7 @@ jest.mock("~/trpc/react", () => {
   const stashed: { data?: { stashed: boolean }; isLoading?: boolean; isError?: boolean } = {};
   const mutations = { stashThread: jest.fn(), unstashThread: jest.fn() };
   const invalidate = jest.fn(() => Promise.resolve());
+  const markThreadRead = jest.fn(() => Promise.resolve({}));
   const mutation = (name: "stashThread" | "unstashThread") => ({
     useMutation: () => ({ mutateAsync: mutations[name], isPending: false }),
   });
@@ -49,6 +50,9 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate },
           realmSection: { invalidate },
           isThreadStashed: { invalidate },
+          newPosts: { invalidate },
+          watchedThreads: { invalidate },
+          navCounts: { invalidate },
         },
       }),
       thinkpagesForum: {
@@ -56,6 +60,10 @@ jest.mock("~/trpc/react", () => {
         isThreadStashed: { useQuery: () => ({ ...stashed }) },
         stashThread: mutation("stashThread"),
         unstashThread: mutation("unstashThread"),
+        markThreadRead: { useMutation: () => ({ mutateAsync: markThreadRead }) },
+        markCategoryRead: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
+        watchThread: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
+        unwatchThread: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
         reply: { useMutation: () => ({ mutateAsync: jest.fn() }) },
         editPost: { useMutation: () => ({ mutateAsync: jest.fn() }) },
       },

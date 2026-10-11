@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Book, ChatBubble, Group } from "iconoir-react";
+import { Book, ChatBubble, Eye, Group } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
 import { timeAgo } from "~/lib/format/compact";
 import { relatedWikiTitles } from "~/lib/thinkpages-forum/post-html";
@@ -10,6 +11,7 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { AuthorMark } from "../AuthorMark";
 import { AuthorName } from "../AuthorName";
 import { RailPanel } from "../shell";
+import { useWatchToggle } from "../useWatchToggle";
 import type { ThreadData } from "./types";
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
@@ -18,6 +20,28 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
       <dt className="text-callout text-label-secondary">{label}</dt>
       <dd className="text-callout min-w-0 truncate">{children}</dd>
     </div>
+  );
+}
+
+/** "You're watching this thread" with an Unwatch link; left out for a reader who does not watch it. */
+function WatchingPanel({ data }: { data: ThreadData }) {
+  const { setWatching, isPending } = useWatchToggle();
+  if (!data.watching) return null;
+  return (
+    <RailPanel title="Watching" icon={<Eye />}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-callout">You&apos;re watching this thread.</p>
+        <Button
+          variant="link"
+          size="xs"
+          className="pointer-coarse:min-h-11"
+          disabled={isPending}
+          onClick={() => void setWatching(data.thread.id, false)}
+        >
+          Unwatch
+        </Button>
+      </div>
+    </RailPanel>
   );
 }
 
@@ -113,12 +137,13 @@ function RelatedPanel({ titles }: { titles: readonly string[] }) {
   );
 }
 
-/** The thread page's rail: the thread at a glance, who took part, and the wiki pages its first post links to. */
+/** The thread page's rail: whether the reader watches it, the thread at a glance, who took part, and the wiki pages its first post links to. */
 export function ThreadRail({ data }: { data: ThreadData }) {
   // Only the thread's own first post (page 1) names what the thread is about.
   const first = data.posts[0]?.number === 1 ? data.posts[0] : undefined;
   return (
     <>
+      <WatchingPanel data={data} />
       <ThisThreadPanel data={data} />
       <ParticipantsPanel data={data} />
       <RelatedPanel titles={first ? relatedWikiTitles(first.contentHtml) : []} />

@@ -38,6 +38,9 @@ jest.mock("~/trpc/react", () => {
       realmSection: invalidator("realmSection"),
       myStanding: invalidator("myStanding"),
       isThreadStashed: invalidator("isThreadStashed"),
+      newPosts: invalidator("newPosts"),
+      watchedThreads: invalidator("watchedThreads"),
+      navCounts: invalidator("navCounts"),
       resolvePost: { fetch: resolvePost },
     },
     thinkpagesForumMod: { ...invalidator("mod"), context: invalidator("context") },
@@ -58,6 +61,10 @@ jest.mock("~/trpc/react", () => {
         thread: query("thread"),
         myStanding: query("myStanding"),
         isThreadStashed: query("isThreadStashed"),
+        markThreadRead: mutation("markThreadRead"),
+        markCategoryRead: mutation("markCategoryRead"),
+        watchThread: mutation("watchThread"),
+        unwatchThread: mutation("unwatchThread"),
         stashThread: mutation("stashThread"),
         unstashThread: mutation("unstashThread"),
         reply: mutation("reply"),
@@ -334,6 +341,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   for (const key of Object.keys(results)) delete results[key];
   for (const key of Object.keys(mutations)) delete mutations[key];
+  mutations.markThreadRead = jest.fn().mockResolvedValue({ readAt: null });
   auth.isSignedIn = false;
   set("context", { data: NO_MOD });
   set("isThreadStashed", { data: { stashed: false } });
