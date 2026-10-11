@@ -29,6 +29,7 @@ import {
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { AdvertLockButton } from "../advert";
 import { NoteDialog } from "../mod/NoteDialog";
 import { FormError } from "../ReasonField";
 import { ReportDialog } from "../ReportDialog";
@@ -235,6 +236,15 @@ interface ThreadActionsProps {
   compact: boolean;
 }
 
+/**
+ * Whether the advert's own Lock or Unlock is offered: the server says (`canLock`, `canUnlock`), and a moderator of the
+ * thread has the same toggle in the thread bar already.
+ */
+function advertLockOffered({ advert, thread }: ThreadData): boolean {
+  if (!advert) return false;
+  return thread.locked ? advert.canUnlock : advert.canLock;
+}
+
 /** The thread's header actions: "In character", the moderator bar, Watch, Stash, and Report for a member. */
 export function ThreadActions({ data, signedIn, refresh, compact }: ThreadActionsProps) {
   const { thread } = data;
@@ -256,6 +266,9 @@ export function ThreadActions({ data, signedIn, refresh, compact }: ThreadAction
           watching={data.watching === true}
           iconOnly={compact}
         />
+      ) : null}
+      {!moderating && advertLockOffered(data) ? (
+        <AdvertLockButton threadId={thread.id} locked={thread.locked} iconOnly={compact} />
       ) : null}
       {signedIn ? <StashThreadButton threadId={thread.id} iconOnly={compact} /> : null}
       {signedIn && !data.canModerate && !data.viewerIsAuthor ? (

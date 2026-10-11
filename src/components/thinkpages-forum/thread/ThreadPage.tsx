@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Archive, EyeClosed } from "iconoir-react";
 import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
@@ -31,6 +30,7 @@ import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
 import { ForumPage } from "../shell";
 import { PostCard } from "./PostCard";
 import { COMPACT_QUERY, ThreadActions } from "./ThreadActions";
+import { ThreadNotices } from "./ThreadNotices";
 import { ThreadRail } from "./ThreadRail";
 import type { EditBody, ForumPost, ThreadData } from "./types";
 import { useMarkThreadRead } from "./useMarkThreadRead";
@@ -225,18 +225,7 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
       }
       rail={<ThreadRail data={data} />}
     >
-      {thread.hidden ? (
-        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
-          <EyeClosed aria-hidden className="size-4 shrink-0" />
-          This thread is hidden from members.
-        </p>
-      ) : null}
-      {typeof thread.xenforoThreadId === "number" ? (
-        <p className="text-callout text-label-secondary flex items-center gap-2 px-1">
-          <Archive aria-hidden className="size-4 shrink-0" />
-          Imported from the old forum.
-        </p>
-      ) : null}
+      <ThreadNotices data={data} />
       <DiscussionCountsProvider activityIds={actionIds}>
         <Card content="feed" className="overflow-hidden">
           {posts.map((post, index) => (

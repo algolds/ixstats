@@ -160,6 +160,18 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
   DropdownMenuSeparator: () => <hr />,
 }));
 
+jest.mock("~/components/thinkpages-forum/advert", () => ({
+  AdvertCard: ({ realmSlug }: { realmSlug: string }) => (
+    <div data-testid="advert-card">{realmSlug}</div>
+  ),
+  AdvertRailPanel: ({ realmName }: { realmName: string }) => (
+    <section aria-label={`About ${realmName}`}>
+      <h2>About {realmName}</h2>
+    </section>
+  ),
+  AdvertLockButton: () => null,
+}));
+
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 
 const { results, mutations, cards } = jest.requireMock<MockApi>("~/trpc/react");
@@ -426,6 +438,59 @@ describe("the thread page", () => {
       .filter((link) => !trail.contains(link));
     expect(back).toHaveLength(1);
     expect(back[0]).toHaveAttribute("href", "/thinkpages/r/ixworld/hub");
+  });
+});
+
+const advertOf = (over: object = {}) => ({
+  realmSlug: "eurth",
+  realmName: "Eurth",
+  canManage: false,
+  closed: false,
+  canLock: false,
+  canUnlock: false,
+  ...over,
+});
+
+describe("a Find a Realm advert thread", () => {
+  it("mounts the realm card above the feed and the realm's rail panel after Watching", () => {
+    installViewport(true);
+    set({ ...threadData(), watching: true, advert: advertOf() });
+    const { container } = render(<ThreadPage threadId="t1" page={1} />);
+    const card = screen.getByTestId("advert-card");
+    expect(card).toHaveTextContent("eurth");
+    const feed = container.querySelector('[data-content="feed"]')!;
+    expect(card.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const watching = screen.getByRole("heading", { name: "Watching" });
+    const about = screen.getByRole("heading", { name: "About Eurth" });
+    expect(watching.compareDocumentPosition(about) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText(/Realm archived/)).toBeNull();
+  });
+
+  it("mounts neither for an ordinary thread", () => {
+    installViewport(true);
+    set({ ...threadData(), advert: null });
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.queryByTestId("advert-card")).toBeNull();
+    expect(screen.queryByRole("heading", { name: /^About/ })).toBeNull();
+  });
+
+  it("says the realm is archived when its advert is closed, beside the locked state", () => {
+    set({ ...threadData({ locked: true, canReply: false }), advert: advertOf({ closed: true }) });
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.getByText(/Realm archived/)).toBeInTheDocument();
+    expect(screen.getByText("This thread is locked.")).toBeInTheDocument();
+  });
+
+  it("keeps the hidden and imported notices", () => {
+    const base = threadData();
+    set({
+      ...base,
+      thread: { ...base.thread, hidden: true, xenforoThreadId: 12 },
+      advert: advertOf(),
+    });
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(screen.getByText("This thread is hidden from members.")).toBeInTheDocument();
+    expect(screen.getByText("Imported from the old forum.")).toBeInTheDocument();
   });
 });
 

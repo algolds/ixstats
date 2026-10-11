@@ -8,6 +8,7 @@ import { Stat } from "~/components/ui/stat";
 import { timeAgo } from "~/lib/format/compact";
 import { relatedWikiTitles } from "~/lib/thinkpages-forum/post-html";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { AdvertRailPanel } from "../advert";
 import { AuthorMark } from "../AuthorMark";
 import { AuthorName } from "../AuthorName";
 import { RailPanel } from "../shell";
@@ -137,13 +138,16 @@ function RelatedPanel({ titles }: { titles: readonly string[] }) {
   );
 }
 
-/** The thread page's rail: whether the reader watches it, the thread at a glance, who took part, and the wiki pages its first post links to. */
+/** The thread page's rail: whether the reader watches it, the realm an advert is for, the thread at a glance, who took part, and the wiki pages its first post links to. */
 export function ThreadRail({ data }: { data: ThreadData }) {
   // Only the thread's own first post (page 1) names what the thread is about.
   const first = data.posts[0]?.number === 1 ? data.posts[0] : undefined;
   return (
     <>
       <WatchingPanel data={data} />
+      {data.advert ? (
+        <AdvertRailPanel realmSlug={data.advert.realmSlug} realmName={data.advert.realmName} />
+      ) : null}
       <ThisThreadPanel data={data} />
       <ParticipantsPanel data={data} />
       <RelatedPanel titles={first ? relatedWikiTitles(first.contentHtml) : []} />
