@@ -25,6 +25,34 @@ import {
   type SearchParamsLike,
 } from "~/lib/navigation/app-sections";
 
+/**
+ * Every row's icon sits in one 28px slot, so labels line up; the slot of the current app, section or page is
+ * pressed in (`facet-recess`), so where you are reads from the icons alone.
+ */
+function NavMark({
+  current = false,
+  tint,
+  children,
+}: {
+  current?: boolean;
+  /** The app tint the mark wears (an app row); a section row inherits its app's. */
+  tint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      data-app={tint}
+      data-current={current || undefined}
+      className={cn(
+        "text-tint rounded-control-sm relative grid size-7 shrink-0 place-items-center",
+        current && "facet-recess"
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 export const sourceRowClassName =
   "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11";
 
@@ -99,7 +127,9 @@ function ActionRow({ section, action, ctx }: { section: Section; action: NavActi
           "text-tint-ink hover:bg-tint-fill font-medium"
         )}
       >
-        <Icon aria-hidden className="size-4 shrink-0" />
+        <NavMark>
+          <Icon aria-hidden className="size-4" />
+        </NavMark>
         <span className="min-w-0 flex-1 truncate text-left">{section.label}</span>
         <Trailing badge={badge} badgeKey={section.badge} />
       </button>
@@ -137,7 +167,9 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
             className="bg-tint-fill rounded-control absolute inset-0"
           />
         )}
-        <Icon aria-hidden className="text-tint relative size-4 shrink-0" />
+        <NavMark current={active}>
+          <Icon aria-hidden className="size-4" />
+        </NavMark>
         <span className="relative min-w-0 flex-1 truncate">{section.label}</span>
         <span className="relative">
           <Trailing badge={badge} badgeKey={section.badge} />
@@ -276,9 +308,9 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
             isCurrent ? "text-label font-semibold" : "text-label hover:bg-fill-4"
           )}
         >
-          <span data-app={app.tint} className="text-tint inline-flex shrink-0">
+          <NavMark current={isCurrent} tint={app.tint}>
             <Icon aria-hidden className="size-5" />
-          </span>
+          </NavMark>
           <span className="min-w-0 flex-1 truncate">{app.label}</span>
           <Trailing badge={appBadge} badgeKey={app.badge} />
           {!open && pendingInside && (
@@ -315,6 +347,7 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
   );
 }
 
+/** Area apps (Settings, Admin) at the foot; inside one the list switches to its sections, so none is ever current. */
 function FooterLinks({
   apps,
   onNavigate,
@@ -334,9 +367,9 @@ function FooterLinks({
               onClick={onNavigate}
               className={cn(sourceRowClassName, focusRing, "text-label hover:bg-fill-4")}
             >
-              <span data-app={a.tint} className="text-tint inline-flex shrink-0">
+              <NavMark tint={a.tint}>
                 <Icon aria-hidden className="size-5" />
-              </span>
+              </NavMark>
               <span className="min-w-0 flex-1 truncate">{a.label}</span>
             </Link>
           </li>

@@ -95,8 +95,8 @@ const railButtonClassName = (current: boolean) =>
   cn(
     focusRing,
     "rounded-control relative grid size-9 shrink-0 cursor-pointer place-items-center transition-colors duration-fast ease-out-facet pointer-coarse:size-11",
-    // Every glyph wears its app's tint; the current one also gets the tinted fill.
-    current ? "bg-tint-fill text-tint" : "text-tint hover:bg-fill-4"
+    // Every glyph wears its app's tint; the current one is pressed in, as in the full list.
+    current ? "facet-recess text-tint" : "text-tint hover:bg-fill-4"
   );
 
 function RailGlyph({ app, showDot }: { app: AppDefinition; showDot: boolean }) {
