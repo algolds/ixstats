@@ -41,15 +41,18 @@ export interface StoredBody extends PreparedBody {
 /** `"pending"`: the wiki was unavailable, so the stored HTML is a fallback until the stale cron re-renders it. */
 export type Formatting = "done" | "pending";
 
+const sortedIds = (ids: string[]): string => [...ids].sort().join(" ");
+
 /**
  * A token inside a tag or attribute would never render as a card and must never be cut by the renderer. The ids the
- * page renders must be the ids the text holds, in order, not just as many: ownership is checked on the text, and
- * `<includeonly>` or a template default can make a render show a different id at the same count.
+ * page renders must be the ids the text holds, not just as many: ownership is checked on the text, and
+ * `<includeonly>` or a template default can make a render show a different id at the same count. The order may differ
+ * (MediaWiki moves `<ref>` content to the end of the page), so the lists are compared sorted.
  */
 export function assertTokensArePlainText(contentHtml: string, plainText: string): void {
   const rendered = countTextActionTokens(contentHtml);
   const sameIds =
-    parseTextActionTokens(contentHtml).join(" ") === parseActionTokens(plainText).join(" ");
+    sortedIds(parseTextActionTokens(contentHtml)) === sortedIds(parseActionTokens(plainText));
   if (
     rendered !== countActionTokens(contentHtml) ||
     rendered !== countActionTokens(plainText) ||

@@ -64,10 +64,19 @@ describe("a Canvas post's action tokens", () => {
       /plain text/
     );
     expect(() =>
-      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=b] [ixaction=a]")
+      assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=c]")
     ).toThrow(/plain text/);
     expect(() =>
       assertTokensArePlainText("<p>[ixaction=a] [ixaction=b]</p>", "[ixaction=a] [ixaction=b]")
+    ).not.toThrow();
+  });
+
+  it("accept the same ids in another order, as when MediaWiki moves a ref to the end of the page", () => {
+    expect(() =>
+      assertTokensArePlainText(
+        "<p>[ixaction=b]</p><p>[ixaction=a]</p>",
+        "[ixaction=a] [ixaction=b]"
+      )
     ).not.toThrow();
   });
 });
