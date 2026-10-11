@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 const mockMark = jest.fn();
 const mockRefresh = jest.fn(() => Promise.resolve());
@@ -6,7 +6,8 @@ jest.mock("~/trpc/react", () => ({
   api: { thinkpagesForum: { markThreadRead: { useMutation: () => ({ mutateAsync: mockMark }) } } },
 }));
 jest.mock("~/components/thinkpages-forum/useReadStateRefresh", () => ({
-  useReadStateRefresh: () => mockRefresh,
+  // A new function every render, as a refreshed utils object would give: the effect runs again with the same key.
+  useReadStateRefresh: () => () => mockRefresh(),
 }));
 
 import { useMarkThreadRead } from "~/components/thinkpages-forum/thread/useMarkThreadRead";
@@ -50,6 +51,17 @@ describe("useMarkThreadRead", () => {
     expect(mockRefresh).not.toHaveBeenCalled();
     rerender({ ...args, newestPostId: "p41" });
     await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not retry a failed mark on a re-render with the same key", async () => {
+    mockMark.mockRejectedValueOnce(new Error("offline"));
+    const { rerender } = renderHook((props) => useMarkThreadRead(props), { initialProps: args });
+    await waitFor(() => expect(mockMark).toHaveBeenCalledTimes(1));
+    rerender({ ...args });
+    rerender({ ...args });
+    await act(async () => void (await Promise.resolve()));
+    expect(mockMark).toHaveBeenCalledTimes(1);
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 
   it("does not report a failed refresh after a saved mark", async () => {

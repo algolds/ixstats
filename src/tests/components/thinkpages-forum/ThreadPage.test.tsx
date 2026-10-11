@@ -610,6 +610,6 @@ describe("read state and watching on the thread page", () => {
     set({ ...threadData(), watching: false });
     render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByText("You're watching this thread.")).toBeNull();
-    expect(screen.getByRole("button", { name: "Watch" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveTextContent("Watch");
   });
 });

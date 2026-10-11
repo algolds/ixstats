@@ -6,20 +6,26 @@ import { api } from "~/trpc/react";
 /** The board is marked read at most this often: live messages arrive continuously. */
 export const BOARD_READ_INTERVAL_MS = 10_000;
 
+interface RealmBoardRead {
+  /** The reader is at the top of the feed, in view of this newest message. */
+  markSeen: (newestMessageId: string) => void;
+  /** The reader scrolled the top of the feed out of view: a mark that is waiting is dropped. */
+  leaveTop: () => void;
+}
+
 /**
- * Marks the realm's live board read for a signed-in reader. The feed calls the returned function with its newest message
- * while the reader is at the top. A newest message already marked is skipped, and marks are at least
- * `BOARD_READ_INTERVAL_MS` apart: a newer message seen inside that window is marked when it ends, so the last one seen
- * is never lost. After a mark, the sidebar counts are refreshed.
+ * Marks the realm's live board read for a signed-in reader. The feed calls `markSeen` with its newest message while the
+ * reader is at the top and `leaveTop` when they scroll away. A newest message already marked is skipped, and marks are
+ * at least `BOARD_READ_INTERVAL_MS` apart: a newer message seen inside that window is marked when it ends, so the last
+ * one seen is not lost, unless the reader has left the top by then (the next arrival at the top marks it). After a
+ * mark, the sidebar counts are refreshed. Switching realm starts over: nothing marked or waiting carries across.
  */
-export function useRealmBoardRead(
-  slug: string,
-  signedIn: boolean
-): (newestMessageId: string) => void {
+export function useRealmBoardRead(slug: string, signedIn: boolean): RealmBoardRead {
   const utils = api.useUtils();
   const { mutateAsync: markBoardRead } = api.thinkpagesForum.markRealmBoardRead.useMutation();
   const lastMarked = useRef<string | null>(null);
   const lastMarkAt = useRef<number | null>(null);
+  const atTop = useRef(true);
   const waiting = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null);
 
   const mark = useCallback(
@@ -31,7 +37,7 @@ export function useRealmBoardRead(
         () => void utils.thinkpagesForum.navCounts.invalidate().catch(() => undefined),
         () => {
           // Not saved: the next message seen tries again.
-          lastMarked.current = null;
+          if (lastMarked.current === newestId) lastMarked.current = null;
         }
       );
     },
@@ -40,6 +46,7 @@ export function useRealmBoardRead(
 
   const markSeen = useCallback(
     (newestId: string) => {
+      atTop.current = true;
       if (!signedIn || lastMarked.current === newestId) return;
       if (waiting.current) {
         // A mark is already waiting out the interval; it will carry the newest message.
@@ -55,7 +62,7 @@ export function useRealmBoardRead(
         id: newestId,
         timer: setTimeout(() => {
           waiting.current = null;
-          if (lastMarked.current !== pending.id) mark(pending.id);
+          if (atTop.current && lastMarked.current !== pending.id) mark(pending.id);
         }, BOARD_READ_INTERVAL_MS - elapsed),
       };
       waiting.current = pending;
@@ -63,12 +70,20 @@ export function useRealmBoardRead(
     [signedIn, mark]
   );
 
+  const leaveTop = useCallback(() => {
+    atTop.current = false;
+  }, []);
+
   useEffect(
     () => () => {
+      // A new realm, or the page going away: drop what the last one marked or was about to mark.
       if (waiting.current) clearTimeout(waiting.current.timer);
       waiting.current = null;
+      lastMarked.current = null;
+      lastMarkAt.current = null;
+      atTop.current = true;
     },
-    []
+    [slug]
   );
-  return markSeen;
+  return { markSeen, leaveTop };
 }

@@ -53,6 +53,8 @@ jest.mock("~/trpc/react", () => {
         },
         category: query("category"),
         realms: query("realms"),
+        categories: query("categories"),
+        realmSection: query("realmSection"),
         boardTopPosters: query("boardTopPosters"),
       },
     },
@@ -364,8 +366,41 @@ describe("BoardPage read state", () => {
     expect(invalidated).toEqual([]);
   });
 
+  it("bases Mark board read on the board's own unread count, not on the page shown", () => {
+    // Nothing unread on this page, but the board has unread threads on another one.
+    set("category", { data: board() });
+    set("categories", { data: [{ key: "general", unreadThreads: 4 }] });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Mark board read" })).toBeEnabled();
+  });
+
+  it("reads a realm board's count from the realm's boards", () => {
+    set("category", {
+      data: board({
+        category: { key: "hub", name: "Hub", realm: { slug: "eurth", name: "Eurth" } },
+      }),
+    });
+    set("realmSection", { data: { categories: [{ key: "hub", unreadThreads: 0 }] } });
+    set("categories", { data: [{ key: "hub", unreadThreads: 9 }] });
+    const { unmount } = render(
+      <BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />
+    );
+    expect(screen.getByRole("button", { name: "Mark board read" })).toBeDisabled();
+    unmount();
+    set("realmSection", { data: { categories: [{ key: "hub", unreadThreads: 3 }] } });
+    render(<BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Mark board read" })).toBeEnabled();
+  });
+
+  it("leaves Mark board read enabled while the board's count is unknown", () => {
+    set("category", { data: board() });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Mark board read" })).toBeEnabled();
+  });
+
   it("disables Mark board read when nothing is unread, and shows it to nobody signed out", () => {
     set("category", { data: board() });
+    set("categories", { data: [{ key: "general", unreadThreads: 0 }] });
     const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.getByRole("button", { name: "Mark board read" })).toBeDisabled();
     unmount();

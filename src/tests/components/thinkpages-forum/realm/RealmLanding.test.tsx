@@ -22,6 +22,7 @@ jest.mock("~/trpc/react", () => {
     setData: jest.fn(),
     cancel: jest.fn(() => Promise.resolve()),
     invalidate: jest.fn(() => Promise.resolve()),
+    navCountsInvalidate: jest.fn(() => Promise.resolve()),
   };
   const mutation = (name: string) => ({
     useMutation: () => ({ mutateAsync: state.mutations[name], isPending: false }),
@@ -36,7 +37,7 @@ jest.mock("~/trpc/react", () => {
             cancel: state.cancel,
             invalidate: state.invalidate,
           },
-          navCounts: { invalidate: state.invalidate },
+          navCounts: { invalidate: state.navCountsInvalidate },
         },
         thinkpagesForumMod: { invalidate: () => Promise.resolve() },
       }),
@@ -136,6 +137,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onChanged,
     onStart,
     onSeen,
+    onAway,
   }: {
     data: { messages: Array<{ id: string; contentHtml: string; author: { name: string } }> };
     showLatest: number;
@@ -146,6 +148,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onChanged: () => void;
     onStart: () => void;
     onSeen?: (newestMessageId: string) => void;
+    onAway?: () => void;
   }) => (
     <div data-testid="feed" data-show-latest={showLatest} data-paused={String(paused)}>
       <span>{typing.join(",")}</span>
@@ -171,6 +174,9 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
       </button>
       <button type="button" onClick={() => onSeen?.("p3")}>
         seen p3
+      </button>
+      <button type="button" onClick={() => onAway?.()}>
+        away
       </button>
     </div>
   ),
@@ -245,6 +251,7 @@ const { state } = jest.requireMock<{
     setData: jest.Mock;
     cancel: jest.Mock;
     invalidate: jest.Mock;
+    navCountsInvalidate: jest.Mock;
   };
 }>("~/trpc/react");
 const { live } = jest.requireMock<{
@@ -750,7 +757,9 @@ describe("RealmLanding read state", () => {
     expect(state.mutations.markRealmBoardRead).toHaveBeenCalledWith({ realm: "eurth" });
     expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
     await act(async () => void jest.advanceTimersByTime(0));
-    expect(state.invalidate).toHaveBeenCalled();
+    expect(state.navCountsInvalidate).toHaveBeenCalledTimes(1);
+    // Not the board's own refetch: only the sidebar counts follow a read mark.
+    expect(state.invalidate).not.toHaveBeenCalled();
   });
 
   it("holds a newer message back for ten seconds after the last mark", async () => {
@@ -763,6 +772,16 @@ describe("RealmLanding read state", () => {
     expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
     await act(async () => void jest.advanceTimersByTime(1));
     expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(2);
+  });
+
+  it("drops a held-back mark when the feed reports the reader has scrolled away", async () => {
+    state.mutations.markRealmBoardRead = jest.fn().mockResolvedValue({ readAt: new Date() });
+    render(<RealmLanding realm="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "seen p2" }));
+    fireEvent.click(screen.getByRole("button", { name: "seen p3" }));
+    fireEvent.click(screen.getByRole("button", { name: "away" }));
+    await act(async () => void jest.advanceTimersByTime(10_000));
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
   });
 
   it("marks nothing for a signed-out reader", () => {

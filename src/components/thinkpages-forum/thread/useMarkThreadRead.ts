@@ -36,8 +36,8 @@ export function useMarkThreadRead({
       // The mark is saved; a failed refresh of the lists is not an error to report.
       () => void refresh().catch(() => undefined),
       () => {
-        // Not saved: the next change of page or newest post tries again.
-        done.current = null;
+        // Not saved. The key stays, so a re-render does not retry in a loop; the next change of page or newest post
+        // tries again.
       }
     );
   }, [signedIn, threadId, page, newestPostId, markRead, refresh]);

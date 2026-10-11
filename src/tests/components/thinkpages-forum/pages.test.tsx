@@ -58,6 +58,7 @@ jest.mock("~/trpc/react", () => {
         trending: query("trending"),
         navFlags: query("navFlags"),
         navCounts: query("navCounts"),
+        realmSection: query("realmSection"),
         category: query("category"),
         thread: query("thread"),
         reply: mutation("reply"),

@@ -72,7 +72,7 @@ interface LandingBodyProps {
 function LandingBody({ slug, loaded }: LandingBodyProps) {
   const utils = api.useUtils();
   const { isSignedIn } = useUser();
-  const markSeen = useRealmBoardRead(slug, !!isSignedIn);
+  const { markSeen, leaveTop } = useRealmBoardRead(slug, !!isSignedIn);
   const live = useRealmBoardLive(loaded.realm.id);
   const { data = loaded } = api.thinkpagesForum.getBoard.useQuery(
     { realm: slug },
@@ -190,6 +190,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         onChanged={changed}
         onStart={startConversation}
         onSeen={markSeen}
+        onAway={leaveTop}
       />
       {phone && access.canPost ? <DockSpacer /> : null}
     </ForumPage>

@@ -97,7 +97,7 @@ describe("ThreadActions in a compact header", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
-  it("makes Watch an icon button in a compact header, named for its state", () => {
+  it("makes Watch an icon button in a compact header that keeps its name and shows its state as pressed", () => {
     const { rerender } = render(
       <ThreadActions
         data={data({ canModerate: false, moderable: false, watching: false })}
@@ -106,7 +106,9 @@ describe("ThreadActions in a compact header", () => {
         refresh={refresh}
       />
     );
-    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveTextContent("");
+    const off = screen.getByRole("button", { name: "Watch thread" });
+    expect(off).toHaveTextContent("");
+    expect(off).toHaveAttribute("aria-pressed", "false");
     rerender(
       <ThreadActions
         data={data({ canModerate: false, moderable: false, watching: true })}
@@ -115,7 +117,10 @@ describe("ThreadActions in a compact header", () => {
         refresh={refresh}
       />
     );
-    expect(screen.getByRole("button", { name: "Stop watching thread" })).toHaveTextContent("");
+    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
   });
 
   it("offers the moderator one Thread actions menu", () => {
@@ -204,14 +209,15 @@ describe("ThreadActions in a wide header", () => {
     const { rerender } = render(
       <ThreadActions data={data({ watching: false })} signedIn refresh={refresh} compact={false} />
     );
-    expect(screen.getByRole("button", { name: "Watch" })).toHaveAttribute("aria-pressed", "false");
+    const watch = screen.getByRole("button", { name: "Watch thread" });
+    expect(watch).toHaveAttribute("aria-pressed", "false");
+    expect(watch).toHaveTextContent("Watch");
     rerender(
       <ThreadActions data={data({ watching: true })} signedIn refresh={refresh} compact={false} />
     );
-    expect(screen.getByRole("button", { name: "Watching" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
+    const watching = screen.getByRole("button", { name: "Watch thread" });
+    expect(watching).toHaveAttribute("aria-pressed", "true");
+    expect(watching).toHaveTextContent("Watching");
     rerender(<ThreadActions data={data()} signedIn={false} refresh={refresh} compact={false} />);
     expect(screen.queryByRole("button", { name: /Watch/ })).toBeNull();
   });
@@ -222,12 +228,12 @@ describe("ThreadActions in a wide header", () => {
     const { rerender } = render(
       <ThreadActions data={data({ watching: false })} signedIn refresh={refresh} compact={false} />
     );
-    fireEvent.click(screen.getByRole("button", { name: "Watch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watch thread" }));
     await waitFor(() => expect(mutations.watchThread).toHaveBeenCalledWith({ threadId: "t1" }));
     rerender(
       <ThreadActions data={data({ watching: true })} signedIn refresh={refresh} compact={false} />
     );
-    fireEvent.click(screen.getByRole("button", { name: "Watching" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watch thread" }));
     await waitFor(() => expect(mutations.unwatchThread).toHaveBeenCalledWith({ threadId: "t1" }));
   });
 

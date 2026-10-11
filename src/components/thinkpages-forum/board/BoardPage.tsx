@@ -48,6 +48,17 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
   const redirecting = useLastPageRedirect(sortedPath, page, data?.total, totalPages);
   usePageTitle({ title: data?.category.name ?? "ThinkPages" });
   const { isSignedIn } = useUser();
+  // The board's own unread count (the list below shows one page): the home's or the realm's board row.
+  const sitewideBoards = api.thinkpagesForum.categories.useQuery(undefined, {
+    enabled: !!isSignedIn && !realm,
+  });
+  const realmBoards = api.thinkpagesForum.realmSection.useQuery(
+    { realm: realm ?? "" },
+    { enabled: !!isSignedIn && !!realm }
+  );
+  const unreadThreads = (realm ? realmBoards.data?.categories : sitewideBoards.data)?.find(
+    (b) => b.key === categoryKey
+  )?.unreadThreads;
   const notify = useNotify();
   const refreshReadState = useReadStateRefresh();
   const { mutateAsync: markRead, isPending: marking } =
@@ -125,7 +136,8 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
               size="sm"
               variant="ghost"
               className="text-label-secondary pointer-coarse:min-h-11"
-              disabled={marking || !data.threads.some((t) => t.unread)}
+              // Unknown (the count has not loaded) leaves it enabled.
+              disabled={marking || unreadThreads === 0}
               onClick={() => void markBoardRead()}
             >
               Mark board read

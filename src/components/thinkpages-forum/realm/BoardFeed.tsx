@@ -218,6 +218,8 @@ interface BoardFeedProps {
   onStart: () => void;
   /** The reader is looking at the top of the feed: this is its newest message. The page marks the board read. */
   onSeen?: (newestMessageId: string) => void;
+  /** The reader scrolled the top of the feed out of view: the page stops waiting to mark the board read. */
+  onAway?: () => void;
 }
 
 /**
@@ -238,6 +240,7 @@ export function BoardFeed({
   onChanged,
   onStart,
   onSeen,
+  onAway,
 }: BoardFeedProps) {
   const top = useRef<HTMLDivElement>(null);
   const [held, setHeld] = useState<ReadonlySet<string> | null>(null);
@@ -249,8 +252,9 @@ export function BoardFeed({
   const newestId = data.messages[0]?.id;
   useEffect(() => {
     // Not held back means the reader is at the top, in view of the newest messages.
-    if (held === null && newestId !== undefined) onSeen?.(newestId);
-  }, [held, newestId, onSeen]);
+    if (held !== null) onAway?.();
+    else if (newestId !== undefined) onSeen?.(newestId);
+  }, [held, newestId, onSeen, onAway]);
 
   const [seenShowLatest, setSeenShowLatest] = useState(showLatest);
   if (seenShowLatest !== showLatest) {

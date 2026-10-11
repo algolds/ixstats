@@ -376,10 +376,13 @@ describe("BoardFeed", () => {
 
   it("reports the newest message as seen while at the top, and a newer one once the reader is back at the top", () => {
     const onSeen = jest.fn();
-    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen });
+    const onAway = jest.fn();
+    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen, onAway });
     const { rerender } = render(<BoardFeed {...props} />);
     expect(onSeen).toHaveBeenCalledWith("p3");
+    expect(onAway).not.toHaveBeenCalled();
     scrollAway();
+    expect(onAway).toHaveBeenCalled();
     onSeen.mockClear();
     rerender(<BoardFeed {...props} data={boardData([msg("p4"), msg("p3"), msg("p2")])} />);
     expect(onSeen).not.toHaveBeenCalled();
@@ -399,7 +402,9 @@ describe("BoardFeed", () => {
 
   it("reports nothing for an empty board", () => {
     const onSeen = jest.fn();
-    render(<BoardFeed {...feedProps(boardData([]), { onSeen })} />);
+    const onAway = jest.fn();
+    render(<BoardFeed {...feedProps(boardData([]), { onSeen, onAway })} />);
     expect(onSeen).not.toHaveBeenCalled();
+    expect(onAway).not.toHaveBeenCalled();
   });
 });
