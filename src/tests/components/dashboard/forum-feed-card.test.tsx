@@ -112,6 +112,26 @@ describe("ForumFeedCard", () => {
     );
   });
 
+  it("keeps the board link reachable: it is never inside a truncating container", () => {
+    card({ board: { name: "A very long board name", href: "/thinkpages/c/long" } });
+    const link = screen.getByRole("link", { name: "A very long board name" });
+    expect(link.closest(".truncate")).toBeNull();
+    expect(link).toHaveClass("pointer-coarse:min-h-11");
+  });
+
+  it("gives the title link a coarse-pointer touch target", () => {
+    card();
+    expect(screen.getByRole("link", { name: "The Treaty of Aurelia" })).toHaveClass(
+      "pointer-coarse:min-h-11"
+    );
+  });
+
+  it("omits the time instead of throwing on a timestamp that does not parse", () => {
+    const { container } = card({}, new Date("not a date"));
+    expect(container.querySelector("time")).toBeNull();
+    expect(screen.getByText("jane")).toBeInTheDocument();
+  });
+
   it("falls back to the realm thumbnail when the realm has no emblem", () => {
     const { container } = card({
       realm: {

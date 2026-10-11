@@ -29,18 +29,20 @@ export function ForumFeedCard({ activity }: ForumFeedCardProps) {
   const { forum } = activity;
   const ic = forum.style === "ic";
   const when = new Date(activity.timestamp);
+  // A timestamp that does not parse has no time to show (toISOString would throw on it).
+  const posted = !Number.isNaN(when.getTime());
   return (
     <Card padding="md" content="feed">
       <article className="min-w-0">
-        <div className="text-footnote flex items-center gap-2">
+        <div className="text-footnote flex flex-wrap items-center gap-x-2 gap-y-1">
           <ForumAvatar name={forum.author.name} avatarUrl={forum.author.avatarUrl} size="sm" />
           {forum.author.flagUrl ? <AuthorFlag url={forum.author.flagUrl} /> : null}
-          <p className="text-label-secondary min-w-0 flex-1 truncate">
+          <p className="text-label-secondary min-w-0 flex-1 basis-48 break-words">
             <span className="text-label font-medium">{forum.author.name}</span>{" "}
             {forum.kind === "thread" ? "started a thread in" : "replied in"}{" "}
             <Link
               href={forum.board.href}
-              className="text-tint focus-visible:outline-tint hover:underline focus-visible:outline-2"
+              className="text-tint focus-visible:outline-tint inline-flex items-center hover:underline focus-visible:outline-2 pointer-coarse:min-h-11"
             >
               {forum.board.name}
             </Link>
@@ -54,12 +56,14 @@ export function ForumFeedCard({ activity }: ForumFeedCardProps) {
               <span className="truncate">{forum.realm.name}</span>
             </span>
           ) : null}
-          <time
-            dateTime={when.toISOString()}
-            className="text-label-secondary shrink-0 tabular-nums"
-          >
-            {timeAgo(when)}
-          </time>
+          {posted ? (
+            <time
+              dateTime={when.toISOString()}
+              className="text-label-secondary shrink-0 tabular-nums"
+            >
+              {timeAgo(when)}
+            </time>
+          ) : null}
         </div>
 
         <h3
@@ -70,7 +74,7 @@ export function ForumFeedCard({ activity }: ForumFeedCardProps) {
         >
           <Link
             href={forum.threadHref}
-            className="focus-visible:outline-tint hover:underline focus-visible:outline-2"
+            className="focus-visible:outline-tint block hover:underline focus-visible:outline-2 pointer-coarse:min-h-11"
           >
             {forum.title}
           </Link>
