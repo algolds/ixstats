@@ -87,6 +87,17 @@ export function notBoardCategory(): {
   return { style: { not: BOARD_STYLE }, NOT: { scope: "realm", key: REALM_BOARD_KEY } };
 }
 
+/**
+ * The Prisma where fragment for "a board category" (the same test as `isBoardCategory`, so a realm category keyed
+ * "board" that was not yet restyled counts), for a relation filter onto one. Used only by the directory's separate
+ * board-week figure: every other read uses `notBoardCategory`.
+ */
+export function onlyBoardCategory(): {
+  OR: [{ style: typeof BOARD_STYLE }, { scope: "realm"; key: typeof REALM_BOARD_KEY }];
+} {
+  return { OR: [{ style: BOARD_STYLE }, { scope: "realm", key: REALM_BOARD_KEY }] };
+}
+
 /** Imported threads from a XenForo forum node with no mapped category live in an archive category `xf-<nodeId>`. */
 export function isArchiveCategory(key: string): boolean {
   return /^xf-\d+$/.test(key);

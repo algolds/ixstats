@@ -4,6 +4,7 @@ import {
   categoryVisibilityWhere,
   isBoardCategory,
   notBoardCategory,
+  onlyBoardCategory,
   REALM_BOARD_KEY,
   REALM_CATEGORIES,
   REALM_HUB_KEY,
@@ -12,7 +13,10 @@ import {
 } from "~/lib/thinkpages-forum/categories";
 
 const sql = readFileSync("prisma/migrations/20261008120000_thinkpages_forum/migration.sql", "utf8");
-const realmSql = readFileSync("prisma/migrations/20261009120000_thinkpages_forum_realms/migration.sql", "utf8");
+const realmSql = readFileSync(
+  "prisma/migrations/20261009120000_thinkpages_forum_realms/migration.sql",
+  "utf8"
+);
 
 describe("sitewide forum categories", () => {
   it("has unique keys in a valid format", () => {
@@ -23,7 +27,13 @@ describe("sitewide forum categories", () => {
 
   it("matches the spec's sitewide section", () => {
     expect(SITE_CATEGORIES.map((c) => c.name)).toEqual([
-      "Rules", "Announcements", "Reports", "Staff", "Find a Realm", "General", "Side Games",
+      "Rules",
+      "Announcements",
+      "Reports",
+      "Staff",
+      "Find a Realm",
+      "General",
+      "Side Games",
     ]);
     expect(SITE_CATEGORIES.filter((c) => c.icAllowed).map((c) => c.key)).toEqual(["side-games"]);
   });
@@ -130,6 +140,12 @@ describe("the realm board category", () => {
       NOT: { scope: "realm", key: "board" },
     });
   });
+
+  it("gives the opposite fragment for reading only boards", () => {
+    expect(onlyBoardCategory()).toEqual({
+      OR: [{ style: "board" }, { scope: "realm", key: "board" }],
+    });
+  });
 });
 
 describe("the realm board migration", () => {
@@ -139,7 +155,13 @@ describe("the realm board migration", () => {
   );
 
   it("adds the post, realm and index columns idempotently", () => {
-    for (const column of ["replyToPostId", "continuedThreadId", "emblemUrl", "boardVisitorsAllowed", "boardSlowModeSeconds"]) {
+    for (const column of [
+      "replyToPostId",
+      "continuedThreadId",
+      "emblemUrl",
+      "boardVisitorsAllowed",
+      "boardSlowModeSeconds",
+    ]) {
       expect(boardSql).toContain(`ADD COLUMN IF NOT EXISTS "${column}"`);
     }
     expect(boardSql).toContain('"forum_posts_replyToPostId_idx"');

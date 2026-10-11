@@ -196,6 +196,46 @@ describe("realm board exclusions", () => {
     );
   });
 
+  it("the directory's board-week figure is separate: the forum count keeps excluding the board and is issued first", async () => {
+    const postCount = jest.fn(async (_args: object) => 0);
+    const db = {
+      realm: {
+        findMany: jest.fn(async () => [
+          {
+            id: "r1",
+            slug: "r1",
+            name: "R1",
+            description: null,
+            thumbnail: null,
+            bannerUrl: null,
+            tags: [],
+            foundedAt: null,
+            createdAt: new Date(),
+            settings: null,
+            _count: { countries: 0 },
+          },
+        ]),
+      },
+      country: { groupBy: jest.fn(async () => []), findMany: jest.fn(async () => []) },
+      realmPage: { findMany: jest.fn(async () => []) },
+      forumPost: { count: postCount },
+      forumThread: { findFirst: jest.fn(async () => null) },
+    };
+    await listRealmDirectory(db as never, null);
+    expect(postCount).toHaveBeenCalledTimes(2);
+    const [forumCount, boardCount] = postCount.mock.calls.map(
+      ([args]) =>
+        (args as { where: { thread: { category: Record<string, object | string> } } }).where.thread
+          .category
+    );
+    expect(forumCount).toMatchObject(NOT_BOARD);
+    expect(forumCount!.OR).toBeUndefined();
+    expect(boardCount).toMatchObject({
+      OR: [{ style: "board" }, { scope: "realm", key: "board" }],
+    });
+    expect(boardCount!.style).toBeUndefined();
+  });
+
   it("a moderator is never offered the board as a place to move a thread", async () => {
     const state = seed();
     state.categories = [

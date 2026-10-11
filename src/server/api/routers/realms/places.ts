@@ -1,13 +1,14 @@
 /**
  * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section
- * (the realm board page is gone; /r/[realm]/board redirects to the forum).
+ * (the board page redirects to the live board in the forum).
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
+import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
 import { nationPageTaken } from "~/server/modules/realms/realms.handover";
+import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum/board-thread";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   ensureRealmBoard,
@@ -65,6 +66,24 @@ async function forumActivity(db: PrismaClient, realmId: string, since: Date) {
   return { recentPosts, lastPostAt: latest?.lastPostAt ?? null };
 }
 
+/**
+ * Messages on the realm's live board since `since`: the directory's own "board messages this week" figure. It is
+ * never added to `forumActivity`'s post count (the board stays out of every forum count): public board category, not
+ * hidden, and not the placeholder line of a message that was continued in a thread.
+ */
+async function boardMessages(db: PrismaClient, realmId: string, since: Date): Promise<number> {
+  return db.forumPost.count({
+    where: {
+      ...PREVIEWED_BOARD_MESSAGES,
+      createdAt: { gte: since },
+      thread: {
+        hidden: false,
+        category: { scope: "realm", realmId, visibility: "public", ...onlyBoardCategory() },
+      },
+    },
+  });
+}
+
 /** Open realms with their nation counts, forum activity and the viewer's own holdings. */
 export async function listRealmDirectory(db: PrismaClient, viewerUserId: string | null) {
   const realms = await db.realm.findMany({
@@ -116,18 +135,27 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const mineBy = countBy(mine);
 
   return Promise.all(
-    realms.map(async ({ settings, _count, foundedAt, createdAt, ...realm }) => ({
-      ...realm,
-      foundedAt: foundedAt ?? createdAt,
-      nationCount: _count.countries,
-      openNationCount: unclaimedBy.get(realm.id) ?? 0,
-      /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
-      openNationPageCount: claimablePages.get(realm.id) ?? 0,
-      myNationCount: mineBy.get(realm.id) ?? 0,
-      maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
-      /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
-      board: await forumActivity(db, realm.id, since),
-    }))
+    realms.map(async ({ settings, _count, foundedAt, createdAt, ...realm }) => {
+      // The forum count is issued first (and keeps the board out); the board figure is separate.
+      const [board, boardMessagesThisWeek] = await Promise.all([
+        forumActivity(db, realm.id, since),
+        boardMessages(db, realm.id, since),
+      ]);
+      return {
+        ...realm,
+        foundedAt: foundedAt ?? createdAt,
+        nationCount: _count.countries,
+        openNationCount: unclaimedBy.get(realm.id) ?? 0,
+        /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
+        openNationPageCount: claimablePages.get(realm.id) ?? 0,
+        myNationCount: mineBy.get(realm.id) ?? 0,
+        maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
+        /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */
+        board,
+        /** Board messages in the last week: its own figure, never added to `board.recentPosts`. */
+        boardMessagesThisWeek,
+      };
+    })
   );
 }
 

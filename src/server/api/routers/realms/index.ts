@@ -319,7 +319,7 @@ export const realmsRouter = createTRPCRouter({
   nationDefaults: realmNationDefaultsRouter,
 
   /** The realm directory (/realms): open realms, nation counts, board activity, the viewer's holdings. */
-  directory: publicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
+  directory: rateLimitedPublicProcedure.query(({ ctx }) => listRealmDirectory(ctx.db, ctx.user?.id ?? null)),
 
   /** Nation search on /realms: countries and claimable nation pages in the realms the directory lists. */
   searchNations: rateLimitedPublicProcedure
