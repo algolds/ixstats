@@ -676,6 +676,28 @@ describe("thinkpagesForum router", () => {
       );
     });
 
+    it("offers no reacting on a hidden thread, even to a moderator who can read it", async () => {
+      expect((await caller(admin, reactedDb()).thread({ threadId: "t1", page: 1 })).canReact).toBe(
+        true
+      );
+      const out = await caller(admin, reactedDb({ hidden: true })).thread({
+        threadId: "t1",
+        page: 1,
+      });
+      expect(out).toMatchObject({ canModerate: true });
+      expect(out.canReact).toBe(false);
+    });
+
+    it("offers no reacting in an archived realm, and still offers it in a live one", async () => {
+      expect(
+        (await caller(member, realmForumDb(inEurth)).thread({ threadId: "t1", page: 1 })).canReact
+      ).toBe(true);
+      const archived = realmForumDb(inEurth);
+      archived.realm.findUnique.mockResolvedValue({ ...EURTH, status: "archived" } as never);
+      const out = await caller(member, archived).thread({ threadId: "t1", page: 1 });
+      expect(out.canReact).toBe(false);
+    });
+
     it("reads a corrupt counts column as no reactions", async () => {
       const db = forumDb();
       db.forumPost.findMany.mockResolvedValue([
