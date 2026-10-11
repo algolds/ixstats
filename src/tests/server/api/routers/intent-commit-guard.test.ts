@@ -67,8 +67,6 @@ function makeDb(seed: IntentRow[]) {
     Object.entries(where).every(([k, v]) => row[k] === v);
 
   const db = {
-    // The interactive transaction runs on the same in-memory tables.
-    $transaction: jest.fn(async (run: (tx: object) => Promise<object>) => run(db)),
     rows,
     intent: {
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
@@ -133,7 +131,9 @@ function makeDb(seed: IntentRow[]) {
     budgetAllocation: { findFirst: jest.fn(async () => null), update: jest.fn() },
     nationalIssue: { findFirst: jest.fn(async () => null) },
   };
-  return db;
+  // The interactive transaction runs on the same in-memory tables.
+  const $transaction = jest.fn(async <T>(run: (tx: object) => Promise<T>): Promise<T> => run(db));
+  return { ...db, $transaction };
 }
 
 const ctxFor = (db: ReturnType<typeof makeDb>) =>

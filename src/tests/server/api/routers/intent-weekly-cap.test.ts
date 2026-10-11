@@ -63,8 +63,6 @@ function makeDb() {
   const rows: Row[] = [];
   let nextId = 1;
   const db = {
-    // The interactive transaction runs on the same in-memory tables.
-    $transaction: jest.fn(async (run: (tx: object) => Promise<object>) => run(db)),
     rows,
     intent: {
       findMany: jest.fn(async ({ where }: { where: Record<string, unknown> }) =>
@@ -91,7 +89,9 @@ function makeDb() {
     storytellerEffect: { create: jest.fn(async () => ({})) },
     budgetAllocation: { findFirst: jest.fn(async () => null), update: jest.fn() },
   };
-  return db;
+  // The interactive transaction runs on the same in-memory tables.
+  const $transaction = jest.fn(async <T>(run: (tx: object) => Promise<T>): Promise<T> => run(db));
+  return { ...db, $transaction };
 }
 
 const callerFor = (db: ReturnType<typeof makeDb>) =>

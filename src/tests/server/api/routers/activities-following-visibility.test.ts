@@ -76,7 +76,11 @@ function followingCaller(activityFeed: ReturnType<typeof activityFeedFake>) {
     country: { findMany: jest.fn(async () => []) },
   });
   const caller = createCallerFactory(activitiesFeedPersonalRouter)(
-    createMockRouterContext({ db, auth: { userId: ME }, user: { countryId: "c2" } }) as never
+    createMockRouterContext({
+      db,
+      auth: { userId: ME },
+      user: { clerkUserId: ME, countryId: "c2" },
+    }) as never
   );
   return { db, caller };
 }

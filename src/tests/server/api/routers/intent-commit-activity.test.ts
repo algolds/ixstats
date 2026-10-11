@@ -43,18 +43,6 @@ function makeDb(existing: string[] = []) {
   const db = {
     rows,
     status: () => status,
-    $transaction: jest.fn(async <T>(run: (tx: object) => Promise<T>) => {
-      const savedStatus = status;
-      const savedRows = [...rows.values()].map((r) => ({ ...r }));
-      try {
-        return await run(db);
-      } catch (error) {
-        status = savedStatus;
-        rows.clear();
-        for (const r of savedRows) rows.set(r.id, r);
-        throw error;
-      }
-    }),
     intent: {
       findMany: jest.fn(async () => []),
       create: jest.fn(async (args: { data: Record<string, string | number | null> }) => ({
@@ -88,7 +76,20 @@ function makeDb(existing: string[] = []) {
       ),
     },
   };
-  return db;
+  /** Rolls both tables back when the body throws, as a database transaction does. */
+  const $transaction = jest.fn(async <T>(run: (tx: object) => Promise<T>): Promise<T> => {
+    const savedStatus = status;
+    const savedRows = [...rows.values()].map((r) => ({ ...r }));
+    try {
+      return await run(db);
+    } catch (error) {
+      status = savedStatus;
+      rows.clear();
+      for (const r of savedRows) rows.set(r.id, r);
+      throw error;
+    }
+  });
+  return { ...db, $transaction };
 }
 
 const ctxFor = (db: ReturnType<typeof makeDb>) =>
