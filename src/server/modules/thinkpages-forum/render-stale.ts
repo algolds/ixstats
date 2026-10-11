@@ -11,6 +11,32 @@ import { writeTemplates } from "./writes-body";
 
 const BATCH = 10;
 
+/** A post whose render failed is left alone for this long before the cron tries it again. */
+const RETRY_AFTER_MS = 30 * 60_000;
+/** More failed posts than this are not remembered (the oldest go first), so the extra rows the query reads stay few. */
+const MAX_REMEMBERED = 200;
+
+// ponytail: kept in process memory. A restart forgets it and the failing posts head the queue again for one run; a
+// `renderAttemptedAt` column that the query orders by is the upgrade if restarts ever make that matter.
+const failedAt = new Map<string, number>();
+
+export function resetRenderFailuresForTests(): void {
+  failedAt.clear();
+}
+
+function rememberFailure(id: string): void {
+  failedAt.delete(id);
+  failedAt.set(id, Date.now());
+  if (failedAt.size > MAX_REMEMBERED) failedAt.delete(failedAt.keys().next().value!);
+}
+
+/** The posts that failed too recently to try again, forgetting the ones whose wait is over. */
+function recentlyFailed(): Set<string> {
+  const since = Date.now() - RETRY_AFTER_MS;
+  for (const [id, at] of failedAt) if (at <= since) failedAt.delete(id);
+  return new Set(failedAt.keys());
+}
+
 export type StaleDb = Pick<
   PrismaClient,
   "forumPost" | "forumPostTemplate" | "$transaction" | "user" | "thinkpagesAccount"
@@ -53,8 +79,10 @@ export async function rerenderPosts(
     const out = await renderViaWiki(source, post.threadId);
     if (!out) {
       failed += 1;
+      rememberFailure(post.id);
       continue;
     }
+    failedAt.delete(post.id);
     // The renderer knows nothing of members: the mention links are added to every render, as at save.
     const { contentHtml } = await withMentionLinks(db, {
       contentHtml: out.contentHtml,
@@ -80,6 +108,17 @@ export async function rerenderPosts(
   return { rendered, failed };
 }
 
+/**
+ * The next posts to re-render: the stalest first, without the ones that failed a moment ago. Those sort first (they
+ * never got a `renderedAt`), so the query reads one extra row for each of them, and ten posts that always fail
+ * cannot keep newer ones from being reached.
+ */
+export async function nextStaleBatch(db: Pick<PrismaClient, "$queryRaw">): Promise<string[]> {
+  const skip = recentlyFailed();
+  const ids = await staleForumPostIds(db, BATCH + skip.size);
+  return ids.filter((id) => !skip.has(id)).slice(0, BATCH);
+}
+
 export async function renderStaleForumPosts(): Promise<{ rendered: number; failed: number }> {
-  return rerenderPosts(appDb, await staleForumPostIds(appDb, BATCH));
+  return rerenderPosts(appDb, await nextStaleBatch(appDb));
 }
