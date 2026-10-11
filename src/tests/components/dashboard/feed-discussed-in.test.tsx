@@ -41,6 +41,7 @@ import {
   groupRepeatedActivities,
   type FeedHandlers,
 } from "~/components/dashboard/sections/UnifiedFeedContent";
+import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { UnifiedFeedItem, getActivityLabel } from "~/components/dashboard/sections/UnifiedFeedItem";
 
 const activity = (id: string, extra: object = {}) => ({
@@ -51,15 +52,28 @@ const activity = (id: string, extra: object = {}) => ({
   ...extra,
 });
 
+/** The typed row `UnifiedFeedItem` takes: a plain activity, a grouped run or a forum row with no preview. */
+const feedItem = (id: string, kind: "plain" | "grouped" | "forum"): ProcessedFeedItem => {
+  const common = {
+    id,
+    timestamp: new Date("2026-10-01T00:00:00Z"),
+    content: { title: "A directive", description: "Declared." },
+  };
+  if (kind === "forum") return { ...common, source: "forum" };
+  return kind === "grouped"
+    ? { ...common, source: "activity", _grouped: true }
+    : { ...common, source: "activity" };
+};
+
 describe("UnifiedFeedItem discussed-in badge", () => {
   it("shows the badge on a plain activity card", () => {
-    render(<UnifiedFeedItem activity={activity("a1")} />);
+    render(<UnifiedFeedItem activity={feedItem("a1", "plain")} />);
     expect(screen.getByTestId("badge")).toHaveTextContent("a1");
   });
 
   it.each([
-    ["a grouped run", activity("g1", { _grouped: true })],
-    ["a forum row", activity("f1", { source: "forum" })],
+    ["a grouped run", feedItem("g1", "grouped")],
+    ["a forum row", feedItem("f1", "forum")],
   ])("shows no badge on %s", (_label, row) => {
     render(<UnifiedFeedItem activity={row} />);
     expect(screen.queryByTestId("badge")).toBeNull();
