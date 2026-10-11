@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { Prisma } from "@prisma/client";
-import { ConflictError, NotFoundError, ValidationError } from "~/lib/app-error";
+import { ConflictError, InternalError, NotFoundError, ValidationError } from "~/lib/app-error";
 import {
   listReactors,
   reactToPost,
@@ -167,6 +167,23 @@ describe("reactToPost", () => {
       message: "Your reaction changed at the same moment. Try again.",
     });
     expect(store.reactions).toHaveLength(0);
+  });
+
+  it("answers CONFLICT for a timed-out transaction the app's db client wraps as an InternalError", async () => {
+    const store = reactionStore();
+    store.tx.forumPost.update.mockRejectedValueOnce(
+      new InternalError(
+        "Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."
+      )
+    );
+    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Your reaction changed at the same moment. Try again.",
+    });
+    const other = reactionStore();
+    const unrelated = new InternalError("Database connection timeout");
+    other.tx.forumPost.update.mockRejectedValueOnce(unrelated);
+    await expect(react(other, member, "p_hub", "like")).rejects.toBe(unrelated);
   });
 
   it("does not turn another database failure into a CONFLICT", async () => {
