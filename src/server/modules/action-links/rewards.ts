@@ -26,7 +26,7 @@ import {
   actionRewardLockKey,
   startOfUtcDay,
 } from "~/lib/action-rewards";
-import { ConflictError } from "~/lib/app-error";
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { getBonusConfig } from "~/lib/vault/vault-bonus";
 import { LedgerError, vaultService } from "~/lib/vault/vault-service";
 import { pickableActivityWhere } from "./links";
@@ -151,10 +151,6 @@ async function payInLock(tx: Tx, input: RewardInput, rule: Rule, now: Date): Pro
 }
 
 /** A duplicate key means the payout already exists: expected under a race, not worth an error line. */
-function isDuplicate(error: Error): boolean {
-  if (error instanceof ConflictError) return true;
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
 
 /**
  * Pays the new links of one post and returns the credits paid in total (0 for none). Never throws. The bonus master
@@ -168,7 +164,7 @@ export async function grantActionLinkRewards(db: RewardDb, input: RewardInput): 
     if (!cfg.enabled || rule.amount <= 0 || rule.cap < 1) return 0;
     return await db.$transaction((tx) => payInLock(tx, input, rule, new Date()), TX_OPTIONS);
   } catch (error) {
-    if (!(error instanceof Error && isDuplicate(error))) {
+    if (!isUniqueViolation(error)) {
       console.error("[action-links] Reward failed:", error);
     }
     return 0;

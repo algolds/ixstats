@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import { Prisma } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
 import {
   listReactors,
   reactToPost,
@@ -140,6 +141,17 @@ describe("reactToPost", () => {
     expect(store.reactions).toHaveLength(1);
     expect(store.reactions[0]).toMatchObject({ type: "like" });
     expect(countsOf(store, "p_hub")).toEqual({ like: 1 });
+  });
+
+  it("answers CONFLICT when the app's db client wraps the unique violation as a ConflictError", async () => {
+    const store = reactionStore();
+    store.reactionDb.create.mockRejectedValueOnce(
+      new ConflictError("Unique constraint violation on ForumPostReaction (postId)")
+    );
+    await expect(react(store, member, "p_hub", "like")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Your reaction changed at the same moment. Try again.",
+    });
   });
 
   it("answers CONFLICT when the transaction runs past its timeout, and says to try again", async () => {

@@ -84,3 +84,17 @@ export function prismaErrorToAppError(error: unknown): never {
       throw new InternalError(parsed.message);
   }
 }
+
+/**
+ * A unique-index violation (P2002), however it arrives: the raw Prisma error from a bare client (matched by its `code`,
+ * so a duplicated Prisma module cannot defeat it), or the `ConflictError` that `~/server/db` wraps every model
+ * operation's failure into. `field` narrows it to a violation that names that column (the raw `meta.target`, or the
+ * column in the wrapped message).
+ */
+export function isUniqueViolation(error: unknown, field?: string): boolean {
+  if (error instanceof ConflictError) return field === undefined || error.message.includes(field);
+  if (!(error instanceof Error) || !("code" in error) || error.code !== "P2002") return false;
+  const meta = "meta" in error && typeof error.meta === "object" ? error.meta : null;
+  const target = meta && "target" in meta ? String(meta.target) : "";
+  return field === undefined || target.includes(field);
+}

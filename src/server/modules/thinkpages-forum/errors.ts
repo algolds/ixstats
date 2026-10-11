@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { isUniqueViolation } from "~/lib/prisma-error";
 
 export type ForumErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST" | "TOO_MANY_REQUESTS";
@@ -19,10 +20,7 @@ export class ForumError extends Error {
   }
 }
 
-/** A unique constraint lost to a concurrent insert (Prisma P2002), for mapping to CONFLICT. */
-export function isUniqueViolation<E>(error: E): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
+export { isUniqueViolation };
 
 /**
  * An interactive transaction that ran past its timeout or was closed under the write (Prisma P2028), for mapping to

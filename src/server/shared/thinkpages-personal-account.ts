@@ -5,7 +5,8 @@
  * enforced by the `ThinkpagesPersonalAccount` row (primary key = Clerk user id), so two concurrent
  * "post as yourself" calls cannot create two personas.
  */
-import { Prisma, type PrismaClient, type ThinkpagesAccount } from "@prisma/client";
+import type { PrismaClient, ThinkpagesAccount } from "@prisma/client";
+import { isUniqueViolation } from "~/lib/prisma-error";
 
 export const PERSONAL_ACCOUNT_TYPE = "personal";
 
@@ -55,10 +56,6 @@ export async function findPersonalAccount(
   // Guard against a stale link (account removed, or reassigned by an admin).
   if (!account || account.clerkUserId !== clerkUserId) return null;
   return account;
-}
-
-function isUniqueViolation(err: unknown): err is Prisma.PrismaClientKnownRequestError {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }
 
 /** Username stem and display name for a new personal persona: explicit prefs, then the user's forum/wiki names. */
