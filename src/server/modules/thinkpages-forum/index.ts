@@ -46,7 +46,7 @@ export {
   type BoardMessageDb,
   type BoardPlace,
 } from "./board-messages";
-export { boardThreadOf, type BoardThreadDb } from "./board-thread";
+export { boardThreadOf, PREVIEWED_BOARD_MESSAGES, type BoardThreadDb } from "./board-thread";
 export {
   editBoardMessage,
   postBoardMessage,

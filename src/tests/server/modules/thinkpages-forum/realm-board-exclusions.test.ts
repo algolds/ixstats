@@ -47,8 +47,10 @@ const hubCategory = {
 };
 
 const noRealms = { findMany: jest.fn(async () => []) };
-const argsOf = (fn: jest.Mock): { where: Record<string, unknown> } =>
-  fn.mock.calls[0]![0] as { where: Record<string, unknown> };
+interface QueryArgs {
+  where: { category?: object; thread?: { category: object } };
+}
+const argsOf = (fn: jest.Mock): QueryArgs => fn.mock.calls[0]![0] as QueryArgs;
 
 describe("publicThreadWhere", () => {
   it("leaves board categories out of what anyone may read", async () => {
@@ -135,7 +137,7 @@ describe("realm board exclusions", () => {
     });
     await forumStatistics(db as never, Date.now());
     expect(count).toHaveBeenCalledTimes(2);
-    for (const [args] of count.mock.calls as Array<[Record<string, unknown>]>) {
+    for (const [args] of count.mock.calls as Array<[object]>) {
       expect(JSON.stringify(args)).toContain('"style":{"not":"board"}');
     }
     expect(JSON.stringify(argsOf(groupBy as never))).toContain('"style":{"not":"board"}');
@@ -145,8 +147,8 @@ describe("realm board exclusions", () => {
     const groupBy = jest.fn(async (_args: object) => []);
     const db = { realm: noRealms, forumPost: { groupBy }, forumThread: { findMany: jest.fn() } };
     await trendingThreads(db as never, null, 5, new Date("2026-10-14T12:00:00Z"));
-    const thread = argsOf(groupBy as never).where.thread as { category: object };
-    expect(thread.category).toMatchObject(NOT_BOARD);
+    const { thread } = argsOf(groupBy as never).where;
+    expect(thread?.category).toMatchObject(NOT_BOARD);
   });
 
   it("the passport's footprint counts no board post or thread and a board post never confirms a name", async () => {
@@ -155,7 +157,7 @@ describe("realm board exclusions", () => {
     const db = { realm: noRealms, forumPost: { count, findFirst }, forumThread: { count } };
     await forumActivityOf(db as never, "u1");
     expect(count).toHaveBeenCalledTimes(2);
-    for (const [args] of count.mock.calls as Array<[Record<string, unknown>]>) {
+    for (const [args] of count.mock.calls as Array<[object]>) {
       expect(JSON.stringify(args)).toContain('"style":{"not":"board"}');
     }
     await importedAuthorByName(db as never, "OldTimer");

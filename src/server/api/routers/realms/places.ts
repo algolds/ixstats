@@ -8,7 +8,7 @@ import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/cate
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
 import { nationPageTaken } from "~/server/modules/realms/realms.handover";
-import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum/board-thread";
+import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
   ensureRealmBoard,
