@@ -1,7 +1,10 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 
 const directive = jest.fn();
+const invalidateDirective = jest.fn();
+let statusOptions: { onSuccess?: (data: object, vars: { id: string; status: string }) => void } =
+  {};
 const counts = jest.fn();
 const list = jest.fn();
 const intent = {
@@ -30,8 +33,16 @@ jest.mock("~/trpc/react", () => ({
       getLinkedIssues: {
         useQuery: () => ({ data: { progress: 0, resolvedCount: 0, totalCount: 0, issues: [] } }),
       },
-      updateStatus: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
+      updateStatus: {
+        useMutation: (options: typeof statusOptions) => {
+          statusOptions = options;
+          return { mutate: jest.fn(), isPending: false };
+        },
+      },
     },
+    useUtils: () => ({
+      actionLinks: { directiveActivity: { invalidate: invalidateDirective } },
+    }),
     actionLinks: {
       directiveActivity: {
         useQuery: (input: { intentId: string }, options: { enabled: boolean }) =>
@@ -58,6 +69,7 @@ import { IntentDetail } from "~/components/mycountry/shell/IntentDetail";
 describe("IntentDetail forum share", () => {
   beforeEach(() => {
     directive.mockReset();
+    invalidateDirective.mockReset();
     counts.mockReset();
     counts.mockReturnValue({ data: undefined });
     list.mockReset();
@@ -139,5 +151,19 @@ describe("IntentDetail forum share", () => {
     expect(screen.queryByText(/Discussed in/)).toBeNull();
     // The section, and its counts request, mount only when the directive has a row.
     expect(counts.mock.calls.length).toBe(asked);
+  });
+
+  it("drops the forum share once the directive is abandoned, without waiting for the cache to expire", () => {
+    let withdrawn = false;
+    directive.mockImplementation(() => ({ data: withdrawn ? null : { activityId: "dir-i1" } }));
+    invalidateDirective.mockImplementation(() => {
+      withdrawn = true;
+    });
+    const { rerender } = render(<IntentDetail countryId="c1" intentId="i1" />);
+    expect(screen.getByRole("button", { name: "Share dir-i1" })).toBeInTheDocument();
+    act(() => statusOptions.onSuccess?.({}, { id: "i1", status: "abandoned" }));
+    expect(invalidateDirective).toHaveBeenCalledWith({ intentId: "i1" });
+    rerender(<IntentDetail countryId="c1" intentId="i1" />);
+    expect(screen.queryByRole("button", { name: /^Share dir/ })).toBeNull();
   });
 });

@@ -448,8 +448,13 @@ export function IntentDetail({
     { intentId },
     { enabled: !!intentId, staleTime: 5 * 60_000 }
   );
+  const utils = api.useUtils();
   const updateM = api.intent.updateStatus.useMutation({
-    onSuccess: () => tree.refetch(),
+    onSuccess: () => {
+      // Abandoning withdraws the directive's public row; refetch so the forum share goes with it.
+      void utils.actionLinks.directiveActivity.invalidate({ intentId });
+      return tree.refetch();
+    },
   });
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
