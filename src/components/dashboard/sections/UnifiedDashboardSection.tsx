@@ -66,6 +66,7 @@ const RepostModal = dynamic(
 import { UnifiedFeedContent, FollowingFeedContent, type FeedHandlers } from "./UnifiedFeedContent";
 import { TrendingFeedContent } from "./TrendingFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
+import { YourRealmPanel } from "./YourRealmPanel";
 import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -388,6 +389,7 @@ export function UnifiedDashboardSection({
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
       <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
         <div className="flex flex-col space-y-4">
+          {isSignedIn && <YourRealmPanel />}
           <TrendingSectionWidget />
           <BlurbSection />
           <CountriesToExploreCard currentUserCountryId={countryId} />

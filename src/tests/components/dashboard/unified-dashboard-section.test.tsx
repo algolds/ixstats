@@ -19,7 +19,13 @@ jest.mock("~/trpc/react", () => {
     },
   };
 });
-jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: null, isSignedIn: false }) }));
+let signedIn = false;
+jest.mock("~/context/auth-context", () => ({
+  useUser: () => ({ user: signedIn ? { id: "u1" } : null, isSignedIn: signedIn }),
+}));
+jest.mock("~/components/dashboard/sections/YourRealmPanel", () => ({
+  YourRealmPanel: () => <div>your realm panel</div>,
+}));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
@@ -42,6 +48,10 @@ jest.mock("~/components/dashboard/sections/CountriesToExploreCard", () => ({
 const stats = { economicTierDistribution: { Strong: 3 } };
 
 describe("UnifiedDashboardSection", () => {
+  beforeEach(() => {
+    signedIn = false;
+  });
+
   it("shows the right column as an Inspector aside at 1280px and up", () => {
     wide = true;
     render(<UnifiedDashboardSection globalStats={stats} />);
@@ -71,5 +81,31 @@ describe("UnifiedDashboardSection", () => {
       "trending widget"
     );
     expect(screen.getAllByText("trending widget")).toHaveLength(1);
+  });
+
+  it("shows no Your realm panel to a signed-out viewer", () => {
+    wide = true;
+    render(<UnifiedDashboardSection globalStats={stats} />);
+    expect(screen.queryByText("your realm panel")).not.toBeInTheDocument();
+  });
+
+  it("puts Your realm first in the rail for a signed-in viewer", () => {
+    wide = true;
+    signedIn = true;
+    render(<UnifiedDashboardSection globalStats={stats} />);
+    const aside = screen.getByRole("complementary", { name: "Around IxStates" });
+    const text = aside.textContent ?? "";
+    expect(text.indexOf("your realm panel")).toBeGreaterThanOrEqual(0);
+    expect(text.indexOf("your realm panel")).toBeLessThan(text.indexOf("trending widget"));
+  });
+
+  it("shows Your realm in the sheet below 1280px too", () => {
+    wide = false;
+    signedIn = true;
+    render(<UnifiedDashboardSection globalStats={stats} />);
+    fireEvent.click(screen.getByRole("button", { name: "Trends" }));
+    expect(screen.getByRole("dialog", { name: "Around IxStates" })).toHaveTextContent(
+      "your realm panel"
+    );
   });
 });
