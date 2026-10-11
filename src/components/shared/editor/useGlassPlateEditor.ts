@@ -20,6 +20,7 @@ import {
   ImagePlugin,
 } from "./EditorPlugins";
 import { slateNodesToHtml, parsoidHtmlToSlate, toggleMark } from "./SlateSerializer";
+import { userMentionItems, type MentionSource } from "./mention-source";
 
 function getMentionItemIcon(name: string, type: "league" | "club") {
   const lower = name.toLowerCase();
@@ -34,6 +35,19 @@ function getMentionItemIcon(name: string, type: "league" | "club") {
   return type === "league" ? "🏆" : "🛡️";
 }
 
+/**
+ * Slate's word unit stops after a `@`, so the word before the cursor in "@ki" reads "ki". Widen it to the `@` when one
+ * starts the word (at the start of a block or after a space), so a typed name is the menu's query.
+ */
+function widenToAt(editor: Editor, word: Range): Range {
+  const before = Editor.before(editor, word.anchor);
+  if (!before || Editor.string(editor, Editor.range(editor, before, word.anchor)) !== "@")
+    return word;
+  const ahead = Editor.before(editor, before);
+  const gap = ahead ? Editor.string(editor, Editor.range(editor, ahead, before)) : "";
+  return /^\s?$/.test(gap) ? Editor.range(editor, before, word.focus) : word;
+}
+
 interface UseGlassPlateEditorProps {
   value?: string;
   onChange?: (html: string, text: string) => void;
@@ -41,6 +55,8 @@ interface UseGlassPlateEditorProps {
   onBlur?: () => void;
   onSubmit?: () => void;
   submitOnEnter?: boolean;
+  /** Replaces the member's own personas in the @ menu (wiki and sports entries stay). */
+  mentionSource?: MentionSource;
 }
 
 export function useGlassPlateEditor({
@@ -50,6 +66,7 @@ export function useGlassPlateEditor({
   onBlur,
   onSubmit,
   submitOnEnter = false,
+  mentionSource,
 }: UseGlassPlateEditorProps) {
   const [_version, setVersion] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
@@ -108,9 +125,16 @@ export function useGlassPlateEditor({
   const [mentionRange, setMentionRange] = useState<Range | null>(null);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
 
+  // The member's own personas, unless a source replaces them.
   const mentionSearch = api.thinkpages.getMyAccounts.useQuery(undefined, {
     staleTime: 60_000,
+    enabled: !mentionSource,
   });
+  const hasMentionSource = !!mentionSource;
+  const onMentionQueryChange = mentionSource?.onQueryChange;
+  useEffect(() => {
+    onMentionQueryChange?.(mentionQuery);
+  }, [mentionQuery, onMentionQueryChange]);
 
   const wikiSearchForMention = api.wikios.search.useQuery(
     { query: mentionQuery, limit: 3, wikiSource: "all" },
@@ -123,7 +147,6 @@ export function useGlassPlateEditor({
   );
 
   const mentionResults = useMemo(() => {
-    const q = mentionQuery.toLowerCase().trim();
     const results: Array<{
       type: "user" | "wiki" | "league" | "club";
       id: string;
@@ -133,24 +156,7 @@ export function useGlassPlateEditor({
       raw: any;
     }> = [];
 
-    if (mentionSearch.data) {
-      for (const acc of mentionSearch.data) {
-        if (
-          !q ||
-          acc.username.toLowerCase().includes(q) ||
-          acc.displayName?.toLowerCase().includes(q)
-        ) {
-          results.push({
-            type: "user",
-            id: acc.id,
-            name: `@${acc.username}`,
-            description: acc.displayName || acc.username,
-            icon: "👤",
-            raw: acc,
-          });
-        }
-      }
-    }
+    results.push(...userMentionItems(mentionSource, mentionSearch.data, mentionQuery));
 
     if (sportsMentionSearch.data) {
       for (const l of sportsMentionSearch.data.leagues || []) {
@@ -189,7 +195,13 @@ export function useGlassPlateEditor({
     }
 
     return results.slice(0, 6);
-  }, [mentionQuery, mentionSearch.data, wikiSearchForMention.data, sportsMentionSearch.data]);
+  }, [
+    mentionQuery,
+    mentionSource,
+    mentionSearch.data,
+    wikiSearchForMention.data,
+    sportsMentionSearch.data,
+  ]);
 
   // Lore Stash State
   const [isStashesOpen, setIsStashesOpen] = useState(false);
@@ -307,11 +319,13 @@ export function useGlassPlateEditor({
       const { selection } = editor;
       if (selection && Range.isCollapsed(selection)) {
         const [start] = Range.edges(selection);
-        const wordRange = Editor.range(
+        let wordRange = Editor.range(
           editor as any,
           Editor.before(editor as any, start, { unit: "word" }) || start,
           start
         );
+        // Only the forum's source needs the typed name; every other editor keeps opening on a bare `@`.
+        if (hasMentionSource) wordRange = widenToAt(editor as never, wordRange);
         const wordText = Editor.string(editor as any, wordRange);
 
         if (wordText.startsWith("@")) {
@@ -338,7 +352,7 @@ export function useGlassPlateEditor({
       setMentionRange(null);
       setMentionQuery("");
     },
-    [editor, onChange]
+    [editor, onChange, hasMentionSource]
   );
 
   // Mention selection
@@ -569,6 +583,7 @@ export function useGlassPlateEditor({
     mentionSelectedIndex,
     mentionQuery,
     mentionSearch,
+    mentionLoading: mentionSource ? mentionSource.isLoading : mentionSearch.isLoading,
     handleSelectMention,
     isStashesOpen,
     setIsStashesOpen,

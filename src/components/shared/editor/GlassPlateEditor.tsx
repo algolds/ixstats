@@ -20,6 +20,7 @@ import {
 } from "./SlateSerializer";
 import { POST_IMAGE_CLASSES } from "./postImageClasses";
 import { MentionMenuPortal } from "./MentionMenuPortal";
+import type { MentionSource } from "./mention-source";
 import { useGlassPlateEditor } from "./useGlassPlateEditor";
 import { WikiAndStashPopovers } from "./WikiAndStashPopovers";
 import { altFromImageUrl } from "./imageAlt";
@@ -60,6 +61,8 @@ interface GlassPlateEditorProps {
   actionRight?: React.ReactNode;
   /** Show the "Insert image" picker button. Off by default; only composers that store HTML images opt in. */
   allowImageInsert?: boolean;
+  /** Where the @ menu gets its names; absent, it lists the member's own personas. */
+  mentionSource?: MentionSource;
 }
 
 export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditorProps>(
@@ -82,6 +85,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       variant = "default",
       actionRight,
       allowImageInsert = false,
+      mentionSource,
     },
     ref
   ) => {
@@ -123,7 +127,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       mentionResults,
       mentionSelectedIndex,
       mentionQuery,
-      mentionSearch,
+      mentionLoading,
       handleSelectMention,
       isStashesOpen,
       setIsStashesOpen,
@@ -145,6 +149,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       onBlur,
       onSubmit,
       submitOnEnter,
+      mentionSource,
     });
 
     useImperativeHandle(
@@ -375,7 +380,7 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
             selectedIndex={mentionSelectedIndex}
             onSelect={handleSelectMention}
             query={mentionQuery}
-            isLoading={mentionSearch.isLoading}
+            isLoading={mentionLoading}
           />
         )}
       </div>
