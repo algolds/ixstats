@@ -24,6 +24,7 @@ import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
+import { ForumFeedCard } from "./feed/ForumFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { Card } from "~/components/ui/card";
 
@@ -196,17 +197,18 @@ function ActivityCard({ activity }: { activity: any }) {
   );
 }
 
-/** Wiki edits get their own card; every other activity shares one layout. */
+/** Wiki edits and forum posts get their own cards; every other activity shares one layout. */
 export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   activity,
 }: {
-  activity: ProcessedFeedItem | any;
+  activity: ProcessedFeedItem;
 }) {
-  return activity.source === "wiki" ? (
-    <WikiFeedCard activity={activity} />
-  ) : (
-    <ActivityCard activity={activity} />
-  );
+  if (activity.source === "wiki") return <WikiFeedCard activity={activity} />;
+  // An item cached before previews existed has no `forum` and keeps the plain card.
+  if (activity.source === "forum" && activity.forum) {
+    return <ForumFeedCard activity={{ timestamp: activity.timestamp, forum: activity.forum }} />;
+  }
+  return <ActivityCard activity={activity} />;
 });
 
 /** Loading placeholder shaped like a feed card. */
