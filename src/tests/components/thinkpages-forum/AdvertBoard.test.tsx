@@ -10,7 +10,8 @@ const mockState: {
   }>;
   loading: boolean;
   signedIn: boolean;
-} = { loading: false, signedIn: true };
+  loaded: boolean;
+} = { loading: false, signedIn: true, loaded: true };
 const mockCreate = jest.fn();
 const mockPush = jest.fn();
 const mockInvalidate = jest.fn(() => Promise.resolve());
@@ -38,7 +39,7 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("~/context/auth-context", () => ({
-  useUser: () => ({ user: null, isSignedIn: mockState.signedIn }),
+  useUser: () => ({ user: null, isSignedIn: mockState.signedIn, isLoaded: mockState.loaded }),
 }));
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, replace: jest.fn() }),
@@ -73,8 +74,17 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
     <div role="menu">{children}</div>
   ),
-  DropdownMenuItem: ({ children }: { children: React.ReactNode; asChild?: boolean }) => (
-    <div role="menuitem">{children}</div>
+  DropdownMenuItem: ({
+    children,
+    disabled,
+  }: {
+    children: React.ReactNode;
+    asChild?: boolean;
+    disabled?: boolean;
+  }) => (
+    <div role="menuitem" aria-disabled={disabled ? true : undefined}>
+      {children}
+    </div>
   ),
 }));
 jest.mock("~/components/ui/avatar", () => ({
@@ -108,6 +118,7 @@ beforeEach(() => {
   mockState.realms = undefined;
   mockState.loading = false;
   mockState.signedIn = true;
+  mockState.loaded = true;
 });
 
 describe("advert rows on the board", () => {
@@ -162,6 +173,44 @@ describe("advert rows on the board", () => {
     thumb.unmount();
     const mark = renderRow(advert({ emblemUrl: null, thumbnail: null }));
     expect(sources(mark.container)).toEqual([]);
+  });
+
+  it("falls back to the thumbnail when the emblem is an empty string", () => {
+    const { container } = renderRow(advert({ emblemUrl: "" }));
+    expect(sources(container)).toEqual(["https://img.example/thumb.png"]);
+  });
+
+  it("draws the realm mark (a globe, no picture) when there is no emblem or thumbnail", () => {
+    const { container } = renderRow(advert({ emblemUrl: null, thumbnail: null }));
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("svg.size-5")).not.toBeNull();
+  });
+
+  it("names a persona's last post by the persona on an advert row, never the player", () => {
+    const personaAuthors = {
+      users: {
+        u1: { name: "Kir", handle: "kir", avatarUrl: "/kir.png", flagUrl: "/flags/kir.png" },
+      },
+      personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: "/aria.png" } },
+    } as ForumAuthors;
+    render(
+      <ThreadTable
+        threads={
+          [
+            {
+              ...row(advert()),
+              lastPoster: { authorUserId: "u1", authorPersonaId: "pa", importedAuthorName: null },
+            },
+          ] as never
+        }
+        authors={personaAuthors}
+        basePath="/thinkpages/c/find-a-realm"
+        sort="latest"
+      />
+    );
+    expect(screen.getByText("Aria Vance")).toBeInTheDocument();
+    expect(document.querySelector('img[src="/aria.png"]')).not.toBeNull();
+    expect(document.querySelectorAll('img[src^="/flags/"]')).toHaveLength(1);
   });
 
   it("leaves the pill out when the realm is closed to new nations", () => {
@@ -232,12 +281,25 @@ describe("AdvertBoardAction", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
+  it("words it for several when every one of a viewer's realms has a hidden advert", () => {
+    mockState.realms = [HIDDEN, { ...ZETA, hiddenByModerator: true }];
+    render(<AdvertBoardAction />);
+    expect(screen.getByText("Your realms' adverts were hidden by a moderator")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
   it("lists a hidden advert in the menu without a link, beside the realms that can still act", () => {
     mockState.realms = [HIDDEN, ZETA];
     render(<AdvertBoardAction />);
     expect(screen.getByRole("button", { name: "Advertise your realm" })).toBeInTheDocument();
     const menu = within(screen.getByRole("menu"));
     expect(menu.getByText("The Eurth advert was hidden by a moderator")).toBeInTheDocument();
+    expect(
+      menu.getByText("The Eurth advert was hidden by a moderator").closest("[role=menuitem]")
+    ).toHaveAttribute("aria-disabled", "true");
+    expect(
+      menu.getByRole("link", { name: "Advertise Zeta" }).closest("[role=menuitem]")
+    ).not.toHaveAttribute("aria-disabled");
     expect(menu.queryByRole("link", { name: /Eurth/ })).toBeNull();
     expect(menu.getByRole("link", { name: "Advertise Zeta" })).toBeInTheDocument();
   });
@@ -274,6 +336,14 @@ describe("NewAdvertForm", () => {
     mockState.signedIn = false;
     render(<NewAdvertForm />);
     expect(screen.getByText("Sign in to advertise your realm")).toBeInTheDocument();
+  });
+
+  it("shows a skeleton, not the sign-in ask, until the session has loaded", () => {
+    mockState.loaded = false;
+    mockState.signedIn = false;
+    const { container } = render(<NewAdvertForm />);
+    expect(container.querySelector("[aria-busy='true']")).not.toBeNull();
+    expect(screen.queryByText("Sign in to advertise your realm")).toBeNull();
   });
 
   it("shows a skeleton while the realms load", () => {
@@ -342,13 +412,18 @@ describe("NewAdvertForm", () => {
     expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
   });
 
-  it("shows the hidden-advert refusal in the composer when it is the server's answer", async () => {
+  it("shows the hidden-advert refusal in the composer when it is the server's answer, and refreshes the realms", async () => {
     mockState.realms = [EURTH];
-    mockCreate.mockRejectedValue(new Error("Your realm's advert was hidden by a moderator."));
+    mockCreate.mockRejectedValue(
+      Object.assign(new Error("Your realm's advert was hidden by a moderator."), {
+        data: { code: "CONFLICT" },
+      })
+    );
     render(<NewAdvertForm realm="eurth" />);
     fireEvent.click(screen.getByRole("button", { name: "Post" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("hidden by a moderator");
     expect(screen.getByRole("button", { name: "Post" })).toBeInTheDocument();
+    expect(mockInvalidate).toHaveBeenCalled();
   });
 
   it("shows the existing advert instead of a composer when the realm has one", () => {
@@ -379,6 +454,23 @@ describe("NewAdvertForm", () => {
     expect(screen.getByText(/can't advertise that realm/i)).toBeInTheDocument();
   });
 
+  it("does not refresh the realms for a refusal that is not a conflict", async () => {
+    mockState.realms = [EURTH];
+    mockCreate.mockRejectedValue(new Error("boom"));
+    render(<NewAdvertForm realm="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "Post" }));
+    await screen.findByRole("alert");
+    expect(mockInvalidate).not.toHaveBeenCalled();
+  });
+
+  it("lists a realm whose advert a moderator hid in the picker, with no link", () => {
+    mockState.realms = [HIDDEN, ZETA];
+    render(<NewAdvertForm />);
+    expect(screen.getByText("Advert hidden by a moderator")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Eurth/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /Advertise Zeta/ })).toBeInTheDocument();
+  });
+
   it("switches to the existing advert when another tab created it first", async () => {
     mockState.realms = [EURTH];
     mockCreate.mockRejectedValue(
@@ -394,6 +486,7 @@ describe("NewAdvertForm", () => {
       "/thinkpages/t/t_race"
     );
     expect(mockPush).not.toHaveBeenCalled();
+    expect(mockInvalidate).toHaveBeenCalled();
   });
 
   it("shows another refusal in the composer and keeps the form", async () => {

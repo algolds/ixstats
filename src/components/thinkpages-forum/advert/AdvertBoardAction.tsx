@@ -21,6 +21,7 @@ interface AdvertChoice {
 }
 
 const HIDDEN_LINE = "Your advert was hidden by a moderator";
+const HIDDEN_LINE_SEVERAL = "Your realms' adverts were hidden by a moderator";
 
 /** Where a realm's entry goes: its advert when it has one, else the form that creates it. */
 const hrefOf = (r: AdvertChoice) =>
@@ -77,7 +78,9 @@ export function AdvertBoardAction() {
   const realms = isSignedIn ? (data?.realms ?? []) : [];
   const open = realms.filter((r) => !r.hiddenByModerator);
   if (realms.length === 0) return null;
-  if (open.length === 0) return <HiddenLine>{HIDDEN_LINE}</HiddenLine>;
+  if (open.length === 0) {
+    return <HiddenLine>{realms.length > 1 ? HIDDEN_LINE_SEVERAL : HIDDEN_LINE}</HiddenLine>;
+  }
   const label = labelOf(open);
   if (realms.length > 1) return <AdvertMenu realms={realms} label={label} />;
   return (

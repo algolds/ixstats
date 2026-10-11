@@ -127,7 +127,7 @@ export function AdvertNotice() {
   );
 }
 
-/** The board's threads in a data card, or an empty state (with New thread, for those who may start one). */
+/** The board's threads in a data card, or an empty state (with New thread, or on Find a Realm the advert action). */
 export function BoardThreads({
   data,
   adverts,
@@ -153,7 +153,7 @@ export function BoardThreads({
           compact
           title="No threads yet"
           message={adverts ? "Realm adverts will appear here" : "Be the first to post"}
-          action={startAction(data)}
+          action={adverts ? <AdvertBoardAction /> : startAction(data)}
         />
       )}
     </Card>

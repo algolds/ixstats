@@ -6,5 +6,5 @@ export function AdvertMark({
 }: {
   advert: { emblemUrl: string | null; thumbnail: string | null };
 }) {
-  return <RealmAvatar thumbnail={advert.emblemUrl ?? advert.thumbnail} className="size-9" />;
+  return <RealmAvatar thumbnail={advert.emblemUrl || advert.thumbnail} className="size-9" />;
 }

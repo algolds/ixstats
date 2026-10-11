@@ -9,3 +9,10 @@ export function advertThreadIdOf(error: Error): string | null {
   const parsed = exists.safeParse(error);
   return parsed.success ? parsed.data.data.context.threadId : null;
 }
+
+const conflict = z.object({ data: z.object({ code: z.literal("CONFLICT") }) });
+
+/** Whether `createAdvert` refused with a CONFLICT (the realm has an advert, or a moderator hid it; an archived realm too). */
+export function isAdvertConflict(error: Error): boolean {
+  return conflict.safeParse(error).success;
+}

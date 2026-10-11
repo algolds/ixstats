@@ -14,7 +14,7 @@ import { api } from "~/trpc/react";
 import { CanvasComposer, type CanvasSubmitMeta } from "../composer";
 import { ForumFormPage, OpenStartedLink } from "../ForumFormPage";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
-import { advertThreadIdOf } from "./advert-error";
+import { advertThreadIdOf, isAdvertConflict } from "./advert-error";
 
 const BACK = { href: categoryHref({ key: ADVERT_CATEGORY_KEY }), label: "Find a Realm" };
 
@@ -131,6 +131,10 @@ function AdvertComposer({
       } catch (cause) {
         const existing = cause instanceof Error ? advertThreadIdOf(cause) : null;
         if (existing) onRaced(existing);
+        // A CONFLICT (another tab got there first, or a moderator hid the advert) means the header action is stale.
+        if (cause instanceof Error && isAdvertConflict(cause)) {
+          void utils.thinkpagesForum.myAdvertRealms.invalidate();
+        }
         throw cause;
       }
     },
@@ -167,7 +171,7 @@ function ChosenRealm({
  * a composer. The server validates everything.
  */
 export function NewAdvertForm({ realm }: { realm?: string }) {
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { data, isLoading, error, refetch } = api.thinkpagesForum.myAdvertRealms.useQuery(
     undefined,
     { enabled: !!isSignedIn }
@@ -183,6 +187,7 @@ export function NewAdvertForm({ realm }: { realm?: string }) {
     </ForumFormPage>
   );
 
+  if (!isLoaded) return <ForumPageSkeleton />;
   if (!isSignedIn) {
     return page(
       <Refusal

@@ -418,17 +418,19 @@ describe("BoardPage in Find a Realm", () => {
   const find = { key: "find-a-realm", name: "Find a Realm", scope: "site" };
 
   it("replaces New thread with the advert action and says who posts adverts", () => {
-    set("category", { data: board({ category: find, threads: [], canStart: false }) });
+    set("category", { data: board({ category: find, canStart: false }) });
     render(<BoardPage categoryKey="find-a-realm" page={1} sort="latest" />);
     expect(screen.getByRole("button", { name: "Advertise stub" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
     expect(screen.getByText(/founder and officers post its advert/i)).toBeInTheDocument();
   });
 
-  it("names adverts in the empty state", () => {
-    set("category", { data: board({ category: find, threads: [], canStart: false }) });
+  it("names adverts in the empty state and offers the advert action, never New thread", () => {
+    set("category", { data: board({ category: find, threads: [], canStart: true }) });
     render(<BoardPage categoryKey="find-a-realm" page={1} sort="latest" />);
     expect(screen.getByText("Realm adverts will appear here")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Advertise stub" })).toHaveLength(2);
+    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
     expect(screen.queryByText("Be the first to post")).toBeNull();
   });
 
