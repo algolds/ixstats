@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen } from "@testing-library/react";
 
 const mockHook = { set: jest.fn(async (_next: string | null) => undefined), pending: false };
 const mockMounted = jest.fn();
@@ -100,6 +100,14 @@ describe("ReactionBar visibility", () => {
     expect(screen.queryByRole("button", { name: /see who reacted/ })).toBeNull();
   });
 
+  it("labels a Discord pill by its name and leaves the image to the label", () => {
+    const { container } = bar({ canReact: false, counts: { "discord:sparkle": 2 } });
+    expect(
+      screen.getByRole("button", { name: "2 :sparkle:, see who reacted" })
+    ).toBeInTheDocument();
+    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+  });
+
   it("orders the pills by count and tints the viewer's own", () => {
     bar({ counts: { like: 1, fire: 3 }, mine: "like" });
     const pills = screen.getAllByRole("button", { name: /see who reacted/ });
@@ -123,17 +131,28 @@ describe("ReactionBar visibility", () => {
 });
 
 describe("ReactionBar many reaction types", () => {
-  it("shows the top twelve types and a +N pill that opens the dialog on All", () => {
+  const many = (): Record<string, number> => {
     const counts: Record<string, number> = {};
     for (let i = 0; i < 14; i += 1) counts[`discord:emo${String(i).padStart(2, "0")}`] = 20 - i;
-    bar({ canReact: false, counts });
-    expect(screen.getAllByRole("button", { name: /yours|see who reacted/ })).toHaveLength(13);
+    return counts;
+  };
+
+  it("shows the top twelve types and a +N more note that is not a button", () => {
+    bar({ canReact: false, counts: many() });
+    expect(screen.getAllByRole("button", { name: /see who reacted/ })).toHaveLength(12);
     expect(screen.queryByRole("button", { name: /emo12/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "2 more reaction types, see who reacted" }));
-    expect(screen.getByRole("radio", { name: /All \(2\)/ })).toHaveAttribute(
-      "aria-checked",
-      "true"
-    );
+    const note = screen.getByRole("img", { name: "2 more reaction types" });
+    expect(note).toHaveTextContent("+2 more");
+    expect(note.closest("button")).toBeNull();
+  });
+
+  it("always gives the viewer's own reaction a pill, in place of the twelfth", () => {
+    bar({ canReact: false, counts: many(), mine: "discord:emo13" });
+    const pills = screen.getAllByRole("button", { name: /see who reacted/ });
+    expect(pills).toHaveLength(12);
+    expect(pills[11]).toHaveAttribute("aria-label", "7 :emo13:, yours included, see who reacted");
+    expect(screen.queryByRole("button", { name: /:emo11:/ })).toBeNull();
+    expect(screen.getByRole("img", { name: "2 more reaction types" })).toBeInTheDocument();
   });
 });
 
@@ -152,6 +171,13 @@ describe("ReactionBar React button", () => {
     expect(mockHook.set).toHaveBeenCalledWith(null);
   });
 
+  it("keeps its tint on hover and suppresses text selection and the touch callout", () => {
+    bar({ counts: { fire: 1 }, mine: "fire" });
+    expect(reactButton().className).toContain("hover:text-tint");
+    expect(reactButton().className).not.toContain("hover:text-label");
+    expect(reactButton().className).toContain("select-none");
+  });
+
   it("is disabled while a request is in flight", () => {
     mockHook.pending = true;
     bar();
@@ -167,6 +193,16 @@ describe("ReactionBar popup", () => {
     fireEvent.click(screen.getByText("pick fire"));
     expect(mockHook.set).toHaveBeenCalledWith("fire");
     expect(screen.queryByText("pick fire")).toBeNull();
+  });
+
+  it("reaches the chevron with the keyboard and moves focus into the popup it opens", () => {
+    bar();
+    const chevron = screen.getByRole("button", { name: "Choose a reaction" });
+    chevron.focus();
+    expect(chevron).toHaveFocus();
+    expect(chevron).not.toHaveAttribute("tabindex", "-1");
+    fireEvent.click(chevron);
+    expect(screen.getByText("pick fire")).toHaveFocus();
   });
 
   it("gives the popup no counts of its own", () => {
@@ -206,6 +242,31 @@ describe("ReactionBar popup", () => {
       fireEvent.pointerUp(reactButton());
       fireEvent.click(reactButton());
       expect(mockHook.set).not.toHaveBeenCalled();
+    });
+
+    it("does not react on the click that follows a touch long press (pointer-up, then pointer-leave)", () => {
+      bar();
+      fireEvent.pointerDown(reactButton());
+      act(() => {
+        jest.advanceTimersByTime(450);
+      });
+      fireEvent.pointerUp(reactButton());
+      fireEvent.pointerLeave(reactButton());
+      fireEvent.click(reactButton());
+      expect(screen.getByText("pick fire")).toBeInTheDocument();
+      expect(mockHook.set).not.toHaveBeenCalled();
+    });
+
+    it("ignores a non-primary pointer", () => {
+      bar();
+      // jsdom has no PointerEvent, so the init dictionary drops isPrimary: set it on the event itself.
+      const secondFinger = createEvent.pointerDown(reactButton());
+      Object.defineProperty(secondFinger, "isPrimary", { value: false });
+      fireEvent(reactButton(), secondFinger);
+      act(() => {
+        jest.advanceTimersByTime(450);
+      });
+      expect(screen.queryByText("pick fire")).toBeNull();
     });
 
     it("does not swallow a keyboard activation after a long press whose click never came", () => {

@@ -12,7 +12,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { reactionLabel } from "~/lib/thinkpages-forum/reactions";
 import { api } from "~/trpc/react";
-import { ReactionGlyph, type EmojiList } from "./ReactionGlyph";
+import { isDiscordReaction, ReactionGlyph, type EmojiList } from "./ReactionGlyph";
 import { ReactorList, type ReactorGroup } from "./ReactorList";
 import { ALL_REACTIONS } from "./reactors-tabs";
 import { useReactionEmojis } from "./useReactionEmojis";
@@ -43,7 +43,7 @@ function ReactorTabs({ groups, active, emojis, onChange }: TabsProps) {
       onValueChange={(next) => onChange(next || ALL_REACTIONS)}
       className="border-separator flex items-center gap-2 overflow-x-auto border-b px-4 py-2"
     >
-      <ToggleGroupItem value={ALL_REACTIONS} className="tabular-nums">
+      <ToggleGroupItem value={ALL_REACTIONS} className="tabular-nums pointer-coarse:min-h-11">
         All ({total})
       </ToggleGroupItem>
       {groups.map((group) => (
@@ -51,7 +51,7 @@ function ReactorTabs({ groups, active, emojis, onChange }: TabsProps) {
           key={group.type}
           value={group.type}
           aria-label={`${reactionLabel(group.type)}, ${group.count}`}
-          className="tabular-nums"
+          className="tabular-nums pointer-coarse:min-h-11"
         >
           <ReactionGlyph type={group.type} emojis={emojis} decorative />
           <span>{group.count}</span>
@@ -68,8 +68,8 @@ function ReactorTabs({ groups, active, emojis, onChange }: TabsProps) {
 export function ReactorsDialog({ postId, type, onClose }: ReactorsDialogProps) {
   const [tab, setTab] = useState(type);
   const { data, isLoading, isError, refetch } = api.thinkpagesForum.reactors.useQuery({ postId });
-  const emojis = useReactionEmojis();
   const groups = data?.groups ?? [];
+  const emojis = useReactionEmojis(groups.some((group) => isDiscordReaction(group.type)));
   const active = groups.some((group) => group.type === tab) ? tab : ALL_REACTIONS;
   const shown = active === ALL_REACTIONS ? groups : groups.filter((group) => group.type === active);
 
@@ -83,11 +83,18 @@ export function ReactorsDialog({ postId, type, onClose }: ReactorsDialogProps) {
         <ReactorTabs groups={groups} active={active} emojis={emojis} onChange={setTab} />
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           {isLoading ? (
-            <p className="text-footnote text-label-secondary py-8 text-center">Loading reactions</p>
+            <p role="status" className="text-footnote text-label-secondary py-8 text-center">
+              Loading reactions
+            </p>
           ) : isError ? (
             <div className="flex flex-col items-center gap-3 py-8">
               <p className="text-footnote text-label-secondary">Could not load who reacted.</p>
-              <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="pointer-coarse:min-h-11"
+                onClick={() => void refetch()}
+              >
                 Try again
               </Button>
             </div>

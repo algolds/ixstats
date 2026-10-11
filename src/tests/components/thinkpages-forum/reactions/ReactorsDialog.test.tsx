@@ -9,6 +9,7 @@ type Reactor = {
   flagUrl: string | null;
 };
 type Group = { type: string; count: number; reactors: Reactor[] };
+const mockEmojiOptions = jest.fn();
 const mockState: {
   data: { groups: Group[] } | undefined;
   isLoading: boolean;
@@ -18,7 +19,14 @@ const mockState: {
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    thinkpages: { getDiscordEmojis: { useQuery: () => ({ data: undefined }) } },
+    thinkpages: {
+      getDiscordEmojis: {
+        useQuery: (_input: object, options: { enabled: boolean }) => {
+          mockEmojiOptions(options);
+          return { data: undefined };
+        },
+      },
+    },
     thinkpagesForum: { reactors: { useQuery: () => mockState } },
   },
 }));
@@ -44,6 +52,7 @@ beforeEach(() => {
     isError: false,
   });
   mockState.refetch.mockClear();
+  mockEmojiOptions.mockClear();
 });
 
 const open = (type = "all", onClose = jest.fn()) => {
@@ -104,6 +113,21 @@ describe("ReactorsDialog", () => {
     render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(mockState.refetch).toHaveBeenCalled();
+  });
+
+  it("loads the Discord emoji list only when a Discord reaction is listed", () => {
+    const { unmount } = render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
+    expect(mockEmojiOptions).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
+    unmount();
+    mockState.data = data({ type: "discord:pog", count: 1, reactors: [person("bo")] });
+    render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
+    expect(mockEmojiOptions).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: true }));
+  });
+
+  it("announces loading as a status", () => {
+    Object.assign(mockState, { data: undefined, isLoading: true });
+    render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Loading reactions");
   });
 
   it("closes through the dismiss button", () => {

@@ -19,6 +19,8 @@ jest.mock("~/trpc/react", () => {
     },
   };
 });
+// The real getQueryKey needs a live tRPC proxy; this stand-in keeps the same `[[router, procedure]]` prefix shape.
+// The real getQueryKey needs a live tRPC proxy; this stand-in keeps the same `[[router, procedure]]` prefix shape.
 jest.mock("@trpc/react-query", () => ({
   getQueryKey: (procedure: { key: string }) => [["thinkpagesForum", procedure.key]],
 }));
@@ -57,10 +59,12 @@ const messages = () => (client.getQueryData(BOARD) as { messages: Rows }).messag
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((res) => {
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((res, rej) => {
     resolve = res;
+    reject = rej;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 beforeEach(() => {
@@ -107,15 +111,71 @@ describe("useForumReaction", () => {
     expect(messages()[0]).toMatchObject({ reactions: { fire: 1 }, myReaction: null });
   });
 
-  it("puts the post back and says so when the reaction fails, leaving other posts alone", async () => {
-    mutations.react!.mockRejectedValue(new Error("Slow down"));
+  it("cancels in-flight reads of the pages that hold the post before patching", async () => {
+    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
+    const cancel = jest.spyOn(client, "cancelQueries");
     const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
     await act(async () => {
       await result.current.set("fire");
     });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledWith({ queryKey: THREAD, exact: true });
+  });
+
+  it("marks the pages that hold the post stale once settled", async () => {
+    mutations.react!.mockResolvedValue({ counts: { like: 1, fire: 1 }, mine: "fire" });
+    const invalidate = jest.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
+    await act(async () => {
+      await result.current.set("fire");
+    });
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: THREAD, exact: true });
+  });
+
+  it("puts only that post back when the reaction fails, keeping changes made elsewhere meanwhile", async () => {
+    const call = deferred<{ counts: Record<string, number>; mine: string | null }>();
+    mutations.react!.mockReturnValue(call.promise);
+    const { result } = renderHook(() => useForumReaction("p1"), { wrapper });
+    let done!: Promise<void>;
+    act(() => {
+      done = result.current.set("fire");
+    });
+    await waitFor(() => expect(posts()[0]).toMatchObject({ myReaction: "fire" }));
+    act(() => {
+      client.setQueryData(THREAD, {
+        posts: [row("p1", { like: 1, fire: 1 }, "fire"), row("p2", { laugh: 4 }, "laugh")],
+      });
+      client.setQueryData(BOARD, { messages: [row("b1", { fire: 9 }, "fire")] });
+    });
+    await act(async () => {
+      call.reject(new Error("Slow down"));
+      await done;
+    });
     expect(posts()[0]).toMatchObject({ reactions: { like: 1 }, myReaction: null });
+    expect(posts()[1]).toMatchObject({ reactions: { laugh: 4 }, myReaction: "laugh" });
+    expect(messages()[0]).toMatchObject({ reactions: { fire: 9 }, myReaction: "fire" });
     expect(notify.error).toHaveBeenCalledWith("Could not update your reaction", "Slow down");
     expect(result.current.pending).toBe(false);
+  });
+
+  it("lets the server's counts win over a live board update that arrived mid-request", async () => {
+    const call = deferred<{ counts: Record<string, number>; mine: string | null }>();
+    mutations.react!.mockReturnValue(call.promise);
+    const { result } = renderHook(() => useForumReaction("b1"), { wrapper });
+    let done!: Promise<void>;
+    act(() => {
+      done = result.current.set("like");
+    });
+    await waitFor(() => expect(messages()[0]).toMatchObject({ myReaction: "like" }));
+    act(() => {
+      client.setQueryData(BOARD, { messages: [row("b1", { fire: 7 }, "fire")] });
+    });
+    await act(async () => {
+      call.resolve({ counts: { fire: 7, like: 1 }, mine: "like" });
+      await done;
+    });
+    expect(messages()[0]).toMatchObject({ reactions: { fire: 7, like: 1 }, myReaction: "like" });
   });
 
   it("ignores a second request while one is in flight", async () => {

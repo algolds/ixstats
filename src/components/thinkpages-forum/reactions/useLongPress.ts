@@ -14,6 +14,7 @@ export function useLongPress(onLongPress: () => void, delayMs: number = LONG_PRE
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const forget = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fired = useRef(false);
+  const down = useRef(false);
   const callback = useRef(onLongPress);
   useEffect(() => {
     callback.current = onLongPress;
@@ -35,8 +36,9 @@ export function useLongPress(onLongPress: () => void, delayMs: number = LONG_PRE
 
   const start = useCallback(
     (event: PointerEvent) => {
-      if (event.button > 0) return;
+      if (event.button > 0 || event.isPrimary === false) return;
       clear(forget);
+      down.current = true;
       clear(timer);
       fired.current = false;
       timer.current = setTimeout(() => {
@@ -50,6 +52,7 @@ export function useLongPress(onLongPress: () => void, delayMs: number = LONG_PRE
 
   /** The press ended on the button: its click, if any, follows in this task. */
   const end = useCallback(() => {
+    down.current = false;
     clear(timer);
     if (!fired.current) return;
     clear(forget);
@@ -59,8 +62,13 @@ export function useLongPress(onLongPress: () => void, delayMs: number = LONG_PRE
     }, 0);
   }, [clear]);
 
-  /** The press left the button: no click will follow. */
+  /**
+   * The press left the button while still down: no click will follow. A touch press ends with a pointer-up and then a
+   * pointer-leave, before the synthesized click, so a leave after the press ended changes nothing.
+   */
   const abandon = useCallback(() => {
+    if (!down.current) return;
+    down.current = false;
     clear(timer);
     fired.current = false;
   }, [clear]);

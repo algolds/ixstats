@@ -14,7 +14,11 @@ import { useForumReaction } from "./useForumReaction";
 import { useLongPress } from "./useLongPress";
 import { useReactionEmojis } from "./useReactionEmojis";
 
-const ACTION = "text-label-secondary hover:text-label pointer-coarse:min-h-11";
+const ACTION = "pointer-coarse:min-h-11";
+const IDLE_TEXT = "text-label-secondary hover:text-label";
+const REACTED_TEXT = "text-tint hover:text-tint";
+/** A long press must open the popup, not select text or raise the browser's touch callout. */
+const NO_PRESS_MENU = "select-none [-webkit-touch-callout:none]";
 
 interface ReactionBarProps {
   postId: string;
@@ -57,7 +61,7 @@ function ReactionBarBody({ postId, counts, mine, canReact }: ReactionBarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn(ACTION, mine !== null && "text-tint")}
+            className={cn(ACTION, NO_PRESS_MENU, mine !== null ? REACTED_TEXT : IDLE_TEXT)}
             aria-pressed={mine !== null}
             disabled={pending}
             {...longPress.handlers}
@@ -82,7 +86,7 @@ function ReactionBarBody({ postId, counts, mine, canReact }: ReactionBarProps) {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className={ACTION}
+                className={cn(ACTION, IDLE_TEXT)}
                 aria-label="Choose a reaction"
                 disabled={pending}
               >
