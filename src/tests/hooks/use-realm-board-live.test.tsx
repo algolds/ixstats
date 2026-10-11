@@ -313,7 +313,7 @@ describe("useRealmBoardLive cache merge", () => {
     send({ type: "board:message", realmId: "r_eurth", message: live("p2", 2) });
     const [newest, edited] = client.getQueryData<Page>(FIRST)!.messages;
     expect(edited).toMatchObject({ moderable: false, sanctionable: true });
-    expect(newest).toMatchObject({ moderable: true, sanctionable: false });
+    expect(newest).toMatchObject({ moderable: false, sanctionable: false });
   });
 
   it("gives a reader no verdicts", () => {

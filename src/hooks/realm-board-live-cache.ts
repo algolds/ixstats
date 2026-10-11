@@ -49,7 +49,7 @@ export function toCachedMessage(
     ...(moderator
       ? {
           hidden: false,
-          moderable: existing?.moderable ?? true,
+          moderable: existing?.moderable ?? false,
           sanctionable: existing?.sanctionable ?? false,
         }
       : {}),
