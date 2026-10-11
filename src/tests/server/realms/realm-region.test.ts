@@ -561,6 +561,21 @@ describe("overview and happenings", () => {
     );
   });
 
+  it.each(["draft", "generating"])(
+    "leaks no emblem of a %s realm to a viewer who cannot moderate it",
+    async (status) => {
+      const db = overviewDb(status, FOUNDER);
+      const row = await db.realm.findUnique({ where: { slug: "eurth" } });
+      db.realm.findUnique.mockResolvedValue({
+        ...row,
+        emblemUrl: "https://img.example/emblem.png",
+      });
+      expect(await callerAs(PLAYER, db).region.overview({ slug: "eurth" })).toBeNull();
+      const staff = await callerAs(FOUNDER, db).region.overview({ slug: "eurth" });
+      expect(staff?.realm.emblemUrl).toBe("https://img.example/emblem.png");
+    }
+  );
+
   it("shows a staff-administered realm's header, stats and factbook", async () => {
     const db = overviewDb();
     const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
