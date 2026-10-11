@@ -101,6 +101,11 @@ function BoardRow({ board }: { board: Board }) {
             >
               {board.name}
             </Link>
+            {board.unreadThreads > 0 ? (
+              <span className="text-footnote text-tint shrink-0 font-medium tabular-nums">
+                {`${board.unreadThreads} new`}
+              </span>
+            ) : null}
             {board.visibility === "staff" ? <Badge variant="outline">Staff</Badge> : null}
           </span>
           {board.description ? (

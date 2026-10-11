@@ -36,6 +36,7 @@ jest.mock("~/trpc/react", () => {
         navFlags: query("navFlags"),
         realms: query("realms"),
         category: query("category"),
+        navCounts: query("navCounts"),
         appeal: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
       },
       thinkpagesForumMod: { context: query("context") },
@@ -85,6 +86,7 @@ function board(key: string, extra: object = {}) {
     style: "ooc",
     threadCount: 8,
     postCount: 23,
+    unreadThreads: 0,
     lastPostAt: new Date(),
     latest: {
       threadId: `t_${key}`,
@@ -122,6 +124,16 @@ afterEach(() => {
 });
 
 describe("Forums home: board table", () => {
+  it("shows the unread count of a board in tint, and nothing for a board with none", () => {
+    set("categories", {
+      data: [board("general", { unreadThreads: 3 }), board("rules", { unreadThreads: 0 })],
+    });
+    render(<ForumHome />);
+    const unread = within(screen.getByRole("row", { name: /General/ })).getByText("3 new");
+    expect(unread).toHaveClass("text-tint");
+    expect(within(screen.getByRole("row", { name: /Rules/ })).queryByText(/ new$/)).toBeNull();
+  });
+
   it("lists boards under Board / Threads / Posts / Latest, each row linking to its board", () => {
     set("categories", { data: [board("general"), board("announcements")] });
     render(<ForumHome />);
@@ -328,6 +340,31 @@ describe("Forums home: Your realm and Moderation", () => {
 
   beforeEach(() => {
     set("categories", { data: [board("general")] });
+  });
+
+  it("says how many messages are new on the realm board, and nothing when none are", () => {
+    auth.isSignedIn = true;
+    set("navFlags", { data: { realmMember: true, forumModerator: false } });
+    set("realms", { data: realm });
+    set("category", { data: hub });
+    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
+    const { unmount } = render(<ForumHome />);
+    expect(screen.getByRole("link", { name: /Eurth/ })).toHaveTextContent("4 new on the board");
+    unmount();
+
+    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 0 } });
+    render(<ForumHome />);
+    expect(screen.queryByText(/new on the board/)).toBeNull();
+  });
+
+  it("caps the realm board count at 99+", () => {
+    auth.isSignedIn = true;
+    set("navFlags", { data: { realmMember: true, forumModerator: false } });
+    set("realms", { data: realm });
+    set("category", { data: hub });
+    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
+    render(<ForumHome />);
+    expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
   it("shows the viewer's realm with its Hub's latest thread, linking to /thinkpages/r/mine", () => {

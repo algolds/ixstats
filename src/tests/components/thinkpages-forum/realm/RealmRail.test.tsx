@@ -63,6 +63,20 @@ describe("BoardsPanel", () => {
     expect(within(link).getByText("No threads yet")).toBeInTheDocument();
   });
 
+  it("shows how many threads are new in a board", () => {
+    render(
+      <BoardsPanel
+        slug="eurth"
+        boards={[
+          { ...boards[0]!, unreadThreads: 2 },
+          { ...boards[1]!, unreadThreads: 0 },
+        ]}
+      />
+    );
+    expect(screen.getByText("2 new")).toBeInTheDocument();
+    expect(screen.queryByText("0 new")).toBeNull();
+  });
+
   it("renders nothing without boards", () => {
     render(<BoardsPanel slug="eurth" boards={[]} />);
     expect(screen.queryByRole("heading")).toBeNull();

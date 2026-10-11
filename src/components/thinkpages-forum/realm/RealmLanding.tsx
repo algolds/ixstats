@@ -21,6 +21,7 @@ import { BoardFeed } from "./BoardFeed";
 import { boardQuoteText } from "./board-quote";
 import { RealmRail, RECENT_ACTIONS_SHOWN, railHasContent } from "./RealmRail";
 import type { BoardData, BoardMessageData, BoardQuote, ReplyTarget } from "./types";
+import { useRealmBoardRead } from "./useRealmBoardRead";
 import { useScrollToMessageHash } from "./useScrollToMessageHash";
 
 /** The realm's emblem (or its thumbnail, as the server resolves it); a tinted realm mark without either. */
@@ -71,6 +72,7 @@ interface LandingBodyProps {
 function LandingBody({ slug, loaded }: LandingBodyProps) {
   const utils = api.useUtils();
   const { isSignedIn } = useUser();
+  const markSeen = useRealmBoardRead(slug, !!isSignedIn);
   const live = useRealmBoardLive(loaded.realm.id);
   const { data = loaded } = api.thinkpagesForum.getBoard.useQuery(
     { realm: slug },
@@ -187,6 +189,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
         onQuote={startQuote}
         onChanged={changed}
         onStart={startConversation}
+        onSeen={markSeen}
       />
       {phone && access.canPost ? <DockSpacer /> : null}
     </ForumPage>

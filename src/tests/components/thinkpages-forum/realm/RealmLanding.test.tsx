@@ -36,6 +36,7 @@ jest.mock("~/trpc/react", () => {
             cancel: state.cancel,
             invalidate: state.invalidate,
           },
+          navCounts: { invalidate: state.invalidate },
         },
         thinkpagesForumMod: { invalidate: () => Promise.resolve() },
       }),
@@ -63,6 +64,7 @@ jest.mock("~/trpc/react", () => {
           },
         },
         postBoardMessage: mutation("postBoardMessage"),
+        markRealmBoardRead: mutation("markRealmBoardRead"),
       },
       realms: {
         region: {
@@ -133,6 +135,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onQuote,
     onChanged,
     onStart,
+    onSeen,
   }: {
     data: { messages: Array<{ id: string; contentHtml: string; author: { name: string } }> };
     showLatest: number;
@@ -142,6 +145,7 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
     onQuote: (m: unknown) => void;
     onChanged: () => void;
     onStart: () => void;
+    onSeen?: (newestMessageId: string) => void;
   }) => (
     <div data-testid="feed" data-show-latest={showLatest} data-paused={String(paused)}>
       <span>{typing.join(",")}</span>
@@ -161,6 +165,12 @@ jest.mock("~/components/thinkpages-forum/realm/BoardFeed", () => ({
       </button>
       <button type="button" onClick={onStart}>
         start
+      </button>
+      <button type="button" onClick={() => onSeen?.("p2")}>
+        seen p2
+      </button>
+      <button type="button" onClick={() => onSeen?.("p3")}>
+        seen p3
       </button>
     </div>
   ),
@@ -725,5 +735,41 @@ describe("RealmLanding", () => {
       expect(state.setData).not.toHaveBeenCalled();
       expect(screen.getByTestId("feed")).toHaveAttribute("data-show-latest", "0");
     });
+  });
+});
+
+describe("RealmLanding read state", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it("marks the realm board read once per newest message, for a signed-in reader", async () => {
+    state.mutations.markRealmBoardRead = jest.fn().mockResolvedValue({ readAt: new Date() });
+    render(<RealmLanding realm="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "seen p2" }));
+    fireEvent.click(screen.getByRole("button", { name: "seen p2" }));
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledWith({ realm: "eurth" });
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
+    await act(async () => void jest.advanceTimersByTime(0));
+    expect(state.invalidate).toHaveBeenCalled();
+  });
+
+  it("holds a newer message back for ten seconds after the last mark", async () => {
+    state.mutations.markRealmBoardRead = jest.fn().mockResolvedValue({ readAt: new Date() });
+    render(<RealmLanding realm="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "seen p2" }));
+    fireEvent.click(screen.getByRole("button", { name: "seen p3" }));
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
+    await act(async () => void jest.advanceTimersByTime(9_999));
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(1);
+    await act(async () => void jest.advanceTimersByTime(1));
+    expect(state.mutations.markRealmBoardRead).toHaveBeenCalledTimes(2);
+  });
+
+  it("marks nothing for a signed-out reader", () => {
+    auth.isSignedIn = false;
+    state.mutations.markRealmBoardRead = jest.fn();
+    render(<RealmLanding realm="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "seen p2" }));
+    expect(state.mutations.markRealmBoardRead).not.toHaveBeenCalled();
   });
 });

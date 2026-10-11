@@ -216,6 +216,8 @@ interface BoardFeedProps {
   onChanged: () => void;
   /** The empty board's way in: takes the writer to the composer. */
   onStart: () => void;
+  /** The reader is looking at the top of the feed: this is its newest message. The page marks the board read. */
+  onSeen?: (newestMessageId: string) => void;
 }
 
 /**
@@ -235,6 +237,7 @@ export function BoardFeed({
   onQuote,
   onChanged,
   onStart,
+  onSeen,
 }: BoardFeedProps) {
   const top = useRef<HTMLDivElement>(null);
   const [held, setHeld] = useState<ReadonlySet<string> | null>(null);
@@ -243,6 +246,11 @@ export function BoardFeed({
     latest.current = data.messages;
   });
   useScrolledAway(top, (away) => setHeld(away ? new Set(latest.current.map((m) => m.id)) : null));
+  const newestId = data.messages[0]?.id;
+  useEffect(() => {
+    // Not held back means the reader is at the top, in view of the newest messages.
+    if (held === null && newestId !== undefined) onSeen?.(newestId);
+  }, [held, newestId, onSeen]);
 
   const [seenShowLatest, setSeenShowLatest] = useState(showLatest);
   if (seenShowLatest !== showLatest) {

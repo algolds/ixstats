@@ -40,7 +40,16 @@ export function BoardsPanel({ slug, boards }: { slug: string; boards: readonly R
               href={categoryHref({ key: board.key, realm: { slug } })}
               className="hover:bg-fill-4 focus-visible:outline-tint rounded-control-sm block px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
             >
-              <span className="text-body text-label block truncate font-medium">{board.name}</span>
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="text-body text-label block min-w-0 flex-1 truncate font-medium">
+                  {board.name}
+                </span>
+                {board.unreadThreads > 0 ? (
+                  <span className="text-footnote text-tint shrink-0 font-medium tabular-nums">
+                    {`${board.unreadThreads} new`}
+                  </span>
+                ) : null}
+              </span>
               <span className="text-footnote text-label-secondary flex min-w-0 gap-2">
                 <span className="min-w-0 flex-1 truncate">
                   {board.latest ? board.latest.threadTitle : "No threads yet"}

@@ -8,6 +8,7 @@ import { Card } from "~/components/ui/card";
 import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
 import { timeAgo } from "~/lib/format/compact";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
+import { countLabel } from "~/lib/thinkpages-forum/unread";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName } from "../AuthorName";
 
@@ -26,6 +27,11 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
   const hub = api.thinkpagesForum.category.useQuery(
     slug ? { key: REALM_HUB_KEY, realm: slug, page: 1, sort: "latest" } : skipToken
   );
+  const counts = api.thinkpagesForum.navCounts.useQuery(undefined, {
+    enabled: realmMember,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
   const name = realms.data?.realms.find((r) => r.slug === slug)?.name;
   if (!slug || !name) return null;
 
@@ -52,6 +58,11 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
             <span className="min-w-0 truncate">{name}</span>
             <Badge variant="secondary">Your realm</Badge>
           </span>
+          {counts.data && counts.data.realmBoardNew > 0 ? (
+            <span className="text-callout text-tint block font-medium tabular-nums">
+              {`${countLabel(counts.data.realmBoardNew)} new on the board`}
+            </span>
+          ) : null}
           {latest && hub.data ? (
             <span className="text-callout text-label-secondary flex min-w-0 items-center gap-1">
               <span className="text-label min-w-0 truncate">{latest.title}</span>

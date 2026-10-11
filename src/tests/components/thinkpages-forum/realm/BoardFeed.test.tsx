@@ -373,4 +373,33 @@ describe("BoardFeed", () => {
       expect(refetch).toHaveBeenCalled();
     });
   });
+
+  it("reports the newest message as seen while at the top, and a newer one once the reader is back at the top", () => {
+    const onSeen = jest.fn();
+    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen });
+    const { rerender } = render(<BoardFeed {...props} />);
+    expect(onSeen).toHaveBeenCalledWith("p3");
+    scrollAway();
+    onSeen.mockClear();
+    rerender(<BoardFeed {...props} data={boardData([msg("p4"), msg("p3"), msg("p2")])} />);
+    expect(onSeen).not.toHaveBeenCalled();
+    scrollToTop();
+    expect(onSeen).toHaveBeenCalledWith("p4");
+  });
+
+  it("reports a newer message at once while the reader stays at the top", () => {
+    const onSeen = jest.fn();
+    const props = feedProps(boardData([msg("p3"), msg("p2")]), { onSeen });
+    const { rerender } = render(<BoardFeed {...props} />);
+    onSeen.mockClear();
+    rerender(<BoardFeed {...props} data={boardData([msg("p4"), msg("p3"), msg("p2")])} />);
+    expect(onSeen).toHaveBeenCalledTimes(1);
+    expect(onSeen).toHaveBeenCalledWith("p4");
+  });
+
+  it("reports nothing for an empty board", () => {
+    const onSeen = jest.fn();
+    render(<BoardFeed {...feedProps(boardData([]), { onSeen })} />);
+    expect(onSeen).not.toHaveBeenCalled();
+  });
 });
