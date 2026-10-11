@@ -325,7 +325,12 @@ describe("createThread", () => {
       personaId: "pa1",
     });
     expect(db.thinkpagesAccount.findFirst).toHaveBeenCalledWith({
-      where: { id: "pa1", clerkUserId: "plain", isActive: true },
+      where: {
+        id: "pa1",
+        clerkUserId: "plain",
+        isActive: true,
+        accountType: { not: "personal" },
+      },
       select: { id: true },
     });
     expect(tx.forumThread.create.mock.calls[0]![0].data).toMatchObject({ authorPersonaId: "pa1" });
@@ -536,7 +541,12 @@ describe("replyToThread", () => {
       })
     ).resolves.toEqual({ postId: "p_new", formatting: "done", reward: null });
     expect(db.thinkpagesAccount.findFirst).toHaveBeenCalledWith({
-      where: { id: "pa1", clerkUserId: "plain", isActive: true },
+      where: {
+        id: "pa1",
+        clerkUserId: "plain",
+        isActive: true,
+        accountType: { not: "personal" },
+      },
       select: { id: true },
     });
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
