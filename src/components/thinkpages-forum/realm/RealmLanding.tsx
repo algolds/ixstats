@@ -124,7 +124,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
 
   const post = useCallback(
     async (input: BoardPostInput) => {
-      const { message } = await postMessage({ realm: slug, ...input });
+      const { message, reward } = await postMessage({ realm: slug, ...input });
       // A poll in flight started before the post would overwrite the upsert with a board without the message.
       await utils.thinkpagesForum.getBoard.cancel({ realm: slug });
       // The live event for the same message merges by id, so it shows once whichever arrives first.
@@ -137,6 +137,7 @@ function LandingBody({ slug, loaded }: LandingBodyProps) {
           }
       );
       setShowLatest((n) => n + 1);
+      return { reward };
     },
     [postMessage, utils, slug]
   );

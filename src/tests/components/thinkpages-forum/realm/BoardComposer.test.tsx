@@ -1,10 +1,13 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { boardAccess } from "~/tests/helpers/realm-board-fixtures";
 
 const editorFocusEnd = jest.fn();
 const editorInsert = jest.fn();
 const editorClear = jest.fn();
+// When set, the stand-in editor takes inserted text and reports it through onChange, as the real one does once it has a
+// selection; `ignoredInserts` first inserts do nothing, as the real one's do without a selection.
+const echo = { inserts: false, ignoredInserts: 0 };
 
 interface MockEditorProps {
   onFocus?: () => void;
@@ -35,6 +38,8 @@ jest.mock(
       mentionSource,
     }: MockEditorProps) {
       const textarea = React.useRef<HTMLTextAreaElement>(null);
+      const reportRef = React.useRef(onChange);
+      reportRef.current = onChange;
       React.useImperativeHandle(
         ref,
         () => ({
@@ -43,7 +48,16 @@ jest.mock(
             // A disabled field cannot take focus, as the real editor in read-only mode.
             textarea.current?.focus();
           },
-          insertText: editorInsert,
+          insertText: (text: string) => {
+            editorInsert(text);
+            if (!echo.inserts || !textarea.current) return;
+            if (echo.ignoredInserts > 0) {
+              echo.ignoredInserts -= 1;
+              return;
+            }
+            textarea.current.value += text;
+            reportRef.current?.(`<p>${textarea.current.value}</p>`, textarea.current.value, "");
+          },
           clear: editorClear,
         }),
         []
@@ -126,7 +140,7 @@ type Props = React.ComponentProps<typeof BoardComposer>;
 
 function renderComposer(props: Partial<Props> = {}) {
   const handlers = {
-    onSubmit: jest.fn().mockResolvedValue(undefined),
+    onSubmit: jest.fn().mockResolvedValue({ reward: null }),
     onTyping: jest.fn(),
     onClearReply: jest.fn(),
     onQuoteInserted: jest.fn(),
@@ -153,6 +167,8 @@ const post = () => screen.getByRole("button", { name: "Post" });
 
 beforeEach(() => {
   jest.clearAllMocks();
+  echo.inserts = false;
+  echo.ignoredInserts = 0;
   trpc.state.personas = PERSONAS;
 });
 
@@ -180,7 +196,7 @@ describe("BoardComposer on a phone", () => {
       onTyping: jest.fn(),
       onClearReply: jest.fn(),
       onQuoteInserted: jest.fn(),
-      onSubmit: jest.fn().mockResolvedValue(undefined),
+      onSubmit: jest.fn().mockResolvedValue({ reward: null }),
     };
     rerender(<BoardComposer {...props} docked />);
     expect(screen.getByTestId("editor")).toBe(editor);
@@ -368,8 +384,8 @@ describe("BoardComposer", () => {
     let finish: () => void = () => undefined;
     const onSubmit = jest.fn(
       () =>
-        new Promise<void>((resolve) => {
-          finish = resolve;
+        new Promise<{ reward: null }>((resolve) => {
+          finish = () => resolve({ reward: null });
         })
     );
     renderComposer({ onSubmit });
@@ -596,5 +612,89 @@ describe("BoardComposer", () => {
       expect(screen.getByRole("link", { name: "Appeal" })).toBeInTheDocument();
       expect(screen.queryByTestId("editor")).toBeNull();
     });
+  });
+});
+
+describe("BoardComposer rewards and prefill", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("shows what the message earned and clears it when the next message is typed", async () => {
+    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 5 } }) });
+    type("We act");
+    fireEvent.click(post());
+    expect(await screen.findByText("+5 IxC for posting your action")).toBeInTheDocument();
+    type("More");
+    expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
+  });
+
+  it("keeps the reward line when the editor clears itself after the post", async () => {
+    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 5 } }) });
+    type("We act");
+    fireEvent.click(post());
+    await screen.findByText("+5 IxC for posting your action");
+    type("");
+    expect(screen.getByText("+5 IxC for posting your action")).toBeInTheDocument();
+  });
+
+  it("shows no reward line for a message that earned nothing", async () => {
+    const { onSubmit } = renderComposer();
+    type("Hello");
+    fireEvent.click(post());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(screen.queryByText(/IxC for posting/)).toBeNull();
+  });
+
+  it("never shows a reward beside a refusal", async () => {
+    const onSubmit = jest
+      .fn()
+      .mockResolvedValueOnce({ reward: { amount: 5 } })
+      .mockRejectedValueOnce(new Error("Nope"));
+    renderComposer({ onSubmit });
+    type("We act");
+    fireEvent.click(post());
+    await screen.findByText("+5 IxC for posting your action");
+    type("again");
+    fireEvent.click(post());
+    expect(await screen.findByText("Nope")).toBeInTheDocument();
+    expect(screen.queryByText(/IxC for posting/)).toBeNull();
+  });
+
+  it("inserts the attached action into the editor once and removes the parameter", async () => {
+    echo.inserts = true;
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc&x=1");
+    renderComposer();
+    await waitFor(() => expect(screen.getByTestId("editor")).toHaveValue("[ixaction=dir-abc]"));
+    await waitFor(() => expect(window.location.search).toBe("?x=1"));
+    expect(editorInsert).toHaveBeenCalledTimes(1);
+    expect(editorInsert).toHaveBeenCalledWith("[ixaction=dir-abc]");
+  });
+
+  it("tries again when the first insert does nothing, and counts the token only once it shows in the text", async () => {
+    echo.inserts = true;
+    echo.ignoredInserts = 1;
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+    renderComposer();
+    await waitFor(() => expect(screen.getByTestId("editor")).toHaveValue("[ixaction=dir-abc]"));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(editorInsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not insert again after a post", async () => {
+    echo.inserts = true;
+    window.history.replaceState(null, "", "/thinkpages/r/eurth?attach=dir-abc");
+    const { onSubmit } = renderComposer();
+    await waitFor(() => expect(window.location.search).toBe(""));
+    fireEvent.click(post());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    type("");
+    await act(async () => undefined);
+    expect(editorInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the editor alone without the parameter", async () => {
+    echo.inserts = true;
+    renderComposer();
+    await act(async () => undefined);
+    expect(editorInsert).not.toHaveBeenCalled();
   });
 });

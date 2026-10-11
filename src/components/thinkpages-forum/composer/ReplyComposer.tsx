@@ -69,8 +69,8 @@ export function ReplyComposer({
             onWikitextChange={setDraft}
             onSubmit={async (wikitext, meta) => {
               const result = await onSubmit(wikitext, meta);
-              // A save that is still formatting keeps the sheet open to say so.
-              if (result.formatting === "done") onOpenChange(false);
+              // A save that is still formatting, or that earned a reward to show, keeps the sheet open.
+              if (result.formatting === "done" && !result.reward) onOpenChange(false);
               return result;
             }}
             {...composer}

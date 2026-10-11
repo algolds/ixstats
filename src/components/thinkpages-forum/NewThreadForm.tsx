@@ -31,13 +31,13 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
   });
   const { mutateAsync: createThread } = api.thinkpagesForum.createThread.useMutation();
   const personas = useMyPersonas(data?.category.icAllowed === true);
-  // A thread whose first post is still being formatted opens on request, so the composer can say so first.
+  // A thread whose first post is still being formatted, or that earned a reward the composer shows, opens on request.
   const [startedId, setStartedId] = useState<string | null>(null);
   const backHref = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
 
   const submit = useCallback(
     async (wikitext: string, { personaId, title }: CanvasSubmitMeta) => {
-      const { threadId, formatting } = await createThread({
+      const { threadId, formatting, reward } = await createThread({
         categoryKey,
         realm,
         title,
@@ -47,9 +47,9 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
       void utils.thinkpagesForum.category.invalidate({ key: categoryKey });
       void utils.thinkpagesForum.categories.invalidate();
       void utils.thinkpagesForum.realmSection.invalidate();
-      if (formatting === "done") router.push(threadHref(threadId));
+      if (formatting === "done" && !reward) router.push(threadHref(threadId));
       else setStartedId(threadId);
-      return { formatting };
+      return { formatting, reward };
     },
     [createThread, categoryKey, realm, utils, router]
   );

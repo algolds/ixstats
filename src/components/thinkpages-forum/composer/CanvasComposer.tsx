@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { TSlateEditor } from "platejs";
 import { ActionPicker } from "~/components/action-links";
+import { useAttachPrefill } from "~/components/action-links/useAttachPrefill";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -11,6 +12,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
+import type { ForumReward } from "~/lib/action-rewards";
 import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
 import { PostBody } from "../thread/PostBody";
@@ -18,6 +20,7 @@ import type { PostStyle } from "../thread/types";
 import { appendQuote, insertAtCaret } from "./canvas-ops";
 import { PersonaSelect, type PersonaOption } from "./PersonaSelect";
 import type { QuoteRequest } from "./QuoteInsert";
+import { RewardSignal, useRewardLine } from "./RewardSignal";
 
 // The Canvas editor, hosted bare: its toolbar, slash menu and modals, without the page title bar or save menu.
 const WikiVisualEditor = dynamic(
@@ -53,11 +56,14 @@ export interface CanvasComposerProps {
   initialWikitext?: string;
   /** The thread the post is for: the preview renders as it would in that thread. */
   threadId?: string;
-  /** Saves the post. Reject with the server's message to have it shown; a reply or thread is cleared on success. */
+  /**
+   * Saves the post. Reject with the server's message to have it shown; a reply or thread is cleared on success. The
+   * result's `reward` (credits the post earned for linking an action) shows as a success Signal until the next edit.
+   */
   onSubmit: (
     wikitext: string,
     meta: CanvasSubmitMeta
-  ) => Promise<{ formatting: "done" | "pending" }>;
+  ) => Promise<{ formatting: "done" | "pending"; reward?: ForumReward | null }>;
   /** The member's personas for "Posting as"; omit where in-character posting is not allowed. */
   personas?: readonly PersonaOption[];
   /** A quote to add to the draft (a new object each time the Quote button is pressed). */
@@ -103,6 +109,7 @@ export function CanvasComposer({
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [preview, setPreview] = useState<Preview | null>(null);
+  const earned = useRewardLine();
   const { mutateAsync: previewPost } = api.thinkpagesForum.previewPost.useMutation();
 
   const editorRef = useRef<TSlateEditor | null>(null);
@@ -138,19 +145,36 @@ export function CanvasComposer({
     if (quoteRequest) applyQuote(quoteRequest);
   }, [quoteRequest, applyQuote]);
 
-  const handleSerialized = useCallback((next: WikitextSerializeResult) => {
-    setDoc(next);
-    if (next.wikitext !== lastTextRef.current) {
-      lastTextRef.current = next.wikitext;
-      // An edit makes the last save's outcome (a refusal, "formatting") stale.
-      setPhase((current) => (current.kind === "sending" ? current : { kind: "idle" }));
-    }
-    onWikitextChangeRef.current?.(next.wikitext);
-  }, []);
+  const { clear: clearReward, show: showReward } = earned;
+  const handleSerialized = useCallback(
+    (next: WikitextSerializeResult) => {
+      setDoc(next);
+      if (next.wikitext !== lastTextRef.current) {
+        lastTextRef.current = next.wikitext;
+        clearReward();
+        // An edit makes the last save's outcome (a refusal, "formatting", a reward) stale.
+        setPhase((current) => (current.kind === "sending" ? current : { kind: "idle" }));
+      }
+      onWikitextChangeRef.current?.(next.wikitext);
+    },
+    [clearReward]
+  );
 
   const attach = useCallback((token: string) => {
     if (editorRef.current) insertAtCaret(editorRef.current, token);
   }, []);
+
+  // A share from MyCountry opens a new thread with its action already attached. insertAtCaret selects the end of the
+  // draft first, so the token is in as soon as it returns.
+  useAttachPrefill(
+    mode === "thread"
+      ? (token) => {
+          if (!editorRef.current) return false;
+          insertAtCaret(editorRef.current, token);
+          return true;
+        }
+      : null
+  );
 
   const changeView = useCallback(
     async (next: View) => {
@@ -173,9 +197,14 @@ export function CanvasComposer({
   const submit = useCallback(async () => {
     if (!canSubmit) return;
     setPhase({ kind: "sending" });
+    clearReward();
     try {
-      const { formatting } = await onSubmit(doc.wikitext, { personaId, title: title.trim() });
+      const { formatting, reward } = await onSubmit(doc.wikitext, {
+        personaId,
+        title: title.trim(),
+      });
       setPhase(formatting === "pending" ? { kind: "pending" } : { kind: "idle" });
+      showReward(reward);
       if (mode !== "edit") {
         // A posted reply or thread starts the next one blank (its report of "" is not an edit).
         lastTextRef.current = "";
@@ -188,7 +217,7 @@ export function CanvasComposer({
     } catch (e) {
       setPhase({ kind: "error", message: e instanceof Error ? e.message : "Could not post" });
     }
-  }, [canSubmit, onSubmit, doc.wikitext, personaId, title, mode]);
+  }, [canSubmit, onSubmit, doc.wikitext, personaId, title, mode, clearReward, showReward]);
 
   return (
     <Card
@@ -270,6 +299,7 @@ export function CanvasComposer({
       ) : null}
       {phase.kind === "error" ? <Signal tone="destructive" title={phase.message} /> : null}
       {phase.kind === "pending" ? <Signal tone="info" title={FORMATTING_LATER} /> : null}
+      <RewardSignal reward={earned.reward} />
 
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         {personas.length > 0 && mode !== "edit" ? (

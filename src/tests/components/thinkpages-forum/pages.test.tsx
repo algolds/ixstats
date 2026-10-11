@@ -656,6 +656,21 @@ describe("new thread", () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
+  it("stays on the page when the thread earned a reward, with a way in", async () => {
+    set("category", { data: categoryData(true) });
+    mutations.createThread = jest.fn(() =>
+      Promise.resolve({ threadId: "t10", postId: "p10", formatting: "done", reward: { amount: 5 } })
+    );
+    router.push.mockClear();
+    render(<NewThreadForm categoryKey="general" />);
+    fireEvent.click(screen.getByRole("button", { name: "Post" }));
+    expect(await screen.findByRole("link", { name: "Open the thread" })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/t10"
+    );
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
   it("explains a refusal with the category's notice, else the general copy", () => {
     const notice = "Only owners of a nation in Eurth can post here.";
     set("category", { data: categoryData(false, [], HUB, notice) });

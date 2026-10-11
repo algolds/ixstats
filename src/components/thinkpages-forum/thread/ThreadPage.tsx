@@ -142,13 +142,13 @@ export function ThreadPage({ threadId, page }: ThreadPageProps) {
 
   const reply = useCallback(
     async (wikitext: string, { personaId }: CanvasSubmitMeta) => {
-      const { postId, formatting } = await replyTo({ threadId, wikitext, personaId });
+      const { postId, formatting, reward } = await replyTo({ threadId, wikitext, personaId });
       await refresh();
       // The reply is the thread's last post; ask where that is rather than guessing the page.
       const at = await utils.thinkpagesForum.resolvePost.fetch({ postId }).catch(() => null);
       const target = at?.page ?? page;
       router.push(`${basePath}?page=${target}#post-${postId}`);
-      return { formatting };
+      return { formatting, reward };
     },
     [replyTo, refresh, utils, threadId, basePath, page, router]
   );

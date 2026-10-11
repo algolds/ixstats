@@ -8,7 +8,10 @@ jest.mock("~/trpc/react", () => ({
 interface StubProps {
   initialWikitext?: string;
   onWikitextChange?: (text: string) => void;
-  onSubmit: (text: string, meta: object) => Promise<{ formatting: "done" | "pending" }>;
+  onSubmit: (
+    text: string,
+    meta: object
+  ) => Promise<{ formatting: "done" | "pending"; reward?: { amount: number } | null }>;
   fill?: boolean;
 }
 
@@ -30,7 +33,15 @@ jest.mock("~/components/thinkpages-forum/composer/CanvasComposer", () => ({
 
 import { ReplyComposer } from "~/components/thinkpages-forum/composer";
 
-function Host({ phone, formatting = "done" }: { phone: boolean; formatting?: "done" | "pending" }) {
+function Host({
+  phone,
+  formatting = "done",
+  reward = null,
+}: {
+  phone: boolean;
+  formatting?: "done" | "pending";
+  reward?: { amount: number } | null;
+}) {
   const [open, setOpen] = React.useState(false);
   return (
     <ReplyComposer
@@ -39,7 +50,7 @@ function Host({ phone, formatting = "done" }: { phone: boolean; formatting?: "do
       phone={phone}
       open={open}
       onOpenChange={setOpen}
-      onSubmit={async () => ({ formatting })}
+      onSubmit={async () => ({ formatting, reward })}
     />
   );
 }
@@ -90,6 +101,15 @@ describe("ReplyComposer", () => {
     fireEvent.click(screen.getByText("Send"));
     // Let the submit settle: the sheet would be closing by now if it were going to.
     await act(async () => new Promise((resolve) => setTimeout(resolve, 20)));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("keeps the sheet open when the reply earned a reward, so the author sees it", async () => {
+    render(<Host phone reward={{ amount: 5 }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    await screen.findByRole("dialog");
+    fireEvent.click(screen.getByText("Send"));
+    await act(async () => undefined);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

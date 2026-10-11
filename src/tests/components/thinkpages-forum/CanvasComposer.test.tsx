@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 interface FakeEditorProps {
   initialWikitext?: string;
@@ -306,5 +306,67 @@ describe("CanvasComposer", () => {
     );
     write("draft");
     expect(onWikitextChange).toHaveBeenLastCalledWith("draft");
+  });
+
+  it("shows what the post earned and clears it on the next edit", async () => {
+    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: { amount: 5 } }));
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("We act");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    expect(await screen.findByText("+5 IxC for posting your action")).toBeInTheDocument();
+    write("Another thought");
+    expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
+  });
+
+  it("keeps the reward line when the composer clears itself after the post", async () => {
+    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: { amount: 5 } }));
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("We act");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    await screen.findByText("+5 IxC for posting your action");
+    expect(screen.getByTestId("canvas")).toHaveValue("");
+    expect(screen.getByText("+5 IxC for posting your action")).toBeInTheDocument();
+  });
+
+  it("shows no reward line when the post earned none", async () => {
+    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: null }));
+    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
+    write("Hello");
+    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(screen.queryByText(/IxC for posting/)).toBeNull();
+  });
+
+  describe("prefill from the address", () => {
+    afterEach(() => {
+      jest.useRealTimers();
+      window.history.replaceState(null, "", "/");
+    });
+
+    it("inserts the attached action once into a new thread", async () => {
+      window.history.replaceState(null, "", "/thinkpages/c/general/new?attach=dir-abc");
+      render(<CanvasComposer mode="thread" onSubmit={jest.fn()} />);
+      await waitFor(() =>
+        expect(insert).toHaveBeenCalledWith({ fake: true }, "[ixaction=dir-abc]")
+      );
+      expect(insert).toHaveBeenCalledTimes(1);
+      expect(window.location.search).toBe("");
+    });
+
+    it("leaves a reply and an edit alone", () => {
+      jest.useFakeTimers();
+      window.history.replaceState(null, "", "/thinkpages/t/t1?attach=dir-abc");
+      const { unmount } = render(<CanvasComposer mode="reply" onSubmit={jest.fn()} />);
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      unmount();
+      render(<CanvasComposer mode="edit" onSubmit={jest.fn()} />);
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(insert).not.toHaveBeenCalled();
+      expect(window.location.search).toBe("?attach=dir-abc");
+    });
   });
 });
