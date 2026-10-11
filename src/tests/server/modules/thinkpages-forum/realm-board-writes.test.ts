@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { AsyncLocalStorage } from "node:async_hooks";
 jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
   withMentionLinks: jest.fn(async (_db: object, body: object) => body),
 }));
@@ -242,6 +243,63 @@ describe("postBoardMessage", () => {
       const since = (where?.createdAt as { gte: Date }).gte.getTime();
       expect(since).toBeGreaterThanOrEqual(before - 30_000);
       expect(since).toBeLessThanOrEqual(Date.now() - 30_000);
+    });
+
+    /** Gives the fake database PostgreSQL's transaction-scoped advisory lock: one holder per key until the transaction ends. */
+    const withAdvisoryLocks = (store: ReturnType<typeof boardStore>) => {
+      const held = new AsyncLocalStorage<Array<() => void>>();
+      const queues = new Map<string, Promise<void>>();
+      const { db, tx } = store;
+      tx.$executeRaw = jest.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
+        if (!strings.join("?").includes("pg_advisory_xact_lock")) return 1;
+        const key = String(values[0]);
+        const before = queues.get(key) ?? Promise.resolve();
+        let release!: () => void;
+        const mine = new Promise<void>((resolve) => (release = resolve));
+        queues.set(
+          key,
+          before.then(() => mine)
+        );
+        held.getStore()?.push(release);
+        await before;
+        return 1;
+      });
+      // No snapshot rollback here: the fake's would undo another transaction's committed post (a refused one wrote nothing).
+      db.$transaction = jest.fn(async (fn: (client: typeof tx) => Promise<unknown>) => {
+        const releases: Array<() => void> = [];
+        try {
+          return await held.run(releases, () => fn(tx));
+        } finally {
+          for (const release of releases) release();
+        }
+      }) as never;
+    };
+
+    it("lets only one of several parallel posts through", async () => {
+      const store = slow(60);
+      withAdvisoryLocks(store);
+      const results = await Promise.allSettled(
+        Array.from({ length: 5 }, () => post(store, member, {}))
+      );
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      const refused = results.filter((r) => r.status === "rejected");
+      expect(refused).toHaveLength(4);
+      for (const r of refused) {
+        expect((r as PromiseRejectedResult).reason).toMatchObject({ code: "TOO_MANY_REQUESTS" });
+      }
+      expect(posts(store)).toBe(1);
+    });
+
+    it("takes the lock per thread and user, so another member is not held up", async () => {
+      const store = slow(60);
+      withAdvisoryLocks(store);
+      await Promise.all([post(store, member, {}), post(store, member2, {})]);
+      expect(posts(store)).toBe(2);
+      const keys = (store.tx.$executeRaw as jest.Mock).mock.calls.map(([, key]) => String(key));
+      expect(keys).toEqual([
+        `board-post:${BOARD_THREAD}:u_member`,
+        `board-post:${BOARD_THREAD}:u_member2`,
+      ]);
     });
 
     it("never refuses when slow mode is off", async () => {
