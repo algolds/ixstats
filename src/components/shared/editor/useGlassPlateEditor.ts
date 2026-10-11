@@ -161,7 +161,8 @@ export function useGlassPlateEditor({
 
     results.push(...userMentionItems(mentionSource, mentionSearch.data, mentionQuery));
 
-    if (sportsMentionSearch.data) {
+    // A disabled query still returns what react-query cached for its key, so a forum menu must not read them.
+    if (!mentionSource && sportsMentionSearch.data) {
       for (const l of sportsMentionSearch.data.leagues || []) {
         results.push({
           type: "league",
@@ -184,7 +185,7 @@ export function useGlassPlateEditor({
       }
     }
 
-    if (wikiSearchForMention.data) {
+    if (!mentionSource && wikiSearchForMention.data) {
       for (const w of wikiSearchForMention.data) {
         results.push({
           type: "wiki",

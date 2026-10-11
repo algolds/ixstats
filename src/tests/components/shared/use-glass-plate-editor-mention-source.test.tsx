@@ -6,6 +6,15 @@ const mockAccountsQuery = jest.fn((_input?: object, _options?: { enabled?: boole
   data: [{ id: "a1", username: "own", displayName: "Own" }],
   isLoading: false,
 }));
+// Cached results from another editor's query stay in react-query's cache and come back even when disabled.
+const mockWikiQuery = jest.fn(() => ({
+  data: [{ title: "Owl", source: "ixwiki" }],
+  isLoading: false,
+}));
+const mockSportsQuery = jest.fn(() => ({
+  data: { leagues: [{ id: "l1", name: "Owl League" }], teams: [] },
+  isLoading: false,
+}));
 jest.mock("platejs/react", () => ({
   createPlateEditor: (...args: object[]) => mockCreateEditor(...args),
   ParagraphPlugin: {},
@@ -25,7 +34,19 @@ jest.mock("~/trpc/react", () => {
       {},
       {
         get: (_target, prop) =>
-          prop === "thinkpages" ? { getMyAccounts: { useQuery: mockAccountsQuery } } : group,
+          prop === "thinkpages"
+            ? { getMyAccounts: { useQuery: mockAccountsQuery } }
+            : prop === "wikios"
+              ? new Proxy(
+                  {},
+                  {
+                    get: (_t, name) =>
+                      name === "search" ? { useQuery: mockWikiQuery } : { useQuery: query },
+                  }
+                )
+              : prop === "sports"
+                ? { searchSportsEntities: { useQuery: mockSportsQuery } }
+                : group,
       }
     ),
   };
@@ -66,5 +87,16 @@ describe("useGlassPlateEditor mentionSource", () => {
   it("reports the source's loading state as the menu's", () => {
     const { result } = setup({ items: [], isLoading: true, onQueryChange: jest.fn() });
     expect(result.current.mentionLoading).toBe(true);
+  });
+
+  it("keeps cached wiki and sports results out of a source's menu, but not out of the default one", () => {
+    const { result } = setup({
+      items: [{ kind: "user", name: "owena", label: "owena", avatarUrl: null }],
+      isLoading: false,
+      onQueryChange: jest.fn(),
+    });
+    expect(result.current.mentionResults.map((r) => r.type)).toEqual(["user"]);
+    const { result: own } = setup();
+    expect(own.current.mentionResults.map((r) => r.type)).toEqual(["user", "league", "wiki"]);
   });
 });
