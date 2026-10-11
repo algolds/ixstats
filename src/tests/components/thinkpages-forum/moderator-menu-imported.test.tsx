@@ -33,6 +33,8 @@ const postBy = (authorUserId: string | null): ForumPost => ({
   id: "p1",
   authorUserId,
   authorPersonaId: null,
+  reactions: {},
+  myReaction: null,
   importedAuthorName: authorUserId ? null : "OldName",
   contentHtml: "<p>x</p>",
   editedAt: null,
