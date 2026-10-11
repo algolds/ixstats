@@ -1,7 +1,10 @@
 "use client";
 /** Live values for the source list's badge keys. Signed out, or still loading, means no badges. */
 import { useMemo, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { api } from "~/trpc/react";
+import { stripBasePath } from "~/lib/base-path";
+import { isForumPath } from "~/lib/thinkpages-forum/links";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import type { NavBadges } from "~/lib/navigation/app-sections";
@@ -10,6 +13,9 @@ import {
   readSeenVersion,
   subscribeSeenVersion,
 } from "~/lib/navigation/seen-version";
+
+const FORUM_POLL_MS = 60_000;
+const ELSEWHERE_POLL_MS = 300_000;
 
 export function useNavBadges(signedIn: boolean): NavBadges {
   const { country } = useUserCountry();
@@ -37,11 +43,14 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     { countryId: countryId ?? "" },
     forCountry
   );
-  // Unread watched threads and new realm board messages, one poll a minute (they change slowly; the bell is the alert).
+  // Unread watched threads and new realm board messages (they change slowly; the bell is the alert): a poll a minute
+  // while the member is in the forum, one every five minutes anywhere else.
+  const inForum = isForumPath(stripBasePath(usePathname() || "/"));
+  const forumPoll = inForum ? FORUM_POLL_MS : ELSEWHERE_POLL_MS;
   const { data: forumCounts } = api.thinkpagesForum.navCounts.useQuery(undefined, {
     enabled: signedIn,
     staleTime: 60_000,
-    refetchInterval: 60_000,
+    refetchInterval: forumPoll,
     refetchOnWindowFocus: false,
     retry: false,
   });

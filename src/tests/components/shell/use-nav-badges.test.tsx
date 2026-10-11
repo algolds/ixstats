@@ -12,6 +12,8 @@ const folderCountsQuery = jest.fn();
 let forumCounts: { watchedUnread: number; realmBoardNew: number } | undefined;
 const forumCountsQuery = jest.fn();
 
+let pathname: string | null = "/dashboard";
+jest.mock("next/navigation", () => ({ usePathname: () => pathname }));
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ country }) }));
 jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", () => ({
   useDiplomacyInboxCount: (_id: string | undefined, enabled: boolean) => {
@@ -60,6 +62,7 @@ import { useNavBadges } from "~/components/shell/use-nav-badges";
 import { markVersionSeen } from "~/lib/navigation/seen-version";
 
 beforeEach(() => {
+  pathname = "/dashboard";
   country = { id: "c1", name: "Caphiria", flag: "flag.png" };
   inboxCount = 3;
   balance = { credits: 1240.7, canClaimDailyBonus: true, loginStreak: 4 };
@@ -173,12 +176,27 @@ describe("useNavBadges", () => {
     expect(result.current["forum-realm-board"]).toBeUndefined();
   });
 
-  it("polls the forum counts every minute for a signed-in member only", () => {
+  it("polls the forum counts every minute under the forum, for a signed-in member only", () => {
+    pathname = "/thinkpages/c/general";
     renderHook(() => useNavBadges(false));
     expect(forumCountsQuery).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
     renderHook(() => useNavBadges(true));
     expect(forumCountsQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({ enabled: true, staleTime: 60_000, refetchInterval: 60_000 })
     );
+  });
+
+  it("polls the forum counts every five minutes elsewhere, and still not when signed out", () => {
+    renderHook(() => useNavBadges(true));
+    expect(forumCountsQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ enabled: true, refetchInterval: 300_000 })
+    );
+    pathname = null;
+    renderHook(() => useNavBadges(true));
+    expect(forumCountsQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ refetchInterval: 300_000 })
+    );
+    renderHook(() => useNavBadges(false));
+    expect(forumCountsQuery).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
   });
 });

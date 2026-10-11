@@ -7,6 +7,11 @@ import { REALM_HUB_KEY } from "./categories";
 
 export const FORUM_HOME = "/thinkpages";
 
+/** Whether a base-path-free pathname is the forum or under it. */
+export function isForumPath(pathname: string): boolean {
+  return pathname === FORUM_HOME || pathname.startsWith(`${FORUM_HOME}/`);
+}
+
 /** Where a category sits: a realm category carries its realm's slug, a sitewide one none. */
 export interface CategoryPlace {
   key: string;

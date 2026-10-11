@@ -6,6 +6,7 @@ import {
   forumHomeHref,
   handleProfileHref,
   hubHref,
+  isForumPath,
   modHref,
   NEW_POSTS_HREF,
   newThreadHref,
@@ -88,5 +89,15 @@ describe("forum links", () => {
     expect(handleProfileHref("kir")).toBe("/id/kir");
     expect(personaProfileHref("Aria_V")).toBe("/dashboard/profile/Aria_V");
     expect(personaProfileHref("a/b")).toBe("/dashboard/profile/a%2Fb");
+  });
+});
+
+describe("isForumPath", () => {
+  it("is true for the forum and anything under it, false for lookalikes", () => {
+    expect(isForumPath("/thinkpages")).toBe(true);
+    expect(isForumPath("/thinkpages/c/general")).toBe(true);
+    expect(isForumPath("/thinkpages-old")).toBe(false);
+    expect(isForumPath("/dashboard")).toBe(false);
+    expect(isForumPath("/")).toBe(false);
   });
 });
