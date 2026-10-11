@@ -8,6 +8,14 @@ import { IxTime } from "~/lib/ixtime";
 export const MAX_ACTIONS_PER_POST = 10;
 
 /**
+ * The ActivityFeed id of a directive's row: fixed, so declaring twice cannot write twice and the row is found from the
+ * intent id alone. Inside the token alphabet (`dir-` plus a 25-character cuid).
+ */
+export function directiveActivityId(intentId: string): string {
+  return `dir-${intentId}`;
+}
+
+/**
  * Where a linked post lives. "xenforo" rows predate the native forum: the XenForo import remaps them to "native"
  * (and its rollback restores them), so the type stays while such rows may exist; nothing creates new ones.
  */

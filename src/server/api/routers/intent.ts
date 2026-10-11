@@ -19,6 +19,10 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { CountryEventSpine } from "~/lib/activity";
 import {
+  declareDirectiveActivity,
+  withdrawDirectiveActivity,
+} from "~/lib/activity/directive-activity";
+import {
   assemblePackages,
   weightAcceptance,
   CATEGORY_TO_BROKER,
@@ -341,6 +345,8 @@ export const intentRouter = createTRPCRouter({
         data: { status: input.status },
       });
 
+      if (input.status === "abandoned") await withdrawDirectiveActivity(ctx.db, input.id);
+
       if (input.status === "completed") {
         try {
           await generateIntentSummationDraft({
@@ -429,7 +435,7 @@ export const intentRouter = createTRPCRouter({
             createdIxTime: now,
           },
         });
-        return { intent, changes: [], summary: intent.summary };
+        return { intent, changes: [], summary: intent.summary, activityId: null };
       }
 
       const pkg = packages.find((p) => p.tier === (input.tier as Tier));
@@ -507,7 +513,21 @@ export const intentRouter = createTRPCRouter({
         });
       }
 
-      return { intent, changes: pkg.changes, applied, summary };
+      // The directive's public row, so a forum post can link it (last: the commit stands whatever happens here).
+      // isPublicDirective is the public-record rule, applied to the stored row.
+      const activityId = isPublicDirective(intent)
+        ? await declareDirectiveActivity(ctx.db, {
+            intentId: intent.id,
+            countryId: input.countryId,
+            countryName: country?.name ?? "A nation",
+            userId: ctx.user?.clerkUserId ?? null,
+            goal: input.goal,
+            tier: input.tier,
+            category,
+          })
+        : null;
+
+      return { intent, changes: pkg.changes, applied, summary, activityId };
     }),
 
   /**

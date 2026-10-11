@@ -5,6 +5,7 @@ import {
   MAX_ACTIONS_PER_POST,
   countActionTokens,
   countTextActionTokens,
+  directiveActivityId,
   mapHtmlRuns,
   parseActionTokens,
   postPermalinkPath,
@@ -245,5 +246,17 @@ describe("mapHtmlRuns", () => {
   it("leaves a side alone when no mapper is given for it", () => {
     expect(mapHtmlRuns("<b>x</b>", { text: () => "y" })).toBe("<b>y</b>");
     expect(mapHtmlRuns("<b>x</b>", { markup: () => "" })).toBe("x");
+  });
+});
+
+describe("directiveActivityId", () => {
+  it("prefixes the intent id", () => {
+    expect(directiveActivityId("ckabc")).toBe("dir-ckabc");
+  });
+
+  it("stays a valid token id for a cuid", () => {
+    const id = directiveActivityId("cm9x2k4f10000abcd1234efgh");
+    expect(id.length).toBeLessThanOrEqual(64);
+    expect(parseActionTokens(`[ixaction=${id}]`)).toEqual([id]);
   });
 });

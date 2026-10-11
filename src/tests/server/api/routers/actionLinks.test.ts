@@ -16,10 +16,19 @@ import { createChain } from "~/server/modules/action-links";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(actionLinksRouter)(
-    createMockRouterContext({ auth: user ? { userId: "owner_1" } : null, user: user as never, db }) as never
+    createMockRouterContext({
+      auth: user ? { userId: "owner_1" } : null,
+      user: user as never,
+      db,
+    }) as never
   );
 
-const owner = { id: "u1", clerkUserId: "owner_1", countryId: "c1", role: { name: "user", level: 100 } };
+const owner = {
+  id: "u1",
+  clerkUserId: "owner_1",
+  countryId: "c1",
+  role: { name: "user", level: 100 },
+};
 const noCountry = { ...owner, countryId: null };
 
 describe("actionLinks router", () => {
@@ -29,11 +38,15 @@ describe("actionLinks router", () => {
   });
 
   it("refuses chain writes from a user without a country", async () => {
-    await expect(caller(noCountry).createChain({ title: "Pact" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller(noCountry).createChain({ title: "Pact" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("maps module refusals to the same TRPC code", async () => {
-    await expect(caller(owner).reviewChain({ storylineId: "s1", approve: true })).rejects.toMatchObject({
+    await expect(
+      caller(owner).reviewChain({ storylineId: "s1", approve: true })
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -46,5 +59,23 @@ describe("actionLinks router", () => {
       expect.objectContaining({ where: { id: { in: ["a1"] }, visibility: "public" } })
     );
     expect(country.findMany).not.toHaveBeenCalled();
+  });
+
+  it("finds a directive's public activity row by its fixed id", async () => {
+    const findFirst = jest.fn(async () => ({ id: "dir-i1" }));
+    await expect(
+      caller(null, { activityFeed: { findFirst } }).directiveActivity({ intentId: "i1" })
+    ).resolves.toEqual({ activityId: "dir-i1" });
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: "dir-i1", visibility: "public" },
+      select: { id: true },
+    });
+  });
+
+  it("returns null for a directive without a public row (a draft, an abandoned one, or one declared before this shipped)", async () => {
+    const findFirst = jest.fn(async () => null);
+    await expect(
+      caller(null, { activityFeed: { findFirst } }).directiveActivity({ intentId: "i2" })
+    ).resolves.toBeNull();
   });
 });

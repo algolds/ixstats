@@ -24,6 +24,11 @@ jest.mock("~/lib/activity", () => ({
   __esModule: true,
   CountryEventSpine: { recordCountryEvent: jest.fn() },
 }));
+jest.mock("~/lib/activity/directive-activity", () => ({
+  __esModule: true,
+  declareDirectiveActivity: jest.fn(async () => null),
+  withdrawDirectiveActivity: jest.fn(async () => undefined),
+}));
 jest.mock("~/lib/intent/resistance", () => ({
   __esModule: true,
   spawnIntentResistance: jest.fn(),

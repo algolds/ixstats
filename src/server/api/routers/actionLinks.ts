@@ -11,6 +11,7 @@ import {
   publicProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
+import { directiveActivityId } from "~/lib/action-links";
 import {
   ActionLinkError,
   addPostToChain,
@@ -25,12 +26,14 @@ import {
 } from "~/server/modules/action-links";
 
 function mapError(error: Error): never {
-  if (error instanceof ActionLinkError) throw new TRPCError({ code: error.code, message: error.message });
+  if (error instanceof ActionLinkError)
+    throw new TRPCError({ code: error.code, message: error.message });
   throw error;
 }
 
 function requireCountry(user: { countryId?: string | null } | null | undefined): string {
-  if (!user?.countryId) throw new TRPCError({ code: "FORBIDDEN", message: "Story chains belong to a nation" });
+  if (!user?.countryId)
+    throw new TRPCError({ code: "FORBIDDEN", message: "Story chains belong to a nation" });
   return user.countryId;
 }
 
@@ -50,7 +53,9 @@ export const actionLinksRouter = createTRPCRouter({
         where: {
           countryId: requireCountry(ctx.user),
           visibility: "public",
-          ...(input.search ? { title: { contains: input.search, mode: "insensitive" as const } } : {}),
+          ...(input.search
+            ? { title: { contains: input.search, mode: "insensitive" as const } }
+            : {}),
         },
         orderBy: { createdAt: "desc" },
         take: 30,
@@ -73,7 +78,21 @@ export const actionLinksRouter = createTRPCRouter({
           })
         : [];
       const byId = new Map(countries.map((c) => [c.id, c]));
-      return rows.map(({ countryId, ...r }) => ({ ...r, country: countryId ? (byId.get(countryId) ?? null) : null }));
+      return rows.map(({ countryId, ...r }) => ({
+        ...r,
+        country: countryId ? (byId.get(countryId) ?? null) : null,
+      }));
+    }),
+
+  /** The public ActivityFeed row of a committed directive, null when it has none (a draft, an abandoned one, an older one). */
+  directiveActivity: publicProcedure
+    .input(z.object({ intentId: id }))
+    .query(async ({ ctx, input }) => {
+      const row = await ctx.db.activityFeed.findFirst({
+        where: { id: directiveActivityId(input.intentId), visibility: "public" },
+        select: { id: true },
+      });
+      return row ? { activityId: row.id } : null;
     }),
 
   linkedPosts: publicProcedure
@@ -84,7 +103,9 @@ export const actionLinksRouter = createTRPCRouter({
 
   createChain: rateLimitedMutationProcedure
     .input(z.object({ title: z.string().trim().min(1).max(200) }))
-    .mutation(({ ctx, input }) => createChain(ctx.db, requireCountry(ctx.user), input.title).catch(mapError)),
+    .mutation(({ ctx, input }) =>
+      createChain(ctx.db, requireCountry(ctx.user), input.title).catch(mapError)
+    ),
 
   addPostToChain: rateLimitedMutationProcedure
     .input(postInput)
@@ -107,7 +128,13 @@ export const actionLinksRouter = createTRPCRouter({
   reviewQueue: protectedProcedure.query(({ ctx }) => reviewQueue(ctx.db, ctx.user)),
 
   reviewChain: rateLimitedMutationProcedure
-    .input(z.object({ storylineId: id, approve: z.boolean(), note: z.string().trim().max(1000).optional() }))
+    .input(
+      z.object({
+        storylineId: id,
+        approve: z.boolean(),
+        note: z.string().trim().max(1000).optional(),
+      })
+    )
     .mutation(({ ctx, input }) =>
       reviewChain(ctx.db, ctx.user, input, (storylineId) =>
         appendChainToWiki(ctx.db, storylineId).then(() => undefined)
