@@ -28,7 +28,9 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
       country: { select: { name: true } },
       actionLinks: {
         orderBy: { chainOrder: "asc" },
-        include: { activity: { select: { title: true, type: true, createdAt: true } } },
+        include: {
+          activity: { select: { title: true, type: true, createdAt: true, visibility: true } },
+        },
       },
     },
   });
@@ -38,12 +40,15 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   const section = `${marker}\n${chainWikiSection({
     title: chain.title,
     approvedIxTime: IxTime.convertToIxTime((chain.reviewedAt ?? new Date()).getTime()),
-    entries: chain.actionLinks.map((l) => ({
-      title: l.activity.title,
-      type: l.activity.type,
-      ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
-      url: postUrl(l.postSource as PostSource, l.postRef),
-    })),
+    // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
+    entries: chain.actionLinks
+      .filter((l) => l.activity.visibility === "public")
+      .map((l) => ({
+        title: l.activity.title,
+        type: l.activity.type,
+        ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
+        url: postUrl(l.postSource as PostSource, l.postRef),
+      })),
   })}`;
   // Head first, then text: findBySlug swallows read errors as null, so a page that exists but cannot be read
   // must abort rather than be overwritten by the section alone. The head ref also makes a concurrent edit conflict.

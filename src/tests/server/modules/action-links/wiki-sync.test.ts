@@ -30,7 +30,7 @@ const CHAIN = {
   reviewedAt: new Date("2026-10-07T00:00:00Z"),
   country: { name: "Aurelia" },
   actionLinks: [
-    { postSource: "native", postRef: "p1", activity: { title: "Signed", type: "diplomatic", createdAt: new Date(0) } },
+    { postSource: "native", postRef: "p1", activity: { title: "Signed", type: "diplomatic", createdAt: new Date(0), visibility: "public" } },
   ],
 };
 
@@ -54,6 +54,20 @@ describe("appendChainToWiki", () => {
     expect(save.wikitext).toContain("https://wiki.test");
     expect(save.wikitext).toContain("/thinkpages/post/p1 Signed]");
     expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
+  });
+
+  it("leaves out an action that is no longer public, such as an abandoned directive", async () => {
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    const withdrawn = {
+      postSource: "native",
+      postRef: "p2",
+      activity: { title: "Secret overhaul", type: "policy", createdAt: new Date(0), visibility: "private" },
+    };
+    await appendChainToWiki(db({ ...CHAIN, actionLinks: [...CHAIN.actionLinks, withdrawn] }) as never, "s1");
+    const { wikitext } = jest.mocked(commitWikitextSave).mock.calls[0]![1];
+    expect(wikitext).toContain("Signed]");
+    expect(wikitext).not.toContain("Secret overhaul");
+    expect(wikitext).not.toContain("/thinkpages/post/p2");
   });
 
   it("creates the page when it does not exist", async () => {

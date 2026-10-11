@@ -44,12 +44,36 @@ describe("addPostToChain", () => {
     const db = chainDb({ status: "open" });
     await addPostToChain(db as never, { countryId: "c1", storylineId: "s1", postSource: "native", postRef: "p1" });
     expect(db.postActionLink.updateMany).toHaveBeenCalledWith({
-      where: { postSource: "native", postRef: "p1", countryId: "c1", OR: [{ storylineId: null }, { storylineId: "s1" }] },
+      where: {
+        postSource: "native",
+        postRef: "p1",
+        countryId: "c1",
+        activity: { visibility: "public" },
+        OR: [{ storylineId: null }, { storylineId: "s1" }],
+      },
       data: { storylineId: "s1", chainOrder: 4 },
     });
     expect(db.postActionLink.count).toHaveBeenCalledWith({
-      where: { postSource: "native", postRef: "p1", countryId: "c1", OR: [{ storylineId: null }, { storylineId: "s1" }] },
+      where: {
+        postSource: "native",
+        postRef: "p1",
+        countryId: "c1",
+        activity: { visibility: "public" },
+        OR: [{ storylineId: null }, { storylineId: "s1" }],
+      },
     });
+  });
+
+  it("counts only links to public actions, so a post whose only link was withdrawn is refused", async () => {
+    const db = chainDb({ status: "open" });
+    db.postActionLink.count.mockResolvedValue(0);
+    await expect(
+      addPostToChain(db as never, { countryId: "c1", storylineId: "s1", postSource: "native", postRef: "p1" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    for (const [args] of db.postActionLink.count.mock.calls as Array<[{ where: object }]>) {
+      expect(args.where).toMatchObject({ activity: { visibility: "public" } });
+    }
+    expect(db.postActionLink.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses a post whose links all sit in another chain and moves nothing", async () => {
