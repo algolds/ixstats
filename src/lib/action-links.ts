@@ -13,6 +13,20 @@ export const MAX_ACTIONS_PER_POST = 10;
  */
 export type PostSource = "native" | "xenforo";
 
+/**
+ * ActivityFeed rows that are not actions a player takes: they stay out of the Attach action picker and never earn the
+ * forum action reward (a token already written for one still renders and verifies). The titles are the fixed titles of
+ * the Onoma and country-link generators (activity/generator.ts); the event types are matched in the JSON `metadata` of
+ * hook-made rows, which `recordActivity` writes as `{"eventType":...}` (activity/hooks.ts).
+ */
+export const NON_ACTION_TITLES = [
+  "Names Generated in Onoma Lab",
+  "Naming Dictionary Shared",
+  "New Nation Founded",
+  "Leadership Established",
+] as const;
+export const NON_ACTION_EVENT_TYPES = ["economic_tier_change", "achievement_unlocked"] as const;
+
 const TOKEN = /\[ixaction=([A-Za-z0-9_-]{1,64})\]/g;
 
 /** Distinct activity ids embedded in `body`, in first-seen order. Callers enforce MAX_ACTIONS_PER_POST. */

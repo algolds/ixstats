@@ -3,8 +3,14 @@
  * (and so their chain membership); removed tokens drop their row. Only the poster's own country's public
  * ActivityFeed entries are linkable: ownership at write time is the verification.
  */
-import type { PrismaClient } from "@prisma/client";
-import { MAX_ACTIONS_PER_POST, parseActionTokens, type PostSource } from "~/lib/action-links";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import {
+  MAX_ACTIONS_PER_POST,
+  NON_ACTION_EVENT_TYPES,
+  NON_ACTION_TITLES,
+  parseActionTokens,
+  type PostSource,
+} from "~/lib/action-links";
 import { ActionLinkError } from "./errors";
 
 export type LinksDb = Pick<PrismaClient, "activityFeed" | "postActionLink" | "$transaction">;
@@ -75,4 +81,21 @@ export function linkedPosts(db: Pick<PrismaClient, "postActionLink">, activityId
     select: { postSource: true, postRef: true },
     orderBy: { createdAt: "asc" },
   });
+}
+
+/**
+ * The nation's public rows that count as actions a player took: not the generators' fixed-title rows and not the
+ * denylisted event types. The reward transaction applies it too, so a denylisted row never pays. The event-type clauses
+ * keep rows with no metadata (a bare NOT would drop them: NULL is neither true nor false), and the title clause is on a
+ * column that is never null.
+ */
+export function pickableActivityWhere(countryId: string): Prisma.ActivityFeedWhereInput {
+  return {
+    countryId,
+    visibility: "public",
+    title: { notIn: [...NON_ACTION_TITLES] },
+    AND: NON_ACTION_EVENT_TYPES.map((eventType) => ({
+      OR: [{ metadata: null }, { NOT: { metadata: { contains: `"eventType":"${eventType}"` } } }],
+    })),
+  };
 }
