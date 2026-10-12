@@ -23,7 +23,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { rollbackMapImport } from "~/server/modules/maps/map-import.history";
-import { applyWorld, runWorldDryRun } from "~/server/modules/maps/world-import";
+import { applyWorld, rebuildRealmRelief, runWorldDryRun } from "~/server/modules/maps/world-import";
 import { admin } from "./map-import-fakes";
 import { CELLS, jobFor, layer, mapRow, relief, seedRealm, stored } from "./world-import-fixtures";
 
@@ -205,7 +205,7 @@ describe("a layer choice: the apply", () => {
     expect(db.country.rows).toHaveLength(4);
   });
 
-  it("is refused for a founder and when the check was for another realm", async () => {
+  it("is refused for a founder, and for a preset world, writing nothing", async () => {
     const db = drawnRealm();
     const before = JSON.stringify(db.mapLayer.rows);
     await expect(
@@ -216,6 +216,11 @@ describe("a layer choice: the apply", () => {
         { runRelief: relief() }
       )
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      applyWorld(db, jobFor(await stored(), chooseApply(["rivers"])), undefined, {
+        runRelief: relief(),
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("fitted") });
     expect(JSON.stringify(db.mapLayer.rows)).toBe(before);
   });
 });
@@ -296,6 +301,21 @@ describe("Ixnay", () => {
     );
     expect(result.slots).toEqual({ created: 0, retired: 0, opened: 0 });
     expect(runRelief).toHaveBeenCalledWith(expect.anything(), "default", expect.anything());
+  });
+
+  it("rebuilds its relief from its bands, whatever world last wrote its elevation", async () => {
+    const db = ixnay();
+    const base = { requestedBy: "admin_1", realmId: "default" };
+    await applyWorld(
+      db,
+      jobFor(await realmMap(), { ...base, ...chooseApply(["altitudes"]) }),
+      undefined,
+      { runRelief: relief() }
+    );
+    db.mapImportJob.rows.push({ id: "j_world", uploadId: await realmMap() });
+    const runRelief = relief();
+    expect((await rebuildRealmRelief(db, "default", { runRelief })).source).toBe("bands");
+    expect(runRelief.mock.calls[0]![2]).toEqual({ bands: true });
   });
 
   it("is refused to a founder who sends a layer choice", async () => {

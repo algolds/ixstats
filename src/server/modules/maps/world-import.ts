@@ -39,6 +39,7 @@ import {
 import { deactivateOtherFeatures } from "~/lib/maps/realm-map-writer";
 import { ATLAS_ENGINE_VERSION } from "~/lib/buildVersion";
 import { withJobLock } from "~/lib/system/job-lock";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { refreshRealmMap } from "./map-import.apply";
 import { pipelineSnapshotScopes, writePipelineLayers } from "./map-import.pipeline";
@@ -491,7 +492,9 @@ export async function rebuildRealmRelief(
   realmId: string,
   deps: WorldImportDeps = {}
 ): Promise<ReliefRebuild> {
-  const source = await reliefSource(db, realmId);
+  // Ixnay's relief is shaded from its own bands: its elevation is drawn, whatever a layer choice once wrote
+  const source: ReliefSource =
+    realmId === DEFAULT_REALM_ID ? { bands: true } : await reliefSource(db, realmId);
   const entry = await (deps.runRelief ?? defaultRelief)(db, realmId, source);
   // The relief is there: the book-keeping that clears the "Rebuild relief" offer must not fail the rebuild
   await markWorldReliefBuilt(db, realmId, entry).catch((error: Error) =>
@@ -507,7 +510,8 @@ export async function rebuildRealmRelief(
 
 /**
  * `rebuildRealmRelief` for `actor` (the World tab's "Rebuild relief"), under the realm's job lease so it never
- * overlaps an import. The same people as the apply, without the claim lock: relief leaves the nations alone.
+ * overlaps an import. The same people as the apply, without the claim lock: relief leaves the nations alone. A site
+ * admin may rebuild Ixnay's too.
  */
 export async function rebuildWorldRelief(
   db: PrismaClient,
@@ -515,7 +519,8 @@ export async function rebuildWorldRelief(
   realmId: string,
   deps: WorldImportDeps = {}
 ): Promise<ReliefRebuild> {
-  await assertWorldImportAllowed(db, actor, realmId, { claims: false });
+  // Relief leaves the nations alone, so a site admin may rebuild Ixnay's like any realm's
+  await assertWorldImportAllowed(db, actor, realmId, { claims: false, ixnay: true });
   const outcome = await withJobLock(
     db,
     mapImportLockName(realmId),

@@ -245,12 +245,29 @@ describe("geoEditor.mapImport.rebuildRelief", () => {
     expect(buildRealmRelief).toHaveBeenCalledWith(expect.anything(), "r1", { bands: true });
   });
 
-  it("keeps other players out, and refuses Ixnay", async () => {
+  it("keeps other players out", async () => {
     await expect(caller(stranger).api.rebuildRelief({ realmId: "r1" })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+    expect(buildRealmRelief).not.toHaveBeenCalled();
+  });
+
+  it("builds Ixnay's relief from its bands for a site admin, even under a pending claim", async () => {
+    const { api, db } = caller(admin, { id: "default", slug: "ixnay" });
+    db.realmClaim.rows.push({ id: "q", realmId: "default", countryId: null, status: "pending" });
+    expect(await api.rebuildRelief({ realmId: "default" })).toMatchObject({
+      source: "bands",
+      version: "v9",
+    });
+    expect(buildRealmRelief).toHaveBeenCalledWith(expect.anything(), "default", { bands: true });
+  });
+
+  it("still keeps founders and officers off Ixnay, and refuses an archived realm", async () => {
     await expect(
-      caller(admin, { id: "default", slug: "ixnay" }).api.rebuildRelief({ realmId: "default" })
+      caller(founder, { id: "default", slug: "ixnay" }).api.rebuildRelief({ realmId: "default" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      caller(founder, { status: "archived" }).api.rebuildRelief({ realmId: "r1" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(buildRealmRelief).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { isIxnaySlug } from "~/lib/realms/realm-ids";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { MapImportError } from "~/server/modules/maps/map-import.realm";
 import { measureRealm } from "~/server/modules/maps/realm-calibration";
@@ -45,7 +46,8 @@ export const atlasStudioRouter = createTRPCRouter({
         name: z.string().trim().min(1).max(100),
         slug: z
           .string()
-          .regex(REALM_SLUG_PATTERN, "2-40 lower-case letters, digits or hyphens (not mine)"),
+          .regex(REALM_SLUG_PATTERN, "2-40 lower-case letters, digits or hyphens (not mine)")
+          .refine((slug) => !isIxnaySlug(slug), "That slug names Ixnay"),
       })
     )
     .mutation(({ ctx, input }) =>

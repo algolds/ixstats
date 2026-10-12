@@ -61,7 +61,7 @@ describe("atlas.studio.createRealm", () => {
     );
   });
 
-  it.each(["Eurth", "e", "mine", "a".repeat(41), "eu rth"])(
+  it.each(["Eurth", "e", "mine", "ixnay", "ixworld", "default", "a".repeat(41), "eu rth"])(
     "rejects the slug %p without touching the database",
     async (slug) => {
       const { api, create } = caller(admin);
@@ -83,7 +83,7 @@ describe("atlas.studio.createRealm", () => {
     await expect(
       caller(admin, jest.fn().mockRejectedValue(taken)).api.createRealm({
         name: "Copy",
-        slug: "ixnay",
+        slug: "taken-slug",
       })
     ).rejects.toMatchObject({ code: "CONFLICT", message: "That slug is taken" });
     const { api, create } = caller(founder);

@@ -46,14 +46,19 @@ export async function assertWorldImportAllowed(
   db: Pick<PrismaClient, "realm" | "realmClaim">,
   actor: RealmActor,
   realmId: string,
-  options: { claims?: boolean; layers?: readonly PhysicalLayer[] | null } = {}
+  options: {
+    claims?: boolean;
+    layers?: readonly PhysicalLayer[] | null;
+    /** Ixnay is allowed to a site admin (work that leaves its borders and nations alone: its relief) */
+    ixnay?: boolean;
+  } = {}
 ): Promise<ImportRealm> {
   const choosing = !!options.layers;
   if (choosing && !isSiteAdmin(actor)) {
     throw new MapImportError("FORBIDDEN", "Only site admins can choose the layers to write");
   }
   const realm = await loadImportRealm(db, actor, realmId);
-  if (realm.id === DEFAULT_REALM_ID && !choosing) {
+  if (realm.id === DEFAULT_REALM_ID && !choosing && !(options.ixnay && isSiteAdmin(actor))) {
     throw new MapImportError(
       "BAD_REQUEST",
       "Ixnay's map is hand drawn and is never generated; only chosen physical layers can be written"

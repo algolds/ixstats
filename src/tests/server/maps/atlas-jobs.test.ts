@@ -313,6 +313,41 @@ describe("retryAtlasJob", () => {
     expect(result.note).toMatch(/fails if the map has changed/i);
   });
 
+  it("retries an Ixnay layer choice as a layer choice, under a pending claim", async () => {
+    const db = world();
+    db.realm.rows.push({
+      id: "default",
+      slug: "ixnay",
+      name: "Ixnay",
+      ownerId: "system",
+      status: "active",
+    });
+    db.realmClaim.rows.push({ id: "q", realmId: "default", countryId: null, status: "pending" });
+    const check = seed(db, {
+      realmId: "default",
+      kind: "world",
+      status: "failed",
+      options: { layers: ["rivers", "altitudes"], fittedMapVersion: 2 },
+    });
+    const failed = seed(db, {
+      realmId: "default",
+      kind: "world",
+      dryRun: false,
+      status: "failed",
+      parentJobId: check.id,
+      options: { layers: ["rivers", "altitudes"] },
+    });
+    for (const from of [check, failed]) {
+      const result = await retryAtlasJob(db, admin, from.id, deps);
+      const created = db.mapImportJob.rows.find((r: any) => r.id === result.jobId);
+      expect(created).toMatchObject({ realmId: "default", kind: "world", dryRun: true });
+      expect(created.options).toMatchObject({
+        layers: ["rivers", "altitudes"],
+        fittedMapVersion: 2,
+      });
+    }
+  });
+
   it("starts a failed world check again as a check", async () => {
     const db = world();
     const failed = seed(db, { kind: "world", status: "failed" });

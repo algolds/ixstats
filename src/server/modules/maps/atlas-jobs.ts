@@ -24,7 +24,7 @@ import { loadImportRealm, MapImportError } from "./map-import.realm";
 import { mapImportDir, mapUploadSize } from "./map-import.storage";
 import { startMapPipelineRun, cancelMapPipelineRun } from "./realm-map-pipeline.config";
 import { MAP_PIPELINE_KIND } from "./realm-map-pipeline.job";
-import { fittedMapVersionOf } from "./world-import.check";
+import { fittedMapVersionOf, layersOf } from "./world-import.check";
 import { assertWorldImportAllowed } from "./world-import.guards";
 
 export const ATLAS_JOB_KINDS = ["png", "svg", "geojson", "world", MAP_PIPELINE_KIND] as const;
@@ -369,7 +369,9 @@ export async function retryAtlasJob(
       : job;
   if (!source)
     throw new MapImportError("BAD_REQUEST", "The check this world was applied from is gone");
-  if (job.kind === "world") await assertWorldImportAllowed(db, actor, job.realmId);
+  if (job.kind === "world") {
+    await assertWorldImportAllowed(db, actor, job.realmId, { layers: layersOf(source.options) });
+  }
   const fitted = fittedMapVersionOf(source.options);
   const newId = await startMapImport(
     {

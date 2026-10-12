@@ -293,6 +293,28 @@ async function realmLayers(db: PrismaClient, realmId: string): Promise<WorldBund
 }
 
 /**
+ * The layers the world leaves alone. A layer choice: every layer not ticked, whatever the realm has. A world fitted to
+ * the realm's map: its land and every layer the realm has (`have`). A preset world: none.
+ */
+function layersLeft(
+  source: WorldBundle["source"],
+  have: readonly WorldBundleLayerName[],
+  chosen: readonly PhysicalLayer[] | null
+): { kept: WorldBundleLayerName[]; left: Set<WorldBundleLayerName> } {
+  if (chosen) {
+    const left = WORLD_BUNDLE_LAYERS.filter(
+      (layer) => !(chosen as readonly string[]).includes(layer)
+    );
+    return { kept: have.filter((layer) => left.includes(layer)), left: new Set(left) };
+  }
+  const kept = [...have];
+  return {
+    kept,
+    left: new Set<WorldBundleLayerName>(source === "realm-map" ? ["background", ...kept] : []),
+  };
+}
+
+/**
  * Check a bundle against the realm and prepare it to write: the dry run and the apply both run this, so the apply
  * never relies on a check made earlier. Throws a MapImportError listing every problem found.
  */
@@ -316,16 +338,8 @@ export async function prepareWorld(
 
   // A world fitted to the realm's map writes the physical layers the realm has none of, and never its land;
   // a layer choice writes exactly the ticked layers instead
-  const ticked = new Set<WorldBundleLayerName>(chosen);
   const have = bundle.source === "realm-map" ? await realmLayers(db, realm.id) : [];
-  const kept = chosen ? have.filter((layer) => !ticked.has(layer)) : have;
-  const left = new Set<WorldBundleLayerName>(
-    chosen
-      ? WORLD_BUNDLE_LAYERS.filter((layer) => !ticked.has(layer))
-      : bundle.source === "realm-map"
-        ? ["background", ...kept]
-        : []
-  );
+  const { kept, left } = layersLeft(bundle.source, have, chosen);
   const layers: Record<string, FeatureCollection> = {};
   for (const layer of WORLD_BUNDLE_LAYERS) {
     const collection = bundle.layers[layer];

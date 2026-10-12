@@ -389,11 +389,13 @@ describe("rebuildWorldRelief", () => {
     expect(await rebuildWorldRelief(db, founder, "r1", { runRelief })).toBeTruthy();
   });
 
-  it("is refused for Ixnay and archived realms, and while another import of the realm runs", async () => {
+  it("builds Ixnay's relief for a site admin, from its bands", async () => {
     const ixnay = seedRealm({ id: "default", slug: "ixnay" });
-    await expect(rebuildWorldRelief(ixnay, admin, "default", { runRelief })).rejects.toThrow(
-      /Ixnay/
-    );
+    const out = await rebuildWorldRelief(ixnay, admin, "default", { runRelief });
+    expect(out.source).toBe("bands");
+  });
+
+  it("is refused for archived realms, and while another import of the realm runs", async () => {
     const archived = seedRealm({ status: "archived" });
     await expect(rebuildWorldRelief(archived, founder, "r1", { runRelief })).rejects.toMatchObject({
       code: "BAD_REQUEST",
