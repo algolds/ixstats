@@ -21,7 +21,10 @@ import {
   withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
-import { seedRealmCategories } from "~/server/modules/thinkpages-forum";
+import {
+  createRealmWithCategories,
+  RealmCreateError,
+} from "~/server/modules/realms/realms.create-from-world";
 import { notifyClaimRejected } from "~/server/modules/realms/realms.notices";
 import {
   resolveInviterUserId,
@@ -29,7 +32,6 @@ import {
 } from "~/server/modules/identity/identity.invites";
 import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { parsePrismaError } from "~/lib/prisma-error";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
@@ -123,8 +125,8 @@ function claimError(error: Error): never {
 }
 
 function slugTaken(error: Error): never {
-  if (parsePrismaError(error)?.type === "unique_constraint")
-    throw new TRPCError({ code: "CONFLICT", message: "That slug is taken" });
+  if (error instanceof RealmCreateError)
+    throw new TRPCError({ code: error.code, message: error.message });
   throw error;
 }
 
@@ -304,17 +306,12 @@ export const realmsRouter = createTRPCRouter({
         ownerId: z.string().min(1).optional(),
       })
     )
-    // The realm and its forum categories commit together (N3).
     .mutation(({ ctx, input }) =>
-      ctx.db
-        .$transaction(async (tx) => {
-          const realm = await tx.realm.create({
-            data: { ...input, ownerId: input.ownerId ?? "system", status: "active" },
-          });
-          await seedRealmCategories(tx, realm);
-          return realm;
-        })
-        .catch(slugTaken)
+      createRealmWithCategories(ctx.db, {
+        ...input,
+        ownerId: input.ownerId ?? "system",
+        status: "active",
+      }).catch(slugTaken)
     ),
 
   /** Admin: update any realm (not restricted to owner) */
