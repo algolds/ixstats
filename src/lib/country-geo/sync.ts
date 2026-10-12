@@ -15,25 +15,15 @@ interface LinkedRegion {
 }
 
 /**
- * $1 the nation, $2 its realm. One outline for a nation drawn as several regions: their union in PostGIS (touching
- * regions merge, so no inner border is left), as a Polygon when it is one. A region whose planar width is over 180
- * degrees crosses +-180: its geom_postgis is a planar sliver, so it stays out of the union and comes back as its
- * stored GeoJSON (`wide`) to sit beside it.
+ * $1 the nation, $2 its realm. One outline for a nation drawn as several regions: atlas_country_union
+ * (migration 20261021120000_atlas_r0) returns their union in PostGIS (touching regions merge, so no inner border is
+ * left), as a Polygon when it is one, and under `wide` the stored GeoJSON of any region drawn across +-180, whose
+ * geom_postgis is a planar sliver, to sit beside it. It catches its own failures (in SQL, so a caller's
+ * transaction is never aborted) and returns NULL: the cached outline stays.
  */
-const REGION_UNION_SQL = `WITH regions AS (
-    SELECT geom_postgis AS g, geometry,
-           ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180 AS wide
-      FROM map_layers
-     WHERE "layerType" = 'political' AND "isActive" = true AND "countryId" = $1 AND "worldId" = $2
-       AND geom_postgis IS NOT NULL
-  ), merged AS (
-    SELECT ST_CollectionExtract(ST_Union(g), 3) AS g FROM regions WHERE NOT wide
-  )
-  SELECT (SELECT ST_AsGeoJSON(CASE WHEN ST_NumGeometries(g) = 1 THEN ST_GeometryN(g, 1) ELSE g END)::json
-            FROM merged WHERE g IS NOT NULL AND NOT ST_IsEmpty(g)) AS geometry,
-         (SELECT json_agg(geometry) FROM regions WHERE wide) AS wide`;
+const REGION_UNION_SQL = "SELECT atlas_country_union($1, $2) AS result";
 
-interface RegionUnionRow {
+interface RegionUnion {
   geometry: RegionGeometry | null;
   wide: RegionGeometry[] | null;
 }
@@ -46,15 +36,21 @@ async function unionLinkedRegions(
   countryId: string,
   realmId: string
 ): Promise<RegionGeometry | null> {
-  let row: RegionUnionRow | undefined;
+  let union: RegionUnion | null | undefined;
   try {
-    [row] = await db.$queryRawUnsafe<RegionUnionRow[]>(REGION_UNION_SQL, countryId, realmId);
+    const [row] = await db.$queryRawUnsafe<Array<{ result: RegionUnion | null }>>(
+      REGION_UNION_SQL,
+      countryId,
+      realmId
+    );
+    union = row?.result;
   } catch (error) {
-    // A geometry PostGIS cannot union must not fail the save that stored it: the cached outline stays
+    // Only a database without the function lands here (a failed union is caught in SQL): the cached outline
+    // stays. On a transaction client this statement error would already have aborted the transaction.
     console.warn(`[country-geo] region union failed for ${countryId}, keeping its outline:`, error);
     return null;
   }
-  const parts = [row?.geometry, ...(row?.wide ?? [])].filter((g): g is RegionGeometry => !!g);
+  const parts = [union?.geometry, ...(union?.wide ?? [])].filter((g): g is RegionGeometry => !!g);
   if (parts.length <= 1) return parts[0] ?? null;
   return { type: "MultiPolygon", coordinates: parts.flatMap(polygonsOf) };
 }

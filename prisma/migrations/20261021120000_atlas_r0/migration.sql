@@ -36,3 +36,41 @@ CREATE TRIGGER country_geom_sync
 -- Backfill countries written before the trigger existed. Re-assigning the source column fires the trigger, which
 -- skips an invalid geometry with a warning instead of failing the whole UPDATE.
 UPDATE "Country" SET geometry = geometry WHERE geometry IS NOT NULL AND geom_postgis IS NULL;
+
+-- A nation's outline from its regions (syncCountryGeometryFromMapLayer): the union of the country's active political
+-- features in the realm, plus the stored GeoJSON of any region whose planar width is over 180 degrees (it crosses
+-- +-180, so its geom_postgis is a planar sliver and stays out of the union). Returns
+-- {"geometry": <GeoJSON or null>, "wide": <array of GeoJSON or null>}.
+-- A failure is caught here, in an EXCEPTION block, which is a subtransaction: the caller's transaction is never
+-- aborted (a failed statement in a Prisma `$transaction` would fail every statement after it). It raises a WARNING
+-- and returns NULL, which the caller reads as "keep the cached outline".
+CREATE OR REPLACE FUNCTION atlas_country_union(p_country_id text, p_realm_id text)
+RETURNS jsonb AS $$
+DECLARE
+  merged geometry;
+  wide jsonb;
+BEGIN
+  SELECT ST_CollectionExtract(ST_Union(geom_postgis), 3) INTO merged
+    FROM map_layers
+   WHERE "layerType" = 'political' AND "isActive" = true AND "countryId" = p_country_id
+     AND "worldId" = p_realm_id AND geom_postgis IS NOT NULL
+     AND NOT (ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180);
+  SELECT jsonb_agg(geometry) INTO wide
+    FROM map_layers
+   WHERE "layerType" = 'political' AND "isActive" = true AND "countryId" = p_country_id
+     AND "worldId" = p_realm_id AND geom_postgis IS NOT NULL
+     AND ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180;
+  RETURN jsonb_build_object(
+    'geometry',
+    CASE
+      WHEN merged IS NULL OR ST_IsEmpty(merged) THEN NULL
+      WHEN ST_NumGeometries(merged) = 1 THEN ST_AsGeoJSON(ST_GeometryN(merged, 1))::jsonb
+      ELSE ST_AsGeoJSON(merged)::jsonb
+    END,
+    'wide', wide
+  );
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'atlas_country_union(%, %) failed: %', p_country_id, p_realm_id, SQLERRM;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;

@@ -47,6 +47,27 @@ describe("atlas r0 migration", () => {
     expect(statements).toContain("EXCEPTION WHEN OTHERS THEN NEW.geom_postgis = NULL;");
   });
 
+  it("defines the nation outline function, which catches its own failures in SQL", () => {
+    expect(statements).toContain(
+      "CREATE OR REPLACE FUNCTION atlas_country_union(p_country_id text, p_realm_id text) RETURNS jsonb"
+    );
+    const fn = statements.slice(
+      statements.indexOf("CREATE OR REPLACE FUNCTION atlas_country_union")
+    );
+    // the union of the country's active political regions in the realm, without the ones drawn across +-180
+    expect(fn).toContain("ST_Union(geom_postgis)");
+    expect(fn).toContain(
+      `"layerType" = 'political' AND "isActive" = true AND "countryId" = p_country_id`
+    );
+    expect(fn).toContain(`"worldId" = p_realm_id`);
+    expect(fn).toContain("NOT (ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180)");
+    // an EXCEPTION block is a subtransaction: a failure warns and returns NULL, never aborting the caller's transaction
+    expect(fn).toMatch(
+      /EXCEPTION WHEN OTHERS THEN RAISE WARNING '[^']*', p_country_id, p_realm_id, SQLERRM; RETURN NULL; END;/
+    );
+    expect(fn).toContain("LANGUAGE plpgsql");
+  });
+
   it("backfills only the rows still missing geom_postgis", () => {
     const backfill = statements.match(/UPDATE "Country" SET [^;]*;/g) ?? [];
     expect(backfill).toHaveLength(1);

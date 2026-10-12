@@ -1002,7 +1002,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
               type: "MultiPolygon",
               coordinates: parts.map((r) => (r.geometry as any).coordinates),
             };
-      return Promise.resolve([{ geometry, wide: null }]);
+      return Promise.resolve([{ result: { geometry, wide: null } }]);
     });
 
   /** The map is reachable only through the approving transaction, whose client writes its own country rows. */
