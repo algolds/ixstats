@@ -1,4 +1,4 @@
-import { generateWorld } from "~/lib/worldgen/engine";
+import { generateWorld } from "~/lib/worldgen/v2";
 
 describe("Heightmap & Topographic Elevation Coverage", () => {
   it("guarantees 100% topographic elevation multi-zone gradient across random seeds", () => {

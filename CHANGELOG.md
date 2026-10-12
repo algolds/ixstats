@@ -1867,7 +1867,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### Added
 
 - **Unified Physical Geography Engine (UPG v2 & Atlas Engine v4)**:
-  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](src/lib/worldgen/v2/config.ts) and [page.tsx](src/app/labs/map-pipeline/page.tsx). Removed resolution range sliders from `MapPipelineControls.tsx` and added a `"100K RBF Spline Vector Engine"` telemetry badge.
+  - **Fixed 100,000-Cell Spatial Mesh**: Locked default mesh resolution to a high-density 100,000-cell Voronoi spatial mesh (`WorldGraph`, 5 Lloyd relaxation passes) in [config.ts](src/lib/worldgen/v2/config.ts) and `page.tsx`. Removed resolution range sliders from `MapPipelineControls.tsx` and added a `"100K RBF Spline Vector Engine"` telemetry badge.
   - **Option A 3-Stage IxWorld Vector Synthesis Engine**:
     - **Douglas-Peucker Decimation (`simplifyRing`)**: Integrated `simplifyRing` in [chaikin.ts](src/lib/worldgen/v2/helpers/chaikin.ts) to strip high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
     - **Control Point Catmull-Rom Subdivision (`catmullRomSmooth`)**: Implemented 3-pass Catmull-Rom spline subdivision ($\tau = 0.5$) through structural control points for continuous, silk-smooth Bezier arcs at all zoom levels without scalloped wave bumps.

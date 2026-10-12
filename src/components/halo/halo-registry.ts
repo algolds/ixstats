@@ -370,14 +370,6 @@ export const CORE_COMMANDS: CommandEntry[] = [
     description: "Design flags and symbols, export as SVG",
     keywords: ["vexel", "flags", "emblem", "heraldry", "designer", "banner"],
   },
-  {
-    name: "Map mesh pipeline",
-    path: "/labs/map-pipeline",
-    icon: Globe,
-    category: "Labs",
-    description: "Generate Voronoi terrain meshes and inspect spline topology",
-    keywords: ["mesh", "voronoi", "pipeline", "terrain", "splines", "map generator"],
-  },
 
   // 8. System & Settings
   {

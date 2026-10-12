@@ -1,6 +1,6 @@
 ---
 title: Labs: Onoma, Vexel, MyLeague & More
-description: The experimental tools - language and name generation, sports leagues and clubs, flags and map generation.
+description: The experimental tools - language and name generation, sports leagues and clubs, and flags.
 badge: Labs
 nextHref: /help/labs/myleague-myclub
 nextLabel: MyLeague & MyClub
@@ -34,7 +34,3 @@ The full guide is [MyLeague & MyClub](/help/labs/myleague-myclub).
 ## Vexel (flags and heraldry)
 
 [Vexel](/labs/vexel), listed under Labs in the sidebar, is a flag and coat-of-arms designer with a generator and a registry of designs. Attaching a Vexel design to your country doesn't work yet, so export your design and add it in the [Country Editor](/help/mycountry/editor) instead. The full guide is [Vexel](/help/labs/vexel).
-
-## Map pipeline
-
-[/labs/map-pipeline](/labs/map-pipeline) is an experimental world-map generator (terrain, climate, rivers). Results aren't saved and don't create nations, and the regional profiles and resources it shows are labelled as sample data; it's a preview of future realm generation.
