@@ -125,33 +125,49 @@ export function deriveGeographicResources(src: ResourceSourceData): DerivedResou
   return resources;
 }
 
-const COUNTRY_CTE = `
-  WITH c AS (
-    SELECT id, "realmId",
-      ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) AS geom
-    FROM "Country"
-    WHERE id = $1 AND geometry IS NOT NULL
-    LIMIT 1
-  )`;
-
-/** Realm layer features of one type clipped to the country, largest first. */
+/**
+ * $1 country: the realm's features of one layer type clipped to the country's border (`geom_postgis`, indexed),
+ * largest first, each with a point inside the clipped part. The border is cut into pieces of at most 256 vertices
+ * and each feature into pieces of at most 2048 (ST_Subdivide) so every overlay is a small one, and the `&&` test
+ * lets the GiST index prune the features first; a piece inside a border piece counts whole. `measure` reads the
+ * clipped pieces as `g`.
+ */
 function clippedLayerSql(layerType: "rivers" | "lakes" | "climate", measure: string) {
-  return `${COUNTRY_CTE}
-    SELECT ml."displayName" AS name, ml.properties->>'fill' AS fill,
-      ${measure} AS size,
-      ST_X(ST_PointOnSurface(x.g)) AS lng, ST_Y(ST_PointOnSurface(x.g)) AS lat
-    FROM c
-    JOIN map_layers ml ON ml."layerType" = '${layerType}' AND ml."isActive" = true
-      AND ml.geom_postgis IS NOT NULL AND ml."worldId" = c."realmId"
-      AND ST_Intersects(ml.geom_postgis, c.geom)
-    CROSS JOIN LATERAL (SELECT ST_Intersection(ST_MakeValid(ml.geom_postgis), c.geom) AS g) x
-    WHERE NOT ST_IsEmpty(x.g)
-    ORDER BY size DESC
-    LIMIT 50`;
+  return `
+    WITH c AS MATERIALIZED (
+      SELECT "realmId", geom_postgis FROM "Country" WHERE id = $1 AND geom_postgis IS NOT NULL
+    ),
+    parts AS MATERIALIZED (SELECT ST_Subdivide(c.geom_postgis, 256) AS g FROM c),
+    feat AS MATERIALIZED (
+      SELECT ml.id, ml."displayName" AS name, ml.properties->>'fill' AS fill,
+             ST_Subdivide(ml.geom_postgis, 2048) AS g
+        FROM c JOIN map_layers ml ON ml."layerType" = '${layerType}' AND ml."isActive" = true
+         AND ml."worldId" = c."realmId" AND ml.geom_postgis && c.geom_postgis
+    ),
+    clip AS (
+      SELECT feat.id, feat.name, feat.fill,
+             ST_Collect(CASE WHEN ST_CoveredBy(feat.g, parts.g) THEN feat.g
+                             ELSE ST_Intersection(feat.g, parts.g) END) AS g
+        FROM feat JOIN parts ON feat.g && parts.g AND ST_Intersects(feat.g, parts.g)
+       GROUP BY feat.id, feat.name, feat.fill
+    ),
+    largest AS (
+      SELECT name, fill, ${measure} AS size, g FROM clip WHERE NOT ST_IsEmpty(g)
+       ORDER BY size DESC LIMIT 50
+    )
+    SELECT name, fill, size,
+           ST_X(ST_PointOnSurface(ST_UnaryUnion(g))) AS lng, ST_Y(ST_PointOnSurface(ST_UnaryUnion(g))) AS lat
+      FROM largest ORDER BY size DESC`;
 }
 
 /** The border not shared with a neighbouring political feature (1 km tolerance), as one point. */
-const COAST_POINT_SQL = `${COUNTRY_CTE},
+const COAST_POINT_SQL = `
+  WITH c AS (
+    SELECT id, "realmId", geom_postgis AS geom
+    FROM "Country"
+    WHERE id = $1 AND geom_postgis IS NOT NULL
+    LIMIT 1
+  ),
   n AS (
     SELECT ST_Union(ST_MakeValid(ml.geom_postgis)) AS g
     FROM c
@@ -189,9 +205,9 @@ export async function loadResourceSourceData(
 
   const query = (sql: string) => db.$queryRawUnsafe<Row[]>(sql, countryId);
   const [rivers, lakes, climate, coast] = await Promise.all([
-    query(clippedLayerSql("rivers", "ST_Length(x.g::geography) / 1000")),
-    query(clippedLayerSql("lakes", "ST_Area(x.g::geography) / 1e6")),
-    query(clippedLayerSql("climate", "ST_Area(x.g::geography) / 1e6")),
+    query(clippedLayerSql("rivers", "ST_Length(g::geography) / 1000")),
+    query(clippedLayerSql("lakes", "ST_Area(g::geography) / 1e6")),
+    query(clippedLayerSql("climate", "ST_Area(g::geography) / 1e6")),
     query(COAST_POINT_SQL),
   ]);
 

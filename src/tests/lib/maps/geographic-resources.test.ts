@@ -150,6 +150,22 @@ describe("refreshGeographicResources", () => {
     for (const call of db.$queryRawUnsafe.mock.calls) expect(call[1]).toBe("c1");
   });
 
+  it("clips on the indexed geom_postgis columns, never parsing GeoJSON in SQL", async () => {
+    const db = makeDb({ type: "Polygon", coordinates: [] });
+    await refreshGeographicResources(db as never, "c1");
+
+    const queries = db.$queryRawUnsafe.mock.calls.map((call) => call[0]);
+    expect(queries).toHaveLength(4);
+    for (const sql of queries) {
+      expect(sql).toContain("geom_postgis");
+      expect(sql).not.toContain("ST_GeomFromGeoJSON(");
+    }
+    for (const sql of queries.filter((q) => !q.includes("'political'"))) {
+      expect(sql).toContain("ST_Subdivide(c.geom_postgis, 256)");
+      expect(sql).toContain("&&");
+    }
+  });
+
   it("clears the rows of a country without geometry", async () => {
     const db = makeDb(null);
     expect(await refreshGeographicResources(db as never, "c1")).toBe(0);

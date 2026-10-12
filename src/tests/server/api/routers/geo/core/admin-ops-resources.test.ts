@@ -1,6 +1,6 @@
 /** @jest-environment node */
-// AT-9: the admin geo-profile recalculation also rewrites each country's map-derived
-// GeographicResource rows; a resource failure is reported without losing the profile.
+// Atlas R0 task 2: the admin geo-profile recalculation only queues the work (the `geo-profiles` cron job does
+// it, see profile-job.test.ts), so the mutation returns at once with the number of countries queued.
 // `jest` is the ambient global so the hoisted jest.mock() factories can call jest.fn().
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/country-geo", () => ({ syncCountryGeometryFromMapLayer: jest.fn() }));
@@ -12,6 +12,7 @@ jest.mock("~/lib/maps/geographic-resources", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { adminOpsProcedures } from "~/server/api/routers/geo/core/admin-ops";
+import { GEO_PROFILE_STALE_AT } from "~/server/api/routers/geo/core/profile-job";
 import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -29,21 +30,15 @@ function makeDb() {
     },
     auditLog: { create: jest.fn(async () => ({})) },
     country: {
-      findMany: jest.fn(async () => [
-        { id: "c1", name: "Aurelia" },
-        { id: "c2", name: "Borealis" },
-      ]),
-      findUnique: jest.fn(async () => ({
-        coastlineKm: 100,
-        landArea: 50_000,
-        areaSqMi: null,
-        geometry: { type: "Polygon", coordinates: [] },
-        boundingBox: [0, 0, 1, 1],
-        realmId: "default",
-      })),
+      count: jest.fn(async (_args: { where: object }) => 2),
+      findMany: jest.fn(async () => []),
+      findUnique: jest.fn(async () => null),
     },
     mapLayer: { findMany: jest.fn(async () => []) },
-    countryGeoProfile: { upsert: jest.fn(async () => ({})) },
+    countryGeoProfile: {
+      updateMany: jest.fn(async () => ({ count: 2 })),
+      upsert: jest.fn(async () => ({})),
+    },
   };
 }
 
@@ -61,34 +56,36 @@ const caller = (db: ReturnType<typeof makeDb>, role = "admin") =>
     }) as never
   );
 
-describe("geoCore.recalculateGeoProfiles writes geographic resources (AT-9)", () => {
+describe("geoCore.recalculateGeoProfiles queues the work (Atlas R0)", () => {
   beforeEach(() => {
     refresh.mockReset();
   });
 
-  it("refreshes each country's resources after its profile and totals them", async () => {
-    refresh.mockResolvedValueOnce(3).mockResolvedValueOnce(1);
+  it("marks the profiles stale and returns the count without computing anything", async () => {
     const db = makeDb();
     const res = await caller(db).recalculateGeoProfiles();
 
-    expect(res).toMatchObject({ processed: 2, resourcesWritten: 4, failed: 0, total: 2 });
-    expect(refresh.mock.calls.map((c) => c[1])).toEqual(["c1", "c2"]);
-    expect(db.countryGeoProfile.upsert).toHaveBeenCalledTimes(2);
+    expect(res).toEqual({ queued: 2 });
+    expect(db.countryGeoProfile.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { lastCalculatedAt: GEO_PROFILE_STALE_AT } })
+    );
+    expect(db.countryGeoProfile.upsert).not.toHaveBeenCalled();
+    expect(db.country.findUnique).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("reports a resource failure but keeps the profile", async () => {
-    refresh.mockRejectedValueOnce(new Error("postgis down")).mockResolvedValueOnce(2);
+  it("queues a single country", async () => {
     const db = makeDb();
-    const res = await caller(db).recalculateGeoProfiles();
+    db.country.count.mockResolvedValue(1);
+    const res = await caller(db).recalculateGeoProfiles({ countryId: "c1" });
 
-    expect(res.processed).toBe(2);
-    expect(res.resourcesWritten).toBe(2);
-    expect(res.errors).toEqual(["Aurelia (resources): postgis down"]);
+    expect(res).toEqual({ queued: 1 });
+    expect(db.country.count.mock.calls[0]?.[0].where).toMatchObject({ id: "c1" });
   });
 
   it("is admin only", async () => {
     const db = makeDb();
     await expect(caller(db, "user").recalculateGeoProfiles()).rejects.toThrow(/Admin/);
-    expect(refresh).not.toHaveBeenCalled();
+    expect(db.countryGeoProfile.updateMany).not.toHaveBeenCalled();
   });
 });

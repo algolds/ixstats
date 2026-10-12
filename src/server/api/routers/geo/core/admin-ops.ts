@@ -4,89 +4,8 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import type { PrismaClient } from "@prisma/client";
-import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
-import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
-import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
-import {
-  buildClimateZones,
-  buildElevationZones,
-  countryZoneFills,
-  type Extent,
-} from "./profile-zones";
+import { queueGeoProfileRecalculation } from "./profile-job";
 import { requirePoliticalLayer } from "./shared";
-
-/** Computes and stores one country's geo profile; throws "no geometry" when it has none. */
-async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: {
-      coastlineKm: true,
-      landArea: true,
-      areaSqMi: true,
-      geometry: true,
-      boundingBox: true,
-      realmId: true,
-      realm: { select: { settings: true } },
-    },
-  });
-  if (!country?.geometry) throw new Error("no geometry");
-
-  const coastlineKm = country.coastlineKm ?? 0;
-  const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
-  const extent: Extent = (country.boundingBox as [number, number, number, number] | null) ?? [
-    -180, -90, 180, 90,
-  ];
-
-  // Climate/altitude layers of the country's own realm, its zones named by its climate key
-  const place = { id: countryId, realmId: country.realmId };
-  const [climateFills, altitudeFills] = await Promise.all([
-    countryZoneFills(db, place, "climate", extent),
-    countryZoneFills(db, place, "altitudes", extent),
-  ]);
-  const climateKey = parseRealmMapSettings(country.realm?.settings).climateKey ?? null;
-  const climateDistribution = buildClimateZones(climateFills, false, climateKey);
-  const elevationProfile = buildElevationZones(altitudeFills);
-
-  const profile = buildGeoProfile({
-    climateDistribution,
-    elevationProfile,
-    coastlineKm,
-    neighborCount: 0,
-    totalRiverLengthKm: 0,
-    totalLakeAreaSqKm: 0,
-    areaKm2,
-  });
-  const econ = computeEconomicGeoModifiers(profile);
-
-  const fields = {
-    climateDistribution: climateDistribution as any,
-    elevationProfile: elevationProfile as any,
-    arableLandPercent: profile.arableLandPercent,
-    coastlineKm,
-    isLandlocked: profile.isLandlocked,
-    isIsland: profile.isIsland,
-    dominantClimate: profile.dominantClimate,
-    dominantElevation: profile.dominantElevation,
-    meanElevation: profile.meanElevation,
-    terrainRoughness: profile.terrainRoughness,
-    gdpModifier: econ.gdpModifier,
-    tradeModifier: econ.tradeModifier,
-    infraCostModifier: econ.infraCostModifier,
-    lastCalculatedAt: new Date(),
-  };
-  await db.countryGeoProfile.upsert({
-    where: { countryId },
-    create: {
-      countryId,
-      riverKm: 0,
-      lakeAreaSqKm: 0,
-      neighborCount: profile.neighborCount,
-      ...fields,
-    },
-    update: fields,
-  });
-}
 
 export const adminOpsProcedures = {
   recalculateArea: adminProcedure
@@ -132,42 +51,10 @@ export const adminOpsProcedures = {
     }),
 
   /**
-   * Admin: recompute stored geo profiles (one country, or every country with geometry), and with
-   * them the country's map-derived `GeographicResource` rows (AT-9).
+   * Admin: queue a recompute of the stored geo profiles (one country, or every country with geometry), and with
+   * them the country's map-derived `GeographicResource` rows (AT-9). The `geo-profiles` cron job does the work.
    */
   recalculateGeoProfiles: adminProcedure
     .input(z.object({ countryId: z.string().optional() }).optional())
-    .mutation(async ({ ctx, input }) => {
-      const countries = await ctx.db.country.findMany({
-        where: input?.countryId ? { id: input.countryId } : { geometry: { not: null } as any },
-        select: { id: true, name: true },
-      });
-
-      let processed = 0;
-      let resourcesWritten = 0;
-      const errors: string[] = [];
-      const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
-      for (const country of countries) {
-        try {
-          await recalculateGeoProfile(ctx.db, country.id);
-          processed++;
-        } catch (err) {
-          errors.push(`${country.name}: ${message(err)}`);
-          continue;
-        }
-        try {
-          resourcesWritten += await refreshGeographicResources(ctx.db, country.id);
-        } catch (err) {
-          errors.push(`${country.name} (resources): ${message(err)}`);
-        }
-      }
-
-      return {
-        processed,
-        resourcesWritten,
-        failed: errors.length,
-        total: countries.length,
-        errors: errors.slice(0, 20),
-      };
-    }),
+    .mutation(({ ctx, input }) => queueGeoProfileRecalculation(ctx.db, input?.countryId)),
 };

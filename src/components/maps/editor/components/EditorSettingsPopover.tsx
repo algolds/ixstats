@@ -43,16 +43,7 @@ export interface TransportMutation {
 
 export interface RecalculateGeoMutation {
   isPending: boolean;
-  mutateAsync: (args?: { countryId?: string } | void) => Promise<
-    | {
-        processed: number;
-        failed: number;
-        total: number;
-        errors: string[];
-      }
-    | { success?: boolean }
-    | void
-  >;
+  mutateAsync: (args?: { countryId?: string } | void) => Promise<{ queued: number }>;
 }
 
 interface EditorSettingsPopoverProps {
@@ -289,11 +280,11 @@ export function EditorSettingsPopover({
                   onClick={() =>
                     run("Recalculation error", async () => {
                       await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                      return "Geographic profile and resources recalculated";
+                      return "Geographic profile and resources queued for recalculation";
                     })
                   }
                   disabled={recalculateGeo.isPending}
-                  title="Recalculate the geographic profile and resources for the active country"
+                  title="Queue a recalculation of the geographic profile and resources for the active country"
                 />
               </>
             )}

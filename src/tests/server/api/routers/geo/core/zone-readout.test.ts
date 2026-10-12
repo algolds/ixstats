@@ -180,7 +180,7 @@ describe("the pin tool's zone readout", () => {
 describe("the Geography tab of a realm nation", () => {
   it("clips the realm's own climate and altitude layers to the nation and names zones by the key", async () => {
     const db = fakeDb((sql) => {
-      if (!sql.includes("ST_Intersection(ml.geom_postgis")) return [];
+      if (!sql.includes("ST_Subdivide(c.geom_postgis, 256)")) return [];
       return sql.includes("climateId")
         ? [
             { fill: "#21c200", climateId: "Cfb", zoneId: null, area: 300 },
@@ -208,9 +208,34 @@ describe("the Geography tab of a realm nation", () => {
     expect(profile.elevation.zones).toEqual([]);
     const clipSql = (db.$queryRawUnsafe as Mock).mock.calls
       .map((c: [string, ...unknown[]]) => c)
-      .filter(([sql]) => sql.includes("ST_Intersection(ml.geom_postgis"));
+      .filter(([sql]) => sql.includes("ST_Subdivide(c.geom_postgis, 256)"));
     expect(clipSql.map(([, , layerType]) => layerType).sort()).toEqual(["altitudes", "climate"]);
     for (const [sql] of clipSql) expect(sql).toContain(`ml."worldId" = c."realmId"`);
+    expect(db.mapLayer.findMany).not.toHaveBeenCalled();
+  });
+
+  it("clips Ixnay's layers in PostGIS too, instead of pulling them into the server", async () => {
+    const db = fakeDb((sql) =>
+      sql.includes("ST_Subdivide(c.geom_postgis, 256)")
+        ? [{ fill: "#00fd97", climateId: null, zoneId: null, area: 200 }]
+        : []
+    );
+    db.country.findUnique.mockResolvedValue({
+      id: "c_ix",
+      name: "Caphiria",
+      realmId: DEFAULT_REALM_ID,
+      geometry: { type: "Point", coordinates: [0, 0] },
+      centroid: [0, -20],
+      boundingBox: [7, -33, 45, -1],
+      coastlineKm: null,
+      landArea: 200,
+      areaSqMi: null,
+    });
+    const profile = await caller(ctxFor(db)).getCountryGeoProfile({ countryId: "c_ix" });
+
+    expect(profile.climate.zones.map((z) => [z.type, z.percentArea])).toEqual([
+      ["Temperate Oceanic (Do)", 100],
+    ]);
     expect(db.mapLayer.findMany).not.toHaveBeenCalled();
   });
 });

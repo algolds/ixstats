@@ -349,6 +349,24 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
+    // Geo profiles (docs/systems/maps.md): recomputes, one country at a time, the profiles (and their map-derived
+    // resources) an admin queued with geoCore.recalculateGeoProfiles, plus any country still missing one.
+    name: "geo-profiles",
+    defaultSchedule: "*/5 * * * *",
+    lockName: "geo-profiles",
+    // Above the run's own budget (GEO_PROFILE_RUN_BUDGET_MS, 20 min), so the lease never expires mid-country.
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/api/routers/geo/core/profile-job",
+    exportName: "runGeoProfileRecalculation",
+    load: async () => {
+      const [{ runGeoProfileRecalculation }, { db }] = await Promise.all([
+        import("~/server/api/routers/geo/core/profile-job"),
+        import("~/server/db"),
+      ]);
+      return () => runGeoProfileRecalculation(db);
+    },
+  },
+  {
     // Realm map imports (docs/systems/maps.md): runs queued analyses (PNG tracing in a worker thread) and any
     // apply job the web process left queued, one realm at a time under `map-import:<realmId>` leases.
     name: "map-import",
