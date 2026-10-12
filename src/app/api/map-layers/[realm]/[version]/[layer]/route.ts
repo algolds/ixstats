@@ -9,9 +9,18 @@ import { PRIVATE_TILE_CACHE, resolveTileRealm } from "~/server/modules/maps/real
 import { getRealmMapVersion } from "~/server/shared/map-invalidation";
 
 const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
+// A slug can be renamed or given to another realm, so a slug-addressed URL names no fixed content
+const SLUG_CACHE = "public, max-age=300";
 /** A URL whose map version or loader format is not the current one: current data, which must not be kept as that
  * URL's forever. */
 const REVALIDATE_CACHE = "public, no-cache";
+
+/** Immutable only when the URL names the realm by id, the current version and the current format; by slug it is cached
+ * briefly (the tile route's rule); any other URL gets the current data to revalidate. */
+function cacheControl(named: boolean, byId: boolean): string {
+  if (!named) return REVALIDATE_CACHE;
+  return byId ? IMMUTABLE_CACHE : SLUG_CACHE;
+}
 
 /** A realm the viewer may not see is indistinguishable from one that does not exist, and never stored. */
 const notFound = () =>
@@ -35,8 +44,8 @@ function matchesEtag(header: string | null, etag: string): boolean {
  * One layer of a realm's map in the packed wire format, by map version and loader format (`?format=`, see
  * layer-format.ts). Both are in the URL so a changed map or a changed build is a new URL; the body is always the
  * current data, and the tag names the current version and format. Ixnay and published realms are cacheable by
- * anyone for a year when the URL names both; an unpublished realm's layers go only to those who may see the realm,
- * and are never stored.
+ * anyone for a year when the URL names both and the realm by id (by slug, which can be renamed, for five minutes);
+ * an unpublished realm's layers go only to those who may see the realm, and are never stored.
  */
 export async function GET(
   request: NextRequest,
@@ -66,7 +75,7 @@ export async function GET(
     const named =
       namedVersion === version &&
       request.nextUrl.searchParams.get("format") === String(LAYER_FORMAT_VERSION);
-    const headers = { ETag: etag, "Cache-Control": named ? IMMUTABLE_CACHE : REVALIDATE_CACHE };
+    const headers = { ETag: etag, "Cache-Control": cacheControl(named, realm === realmId) };
     if (matchesEtag(request.headers.get("if-none-match"), etag)) {
       return new NextResponse(null, { status: 304, headers });
     }

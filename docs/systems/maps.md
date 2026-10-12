@@ -341,8 +341,9 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
   wire format or the loader does. The body is the packed layer (`geojson-pack.ts`) as a ready string from one
   `ByteBoundedCache` (256 MB, 24 h TTL, `layer-delivery.ts`) keyed by realm, version, format, layer and bucket; a miss
   builds the layer once however many requests wait for it. A URL naming the current version and format is served
-  `public, max-age=31536000, immutable` for Ixnay and published realms, with an `ETag` that `If-None-Match` turns into a
-  304; a URL naming an older version or format gets the current data with `public, no-cache`. An unpublished (draft or
+  `public, max-age=31536000, immutable` for Ixnay and published realms when it names the realm by id (the client
+  always does) and `public, max-age=300` when it names a slug, which can be renamed, with an `ETag` that
+  `If-None-Match` turns into a 304; a URL naming an older version or format gets the current data with `public, no-cache`. An unpublished (draft or
   generating) realm's layers go only to those who may see it, as `private, no-store`; a realm the viewer may not see is
   a 404 (`private, no-store`), and an unknown `bucket` a 400. A realm with no such layer gets an empty FeatureCollection,
   not an error.

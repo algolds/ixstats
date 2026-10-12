@@ -100,12 +100,16 @@ describe("GET /api/map-layers", () => {
     expect(packedLayerAt).toHaveBeenCalledWith(expect.anything(), "default", 3, "political", 1);
   });
 
-  it("takes Ixnay's slug as well as its id", async () => {
-    const res = await get("ixnay", "3", "political");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("etag")).toBe('"default-3-f1-political-1"');
-    expect(realmFindUnique).not.toHaveBeenCalled();
-  });
+  it.each(["ixnay", "ixworld"])(
+    "takes Ixnay's name %s as well as its id, cached briefly rather than for a year",
+    async (name) => {
+      const res = await get(name, "3", "political");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("etag")).toBe('"default-3-f1-political-1"');
+      expect(res.headers.get("cache-control")).toBe("public, max-age=300");
+      expect(realmFindUnique).not.toHaveBeenCalled();
+    }
+  );
 
   it("defaults to the mid zoom bucket", async () => {
     await get("default", "3", "political");
@@ -123,12 +127,26 @@ describe("GET /api/map-layers", () => {
         where.id === "r_eurth" || where.slug === "eurth" ? realmRow("active") : null
     );
     const bySlug = await get("eurth", "3", "political");
-    expect(bySlug.headers.get("cache-control")).toBe(IMMUTABLE);
+    expect(bySlug.status).toBe(200);
     expect(bySlug.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
 
     const byId = await get("r_eurth", "3", "political");
     expect(byId.status).toBe(200);
+    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
     expect(byId.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
+  });
+
+  it("makes only ID-addressed URLs immutable: a slug can be renamed or given to another realm", async () => {
+    realmFindUnique.mockImplementation(
+      async ({ where }: { where: { id?: string; slug?: string } }) =>
+        where.id === "r_eurth" || where.slug === "eurth" ? realmRow("active") : null
+    );
+    const bySlug = await get("eurth", "3", "political");
+    const byId = await get("r_eurth", "3", "political");
+
+    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
+    expect(bySlug.headers.get("cache-control")).toBe("public, max-age=300");
+    expect(await bySlug.text()).toBe(await byId.text());
   });
 
   it("answers 304 to a matching If-None-Match without building the layer", async () => {
