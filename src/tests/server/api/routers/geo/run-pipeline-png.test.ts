@@ -162,6 +162,7 @@ describe("geoEditor.importPipelineResult — region metrics", () => {
     // The transaction client is the same object, so writes land on the same mocks.
     return Object.assign(models, {
       $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(models)),
+      $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
     });
   }
 
@@ -298,6 +299,7 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
       mapImport: { create: jest.Mock };
       sharedVertex: { deleteMany: jest.Mock; createMany: jest.Mock };
       $transaction: jest.Mock;
+      $queryRaw: jest.Mock;
     } = {
       realm: { findUnique: jest.fn().mockResolvedValue({ id: "r_eurth" }) },
       mapLayer: {
@@ -308,6 +310,7 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
       mapImport: { create: jest.fn().mockResolvedValue({ id: "import_1" }) },
       sharedVertex: { deleteMany: jest.fn(), createMany: jest.fn() },
       $transaction: jest.fn((fn: (tx: unknown) => unknown): unknown => fn(db)),
+      $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
     };
     return db;
   }
@@ -322,6 +325,11 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
     expect(adjacencyMock).toHaveBeenCalledWith(db, "r_eurth");
     expect(db.mapLayer.upsert.mock.invocationCallOrder[0]).toBeLessThan(
       adjacencyMock.mock.invocationCallOrder[0]!
+    );
+    // and the realm's map version moves once, after the borders are stored
+    expect(db.$queryRaw.mock.calls.map((call) => call[1])).toEqual(["r_eurth"]);
+    expect(db.mapLayer.upsert.mock.invocationCallOrder[0]).toBeLessThan(
+      db.$queryRaw.mock.invocationCallOrder[0]!
     );
   });
 

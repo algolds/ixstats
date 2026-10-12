@@ -66,10 +66,16 @@ function modelMock(): ModelMock {
 
 function realmDb(status: Record<string, string> = {}): Db {
   const models = new Map<string, ModelMock>();
+  // The map version bump after a map write (invalidateRealmMap)
+  const queryRaw = jest.fn().mockResolvedValue([{ mapVersion: 1 }]);
+  // The nation's outline union after a merge (syncCountryGeometryFromMapLayer): no PostGIS geometry here
+  const queryRawUnsafe = jest.fn().mockResolvedValue([]);
   const db = new Proxy({} as Db, {
     get: (_t, name) => {
       const key = String(name);
       if (key === "$transaction") return (fn: (tx: Db) => unknown) => fn(db);
+      if (key === "$queryRaw") return queryRaw;
+      if (key === "$queryRawUnsafe") return queryRawUnsafe;
       if (!models.has(key)) models.set(key, modelMock());
       return models.get(key);
     },
@@ -322,7 +328,7 @@ describe("world-mode border editing is realm-scoped", () => {
       targetId: "ml1",
       proposedData: { geometry },
     });
-    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null });
+    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null, realmId: EURTH });
     const queue = createCallerFactory(geoEditorQueueRouter)(ctxAs(db, ADMIN));
     await queue.approveEdit({ editId: "req1" });
     expect(db.mapLayer!.findFirst!.mock.calls[0][0].where).toEqual({

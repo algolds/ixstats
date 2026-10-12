@@ -36,3 +36,16 @@ export function clearLayerCache(layerType?: string): void {
     }
   }
 }
+
+/**
+ * Drop one realm's assembled layers and in-flight builds, every layer and zoom bucket. Keys end with the realm id
+ * (`${layer}:z${bucket}:${realmId}`, layer-loader.ts); realm ids hold no colon.
+ */
+export function clearRealmLayerCache(realmId: string): void {
+  const suffix = `:${realmId}`;
+  for (const map of [layerCache, layerInflight]) {
+    for (const key of map.keys()) {
+      if (key.endsWith(suffix)) map.delete(key);
+    }
+  }
+}

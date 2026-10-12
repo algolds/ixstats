@@ -1,12 +1,35 @@
 import { z } from "zod";
+import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, cachedPublicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
+import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { clearLayerCache } from "./core";
+
+type Relation = { sovereignId: string; subjectId: string } | null;
+
+/**
+ * A sovereignty change moves the colours and tags on the political layer of the realm(s) its two countries are in
+ * (a relation names no realm). Without the countries (a delete that returned nothing), every realm's map.
+ */
+async function refreshSovereigntyMaps(db: PrismaClient, relation: Relation): Promise<void> {
+  await invalidateCache([
+    "geoSovereignty.getSovereigntyRelations",
+    "geoSovereignty.getCountrySovereignty",
+  ]);
+  const countries = relation
+    ? await db.country.findMany({
+        where: { id: { in: [relation.sovereignId, relation.subjectId] } },
+        select: { realmId: true },
+      })
+    : [];
+  const realmIds = [...new Set(countries.map((c) => c.realmId))];
+  if (realmIds.length === 0) return invalidateAllRealmMaps(db);
+  for (const realmId of realmIds) await invalidateRealmMap(db, realmId);
+}
 
 export const geoSovereigntyRouter = createTRPCRouter({
   /** The viewer's realm's active sovereignty relationships (public, cached; rule E-h). */
@@ -149,14 +172,7 @@ export const geoSovereigntyRouter = createTRPCRouter({
         },
       });
 
-      // Invalidate political layer cache so map reflects the change
-      clearLayerCache("political");
-      // Invalidate server-side tRPC cache so queries return fresh data
-      await invalidateCache([
-        "geoSovereignty.getSovereigntyRelations",
-        "geoSovereignty.getCountrySovereignty",
-        "geoCore.getWorldMap",
-      ]);
+      await refreshSovereigntyMaps(ctx.db, relation);
       broadcastMapUpdate("sovereignty");
 
       return relation;
@@ -192,12 +208,7 @@ export const geoSovereigntyRouter = createTRPCRouter({
         data,
       });
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoSovereignty.getSovereigntyRelations",
-        "geoSovereignty.getCountrySovereignty",
-        "geoCore.getWorldMap",
-      ]);
+      await refreshSovereigntyMaps(ctx.db, updated);
       broadcastMapUpdate("sovereignty");
       return updated;
     }),
@@ -206,13 +217,8 @@ export const geoSovereigntyRouter = createTRPCRouter({
   deleteSovereignty: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.db.countrySovereignty.delete({ where: { id: input.id } });
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoSovereignty.getSovereigntyRelations",
-        "geoSovereignty.getCountrySovereignty",
-        "geoCore.getWorldMap",
-      ]);
+      const deleted = await ctx.db.countrySovereignty.delete({ where: { id: input.id } });
+      await refreshSovereigntyMaps(ctx.db, deleted);
       broadcastMapUpdate("sovereignty");
       return { success: true };
     }),

@@ -152,7 +152,7 @@ export async function loadLayerFromDB(
   zoomBucket: ZoomBucket = 1,
   realmId: string = DEFAULT_REALM_ID
 ): Promise<FeatureCollection | null> {
-  // Check cache with a zoom- and realm-aware key (layer type stays first: TTLs and clearLayerCache key on it)
+  // Check cache with a zoom- and realm-aware key (layer type first for the TTLs, realm last for clearRealmLayerCache)
   const cacheKey = `${layerType}:z${zoomBucket}:${realmId}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -167,7 +167,7 @@ export async function loadLayerFromDB(
     realmId,
     cacheKey
   ).finally(() => {
-    // Identity check: a clearLayerCache() may have replaced this entry with a newer build
+    // Identity check: a cache clear may have replaced this entry with a newer build
     if (layerInflight.get(cacheKey) === promise) layerInflight.delete(cacheKey);
   });
   layerInflight.set(cacheKey, promise);

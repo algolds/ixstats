@@ -8,9 +8,8 @@ import {
 import { TRPCError } from "@trpc/server";
 import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan";
 import { MAX_PNG_BASE64_LENGTH, MAX_PNG_BYTES, PngDecodeError } from "~/lib/maps/png-realm-map";
-import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertOwnCountry } from "../core/shared";
 
 /** SVG markup or base64 PNG for the import, from the upload record or the direct input. */
@@ -304,14 +303,13 @@ export const geoAdminProvincesRouter = createTRPCRouter({
         };
       });
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      // An import bumps the map version too: the detail queries (subdivisions, cities) key on it
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { realmId: true },
+      });
+      if (country) await invalidateRealmMap(ctx.db, country.realmId);
+      else await invalidateAllRealmMaps(ctx.db);
       broadcastMapUpdate("bulk", input.countryId);
 
       return result;

@@ -119,6 +119,13 @@ export function fakeDb(): any {
     thinkpagesAccount: table("t"),
     $queryRawUnsafe: jest.fn(async () => []),
     $executeRawUnsafe: jest.fn(async () => 0),
+    // invalidateRealmMap's version bump: UPDATE "realms" SET "mapVersion" = "mapVersion" + 1 WHERE id = $1 RETURNING
+    $queryRaw: jest.fn(async (_sql: TemplateStringsArray, realmId: string) => {
+      const realm = db.realm.rows.find((r: Row) => r.id === realmId);
+      if (!realm) return [];
+      realm.mapVersion = (realm.mapVersion ?? 0) + 1;
+      return [{ mapVersion: realm.mapVersion }];
+    }),
   };
   db.$transaction = jest.fn(async (fn: (tx: Row) => unknown) => fn(db));
   return db;

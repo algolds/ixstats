@@ -11,7 +11,6 @@ import { TRPCError } from "@trpc/server";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
 import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
@@ -561,7 +560,6 @@ export const managementCreateProcedures = {
         });
 
         await invalidateCache(["countries.getAll"]);
-        clearLayerCache("political");
         await globalCache.delete(`user_profile:${userId}`);
 
         await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);

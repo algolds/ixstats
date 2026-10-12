@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import {
+  COUNTRY_MAP_SELECT,
+  countryMapChanged,
+  invalidateRealmMap,
+  touchesCountryMapFields,
+} from "~/server/shared/map-invalidation";
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
@@ -30,6 +35,12 @@ export const managementLifecycleProcedures = {
           Object.entries(updates).filter(([_, value]) => value !== undefined)
         );
 
+        // Only a column the political layer reads moves the map, so the before-image is read for those alone
+        const touchesMap = touchesCountryMapFields(filteredUpdates);
+        const before = touchesMap
+          ? await ctx.db.country.findUnique({ where: { id }, select: COUNTRY_MAP_SELECT })
+          : null;
+
         const updatedCountry = await ctx.db.country.update({
           where: { id },
           data: {
@@ -39,7 +50,9 @@ export const managementLifecycleProcedures = {
         });
 
         await invalidateCache(["countries."]);
-        clearLayerCache("political");
+        if (touchesMap && countryMapChanged(before, updatedCountry)) {
+          await invalidateRealmMap(ctx.db, updatedCountry.realmId);
+        }
 
         let targetUserId = userProfile?.id;
         if (!targetUserId) {

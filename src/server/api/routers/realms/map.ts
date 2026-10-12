@@ -15,8 +15,7 @@ import {
   updateRealmMapSettings,
 } from "~/server/modules/realms/realms.map";
 import { RealmMapSettingsSchema } from "~/lib/maps/realm-map-settings";
-import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { getRealmMapVersion, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 
 function mapError(error: Error): never {
@@ -35,6 +34,16 @@ export const realmMapRouter = createTRPCRouter({
   display: publicProcedure.input(realmScopeInput.optional()).query(async ({ ctx, input }) => {
     const realmId = await viewerRealmId(ctx, input?.realm);
     return getRealmMapDisplay(ctx.db, ctx.user ?? null, realmId);
+  }),
+
+  /**
+   * The realm's map version, from which the client builds the versioned layer and tile URLs (a change to the map is
+   * a new URL). Resolved like `display`: `?realm=`, else the viewer's realm, else Ixnay; a draft realm resolves to
+   * Ixnay for everyone but its staff.
+   */
+  version: publicProcedure.input(realmScopeInput.optional()).query(async ({ ctx, input }) => {
+    const realmId = await viewerRealmId(ctx, input?.realm);
+    return { realmId, version: await getRealmMapVersion(ctx.db, realmId) };
   }),
 
   /**
@@ -75,15 +84,7 @@ export const realmMapRouter = createTRPCRouter({
       const result = await recomputeRealmMapAreas(ctx.db, ctx.user, realmId, {
         alsoSetLandArea: input.alsoSetLandArea,
       }).catch(mapError);
-      clearLayerCache();
-      await invalidateCache([
-        "geoCore.getWorldMap",
-        "geoCore.getMapBundle",
-        "geoCore.getCountryGeometry",
-        "geoCore.getCountryFeatures",
-        "geoEditor.validateLinkage",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders");
       return result;
     }),

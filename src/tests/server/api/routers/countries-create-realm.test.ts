@@ -18,7 +18,6 @@ jest.mock("~/lib/cache", () => ({
   },
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/server/shared/layer-cache", () => ({ clearLayerCache: jest.fn() }));
 jest.mock("~/lib/vault/vault-bonus", () => ({
   getBonusConfig: jest.fn().mockResolvedValue({ newPlayer: 0, wikiImport: 0 }),
   grantBonus: jest.fn().mockResolvedValue(undefined),

@@ -6,8 +6,7 @@ import {
 } from "~/server/api/trpc";
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "../../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { findAllById } from "~/lib/system/find-all-by-id";
 import { AUTO_LINK_MIN_CONFIDENCE } from "~/lib/maps/nation-name-matching";
@@ -252,16 +251,7 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
         repaired = 1;
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryGeometry",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
 
       return { repaired };
     }),

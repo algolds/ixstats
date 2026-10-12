@@ -9,10 +9,9 @@ import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { upsertCity } from "~/lib/country-geo";
-import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertOwnCountry } from "../core/shared";
 
 // ── Shared schema ─────────────────────────────────────────────────────────────
@@ -55,7 +54,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
       // Verify country exists
       const countryRecord = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { id: true },
+        select: { id: true, realmId: true },
       });
       if (!countryRecord) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
@@ -112,14 +111,8 @@ export const geoAdminCitiesRouter = createTRPCRouter({
         }
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      // An import bumps the map version too: the detail queries (cities, subdivisions) key on it
+      await invalidateRealmMap(ctx.db, countryRecord.realmId);
       broadcastMapUpdate("bulk", input.countryId);
 
       return { created };

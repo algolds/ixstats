@@ -13,7 +13,7 @@ import { generateSlug } from "~/lib/utils/slug-utils";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { countryMapChanged, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import {
   countryEconomicInputsSchema,
@@ -179,7 +179,9 @@ export const managementUpdateProcedures = {
         });
 
         await invalidateCache(["countries."]);
-        clearLayerCache("political");
+        if (countryMapChanged(existingCountry, result)) {
+          await invalidateRealmMap(ctx.db, result.realmId);
+        }
         globalCache.delete(`user_profile:${userId}`);
 
         return result;

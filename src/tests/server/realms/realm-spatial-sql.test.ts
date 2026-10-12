@@ -71,6 +71,8 @@ function sqlDb(rows: (sql: string) => unknown[] = () => []) {
   const db: Record<string, any> = {
     $queryRawUnsafe,
     $executeRawUnsafe: jest.fn().mockResolvedValue(0),
+    // invalidateRealmMap's version bump, after an import
+    $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
     subdivision: model(),
     city: model(),
     country: model(),

@@ -1,7 +1,6 @@
 import {
   syncCountryGeometryFromMapLayer,
   syncGeographicDemographics,
-  unionRegionGeometries,
 } from "~/lib/country-geo/sync";
 
 const geometry = {
@@ -16,8 +15,10 @@ const geometry = {
   ],
 };
 
+// The outline is unioned in PostGIS (sync-union.test.ts); here the union returns the first region's geometry.
 function dbWith(layer: object | null, more: object[] = []) {
   return {
+    $queryRawUnsafe: jest.fn().mockResolvedValue([{ geometry, wide: null }]),
     mapLayer: { findMany: jest.fn().mockResolvedValue(layer ? [layer, ...more] : []) },
     country: {
       findUnique: jest.fn().mockResolvedValue({ realmId: "r_eurth" }),
@@ -26,27 +27,9 @@ function dbWith(layer: object | null, more: object[] = []) {
   };
 }
 
-const square = (x: number, y: number) => ({
-  type: "Polygon" as const,
-  coordinates: [
-    [
-      [x, y],
-      [x + 1, y],
-      [x + 1, y + 1],
-      [x, y + 1],
-      [x, y],
-    ],
-  ],
-});
-
 describe("syncCountryGeometryFromMapLayer", () => {
   it("copies the linked region's geometry, centroid, bounding box and area", async () => {
-    const db = dbWith({
-      geometry,
-      centroid: [0.5, 0.5],
-      boundingBox: [0, 0, 1, 1],
-      areaSqKm: 1000,
-    });
+    const db = dbWith({ centroid: [0.5, 0.5], boundingBox: [0, 0, 1, 1], areaSqKm: 1000 });
     await syncCountryGeometryFromMapLayer(db, "c1");
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: "c1" },
@@ -61,7 +44,7 @@ describe("syncCountryGeometryFromMapLayer", () => {
   });
 
   it("never overwrites the country's values with a region's missing ones (a baseline landArea survives)", async () => {
-    const db = dbWith({ geometry, centroid: null, boundingBox: null, areaSqKm: null });
+    const db = dbWith({ centroid: null, boundingBox: null, areaSqKm: null });
     await syncCountryGeometryFromMapLayer(db, "c1");
     expect(db.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { geometry } });
   });
@@ -77,36 +60,19 @@ describe("syncCountryGeometryFromMapLayer", () => {
     });
   });
 
-  it("a nation with several regions gets their union, summed area, joint box and weighted centre", async () => {
-    const db = dbWith(
-      { geometry: square(0, 0), centroid: [0.5, 0.5], boundingBox: [0, 0, 1, 1], areaSqKm: 3000 },
-      [
-        {
-          geometry: square(10, 0),
-          centroid: [10.5, 0.5],
-          boundingBox: [10, 0, 11, 1],
-          areaSqKm: 1000,
-        },
-      ]
-    );
+  it("a nation with several regions gets summed area, joint box and weighted centre", async () => {
+    const db = dbWith({ centroid: [0.5, 0.5], boundingBox: [0, 0, 1, 1], areaSqKm: 3000 }, [
+      { centroid: [10.5, 0.5], boundingBox: [10, 0, 11, 1], areaSqKm: 1000 },
+    ]);
     await syncCountryGeometryFromMapLayer(db, "c1");
     const data = db.country.update.mock.calls[0][0].data;
-    expect(data.geometry.type).toBe("MultiPolygon");
-    expect(data.geometry.coordinates).toHaveLength(2);
+    expect(data.geometry).toEqual(geometry);
     expect(data).toMatchObject({
       centroid: [3, 0.5],
       boundingBox: [0, 0, 11, 1],
       landArea: 4000,
       areaSqMi: 4000 * 0.386102,
     });
-  });
-
-  it("touching regions merge into one outline with no inner border", () => {
-    const merged = unionRegionGeometries([square(0, 0), square(1, 0)]);
-    expect(merged?.type).toBe("Polygon");
-    const xs = (merged as { coordinates: number[][][] }).coordinates[0]!.map((p) => p[0]);
-    expect(Math.min(...xs)).toBe(0);
-    expect(Math.max(...xs)).toBe(2);
   });
 
   it("with no linked region (an unlink) still clears the cached geography", async () => {

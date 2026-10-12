@@ -18,14 +18,13 @@ jest.mock("~/lib/maps/realm-layer-repair", () => ({
 jest.mock("~/lib/maps/adjacency", () => ({
   rebuildAdjacency: jest.fn().mockResolvedValue({ skipped: true }),
 }));
-jest.mock("~/server/shared/layer-cache", () => ({ clearLayerCache: jest.fn() }));
-jest.mock("~/lib/cache", () => ({
-  ...jest.requireActual("~/lib/cache"),
-  invalidateCache: jest.fn().mockResolvedValue(undefined),
+jest.mock("~/server/shared/map-invalidation", () => ({
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 
 import { writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
 import { repairRealmLayer } from "~/lib/maps/realm-layer-repair";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import type { PlannedNation, SyncPlan } from "~/lib/realms/sources/plan";
 import { applySyncPlan } from "~/server/modules/realms/realms.source-apply";
 import { IXSTATS_NATION_GROWTH_DEFAULTS } from "~/lib/realms/nation-growth-defaults";
@@ -398,6 +397,9 @@ describe("applySyncPlan", () => {
     const [, realmId, features, options] = (writeRealmMapFeatures as jest.Mock).mock.calls[0];
     expect(realmId).toBe("eurth-id");
     expect(options).toEqual({ layerType: "political", areaScale: 1 });
+    // The written borders move the realm's map version, once the adjacency is rebuilt
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth-id");
     expect(features[0]).toMatchObject({
       key: "Deseti",
       name: "Deseti",

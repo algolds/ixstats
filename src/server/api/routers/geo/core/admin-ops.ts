@@ -3,6 +3,7 @@ import { adminProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import type { PrismaClient } from "@prisma/client";
 import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
 import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
@@ -91,12 +92,10 @@ export const adminOpsProcedures = {
   recalculateArea: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const mapLayer = await requirePoliticalLayer(
-        ctx.db,
-        input.featureId,
-        await viewerRealmId(ctx, input.realm)
-      );
+      const realmId = await viewerRealmId(ctx, input.realm);
+      const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
+      let areaSqKm: number | null = null;
       try {
         const result = await ctx.db.$queryRawUnsafe<Array<{ area_sqkm: number }>>(
           `SELECT ST_Area(geom_postgis::geography) / 1000000.0 as area_sqkm
@@ -112,16 +111,18 @@ export const adminOpsProcedures = {
           if (mapLayer.countryId) {
             await syncCountryGeometryFromMapLayer(ctx.db, mapLayer.countryId);
           }
-          return {
-            featureId: input.featureId,
-            areaSqKm: result[0].area_sqkm,
-          };
+          areaSqKm = result[0].area_sqkm;
         }
       } catch {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "PostGIS area calculation failed",
         });
+      }
+
+      if (areaSqKm !== null) {
+        await invalidateRealmMap(ctx.db, realmId);
+        return { featureId: input.featureId, areaSqKm };
       }
 
       throw new TRPCError({

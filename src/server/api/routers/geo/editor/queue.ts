@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { MapEditRequest, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { clearLayerCache } from "../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { ActivityGenerator } from "~/lib/activity";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 
@@ -120,7 +120,7 @@ async function applyBorderAdjust(
     });
   }
 
-  clearLayerCache("political");
+  await invalidateRealmMap(db, mapLayer.realmId);
 }
 
 function applySubdivisionEdit(db: PrismaClient, edit: MapEditRequest, p: Proposed) {

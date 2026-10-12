@@ -8,9 +8,8 @@ import {
 import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clearLayerCache } from "../../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
@@ -45,17 +44,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       // Update country with geometry + area
       await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
 
-      // Invalidate caches
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("linkage", input.countryId);
 
       return {
@@ -89,16 +78,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, mapLayer.realmId);
       broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
       return { featureId: input.featureId, previousCountryId };
@@ -226,16 +206,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         }
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
 
       if (input.countryId !== undefined) {
         broadcastMapUpdate("linkage", input.countryId ?? undefined);
@@ -289,16 +260,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: { countryId: newCountry.id },
       });
       await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.listCountries",
-        "geoCore.getWorldMap",
-        "geoEditor.validateLinkage",
-        "geoCore.getCountryLinkage",
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "countryGeo.getCountryGeoBundle",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("linkage", newCountry.id);
       return { countryId: newCountry.id, name: newCountry.name };
     }),

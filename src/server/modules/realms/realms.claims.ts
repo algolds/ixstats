@@ -16,6 +16,7 @@ import {
   type ProofSource,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { resolvePrimaryWikiUsername } from "~/lib/wiki-os/adapters/ixstates/user-sync";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import {
   canModerateRealm,
@@ -107,6 +108,7 @@ type ClaimsDb = Pick<
   | "realmPage"
   | "nationMaterialHold"
   | "$transaction"
+  | "$queryRaw"
 >;
 type ClaimsTx = Pick<
   Prisma.TransactionClient,
@@ -239,10 +241,14 @@ async function rejectRivals(tx: ClaimsTx, where: Prisma.RealmClaimWhereInput): P
   return (rivals ?? []).map((r) => r.user.clerkUserId);
 }
 
-/** What a hand-over produced: the nation, and the claimants whose rival claims it turned away. */
+/**
+ * What a hand-over produced: the nation, the claimants whose rival claims it turned away, and the realm whose map
+ * gained a region for it (null when none did), for the caller to invalidate once the transaction commits.
+ */
 interface HandOver {
   country: { id: string; name: string };
   rivals: string[];
+  mapRealmId: string | null;
 }
 
 /** Whether the page's nation exists (by page reference, or by name for a nation without one). */
@@ -338,9 +344,9 @@ async function createNationCountry(
  * Decision 11: the realm's unlinked political regions named after the nation (feature id or display name, from
  * the colour → nation mapping, or the nation's source key) become the new country's: all of them, since a nation
  * may be drawn as several regions (islands, exclaves). Linked, then the geometry synced (their union), in the
- * approving transaction. No such region: nothing to link.
+ * approving transaction. No such region: nothing to link. True when a region was linked.
  */
-async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage): Promise<void> {
+async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage): Promise<boolean> {
   const unlinked = {
     realmId: page.realmId,
     layerType: "political",
@@ -357,10 +363,11 @@ async function takeMapRegion(tx: ClaimsTx, countryId: string, page: NationPage):
     OR: [{ featureId: { in: keys } }, { displayName: page.title }],
   };
   const region = await tx.mapLayer.findFirst({ where: named, select: { id: true } });
-  if (!region) return;
+  if (!region) return false;
   await assertCountryInFeatureRealm(tx, countryId, page.realmId);
   const { count } = await tx.mapLayer.updateMany({ where: named, data: { countryId } });
   if (count > 0) await syncCountryGeometryFromMapLayer(tx, countryId);
+  return count > 0;
 }
 
 /** Inside the approving transaction: hand the nation over and turn away rival pending claims for it. */
@@ -380,7 +387,11 @@ async function handOver(
       status: "pending",
       id: { not: claim.id },
     });
-    return { country: { id: target.countryId, name: target.countryName }, rivals };
+    return {
+      country: { id: target.countryId, name: target.countryName },
+      rivals,
+      mapRealmId: null,
+    };
   }
   const { page } = target;
   // The nation may exist unclaimed (created by the realm's source sync since the claim was filed): hand it over.
@@ -391,8 +402,8 @@ async function handOver(
     await settleMaterialHold(tx, country.id, claim.userId);
     await fillEmptyFromPrefill(tx, country.id, prefill);
   }
-  if (!unclaimed || !(await hasMapRegion(tx, country.id)))
-    await takeMapRegion(tx, country.id, page);
+  const takesRegion = !unclaimed || !(await hasMapRegion(tx, country.id));
+  const linkedRegion = takesRegion && (await takeMapRegion(tx, country.id, page));
   await tx.realmClaim.update({ where: { id: claim.id }, data: { countryId: country.id } });
   const rivals = await rejectRivals(tx, {
     realmId: page.realmId,
@@ -400,7 +411,7 @@ async function handOver(
     status: "pending",
     id: { not: claim.id },
   });
-  return { country, rivals };
+  return { country, rivals, mapRealmId: linkedRegion ? page.realmId : null };
 }
 
 /** The nation-assigned event for a claimant, with the claim's inviter when it has one. */
@@ -608,12 +619,13 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     target: ClaimTarget
   ) {
     const prefill = await prefillFor(target);
-    const { claimId, country, rivals } = await db
+    const { claimId, country, rivals, mapRealmId } = await db
       .$transaction(async (tx) => {
         const claim = await approvedClaim(tx, filed, pendingId);
         return { claimId: claim.id, ...(await handOver(tx, claim, target, prefill)) };
       })
       .catch(ownershipAsClaimError);
+    if (mapRealmId) await invalidateRealmMap(db, mapRealmId);
     await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned(
       assignedEvent(
@@ -883,7 +895,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       }
       throw error;
     }
-    const { country, rivals } = handed;
+    const { country, rivals, mapRealmId } = handed;
+    if (mapRealmId) await invalidateRealmMap(db, mapRealmId);
     await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned(
       assignedEvent(

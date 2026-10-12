@@ -18,7 +18,10 @@ jest.mock("~/lib/cache", () => ({
   },
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/server/shared/layer-cache", () => ({ clearLayerCache: jest.fn() }));
+jest.mock("~/server/shared/map-invalidation", () => ({
+  ...jest.requireActual("~/server/shared/map-invalidation"),
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+}));
 jest.mock("~/lib/vault/vault-bonus", () => ({
   getBonusConfig: jest.fn().mockResolvedValue({ newPlayer: 0, wikiImport: 0 }),
   grantBonus: jest.fn().mockResolvedValue(undefined),
@@ -37,6 +40,7 @@ import { createTRPCRouter } from "~/server/api/trpc";
 import { managementCreateProcedures } from "~/server/api/routers/countries/management/create";
 import { managementUpdateProcedures } from "~/server/api/routers/countries/management/update";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 
 const CLERK_ID = "clerk_p1";
 
@@ -385,6 +389,44 @@ describe("countries.updateCountry field mapping matches the pre-refactor mapping
       (k) => !(k in expected) && !derived.has(k)
     );
     expect(extra).toEqual([]);
+  });
+});
+
+describe("countries.updateCountry and the realm's map version", () => {
+  const router = createTRPCRouter(managementUpdateProcedures);
+
+  async function save(name: string, geography: { continent: string; region: string }) {
+    const update = jest.fn(({ data }: { data: object }) =>
+      Promise.resolve({ id: "c1", realmId: "r_eurth", ...data })
+    );
+    const db: any = {
+      $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
+      user: { findUnique: jest.fn().mockResolvedValue(null) },
+      country: { findUnique: jest.fn().mockResolvedValue(EXISTING), update },
+    };
+    await router.createCaller(makeCtx(db) as never).updateCountry({
+      id: "c1",
+      name,
+      economicInputs: { geography },
+    } as never);
+    return db;
+  }
+
+  beforeEach(() => jest.mocked(invalidateRealmMap).mockClear());
+
+  it("leaves the map alone when nothing the political layer reads changed", async () => {
+    await save("Old Name", { continent: "OldContinent", region: "OldRegion" });
+    expect(invalidateRealmMap).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["name", "Renamed", "OldContinent", "OldRegion"],
+    ["continent", "Old Name", "NewContinent", "OldRegion"],
+    ["region", "Old Name", "OldContinent", "NewRegion"],
+  ])("bumps the country's realm when its %s changes", async (_field, name, continent, region) => {
+    const db = await save(name, { continent, region });
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
   });
 });
 

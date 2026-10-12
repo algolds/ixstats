@@ -72,6 +72,8 @@ function setup({
       ),
     },
     realmPage: { findMany: pagedFindMany(pages) },
+    // invalidateRealmMap's version bump after the links are written
+    $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
   };
   const caller = createCallerFactory(geoEditorLinkageValidationRouter)(
     createMockRouterContext({
@@ -172,6 +174,8 @@ describe("Auto-Match", () => {
     // One outline sync for the nation, after both regions are linked
     expect(syncCountryGeometryFromMapLayer).toHaveBeenCalledTimes(1);
     expect(syncCountryGeometryFromMapLayer).toHaveBeenCalledWith(db, "c_ost");
+    // and the edited realm's map version moves
+    expect(db.$queryRaw.mock.calls.map((call) => call[1])).toEqual([EURTH]);
   });
 
   it("links reviewed matches, refusing nations of another realm", async () => {

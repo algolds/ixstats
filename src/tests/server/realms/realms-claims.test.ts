@@ -1,8 +1,12 @@
 import { Prisma } from "@prisma/client";
 import { createClaimsService, DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { IXSTATS_NATION_GROWTH_DEFAULTS } from "~/lib/realms/nation-growth-defaults";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
+jest.mock("~/server/shared/map-invalidation", () => ({
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+}));
 jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
   resolvePrimaryWikiUsername: (name: string) => (name === "Carthinova" ? "Kir" : name),
 }));
@@ -984,6 +988,23 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     country: null,
   };
 
+  /** The nation's outline as PostGIS would return it: the union of its active regions in its realm. */
+  const unionQuery = (rows: RegionRow[]) =>
+    jest.fn((_sql: string, countryId: string, realmId: string) => {
+      const parts = rows.filter(
+        (r) => r.countryId === countryId && r.realmId === realmId && r.isActive
+      );
+      const [first] = parts;
+      const geometry =
+        parts.length <= 1
+          ? (first?.geometry ?? null)
+          : {
+              type: "MultiPolygon",
+              coordinates: parts.map((r) => (r.geometry as any).coordinates),
+            };
+      return Promise.resolve([{ geometry, wide: null }]);
+    });
+
   /** The map is reachable only through the approving transaction, whose client writes its own country rows. */
   function regionSetup(rows: RegionRow[]) {
     const s = pageSetup();
@@ -992,6 +1013,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
       ...s.db,
       mapLayer: table,
       country: { ...s.db.country, update: jest.fn().mockResolvedValue({}) },
+      $queryRawUnsafe: unionQuery(rows),
     };
     delete s.db.mapLayer;
     s.db.$transaction.mockImplementation((cb: (client: typeof tx) => unknown) => cb(tx));
@@ -1019,6 +1041,22 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     });
   });
 
+  it("and the realm's map version moves once the transaction has committed", async () => {
+    const { db, tx, claims } = regionSetup([region()]);
+    jest.mocked(invalidateRealmMap).mockClear();
+    jest.mocked(invalidateRealmMap).mockImplementation(async () => {
+      expect(db.$transaction).toHaveBeenCalledTimes(1);
+      return 1;
+    });
+    await claims.claimNationPage(actor, EURTH, "Aurelia");
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    const [client, realmId] = jest.mocked(invalidateRealmMap).mock.calls[0]!;
+    expect(realmId).toBe(EURTH);
+    // the plain client, not the transaction's
+    expect(client).toBe(db);
+    expect(client).not.toBe(tx);
+  });
+
   it("a nation drawn as several regions takes all of them, and its outline is their union", async () => {
     const islands = region({
       id: "ml-isles",
@@ -1043,6 +1081,8 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     const { tx, claims } = regionSetup(rows);
     await claims.claimNationPage(actor, EURTH, "Aurelia");
     expect(rows.map((r) => r.countryId)).toEqual(["new-c", "new-c", null]);
+    // The outline is the PostGIS union of the nation's regions, asked for by the nation's id and realm
+    expect(tx.$queryRawUnsafe.mock.calls[0]!.slice(1)).toEqual(["new-c", EURTH]);
     const data = tx.country.update.mock.calls[0][0].data;
     expect(data.geometry.type).toBe("MultiPolygon");
     expect(data.geometry.coordinates).toHaveLength(2);
@@ -1062,11 +1102,13 @@ describe("approved nation-page claims take their map region (decision 11)", () =
 
   it("no region of that name is a no-op: the claim is approved and no geometry is written", async () => {
     const { deps, table, tx, claims } = regionSetup([region({ featureId: "Borealis" })]);
+    jest.mocked(invalidateRealmMap).mockClear();
     await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
       status: "approved",
     });
     expect(table.updateMany).not.toHaveBeenCalled();
     expect(tx.country.update).not.toHaveBeenCalled();
+    expect(invalidateRealmMap).not.toHaveBeenCalled();
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
   });
 
@@ -1170,9 +1212,9 @@ describe("realm rules", () => {
     await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
       code: "RULES_NOT_ACCEPTED",
     });
-    await expect(claims.claimCountry(actor, "c1", { acceptedRules: false })).rejects.toMatchObject(
-      { code: "RULES_NOT_ACCEPTED" }
-    );
+    await expect(claims.claimCountry(actor, "c1", { acceptedRules: false })).rejects.toMatchObject({
+      code: "RULES_NOT_ACCEPTED",
+    });
     expect(deps.fetchPageCreator).not.toHaveBeenCalled();
     expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
@@ -1181,9 +1223,9 @@ describe("realm rules", () => {
     const { db, deps, claims } = setup();
     db.country.findUnique.mockResolvedValue(ruledCountry);
     deps.fetchPageCreator.mockResolvedValue("Someone else");
-    await expect(claims.claimCountry(actor, "c1", { acceptedRules: true })).resolves.toMatchObject(
-      { status: "pending" }
-    );
+    await expect(claims.claimCountry(actor, "c1", { acceptedRules: true })).resolves.toMatchObject({
+      status: "pending",
+    });
     expect(db.realmClaim.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ countryId: "c1", rulesAcceptedAt: expect.any(Date) }),
     });
@@ -1202,7 +1244,10 @@ describe("realm rules", () => {
       claims.claimNationPage(actor, EURTH, "Aurelia", { acceptedRules: true })
     ).resolves.toMatchObject({ status: "approved" });
     expect(db.realmClaim.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ wikiPageTitle: "Aurelia", rulesAcceptedAt: expect.any(Date) }),
+      data: expect.objectContaining({
+        wikiPageTitle: "Aurelia",
+        rulesAcceptedAt: expect.any(Date),
+      }),
     });
   });
 

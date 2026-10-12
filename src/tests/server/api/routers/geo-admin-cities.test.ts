@@ -17,9 +17,9 @@ jest.mock("~/lib/maps/map-update-bus", () => ({
   broadcastMapUpdate: jest.fn(),
 }));
 
-jest.mock("~/server/shared/layer-cache", () => ({
+jest.mock("~/server/shared/map-invalidation", () => ({
   __esModule: true,
-  clearLayerCache: jest.fn(),
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 
 jest.mock("~/lib/city-importer/svg-points", () => ({
@@ -32,6 +32,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { geoAdminCitiesRouter } from "~/server/api/routers/geo/admin/cities";
 import { upsertCity } from "~/lib/country-geo";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { parseCitySvg } from "~/lib/city-importer/svg-points";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
@@ -63,7 +64,7 @@ let db: MockPrismaProxy;
 beforeEach(() => {
   jest.clearAllMocks();
   db = createMockPrisma();
-  db.country.findUnique.mockResolvedValue({ id: "c_mine" });
+  db.country.findUnique.mockResolvedValue({ id: "c_mine", realmId: "r_eurth" });
   db.$queryRawUnsafe = jest.fn().mockResolvedValue([{ is_inside: true }]);
 });
 
@@ -82,10 +83,11 @@ describe("commitCityImport", () => {
   });
 
   it("lets staff import into any country", async () => {
-    db.country.findUnique.mockResolvedValue({ id: "c_other" });
+    db.country.findUnique.mockResolvedValue({ id: "c_other", realmId: "default" });
     await expect(
       callerAs(db, "admin").commitCityImport({ countryId: "c_other", cities: [city("A")] })
     ).resolves.toEqual({ created: 1 });
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "default");
   });
 
   it("skips rows outside the border and keeps going after a failed row", async () => {
@@ -109,6 +111,9 @@ describe("commitCityImport", () => {
       "Unknown border",
     ]);
     expect(broadcastMapUpdate).toHaveBeenCalledWith("bulk", "c_mine");
+    // An import bumps the map version of the country's realm, so detail queries and layer URLs refresh
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
     errorSpy.mockRestore();
   });
 

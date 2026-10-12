@@ -7,7 +7,6 @@ import { validateComposition } from "~/lib/heraldry/validation";
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
 import { RENDERED_IMAGE_URL, renderAchievementImages } from "./render";
@@ -308,7 +307,6 @@ export const heraldryMutationsRouter = createTRPCRouter({
       });
 
       await invalidateCache(["countries."]);
-      clearLayerCache("political");
 
       return { success: true };
     }),

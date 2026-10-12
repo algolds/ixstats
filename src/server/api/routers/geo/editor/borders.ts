@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { clearLayerCache } from "../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
@@ -247,16 +246,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
           });
         }
 
-        // Clear cache
-        clearLayerCache("political");
-        await invalidateCache([
-          "geoCore.getCountryFeatures",
-          "geoCore.getMapBundle",
-          "geoCore.getWorldMap",
-          "geoCore.getAllMapFeatures",
-          "countryGeo.getCountryGeoBundle",
-          "geoCore.getCountryGeometry",
-        ]);
+        await invalidateRealmMap(ctx.db, realmId);
         broadcastMapUpdate("borders", feature.countryId ?? undefined);
 
         // Clean up session
@@ -385,15 +375,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "geoCore.getCountryGeometry",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders");
 
       return {
@@ -494,15 +476,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         await syncCountryGeometryFromMapLayer(ctx.db, countryId);
       }
 
-      clearLayerCache("political");
-      await invalidateCache([
-        "geoCore.getCountryFeatures",
-        "geoCore.getMapBundle",
-        "geoCore.getWorldMap",
-        "geoCore.getAllMapFeatures",
-        "countryGeo.getCountryGeoBundle",
-        "geoCore.getCountryGeometry",
-      ]);
+      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders");
 
       return {

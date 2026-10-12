@@ -3,7 +3,6 @@ jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/server/shared/layer-cache", () => ({ clearLayerCache: jest.fn() }));
 
 import { heraldryMutationsRouter, isCommonsFileUrl } from "~/server/api/routers/heraldry/mutations";
 import { heraldryQueriesRouter } from "~/server/api/routers/heraldry/queries";

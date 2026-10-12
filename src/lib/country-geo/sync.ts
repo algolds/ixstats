@@ -1,6 +1,5 @@
-import type { Feature, MultiPolygon, Polygon } from "geojson";
-import { union } from "@turf/union";
-import { featureCollection } from "@turf/helpers";
+import type { MultiPolygon, Polygon } from "geojson";
+import type { PrismaClient } from "@prisma/client";
 
 /**
  * Sync helper to keep Country cached geo columns up to date with its MapLayer political geometry.
@@ -10,40 +9,47 @@ import { featureCollection } from "@turf/helpers";
 type RegionGeometry = Polygon | MultiPolygon;
 
 interface LinkedRegion {
-  geometry: unknown;
   centroid: unknown;
   boundingBox: unknown;
   areaSqKm: number | null;
 }
 
-const isPolygonal = (g: unknown): g is RegionGeometry =>
-  !!g &&
-  typeof g === "object" &&
-  ((g as { type?: string }).type === "Polygon" || (g as { type?: string }).type === "MultiPolygon");
-
 /**
- * One outline for a nation drawn as several regions: their union (touching regions merge, so no inner border is
- * left), or, if the union fails on bad input, every region's polygons side by side.
+ * $1 the nation, $2 its realm. One outline for a nation drawn as several regions: their union in PostGIS (touching
+ * regions merge, so no inner border is left), as a Polygon when it is one. A region whose planar width is over 180
+ * degrees crosses +-180: its geom_postgis is a planar sliver, so it stays out of the union and comes back as its
+ * stored GeoJSON (`wide`) to sit beside it.
  */
-export function unionRegionGeometries(geometries: unknown[]): RegionGeometry | null {
-  const polygonal = geometries.filter(isPolygonal);
-  if (polygonal.length === 0) return null;
-  if (polygonal.length === 1) return polygonal[0]!;
-  try {
-    const features = polygonal.map((geometry): Feature<RegionGeometry> => ({
-      type: "Feature",
-      properties: {},
-      geometry,
-    }));
-    const merged = union(featureCollection(features));
-    if (merged && isPolygonal(merged.geometry)) return merged.geometry;
-  } catch (err) {
-    console.warn("[country-geo] region union failed, keeping the regions side by side:", err);
-  }
-  return {
-    type: "MultiPolygon",
-    coordinates: polygonal.flatMap((g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates)),
-  };
+const REGION_UNION_SQL = `WITH regions AS (
+    SELECT geom_postgis AS g, geometry,
+           ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180 AS wide
+      FROM map_layers
+     WHERE "layerType" = 'political' AND "isActive" = true AND "countryId" = $1 AND "worldId" = $2
+       AND geom_postgis IS NOT NULL
+  ), merged AS (
+    SELECT ST_CollectionExtract(ST_Union(g), 3) AS g FROM regions WHERE NOT wide
+  )
+  SELECT (SELECT ST_AsGeoJSON(CASE WHEN ST_NumGeometries(g) = 1 THEN ST_GeometryN(g, 1) ELSE g END)::json
+            FROM merged WHERE g IS NOT NULL AND NOT ST_IsEmpty(g)) AS geometry,
+         (SELECT json_agg(geometry) FROM regions WHERE wide) AS wide`;
+
+interface RegionUnionRow {
+  geometry: RegionGeometry | null;
+  wide: RegionGeometry[] | null;
+}
+
+const polygonsOf = (g: RegionGeometry) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
+
+/** The nation's outline: the PostGIS union of its regions, with any region drawn across +-180 beside it. */
+async function unionLinkedRegions(
+  db: Pick<PrismaClient, "$queryRawUnsafe">,
+  countryId: string,
+  realmId: string
+): Promise<RegionGeometry | null> {
+  const [row] = await db.$queryRawUnsafe<RegionUnionRow[]>(REGION_UNION_SQL, countryId, realmId);
+  const parts = [row?.geometry, ...(row?.wide ?? [])].filter((g): g is RegionGeometry => !!g);
+  if (parts.length <= 1) return parts[0] ?? null;
+  return { type: "MultiPolygon", coordinates: parts.flatMap(polygonsOf) };
 }
 
 const asPair = (v: unknown): [number, number] | null =>
@@ -54,14 +60,11 @@ const asBox = (v: unknown): [number, number, number, number] | null =>
     : null;
 
 /**
- * The nation's cached geography from all its linked regions: their union, the area-weighted centre of their
- * centroids, the box around their boxes and the sum of their areas. A value no region has stays absent.
+ * The nation's cached metrics from all its linked regions: the area-weighted centre of their centroids, the box
+ * around their boxes and the sum of their areas (the outline is unionLinkedRegions). A value no region has stays
+ * absent.
  */
 export function combineRegions(regions: LinkedRegion[]) {
-  const geometry =
-    regions.length === 1
-      ? regions[0]!.geometry
-      : unionRegionGeometries(regions.map((r) => r.geometry));
   const areas = regions.map((r) => r.areaSqKm).filter((a): a is number => a != null);
   const areaSqKm = areas.length > 0 ? areas.reduce((sum, a) => sum + a, 0) : null;
 
@@ -92,7 +95,6 @@ export function combineRegions(regions: LinkedRegion[]) {
             Math.max(...boxes.map((b) => b[3])),
           ];
   return {
-    geometry,
     centroid: regions.length === 1 ? regions[0]!.centroid : centroid,
     boundingBox,
     areaSqKm,
@@ -116,7 +118,6 @@ export async function syncCountryGeometryFromMapLayer(db: any, countryId: string
       ...(country?.realmId && { realmId: country.realmId }),
     },
     select: {
-      geometry: true,
       centroid: true,
       boundingBox: true,
       areaSqKm: true,
@@ -127,12 +128,13 @@ export async function syncCountryGeometryFromMapLayer(db: any, countryId: string
 
   if (regions.length > 0) {
     const mapLayer = combineRegions(regions);
-    // Only what the region actually has: a region imported without metrics must not null the country's
-    // centroid, bounding box or (baseline) land area.
+    const geometry = await unionLinkedRegions(db, countryId, country?.realmId);
+    // Only what the regions actually have: one imported without metrics must not null the country's centroid,
+    // bounding box or (baseline) land area, and with no PostGIS geometry yet the cached outline stays.
     await db.country.update({
       where: { id: countryId },
       data: {
-        geometry: mapLayer.geometry,
+        ...(geometry && { geometry }),
         ...(mapLayer.centroid != null && { centroid: mapLayer.centroid }),
         ...(mapLayer.boundingBox != null && { boundingBox: mapLayer.boundingBox }),
         ...(mapLayer.areaSqKm != null && {

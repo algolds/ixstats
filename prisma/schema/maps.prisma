@@ -544,6 +544,8 @@ model Realm {
   factbookUpdatedAt DateTime?
   factbookUpdatedBy String?   // Clerk userId
   tags              String[]  @default([]) // from REALM_TAGS (src/lib/realms/realm-tags.ts)
+  /// Incremented by invalidateRealmMap (src/server/shared/map-invalidation.ts) on every map change; versioned layer and tile URLs carry it.
+  mapVersion        Int       @default(0)
   foundedAt         DateTime? // shown as "founded"; null = createdAt
   /// Community links, rules and the in-world date (the date lives in `settings.inWorldDate`).
   communityLinks    Json?     // [{ label, url, kind }], https only (src/lib/realms/realm-community.ts)

@@ -7,7 +7,6 @@
 import { createHash } from "node:crypto";
 import type { MultiPolygon, Polygon } from "geojson";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { invalidateCache } from "~/lib/cache";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { buildNationGeometries, tidyGeometry, unionGeometries } from "~/lib/maps/import/build";
 import { resolveGeoreference, type GeorefResolution } from "~/lib/maps/import/georef";
@@ -20,7 +19,7 @@ import { deactivateOtherFeatures, writeRealmMapFeatures } from "~/lib/maps/realm
 import { captureMapSnapshot, packSnapshot } from "~/lib/maps/realm-map-snapshot";
 import type { MapGeoreference } from "~/lib/maps/realm-map-settings";
 import { normalizeNationName } from "~/lib/realms/sources/matching";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import {
   realmMapSettings,
   realmNations,
@@ -393,8 +392,8 @@ export async function applyMapImportPlan(
 }
 
 /**
- * After a realm's political layer changed: rebuild its adjacency (PostGIS; null when skipped or failed), drop the
- * assembled-layer cache and the cached map responses, and tell open maps to refetch.
+ * After a realm's political layer changed: rebuild its adjacency (PostGIS; null when skipped or failed), bump the
+ * realm's map version (which drops its assembled layers and cached map responses) and tell open maps to refetch.
  */
 export async function refreshRealmMap(
   db: PrismaClient,
@@ -410,8 +409,7 @@ export async function refreshRealmMap(
       console.error("[map-import] Adjacency rebuild failed:", error);
     }
   }
-  clearLayerCache();
-  await invalidateCache(["geoCore.getWorldMap", "geoCore.getMapBundle"]).catch(() => undefined);
+  await invalidateRealmMap(db, realmId);
   broadcastMapUpdate("bulk");
   return pairs;
 }

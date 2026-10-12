@@ -214,6 +214,7 @@ describe("applyMapImportPlan and rollback", () => {
     });
     expect(db.country.rows[0].landArea).toBeGreaterThan(0);
     expect(db.country.rows[1].landArea).toBe(51_000); // a stated land area is kept
+    expect(db.realm.rows[0].mapVersion).toBe(1); // the apply moved the realm's map version
 
     const history = await listMapImports(db as never, admin, "r1");
     expect(history[0]).toMatchObject({ id: applied.mapImportId, canRollBack: true });
@@ -224,6 +225,7 @@ describe("applyMapImportPlan and rollback", () => {
     expect(row("Old Kingdom").isActive).toBe(true);
     expect(row("borealis-key").geometry).toEqual(square(10));
     expect(db.country.rows[0].landArea).toBeNull();
+    expect(db.realm.rows[0].mapVersion).toBe(2); // and so did the rollback
     await expect(rollbackMapImport(db as never, admin, applied.mapImportId)).rejects.toMatchObject({
       code: "CONFLICT",
     });

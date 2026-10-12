@@ -28,7 +28,11 @@ type Db = Record<string, ModelMock> & Record<`$${string}`, jest.Mock>;
 
 function realmDb(radiusKm?: number): Db {
   const models = new Map<string, ModelMock>();
-  const raw: Record<string, jest.Mock> = { $queryRawUnsafe: jest.fn().mockResolvedValue([]) };
+  const raw: Record<string, jest.Mock> = {
+    $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+    // invalidateRealmMap's version bump
+    $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
+  };
   const db = new Proxy({} as Db, {
     get: (_t, name) => {
       const key = String(name);
@@ -138,6 +142,8 @@ describe("Recompute areas", () => {
     expect(sql).toContain(`"worldId" = $1`);
     expect(realmId).toBe(EURTH);
     expect(factor).toBeCloseTo(0.25);
+    // the new areas show in the layers: the realm's map version moves
+    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([EURTH]);
   });
 
   it("leaves nations' stated land area alone unless the founder ticks the box", async () => {

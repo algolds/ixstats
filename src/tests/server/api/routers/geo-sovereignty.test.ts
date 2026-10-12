@@ -7,9 +7,10 @@
  * `jest` is the ambient global (not imported from "@jest/globals") because the hoisted
  * jest.mock() factories below call jest.fn() inline; see trpc-impersonation.test.ts.
  */
-jest.mock("~/server/api/routers/geo/core", () => ({
+jest.mock("~/server/shared/map-invalidation", () => ({
   __esModule: true,
-  clearLayerCache: jest.fn(),
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+  invalidateAllRealmMaps: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("~/lib/maps/map-update-bus", () => ({
@@ -20,7 +21,7 @@ jest.mock("~/lib/maps/map-update-bus", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoSovereigntyRouter } from "~/server/api/routers/geo/sovereignty";
-import { clearLayerCache } from "~/server/api/routers/geo/core";
+import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
@@ -49,8 +50,10 @@ let db: MockPrismaProxy;
 beforeEach(() => {
   jest.clearAllMocks();
   db = createMockPrisma();
-  db.countrySovereignty.create.mockResolvedValue({ id: "s1" });
-  db.countrySovereignty.update.mockResolvedValue({ id: "s1" });
+  db.countrySovereignty.create.mockResolvedValue({ id: "s1", sovereignId: "a", subjectId: "b" });
+  db.countrySovereignty.update.mockResolvedValue({ id: "s1", sovereignId: "a", subjectId: "b" });
+  db.countrySovereignty.delete.mockResolvedValue({ id: "s1", sovereignId: "a", subjectId: "b" });
+  db.country.findMany.mockResolvedValue([{ realmId: "r_eurth" }, { realmId: "r_eurth" }]);
 });
 
 describe("admin gate", () => {
@@ -73,6 +76,11 @@ describe("admin gate", () => {
 
 describe("createSovereignty", () => {
   it("creates the relation and refreshes the political layer", async () => {
+    db.countrySovereignty.create.mockResolvedValue({
+      id: "s1",
+      sovereignId: "caphiria",
+      subjectId: "colony",
+    });
     await callerAs(db, "admin").createSovereignty({
       sovereignId: "caphiria",
       subjectId: "colony",
@@ -87,8 +95,27 @@ describe("createSovereignty", () => {
         autonomyLevel: 0.5,
       }),
     });
-    expect(clearLayerCache).toHaveBeenCalledWith("political");
+    // The map version moves for the realm the two countries are in
+    expect(db.country.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["caphiria", "colony"] } },
+      select: { realmId: true },
+    });
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
     expect(broadcastMapUpdate).toHaveBeenCalledWith("sovereignty");
+  });
+
+  it("bumps both realms when the two countries are in different ones", async () => {
+    db.country.findMany.mockResolvedValue([{ realmId: "r_eurth" }, { realmId: "default" }]);
+    await callerAs(db, "admin").createSovereignty({
+      sovereignId: "a",
+      subjectId: "b",
+      relationshipType: "protectorate",
+    });
+    expect((invalidateRealmMap as jest.Mock).mock.calls.map((call) => call[1])).toEqual([
+      "r_eurth",
+      "default",
+    ]);
   });
 
   it("refuses a country as its own sovereign", async () => {
@@ -149,6 +176,8 @@ describe("update and delete", () => {
       where: { id: "s1" },
       data: { autonomyLevel: 0.9 },
     });
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
   });
 
   it("deletes and refreshes the map", async () => {
@@ -156,7 +185,15 @@ describe("update and delete", () => {
       success: true,
     });
     expect(db.countrySovereignty.delete).toHaveBeenCalledWith({ where: { id: "s1" } });
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
     expect(broadcastMapUpdate).toHaveBeenCalledWith("sovereignty");
+  });
+
+  it("bumps every realm when the countries of the relation cannot be found", async () => {
+    db.countrySovereignty.delete.mockResolvedValue(null);
+    await callerAs(db, "admin").deleteSovereignty({ id: "s1" });
+    expect(invalidateRealmMap).not.toHaveBeenCalled();
+    expect(invalidateAllRealmMaps).toHaveBeenCalledWith(db);
   });
 });
 

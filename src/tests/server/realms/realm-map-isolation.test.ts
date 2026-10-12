@@ -55,6 +55,7 @@ function modelMock(): ModelMock {
 function emptyDb(): Db {
   const models = new Map<string, ModelMock>();
   const raw: Record<string, jest.Mock> = {
+    $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: 1 }]),
     $queryRawUnsafe: jest.fn().mockResolvedValue([]),
     $executeRawUnsafe: jest.fn().mockResolvedValue(0),
   };
@@ -439,6 +440,8 @@ describe("imports and SVG commits never touch another realm's layers", () => {
     expect(wheres(db, "country").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
     const created = db.mapLayer!.createMany!.mock.calls[0][0].data as Array<{ realmId: string }>;
     expect(created.map((r) => r.realmId)).toEqual([DEFAULT_REALM_ID]);
+    // and Ixnay's map version moves, no other realm's
+    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([DEFAULT_REALM_ID]);
   });
 
   it("a pipeline import into an unknown realm is refused before any write", async () => {
@@ -459,15 +462,16 @@ describe("imports and SVG commits never touch another realm's layers", () => {
 
   it("a pipeline import drops the assembled-layer cache so the target realm's map rebuilds", async () => {
     const db = emptyDb();
-    layerCache.set(`political:z1:${EURTH}`, {
-      data: { type: "FeatureCollection", features: [] },
-      timestamp: Date.now(),
-    });
+    const empty = { type: "FeatureCollection" as const, features: [] };
+    layerCache.set(`political:z1:${EURTH}`, { data: empty, timestamp: Date.now() });
+    layerCache.set(`political:z1:${DEFAULT_REALM_ID}`, { data: empty, timestamp: Date.now() });
     await createCallerFactory(geoEditorProceduralRouter)(adminCtx(db)).importPipelineResult({
       layers: { lakes: { type: "FeatureCollection", features: [] } },
       realmId: EURTH,
     });
 
-    expect(layerCache.size).toBe(0);
+    // Eurth's layers go and its map version moves; Ixnay's layers and version stay
+    expect([...layerCache.keys()]).toEqual([`political:z1:${DEFAULT_REALM_ID}`]);
+    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([EURTH]);
   });
 });

@@ -2,12 +2,12 @@ import { z } from "zod";
 import type { PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import type { FeatureCollection, Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { getZoneByColor } from "~/lib/maps/elevation-config";
-import { clearLayerCache, extractAllPositions } from "../core";
+import { extractAllPositions } from "../core";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 
@@ -264,14 +264,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         console.warn("PostGIS area recalculation skipped:", e instanceof Error ? e.message : e);
       }
 
-      // Clear cache for this layer
-      clearLayerCache(upload.layerType);
-      await invalidateCache([
-        "geoCore.getWorldMap",
-        "geoCore.getMapStats",
-        "geoCore.getAllMapFeatures",
-        "geoCore.listCountries",
-      ]);
+      await invalidateRealmMap(ctx.db, DEFAULT_REALM_ID);
       broadcastMapUpdate("bulk", undefined);
 
       return {
@@ -372,13 +365,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
         { timeout: 30000 }
       );
 
-      clearLayerCache(targetUpload.layerType);
-      await invalidateCache([
-        "geoCore.getWorldMap",
-        "geoCore.getMapStats",
-        "geoCore.getAllMapFeatures",
-        "geoCore.listCountries",
-      ]);
+      await invalidateRealmMap(ctx.db, DEFAULT_REALM_ID);
       broadcastMapUpdate("bulk");
 
       return { success: true, restoredUploadId: targetUpload.id };

@@ -21,7 +21,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
 import type { NationGrowthTable } from "~/lib/realms/nation-growth-defaults";
-import { invalidateCache } from "~/lib/cache";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { writeRealmMapFeatures } from "~/lib/maps/realm-map-writer";
 import { repairRealmLayer, type SourceOutline } from "~/lib/maps/realm-layer-repair";
@@ -35,7 +34,7 @@ import type {
 } from "~/lib/realms/sources/plan";
 import { isEmptyInfobox, newNationFields, type InfoboxFacts } from "~/lib/realms/sources/stats";
 import type { AppliedResult } from "~/lib/realms/sources/summary";
-import { clearLayerCache } from "~/server/shared/layer-cache";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { freeNationSlug } from "./realms.claims";
 import { fillEmptyFromPrefill } from "./realms.handover";
 
@@ -327,8 +326,7 @@ async function writeFeatures(
   } catch (error) {
     result.errors.push(`Adjacency rebuild: ${message(error)}`);
   }
-  clearLayerCache();
-  await invalidateCache(["geoCore.getWorldMap", "geoCore.getMapBundle"]).catch(() => undefined);
+  await invalidateRealmMap(db, ctx.realmId);
 }
 
 async function writeAlliances(
