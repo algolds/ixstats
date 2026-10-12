@@ -1,6 +1,9 @@
 /** In-memory stand-ins for the tables a map import touches (jobs, realms, countries, map layers, imports). */
 type Row = Record<string, any>;
 
+/** The guarded client's cap on an unbounded findMany (UNBOUNDED_FIND_MANY_CAP in src/server/db.ts). */
+const GUARD_CAP = 1000;
+
 let counter = 0;
 const newId = (prefix: string) => `${prefix}${(++counter).toString(36).padStart(8, "0")}`;
 
@@ -49,10 +52,11 @@ function table(prefix: string, defaults: () => Row = () => ({})) {
       if (orderBy?.createdAt) list = [...list].sort((a, b) => a.createdAt - b.createdAt);
       return list[0] ? pick(list[0], select) : null;
     }),
+    // Like the guarded client (src/server/db.ts): a findMany with no `take` answers at most GUARD_CAP rows
     findMany: jest.fn(async ({ where, select, orderBy, take }: Row = {}) => {
       let list = rows.filter((r) => matches(r, where));
       if (orderBy?.createdAt === "desc") list = [...list].sort((a, b) => b.createdAt - a.createdAt);
-      return list.slice(0, take ?? list.length).map((r) => pick(r, select));
+      return list.slice(0, take ?? GUARD_CAP).map((r) => pick(r, select));
     }),
     createMany: jest.fn(async ({ data }: Row) => {
       for (const item of data as Row[])

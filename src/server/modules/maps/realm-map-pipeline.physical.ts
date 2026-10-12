@@ -167,6 +167,7 @@ async function diffLayers(
     const stored = await ctx.db.mapLayer.findMany({
       where: { realmId: ctx.realm.id, layerType, isActive: true },
       select: { featureId: true, displayName: true, properties: true, geometry: true },
+      take: 50_000,
     });
     const byKey = new Map(stored.map((row) => [row.featureId, row]));
     const diff: LayerDiff = { created: 0, changed: 0, retired: 0, unchanged: 0 };

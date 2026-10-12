@@ -151,10 +151,13 @@ export async function diffWorld(
         countryId: true,
         updatedAt: true,
       },
+      // Past the guarded client's 1000-row cap: Ixnay has about 7,300 features
+      take: 50_000,
     }),
     db.country.findMany({
       where: { realmId: realm.id },
       select: { id: true, name: true, worldgen: true, ownerUserId: true },
+      take: 50_000,
     }),
   ]);
   const retirable = preset ? await retirableSlots(db, realm.id) : [];

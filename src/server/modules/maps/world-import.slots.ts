@@ -91,11 +91,22 @@ export async function retirableSlots(
   db: Pick<PrismaClient, "country" | "realmClaim" | "blurbResponse">,
   realmId: string
 ) {
-  const slots = await db.country.findMany({ where: { realmId, worldgen: true } });
+  const slots = await db.country.findMany({
+    where: { realmId, worldgen: true },
+    take: 50_000,
+  });
   const ids = slots.map((slot) => slot.id);
   const [claimed, blurbs] = await Promise.all([
-    db.realmClaim.findMany({ where: { countryId: { in: ids } }, select: { countryId: true } }),
-    db.blurbResponse.findMany({ where: { countryId: { in: ids } }, select: { countryId: true } }),
+    db.realmClaim.findMany({
+      where: { countryId: { in: ids } },
+      select: { countryId: true },
+      take: 50_000,
+    }),
+    db.blurbResponse.findMany({
+      where: { countryId: { in: ids } },
+      select: { countryId: true },
+      take: 50_000,
+    }),
   ]);
   const held = new Set([...claimed, ...blurbs].map((row) => row.countryId));
   return slots.filter((slot) => !slot.ownerUserId && !held.has(slot.id));
@@ -110,6 +121,7 @@ async function reserveKeptSlots(tx: SlotTx, realmId: string): Promise<string[]> 
   const open = await tx.country.findMany({
     where: { realmId, worldgen: true, ownerUserId: null, claimable: true },
     select: { id: true },
+    take: 50_000,
   });
   const ids = open.map((slot) => slot.id);
   if (ids.length > 0) {
@@ -208,6 +220,7 @@ export async function unlinkedFeatures(
       areaSqKm: true,
     },
     orderBy: { featureId: "asc" },
+    take: 50_000,
   });
   return rows.map((row) => ({
     name: row.displayName?.trim() || row.featureId,
@@ -270,6 +283,7 @@ export async function replaceSlots(
         const taken = await tx.country.findMany({
           where: { realmId: realm.id },
           select: { name: true },
+          take: 50_000,
         });
         const names = dedupeNames(
           nations.map((nation) => nation.name),

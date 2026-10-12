@@ -123,6 +123,8 @@ export async function captureMapSnapshot(
         ...(scope.wholeLayer ? {} : { featureId: { in: [...scope.keys] } }),
       },
       select: ROW_SELECT,
+      // Past the guarded client's 1000-row cap: Ixnay has 4068 altitude bands, and a rollback restores only what is here
+      take: 50_000,
     })) as SnapshotRow[];
     snapshot.rows.push(...rows);
     const existing = new Set(rows.map((r) => r.featureId));
@@ -145,6 +147,7 @@ export async function captureMapSnapshot(
         landArea: true,
         areaSqMi: true,
       },
+      take: 50_000,
     })) as SnapshotCountry[];
   }
   return snapshot;
@@ -255,8 +258,13 @@ export async function heldSlots(
     db.country.findMany({
       where: { id: { in: [...ids] } },
       select: { id: true, ownerUserId: true },
+      take: 50_000,
     }),
-    db.realmClaim.findMany({ where: { countryId: { in: [...ids] } }, select: { countryId: true } }),
+    db.realmClaim.findMany({
+      where: { countryId: { in: [...ids] } },
+      select: { countryId: true },
+      take: 50_000,
+    }),
   ]);
   const held = new Set<string>();
   for (const country of owned) if (country.ownerUserId) held.add(country.id);
@@ -282,6 +290,7 @@ async function removeCreatedSlots(tx: Prisma.TransactionClient, snapshot: MapImp
   const open = await tx.country.findMany({
     where: { id: { in: ids }, realmId, claimable: true },
     select: { id: true },
+    take: 50_000,
   });
   await tx.country.updateMany({ where: { id: { in: ids }, realmId }, data: { claimable: false } });
 
@@ -310,6 +319,7 @@ async function recreateRetiredSlots(
       await db.country.findMany({
         where: { id: { in: retired.map((row) => row.id) } },
         select: { id: true },
+        take: 50_000,
       })
     ).map((row) => row.id)
   );

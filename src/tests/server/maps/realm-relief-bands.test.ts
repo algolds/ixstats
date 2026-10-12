@@ -273,9 +273,7 @@ describe("loadAltitudeBands", () => {
         properties: { zone: "zone_1" },
       });
     }
-    // What src/server/db.ts does to a findMany with no `take`
-    const read = db.mapLayer.findMany.getMockImplementation()!;
-    db.mapLayer.findMany.mockImplementation((args) => read({ ...args, take: args.take ?? 1000 }));
+    // fakeDb answers at most 1000 rows to a findMany with no take, as the guarded client does
     expect(await loadAltitudeBands(db, "realm_1")).toHaveLength(1001);
   });
 });

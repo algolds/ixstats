@@ -100,8 +100,13 @@ export async function realmNations(
       where: { realmId },
       select: { id: true, name: true, landArea: true },
       orderBy: { name: "asc" },
+      take: 50_000,
     }),
-    db.realmPage.findMany({ where: { realmId, kind: "nation" }, select: { title: true } }),
+    db.realmPage.findMany({
+      where: { realmId, kind: "nation" },
+      select: { title: true },
+      take: 50_000,
+    }),
   ]);
   const names = new Set(countries.map((c) => c.name));
   return {

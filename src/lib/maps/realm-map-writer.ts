@@ -340,6 +340,7 @@ export async function writeRealmMapFeatures(
           await db.country.findMany({
             where: { id: { in: linkIds }, realmId },
             select: { id: true },
+            take: 50_000,
           })
         ).map((c) => c.id)
       : []

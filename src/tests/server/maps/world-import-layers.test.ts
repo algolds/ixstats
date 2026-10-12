@@ -220,6 +220,38 @@ describe("a layer choice: the apply", () => {
   });
 });
 
+describe("a realm with more rows than the guarded client's findMany cap (Ixnay has 4068 bands)", () => {
+  const BANDS = 1001;
+  const bigRealm = () => {
+    const db = drawnRealm();
+    for (let i = 0; i < BANDS; i++) db.mapLayer.rows.push(mapRow("altitudes", `band_${i}`));
+    return db;
+  };
+  const activeAltitudes = (db: Db) =>
+    db.mapLayer.rows.filter(
+      (r: { layerType: string; isActive: boolean }) => r.layerType === "altitudes" && r.isActive
+    ).length;
+
+  it("counts every feature the ticked layer replaces in the check", async () => {
+    const diff = await runWorldDryRun(bigRealm(), jobFor(await realmMap(), choose(["altitudes"])));
+    expect(diff.layers.altitudes).toEqual({ create: 1, change: 0, retire: BANDS + 1 });
+    expect(diff.replaces).toEqual([`The realm's ${BANDS + 1} altitudes features will be replaced`]);
+  });
+
+  it("snapshots and restores every row of a ticked layer", async () => {
+    const db = bigRealm();
+    const result = await applyWorld(
+      db,
+      jobFor(await realmMap(), chooseApply(["altitudes"])),
+      undefined,
+      { runRelief: relief() }
+    );
+    expect(activeAltitudes(db)).toBe(1);
+    await rollbackMapImport(db, admin, result.mapImportId!);
+    expect(activeAltitudes(db)).toBe(BANDS + 1);
+  });
+});
+
 describe("Ixnay", () => {
   it("is refused without a layer choice, even for a site admin", async () => {
     const db = ixnay();

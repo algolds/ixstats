@@ -159,6 +159,7 @@ export async function planMapImport(
   const existing = await db.mapLayer.findMany({
     where: { realmId: realm.id, layerType: LAYER, isActive: true },
     select: { featureId: true, displayName: true, countryId: true },
+    take: 50_000,
   });
 
   const newNames: MapImportDiff["newNames"] = [];
@@ -201,6 +202,7 @@ export async function planMapImport(
     ? await db.mapLayer.findMany({
         where: { realmId: realm.id, layerType: LAYER, featureId: { in: keys } },
         select: { featureId: true, geometry: true, properties: true, isActive: true },
+        take: 50_000,
       })
     : [];
   // The writer stores a repaired copy, so a border an earlier import wrote is matched by that import's hash.
