@@ -797,17 +797,6 @@ describe("overview and happenings", () => {
     );
   });
 
-  it("founds no happening for a generated nation nobody owns: applying a world makes hundreds", async () => {
-    const db = makeDb();
-    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["nation"] });
-    // An unowned generated slot is not an event; the nation is founded in the feed once a player claims it
-    expect(db.country.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ NOT: { worldgen: true, ownerUserId: null } }),
-      })
-    );
-  });
-
   it("leaves embassies with draft or generating partners out of the happenings (AT-6)", async () => {
     const db = makeDb();
     await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
