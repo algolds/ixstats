@@ -26,8 +26,14 @@ interface UseWorldRecipeArgs {
   hasRealmMap: boolean;
   /** Every layer of its map has settled (arrived, or come back empty), so a world can be fitted to them */
   realmMapReady: boolean;
-  /** The layers a world is fitted to; a new object whenever any of them changes */
+  /** The layers a world is fitted to */
   realmMapLayers: LandMaskLayers;
+  /**
+   * Names the content of `realmMapLayers`: the realm's map version, which changes when the map does and not when
+   * the layers are only read again. The layers' own identity says nothing (a hook may hand back new objects with the
+   * same content), so a world is fitted again by this and never by that.
+   */
+  realmMapVersion: number | undefined;
   generator: Pick<WorldGenerator, "generate" | "reset">;
 }
 
@@ -54,7 +60,7 @@ function useRunOnce(ready: boolean, run: () => void) {
 interface LastRun {
   controls: WorldControls;
   seed: number;
-  mask: LandMaskLayers;
+  mapVersion: number | undefined;
 }
 
 /**
@@ -70,6 +76,7 @@ export function useWorldRecipe({
   hasRealmMap,
   realmMapReady,
   realmMapLayers,
+  realmMapVersion,
   generator,
 }: UseWorldRecipeArgs) {
   const [start] = useState(() => {
@@ -86,12 +93,24 @@ export function useWorldRecipe({
   const [seed, setSeed] = useState(start.seed);
   // A ref, not state: every run also moves the generator's view (or the controls), which renders this
   const lastRun = useRef<LastRun | null>(null);
-  const latest = useLatest({ controls, seed, realmMapLayers, realmMapReady, scope });
+  const latest = useLatest({
+    controls,
+    seed,
+    realmMapLayers,
+    realmMapVersion,
+    realmMapReady,
+    scope,
+  });
   const { generate, reset } = generator;
 
   const run = useCallback(
     (next: WorldControls, nextSeed: number) => {
-      const { realmMapLayers: layers, realmMapReady: ready, scope: key } = latest.current;
+      const {
+        realmMapLayers: layers,
+        realmMapVersion: mapVersion,
+        realmMapReady: ready,
+        scope: key,
+      } = latest.current;
       // A world fitted to the realm's map waits for the map: the saved recipe runs once it has loaded
       if (next.source === "realm-map" && !ready) return;
       generate(
@@ -100,7 +119,7 @@ export function useWorldRecipe({
         next.source === "realm-map" ? { landMaskLayers: layers, keepBorders: true } : undefined
       );
       saveWorldRecipe(key, { seed: nextSeed, controls: next });
-      lastRun.current = { controls: next, seed: nextSeed, mask: layers };
+      lastRun.current = { controls: next, seed: nextSeed, mapVersion };
     },
     [generate, latest]
   );
@@ -118,7 +137,7 @@ export function useWorldRecipe({
   // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
   const fitsMap = controls.source === "realm-map";
   const ran = lastRun.current;
-  const mapMoved = !!ran && ran.mask !== realmMapLayers;
+  const mapMoved = !!ran && ran.mapVersion !== realmMapVersion;
   useEffect(() => {
     if (fitsMap && realmMapReady && mapMoved) generateNow();
   }, [fitsMap, realmMapReady, mapMoved, generateNow]);
@@ -168,7 +187,7 @@ export function useWorldRecipe({
     ran === null ||
     ran.controls !== controls ||
     ran.seed !== seed ||
-    (fitsMap && (!realmMapReady || ran.mask !== realmMapLayers));
+    (fitsMap && (!realmMapReady || ran.mapVersion !== realmMapVersion));
 
   return {
     controls,

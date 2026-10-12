@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "~/components/ui/button";
 import { Signal } from "~/components/ui/signal";
 import { realmManageHref } from "~/lib/maps/realm-world-editor";
 
@@ -50,15 +49,12 @@ export function WorldLockedNotice({
 }
 
 /** The claims that lock the world could not be read, so applying stays off until they can. */
-export function WorldLockUnknownNotice({ onRetry }: { onRetry: () => void }) {
+export function WorldLockUnknownNotice() {
   return (
     <Signal tone="warning" title="Claims could not be checked">
       <p>
         Using a world stays off until the realm's claims can be read. You can still make a preview.
       </p>
-      <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
-        Check again
-      </Button>
     </Signal>
   );
 }

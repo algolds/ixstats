@@ -4,6 +4,10 @@ import { Button } from "~/components/ui/button";
 import type { RouterOutputs } from "~/trpc/react";
 import type { WorldSource } from "~/lib/worldgen/world-controls";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
+import { useWorldApply } from "../hooks/useWorldApply";
+import { WorldApplyReview } from "./WorldApplyReview";
+import { WorldApplyDone, WorldApplyFailed, WorldApplyProgress } from "./WorldApplyStatus";
+import { WorldReliefRebuild } from "./WorldReliefRebuild";
 
 /**
  * Whether claims or an archived realm lock applying, as `realms.map.worldStatus` answers. `loading` and `failed`
@@ -14,10 +18,7 @@ export type WorldLock =
   | { phase: "failed"; message: string; retry: () => void }
   | { phase: "ready"; status: RouterOutputs["realms"]["map"]["worldStatus"] };
 
-/**
- * What the apply flow can read. `WorldPanel` renders this region below the draft's statistics, on a realm (never in
- * the studio's sandbox), and owns everything in it.
- */
+/** What the apply region reads. `WorldPanel` renders it on a realm (never in the studio's sandbox). */
 export interface WorldApplyRegionProps {
   /** The realm the world would be applied to */
   realm: { id: string; slug: string | null };
@@ -32,27 +33,110 @@ export interface WorldApplyRegionProps {
   generating: boolean;
   /**
    * `result` is not the world the controls, the seed and the realm's map now ask for: a slider is mid-drag, the last
-   * generation failed, or the realm's map changed or is loading under a draft fitted to it. Apply only a draft
-   * that is not stale.
+   * generation failed, or the realm's map changed or is loading under a draft fitted to it. Only a draft that is not
+   * stale is applied.
    */
   stale: boolean;
   lock: WorldLock;
-  /** Drops the draft from the map and the stored recipe: call it once the world has been applied */
+  /** Drops the draft from the map and the stored recipe: called once the world has been applied */
   onDiscardDraft: () => void;
 }
 
+/** Why the realm can't take a world now (its claims, its status), or null when it can. */
+function lockBlock(lock: WorldLock): string | null {
+  if (lock.phase === "loading") return "Checking the realm's claims.";
+  if (lock.phase === "failed") return "Claims could not be checked, so using a world is off.";
+  if (lock.status.lockReason === "archived") return "This realm is archived.";
+  if (lock.status.lockReason === "claims") return "Claims on this realm's nations lock its world.";
+  return null;
+}
+
+/** Why the draft can't be used yet, or null when it can. */
+function draftBlock({ result, generating, stale }: WorldApplyRegionProps): string | null {
+  if (generating) return "Wait for the preview to finish.";
+  if (!result) return "Make a preview first.";
+  if (stale) return "The preview no longer matches the controls or the realm's map.";
+  return null;
+}
+
 /**
- * The seam for applying a world. The upload, dry run, apply, progress and result flow renders here, reading the
- * props above; until it does, applying is not offered.
+ * Using the draft world for the realm: Use this world uploads it and checks what it would change (the dry run), the
+ * review shows that, Apply writes it. Applying is off, with the reason, while the claims are unread or lock the realm
+ * or the draft is out of date; the server checks all of it again. Also offers to rebuild the relief when its build
+ * failed.
  */
-export function WorldApplyRegion({ result, generating }: WorldApplyRegionProps) {
+export function WorldApplyRegion(props: WorldApplyRegionProps) {
+  const { realm, result, source, lock, onDiscardDraft } = props;
+  const { view, begin, confirm, close } = useWorldApply({
+    realmId: realm.id,
+    result,
+    source,
+    onApplied: onDiscardDraft,
+  });
+  const lockedBy = lockBlock(lock);
+  const blocked = lockedBy ?? draftBlock(props);
+  const appliedRelief = view.stage === "done" ? view.applied.relief : null;
+  const reliefFailed =
+    appliedRelief?.status === "failed" || (lock.phase === "ready" && lock.status.reliefFailed);
+
   return (
-    <div className="border-separator space-y-2 border-t pt-3">
-      <Button className="w-full" disabled>
-        Use this world
-      </Button>
-      {!result && !generating && (
-        <p className="text-label-secondary text-caption">Make a preview first.</p>
+    <div className="border-separator space-y-3 border-t pt-3">
+      <WorldReliefRebuild
+        key={view.stage === "done" ? (view.applied.mapImportId ?? "applied") : "stored"}
+        realmId={realm.id}
+        failed={reliefFailed}
+        cause={appliedRelief?.error}
+      />
+      {view.stage === "idle" && (
+        <div className="space-y-2">
+          <Button className="w-full" disabled={blocked !== null} onClick={() => void begin()}>
+            Use this world
+          </Button>
+          {blocked && <p className="text-label-secondary text-caption">{blocked}</p>}
+          {lock.phase === "failed" && (
+            <Button size="sm" variant="outline" onClick={lock.retry}>
+              Check again
+            </Button>
+          )}
+        </div>
+      )}
+      {view.stage === "sending" && (
+        <WorldApplyProgress label="Sending the world" message="Uploading" progress={null} />
+      )}
+      {view.stage === "checking" && (
+        <WorldApplyProgress
+          label="Checking the world"
+          message={view.message}
+          progress={view.progress}
+        />
+      )}
+      {view.stage === "review" && (
+        <WorldApplyReview
+          diff={view.diff}
+          outdated={view.outdated}
+          blocked={view.outdated ? blocked : lockedBy}
+          onApply={() => void confirm()}
+          onCheckAgain={() => void begin()}
+          onCancel={close}
+        />
+      )}
+      {view.stage === "applying" && (
+        <WorldApplyProgress
+          label="Applying the world"
+          message={view.message}
+          progress={view.progress}
+        />
+      )}
+      {view.stage === "done" && (
+        <WorldApplyDone applied={view.applied} realmSlug={realm.slug} onClose={close} />
+      )}
+      {view.stage === "failed" && (
+        <WorldApplyFailed
+          failure={view.failure}
+          blocked={blocked}
+          onRetry={() => void begin()}
+          onClose={close}
+        />
       )}
     </div>
   );

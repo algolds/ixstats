@@ -32,6 +32,8 @@ interface WorldSourceSectionProps {
   realmMap: RealmMapState;
   /** The realm's slug, for the link to Map import */
   realmSlug: string | null;
+  /** Asks for the realm's map layers again, after they could not be loaded */
+  onRetryMap: () => void;
   onPickSource: (source: WorldSource) => void;
   onPickPreset: (preset: WorldPreset) => void;
   onCommitSeed: (seed: number) => void;
@@ -43,6 +45,7 @@ export function WorldSourceSection({
   seed,
   realmMap,
   realmSlug,
+  onRetryMap,
   onPickSource,
   onPickPreset,
   onCommitSeed,
@@ -87,9 +90,14 @@ export function WorldSourceSection({
           <p className="text-label-secondary text-caption">Loading the realm's map.</p>
         )}
         {realmMap === "failed" && (
-          <p className="text-label-secondary text-caption">
-            The realm's map could not be loaded. Reload the editor to try again.
-          </p>
+          <div className="space-y-1">
+            <p className="text-label-secondary text-caption">
+              The realm's map could not be loaded, so a world can't be built around it.
+            </p>
+            <Button type="button" size="xs" variant="outline" onClick={onRetryMap}>
+              Try again
+            </Button>
+          </div>
         )}
         {controls.source === "preset" && (
           <SegmentedControl

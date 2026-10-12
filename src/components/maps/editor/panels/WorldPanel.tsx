@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { useRealmMapDisplay } from "~/components/maps/core/hooks/useRealmMapDisplay";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
-import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
+import { useDecodedMapLayers, useRetryMapLayers } from "~/hooks/useMapLayerData";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
 import { useWorldPreview } from "~/hooks/useWorldPreview";
 import { api } from "~/trpc/react";
@@ -50,9 +50,18 @@ export function WorldPanel(props: WorldPanelProps) {
   return <RealmWorldPanel key={display.realmId} display={display} {...props} />;
 }
 
-function realmMapState(hasRealmMap: boolean, ready: boolean, pending: boolean): RealmMapState {
+interface MapLoad {
+  ready: boolean;
+  pending: boolean;
+  /** A layer (or the map's version) could not be loaded */
+  failed: boolean;
+}
+
+function realmMapState(hasRealmMap: boolean, { ready, pending, failed }: MapLoad): RealmMapState {
   if (!hasRealmMap) return "none";
   if (ready) return "ready";
+  // A failed version read leaves the layers pending for good, so a failure outranks pending
+  if (failed) return "failed";
   return pending ? "loading" : "failed";
 }
 
@@ -71,12 +80,16 @@ function RealmWorldPanel({
   const loaded = useDecodedMapLayers({ layers: MASK_LAYER_TYPES, realm });
   const realmMapLayers = useMemo(() => landMaskLayersFrom(loaded.layers), [loaded.layers]);
   const hasRealmMap = display.layerTypes.includes("political");
-  const realmMapReady = !loaded.isPending && hasRealmBorders(realmMapLayers);
+  const mapFailed = !!loaded.error;
+  // A layer that failed is not settled: left out of the mask, the fit would run on a map with its land missing
+  const realmMapReady = !loaded.isPending && !mapFailed && hasRealmBorders(realmMapLayers);
+  const retryMap = useRetryMapLayers();
   const recipe = useWorldRecipe({
     scope: sandbox ? `sandbox:${display.realmId}` : display.realmId,
     hasRealmMap,
     realmMapReady,
     realmMapLayers,
+    realmMapVersion: loaded.version,
     generator,
   });
   const { controls } = recipe;
@@ -117,13 +130,18 @@ function RealmWorldPanel({
           realmSlug={display.realmSlug}
         />
       )}
-      {lock.phase === "failed" && <WorldLockUnknownNotice onRetry={lock.retry} />}
+      {lock.phase === "failed" && <WorldLockUnknownNotice />}
 
       <WorldSourceSection
         controls={controls}
         seed={recipe.seed}
-        realmMap={realmMapState(hasRealmMap, realmMapReady, loaded.isPending)}
+        realmMap={realmMapState(hasRealmMap, {
+          ready: realmMapReady,
+          pending: loaded.isPending,
+          failed: mapFailed,
+        })}
         realmSlug={display.realmSlug}
+        onRetryMap={retryMap}
         onPickSource={recipe.pickSource}
         onPickPreset={recipe.pickPreset}
         onCommitSeed={recipe.commitSeed}
