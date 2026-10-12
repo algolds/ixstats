@@ -10,9 +10,13 @@
 
 import type { Position } from "geojson";
 import {
+  coastCorners,
+  groupRings,
   mergeCells,
+  ringArea,
   RING_LATITUDE,
   type MergedPolygon,
+  type MergedRing,
 } from "~/lib/worldgen/v2/helpers/polygon-merge";
 import { generateWorld } from "~/lib/worldgen/v2/index";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
@@ -319,5 +323,83 @@ describe("v2/polygon-merge", () => {
       expect(rings.length).toBeGreaterThan(0);
       for (const ring of rings) expect(ring.corners).toEqual([]);
     });
+
+    it("flags, as well, the vertices where a coast touches two regions or a region and a map edge", () => {
+      // Water is region 0; land is its state, so a coast vertex is a corner where two states (or a state and
+      // the map's edge) meet beside the water
+      const regionOf = (i: number) => (cells.isLand[i] ? 1 + stateOf(i) : 0);
+      const regions = new Map<string, { around: Set<number>; wet: boolean }>();
+      for (let i = 0; i < cells.n; i++) {
+        for (const [x, y] of cells.vertices[i]!.slice(0, -1)) {
+          const here = regions.get(key(x, y)) ?? { around: new Set<number>(), wet: false };
+          here.around.add(regionOf(i));
+          here.wet ||= regionOf(i) === 0;
+          if (x === -180) here.around.add(-1);
+          if (x === 180) here.around.add(-2);
+          regions.set(key(x, y), here);
+        }
+      }
+
+      const land = cellsWhere((i) => cells.isLand[i] === 1 && clear(i));
+      const flags = coastCorners(graph, regionOf);
+      const plain = mergeCells(graph, land, stateOf).flat();
+      const flagged = mergeCells(graph, land, stateOf, flags).flat();
+      expect(flagged.length).toBe(plain.length);
+      let extra = 0;
+      flagged.forEach(({ coordinates, corners }, r) => {
+        coordinates.slice(0, -1).forEach(([x, y], v) => {
+          if (Math.abs(y!) > 80) return;
+          const here = regions.get(key(x!, y!))!;
+          const coastCorner = here.wet && here.around.size >= 3;
+          expect({ r, v, corner: corners.includes(v) }).toEqual({
+            r,
+            v,
+            corner: plain[r]!.corners.includes(v) || coastCorner,
+          });
+          if (coastCorner && !plain[r]!.corners.includes(v)) extra++;
+        });
+      });
+      // A ring through a coastal vertex where the state changes beside the sea is a corner of the landmass too
+      expect(extra).toBeGreaterThan(5);
+    });
+  });
+});
+
+describe("v2/polygon-merge groupRings", () => {
+  const square = (x: number, y: number, size: number, clockwise = false): MergedRing => {
+    const ring = [
+      [x, y],
+      [x + size, y],
+      [x + size, y + size],
+      [x, y + size],
+      [x, y],
+    ];
+    return { coordinates: clockwise ? ring.reverse() : ring, corners: [] };
+  };
+
+  it("measures counter-clockwise rings positive and clockwise ones negative", () => {
+    expect(ringArea(square(0, 0, 10).coordinates)).toBeCloseTo(100);
+    expect(ringArea(square(0, 0, 10, true).coordinates)).toBeCloseTo(-100);
+  });
+
+  it("attaches a hole to the smallest shell that contains it", () => {
+    const [big, small] = groupRings([
+      square(0, 0, 100),
+      square(20, 20, 30),
+      square(30, 30, 5, true),
+      square(5, 5, 5, true),
+    ]);
+    expect(big!.length).toBe(2);
+    expect(small!.length).toBe(2);
+    expect(big![1]!.coordinates[0]).toEqual([5, 5]);
+    expect(small![1]!.coordinates[0]).toEqual([30, 30]);
+  });
+
+  it("leaves out a hole no shell contains, whether there is one shell or several", () => {
+    const outside = square(500, 500, 5, true);
+    expect(groupRings([square(0, 0, 10), outside]).map((p) => p.length)).toEqual([1]);
+    expect(
+      groupRings([square(0, 0, 10), square(50, 50, 10), outside]).map((p) => p.length)
+    ).toEqual([1, 1]);
   });
 });

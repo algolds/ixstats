@@ -230,51 +230,116 @@ describe("v2/export polygon validity", () => {
       }
     }
   });
+});
 
-  it("keeps the rings of neighbouring states on the same borders", () => {
-    const world = worlds[1]!;
-    const edge = (a: Position, b: Position) => `${a[0]},${a[1]}>${b[0]},${b[1]}`;
-    const owners = new Map<string, number>();
-    const features = world.layers.political!.features;
-    for (const feature of features) {
-      for (const polygon of polygonsOf(feature.geometry)) {
-        for (const ring of polygon) {
-          for (let i = 0; i < ring.length - 1; i++) {
-            owners.set(edge(ring[i]!, ring[i + 1]!), Number(feature.id));
-          }
-        }
-      }
-    }
+type World = ReturnType<typeof generateWorld>;
 
-    // Every pair of states whose cells touch shares a stretch of border that both rings run, in opposite directions
-    const { cells } = world.graph!;
-    const touching = new Set<string>();
-    for (let i = 0; i < cells.n; i++) {
-      for (const j of cells.neighbors[i]!) {
-        const [a, b] = [cells.state[i]!, cells.state[j]!];
-        if (a > 0 && b > a && Math.abs(cells.p[i * 2]! - cells.p[j * 2]!) < 180) {
-          touching.add(`${a}|${b}`);
-        }
-      }
-    }
-    const sharing = new Set<string>();
-    for (const feature of features) {
-      for (const polygon of polygonsOf(feature.geometry)) {
-        for (const ring of polygon) {
-          for (let i = 0; i < ring.length - 1; i++) {
-            const other = owners.get(edge(ring[i + 1]!, ring[i]!));
-            if (other !== undefined && other !== feature.id) {
-              sharing.add(
-                `${Math.min(Number(feature.id), other)}|${Math.max(Number(feature.id), other)}`
-              );
+/** Rounded to 1e-4 and perturbed by up to 0.006, the points along the antimeridian and the polar cut stay near them. */
+const onMapEdge = (p: Position) => Math.abs(p[0]!) > 179.99 || Math.abs(p[1]!) > 84.97;
+
+const edgeKey = (a: Position, b: Position) => `${a[0]},${a[1]}>${b[0]},${b[1]}`;
+const pointKey = (p: Position) => `${p[0]},${p[1]}`;
+
+/** Every ring point of the features of a layer (one feature when `only` names it). */
+function ringPoints(world: World, layer: string, only?: number): Position[] {
+  const out: Position[] = [];
+  for (const feature of world.layers[layer]!.features) {
+    if (only !== undefined && feature.id !== only) continue;
+    for (const polygon of polygonsOf(feature.geometry))
+      for (const ring of polygon) out.push(...ring);
+  }
+  return out;
+}
+
+describe("v2/export shared borders", () => {
+  const worlds = [
+    generateWorld({ ...WORLD_PRESETS.eurth, seed: 7, cellCount: 8000 }),
+    generateWorld({ ...WORLD_PRESETS.ixnay, seed: 4, cellCount: 8000 }),
+  ];
+
+  it("gives every edge of a political ring a reverse in a neighbouring ring, apart from coasts and map edges", () => {
+    for (const world of worlds) {
+      const owners = new Map<string, number>();
+      const coast = new Set<string>();
+      for (const [layer, edges] of [
+        ["political", owners],
+        ["background", coast],
+      ] as const) {
+        for (const feature of world.layers[layer]!.features) {
+          for (const polygon of polygonsOf(feature.geometry)) {
+            for (const ring of polygon) {
+              for (let i = 0; i < ring.length - 1; i++) {
+                const key = edgeKey(ring[i]!, ring[i + 1]!);
+                if (edges instanceof Map) edges.set(key, Number(feature.id));
+                else edges.add(key);
+              }
             }
           }
         }
       }
+
+      let shared = 0;
+      const stray: string[] = [];
+      for (const feature of world.layers.political!.features) {
+        for (const polygon of polygonsOf(feature.geometry)) {
+          for (const ring of polygon) {
+            for (let i = 0; i < ring.length - 1; i++) {
+              const [a, b] = [ring[i]!, ring[i + 1]!];
+              const other = owners.get(edgeKey(b, a));
+              if (other !== undefined && other !== feature.id) shared++;
+              else if (!coast.has(edgeKey(a, b)) && !(onMapEdge(a) && onMapEdge(b))) {
+                stray.push(`${feature.id}: ${edgeKey(a, b)}`);
+              }
+            }
+          }
+        }
+      }
+      expect(shared).toBeGreaterThan(5000);
+      expect(stray).toEqual([]);
     }
-    expect(touching.size).toBeGreaterThan(20);
-    const apart = [...touching].filter((pair) => !sharing.has(pair));
-    // Corner contacts apart, which share no stretch of border
-    expect(apart.length).toBeLessThan(touching.size * 0.03);
+  });
+
+  it("draws a coast the same in every layer", () => {
+    for (const world of worlds) {
+      const inland = ringPoints(world, "background").filter((p) => !onMapEdge(p));
+      expect(inland.length).toBeGreaterThan(2000);
+      // The whole coast is a ring point of the political and climate layers and of the lowest altitude zone
+      for (const layer of ["political", "climate"]) {
+        const points = new Set(ringPoints(world, layer).map(pointKey));
+        expect(inland.filter((p) => !points.has(pointKey(p)))).toEqual([]);
+      }
+      const lowland = new Set(ringPoints(world, "altitudes", 1).map(pointKey));
+      expect(inland.filter((p) => !lowland.has(pointKey(p)))).toEqual([]);
+
+      // A higher zone follows the coast where it has coast, and then to the point: none of its points lies within
+      // 0.001 degrees of a coast point without being one
+      const coast = new Map<string, Position[]>();
+      const cell = (v: number) => Math.floor(v / 0.01);
+      for (const p of inland) {
+        const key = `${cell(p[0]!)},${cell(p[1]!)}`;
+        coast.set(key, [...(coast.get(key) ?? []), p]);
+      }
+      const coastNear = (p: Position) => {
+        const found: Position[] = [];
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            for (const q of coast.get(`${cell(p[0]!) + dx},${cell(p[1]!) + dy}`) ?? []) {
+              if (Math.hypot(p[0]! - q[0]!, p[1]! - q[1]!) < 0.001) found.push(q);
+            }
+          }
+        }
+        return found;
+      };
+      const drifting: string[] = [];
+      for (const zone of world.layers.altitudes!.features) {
+        for (const p of ringPoints(world, "altitudes", zone.id as number)) {
+          const near = coastNear(p);
+          if (near.length > 0 && !near.some((q) => pointKey(q) === pointKey(p))) {
+            drifting.push(`zone ${zone.id}: ${pointKey(p)}`);
+          }
+        }
+      }
+      expect(drifting).toEqual([]);
+    }
   });
 });

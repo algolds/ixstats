@@ -6,9 +6,20 @@
 export const MAX_LATITUDE = 85;
 
 /**
- * Length of a spline end tangent as a fraction of its segment. A full Catmull-Rom curve (1) swells the area of
- * a small region by up to 9% (a two-cell country); at 0.35 a region of 13 cells or more is within 3% of its cells
- * and the smallest within 5%, at the price of tighter corners.
+ * How far inside the map's edges the export keeps its rings: the polar clip sits this far short of MAX_LATITUDE
+ * and a splined point that would cross an edge is put this far inside it. Perturbation moves a point by up to
+ * 0.005, so a ring this far in is never pressed against the clamp or the edge.
+ */
+export const EDGE_INSET = 0.01;
+
+/**
+ * Length of a spline end tangent as a fraction of its segment. A full Catmull-Rom curve (1) swells a small
+ * region, which smoothing must not do to the area the slots report. Measured on 60 worlds of 20,000 cells (area
+ * of each smoothed polygon over its raw one, per connected polygon, any layer): a polygon of 13 cells or more
+ * swells by at most 1.8%, 4 to 12 cells 4.3%, 2 to 3 cells 7.9%, a single cell up to 17%. Country slots (a
+ * slot is often several polygons) at 100k cells in 16 worlds: 13 cells or more within 3% of their area (worst
+ * 1.026), the smallest within 5% (worst 1.050); a full Catmull-Rom curve took a two-cell country up to 9% over.
+ * The price is tighter corners.
  */
 const SPLINE_TENSION = 0.35;
 
@@ -82,7 +93,7 @@ function refine(points: [number, number][], closed: boolean, bounds?: Bounds): [
  * Smooth a closed polygon ring with a spline through its vertices. Replaces sharp polygon corners with
  * continuous curves; each pass doubles the number of vertices. New points are held within `bounds`.
  */
-export function catmullRomSmooth(
+export function splineSmooth(
   ring: [number, number][],
   passes: number = 3,
   bounds?: Bounds
@@ -98,7 +109,7 @@ export function catmullRomSmooth(
  * stay where they are and the curve leaves each of them along the chain's first and last segment, so a
  * corner stays a corner and the result depends on the chain alone.
  */
-export function catmullRomSmoothChain(
+export function splineSmoothChain(
   chain: [number, number][],
   passes: number = 3,
   bounds?: Bounds

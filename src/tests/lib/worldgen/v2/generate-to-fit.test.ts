@@ -7,6 +7,7 @@ import { generateWorld } from "~/lib/worldgen/v2/index";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import { cellAreaKm2, createMesh, MeshCache } from "~/lib/worldgen/v2/mesh";
 import { rasterizeLandMask, sampleLandMask, type LandMask } from "~/lib/worldgen/land-mask";
+import { polygonsOf, ringFault } from "~/tests/helpers/ring-geometry";
 
 const PARAMS = { ...DEFAULT_PARAMS, seed: 7, cellCount: 12000 };
 
@@ -123,6 +124,46 @@ describe("v2 generate to fit: land mask", () => {
     const w = generateWorld({ ...PARAMS, cellCount: 3000 }, undefined, { landMask: empty });
     expect(w.graph!.cells.isLand.reduce((a, b) => a + b, 0)).toBe(0);
     expect(w.slots).toEqual([]);
+  });
+});
+
+describe("v2 generate to fit: polygon validity", () => {
+  // Land across the antimeridian (a block on each side of it) and over the south pole, as well as the continents
+  const seamAndPole = layer(
+    rect(-120, -30, -40, 50),
+    rect(10, -35, 120, 55),
+    rect(168, -25, 180, 25),
+    rect(-180, -25, -165, 25),
+    rect(-70, -90, 70, -72)
+  );
+  const mask = rasterizeLandMask({ background: seamAndPole }, 720);
+
+  it.each([
+    ["generated countries", {}],
+    ["kept borders", { keepBorders: true }],
+  ])("exports sound rings on every layer with %s", (_label, options) => {
+    const world = generateWorld({ ...PARAMS, cellCount: 8000 }, undefined, {
+      landMask: mask,
+      ...options,
+    });
+    let reachedSeam = false;
+    for (const [name, collection] of Object.entries(world.layers)) {
+      if (name === "rivers") continue;
+      for (const feature of collection.features) {
+        expect({ name, id: feature.id, fault: ringFault(feature.geometry) }).toEqual({
+          name,
+          id: feature.id,
+          fault: null,
+        });
+        if (name === "background") {
+          reachedSeam ||= polygonsOf(feature.geometry).some(([shell]) =>
+            shell!.some((p) => Math.abs(p[0]!) > 179.99)
+          );
+        }
+      }
+    }
+    // The mask puts land on the seam, so the test does cover the pieces cut there
+    expect(reachedSeam).toBe(true);
   });
 });
 

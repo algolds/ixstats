@@ -32,9 +32,43 @@ export function polygonsOf(geometry: Geometry): Position[][][] {
   return [];
 }
 
-function side(ax: number, ay: number, bx: number, by: number, cx: number, cy: number): number {
-  const cross = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-  return cross > 0 ? 1 : cross < 0 ? -1 : 0;
+const view = new DataView(new ArrayBuffer(8));
+
+/** A double as an integer mantissa and a power of two: x = mantissa * 2^exponent, exactly. */
+function decompose(x: number): { mantissa: bigint; exponent: number } {
+  view.setFloat64(0, x);
+  const bits = view.getBigUint64(0);
+  const sign = bits >> 63n ? -1n : 1n;
+  const biased = Number((bits >> 52n) & 0x7ffn);
+  const fraction = bits & 0xfffffffffffffn;
+  return biased === 0
+    ? { mantissa: sign * fraction, exponent: -1074 }
+    : { mantissa: sign * (fraction | (1n << 52n)), exponent: biased - 1075 };
+}
+
+/** The sign of (b - a) x (c - a), exactly, on the doubles given. */
+function exactOrient(a: Position, b: Position, c: Position): number {
+  const parts = [a[0]!, a[1]!, b[0]!, b[1]!, c[0]!, c[1]!].map(decompose);
+  const exponents = parts.filter((p) => p.mantissa !== 0n).map((p) => p.exponent);
+  if (exponents.length === 0) return 0;
+  const base = Math.min(...exponents);
+  const [ax, ay, bx, by, cx, cy] = parts.map((p) => p.mantissa << BigInt(p.exponent - base));
+  const cross = (bx! - ax!) * (cy! - ay!) - (by! - ay!) * (cx! - ax!);
+  return cross > 0n ? 1 : cross < 0n ? -1 : 0;
+}
+
+/**
+ * Orientation of the triangle a, b, c: 1 counter-clockwise, -1 clockwise, 0 collinear. A floating-point
+ * cross product decides it unless it is within rounding error of zero, then exact integer arithmetic does
+ * (rounded exported coordinates are often collinear in decimal and nearly so in binary).
+ */
+export function orient(a: Position, b: Position, c: Position): number {
+  const left = (b[0]! - a[0]!) * (c[1]! - a[1]!);
+  const right = (b[1]! - a[1]!) * (c[0]! - a[0]!);
+  const det = left - right;
+  // The error bound of a floating-point 2x2 determinant, with room to spare for the subtractions
+  if (Math.abs(det) > 1e-15 * (Math.abs(left) + Math.abs(right))) return det > 0 ? 1 : -1;
+  return exactOrient(a, b, c);
 }
 
 function within(a: number, b: number, c: number): boolean {
@@ -42,29 +76,30 @@ function within(a: number, b: number, c: number): boolean {
 }
 
 /** True when the closed segments ab and cd share a point (crossing, touching or overlapping). */
-function segmentsMeet(a: Position, b: Position, c: Position, d: Position): boolean {
-  const [ax, ay] = [a[0]!, a[1]!];
-  const [bx, by] = [b[0]!, b[1]!];
-  const [cx, cy] = [c[0]!, c[1]!];
-  const [dx, dy] = [d[0]!, d[1]!];
-  const o1 = side(ax, ay, bx, by, cx, cy);
-  const o2 = side(ax, ay, bx, by, dx, dy);
-  const o3 = side(cx, cy, dx, dy, ax, ay);
-  const o4 = side(cx, cy, dx, dy, bx, by);
+export function segmentsMeet(a: Position, b: Position, c: Position, d: Position): boolean {
+  const apart =
+    Math.max(a[0]!, b[0]!) < Math.min(c[0]!, d[0]!) ||
+    Math.max(c[0]!, d[0]!) < Math.min(a[0]!, b[0]!) ||
+    Math.max(a[1]!, b[1]!) < Math.min(c[1]!, d[1]!) ||
+    Math.max(c[1]!, d[1]!) < Math.min(a[1]!, b[1]!);
+  if (apart) return false;
+  const o1 = orient(a, b, c);
+  const o2 = orient(a, b, d);
+  const o3 = orient(c, d, a);
+  const o4 = orient(c, d, b);
   if (o1 !== o2 && o3 !== o4) return true;
   return (
-    (o1 === 0 && within(ax, bx, cx) && within(ay, by, cy)) ||
-    (o2 === 0 && within(ax, bx, dx) && within(ay, by, dy)) ||
-    (o3 === 0 && within(cx, dx, ax) && within(cy, dy, ay)) ||
-    (o4 === 0 && within(cx, dx, bx) && within(cy, dy, by))
+    (o1 === 0 && within(a[0]!, b[0]!, c[0]!) && within(a[1]!, b[1]!, c[1]!)) ||
+    (o2 === 0 && within(a[0]!, b[0]!, d[0]!) && within(a[1]!, b[1]!, d[1]!)) ||
+    (o3 === 0 && within(c[0]!, d[0]!, a[0]!) && within(c[1]!, d[1]!, a[1]!)) ||
+    (o4 === 0 && within(c[0]!, d[0]!, b[0]!) && within(c[1]!, d[1]!, b[1]!))
   );
 }
 
 /** Adjacent segments share an end point; they only meet again when the second doubles back over the first. */
 function adjacentOverlap(a: Position, b: Position, c: Position): boolean {
-  const cross = (b[0]! - a[0]!) * (c[1]! - b[1]!) - (b[1]! - a[1]!) * (c[0]! - b[0]!);
   const dot = (b[0]! - a[0]!) * (c[0]! - b[0]!) + (b[1]! - a[1]!) * (c[1]! - b[1]!);
-  return cross === 0 && dot < 0;
+  return dot < 0 && orient(a, b, c) === 0;
 }
 
 interface SegmentGrid {

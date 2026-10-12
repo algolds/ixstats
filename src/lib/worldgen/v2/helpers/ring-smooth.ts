@@ -2,18 +2,24 @@
  * UPG v2 — Ring smoothing
  *
  * Smooths a merged ring so that borders the ring shares with its neighbours come out identical on both
- * sides. The ring is cut at its corners (where a third region meets it) into chains; each chain is
- * simplified, splined and oriented the same way whichever ring it is read from, so two rings that share a
- * chain get the same curve for it. A ring without corners is a closed chain of its own, started at its
- * lowest vertex and read counter-clockwise.
+ * sides. The ring is cut at its corners (where a third region meets it, a map edge begins, or the merge
+ * flagged the vertex) into chains; each chain is simplified, splined and oriented the same way whichever
+ * ring it is read from, so two rings that cut a border at the same corners get the same curve for it. A
+ * ring without corners is a closed chain of its own, started at its lowest vertex and read counter-clockwise.
+ *
+ * Within a layer the corners are the same on both sides of every border. Across layers they are the same
+ * along a coast (the export flags the vertices where a coast changes what it borders in every layer), so
+ * the coast is one curve in the background, altitude, climate and political layers. Other borders of one
+ * layer (a state border, a contour) are not shared with another layer's borders and need not be.
  */
 
-import { RING_LATITUDE, type MergedRing } from "./polygon-merge";
+import { RING_LATITUDE, ringArea, type MergedRing } from "./polygon-merge";
 import {
-  catmullRomSmooth,
-  catmullRomSmoothChain,
+  EDGE_INSET,
   perturbRing,
   simplifyRing,
+  splineSmooth,
+  splineSmoothChain,
   type Bounds,
 } from "./chaikin";
 
@@ -21,8 +27,6 @@ type Point = [number, number];
 
 /** Fine decimation of collinear/duplicate points (0.001° ≈ 100m) */
 const SIMPLIFY_TOLERANCE = 0.001;
-/** A splined point that would cross the edge of the map is put this far inside it instead. */
-const EDGE_INSET = 0.01;
 const BOUNDS: Bounds = {
   minX: -180,
   maxX: 180,
@@ -48,17 +52,8 @@ function runsBackwards(chain: Point[]): boolean {
 function smoothChain(chain: Point[], passes: number): Point[] {
   const backwards = runsBackwards(chain);
   const ordered = backwards ? chain.slice().reverse() : chain;
-  const smoothed = catmullRomSmoothChain(simplifyRing(ordered, SIMPLIFY_TOLERANCE), passes, BOUNDS);
+  const smoothed = splineSmoothChain(simplifyRing(ordered, SIMPLIFY_TOLERANCE), passes, BOUNDS);
   return backwards ? smoothed.reverse() : smoothed;
-}
-
-/** Signed area, positive counter-clockwise. */
-function orientation(ring: Point[]): number {
-  let area = 0;
-  for (let i = 0; i < ring.length - 1; i++) {
-    area += (ring[i]![0] - ring[i + 1]![0]) * (ring[i + 1]![1] + ring[i]![1]);
-  }
-  return area;
 }
 
 /** Smooth a closed ring that has no corners: from its lowest vertex, counter-clockwise. */
@@ -69,9 +64,9 @@ function smoothLoop(ring: Point[], passes: number): Point[] {
   const started = [...open.slice(lowest), ...open.slice(0, lowest)];
   started.push([started[0]![0], started[0]![1]]);
 
-  const clockwise = orientation(started) < 0;
+  const clockwise = ringArea(started) < 0;
   const ordered = clockwise ? started.reverse() : started;
-  const smoothed = catmullRomSmooth(simplifyRing(ordered, SIMPLIFY_TOLERANCE), passes, BOUNDS);
+  const smoothed = splineSmooth(simplifyRing(ordered, SIMPLIFY_TOLERANCE), passes, BOUNDS);
   return clockwise ? smoothed.reverse() : smoothed;
 }
 

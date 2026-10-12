@@ -6,7 +6,7 @@
  */
 
 import type { Position } from "geojson";
-import { catmullRomSmoothChain } from "~/lib/worldgen/v2/helpers/chaikin";
+import { splineSmoothChain } from "~/lib/worldgen/v2/helpers/chaikin";
 import { smoothRing } from "~/lib/worldgen/v2/helpers/ring-smooth";
 import { RING_LATITUDE, type MergedRing } from "~/lib/worldgen/v2/helpers/polygon-merge";
 import { ringFault, selfIntersections } from "~/tests/helpers/ring-geometry";
@@ -26,7 +26,7 @@ describe("v2/chaikin spline chain", () => {
   ];
 
   it("passes through every control point and keeps the ends of the chain", () => {
-    const smoothed = catmullRomSmoothChain(zigzag, 2);
+    const smoothed = splineSmoothChain(zigzag, 2);
     expect(smoothed.length).toBe((zigzag.length - 1) * 4 + 1);
     expect(smoothed[0]).toEqual(zigzag[0]);
     expect(smoothed.at(-1)).toEqual(zigzag.at(-1));
@@ -35,15 +35,15 @@ describe("v2/chaikin spline chain", () => {
   });
 
   it("gives the same curve whichever way the chain is read", () => {
-    const forward = catmullRomSmoothChain(zigzag, 2);
-    const backward = catmullRomSmoothChain([...zigzag].reverse(), 2);
+    const forward = splineSmoothChain(zigzag, 2);
+    const backward = splineSmoothChain([...zigzag].reverse(), 2);
     expect(backward).toEqual([...forward].reverse());
   });
 
   it("does not loop where a short segment sits between long ones", () => {
     const ring: Point[] = [...zigzag, [30, -5], [0, -5], [0, 0]];
     expect(selfIntersections(ring)).toBe(0);
-    expect(selfIntersections(catmullRomSmoothChain(ring, 3))).toBe(0);
+    expect(selfIntersections(splineSmoothChain(ring, 3))).toBe(0);
   });
 
   it("holds new points inside the bounds, an inset back from the edge they would cross", () => {
@@ -55,8 +55,8 @@ describe("v2/chaikin spline chain", () => {
       [10, 0],
     ];
     const bounds = { minX: -10, maxX: 20, minY: 0, maxY: 10, inset: 0.05 };
-    expect(Math.min(...catmullRomSmoothChain(chain, 3).map((p) => p[1]))).toBeLessThan(0);
-    const held = catmullRomSmoothChain(chain, 3, bounds);
+    expect(Math.min(...splineSmoothChain(chain, 3).map((p) => p[1]))).toBeLessThan(0);
+    const held = splineSmoothChain(chain, 3, bounds);
     expect(Math.min(...held.map((p) => p[1]))).toBeGreaterThanOrEqual(0);
     // Points on the edge itself, the control points among them, stay where they are
     expect(held.filter((p) => p[1] === 0).length).toBeGreaterThanOrEqual(2);

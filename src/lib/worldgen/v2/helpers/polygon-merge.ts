@@ -10,7 +10,7 @@
 
 import type { WorldGraph } from "../types";
 import type { Position } from "geojson";
-import { MAX_LATITUDE } from "./chaikin";
+import { EDGE_INSET, MAX_LATITUDE } from "./chaikin";
 
 /** A closed ring of a merged polygon. */
 export interface MergedRing {
@@ -18,8 +18,9 @@ export interface MergedRing {
   coordinates: Position[];
   /**
    * Indices into `coordinates` of the vertices where the region across the ring's edge changes: a third
-   * region (or the edge of the map) meets this ring there. Rings of neighbouring regions share exactly the
-   * chains between their corners, so smoothing chain by chain keeps shared borders identical.
+   * region (or the edge of the map) meets this ring there, or the vertex is one of the `coastCorners` the
+   * caller passed. Rings that share a border share exactly the chains between their corners, so smoothing
+   * chain by chain keeps shared borders identical.
    */
   corners: number[];
 }
@@ -83,10 +84,10 @@ function vertexIndex(graph: WorldGraph): VertexIndex {
 type Point = [number, number];
 
 /**
- * Rings are cut at this latitude, a little short of the one perturbRing holds points to: the perturbation
+ * Rings are cut at this latitude, EDGE_INSET short of the one perturbRing holds points to: the perturbation
  * moves a point by up to 0.005°, and a ring pressed against that limit would flatten into overlapping edges.
  */
-export const RING_LATITUDE = MAX_LATITUDE - 0.01;
+export const RING_LATITUDE = MAX_LATITUDE - EDGE_INSET;
 
 /**
  * Keep the part of a convex ring on the side of the parallel `limit` where sign * lat <= limit. The point
@@ -330,7 +331,12 @@ function mapEdgeOf(index: VertexIndex, slot: number): number {
  * Edges shared between two cells in the group are interior → remove them.
  * Remaining edges form closed rings, which are then sorted into shells and holes.
  */
-function mergeGroup(index: VertexIndex, cellIds: number[], edgeLabel: EdgeLabel): MergedPolygon[] {
+function mergeGroup(
+  index: VertexIndex,
+  cellIds: number[],
+  edgeLabel: EdgeLabel,
+  corners?: Uint8Array
+): MergedPolygon[] {
   let capacity = 0;
   for (const cell of cellIds) capacity += index.offsets[cell + 1]! - index.offsets[cell]!;
   reserveEdges(index, capacity);
@@ -340,7 +346,7 @@ function mergeGroup(index: VertexIndex, cellIds: number[], edgeLabel: EdgeLabel)
   for (let e = 0; e < edgeCount; e++) if (index.state[e] === BOUNDARY) boundary.push(e);
   if (boundary.length === 0) return [];
 
-  return groupRings(chainBoundary(index, boundary, edgeLabel));
+  return groupRings(chainBoundary(index, boundary, edgeLabel, corners));
 }
 
 /**
@@ -349,12 +355,14 @@ function mergeGroup(index: VertexIndex, cellIds: number[], edgeLabel: EdgeLabel)
  * clipped edge of the map at a pole or the antimeridian), and those become polygons of their own.
  *
  * `labelOf` names the region a cell outside the set belongs to (labels are never negative; the default puts
- * all of them in one region). Rings record as corners where that region changes along them.
+ * all of them in one region). Rings record as corners where that region changes along them, and at the
+ * vertices flagged in `corners` (see coastCorners), which every layer is given alike.
  */
 export function mergeCells(
   graph: WorldGraph,
   cellIds: number[],
-  labelOf: (cell: number) => number = () => 0
+  labelOf: (cell: number) => number = () => 0,
+  corners?: Uint8Array
 ): MergedPolygon[] {
   if (cellIds.length === 0) return [];
 
@@ -365,9 +373,52 @@ export function mergeCells(
   };
   const polygons: MergedPolygon[] = [];
   for (const group of findContiguousGroups(graph, index, cellIds)) {
-    polygons.push(...mergeGroup(index, group, edgeLabel));
+    polygons.push(...mergeGroup(index, group, edgeLabel, corners));
   }
   return polygons;
+}
+
+/**
+ * The vertices where a coast changes what it borders: a vertex that touches water and at least two different
+ * regions (or a region and an edge of the map). `regionOf` names every cell's region, 0 for water.
+ *
+ * Rings are smoothed chain by chain between their corners, and a ring only knows what lies across its own
+ * edge, so a coast has different chains in the political, climate and background layers: the state border
+ * that ends the political chain does not end the background one, and the curves differ near the junction.
+ * Flag these vertices as corners in every layer and the chains of a shared coast are the same in all of them.
+ */
+export function coastCorners(graph: WorldGraph, regionOf: (cell: number) => number): Uint8Array {
+  const { offsets, ids, xs, ys } = vertexIndex(graph);
+  const count = xs.length;
+  // The first two different regions seen at each vertex, and how many there are (3 stands for 3 or more)
+  const first = new Int32Array(count);
+  const second = new Int32Array(count);
+  const distinct = new Uint8Array(count);
+  const wet = new Uint8Array(count);
+  const see = (v: number, region: number) => {
+    if (distinct[v] === 0) first[v] = region;
+    else if (region === first[v] || (distinct[v]! > 1 && region === second[v])) return;
+    else if (distinct[v] === 1) second[v] = region;
+    distinct[v] = Math.min(3, distinct[v]! + 1);
+  };
+
+  for (let c = 0; c < offsets.length - 1; c++) {
+    const region = regionOf(c);
+    for (let k = offsets[c]!; k < offsets[c + 1]! - 1; k++) {
+      const v = ids[k]!;
+      if (region === 0) wet[v] = 1;
+      see(v, region);
+    }
+  }
+  const flags = new Uint8Array(count);
+  for (let v = 0; v < count; v++) {
+    if (xs[v] === -180) see(v, WEST_EDGE);
+    if (xs[v] === 180) see(v, EAST_EDGE);
+    if (ys[v] === -RING_LATITUDE) see(v, SOUTH_EDGE);
+    if (ys[v] === RING_LATITUDE) see(v, NORTH_EDGE);
+    flags[v] = wet[v]! & (distinct[v]! >= 3 ? 1 : 0);
+  }
+  return flags;
 }
 
 // Internal: Directed Edge Chaining
@@ -377,7 +428,12 @@ export function mergeCells(
  * Walks the edges leaving each vertex in boundary order, so the rings come out in the same
  * counter-clockwise perimeter order whatever the vertex ids are.
  */
-function chainBoundary(index: VertexIndex, boundary: number[], edgeLabel: EdgeLabel): MergedRing[] {
+function chainBoundary(
+  index: VertexIndex,
+  boundary: number[],
+  edgeLabel: EdgeLabel,
+  flagged?: Uint8Array
+): MergedRing[] {
   const { from, to, next, state, slot, head, headEpoch, xs, ys } = index;
 
   // Relink the boundary edges per start vertex, first boundary edge first
@@ -403,6 +459,7 @@ function chainBoundary(index: VertexIndex, boundary: number[], edgeLabel: EdgeLa
     if (startEdge < 0) continue;
 
     const coordinates: Position[] = [[xs[startVertex]!, ys[startVertex]!]];
+    const vertices = [startVertex];
     const labels = [edgeLabel(slot[startEdge]!)];
     state[startEdge] = USED;
     let current = to[startEdge]!;
@@ -412,7 +469,7 @@ function chainBoundary(index: VertexIndex, boundary: number[], edgeLabel: EdgeLa
       coordinates.push([xs[current]!, ys[current]!]);
 
       if (current === startVertex && coordinates.length > 2) {
-        rings.push({ coordinates, corners: cornersOf(labels) });
+        rings.push({ coordinates, corners: cornersOf(labels, vertices, flagged) });
         break;
       }
 
@@ -421,6 +478,7 @@ function chainBoundary(index: VertexIndex, boundary: number[], edgeLabel: EdgeLa
 
       state[nextEdge] = USED;
       labels.push(edgeLabel(slot[nextEdge]!));
+      vertices.push(current);
       current = to[nextEdge]!;
     }
   }
@@ -428,11 +486,15 @@ function chainBoundary(index: VertexIndex, boundary: number[], edgeLabel: EdgeLa
   return rings;
 }
 
-/** Vertex i starts edge i: it is a corner where the label across the edge before it differs from the next. */
-function cornersOf(labels: number[]): number[] {
+/**
+ * Vertex i starts edge i: it is a corner where the label across the edge before it differs from the next,
+ * or where the vertex is flagged.
+ */
+function cornersOf(labels: number[], vertices: number[], flagged?: Uint8Array): number[] {
   const corners: number[] = [];
   for (let i = 0; i < labels.length; i++) {
-    if (labels[i] !== labels[(i + labels.length - 1) % labels.length]) corners.push(i);
+    const changes = labels[i] !== labels[(i + labels.length - 1) % labels.length];
+    if (changes || flagged?.[vertices[i]!] === 1) corners.push(i);
   }
   return corners;
 }
@@ -443,7 +505,7 @@ function cornersOf(labels: number[]): number[] {
  * Area of a ring: positive when it runs counter-clockwise (a shell, as the cell rings do), negative when
  * clockwise (a hole).
  */
-function ringArea(ring: Position[]): number {
+export function ringArea(ring: readonly Position[]): number {
   let area = 0;
   for (let i = 0; i < ring.length - 1; i++) {
     const [x0, y0] = ring[i]!;
@@ -467,9 +529,10 @@ function contains(ring: Position[], x: number, y: number): boolean {
 /**
  * Sort rings into polygons by orientation: every counter-clockwise ring is the shell of its own polygon
  * (the disjoint pieces of a group are shells, not holes of the largest piece), every clockwise ring is a
- * hole of the smallest shell that contains it.
+ * hole of the smallest shell that contains it. A hole that no shell contains cannot happen in a sound
+ * mesh; it is left out, never attached to a shell it is not inside.
  */
-function groupRings(rings: MergedRing[]): MergedPolygon[] {
+export function groupRings(rings: MergedRing[]): MergedPolygon[] {
   const areas = rings.map((ring) => ringArea(ring.coordinates));
   const order = rings.map((_, i) => i).sort((a, b) => Math.abs(areas[b]!) - Math.abs(areas[a]!));
   const polygons: MergedPolygon[] = [];
@@ -488,11 +551,10 @@ function groupRings(rings: MergedRing[]): MergedPolygon[] {
     const [a, b] = rings[i]!.coordinates;
     const x = (a![0]! + b![0]!) / 2;
     const y = (a![1]! + b![1]!) / 2;
-    // Smallest shell first; a shell no bigger than the hole cannot hold it, and a lone shell must. A hole that
-    // no shell contains has nothing to cut out of and is left out.
+    // Smallest shell first; a shell no bigger than the hole cannot hold it
     for (let p = polygons.length - 1; p >= 0; p--) {
       if (shellAreas[p]! <= -areas[i]!) continue;
-      if (polygons.length === 1 || contains(polygons[p]![0]!.coordinates, x, y)) {
+      if (contains(polygons[p]![0]!.coordinates, x, y)) {
         polygons[p]!.push(rings[i]!);
         break;
       }
