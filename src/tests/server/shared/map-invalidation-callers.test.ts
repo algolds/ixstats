@@ -48,6 +48,7 @@ import { geoSovereigntyRouter } from "~/server/api/routers/geo/sovereignty";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { adminOpsProcedures } from "~/server/api/routers/geo/core/admin-ops";
 import { managementLifecycleProcedures } from "~/server/api/routers/countries/management/lifecycle";
+import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { refreshRealmMap } from "~/server/modules/maps/map-import.apply";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";
@@ -151,6 +152,8 @@ interface WritePath {
   name: string;
   /** The realm the version moves for. */
   realm: string;
+  /** The path syncs a Country's cached outline after storing the layer (so that sync can fail after the write). */
+  syncs?: boolean;
   run: (db: Db) => Promise<unknown>;
 }
 
@@ -158,6 +161,7 @@ const WRITE_PATHS: WritePath[] = [
   {
     name: "border save (direct apply)",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       withFeature(db);
       return createCallerFactory(geoEditorBordersRouter)(ctxAs(db)).submitBorderEdit({
@@ -172,6 +176,7 @@ const WRITE_PATHS: WritePath[] = [
   {
     name: "split",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       withFeature(db);
       return createCallerFactory(geoEditorBordersRouter)(ctxAs(db)).splitCountry({
@@ -189,6 +194,7 @@ const WRITE_PATHS: WritePath[] = [
   {
     name: "merge",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       db.mapLayer!.findMany!.mockResolvedValue([
         { id: "m1", featureId: "A", countryId: "c1", areaSqKm: 10, geometry: rect(0, 1) },
@@ -204,6 +210,7 @@ const WRITE_PATHS: WritePath[] = [
   {
     name: "approved border edit (queue)",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       db.mapEditRequest!.findUnique!.mockResolvedValue({
         id: "req1",
@@ -216,6 +223,25 @@ const WRITE_PATHS: WritePath[] = [
         proposedData: { geometry: rect(0, 2) },
       });
       db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null, realmId: EURTH });
+      return createCallerFactory(geoEditorQueueRouter)(ctxAs(db)).approveEdit({ editId: "req1" });
+    },
+  },
+  {
+    name: "approved border edit on a legacy NULL-realm layer (Ixnay)",
+    realm: DEFAULT_REALM_ID,
+    syncs: true,
+    run: (db) => {
+      db.mapEditRequest!.findUnique!.mockResolvedValue({
+        id: "req1",
+        status: "pending",
+        editType: "border_adjust",
+        operation: "update",
+        countryId: "c1",
+        realmId: null,
+        targetId: "ml1",
+        proposedData: { geometry: rect(0, 2) },
+      });
+      db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null, realmId: null });
       return createCallerFactory(geoEditorQueueRouter)(ctxAs(db)).approveEdit({ editId: "req1" });
     },
   },
@@ -234,8 +260,48 @@ const WRITE_PATHS: WritePath[] = [
     },
   },
   {
+    name: "region relinked (feature properties)",
+    realm: EURTH,
+    syncs: true,
+    run: (db) => {
+      withFeature(db);
+      return createCallerFactory(geoEditorLinkageAssignmentRouter)(
+        ctxAs(db)
+      ).updateFeatureProperties({
+        featureId: "F",
+        countryId: "c1",
+        realm: "eurth",
+      });
+    },
+  },
+  {
+    name: "nation created from a region",
+    realm: EURTH,
+    syncs: true,
+    run: (db) => {
+      withFeature(db);
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        featureId: "F",
+        countryId: null,
+        areaSqKm: 10,
+        geometry: rect(0, 3),
+        realmId: EURTH,
+      });
+      db.country!.create!.mockResolvedValue({ id: "c_new", name: "Newland" });
+      return createCallerFactory(geoEditorLinkageAssignmentRouter)(
+        ctxAs(db)
+      ).createCountryFromShape({
+        featureId: "F",
+        name: "Newland",
+        realm: "eurth",
+      });
+    },
+  },
+  {
     name: "link a region to a nation",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       withFeature(db);
       return createCallerFactory(geoEditorLinkageAssignmentRouter)(ctxAs(db)).assignCountryGeometry(
@@ -250,6 +316,7 @@ const WRITE_PATHS: WritePath[] = [
   {
     name: "unlink a region from its nation",
     realm: EURTH,
+    syncs: true,
     run: (db) => {
       withFeature(db);
       return createCallerFactory(geoEditorLinkageAssignmentRouter)(ctxAs(db)).unlinkCountryGeometry(
@@ -258,6 +325,20 @@ const WRITE_PATHS: WritePath[] = [
           realm: "eurth",
         }
       );
+    },
+  },
+  {
+    name: "linkage repair (link by name)",
+    realm: EURTH,
+    syncs: true,
+    run: (db) => {
+      withFeature(db);
+      return createCallerFactory(geoEditorLinkageValidationRouter)(ctxAs(db)).repairLinkage({
+        action: "link_by_name",
+        featureId: "F",
+        countryId: "c1",
+        realm: "eurth",
+      });
     },
   },
   {
@@ -369,6 +450,59 @@ describe("every map write path bumps its realm's map version", () => {
     expect(realmId).toBe(realm);
     expect(passedDb === (db as never)).toBe(true);
     expect(invalidateAllRealmMaps).not.toHaveBeenCalled();
+  });
+});
+
+describe("the map version moves even when the work after the stored write fails", () => {
+  const SYNCING = WRITE_PATHS.filter((path) => path.syncs);
+
+  // The failures are the point; the audit middleware logs each one
+  beforeEach(() => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each(SYNCING)("$name, when the Country sync throws", async ({ run, realm }) => {
+    const db = realmDb();
+    jest.mocked(syncCountryGeometryFromMapLayer).mockRejectedValueOnce(new Error("union failed"));
+    await expect(run(db)).rejects.toThrow("union failed");
+
+    expect(syncCountryGeometryFromMapLayer).toHaveBeenCalled();
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(invalidateRealmMap).mock.calls[0]![1]).toBe(realm);
+  });
+
+  it("an approved border edit whose history write fails still bumps", async () => {
+    const db = realmDb();
+    db.mapEditRequest!.findUnique!.mockResolvedValue({
+      id: "req1",
+      status: "pending",
+      editType: "border_adjust",
+      operation: "update",
+      countryId: "c1",
+      realmId: EURTH,
+      targetId: "ml1",
+      proposedData: { geometry: rect(0, 2) },
+    });
+    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: 5, realmId: EURTH });
+    db.$queryRawUnsafe!.mockResolvedValue([{ area_sq_km: 7 }]);
+    db.borderHistory!.create!.mockRejectedValue(new Error("history down"));
+    await expect(
+      createCallerFactory(geoEditorQueueRouter)(ctxAs(db)).approveEdit({ editId: "req1" })
+    ).rejects.toThrow("history down");
+    expect(jest.mocked(invalidateRealmMap).mock.calls.map((call) => call[1])).toEqual([EURTH]);
+  });
+
+  it("a rejected request that wrote nothing does not bump", async () => {
+    const db = realmDb();
+    await expect(
+      createCallerFactory(geoEditorLinkageAssignmentRouter)(ctxAs(db)).assignCountryGeometry({
+        featureId: "missing",
+        countryId: "c1",
+        realm: "eurth",
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(invalidateRealmMap).not.toHaveBeenCalled();
   });
 });
 

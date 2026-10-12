@@ -197,11 +197,13 @@ async function refillNations(
   }
 }
 
+/** Writes the plan's updates. True when one changed a continent, which the political layer reads. */
 async function updateNations(
   db: PrismaClient,
   plan: SyncPlan,
   result: AppliedResult
-): Promise<void> {
+): Promise<boolean> {
+  let continentChanged = false;
   for (const update of plan.updates) {
     try {
       const country = await db.country.findUnique({
@@ -239,10 +241,14 @@ async function updateNations(
           });
       });
       if (changes.length > 0) result.updated++;
+      if (typeof data.continent === "string" && data.continent !== country.continent) {
+        continentChanged = true;
+      }
     } catch (error) {
       result.errors.push(`Update ${update.name}: ${message(error)}`);
     }
   }
+  return continentChanged;
 }
 
 const resolve = (ref: NationRef | null, created: ReadonlyMap<string, string>) =>
@@ -318,7 +324,7 @@ async function writeFeatures(
     if (area === null) continue;
     await db.country
       .update({ where: { id: countryId }, data: { landArea: area, areaSqMi: area * SQKM_TO_SQMI } })
-      .catch((error: unknown) => result.errors.push(`Land area ${feature.key}: ${message(error)}`));
+      .catch((error) => result.errors.push(`Land area ${feature.key}: ${message(error)}`));
   }
   await smoothBorders(db, ctx, result);
   try {
@@ -422,7 +428,12 @@ export async function applySyncPlan(
   const readInfobox = pacedInfoboxReader(ctx, deps);
   const created = await createNations(db, ctx, plan.creates, readInfobox, result);
   await refillNations(db, ctx, plan.refills, readInfobox, result);
-  await updateNations(db, plan, result);
+  if (await updateNations(db, plan, result)) {
+    // Features bump the map themselves, but only after their own writes (and not at all when there are none)
+    await invalidateRealmMap(db, ctx.realmId).catch((error) =>
+      result.errors.push(`Map version: ${message(error)}`)
+    );
+  }
   await writeFeatures(db, ctx, plan, created, result);
   await writeAlliances(db, ctx, plan, created, result);
   return result;

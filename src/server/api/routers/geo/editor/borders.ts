@@ -228,25 +228,29 @@ export const geoEditorBordersRouter = createTRPCRouter({
           }
         });
 
-        if (feature.countryId) {
-          // Sync outside the transaction — it does its own internal commits.
-          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+        // The borders are committed: the map version moves even if the Country sync or history below fails
+        try {
+          if (feature.countryId) {
+            // Sync outside the transaction — it does its own internal commits.
+            await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
 
-          // Log in BorderHistory
-          await ctx.db.borderHistory.create({
-            data: {
-              countryId: feature.countryId,
-              geometry: input.proposedGeometry as any,
-              changedBy: ctx.auth?.userId ?? "admin",
-              reason: input.reason ?? "Direct map edit via World Editor",
-              oldAreaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : null,
-              newAreaSqMi: area ? area * 0.386102 : null,
-              areaDeltaSqMi: feature.areaSqKm && area ? (area - feature.areaSqKm) * 0.386102 : null,
-            },
-          });
+            // Log in BorderHistory
+            await ctx.db.borderHistory.create({
+              data: {
+                countryId: feature.countryId,
+                geometry: input.proposedGeometry as any,
+                changedBy: ctx.auth?.userId ?? "admin",
+                reason: input.reason ?? "Direct map edit via World Editor",
+                oldAreaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : null,
+                newAreaSqMi: area ? area * 0.386102 : null,
+                areaDeltaSqMi:
+                  feature.areaSqKm && area ? (area - feature.areaSqKm) * 0.386102 : null,
+              },
+            });
+          }
+        } finally {
+          await invalidateRealmMap(ctx.db, realmId);
         }
-
-        await invalidateRealmMap(ctx.db, realmId);
         broadcastMapUpdate("borders", feature.countryId ?? undefined);
 
         // Clean up session
@@ -371,11 +375,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
         });
       });
 
-      if (originalCountryId) {
-        await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
+      // The split is committed: the map version moves even if the Country sync fails
+      try {
+        if (originalCountryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, originalCountryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders");
 
       return {
@@ -471,12 +478,15 @@ export const geoEditorBordersRouter = createTRPCRouter({
         });
       });
 
-      // Sync geometries of any country that was linked to the merged features
-      for (const countryId of countryIds) {
-        await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+      // Sync geometries of any country that was linked to the merged features. The merge is committed: the map
+      // version moves even if a sync fails.
+      try {
+        for (const countryId of countryIds) {
+          await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders");
 
       return {

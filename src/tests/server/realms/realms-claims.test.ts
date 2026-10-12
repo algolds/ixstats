@@ -1044,7 +1044,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
   it("and the realm's map version moves once the transaction has committed", async () => {
     const { db, tx, claims } = regionSetup([region()]);
     jest.mocked(invalidateRealmMap).mockClear();
-    jest.mocked(invalidateRealmMap).mockImplementation(async () => {
+    jest.mocked(invalidateRealmMap).mockImplementationOnce(async () => {
       expect(db.$transaction).toHaveBeenCalledTimes(1);
       return 1;
     });
@@ -1098,6 +1098,26 @@ describe("approved nation-page claims take their map region (decision 11)", () =
     });
     expect(rows[0]!.countryId).toBe("new-c");
     expect(tx.country.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("a map version bump that fails after the commit is logged: the approval still sends its events", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const auto = regionSetup([region()]);
+    jest.mocked(invalidateRealmMap).mockRejectedValueOnce(new Error("db down"));
+    await expect(auto.claims.claimNationPage(actor, EURTH, "Aurelia")).resolves.toMatchObject({
+      status: "approved",
+    });
+    expect(auto.deps.onNationAssigned).toHaveBeenCalledTimes(1);
+
+    const review = regionSetup([region({ featureId: "country_3", displayName: "Aurelia" })]);
+    review.db.realmClaim.findUnique.mockResolvedValue(pendingPage);
+    jest.mocked(invalidateRealmMap).mockRejectedValueOnce(new Error("db down"));
+    await expect(review.claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "approved",
+    });
+    expect(review.deps.onNationAssigned).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledTimes(2);
+    error.mockRestore();
   });
 
   it("no region of that name is a no-op: the claim is approved and no geometry is written", async () => {

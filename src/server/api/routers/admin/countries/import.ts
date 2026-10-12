@@ -10,6 +10,7 @@ import { parseRosterFile } from "~/lib/admin/roster-parser";
 import type { ImportAnalysis, BaseCountryData } from "~/types/ixstats";
 import { generateSlug } from "~/lib/utils";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
+import { countryMapChanged, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
 /** Every roster-derived Country column, with current values and tiers computed from the baseline. */
@@ -232,6 +233,7 @@ export const adminCountriesImportRouter = createTRPCRouter({
         let created = 0;
         let updated = 0;
         let skipped = 0;
+        let mapChanged = false;
         const errors: string[] = [];
         for (const country of countries) {
           const existing = existingMap.get(country.country);
@@ -247,10 +249,12 @@ export const adminCountriesImportRouter = createTRPCRouter({
               created++;
             } else if (input.replaceExisting) {
               // Replace all fields (baselineDate and lastCalculated stay as they were)
-              await ctx.db.country.update({
+              const replaced = await ctx.db.country.update({
                 where: { id: existing.id },
                 data: rosterCountryData(country),
               });
+              // A new continent or region (the name is the match key) shows on Ixnay's political layer
+              if (countryMapChanged(existing, replaced)) mapChanged = true;
               updated++;
             } else {
               // Only update changed fields (basic check)
@@ -301,6 +305,13 @@ export const adminCountriesImportRouter = createTRPCRouter({
               `Error processing country ${country.country}: ${err instanceof Error ? err.message : "Unknown error"}`
             );
           }
+        }
+        if (mapChanged) {
+          await invalidateRealmMap(ctx.db, DEFAULT_REALM_ID).catch((err) =>
+            errors.push(
+              `Map version bump failed: ${err instanceof Error ? err.message : "Unknown error"}`
+            )
+          );
         }
         // After import, trigger recalculation for all affected countries
         await ctx.db.calculationLog.create({

@@ -350,6 +350,77 @@ describe("applySyncPlan", () => {
     expect(db.nationalIdentity.upsert.mock.calls[0][0].update).toEqual({ capitalCity: "Freeport" });
   });
 
+  describe("a continent change reaches the political layer", () => {
+    const freeNation = (continent: string | null) => ({
+      name: "Free",
+      ownerUserId: null,
+      baselinePopulation: 1_000_000,
+      baselineGdpPerCapita: 10_000,
+      landArea: 10_000,
+      continent,
+    });
+    const continentUpdate = emptyPlan({
+      updates: [
+        {
+          countryId: "f",
+          name: "Free",
+          key: "Free",
+          claimed: false,
+          bindKey: false,
+          changes: [{ field: "continent", from: "Aurelia", to: "Boreas" }],
+        },
+      ],
+    });
+
+    it("moves the realm's map version even when the run writes no border", async () => {
+      const db = applyDb();
+      db.country.findUnique.mockResolvedValue(freeNation("Aurelia"));
+      await applySyncPlan(db, ctx, continentUpdate);
+      expect(db.country.update.mock.calls[0][0].data).toMatchObject({ continent: "Boreas" });
+      expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+      expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth-id");
+    });
+
+    it("leaves the map alone when the continent is the one already stored", async () => {
+      const db = applyDb();
+      db.country.findUnique.mockResolvedValue(freeNation("Boreas"));
+      await applySyncPlan(db, ctx, continentUpdate);
+      expect(invalidateRealmMap).not.toHaveBeenCalled();
+    });
+
+    it("leaves the map alone for a figures-only update", async () => {
+      const db = applyDb();
+      db.country.findUnique.mockResolvedValue(freeNation("Aurelia"));
+      await applySyncPlan(
+        db,
+        ctx,
+        emptyPlan({
+          updates: [
+            {
+              countryId: "f",
+              name: "Free",
+              key: "Free",
+              claimed: false,
+              bindKey: false,
+              changes: [{ field: "population", from: 1_000_000, to: 3_000_000 }],
+            },
+          ],
+        })
+      );
+      expect(db.country.update).toHaveBeenCalledTimes(1);
+      expect(invalidateRealmMap).not.toHaveBeenCalled();
+    });
+
+    it("reports a failed bump among the errors instead of failing the run", async () => {
+      const db = applyDb();
+      db.country.findUnique.mockResolvedValue(freeNation("Aurelia"));
+      (invalidateRealmMap as jest.Mock).mockRejectedValueOnce(new Error("db down"));
+      const result = await applySyncPlan(db, ctx, continentUpdate);
+      expect(result.updated).toBe(1);
+      expect(result.errors).toEqual(["Map version: db down"]);
+    });
+  });
+
   it("writes borders through the realm map writer and sets the traced area only for nations with no stated area", async () => {
     const db = applyDb();
     db.country.findMany.mockResolvedValue([{ id: "c1", name: "Deseti" }]);

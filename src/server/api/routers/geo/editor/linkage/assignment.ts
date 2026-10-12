@@ -41,10 +41,12 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: { countryId: input.countryId },
       });
 
-      // Update country with geometry + area
-      await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
-
-      await invalidateRealmMap(ctx.db, realmId);
+      // Update country with geometry + area. The link is stored: the map version moves even if the sync fails.
+      try {
+        await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
+      }
       broadcastMapUpdate("linkage", input.countryId);
 
       return {
@@ -60,11 +62,8 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   unlinkCountryGeometry: rateLimitedMutationProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .mutation(async ({ ctx, input }) => {
-      const mapLayer = await requirePoliticalLayer(
-        ctx.db,
-        input.featureId,
-        await editableMapRealmId(ctx, input.realm)
-      );
+      const realmId = await editableMapRealmId(ctx, input.realm);
+      const mapLayer = await requirePoliticalLayer(ctx.db, input.featureId, realmId);
 
       const previousCountryId = mapLayer.countryId;
 
@@ -73,12 +72,14 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: { countryId: null },
       });
 
-      // Clear geometry + area from country
-      if (previousCountryId) {
-        await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
+      // Clear geometry + area from country. The unlink is stored: the map version moves even if the sync fails.
+      try {
+        if (previousCountryId) {
+          await syncCountryGeometryFromMapLayer(ctx.db, previousCountryId);
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      await invalidateRealmMap(ctx.db, mapLayer.realmId);
       broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
       return { featureId: input.featureId, previousCountryId };
@@ -167,46 +168,49 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         data: updateData,
       });
 
-      const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
+      // The region is stored: the map version moves even if a nation write or sync below fails
+      try {
+        const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
 
-      // Update Country name and slug if displayName is changed and country is linked
-      if (
-        renamesNation &&
-        targetCountryId &&
-        input.displayName !== undefined &&
-        input.displayName !== feature.displayName
-      ) {
-        const slug = input.displayName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-        await ctx.db.country.update({
-          where: { id: targetCountryId },
-          data: {
-            name: input.displayName,
-            slug,
-          },
-        });
-      }
-
-      // Update wikiPageTitle on Country if linked
-      if (renamesNation && targetCountryId && input.wikiPageTitle !== undefined) {
-        await ctx.db.country.update({
-          where: { id: targetCountryId },
-          data: { wikiPageTitle: input.wikiPageTitle },
-        });
-      }
-
-      if (input.countryId !== undefined) {
-        if (feature.countryId) {
-          await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+        // Update Country name and slug if displayName is changed and country is linked
+        if (
+          renamesNation &&
+          targetCountryId &&
+          input.displayName !== undefined &&
+          input.displayName !== feature.displayName
+        ) {
+          const slug = input.displayName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+          await ctx.db.country.update({
+            where: { id: targetCountryId },
+            data: {
+              name: input.displayName,
+              slug,
+            },
+          });
         }
-        if (input.countryId) {
-          await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
-        }
-      }
 
-      await invalidateRealmMap(ctx.db, realmId);
+        // Update wikiPageTitle on Country if linked
+        if (renamesNation && targetCountryId && input.wikiPageTitle !== undefined) {
+          await ctx.db.country.update({
+            where: { id: targetCountryId },
+            data: { wikiPageTitle: input.wikiPageTitle },
+          });
+        }
+
+        if (input.countryId !== undefined) {
+          if (feature.countryId) {
+            await syncCountryGeometryFromMapLayer(ctx.db, feature.countryId);
+          }
+          if (input.countryId) {
+            await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+          }
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
+      }
 
       if (input.countryId !== undefined) {
         broadcastMapUpdate("linkage", input.countryId ?? undefined);
@@ -259,8 +263,12 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         where: { id: feature.id },
         data: { countryId: newCountry.id },
       });
-      await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
-      await invalidateRealmMap(ctx.db, realmId);
+      // The link is stored: the map version moves even if the sync fails
+      try {
+        await syncCountryGeometryFromMapLayer(ctx.db, newCountry.id);
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
+      }
       broadcastMapUpdate("linkage", newCountry.id);
       return { countryId: newCountry.id, name: newCountry.name };
     }),

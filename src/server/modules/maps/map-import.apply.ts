@@ -409,7 +409,10 @@ export async function refreshRealmMap(
       console.error("[map-import] Adjacency rebuild failed:", error);
     }
   }
-  await invalidateRealmMap(db, realmId);
+  // The import is recorded by now: a failed bump is logged, it must not fail the import
+  await invalidateRealmMap(db, realmId).catch((error: Error) =>
+    console.error("[map-import] Map version bump failed:", error)
+  );
   broadcastMapUpdate("bulk");
   return pairs;
 }

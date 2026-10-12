@@ -207,51 +207,55 @@ export const geoEditorLinkageValidationRouter = createTRPCRouter({
       // Every action works inside the edited realm (site admins anywhere; founders and map officers in theirs)
       const realmId = await editableMapRealmId(ctx, input.realm);
 
-      if (input.action === "sync_all") {
-        // Re-sync geometry + area from MapLayer → Country for the realm's linked countries, once per nation
-        const linkedLayers = await findAllById((page) =>
-          ctx.db.mapLayer.findMany({
-            where: { layerType: "political", countryId: { not: null }, isActive: true, realmId },
-            select: { id: true, countryId: true },
-            ...page,
-          })
-        );
-        for (const countryId of new Set(linkedLayers.map((ml) => ml.countryId))) {
-          if (!countryId) continue;
-          await syncCountryGeometryFromMapLayer(ctx.db, countryId);
-          repaired++;
+      // The actions write the map in steps (linking, then syncing each nation), so the map version moves even
+      // when one fails midway
+      try {
+        if (input.action === "sync_all") {
+          // Re-sync geometry + area from MapLayer → Country for the realm's linked countries, once per nation
+          const linkedLayers = await findAllById((page) =>
+            ctx.db.mapLayer.findMany({
+              where: { layerType: "political", countryId: { not: null }, isActive: true, realmId },
+              select: { id: true, countryId: true },
+              ...page,
+            })
+          );
+          for (const countryId of new Set(linkedLayers.map((ml) => ml.countryId))) {
+            if (!countryId) continue;
+            await syncCountryGeometryFromMapLayer(ctx.db, countryId);
+            repaired++;
+          }
         }
+
+        if (input.action === "auto_match") {
+          const { suggestions } = await realmMatchSuggestions(ctx.db, realmId);
+          repaired = await linkRegionMatches(
+            ctx.db,
+            realmId,
+            suggestions.filter((s) => s.confidence >= AUTO_LINK_MIN_CONFIDENCE)
+          );
+        }
+
+        if (input.action === "apply_matches") {
+          repaired = await linkRegionMatches(ctx.db, realmId, input.matches ?? []);
+        }
+
+        if (input.action === "link_by_name" && input.featureId && input.countryId) {
+          const ml = await ctx.db.mapLayer.findFirst({
+            where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+          });
+          if (!ml) throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
+          await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
+
+          await ctx.db.mapLayer.update({
+            where: { id: ml.id },
+            data: { countryId: input.countryId },
+          });
+          await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
+          repaired = 1;
+        }
+      } finally {
+        await invalidateRealmMap(ctx.db, realmId);
       }
-
-      if (input.action === "auto_match") {
-        const { suggestions } = await realmMatchSuggestions(ctx.db, realmId);
-        repaired = await linkRegionMatches(
-          ctx.db,
-          realmId,
-          suggestions.filter((s) => s.confidence >= AUTO_LINK_MIN_CONFIDENCE)
-        );
-      }
-
-      if (input.action === "apply_matches") {
-        repaired = await linkRegionMatches(ctx.db, realmId, input.matches ?? []);
-      }
-
-      if (input.action === "link_by_name" && input.featureId && input.countryId) {
-        const ml = await ctx.db.mapLayer.findFirst({
-          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        });
-        if (!ml) throw new TRPCError({ code: "NOT_FOUND", message: "Feature not found" });
-        await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
-
-        await ctx.db.mapLayer.update({
-          where: { id: ml.id },
-          data: { countryId: input.countryId },
-        });
-        await syncCountryGeometryFromMapLayer(ctx.db, input.countryId);
-        repaired = 1;
-      }
-
-      await invalidateRealmMap(ctx.db, realmId);
 
       return { repaired };
     }),

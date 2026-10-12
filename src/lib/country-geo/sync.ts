@@ -46,7 +46,14 @@ async function unionLinkedRegions(
   countryId: string,
   realmId: string
 ): Promise<RegionGeometry | null> {
-  const [row] = await db.$queryRawUnsafe<RegionUnionRow[]>(REGION_UNION_SQL, countryId, realmId);
+  let row: RegionUnionRow | undefined;
+  try {
+    [row] = await db.$queryRawUnsafe<RegionUnionRow[]>(REGION_UNION_SQL, countryId, realmId);
+  } catch (error) {
+    // A geometry PostGIS cannot union must not fail the save that stored it: the cached outline stays
+    console.warn(`[country-geo] region union failed for ${countryId}, keeping its outline:`, error);
+    return null;
+  }
   const parts = [row?.geometry, ...(row?.wide ?? [])].filter((g): g is RegionGeometry => !!g);
   if (parts.length <= 1) return parts[0] ?? null;
   return { type: "MultiPolygon", coordinates: parts.flatMap(polygonsOf) };
@@ -128,7 +135,10 @@ export async function syncCountryGeometryFromMapLayer(db: any, countryId: string
 
   if (regions.length > 0) {
     const mapLayer = combineRegions(regions);
-    const geometry = await unionLinkedRegions(db, countryId, country?.realmId);
+    // Without the country row there is no realm to read the regions from: the cached outline stays
+    const geometry = country?.realmId
+      ? await unionLinkedRegions(db, countryId, country.realmId)
+      : null;
     // Only what the regions actually have: one imported without metrics must not null the country's centroid,
     // bounding box or (baseline) land area, and with no PostGIS geometry yet the cached outline stays.
     await db.country.update({

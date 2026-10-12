@@ -414,6 +414,19 @@ async function handOver(
   return { country, rivals, mapRealmId: linkedRegion ? page.realmId : null };
 }
 
+/**
+ * The approving transaction has committed: move the map version of the realm whose map gained a region. A failure
+ * is logged, never thrown: it must not drop the notices and nation-assigned event that follow.
+ */
+async function refreshClaimedMap(db: ClaimsDb, mapRealmId: string | null): Promise<void> {
+  if (!mapRealmId) return;
+  try {
+    await invalidateRealmMap(db, mapRealmId);
+  } catch (error) {
+    console.error(`[claims] map version bump failed for realm ${mapRealmId}:`, error);
+  }
+}
+
 /** The nation-assigned event for a claimant, with the claim's inviter when it has one. */
 function assignedEvent(
   claimant: { userId: string; clerkUserId: string },
@@ -625,7 +638,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         return { claimId: claim.id, ...(await handOver(tx, claim, target, prefill)) };
       })
       .catch(ownershipAsClaimError);
-    if (mapRealmId) await invalidateRealmMap(db, mapRealmId);
+    await refreshClaimedMap(db, mapRealmId);
     await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned(
       assignedEvent(
@@ -896,7 +909,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
       throw error;
     }
     const { country, rivals, mapRealmId } = handed;
-    if (mapRealmId) await invalidateRealmMap(db, mapRealmId);
+    await refreshClaimedMap(db, mapRealmId);
     await notifyRejected(rivalNotices(target, rivals));
     await deps.onNationAssigned(
       assignedEvent(

@@ -112,6 +112,32 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
     expect(data).toMatchObject({ landArea: 2000 });
   });
 
+  it("a union PostGIS cannot compute keeps the cached outline, warns, and still writes the metrics", async () => {
+    const db = dbWith([], [region(2000, [0.5, 0.5], [0, 0, 1, 1])]);
+    db.$queryRawUnsafe.mockRejectedValue(new Error("GEOSUnaryUnion: TopologyException"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(syncCountryGeometryFromMapLayer(db, "c1")).resolves.toBeUndefined();
+
+    const data = db.country.update.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty("geometry");
+    expect(data).toMatchObject({
+      centroid: [0.5, 0.5],
+      boundingBox: [0, 0, 1, 1],
+      landArea: 2000,
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("c1"), expect.any(Error));
+    warn.mockRestore();
+  });
+
+  it("without the country row there is no realm to read the regions from: no union is asked for", async () => {
+    const db = dbWith([{ geometry: square(0, 0), wide: null }], [region(10, [0, 0], [0, 0, 1, 1])]);
+    db.country.findUnique.mockResolvedValue(null);
+    await syncCountryGeometryFromMapLayer(db, "c1");
+    expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+    expect(db.country.update.mock.calls[0][0].data).not.toHaveProperty("geometry");
+  });
+
   it("with no linked region (an unlink) clears the cached geography without a union", async () => {
     const db = dbWith([], []);
     await syncCountryGeometryFromMapLayer(db, "c1");

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { MapEditRequest, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { ActivityGenerator } from "~/lib/activity";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
@@ -53,35 +54,19 @@ async function recalculateAreaSqKm(db: PrismaClient, layerId: string) {
   }
 }
 
-async function applyBorderAdjust(
+/** The Country-side work after an approved border edit's geometry is stored: area, cached outline, history, activity. */
+async function recordBorderAdjust(
   db: PrismaClient,
   edit: MapEditRequest,
-  proposed: Proposed,
+  layer: { id: string; areaSqKm: number | null },
+  geometry: object,
   actorId: string,
   reviewNote: string | undefined
 ) {
-  // The feature the edit was filed against, still active on the edit's realm map
-  const mapLayer =
-    edit.targetId &&
-    (await db.mapLayer.findFirst({
-      where: { id: edit.targetId, layerType: "political", isActive: true, realmId: edit.realmId },
-    }));
-  if (!mapLayer || !proposed.geometry) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "This border edit can no longer be applied: its feature or geometry is missing",
-    });
-  }
-  const oldAreaSqKm = mapLayer.areaSqKm;
-
-  await db.mapLayer.update({
-    where: { id: mapLayer.id },
-    data: { geometry: proposed.geometry as object },
-  });
-
-  const newAreaSqKm = await recalculateAreaSqKm(db, mapLayer.id);
+  const oldAreaSqKm = layer.areaSqKm;
+  const newAreaSqKm = await recalculateAreaSqKm(db, layer.id);
   if (newAreaSqKm != null) {
-    await db.mapLayer.update({ where: { id: mapLayer.id }, data: { areaSqKm: newAreaSqKm } });
+    await db.mapLayer.update({ where: { id: layer.id }, data: { areaSqKm: newAreaSqKm } });
   }
 
   // Sync MapLayer to Country cached columns
@@ -93,7 +78,7 @@ async function applyBorderAdjust(
     await db.borderHistory.create({
       data: {
         countryId: edit.countryId,
-        geometry: proposed.geometry as object,
+        geometry,
         changedBy: actorId,
         reason: reviewNote ?? "Border adjustment approved",
         oldAreaSqMi: oldSqMi,
@@ -119,8 +104,39 @@ async function applyBorderAdjust(
       metadata: { oldArea: oldAreaSqKm, newArea: newAreaSqKm, delta: deltaKm },
     });
   }
+}
 
-  await invalidateRealmMap(db, mapLayer.realmId);
+async function applyBorderAdjust(
+  db: PrismaClient,
+  edit: MapEditRequest,
+  proposed: Proposed,
+  actorId: string,
+  reviewNote: string | undefined
+) {
+  // The feature the edit was filed against, still active on the edit's realm map
+  const mapLayer =
+    edit.targetId &&
+    (await db.mapLayer.findFirst({
+      where: { id: edit.targetId, layerType: "political", isActive: true, realmId: edit.realmId },
+    }));
+  if (!mapLayer || !proposed.geometry) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "This border edit can no longer be applied: its feature or geometry is missing",
+    });
+  }
+
+  await db.mapLayer.update({
+    where: { id: mapLayer.id },
+    data: { geometry: proposed.geometry as object },
+  });
+
+  // The geometry is stored: the map version moves even if a step after it fails (a NULL realm is Ixnay's)
+  try {
+    await recordBorderAdjust(db, edit, mapLayer, proposed.geometry as object, actorId, reviewNote);
+  } finally {
+    await invalidateRealmMap(db, mapLayer.realmId ?? DEFAULT_REALM_ID);
+  }
 }
 
 function applySubdivisionEdit(db: PrismaClient, edit: MapEditRequest, p: Proposed) {

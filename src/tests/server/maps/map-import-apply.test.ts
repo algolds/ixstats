@@ -5,7 +5,11 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 
 import type { Polygon } from "geojson";
-import { applyMapImportPlan, planMapImport } from "~/server/modules/maps/map-import.apply";
+import {
+  applyMapImportPlan,
+  planMapImport,
+  refreshRealmMap,
+} from "~/server/modules/maps/map-import.apply";
 import { listMapImports, rollbackMapImport } from "~/server/modules/maps/map-import.history";
 import { writePipelineLayers } from "~/server/modules/maps/map-import.pipeline";
 import { canImportRealmMap } from "~/server/modules/realms/realms.access";
@@ -185,6 +189,20 @@ describe("planMapImport (the dry run)", () => {
       ).diff.features[0]!.areaKm2!;
     expect(await area(earth)).toBeCloseTo(polygonalAreaSqKm(square(0)), 3);
     expect((await area(small)) / (await area(earth))).toBeCloseTo(0.25, 6);
+  });
+});
+
+describe("refreshRealmMap", () => {
+  it("moves the realm's map version, and a failed bump is logged instead of failing the recorded import", async () => {
+    const db = setup();
+    await expect(refreshRealmMap(db as never, "r1", { adjacency: false })).resolves.toBeNull();
+    expect(db.realm.rows[0].mapVersion).toBe(1);
+
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    db.$queryRaw.mockRejectedValueOnce(new Error("db down"));
+    await expect(refreshRealmMap(db as never, "r1", { adjacency: false })).resolves.toBeNull();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("version bump"), expect.any(Error));
+    error.mockRestore();
   });
 });
 
