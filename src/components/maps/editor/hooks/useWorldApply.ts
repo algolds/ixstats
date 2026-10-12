@@ -1,109 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "~/trpc/react";
-import { useMapImportJob, type MapImportJobView } from "~/hooks/useMapImportJob";
+import { useMapImportJob } from "~/hooks/useMapImportJob";
 import { encodeWorldBundle } from "~/lib/maps/import/world-bundle";
 import { uploadWorldBundle } from "~/lib/maps/import/upload-client";
 import type { WorldSource } from "~/lib/worldgen/world-controls";
-import {
-  buildWorldBundle,
-  failureOf,
-  type WorldFailure,
-  type WorldFailureStage,
-} from "~/lib/worldgen/world-apply";
+import { buildWorldBundle, draftKey, failureOf } from "~/lib/worldgen/world-apply";
+import { clearWorldJob, loadWorldJob, saveWorldJob } from "~/lib/worldgen/world-draft-recipe";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
+import { isSentDraft, resumedFlow, worldApplyView, type Flow, type Sent } from "./world-apply-flow";
 import { useLatest } from "./useLatest";
 
-type JobResult = NonNullable<MapImportJobView["result"]>;
-/** The dry run of a world: what applying it would do */
-export type WorldDryRun = Extract<JobResult, { phase: "world-dry-run" }>;
-/** The apply of a world: what it wrote, and how its relief step went */
-export type WorldApplied = Extract<JobResult, { phase: "world-apply" }>;
-
-const isDryRun = (result: JobResult | null): result is WorldDryRun =>
-  result?.phase === "world-dry-run";
-const isApplied = (result: JobResult | null): result is WorldApplied =>
-  result?.phase === "world-apply";
-
-/**
- * Where the flow is. The draft that was sent is kept with it: the check and the apply are of that world, whatever the
- * draft on the map becomes meanwhile.
- */
-type Flow =
-  | { step: "idle" }
-  | { step: "sending"; draft: WorldGenResult }
-  | { step: "checking"; draft: WorldGenResult; checkJobId: string }
-  /** `applyJobId` is null while the apply is being queued */
-  | { step: "applying"; draft: WorldGenResult; checkJobId: string; applyJobId: string | null }
-  | { step: "failed"; failure: WorldFailure };
-
-export type WorldApplyView =
-  | { stage: "idle" }
-  | { stage: "sending" }
-  | { stage: "checking"; progress: number; message: string }
-  /** `outdated`: the draft on the map is no longer the world that was checked */
-  | { stage: "review"; diff: WorldDryRun; outdated: boolean }
-  | { stage: "applying"; progress: number; message: string }
-  | { stage: "done"; applied: WorldApplied }
-  | { stage: "failed"; failure: WorldFailure };
-
-/** A job's query, as far as the flow reads it */
-type Polled = Pick<ReturnType<typeof useMapImportJob>, "data" | "error">;
-type Outcome<T> = { result: T } | { failure: WorldFailure } | null;
-
-/** A job that has finished: its result, or why it failed. Null while it is queued or running. */
-function outcomeOf<T extends JobResult>(
-  poll: Polled,
-  stage: WorldFailureStage,
-  accepts: (result: JobResult | null) => result is T
-): Outcome<T> {
-  const job = poll.data;
-  if (!job) return poll.error ? { failure: failureOf(poll.error, stage) } : null;
-  if (job.status === "succeeded") {
-    return accepts(job.result)
-      ? { result: job.result }
-      : { failure: { stage, reason: "The server finished without a result" } };
-  }
-  if (job.status === "failed" || job.status === "cancelled") {
-    return { failure: { stage, reason: job.error ?? "The job was cancelled" } };
-  }
-  return null;
-}
-
-function progressOf(job: MapImportJobView | undefined, waiting: string) {
-  if (!job) return { progress: 0, message: waiting };
-  const message = job.status === "queued" ? "Waiting for the import runner" : job.stage;
-  return { progress: job.progress, message: message ?? waiting };
-}
-
-/** What the flow shows: its own step, read together with the check and apply jobs it is polling. */
-function worldApplyView(
-  flow: Flow,
-  check: Polled,
-  apply: Polled,
-  current: WorldGenResult | null
-): WorldApplyView {
-  switch (flow.step) {
-    case "idle":
-    case "sending":
-      return { stage: flow.step };
-    case "failed":
-      return { stage: "failed", failure: flow.failure };
-    case "checking": {
-      const outcome = outcomeOf(check, "check", isDryRun);
-      if (!outcome) return { stage: "checking", ...progressOf(check.data, "Starting the check") };
-      if ("failure" in outcome) return { stage: "failed", failure: outcome.failure };
-      return { stage: "review", diff: outcome.result, outdated: flow.draft !== current };
-    }
-    case "applying": {
-      const outcome = outcomeOf(apply, "apply", isApplied);
-      if (!outcome) return { stage: "applying", ...progressOf(apply.data, "Starting") };
-      if ("failure" in outcome) return { stage: "failed", failure: outcome.failure };
-      return { stage: "done", applied: outcome.result };
-    }
-  }
-}
+export type { WorldApplied, WorldApplyView, WorldDryRun } from "./world-apply-flow";
 
 interface UseWorldApplyArgs {
   realmId: string;
@@ -117,17 +26,24 @@ interface UseWorldApplyArgs {
  * Applying the draft world to the realm: build the bundle, upload it, queue the `world` import (its dry run), show
  * what it would do, and on confirmation queue the apply. The server checks everything again; every refusal comes back
  * as a `failed` view with the server's reason, and the draft stays. `begin` also serves as the retry.
+ *
+ * The job in flight is stored with the realm's draft (`saveWorldJob`), so a World tab that was left (the tab closes
+ * when another is chosen) or a page that was reloaded mid-apply picks the job up again: it is polled to its end and the
+ * success handling (the draft off the map, the maps asked again) runs then.
  */
 export function useWorldApply({ realmId, result, source, onApplied }: UseWorldApplyArgs) {
-  const [flow, setFlow] = useState<Flow>({ step: "idle" });
+  const [flow, setFlow] = useState<Flow>(() => resumedFlow(loadWorldJob(realmId)));
   const utils = api.useUtils();
   const start = api.geoEditor.mapImport.start.useMutation();
   const applyWorld = api.geoEditor.mapImport.applyWorld.useMutation();
+  const cancelJob = api.geoEditor.mapImport.cancel.useMutation();
   const checkJobId = flow.step === "checking" || flow.step === "applying" ? flow.checkJobId : null;
   const applyJobId = flow.step === "applying" ? flow.applyJobId : null;
   const check = useMapImportJob(checkJobId);
   const apply = useMapImportJob(applyJobId);
-  const view = worldApplyView(flow, check, apply, result);
+  const view = worldApplyView(flow, check, apply, result, source);
+  // A call that is under way: a second press in the same moment, before the view has caught up, is ignored
+  const calling = useRef(false);
 
   const latest = useLatest({
     flow,
@@ -139,12 +55,15 @@ export function useWorldApply({ realmId, result, source, onApplied }: UseWorldAp
     utils,
     start: start.mutateAsync,
     applyWorld: applyWorld.mutateAsync,
+    cancelJob: cancelJob.mutateAsync,
   });
 
   const begin = useCallback(async () => {
     const { busy, result: draft, source: from, realmId: realm } = latest.current;
-    if (!draft || busy) return;
-    setFlow({ step: "sending", draft });
+    if (!draft || busy || calling.current) return;
+    calling.current = true;
+    const sent: Sent = { draft, key: draftKey(draft, from), resumed: false };
+    setFlow({ step: "sending", sent });
     try {
       const bytes = await encodeWorldBundle(buildWorldBundle(draft, from));
       const upload = await uploadWorldBundle(realm, bytes);
@@ -154,40 +73,78 @@ export function useWorldApply({ realmId, result, source, onApplied }: UseWorldAp
         kind: "world",
         filename: `world-${draft.seed}.json.gz`,
       });
-      setFlow({ step: "checking", draft, checkJobId: jobId });
+      saveWorldJob(realm, { checkJobId: jobId, applyJobId: null, draftKey: sent.key });
+      setFlow({ step: "checking", sent, checkJobId: jobId });
     } catch (error) {
-      const failure = failureOf(error instanceof Error ? error : new Error(String(error)), "send");
-      setFlow({ step: "failed", failure });
+      setFlow({
+        step: "failed",
+        failure: failureOf(error instanceof Error ? error : new Error(String(error)), "send"),
+      });
+    } finally {
+      calling.current = false;
     }
   }, [latest]);
 
   const confirm = useCallback(async () => {
-    const { flow: now } = latest.current;
-    if (now.step !== "checking") return;
+    const { flow: now, realmId: realm } = latest.current;
+    if (now.step !== "checking" || calling.current) return;
+    calling.current = true;
     setFlow({ ...now, step: "applying", applyJobId: null });
     try {
       const { jobId } = await latest.current.applyWorld({ jobId: now.checkJobId });
+      saveWorldJob(realm, {
+        checkJobId: now.checkJobId,
+        applyJobId: jobId,
+        draftKey: now.sent.key,
+      });
       setFlow({ ...now, step: "applying", applyJobId: jobId });
     } catch (error) {
-      const failure = failureOf(error instanceof Error ? error : new Error(String(error)), "apply");
-      setFlow({ step: "failed", failure });
+      setFlow({
+        step: "failed",
+        failure: failureOf(error instanceof Error ? error : new Error(String(error)), "apply"),
+      });
+    } finally {
+      calling.current = false;
+    }
+  }, [latest]);
+
+  /** Call off the check, or an apply that has not started. A job that has finished meanwhile is shown as it ended. */
+  const cancel = useCallback(async () => {
+    const { flow: now } = latest.current;
+    const jobId =
+      now.step === "applying" ? now.applyJobId : now.step === "checking" ? now.checkJobId : null;
+    if (!jobId) return;
+    try {
+      await latest.current.cancelJob({ jobId });
+      setFlow({ step: "idle" });
+    } catch {
+      // The job finished or the call failed: the polled job says which, and Cancel can be pressed again
     }
   }, [latest]);
 
   const close = useCallback(() => setFlow({ step: "idle" }), []);
 
-  // The world is applied: the live map is the new world, so the draft goes (unless the draft moved on since it was
-  // sent), and everything that reads the realm's map or its lock asks again. A refusal can mean a claim landed.
+  // A job that is over (applied, refused, cancelled, gone, or closed) is not picked up again. When the world is
+  // applied the live map is the new world, so the draft goes (unless the draft moved on since it was sent) and
+  // everything that reads the realm's map or its lock asks again. A refusal can mean a claim landed.
   const stage = view.stage;
   useEffect(() => {
-    const { flow: now, result: draft, onApplied: applied, utils: cache } = latest.current;
+    const {
+      flow: now,
+      result: draft,
+      source: from,
+      realmId: realm,
+      onApplied: applied,
+      utils: cache,
+    } = latest.current;
+    if (stage === "idle" || stage === "done" || stage === "failed") clearWorldJob(realm);
     if (stage === "done") {
-      if (now.step === "applying" && now.draft === draft) applied();
+      if (now.step === "applying" && isSentDraft(now.sent, draft, from)) applied();
       void cache.realms.map.version.invalidate();
       void cache.realms.map.display.invalidate();
     }
     if (stage === "done" || stage === "failed") void cache.realms.map.worldStatus.invalidate();
   }, [stage, latest]);
 
-  return { view, begin, confirm, close };
+  return { view, begin, confirm, cancel, close };
 }

@@ -93,6 +93,8 @@ export function useWorldRecipe({
   const [seed, setSeed] = useState(start.seed);
   // A ref, not state: every run also moves the generator's view (or the controls), which renders this
   const lastRun = useRef<LastRun | null>(null);
+  // The draft was taken away (discarded, or its world applied): the saved recipe is not brought back on mount
+  const discarded = useRef(false);
   const latest = useLatest({
     controls,
     seed,
@@ -113,6 +115,7 @@ export function useWorldRecipe({
       } = latest.current;
       // A world fitted to the realm's map waits for the map: the saved recipe runs once it has loaded
       if (next.source === "realm-map" && !ready) return;
+      discarded.current = false;
       generate(
         paramsFromControls(next),
         nextSeed,
@@ -129,10 +132,11 @@ export function useWorldRecipe({
     () => run(latest.current.controls, latest.current.seed),
     [run, latest]
   );
-  useRunOnce(
-    start.restored && (start.controls.source !== "realm-map" || realmMapReady),
-    generateNow
-  );
+  // A world applied while the tab was away discards the draft before this runs: it is not brought back then
+  const restore = useCallback(() => {
+    if (!discarded.current) generateNow();
+  }, [generateNow]);
+  useRunOnce(start.restored && (start.controls.source !== "realm-map" || realmMapReady), restore);
 
   // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
   const fitsMap = controls.source === "realm-map";
@@ -178,6 +182,7 @@ export function useWorldRecipe({
   /** Take the draft off the map and forget the recipe; the controls stay for the next one */
   const discard = useCallback(() => {
     reset();
+    discarded.current = true;
     clearWorldRecipe(latest.current.scope);
     // Nothing left to keep fitted to the map
     lastRun.current = null;

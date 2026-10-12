@@ -13,9 +13,7 @@ export interface FakeCallError {
   data?: { code: string };
 }
 
-type JobView = Record<string, unknown>;
-
-const jobs = new Map<string, JobView>();
+const jobs = new Map<string, object>();
 const readErrors = new Map<string, FakeCallError>();
 const listeners = new Set<() => void>();
 let revision = 0;
@@ -37,6 +35,7 @@ export const calls: string[] = [];
 export const start = jest.fn();
 export const applyWorld = jest.fn();
 export const rebuildRelief = jest.fn();
+export const cancelJob = jest.fn();
 export const invalidated = {
   version: jest.fn(),
   display: jest.fn(),
@@ -45,7 +44,7 @@ export const invalidated = {
 /** The job ids the component asked the job query for, with whether it was enabled */
 export const jobReads: Array<{ jobId: string; enabled: boolean }> = [];
 
-export function setJob(id: string, job: JobView) {
+export function setJob(id: string, job: object) {
   jobs.set(id, { id, ...job });
   emit();
 }
@@ -58,7 +57,7 @@ export function resetFakeMapImport() {
   readErrors.clear();
   calls.length = 0;
   jobReads.length = 0;
-  for (const fn of [start, applyWorld, rebuildRelief, ...Object.values(invalidated)])
+  for (const fn of [start, applyWorld, rebuildRelief, cancelJob, ...Object.values(invalidated)])
     fn.mockReset();
 }
 
@@ -74,6 +73,7 @@ export const geoEditor = {
     start: { useMutation: () => logged("start", start) },
     applyWorld: { useMutation: () => logged("applyWorld", applyWorld) },
     rebuildRelief: { useMutation: () => logged("rebuildRelief", rebuildRelief) },
+    cancel: { useMutation: () => logged("cancel", cancelJob) },
     job: {
       useQuery: (input: { jobId: string }, options?: { enabled?: boolean }) => {
         useSyncExternalStore(

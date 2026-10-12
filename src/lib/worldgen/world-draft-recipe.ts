@@ -100,3 +100,62 @@ export function clearWorldRecipe(scope: string): void {
     // Nothing to forget where nothing can be kept
   }
 }
+
+// The job in flight
+
+/**
+ * The world check or apply that was running when the tab last looked, kept per realm so a tab that was left or
+ * reloaded mid-apply can pick the job up again: it is polled to its end and the draft is taken off the map once the
+ * world is applied. Kept apart from the recipe (saving a recipe must not lose it, and discarding a draft does not
+ * end a job).
+ */
+export interface WorldJobRef {
+  /** The check (the dry run) that was queued for the draft */
+  checkJobId: string;
+  /** The apply of that check, once confirmed */
+  applyJobId: string | null;
+  /** `draftKey` of the world that was sent: tells whether the draft on the map is that world */
+  draftKey: string;
+}
+
+const JOB_KEY_PREFIX = "ixworld-world-job:";
+
+export const worldJobKey = (scope: string) => `${JOB_KEY_PREFIX}${scope}`;
+
+const jobId = z.string().min(1).max(64);
+const jobSchema = z.object({
+  checkJobId: jobId,
+  applyJobId: jobId.nullable(),
+  draftKey: z.string().max(10_000),
+});
+
+/** The realm's job in flight; null when there is none, or what is stored is not a job (it is dropped). */
+export function loadWorldJob(scope: string): WorldJobRef | null {
+  try {
+    const raw = storage()?.getItem(worldJobKey(scope));
+    if (!raw) return null;
+    const result = jobSchema.safeParse(JSON.parse(raw));
+    if (result.success) return result.data;
+    clearWorldJob(scope);
+    return null;
+  } catch {
+    clearWorldJob(scope);
+    return null;
+  }
+}
+
+export function saveWorldJob(scope: string, job: WorldJobRef): void {
+  try {
+    storage()?.setItem(worldJobKey(scope), JSON.stringify(job));
+  } catch {
+    // Storage is full or blocked: the job is followed for as long as the tab stays on the World tab
+  }
+}
+
+export function clearWorldJob(scope: string): void {
+  try {
+    storage()?.removeItem(worldJobKey(scope));
+  } catch {
+    // Nothing to forget where nothing can be kept
+  }
+}

@@ -66,8 +66,8 @@ function draftBlock({ result, generating, stale }: WorldApplyRegionProps): strin
  * failed.
  */
 export function WorldApplyRegion(props: WorldApplyRegionProps) {
-  const { realm, result, source, lock, onDiscardDraft } = props;
-  const { view, begin, confirm, close } = useWorldApply({
+  const { realm, result, source, generating, stale, lock, onDiscardDraft } = props;
+  const { view, begin, confirm, cancel, close } = useWorldApply({
     realmId: realm.id,
     result,
     source,
@@ -76,28 +76,21 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
   const lockedBy = lockBlock(lock);
   const blocked = lockedBy ?? draftBlock(props);
   const appliedRelief = view.stage === "done" ? view.applied.relief : null;
+  // An archived realm's relief can't be rebuilt either, so it is not offered there
+  const archived = lock.phase === "ready" && lock.status.lockReason === "archived";
   const reliefFailed =
-    appliedRelief?.status === "failed" || (lock.phase === "ready" && lock.status.reliefFailed);
+    !archived &&
+    (appliedRelief?.status === "failed" || (lock.phase === "ready" && lock.status.reliefFailed));
 
   return (
     <div className="border-separator space-y-3 border-t pt-3">
-      <WorldReliefRebuild
-        key={view.stage === "done" ? (view.applied.mapImportId ?? "applied") : "stored"}
-        realmId={realm.id}
-        failed={reliefFailed}
-        cause={appliedRelief?.error}
-      />
+      <WorldReliefRebuild realmId={realm.id} failed={reliefFailed} cause={appliedRelief?.error} />
       {view.stage === "idle" && (
         <div className="space-y-2">
           <Button className="w-full" disabled={blocked !== null} onClick={() => void begin()}>
             Use this world
           </Button>
           {blocked && <p className="text-label-secondary text-caption">{blocked}</p>}
-          {lock.phase === "failed" && (
-            <Button size="sm" variant="outline" onClick={lock.retry}>
-              Check again
-            </Button>
-          )}
         </div>
       )}
       {view.stage === "sending" && (
@@ -108,13 +101,15 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
           label="Checking the world"
           message={view.message}
           progress={view.progress}
+          onCancel={view.cancellable ? () => void cancel() : undefined}
         />
       )}
       {view.stage === "review" && (
         <WorldApplyReview
           diff={view.diff}
-          outdated={view.outdated}
-          blocked={view.outdated ? blocked : lockedBy}
+          // A preview being made or out of step with the controls is not the world that was checked
+          outdated={view.outdated || generating || stale}
+          blocked={view.outdated || generating || stale ? blocked : lockedBy}
           onApply={() => void confirm()}
           onCheckAgain={() => void begin()}
           onCancel={close}
@@ -125,6 +120,7 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
           label="Applying the world"
           message={view.message}
           progress={view.progress}
+          onCancel={view.cancellable ? () => void cancel() : undefined}
         />
       )}
       {view.stage === "done" && (
@@ -137,6 +133,11 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
           onRetry={() => void begin()}
           onClose={close}
         />
+      )}
+      {lock.phase === "failed" && (
+        <Button size="sm" variant="outline" onClick={lock.retry}>
+          Check claims again
+        </Button>
       )}
     </div>
   );

@@ -24,7 +24,13 @@ function addApply(
   db: ReturnType<typeof seedRealm>,
   id: string,
   outcome: object,
-  over: Record<string, unknown> = {}
+  over: Partial<{
+    dryRun: boolean;
+    status: string;
+    kind: string;
+    realmId: string;
+    createdAt: Date;
+  }> = {}
 ) {
   db.mapImportJob.rows.push({
     id,

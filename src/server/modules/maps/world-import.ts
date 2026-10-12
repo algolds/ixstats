@@ -118,7 +118,14 @@ export interface WorldDiff {
     /** New slots whose name was taken in the realm and got a number. */
     renamed: number;
   };
+  /** Every warning, the notes and the ones in `replaces` */
   warnings: string[];
+  /**
+   * The warnings about work the world replaces or takes from someone (hand edits, later map imports, the current
+   * map, nations that keep their country but lose their border): the review shows these first. Each is also in
+   * `warnings`.
+   */
+  replaces: string[];
 }
 
 interface MapRow {
@@ -228,12 +235,14 @@ async function diffWorld(
   const renamed = names.filter((name, i) => name.toLowerCase() !== wanted[i]!.trim().toLowerCase());
 
   const warnings = [...prepared.warnings];
+  const replaces: string[] = [];
   if (preset) {
     const links = rows.filter(
       (row) => row.layerType === "political" && row.isActive && row.countryId !== null
     );
     const kept = links.filter((row) => !retiredIds.has(row.countryId!)).length;
-    warnings.push(...(await replacedWarnings(db, realm.id, rows, kept)));
+    replaces.push(...(await replacedWarnings(db, realm.id, rows, kept)));
+    warnings.push(...replaces);
     const empty = prepared.slots.filter((planned) => planned.slot.population === 0).length;
     if (empty > 0)
       warnings.push(`${empty} slots have no habitable land and start as token nations`);
@@ -260,6 +269,7 @@ async function diffWorld(
       renamed: renamed.length,
     },
     warnings,
+    replaces,
   };
 }
 

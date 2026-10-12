@@ -4,7 +4,7 @@
  * reason while the draft is out of date or the claims lock the realm or cannot be read. The server's refusals read in
  * plain words, with Retry and the draft kept. A failed relief step offers Rebuild relief, also after a reload.
  */
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const fake = jest.requireActual("~/tests/helpers/fake-map-import");
@@ -17,142 +17,36 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
 }));
 
 import { encodeWorldBundle } from "~/lib/maps/import/world-bundle";
-import {
-  WorldApplyRegion,
-  type WorldApplyRegionProps,
-  type WorldLock,
-} from "~/components/maps/editor/panels/WorldApplyRegion";
+import type { WorldLock } from "~/components/maps/editor/panels/WorldApplyRegion";
 import {
   applyWorld,
   calls,
   failRead,
   invalidated,
   rebuildRelief,
-  resetFakeMapImport,
   setJob,
   start,
 } from "~/tests/helpers/fake-map-import";
-import { layerJson, worldResult } from "~/tests/helpers/fake-world-worker";
+import { worldResult } from "~/tests/helpers/fake-world-worker";
+import {
+  DRAFT,
+  OPEN,
+  REALM,
+  STATUS,
+  UPLOAD,
+  applied,
+  claimsLock,
+  dryRun,
+  reachReview,
+  refusal,
+  renderRegion,
+  resetWorldApplyTests,
+  respondToUpload,
+  startCheck,
+  getUseButton,
+} from "~/tests/helpers/world-apply-fixtures";
 
-const REALM = "r_eurth";
-const DRAFT = worldResult({ seed: 7 });
-
-const STATUS = {
-  realmId: REALM,
-  status: "active",
-  pendingClaims: 0,
-  approvedClaims: 0,
-  locked: false,
-  lockReason: null,
-  canReviewClaims: true,
-  reliefFailed: false,
-} as const;
-const OPEN: WorldLock = { phase: "ready", status: STATUS };
-const claimsLock = (): WorldLock => ({
-  phase: "ready",
-  status: { ...STATUS, locked: true, lockReason: "claims", pendingClaims: 2 },
-});
-
-/** What tRPC raises for a refusal: an Error that carries the server's code. */
-const refusal = (message: string, code: string) =>
-  Object.assign(new Error(message), { data: { code } });
-
-const UPLOAD = { uploadId: "a".repeat(64), kind: "world", filename: "world.json.gz", size: 9 };
-
-const counts = (create = 0, change = 0, retire = 0) => ({ create, change, retire });
-const dryRun = (over: Record<string, unknown> = {}) => ({
-  status: "succeeded",
-  progress: 100,
-  stage: null,
-  error: null,
-  result: {
-    phase: "world-dry-run",
-    source: "preset",
-    seed: 7,
-    developmentLevel: "industrial",
-    layers: {
-      background: counts(1),
-      altitudes: counts(4, 2, 1),
-      climate: counts(6),
-      political: counts(12, 0, 3),
-      rivers: counts(30, 0, 25),
-      lakes: counts(),
-      icecaps: counts(2),
-    },
-    slots: { create: 12, retire: 3, keep: 2, renamed: 1 },
-    warnings: [],
-    ...over,
-  },
-});
-const applied = (relief: Record<string, unknown> = {}) => ({
-  status: "succeeded",
-  progress: 100,
-  stage: null,
-  error: null,
-  result: {
-    phase: "world-apply",
-    written: 140,
-    rejected: [],
-    deactivated: 20,
-    slots: { created: 12, retired: 3, opened: 12 },
-    mapImportId: "i_1",
-    rollbackAvailable: true,
-    relief: { status: "built", version: "abc12345", tiles: 12, error: null, ...relief },
-  },
-});
-
-function respondToUpload(response: { status: number; body: object } | null = null) {
-  global.fetch = jest.fn(async () => {
-    calls.push("upload");
-    const { status, body } = response ?? { status: 200, body: UPLOAD };
-    return { ok: status < 400, status, json: async () => body } as Response;
-  });
-}
-
-function renderRegion(props: Partial<WorldApplyRegionProps> = {}) {
-  const onDiscardDraft = jest.fn();
-  const base: WorldApplyRegionProps = {
-    realm: { id: REALM, slug: "eurth" },
-    result: DRAFT,
-    source: "preset",
-    generating: false,
-    stale: false,
-    lock: OPEN,
-    onDiscardDraft,
-  };
-  const view = render(<WorldApplyRegion {...base} {...props} />);
-  return {
-    onDiscardDraft,
-    ...view,
-    update: (next: Partial<WorldApplyRegionProps>) =>
-      view.rerender(<WorldApplyRegion {...base} {...props} {...next} />),
-  };
-}
-
-const useButton = () => screen.getByRole("button", { name: "Use this world" });
-
-/** Click Use this world and wait until the check has been queued and is being polled. */
-async function startCheck() {
-  fireEvent.click(useButton());
-  await screen.findByText(/Checking the world/);
-}
-
-/** The check finishes with `diff`; the review is up. */
-async function reachReview(diff = dryRun()) {
-  await startCheck();
-  act(() => setJob("j_check", diff));
-  await screen.findByText("What this world changes");
-}
-
-beforeEach(() => {
-  resetFakeMapImport();
-  respondToUpload();
-  jest.mocked(encodeWorldBundle).mockReset();
-  jest.mocked(encodeWorldBundle).mockResolvedValue(new Uint8Array([0x1f, 0x8b, 0x08, 1, 2]));
-  start.mockResolvedValue({ jobId: "j_check" });
-  applyWorld.mockResolvedValue({ jobId: "j_apply" });
-  rebuildRelief.mockResolvedValue({ source: "cells", version: "abc12345", built: true, tiles: 12 });
-});
+beforeEach(resetWorldApplyTests);
 afterEach(() => jest.restoreAllMocks());
 
 describe("using a world", () => {
@@ -248,6 +142,31 @@ describe("using a world", () => {
     expect(view.onDiscardDraft).not.toHaveBeenCalled();
   });
 
+  it("says one shape and one nation in the singular", async () => {
+    renderRegion();
+    await reachReview();
+    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
+    await screen.findByText(/Applying the world/);
+    const done = applied();
+    act(() =>
+      setJob("j_apply", {
+        ...done,
+        result: {
+          ...done.result,
+          written: 1,
+          rejected: [{ layerType: "lakes", key: "l1", reason: "Too small" }],
+          slots: { created: 1, retired: 1, opened: 1 },
+        },
+      })
+    );
+    await screen.findByText("The world is applied");
+    expect(
+      screen.getByText("1 map feature written, 1 nation created, 1 nation retired.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 shape could not be written and was left out.")).toBeInTheDocument();
+    expect(screen.getByText("1 nation is open for claims.")).toBeInTheDocument();
+  });
+
   it("closes the result", async () => {
     renderRegion();
     await reachReview();
@@ -255,7 +174,7 @@ describe("using a world", () => {
     await screen.findByText(/Applying the world/);
     act(() => setJob("j_apply", applied()));
     fireEvent.click(await screen.findByRole("button", { name: "Done" }));
-    expect(useButton()).toBeInTheDocument();
+    expect(getUseButton()).toBeInTheDocument();
   });
 });
 
@@ -274,22 +193,38 @@ describe("the review", () => {
     );
   });
 
-  it("says first that hand edits are replaced, and lists the other notes quietly", async () => {
+  it("says first what the server flags as replacing work, and lists the other notes quietly", async () => {
+    const handEdits =
+      "14 features were edited by hand since the last generation and will be replaced";
+    const lostBorders =
+      "2 nations that are not generated slots, or that a player holds, keep their country but lose their border";
+    const taken = "1 names were already taken in this realm and got a number";
     renderRegion();
     await reachReview(
-      dryRun({
-        warnings: [
-          "14 features were edited by hand since the last generation and will be replaced",
-          "1 names were already taken in this realm and got a number",
-        ],
-      })
+      dryRun({ warnings: [handEdits, lostBorders, taken], replaces: [handEdits, lostBorders] })
     );
     const warning = screen
       .getByText("This replaces work in the realm")
       .closest("div")!.parentElement!;
     expect(warning).toHaveTextContent("14 features were edited by hand");
+    expect(warning).toHaveTextContent("lose their border");
     expect(warning).not.toHaveTextContent("already taken");
-    expect(screen.getByText(/already taken in this realm/)).toBeInTheDocument();
+    expect(screen.getByText(taken)).toBeInTheDocument();
+  });
+
+  it("goes by the server's flag and not by the wording of a warning", async () => {
+    renderRegion();
+    await reachReview(
+      dryRun({
+        warnings: ["The realm's current map (5 features) will be replaced", "A quiet note"],
+        replaces: ["A quiet note"],
+      })
+    );
+    const warning = screen
+      .getByText("This replaces work in the realm")
+      .closest("div")!.parentElement!;
+    expect(warning).toHaveTextContent("A quiet note");
+    expect(warning).not.toHaveTextContent("current map");
   });
 
   it("has no replaced-work warning when the server has none", async () => {
@@ -310,7 +245,7 @@ describe("the review", () => {
     renderRegion();
     await reachReview();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(useButton()).toBeInTheDocument();
+    expect(getUseButton()).toBeInTheDocument();
     expect(applyWorld).not.toHaveBeenCalled();
   });
 
@@ -345,10 +280,27 @@ describe("the review", () => {
     expect(applyWorld).not.toHaveBeenCalled();
   });
 
-  it("still applies the world that was checked while a slider is mid-drag on the same draft", async () => {
+  it.each([
+    ["a slider is mid-drag on the same draft", { stale: true }],
+    ["the preview is being made again", { generating: true }],
+  ])(
+    "offers no Apply while %s: the checked world is not what the controls ask for",
+    async (_name, change) => {
+      const view = renderRegion();
+      await reachReview();
+      view.update(change);
+      expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+      expect(screen.getByText(/The preview changed after this check/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Check again" })).toBeDisabled();
+      expect(applyWorld).not.toHaveBeenCalled();
+    }
+  );
+
+  it("offers Apply again when the draft is current again", async () => {
     const view = renderRegion();
     await reachReview();
     view.update({ stale: true });
+    view.update({ stale: false });
     expect(screen.getByRole("button", { name: "Apply this world" })).toBeEnabled();
   });
 });
@@ -377,9 +329,9 @@ describe("when applying is off", () => {
     ],
   ] as const)("disables Use this world for %s, and says why", async (_name, props, text) => {
     renderRegion(props as Partial<WorldApplyRegionProps>);
-    expect(useButton()).toBeDisabled();
+    expect(getUseButton()).toBeDisabled();
     expect(reason(text)).toBeInTheDocument();
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     expect(global.fetch).not.toHaveBeenCalled();
     expect(start).not.toHaveBeenCalled();
   });
@@ -387,15 +339,36 @@ describe("when applying is off", () => {
   it("is not open on a failed claims read, and offers to read them again", () => {
     const retry = jest.fn();
     renderRegion({ lock: { phase: "failed", message: "offline", retry } });
-    expect(useButton()).toBeDisabled();
+    expect(getUseButton()).toBeDisabled();
     expect(reason("Claims could not be checked, so using a world is off.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Check claims again" }));
     expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers to read the claims again in every step, not only before a check", async () => {
+    const retry = jest.fn();
+    const failed: WorldLock = { phase: "failed", message: "offline", retry };
+    const view = renderRegion();
+    await reachReview();
+    view.update({ lock: failed });
+    expect(screen.getByRole("button", { name: "Apply this world" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Check claims again" }));
+    expect(retry).toHaveBeenCalledTimes(1);
+    view.update({ lock: OPEN });
+    expect(screen.queryByRole("button", { name: "Check claims again" })).toBeNull();
+
+    respondToUpload({ status: 500, body: {} });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(getUseButton());
+    await screen.findByText("The world could not be sent.");
+    view.update({ lock: failed });
+    expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Check claims again" })).toBeInTheDocument();
   });
 
   it("is on when the draft is current and the realm is open", () => {
     renderRegion();
-    expect(useButton()).toBeEnabled();
+    expect(getUseButton()).toBeEnabled();
   });
 });
 
@@ -406,7 +379,7 @@ describe("a refusal", () => {
       body: { error: "The world is locked: 2 claims are pending or approved in this realm" },
     });
     const { onDiscardDraft } = renderRegion();
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     expect(await screen.findByText("The realm can't take a world right now.")).toBeInTheDocument();
     expect(
       screen.getByText("The world is locked: 2 claims are pending or approved in this realm")
@@ -425,7 +398,7 @@ describe("a refusal", () => {
   ])("words a %s refusal of the check", async (code, title) => {
     start.mockRejectedValue(refusal("Ixnay's map is hand drawn", code));
     renderRegion();
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     expect(await screen.findByText(title)).toBeInTheDocument();
     expect(screen.getByText("Ixnay's map is hand drawn")).toBeInTheDocument();
   });
@@ -493,7 +466,7 @@ describe("a refusal", () => {
   it("says a bundle that cannot be built, naming the layer", async () => {
     const { rivers: _rivers, ...layers } = DRAFT.layers;
     renderRegion({ result: worldResult({ layers }) });
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     expect(await screen.findByText("The world could not be sent.")).toBeInTheDocument();
     expect(screen.getByText("The preview has no rivers layer")).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
@@ -502,7 +475,7 @@ describe("a refusal", () => {
   it("tries the whole flow again on Retry, from the upload", async () => {
     respondToUpload({ status: 500, body: { error: "Upload failed" } });
     renderRegion();
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     await screen.findByText("The world could not be sent.");
     respondToUpload();
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -528,7 +501,7 @@ describe("a refusal", () => {
   it("will not retry while the claims lock the realm", async () => {
     const view = renderRegion();
     respondToUpload({ status: 500, body: {} });
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     await screen.findByText("The world could not be sent.");
     view.update({ lock: claimsLock() });
     expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
@@ -537,10 +510,10 @@ describe("a refusal", () => {
   it("closes the message and offers Use this world again", async () => {
     respondToUpload({ status: 500, body: {} });
     renderRegion();
-    fireEvent.click(useButton());
+    fireEvent.click(getUseButton());
     await screen.findByText("The world could not be sent.");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(useButton()).toBeInTheDocument();
+    expect(getUseButton()).toBeInTheDocument();
   });
 });
 
@@ -594,6 +567,41 @@ describe("rebuilding the relief", () => {
     expect(screen.getByRole("button", REBUILD)).toBeEnabled();
   });
 
+  it("is not offered for an archived realm, which can't change", () => {
+    renderRegion({
+      result: null,
+      lock: {
+        phase: "ready",
+        status: { ...STATUS, locked: true, lockReason: "archived", reliefFailed: true },
+      },
+    });
+    expect(screen.queryByRole("button", REBUILD)).toBeNull();
+  });
+
+  it("is offered again when a later world's relief also fails, after this one was rebuilt", async () => {
+    const view = renderRegion({
+      result: null,
+      lock: { phase: "ready", status: { ...STATUS, reliefFailed: true } },
+    });
+    fireEvent.click(screen.getByRole("button", REBUILD));
+    await screen.findByText("The relief was rebuilt.");
+    view.update({ lock: { phase: "ready", status: STATUS } });
+    view.update({ lock: { phase: "ready", status: { ...STATUS, reliefFailed: true } } });
+    expect(screen.getByRole("button", REBUILD)).toBeInTheDocument();
+    expect(screen.queryByText("The relief was rebuilt.")).toBeNull();
+  });
+
+  it("keeps saying the relief was rebuilt while the status has not caught up", async () => {
+    const view = renderRegion({
+      result: null,
+      lock: { phase: "ready", status: { ...STATUS, reliefFailed: true } },
+    });
+    fireEvent.click(screen.getByRole("button", REBUILD));
+    await screen.findByText("The relief was rebuilt.");
+    view.update({ lock: { phase: "ready", status: { ...STATUS, reliefFailed: true } } });
+    expect(screen.queryByRole("button", REBUILD)).toBeNull();
+  });
+
   it("builds the relief of the realm, shows it is working, then says it was rebuilt and refreshes the map", async () => {
     let finish: (value: object) => void = () => {};
     rebuildRelief.mockReturnValue(new Promise((resolve) => (finish = resolve)));
@@ -622,7 +630,8 @@ describe("rebuilding the relief", () => {
     });
     fireEvent.click(screen.getByRole("button", REBUILD));
     expect(await screen.findByText(/Another import of this realm is running/)).toBeInTheDocument();
-    expect(screen.getByText(/The realm can't take a world right now\./)).toBeInTheDocument();
+    expect(screen.getByText(/The relief can't be rebuilt right now\./)).toBeInTheDocument();
+    expect(screen.queryByText(/take a world/)).toBeNull();
     expect(invalidated.display).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", REBUILD));
     expect(await screen.findByText("The relief was rebuilt.")).toBeInTheDocument();

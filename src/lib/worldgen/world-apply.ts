@@ -61,6 +61,13 @@ export function buildWorldBundle(result: WorldGenResult, source: WorldSource): W
   };
 }
 
+/**
+ * What makes a draft the world it is: its source, seed and parameters. A world checked and a draft made again from
+ * the same recipe (a reopened tab) have the same key, though they are different objects.
+ */
+export const draftKey = (result: WorldGenResult, source: WorldSource): string =>
+  JSON.stringify([source, result.seed, result.params]);
+
 // A refusal
 
 /** Where the flow stopped: sending the bundle, checking it (the dry run), applying it, or rebuilding the relief. */
@@ -81,6 +88,14 @@ const TITLE_BY_CODE: Record<string, string> = {
   NOT_FOUND: "The realm or the uploaded world was not found.",
   UNAUTHORIZED: "You are signed out. Sign in again, then retry.",
   TOO_MANY_REQUESTS: "Too many requests. Wait a minute, then retry.",
+};
+
+/** The same refusals as they read for a relief rebuild; a code not named here reads as in `TITLE_BY_CODE`. */
+const RELIEF_TITLE_BY_CODE: Record<string, string> = {
+  CONFLICT: "The relief can't be rebuilt right now.",
+  FORBIDDEN: "You can't rebuild this realm's relief.",
+  BAD_REQUEST: "The relief could not be rebuilt.",
+  NOT_FOUND: "The realm was not found.",
 };
 
 const TITLE_BY_STAGE: Record<WorldFailureStage, string> = {
@@ -115,7 +130,8 @@ export function failureOf(error: FailedCall, stage: WorldFailureStage): WorldFai
 
 /** What to say about a failure: a plain title for the kind of refusal, and the server's reason under it. */
 export function describeWorldFailure({ stage, code, reason }: WorldFailure) {
-  return { title: (code && TITLE_BY_CODE[code]) || TITLE_BY_STAGE[stage], reason };
+  const titles = stage === "relief" ? { ...TITLE_BY_CODE, ...RELIEF_TITLE_BY_CODE } : TITLE_BY_CODE;
+  return { title: (code && titles[code]) || TITLE_BY_STAGE[stage], reason };
 }
 
 // The dry run
@@ -126,9 +142,9 @@ interface Counts {
   retire: number;
 }
 
-const joined = (parts: ReadonlyArray<readonly [number, string]>, none = "No change"): string => {
+const joined = (parts: ReadonlyArray<readonly [number, string]>): string => {
   const said = parts.filter(([count]) => count > 0).map(([count, word]) => `${count} ${word}`);
-  return said.length > 0 ? said.join(", ") : none;
+  return said.length > 0 ? said.join(", ") : "No change";
 };
 
 /** A layer's part of the diff: "3 new, 2 changed, 1 retired". */
@@ -153,23 +169,33 @@ export const slotChangeText = (slots: {
     [slots.renamed, "renamed"],
   ]);
 
+/** "1 nation", "2 nations": the count with its noun in the right number. */
+export const countOf = (count: number, noun: string): string =>
+  `${count} ${noun}${count === 1 ? "" : "s"}`;
+
 /** What an applied world did, for the result: the map features written and the nations made and retired. */
 export const appliedText = (applied: {
   written: number;
   slots: { created: number; retired: number };
-}): string =>
-  joined(
-    [
-      [applied.written, "map features written"],
-      [applied.slots.created, "nations created"],
-      [applied.slots.retired, "nations retired"],
-    ],
-    "Nothing was written"
-  );
+}): string => {
+  const said = [
+    applied.written > 0 && `${countOf(applied.written, "map feature")} written`,
+    applied.slots.created > 0 && `${countOf(applied.slots.created, "nation")} created`,
+    applied.slots.retired > 0 && `${countOf(applied.slots.retired, "nation")} retired`,
+  ].filter((part) => part !== false);
+  return said.length > 0 ? said.join(", ") : "Nothing was written";
+};
 
-/** A warning that work already in the realm (hand edits, earlier imports, its map) will be replaced. */
-export const isReplacementWarning = (warning: string): boolean =>
-  /by hand|will be replaced/i.test(warning);
+/**
+ * The dry run's warnings in the two groups the review shows: those the server flags as replacing work (its `replaces`
+ * list, shown first) and the rest, as notes. The split is the server's, not a reading of its wording.
+ */
+export function splitWarnings(diff: { warnings: readonly string[]; replaces: readonly string[] }) {
+  return {
+    replaces: [...diff.replaces],
+    notes: diff.warnings.filter((warning) => !diff.replaces.includes(warning)),
+  };
+}
 
 export const WORLD_LAYER_LABELS: Record<WorldBundleLayerName, string> = {
   background: "Land and sea",

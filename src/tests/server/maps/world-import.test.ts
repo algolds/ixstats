@@ -82,6 +82,65 @@ describe("runWorldDryRun", () => {
     expect(stateOf(db)).toBe(before);
   });
 
+  it("flags the warnings about work the world replaces, apart from the notes", async () => {
+    const db = seedRealm();
+    const diff = await runWorldDryRun(db, jobFor(await stored()));
+    expect(diff.replaces).toEqual([
+      "The realm's current map (5 features) will be replaced",
+      "2 nations that are not generated slots, or that a player holds, keep their country but lose their border",
+    ]);
+    // each is also in the full list, which holds the notes too
+    expect(diff.warnings).toEqual(expect.arrayContaining(diff.replaces));
+    expect(diff.warnings).toContain("1 names were already taken in this realm and got a number");
+    expect(diff.replaces).not.toContain(
+      "1 names were already taken in this realm and got a number"
+    );
+  });
+
+  it("flags hand edits and map imports made since the last generation as replaced work", async () => {
+    const db = seedRealm();
+    db.mapImport.rows.push(
+      {
+        id: "i_prev",
+        realmId: "r1",
+        jobId: "j_prev",
+        layerTypes: ["political"],
+        mode: "replace",
+        summary: { source: "world" },
+        createdAt: new Date("2026-01-01T12:00:00Z"),
+        rolledBackAt: null,
+      },
+      {
+        id: "i_later",
+        realmId: "r1",
+        jobId: "j_later",
+        layerTypes: ["political"],
+        mode: "replace",
+        summary: { source: "png" },
+        createdAt: new Date("2026-01-03T12:00:00Z"),
+        rolledBackAt: null,
+      }
+    );
+    layer(db, "political", "manual-key").updatedAt = new Date("2026-01-02T12:00:00Z");
+    const diff = await runWorldDryRun(db, jobFor(await stored()));
+    expect(diff.replaces).toEqual(
+      expect.arrayContaining([
+        "1 features were edited by hand since the last generation and will be replaced",
+        "1 map imports were applied since the last generation and will be replaced",
+      ])
+    );
+  });
+
+  it("flags nothing for a first world in an empty realm, and not the realm map's kept borders", async () => {
+    const empty = seedRealm();
+    empty.mapLayer.rows.splice(0);
+    empty.country.rows.splice(0);
+    expect((await runWorldDryRun(empty, jobFor(await stored()))).replaces).toEqual([]);
+    const kept = await runWorldDryRun(seedRealm(), jobFor(await stored({ source: "realm-map" })));
+    expect(kept.replaces).toEqual([]);
+    expect(kept.warnings.length).toBeGreaterThan(0);
+  });
+
   it("warns of hand edits made since the last generation, not of the generation's own touches", async () => {
     const db = seedRealm();
     db.mapImport.rows.push({

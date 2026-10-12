@@ -57,8 +57,10 @@ export function RealmMapImportWizard({ realmId: fixedRealmId, initialJobId = nul
   const [plan, setPlan] = useState<RegionMappingPlan | null>(null);
   const [applyJobId, setApplyJobId] = useState<string | null>(null);
 
-  const analyseJob = useMapImportJob(analyseJobId).data;
-  const applyJob = useMapImportJob(applyJobId).data;
+  const analyseQuery = useMapImportJob(analyseJobId);
+  const applyQuery = useMapImportJob(applyJobId);
+  const analyseJob = analyseQuery.data;
+  const applyJob = applyQuery.data;
   const realmId = fixedRealmId ?? analyseJob?.realmId ?? chosenRealm;
   const { data: realms } = api.realms.adminListRealms.useQuery(undefined, {
     enabled: !fixedRealmId,
@@ -227,8 +229,13 @@ export function RealmMapImportWizard({ realmId: fixedRealmId, initialJobId = nul
 
       {shownStep === "analyse" && (
         <div className="flex flex-col gap-3">
-          <ImportJobProgress job={analyseJob} />
-          {analyseJob && ["failed", "cancelled"].includes(analyseJob.status) && (
+          <ImportJobProgress
+            job={analyseJob}
+            readError={analyseQuery.error?.message}
+            onRetryRead={() => void analyseQuery.refetch()}
+          />
+          {((analyseJob && ["failed", "cancelled"].includes(analyseJob.status)) ||
+            (!analyseJob && analyseQuery.error)) && (
             <div>
               <Button variant="outline" onClick={reset}>
                 Start again
@@ -269,7 +276,11 @@ export function RealmMapImportWizard({ realmId: fixedRealmId, initialJobId = nul
 
       {shownStep === "apply" && (
         <div className="flex flex-col gap-3">
-          <ImportJobProgress job={applyJob} />
+          <ImportJobProgress
+            job={applyJob}
+            readError={applyQuery.error?.message}
+            onRetryRead={() => void applyQuery.refetch()}
+          />
           {applyJob?.status === "succeeded" && applyJob.result?.phase === "apply" && (
             <p className="text-label text-body">
               {applyJob.result.written} borders written

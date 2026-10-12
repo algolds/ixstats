@@ -5,9 +5,9 @@ import { Card } from "~/components/ui/card";
 import { Signal } from "~/components/ui/signal";
 import { WORLD_BUNDLE_LAYERS } from "~/lib/maps/import/world-bundle";
 import {
-  isReplacementWarning,
   layerChangeText,
   slotChangeText,
+  splitWarnings,
   WORLD_LAYER_LABELS,
 } from "~/lib/worldgen/world-apply";
 import type { WorldDryRun } from "../hooks/useWorldApply";
@@ -23,7 +23,7 @@ function DiffRow({ label, value }: { label: string; value: string }) {
 
 interface WorldApplyReviewProps {
   diff: WorldDryRun;
-  /** The draft on the map is no longer the world that was checked */
+  /** The draft on the map is not the world that was checked: changed since, or being made again */
   outdated: boolean;
   /** Why the world can't be applied now (a claim landed, the claims can't be read), or null */
   blocked: string | null;
@@ -44,18 +44,17 @@ export function WorldApplyReview({
   onCheckAgain,
   onCancel,
 }: WorldApplyReviewProps) {
-  const replaced = diff.warnings.filter(isReplacementWarning);
-  const notes = diff.warnings.filter((warning) => !isReplacementWarning(warning));
+  const { replaces, notes } = splitWarnings(diff);
   const layers = WORLD_BUNDLE_LAYERS.filter(
     (layer) => layer !== "political" || diff.source === "preset"
   );
   return (
     <div className="space-y-3">
       <p className="text-label text-footnote font-medium">What this world changes</p>
-      {replaced.length > 0 && (
+      {replaces.length > 0 && (
         <Signal tone="warning" title="This replaces work in the realm">
           <ul className="list-disc space-y-1 pl-4">
-            {replaced.map((warning) => (
+            {replaces.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}
           </ul>
@@ -82,7 +81,8 @@ export function WorldApplyReview({
       )}
       {outdated && (
         <p className="text-label-secondary text-caption" role="status">
-          The preview changed after this check. Check it again to use the new one.
+          The preview changed after this check, or is being made again. Check it again to use the
+          new one.
         </p>
       )}
       {blocked && <p className="text-label-secondary text-caption">{blocked}</p>}

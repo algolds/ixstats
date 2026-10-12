@@ -26,6 +26,12 @@ interface WorldReliefRebuildProps {
  */
 export function WorldReliefRebuild({ realmId, failed, cause }: WorldReliefRebuildProps) {
   const [rebuild, setRebuild] = useState<Rebuild>({ state: "idle" });
+  // A relief that fails again after it was rebuilt is offered again, not shown as rebuilt
+  const [wasFailed, setWasFailed] = useState(failed);
+  if (failed !== wasFailed) {
+    setWasFailed(failed);
+    if (failed) setRebuild({ state: "idle" });
+  }
   const utils = api.useUtils();
   const rebuildRelief = api.geoEditor.mapImport.rebuildRelief.useMutation();
 

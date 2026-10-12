@@ -3,43 +3,77 @@
  * What the World tab uploads and how it words what comes back: the bundle built from a generated world (which the
  * server's parser must accept), the readable copy for a refusal, and the diff as a person reads it.
  */
-import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
-import { generateWorld } from "~/lib/worldgen/v2";
-import { parseWorldBundleJson, decodeCells } from "~/lib/maps/import/world-bundle";
-import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
+import {
+  decodeCells,
+  encodeWorldBundle,
+  parseWorldBundleJson,
+} from "~/lib/maps/import/world-bundle";
+import { parseWorldBundle } from "~/lib/maps/import/world-bundle.node";
+import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
+import { controlsForPreset, paramsFromControls } from "~/lib/worldgen/world-controls";
 import { MapUploadError } from "~/lib/maps/import/upload-client";
 import {
   buildWorldBundle,
   describeWorldFailure,
   failureOf,
-  isReplacementWarning,
+  draftKey,
   layerChangeText,
   slotChangeText,
   appliedText,
+  countOf,
+  splitWarnings,
 } from "~/lib/worldgen/world-apply";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
+import { realWorld } from "~/tests/helpers/real-world-result";
 
-/** A generated world as the worker hands it over: each layer a JSON string. */
-function generated(over: Partial<typeof DEFAULT_PARAMS> = {}): WorldGenResult {
-  const world = generateWorld({
-    ...DEFAULT_PARAMS,
-    seed: 7,
-    cellCount: 3000,
-    plateCount: 8,
-    ...over,
-  });
-  return {
-    seed: world.seed,
-    params: world.params,
-    layers: Object.fromEntries(
-      Object.entries(world.layers).map(([name, layer]) => [name, JSON.stringify(layer)])
-    ),
-    slots: world.slots,
-    stats: { landShare: 0.3, continents: 4, climateMix: {}, slotCount: 0, baseline: null },
-    cells: world.cells,
-    relief: { width: 2, height: 2, rgba: new Uint8ClampedArray(16) },
-  };
-}
+/** A generated world as `useWorldGenerator` holds it, made by the real generator through the real worker runner. */
+const generated = realWorld;
+
+/** A realm's landmass and borders: a box of land with one country in it. */
+const box: LandMaskLayers = {
+  background: {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-60, -30],
+              [60, -30],
+              [60, 30],
+              [-60, 30],
+              [-60, -30],
+            ],
+          ],
+        },
+      },
+    ],
+  },
+  political: {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { name: "Boxland" },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-60, -30],
+              [60, -30],
+              [60, 30],
+              [-60, 30],
+              [-60, -30],
+            ],
+          ],
+        },
+      },
+    ],
+  },
+};
 
 describe("buildWorldBundle", () => {
   it("makes a bundle the server's parser accepts from a generated world", () => {
@@ -111,6 +145,17 @@ describe("buildWorldBundle", () => {
   });
 });
 
+describe("draftKey", () => {
+  it("is the same for the same world and differs by seed, parameters and source", () => {
+    const world = worldResult({ seed: 7 });
+    expect(draftKey(world, "preset")).toBe(draftKey(worldResult({ seed: 7 }), "preset"));
+    expect(draftKey(world, "preset")).not.toBe(draftKey(world, "realm-map"));
+    expect(draftKey(world, "preset")).not.toBe(draftKey(worldResult({ seed: 8 }), "preset"));
+    const warmer = worldResult({ seed: 7, params: { ...world.params, temperatureOffset: 3 } });
+    expect(draftKey(world, "preset")).not.toBe(draftKey(warmer, "preset"));
+  });
+});
+
 describe("describeWorldFailure", () => {
   const reason = "The world is locked: 2 claims are pending or approved in this realm";
 
@@ -126,6 +171,15 @@ describe("describeWorldFailure", () => {
   });
 
   it.each([
+    ["CONFLICT", "The relief can't be rebuilt right now."],
+    ["FORBIDDEN", "You can't rebuild this realm's relief."],
+    ["BAD_REQUEST", "The relief could not be rebuilt."],
+    ["NOT_FOUND", "The realm was not found."],
+  ])("words a %s refusal of a relief rebuild as the relief's, not the world's", (code, title) => {
+    expect(describeWorldFailure({ stage: "relief", code, reason })).toEqual({ title, reason });
+  });
+
+  it.each([
     ["send", "The world could not be sent."],
     ["check", "The world could not be checked."],
     ["apply", "The world could not be applied."],
@@ -135,6 +189,51 @@ describe("describeWorldFailure", () => {
       reason: "Disk full",
     });
   });
+});
+
+describe("buildWorldBundle on worlds the generator really makes", () => {
+  it("makes a world fitted to the realm's borders into a bundle with no borders and no nations", () => {
+    const result = generated({ landMaskLayers: box, keepBorders: true });
+    expect(result.slots).toEqual([]);
+    expect(result.layers).not.toHaveProperty("political");
+    const bundle = buildWorldBundle(result, "realm-map");
+    expect(bundle).toMatchObject({ source: "realm-map", slots: [] });
+    expect(Object.keys(bundle.layers).sort()).toEqual(
+      ["altitudes", "background", "climate", "icecaps", "lakes", "rivers"].sort()
+    );
+    expect(parseWorldBundleJson(JSON.stringify(bundle))).toMatchObject({ ok: true });
+  });
+
+  it("keeps the layers of a world with no rivers and no lakes, empty", () => {
+    const params = paramsFromControls({ ...controlsForPreset("ixnay"), rivers: 0, lakes: 0 });
+    const result = generated({ params: { ...params, cellCount: 3000, plateCount: 8 } });
+    const bundle = buildWorldBundle(result, "preset");
+    expect(bundle.layers.rivers.features).toEqual([]);
+    expect(bundle.layers.lakes.features).toEqual([]);
+    expect(parseWorldBundleJson(JSON.stringify(bundle))).toMatchObject({ ok: true });
+  });
+
+  it.each([
+    ["a preset world", () => buildWorldBundle(generated(), "preset"), "preset"],
+    [
+      "a world fitted to the realm's borders",
+      () => buildWorldBundle(generated({ landMaskLayers: box, keepBorders: true }), "realm-map"),
+      "realm-map",
+    ],
+  ] as const)(
+    "is read by the server from the gzip the browser sends: %s",
+    async (_name, build, source) => {
+      const bundle = build();
+      const parsed = parseWorldBundle(await encodeWorldBundle(bundle));
+      expect(parsed).toMatchObject({ ok: true });
+      if (!parsed.ok) return;
+      expect(parsed.bundle.source).toBe(source);
+      expect(parsed.bundle.seed).toBe(bundle.seed);
+      expect(parsed.bundle.slots).toEqual(bundle.slots);
+      expect(parsed.bundle.cells).toBe(bundle.cells);
+      expect(parsed.bundle.params.developmentLevel).toBe(bundle.params.developmentLevel);
+    }
+  );
 });
 
 describe("failureOf", () => {
@@ -191,18 +290,40 @@ describe("the diff in words", () => {
     expect(appliedText({ written: 140, slots: { created: 12, retired: 3 } })).toBe(
       "140 map features written, 12 nations created, 3 nations retired"
     );
+    expect(appliedText({ written: 1, slots: { created: 1, retired: 1 } })).toBe(
+      "1 map feature written, 1 nation created, 1 nation retired"
+    );
     expect(appliedText({ written: 0, slots: { created: 0, retired: 0 } })).toBe(
       "Nothing was written"
     );
   });
 
   it.each([
-    ["14 features were edited by hand since the last generation and will be replaced", true],
-    ["The realm's current map (40 features) will be replaced", true],
-    ["2 map imports were applied since the last generation and will be replaced", true],
-    ["3 names were already taken in this realm and got a number", false],
-    ["The realm's borders are kept: 5 regions with no nation become claimable nations", false],
-  ])("tells a warning about replaced work from the others (%s)", (warning, replaced) => {
-    expect(isReplacementWarning(warning)).toBe(replaced);
+    [0, "0 nations"],
+    [1, "1 nation"],
+    [2, "2 nations"],
+  ])("counts %i with the right plural", (count, text) => {
+    expect(countOf(count, "nation")).toBe(text);
+  });
+
+  it("splits the warnings by the server's own list of what replaces work, not by their wording", () => {
+    const warnings = [
+      "Something odd about the wording",
+      "3 names were already taken in this realm and got a number",
+      "The realm's current map (40 features) will be replaced",
+    ];
+    expect(
+      splitWarnings({
+        warnings,
+        replaces: ["Something odd about the wording"],
+      })
+    ).toEqual({
+      replaces: ["Something odd about the wording"],
+      notes: [
+        "3 names were already taken in this realm and got a number",
+        "The realm's current map (40 features) will be replaced",
+      ],
+    });
+    expect(splitWarnings({ warnings, replaces: [] }).replaces).toEqual([]);
   });
 });
