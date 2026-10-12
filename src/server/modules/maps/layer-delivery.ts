@@ -10,8 +10,8 @@ import type { PrismaClient } from "@prisma/client";
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import { packFeatureCollection } from "~/lib/maps/geojson-pack";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { getCompressionForLayer, type ZoomBucket } from "~/server/api/routers/geo/core/cache";
-import { loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { getCompressionForLayer, type ZoomBucket } from "./layer-lod";
+import { loadLayerWithFallback } from "./layer-loader";
 import { getRealmMapVersion, onMapInvalidated } from "~/server/shared/map-invalidation";
 
 type DeliveryDb = Pick<PrismaClient, "realm">;

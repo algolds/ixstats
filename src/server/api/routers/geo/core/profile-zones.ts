@@ -11,7 +11,7 @@ import {
 import { climateZoneOf } from "~/lib/maps/climate-zones";
 import { isLandBand } from "~/lib/maps/elevation-config";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
-import { estimateBboxOverlap } from "./geometry";
+import { estimateBboxOverlap } from "~/server/modules/maps/layer-geometry";
 
 /** Longitude/latitude extent of a country: its stored bounding box. */
 export type Extent = [minLng: number, minLat: number, maxLng: number, maxLat: number];

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
-import type { ZoomBucket } from "~/server/api/routers/geo/core/cache";
+import type { ZoomBucket } from "~/server/modules/maps/layer-lod";
 import { packedLayerAt } from "~/server/modules/maps/layer-delivery";
 import { findRealmIdBySlugOrId } from "~/server/modules/maps/map-realm";
 import { PRIVATE_TILE_CACHE, realmTileAccess } from "~/server/modules/maps/realm-tile-access";

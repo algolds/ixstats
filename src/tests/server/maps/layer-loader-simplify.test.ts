@@ -6,7 +6,7 @@ jest.mock("fs/promises", () => ({ readFile: jest.fn().mockRejectedValue(new Erro
 
 import type { Geometry, Polygon, Position } from "geojson";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { loadLayerFromDB, loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerFromDB, loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 
 function circle(cx: number, cy: number, radius: number, n: number): Position[] {
   const ring: Position[] = [];

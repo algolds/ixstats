@@ -4,7 +4,11 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { PrismaClient } from "@prisma/client";
 import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
 import { packFeatureCollection } from "~/lib/maps/geojson-pack";
-import { getCompressionForLayer, getZoomBucket, type ZoomBucket } from "./cache";
+import {
+  getCompressionForLayer,
+  getZoomBucket,
+  type ZoomBucket,
+} from "~/server/modules/maps/layer-lod";
 
 // The map's geometry layers (political, background, ...) are not tRPC procedures: they are served as packed JSON by
 // the versioned GET /api/map-layers route (src/server/modules/maps/layer-delivery.ts). What stays here is what

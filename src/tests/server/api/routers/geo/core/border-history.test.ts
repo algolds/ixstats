@@ -2,14 +2,14 @@
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/server/api/routers/geo/core/layer-loader", () => ({
+jest.mock("~/server/modules/maps/layer-loader", () => ({
   loadLayerWithFallback: jest.fn(),
 }));
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
-import { loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 
 const EURTH = "r_eurth";
 const IX_DAY_MS = 86_400_000;

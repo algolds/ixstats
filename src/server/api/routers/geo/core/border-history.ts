@@ -15,8 +15,8 @@ import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
-import { loadLayerWithFallback } from "./layer-loader";
-import { getZoomBucket } from "./cache";
+import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
+import { getZoomBucket } from "~/server/modules/maps/layer-lod";
 import { IxTime } from "~/lib/ixtime";
 import { roundToIxDay } from "~/lib/ixtime/day";
 

@@ -36,6 +36,5 @@ export const geoCoreRouter = createTRPCRouter({
 
 // Preserve the original public API of `geo/core` (resolves to `geo/core/index.ts`),
 // so existing importers across the codebase keep working unchanged.
-export { layerCache } from "./cache";
 export { warmGeoCache, warmGeoCacheDev } from "~/server/modules/maps/layer-delivery";
-export { extractAllPositions } from "./geometry";
+export { extractAllPositions } from "~/server/modules/maps/layer-geometry";

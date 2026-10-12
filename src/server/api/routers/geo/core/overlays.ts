@@ -9,7 +9,7 @@ import {
   type HealthInput,
 } from "~/lib/maps/overlay-metrics";
 import { parseAffectedCountries } from "~/lib/maps/crisis-affected-countries";
-import { percentileRanks } from "./geometry";
+import { percentileRanks } from "~/server/modules/maps/layer-geometry";
 
 /**
  * Weighted canon sources used by the Canon Density overlay. Each source is

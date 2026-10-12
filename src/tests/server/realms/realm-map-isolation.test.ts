@@ -13,7 +13,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { clearLayerCache, layerCache } from "~/server/shared/layer-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
-import { loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
 import { discoveryProcedures } from "~/server/api/routers/geo/core/discovery";

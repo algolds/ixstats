@@ -323,7 +323,7 @@ MapLibre GL JS renders vector GeoJSON layers. Hydrological layers strictly rende
 | `climate` | `climate.geojson` | **2** | 12 Trewartha biome zone polygons | 0.05 |
 | `altitudes` | `altitudes.geojson` | **1** | 9-zone hypsometric elevation contours | 0.05 |
 
-z-index values are `LAYER_CONFIGS` in `src/lib/maps/map-config.ts`; tolerances are the base `LAYER_COMPRESSION` values in `src/server/api/routers/geo/core/cache.ts` (mid-zoom defaults; `LOD_OVERRIDES` change them for globe and detail zoom).
+z-index values are `LAYER_CONFIGS` in `src/lib/maps/map-config.ts`; tolerances are the base `LAYER_COMPRESSION` values in `src/server/modules/maps/layer-lod.ts` (mid-zoom defaults; `LOD_OVERRIDES` change them for globe and detail zoom).
 
 ---
 

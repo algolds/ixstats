@@ -7,7 +7,7 @@ import type { MultiPolygon, Polygon, Position } from "geojson";
 import { calculateArea } from "~/lib/maps/border-editor";
 import { polygonMetrics } from "~/lib/maps/feature-metrics";
 import { calculateApproxArea } from "~/lib/flags/svg/topology-flattener";
-import { computeApproxAreaForFeature } from "~/server/api/routers/geo/core/geometry";
+import { computeApproxAreaForFeature } from "~/server/modules/maps/layer-geometry";
 import { parseProvinceSvg } from "~/lib/maps/province-importer/parse-provinces";
 import { signedRingArea } from "~/lib/maps/ring-assembly";
 

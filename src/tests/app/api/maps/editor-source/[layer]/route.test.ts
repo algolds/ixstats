@@ -5,7 +5,7 @@ global.TextEncoder = TextEncoder as any;
 import { NextRequest, NextResponse } from "next/server";
 import { GET } from "~/app/api/maps/editor-source/[layer]/route";
 import { db } from "~/server/db";
-import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerFromDB } from "~/server/modules/maps/layer-loader";
 import { requireAdminSession } from "~/server/shared/route-auth";
 import { rateLimiter } from "~/lib/cache";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
@@ -44,7 +44,7 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 // Mock the layer loader
-jest.mock("~/server/api/routers/geo/core/layer-loader", () => ({
+jest.mock("~/server/modules/maps/layer-loader", () => ({
   loadLayerFromDB: jest.fn(),
 }));
 

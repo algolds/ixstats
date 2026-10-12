@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerFromDB } from "~/server/modules/maps/layer-loader";
 import { rateLimiter } from "~/lib/cache";
 import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { requireAdminSession } from "~/server/shared/route-auth";

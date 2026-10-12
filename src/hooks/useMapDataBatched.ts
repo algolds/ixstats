@@ -41,7 +41,7 @@ const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", feature
 /** Zoom at which cities and subdivisions (drawn from zoom 4) start loading. */
 export const DETAIL_FETCH_ZOOM = 3;
 
-/** Server LOD bucket for a zoom level (mirrors `getZoomBucket` in geo/core/cache.ts). */
+/** Server LOD bucket for a zoom level (mirrors `getZoomBucket` in server/modules/maps/layer-lod.ts). */
 function getMapZoomBucket(zoom: number | undefined): 0 | 1 | 2 | undefined {
   if (zoom === undefined) return undefined;
   if (zoom < 4) return 0;

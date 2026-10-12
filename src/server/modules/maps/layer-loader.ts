@@ -13,16 +13,11 @@ import {
   getSovereigntyColor,
   DEMOTED_COUNTRY_NAMES,
 } from "~/lib/maps/map-config";
-import {
-  getCached,
-  setCache,
-  getCompressionForLayer,
-  layerInflight,
-  type ZoomBucket,
-} from "./cache";
-import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
-import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import { simplifyLayerCoverage } from "~/server/modules/maps/coverage-simplify";
+import { getCached, setCache, getCompressionForLayer, type ZoomBucket } from "./layer-lod";
+import { layerInflight } from "~/server/shared/layer-cache";
+import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./layer-geometry";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { simplifyLayerCoverage } from "./coverage-simplify";
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
 

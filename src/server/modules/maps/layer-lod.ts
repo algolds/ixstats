@@ -1,12 +1,11 @@
 import type { FeatureCollection } from "geojson";
 import type { CompressOptions } from "~/lib/maps/geojson-compress";
-import { layerCache, layerInflight } from "~/server/shared/layer-cache";
+import { layerCache } from "~/server/shared/layer-cache";
 
 // The shared cache primitive lives in src/server/shared/layer-cache.ts so the
-// countries router can invalidate it without importing this geo router (all
+// countries router can invalidate it without importing the geo router (all
 // invalidation goes through invalidateRealmMap, src/server/shared/map-invalidation.ts).
-// Re-export for geo siblings that import { layerCache } from "./core".
-export { layerCache, layerInflight };
+// This file holds the layers' LOD and compression config and the TTL'd reads of that cache.
 
 /** Per-layer cache TTL — static layers imported from SVGs rarely change */
 const CACHE_TTLS: Record<string, number> = {

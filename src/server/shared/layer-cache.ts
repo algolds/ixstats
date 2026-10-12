@@ -6,7 +6,7 @@ import type { FeatureCollection } from "geojson";
 // countries router invalidates it when borders/identity change. It lives in
 // src/server/shared so neither router imports the other (arch.md: no
 // cross-router imports). Geo-specific TTL/compression config stays in
-// routers/geo/core/cache.ts, which re-exports these for its siblings.
+// src/server/modules/maps/layer-lod.ts.
 export const layerCache = new Map<string, { data: FeatureCollection; timestamp: number }>();
 
 /** In-flight layer builds keyed like layerCache, so concurrent requests share one build. */

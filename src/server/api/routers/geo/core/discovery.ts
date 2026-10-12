@@ -4,8 +4,8 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { LayerInfoItemDto } from "~/types/geo.dto";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
-import { centroidLngLat, computeVisualCenter } from "./geometry";
-import { getColorForFeature } from "./layer-loader";
+import { centroidLngLat, computeVisualCenter } from "~/server/modules/maps/layer-geometry";
+import { getColorForFeature } from "~/server/modules/maps/layer-loader";
 
 export const discoveryProcedures = {
   listCountries: cachedPublicProcedure

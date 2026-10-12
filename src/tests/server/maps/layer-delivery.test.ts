@@ -4,12 +4,12 @@ jest.mock("~/lib/cache", () => ({
   __esModule: true,
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/server/api/routers/geo/core/layer-loader", () => ({
+jest.mock("~/server/modules/maps/layer-loader", () => ({
   loadLayerWithFallback: jest.fn(),
 }));
 
 import type { FeatureCollection } from "geojson";
-import { loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 import { unpackLayers, type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import {

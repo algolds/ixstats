@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
 
-import { loadLayerFromDB } from "~/server/api/routers/geo/core/layer-loader";
+import { loadLayerFromDB } from "~/server/modules/maps/layer-loader";
 import { clearLayerCache } from "~/server/shared/layer-cache";
 
 const row = {
