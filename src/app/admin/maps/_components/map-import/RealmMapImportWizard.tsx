@@ -8,6 +8,7 @@
  */
 import { useMemo, useState } from "react";
 import { api } from "~/trpc/react";
+import { useMapImportJob } from "~/hooks/useMapImportJob";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -22,13 +23,13 @@ import {
 import type { MapImportApplyInput, MapImportOptionsInput } from "~/lib/maps/import/options";
 import type { RegionMappingPlan } from "~/lib/maps/import/mapping";
 import { MAX_MAP_IMPORT_BYTES } from "~/lib/maps/import/options";
+import type { MapUploadInfo } from "~/lib/maps/import/upload-client";
 import type { CapitalHint } from "./GeorefPanel";
 import { ImportHistory } from "./ImportHistory";
 import { ImportJobProgress } from "./ImportJobProgress";
 import { ImportReviewStep } from "./ImportReviewStep";
-import { ImportSettings, uploadMapFile, type MapUploadInfo } from "./ImportSourceStep";
+import { ImportSettings, uploadMapFile } from "./ImportSourceStep";
 import { RegionNationMapper } from "./RegionNationMapper";
-import { useMapImportJob } from "./useMapImportJob";
 
 type Step = "upload" | "settings" | "analyse" | "map" | "review" | "apply";
 const STEPS: Array<{ id: Step; label: string }> = [

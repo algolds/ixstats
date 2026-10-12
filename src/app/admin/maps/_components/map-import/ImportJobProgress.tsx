@@ -4,7 +4,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { isJobActive, type MapImportJobView } from "./useMapImportJob";
+import { isJobActive, type MapImportJobView } from "~/hooks/useMapImportJob";
 
 const STATUS_TEXT: Record<string, string> = {
   queued: "Waiting for the import runner",
