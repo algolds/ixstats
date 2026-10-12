@@ -16,7 +16,15 @@
  */
 
 import { slotKey, type WorldGraph, type WorldGenParams } from "./types";
-import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } from "geojson";
+import type {
+  FeatureCollection,
+  Feature,
+  Geometry,
+  LineString,
+  Polygon,
+  MultiPolygon,
+  Position,
+} from "geojson";
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
 import {
@@ -42,7 +50,33 @@ export function exportToGeoJSON(
     icecaps: params.hasIcecaps ? exportIcecaps(graph) : { type: "FeatureCollection", features: [] },
   };
 
+  for (const layer of Object.values(layers)) {
+    for (const feature of layer.features) clampToPoles(feature.geometry);
+  }
   return layers;
+}
+
+/**
+ * The spline smoothing and perturbation overshoot at the poles (a river on an Antarctic coast reached latitude
+ * -90.74), and no map projection takes a latitude past 90. Every exported coordinate is clamped here, once, for
+ * all layers; a coordinate within range is left exactly as it was.
+ */
+function clampToPoles(geometry: Geometry | null): void {
+  const clamp = (position: Position) => {
+    if (position[1]! > 90) position[1] = 90;
+    else if (position[1]! < -90) position[1] = -90;
+  };
+  switch (geometry?.type) {
+    case "LineString":
+      geometry.coordinates.forEach(clamp);
+      break;
+    case "Polygon":
+      geometry.coordinates.forEach((ring) => ring.forEach(clamp));
+      break;
+    case "MultiPolygon":
+      geometry.coordinates.forEach((polygon) => polygon.forEach((ring) => ring.forEach(clamp)));
+      break;
+  }
 }
 
 /** Cell ids by key, in cell order (key 0 means none). One pass instead of one per feature. */

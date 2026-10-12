@@ -7,6 +7,7 @@ import { gzipSync } from "node:zlib";
 import type { Feature, FeatureCollection, Polygon } from "geojson";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import { generateWorld } from "~/lib/worldgen/v2";
+import type { GeneratedWorld } from "~/lib/worldgen/v2/types";
 import {
   decodeCells,
   encodeCells,
@@ -84,6 +85,36 @@ function bundle(overrides: Partial<WorldBundle> = {}): WorldBundle {
   };
 }
 
+/** What the browser generator would upload for a generated world: all its layers, its slots left claimable. */
+function bundleOf(world: GeneratedWorld): WorldBundle {
+  const { background, altitudes, climate, political, rivers, lakes, icecaps } = world.layers;
+  return {
+    version: 1,
+    seed: world.seed,
+    params: world.params,
+    source: "preset",
+    layers: {
+      background: background!,
+      altitudes: altitudes!,
+      climate: climate!,
+      political: political!,
+      rivers: rivers!,
+      lakes: lakes!,
+      icecaps: icecaps!,
+    },
+    slots: world.slots.map(({ key, name, colour, population, gdpPerCapita, areaKm2 }) => ({
+      key,
+      name,
+      colour,
+      claimable: true,
+      population,
+      gdpPerCapita,
+      areaKm2,
+    })),
+    cells: encodeCells(world.cells),
+  };
+}
+
 const reasonOf = (text: string) => {
   const result = parseWorldBundleJson(text);
   return result.ok ? null : result.reason;
@@ -105,33 +136,7 @@ describe("encodeWorldBundle and parseWorldBundle", () => {
 
   it("round-trips a generated world", async () => {
     const world = generateWorld({ ...DEFAULT_PARAMS, seed: 7, cellCount: 3000, plateCount: 8 });
-    const { background, altitudes, climate, political, rivers, lakes, icecaps } = world.layers;
-    const generated: WorldBundle = {
-      version: 1,
-      seed: world.seed,
-      params: world.params,
-      source: "preset",
-      layers: {
-        background: background!,
-        altitudes: altitudes!,
-        climate: climate!,
-        political: political!,
-        rivers: rivers!,
-        lakes: lakes!,
-        icecaps: icecaps!,
-      },
-      slots: world.slots.map(({ key, name, colour, population, gdpPerCapita, areaKm2 }) => ({
-        key,
-        name,
-        colour,
-        claimable: true,
-        population,
-        gdpPerCapita,
-        areaKm2,
-      })),
-      cells: encodeCells(world.cells),
-    };
-    const parsed = parseWorldBundle(await encodeWorldBundle(generated));
+    const parsed = parseWorldBundle(await encodeWorldBundle(bundleOf(world)));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.bundle.slots).toHaveLength(world.slots.length);
@@ -422,6 +427,27 @@ describe("the decompressed cap", () => {
       reason: expect.stringMatching(/more than 48 MB/),
     });
   });
+});
+
+describe("worlds the generator makes at the poles", () => {
+  // The spline smoothing of Antarctic rivers overshot to latitude -90.74 on these seeds; the bundle gate (PostGIS
+  // cannot project past 90) refused the world. The generator now clamps what it exports.
+  const cases = [
+    ["default params", [33, 36], {}],
+    ["both polar caps", [5, 37], { polarLand: { north: true, south: true } }],
+  ] as const;
+
+  it.each(cases)(
+    "%s: the generated bundle passes the gate",
+    (_label, seeds, params) => {
+      for (const seed of seeds) {
+        const world = generateWorld({ ...DEFAULT_PARAMS, ...params, seed });
+        const result = parseWorldBundleJson(JSON.stringify(bundleOf(world)));
+        expect({ seed, result: result.ok ? "ok" : result.reason }).toEqual({ seed, result: "ok" });
+      }
+    },
+    120_000
+  );
 });
 
 describe("cells", () => {

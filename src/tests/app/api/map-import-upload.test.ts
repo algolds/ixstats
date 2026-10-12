@@ -160,22 +160,22 @@ describe("POST /api/admin/map-import/upload with a world bundle", () => {
   });
 
   it("refuses other gzip, naming why, and stores nothing", async () => {
-    const stored = readdirSync(dir);
+    const stored = readdirSync(dir, { recursive: true });
     const notBundle = new File([gzipSync("hello")], "notes.gz");
     const response = await POST(request({ realm: "r1", file: notBundle }).req);
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(/not a world bundle.*not valid JSON/i);
-    expect(readdirSync(dir)).toEqual(stored);
+    expect(readdirSync(dir, { recursive: true })).toEqual(stored);
   });
 
   it("refuses a gzip bundle that breaks a rule, with the rule's reason", async () => {
     const hostile = { ...worldBundle, slots: [{ key: "slot_1" }] };
     const file = new File([gzipSync(JSON.stringify(hostile))], "world.json.gz");
-    const stored = readdirSync(dir);
+    const stored = readdirSync(dir, { recursive: true });
     const response = await POST(request({ realm: "r1", file }).req);
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(/not a world bundle.*slots/i);
-    expect(readdirSync(dir)).toEqual(stored);
+    expect(readdirSync(dir, { recursive: true })).toEqual(stored);
   });
 });
 
