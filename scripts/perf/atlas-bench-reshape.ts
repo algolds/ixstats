@@ -1,9 +1,11 @@
 /**
  * scripts/perf/atlas-bench-reshape.ts - the region-reshape acceptance measurement of `bun run perf:atlas`: how often
- * the overlap check runs while a region vertex is dragged, and after the drop. It mounts the real
- * `useSubdivisionVertexEdit` hook (with `useVertexEditPointer`) in jsdom on the subdivisions of the database's
- * largest country, over a fake map that records its listeners, drags a vertex a neighbouring region shares through
- * 10 moves, and counts the calls of `calculateOverlapGeoJson`.
+ * the overlap check runs while a region vertex is dragged, how much of it runs in the release frame (the mouse-up
+ * handler, which must not pay for it: the check waits for the browser to be idle), and what it costs when it runs. It
+ * mounts the real `useSubdivisionVertexEdit` hook (with `useVertexEditPointer`) in jsdom on the subdivisions of the
+ * database's largest country, over a fake map that records its listeners, drags a vertex a neighbouring region
+ * shares through 10 moves, and times the calls of `calculateOverlapGeoJson`. jsdom has no `requestIdleCallback`, so
+ * the hook's timer fallback (50 ms) stands in for the idle period.
  */
 import { JSDOM } from "jsdom";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -12,7 +14,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { EditorFeature } from "~/hooks/map-editor/editor-types";
 import { getAllRings } from "~/lib/maps/border-editor";
 import { buildTopologyIndex, vkey } from "~/lib/maps/topology-engine";
-import { exactly, median, type TargetResult } from "./atlas-bench-report";
+import { atMost, exactly, info, median, type TargetResult } from "./atlas-bench-report";
 import { client } from "./atlas-bench-client";
 
 type Shape = Polygon | MultiPolygon;
@@ -22,6 +24,10 @@ interface BunMock {
   mock: { module(specifier: string, factory: () => object): void };
 }
 const MOVES = 10;
+/** Long enough for the hook's idle fallback (a 50 ms timer in jsdom) and the add-vertex throttle (100 ms) to fire. */
+const IDLE_WAIT_MS = 150;
+/** The spec's frame budget: no frame is over 16 ms from overlap checks. */
+const FRAME_BUDGET_MS = 16;
 /** Pointer travel per move, in degrees, and in screen pixels (past the 4 px dead zone of a drag). */
 const STEP_DEGREES = 0.0004;
 const STEP_PIXELS = 10;
@@ -202,6 +208,9 @@ export async function reshapeTargets(): Promise<TargetResult[]> {
       snapEnabled: false,
     })
   );
+  // The session opening schedules a check for when the browser is idle: let it run, so the count below starts clean
+  // and proves the timing wrapper is live
+  await sleep(IDLE_WAIT_MS);
   const atEntry = overlapMs.length;
   fire("mousedown:editor-vedit-vertices-layer", {
     point: { x: 0, y: 0 },
@@ -225,12 +234,20 @@ export async function reshapeTargets(): Promise<TargetResult[]> {
     frameMs.push(performance.now() - startedAt);
   }
   // The add-vertex handles follow on a 100 ms throttle: let it fire before counting
-  await sleep(150);
+  await sleep(IDLE_WAIT_MS);
   const duringDrag = overlapMs.length - atEntry;
+
+  // The release frame: the mouse-up handler and the frames it requests. Overlap work done in it is what delays the paint.
+  const beforeRelease = overlapMs.length;
+  const releasedAt = performance.now();
   window.dispatchEvent(new dom.window.MouseEvent("mouseup"));
-  const afterDrop = overlapMs.length - atEntry - duringDrag;
+  flushFrames();
+  const releaseMs = performance.now() - releasedAt;
+  const inRelease = overlapMs.slice(beforeRelease);
+  // Then the browser goes idle and the deferred check runs
+  await sleep(IDLE_WAIT_MS);
+  const deferred = overlapMs.slice(beforeRelease + inRelease.length);
   mounted.unmount();
-  const dropCheckMs = overlapMs.at(-1) ?? Number.NaN;
   const setting = `${regions.length} regions, ${pointCount(grab.region.geometry)} points in ${grab.region.name}`;
   return [
     exactly(
@@ -241,12 +258,25 @@ export async function reshapeTargets(): Promise<TargetResult[]> {
       "",
       `${setting}; ${MOVES} drag frames median ${median(frameMs).toFixed(2)} / max ${Math.max(...frameMs).toFixed(2)} ms; the check is live: ${atEntry} ran when the edit session opened`
     ),
+    atMost(
+      "region reshape: overlap check time in the release frame",
+      atEntry > 0 ? inRelease.reduce((sum, ms) => sum + ms, 0) : Number.NaN,
+      FRAME_BUDGET_MS,
+      "ms",
+      `${inRelease.length} checks ran in the mouse-up handler, which took ${releaseMs.toFixed(2)} ms in all`
+    ),
     exactly(
-      "region reshape: overlap checks after mouse-up",
-      afterDrop,
+      "region reshape: overlap checks after mouse-up, when idle",
+      deferred.length,
       1,
       "",
-      `the one check on the drop took ${dropCheckMs.toFixed(1)} ms, against the regions sharing a vertex with the edited one`
+      "the one check on the drop, against the regions sharing a vertex with the edited one, runs once the browser is idle"
+    ),
+    info(
+      "region reshape: the deferred overlap check, when idle",
+      deferred[0] ?? Number.NaN,
+      "ms",
+      "runs after the release frame has painted, so it delays no frame; it blocks the main thread for this long once"
     ),
   ];
 }

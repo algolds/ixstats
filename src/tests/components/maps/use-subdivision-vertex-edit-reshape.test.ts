@@ -166,8 +166,11 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
+/** The browser's idle period: without requestIdleCallback (jsdom, Safari) the hook falls back to a short timer. */
+const goIdle = () => jest.advanceTimersByTime(100);
+
 describe("region reshape overlap check", () => {
-  it("runs no overlap check while dragging, then one on mouse-up against the regions sharing a vertex", () => {
+  it("runs no overlap check while dragging nor in the mouse-up frame, then one when idle against the regions sharing a vertex", () => {
     const { frames, fire, source } = setup();
 
     for (let i = 0; i < 10; i++) {
@@ -180,10 +183,16 @@ describe("region reshape overlap check", () => {
     expect(source("editor-vedit-midpoints").setData).toHaveBeenCalled();
 
     mouseUp();
+    // The release frame paints the new outline first
+    expect(overlap).not.toHaveBeenCalled();
+    expect(source("editor-vedit-polygon").setData).toHaveBeenCalled();
+
+    goIdle();
     expect(overlap).toHaveBeenCalledTimes(1);
     const [, checked, editedId] = overlap.mock.calls[0]!;
     expect(checked.map((f) => f.id)).toEqual(["region-b"]);
     expect(editedId).toBe("region-a");
+    expect(source("editor-overlap-highlight").setData).toHaveBeenCalledTimes(1);
   });
 
   it("checks the neighbour where the cascade left it, not where it was saved", () => {
@@ -192,9 +201,115 @@ describe("region reshape overlap check", () => {
     fire("mousemove", move(20, 3, 3));
     frames();
     mouseUp();
+    goIdle();
 
     const checked = overlap.mock.calls[0]![1];
     expect((checked[0]!.geometry as Polygon).coordinates[0]![3]).toEqual([3, 3]);
+  });
+
+  it("checks the shape the region has when the check runs, once however many updates came first", () => {
+    const { frames, fire, source } = setup();
+    fire("mousemove", move(20, 3, 3));
+    frames();
+    mouseUp();
+    // Escape-free second update before idle: the pending check is replaced, not queued twice
+    fire("mousedown:editor-vedit-vertices-layer", {
+      point: { x: 0, y: 0 },
+      preventDefault: () => {},
+      features: [
+        {
+          properties: { ringIndex: 0, vertexIndex: 2 },
+          geometry: { type: "Point", coordinates: [3, 3] },
+        },
+      ],
+    });
+    fire("mousemove", move(20, 4, 4));
+    frames();
+    mouseUp();
+    goIdle();
+
+    expect(overlap).toHaveBeenCalledTimes(1);
+    expect(source("editor-overlap-highlight").setData).toHaveBeenCalledTimes(1);
+    const geometry = overlap.mock.calls[0]![0] as Polygon;
+    expect(geometry.coordinates[0]![2]).toEqual([4, 4]);
+  });
+
+  it("drops the pending check when a new drag starts: nothing is checked mid-drag", () => {
+    const { frames, fire } = setup();
+    fire("mousemove", move(20, 3, 3));
+    frames();
+    mouseUp();
+
+    fire("mousedown:editor-vedit-vertices-layer", {
+      point: { x: 0, y: 0 },
+      preventDefault: () => {},
+      features: [
+        {
+          properties: { ringIndex: 0, vertexIndex: 2 },
+          geometry: { type: "Point", coordinates: [3, 3] },
+        },
+      ],
+    });
+    goIdle();
+
+    expect(overlap).not.toHaveBeenCalled();
+  });
+
+  it("drops the pending check when the edit ends or the hook unmounts", () => {
+    const first = setup();
+    first.fire("mousemove", move(20, 3, 3));
+    first.frames();
+    mouseUp();
+    first.rerender({ mode: "view" });
+    goIdle();
+    expect(overlap).not.toHaveBeenCalled();
+
+    const second = setup();
+    second.fire("mousemove", move(20, 3, 3));
+    second.frames();
+    mouseUp();
+    second.unmount();
+    goIdle();
+    expect(overlap).not.toHaveBeenCalled();
+  });
+
+  it("waits for requestIdleCallback where the browser has it, and cancels through cancelIdleCallback", () => {
+    const request = jest.fn((_task: IdleRequestCallback, _options?: IdleRequestOptions) => 7);
+    const cancel = jest.fn();
+    Object.assign(window, { requestIdleCallback: request, cancelIdleCallback: cancel });
+    try {
+      const { frames, fire } = setup();
+      fire("mousemove", move(20, 3, 3));
+      frames();
+      mouseUp();
+      jest.advanceTimersByTime(1000);
+      expect(overlap).not.toHaveBeenCalled();
+      expect(request).toHaveBeenCalled();
+
+      // the browser calls back: the check runs
+      const task = request.mock.calls.at(-1)![0];
+      task({ didTimeout: false, timeRemaining: () => 50 });
+      expect(overlap).toHaveBeenCalledTimes(1);
+
+      // a pending one is cancelled by the next drag
+      fire("mousemove", move(40, 4, 4));
+      frames();
+      mouseUp();
+      fire("mousedown:editor-vedit-vertices-layer", {
+        point: { x: 0, y: 0 },
+        preventDefault: () => {},
+        features: [
+          {
+            properties: { ringIndex: 0, vertexIndex: 2 },
+            geometry: { type: "Point", coordinates: [4, 4] },
+          },
+        ],
+      });
+      expect(cancel).toHaveBeenCalledWith(7);
+    } finally {
+      Reflect.deleteProperty(window, "requestIdleCallback");
+      Reflect.deleteProperty(window, "cancelIdleCallback");
+    }
   });
 });
 

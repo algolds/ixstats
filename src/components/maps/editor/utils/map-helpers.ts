@@ -339,7 +339,7 @@ function layerGrid(data: FeatureCollection): SegmentGrid {
 }
 
 /** Runs `task` when the browser is idle (after a short timer where it cannot tell); returns its canceller. */
-function whenIdle(task: () => void): () => void {
+export function whenIdle(task: () => void): () => void {
   if ("requestIdleCallback" in window) {
     const handle = window.requestIdleCallback(task, { timeout: 2000 });
     return () => window.cancelIdleCallback(handle);

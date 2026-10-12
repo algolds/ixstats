@@ -46,6 +46,8 @@ export interface VertexEditState {
   /** Neighbours reshaped by the topology cascade during this edit session. */
   changedNeighborIds: Set<string>;
   throttleTimer: ReturnType<typeof setTimeout> | null;
+  /** Cancels the overlap check waiting for the browser to be idle after a drop (see cancelOverlapCheck). */
+  overlapCancel: (() => void) | null;
 }
 
 export const createVertexEditState = (): VertexEditState => ({
@@ -57,7 +59,14 @@ export const createVertexEditState = (): VertexEditState => ({
   neighbors: new Map(),
   changedNeighborIds: new Set(),
   throttleTimer: null,
+  overlapCancel: null,
 });
+
+/** Drops the pending overlap check: a new drag, the end of the edit and an unmount make it stale. */
+export function cancelOverlapCheck(st: VertexEditState): void {
+  st.overlapCancel?.();
+  st.overlapCancel = null;
+}
 
 /** The latest props the pointer handlers read at event time. */
 export interface VertexEditLatest {
@@ -154,6 +163,7 @@ export function useVertexEditPointer({
     };
 
     const beginDrag = (vertex: VertexRef, startScreenPoint: ScreenPoint, committed: boolean) => {
+      cancelOverlapCheck(st);
       st.drag = {
         ...vertex,
         originalCoord: [...vertex.coord],

@@ -17,6 +17,7 @@ import {
   collection,
   pointFeature,
   snapGeometryToBackgroundLayers,
+  whenIdle,
 } from "../utils/map-helpers";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { withoutDisabledSnapLayers } from "~/lib/maps/editor-prefs";
@@ -26,6 +27,7 @@ import {
   snapToNeighbors,
 } from "./vertex-edit-geometry";
 import {
+  cancelOverlapCheck,
   createVertexEditState,
   useVertexEditPointer,
   type VertexEditState,
@@ -159,12 +161,32 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     );
   }, [map, st]);
 
+  /**
+   * The overlap highlight, checked when the browser is idle (a check takes 40 to 110 ms on a big region, which the
+   * release frame must not pay). It reads the region as it is then; a new drag, the end of the edit and an unmount
+   * cancel it, so a stale highlight never lands.
+   */
+  const scheduleOverlapCheck = useCallback(() => {
+    cancelOverlapCheck(st);
+    st.overlapCancel = whenIdle(() => {
+      st.overlapCancel = null;
+      if (!map || !st.edit) return;
+      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(
+        calculateOverlapGeoJson(
+          st.edit.currentGeometry,
+          adjacentRegions(st, latest.current.features),
+          st.edit.featureId
+        )
+      );
+    });
+  }, [map, st]);
+
   const updateVertexEditVis = useCallback(
     (fastOnly = false) => {
       if (!map || !st.edit) return;
       if (!suppressDirtyRef.current) markDirty(true);
 
-      const { featureId, currentGeometry: geo } = st.edit;
+      const { currentGeometry: geo } = st.edit;
       const setSource = (id: string, features: Parameters<typeof collection>[0]) =>
         getGeoJSONSource(map, id)?.setData(collection(features));
 
@@ -177,13 +199,11 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
       );
       if (fastOnly) return;
 
-      // Drag frames stop above; their midpoints follow on a throttle, the overlap check on mouse-up.
+      // Drag frames stop above; their midpoints follow on a throttle, the overlap check on the drop (when idle).
       updateMidpoints();
-      getGeoJSONSource(map, "editor-overlap-highlight")?.setData(
-        calculateOverlapGeoJson(geo, adjacentRegions(st, latest.current.features), featureId)
-      );
+      scheduleOverlapCheck();
     },
-    [map, st, markDirty, updateMidpoints]
+    [map, st, markDirty, updateMidpoints, scheduleOverlapCheck]
   );
 
   /** Add-vertex handles follow a drag at most every 100 ms; the overlap check waits for the drop. */
@@ -204,6 +224,7 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
   useEffect(() => {
     return () => {
       if (st.throttleTimer) clearTimeout(st.throttleTimer);
+      cancelOverlapCheck(st);
       cancelCascadeFrame();
     };
   }, [st, cancelCascadeFrame]);
@@ -231,6 +252,7 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
 
   /** Leaves vertex editing without saving. */
   const endSession = useCallback(() => {
+    cancelOverlapCheck(st);
     st.edit = null;
     st.topology = null;
     st.changedNeighborIds = new Set();
