@@ -3,8 +3,9 @@
 /**
  * useMapLiveSync — Real-time map data synchronization via Server-Sent Events.
  *
- * Connects to /api/sse/map-updates and invalidates React Query map caches
- * whenever any geo mutation succeeds anywhere in the system.
+ * Connects to /api/sse/map-updates. Each change event names the realm it happened in and what changed
+ * (`~/lib/maps/live-sync`): a map ignores other realms' events and refetches only the queries the change touches.
+ * Layers follow the realm's map version, so a moved version (a "version" event) is all the layers need.
  *
  * This ensures ALL connected users see map updates instantly without refresh,
  * not just the user who made the edit.
@@ -15,36 +16,48 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
+import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
+import { isForRealm, parseMapSyncEvent, queriesFor, type MapSyncQuery } from "~/lib/maps/live-sync";
 
 const SSE_ENDPOINT = "/api/sse/map-updates";
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 /**
  * Coalesce bursts of change events (an editor autosave or a bulk import emits many) into one
- * cache invalidation, so every open map refetches its (multi-MB) bundle once, not per event.
+ * refetch per query, so every open map asks once, not per event.
  */
 const INVALIDATE_DEBOUNCE_MS = 750;
 
-/** Invalidate all map-related React Query caches */
-function invalidateMapCaches(utils: ReturnType<typeof api.useUtils>) {
-  utils.realms.map.version.invalidate();
-  utils.geoCore.getMapBundleMarkers.invalidate();
-  utils.geoCore.getMapBundleDetail.invalidate();
-  utils.geoCore.getCountryFeatures.invalidate();
-  utils.geoFeatures.getAllStoryPins.invalidate();
-  utils.geoFeatures.getAllMapLabels.invalidate();
-  utils.geoCore.getCapitalCities.invalidate();
-  utils.countryGeo.getCountryGeoBundle.invalidate();
-  utils.geoCore.getCountryGeometry.invalidate();
-}
+type Utils = ReturnType<typeof api.useUtils>;
 
-export function useMapLiveSync() {
+const REFETCH: Record<MapSyncQuery, (utils: Utils) => void> = {
+  version: (utils) => void utils.realms.map.version.invalidate(),
+  markers: (utils) => void utils.geoCore.getMapBundleMarkers.invalidate(),
+  detail: (utils) => void utils.geoCore.getMapBundleDetail.invalidate(),
+  storyPins: (utils) => void utils.geoFeatures.getAllStoryPins.invalidate(),
+  labels: (utils) => void utils.geoFeatures.getAllMapLabels.invalidate(),
+  country: (utils) => {
+    void utils.geoCore.getCountryFeatures.invalidate();
+    void utils.countryGeo.getCountryGeoBundle.invalidate();
+    void utils.geoCore.getCountryGeometry.invalidate();
+  },
+};
+
+/** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
+export function useMapLiveSync(realm?: string) {
   const utils = api.useUtils();
+  const { mapVersion } = useRealmMapVersion(realm);
+  const realmIdRef = useRef<string | undefined>(undefined);
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const isMountedRef = useRef(true);
   const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef(new Set<MapSyncQuery>());
+
+  useEffect(() => {
+    realmIdRef.current = mapVersion?.realmId;
+  }, [mapVersion?.realmId]);
 
   const connect = useCallback(() => {
     if (!isMountedRef.current) return;
@@ -63,12 +76,17 @@ export function useMapLiveSync() {
       const es = new EventSource(url);
       esRef.current = es;
 
-      es.addEventListener("map_data_changed", () => {
+      es.addEventListener("map_data_changed", (message) => {
         reconnectAttemptsRef.current = 0;
+        const event = parseMapSyncEvent((message as MessageEvent<string>).data);
+        if (!isForRealm(event, realmIdRef.current)) return;
+        for (const query of queriesFor(event.changeType)) pendingRef.current.add(query);
         if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
         invalidateTimerRef.current = setTimeout(() => {
           invalidateTimerRef.current = null;
-          if (isMountedRef.current) invalidateMapCaches(utils);
+          const queries = [...pendingRef.current];
+          pendingRef.current.clear();
+          if (isMountedRef.current) for (const query of queries) REFETCH[query](utils);
         }, INVALIDATE_DEBOUNCE_MS);
       });
 

@@ -50,15 +50,15 @@ export function useMapEditorOverlayState({
   isWorldMode = false,
   mapRef,
 }: UseMapEditorOverlayStateProps) {
-  // Real-time sync: invalidate map caches when any geo mutation succeeds
-  useMapLiveSync();
+  const realm = useMapRealm();
+  // Real-time sync: refetch the map's data when a change lands in the realm being edited
+  useMapLiveSync(realm);
 
   const [activeCountryId, setActiveCountryId] = useState<string | null>(countryId || null);
   const [activeEditorMode, setActiveEditorMode] = useState<"view" | "border_edit">("view");
   const [mapSelectedCountry, setMapSelectedCountry] = useState<SelectedCountry | null>(null);
 
   const [borderState, borderActions] = useBorderEditor();
-  const realm = useMapRealm();
   const [mapInstance, setMapInstance] = useEditorMapInstance(mapRef);
   // Background layers (coastline, rivers, relief) — also feed snapping and the coast-snap tool.
   // The country editor draws terrain from tiles, so its GeoJSON (for snapping) loads once that map

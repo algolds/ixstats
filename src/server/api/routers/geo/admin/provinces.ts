@@ -310,7 +310,7 @@ export const geoAdminProvincesRouter = createTRPCRouter({
       });
       if (country) await invalidateRealmMap(ctx.db, country.realmId);
       else await invalidateAllRealmMaps(ctx.db);
-      broadcastMapUpdate("bulk", input.countryId);
+      broadcastMapUpdate("bulk", input.countryId, country?.realmId);
 
       return result;
     }),

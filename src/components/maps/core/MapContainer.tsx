@@ -407,7 +407,7 @@ export function MapContainer({
   const mapRef = useRef<IxWorldMapRef>(null);
   const measureToolRef = useRef<{ toggle: () => void }>(null);
 
-  useMapLiveSync();
+  useMapLiveSync(realm);
 
   useEffect(() => {
     return () => onMapReady?.(null);

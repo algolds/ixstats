@@ -155,7 +155,6 @@ export function useMapLayerData({
     packed,
     error: combined.error ?? versionError,
     isPending: combined.pending || (enabled && !mapVersion),
-    realmId,
   };
 }
 

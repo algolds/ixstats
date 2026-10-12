@@ -85,7 +85,7 @@ export const realmMapRouter = createTRPCRouter({
         alsoSetLandArea: input.alsoSetLandArea,
       }).catch(mapError);
       await invalidateRealmMap(ctx.db, realmId);
-      broadcastMapUpdate("borders");
+      broadcastMapUpdate("borders", undefined, realmId);
       return result;
     }),
 });

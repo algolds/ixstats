@@ -1,12 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
 import { invalidateCache } from "~/lib/cache";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache, clearRealmLayerCache } from "./layer-cache";
 
 // One place that says "this realm's map changed". Every write path that changes what a realm's map layers hold
 // (borders, imports, rollbacks, linkage, sovereignty, area recomputes) calls invalidateRealmMap after the write
 // commits. It clears the server's assembled-layer caches and the cached map reads and increments
 // Realm.mapVersion, which versioned layer and tile URLs carry: a new version is a new URL, so browsers and CDNs
-// never serve the old map. This is a cross-domain primitive (src/server/shared), like layer-cache.ts.
+// never serve the old map. It then announces the new version on the live-sync stream, naming the realm, so open maps
+// of that realm (and no other) fetch it. This is a cross-domain primitive (src/server/shared), like layer-cache.ts.
 
 type VersionWriter = Pick<PrismaClient, "$queryRaw">;
 type AllVersionsWriter = Pick<PrismaClient, "$executeRaw">;
@@ -112,9 +114,9 @@ async function dropMapReads(): Promise<void> {
 
 /**
  * A realm's map changed: clear its assembled layers, the cached map reads and the memoised version, and increment
- * Realm.mapVersion. Call it AFTER the write commits (not inside its transaction: a reader could rebuild the old
- * data between the clear and the commit). Returns the new version, 0 when the realm has no row. Ixnay is realm
- * "default".
+ * Realm.mapVersion, then tell live-sync viewers of that realm. Call it AFTER the write commits (not inside its
+ * transaction: a reader could rebuild the old data between the clear and the commit). Returns the new version, 0
+ * when the realm has no row. Ixnay is realm "default".
  */
 export async function invalidateRealmMap(db: VersionWriter, realmId: string): Promise<number> {
   epoch++;
@@ -126,10 +128,12 @@ export async function invalidateRealmMap(db: VersionWriter, realmId: string): Pr
   versionMemo.delete(realmId);
   epoch++;
   await dropMapReads();
+  broadcastMapUpdate("version", undefined, realmId);
   return rows[0]?.mapVersion ?? 0;
 }
 
-/** For a change that spans realms or has no realm to name (global admin work): every realm's map changed. */
+/** For a change that spans realms or has no realm to name (global admin work): every realm's map changed (and every
+ * viewer is told). */
 export async function invalidateAllRealmMaps(db: AllVersionsWriter): Promise<void> {
   epoch++;
   clearLayerCache();
@@ -138,4 +142,5 @@ export async function invalidateAllRealmMaps(db: AllVersionsWriter): Promise<voi
   versionMemo.clear();
   epoch++;
   await dropMapReads();
+  broadcastMapUpdate("version");
 }

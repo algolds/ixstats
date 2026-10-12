@@ -35,9 +35,9 @@ const LABEL_SELECT = {
   metadata: true,
 } as const;
 
-async function afterLabelWrite() {
+async function afterLabelWrite(realmId: string) {
   await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
-  broadcastMapUpdate("mapLabel");
+  broadcastMapUpdate("mapLabel", undefined, realmId);
 }
 
 /** The realm label, if it is one of this realm's (a nation's label never is). */
@@ -94,7 +94,7 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
         },
         select: LABEL_SELECT,
       });
-      await afterLabelWrite();
+      await afterLabelWrite(realmId);
       return label;
     }),
 
@@ -118,7 +118,7 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
         },
         select: LABEL_SELECT,
       });
-      await afterLabelWrite();
+      await afterLabelWrite(realmId);
       return label;
     }),
 
@@ -128,7 +128,7 @@ export const geoFeaturesRealmLabelsRouter = createTRPCRouter({
       const realmId = await editableMapRealmId(ctx, input.realm);
       await requireRealmLabel(ctx.db, input.labelId, realmId);
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
-      await afterLabelWrite();
+      await afterLabelWrite(realmId);
       return { id: input.labelId, deleted: true };
     }),
 });

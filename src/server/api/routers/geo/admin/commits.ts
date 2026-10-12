@@ -265,7 +265,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       }
 
       await invalidateRealmMap(ctx.db, DEFAULT_REALM_ID);
-      broadcastMapUpdate("bulk", undefined);
+      broadcastMapUpdate("bulk", undefined, DEFAULT_REALM_ID);
 
       return {
         success: true,
@@ -366,7 +366,7 @@ export const geoAdminCommitsRouter = createTRPCRouter({
       );
 
       await invalidateRealmMap(ctx.db, DEFAULT_REALM_ID);
-      broadcastMapUpdate("bulk");
+      broadcastMapUpdate("bulk", undefined, DEFAULT_REALM_ID);
 
       return { success: true, restoredUploadId: targetUpload.id };
     }),

@@ -1,14 +1,20 @@
 "use client";
 
-/** Coordinate-focused MapLibre widget; the map is created only once it scrolls into view. */
+/**
+ * Coordinate-focused MapLibre widget. Its map is built when it scrolls near the viewport and released when it is
+ * more than a viewport away (a page allows about 16 WebGL contexts); new data goes into the map it has.
+ */
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
+import type { FeatureCollection } from "geojson";
+import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
 import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
-import { addGeoLayers } from "~/components/maps/shared/geo-layers";
+import { addGeoLayers, type LayerDef } from "~/components/maps/shared/geo-layers";
+import { useEmbedInRange } from "~/components/maps/widgets/hooks/useEmbedInRange";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { IXNAY_SLUG } from "~/lib/realms/realm-ids";
 
@@ -54,6 +60,49 @@ export function needsWikiRealmLookup(
   return !realm && wiki.isWikiPage && wiki.articleSource !== "ixwiki";
 }
 
+const POLITICAL_SOURCE_ID = "source-world-political";
+
+const POLITICAL_LAYERS: LayerDef[] = [
+  {
+    id: "world-political-fill",
+    type: "fill",
+    paint: {
+      "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
+      "fill-opacity": 0.45,
+    },
+  },
+  {
+    id: "world-political-stroke",
+    type: "line",
+    paint: { "line-color": "#475569", "line-width": 0.8, "line-opacity": 0.5 },
+  },
+  {
+    id: "world-political-labels",
+    type: "symbol",
+    layout: {
+      "text-field": ["coalesce", ["get", "_displayName"], ["get", "name"], ""],
+      "text-size": 10,
+      "text-allow-overlap": false,
+      "text-optional": true,
+      "text-font": [...MAP_SYMBOL_FONTS.regular],
+    },
+    paint: {
+      "text-color": "#475569",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 1.5,
+      "text-opacity": 0.8,
+    },
+    minzoom: 2,
+  },
+];
+
+/** Show the political layer: its data goes into the source the map already has, else the source and layers are added. */
+function showPolitical(map: MapLibreMap, data: FeatureCollection) {
+  const source = map.getSource(POLITICAL_SOURCE_ID) as GeoJSONSource | undefined;
+  if (source) source.setData(data);
+  else addGeoLayers(map, POLITICAL_SOURCE_ID, data, POLITICAL_LAYERS);
+}
+
 export function CoordinatesMapEmbed({
   lat,
   lng,
@@ -68,7 +117,7 @@ export function CoordinatesMapEmbed({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
 
-  const [isInViewport, setIsInViewport] = useState(false);
+  const inRange = useEmbedInRange(elementRef);
   const [mapReady, setMapReady] = useState(false);
 
   const parsedOptions = useMemo(
@@ -97,7 +146,7 @@ export function CoordinatesMapEmbed({
   const { data: wikiRealm, isFetched: wikiRealmFetched } =
     api.realms.map.realmForWikiArticle.useQuery(
       { wikiSource: wiki.articleSource, title: wiki.articleTitle ?? "" },
-      { enabled: lookupRealm && isInViewport, staleTime: 60 * 60_000 }
+      { enabled: lookupRealm && inRange, staleTime: 60 * 60_000 }
     );
   const realm = explicitRealm ?? wikiRealm?.slug ?? undefined;
 
@@ -105,27 +154,10 @@ export function CoordinatesMapEmbed({
   const { layers: worldMap } = useDecodedMapLayers({
     layers: ["political"],
     realm,
-    enabled: isInViewport && (!lookupRealm || wikiRealmFetched),
+    enabled: inRange && (!lookupRealm || wikiRealmFetched),
   });
 
   const worldPolitical = worldMap?.political;
-
-  useEffect(() => {
-    const el = elementRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInViewport(true);
-          observer.disconnect(); // Load once and keep loaded
-        }
-      },
-      { rootMargin: "200px" } // Pre-load 200px before scrolling into view
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   const initMap = useCallback(
     async (isCancelled: () => boolean) => {
@@ -137,8 +169,6 @@ export function CoordinatesMapEmbed({
       await import("maplibre-gl/dist/maplibre-gl.css");
       // Unmounted (or deps changed) while MapLibre was loading — don't create an orphan map.
       if (isCancelled() || !containerRef.current) return;
-
-      mapRef.current?.remove();
 
       const baseStyle: any = buildBaseStyle();
       delete baseStyle.projection; // Mercator for embeds
@@ -156,42 +186,6 @@ export function CoordinatesMapEmbed({
 
       map.on("load", () => {
         if (isCancelled()) return;
-        if (worldPolitical?.features?.length) {
-          addGeoLayers(map, "source-world-political", worldPolitical, [
-            {
-              id: "world-political-fill",
-              type: "fill",
-              paint: {
-                "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
-                "fill-opacity": 0.45,
-              },
-            },
-            {
-              id: "world-political-stroke",
-              type: "line",
-              paint: { "line-color": "#475569", "line-width": 0.8, "line-opacity": 0.5 },
-            },
-            {
-              id: "world-political-labels",
-              type: "symbol",
-              layout: {
-                "text-field": ["coalesce", ["get", "_displayName"], ["get", "name"], ""],
-                "text-size": 10,
-                "text-allow-overlap": false,
-                "text-optional": true,
-                "text-font": [...MAP_SYMBOL_FONTS.regular],
-              },
-              paint: {
-                "text-color": "#475569",
-                "text-halo-color": "#ffffff",
-                "text-halo-width": 1.5,
-                "text-opacity": 0.8,
-              },
-              minzoom: 2,
-            },
-          ]);
-        }
-
         const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
 
         if (titleVal) {
@@ -203,26 +197,29 @@ export function CoordinatesMapEmbed({
         setMapReady(true);
       });
     },
-    [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]
+    [lat, lng, zoom, interactiveVal, titleVal]
   );
 
   useEffect(() => {
-    if (isInViewport) {
-      let cancelled = false;
-      // Small delay to ensure container has layout dimensions
-      const timer = setTimeout(() => void initMap(() => cancelled), 50);
-      return () => {
-        cancelled = true;
-        clearTimeout(timer);
-        if (mapRef.current) {
-          mapRef.current.remove();
-          mapRef.current = null;
-          setMapReady(false);
-        }
-      };
-    }
-    return undefined;
-  }, [initMap, isInViewport]);
+    if (!inRange) return undefined;
+    let cancelled = false;
+    // Small delay to ensure container has layout dimensions
+    const timer = setTimeout(() => void initMap(() => cancelled), 50);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      mapRef.current?.remove();
+      mapRef.current = null;
+      setMapReady(false);
+    };
+  }, [initMap, inRange]);
+
+  // New data goes into the map it has: the map is built once, not again when the layer arrives or changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map || !worldPolitical?.features?.length) return;
+    showPolitical(map, worldPolitical);
+  }, [mapReady, worldPolitical]);
 
   // Resize map when container dimensions change
   useEffect(() => {
@@ -241,7 +238,7 @@ export function CoordinatesMapEmbed({
       className="wikios-ixworld-embed bg-map-ocean/40 rounded-row border-separator relative overflow-hidden border"
       style={{ height: heightVal }}
     >
-      {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
+      {inRange && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
 
       {!mapReady && (
         <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center">

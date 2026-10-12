@@ -47,7 +47,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("linkage", input.countryId);
+      broadcastMapUpdate("linkage", input.countryId, realmId);
 
       return {
         featureId: input.featureId,
@@ -80,7 +80,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("linkage", previousCountryId ?? undefined);
+      broadcastMapUpdate("linkage", previousCountryId ?? undefined, realmId);
 
       return { featureId: input.featureId, previousCountryId };
     }),
@@ -213,7 +213,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       }
 
       if (input.countryId !== undefined) {
-        broadcastMapUpdate("linkage", input.countryId ?? undefined);
+        broadcastMapUpdate("linkage", input.countryId ?? undefined, realmId);
       }
 
       return { ok: true };
@@ -269,7 +269,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("linkage", newCountry.id);
+      broadcastMapUpdate("linkage", newCountry.id, realmId);
       return { countryId: newCountry.id, name: newCountry.name };
     }),
 });

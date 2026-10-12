@@ -20,6 +20,27 @@ type LayerConfig = (typeof LAYER_CONFIGS)[MapLayerType];
 
 const NO_OCEAN_LABELS: OceanLabelFeature[] = [];
 
+/**
+ * What each map's sources were last given, per layer type. It lives with the map, not the mount: the world map is
+ * parked between visits and borrowed again (map-engine), and its sources still hold the data, so a new mount that
+ * finds the same data already there pushes nothing.
+ */
+const loadedData = new WeakMap<MapLibreMap, Map<string, unknown>>();
+
+function loadedDataOf(map: MapLibreMap): Map<string, unknown> {
+  let loaded = loadedData.get(map);
+  if (!loaded) {
+    loaded = new Map();
+    loadedData.set(map, loaded);
+  }
+  return loaded;
+}
+
+/** The map's style was put back (map-engine reports it): its sources are empty, so every layer is pushed again. */
+export function forgetLoadedLayers(map: MapLibreMap): void {
+  loadedData.delete(map);
+}
+
 /** Rivers fade in with zoom (thin, faint at globe view). */
 const RIVER_LINE_OPACITY = [
   "interpolate",
@@ -379,7 +400,6 @@ export function useWorldMapLayers({
     }
   }, [map, isLoaded, theme, oceanLabels, showPrimeMeridian]);
 
-  const lastLoadedDataRef = useRef<Map<string, unknown>>(new Map());
   const lastThemeRef = useRef(theme);
 
   useEffect(() => {
@@ -387,8 +407,9 @@ export function useWorldMapLayers({
     // A theme change re-applies the base style, whose sources are empty: push everything again
     if (lastThemeRef.current !== theme) {
       lastThemeRef.current = theme;
-      lastLoadedDataRef.current.clear();
+      forgetLoadedLayers(map);
     }
+    const loaded = loadedDataOf(map);
 
     const sortedLayers = [...layers].sort(
       (a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0)
@@ -411,9 +432,11 @@ export function useWorldMapLayers({
         // never refreshed.
         const targetSource = isLabels ? "source-country-labels" : sourceId;
         const source = map.getSource(targetSource) as GeoJSONSource | undefined;
-        const changed = lastLoadedDataRef.current.get(layer.type) !== layer.data;
+        const changed = loaded.get(layer.type) !== layer.data;
+        // This mount's label ref starts empty; the source already has the labels when the map is borrowed again
+        if (!changed && isLabels) labelFeaturesRef.current ??= layer.data;
         if (!changed && (isLabels || source)) continue;
-        lastLoadedDataRef.current.set(layer.type, layer.data);
+        loaded.set(layer.type, layer.data);
 
         if (isLabels) labelFeaturesRef.current = layer.data;
         if (source) {

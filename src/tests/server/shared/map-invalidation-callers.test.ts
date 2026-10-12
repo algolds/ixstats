@@ -50,6 +50,7 @@ import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { adminOpsProcedures } from "~/server/api/routers/geo/core/admin-ops";
 import { managementLifecycleProcedures } from "~/server/api/routers/countries/management/lifecycle";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { refreshRealmMap } from "~/server/modules/maps/map-import.apply";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";
@@ -155,12 +156,15 @@ interface WritePath {
   realm: string;
   /** The path syncs a Country's cached outline after storing the layer (so that sync can fail after the write). */
   syncs?: boolean;
+  /** The path also announces its change on the live-sync stream, naming the realm. */
+  announces?: boolean;
   run: (db: Db) => Promise<unknown>;
 }
 
 const WRITE_PATHS: WritePath[] = [
   {
     name: "border save (direct apply)",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -176,6 +180,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "split",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -194,6 +199,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "merge",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -262,6 +268,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "region relinked (feature properties)",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -277,6 +284,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "nation created from a region",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -301,6 +309,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "link a region to a nation",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -316,6 +325,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "unlink a region from its nation",
+    announces: true,
     realm: EURTH,
     syncs: true,
     run: (db) => {
@@ -353,6 +363,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "city import commit",
+    announces: true,
     realm: EURTH,
     run: (db) => {
       db.country!.findUnique!.mockResolvedValue({ id: "c1", realmId: EURTH });
@@ -364,6 +375,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "province commit",
+    announces: true,
     realm: EURTH,
     run: (db) => {
       db.country!.findUnique!.mockResolvedValue({ realmId: EURTH });
@@ -418,6 +430,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "recompute areas",
+    announces: true,
     realm: EURTH,
     run: (db) => createCallerFactory(realmMapRouter)(ctxAs(db)).recomputeAreas({ realm: "eurth" }),
   },
@@ -434,6 +447,7 @@ const WRITE_PATHS: WritePath[] = [
   },
   {
     name: "import apply, rollback, pipeline import and repair (refreshRealmMap)",
+    announces: true,
     realm: EURTH,
     run: (db) => refreshRealmMap(db as never, EURTH),
   },
@@ -451,6 +465,16 @@ describe("every map write path bumps its realm's map version", () => {
     expect(realmId).toBe(realm);
     expect(passedDb === (db as never)).toBe(true);
     expect(invalidateAllRealmMaps).not.toHaveBeenCalled();
+  });
+});
+
+describe("the live-sync event names the realm the change happened in", () => {
+  it.each(WRITE_PATHS.filter((path) => path.announces))("$name", async ({ run, realm }) => {
+    await run(realmDb());
+
+    const announced = jest.mocked(broadcastMapUpdate).mock.calls;
+    expect(announced.length).toBeGreaterThan(0);
+    for (const [, , announcedRealm] of announced) expect(announcedRealm).toBe(realm);
   });
 });
 

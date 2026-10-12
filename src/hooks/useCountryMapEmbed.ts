@@ -4,8 +4,9 @@
  * useCountryMapEmbed - Data hook for country-focused map embeds.
  *
  * Fetches a single country's geometry, neighbors, cities, and POIs
- * via a single unified countryGeo.getCountryGeoBundle tRPC endpoint.
- * All queries share cache settings with the full world map (30min stale, 2hr gc).
+ * via a single unified countryGeo.getCountryGeoBundle tRPC endpoint (30min stale, 2hr gc).
+ * The neighbours come from the political layer /maps downloads: the same versioned layer URL, so the browser's
+ * copy serves both.
  */
 
 import { useMemo } from "react";
@@ -30,7 +31,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     { enabled, ...MAP_CACHE }
   );
 
-  // World political layer for neighbor rendering: the packed layer /maps downloads (same URL, same cache)
+  // World political layer for neighbor rendering: the packed layer /maps downloads (same versioned URL)
   const { layers: worldMap } = useDecodedMapLayers({ layers: ["political"], enabled });
 
   return useMemo(() => {

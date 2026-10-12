@@ -23,85 +23,86 @@ export function useCountryMapEmbedLayers({
   onFeatureClick,
   boundsPadding = 40,
 }: UseCountryMapEmbedLayersProps) {
-  const initMap = useCallback(async () => {
-    if (!state.containerRef.current || !state.geometry) return () => {};
+  const { mapRef, setMapReady } = state;
 
-    const initialCenter: [number, number] = state.centroid
-      ? [state.centroid.lng, state.centroid.lat]
-      : [10, 5];
+  /** `isCancelled` turns true when the effect that started this run is cleaned up, at whatever stage the run is. */
+  const initMap = useCallback(
+    async (isCancelled: () => boolean) => {
+      if (!state.containerRef.current || !state.geometry) return;
 
-    let released = false;
+      const initialCenter: [number, number] = state.centroid
+        ? [state.centroid.lng, state.centroid.lat]
+        : [10, 5];
 
-    const maplibregl = await loadMaplibre();
-    if (released || !state.containerRef.current) return () => {};
+      const maplibregl = await loadMaplibre();
+      if (isCancelled() || !state.containerRef.current) return;
 
-    // Each embed owns its own standalone MapLibre instance.
-    const map = new maplibregl.Map({
-      container: state.containerRef.current,
-      style: buildBaseStyle("standard", "mercator") as any,
-      center: initialCenter,
-      zoom: 3,
-      attributionControl: false,
-      dragRotate: false,
-      interactive,
-    });
-
-    map.on("load", () => {
-      if (released) return;
-      state.mapRef.current = map;
-      populateEmbedMap(map, {
-        state,
-        countryId,
-        showNeighbors,
-        showCities,
-        showSubdivisions,
-        boundsPadding,
-        onCountryClick,
-        onNeighborClick,
-        onFeatureClick,
+      // Each embed owns its own standalone MapLibre instance. The ref holds it from here on, so the
+      // effect's cleanup removes it whether or not it has loaded.
+      const map = new maplibregl.Map({
+        container: state.containerRef.current,
+        style: buildBaseStyle("standard", "mercator") as any,
+        center: initialCenter,
+        zoom: 3,
+        attributionControl: false,
+        dragRotate: false,
+        interactive,
       });
-      state.setMapReady(true);
-    });
+      mapRef.current = map;
 
-    return () => {
-      released = true;
-      map.remove();
-      state.mapRef.current = null;
-      state.setMapReady(false);
-    };
+      map.on("load", () => {
+        if (isCancelled()) return;
+        populateEmbedMap(map, {
+          state,
+          countryId,
+          showNeighbors,
+          showCities,
+          showSubdivisions,
+          boundsPadding,
+          onCountryClick,
+          onNeighborClick,
+          onFeatureClick,
+        });
+        setMapReady(true);
+      });
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    state.geometry,
-    state.centroid,
-    state.bbox,
-    state.featureId,
-    state.displayName,
-    state.fillColor,
-    state.neighbors,
-    state.cities,
-    state.capital,
-    state.subdivisions,
-    state.worldPolitical,
-    showNeighbors,
-    showCities,
-    showSubdivisions,
-    interactive,
-    onCountryClick,
-    onNeighborClick,
-    onFeatureClick,
-    boundsPadding,
-    countryId,
-  ]);
+    [
+      state.geometry,
+      state.centroid,
+      state.bbox,
+      state.featureId,
+      state.displayName,
+      state.fillColor,
+      state.neighbors,
+      state.cities,
+      state.capital,
+      state.subdivisions,
+      state.worldPolitical,
+      showNeighbors,
+      showCities,
+      showSubdivisions,
+      interactive,
+      onCountryClick,
+      onNeighborClick,
+      onFeatureClick,
+      boundsPadding,
+      countryId,
+      mapRef,
+      setMapReady,
+    ]
+  );
 
   useEffect(() => {
     if (!state.geometry) return;
-    let cleanup: (() => void) | undefined;
-    const timer = setTimeout(async () => {
-      cleanup = await initMap();
-    }, 50);
+    let cancelled = false;
+    const timer = setTimeout(() => void initMap(() => cancelled), 50);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
-      cleanup?.();
+      mapRef.current?.remove();
+      mapRef.current = null;
+      setMapReady(false);
     };
-  }, [initMap, state.geometry]);
+  }, [initMap, state.geometry, mapRef, setMapReady]);
 }

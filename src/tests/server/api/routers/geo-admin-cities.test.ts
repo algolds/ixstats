@@ -127,7 +127,8 @@ describe("commitCityImport", () => {
       "Inside",
       "Unknown border",
     ]);
-    expect(broadcastMapUpdate).toHaveBeenCalledWith("bulk", "c_mine");
+    // The change names its realm, so a viewer of another realm's map ignores it
+    expect(broadcastMapUpdate).toHaveBeenCalledWith("bulk", "c_mine", "r_eurth");
     // An import bumps the map version of the country's realm, so detail queries and layer URLs refresh
     expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
     expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");

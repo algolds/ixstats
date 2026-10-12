@@ -2,12 +2,15 @@
  * SSE endpoint for real-time map update broadcasts.
  *
  * Clients connect here and receive `map_data_changed` events whenever
- * any geo mutation succeeds (city, subdivision, POI, story pin, map label, etc.).
+ * any geo mutation succeeds (city, subdivision, POI, story pin, map label, etc.), each naming the realm it
+ * happened in so a map open on another realm can ignore it.
  *
  * Usage: new EventSource('/api/sse/map-updates')
  */
 
 import { mapUpdateBus } from "~/lib/maps/map-update-bus";
+import { resolveEventRealm } from "~/server/modules/maps/map-event-realm";
+import { db } from "~/server/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,8 +33,11 @@ export async function GET(request: Request) {
       // Subscribe to map update bus
       const unsubscribe = mapUpdateBus.subscribe((event) => {
         if (closed) return;
-        const data = JSON.stringify(event);
-        controller.enqueue(encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`));
+        void resolveEventRealm(db, event).then((resolved) => {
+          if (closed) return;
+          const data = JSON.stringify(resolved);
+          controller.enqueue(encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`));
+        });
       });
 
       // Keep-alive: send comment every 15s to prevent connection timeout

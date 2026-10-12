@@ -107,7 +107,7 @@ export const geoAdminCitiesRouter = createTRPCRouter({
 
       // An import bumps the map version too: the detail queries (cities, subdivisions) key on it
       await invalidateRealmMap(ctx.db, countryRecord.realmId);
-      broadcastMapUpdate("bulk", input.countryId);
+      broadcastMapUpdate("bulk", input.countryId, countryRecord.realmId);
 
       return { created };
     }),

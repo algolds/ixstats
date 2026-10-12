@@ -14,7 +14,7 @@ import { acquireSurface } from "~/lib/maps/map-engine";
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 
-import { useWorldMapLayers } from "./hooks/useWorldMapLayers";
+import { forgetLoadedLayers, useWorldMapLayers } from "./hooks/useWorldMapLayers";
 import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
@@ -303,8 +303,10 @@ const IxWorldMap = memo(
             map.__mlgl = maplibregl;
             map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
           },
-          onReady: (map) => {
+          onReady: (map, { styleReset }) => {
             mapRef.current = map;
+            // The base style was put back: its sources are empty, so every layer's data goes in again
+            if (styleReset) forgetLoadedLayers(map);
 
             // Remove stale zoomend handlers to prevent setData zoom thrashing
             if (map.__ixZoomHandler) {

@@ -10,12 +10,17 @@
 
 type MapUpdateListener = (event: MapUpdateEvent) => void;
 
-interface MapUpdateEvent {
+export interface MapUpdateEvent {
   type: "map_data_changed";
-  /** What changed: city, subdivision, poi, storyPin, mapLabel, sovereignty, linkage, bulk */
+  /**
+   * What changed: city, subdivision, poi, storyPin, mapLabel, borders, sovereignty, linkage, bulk; "version" when a
+   * realm's map version moved (src/server/shared/map-invalidation.ts announces it)
+   */
   changeType: string;
   /** Optional country ID for targeted invalidation */
   countryId?: string;
+  /** The realm the change happened in; viewers of other realms ignore it. Absent: every realm (or see countryId). */
+  realmId?: string;
   timestamp: number;
 }
 
@@ -48,13 +53,15 @@ class MapUpdateBus {
 export const mapUpdateBus = new MapUpdateBus();
 
 /**
- * Helper to broadcast a map data change from any tRPC mutation or server function.
+ * Helper to broadcast a map data change from any tRPC mutation or server function. Name the realm when the writer
+ * knows it; the live-sync stream otherwise takes it from `countryId` (map-event-realm.ts).
  */
-export function broadcastMapUpdate(changeType: string, countryId?: string): void {
+export function broadcastMapUpdate(changeType: string, countryId?: string, realmId?: string): void {
   mapUpdateBus.emit({
     type: "map_data_changed",
     changeType,
     countryId,
+    realmId,
     timestamp: Date.now(),
   });
 }

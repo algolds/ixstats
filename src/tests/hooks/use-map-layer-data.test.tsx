@@ -99,7 +99,6 @@ describe("useMapLayerData", () => {
       "/api/map-layers/default/3/political?bucket=2&format=1",
     ]);
     expect(Object.keys(result.current.packed ?? {}).sort()).toEqual(["background", "political"]);
-    expect(result.current.realmId).toBe("default");
   });
 
   it("defaults to the mid zoom bucket and asks the version of the realm it was given", async () => {
@@ -203,7 +202,6 @@ describe("useMapLayerData", () => {
       { wrapper, initialProps: { realm: "a" } }
     );
     await waitFor(() => expect(result.current.packed?.political).toBeDefined());
-    expect(result.current.realmId).toBe("default");
 
     // another realm: its version arrives, its layer does not (yet, then never)
     mockVersion = { realmId: "r_b", version: 1 };
@@ -222,7 +220,6 @@ describe("useMapLayerData", () => {
       expect(urls()).toContain("/api/map-layers/r_b/1/political?bucket=1&format=1")
     );
 
-    expect(result.current.realmId).toBe("r_b");
     expect(result.current.packed).toBeUndefined();
 
     await act(async () => fail());

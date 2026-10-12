@@ -17,8 +17,10 @@
  *  - Module singleton, not a React context → no context-value churn re-render loops.
  *  - Readiness is a single awaited Promise (resolved on load / style.load), never a poller.
  *  - Every acquire gets a unique id; stale acquires are guarded out (StrictMode-safe).
- *  - On re-acquire the style is reset (diff:false) so the borrowing surface starts clean;
- *    the first acquire of a freshly-created instance skips the reset.
+ *  - The editor starts clean: on re-acquire its style is reset (diff:false). The world surface
+ *    refreshes its sources in place, so it keeps the warm map (sources, layers, tiles) and the
+ *    style is reset only when the theme changed (`onReady` says so). The first acquire of a
+ *    freshly-created instance never resets.
  */
 
 import { buildBaseStyle, type ProjectionMode } from "./map-config";
@@ -39,8 +41,11 @@ interface AcquireOpts {
   interactive?: boolean;
   /** Runs ONCE after the role's instance is created AND its style has loaded (add controls, etc.). */
   onCreate?: (map: any, maplibregl: any) => void;
-  /** Runs on every successful acquire, after attach + style ready + resize. */
-  onReady?: (map: any) => void;
+  /**
+   * Runs on every successful acquire, after attach + style ready + resize. `styleReset`: the base style was put
+   * back, so the map's sources are empty again.
+   */
+  onReady?: (map: any, info: { styleReset: boolean }) => void;
 }
 
 interface SurfaceHandle {
@@ -55,7 +60,8 @@ interface RoleState {
   container: HTMLDivElement;
   base: Promise<any> | null; // resolves once, on first 'load'
   activeId: number | null;
-  styleKey: string | null;
+  theme: MapTheme | null; // the base style currently in place
+  projectionMode: ProjectionMode | null;
   dirty: boolean; // instance currently holds a surface's custom layers
   createdMs: number;
 }
@@ -65,7 +71,20 @@ const isDev = process.env.NODE_ENV !== "production";
 let liveContexts = 0;
 let acquireCounter = 0;
 
-const styleKeyOf = (theme: MapTheme, proj: ProjectionMode) => `${theme}::${proj}`;
+/**
+ * Whether borrowing the role's map again must put the base style back. The world surface keeps its map warm: its
+ * hooks refresh sources in place and it applies its projection on every mount, so only a theme change resets it.
+ * Any other role starts from a clean style whenever its last surface left layers or the style differs.
+ */
+function needsStyleReset(
+  role: MapRole,
+  st: RoleState,
+  theme: MapTheme,
+  projectionMode: ProjectionMode
+): boolean {
+  if (role === "world") return st.theme !== theme;
+  return st.dirty || st.theme !== theme || st.projectionMode !== projectionMode;
+}
 
 function makeHolder(): HTMLDivElement {
   const holder = document.createElement("div");
@@ -90,7 +109,8 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
     container,
     base: null,
     activeId: null,
-    styleKey: null,
+    theme: null,
+    projectionMode: null,
     dirty: false,
     createdMs: 0,
   };
@@ -115,7 +135,8 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
       dragRotate: false,
     });
     st!.map = map;
-    st!.styleKey = styleKeyOf(theme, proj);
+    st!.theme = theme;
+    st!.projectionMode = proj;
     liveContexts++;
 
     // Wait for the style to load BEFORE onCreate — style-dependent calls (e.g.
@@ -170,7 +191,8 @@ export function acquireSurface(role: MapRole, opts: AcquireOpts): SurfaceHandle 
   const id = ++acquireCounter;
   st.activeId = id;
 
-  const requestedStyleKey = styleKeyOf(opts.theme ?? "standard", opts.projectionMode ?? "dynamic");
+  const theme = opts.theme ?? "standard";
+  const proj = opts.projectionMode ?? "dynamic";
 
   const ready = (async () => {
     const map = await st.base!;
@@ -179,15 +201,14 @@ export function acquireSurface(role: MapRole, opts: AcquireOpts): SurfaceHandle 
     // Attach the warm canvas into the surface's container.
     opts.container.appendChild(st.container);
 
-    // Reset to a clean base style if the instance is dirty (previous surface's layers)
-    // or the theme/projection changed. Skips on the first acquire of a fresh instance.
-    if (st.dirty || st.styleKey !== requestedStyleKey) {
+    // Reset to a clean base style when the previous surface left layers the next one must not
+    // inherit, or the theme changed. A fresh instance already has the requested style.
+    const styleReset = needsStyleReset(role, st, theme, proj);
+    if (styleReset) {
       await new Promise<void>((res) => {
-        map.setStyle(
-          buildBaseStyle(opts.theme ?? "standard", opts.projectionMode ?? "dynamic") as any,
-          { diff: false }
-        );
-        st.styleKey = requestedStyleKey;
+        map.setStyle(buildBaseStyle(theme, proj) as any, { diff: false });
+        st.theme = theme;
+        st.projectionMode = proj;
         if (map.isStyleLoaded()) res();
         else map.once("style.load", () => res());
       });
@@ -201,7 +222,7 @@ export function acquireSurface(role: MapRole, opts: AcquireOpts): SurfaceHandle 
     });
 
     st.dirty = true;
-    opts.onReady?.(map);
+    opts.onReady?.(map, { styleReset });
     return map;
   })();
 

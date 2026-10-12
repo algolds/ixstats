@@ -413,6 +413,6 @@ export async function refreshRealmMap(
   await invalidateRealmMap(db, realmId).catch((error: Error) =>
     console.error("[map-import] Map version bump failed:", error)
   );
-  broadcastMapUpdate("bulk");
+  broadcastMapUpdate("bulk", undefined, realmId);
   return pairs;
 }

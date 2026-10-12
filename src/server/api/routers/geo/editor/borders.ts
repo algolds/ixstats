@@ -294,7 +294,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
         } finally {
           await invalidateRealmMap(ctx.db, realmId);
         }
-        broadcastMapUpdate("borders", feature.countryId ?? undefined);
+        broadcastMapUpdate("borders", feature.countryId ?? undefined, realmId);
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
@@ -426,7 +426,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("borders");
+      broadcastMapUpdate("borders", undefined, realmId);
 
       return {
         originalFeatureId: input.featureId,
@@ -530,7 +530,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
       } finally {
         await invalidateRealmMap(ctx.db, realmId);
       }
-      broadcastMapUpdate("borders");
+      broadcastMapUpdate("borders", undefined, realmId);
 
       return {
         mergedFeatures: input.featureIds,

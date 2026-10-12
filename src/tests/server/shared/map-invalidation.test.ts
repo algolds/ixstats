@@ -10,6 +10,7 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 import { invalidateCache } from "~/lib/cache";
+import { mapUpdateBus } from "~/lib/maps/map-update-bus";
 import { layerCache, layerInflight, clearLayerCache } from "~/server/shared/layer-cache";
 import {
   MAP_TRPC_KEYS,
@@ -111,6 +112,35 @@ describe("invalidateRealmMap", () => {
     expect(layerCache.has("political:z0:r1")).toBe(false);
   });
 
+  it("announces the realm's new version to live-sync listeners, after the write", async () => {
+    const db = fakeDb(5);
+    const seen: Array<{ changeType: string; realmId?: string; written: boolean }> = [];
+    const off = mapUpdateBus.subscribe((event) =>
+      seen.push({
+        changeType: event.changeType,
+        realmId: event.realmId,
+        written: db.$queryRaw.mock.calls.length === 1,
+      })
+    );
+
+    await invalidateRealmMap(db, "r1");
+    off();
+
+    expect(seen).toEqual([{ changeType: "version", realmId: "r1", written: true }]);
+  });
+
+  it("announces nothing when the version write fails", async () => {
+    const db = fakeDb();
+    db.$queryRaw.mockRejectedValue(new Error("db down"));
+    const listener = jest.fn();
+    const off = mapUpdateBus.subscribe(listener);
+
+    await expect(invalidateRealmMap(db, "r1")).rejects.toThrow("db down");
+    off();
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it("tells registered hooks which realm changed", async () => {
     const hook = jest.fn();
     const off = onMapInvalidated(hook);
@@ -123,6 +153,18 @@ describe("invalidateRealmMap", () => {
 });
 
 describe("invalidateAllRealmMaps", () => {
+  it("announces the change with no realm, which every viewer's map takes as its own", async () => {
+    const listener = jest.fn();
+    const off = mapUpdateBus.subscribe(listener);
+
+    await invalidateAllRealmMaps(fakeDb());
+    off();
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0][0]).toMatchObject({ changeType: "version" });
+    expect(listener.mock.calls[0][0].realmId).toBeUndefined();
+  });
+
   it("clears every realm's caches and bumps every realm's version", async () => {
     layerCache.set("political:z0:r1", entry());
     layerCache.set("political:z0:r2", entry());
