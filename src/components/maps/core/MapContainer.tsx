@@ -30,7 +30,7 @@ import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
-import { TimelineScrubber } from "./TimelineScrubber";
+import { TimelineScrubber, type TimelineScrubberProps } from "./TimelineScrubber";
 import { MapRealmProvider } from "./MapRealmContext";
 import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
@@ -326,8 +326,8 @@ interface MapOverlaysProps {
   mapReady: boolean;
   isWelcomeOpen: boolean | undefined;
   onCloseWelcome: () => void;
-  historicalIxTime: number | null;
-  onHistoricalChange: (ixTime: number | null) => void;
+  /** The timeline scrubber's position, setter and realm. */
+  historical: Pick<TimelineScrubberProps, "value" | "onChange" | "realm">;
   sidePanelOpen: boolean;
 }
 
@@ -341,8 +341,7 @@ function MapOverlays({
   mapReady,
   isWelcomeOpen,
   onCloseWelcome,
-  historicalIxTime,
-  onHistoricalChange,
+  historical,
   sidePanelOpen,
 }: MapOverlaysProps) {
   const tourIdle = tour.tourState === "idle";
@@ -366,8 +365,7 @@ function MapOverlays({
           mobile while the bottom sheet is up and shifted clear of the desktop side panel. */}
       {showControls && tourIdle && !state.isEditing && !state.isWorldEditing && (
         <TimelineScrubber
-          value={historicalIxTime}
-          onChange={onHistoricalChange}
+          {...historical}
           className={sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : undefined}
         />
       )}
@@ -693,8 +691,7 @@ export function MapContainer({
         mapReady={mapReady}
         isWelcomeOpen={isWelcomeOpen}
         onCloseWelcome={() => setIsWelcomeOpen(false)}
-        historicalIxTime={historicalIxTime}
-        onHistoricalChange={setHistoricalIxTime}
+        historical={{ value: historicalIxTime, onChange: setHistoricalIxTime, realm }}
         sidePanelOpen={sidePanelOpen}
       />
 

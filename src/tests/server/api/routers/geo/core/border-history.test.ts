@@ -81,3 +81,51 @@ describe("getWorldMapAsOf history read", () => {
     expect(db.borderHistory.findMany).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("getHistoryRange", () => {
+  // Ixnay's edit is the earliest; Eurth's earliest is later. A realm-blind read returns Ixnay's for everyone.
+  const history = [
+    { realmId: "default", changedAt: new Date(1_000) },
+    { realmId: EURTH, changedAt: new Date(9_000) },
+    { realmId: EURTH, changedAt: new Date(5_000) },
+  ];
+
+  function rangeDb(rows = history) {
+    const db = makeDb();
+    db.borderHistory.findFirst.mockImplementation(
+      async ({ where }: { where: { country: { realmId: string } } }) => {
+        const inRealm = rows
+          .filter((row) => row.realmId === where.country.realmId)
+          .sort((a, b) => a.changedAt.getTime() - b.changedAt.getTime());
+        return inRealm[0] ? { changedAt: inRealm[0].changedAt } : null;
+      }
+    );
+    db.realm.findUnique.mockResolvedValue(null); // "ixnay" resolves to Ixnay without a realm row
+    return db;
+  }
+
+  it("starts at the earliest history of the viewer's realm, not of every realm", async () => {
+    const db = rangeDb();
+    const range = await caller(ctxFor(db)).getHistoryRange();
+
+    expect(range.minTime).toBe(5_000);
+    const args = db.borderHistory.findFirst.mock.calls[0]![0];
+    expect(args.where).toEqual({ country: { realmId: EURTH } });
+    expect(args.orderBy).toEqual({ changedAt: "asc" });
+  });
+
+  it("follows ?realm=: another realm's range excludes the viewer's own history", async () => {
+    const db = rangeDb();
+    const api = caller(ctxFor(db));
+
+    expect((await api.getHistoryRange({ realm: "ixnay" })).minTime).toBe(1_000);
+    expect((await api.getHistoryRange()).minTime).toBe(5_000);
+  });
+
+  it("has no range for a realm without history, so the scrubber stays hidden", async () => {
+    const db = rangeDb(history.filter((row) => row.realmId === "default"));
+    const range = await caller(ctxFor(db)).getHistoryRange();
+
+    expect(range.minTime).toBeNull();
+  });
+});

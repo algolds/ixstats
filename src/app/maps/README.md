@@ -75,11 +75,11 @@ The viewer is tuned so pan, zoom and hover do no React work and no redundant Map
 
 ## Data sources (tRPC geo routers)
 
-The geo API is split into **6 router namespaces** (90 procedures across 37 files under `src/server/api/routers/geo/`), registered in `src/server/api/root.ts`:
+The geo API is split into **6 router namespaces** (91 procedures across 37 files under `src/server/api/routers/geo/`), registered in `src/server/api/root.ts`:
 
 | Namespace | Approx. procs | Representative endpoints (verified in use) |
 |-----------|---------------|--------------------------------------------|
-| `geoCore` | 23 | `getWorldMap`, `getWorldMapAsOf`, `getCountryGeometry`, `getNeighborGeometries`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
+| `geoCore` | 24 | `getWorldMap`, `getWorldMapAsOf`, `getCountryGeometry`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
 | `geoFeatures` | 29 | `createCity`, `updateCity`, `updatePOI`, `getAllMapLabels`, `updateMapLabel`, `getAllStoryPins`, `getStoryPinFull`, `updateStoryPin`, `createPeak`, `createNamedRiver`, `createNamedLake`, `simplifySubdivisions` |
 | `geoEditor` | 19 | `assignCountryGeometry`, `createCountryFromShape`, `updateFeatureProperties`, `getFeatureDetails`, `validateLinkage`, `repairLinkage`, `unlinkCountryGeometry`, `runPipeline`, `importPipelineResult` |
 | `geoAdmin` | 11 | `processSvgUpload`, `commitSvgUpload`, `parseProvinceUpload`, `commitProvinceImport`, `parseCitySvg`, `commitCityImport` |

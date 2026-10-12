@@ -550,23 +550,24 @@ api.scheduledChanges.getPendingChanges.useQuery()
 
 ## Maps & Geography
 
-### geoCore Router (23 procedures)
+### geoCore Router (24 procedures)
 
 The former `geo`, `mapEditor` and `mapMonitoring` routers are replaced by the `geo*` namespaces (`geoCore`, `geoFeatures`, `geoEditor`, `geoAdmin`, `geoSovereignty`, `geoWiki`); see the inventory table for the rest.
 
 ```typescript
-// Queries (21)
+// Queries (22)
 api.geoCore.getWorldMap.useQuery({ layers?, zoom?, realm? })
+api.geoCore.getWorldMapPacked.useQuery({ layers?, zoom?, realm? })
 api.geoCore.getMapBundle.useQuery({ layers?, zoom?, realm? })
+api.geoCore.getMapBundleDetail.useQuery({ layers?, zoom?, realm? })
 api.geoCore.getAllMapFeatures.useQuery({ realm? })
 api.geoCore.getWorldMapAsOf.useQuery({ ixTime, zoom?, realm? })
-api.geoCore.getHistoryRange.useQuery()
+api.geoCore.getHistoryRange.useQuery({ realm? })
 api.geoCore.getCountryGeometry.useQuery({ featureId?, countryName?, countryId?, realm? })
 api.geoCore.getCountryFeatures.useQuery({ countryId })
 api.geoCore.getCapitalCities.useQuery({ realm? })
 api.geoCore.getCountryLinkage.useQuery({ countryId })
 api.geoCore.getNeighbors.useQuery({ countryId })
-api.geoCore.getNeighborGeometries.useQuery({ featureId, realm? })
 api.geoCore.getPointInfo.useQuery({ lng, lat, realm? })
 api.geoCore.listCountries.useQuery({ realm? })
 api.geoCore.getLayerInfo.useQuery({ realm? })
