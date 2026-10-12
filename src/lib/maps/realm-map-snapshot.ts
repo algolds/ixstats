@@ -12,6 +12,7 @@
  */
 import { gunzipSync, gzipSync } from "node:zlib";
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { rasterVersionDir, rasterVersionExists } from "~/server/modules/maps/realm-rasters.storage";
 import { isPostGISAvailable } from "./geo-validation";
 import { RELIEF_LAYER_ID, withRasterLayer } from "./raster-tiles";
 import {
@@ -173,8 +174,8 @@ const json = (value: unknown) =>
   value === null || value === undefined ? Prisma.JsonNull : (value as Prisma.InputJsonValue);
 
 /** A nullable JSON column's value for a row created again: nothing stored stays SQL NULL, as a new slot's was. */
-const columnJson = (value: unknown) =>
-  value === null || value === undefined ? Prisma.DbNull : (value as Prisma.InputJsonValue);
+const columnJson = (value: Prisma.JsonValue | undefined) =>
+  value === null || value === undefined ? Prisma.DbNull : value;
 
 export interface RestoreResult {
   restored: number;
@@ -201,6 +202,17 @@ export async function captureRealmState(
   };
 }
 
+/**
+ * The relief entry a snapshot recorded, when its tiles are still on disk. The build keeps only the newest two
+ * versions, so after two more worlds the version a rollback would put back is gone: serving it would answer every
+ * relief tile with a 404.
+ */
+async function reliefWithTiles(realmId: string, relief: RealmRasterLayer | null) {
+  if (!relief) return null;
+  const dir = rasterVersionDir(realmId, relief.id, relief.version);
+  return dir && (await rasterVersionExists(dir)) ? relief : null;
+}
+
 /** Put the realm's generation record and relief layer entry back; its other settings are kept. */
 async function restoreRealmState(
   db: Pick<PrismaClient, "realm">,
@@ -210,8 +222,9 @@ async function restoreRealmState(
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm) return;
   const layers = parseRealmMapSettings(realm.settings).rasterLayers ?? [];
-  const restored = state.relief
-    ? withRasterLayer(layers, state.relief)
+  const relief = await reliefWithTiles(realmId, state.relief);
+  const restored = relief
+    ? withRasterLayer(layers, relief)
     : layers.filter((layer) => layer.id !== RELIEF_LAYER_ID);
   await db.realm.update({
     where: { id: realmId },
@@ -247,16 +260,38 @@ export async function heldSlots(
   return held;
 }
 
-/** Remove the slots the import created, except any a player has since claimed. Frees their names and slugs. */
-async function removeCreatedSlots(
-  db: Pick<PrismaClient, "country" | "realmClaim">,
-  snapshot: MapImportSnapshot
-) {
+/**
+ * Remove the slots the import created, except any a player has claimed. Frees their names and slugs.
+ *
+ * A world is open to claims once applied, so a claim can arrive while this runs, and deleting a country removes its
+ * claims (`RealmClaim.country` cascades). A claim takes a share lock on its country and then on its realm (the
+ * foreign keys of RealmClaim), so this takes the locks the same way the apply does (the countries, then the realm)
+ * and closes the slots before it asks who holds them: a claim filed already has committed and shows as held, and one
+ * that comes later waits for the lock, then finds the slot closed or gone. The slots that are kept are opened again.
+ */
+async function removeCreatedSlots(tx: Prisma.TransactionClient, snapshot: MapImportSnapshot) {
+  const { realmId } = snapshot;
   const ids = snapshot.slots?.created ?? [];
-  const held = await heldSlots(db, ids);
-  const { count } = await db.country.deleteMany({
-    where: { id: { in: ids.filter((id) => !held.has(id)) }, realmId: snapshot.realmId },
+  if (ids.length === 0) return { removed: 0, kept: 0 };
+  await tx.$queryRaw`SELECT "id" FROM "Country" WHERE "id" = ANY(${ids}::text[]) AND "realmId" = ${realmId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT "id" FROM "realms" WHERE "id" = ${realmId} FOR UPDATE`;
+  const open = await tx.country.findMany({
+    where: { id: { in: ids }, realmId, claimable: true },
+    select: { id: true },
   });
+  await tx.country.updateMany({ where: { id: { in: ids }, realmId }, data: { claimable: false } });
+
+  const held = await heldSlots(tx, ids);
+  const { count } = await tx.country.deleteMany({
+    where: { id: { in: ids.filter((id) => !held.has(id)) }, realmId },
+  });
+  const reopen = open.map((slot) => slot.id).filter((id) => held.has(id));
+  if (reopen.length > 0) {
+    await tx.country.updateMany({
+      where: { id: { in: reopen }, realmId },
+      data: { claimable: true },
+    });
+  }
   return { removed: count, kept: held.size };
 }
 
