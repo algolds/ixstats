@@ -4,8 +4,8 @@
  * The Eurth preset at the default size (66,626 cells) and a fixed seed, in two fresh child processes so the first
  * generation is a cold one, as in a new worker, and nothing the database lines left on the heap is in the way:
  *
- * - `generateWorld` alone, gated on the spec's targets: first generation, a slider change (same seed, mesh cached,
- *   one param changed) and a reroll (new seed, new mesh). The slider change and the reroll are the median of five.
+ * - `generateWorld` alone, gated on the spec's targets: first generation and a reroll (new seed, new mesh), the
+ *   reroll the median of five.
  * - `generateWorldStaged` alone, gated per stage: the restart time inside the generator (what the stage cache buys)
  *   of a change that reaches the mesh, the land, the climate, the nations and the output, each the median of five
  *   warm restarts.
@@ -23,7 +23,7 @@ import { z } from "zod";
 import { previewRelief } from "~/lib/worldgen/relief-preview";
 import { generateWorld, generateWorldStaged, MeshCache, StageCache } from "~/lib/worldgen/v2";
 import { STAGE_ORDER, type StageId } from "~/lib/worldgen/v2/stages";
-import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
+import { DEFAULT_PARAMS, WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import type { GeneratedWorld, WorldGenParams } from "~/lib/worldgen/v2/types";
 import { computeWorldStats } from "~/lib/worldgen/world-stats";
 import { createWorldRunner } from "~/lib/worldgen/worker/world-runner";
@@ -41,7 +41,6 @@ export const WORLDGEN_RUN_FLAG = "--worldgen-run";
 
 /** Spec targets at 66,626 cells (docs/specs/2026-10-11-atlas-release-a-world-creation-design.md). */
 const FIRST_LIMIT_MS = 1000;
-const SLIDER_LIMIT_MS = 600;
 const REROLL_LIMIT_MS = 900;
 /** The restart targets by the stage a change reaches (the spec's, with the output raised from 150 ms by ruling). */
 const STAGE_LIMIT_MS: Record<StageId, number> = {
@@ -56,15 +55,6 @@ const CHILD_TIMEOUT_MS = 60_000;
 
 const SEED = 7;
 const REROLL_SEEDS = [8, 9, 10, 11, 12] as const;
-/** One param off the Eurth preset per slider change, so the repeats are not five runs of the same work. */
-const SLIDERS: readonly { label: string; params: Partial<WorldGenParams> }[] = [
-  { label: "land share", params: { oceanPercentage: 0.74 } },
-  { label: "continents", params: { continentCount: 7 } },
-  { label: "warmer or colder", params: { temperatureOffset: 1 } },
-  { label: "wetter or drier", params: { precipitationScale: 1.3 } },
-  { label: "nations", params: { countryCountRange: [40, 120] } },
-];
-
 /** Five changes that each reach their stage and no earlier one, each different from the one before and from `base`. */
 const STAGE_CHANGES: Record<
   StageId,
@@ -86,6 +76,9 @@ const STAGE_CHANGES: Record<
   output: { param: "hasIcecaps", change: (_base, repeat) => ({ hasIcecaps: repeat % 2 === 1 }) },
 };
 
+/** The stages a runner "slider" message reaches: every one after the mesh, which is the reroll. */
+const RUNNER_STAGES: readonly StageId[] = ["land", "climate", "nations", "output"];
+
 const stageMsSchema = z.object({
   mesh: z.array(z.number()),
   land: z.array(z.number()),
@@ -106,7 +99,6 @@ const messageSchema = z.object({
 export const directSchema = z.object({
   cellCount: z.number(),
   firstMs: z.number(),
-  sliderMs: z.array(z.number()),
   rerollMs: z.array(z.number()),
   stageMs: stageMsSchema,
 });
@@ -180,7 +172,6 @@ export function measureDirect(overrides: Partial<WorldGenParams> = {}): DirectRu
   return {
     cellCount: first.result.stats.cellCount,
     firstMs: first.ms,
-    sliderMs: SLIDERS.map((slider) => generate({ ...base, ...slider.params, seed: SEED }).ms),
     rerollMs: REROLL_SEEDS.map((seed) => generate({ ...base, seed }).ms),
     stageMs: measureStages(base),
   };
@@ -258,9 +249,14 @@ export function measureRunner(overrides: Partial<WorldGenParams> = {}): RunnerRu
     };
   };
 
+  const baseParams: WorldGenParams = { ...DEFAULT_PARAMS, ...base };
   return {
     first: send(base, SEED),
-    slider: SLIDERS.map((slider) => send({ ...base, ...slider.params }, SEED)),
+    // A change that reaches each stage after the mesh, from the base world put back first (not recorded)
+    slider: RUNNER_STAGES.map((stage) => {
+      send(base, SEED);
+      return send({ ...base, ...STAGE_CHANGES[stage].change(baseParams, 0) }, SEED);
+    }),
     reroll: REROLL_SEEDS.map((seed) => send(base, seed)),
   };
 }
@@ -274,12 +270,11 @@ export function printWorldgenRun(mode: string): void {
 
 // --- The table ------------------------------------------------------------------------------------------------
 
-/** The three gated lines; a missing run (the child failed) fails all three. */
+/** The two gated full-run lines; a missing run (the child failed) fails both. */
 export function directTargets(run: DirectRun | null): TargetResult[] {
   const measured = run ?? {
     cellCount: Number.NaN,
     firstMs: Number.NaN,
-    sliderMs: [],
     rerollMs: [],
   };
   return [
@@ -289,13 +284,6 @@ export function directTargets(run: DirectRun | null): TargetResult[] {
       FIRST_LIMIT_MS,
       "ms",
       `Eurth preset, seed ${SEED}, one run in a fresh process with an empty mesh cache; a reroll, which also builds its mesh, takes ${fmt(median(measured.rerollMs))} ms once the process is warm`
-    ),
-    atMost(
-      "world generator: slider change on the cached mesh, median",
-      median(measured.sliderMs),
-      SLIDER_LIMIT_MS,
-      "ms",
-      `median of ${measured.sliderMs.length} changes of one param each (${SLIDERS.map((slider) => slider.label).join(", ")}): ${ms(measured.sliderMs)} ms`
     ),
     atMost(
       "world generator: reroll to a new seed, median",
@@ -348,7 +336,7 @@ export function runnerTargets(run: RunnerRun | null): TargetResult[] {
     runnerLine(
       "worker runner: slider message, end to end, median",
       messages.slider,
-      `median of ${messages.slider.length}, mesh cached`
+      `one change reaching each stage after the mesh (${RUNNER_STAGES.join(", ")}), mesh cached`
     ),
     runnerLine(
       "worker runner: reroll message, end to end, median",

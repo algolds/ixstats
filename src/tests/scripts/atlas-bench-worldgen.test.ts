@@ -18,7 +18,6 @@ import {
 const direct = (over: Partial<DirectRun> = {}): DirectRun => ({
   cellCount: 66626,
   firstMs: 850,
-  sliderMs: [300, 310, 320, 330, 340],
   rerollMs: [600, 610, 620, 630, 640],
   stageMs: {
     mesh: [700, 710, 720, 730, 740],
@@ -53,7 +52,6 @@ describe("readRun", () => {
   const run = {
     cellCount: 66626,
     firstMs: 850,
-    sliderMs: [300],
     rerollMs: [600],
     stageMs: { mesh: [700], land: [400], climate: [150], nations: [100], output: [100] },
   };
@@ -73,38 +71,33 @@ describe("readRun", () => {
 });
 
 describe("directTargets", () => {
-  it("gates the first generation, a slider change and a reroll, in that order", () => {
+  it("gates the first generation and a reroll, in that order", () => {
     expect(directTargets(direct()).map((result) => result.name)).toEqual([
       "world generator: first generation, cold process (66626 cells)",
-      "world generator: slider change on the cached mesh, median",
       "world generator: reroll to a new seed, median",
     ]);
-    expect(verdicts(direct())).toEqual([true, true, true]);
+    expect(verdicts(direct())).toEqual([true, true]);
   });
 
-  it("holds each to its own limit: 1.0 s, 0.6 s and 0.9 s", () => {
+  it("holds each to its own limit: 1.0 s and 0.9 s", () => {
     expect(verdicts(direct({ firstMs: 1000 }))[0]).toBe(true);
     expect(verdicts(direct({ firstMs: 1000.5 }))[0]).toBe(false);
-    expect(verdicts(direct({ sliderMs: [600] }))[1]).toBe(true);
-    expect(verdicts(direct({ sliderMs: [600.5] }))[1]).toBe(false);
-    expect(verdicts(direct({ rerollMs: [900] }))[2]).toBe(true);
-    expect(verdicts(direct({ rerollMs: [900.5] }))[2]).toBe(false);
+    expect(verdicts(direct({ rerollMs: [900] }))[1]).toBe(true);
+    expect(verdicts(direct({ rerollMs: [900.5] }))[1]).toBe(false);
   });
 
   it("gates the median of the repeats, and prints every one of them", () => {
-    const run = direct({
-      sliderMs: [100, 100, 100, 100, 5000],
-      rerollMs: [100, 100, 5000, 5000, 5000],
-    });
-    expect(verdicts(run)).toEqual([true, true, false]);
-    expect(directTargets(run)[1]!.detail).toContain("100 / 100 / 100 / 100 / 5000");
+    const run = direct({ rerollMs: [100, 100, 5000, 5000, 5000] });
+    expect(verdicts(run)).toEqual([true, false]);
+    expect(directTargets(run)[1]!.detail).toContain("100 / 100 / 5000 / 5000 / 5000");
   });
 
-  it("fails all three when the measurement is missing or broken", () => {
-    expect(verdicts(null)).toEqual([false, false, false]);
-    expect(verdicts(direct({ firstMs: Number.NaN, sliderMs: [], rerollMs: [Number.NaN] }))).toEqual(
-      [false, false, false]
-    );
+  it("fails both when the measurement is missing or broken", () => {
+    expect(verdicts(null)).toEqual([false, false]);
+    expect(verdicts(direct({ firstMs: Number.NaN, rerollMs: [Number.NaN] }))).toEqual([
+      false,
+      false,
+    ]);
   });
 });
 
@@ -184,12 +177,11 @@ describe("the measurements", () => {
   // A small world keeps jest fast; the numbers themselves are the bench's business
   const small = { cellCount: 2500 };
 
-  it("times a first generation, five slider changes and five rerolls", () => {
+  it("times a first generation and five rerolls", () => {
     const run = measureDirect(small);
     expect(run.cellCount).toBeGreaterThan(1000);
-    expect(run.sliderMs).toHaveLength(5);
     expect(run.rerollMs).toHaveLength(5);
-    for (const ms of [run.firstMs, ...run.sliderMs, ...run.rerollMs]) {
+    for (const ms of [run.firstMs, ...run.rerollMs]) {
       expect(ms).toBeGreaterThan(0);
     }
   });
@@ -205,7 +197,7 @@ describe("the measurements", () => {
 
   it("times each runner message with every phase measured on the world it made", () => {
     const run = measureRunner(small);
-    expect(run.slider).toHaveLength(5);
+    expect(run.slider).toHaveLength(4);
     expect(run.reroll).toHaveLength(5);
     for (const phases of [run.first, ...run.slider, ...run.reroll]) {
       expect(phases.generateMs).toBeGreaterThan(0);

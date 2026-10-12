@@ -112,6 +112,16 @@ describe("v2/stages planRestart", () => {
     expect(planRestart(inputs(), next)).toBe("output");
   });
 
+  it("does not count the same polarLand written in another key order as a change", () => {
+    const next = inputs({
+      polarLand: { south: DEFAULT_PARAMS.polarLand.south, north: DEFAULT_PARAMS.polarLand.north },
+    });
+    expect(planRestart(inputs(), next)).toBe("output");
+    expect(planRestart(inputs(), inputs({ polarLand: { south: false, north: true } }))).toBe(
+      "land"
+    );
+  });
+
   it("restarts a different land mask at the land and a different keep-borders at the nations", () => {
     const mask = rasterizeLandMask({}, 64);
     expect(planRestart(inputs({}, { landMask: mask }), inputs({}, { landMask: mask }))).toBe(
@@ -163,12 +173,16 @@ interface Case {
   preset: keyof typeof WORLD_PRESETS;
   seed: number;
   masked: boolean;
+  /** The realm keeps its borders (no nations are generated); a mask without it generates nations under the mask */
+  keepBorders: boolean;
 }
 const CASES: Case[] = [
-  { preset: "ixnay", seed: 7, masked: false },
-  { preset: "eurth", seed: 11, masked: false },
-  { preset: "ixnay", seed: 11, masked: true },
-  { preset: "eurth", seed: 7, masked: true },
+  { preset: "ixnay", seed: 7, masked: false, keepBorders: false },
+  { preset: "eurth", seed: 11, masked: false, keepBorders: false },
+  { preset: "ixnay", seed: 11, masked: true, keepBorders: true },
+  { preset: "eurth", seed: 7, masked: true, keepBorders: true },
+  { preset: "ixnay", seed: 7, masked: true, keepBorders: false },
+  { preset: "eurth", seed: 11, masked: true, keepBorders: false },
 ];
 
 /** The world a run made, without the time it took. */
@@ -189,22 +203,38 @@ const CHANGES: Record<StageId, (params: WorldGenParams) => Partial<WorldGenParam
 };
 
 describe("v2/stages restart equals a full run", () => {
-  describe.each(CASES)("$preset, seed $seed, masked $masked", ({ preset, seed, masked }) => {
-    const options = masked ? { landMask: box, keepBorders: true } : {};
-    const start = base({ ...WORLD_PRESETS[preset], seed });
+  describe.each(CASES)(
+    "$preset, seed $seed, masked $masked, keep borders $keepBorders",
+    ({ preset, seed, masked, keepBorders }) => {
+      const options = masked ? { landMask: box, keepBorders } : {};
+      const start = base({ ...WORLD_PRESETS[preset], seed });
 
-    it.each(STAGE_ORDER)("restarting at %s makes the world a full run makes", (stage) => {
-      const cache = new StageCache();
-      const meshCache = new MeshCache();
-      generateWorldStaged(start, undefined, { ...options, cache, meshCache });
+      it.each(STAGE_ORDER)("restarting at %s makes the world a full run makes", (stage) => {
+        const cache = new StageCache();
+        const meshCache = new MeshCache();
+        generateWorldStaged(start, undefined, { ...options, cache, meshCache });
 
-      const changed = { ...start, ...CHANGES[stage](start) };
-      const staged = generateWorldStaged(changed, undefined, { ...options, cache, meshCache });
-      const full = generateWorld(changed, undefined, options);
+        const changed = { ...start, ...CHANGES[stage](start) };
+        const staged = generateWorldStaged(changed, undefined, { ...options, cache, meshCache });
+        const full = generateWorld(changed, undefined, options);
 
-      expect(staged.restartedAt).toBe(stage);
-      expect(fingerprint(staged)).toEqual(fingerprint(full));
-    });
+        expect(staged.restartedAt).toBe(stage);
+        expect(fingerprint(staged)).toEqual(fingerprint(full));
+      });
+    }
+  );
+
+  it("restarts a toggled keepBorders at the nations under a mask, and equals a full run", () => {
+    const start = base({ ...WORLD_PRESETS.eurth, seed: 12 });
+    const cache = new StageCache();
+    const meshCache = new MeshCache();
+    generateWorldStaged(start, undefined, { cache, meshCache, landMask: box, keepBorders: false });
+    for (const keepBorders of [true, false]) {
+      const options = { landMask: box, keepBorders };
+      const staged = generateWorldStaged(start, undefined, { cache, meshCache, ...options });
+      expect(staged.restartedAt).toBe("nations");
+      expect(fingerprint(staged)).toEqual(fingerprint(generateWorld(start, undefined, options)));
+    }
   });
 
   it("holds for a change of every single parameter", () => {

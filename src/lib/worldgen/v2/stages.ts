@@ -61,8 +61,19 @@ export interface StageInputs {
   keepBorders?: boolean;
 }
 
-const sameValue = (a: unknown, b: unknown): boolean =>
-  a === b || JSON.stringify(a) === JSON.stringify(b);
+type ParamValue = WorldGenParams[keyof WorldGenParams];
+
+/** Equal values, arrays by element and `polarLand` by its two flags, whatever order its keys were written in. */
+function sameValue(a: ParamValue, b: ParamValue): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object") return false;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return (
+      Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i])
+    );
+  }
+  return a.north === b.north && a.south === b.south;
+}
 
 function changesStage(stage: StageId, prev: StageInputs, next: StageInputs): boolean {
   if (STAGE_FIELDS[stage].some((field) => !sameValue(prev.params[field], next.params[field]))) {
