@@ -550,16 +550,16 @@ api.scheduledChanges.getPendingChanges.useQuery()
 
 ## Maps & Geography
 
-### geoCore Router (24 procedures)
+### geoCore Router (22 procedures)
 
 The former `geo`, `mapEditor` and `mapMonitoring` routers are replaced by the `geo*` namespaces (`geoCore`, `geoFeatures`, `geoEditor`, `geoAdmin`, `geoSovereignty`, `geoWiki`); see the inventory table for the rest.
 
+The map's geometry layers are not tRPC procedures (Atlas Release 0 removed `getWorldMap`, `getWorldMapPacked` and `getMapBundle`): they are served as packed JSON by `GET /api/map-layers/<realm>/<version>/<layer>`, and the decorative layers as vector tiles by `GET /api/map-tiles/<realm>/<version>/f<format>/<layer>/<z>/<x>/<y>`. The map version comes from `api.realms.map.version`. See [maps.md](../systems/maps.md#map-delivery-atlas-release-0).
+
 ```typescript
-// Queries (22)
-api.geoCore.getWorldMap.useQuery({ layers?, zoom?, realm? })
-api.geoCore.getWorldMapPacked.useQuery({ layers?, zoom?, realm? })
-api.geoCore.getMapBundle.useQuery({ layers?, zoom?, realm? })
-api.geoCore.getMapBundleDetail.useQuery({ layers?, zoom?, realm? })
+// Queries (20)
+api.geoCore.getMapBundleMarkers.useQuery({ realm?, version? }) // POIs and capitals
+api.geoCore.getMapBundleDetail.useQuery({ zoom?, realm?, version? }) // cities and subdivisions
 api.geoCore.getAllMapFeatures.useQuery({ realm? })
 api.geoCore.getWorldMapAsOf.useQuery({ ixTime, zoom?, realm? })
 api.geoCore.getHistoryRange.useQuery({ realm? })

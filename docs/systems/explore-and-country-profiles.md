@@ -54,7 +54,7 @@ The README linked above lists every tile and its data source. In summary:
 | :--- | :--- |
 | Identity, vitals, economy | `countries.getByIdWithEconomicData` (`rateLimitedPublicProcedure`) |
 | Enacted directives and resolved issues | `countries.getPublicRecord` (public) |
-| Land, cities, regions, map | `countryGeo.getCountryGeoBundle`, `geoCore.getWorldMap` |
+| Land, cities, regions, map | `countryGeo.getCountryGeoBundle`; the map embed draws the political layer from `GET /api/map-layers` |
 | Government and parliament | `government.getByCountryId`, `elections.getElectionStatus` |
 | Rankings and relations | `mycountry.getRankings`, `diplomaticCore.getRelationships`, `diplomaticEmbassies.getEmbassies` |
 | Lore | `wikios.getWikitext` (IxWiki), else `wikiCache.getCountryProfile` |
