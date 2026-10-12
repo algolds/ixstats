@@ -12,6 +12,10 @@
  *     baseline allows. The area is PostGIS's; without PostGIS only the GDP is checked (a spherical estimate of the
  *     area is not exact enough to refuse a world by) and the nation's land area is the estimate.
  *
+ * A layer choice (admin only, a world fitted to the realm's map) narrows that further: only the ticked physical layers
+ * are written, replacing the realm's, and every other layer of the bundle (background and political always) is left
+ * out whatever the realm has. No slot is planned.
+ *
  * Any problem refuses the whole bundle with every reason found (a MapImportError), and nothing is written. Shapes
  * of the physical layers that PostGIS finds nothing of once repaired are left out with a warning.
  *
@@ -27,6 +31,7 @@ import {
   type WorldBundleLayerName,
   type WorldBundleSlot,
 } from "~/lib/maps/import/world-bundle";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { parseWorldBundle } from "~/lib/maps/import/world-bundle.node";
 import { fitToSeam } from "~/lib/maps/import/world-seam";
 import { scaleAreaToRadius, sphericalRingAreaSqKm } from "~/lib/maps/planet";
@@ -59,6 +64,8 @@ export interface PreparedWorld {
   layers: Record<string, FeatureCollection>;
   /** The layers the realm has that the world leaves as they are (a world fitted to the realm's map; else none). */
   kept: WorldBundleLayerName[];
+  /** The admin's layer choice when this is one (only these layers are in `layers`, and there are no slots), else null. */
+  chosen: PhysicalLayer[] | null;
   slots: PreparedSlot[];
   warnings: string[];
 }
@@ -292,18 +299,32 @@ async function realmLayers(db: PrismaClient, realmId: string): Promise<WorldBund
 export async function prepareWorld(
   db: PrismaClient,
   realm: ImportRealm,
-  bundle: WorldBundle
+  bundle: WorldBundle,
+  chosen: readonly PhysicalLayer[] | null = null
 ): Promise<PreparedWorld> {
   const problems: string[] = [];
   const warnings: string[] = [];
   if (Math.abs(bundle.seed) > INT32_MAX) {
     problems.push(`The seed ${bundle.seed} does not fit the realm's 32-bit seed column`);
   }
+  if (chosen && bundle.source !== "realm-map") {
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "A layer choice needs a world fitted to the realm's own map"
+    );
+  }
 
-  // A world fitted to the realm's map writes the physical layers the realm has none of, and never its land
-  const kept = bundle.source === "realm-map" ? await realmLayers(db, realm.id) : [];
+  // A world fitted to the realm's map writes the physical layers the realm has none of, and never its land;
+  // a layer choice writes exactly the ticked layers instead
+  const ticked = new Set<WorldBundleLayerName>(chosen);
+  const have = bundle.source === "realm-map" ? await realmLayers(db, realm.id) : [];
+  const kept = chosen ? have.filter((layer) => !ticked.has(layer)) : have;
   const left = new Set<WorldBundleLayerName>(
-    bundle.source === "realm-map" ? ["background", ...kept] : []
+    chosen
+      ? WORLD_BUNDLE_LAYERS.filter((layer) => !ticked.has(layer))
+      : bundle.source === "realm-map"
+        ? ["background", ...kept]
+        : []
   );
   const layers: Record<string, FeatureCollection> = {};
   for (const layer of WORLD_BUNDLE_LAYERS) {
@@ -324,5 +345,12 @@ export async function prepareWorld(
     problems
   );
   if (problems.length > 0) refuse(problems);
-  return { bundle, layers: inspected.layers, kept, slots, warnings };
+  return {
+    bundle,
+    layers: inspected.layers,
+    kept,
+    chosen: chosen ? [...chosen] : null,
+    slots,
+    warnings,
+  };
 }

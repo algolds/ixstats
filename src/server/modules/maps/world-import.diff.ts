@@ -3,6 +3,7 @@
  * kept and reserved, and the warnings (work the world replaces, notes). Reads the realm and writes nothing.
  */
 import type { PrismaClient } from "@prisma/client";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { WORLD_BUNDLE_LAYERS, type WorldBundleLayerName } from "~/lib/maps/import/world-bundle";
 import { layerFeatures } from "./map-import.pipeline";
 import type { ImportRealm } from "./map-import.realm";
@@ -33,6 +34,8 @@ export interface WorldDiff {
   layers: Record<WorldBundleLayerName, WorldLayerDiff>;
   /** The layers the realm has that the world leaves as they are (a world fitted to the realm's map; else none). */
   kept: WorldBundleLayerName[];
+  /** The admin's layer choice when this check is one: only these layers are written, and no nation is touched. */
+  chosen: PhysicalLayer[] | null;
   slots: {
     create: number;
     /** Old generated slots no player has: retired. */
@@ -119,6 +122,14 @@ async function replacedWarnings(
   return warnings;
 }
 
+/** What replacing the ticked layers loses: the realm's current features in each. */
+function chosenWarnings(chosen: readonly PhysicalLayer[], rows: readonly MapRow[]): string[] {
+  return chosen.flatMap((layer) => {
+    const active = rows.filter((row) => row.layerType === layer && row.isActive).length;
+    return active > 0 ? [`The realm's ${active} ${layer} features will be replaced`] : [];
+  });
+}
+
 const reservedWarning = (count: number) =>
   `${count} earlier ${count === 1 ? "nation has an old claim on file and is" : "nations have old claims on file and are"} kept as reserved, with no land`;
 
@@ -147,7 +158,7 @@ export async function diffWorld(
     }),
   ]);
   const retirable = preset ? await retirableSlots(db, realm.id) : [];
-  const unlinked = preset ? [] : await unlinkedFeatures(db, realm.id);
+  const unlinked = preset || prepared.chosen ? [] : await unlinkedFeatures(db, realm.id);
   const retiredIds = new Set(retirable.map((slot) => slot.id));
   const survivors = countries.filter((country) => !retiredIds.has(country.id));
   // A regeneration closes the unowned generated slots it keeps: no territory is left for them
@@ -178,6 +189,12 @@ export async function diffWorld(
     const empty = prepared.slots.filter((planned) => planned.slot.population === 0).length;
     if (empty > 0)
       warnings.push(`${empty} slots have no habitable land and start as token nations`);
+  } else if (prepared.chosen) {
+    replaces.push(...chosenWarnings(prepared.chosen, rows));
+    warnings.push(
+      ...replaces,
+      "Land, borders and nations are not touched, and no nation is created"
+    );
   } else {
     warnings.push(
       `The realm's borders are kept: ${unlinked.length} regions with no nation become claimable nations`
@@ -196,6 +213,7 @@ export async function diffWorld(
       WORLD_BUNDLE_LAYERS.map((layer) => [layer, layerDiff(prepared, layer, rows)])
     ) as WorldDiff["layers"],
     kept: prepared.kept,
+    chosen: prepared.chosen,
     slots: {
       create: wanted.length,
       retire: retirable.length,
@@ -208,7 +226,11 @@ export async function diffWorld(
   };
 }
 
-/** Whether a world fitted to the realm's map would write no feature and create no nation. */
+/**
+ * Whether a world fitted to the realm's map would write no feature and create no nation. A layer choice replaces
+ * what the realm has, so it always has something to do.
+ */
 export const hasNothingToAdd = (diff: WorldDiff): boolean =>
+  diff.chosen === null &&
   diff.slots.create === 0 &&
   Object.values(diff.layers).every(({ create, change }) => create === 0 && change === 0);

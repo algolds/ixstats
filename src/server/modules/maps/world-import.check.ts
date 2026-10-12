@@ -5,6 +5,7 @@
  * process by a few seconds).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { mapImportOptionsSchema, type PhysicalLayer } from "~/lib/maps/import/options";
 import { MapImportError } from "./map-import.realm";
 
 export const MAP_CHANGED = "The map changed since the check. Check the world again.";
@@ -44,6 +45,21 @@ export function fittedMapVersionOf(options: Prisma.JsonValue | undefined): numbe
   if (!options || typeof options !== "object" || Array.isArray(options)) return null;
   const version = options.fittedMapVersion;
   return typeof version === "number" ? version : null;
+}
+
+/**
+ * The layer choice `start` was given (stored in the check's options, copied into its apply job's), or null for a
+ * world applied the usual way. Read back through the options schema, so a retry of the check gets it typed.
+ */
+export function layersOf(options: Prisma.JsonValue | undefined): PhysicalLayer[] | null {
+  if (!options || typeof options !== "object" || Array.isArray(options)) return null;
+  if (options.layers === undefined) return null;
+  const parsed = mapImportOptionsSchema.shape.layers.safeParse(options.layers);
+  // Never fall back to a plain apply: it would write the borders and nations the choice was made to leave alone
+  if (!parsed.success) {
+    throw new MapImportError("BAD_REQUEST", "The job's layer choice is not valid");
+  }
+  return parsed.data ?? null;
 }
 
 /**

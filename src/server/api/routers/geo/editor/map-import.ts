@@ -88,8 +88,17 @@ export const geoEditorMapImportRouter = createTRPCRouter({
         })
       )
       .mutation(async ({ ctx, input }) => {
+        const layers = input.options?.layers;
+        if (layers && input.kind !== "world") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only a world takes a layer choice",
+          });
+        }
         if (input.kind === "world") {
-          await assertWorldImportAllowed(ctx.db, ctx.user, input.realmId).catch(importError);
+          await assertWorldImportAllowed(ctx.db, ctx.user, input.realmId, { layers }).catch(
+            importError
+          );
         } else {
           await loadImportRealm(ctx.db, ctx.user, input.realmId).catch(importError);
         }

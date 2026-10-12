@@ -63,7 +63,7 @@ import {
   runMapPipelineJob,
   type PipelineSummary,
 } from "./realm-map-pipeline.job";
-import { assertMapUnchangedSince } from "./world-import.check";
+import { assertMapUnchangedSince, layersOf } from "./world-import.check";
 import { assertWorldImportAllowed } from "./world-import.guards";
 import {
   runWorldJob,
@@ -227,7 +227,9 @@ export async function startWorldApply(
 ): Promise<string> {
   const parent = await db.mapImportJob.findUnique({ where: { id: parentJobId } });
   if (!parent) throw new MapImportError("NOT_FOUND", "Import not found");
-  await assertWorldImportAllowed(db, actor, parent.realmId);
+  // The check's layer choice is checked again here, and is the only option the apply job inherits
+  const layers = layersOf(parent.options);
+  await assertWorldImportAllowed(db, actor, parent.realmId, { layers });
   if (parent.kind !== "world" || !parent.dryRun || parent.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "Only a world whose check has finished can be applied");
   }
@@ -238,7 +240,7 @@ export async function startWorldApply(
       realmId: parent.realmId,
       kind: "world",
       dryRun: false,
-      options: {},
+      options: layers ? { layers } : {},
       requestedBy: actor.clerkUserId,
       parentJobId: parent.id,
       uploadId: parent.uploadId,

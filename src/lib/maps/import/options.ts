@@ -66,6 +66,13 @@ export const geojsonEngineOptionsSchema = z.object({
   nameProperty: z.string().max(100).optional(),
 });
 
+/**
+ * The physical layers a site admin may write onto a realm's map from a generated world (the layer choice). Land,
+ * borders and nations are never among them.
+ */
+export const PHYSICAL_LAYERS = ["altitudes", "climate", "rivers", "lakes", "icecaps"] as const;
+export type PhysicalLayer = (typeof PHYSICAL_LAYERS)[number];
+
 /** What an analyse job is asked to do. */
 export const mapImportOptionsSchema = z.object({
   png: pngEngineOptionsSchema.default(pngEngineOptionsSchema.parse({})),
@@ -75,6 +82,11 @@ export const mapImportOptionsSchema = z.object({
   georef: mapGeoreferenceSchema.optional(),
   /** The map's credit line (e.g. its wiki file's author), stored on every imported border. */
   attribution: z.string().trim().max(300).optional(),
+  /**
+   * A world check only, site admins only: write exactly these physical layers onto the realm's own map (a world fitted
+   * to it), in replace mode, and nothing else: no land, borders or nations. Ixnay may be written to only this way.
+   */
+  layers: z.array(z.enum(PHYSICAL_LAYERS)).min(1).max(PHYSICAL_LAYERS.length).optional(),
 });
 export type MapImportOptions = z.infer<typeof mapImportOptionsSchema>;
 export type MapImportOptionsInput = z.input<typeof mapImportOptionsSchema>;

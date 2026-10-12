@@ -29,6 +29,7 @@ jest.mock("~/server/modules/maps/realm-relief", () => ({
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { mapImportOptionsSchema } from "~/lib/maps/import/options";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorMapImportRouter } from "~/server/api/routers/geo/editor/map-import";
 import { buildRealmRelief } from "~/server/modules/maps/realm-relief";
@@ -111,6 +112,83 @@ describe("geoEditor.mapImport.start for a world", () => {
     await expect(api.start(input())).rejects.toMatchObject({ code: "CONFLICT" });
     // only the finished check the realm was seeded with: no job was queued
     expect(db.mapImportJob.rows.map((job: { id: string }) => job.id)).toEqual([CHECK_ID]);
+  });
+});
+
+describe("geoEditor.mapImport.start with a layer choice", () => {
+  const input = (realmId = "r1") => ({
+    realmId,
+    uploadId: "",
+    kind: "world" as const,
+    filename: "world.json.gz",
+    options: { layers: ["rivers" as const, "altitudes" as const] },
+    fittedMapVersion: 0,
+  });
+  const upload = () => storeBundle(makeBundle({ source: "realm-map" }));
+  const jobOptions = (db: ReturnType<typeof seedRealm>, jobId: string) =>
+    db.mapImportJob.rows.find((job: { id: string }) => job.id === jobId).options;
+
+  it("stores the choice in the check's options, and it parses back typed (the retry)", async () => {
+    const { api, db } = caller(admin);
+    const { jobId } = await api.start({ ...input(), uploadId: await upload() });
+    const stored = jobOptions(db, jobId);
+    expect(stored).toMatchObject({ layers: ["rivers", "altitudes"], fittedMapVersion: 0 });
+    expect(mapImportOptionsSchema.parse(stored).layers).toEqual(["rivers", "altitudes"]);
+  });
+
+  it("lets a site admin choose layers on Ixnay, under a pending claim", async () => {
+    const { api, db } = caller(admin, { id: "default", slug: "ixnay" });
+    db.realmClaim.rows.push({ id: "q", realmId: "default", countryId: null, status: "pending" });
+    await expect(api.start({ ...input("default"), uploadId: await upload() })).resolves.toEqual({
+      jobId: expect.any(String),
+    });
+  });
+
+  it("refuses a founder's layer choice, a layer choice on a file that is not a world, and bad layers", async () => {
+    const uploadId = await upload();
+    await expect(caller(founder).api.start({ ...input(), uploadId })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(
+      caller(admin).api.start({ ...input(), uploadId, kind: "png" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      caller(admin).api.start({
+        ...input(),
+        uploadId,
+        options: { layers: ["political"] } as never,
+      })
+    ).rejects.toThrow();
+    await expect(
+      caller(admin).api.start({ ...input(), uploadId, options: { layers: [] } })
+    ).rejects.toThrow();
+  });
+
+  it("still refuses Ixnay for a founder's or an admin's world with no layer choice", async () => {
+    const { api } = caller(admin, { id: "default", slug: "ixnay" });
+    await expect(
+      api.start({ ...input("default"), options: undefined, uploadId: await upload() })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("queues the apply with the choice and nothing else of the check's options", async () => {
+    const { api, db } = caller(admin, { id: "default", slug: "ixnay" });
+    db.realmClaim.rows.push({ id: "q", realmId: "default", countryId: null, status: "pending" });
+    db.mapImportJob.rows[0].realmId = "default";
+    db.mapImportJob.rows[0].options = { layers: ["lakes"], fittedMapVersion: 0, png: {} };
+    const { jobId } = await api.applyWorld({ jobId: CHECK_ID });
+    expect(jobOptions(db, jobId)).toEqual({ layers: ["lakes"] });
+  });
+
+  it("refuses a founder the apply of an admin's layer choice, and Ixnay's apply without one", async () => {
+    const { api, db } = caller(founder);
+    db.mapImportJob.rows[0].options = { layers: ["lakes"] };
+    await expect(api.applyWorld({ jobId: CHECK_ID })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const ixnay = caller(admin, { id: "default", slug: "ixnay" });
+    ixnay.db.mapImportJob.rows[0].realmId = "default";
+    await expect(ixnay.api.applyWorld({ jobId: CHECK_ID })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 });
 

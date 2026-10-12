@@ -18,6 +18,11 @@
  *   6. after the commit, the relief tiles are built from the bundle's cells; if that fails the world stays and the
  *      result says the relief step failed (`rebuildRealmRelief` runs it again).
  *
+ * A site admin's layer choice (`options.layers`, a world fitted to the realm's map, Ixnay allowed) writes exactly the
+ * ticked physical layers in replace mode and nothing else: no slot is created or retired, no claim lock applies (no
+ * nation is touched), and the realm's seed and generation record stay as they are. Rolling it back restores those
+ * layers from the normal snapshot.
+ *
  * The "realm map" source keeps what the realm drew: no political layer and no land layer is written, each political
  * feature with no country gets one (claimable), and only the other layers the realm has none of are generated. The
  * relief is shaded from the elevation, so it is built only when the elevation is written.
@@ -51,6 +56,7 @@ import {
   assertMapUnchangedSince,
   currentMapVersion,
   fittedMapVersionOf,
+  layersOf,
   loadCheck,
   summarySource,
 } from "./world-import.check";
@@ -116,17 +122,19 @@ export async function runWorldDryRun(
 ): Promise<WorldDiff> {
   progress.write(2, "Reading the world");
   const bundle = await loadWorldBundle(job.uploadId);
+  const chosen = layersOf(job.options);
   const realm = await assertWorldImportAllowed(
     db,
     await jobActor(db, job.requestedBy),
-    job.realmId
+    job.realmId,
+    { layers: chosen }
   );
   // Read before the map is, so a change while this runs shows as a newer map than the check
   const mapVersion = await currentMapVersion(db, realm.id);
   const fittedMapVersion = fittedMapVersionOf(job.options);
   if (bundle.source === "realm-map") assertFittedToMap(fittedMapVersion, mapVersion);
   progress.write(10, "Checking the geometry");
-  const prepared = await prepareWorld(db, realm, bundle);
+  const prepared = await prepareWorld(db, realm, bundle, chosen);
   if (progress.isCancelled()) throw new ImportCancelledError();
   progress.write(80, "Comparing with the realm's map");
   const diff = await diffWorld(db, realm, prepared, { mapVersion, fittedMapVersion });
@@ -252,6 +260,9 @@ async function compensate(
   throw new Error(`${cause.message}. ${notes.join(". ")}`, { cause });
 }
 
+/** What a layer choice does to the nation slots. */
+const NO_SLOTS: SlotStep = { created: [], retired: [], reserved: [] };
+
 const KEPT_RELIEF: WorldApplyResult["relief"] = {
   status: "kept",
   version: null,
@@ -316,18 +327,21 @@ async function writeWorld(
   if (lost.length > 0) {
     throw new Error(`The map writer rejected ${lost.length} nation borders (${lost[0]!.reason})`);
   }
-  await db.realm.update({
-    where: { id: realm.id },
-    data: {
-      seed: bundle.seed,
-      generationParams: toJson({
-        params: bundle.params,
-        engineVersion: ATLAS_ENGINE_VERSION,
-        developmentLevel: bundle.params.developmentLevel,
-        source: bundle.source,
-      }),
-    },
-  });
+  // A layer choice leaves the realm's generation record alone (Ixnay has none to overwrite)
+  if (!prepared.chosen) {
+    await db.realm.update({
+      where: { id: realm.id },
+      data: {
+        seed: bundle.seed,
+        generationParams: toJson({
+          params: bundle.params,
+          engineVersion: ATLAS_ENGINE_VERSION,
+          developmentLevel: bundle.params.developmentLevel,
+          source: bundle.source,
+        }),
+      },
+    });
+  }
   // The slots open after the last step that can fail; the refresh that tells viewers swallows its own errors
   const opened = await openSlots(db, step.created);
   await refreshRealmMap(db, realm.id, { adjacency: false });
@@ -347,9 +361,10 @@ export async function applyWorld(
   progress.write(2, "Reading the world");
   const bundle = await loadWorldBundle(job.uploadId);
   const actor = await jobActor(db, job.requestedBy);
-  const realm = await assertWorldImportAllowed(db, actor, job.realmId);
+  const chosen = layersOf(job.options);
+  const realm = await assertWorldImportAllowed(db, actor, job.realmId, { layers: chosen });
   progress.write(8, "Checking the world");
-  const prepared = await prepareWorld(db, realm, bundle);
+  const prepared = await prepareWorld(db, realm, bundle, chosen);
   const preset = bundle.source === "preset";
   if (progress.isCancelled()) throw new ImportCancelledError();
   // The check was a diff against the map as it was. Refused here before the snapshot is taken (the slot transaction
@@ -359,26 +374,30 @@ export async function applyWorld(
 
   progress.write(20, "Saving a snapshot to roll back to");
   const scopes = pipelineSnapshotScopes(prepared.layers, "replace");
-  if (!preset) {
+  if (!preset && !chosen) {
     const keys = (await unlinkedFeatures(db, realm.id)).map((nation) => nation.featureKey);
     scopes.push({ layerType: "political", keys, wholeLayer: false, countryIds: [] });
   }
   const snapshot = await captureMapSnapshot(db, realm.id, scopes);
   snapshot.realm = await captureRealmState(db, realm.id);
 
-  progress.write(30, "Creating nations");
-  const step = await replaceSlots(db, realm, {
-    actor,
-    retire: preset,
-    slots: preset ? prepared.slots : null,
-    level: bundle.params.developmentLevel,
-    check,
-  });
-  snapshot.slots = {
-    retired: step.retired,
-    created: step.created.map((c) => c.countryId),
-    reserved: step.reserved,
-  };
+  progress.write(30, chosen ? "Keeping the nations" : "Creating nations");
+  const step = chosen
+    ? NO_SLOTS
+    : await replaceSlots(db, realm, {
+        actor,
+        retire: preset,
+        slots: preset ? prepared.slots : null,
+        level: bundle.params.developmentLevel,
+        check,
+      });
+  if (!chosen) {
+    snapshot.slots = {
+      retired: step.retired,
+      created: step.created.map((c) => c.countryId),
+      reserved: step.reserved,
+    };
+  }
 
   const everyMs = deps.heartbeatMs ?? HEARTBEAT_MS;
   progress.write(45, "Writing the map");
