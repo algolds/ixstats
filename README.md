@@ -101,7 +101,7 @@ A complete cartography, spatial analytics, and procedural world generation suite
 
 - **The Interactive World Map**: High-performance WebGL vector globe and map rendering 7 distinct layers (rivers, lakes, icecaps, sovereign borders, altitudes, climate, and background) with deterministic hypsometry (hydrology rendering strictly above political borders). Features projection switching (Globe, Mercator, Equal Earth) and standalone deployment as **IxMaps** (`maps.ixwiki.com`).
 - **Professional In-App Vector Map Editor**: Draw and edit sovereign borders with vertex snapping, paint provinces and administrative regions, place cities and Points of Interest (POIs), route trade networks, attach localized lore stories to territories, and import/export raw vector SVG and GeoJSON cartography.
-- **Procedural Realms Engine (Atlas / UPG v2)**: Procedural world generation from pure mathematics on a 100,000-cell Voronoi spatial mesh with 5 Lloyd iterations. Simulates tectonic plate collisions, crust types, Euler rotation vectors, coastal hypsometric damping ($H_{\text{final}} = H_{\text{raw}} \cdot \min(1.0, 0.15 + 0.35 \cdot \text{coastDist})$), Coriolis wind precipitation, steepest-descent river networks, and 12 Trewartha climate biomes smoothed with 4-pass Catmull-Rom spline subdivision ($\tau=0.5$).
+- **Procedural Realms Engine (Atlas / UPG v2)**: Procedural world generation from pure mathematics on a 100,000-cell Voronoi spatial mesh with 5 Lloyd iterations. Simulates tectonic plate collisions, crust types, Euler rotation vectors, coastal hypsometric damping ($H_{\text{final}} = H_{\text{raw}} \cdot \min(1.0, 0.15 + 0.35 \cdot \text{coastDist})$), Coriolis wind precipitation, steepest-descent river networks, and 12 Trewartha climate biomes smoothed with 4-pass Catmull-Rom spline subdivision ($\tau=0.5$). Realm founders generate, preview and apply a world from the map editor's World tab (the generator runs in a Web Worker, never on a web request), with nation slots to claim and hillshade relief.
 - **Spatial Geographic Analyzer & Tier-0 Grounding**: Computes exact geographic metrics directly from terrain mesh geometry (highest peaks, longest rivers, surface areas, biomes) and serves as the single source of truth for all nation borders (`ST_Touches`), neighbor relations, and regional attribute rollups.
 
 ---
@@ -170,7 +170,6 @@ Specialized creative toolkits and simulation sandboxes:
 |---|---|:---:|---|
 | **⟨ONOMA⟩** | `/labs/onoma` | **Active** | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries. |
 | **Vexel** | `/labs/vexel` | **Preview** | Structured heraldry composer: vector blazon generation, tincture rules, gallery and revisions. Routable but not in the Labs menu; external ornaments and attach-to-country are unfinished. |
-| **Map Pipeline** | `/labs/map-pipeline` | **Active** | Procedural worldgen testbed for testing 100k-cell Voronoi meshes and hypsometric algorithms without touching live data. |
 | **Strata & Dynas** | — | *Roadmap* | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling. |
 
 ---

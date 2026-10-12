@@ -1,6 +1,6 @@
 # Realm maps: bring any realm's map into IxWorld
 
-**Last updated:** 2026-10-07 · Spec: `docs/specs/2026-10-07-eurth-map-port.md` (Phase 5) · Worked example: Eurth
+**Last updated:** 2026-10-12 · Spec: `docs/specs/2026-10-07-eurth-map-port.md` (Phase 5) · Worked example: Eurth
 ([realms-eurth-onboarding.md](realms-eurth-onboarding.md) §4.7–4.9)
 
 A realm's map in IxWorld is built from its **map pipeline**: one config per realm, kept with the realm
@@ -12,7 +12,7 @@ the panel), never a new script.
 | :-- | :-- |
 | Config schema (client-safe zod) | `src/lib/maps/realm-map-pipeline.ts` (art: `realm-map-art.ts`, physical layers: `import/realm-layer-config.ts`) |
 | Presets | `src/lib/realms/sources/presets/*.json`, key `mapPipeline` (schema: `presets/index.ts`) |
-| Steps | `src/server/modules/maps/realm-map-pipeline.{repair,physical,rasters,steps}.ts` |
+| Steps | `src/server/modules/maps/realm-map-pipeline.{repair,physical,rasters,relief,steps}.ts` (relief: `realm-relief.ts`) |
 | Job | `src/server/modules/maps/realm-map-pipeline.job.ts`, in the map import queue (`map-import.jobs.ts`) |
 | Panel API | `realms.mapPipeline.*` (`src/server/api/routers/realms/map-pipeline.ts`, logic `realm-map-pipeline.config.ts`) |
 | CLI | `scripts/realms/build-realm-map.ts` (and the per-step wrappers, `scripts/realms/realm-map-cli.ts`) |
@@ -92,6 +92,7 @@ A run takes any of the steps, always in this order. A dry run writes nothing and
 | `repair` | Political borders made valid, overlaps given to one side, smoothed with `coverage` (see §4) | `map_layers` (with a rollback snapshot, `MapImport`), areas, adjacency |
 | `physical` | Traces altitudes, lakes, climate, ice and rivers from the art; compares them with the stored features (as the writer would store them, coordinates equal within 1e-9°) | Replaces those layer types as one map import (rollback snapshot), `settings.map.climateKey`, areas |
 | `rasters` | Builds each raster layer's tiles (`MAP_RASTER_DIR/<realm>/<layer>/<version>/`); the version is a hash of the art and options | Tiles, `settings.map.rasterLayers`; versions other than the new and the previous one removed. Layers the pipeline does not list are kept |
+| `relief` | Builds the hillshade raster layer `relief` from the realm's stored altitude bands (2048×1024 heights, fractal detail, light from the northwest at 45°; tiles z0 to 5 in lossy WebP, fully transparent tiles skipped); the version is a hash of the picture. Needs no stored pipeline (Ixnay and Eurth have none); a realm with no altitude bands reports `skipped`. A generated world's relief is built from the world's cells by the `world` job instead ([maps.md](maps.md#relief-hillshade)) | Tiles under `MAP_RASTER_DIR/<realm>/relief/<version>/`, the `relief` entry of `settings.map.rasterLayers` (the id is reserved: a pipeline raster layer cannot use it); the new and the previous version kept |
 | `labels` | The label list against the realm's labels | `MapLabel` rows (created or updated; others kept) |
 | `flags` | Resolves every non-local flag and arms file on its wiki | `public/flags/<realm>--<country>[--arms].<ext>`, `metadata.json`, `Country.flag/coatOfArms`; a file the wiki confirms missing is cleared |
 | `defaultView` | `"auto"` centre (above) against the saved view | `settings.map.defaultView` |
@@ -134,8 +135,9 @@ Ixnay stays with site admins; an archived realm is read-only).
 The panel (`src/app/admin/realms/_components/map-pipeline/`, `MapPipelinePanel`; the Manage tab shows it as
 **Map pipeline**) edits the whole config as a form and saves it as one validated config:
 
-- **No pipeline yet**: one line, then **Load preset** (the presets that carry a map pipeline) or **Start from scratch**.
-  A stored config that no longer parses is shown with its reason; loading a preset or saving replaces it.
+- **No pipeline yet**: one line, then **Load preset** (the presets that carry a map pipeline) or **Start from scratch**,
+  and a **Run** section with the Relief step alone. A stored config that no longer parses is shown with its reason;
+  loading a preset or saving replaces it.
 - **Preset**: Load preset fills the empty fields; **Replace everything** (force) asks first, as does loading over
   unsaved edits.
 - **Art files**: name, repository path or upload (through the map import upload route), and which steps read it.
@@ -173,6 +175,7 @@ bun scripts/realms/build-realm-map.ts --realm <slug>                      # dry 
 bun scripts/realms/build-realm-map.ts --realm <slug> --preset <id>        # load a preset first (empty fields; --force: all)
 bun scripts/realms/build-realm-map.ts --realm <slug> --steps repair,defaultView,areas --apply
 bun scripts/realms/build-realm-map.ts --realm <slug> --source <checkout>  # read repository art from a local checkout
+bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief --apply  # hillshade from the altitude bands; no pipeline config needed
 ```
 
 It runs the same job in process (under the realm's lease, recorded in the run history as `script:build-realm-map`)
@@ -182,7 +185,7 @@ and prints each step's report. The per-step scripts are the same CLI with one st
 
 ### The job
 
-A `MapImportJob` of kind `map-pipeline`, options `{ steps, dryRun }`, in the map import queue: one job of a realm at a
+A `MapImportJob` of kind `map-pipeline`, options `{ steps, dryRun }` (a run of the `relief` step alone needs no stored pipeline), in the map import queue: one job of a realm at a
 time under the lease `map-import:<realmId>` (30 minutes), a running job silent for 10 minutes marked failed (a
 restart), cancel honoured at the next progress report. When the `map-import` cron job runs (`CRON_ENABLED_JOBS`), it
 takes pipeline runs, applied ones included; the web process then never runs them. Without it the web process runs the

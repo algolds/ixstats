@@ -1,22 +1,22 @@
 # 🗺️ Atlas — Spatial Geography & Cartographic Studio
 
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-12
 
 **Parent App Suite:** Atlas (app version 3 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer  
 **Primary Action:** `MAP` | **Domain Accent:** Sky Blue (`#0EA5E9` / `--color-blue-500`)  
-**Routes:** `/maps` (players edit their own nation in place), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map ✅ Live; map editor, pipeline and worldgen 🟡 Partial or 🧪 Labs)  
+**Routes:** `/maps` (players edit their own nation in place; `?realm=<slug>&editor=world` opens the World tab), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor; `?sandbox=1` is the World tab alone), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map and worldgen ✅ Live; map editor and pipeline 🟡 Partial)  
 
 Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.
 
 ### Core Foundation: "Geography is King"
 In IxStates, geography is the source of truth for borders, area and adjacency. Its reach into the economy is narrower than the aspiration:
 - **Topological Ground Truth**: Live neighbour queries use PostGIS spatial geometry (`ST_Touches`, `ST_Intersection`; `geo/core/geo-profile.ts`, `national-issues/neighbors.ts`). The stored `MapLayer.neighbors` column is rebuilt from PostGIS after every map import that carries political regions (the realm map import, its rollback and `importPipelineResult`, so imported realms get neighbours too) and by the admin `rebuildAdjacency` mutation (`lib/maps/adjacency.ts`).
-- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. **Geographic resources** (AT-9): the admin **Recalc** action (`geoCore.recalculateGeoProfiles`) only queues the work and returns `{ queued, lastRunAt }` (the toast says when the job last ran, or that no run is recorded): the `geo-profiles` cron job (`geo/core/profile-job.ts`; add it to `CRON_ENABLED_JOBS`, every 5 minutes, one country at a time) recomputes each stale or missing profile and also rewrites the country's `GeographicResource` rows from PostGIS (`src/lib/maps/geographic-resources.ts`): freshwater for its three longest rivers and three largest lakes inside the border, a fishery on the coast (the border not shared with a neighbour) when `coastlineKm > 0`, and farmland weighted by each clipped climate zone's agriculture factor. `quantity` is the measured size on a fixed scale (1000 km of river, 1000 km² of lake, 2000 km of coast, the arable share); only farmland gets a `quality` (its mean agriculture factor), so the Geography tab shows quality for farmland only. There is no geology data, so no mineral, oil, gas or forest resources are written. Like the profiles, they are display only. The Labs pipeline (`/labs/map-pipeline`) still shows sample profiles and resources (labelled as such): a generated world has no `Country` rows to attach real values to.
+- **Climate & Biomes**: The bbox-estimated geo profile derives `CountryGeoProfile.gdpModifier`, `tradeModifier` and `infraCostModifier` (`computeEconomicGeoModifiers`, `src/lib/maps/geo-analytics.ts`). These are written and displayed only (`GeoProfileContent.tsx`); no economy code reads them. The simulation's geographic inputs are `landArea`, transport effects (`transport-sync.ts`), the national-issues snapshot (landlocked, coastline) and the bottom-up rollup. **Geographic resources** (AT-9): the admin **Recalc** action (`geoCore.recalculateGeoProfiles`) only queues the work and returns `{ queued, lastRunAt }` (the toast says when the job last ran, or that no run is recorded): the `geo-profiles` cron job (`geo/core/profile-job.ts`; add it to `CRON_ENABLED_JOBS`, every 5 minutes, one country at a time) recomputes each stale or missing profile and also rewrites the country's `GeographicResource` rows from PostGIS (`src/lib/maps/geographic-resources.ts`): freshwater for its three longest rivers and three largest lakes inside the border, a fishery on the coast (the border not shared with a neighbour) when `coastlineKm > 0`, and farmland weighted by each clipped climate zone's agriculture factor. `quantity` is the measured size on a fixed scale (1000 km of river, 1000 km² of lake, 2000 km of coast, the arable share); only farmland gets a `quality` (its mean agriculture factor), so the Geography tab shows quality for farmland only. There is no geology data, so no mineral, oil, gas or forest resources are written. Like the profiles, they are display only. The Labs pipeline that showed sample profiles and resources is gone: a generated world's nation slots are ordinary `Country` rows with a border, so the same job covers them once they exist.
 - **Dual Pipeline Architecture**: The Atlas Engine unifies two distinct cartographic streams under one high-performance WebGL renderer:
   1. **Grounded Manual IxEarth Pipeline**: Exact affine transformation ($25625 \times 15729$ viewBox $\to$ WGS84 coordinates), manual hypsometric contour stacking, topological seam-locking, and 12 Trewartha climate biomes.
-  2. **Procedural UPG v2 Vector Pipeline**: ~100,000-seed Voronoi spatial mesh (`WorldGraph`; ~69,000 cells after latitude thinning), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
+  2. **Procedural UPG v2 Vector Pipeline**: ~100,000-seed Voronoi spatial mesh (`WorldGraph`; 66,626 cells after latitude thinning), 5 Lloyd iterations, coastal hypsometric damping, and Catmull-Rom spline vector subdivision (2 passes for polygons, 3 for rivers).
 
 ---
 
@@ -45,13 +45,28 @@ Raw map graphics (SVG vector files or PNG raster maps) undergo a multi-pass pars
 
 The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/lib/worldgen/v2/`) generates high-resolution, scientifically accurate fictional world maps:
 
-1. **~69,000-Cell Spatial Mesh**: Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations. Seeds are thinned by `cos(latitude)` density (`mesh.ts`), so every seed measured gave about 69,000 cells, not 100,000.
+1. **66,626-Cell Spatial Mesh**: Voronoi mesh (`WorldGraph`) with 5 Lloyd relaxation iterations. Seeds are thinned by `cos(latitude)` density (`mesh.ts`), so every seed gives 66,626 cells at the default size, not 100,000. A `MeshCache` reuses the mesh while seed, cell count and relaxation stay the same.
 2. **Tectonic Plate Simulation**: Continental/oceanic crust assignment, 2-D linear plate velocity vectors (`tectonics.ts`; no Euler poles), and convergent/divergent/transform boundary classification.
 3. **Coastal Hypsometric Damping**: Exponentially dampens coastal land elevation within 8 cells of water (`coastDist <= 8`, `coastlines.ts`), preventing glacial peaks on shorelines:
    $$H_{\text{final}} = H_{\text{raw}} \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}})$$
 4. **Unified Hydrology & Biomes**: Coriolis wind simulation, rain shadow calculation, priority-queue depression filling, steepest-descent river tracing, and 12 Trewartha climate biomes.
 5. **Vector Synthesis & Export (`export.ts`)**: Merges cell polygons into rings, then Douglas-Peucker decimation → Catmull-Rom spline subdivision ($\tau = 0.5$; 2 passes for polygons, 3 for river lines) → harmonic noise perturbation, across all 7 vector layers with shared topology inside the generator. After import the layers are independent rows and `SharedVertex` is not read back.
-6. **Status:** Labs only (`/labs/map-pipeline`). Nothing is persisted; the procedural import does not yet produce `Country`, `City` or `Subdivision` rows, and generation runs synchronously on the main Node process (3-28 s). Capital count is fixed at 80 (`politics.ts`); the `countryCountRange`, `useIxWorldTemplate`, `templateStrength`, `climateFidelity` and `languageFamilies` params are accepted and ignored. Worldgen biomes never reach the database, so the 12 Trewartha biomes drive agriculture only in the bbox-estimated profile.
+6. **Status:** Live as the World tab of the world editor (below). The engine runs in a browser Web Worker, never on a web request. `countryCountRange` sets the nation count (its middle, capped by the land available); capital and town counts follow from it. Worldgen biomes are not stored per cell: the 12 Trewartha biomes reach the database as the `climate` layer, and the bbox-estimated profile still derives agriculture from the layers. Engine internals, generate to fit and the derived baseline: [`src/lib/worldgen/README.md`](../../src/lib/worldgen/README.md).
+
+### World generation (the World tab, Atlas Release A)
+
+- **Who and where.** The realm's founder and officers with the `map` power (`canEditRealmMap`; site admins too) on any realm except Ixnay, not archived: **World** tab of the world editor, opened from `/maps?realm=<slug>&editor=world` (Manage → Map links to it, `src/lib/maps/realm-world-editor.ts`). `/admin/maps/editor?sandbox=1` is the same tab with no realm: it applies nothing and reads the generated world against the Ixnay and Eurth reference figures (land share, 9 zones, climate groups).
+- **Controls.** Source: a preset (Earth-like, Ixnay, Eurth) or **This realm's map** (enabled once the realm has a political layer: the worker rasterises its layers into a land mask and generates the physical layers around its coast, optionally keeping its borders). Seed with reroll; continents, land share, nations, warmer or colder, wetter or drier, development level (developing, industrial, modern); **Advanced**: latitude band, size spread, islands, polar caps, hypsometry, rivers, lakes, coast complexity. Live stats: land share, continents, climate mix, slot count, baseline range.
+- **Preview.** The worker returns the layers as JSON strings; the main thread draws them as draft sources under the live layers (which are hidden while the draft shows; "Draft" appears in the status bar) with the hillshade as an image source. The recipe (seed and controls) is kept in browser storage per realm and regenerates on reopening; nothing is stored on the server.
+- **Apply.** **Use this world** gzips a world bundle (`src/lib/maps/import/world-bundle.ts`: 7 layers, slots with `slotKey` on each political feature, packed cells, seed and params), uploads it to `/api/admin/map-import/upload` (kind `world`; 40 MB route cap, 48 MB of JSON, 200,000 cells, 500 slots) and starts a `world` `MapImportJob` (`world-import*.ts` in `src/server/modules/maps/`): a dry run that lists layers, nations and warnings (hand edits and later imports that the world replaces), then an apply job. The apply guards the person and the lock, locks the realm's generated countries and then the realm row, retires the previous unowned, unclaimed slots, creates the new ones unclaimable, writes the layers through the realm map writer with `slot_<key>` feature keys linked to their countries, saves `Realm.seed` and `Realm.generationParams` (`{ params, engineVersion, developmentLevel, source }`), opens the slots the founder left claimable, then builds the relief. A failure after the slot transaction restores the rollback snapshot (layers, slots, generation record, relief entry). The tab resumes a check or apply that was in flight after a tab switch or reload.
+- **Lock.** Regeneration and apply are refused while any claim on the realm is pending or approved (re-checked inside the apply transaction, so a claim filed mid-job wins). The tab explains this and links to the realm's claims. Rollback is refused once a slot of the world has been claimed.
+- **Nation slots.** `Country.worldgen` marks a country made by the generator; `Country.claimable = false` reserves it (claims, open-nation counts, the nation search and realm listings skip it). A claimed slot starts with its territory and the derived baseline (population from habitable land by climate, GDP per capita from the development level varied up to 25% by geography); the realm's nation-defaults table never overwrites worldgen countries. After the apply, slots are ordinary features and countries: the existing border tools merge, split and reshape them; the Properties inspector renames and recolours them and has a **Claimable** toggle (a slot with an owner cannot be reserved), and **Delete slot** removes an unowned, unclaimed one. Deleting a realm deletes its unowned, unclaimed slots.
+- **Output.** Physical layers and nation slots only: no cities, named rivers or lakes, peaks, labels or provinces.
+- **Procedures.** `geoEditor.mapImport.{start, job, applyWorld, rebuildRelief, rollback}` (`world` kind) and `realms.map.{worldStatus, worldSlot, setSlotClaimable, deleteSlot}`.
+
+### Relief (hillshade)
+
+The raster layer `relief` (kind `overlay`: over elevation and climate, under the political fill), built by `src/server/modules/maps/realm-relief.ts` from generator cells (a generated world) or from a realm's stored altitude bands, z0 to 5 in lossy WebP, fully transparent tiles skipped, versioned by a hash of the picture (about 500 to 740 tiles, 3 MB). The `/api/map-rasters` route answers a missing relief tile with one cached transparent tile. It is built after a world apply (a failure leaves the world applied and the tab offers **Rebuild relief**, which reuses the world's own cells), by the `relief` step of the realm map pipeline, or by `bun scripts/realms/build-realm-map.ts --realm <slug> --steps relief --apply`, none of which needs a stored pipeline. A **Relief** row in the editor's Layers panel and the `/maps` layer toggles show it (on by default, off while a painted base map is shown unless chosen). Ixnay's relief comes from its altitude bands; Eurth has no altitude bands stored, so it has none until it gets them.
 
 ---
 
@@ -205,6 +220,7 @@ self-hosted glyphs have no oblique face, so labels are drawn upright.
   every realm still reads Ixnay's keys.
 - A few country-id lookups of `MapLayer` (`getCountryGeometry`, the edit queue, province imports) do not filter by
   realm; country ids are unique and cross-realm links are refused (`assertCountryInFeatureRealm`).
+- Eurth relief: Eurth has no altitude bands stored, so its `relief` step reports skipped until it gets them.
 
 ## Realm Map Import Engine
 
@@ -212,7 +228,8 @@ A realm's political map from a file: a flat-colour **PNG/JPEG/WebP**, an **SVG**
 a **GeoJSON** FeatureCollection. Code: `src/lib/maps/import/` (engines, georeferencing, colour keys, name checks),
 `src/server/modules/maps/map-import.*` (jobs, storage, plan and apply, rollback, upload, wiki), router
 `geoEditor.mapImport` (`geo/editor/map-import.ts`), upload route `/api/admin/map-import/upload`, wizard
-`src/app/admin/maps/_components/map-import/`.
+`src/app/admin/maps/_components/map-import/`. A generated world uses the same jobs, upload and rollback as kind `world`
+(see [World generation](#world-generation-the-world-tab-atlas-release-a)); the wizard refuses a world bundle.
 
 **Who:** `canImportRealmMap` (site admins, the founder, officers with the Map power; Ixnay admin-only; archived
 realms refused) for uploads, analyses, dry runs, applies and rollbacks. Quick Update and the layered SVG pipeline stay
@@ -405,6 +422,18 @@ benchmark's jsdom). The benchmark cannot see a browser: a second `/maps` load is
 mouse-up handler over a fake map, not a painted frame. It writes nothing to the database (it counts write statements
 and fails on one) and renders tiles into a temporary folder it removes, never `MAP_TILE_DIR`.
 
+### Release A acceptance (world generator, `bun run perf:atlas`)
+
+The same script measures the world generator in two fresh child processes (`scripts/perf/atlas-bench-worldgen.ts`): the Eurth preset at the default size (66,626 cells), seed 7, under Bun. One run on 2026-10-12:
+
+| Target | Limit | Measured (one run) |
+| :--- | :---: | :--- |
+| `generateWorld`, first generation in a cold process | 1000 ms | 869 ms |
+| `generateWorld`, slider change on the cached mesh (one param changed), median of 5 | 600 ms | 288 ms (276 to 344) |
+| `generateWorld`, reroll to a new seed (new mesh), median of 5 | 900 ms | 584 ms (571 to 623) |
+
+Printed as `INFO` lines, with no limit: the worker's runner (`createWorldRunner`, called directly) end to end per message. First message 1,035 ms (`generateWorld` 841, layer stringify 17, relief preview 66, stats 0.3, buffer copies 0.7, and 110 ms the replayed steps do not account for, the cold start of the code after the generator); slider message 361 ms and reroll message 653 ms (medians of 5), of which the runner's own work after `generateWorld` is about 75 ms. Not seen: the structured clone of the posted result, the main thread's blob URLs and draft sources, and the browser's engine (the worker runs on V8, Bun on JavaScriptCore; in Node 20 the first generation took about 0.97 s). Running only these lines: the benchmark needs the database for the rest, so the whole of `bun run perf:atlas` runs.
+
 ## Map Layers & Stacking Order
 
 MapLibre GL JS renders vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
@@ -485,12 +514,12 @@ Geography serves as the foundational data source across the platform:
 
 - `geo/core/` (`geoCore`) – World map geometry and bundles, country geometry/neighbors, point lookups, geo profiles, overlays, border history, and area/profile recalculation
 - `geo/features/` (`geoFeatures`) – Cities, POIs, subdivisions, story pins and storylines (`getCountryStorylines`, storyline CRUD, add/remove pins), map labels, and named superlatives (`createPeak`, `createNamedRiver`, `createNamedLake`)
-- `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, the map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted) and the realm map import (`mapImport.*`)
+- `geo/editor/` (`geoEditor`) – Border editing mutations, split/merge, linkage, the spatial submission review queue, the layered-SVG and PNG map pipeline (`runPipeline`, `importPipelineResult`, realm-targeted) and the realm map import (`mapImport.*`, including the `world` kind: `applyWorld`, `rebuildRelief`)
 - `geo/admin/` (`geoAdmin`) – SVG uploads, province and city imports (the province and city imports are country-owner procedures, not admin-only)
 - `geo/sovereignty.ts` (`geoSovereignty`), `geo/wiki.ts` (`geoWiki`) – Sovereignty relations; wiki intros/infobox lookups for features
 - `countryGeo.ts` – Geo bundles and compliance, `sampleTerrainAt`, settlement upserts (`upsertCity`, `upsertSubdivision`), rollup mode, and wiki population
 - `transport/` – Friction-based transit corridor generation, route CRUD, travel-time and national mobility queries
-- `realms/` (`realms`) – Realm lookup, nation claims and the claims review queue (see [Realms](../architecture/realms-framework-spec.md)); `realms.map` serves a realm's map display and settings and recomputes its areas ([Realm maps](#realm-maps))
+- `realms/` (`realms`) – Realm lookup, nation claims and the claims review queue (see [Realms](../architecture/realms-framework-spec.md)); `realms.map` serves a realm's map display and settings, recomputes its areas ([Realm maps](#realm-maps)) and runs the World tab's lock status and slot tools (`worldStatus`, `worldSlot`, `setSlotClaimable`, `deleteSlot`)
 
 ---
 

@@ -102,7 +102,7 @@ The registry provides comprehensive coverage across eight platform domains:
 - **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
 - **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum (the forum home), New Thread (`/thinkpages/c/general/new`), and Achievements (`/achievements`).
 - **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
-- **Labs**: Onoma Linguistics (`/labs/onoma`), Vexel Heraldry (`/labs/vexel`), and Map Pipeline (`/labs/map-pipeline`).
+- **Labs**: Onoma Linguistics (`/labs/onoma`) and Vexel Heraldry (`/labs/vexel`).
 - **System**: Theme toggles, audio controls, compact mode, mark-all-read, notifications, settings, changelog, and admin.
 
 A second `CORE_FEATURES` list adds quick shortcuts (Dashboard, Leaderboards, Maps, Card Packs, Reload Data, Notifications, Search).

@@ -78,6 +78,11 @@ Read it end to end once before starting. Every command here is meant to be run b
     `geometry`, a backfill of the countries missing it, and the function `atlas_country_union`
     (`prisma/migrations/20261021120000_atlas_r0/migration.sql`, idempotent). **Apply that file before the new code
     serves a request** (step 5a); the deploy script runs it again after its own push
+  - Atlas Release A (2026-10-22, additive): `Country.worldgen` (default false) and `Country.claimable` (default true),
+    which world generation and the claim flow read (`prisma/migrations/20261022120000_atlas_ra/migration.sql`,
+    idempotent; `db push` adds the same two columns). Apply that file with the Release 0 one (step 5a), and build
+    Ixnay's relief once after the deploy (step 5c). The `procedural_worlds` table stays: the release does not drop
+    `ProceduralWorld`, `WorldTemplate` or `Realm.templateId`
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -289,6 +294,17 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 #   expect: t|0, or t and a count of only countries whose stored outline is invalid (the run printed a WARNING naming each)
 ```
 
+Then the Atlas Release A file the same way: two `ADD COLUMN IF NOT EXISTS` on `"Country"` (`worldgen`, `claimable`).
+`db push` adds them too and the deploy script runs the file after its push, so this too is only for the order, SQL first:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261022120000_atlas_ra/migration.sql
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT count(*) FROM information_schema.columns WHERE table_name = 'Country' AND column_name IN ('worldgen', 'claimable');"
+#   expect: 2
+```
+
 Then run the deploy script — its `db push` is now a no-op:
 
 ```bash
@@ -323,6 +339,24 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 #   expect: 0, or only rows whose GeoJSON is invalid (the run printed a WARNING naming each)
 ```
 
+### 5c. Ixnay's relief (after the deploy script)
+
+Atlas Release A draws a hillshade over the land (the raster layer `relief`). Generated worlds build theirs when they
+are applied; Ixnay's comes from its stored altitude bands and is built once, by hand, on the server itself (the
+command writes to the database it is connected to). It needs no map pipeline config. `MAP_RASTER_DIR` must be the same
+absolute folder for the web app, the IxWorld standalone (maps.ixwiki.com) and the shell that runs the command
+([realm-maps.md](../systems/realm-maps.md#7-production-notes)); a generated world's relief is built by its apply job in
+the web process, so the web app writes there too.
+
+```bash
+cd /ixwiki/public/projects/ixstats
+bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief            # dry run: reports what it would build
+bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief --apply    # about 4 s; 490 tiles, about 3 MB
+#   expect: "Relief [built]"; a second run reports "unchanged"
+```
+
+Eurth has no altitude bands stored, so the same command reports `skipped` for it until it does.
+
 ## 6. Smoke checks (browser)
 
 - `/`, `/dashboard`, `/mycountry`, `/maps` load, and the console shows no errors.
@@ -336,6 +370,9 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 - **Country editor** (`/mycountry/editor`): change a slider, and an amber dot plus "1 change" appear. Undo reverts it.
 - **Vault:** place a bid on a test auction; the balance moves, and cancelling refunds it.
 - **Map editor:** click two points on one river, and the edge follows the river.
+- **Relief:** Ixnay's hillshade shows on `/maps` (the Relief toggle in the layer controls). On a test realm where you are
+  the founder, `/maps?realm=<slug>&editor=world` opens the World tab; generating and rerolling work, and nothing is applied
+  until Use this world.
 
 ## 6b. Serve Eurth (the first outside realm)
 

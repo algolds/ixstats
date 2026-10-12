@@ -107,7 +107,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/explore`, `/countries`, `/feed`, `/leaderboards`.
 
-**Other routes:** `/(forum)/forum` (IxForum), `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/labs/map-pipeline`, `/admin/realms` (Realms admin).
+**Other routes:** `/(forum)/forum` (IxForum), `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/admin/realms` (Realms admin).
 
 **IxWorld (Integrated Product):** `/maps` — world map viewer (standalone at maps.ixwiki.com).
 

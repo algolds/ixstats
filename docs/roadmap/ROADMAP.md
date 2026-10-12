@@ -173,7 +173,7 @@ Replace each with real data, or show an empty state. All S or S–M.
 - ✅ **Passport realm tiles:** real values (AT-4).
 - ✅ **Sports standings form:** computed from the last 5 matches (SL-17).
 - ✅ **LiveDataCard:** empty state instead of a fake GDP series (SL-26).
-- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Persisted countries get real `GeographicResource` rows from PostGIS rivers, lakes, coast and climate (AT-9, 2026-10-05); real Labs enrichment stays in M7, once generated worlds are persisted.
+- ✅ **Maps:** the "Private Beta" notice is removed (AT-17); the Labs pipeline's placeholder enrichment is labelled sample data (AT-9). Persisted countries get real `GeographicResource` rows from PostGIS rivers, lakes, coast and climate (AT-9, 2026-10-05); the Labs pipeline itself was removed with Atlas Release A (M3 item 13), so there is no Labs enrichment left to build.
 
 ### M2.3 Settings that do nothing: wire or hide
 ✅ **Done (2026-10-05)**, each wired or hidden:
@@ -225,7 +225,7 @@ shipped system.
 | 10 | Per-realm ThinkPages feed plus a global-feed setting. **Partial (#49):** a realm filter on the ThinkPages feed and realm boards; the dashboard feed and trending are not realm-scoped | PF§4 | M |
 | 11 | WikiOS portal to every realm's lore; realm-tagged forum | PF§4 | M |
 | 12 | ✅ **Done (2026-10-07):** per-realm in-world date label (`Realm.settings.inWorldDate`), plus community links and realm rules accepted before claiming ([design](../specs/2026-10-05-realm-regions-design.md)) | PF§4 | S–M |
-| 13 | Procedural realm generation: wizard option plus `Realm.seed` / `generationParams` writes (the pipeline already supports it) | AT-15, PF§4 | M |
+| 13 | ✅ **Done (2026-10-12, Atlas Release A, [design](../specs/2026-10-11-atlas-release-a-world-creation-design.md)):** realm world generation. A founder or `map` officer generates a world in the editor's World tab (a preset, or their own map with the missing layers generated to fit), previews and rerolls it in a Web Worker, and applies it through a `world` map import job: physical layers, claimable nation slots with a derived baseline, hillshade relief, and `Realm.seed` / `generationParams` written. Regeneration is blocked while a claim is pending or approved. `/labs/map-pipeline` and the procedural import source are removed. Still open: `WorldTemplate`, `ProceduralWorld` and `Realm.templateId` are kept for the owner to drop (AT-15), and Eurth has no relief until it gets altitude bands | AT-9, AT-15, PF§4 | M |
 | 14 | ✅ **Done (2026-10-05):** PNG realms get adjacency (`rebuildAdjacency` after import) | AT-16 | S |
 | 15 | ✅ **Done (2026-10-05):** Admin Realm Users tab supports several realms per user | AT-19 | S |
 | 16 | ✅ **Done (2026-10-05):** NationStates-style realm pages: banner and stats strip, factbook, founder and officers with powers, embassies with cross-posting, realm poll, census, happenings, board mutes and bans, Manage tab, leaving a realm, directory tags, search and sort ([design](../specs/2026-10-05-realm-regions-design.md)) | — | L |
@@ -334,7 +334,7 @@ the spine.
 | MyLeague / MyClub | Boxing bout engine; ✅ rivalries created from match results (SL-16, 2026-10-05); Golden Box stage config and double elimination; patron-saint MyClub UI; promotion/relegation bulletin; broadcast mode, athlete cards, scouting/academy | PF§3–4 |
 | Onoma | ✅ Publish path for language packs (SL-18, 2026-10-05) → phases 4, 5, 8, 9 finished → phases 6, 10 (LLM) → platform integration (toponyms, demonyms, dynasties) | [onoma-roadmap.md](../systems/onoma-roadmap.md) |
 | Vexel | External ornaments, Commons charge seed, attribution, autosave, `[id]/preview`, P1 templates and conflicts | [Vexel PRD](../specs/2026-07-15-vexel-prd.md) |
-| Map pipeline | Real enrichment for the Labs pipeline (AT-9; persisted countries' resources are real since 2026-10-05). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
+| Map pipeline | Persisted countries' resources are real since 2026-10-05 (AT-9); the Labs pipeline is removed (Atlas Release A). Storylines (AT-14) are done (2026-10-05): the editor Stories tab creates them and the map shows their timeline. SmartPlacement and coast snapping (AT-11) are wired. The editor Wiki tab (AT-10) is wired | [backlog](backlog.md#atlas-realms--identity-at) |
 | Strata, Dynas | Not started; scope first | — |
 
 ---
