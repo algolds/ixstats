@@ -7,7 +7,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Feature, Geometry } from "geojson";
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
-import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
+import { parseRealmMapSettings, type RealmMapSettings } from "~/lib/maps/realm-map-settings";
 import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
 import type { LayerFeatures } from "~/lib/worldgen/land-mask";
 import { measureWorld, type MeasureLayers, type WorldMeasures } from "~/lib/worldgen/measure-world";
@@ -40,31 +40,35 @@ const inFlight = new Map<string, Promise<RealmMeasures>>();
 
 /** Measure a realm by id or slug. Never throws for a missing realm or an empty map: it says why. */
 export async function measureRealm(db: ReaderDb, realm: string): Promise<RealmMeasures> {
-  const row = await db.realm.findFirst({
-    where: { OR: [{ id: realm }, { slug: realm }] },
-    select: { id: true, slug: true, name: true, mapVersion: true, settings: true },
-  });
+  const select = { id: true, slug: true, name: true, mapVersion: true, settings: true } as const;
+  // An id wins over a slug that spells the same
+  const row =
+    (await db.realm.findUnique({ where: { id: realm }, select })) ??
+    (await db.realm.findFirst({ where: { slug: realm }, select }));
   if (!row) return { ok: false, reason: "There is no realm with that id or slug." };
 
-  const key = `${row.id}:${row.mapVersion}`;
+  // The settings are part of the key: a radius or climate key can change without a map write
+  const settings = parseRealmMapSettings(row.settings);
+  const key = `${row.id}:${row.mapVersion}:${JSON.stringify([settings.radiusKm, settings.climateKey])}`;
   const cached = cache.get(key);
   if (cached) return cached;
   const running = inFlight.get(key);
   if (running) return running;
 
-  const job = readAndMeasure(db, row).finally(() => inFlight.delete(key));
+  const job = readAndMeasure(db, row, settings, key).finally(() => inFlight.delete(key));
   inFlight.set(key, job);
   return job;
 }
 
 async function readAndMeasure(
   db: ReaderDb,
-  row: { id: string; slug: string; name: string; mapVersion: number; settings: unknown }
+  row: { id: string; slug: string; name: string; mapVersion: number },
+  settings: RealmMapSettings,
+  key: string
 ): Promise<RealmMeasures> {
-  const layers = await loadLayers(db, row.id);
-  if (!layers) return { ok: false, reason: "This realm has no map layers to measure." };
-
-  const settings = parseRealmMapSettings(row.settings);
+  const loaded = await loadLayers(db, row.id);
+  if ("reason" in loaded) return { ok: false, reason: loaded.reason };
+  const { layers } = loaded;
   const measured: MeasuredRealm = {
     ok: true,
     realm: { id: row.id, slug: row.slug, name: row.name },
@@ -74,20 +78,29 @@ async function readAndMeasure(
       ...(settings.climateKey ? { climateKey: settings.climateKey } : {}),
     }),
   };
-  cache.set(`${row.id}:${row.mapVersion}`, measured, ENTRY_BYTES);
+  cache.set(key, measured, ENTRY_BYTES);
   return measured;
 }
 
-/** The realm's active features of the measured layers from `geometry`, or null when it has none at all. */
-async function loadLayers(db: ReaderDb, realmId: string): Promise<MeasureLayers | null> {
+/**
+ * The realm's active features of the measured layers from `geometry`, or why they cannot be measured: none at all,
+ * or more than the read takes (a partial map would measure wrong without saying so).
+ */
+async function loadLayers(
+  db: ReaderDb,
+  realmId: string
+): Promise<{ layers: MeasureLayers } | { reason: string }> {
   const rows = await db.mapLayer.findMany({
     where: { realmId, isActive: true, layerType: { in: [...MEASURED_LAYERS] } },
     select: { layerType: true, geometry: true, properties: true },
     // The order decides which climate feature paints a pixel two of them cover
     orderBy: { featureId: "asc" },
-    take: LAYER_ROW_LIMIT,
+    take: LAYER_ROW_LIMIT + 1,
   });
-  if (rows.length === 0) return null;
+  if (rows.length === 0) return { reason: "This realm has no map layers to measure." };
+  if (rows.length > LAYER_ROW_LIMIT) {
+    return { reason: `This realm's map has more than ${LAYER_ROW_LIMIT} features to measure.` };
+  }
   const layers: Record<string, LayerFeatures> = {};
   for (const layerRow of rows) {
     const collection = (layers[layerRow.layerType] ??= { type: "FeatureCollection", features: [] });
@@ -97,5 +110,5 @@ async function loadLayers(db: ReaderDb, realmId: string): Promise<MeasureLayers 
       geometry: layerRow.geometry as Geometry | null,
     });
   }
-  return layers;
+  return { layers };
 }

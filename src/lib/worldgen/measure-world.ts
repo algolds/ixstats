@@ -66,6 +66,8 @@ export interface WorldMeasures {
     /** 90th percentile nation area in km2 on the planet's radius */
     p90Km2: number;
   };
+  /** Share of the land (0-1, area-weighted) with no climate group: no climate feature there, or one the sampler cannot place (a Koppen zone code the realm's climate key does not describe). `climate` is normalised without it. */
+  unclassifiedShare: number;
   /** Length in km of the land polygons' rings (great-circle edges), less the borders polygons share. */
   coastlineKm: number;
 }
@@ -96,7 +98,7 @@ export function measureWorld(layers: MeasureLayers, options: MeasureOptions = {}
 function sampleGrid(
   mask: LandMask,
   climateGrid: Uint8Array
-): Pick<WorldMeasures, "landShare" | "hypsometry" | "climate"> {
+): Pick<WorldMeasures, "landShare" | "hypsometry" | "climate" | "unclassifiedShare"> {
   const zones = new Array<number>(ZONE_COUNT).fill(0);
   const groups = new Array<number>(TREWARTHA_GROUPS.length).fill(0);
   let total = 0;
@@ -122,6 +124,7 @@ function sampleGrid(
     landShare: total > 0 ? land / total : 0,
     hypsometry: zones.map((weight) => (land > 0 ? weight / land : 0)),
     climate,
+    unclassifiedShare: land > 0 ? Math.max(0, land - classified) / land : 0,
   };
 }
 

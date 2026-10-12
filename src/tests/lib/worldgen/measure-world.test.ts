@@ -58,8 +58,8 @@ describe("measureWorld: land and hypsometry", () => {
       altitudes: layer(feature(polygon(box(0, 0, 10, 20)), { zone: "zone_3" })),
     });
     expect(measures.hypsometry).toHaveLength(9);
-    expect(measures.hypsometry[0]).toBeCloseTo(0.5, 1);
-    expect(measures.hypsometry[3]).toBeCloseTo(0.5, 1);
+    expect(measures.hypsometry[0]).toBeCloseTo(0.5, 10);
+    expect(measures.hypsometry[3]).toBeCloseTo(0.5, 10);
     expect(measures.hypsometry.reduce((sum, share) => sum + share, 0)).toBeCloseTo(1, 6);
   });
 
@@ -77,6 +77,7 @@ describe("measureWorld: land and hypsometry", () => {
       landShare: 0,
       hypsometry: new Array(9).fill(0),
       climate: { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, H: 0 },
+      unclassifiedShare: 0,
       nations: { count: 0, medianKm2: 0, p90Km2: 0 },
       coastlineKm: 0,
     });
@@ -94,8 +95,8 @@ describe("measureWorld: climate", () => {
     const west = feature(polygon(box(0, 0, 20, 40)), { code: "Cs" });
     const east = feature(polygon(box(20, 0, 40, 40)), { biomeId: 0 });
     const { climate } = measureWorld(halves(west, east));
-    expect(climate.C).toBeCloseTo(0.5, 1);
-    expect(climate.A).toBeCloseTo(0.5, 1);
+    expect(climate.C).toBeCloseTo(0.5, 10);
+    expect(climate.A).toBeCloseTo(0.5, 10);
     expect(climate.B).toBe(0);
   });
 
@@ -141,8 +142,8 @@ describe("measureWorld: climate", () => {
       ),
       { climateKey }
     );
-    expect(trewartha.climate.D).toBeCloseTo(0.5, 1);
-    expect(trewartha.climate.B).toBeCloseTo(0.5, 1);
+    expect(trewartha.climate.D).toBeCloseTo(0.5, 10);
+    expect(trewartha.climate.B).toBeCloseTo(0.5, 10);
     for (const other of [koppenCodes, koppenKey, koppenByColour]) {
       expect(other.climate).toEqual(trewartha.climate);
     }
@@ -155,8 +156,8 @@ describe("measureWorld: climate", () => {
         feature(polygon(box(20, 0, 40, 40)), { code: "ET" })
       )
     );
-    expect(climate.D + climate.E).toBeCloseTo(0.5, 1);
-    expect(climate.F).toBeCloseTo(0.5, 1);
+    expect(climate.D + climate.E).toBeCloseTo(0.5, 10);
+    expect(climate.F).toBeCloseTo(0.5, 10);
   });
 
   it("shares only the classified land and ignores climate over the sea", () => {
@@ -169,6 +170,25 @@ describe("measureWorld: climate", () => {
     });
     expect(climate.E).toBeCloseTo(1, 6);
     expect(climate.A).toBe(0);
+  });
+
+  it("counts land whose climate it cannot place as unclassified, not as missing", () => {
+    const koppenWithoutKey = measureWorld({
+      political: land,
+      climate: layer(
+        feature(polygon(box(0, 0, 20, 40)), { climateId: "7" }),
+        feature(polygon(box(20, 0, 40, 40)), { code: "Dfc" })
+      ),
+    });
+    // half the land is a zone code the realm never described: the other half is all there is to share
+    expect(koppenWithoutKey.unclassifiedShare).toBeCloseTo(0.5, 10);
+    expect(koppenWithoutKey.climate.D + koppenWithoutKey.climate.E).toBeCloseTo(1, 10);
+    expect(measureWorld({ political: land }).unclassifiedShare).toBe(1);
+    const classified = measureWorld({
+      political: land,
+      climate: layer(feature(polygon(box(0, 0, 40, 40)), { code: "E" })),
+    });
+    expect(classified.unclassifiedShare).toBeCloseTo(0, 10);
   });
 
   it("keeps every group as a key", () => {
@@ -265,6 +285,32 @@ describe("measureWorld: coastline", () => {
       ),
     });
     expect(line.coastlineKm).toBe(0);
+  });
+
+  it("counts nothing for the edges of a polar ring that run along the pole", () => {
+    const cap = (poleVertices: Position[]) =>
+      measureWorld({
+        political: layer(
+          feature(
+            polygon([
+              [-180, 80],
+              [0, 80],
+              [180, 80],
+              [180, 90],
+              ...poleVertices,
+              [-180, 90],
+              [-180, 80],
+            ])
+          )
+        ),
+      }).coastlineKm;
+    expect(
+      cap([
+        [90, 90],
+        [0, 90],
+        [-90, 90],
+      ])
+    ).toBeCloseTo(cap([]), 6);
   });
 });
 

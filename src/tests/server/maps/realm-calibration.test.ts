@@ -157,6 +157,34 @@ describe("measureRealm", () => {
     expect(db.mapLayer.findMany).toHaveBeenCalledTimes(1);
   });
 
+  it("prefers a realm whose id is the name when another realm's slug is the same", async () => {
+    const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
+    db.realm.rows.unshift({ id: "other", slug: id, name: "Other", mapVersion: 1, settings: null });
+    const result = await measureRealm(db, id);
+    if (!result.ok) throw new Error("expected a measurement");
+    expect(result.realm.id).toBe(id);
+  });
+
+  it("measures again when the planet radius or the climate key changes without a map write", async () => {
+    const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
+    const before = await measureRealm(db, id);
+    db.realm.rows[0].settings = { map: { radiusKm: 6371 / 2 } };
+    const after = await measureRealm(db, id);
+    if (!before.ok || !after.ok) throw new Error("expected a measurement");
+    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
+    expect(after.measures.nations.medianKm2).toBeCloseTo(before.measures.nations.medianKm2 / 4, -2);
+  });
+
+  it("refuses to measure a partial map when the realm holds more rows than it reads", async () => {
+    const { db, id } = seed([{ layerType: "political", geometry: polygon(box(0, 0, 10, 10)) }]);
+    const rows = db.mapLayer.rows.slice();
+    db.mapLayer.findMany.mockImplementationOnce(async ({ take }: { take: number }) =>
+      Array.from({ length: take }, (_, i) => ({ ...rows[0], featureId: `f${i}` }))
+    );
+    const result = await measureRealm(db, id);
+    expect(result).toEqual({ ok: false, reason: expect.stringMatching(/too many|more than/i) });
+  });
+
   it("gives a reason, not a throw, for a realm with no layers or no such realm", async () => {
     const { db, id } = seed([]);
     const empty = await measureRealm(db, id);

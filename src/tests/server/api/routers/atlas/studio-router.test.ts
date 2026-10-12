@@ -32,6 +32,9 @@ describe("atlas.studio.realmMeasures", () => {
   });
 
   it("refuses everyone else", async () => {
-    await expect(caller(founder).realmMeasures({ realm: "empty" })).rejects.toThrow();
+    await expect(caller(founder).realmMeasures({ realm: "empty" })).rejects.toMatchObject({
+      // the middleware throws an AppError, which the caller wraps
+      cause: { code: "FORBIDDEN" },
+    });
   });
 });
