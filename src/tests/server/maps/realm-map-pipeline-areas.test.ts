@@ -38,10 +38,10 @@ const TRACED: LayerEngineResult = {
   height: 2,
   log: [],
   layers: {
-    land: [
+    altitudes: [
       {
-        key: "land-1",
-        name: "Land",
+        key: "altitudes-1",
+        name: "Lowland",
         properties: {},
         geometry: {
           type: "Polygon",
