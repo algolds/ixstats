@@ -24,7 +24,6 @@ import {
   getMapImportJob,
   listMapImportJobs,
   previewMapImport,
-  rebuildWorldRelief,
   startMapImport,
   startMapImportApply,
   startWorldApply,
@@ -38,6 +37,7 @@ import {
 } from "~/server/modules/maps/map-import.realm";
 import { isUploadId } from "~/server/modules/maps/map-import.storage";
 import { startWikiMapImport } from "~/server/modules/maps/map-import.wiki";
+import { rebuildWorldRelief } from "~/server/modules/maps/world-import";
 import { assertWorldImportAllowed } from "~/server/modules/maps/world-import.guards";
 
 function importError(error: unknown): never {
@@ -153,7 +153,7 @@ export const geoEditorMapImportRouter = createTRPCRouter({
     rebuildRelief: rateLimitedMutationProcedure
       .input(z.object({ realmId: id }))
       .mutation(({ ctx, input }) =>
-        rebuildWorldRelief(ctx.db, ctx.user, input.realmId, { db: ctx.db }).catch(importError)
+        rebuildWorldRelief(ctx.db, ctx.user, input.realmId).catch(importError)
       ),
 
     /** The lon/lat box an image of this size covers under a georeference (the wizard's preview). */

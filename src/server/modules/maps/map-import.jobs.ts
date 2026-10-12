@@ -43,6 +43,8 @@ import {
 import {
   findImportRealm,
   loadImportRealm,
+  MAP_IMPORT_LOCK_MS,
+  mapImportLockName,
   MapImportError,
   realmNations,
   saveRealmGeoreference,
@@ -63,17 +65,14 @@ import {
 } from "./realm-map-pipeline.job";
 import { assertWorldImportAllowed } from "./world-import.guards";
 import {
-  rebuildRealmRelief,
   runWorldJob,
-  type ReliefRebuild,
   type WorldApplySummary,
   type WorldDryRunSummary,
   type WorldImportDeps,
 } from "./world-import";
 
-export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
+export { MAP_IMPORT_LOCK_MS, mapImportLockName };
 export const STALE_AFTER_MS = 10 * 60_000;
-export const mapImportLockName = (realmId: string) => `map-import:${realmId}`;
 const PROGRESS_INTERVAL_MS = 750;
 
 export interface AnalyseSummary {
@@ -243,32 +242,6 @@ export async function startWorldApply(
   });
   if (deps.kick !== false) kickMapImports(db, deps);
   return job.id;
-}
-
-/**
- * Build a realm's relief again (the World tab's "Rebuild relief"), under the realm's job lease so it never overlaps
- * an import. The same people as the apply, without the claim lock: relief leaves the nations alone.
- */
-export async function rebuildWorldRelief(
-  db: PrismaClient,
-  actor: RealmActor,
-  realmId: string,
-  deps: MapImportDeps = {}
-): Promise<ReliefRebuild> {
-  await assertWorldImportAllowed(db, actor, realmId, { claims: false });
-  const outcome = await withJobLock(
-    db,
-    mapImportLockName(realmId),
-    () => rebuildRealmRelief(db, realmId, deps.world),
-    { timeoutMs: MAP_IMPORT_LOCK_MS }
-  );
-  if (!outcome.ran) {
-    throw new MapImportError(
-      "CONFLICT",
-      "Another import of this realm is running. Try again when it has finished"
-    );
-  }
-  return outcome.result;
 }
 
 export interface MapImportJobView {
@@ -512,16 +485,30 @@ function runJob(
 
 /** Mark running jobs that stopped reporting (a restarted process) as failed. Returns how many. */
 export async function recoverStaleMapImports(db: PrismaClient, now = new Date()): Promise<number> {
-  const { count } = await db.mapImportJob.updateMany({
-    where: { status: "running", heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) } },
+  const stale = {
+    status: "running",
+    heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) },
+  };
+  const stopped = { status: "failed", finishedAt: now };
+  // A world apply that stopped may have retired and created slots with no snapshot recorded to roll back to: the
+  // apply itself heals that (it retires the slots a run left unopened and writes again)
+  const world = await db.mapImportJob.updateMany({
+    where: { ...stale, kind: "world", dryRun: false },
     data: {
-      status: "failed",
+      ...stopped,
       error:
-        "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
-      finishedAt: now,
+        "The import stopped (the server restarted?). Apply the world again: it replaces whatever the interrupted run wrote.",
     },
   });
-  return count;
+  const { count } = await db.mapImportJob.updateMany({
+    where: stale,
+    data: {
+      ...stopped,
+      error:
+        "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
+    },
+  });
+  return world.count + count;
 }
 
 /**

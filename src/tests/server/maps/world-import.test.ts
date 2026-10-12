@@ -10,29 +10,25 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { decodeCells } from "~/lib/maps/import/world-bundle";
 import { isPostGISAvailable } from "~/lib/maps/geo-validation";
-import { rollbackMapImport } from "~/server/modules/maps/map-import.history";
 import { findImportRealm, MapImportError } from "~/server/modules/maps/map-import.realm";
-import {
-  applyWorld,
-  rebuildRealmRelief,
-  runWorldDryRun,
-  type ReliefRunner,
-} from "~/server/modules/maps/world-import";
+import { applyWorld, runWorldDryRun } from "~/server/modules/maps/world-import";
 import { prepareWorld } from "~/server/modules/maps/world-import.prepare";
 import { dedupeNames } from "~/server/modules/maps/world-import.slots";
-import { admin, fakeDb } from "./map-import-fakes";
+import { fakeDb } from "./map-import-fakes";
 import {
   CELLS,
+  country,
   feature,
   jobFor,
+  layer,
   makeBundle,
+  relief,
   seedRealm,
   slot,
   square,
   stateOf,
-  storeBundle,
+  stored,
   type BundleOptions,
 } from "./world-import-fixtures";
 
@@ -45,29 +41,6 @@ afterAll(() => {
   rmSync(dir, { recursive: true, force: true });
   delete process.env.MAP_IMPORT_DIR;
 });
-
-const relief = (): jest.MockedFunction<ReliefRunner> =>
-  jest.fn(async () => ({
-    id: "relief",
-    label: "Relief",
-    kind: "overlay" as const,
-    version: "abc123",
-    maxZoom: 5,
-    built: true,
-    tiles: 12,
-    skipped: 3,
-  }));
-
-async function stored(options: BundleOptions = {}) {
-  return storeBundle(makeBundle(options));
-}
-
-const country = (db: ReturnType<typeof fakeDb>, id: string) =>
-  db.country.rows.find((c: { id: string }) => c.id === id);
-const layer = (db: ReturnType<typeof fakeDb>, type: string, key: string) =>
-  db.mapLayer.rows.find(
-    (r: { layerType: string; featureId: string }) => r.layerType === type && r.featureId === key
-  );
 
 describe("dedupeNames", () => {
   it("numbers a name the realm or the bundle already uses, ignoring case and spaces", () => {
@@ -193,7 +166,7 @@ describe("applyWorld", () => {
 
     expect(result).toMatchObject({
       slots: { created: 3, retired: 1, opened: 3 },
-      relief: { status: "built", version: "abc123", tiles: 12, error: null },
+      relief: { status: "built", version: "abc12345", tiles: 12, error: null },
       rollbackAvailable: true,
     });
     expect(result.rejected).toEqual([]);
@@ -354,22 +327,40 @@ describe("a claim racing the apply (Review Focus 1)", () => {
     expect(runRelief).not.toHaveBeenCalled();
   });
 
-  it("locks the realm and its generated countries before it counts the claims again", async () => {
+  it("aborts when the person lost the Map power between the guard and the transaction", async () => {
+    const db = seedRealm();
+    const runRelief = relief();
+    const before = stateOf(db);
+    const transaction = db.$transaction;
+    db.$transaction = jest.fn(async (fn: (tx: unknown) => unknown) => {
+      db.realm.rows[0].ownerId = "someone_else";
+      return transaction(fn);
+    });
+    await expect(
+      applyWorld(db, jobFor(await stored()), undefined, { runRelief })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    db.realm.rows[0].ownerId = "founder_1";
+    expect(stateOf(db)).toBe(before);
+    expect(runRelief).not.toHaveBeenCalled();
+  });
+
+  it("locks the generated countries, then the realm, then counts the claims again", async () => {
     const db = seedRealm();
     await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
     const locks = db.$queryRaw.mock.calls
       .map(([sql]: [TemplateStringsArray]) => sql.join("?"))
       .filter((sql: string) => sql.includes("FOR UPDATE"));
     expect(locks).toHaveLength(2);
-    expect(locks[0]).toContain('"realms"');
-    expect(locks[1]).toContain('"Country"');
-    expect(locks[1]).toContain('"worldgen" = true');
-    const [realmLock, countryLock] = db.$queryRaw.mock.invocationCallOrder;
+    // The order of a claim's own foreign-key checks (Country, then realm): any other order can deadlock with it
+    expect(locks[0]).toContain('"Country"');
+    expect(locks[0]).toContain('"worldgen" = true');
+    expect(locks[1]).toContain('"realms"');
+    const [countryLock, realmLock] = db.$queryRaw.mock.invocationCallOrder;
     // The second count (inside the transaction) comes after both locks
     const counts: number[] = db.realmClaim.count.mock.invocationCallOrder;
     expect(counts).toHaveLength(2);
-    expect(counts[1]).toBeGreaterThan(countryLock!);
-    expect(counts[0]).toBeLessThan(realmLock!);
+    expect(counts[1]).toBeGreaterThan(realmLock!);
+    expect(counts[0]).toBeLessThan(countryLock!);
   });
 });
 
@@ -409,6 +400,17 @@ describe("retiring slots (Review Focus 2)", () => {
       "q_old",
       "q_withdrawn",
     ]);
+  });
+
+  it("keeps a slot a restricting foreign key holds (a blurb response), and does not count it as retired", async () => {
+    const db = seedRealm();
+    db.blurbResponse.rows.push({ id: "b1", countryId: "c_old1" });
+    const job = jobFor(await stored());
+    const diff = await runWorldDryRun(db, job);
+    expect(diff.slots).toMatchObject({ retire: 0, keep: 3 });
+    await applyWorld(db, job, undefined, { runRelief: relief() });
+    expect(country(db, "c_old1")).toBeDefined();
+    expect(db.country.deleteMany.mock.calls[0][0].where.id.in).toEqual([]);
   });
 
   it("leaves another realm's generated countries alone", async () => {
@@ -580,290 +582,5 @@ describe("the dry run's refusals (Review Focus 3)", () => {
       const prepared = await prepareWorld(db, await findImportRealm(db, "r1"), bundle);
       expect(prepared.slots.map((s) => s.areaKm2)).toEqual([49_000]);
     });
-  });
-});
-
-describe("a failure after the slots changed", () => {
-  const original = () => {
-    const db = seedRealm();
-    return { db, before: stateOf(db) };
-  };
-
-  it("restores the previous slots and layers when the import cannot be recorded", async () => {
-    const { db } = original();
-    const runRelief = relief();
-    db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    await expect(applyWorld(db, jobFor(await stored()), undefined, { runRelief })).rejects.toThrow(
-      "disk full"
-    );
-    error.mockRestore();
-
-    // The retired slot is back as it was; the new ones and their borders are gone
-    expect(country(db, "c_old1")).toMatchObject({
-      name: "Old One",
-      slug: "old-one",
-      worldgen: true,
-      baselinePopulation: 500_000,
-      baselineGdpPerCapita: 9_000,
-    });
-    expect(db.country.rows.map((c: { id: string }) => c.id).sort()).toEqual([
-      "c_manual",
-      "c_old1",
-      "c_old2",
-      "c_owned",
-    ]);
-    expect(layer(db, "political", "slot_1")).toBeUndefined();
-    expect(layer(db, "rivers", "1")).toBeUndefined();
-    expect(layer(db, "political", "slot_old")).toMatchObject({
-      isActive: true,
-      countryId: "c_old1",
-    });
-    expect(layer(db, "political", "manual-key")).toMatchObject({ isActive: true });
-    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: true });
-    expect(db.realm.rows[0].seed).toBeNull();
-    expect(runRelief).not.toHaveBeenCalled();
-  });
-
-  it("restores them when the map writer rejects a nation's border", async () => {
-    const { db } = original();
-    const upsert = db.mapLayer.upsert.getMockImplementation()!;
-    let failed = false;
-    db.mapLayer.upsert.mockImplementation(async (args: { create: { layerType: string } }) => {
-      // The first nation border fails (its whole batch is rejected); the restore after it writes as usual
-      if (args.create.layerType === "political" && !failed) {
-        failed = true;
-        throw new Error("connection reset");
-      }
-      return upsert(args);
-    });
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    await expect(applyWorld(db, jobFor(await stored()))).rejects.toThrow(
-      /rejected 3 nation borders \(connection reset\)/
-    );
-    error.mockRestore();
-    expect(country(db, "c_old1")).toBeDefined();
-    expect(db.country.rows).toHaveLength(4);
-    expect(layer(db, "political", "slot_old")).toMatchObject({
-      isActive: true,
-      countryId: "c_old1",
-    });
-    expect(layer(db, "rivers", "1")).toBeUndefined();
-    // the import it recorded is marked as rolled back, so the history does not offer it
-    expect(db.mapImport.rows.every((r: { rolledBackAt: Date | null }) => r.rolledBackAt)).toBe(
-      true
-    );
-  });
-
-  it("never deletes a new slot a player claimed in the meantime, or the claim", async () => {
-    const { db } = original();
-    // The map import cannot be recorded; while the apply is writing, a player files a claim for a new slot
-    db.mapImport.create.mockImplementationOnce(async () => {
-      const made = db.country.rows.find((c: { name: string }) => c.name === "Nation 3");
-      db.realmClaim.rows.push({
-        id: "q_new",
-        realmId: "r1",
-        countryId: made.id,
-        status: "pending",
-      });
-      throw new Error("disk full");
-    });
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    await expect(applyWorld(db, jobFor(await stored()))).rejects.toThrow("disk full");
-    error.mockRestore();
-    expect(db.realmClaim.rows.map((q: { id: string }) => q.id).sort()).toEqual([
-      "q_new",
-      "q_withdrawn",
-    ]);
-    expect(db.country.rows.map((c: { name: string }) => c.name).sort()).toEqual(
-      ["Nation 3", "Nation 2", "Old One", "Old Owned", "Old Two"].sort()
-    );
-  });
-
-  it("says so when the previous map cannot be restored either", async () => {
-    const { db } = original();
-    db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
-    db.country.createMany.mockRejectedValueOnce(new Error("unique constraint"));
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    await expect(applyWorld(db, jobFor(await stored()))).rejects.toThrow(
-      /disk full\. Restoring the previous map also failed \(unique constraint\)/
-    );
-    error.mockRestore();
-  });
-});
-
-describe("rolling a world back", () => {
-  it("removes the new slots and puts the retired ones back", async () => {
-    const db = seedRealm();
-    const applied = await applyWorld(db, jobFor(await stored()), undefined, {
-      runRelief: relief(),
-    });
-    expect(country(db, "c_old1")).toBeUndefined();
-
-    const restored = await rollbackMapImport(db, admin, applied.mapImportId!);
-    expect(restored.slots).toEqual({ restored: 1, removed: 3, kept: 0 });
-    expect(country(db, "c_old1")).toMatchObject({
-      name: "Old One",
-      slug: "old-one",
-      worldgen: true,
-    });
-    expect(db.country.rows).toHaveLength(4);
-    expect(layer(db, "political", "slot_old")).toMatchObject({
-      isActive: true,
-      countryId: "c_old1",
-    });
-    expect(layer(db, "political", "slot_1")).toBeUndefined();
-    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: true });
-  });
-
-  it("refuses once a player has claimed one of the new slots, changing nothing", async () => {
-    const db = seedRealm();
-    const applied = await applyWorld(db, jobFor(await stored()), undefined, {
-      runRelief: relief(),
-    });
-    const made = db.country.rows.find((c: { name: string }) => c.name === "Nation 3");
-    db.realmClaim.rows.push({ id: "q_new", realmId: "r1", countryId: made.id, status: "approved" });
-    const before = stateOf(db);
-    await expect(rollbackMapImport(db, admin, applied.mapImportId!)).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: expect.stringContaining("have been claimed"),
-    });
-    expect(stateOf(db)).toBe(before);
-  });
-});
-
-describe("the realm map source", () => {
-  it("keeps the borders and makes a claimable nation of each region that has none", async () => {
-    const db = seedRealm();
-    const runRelief = relief();
-    const politicalBefore = JSON.stringify(
-      db.mapLayer.rows.filter((r: { layerType: string }) => r.layerType === "political")
-    );
-    // two regions without a nation, drawn by hand
-    db.mapLayer.rows.push(
-      {
-        id: "m_free1",
-        realmId: "r1",
-        layerType: "political",
-        featureId: "Aurelia",
-        displayName: "Aurelia",
-        geometry: square(40),
-        centroid: [41, 1],
-        boundingBox: [40, 0, 42, 2],
-        areaSqKm: 40_000,
-        isActive: true,
-        countryId: null,
-        properties: {},
-        updatedAt: new Date(),
-      },
-      {
-        id: "m_free2",
-        realmId: "r1",
-        layerType: "political",
-        featureId: "Nation 2",
-        displayName: null,
-        geometry: square(50),
-        centroid: null,
-        boundingBox: null,
-        areaSqKm: 30_000,
-        isActive: true,
-        countryId: null,
-        properties: {},
-        updatedAt: new Date(),
-      }
-    );
-    const id = await stored({ source: "realm-map" });
-    const diff = await runWorldDryRun(db, jobFor(id));
-    expect(diff.slots).toMatchObject({ create: 2, retire: 0 });
-    expect(diff.layers.political).toEqual({ create: 0, change: 0, retire: 0 });
-
-    const result = await applyWorld(db, jobFor(id), undefined, { runRelief });
-    expect(result.slots).toEqual({ created: 2, retired: 0, opened: 2 });
-    // all the existing generated countries stay (c_old1 included: the borders are kept, so are their slots)
-    expect(db.country.rows).toHaveLength(6);
-    expect(country(db, "c_old1")).toBeDefined();
-    const aurelia = db.country.rows.find((c: { name: string }) => c.name === "Aurelia");
-    const second = db.country.rows.find((c: { name: string }) => c.name === "Nation 2 (2)");
-    expect(aurelia).toMatchObject({
-      worldgen: true,
-      claimable: true,
-      landArea: 40_000,
-      geometry: square(40),
-    });
-    expect(second).toBeDefined();
-    expect(layer(db, "political", "Aurelia")).toMatchObject({
-      countryId: aurelia.id,
-      isActive: true,
-    });
-    expect(layer(db, "political", "Nation 2")).toMatchObject({ countryId: second.id });
-    // the other political features are exactly as they were, and the physical layers were written
-    expect(
-      JSON.stringify(
-        db.mapLayer.rows.filter(
-          (r: { layerType: string; featureId: string }) =>
-            r.layerType === "political" && !["Aurelia", "Nation 2"].includes(r.featureId)
-        )
-      )
-    ).toBe(politicalBefore);
-    expect(layer(db, "rivers", "1")).toMatchObject({ isActive: true });
-    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: false });
-    expect(db.realm.rows[0]).toMatchObject({ seed: 42, generationParams: { source: "realm-map" } });
-    expect(runRelief).toHaveBeenCalledTimes(1);
-
-    // and a rollback unlinks and removes them again
-    const restored = await rollbackMapImport(db, admin, result.mapImportId!);
-    expect(restored.slots).toMatchObject({ restored: 0, removed: 2 });
-    expect(db.country.rows).toHaveLength(4);
-    expect(layer(db, "political", "Aurelia")).toMatchObject({ countryId: null });
-  });
-});
-
-describe("rebuildRealmRelief", () => {
-  it("builds from the cells of the realm's latest world import", async () => {
-    const db = seedRealm();
-    const uploadId = await stored();
-    await applyWorld(db, jobFor(uploadId), undefined, { runRelief: relief() });
-    db.mapImportJob.rows.push({ id: "j_world", uploadId });
-    const runRelief = relief();
-    const out = await rebuildRealmRelief(db, "r1", { runRelief });
-    expect(out).toEqual({ source: "cells", version: "abc123", built: true, tiles: 12 });
-    const [, , source] = runRelief.mock.calls[0]!;
-    const cells = decodeCells(makeBundle().cells);
-    expect(cells.ok && Array.from(cells.cells)).toEqual(CELLS);
-    expect(Array.from((source as { cells: Float32Array }).cells)).toEqual(CELLS);
-  });
-
-  it("builds from the altitude bands when the map did not come from a world", async () => {
-    const db = seedRealm();
-    const runRelief = relief();
-    const out = await rebuildRealmRelief(db, "r1", { runRelief });
-    expect(out.source).toBe("bands");
-    expect(runRelief.mock.calls[0]![2]).toEqual({ bands: true });
-  });
-
-  it("builds from the bands when a later import replaced the world's altitudes", async () => {
-    const db = seedRealm();
-    await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
-    db.mapImportJob.rows.push({ id: "j_world", uploadId: await stored() });
-    db.mapImport.rows.push({
-      id: "i_png",
-      realmId: "r1",
-      jobId: "j_png",
-      layerTypes: ["altitudes"],
-      mode: "replace",
-      summary: { source: "pipeline" },
-      createdAt: new Date(Date.now() + 60_000),
-      rolledBackAt: null,
-    });
-    const runRelief = relief();
-    expect((await rebuildRealmRelief(db, "r1", { runRelief })).source).toBe("bands");
-  });
-
-  it("builds from the bands when the world's bundle is no longer stored", async () => {
-    const db = seedRealm();
-    await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
-    // no stored job: the bundle cannot be found
-    const runRelief = relief();
-    expect((await rebuildRealmRelief(db, "r1", { runRelief })).source).toBe("bands");
   });
 });

@@ -6,12 +6,14 @@
  * The apply runs in this order (ruling A7), because `writePipelineLayers` opens transactions of its own:
  *
  *   1. guards: the person can edit the realm's map, it is not Ixnay or archived, no claim is pending or approved;
- *   2. the rollback snapshot of the layers is taken, then ONE transaction (world-import.slots.ts) locks the realm's
- *      generated countries, counts the claims again, retires the old unowned and unclaimed slots and creates the new
- *      ones (unclaimable until the map is written);
+ *   2. the rollback snapshot (the layers, and the realm's generation record and relief layer) is taken, then ONE
+ *      transaction (world-import.slots.ts) locks the realm's generated countries and then the realm, checks the guards
+ *      again, retires the old unowned and unclaimed slots and creates the new ones (unclaimable until the map is
+ *      written);
  *   3. the old nation borders are retired and the seven layers written with `slot_<key>` feature keys, each border
  *      linked to its country;
- *   4. the slots the founder left claimable are opened, `Realm.seed` and `generationParams` saved, the map refreshed;
+ *   4. `Realm.seed` and `generationParams` are saved, then the slots the founder left claimable are opened and the map
+ *      refreshed: nothing that can fail runs after the slots open;
  *   5. on any failure after step 2 the snapshot is restored: new slots removed, old ones back, layers as they were;
  *   6. after the commit, the relief tiles are built from the bundle's cells; if that fails the world stays and the
  *      result says the relief step failed (`rebuildRealmRelief` runs it again).
@@ -28,14 +30,22 @@ import {
 import { ImportCancelledError } from "~/lib/maps/import/progress";
 import {
   captureMapSnapshot,
+  captureRealmState,
   restoreMapSnapshot,
   type MapImportSnapshot,
 } from "~/lib/maps/realm-map-snapshot";
 import { deactivateOtherFeatures } from "~/lib/maps/realm-map-writer";
 import { ATLAS_ENGINE_VERSION } from "~/lib/buildVersion";
+import { withJobLock } from "~/lib/system/job-lock";
+import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { refreshRealmMap } from "./map-import.apply";
 import { layerFeatures, pipelineSnapshotScopes, writePipelineLayers } from "./map-import.pipeline";
-import type { ImportRealm } from "./map-import.realm";
+import {
+  MAP_IMPORT_LOCK_MS,
+  mapImportLockName,
+  MapImportError,
+  type ImportRealm,
+} from "./map-import.realm";
 import type { ReliefEntry, ReliefSource } from "./realm-relief";
 import { assertWorldImportAllowed, jobActor } from "./world-import.guards";
 import { loadWorldBundle, prepareWorld, type PreparedWorld } from "./world-import.prepare";
@@ -312,30 +322,59 @@ function nameBorders(prepared: PreparedWorld, created: readonly CreatedNation[])
   };
 }
 
-/** Put the realm back as the snapshot has it, and mark the import it may have recorded as rolled back. */
+/** Run one step of the compensation; the reason it failed (logged), or null when it worked. */
+async function attempt(what: string, run: () => Promise<void>): Promise<string | null> {
+  try {
+    await run();
+    return null;
+  } catch (error) {
+    console.error(`[world-import] ${what} failed:`, error);
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
+/**
+ * Put the realm back as the snapshot has it, mark the import it may have recorded as rolled back, and rethrow `cause`.
+ * The error names the step that failed, and any new nation a player claimed meanwhile, which is kept.
+ */
 async function compensate(
   db: PrismaClient,
   snapshot: MapImportSnapshot,
   jobId: string,
   cause: Error
 ): Promise<never> {
-  const reason = cause.message;
-  try {
-    await restoreMapSnapshot(db, snapshot);
+  let kept = 0;
+  const restoreFailed = await attempt("restoring the previous map", async () => {
+    kept = (await restoreMapSnapshot(db, snapshot)).slots?.kept ?? 0;
+  });
+  if (restoreFailed !== null) {
+    throw new Error(
+      `${cause.message}. Restoring the previous map also failed (${restoreFailed}): ask a site admin to check the realm's nations and map`,
+      { cause }
+    );
+  }
+  const notes: string[] = [];
+  const marked = await attempt("marking the import as rolled back", async () => {
     await db.mapImport.updateMany({
       where: { jobId, rolledBackAt: null },
       data: { rolledBackAt: new Date(), rolledBackBy: "system:world-import" },
     });
+  });
+  const refreshed = await attempt("refreshing the map", async () => {
     await refreshRealmMap(db, snapshot.realmId);
-  } catch (restoreError) {
-    console.error("[world-import] restoring the previous map failed:", restoreError);
-    const why = restoreError instanceof Error ? restoreError.message : String(restoreError);
-    throw new Error(
-      `${reason}. Restoring the previous map also failed (${why}): ask a site admin to check the realm's nations and map`,
-      { cause: restoreError }
+  });
+  const failed = [
+    marked && `marking the import as rolled back failed (${marked})`,
+    refreshed && `refreshing the map failed (${refreshed})`,
+  ].filter((note): note is string => !!note);
+  if (failed.length > 0) notes.push(`The previous map was restored, but ${failed.join(" and ")}`);
+  if (kept > 0) {
+    notes.push(
+      `${kept === 1 ? "1 new nation was" : `${kept} new nations were`} kept because a player has claimed ${kept === 1 ? "it" : "them"}`
     );
   }
-  throw cause;
+  if (notes.length === 0) throw cause;
+  throw new Error(`${cause.message}. ${notes.join(". ")}`, { cause });
 }
 
 async function buildRelief(
@@ -395,7 +434,6 @@ async function writeWorld(
   if (lost.length > 0) {
     throw new Error(`The map writer rejected ${lost.length} nation borders (${lost[0]!.reason})`);
   }
-  const opened = await openSlots(db, step.created);
   await db.realm.update({
     where: { id: realm.id },
     data: {
@@ -408,6 +446,8 @@ async function writeWorld(
       }),
     },
   });
+  // The slots open after the last step that can fail; the refresh that tells viewers swallows its own errors
+  const opened = await openSlots(db, step.created);
   await refreshRealmMap(db, realm.id, { adjacency: false });
   return { written, opened };
 }
@@ -424,11 +464,8 @@ export async function applyWorld(
 ): Promise<WorldApplyResult> {
   progress.write(2, "Reading the world");
   const bundle = await loadWorldBundle(job.uploadId);
-  const realm = await assertWorldImportAllowed(
-    db,
-    await jobActor(db, job.requestedBy),
-    job.realmId
-  );
+  const actor = await jobActor(db, job.requestedBy);
+  const realm = await assertWorldImportAllowed(db, actor, job.realmId);
   progress.write(8, "Checking the world");
   const prepared = await prepareWorld(db, realm, bundle);
   const preset = bundle.source === "preset";
@@ -441,9 +478,11 @@ export async function applyWorld(
     scopes.push({ layerType: "political", keys, wholeLayer: false, countryIds: [] });
   }
   const snapshot = await captureMapSnapshot(db, realm.id, scopes);
+  snapshot.realm = await captureRealmState(db, realm.id);
 
   progress.write(30, "Creating nations");
   const step = await replaceSlots(db, realm, {
+    actor,
     retire: preset,
     slots: preset ? prepared.slots : null,
     level: bundle.params.developmentLevel,
@@ -526,7 +565,7 @@ async function reliefSource(db: PrismaClient, realmId: string): Promise<ReliefSo
 /**
  * Build the realm's relief again: from the cells of its latest world import when the map came from one (and its
  * bundle is still stored), else from its altitude bands. The World tab's "Rebuild relief"; the caller has checked who
- * may (`rebuildWorldRelief` in map-import.jobs.ts).
+ * may (`rebuildWorldRelief`, below).
  */
 export async function rebuildRealmRelief(
   db: PrismaClient,
@@ -541,4 +580,32 @@ export async function rebuildRealmRelief(
     built: entry.built,
     tiles: entry.tiles,
   };
+}
+
+/**
+ * `rebuildRealmRelief` for `actor` (the World tab's "Rebuild relief"), under the realm's job lease so it never
+ * overlaps an import. The same people as the apply, without the claim lock: relief leaves the nations alone.
+ */
+export async function rebuildWorldRelief(
+  db: PrismaClient,
+  actor: RealmActor,
+  realmId: string,
+  deps: WorldImportDeps = {}
+): Promise<ReliefRebuild> {
+  await assertWorldImportAllowed(db, actor, realmId, { claims: false });
+  const outcome = await withJobLock(
+    db,
+    mapImportLockName(realmId),
+    () => rebuildRealmRelief(db, realmId, deps),
+    {
+      timeoutMs: MAP_IMPORT_LOCK_MS,
+    }
+  );
+  if (!outcome.ran) {
+    throw new MapImportError(
+      "CONFLICT",
+      "Another import of this realm is running. Try again when it has finished"
+    );
+  }
+  return outcome.result;
 }

@@ -38,7 +38,7 @@ const MAX_LISTED_PROBLEMS = 12;
 const INT32_MAX = 2_147_483_647;
 
 /** The political feature key of a slot: `slot_<key>`, so a regeneration's features never collide with older ones. */
-export const slotFeatureKey = (key: string) => (key.startsWith("slot_") ? key : `slot_${key}`);
+const slotFeatureKey = (key: string) => (key.startsWith("slot_") ? key : `slot_${key}`);
 
 export interface PreparedSlot {
   slot: WorldBundleSlot;

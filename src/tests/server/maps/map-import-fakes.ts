@@ -105,6 +105,7 @@ export function fakeDb(): any {
     country: table("c"),
     realmPage: table("p"),
     realmClaim: table("q", () => ({ status: "pending", countryId: null })),
+    blurbResponse: table("b"),
     mapLayer: table("m", () => ({
       isActive: true,
       countryId: null,
@@ -142,7 +143,31 @@ export function fakeDb(): any {
       return [{ mapVersion: realm.mapVersion }];
     }),
   };
-  db.$transaction = jest.fn(async (fn: (tx: Row) => unknown) => fn(db));
+  // A country's claims go with it (RealmClaim.country cascades) and its map features lose the link (SetNull)
+  const deleteCountries = db.country.deleteMany.getMockImplementation()!;
+  db.country.deleteMany = jest.fn(async (args: Row) => {
+    const gone = db.country.rows.filter((r: Row) => matches(r, args.where)).map((r: Row) => r.id);
+    const out = await deleteCountries(args);
+    db.realmClaim.rows.splice(
+      0,
+      db.realmClaim.rows.length,
+      ...db.realmClaim.rows.filter((q: Row) => !gone.includes(q.countryId))
+    );
+    for (const feature of db.mapLayer.rows)
+      if (gone.includes(feature.countryId)) feature.countryId = null;
+    return out;
+  });
+  // A transaction that throws changes nothing: every table goes back as it was when it began
+  db.$transaction = jest.fn(async (fn: (tx: Row) => unknown) => {
+    const tables: Row[] = Object.values(db).filter((v: Row) => Array.isArray(v?.rows));
+    const before = tables.map((t) => structuredClone(t.rows));
+    try {
+      return await fn(db);
+    } catch (error) {
+      tables.forEach((t, i) => t.rows.splice(0, t.rows.length, ...before[i]!));
+      throw error;
+    }
+  });
   return db;
 }
 

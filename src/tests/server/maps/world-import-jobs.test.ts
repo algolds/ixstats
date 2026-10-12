@@ -28,19 +28,21 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   getMapImportJob,
-  mapImportLockName,
   previewMapImport,
-  rebuildWorldRelief,
+  recoverStaleMapImports,
   runMapImportJob,
   startMapImport,
   startMapImportApply,
   startWorldApply,
+  STALE_AFTER_MS,
   type ApplySummary,
 } from "~/server/modules/maps/map-import.jobs";
-import type {
-  WorldApplySummary,
-  WorldDryRunSummary,
-  ReliefRunner,
+import { mapImportLockName } from "~/server/modules/maps/map-import.realm";
+import {
+  rebuildWorldRelief,
+  type ReliefRunner,
+  type WorldApplySummary,
+  type WorldDryRunSummary,
 } from "~/server/modules/maps/world-import";
 import { admin, founder, stranger } from "./map-import-fakes";
 import { makeBundle, seedRealm, slot, storeBundle } from "./world-import-fixtures";
@@ -175,6 +177,34 @@ describe("a world through the job runner", () => {
   });
 });
 
+describe("a world job that stopped", () => {
+  it("tells the person to run an interrupted apply again, and an interrupted check to start over", async () => {
+    const db = seedRealm();
+    const stale = new Date(Date.now() - STALE_AFTER_MS - 60_000);
+    const running = (id: string, kind: string, dryRun: boolean) => ({
+      id,
+      realmId: "r1",
+      kind,
+      dryRun,
+      status: "running",
+      heartbeatAt: stale,
+    });
+    db.mapImportJob.rows.push(
+      running("j_apply", "world", false),
+      running("j_check", "world", true),
+      running("j_png", "png", false)
+    );
+    expect(await recoverStaleMapImports(db)).toBe(3);
+    const error = (id: string) =>
+      db.mapImportJob.rows.find((j: { id: string }) => j.id === id).error as string;
+    expect(error("j_apply")).toMatch(/Apply the world again/);
+    expect(error("j_apply")).not.toMatch(/rolled back/);
+    expect(error("j_check")).toMatch(/Start it again/);
+    expect(error("j_check")).not.toMatch(/Apply the world again/);
+    expect(error("j_png")).toMatch(/an apply can be rolled back if it wrote anything/);
+  });
+});
+
 describe("queueing a world apply", () => {
   it("needs a finished world check, and the person to be allowed", async () => {
     const db = seedRealm();
@@ -227,10 +257,10 @@ describe("queueing a world apply", () => {
 describe("rebuildWorldRelief", () => {
   it("rebuilds from the bands under the realm's lease, for the people who may apply a world", async () => {
     const db = seedRealm();
-    await expect(
-      rebuildWorldRelief(db, stranger, "r1", { world: { runRelief } })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    const out = await rebuildWorldRelief(db, founder, "r1", { world: { runRelief } });
+    await expect(rebuildWorldRelief(db, stranger, "r1", { runRelief })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    const out = await rebuildWorldRelief(db, founder, "r1", { runRelief });
     expect(out).toMatchObject({ source: "bands", version: "v1", tiles: 7 });
     expect(held.size).toBe(0); // the lease is released
   });
@@ -238,23 +268,23 @@ describe("rebuildWorldRelief", () => {
   it("works in a realm locked by claims, since it leaves the nations alone", async () => {
     const db = seedRealm();
     db.realmClaim.rows.push({ id: "q_live", realmId: "r1", countryId: null, status: "approved" });
-    expect(await rebuildWorldRelief(db, founder, "r1", { world: { runRelief } })).toBeTruthy();
+    expect(await rebuildWorldRelief(db, founder, "r1", { runRelief })).toBeTruthy();
   });
 
   it("is refused for Ixnay and archived realms, and while another import of the realm runs", async () => {
     const ixnay = seedRealm({ id: "default", slug: "ixnay" });
-    await expect(
-      rebuildWorldRelief(ixnay, admin, "default", { world: { runRelief } })
-    ).rejects.toThrow(/Ixnay/);
+    await expect(rebuildWorldRelief(ixnay, admin, "default", { runRelief })).rejects.toThrow(
+      /Ixnay/
+    );
     const archived = seedRealm({ status: "archived" });
-    await expect(
-      rebuildWorldRelief(archived, founder, "r1", { world: { runRelief } })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(rebuildWorldRelief(archived, founder, "r1", { runRelief })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
     const busy = seedRealm();
     held.add(mapImportLockName("r1"));
-    await expect(
-      rebuildWorldRelief(busy, founder, "r1", { world: { runRelief } })
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(rebuildWorldRelief(busy, founder, "r1", { runRelief })).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
     expect(runRelief).not.toHaveBeenCalled();
   });
 });

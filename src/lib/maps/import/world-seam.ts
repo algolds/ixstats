@@ -102,9 +102,15 @@ function ringInBand(ring: Position[], band: number): Position[] {
 
 /** A polygon cut into the part inside each band it reaches; its holes go with the part they fall in. */
 function splitPolygon(rings: Position[][]): Position[][][] {
-  const xs = rings[0]!.map((position) => position[0]!);
+  // Not Math.min(...xs): a ring of a hundred thousand positions overflows the call stack
+  let west = Infinity;
+  let east = -Infinity;
+  for (const position of rings[0]!) {
+    west = Math.min(west, position[0]!);
+    east = Math.max(east, position[0]!);
+  }
   const parts: Position[][][] = [];
-  for (let band = bandOf(Math.min(...xs)); band <= bandOf(Math.max(...xs)); band++) {
+  for (let band = bandOf(west); band <= bandOf(east); band++) {
     const outer = ringInBand(rings[0]!, band);
     if (outer.length === 0) continue;
     parts.push([

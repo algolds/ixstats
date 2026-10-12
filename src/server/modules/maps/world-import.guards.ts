@@ -10,9 +10,9 @@ import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { loadImportRealm, MapImportError, type ImportRealm } from "./map-import.realm";
 
 /** The claim states that lock a realm's world. */
-export const LOCKING_CLAIM_STATUSES = ["pending", "approved"];
+const LOCKING_CLAIM_STATUSES = ["pending", "approved"];
 
-export async function lockingClaimCount(
+async function lockingClaimCount(
   db: Pick<PrismaClient, "realmClaim">,
   realmId: string
 ): Promise<number> {

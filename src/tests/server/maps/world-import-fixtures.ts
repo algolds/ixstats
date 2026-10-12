@@ -7,6 +7,8 @@ import {
   type WorldBundleSlot,
 } from "~/lib/maps/import/world-bundle";
 import { saveMapUpload } from "~/server/modules/maps/map-import.storage";
+import type { ReliefRunner } from "~/server/modules/maps/world-import";
+import type { buildRealmRelief } from "~/server/modules/maps/realm-relief";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import type { WorldGenParams } from "~/lib/worldgen/v2/types";
 import { fakeDb } from "./map-import-fakes";
@@ -132,7 +134,7 @@ const row = (layerType: string, featureId: string, extra: Record<string, unknown
 });
 
 /** A country the way a claim or a previous generation left it (only the columns the import reads or restores). */
-const country = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
+const countryRow = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
   id,
   name,
   slug: id.replace("c_", "slug-"),
@@ -176,10 +178,10 @@ export function seedRealm(over: Record<string, unknown> = {}) {
     { id: "u_other", clerkUserId: "someone", role: { name: "user", level: 100 } }
   );
   db.country.rows.push(
-    country("c_old1", "Old One", { worldgen: true, slug: "old-one" }),
-    country("c_old2", "Old Two", { worldgen: true }),
-    country("c_owned", "Old Owned", { worldgen: true, ownerUserId: "u_player" }),
-    country("c_manual", "Nation 2", { worldgen: false })
+    countryRow("c_old1", "Old One", { worldgen: true, slug: "old-one" }),
+    countryRow("c_old2", "Old Two", { worldgen: true }),
+    countryRow("c_owned", "Old Owned", { worldgen: true, ownerUserId: "u_player" }),
+    countryRow("c_manual", "Nation 2", { worldgen: false })
   );
   db.realmClaim.rows.push({
     id: "q_withdrawn",
@@ -207,3 +209,30 @@ export const stateOf = (db: ReturnType<typeof fakeDb>) =>
     realmClaim: db.realmClaim.rows,
     sharedVertex: db.sharedVertex.rows,
   });
+
+/** What a relief build answers (the type `buildRealmRelief` returns). */
+export const RELIEF_ENTRY: Awaited<ReturnType<typeof buildRealmRelief>> = {
+  id: "relief",
+  label: "Relief",
+  kind: "overlay",
+  version: "abc12345",
+  maxZoom: 5,
+  built: true,
+  tiles: 12,
+  skipped: 3,
+};
+
+/** A relief runner that builds nothing and answers with `RELIEF_ENTRY`. */
+export const relief = () =>
+  jest.fn<ReturnType<ReliefRunner>, Parameters<ReliefRunner>>(async () => RELIEF_ENTRY);
+
+/** The bundle as stored by the upload route; returns its upload id. */
+export const stored = (options: BundleOptions = {}) => storeBundle(makeBundle(options));
+
+export const country = (db: ReturnType<typeof fakeDb>, id: string) =>
+  db.country.rows.find((c: { id: string }) => c.id === id);
+
+export const layer = (db: ReturnType<typeof fakeDb>, type: string, key: string) =>
+  db.mapLayer.rows.find(
+    (r: { layerType: string; featureId: string }) => r.layerType === type && r.featureId === key
+  );

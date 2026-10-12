@@ -3,7 +3,14 @@
  * Longitudes past ±180 in a world bundle (the generator's rivers run to about ±205) are cut at the seam and shifted
  * into range, so the realm map writer accepts them.
  */
-import type { Geometry, LineString, MultiLineString, MultiPolygon, Polygon } from "geojson";
+import type {
+  Geometry,
+  LineString,
+  MultiLineString,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 import { fitToSeam, passesSeam } from "~/lib/maps/import/world-seam";
 
 type Nested = number | Nested[];
@@ -105,8 +112,7 @@ describe("fitToSeam", () => {
         ],
       ],
     };
-    const fitted = fitToSeam(river);
-    expect(fitted === null || lng(fitted).every((x) => Math.abs(x) <= 180)).toBe(true);
+    expect(fitToSeam(river)).toBeNull();
   });
 
   it("splits a polygon over the seam into the part either side, both inside ±180", () => {
@@ -173,5 +179,17 @@ describe("fitToSeam", () => {
     const fitted = fitToSeam(polygon) as MultiPolygon;
     const holes = fitted.coordinates.map((rings) => rings.length - 1);
     expect(holes.sort()).toEqual([0, 1]);
+  });
+
+  it("cuts a ring of 200,000 positions without running out of stack", () => {
+    const n = 200_000;
+    const ring: Position[] = Array.from({ length: n }, (_, i) => {
+      const angle = (i / n) * 2 * Math.PI;
+      return [180 + 10 * Math.cos(angle), 10 * Math.sin(angle)];
+    });
+    ring.push(ring[0]!);
+    const fitted = fitToSeam({ type: "Polygon", coordinates: [ring] }) as MultiPolygon;
+    expect(fitted.coordinates).toHaveLength(2);
+    expect(lng(fitted).every((x) => Math.abs(x) <= 180)).toBe(true);
   });
 });

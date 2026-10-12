@@ -7,10 +7,18 @@
  *
  * A world import also retires and creates generated nation slots (Country rows): `slots` holds the retired ones
  * (every scalar column) and the ids of the created ones, so a rollback removes the new slots and puts the old ones back.
+ * It also records the realm's generation (`Realm.seed`, `generationParams`) and builds a relief layer: `realm` holds
+ * what they were, so a rollback puts the previous world's record and relief version back.
  */
 import { gunzipSync, gzipSync } from "node:zlib";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { isPostGISAvailable } from "./geo-validation";
+import { RELIEF_LAYER_ID, withRasterLayer } from "./raster-tiles";
+import {
+  parseRealmMapSettings,
+  withRealmMapSettings,
+  type RealmRasterLayer,
+} from "./realm-map-settings";
 
 export interface SnapshotRow {
   layerType: string;
@@ -47,6 +55,14 @@ export interface SnapshotSlots {
   created: string[];
 }
 
+/** What a world import changes on the realm itself: its generation record and its relief raster layer. */
+export interface SnapshotRealm {
+  seed: number | null;
+  generationParams: Prisma.JsonValue;
+  /** The realm's `relief` raster layer entry as it was; null when it had none. */
+  relief: RealmRasterLayer | null;
+}
+
 export interface MapImportSnapshot {
   version: 1;
   realmId: string;
@@ -56,6 +72,8 @@ export interface MapImportSnapshot {
   countries: SnapshotCountry[];
   /** World imports only. */
   slots?: SnapshotSlots;
+  /** World imports only. */
+  realm?: SnapshotRealm;
 }
 
 /** Snapshots bigger than this (uncompressed JSON) are not kept: the import then cannot be rolled back. */
@@ -166,6 +184,50 @@ export interface RestoreResult {
   slots?: { restored: number; removed: number; kept: number };
 }
 
+/** The realm's generation record and relief layer now, for a snapshot a world import is about to change. */
+export async function captureRealmState(
+  db: Pick<PrismaClient, "realm">,
+  realmId: string
+): Promise<SnapshotRealm> {
+  const realm = await db.realm.findUnique({
+    where: { id: realmId },
+    select: { seed: true, generationParams: true, settings: true },
+  });
+  const layers = parseRealmMapSettings(realm?.settings).rasterLayers ?? [];
+  return {
+    seed: realm?.seed ?? null,
+    generationParams: realm?.generationParams ?? null,
+    relief: layers.find((layer) => layer.id === RELIEF_LAYER_ID) ?? null,
+  };
+}
+
+/** Put the realm's generation record and relief layer entry back; its other settings are kept. */
+async function restoreRealmState(
+  db: Pick<PrismaClient, "realm">,
+  realmId: string,
+  state: SnapshotRealm
+): Promise<void> {
+  const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
+  if (!realm) return;
+  const layers = parseRealmMapSettings(realm.settings).rasterLayers ?? [];
+  const restored = state.relief
+    ? withRasterLayer(layers, state.relief)
+    : layers.filter((layer) => layer.id !== RELIEF_LAYER_ID);
+  await db.realm.update({
+    where: { id: realmId },
+    data: {
+      seed: state.seed,
+      generationParams:
+        state.generationParams === null
+          ? Prisma.DbNull
+          : (state.generationParams as Prisma.InputJsonValue),
+      settings: withRealmMapSettings(realm.settings, {
+        rasterLayers: restored.length > 0 ? restored : null,
+      }) as Prisma.InputJsonValue,
+    },
+  });
+}
+
 /** The ids among `ids` a player holds or has a claim row for: deleting those would erase the player's claim. */
 export async function heldSlots(
   db: Pick<PrismaClient, "country" | "realmClaim">,
@@ -186,7 +248,10 @@ export async function heldSlots(
 }
 
 /** Remove the slots the import created, except any a player has since claimed. Frees their names and slugs. */
-async function removeCreatedSlots(db: PrismaClient, snapshot: MapImportSnapshot) {
+async function removeCreatedSlots(
+  db: Pick<PrismaClient, "country" | "realmClaim">,
+  snapshot: MapImportSnapshot
+) {
   const ids = snapshot.slots?.created ?? [];
   const held = await heldSlots(db, ids);
   const { count } = await db.country.deleteMany({
@@ -196,7 +261,10 @@ async function removeCreatedSlots(db: PrismaClient, snapshot: MapImportSnapshot)
 }
 
 /** Put back the slots the import retired (scalar columns; their links come back with the map rows). */
-async function recreateRetiredSlots(db: PrismaClient, snapshot: MapImportSnapshot) {
+async function recreateRetiredSlots(
+  db: Pick<PrismaClient, "country">,
+  snapshot: MapImportSnapshot
+) {
   const retired = snapshot.slots?.retired ?? [];
   const present = new Set(
     (
@@ -231,10 +299,16 @@ export async function restoreMapSnapshot(
   const postgis = await isPostGISAvailable(db);
   const result: RestoreResult = { restored: 0, deleted: 0, countries: 0 };
 
-  // Slots first: the new ones go (their names and slugs are free again), the old ones come back for the rows to link to
+  // Slots first: the new ones go (their names and slugs are free again), the old ones come back for the rows to link
+  // to. One transaction, so a failure leaves the slots as they were rather than the new ones gone and the old not back
   if (snapshot.slots) {
-    const { removed, kept } = await removeCreatedSlots(db, snapshot);
-    result.slots = { restored: await recreateRetiredSlots(db, snapshot), removed, kept };
+    result.slots = await db.$transaction(
+      async (tx) => {
+        const { removed, kept } = await removeCreatedSlots(tx, snapshot);
+        return { restored: await recreateRetiredSlots(tx, snapshot), removed, kept };
+      },
+      { timeout, maxWait: timeout }
+    );
   }
 
   for (let i = 0; i < snapshot.rows.length; i += batchSize) {
@@ -300,5 +374,6 @@ export async function restoreMapSnapshot(
     });
     result.countries++;
   }
+  if (snapshot.realm) await restoreRealmState(db, realmId, snapshot.realm);
   return result;
 }

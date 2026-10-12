@@ -2,14 +2,17 @@
  * The nation slots of a world import: the one transaction that retires the old generated slots and creates the new
  * ones, and the steps around it.
  *
- * The transaction (`replaceSlots`) is where a claim racing the apply is decided. It locks the realm's row and its
- * generated (`worldgen`) countries with SELECT ... FOR UPDATE: a claim being filed takes a share lock on both (the
- * foreign keys of `RealmClaim`), so one that is already filed has committed and is counted below, and one that comes
- * later waits until this transaction ends. Then it counts the pending and approved claims again and aborts if there
- * are any. Only then does it retire slots, and only those no player has: `worldgen`, no owner and no claim row at
- * all (a claim row is removed with its country, `RealmClaim.country` cascades), never a country the realm's players
- * made. New slots are created unclaimable and opened by `openSlots` once the map is written, so nobody can claim a
- * slot that has no territory yet.
+ * The transaction (`replaceSlots`) is where a claim racing the apply is decided. It locks the realm's generated
+ * (`worldgen`) countries and then the realm's row with SELECT ... FOR UPDATE: a claim being filed takes a share lock
+ * on both (the foreign keys of `RealmClaim`), so one that is already filed has committed and is counted below, and
+ * one that comes later waits until this transaction ends. The order matters: a claim's foreign-key checks lock the
+ * country first and the realm second, so taking the realm first would let the two wait for each other, and
+ * Postgres would end the claim with a deadlock error. Then the transaction checks the person's right to edit the
+ * map and the realm's status again, counts the pending and approved claims again and aborts if there are any. Only
+ * then does it retire slots, and only those no player has: `worldgen`, no owner, no claim row at all (a claim row is
+ * removed with its country, `RealmClaim.country` cascades) and no blurb response (the one foreign key that stops a
+ * delete), never a country the realm's players made. New slots are created unclaimable and opened by `openSlots`
+ * once the map is written, so nobody can claim a slot that has no territory yet.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
@@ -18,7 +21,8 @@ import { baselineBounds } from "~/lib/worldgen/baseline";
 import type { DevelopmentLevel } from "~/lib/worldgen/v2/types";
 import { freeNationSlug } from "~/server/modules/realms/realms.claims";
 import { realmNationDefaults } from "~/server/modules/realms/realms.settings";
-import { MapImportError, type ImportRealm } from "./map-import.realm";
+import type { RealmActor } from "~/server/modules/realms/realms.access";
+import { loadImportRealm, MapImportError, type ImportRealm } from "./map-import.realm";
 import { assertNoLockingClaims } from "./world-import.guards";
 import type { PreparedSlot } from "./world-import.prepare";
 
@@ -74,17 +78,21 @@ export function dedupeNames(names: readonly string[], taken: Iterable<string>): 
   });
 }
 
-/** The slots a dry run says a regeneration would retire (the same rule as the transaction, without its locks). */
+/**
+ * The slots a regeneration retires (the dry run's count and the transaction's rule): generated, no owner, no claim row
+ * of any status, no blurb response. The rest stay as they are.
+ */
 export async function retirableSlots(
-  db: Pick<PrismaClient, "country" | "realmClaim">,
+  db: Pick<PrismaClient, "country" | "realmClaim" | "blurbResponse">,
   realmId: string
 ) {
   const slots = await db.country.findMany({ where: { realmId, worldgen: true } });
-  const claimed = await db.realmClaim.findMany({
-    where: { countryId: { in: slots.map((slot) => slot.id) } },
-    select: { countryId: true },
-  });
-  const held = new Set(claimed.map((claim) => claim.countryId));
+  const ids = slots.map((slot) => slot.id);
+  const [claimed, blurbs] = await Promise.all([
+    db.realmClaim.findMany({ where: { countryId: { in: ids } }, select: { countryId: true } }),
+    db.blurbResponse.findMany({ where: { countryId: { in: ids } }, select: { countryId: true } }),
+  ]);
+  const held = new Set([...claimed, ...blurbs].map((row) => row.countryId));
   return slots.filter((slot) => !slot.ownerUserId && !held.has(slot.id));
 }
 
@@ -95,9 +103,10 @@ const asInput = (value: Prisma.JsonValue | null) =>
 const toSnapshot = (row: Prisma.CountryGetPayload<object>) =>
   JSON.parse(JSON.stringify(row)) as SnapshotSlotCountry;
 
-async function lockRealmAndSlots(tx: SlotTx, realmId: string) {
-  await tx.$queryRaw`SELECT "id" FROM "realms" WHERE "id" = ${realmId} FOR UPDATE`;
+/** Country rows first, then the realm: the order of a claim's own foreign-key checks (see the module comment). */
+async function lockSlotsAndRealm(tx: SlotTx, realmId: string) {
   await tx.$queryRaw`SELECT "id" FROM "Country" WHERE "realmId" = ${realmId} AND "worldgen" = true FOR UPDATE`;
+  await tx.$queryRaw`SELECT "id" FROM "realms" WHERE "id" = ${realmId} FOR UPDATE`;
 }
 
 /** The figures a slot starts with: the browser's (checked), a token for an empty one, the builder's for no slot. */
@@ -193,6 +202,8 @@ export async function unlinkedFeatures(
 }
 
 export interface ReplaceSlotsInput {
+  /** Who applies: their right to edit the realm's map is checked again inside the transaction. */
+  actor: RealmActor;
   /** Retire the old generated slots (a regeneration); false for the "realm map" source, which keeps its borders. */
   retire: boolean;
   /** The slots to create, or null to create one for each of the realm's unlinked political features. */
@@ -201,8 +212,9 @@ export interface ReplaceSlotsInput {
 }
 
 /**
- * The slot transaction (see the module comment). Throws a MapImportError, with nothing changed, when the realm was
- * archived, or a claim exists or is filed while the apply runs. A deadlock with a claim being filed reads the same.
+ * The slot transaction (see the module comment). Throws a MapImportError, with nothing changed, when the person can no
+ * longer edit the realm's map, the realm was archived, or a claim exists or is filed while the apply runs. A deadlock
+ * with a claim being filed reads the same.
  */
 export async function replaceSlots(
   db: PrismaClient,
@@ -212,18 +224,10 @@ export async function replaceSlots(
   try {
     return await db.$transaction(
       async (tx) => {
-        await lockRealmAndSlots(tx, realm.id);
+        await lockSlotsAndRealm(tx, realm.id);
+        // Who may edit, and not archived, as the realm is now; then the claims, as they are now
+        const current = await loadImportRealm(tx, input.actor, realm.id);
         await assertNoLockingClaims(tx, realm.id);
-        const row = await tx.realm.findUnique({
-          where: { id: realm.id },
-          select: { status: true },
-        });
-        if (row?.status === "archived") {
-          throw new MapImportError(
-            "BAD_REQUEST",
-            "This realm was archived: its map can't be changed"
-          );
-        }
 
         const retired = input.retire ? await retireSlots(tx, realm.id) : [];
         const nations: NewNation[] = input.slots
@@ -246,7 +250,7 @@ export async function replaceSlots(
         );
         const created: CreatedNation[] = [];
         for (const [index, nation] of nations.entries()) {
-          created.push(await createNation(tx, realm, nation, names[index]!, input.level));
+          created.push(await createNation(tx, current, nation, names[index]!, input.level));
         }
         return { created, retired: retired.map(toSnapshot) };
       },
