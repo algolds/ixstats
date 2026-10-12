@@ -9,7 +9,6 @@ import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { listProcedures } from "~/server/api/routers/countries/list";
 import { economyProcedures } from "~/server/api/routers/countries/economy";
 import { achievementsCountryRouter } from "~/server/api/routers/achievements/country";
-import { statsProcedures } from "~/server/api/routers/geo/core/stats";
 import { overlayProcedures } from "~/server/api/routers/geo/core/overlays";
 import { generateRankings } from "~/server/shared/mycountry-helpers";
 import { resolveWikiPlaceholderValues } from "~/server/shared/wiki-placeholders";
@@ -107,7 +106,7 @@ function countryWheres(db: Record<string, ModelMock>) {
 }
 
 const countries = createTRPCRouter({ ...listProcedures, ...economyProcedures });
-const geo = createTRPCRouter({ ...statsProcedures, ...overlayProcedures });
+const geo = createTRPCRouter({ ...overlayProcedures });
 
 describe("every cross-country display listing is scoped to the viewer's realm", () => {
   beforeEach(() => clearTrpcMemoryCache());
@@ -154,10 +153,6 @@ describe("every cross-country display listing is scoped to the viewer's realm", 
         createCallerFactory(achievementsCountryRouter)(
           ctxFor(db, eurthViewer())
         ).getCountryLeaderboard({ metric: "totalGdp" }),
-    ],
-    [
-      "geoCore.getMapStats",
-      (db) => createCallerFactory(geo)(ctxFor(db, eurthViewer())).getMapStats(),
     ],
     [
       "geoCore.getRegionalChoropleth",

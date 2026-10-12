@@ -1,5 +1,5 @@
 /**
- * The Full Pipeline's layer import (geoEditor.importPipelineResult) on the shared realm map writer: validated
+ * The layer import of the world apply and the realm map pipeline on the shared realm map writer: validated
  * geometry, batched transactions with an explicit timeout, display names, PostGIS geometry and areas. A replacing
  * import retires only the stale features of the layer types it brings (never every layer), and every import keeps
  * a rollback snapshot (MapImport). The political layer's shared vertex index and adjacency are rebuilt after.

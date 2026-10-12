@@ -1,6 +1,6 @@
 /**
  * The World tab in the editor's sidebar: shown to the realm's map editors in the world editor, never on Ixnay and
- * never in the country editor; in the studio's sandbox it is the only tab, and panel B is not drawn.
+ * never in the country editor.
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 
@@ -9,9 +9,7 @@ jest.mock("~/components/maps/core/hooks/useRealmMapDisplay", () => ({
   useRealmRelief: () => ({ available: false, shown: false, toggle: jest.fn() }),
 }));
 jest.mock("~/components/maps/editor/panels/WorldPanel", () => ({
-  WorldPanel: ({ sandbox }: { sandbox?: boolean }) => (
-    <div data-testid="world-panel" data-sandbox={String(!!sandbox)} />
-  ),
+  WorldPanel: () => <div data-testid="world-panel" />,
 }));
 jest.mock("~/components/maps/editor/components/useFeatureActionHandlers", () => ({
   useFeatureActionHandlers: () => ({
@@ -66,7 +64,6 @@ function stateOf(over: Record<string, unknown> = {}) {
       guides: [],
     },
     isWorldMode: true,
-    isSandbox: false,
     panelsLocked: false,
     isAdmin: false,
     panelConfigs: {
@@ -187,7 +184,7 @@ describe("the World tab's content", () => {
         worldMap={null}
       />
     );
-    expect(screen.getByTestId("world-panel")).toHaveAttribute("data-sandbox", "false");
+    expect(screen.getByTestId("world-panel")).toBeInTheDocument();
   });
 
   it("switches to it when its tab is clicked", () => {
@@ -210,35 +207,5 @@ describe("the World tab's content", () => {
     display.mockReturnValue(realm() as never);
     renderPanel(stateOf({ activeSidebarTab: "sovereignty" }));
     expect(screen.getByText("sovereignty body")).toBeInTheDocument();
-  });
-});
-
-describe("the studio's sandbox", () => {
-  const sandbox = (over: Record<string, unknown> = {}) =>
-    stateOf({ isSandbox: true, activeSidebarTab: "world", ...over });
-
-  it("shows the World tab alone and tells the panel it is a sandbox", () => {
-    display.mockReturnValue(realm() as never);
-    renderPanel(sandbox());
-    expect(tabNames()).toEqual(["World"]);
-    expect(screen.getByTestId("world-panel")).toHaveAttribute("data-sandbox", "true");
-  });
-
-  it("is open on Ixnay too, which it never changes", () => {
-    display.mockReturnValue(realm({ isIxnay: true }) as never);
-    renderPanel(sandbox({ isAdmin: true }));
-    expect(tabNames()).toEqual(["World"]);
-  });
-
-  it("draws no second panel", () => {
-    display.mockReturnValue(realm() as never);
-    const { container } = renderPanel(sandbox(), "panelB");
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("shows nothing to someone who can't edit the realm's map", () => {
-    display.mockReturnValue(realm({ canEdit: false }) as never);
-    const { container } = renderPanel(sandbox());
-    expect(container).toBeEmptyDOMElement();
   });
 });

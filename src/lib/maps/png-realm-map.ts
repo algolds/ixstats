@@ -6,7 +6,7 @@
 /** Largest PNG/JPEG (decoded bytes) the Full Pipeline accepts. */
 export const MAX_PNG_BYTES = 25 * 1024 * 1024;
 
-/** Base64 length of a MAX_PNG_BYTES image — the bound runPipeline's input enforces. */
+/** Base64 length of a MAX_PNG_BYTES image — the bound a base64 PNG input enforces. */
 export const MAX_PNG_BASE64_LENGTH = Math.ceil(MAX_PNG_BYTES / 3) * 4;
 
 /** Largest map image, in pixels, the pipeline decodes (8192×8192): bounds the raw buffers it allocates. */

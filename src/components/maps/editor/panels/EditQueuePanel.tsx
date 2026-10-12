@@ -47,12 +47,7 @@ export function EditQueuePanel() {
     setReviewNote("");
   };
 
-  const approveMutation = api.geoEditor.approveEdit.useMutation({
-    onSuccess: () => {
-      utils.geoCore.getMapStats.invalidate();
-      afterReview();
-    },
-  });
+  const approveMutation = api.geoEditor.approveEdit.useMutation({ onSuccess: afterReview });
 
   const rejectMutation = api.geoEditor.rejectEdit.useMutation({ onSuccess: afterReview });
 

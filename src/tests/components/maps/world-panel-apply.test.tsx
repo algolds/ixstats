@@ -1,6 +1,6 @@
 /**
  * The World tab and its apply region: what the region is given of the draft and the lock, a world applied while the
- * tab was away, and the studio's sandbox, which has a calibration readout and no apply region.
+ * tab was away.
  */
 import { act, fireEvent, screen, within } from "@testing-library/react";
 
@@ -272,7 +272,7 @@ describe("a world applied while the tab was away", () => {
   });
 });
 
-describe("the apply region and the sandbox", () => {
+describe("the apply region", () => {
   const useWorld = () => screen.getByRole("button", { name: "Use this world" });
 
   it("offers Use this world once there is a current preview and the realm is open", async () => {
@@ -307,50 +307,5 @@ describe("the apply region and the sandbox", () => {
     act(() => workers[0]!.say(resultMessage(request.id)));
     expect(useWorld()).toBeDisabled();
     expect(screen.getByText("Claims on this realm's nations lock its world.")).toBeInTheDocument();
-  });
-
-  it("has no apply region in the sandbox, and does not ask about claims", async () => {
-    renderPanel({ sandbox: true });
-    expect(screen.queryByRole("button", { name: "Use this world" })).toBeNull();
-    expect(statusQuery).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ enabled: false })
-    );
-    expect(
-      screen.getByText("Generate a preview to compare it with Ixnay and Eurth.")
-    ).toBeInTheDocument();
-  });
-
-  it("shows the calibration against Ixnay and Eurth once the sandbox has a world", async () => {
-    renderPanel({ sandbox: true });
-    const request = await generateFirst();
-    act(() =>
-      workers[0]!.say(
-        resultMessage(request.id, {
-          stats: {
-            landShare: 0.25,
-            continents: 5,
-            climateMix: { A: 0.4 },
-            slotCount: 0,
-            baseline: null,
-          },
-          cells: new Float32Array([0, 0, 10, 1, 0, 200]).buffer,
-        })
-      )
-    );
-    const table = screen.getByLabelText("Calibration against Ixnay and Eurth");
-    expect(within(table).getByRole("columnheader", { name: "Ixnay" })).toBeInTheDocument();
-    expect(within(table).getByRole("columnheader", { name: "Eurth" })).toBeInTheDocument();
-    expect(within(table).getByText("Land share")).toBeInTheDocument();
-    expect(within(table).getByText("Coastal Lowlands")).toBeInTheDocument();
-    expect(within(table).getByText("Tropical")).toBeInTheDocument();
-    expect(within(table).getAllByText("22.9%").length).toBe(2);
-  });
-
-  it("keeps the sandbox's recipe apart from the realm's", async () => {
-    renderPanel({ sandbox: true });
-    await generateFirst();
-    expect(loadWorldRecipe(`sandbox:${REALM}`)).not.toBeNull();
-    expect(loadWorldRecipe(REALM)).toBeNull();
   });
 });

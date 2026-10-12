@@ -1,23 +1,6 @@
 import type { Geometry } from "geojson";
 import { polygonAreaSqKm, ringAreaSqKm } from "~/lib/maps/planet";
 
-/** Recursively extract all [lng, lat] positions from a GeoJSON geometry */
-export function extractAllPositions(geometry: Geometry): [number, number][] {
-  const positions: [number, number][] = [];
-  function scan(coords: unknown): void {
-    if (!Array.isArray(coords)) return;
-    if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
-      positions.push([coords[0] as number, coords[1] as number]);
-      return;
-    }
-    for (const c of coords) scan(c);
-  }
-  if ("coordinates" in geometry) {
-    scan((geometry as { coordinates: unknown }).coordinates);
-  }
-  return positions;
-}
-
 /** A ring closed if needed, or null when it has too few points to enclose anything. */
 function closedRing(ring: [number, number][]): [number, number][] | null {
   if (ring.length < 3) return null;

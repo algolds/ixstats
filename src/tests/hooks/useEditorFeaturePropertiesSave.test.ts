@@ -19,7 +19,6 @@ jest.mock("~/trpc/react", () => {
       listCountries: reads(),
       getMapBundleMarkers: reads(),
       getMapBundleDetail: reads(),
-      getMapStats: reads(),
     },
   };
   return {

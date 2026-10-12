@@ -23,7 +23,6 @@ jest.mock("~/trpc/react", () => {
           listCountries: { invalidate },
           getMapBundleMarkers: { invalidate },
           getMapBundleDetail: { invalidate },
-          getMapStats: { invalidate },
         },
       }),
       realms: { map: { display, worldSlot, setSlotClaimable, deleteSlot } },

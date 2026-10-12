@@ -29,7 +29,6 @@ export const MAP_TRPC_KEYS: string[] = [
   "geoCore.getCountryGeometry",
   "geoCore.getCountryGeoProfile",
   "geoCore.getCountryLinkage",
-  "geoCore.getMapStats",
   "geoCore.listCountries",
   "countryGeo.getCountryGeoBundle",
   "geoEditor.validateLinkage",

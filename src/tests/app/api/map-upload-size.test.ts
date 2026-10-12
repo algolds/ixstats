@@ -1,17 +1,13 @@
 /** @jest-environment node */
 /**
- * The map upload routes refuse an oversize body by its Content-Length, before `formData()` buffers it.
+ * The province upload route refuses an oversize body by its Content-Length, before `formData()` buffers it.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/server/shared/route-auth", () => ({
-  requireAdminSession: jest.fn().mockResolvedValue({ userId: "admin_1" }),
-}));
 jest.mock("@clerk/nextjs/server", () => ({
   auth: jest.fn().mockResolvedValue({ userId: "owner_1", sessionClaims: {} }),
 }));
 
 import type { NextRequest } from "next/server";
-import { POST as uploadSvg } from "~/app/api/admin/upload-svg/route";
 import { POST as uploadProvince } from "~/app/api/upload-province/route";
 import { oversizedUploadResponse } from "~/server/shared/request-size";
 
@@ -25,24 +21,18 @@ function uploadRequest(contentLength?: number) {
   return { request: { headers, formData } as unknown as NextRequest, formData };
 }
 
-describe("map upload routes — body size", () => {
-  it.each([
-    ["/api/admin/upload-svg", uploadSvg, 51 * MB, "50MB"],
-    ["/api/upload-province", uploadProvince, 21 * MB, "20MB"],
-  ] as const)("%s answers 413 without reading an oversize body", async (_path, post, size, max) => {
-    const { request, formData } = uploadRequest(size);
-    const response = await post(request);
+describe("map upload routes: body size", () => {
+  it("/api/upload-province answers 413 without reading an oversize body", async () => {
+    const { request, formData } = uploadRequest(21 * MB);
+    const response = await uploadProvince(request);
     expect(response.status).toBe(413);
-    expect(await response.json()).toEqual({ error: `File too large (max ${max})` });
+    expect(await response.json()).toEqual({ error: "File too large (max 20MB)" });
     expect(formData).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ["/api/admin/upload-svg", uploadSvg],
-    ["/api/upload-province", uploadProvince],
-  ] as const)("%s reads a body within the limit", async (_path, post) => {
+  it("/api/upload-province reads a body within the limit", async () => {
     const { request, formData } = uploadRequest(2 * MB);
-    const response = await post(request);
+    const response = await uploadProvince(request);
     expect(formData).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(400); // the empty form has no file
   });

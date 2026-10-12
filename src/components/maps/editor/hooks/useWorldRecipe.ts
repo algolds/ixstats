@@ -22,7 +22,7 @@ import { useLatest } from "./useLatest";
 import { useWorldPresets } from "./useWorldPresets";
 
 interface UseWorldRecipeArgs {
-  /** Where the recipe is kept: the realm's id, or the sandbox's */
+  /** Where the recipe is kept: the realm's id */
   scope: string;
   /** The realm has borders to build on (a political layer) */
   hasRealmMap: boolean;

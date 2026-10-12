@@ -41,7 +41,6 @@ export {
   extractStrokeColor,
   featureIdToDisplayName,
 };
-export { computeLayerDiff } from "./svg/layer-diff";
 
 export interface SvgParseConfig {
   /** Coordinate conversion config (defaults to IxEarth) */

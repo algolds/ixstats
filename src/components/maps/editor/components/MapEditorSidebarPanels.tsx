@@ -55,7 +55,6 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
     editorVisibleLayers,
     toggleEditorLayer,
     featureCounts,
-    isSandbox,
   } = state;
   const display = useRealmMapDisplay();
   const relief = useRealmRelief(display);
@@ -74,15 +73,14 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
   if (panelId === "panelA" && isWorldMode && isAdmin && !tabs.includes("queue")) {
     tabs = [...tabs, "queue" as TabId];
   }
-  // The World tab: the realm's map editors, never Ixnay (the sandbox excepted, which shows that tab alone).
+  // The World tab: the realm's map editors, never Ixnay.
   // Saved layouts always carry it, so it is filtered here and never stored.
   const worldTab = {
     isWorldMode,
     canEdit: isAdmin || !!display?.canEdit,
     isIxnay: display?.isIxnay ?? true,
-    sandbox: isSandbox,
   };
-  tabs = sidebarTabsFor(panelId, tabs, worldTab);
+  tabs = sidebarTabsFor(tabs, worldTab);
 
   const [panelBActiveTab, setPanelBActiveTab] = useState<TabId>(() =>
     tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties")
@@ -157,8 +155,6 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
     />
   );
 
-  if (isSandbox && tabs.length === 0) return null;
-
   return (
     <EditorPanel
       mode={editor.mode}
@@ -211,7 +207,7 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
       layersContent={effectiveActiveTab === "layers" ? renderLayersElement() : undefined}
       worldContent={
         effectiveActiveTab === "world" && worldTabAvailable(worldTab) ? (
-          <WorldPanel map={worldMap} sandbox={isSandbox} />
+          <WorldPanel map={worldMap} />
         ) : undefined
       }
       wikiContent={

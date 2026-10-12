@@ -31,8 +31,6 @@ interface MapEditorOverlayProps {
   mapLayers?: MapLayerData[];
   onExit: () => void;
   isWorldMode?: boolean;
-  /** The admin studio's sandbox (`/admin/maps/editor?sandbox=1`): the World tab alone, nothing applied */
-  sandbox?: boolean;
   historicalYear?: number | null;
   mapInstance?: import("maplibre-gl").Map | null;
 }
@@ -41,7 +39,6 @@ export default function MapEditorOverlay({
   countryId,
   onExit,
   isWorldMode = false,
-  sandbox = false,
   historicalYear,
   mapInstance: initialMapInstance,
 }: MapEditorOverlayProps) {
@@ -62,7 +59,6 @@ export default function MapEditorOverlay({
     countryId,
     onExit,
     isWorldMode,
-    sandbox,
     mapRef,
   });
 

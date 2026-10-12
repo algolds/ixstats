@@ -1,12 +1,10 @@
 /**
- * Where the World tab opens from: the realm's Manage page, the admin studio and the `?editor=world` address, and
+ * Where the World tab opens from: the realm's Manage page and the `?editor=world` address, and
  * the realm layers the "This realm's map" source hands the generator.
  */
 
 import type { FeatureCollection } from "geojson";
 import {
-  WORLD_SANDBOX_HREF,
-  isWorldSandbox,
   realmManageHref,
   realmWorldEditorHref,
   wantsRealmMapEditor,
@@ -31,14 +29,6 @@ describe("editor entry addresses", () => {
     expect(wantsRealmMapEditor(params("editor=other"))).toBe(false);
     expect(wantsRealmMapEditor(params("realm=eurth"))).toBe(false);
     expect(wantsRealmMapEditor(null)).toBe(false);
-  });
-
-  it("links the studio to the editor's sandbox", () => {
-    expect(WORLD_SANDBOX_HREF).toBe("/admin/maps/editor?sandbox=1");
-    expect(isWorldSandbox(params("sandbox=1"))).toBe(true);
-    expect(isWorldSandbox(params("sandbox=0"))).toBe(false);
-    expect(isWorldSandbox(params(""))).toBe(false);
-    expect(isWorldSandbox(null)).toBe(false);
   });
 
   it("links to a section of the realm's Manage page", () => {

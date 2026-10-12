@@ -18,7 +18,7 @@ export type WorldLock =
   | { phase: "failed"; message: string; retry: () => void }
   | { phase: "ready"; status: RouterOutputs["realms"]["map"]["worldStatus"] };
 
-/** What the apply region reads. `WorldPanel` renders it on a realm (never in the studio's sandbox). */
+/** What the apply region reads. `WorldPanel` renders it on a realm. */
 export interface WorldApplyRegionProps {
   /** The realm the world would be applied to */
   realm: { id: string; slug: string | null };

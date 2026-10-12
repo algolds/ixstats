@@ -22,7 +22,6 @@ import { useWorldRecipe } from "../hooks/useWorldRecipe";
 import { WorldAdvancedSection } from "./WorldAdvancedSection";
 import { WorldApplyRegion, type WorldLock } from "./WorldApplyRegion";
 import { WorldBasicControls } from "./WorldBasicControls";
-import { WorldCalibration } from "./WorldCalibration";
 import { WorldLockUnknownNotice, WorldLockedNotice } from "./WorldLockedNotice";
 import { WorldSourceSection, type RealmMapState } from "./WorldSourceSection";
 import { WorldProgress, WorldStats } from "./WorldStatsSection";
@@ -30,8 +29,6 @@ import { WorldProgress, WorldStats } from "./WorldStatsSection";
 interface WorldPanelProps {
   /** The map the draft is drawn on; null until it is up */
   map: MapLibreMap | null;
-  /** The admin studio: calibration instead of the apply region, and nothing of a realm is changed */
-  sandbox?: boolean;
   /** Starts the generator's worker; tests pass a fake */
   createWorker?: WorldWorkerFactory;
 }
@@ -68,7 +65,6 @@ function realmMapState(hasRealmMap: boolean, { ready, pending, failed }: MapLoad
 function RealmWorldPanel({
   display,
   map,
-  sandbox = false,
   createWorker = createWorldWorker,
 }: WorldPanelProps & { display: Display }) {
   const generator = useWorldGenerator(createWorker);
@@ -85,7 +81,7 @@ function RealmWorldPanel({
   const realmMapReady = !loaded.isPending && !mapFailed && hasRealmBorders(realmMapLayers);
   const retryMap = useRetryMapLayers();
   const recipe = useWorldRecipe({
-    scope: sandbox ? `sandbox:${display.realmId}` : display.realmId,
+    scope: display.realmId,
     hasRealmMap,
     realmMapReady,
     realmMapLayers,
@@ -104,7 +100,7 @@ function RealmWorldPanel({
 
   const statusQuery = api.realms.map.worldStatus.useQuery(
     { realm: display.realmSlug ?? "" },
-    { enabled: !sandbox && !!display.realmSlug, retry: false, staleTime: 15_000 }
+    { enabled: !!display.realmSlug, retry: false, staleTime: 15_000 }
   );
   const status = statusQuery.data;
   const lock: WorldLock = statusQuery.isError
@@ -161,12 +157,7 @@ function RealmWorldPanel({
         onCommit={recipe.apply}
       />
 
-      <WorldProgress
-        view={generator}
-        hasWorld={hasWorld}
-        sandbox={sandbox}
-        onGenerate={recipe.generateNow}
-      />
+      <WorldProgress view={generator} hasWorld={hasWorld} onGenerate={recipe.generateNow} />
       {generator.result && <WorldStats stats={generator.result.stats} />}
 
       {hasWorld && (
@@ -175,20 +166,16 @@ function RealmWorldPanel({
         </Button>
       )}
 
-      {sandbox ? (
-        <WorldCalibration result={generator.result} />
-      ) : (
-        <WorldApplyRegion
-          realm={{ id: display.realmId, slug: display.realmSlug }}
-          result={generator.result}
-          source={controls.source}
-          generating={generating}
-          stale={recipe.stale || generator.state === "error"}
-          mapVersion={loaded.version}
-          lock={lock}
-          onDiscardDraft={recipe.discard}
-        />
-      )}
+      <WorldApplyRegion
+        realm={{ id: display.realmId, slug: display.realmSlug }}
+        result={generator.result}
+        source={controls.source}
+        generating={generating}
+        stale={recipe.stale || generator.state === "error"}
+        mapVersion={loaded.version}
+        lock={lock}
+        onDiscardDraft={recipe.discard}
+      />
     </div>
   );
 }

@@ -52,7 +52,7 @@ export function useEditorFeatureProperties({
 
   const updatePropertiesMutation = api.geoEditor.updateFeatureProperties.useMutation({
     onSuccess: () => {
-      invalidateMapViews(utils, { list: true, stats: true });
+      invalidateMapViews(utils, { list: true });
       // A generated slot's nation is renamed with its region: the nation lists and pages read the new name
       void utils.countries.invalidate();
       void utils.realms.getBySlug.invalidate();

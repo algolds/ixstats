@@ -69,15 +69,9 @@ beforeEach(resetPanelTests);
 afterEach(cleanUpPanelTests);
 
 describe("generating", () => {
-  it("invites a realm's editor to use the world, and the studio to compare it", () => {
-    const realm = renderPanel();
+  it("invites a realm's editor to use the world", () => {
+    renderPanel();
     expect(screen.getByText(/then use it for this realm/)).toBeInTheDocument();
-    realm.unmount();
-    renderPanel({ sandbox: true });
-    expect(screen.queryByText(/use it for this realm/)).toBeNull();
-    expect(
-      screen.getByText("Generate a world on the map to compare it with Ixnay and Eurth.")
-    ).toBeInTheDocument();
   });
 
   it("makes no world until asked, then generates from the Earth-like controls", async () => {

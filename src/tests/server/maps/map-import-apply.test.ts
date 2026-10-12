@@ -312,7 +312,7 @@ describe("applyMapImportPlan and rollback", () => {
   });
 });
 
-describe("importPipelineResult on the shared writer", () => {
+describe("writePipelineLayers on the shared writer", () => {
   it("replace mode retires stale features of the imported layer types only, with names and a snapshot", async () => {
     const db = setup();
     const out = await writePipelineLayers(db as never, {

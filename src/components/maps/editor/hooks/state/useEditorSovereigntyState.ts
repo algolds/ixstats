@@ -49,27 +49,27 @@ export function useEditorSovereigntyState({
     setSovereigntyForm(EMPTY_SOVEREIGNTY_FORM);
   };
 
-  const refreshAfterChange = (stats: boolean) => {
+  const refreshAfterChange = () => {
     utils.geoSovereignty.getSovereigntyRelations.invalidate();
-    invalidateMapViews(utils, { stats });
+    invalidateMapViews(utils);
   };
 
   const createSovereignty = api.geoSovereignty.createSovereignty.useMutation({
     onSuccess: () => {
-      refreshAfterChange(true);
+      refreshAfterChange();
       resetSovereigntyForm();
     },
   });
 
   const updateSovereignty = api.geoSovereignty.updateSovereignty.useMutation({
     onSuccess: () => {
-      refreshAfterChange(false);
+      refreshAfterChange();
       resetSovereigntyForm();
     },
   });
 
   const deleteSovereignty = api.geoSovereignty.deleteSovereignty.useMutation({
-    onSuccess: () => refreshAfterChange(true),
+    onSuccess: () => refreshAfterChange(),
   });
 
   const filteredRelations = useMemo(

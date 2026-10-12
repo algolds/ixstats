@@ -11,13 +11,12 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 import { readFile } from "fs/promises";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
-import { clearLayerCache, layerCache } from "~/server/shared/layer-cache";
+import { clearLayerCache } from "~/server/shared/layer-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
 import { loadLayerWithFallback } from "~/server/modules/maps/layer-loader";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
 import { discoveryProcedures } from "~/server/api/routers/geo/core/discovery";
-import { statsProcedures } from "~/server/api/routers/geo/core/stats";
 import { countryProcedures } from "~/server/api/routers/geo/core/country";
 import { pointQueryProcedures } from "~/server/api/routers/geo/core/point-queries";
 import { geoProfileProcedures } from "~/server/api/routers/geo/core/geo-profile";
@@ -27,8 +26,6 @@ import { transportRouteQueriesRouter } from "~/server/api/routers/transport/rout
 import { geoEditorLinkageValidationRouter } from "~/server/api/routers/geo/editor/linkage/validation";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders";
-import { geoEditorProceduralRouter } from "~/server/api/routers/geo/editor/procedural";
-import { geoAdminCommitsRouter } from "~/server/api/routers/geo/admin/commits";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -120,7 +117,6 @@ const geo = createTRPCRouter({
   ...worldMapProcedures,
   ...borderHistoryProcedures,
   ...discoveryProcedures,
-  ...statsProcedures,
   ...countryProcedures,
   ...pointQueryProcedures,
   ...geoProfileProcedures,
@@ -232,18 +228,6 @@ describe("/maps shows only the viewed realm's map", () => {
     const seen = models.flatMap((m) => wheres(db, m));
     expect(seen.length).toBeGreaterThan(0);
     expect(seen.map(realmOf)).toEqual(seen.map(() => EURTH));
-  });
-
-  it("layer counts (getLayerInfo, getMapStats) count the realm's features, like its country counts", async () => {
-    const db = emptyDb();
-    const caller = geoCaller(ctxFor(db, eurthViewer()));
-    await caller.getLayerInfo();
-    await caller.getMapStats();
-
-    const layerWheres = [...wheres(db, "mapLayer", "groupBy"), ...wheres(db, "mapLayer", "count")];
-    expect(layerWheres).toHaveLength(5);
-    expect(layerWheres.map(realmOf)).toEqual(layerWheres.map(() => EURTH));
-    expect(wheres(db, "country", "count").map(realmOf)).toEqual([EURTH, EURTH]);
   });
 
   it("a feature-id or name lookup is scoped to the realm; a country-id lookup is not", async () => {
@@ -420,70 +404,5 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
       NOT: { neighbors: { equals: [] } },
     });
     expect(db.mapLayer!.updateMany!.mock.calls[0]![0]).toMatchObject({ data: { neighbors: [] } });
-  });
-});
-
-describe("imports and SVG commits never touch another realm's layers", () => {
-  it("an SVG commit (Ixnay's Quick Update) replaces Ixnay's layer, matching Ixnay nations only", async () => {
-    const db = emptyDb();
-    db.svgUpload!.findUnique!.mockResolvedValue({
-      id: "up1",
-      status: "processed",
-      layerType: "political",
-      svgMetadata: {},
-      geojsonData: {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            id: "X",
-            properties: { name: "X" },
-            geometry: { type: "Point", coordinates: [0, 0] },
-          },
-        ],
-      },
-    });
-    await createCallerFactory(geoAdminCommitsRouter)(adminCtx(db)).commitSvgUpload({
-      uploadId: "up1",
-    });
-
-    expect(wheres(db, "mapLayer", "deleteMany").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
-    expect(wheres(db, "mapLayer").map(realmOf)).toEqual([DEFAULT_REALM_ID, DEFAULT_REALM_ID]);
-    expect(wheres(db, "country").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
-    const created = db.mapLayer!.createMany!.mock.calls[0][0].data as Array<{ realmId: string }>;
-    expect(created.map((r) => r.realmId)).toEqual([DEFAULT_REALM_ID]);
-    // and Ixnay's map version moves, no other realm's
-    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([DEFAULT_REALM_ID]);
-  });
-
-  it("a pipeline import into an unknown realm is refused before any write", async () => {
-    const db = emptyDb();
-    await expect(
-      createCallerFactory(geoEditorProceduralRouter)(adminCtx(db)).importPipelineResult({
-        layers: { lakes: { type: "FeatureCollection", features: [] } },
-        realmId: "no-such-realm",
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Unknown realm" });
-
-    expect(db.realm!.findUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "no-such-realm" } })
-    );
-    expect(db.mapLayer!.updateMany).not.toHaveBeenCalled();
-    expect(db.mapLayer!.upsert).not.toHaveBeenCalled();
-  });
-
-  it("a pipeline import drops the assembled-layer cache so the target realm's map rebuilds", async () => {
-    const db = emptyDb();
-    const empty = { type: "FeatureCollection" as const, features: [] };
-    layerCache.set(`political:z1:${EURTH}`, { data: empty, timestamp: Date.now() });
-    layerCache.set(`political:z1:${DEFAULT_REALM_ID}`, { data: empty, timestamp: Date.now() });
-    await createCallerFactory(geoEditorProceduralRouter)(adminCtx(db)).importPipelineResult({
-      layers: { lakes: { type: "FeatureCollection", features: [] } },
-      realmId: EURTH,
-    });
-
-    // Eurth's layers go and its map version moves; Ixnay's layers and version stay
-    expect([...layerCache.keys()]).toEqual([`political:z1:${DEFAULT_REALM_ID}`]);
-    expect(db.$queryRaw!.mock.calls.map((call) => call[1])).toEqual([EURTH]);
   });
 });

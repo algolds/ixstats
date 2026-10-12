@@ -4,7 +4,7 @@ import { SystemRestart } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { formatCompact } from "~/lib/format/compact";
-import { CLIMATE_GROUP_NAMES, CLIMATE_GROUPS } from "~/lib/worldgen/world-calibration";
+import { CLIMATE_GROUP_NAMES, TREWARTHA_GROUPS } from "~/lib/worldgen/measure-world";
 import type { WorldGenView } from "~/lib/worldgen/worker/world-gen-session";
 import type { MinMax, WorldPreviewStats } from "~/lib/worldgen/world-stats";
 import { percent } from "./WorldControlParts";
@@ -27,7 +27,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
 
 /** What the draft world came out as: land, continents, climate, nations and their starting figures. */
 export function WorldStats({ stats }: { stats: WorldPreviewStats }) {
-  const climate = CLIMATE_GROUPS.filter((group) => stats.climateMix[group] !== undefined);
+  const climate = TREWARTHA_GROUPS.filter((group) => stats.climateMix[group] !== undefined);
   return (
     <Card content="data" padding="sm" aria-label="Draft world statistics">
       <dl className="text-footnote space-y-1">
@@ -61,13 +61,11 @@ export function WorldStats({ stats }: { stats: WorldPreviewStats }) {
 interface WorldProgressProps {
   view: Pick<WorldGenView, "state" | "message" | "pct" | "error">;
   hasWorld: boolean;
-  /** The studio's sandbox: a world is made to be compared, not used */
-  sandbox?: boolean;
   onGenerate: () => void;
 }
 
 /** The run in flight (its stage and how far), the error that ended one, or the button to make the first world. */
-export function WorldProgress({ view, hasWorld, sandbox, onGenerate }: WorldProgressProps) {
+export function WorldProgress({ view, hasWorld, onGenerate }: WorldProgressProps) {
   if (view.state === "generating") {
     return (
       <p className="text-label-secondary text-footnote flex items-center gap-2" role="status">
@@ -96,9 +94,7 @@ export function WorldProgress({ view, hasWorld, sandbox, onGenerate }: WorldProg
   return (
     <div className="space-y-2">
       <p className="text-label-secondary text-footnote">
-        {sandbox
-          ? "Generate a world on the map to compare it with Ixnay and Eurth."
-          : "Preview a generated world on the map, tune it, then use it for this realm."}
+        Preview a generated world on the map, tune it, then use it for this realm.
       </p>
       <Button size="sm" onClick={onGenerate}>
         Generate preview

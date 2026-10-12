@@ -17,8 +17,6 @@ import { useEditorSovereigntyState } from "./useEditorSovereigntyState";
 
 interface UseEditorGeoDataStateProps {
   isWorldMode: boolean;
-  /** The admin studio's sandbox: the World tab alone */
-  sandbox?: boolean;
   activeCountryId: string | null;
   setActiveCountryId: (id: string | null) => void;
   mapSelectedCountry: SelectedCountry | null;
@@ -30,7 +28,6 @@ const includesText = (haystack: string, needle: string) =>
 
 export function useEditorGeoDataState({
   isWorldMode,
-  sandbox = false,
   activeCountryId,
   setActiveCountryId,
   mapSelectedCountry,
@@ -40,10 +37,10 @@ export function useEditorGeoDataState({
   // The realm being edited: its features, and its nations to link them to.
   const realm = useMapRealm();
 
-  // `?editor=world` (the realm's Manage page) and the studio's sandbox open the World tab
+  // `?editor=world` (the realm's Manage page) opens the World tab
   const wantsWorldTab = wantsRealmWorldEditor(useSearchParams());
   const [activeSidebarTab, setActiveSidebarTab] = useState<TabId>(() =>
-    initialSidebarTab({ isWorldMode, wantsWorldTab, sandbox })
+    initialSidebarTab({ isWorldMode, wantsWorldTab })
   );
 
   // Linkage / assignment
@@ -81,7 +78,7 @@ export function useEditorGeoDataState({
 
   const assignMutation = api.geoEditor.assignCountryGeometry.useMutation({
     onSuccess: () => {
-      invalidateMapViews(utils, { list: true, stats: true });
+      invalidateMapViews(utils, { list: true });
       refetchValidation();
       setAssigningFeatureId(null);
       setAssignCountryId("");
@@ -90,7 +87,7 @@ export function useEditorGeoDataState({
 
   const unlinkMutation = api.geoEditor.unlinkCountryGeometry.useMutation({
     onSuccess: () => {
-      invalidateMapViews(utils, { list: true, stats: true });
+      invalidateMapViews(utils, { list: true });
       refetchValidation();
       setMapSelectedCountry(null);
       setActiveCountryId(null);

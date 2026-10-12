@@ -39,7 +39,7 @@ export function WorldSlotTools({ countryId, countryName, onDeleted }: WorldSlotT
   const remove = api.realms.map.deleteSlot.useMutation({
     onSuccess: () => {
       notify.success(`${countryName} deleted`, "Its land stays on the map, with no nation.");
-      invalidateMapViews(utils, { list: true, stats: true });
+      invalidateMapViews(utils, { list: true });
       void utils.countries.getAll.invalidate();
       onDeleted();
     },

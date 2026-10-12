@@ -26,7 +26,7 @@ const KEY_PREFIX = "ixworld-world-recipe:";
 export const WORLD_RECIPE_VERSION = 2;
 const LEGACY_RECIPE_VERSION = 1;
 
-/** The storage key of a realm's recipe (`scope` is its id, or "sandbox" for the admin studio). */
+/** The storage key of a realm's recipe (`scope` is its id). */
 export const worldRecipeKey = (scope: string) => `${KEY_PREFIX}${scope}`;
 
 const slug = z.string().min(1).max(64);

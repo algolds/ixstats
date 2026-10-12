@@ -3,7 +3,6 @@ import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import type { LayerInfoItemDto } from "~/types/geo.dto";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import { centroidLngLat, computeVisualCenter } from "~/server/modules/maps/layer-geometry";
 import { getColorForFeature } from "~/server/modules/maps/layer-loader";
 
@@ -50,29 +49,6 @@ export const discoveryProcedures = {
           };
         }
       );
-    }),
-
-  /**
-   * Get available layer types and their metadata.
-   */
-  getLayerInfo: cachedPublicProcedure
-    .input(realmScopeInput.optional())
-    .query(async ({ ctx, input }) => {
-      const counts = (await (ctx.db as any).mapLayer.groupBy({
-        by: ["layerType"],
-        where: { isActive: true, realmId: await viewerRealmId(ctx, input?.realm) },
-        _count: { id: true },
-      })) as Array<{ layerType: string; _count: { id: number } }>;
-
-      const countMap = new Map(
-        counts.map((c: { layerType: string; _count: { id: number } }) => [c.layerType, c._count.id])
-      );
-
-      return MAP_LAYER_TYPES.map((type) => ({
-        type,
-        featureCount: (countMap.get(type) as number) || 0,
-        available: ((countMap.get(type) as number) || 0) > 0,
-      }));
     }),
 
   /**

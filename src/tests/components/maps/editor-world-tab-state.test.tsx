@@ -1,7 +1,7 @@
 /**
  * How the editor's state brings in the World tab: a saved panel layout from before it gets the tab added (world
- * editor) or stripped of it (country editor); a new layout has it; and `?editor=world` or the studio's sandbox open
- * the editor on it.
+ * editor) or stripped of it (country editor); a new layout has it; and `?editor=world` opens the editor
+ * on it.
  */
 import { renderHook } from "@testing-library/react";
 
@@ -104,10 +104,6 @@ describe("the tab the editor opens on", () => {
   it("is not World for the labels address, which opens its own dialog", () => {
     searchParams.current = new URLSearchParams("realm=eurth&editor=labels");
     expect(openTab()).toBe("linkages");
-  });
-
-  it("is World in the sandbox", () => {
-    expect(openTab({ sandbox: true })).toBe("world");
   });
 
   it("stays Layers in the country editor whatever the address says", () => {
