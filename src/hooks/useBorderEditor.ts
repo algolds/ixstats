@@ -94,7 +94,7 @@ export interface BorderEditorActions {
   revert: () => void;
   /** Apply the draft offered on load as unsaved changes. */
   restoreDraft: (draft: BorderDraft) => void;
-  /** Dismiss the draft offered on load; the loaded border stays as it is. */
+  /** Drop the draft offered on load, and the saved copy; the loaded border stays as it is. */
   discardDraft: (draft: BorderDraft) => void;
   /** Provide the river/coast layer data used by "trace" mode. */
   setTraceLayerSource: (
@@ -195,7 +195,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const { mutateAsync: repairGeometry } = api.geoEditor.repairBorderGeometry.useMutation();
   const utils = api.useUtils();
   const { handleVertexDrag, commitDrag } = useBorderDrag(stateRef, setState);
-  const { save } = useBorderAutosave(state);
+  const { save, clearDraft } = useBorderAutosave(state);
 
   // Trace mode state (mutable refs)
   /** River/coast layer data updated externally via setTraceLayerSource. */
@@ -544,9 +544,15 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
     });
   }, []);
 
-  const discardDraft = useCallback((draft: BorderDraft) => {
-    setState((s) => (s.pendingDraft === draft ? { ...s, pendingDraft: null } : s));
-  }, []);
+  const discardDraft = useCallback(
+    (draft: BorderDraft) => {
+      // Only the draft on offer: a late answer for a feature since replaced must not reset another's
+      if (stateRef.current.pendingDraft !== draft) return;
+      setState((s) => (s.pendingDraft === draft ? { ...s, pendingDraft: null } : s));
+      clearDraft();
+    },
+    [clearDraft]
+  );
 
   const repairAction = useCallback(async () => {
     const { geometry } = stateRef.current;

@@ -60,6 +60,7 @@ function modelMock(): ModelMock {
     update: jest.fn().mockResolvedValue({}),
     updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     delete: jest.fn().mockResolvedValue({}),
+    deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     upsert: jest.fn().mockResolvedValue({ id: "session", sessionData: {} }),
   };
 }
@@ -359,6 +360,64 @@ describe("world-mode border editing is realm-scoped", () => {
       const saved = db.mapEditorSession!.updateMany!.mock.calls[0][0].data.sessionData;
       expect(saved.savedAt).toBe(Date.now());
       expect(saved.geometry).toEqual(square);
+    });
+
+    it("offers nothing on the next open once the draft was reset by a discard", async () => {
+      const db = realmDb();
+      const sessionId = `${MAP_OFFICER}_${EURTH}_Gallambria`;
+      let stored: object = { undoStack: [], mode: "select" };
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        featureId: "Gallambria",
+        boundingBox: null,
+        updatedAt: hoursBefore(SAVED, 1),
+      });
+      db.mapEditorSession!.updateMany!.mockImplementation(
+        async ({ data }: { data: { sessionData: object } }) => {
+          stored = data.sessionData;
+          return { count: 1 };
+        }
+      );
+      db.mapEditorSession!.upsert!.mockImplementation(async () => ({
+        id: sessionId,
+        userId: MAP_OFFICER,
+        featureId: "Gallambria",
+        sessionData: stored,
+      }));
+      const caller = borders(db, MAP_OFFICER);
+      const open = () => caller.startBorderEditSession({ featureId: "Gallambria", realm: "eurth" });
+
+      await caller.saveBorderEditDraft({ sessionId, sessionData: draftData(SAVED) });
+      expect((await open()).draft).not.toBeNull();
+
+      await caller.saveBorderEditDraft({
+        sessionId,
+        sessionData: { undoStack: [], mode: "select" },
+      });
+      expect((await open()).draft).toBeNull();
+    });
+
+    it("applying an edit clears this realm's draft of the feature, not another realm's", async () => {
+      const db = realmDb();
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        geometry: square,
+        countryId: null,
+        displayName: "Gallambria",
+        areaSqKm: 1,
+      });
+
+      await borders(db, MAP_OFFICER).submitBorderEdit({
+        featureId: "Gallambria",
+        editSubtype: "vertex_edit",
+        proposedGeometry: square,
+        applyDirectly: true,
+        realm: "eurth",
+      });
+
+      expect(db.mapEditorSession!.deleteMany!.mock.calls).toEqual([
+        [{ where: { id: `${MAP_OFFICER}_${EURTH}_Gallambria` } }],
+      ]);
     });
 
     it("offers no draft once the feature was saved after it", async () => {

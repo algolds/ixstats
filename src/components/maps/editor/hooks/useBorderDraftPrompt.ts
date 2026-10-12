@@ -22,7 +22,7 @@ export function useBorderDraftPrompt(
     offered.current = pendingDraft;
     void confirmEditorAction({
       title: "Unsaved changes found",
-      description: `${name ?? featureId} has border changes from ${new Date(pendingDraft.savedAt).toLocaleString()} that were never saved.`,
+      description: `${name ?? featureId} has border changes from ${new Date(pendingDraft.savedAt).toLocaleString()} that were never saved. Discarding them, or closing this dialog, deletes them.`,
       confirmLabel: "Restore unsaved changes",
       cancelLabel: "Discard",
     }).then((restore) => (restore ? restoreDraft(pendingDraft) : discardDraft(pendingDraft)));

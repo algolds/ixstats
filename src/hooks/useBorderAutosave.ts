@@ -6,6 +6,8 @@ import { buildBorderDraft } from "~/lib/maps/border-draft";
 import type { BorderEditorState } from "./useBorderEditor";
 
 const AUTOSAVE_MS = 30_000;
+/** What a new session holds; `restorableBorderDraft` offers nothing for it. */
+const NO_DRAFT = { undoStack: [], mode: "select" };
 
 /** The draft to store for the session, or null before a feature is loaded. */
 function draftOf(s: BorderEditorState) {
@@ -21,7 +23,8 @@ function draftOf(s: BorderEditorState) {
 
 /**
  * Saves the border draft (outline and moved neighbours, never the undo history) after 30 s
- * without a change while the edit is dirty, and on demand through `save`.
+ * without a change while the edit is dirty, and on demand through `save`. `clearDraft` resets the
+ * stored draft so it is not offered again.
  */
 export function useBorderAutosave(state: BorderEditorState) {
   const { mutate, mutateAsync } = api.geoEditor.saveBorderEditDraft.useMutation();
@@ -43,5 +46,10 @@ export function useBorderAutosave(state: BorderEditorState) {
     if (draft) await mutateAsync(draft);
   }, [mutateAsync]);
 
-  return { save };
+  const clearDraft = useCallback(() => {
+    const { sessionId } = latest.current;
+    if (sessionId) mutate({ sessionId, sessionData: NO_DRAFT });
+  }, [mutate]);
+
+  return { save, clearDraft };
 }

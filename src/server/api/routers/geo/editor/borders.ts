@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
@@ -25,6 +26,10 @@ async function realmAreaOf(
   const radiusKm = await realmRadiusKmById(db, realmId);
   return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
 }
+
+/** A user's border editor session for one feature of one realm (feature ids repeat across realms). */
+const borderSessionId = (userId: string, realmId: string, featureId: string) =>
+  `${userId}_${realmId}_${featureId}`;
 
 export const geoEditorBordersRouter = createTRPCRouter({
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
@@ -77,17 +82,17 @@ export const geoEditorBordersRouter = createTRPCRouter({
           .then((layers) => neighbourFeatures(layers, bbox, pad));
       }
 
-      // Create or resume session (feature ids repeat across realms, so the id names the realm)
+      // Create or resume session
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const userId = ctx.auth!.userId ?? "system";
-      const sessionId = `${userId}_${realmId}_${input.featureId}`;
+      const sessionId = borderSessionId(userId, realmId, input.featureId);
       const session = await ctx.db.mapEditorSession.upsert({
         where: { id: sessionId },
         create: {
           id: sessionId,
           userId,
           featureId: input.featureId,
-          sessionData: { undoStack: [], mode: "select" } as any,
+          sessionData: { undoStack: [], mode: "select" },
           expiresAt,
         },
         update: { expiresAt, updatedAt: new Date() },
@@ -126,12 +131,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Only the session's own editor saves into it (session ids are `<userId>_<featureId>`).
+      // Only the session's own editor saves into it (session ids are `<userId>_<realmId>_<featureId>`).
       const { count } = await ctx.db.mapEditorSession.updateMany({
         where: { id: input.sessionId, userId: ctx.auth?.userId ?? "system" },
         data: {
           // Stamped here: a restore compares it with the feature's (server-side) updatedAt
-          sessionData: { ...input.sessionData, savedAt: Date.now() } as any,
+          sessionData: { ...(input.sessionData as Prisma.InputJsonObject), savedAt: Date.now() },
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
@@ -275,7 +280,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
-          where: { userId: ctx.auth!.userId ?? "system", featureId: input.featureId },
+          where: { id: borderSessionId(ctx.auth!.userId ?? "system", realmId, input.featureId) },
         });
 
         return { applied: true, editRequestId: null };

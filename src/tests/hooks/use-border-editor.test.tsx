@@ -435,6 +435,28 @@ describe("useBorderEditor draft restore", () => {
     expect(result.current[0].isDirty).toBe(false);
   });
 
+  it("resets the saved draft on discard, so it is not offered again", () => {
+    const offered = draft();
+    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: offered });
+
+    act(() => result.current[1].discardDraft(offered));
+
+    expect(saveDraft.mutate).toHaveBeenCalledTimes(1);
+    expect(saveDraft.mutate).toHaveBeenCalledWith({
+      sessionId: "u_A",
+      sessionData: { undoStack: [], mode: "select" },
+    });
+  });
+
+  it("leaves the saved draft alone when the answer is for a draft no longer on offer", () => {
+    const { result } = setup({ feature: { geometry: A }, neighbors: NEIGHBORS, draft: draft() });
+
+    act(() => result.current[1].discardDraft(draft()));
+
+    expect(saveDraft.mutate).not.toHaveBeenCalled();
+    expect(result.current[0].pendingDraft).not.toBeNull();
+  });
+
   it("does not restore a draft that is no longer the one on offer", () => {
     const { result } = setup({
       feature: { geometry: A },
