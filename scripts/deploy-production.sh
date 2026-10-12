@@ -175,6 +175,9 @@ if [ $? -eq 0 ]; then
     # Atlas Release 0 (docs/specs/2026-10-11-atlas-release-0-performance-design.md): the Country geom_postgis trigger and
     # backfill and the atlas_country_union function the code calls. Idempotent; must be in place before the new code runs.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261021120000_atlas_r0/migration.sql || exit 1
+    # Atlas Release A (docs/specs/2026-10-11-atlas-release-a-world-creation-design.md): Country.worldgen and
+    # Country.claimable, which db push also adds; idempotent, and must be in place before the new code runs.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261022120000_atlas_ra/migration.sql || exit 1
 else
     echo "❌ Database sync failed"
     exit 1

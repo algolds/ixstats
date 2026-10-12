@@ -26,8 +26,11 @@ export const MAP_GEOMETRY_TRIGGERS_SQL =
 /** Atlas Release 0: Realm.mapVersion, the Country geom_postgis trigger and backfill, atlas_country_union; idempotent. */
 export const ATLAS_R0_SQL = "prisma/migrations/20261021120000_atlas_r0/migration.sql";
 
+/** Atlas Release A: Country.worldgen and Country.claimable; idempotent. */
+export const ATLAS_RA_SQL = "prisma/migrations/20261022120000_atlas_ra/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
-export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL];
+export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
 export interface BootstrapGuardInput {
   nodeEnv: string | undefined;

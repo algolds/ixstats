@@ -2,6 +2,7 @@ import { describe, it, expect } from "@jest/globals";
 import { readFileSync } from "node:fs";
 import {
   ATLAS_R0_SQL,
+  ATLAS_RA_SQL,
   bootstrapRefusal,
   DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
@@ -40,8 +41,14 @@ describe("db:bootstrap guards", () => {
 });
 
 describe("the SQL a fresh database needs besides db push", () => {
-  it("runs the geometry triggers, then the Atlas R0 SQL (it backfills through them)", () => {
-    expect(DB_SETUP_SQL_FILES).toEqual([MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL]);
+  it("runs the geometry triggers, then the Atlas R0 SQL (it backfills through them), then Atlas RA", () => {
+    expect(DB_SETUP_SQL_FILES).toEqual([MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL]);
+  });
+
+  it("the Atlas RA SQL is the idempotent one that adds the Country slot flags", () => {
+    const sql = readFileSync(ATLAS_RA_SQL, "utf8");
+    expect(sql).toContain('ADD COLUMN IF NOT EXISTS "worldgen"');
+    expect(sql).toContain('ADD COLUMN IF NOT EXISTS "claimable"');
   });
 
   it("the Atlas R0 SQL is the idempotent one that creates what the code calls", () => {

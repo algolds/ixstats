@@ -193,6 +193,10 @@ model Country {
   realmClaims                 RealmClaim[]
   /// The nation's key in its realm's outside source (RealmSourceSync), e.g. a community map's nation id
   externalSourceKey           String?
+  /// A nation slot the world generator made (Atlas Release A): its figures are derived from the map, not the realm table.
+  worldgen                    Boolean                       @default(false)
+  /// False for a generated slot nobody may claim (scenery): claims, counts and listings of open nations skip it.
+  claimable                   Boolean                       @default(true)
 
   @@unique([realmId, name])
   @@unique([realmId, externalSourceKey])

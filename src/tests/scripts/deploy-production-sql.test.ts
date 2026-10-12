@@ -14,4 +14,15 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(atlas).toBeGreaterThan(push);
     expect(build).toBeGreaterThan(atlas);
   });
+
+  it("runs the Atlas RA SQL after the Atlas R0 SQL and before the build, and stops the deploy if it fails", () => {
+    const r0 = script.indexOf("prisma/migrations/20261021120000_atlas_r0/migration.sql");
+    const ra = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261022120000_atlas_ra/migration.sql || exit 1"
+    );
+    const build = script.indexOf("bun run build");
+    expect(r0).toBeGreaterThanOrEqual(0);
+    expect(ra).toBeGreaterThan(r0);
+    expect(build).toBeGreaterThan(ra);
+  });
 });
