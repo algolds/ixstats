@@ -380,7 +380,10 @@ describe("the world editor works inside the realm it edits (ruling E-o)", () => 
     });
 
     expect(realmOf(wheres(db, "mapLayer", "findFirst")[0])).toBe(EURTH);
-    expect(realmOf(wheres(db, "mapLayer")[0])).toBe(EURTH);
+    // the neighbours come from one spatial query, whose first parameter is the realm
+    const [sql, realmParam] = db.$queryRawUnsafe!.mock.calls[0]!;
+    expect(sql).toContain(`"worldId" = $1`);
+    expect(realmParam).toBe(EURTH);
   });
 
   it("rebuilding adjacency pairs and updates the given realm's features only", async () => {

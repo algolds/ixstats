@@ -5,6 +5,7 @@
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import type { OverlayRow } from "~/lib/maps/overlay-types";
 import {
   setOrUpdateGeoJSONSource,
   ensureMapLayer,
@@ -30,14 +31,14 @@ const RISK_STOPS: ColorStops = [
 
 interface RiskHeatmapOverlayProps {
   map: MapLibreMap | null;
-  riskData: FeatureCollection;
+  riskRows: OverlayRow[];
   crisisEvents: FeatureCollection;
   visible: boolean;
 }
 
 export function RiskHeatmapOverlay({
   map,
-  riskData,
+  riskRows,
   crisisEvents,
   visible,
 }: RiskHeatmapOverlayProps) {
@@ -57,11 +58,10 @@ export function RiskHeatmapOverlay({
       return;
     }
 
-    const colors = riskData.features.flatMap(({ properties: props }): [string, string][] =>
-      !props?.id || props.riskScore === undefined
-        ? []
-        : [[props.id as string, interpolateColor(props.riskScore as number, RISK_STOPS)]]
-    );
+    const colors = riskRows.map(({ countryId, value }): [string, string] => [
+      countryId,
+      interpolateColor(value, RISK_STOPS),
+    ]);
     if (colorPoliticalFill(map, colors)) activeRef.current = true;
 
     // Crisis event point markers
@@ -80,7 +80,7 @@ export function RiskHeatmapOverlay({
     });
 
     map.setLayoutProperty(CRISIS_LAYER, "visibility", "visible");
-  }, [map, riskData, crisisEvents, visible]);
+  }, [map, riskRows, crisisEvents, visible]);
 
   // Cleanup on unmount
   useEffect(() => {

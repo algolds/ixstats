@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { FeatureCollection } from "geojson";
+import type { OverlayRow } from "~/lib/maps/overlay-types";
 import {
   POLITICAL_LAYER_ID,
   colorPoliticalFill,
@@ -17,7 +17,7 @@ type ColorScale = "wealth" | "population" | "neutral" | "canon";
 
 interface ChoroplethOverlayProps {
   map: MapLibreMap | null;
-  data: FeatureCollection;
+  rows: OverlayRow[];
   visible: boolean;
   layerId: string; // unique key to avoid conflicts between wealth/population
   colorScale?: ColorScale;
@@ -55,7 +55,7 @@ const COLOR_SCALES: Record<ColorScale, ColorStops> = {
 
 export function ChoroplethOverlay({
   map,
-  data,
+  rows,
   visible,
   colorScale = "neutral",
 }: ChoroplethOverlayProps) {
@@ -73,13 +73,12 @@ export function ChoroplethOverlay({
     }
 
     const stops = COLOR_SCALES[colorScale];
-    const colors = data.features.flatMap(({ properties: props }): [string, string][] =>
-      !props?.id || props.value == null
-        ? []
-        : [[props.id as string, interpolateColor(props.value as number, stops)]]
-    );
+    const colors = rows.map(({ countryId, value }): [string, string] => [
+      countryId,
+      interpolateColor(value, stops),
+    ]);
     if (colorPoliticalFill(map, colors)) activeRef.current = true;
-  }, [map, data, visible, colorScale]);
+  }, [map, rows, visible, colorScale]);
 
   // Restore on unmount
   useEffect(() => {

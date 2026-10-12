@@ -111,20 +111,16 @@ describe("getRegionalChoropleth", () => {
     ]);
 
     const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getRegionalChoropleth({
+    const result = await caller.getRegionalChoropleth({
       metric: "health",
       groupBy: "country",
-    })) as {
-      features: { properties: { rawValue: number; value: number } }[];
-    };
+    });
 
-    expect(result.features).toHaveLength(2);
-    const aRaw = result.features[0]?.properties.rawValue ?? 0;
-    const bRaw = result.features[1]?.properties.rawValue ?? 0;
+    expect(result.rows).toHaveLength(2);
+    const aRaw = result.rows[0]?.rawValue ?? 0;
+    const bRaw = result.rows[1]?.rawValue ?? 0;
     expect(aRaw).toBeGreaterThan(bRaw);
-    expect(result.features[0]?.properties.value).toBeGreaterThan(
-      result.features[1]?.properties.value ?? 0
-    );
+    expect(result.rows[0]?.value).toBeGreaterThan(result.rows[1]?.value ?? 0);
   });
 
   it("derives net trade balance from bilateral trade rows and inverts ranking", async () => {
@@ -153,14 +149,12 @@ describe("getRegionalChoropleth", () => {
     ]);
 
     const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getRegionalChoropleth({
+    const result = await caller.getRegionalChoropleth({
       metric: "tradeBalance",
       groupBy: "country",
-    })) as {
-      features: { properties: { id: string; rawValue: number; value: number } }[];
-    };
+    });
 
-    const byId = new Map(result.features.map((f) => [f.properties.id, f.properties]));
+    const byId = new Map(result.rows.map((row) => [row.countryId, row]));
     expect(byId.get("A")?.rawValue).toBe(200);
     expect(byId.get("B")?.rawValue).toBe(-100);
     expect(byId.get("C")?.rawValue).toBe(-100);
@@ -177,18 +171,48 @@ describe("getRegionalChoropleth", () => {
     ]);
 
     const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getRegionalChoropleth({
+    const result = await caller.getRegionalChoropleth({
       metric: "gdpPerCapita",
       groupBy: "country",
-    })) as {
-      features: { properties: { rawValue: number; value: number } }[];
-    };
+    });
 
-    expect(result.features[0]?.properties.rawValue).toBe(50_000);
-    expect(result.features[1]?.properties.rawValue).toBe(5_000);
-    expect(result.features[0]?.properties.value).toBeGreaterThan(
-      result.features[1]?.properties.value ?? 0
-    );
+    expect(result.rows[0]?.rawValue).toBe(50_000);
+    expect(result.rows[1]?.rawValue).toBe(5_000);
+    expect(result.rows[0]?.value).toBeGreaterThan(result.rows[1]?.value ?? 0);
+  });
+
+  it("returns one row per country with no geometry, and never reads it", async () => {
+    mockDb.country.findMany.mockResolvedValue([makeCountry("A"), makeCountry("B")]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = await caller.getRegionalChoropleth({ metric: "population", groupBy: "country" });
+
+    expect(mockDb.country.findMany.mock.calls[0]?.[0].select).not.toHaveProperty("geometry");
+    expect(result.rows.map((row) => row.countryId)).toEqual(["A", "B"]);
+    expect(result.rows[0]).toMatchObject({ name: "Country A", slug: "A", metric: "population" });
+    expect(JSON.stringify(result)).not.toContain("geometry");
+    expect(result.metadata).toMatchObject({ metric: "population", count: 2 });
+  });
+
+  it("groups by region with the group's value on each of its countries, still without geometry", async () => {
+    mockDb.country.findMany.mockResolvedValue([
+      makeCountry("A", { region: "North", currentGdpPerCapita: 10 }),
+      makeCountry("B", { region: "North", currentGdpPerCapita: 30 }),
+      makeCountry("C", { region: "South", currentGdpPerCapita: 100 }),
+    ]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = await caller.getRegionalChoropleth({
+      metric: "gdpPerCapita",
+      groupBy: "region",
+    });
+
+    const byId = new Map(result.rows.map((row) => [row.countryId, row]));
+    expect(byId.get("A")).toMatchObject({ rawValue: 20, groupName: "North", value: 0 });
+    expect(byId.get("B")).toMatchObject({ rawValue: 20, groupName: "North", value: 0 });
+    expect(byId.get("C")).toMatchObject({ rawValue: 100, groupName: "South", value: 1 });
+    expect(JSON.stringify(result)).not.toContain("geometry");
+    expect(result.metadata.count).toBe(2);
   });
 });
 
@@ -245,14 +269,13 @@ describe("getCanonDensity", () => {
     mockDb.storyPin.groupBy.mockResolvedValue([makeGroupByResult("countryId", "C", 4)]);
 
     const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getCanonDensity()) as {
-      features: { properties: { id: string; rawValue: number; value: number } }[];
-      metadata: { maxVal: number };
-    };
+    const result = await caller.getCanonDensity();
 
-    const byId = new Map(result.features.map((f) => [f.properties.id, f.properties]));
+    const byId = new Map(result.rows.map((row) => [row.countryId, row]));
 
-    expect(result.features).toHaveLength(3);
+    expect(result.rows).toHaveLength(3);
+    expect(mockDb.country.findMany.mock.calls[0]?.[0].select).not.toHaveProperty("geometry");
+    expect(JSON.stringify(result)).not.toContain("geometry");
     expect(byId.get("A")?.rawValue).toBe(4);
     expect(byId.get("B")?.rawValue).toBe(4);
     expect(byId.get("C")?.rawValue).toBe(6);
@@ -267,7 +290,7 @@ describe("getCanonDensity", () => {
 
 describe("getCrisisRiskMap", () => {
   type CrisisRiskResult = {
-    riskMap: { features: { properties: { id: string } }[] };
+    rows: { countryId: string; value: number }[];
     crisisEvents: {
       features: {
         geometry: { coordinates: [number, number] };
@@ -290,7 +313,6 @@ describe("getCrisisRiskMap", () => {
       country: {
         name: `Country ${countryId}`,
         slug: countryId,
-        geometry: { type: "Polygon", coordinates: [[[0, 0]]] },
       },
     };
   }
@@ -320,7 +342,20 @@ describe("getCrisisRiskMap", () => {
 
     expect(mockDb.countryGeoProfile.findUnique).not.toHaveBeenCalled();
     expect(mockDb.country.findMany).not.toHaveBeenCalled();
-    expect(result.riskMap.features).toHaveLength(2);
+    expect(result.rows.map((row) => row.countryId)).toEqual(["A", "B"]);
+    expect(result.rows[0]?.value).toBeGreaterThanOrEqual(0);
+  });
+
+  it("returns risk rows without geometry and does not read the country's outline", async () => {
+    mockDb.countryGeoProfile.findMany.mockResolvedValue([makeProfile("A")]);
+    mockDb.crisisEvent.findMany.mockResolvedValue([]);
+
+    const caller = createCallerFactory(testRouter)(baseContext);
+    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
+
+    const args = mockDb.countryGeoProfile.findMany.mock.calls[0]?.[0];
+    expect(args.select.country.select).not.toHaveProperty("geometry");
+    expect(JSON.stringify(result.rows)).not.toContain("geometry");
   });
 
   it("resolves crisis points from JSON id arrays with one country query", async () => {

@@ -6,6 +6,7 @@ import {
   updateCitySpatialProfile,
   updateSubdivisionSpatialProfile,
   alignSubdivisionBorders,
+  type CityPointLookup,
 } from "./spatial";
 import { triggerGeographyPolicy } from "./policy";
 import { recalculateLargestCity, syncGeographicDemographics } from "./sync";
@@ -32,9 +33,21 @@ async function snapAndValidateCoordinates(
   await validatePointContainment(db, countryId, Number(lng), Number(lat), label);
 }
 
-/** Resolves `data.subdivisionId`: "auto"/unset detects it from the coordinates, "none" clears it. */
-async function resolveSubdivisionId(db: any, countryId: string, data: any) {
+/**
+ * Resolves `data.subdivisionId`: "auto"/unset detects it from the coordinates (or takes `covering`, the answer an
+ * import batch already found: a subdivision id, null for none, undefined when not looked up), "none" clears it.
+ */
+async function resolveSubdivisionId(
+  db: any,
+  countryId: string,
+  data: any,
+  covering?: string | null
+) {
   if (data.coordinates && (data.subdivisionId === "auto" || data.subdivisionId == null)) {
+    if (covering !== undefined) {
+      data.subdivisionId = covering;
+      return;
+    }
     const [lng, lat] = lngLatOf(data.coordinates);
     const autoSub = await findSubdivisionAtPoint(db, countryId, lng, lat);
     data.subdivisionId = autoSub ? autoSub.id : null;
@@ -150,8 +163,15 @@ async function createCity(db: any, countryId: string, data: any, autoElevation?:
 
 /**
  * Upsert a City and handle all cascading changes (NationalIdentity, largestCity, subdivisions, etc.)
+ * `lookup` is what an import batch already found out about the city's point (lookupCityPoints): a point it found
+ * inside the border skips the per-city border, subdivision and water queries.
  */
-export async function upsertCity(db: any, countryId: string, data: any): Promise<any> {
+export async function upsertCity(
+  db: any,
+  countryId: string,
+  data: any,
+  lookup?: CityPointLookup
+): Promise<any> {
   if (!data.id && data.name) {
     const matchedCity = await db.city.findFirst({
       where: {
@@ -168,8 +188,9 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
     }
   }
   const isNew = !data.id;
-  await snapAndValidateCoordinates(db, countryId, data, "City");
-  await resolveSubdivisionId(db, countryId, data);
+  const batch = lookup?.inside === true ? lookup : undefined;
+  if (!batch) await snapAndValidateCoordinates(db, countryId, data, "City");
+  await resolveSubdivisionId(db, countryId, data, batch?.subdivisionId);
 
   // Auto-derive elevation from the terrain zone at the city's coordinates when
   // the caller did not supply an explicit value. The explicit value is kept as
@@ -197,7 +218,7 @@ export async function upsertCity(db: any, countryId: string, data: any): Promise
   await syncPointGeometry(db, "cities", city, "upsertCity");
 
   // Update spatial profiles
-  await updateCitySpatialProfile(db, city.id);
+  await updateCitySpatialProfile(db, city.id, batch?.water ?? undefined);
 
   if (isNew) {
     await triggerGeographyPolicy(db, countryId, "city", city.name, data.submittedBy || "owner");

@@ -1,7 +1,7 @@
 /**
  * tRPC Server-Side Cache Middleware
  *
- * Provides Redis-backed (with in-memory fallback) caching for tRPC query results.
+ * Provides Redis-backed (with a byte-bounded in-memory fallback) caching for tRPC query results.
  * This dramatically reduces database load for frequently accessed, read-heavy endpoints.
  *
  * Features:
@@ -23,26 +23,25 @@ import type { createTRPCContext } from "~/server/api/trpc";
 import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { roundToIxDay } from "~/lib/ixtime/day";
+import { ByteLru } from "~/server/shared/byte-lru";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
-// In-memory cache with TTL support
-interface MemoryCacheEntry {
-  data: unknown;
-  expiry: number;
-}
+/**
+ * The memory fallback: each entry is the serialised result behind its expiry (`<epoch ms>:<json>`), so the cache
+ * is sized by what it holds (a map layer read is megabytes) and a hit is a fresh copy, like a Redis hit.
+ */
+const memoryCache = new ByteLru<string>(memoryConfig.trpc.maxCacheBytes);
 
-const memoryCache = new Map<string, MemoryCacheEntry>();
-
-if (process.env.NODE_ENV === "development") {
-  memoryCache.clear(); // HMR cache bust trigger
-}
-
-const MAX_MEMORY_CACHE_SIZE = memoryConfig.trpc.maxCacheSize;
+const EXPIRY_SEPARATOR = ":";
 
 // Clean up expired entries periodically
 let cleanupInterval: NodeJS.Timeout | null = null;
+
+const isExpired = (entry: string, now: number) =>
+  Number(entry.slice(0, entry.indexOf(EXPIRY_SEPARATOR))) <= now;
 
 function startMemoryCacheCleanup() {
   if (cleanupInterval) return;
@@ -50,14 +49,7 @@ function startMemoryCacheCleanup() {
 
   cleanupInterval = setInterval(() => {
     const now = Date.now();
-    let deleted = 0;
-
-    for (const [key, entry] of memoryCache.entries()) {
-      if (entry.expiry < now) {
-        memoryCache.delete(key);
-        deleted++;
-      }
-    }
+    const deleted = memoryCache.deleteWhere((_key, entry) => isExpired(entry, now));
 
     if (deleted > 0 && process.env.NODE_ENV === "development") {
       console.log(`[TRPC_CACHE] Cleaned up ${deleted} expired memory cache entries`);
@@ -86,11 +78,13 @@ interface TrpcCacheOptions {
 }
 
 /**
- * Safe JSON stringify that handles circular references and filters out database/client pointers
+ * Safe JSON stringify that handles circular references and filters out database/client pointers. An `ixTime`
+ * is written as its IxTime day: scrubbing through time would otherwise add a cache entry per position.
  */
 function safeJsonStringify(obj: unknown): string {
   const seen = new WeakSet();
   return JSON.stringify(obj, (key, value) => {
+    if (key === "ixTime" && typeof value === "number") return roundToIxDay(value);
     if (typeof value === "object" && value !== null) {
       if (seen.has(value)) {
         return "[Circular]";
@@ -155,11 +149,14 @@ export function shouldSkipCache(
   return skipPatterns?.some((p) => p.test(path)) ?? false;
 }
 
-/** Parse a Redis value written as JSON.stringify(superjson.serialize(v)); null for legacy/invalid values. */
-function parseRedisPayload(raw: string): SuperJSONResult | null {
+/** A cached value as stored (the Redis value, and the memory entry behind its expiry). */
+const encodePayload = (value: unknown): string => JSON.stringify(superjson.serialize(value));
+
+/** Decode a value written by encodePayload; null for legacy/invalid payloads. */
+function decodePayload<T>(raw: string): T | null {
   const parsed: SuperJSONResult | null = JSON.parse(raw);
   if (parsed === null || typeof parsed !== "object" || !("json" in parsed)) return null;
-  return parsed;
+  return superjson.deserialize<T | undefined>(parsed) ?? null;
 }
 
 /**
@@ -172,39 +169,31 @@ async function getCachedValue<T>(key: string): Promise<T | null> {
   if (isRedisReady(redisClient)) {
     try {
       const raw = await redisClient.get(key);
-      if (raw === null) return null;
-      const payload = parseRedisPayload(raw);
-      if (!payload) return null;
-      const value = superjson.deserialize<T | undefined>(payload);
-      return value === undefined ? null : value;
+      return raw === null ? null : decodePayload<T>(raw);
     } catch (err) {
       console.warn("[TRPC_CACHE] Redis get error, falling back to memory:", err);
     }
   }
 
   // Try memory cache
-  const memEntry = memoryCache.get(key);
-  if (memEntry && memEntry.expiry > Date.now()) {
-    return memEntry.data as T;
-  }
-
-  // Clean up expired entry
-  if (memEntry) {
+  const entry = memoryCache.get(key);
+  if (entry === undefined) return null;
+  if (isExpired(entry, Date.now())) {
     memoryCache.delete(key);
+    return null;
   }
-
-  return null;
+  return decodePayload<T>(entry.slice(entry.indexOf(EXPIRY_SEPARATOR) + 1));
 }
 
 /**
- * Set cached value in Redis when ready, otherwise in the size-capped memory cache.
+ * Set cached value in Redis when ready, otherwise in the byte-capped memory cache.
  */
 async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
   const redisClient = getSharedRedis();
 
   if (isRedisReady(redisClient)) {
     try {
-      await redisClient.setex(key, ttlSeconds, JSON.stringify(superjson.serialize(value)));
+      await redisClient.setex(key, ttlSeconds, encodePayload(value));
     } catch (err) {
       // Includes unserializable (e.g. circular) values: skip caching rather than failing the request
       console.warn("[TRPC_CACHE] Redis set error, value not cached:", err);
@@ -212,20 +201,13 @@ async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Pro
     return;
   }
 
-  // Enforce max size with LRU-style eviction
-  if (memoryCache.size >= MAX_MEMORY_CACHE_SIZE) {
-    // Delete oldest entries (first 10%)
-    const entriesToDelete = Math.floor(MAX_MEMORY_CACHE_SIZE * 0.1);
-    const keys = Array.from(memoryCache.keys()).slice(0, entriesToDelete);
-    for (const k of keys) {
-      memoryCache.delete(k);
-    }
+  try {
+    const expiry = Date.now() + ttlSeconds * 1000;
+    memoryCache.set(key, `${expiry}${EXPIRY_SEPARATOR}${encodePayload(value)}`);
+  } catch (err) {
+    // Unserializable (e.g. circular) values: skip caching rather than failing the request
+    console.warn("[TRPC_CACHE] Memory set error, value not cached:", err);
   }
-
-  memoryCache.set(key, {
-    data: value,
-    expiry: Date.now() + ttlSeconds * 1000,
-  });
 }
 
 // tRPC's `middlewareMarker` (not exported from a stable entrypoint).
@@ -318,16 +300,9 @@ export async function invalidateCache(patterns: string[]): Promise<void> {
   }
 
   // Clear from memory cache
-  let deleted = 0;
-  for (const [key] of memoryCache.entries()) {
-    for (const pattern of patterns) {
-      if (key.includes(pattern)) {
-        memoryCache.delete(key);
-        deleted++;
-        break;
-      }
-    }
-  }
+  const deleted = memoryCache.deleteWhere((key) =>
+    patterns.some((pattern) => key.includes(pattern))
+  );
 
   if (deleted > 0) {
     console.log(`[TRPC_CACHE] Invalidated ${deleted} memory cache entries`);
@@ -368,6 +343,6 @@ export const GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS: string[] = [
 ];
 
 export function clearTrpcMemoryCache(): void {
-  memoryCache.clear();
+  memoryCache.deleteWhere(() => true);
   console.log("[TRPC_CACHE] Module-level memory cache cleared manually");
 }

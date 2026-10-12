@@ -8,9 +8,8 @@
 import { z } from "zod";
 import { createTRPCRouter, standardMutationCountryOwnerProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { upsertCity } from "~/lib/country-geo";
+import { lookupCityPoints, upsertCity } from "~/lib/country-geo";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { assertOwnCountry } from "../core/shared";
 
@@ -60,47 +59,42 @@ export const geoAdminCitiesRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      // Re-validate containment for each city; skip those outside the border
-      let created = 0;
-      for (const row of input.cities) {
-        // Check containment
-        let isInside: boolean | null = null;
-        try {
-          const containResult = (await ctx.db.$queryRawUnsafe(
-            `SELECT ST_Covers(
-               ST_MakeValid(${COUNTRY_BORDER_SQL}),
-               ST_SetSRID(ST_MakePoint($2, $3), 4326)
-             ) as is_inside`,
-            input.countryId,
-            row.lng,
-            row.lat
-          )) as Array<{ is_inside: boolean | null }>;
-          isInside = containResult[0]?.is_inside ?? null;
-        } catch {
-          // PostGIS unavailable — allow through
-          isInside = null;
-        }
+      // Re-validate containment for each city; skip those outside the border. One lookup covers the whole batch
+      // (border, covering subdivision, nearest water), and each city's answer goes to upsertCity.
+      const lookups = await lookupCityPoints(
+        ctx.db,
+        input.countryId,
+        input.cities.map((row) => [row.lng, row.lat])
+      );
 
+      let created = 0;
+      for (const [i, row] of input.cities.entries()) {
+        const lookup = lookups[i];
         // Skip if definitely outside (null means border data unavailable — allow)
-        if (isInside === false) {
+        if (lookup?.inside === false) {
           continue;
         }
 
         try {
-          await upsertCity(ctx.db, input.countryId, {
-            name: row.name,
-            type: row.cityType,
-            coordinates: [row.lng, row.lat],
-            population: row.population,
-            isNationalCapital: row.isNationalCapital,
-            isSubdivisionCapital: row.isSubdivisionCapital,
-            subdivisionId: row.subdivisionId,
-            wikiPageTitle: row.wikiPageTitle,
-            // elevation and foundedYear passed through for Plan 053 compatibility;
-            // silently dropped if not yet in the upsertCity data spread
-            elevation: row.elevation,
-            foundedYear: row.foundedYear,
-          });
+          await upsertCity(
+            ctx.db,
+            input.countryId,
+            {
+              name: row.name,
+              type: row.cityType,
+              coordinates: [row.lng, row.lat],
+              population: row.population,
+              isNationalCapital: row.isNationalCapital,
+              isSubdivisionCapital: row.isSubdivisionCapital,
+              subdivisionId: row.subdivisionId,
+              wikiPageTitle: row.wikiPageTitle,
+              // elevation and foundedYear passed through for Plan 053 compatibility;
+              // silently dropped if not yet in the upsertCity data spread
+              elevation: row.elevation,
+              foundedYear: row.foundedYear,
+            },
+            lookup
+          );
           created++;
         } catch (err) {
           // Log and skip individual failures (don't abort the whole batch)

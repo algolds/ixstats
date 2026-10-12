@@ -20,6 +20,7 @@ jest.mock("~/lib/country-geo", () => ({
   __esModule: true,
   syncCountryGeometryFromMapLayer: jest.fn().mockResolvedValue(undefined),
   upsertCity: jest.fn().mockResolvedValue({}),
+  lookupCityPoints: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("~/lib/maps/geo-validation", () => ({
   ...jest.requireActual("~/lib/maps/geo-validation"),

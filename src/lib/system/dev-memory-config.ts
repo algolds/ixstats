@@ -33,8 +33,8 @@ export const memoryConfig = {
    * tRPC cache settings (trpc-cache.ts)
    */
   trpc: {
-    /** Maximum cache entries: 100 in dev, 1,000 in prod */
-    maxCacheSize: isDev ? 100 : 1000,
+    /** Memory fallback size cap (bytes held, not entries): 128 MB */
+    maxCacheBytes: 128 * 1024 * 1024,
     /** Cache TTL in seconds: 15s in dev, 60s in prod */
     defaultTTLSeconds: isDev ? 15 : 60,
   },

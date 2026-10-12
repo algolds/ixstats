@@ -145,4 +145,29 @@ describe("restorableBorderDraft", () => {
     );
     expect(draft?.dirtyNeighbors).toEqual({ good: multi });
   });
+
+  describe("moved neighbours that changed after the draft was saved", () => {
+    const drafted = stored({
+      dirtyNeighbors: { kept: SQUARE, newer: SQUARE, same: SQUARE, gone: SQUARE },
+    });
+    const updatedAt = {
+      kept: new Date(NOW - 2 * HOUR),
+      newer: new Date(NOW - HOUR + 1),
+      same: new Date(NOW - HOUR),
+    };
+
+    it("keeps only the neighbours whose outline is older than the draft", () => {
+      const draft = restorableBorderDraft(
+        input({ sessionData: drafted, neighborUpdatedAt: updatedAt })
+      );
+      // "gone" is no longer a neighbour of the feature: nothing vouches that its outline is unchanged
+      expect(Object.keys(draft?.dirtyNeighbors ?? {})).toEqual(["kept"]);
+      expect(draft?.geometry).toEqual(SQUARE);
+    });
+
+    it("offers every moved neighbour when the neighbours' update times are not given", () => {
+      const draft = restorableBorderDraft(input({ sessionData: drafted }));
+      expect(Object.keys(draft?.dirtyNeighbors ?? {})).toHaveLength(4);
+    });
+  });
 });

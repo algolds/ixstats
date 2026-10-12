@@ -44,9 +44,14 @@ export class ByteLru<V extends string | Buffer> {
     this.total -= entry.size;
   }
 
-  deleteWhere(pred: (key: string) => boolean): void {
-    for (const key of this.entries.keys()) {
-      if (pred(key)) this.delete(key);
+  /** Delete every entry the predicate accepts (it sees the key and the stored value); returns how many went. */
+  deleteWhere(pred: (key: string, value: V) => boolean): number {
+    let dropped = 0;
+    for (const [key, { value }] of this.entries) {
+      if (!pred(key, value)) continue;
+      this.delete(key);
+      dropped++;
     }
+    return dropped;
   }
 }

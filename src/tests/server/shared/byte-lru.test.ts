@@ -82,4 +82,16 @@ describe("ByteLru", () => {
     expect(lru.get("r2:v1:political")).toBe("cccccc");
     expect(lru.bytes).toBe(12);
   });
+
+  it("deleteWhere hands the predicate the stored value and reports how many entries went", () => {
+    const lru = new ByteLru<string>(1000);
+    lru.set("a", "1:keep");
+    lru.set("b", "0:drop");
+    lru.set("c", "0:drop too");
+    const dropped = lru.deleteWhere((_key, value) => value.startsWith("0:"));
+    expect(dropped).toBe(2);
+    expect(lru.get("a")).toBe("1:keep");
+    expect(lru.get("b")).toBeUndefined();
+    expect(lru.bytes).toBe(12);
+  });
 });

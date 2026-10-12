@@ -18,11 +18,16 @@ import { mergeBordersAsOf } from "~/lib/maps/border-history-asof";
 import { loadLayerWithFallback } from "./layer-loader";
 import { getZoomBucket } from "./cache";
 import { IxTime } from "~/lib/ixtime";
+import { roundToIxDay } from "~/lib/ixtime/day";
+
+/** Most countries one realm's map can hold: a backstop on the history read, which returns one row per country. */
+const MAX_HISTORY_ROWS = 5000;
 
 export const borderHistoryProcedures = {
   /**
    * Political FeatureCollection as it appeared at the given IxTime.
-   * Accepts an epoch-ms IxTime number (matches `IxTime.getCurrentIxTime()`).
+   * Accepts an epoch-ms IxTime number (matches `IxTime.getCurrentIxTime()`), taken as the start of its IxTime day:
+   * the cache key is that day too, so one answer serves every scrub position within it.
    */
   getWorldMapAsOf: cachedPublicProcedure
     .input(
@@ -33,21 +38,26 @@ export const borderHistoryProcedures = {
       })
     )
     .query(async ({ ctx, input }) => {
-      const asOf = new Date(input.ixTime);
+      const asOf = new Date(roundToIxDay(input.ixTime));
+      const realmId = await viewerRealmId(ctx, input.realm);
 
       const politicalFC = await loadLayerWithFallback(
         ctx.db,
         "political",
         getZoomBucket(input.zoom),
-        await viewerRealmId(ctx, input.realm)
+        realmId
       );
 
       if (!politicalFC) {
         return { type: "FeatureCollection" as const, features: [] };
       }
 
+      // The latest snapshot per country of this realm, which is all the merge uses
       const history = await ctx.db.borderHistory.findMany({
-        where: { changedAt: { lte: asOf } },
+        where: { changedAt: { lte: asOf }, country: { realmId } },
+        distinct: ["countryId"],
+        orderBy: [{ countryId: "asc" }, { changedAt: "desc" }],
+        take: MAX_HISTORY_ROWS,
         select: { countryId: true, geometry: true, changedAt: true },
       });
 

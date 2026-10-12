@@ -1,3 +1,154 @@
+import type { PrismaClient } from "@prisma/client";
+import { COUNTRY_BORDER_SQL } from "~/lib/maps/geo-validation";
+
+type RawDb = Pick<PrismaClient, "$queryRawUnsafe">;
+
+/**
+ * Nearest-neighbour candidates measured exactly per point and water type. The index orders by planar degrees,
+ * which can rank a farther feature first at high latitudes; the nearest by true distance is among the first few.
+ */
+const WATER_KNN_CANDIDATES = 5;
+
+/** Distance reported for a water type the realm has none of. */
+const NO_WATER_KM = 9999.0;
+
+/**
+ * The join that finds, for each point, the nearest river and nearest lake of one realm: the GiST index orders the
+ * candidate features by `<->`, and only those few are measured exactly (on the sphere). Rows: `type`, `distance` (km).
+ * `point` is the SQL expression of the point's geometry, `realm` that of the realm id to read.
+ */
+const nearestWaterSql = (point: string, realm: string) => `
+  CROSS JOIN (VALUES ('rivers'), ('lakes')) AS lt(layer)
+  CROSS JOIN LATERAL (
+    SELECT MIN(ST_Distance(${point}::geography, cand.geom_postgis::geography)) / 1000.0 AS distance
+    FROM (
+      SELECT ml.geom_postgis FROM map_layers ml
+      WHERE ml."layerType" = lt.layer AND ml."isActive" = true AND ml.geom_postgis IS NOT NULL
+        AND ml."worldId" = ${realm}
+      ORDER BY ml.geom_postgis <-> ${point}
+      LIMIT ${WATER_KNN_CANDIDATES}
+    ) cand
+  ) nn`;
+
+/** Kilometres to the nearest river and the nearest lake. */
+export interface WaterDistances {
+  riverKm: number;
+  lakeKm: number;
+}
+
+/** What one city import point needs from the database, answered for the whole batch at once. */
+export interface CityPointLookup {
+  /** The point is inside the country's border; null when there is no border (or no PostGIS) to check against. */
+  inside: boolean | null;
+  /** The approved subdivision covering the point. Meaningful only when `inside` is not null. */
+  subdivisionId: string | null;
+  /** Distance to the nearest river and lake; null when the water query failed. */
+  water: WaterDistances | null;
+}
+
+const UNNEST_POINTS_SQL = `unnest($2::int[], $3::float8[], $4::float8[]) AS p(i, lng, lat)`;
+
+async function lookupContainment(
+  db: RawDb,
+  countryId: string,
+  indexes: number[],
+  lngs: number[],
+  lats: number[]
+): Promise<Map<number, { inside: boolean | null; subdivisionId: string | null }>> {
+  const rows = await db.$queryRawUnsafe<
+    Array<{ i: number; is_inside: boolean | null; subdivisionId: string | null }>
+  >(
+    `WITH pts AS (
+       SELECT p.i, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326) AS pt FROM ${UNNEST_POINTS_SQL}
+     ), border AS (SELECT ST_MakeValid(${COUNTRY_BORDER_SQL}) AS geom)
+     SELECT pts.i, ST_Covers(border.geom, pts.pt) AS is_inside,
+            (SELECT s.id FROM subdivisions s
+              WHERE s."countryId" = $1 AND s.status = 'approved' AND s.geom_postgis IS NOT NULL
+                AND ST_Covers(s.geom_postgis, pts.pt)
+              LIMIT 1) AS "subdivisionId"
+     FROM pts CROSS JOIN border`,
+    countryId,
+    indexes,
+    lngs,
+    lats
+  );
+  return new Map(
+    rows.map((r) => [Number(r.i), { inside: r.is_inside, subdivisionId: r.subdivisionId ?? null }])
+  );
+}
+
+/** Distances in km by point index (0 when the rows carry none); a type with no feature in the realm is 9999. */
+function waterByPoint(
+  rows: Array<{ i?: number; type: string; distance: number | string | null }>
+): Map<number, WaterDistances> {
+  const found = new Map<number, WaterDistances>();
+  for (const r of rows) {
+    const km = r.distance === null ? NO_WATER_KM : Number(r.distance);
+    const i = Number(r.i ?? 0);
+    const entry = found.get(i) ?? { riverKm: NO_WATER_KM, lakeKm: NO_WATER_KM };
+    if (r.type === "rivers") entry.riverKm = km;
+    if (r.type === "lakes") entry.lakeKm = km;
+    found.set(i, entry);
+  }
+  return found;
+}
+
+async function lookupWater(
+  db: RawDb,
+  countryId: string,
+  indexes: number[],
+  lngs: number[],
+  lats: number[]
+): Promise<Map<number, WaterDistances>> {
+  const rows = await db.$queryRawUnsafe<
+    Array<{ i: number; type: string; distance: number | string | null }>
+  >(
+    `WITH pts AS (
+       SELECT p.i, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326) AS pt FROM ${UNNEST_POINTS_SQL}
+     )
+     SELECT pts.i, lt.layer AS type, nn.distance
+     FROM pts ${nearestWaterSql("pts.pt", `(SELECT "realmId" FROM "Country" WHERE id = $1)`)}`,
+    countryId,
+    indexes,
+    lngs,
+    lats
+  );
+  return waterByPoint(rows);
+}
+
+/**
+ * What a city import needs to know about each point, in two queries however many points there are: inside the
+ * country's border, which subdivision covers it, and the distance to the nearest river and lake. A query that
+ * fails leaves its part unknown (`inside: null`, `water: null`) and the caller falls back to per-city lookups.
+ */
+export async function lookupCityPoints(
+  db: RawDb,
+  countryId: string,
+  points: Array<[lng: number, lat: number]>
+): Promise<CityPointLookup[]> {
+  if (points.length === 0) return [];
+  const indexes = points.map((_, i) => i);
+  const lngs = points.map(([lng]) => lng);
+  const lats = points.map(([, lat]) => lat);
+
+  const [containment, water] = await Promise.all([
+    lookupContainment(db, countryId, indexes, lngs, lats).catch((err) => {
+      console.error(`[lookupCityPoints] Containment query failed:`, err);
+      return null;
+    }),
+    lookupWater(db, countryId, indexes, lngs, lats).catch((err) => {
+      console.error(`[lookupCityPoints] Water query failed:`, err);
+      return null;
+    }),
+  ]);
+
+  return indexes.map((i) => ({
+    inside: containment?.get(i)?.inside ?? null,
+    subdivisionId: containment?.get(i)?.subdivisionId ?? null,
+    water: water?.get(i) ?? null,
+  }));
+}
+
 /**
  * Find Subdivision at coordinate point using PostGIS contains check.
  */
@@ -193,11 +344,28 @@ export async function updateSubdivisionSpatialProfile(
   }
 }
 
+/** A city's distance to the nearest river and lake of its country's realm. */
+async function cityWaterDistances(db: RawDb, cityId: string): Promise<WaterDistances> {
+  const rows = await db.$queryRawUnsafe<Array<{ type: string; distance: number | string | null }>>(
+    `SELECT lt.layer AS "type", nn.distance
+     FROM cities c
+     JOIN "Country" co ON co.id = c."countryId"
+     ${nearestWaterSql("c.geom_postgis", `co."realmId"`)}
+     WHERE c.id = $1`,
+    cityId
+  );
+  return waterByPoint(rows).get(0) ?? { riverKm: NO_WATER_KM, lakeKm: NO_WATER_KM };
+}
+
 /**
  * Compute and update spatial profile (climate, water access) for a City, from the base layers of its
- * country's realm only.
+ * country's realm only. `water` is the nearest river and lake when the caller already measured them.
  */
-export async function updateCitySpatialProfile(db: any, cityId: string): Promise<any> {
+export async function updateCitySpatialProfile(
+  db: any,
+  cityId: string,
+  water?: WaterDistances
+): Promise<any> {
   const city = await db.city.findUnique({
     where: { id: cityId },
     select: { id: true, coordinates: true },
@@ -230,24 +398,9 @@ export async function updateCitySpatialProfile(db: any, cityId: string): Promise
       climateName = resolveClimateFromColor(climateResult[0].fill);
     }
 
-    // 2. Distance to nearest water body (rivers, lakes)
-    const waterDistances = (await db.$queryRawUnsafe(
-      `
-      SELECT 
-        ml."layerType" as "type",
-        COALESCE(MIN(ST_Distance(c.geom_postgis::geography, ml.geom_postgis::geography) / 1000.0), 9999.0) as "distance"
-      FROM cities c
-      JOIN "Country" co ON co.id = c."countryId"
-      JOIN map_layers ml ON ml."isActive" = true AND ml.geom_postgis IS NOT NULL AND ml."layerType" IN ('rivers', 'lakes')
-        AND ml."worldId" = co."realmId"
-      WHERE c.id = $1
-      GROUP BY ml."layerType"
-    `,
-      cityId
-    )) as Array<{ type: string; distance: number }>;
-
-    const riverDist = Number(waterDistances.find((w) => w.type === "rivers")?.distance ?? 9999.0);
-    const lakeDist = Number(waterDistances.find((w) => w.type === "lakes")?.distance ?? 9999.0);
+    // 2. Distance to nearest water body (rivers, lakes), unless the import batch already measured it
+    const { riverKm: riverDist, lakeKm: lakeDist } =
+      water ?? (await cityWaterDistances(db, cityId));
 
     // Consider close if within 10km
     const waterAccess = {

@@ -145,3 +145,151 @@ describe("createCacheMiddlewareFactory (Redis tier)", () => {
     expect(next).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
+  function withMemoryCap(maxCacheBytes: number) {
+    let mod!: typeof import("~/lib/cache/trpc-cache");
+    jest.isolateModules(() => {
+      jest.doMock("~/lib/system/dev-memory-config", () => ({
+        memoryConfig: { trpc: { maxCacheBytes } },
+      }));
+      jest.doMock("~/lib/cache/redis-client", () => ({
+        getSharedRedis: () => null,
+        isRedisReady: () => false,
+        deleteKeysByPattern: jest.fn(async () => 0),
+      }));
+      mod = require("~/lib/cache/trpc-cache");
+    });
+    return mod;
+  }
+
+  const run = (
+    mw: ReturnType<typeof createCacheMiddlewareFactory>,
+    input: object,
+    next: () => Promise<{ ok: boolean; data: string }>
+  ) => mw({ ctx, path: "geoCore.getWorldMap", type: "query", input, next });
+
+  it("evicts the least recently used entries by bytes, not by count", async () => {
+    // Each 400-character result takes about 800 bytes serialised: three do not fit in 2,000
+    const mod = withMemoryCap(2_000);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bytes" });
+    const next = jest.fn(async () => ({ ok: true, data: "x".repeat(400) }));
+
+    for (const n of [1, 2, 3]) await run(mw, { n }, next);
+    expect(next).toHaveBeenCalledTimes(3);
+
+    await run(mw, { n: 3 }, next); // newest is still held
+    expect(next).toHaveBeenCalledTimes(3);
+    await run(mw, { n: 1 }, next); // oldest was evicted to make room
+    expect(next).toHaveBeenCalledTimes(4);
+  });
+
+  it("does not hold a result larger than the whole cap", async () => {
+    const mod = withMemoryCap(500);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bytes" });
+    const next = jest.fn(async () => ({ ok: true, data: "x".repeat(2_000) }));
+
+    await run(mw, { n: 1 }, next);
+    await run(mw, { n: 1 }, next);
+    expect(next).toHaveBeenCalledTimes(2);
+  });
+
+  it("serves a copy, so a caller mutating its result cannot corrupt the cached one", async () => {
+    const mod = withMemoryCap(100_000);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "copy" });
+    const next = jest.fn(async () => ({ ok: true, data: { rows: [1, 2, 3] } }));
+    const opts = { ctx, path: "geoCore.getWorldMap", type: "query" as const, input: { n: 1 } };
+
+    const first = await mw({ ...opts, next });
+    (first.data as { rows: number[] }).rows.push(99);
+    const second = await mw({ ...opts, next });
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(second.data).toEqual({ rows: [1, 2, 3] });
+  });
+
+  it("expires an entry after its TTL", async () => {
+    const mod = withMemoryCap(100_000);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ttl" });
+    const next = jest.fn(async () => ({ ok: true, data: "v" }));
+    jest.useFakeTimers({ now: new Date("2026-10-11T12:00:00Z") });
+    try {
+      await run(mw, { n: 1 }, next);
+      jest.setSystemTime(new Date("2026-10-11T12:00:59Z"));
+      await run(mw, { n: 1 }, next);
+      expect(next).toHaveBeenCalledTimes(1);
+      jest.setSystemTime(new Date("2026-10-11T12:01:01Z"));
+      await run(mw, { n: 1 }, next);
+      expect(next).toHaveBeenCalledTimes(2);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("invalidateCache drops the memory entries whose key matches a pattern", async () => {
+    const mod = withMemoryCap(100_000);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "inv" });
+    const next = jest.fn(async () => ({ ok: true, data: "v" }));
+    const other = (input: object) =>
+      mw({ ctx, path: "countries.getAll", type: "query", input, next });
+
+    await run(mw, { n: 1 }, next);
+    await other({ n: 1 });
+    await mod.invalidateCache(["geoCore.getWorldMap"]);
+    await run(mw, { n: 1 }, next);
+    await other({ n: 1 });
+
+    expect(next).toHaveBeenCalledTimes(3); // only the geoCore entry was refetched
+  });
+
+  it("does not cache a result it cannot serialise, and still returns it", async () => {
+    const mod = withMemoryCap(100_000);
+    const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "bad" });
+    const circular: { self?: object } = {};
+    circular.self = circular;
+    const next = jest.fn(async () => ({ ok: true, data: circular }));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await run(mw, { n: 1 }, next as never);
+    await run(mw, { n: 1 }, next as never);
+
+    expect(result.data).toBe(circular);
+    expect(next).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+});
+
+describe("createCacheMiddlewareFactory (ixTime keys)", () => {
+  beforeEach(() => {
+    delete process.env.REDIS_ENABLED;
+    clearTrpcMemoryCache();
+  });
+
+  const DAY = 86_400_000;
+  const call = (
+    mw: ReturnType<typeof createCacheMiddlewareFactory>,
+    input: object,
+    next: () => Promise<{ ok: boolean; data: number }>
+  ) => mw({ ctx, path: "geoCore.getWorldMapAsOf", type: "query", input, next });
+
+  it("two ixTimes on the same IxTime day share one entry", async () => {
+    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ix" });
+    const next = jest.fn(async () => ({ ok: true, data: 1 }));
+
+    await call(mw, { ixTime: 20_000 * DAY + 1_000, realm: "eurth" }, next);
+    await call(mw, { ixTime: 20_000 * DAY + DAY - 1, realm: "eurth" }, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it("another IxTime day, or another realm on the same day, is its own entry", async () => {
+    const mw = createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "ix" });
+    const next = jest.fn(async () => ({ ok: true, data: 1 }));
+
+    await call(mw, { ixTime: 20_000 * DAY, realm: "eurth" }, next);
+    await call(mw, { ixTime: 20_001 * DAY, realm: "eurth" }, next);
+    await call(mw, { ixTime: 20_000 * DAY, realm: "ixnay" }, next);
+
+    expect(next).toHaveBeenCalledTimes(3);
+  });
+});

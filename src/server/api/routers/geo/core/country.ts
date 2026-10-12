@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { cachedPublicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { cachedPublicProcedure } from "~/server/api/trpc";
+import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { TRPCError } from "@trpc/server";
 import type { Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { truncateGeometry } from "~/lib/maps/geojson-compress";
-import { neighbourFeatures } from "./shared";
 
 export const countryProcedures = {
   getCountryGeometry: cachedPublicProcedure
@@ -298,37 +297,5 @@ export const countryProcedures = {
         // PostGIS query failed
         return [];
       }
-    }),
-
-  /**
-   * Get all geographic features for a specific country.
-   * Includes subdivisions, cities, and points of interest.
-   */
-  // Same gate as the border edit it serves: site admins, or the realm's map editors.
-  getNeighborGeometries: protectedProcedure
-    .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
-    .query(async ({ ctx, input }) => {
-      const realmId = await editableMapRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-        select: { boundingBox: true },
-      });
-      if (!feature) return [];
-
-      const bbox = feature.boundingBox as number[] | null;
-      if (!bbox || bbox.length !== 4) return [];
-
-      const pad = 1;
-      const neighbors = await ctx.db.mapLayer.findMany({
-        where: {
-          layerType: "political",
-          featureId: { not: input.featureId },
-          isActive: true,
-          realmId,
-        },
-        select: { featureId: true, displayName: true, geometry: true, boundingBox: true },
-      });
-
-      return neighbourFeatures(neighbors, bbox, pad);
     }),
 };

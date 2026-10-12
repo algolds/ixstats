@@ -1,5 +1,5 @@
 import type { MultiPolygon, Polygon } from "geojson";
-import type { PrismaClient } from "@prisma/client";
+import type { City, PrismaClient, Subdivision } from "@prisma/client";
 
 /**
  * Sync helper to keep Country cached geo columns up to date with its MapLayer political geometry.
@@ -325,124 +325,155 @@ export async function rebaseNationalFromGeography(db: any, countryId: string) {
   return country;
 }
 
+type CityDemographics = { id: string; population: number; gdpContribution: number };
+
+/** Splits a subdivision's population and GDP over its cities in proportion to their existing populations. */
+function scaleCityDemographics(
+  cities: City[],
+  subPop: number,
+  subGdp: number,
+  citiesSumPop: number
+): CityDemographics[] {
+  const popScale = subPop / citiesSumPop;
+  const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
+
+  let allocatedPop = 0;
+  let allocatedGdp = 0;
+
+  return cities.map((city, i) => {
+    let pop = Math.round((city.population ?? 0) * popScale);
+    let gdp = pop * gdpPerCapita;
+
+    // Rounding adjustment for last city
+    if (i === cities.length - 1) {
+      pop = subPop - allocatedPop;
+      gdp = subGdp - allocatedGdp;
+    }
+
+    allocatedPop += pop;
+    allocatedGdp += gdp;
+
+    return { id: city.id, population: pop, gdpContribution: gdp };
+  });
+}
+
+/**
+ * Splits a subdivision's population and GDP over its cities by predefined category/status weights:
+ * National Capital = 5.0, Subdivision Capital = 3.0, standard City/major = 2.0, Town = 0.5, other/Village = 0.1.
+ */
+function weightCityDemographics(
+  cities: City[],
+  sub: Subdivision,
+  subPop: number,
+  subGdp: number
+): CityDemographics[] {
+  const getWeight = (c: City) => {
+    if (c.isNationalCapital) return 5.0;
+    if (c.isSubdivisionCapital || c.name === sub.capital) return 3.0;
+    if (c.type === "city" || c.type === "major") return 2.0;
+    if (c.type === "town") return 0.5;
+    return 0.1;
+  };
+
+  const weights = cities.map((c) => ({ city: c, w: getWeight(c) }));
+  const sumWeights = weights.reduce((sum, item) => sum + item.w, 0);
+
+  const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
+
+  let allocatedPop = 0;
+  let allocatedGdp = 0;
+
+  return weights.map(({ city, w }, i): CityDemographics => {
+    let pop = Math.round(subPop * (w / sumWeights));
+    let gdp = pop * gdpPerCapita;
+
+    // Rounding adjustment for last city
+    if (i === weights.length - 1) {
+      pop = subPop - allocatedPop;
+      gdp = subGdp - allocatedGdp;
+    }
+
+    allocatedPop += pop;
+    allocatedGdp += gdp;
+
+    return { id: city.id, population: pop, gdpContribution: gdp };
+  });
+}
+
+/** Rows per UPDATE statement when writing city demographics. */
+const CITY_UPDATE_CHUNK = 500;
+
+/** Writes the cities' figures in a few UPDATE ... FROM statements, all inside one transaction. */
+async function writeCityDemographics(
+  db: Pick<PrismaClient, "$executeRawUnsafe" | "$transaction">,
+  updates: CityDemographics[]
+) {
+  const statements = [];
+  for (let from = 0; from < updates.length; from += CITY_UPDATE_CHUNK) {
+    const chunk = updates.slice(from, from + CITY_UPDATE_CHUNK);
+    statements.push(
+      db.$executeRawUnsafe(
+        `UPDATE cities AS c
+         SET population = v.population, "gdpContribution" = v.gdp, "updatedAt" = NOW()
+         FROM unnest($1::text[], $2::float8[], $3::float8[]) AS v(id, population, gdp)
+         WHERE c.id = v.id`,
+        chunk.map((u) => u.id),
+        chunk.map((u) => u.population),
+        chunk.map((u) => u.gdpContribution)
+      )
+    );
+  }
+  if (statements.length > 0) await db.$transaction(statements);
+}
+
 /**
  * Distributes subdivision populations and GDP contributions down to the subdivision's approved cities.
  * Uses either scaling proportional to existing populations or predefined category/status weights.
+ * Reads every subdivision's cities in one query and writes all the new figures in one transaction.
  */
 export async function distributeSubdivisionDemographicsToCities(
   db: any,
   countryId: string,
   scaleExisting: boolean
 ) {
-  // 1. Fetch subdivisions for the country
-  const subdivisions = await db.subdivision.findMany({
+  // 1. Fetch subdivisions for the country, and their approved cities in one query
+  const subdivisions: Subdivision[] = await db.subdivision.findMany({
     where: { countryId, status: "approved" },
   });
+  const allCities: City[] = await db.city.findMany({
+    where: {
+      subdivisionId: { in: subdivisions.map((sub) => sub.id) },
+      countryId,
+      status: "approved",
+    },
+  });
+  const citiesBySubdivision = new Map<string | null, City[]>();
+  for (const city of allCities) {
+    const siblings = citiesBySubdivision.get(city.subdivisionId);
+    if (siblings) siblings.push(city);
+    else citiesBySubdivision.set(city.subdivisionId, [city]);
+  }
 
-  let totalCitiesUpdated = 0;
-
-  // 2. Iterate subdivisions
+  // 2. Work out each subdivision's cities
+  const cityUpdates: CityDemographics[] = [];
   for (const sub of subdivisions) {
     const subPop = sub.population ?? 0;
     const subGdp = sub.gdpContribution ?? 0;
+    const cities = citiesBySubdivision.get(sub.id) ?? [];
 
-    if (subPop <= 0) continue;
+    if (subPop <= 0 || cities.length === 0) continue;
 
-    // Fetch approved cities in this subdivision
-    const cities = await db.city.findMany({
-      where: { subdivisionId: sub.id, countryId, status: "approved" },
-    });
-
-    if (cities.length === 0) continue;
-
-    let useScaling = scaleExisting;
-    let citiesSumPop = 0;
-    if (useScaling) {
-      citiesSumPop = cities.reduce((sum: number, c: any) => sum + (c.population ?? 0), 0);
-      if (citiesSumPop <= 0) {
-        useScaling = false; // Fallback to weights if sum of existing population is 0
-      }
-    }
-
-    const cityUpdates: Array<{ id: string; population: number; gdpContribution: number }> = [];
-
-    if (useScaling) {
-      // Scale existing population proportionally
-      const popScale = subPop / citiesSumPop;
-      const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
-
-      let allocatedPop = 0;
-      let allocatedGdp = 0;
-
-      for (let i = 0; i < cities.length; i++) {
-        const city = cities[i];
-        let pop = Math.round((city.population ?? 0) * popScale);
-        let gdp = pop * gdpPerCapita;
-
-        // Rounding adjustment for last city
-        if (i === cities.length - 1) {
-          pop = subPop - allocatedPop;
-          gdp = subGdp - allocatedGdp;
-        }
-
-        allocatedPop += pop;
-        allocatedGdp += gdp;
-
-        cityUpdates.push({ id: city.id, population: pop, gdpContribution: gdp });
-      }
-    } else {
-      // Predefined weights
-      // National Capital = 5.0
-      // Subdivision Capital = 3.0
-      // standard City/major = 2.0
-      // Town = 0.5
-      // other/Village = 0.1
-      const getWeight = (c: any) => {
-        if (c.isNationalCapital) return 5.0;
-        if (c.isSubdivisionCapital || c.name === sub.capital) return 3.0;
-        if (c.type === "city" || c.type === "major") return 2.0;
-        if (c.type === "town") return 0.5;
-        return 0.1;
-      };
-
-      const weights = cities.map((c: any) => ({ city: c, w: getWeight(c) }));
-      const sumWeights = weights.reduce((sum: number, item: { w: number }) => sum + item.w, 0);
-
-      const gdpPerCapita = subPop > 0 ? subGdp / subPop : 0;
-
-      let allocatedPop = 0;
-      let allocatedGdp = 0;
-
-      for (let i = 0; i < weights.length; i++) {
-        const { city, w } = weights[i];
-        let pop = Math.round(subPop * (w / sumWeights));
-        let gdp = pop * gdpPerCapita;
-
-        // Rounding adjustment for last city
-        if (i === weights.length - 1) {
-          pop = subPop - allocatedPop;
-          gdp = subGdp - allocatedGdp;
-        }
-
-        allocatedPop += pop;
-        allocatedGdp += gdp;
-
-        cityUpdates.push({ id: city.id, population: pop, gdpContribution: gdp });
-      }
-    }
-
-    // Write updates to database
-    for (const update of cityUpdates) {
-      await db.city.update({
-        where: { id: update.id },
-        data: {
-          population: update.population,
-          gdpContribution: update.gdpContribution,
-        },
-      });
-      totalCitiesUpdated++;
-    }
+    // Fall back to weights if the sum of existing population is 0
+    const citiesSumPop = cities.reduce((sum, c) => sum + (c.population ?? 0), 0);
+    cityUpdates.push(
+      ...(scaleExisting && citiesSumPop > 0
+        ? scaleCityDemographics(cities, subPop, subGdp, citiesSumPop)
+        : weightCityDemographics(cities, sub, subPop, subGdp))
+    );
   }
 
-  return { success: true, totalCitiesUpdated };
+  // 3. Write updates to database
+  await writeCityDemographics(db, cityUpdates);
+
+  return { success: true, totalCitiesUpdated: cityUpdates.length };
 }

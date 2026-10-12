@@ -44,6 +44,8 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       },
       $queryRaw: jest.fn(),
       $queryRawUnsafe: jest.fn().mockResolvedValue([]),
+      $executeRawUnsafe: jest.fn().mockResolvedValue(0),
+      $transaction: jest.fn(async (operations: Promise<unknown>[]) => Promise.all(operations)),
     };
   });
 
@@ -230,6 +232,14 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
   });
 
   describe("distributeSubdivisionDemographicsToCities", () => {
+    /** The rows written by the batched UPDATE statements, in order: one `{ id, population, gdp }` each. */
+    function writtenCityRows() {
+      return mockDb.$executeRawUnsafe.mock.calls.flatMap(
+        ([, ids, populations, gdps]: [string, string[], number[], number[]]) =>
+          ids.map((id, n) => ({ id, population: populations[n], gdp: gdps[n] }))
+      );
+    }
+
     it("should distribute proportionally using existing populations when scaleExisting is true", async () => {
       mockDb.subdivision.findMany.mockResolvedValue([
         { id: "sub-1", name: "Province 1", population: 100000, gdpContribution: 500000 },
@@ -256,14 +266,10 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       expect(result.success).toBe(true);
       expect(result.totalCitiesUpdated).toBe(2);
 
-      expect(mockDb.city.update).toHaveBeenNthCalledWith(1, {
-        where: { id: "city-1" },
-        data: { population: 30000, gdpContribution: 150000 },
-      });
-      expect(mockDb.city.update).toHaveBeenNthCalledWith(2, {
-        where: { id: "city-2" },
-        data: { population: 70000, gdpContribution: 350000 },
-      });
+      expect(writtenCityRows()).toEqual([
+        { id: "city-1", population: 30000, gdp: 150000 },
+        { id: "city-2", population: 70000, gdp: 350000 },
+      ]);
     });
 
     it("should distribute by category weights when scaleExisting is false", async () => {
@@ -298,14 +304,81 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
       const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, false);
 
       expect(result.success).toBe(true);
-      expect(mockDb.city.update).toHaveBeenNthCalledWith(1, {
-        where: { id: "city-1" },
-        data: { population: 85714, gdpContribution: 428570 },
+      expect(writtenCityRows()).toEqual([
+        { id: "city-1", population: 85714, gdp: 428570 },
+        { id: "city-2", population: 14286, gdp: 71430 },
+      ]);
+    });
+
+    it("reads the cities of every subdivision in one query and writes them in one transaction", async () => {
+      const subs = ["a", "b", "c"].map((id) => ({
+        id,
+        name: id,
+        population: 1000,
+        gdpContribution: 5000,
+      }));
+      mockDb.subdivision.findMany.mockResolvedValue(subs);
+      mockDb.city.findMany.mockResolvedValue(
+        subs.flatMap((sub) =>
+          [1, 2].map((n) => ({
+            id: `${sub.id}${n}`,
+            name: `${sub.id}${n}`,
+            population: 10,
+            subdivisionId: sub.id,
+          }))
+        )
+      );
+
+      const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, true);
+
+      expect(result.totalCitiesUpdated).toBe(6);
+      expect(mockDb.city.findMany).toHaveBeenCalledTimes(1);
+      expect(mockDb.city.findMany.mock.calls[0][0].where).toMatchObject({
+        countryId,
+        status: "approved",
+        subdivisionId: { in: ["a", "b", "c"] },
       });
-      expect(mockDb.city.update).toHaveBeenNthCalledWith(2, {
-        where: { id: "city-2" },
-        data: { population: 14286, gdpContribution: 71430 },
-      });
+      expect(mockDb.city.update).not.toHaveBeenCalled();
+      expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockDb.$executeRawUnsafe).toHaveBeenCalledTimes(1);
+      expect(writtenCityRows().map((row) => row.population)).toEqual([
+        500, 500, 500, 500, 500, 500,
+      ]);
+    });
+
+    it("writes a large country in bounded statements inside the one transaction", async () => {
+      mockDb.subdivision.findMany.mockResolvedValue([
+        { id: "big", name: "big", population: 1_200_000, gdpContribution: 0 },
+      ]);
+      mockDb.city.findMany.mockResolvedValue(
+        Array.from({ length: 1201 }, (_, n) => ({
+          id: `city-${n}`,
+          name: `city ${n}`,
+          population: 1,
+          subdivisionId: "big",
+        }))
+      );
+
+      await distributeSubdivisionDemographicsToCities(mockDb, countryId, true);
+
+      expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockDb.$transaction.mock.calls[0][0]).toHaveLength(3);
+      expect(
+        mockDb.$executeRawUnsafe.mock.calls.map((call: unknown[][]) => call[1].length)
+      ).toEqual([500, 500, 201]);
+    });
+
+    it("skips subdivisions with no population or no cities, and writes nothing when nothing changes", async () => {
+      mockDb.subdivision.findMany.mockResolvedValue([
+        { id: "empty", name: "empty", population: 0, gdpContribution: 0 },
+        { id: "cityless", name: "cityless", population: 100, gdpContribution: 0 },
+      ]);
+      mockDb.city.findMany.mockResolvedValue([]);
+
+      const result = await distributeSubdivisionDemographicsToCities(mockDb, countryId, true);
+
+      expect(result).toEqual({ success: true, totalCitiesUpdated: 0 });
+      expect(mockDb.$transaction).not.toHaveBeenCalled();
     });
   });
 });

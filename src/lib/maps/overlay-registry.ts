@@ -37,6 +37,7 @@ import type {
   OverlayLegend,
   OverlayPluginDefinition,
   OverlayRenderCtx,
+  OverlayRow,
   TRPCUtils,
 } from "./overlay-types";
 
@@ -193,23 +194,21 @@ const CANON_DENSITY_LEGEND: OverlayLegend = {
 // Bridge the unified render context to each component's concrete prop shape so
 // IxWorldMap can render every overlay from one loop without rewriting components.
 
-/** ChoroplethOverlay-style fill: data is a FeatureCollection (+ optional metadata). */
+/** ChoroplethOverlay-style fill: data is country rows (+ optional metadata). */
 function choroplethRenderProps(
   colorScale: "wealth" | "population" | "neutral" | "canon",
   layerId: string
 ) {
   return ({ map, data, visible }: OverlayRenderCtx) => {
     if (!data) return null;
-    const fc = data as FeatureCollection & {
-      metadata?: { minVal: number; maxVal: number };
-    };
+    const d = data as { rows: OverlayRow[]; metadata?: { minVal: number; maxVal: number } };
     return {
       map,
-      data: fc,
+      rows: d.rows,
       visible,
       layerId,
       colorScale,
-      metadata: fc.metadata,
+      metadata: d.metadata,
     };
   };
 }
@@ -296,12 +295,12 @@ const OVERLAY_REGISTRY: Record<string, OverlayPluginDefinition> = {
     renderProps: ({ map, data, visible }: OverlayRenderCtx) => {
       if (!data) return null;
       const d = data as {
-        riskMap: FeatureCollection;
+        rows: OverlayRow[];
         crisisEvents: FeatureCollection;
       };
       return {
         map,
-        riskData: d.riskMap,
+        riskRows: d.rows,
         crisisEvents: d.crisisEvents,
         visible,
       };

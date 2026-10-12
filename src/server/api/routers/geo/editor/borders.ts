@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
@@ -10,7 +10,7 @@ import { restorableBorderDraft } from "~/lib/maps/border-draft";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
-import { assertFound, neighbourFeatures } from "../core/shared";
+import { assertFound } from "../core/shared";
 import { realmRadiusKmById } from "~/server/modules/realms/realms.map";
 import { scaleAreaToRadius } from "~/lib/maps/planet";
 
@@ -24,6 +24,43 @@ async function realmAreaOf(
 ) {
   const radiusKm = await realmRadiusKmById(db, realmId);
   return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
+}
+
+/** A neighbouring political feature: what the editor draws, and when it was last saved. */
+interface NeighbourRow {
+  featureId: string;
+  displayName: string | null;
+  geometry: unknown;
+  updatedAt: Date;
+}
+
+/** Degrees added around a feature's bounding box when looking for its neighbours. */
+const NEIGHBOUR_PAD = 1;
+
+/**
+ * The realm's other political features whose extent overlaps the feature's bounding box padded by NEIGHBOUR_PAD.
+ * The `&&` on `geom_postgis` is served by its GiST index, so the rest of the realm's outlines are never read.
+ */
+function findNeighbourRows(
+  db: Pick<PrismaClient, "$queryRawUnsafe">,
+  realmId: string,
+  featureId: string,
+  bbox: number[]
+): Promise<NeighbourRow[]> {
+  const [minLng, minLat, maxLng, maxLat] = bbox as [number, number, number, number];
+  return db.$queryRawUnsafe<NeighbourRow[]>(
+    `SELECT "featureId", "displayName", geometry, "updatedAt"
+       FROM map_layers
+      WHERE "layerType" = 'political' AND "isActive" = true AND "worldId" = $1
+        AND "featureId" <> $2
+        AND geom_postgis && ST_MakeEnvelope($3, $4, $5, $6, 4326)`,
+    realmId,
+    featureId,
+    minLng - NEIGHBOUR_PAD,
+    minLat - NEIGHBOUR_PAD,
+    maxLng + NEIGHBOUR_PAD,
+    maxLat + NEIGHBOUR_PAD
+  );
 }
 
 /** A user's border editor session for one feature of one realm (feature ids repeat across realms). */
@@ -54,32 +91,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
         `Feature not found: ${input.featureId}`
       );
 
-      // Find neighboring features by bounding box overlap
+      // Find neighboring features whose extent overlaps the feature's bounding box
       const bbox = feature.boundingBox as number[] | null;
-      let neighbors: Array<{
-        featureId: string;
-        displayName: string | null;
-        geometry: unknown;
-      }> = [];
-      if (bbox && bbox.length === 4) {
-        const pad = 1; // 1° padding for neighbor search
-        neighbors = await ctx.db.mapLayer
-          .findMany({
-            where: {
-              layerType: "political",
-              featureId: { not: input.featureId },
-              isActive: true,
-              realmId,
-            },
-            select: {
-              featureId: true,
-              displayName: true,
-              boundingBox: true,
-              geometry: true,
-            },
-          })
-          .then((layers) => neighbourFeatures(layers, bbox, pad));
-      }
+      const neighborRows =
+        bbox && bbox.length === 4
+          ? await findNeighbourRows(ctx.db, realmId, input.featureId, bbox)
+          : [];
 
       // Create or resume session
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -107,6 +124,9 @@ export const geoEditorBordersRouter = createTRPCRouter({
           userId,
           featureId: input.featureId,
           featureUpdatedAt: feature.updatedAt,
+          neighborUpdatedAt: Object.fromEntries(
+            neighborRows.map((row) => [row.featureId, row.updatedAt])
+          ),
         }),
         feature: {
           featureId: feature.featureId,
@@ -117,7 +137,11 @@ export const geoEditorBordersRouter = createTRPCRouter({
           areaSqKm: feature.areaSqKm,
           countryId: feature.countryId,
         },
-        neighbors,
+        neighbors: neighborRows.map(({ featureId, displayName, geometry }) => ({
+          featureId,
+          displayName,
+          geometry,
+        })),
       };
     }),
 
