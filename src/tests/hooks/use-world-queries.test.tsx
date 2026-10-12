@@ -22,6 +22,7 @@ const legend: DiagnosticLegend = {
   domain: [-30, 38],
   scale: "linear",
   stops: [{ value: -30, color: "#313695" }],
+  clipped: { low: false, high: false },
 };
 
 function setup() {
